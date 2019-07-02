@@ -1,0 +1,14 @@
+language: python
+python:
+    - "3.6"
+
+cache:
+    pip: true
+
+install:
+    - pip install -r requirements.txt
+
+script:
+    - echo "python version $(python --version) running"
+    - echo "pip version $(pip --version) running"
+    - make check test
