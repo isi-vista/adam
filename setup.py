@@ -10,7 +10,7 @@ with open(join(dirname(abspath(__file__)), 'adam', 'version.py')) as version_fil
 
 setup(name='adam',
       version=version,
-      author='Ryan Gabbard',
+      author='Marjorie Freedman, Ryan Gabbard, Mitch Marcus, Ralph Weischedel, and Charles Yang',
       author_email='gabbard@isi.edu',
       description="ADAM",
       url='https://github.com/isi-vista/adam',

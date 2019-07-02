@@ -30,6 +30,7 @@ Run `make precommit` before commiting.  Eventually this will be automated.
 Marjorie Freedman
 Ryan Gabbard
 Mitch Marcus
+Ralph Weischedel
 Charles Yang
 
 # Contact
