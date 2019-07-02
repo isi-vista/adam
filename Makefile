@@ -7,9 +7,9 @@ PYTHON=python3
 SHELL=bash
 SOURCE_DIR_NAME=adam
 
-PYLINT:=pylint $(SOURCE_DIR_NAME) tests benchmarks
+PYLINT:=pylint $(SOURCE_DIR_NAME) tests 
 
-MYPY:=mypy $(MYPY_ARGS) $(SOURCE_DIR_NAME) tests benchmarks
+MYPY:=mypy $(MYPY_ARGS) $(SOURCE_DIR_NAME) tests 
 
 # Suppressed warnings:
 # Too many arguments, Unexpected keyword arguments: can't do static analysis on attrs __init__
@@ -45,14 +45,11 @@ flake8:
 	$(FLAKE8_CMD)
 
 black-fix:
-	black $(SOURCE_DIR_NAME) tests benchmarks
+	black $(SOURCE_DIR_NAME) tests 
 
 black-check:
-	black --check $(SOURCE_DIR_NAME) tests benchmarks
+	black --check $(SOURCE_DIR_NAME) tests 
 
 check: black-check lint mypy flake8
-
-benchmark:
-	pytest benchmarks --benchmark-timer=time.process_time
 
 precommit: black-fix check
