@@ -1,5 +1,5 @@
 
-[![Build status](https://ci.appveyor.com/api/projects/status/3jhdnwreqoni1492/branch/master?svg=true)](https://ci.appveyor.com/project/rgabbard/vistautils/branch/master)
+[![Build status](https://travis-ci.com/isi-vista/adam.svg?branch=master)](https://travis-ci.com/isi-vista/adam.svg?branch=master)
 
 [![codecov](https://codecov.io/gh/isi-vista/adam/branch/master/graph/badge.svg)](https://codecov.io/gh/isi-vista/adam)
 
