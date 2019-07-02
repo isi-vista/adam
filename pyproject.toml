@@ -1,0 +1,27 @@
+[tool.towncrier]
+    package="adam"
+    filename="CHANGELOG.md"
+    issue_format = "`#{issue} <https://github.com/isi-vista/adam/issues/{issue}>`_"
+
+    [[tool.towncrier.type]]
+        directory = "breaking"
+        name = "Backward-incompatible Changes"
+        showcontent = true
+
+    [[tool.towncrier.type]]
+        directory = "bugfix"
+        name = "Bugfixes"
+        showcontent = true
+
+    [[tool.towncrier.type]]
+        directory = "deprecation"
+        name = "Deprecations"
+        showcontent = true
+
+    [[tool.towncrier.type]]
+        directory = "feature"
+        name = "New Features"
+        showcontent = true
+
+[tool.black]
+line-length = 90

@@ -1,0 +1,15 @@
+image: ubuntu
+stack: python 3.6
+
+# we build manually in the install step
+build: off
+
+build_script:
+- pip install -r requirements.txt
+- pip install codecov
+- make check
+
+test_script:
+- make test coverage
+- codecov
+
