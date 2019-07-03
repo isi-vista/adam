@@ -1,7 +1,7 @@
 # core requirements
 attrs==18.2.0
-vistautils==0.7.0
-immutablecollections==0.3.0
+vistautils==0.12.0
+immutablecollections==0.7.0
 
 
 # extras for development
