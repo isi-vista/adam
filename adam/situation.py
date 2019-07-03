@@ -1,3 +1,6 @@
+"""
+Structures for describing situations in the world at an abstacted, human-friendly level.
+"""
 from abc import ABC
 
 

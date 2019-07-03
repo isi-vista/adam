@@ -1,5 +1,9 @@
+"""
+Interfaces for language learning code.
+"""
+
 from abc import ABC, abstractmethod
-from typing import Generic, Mapping, TypeVar
+from typing import Generic, Mapping, TypeVar, Dict
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
@@ -15,8 +19,11 @@ _LinguisticDescriptionT = TypeVar("_LinguisticDescriptionT", bound=LinguisticDes
 
 @attrs(frozen=True)
 class LearningExample(Generic[_PerceptionT, _LinguisticDescriptionT]):
-    perception: _PerceptionT = attrib(validator=instance_of(PerceptualRepresentation))
-    linguistic_description: _LinguisticDescriptionT = attrib(
+    # attrs can't check the generic types, so we just check the super-types
+    perception: _PerceptionT = attrib(  # type:ignore
+        validator=instance_of(PerceptualRepresentation)
+    )
+    linguistic_description: _LinguisticDescriptionT = attrib(  # type:ignore
         validator=instance_of(LinguisticDescription)
     )
 
@@ -67,7 +74,7 @@ class MemorizingLanguageLearner(
     This implementation is only useful for testing.
     """
 
-    _memorized_situations: Mapping[_PerceptionT, _LinguisticDescriptionT] = attrib(
+    _memorized_situations: Dict[_PerceptionT, _LinguisticDescriptionT] = attrib(
         init=False, default=Factory(dict)
     )
 
