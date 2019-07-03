@@ -1,0 +1,14 @@
+from abc import ABC
+
+
+class Situation(ABC):
+    """
+    A situation is a high-level representation of a configuration of objects, possibly including
+    changes in the states of objects across time.
+
+    A Curriculum is a sequence of situations.
+
+    Situations are a high-level description intended to make it easy for human beings to specify
+    curricula.  Situations will be transformed into pairs of PerceptualRepresentations and
+    LinguisticDescriptions for input to a Learner.
+    """
