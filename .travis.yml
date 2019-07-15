@@ -8,10 +8,13 @@ cache:
 install:
     - pip install -r requirements.txt
 
-script:
-    - echo "python version $(python --version) running"
-    - echo "pip version $(pip --version) running"
-    - make check test
+jobs:
+    include:
+        - stage: lint Docs
+          script: sphinx-build -nWT -b dummy docs docs/_build/html
+        - stage: test
+          script:
+              - echo "python version $(python --version) running"
+              - echo "pip version $(pip --version) running"
+              - make check test
 
-script:
-    - sphinx-build -nWT -b dummy docs doscs/_build/html

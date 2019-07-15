@@ -27,6 +27,11 @@ adam.leaner
 ===============
 .. automodule:: adam.learner
 
+adam.ui
+=========
+.. automodule:: adam.ui
+
+
 
 Indices and tables
 ==================
