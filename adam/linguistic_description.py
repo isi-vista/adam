@@ -1,15 +1,28 @@
 """
-Representations of the linguistic input and outputs of a Learner.
+Representations of the linguistic input and outputs of a `LanguageLearner`\ .
 """
 from abc import ABC
+from typing import Tuple
+
+from attr import attrs, attrib
+from attr.validators import instance_of
 
 
 class LinguisticDescription(ABC):
     """
-    A linguistic description of a Situation.
+    A linguistic description of a `Situation`\ .
 
-    This, together with a PerceptualRepresentation, forms an observation that a Learner learns from.
+    This, together with a `PerceptualRepresentation`\ , forms an observation that a `LanguageLearner`
+    learns from.
 
-    A trained Learner can then generate new LinguisticDescriptions given only a
-    PerceptualRepresentation of a Situation.
+    A trained `LanguageLearner` can then generate new `LinguisticDescription`\ s given only a
+    `PerceptualRepresentation` of a `Situation`\ .
     """
+
+
+@attrs(frozen=True)
+class TokenSequenceLinguisticDescription(LinguisticDescription):
+    """
+    A `LinguisticDescription` which consists of a sequence of tokens.
+    """
+    tokens: Tuple[str, ...] = attrib(validator=instance_of(tuple))

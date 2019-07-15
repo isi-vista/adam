@@ -19,6 +19,10 @@ _LinguisticDescriptionT = TypeVar("_LinguisticDescriptionT", bound=LinguisticDes
 
 @attrs(frozen=True)
 class LearningExample(Generic[_PerceptionT, _LinguisticDescriptionT]):
+    """
+    A `PerceptualRepresentation` of a situation and its `LinguisticDescription`
+    that a `LanguageLearner` can learn from.
+    """
     # attrs can't check the generic types, so we just check the super-types
     perception: _PerceptionT = attrib(  # type:ignore
         validator=instance_of(PerceptualRepresentation)
@@ -32,8 +36,9 @@ class LanguageLearner(Generic[_PerceptionT, _LinguisticDescriptionT], ABC):
     """
     Models an infant learning language.
 
-    A Learner learns language by observing a sequence of LearningExamples.
-    A Learner can describe new situations giben a PerceptualRepresentation.
+    A `LanguageLearner` learns language by observing a sequence of `LearningExample`\ s.
+
+    A `LanguageLearner` can describe new situations given a `PerceptualRepresentation`\ .
     """
 
     @abstractmethod
@@ -41,7 +46,7 @@ class LanguageLearner(Generic[_PerceptionT, _LinguisticDescriptionT], ABC):
         self, learning_example: LearningExample[_PerceptionT, _LinguisticDescriptionT]
     ) -> None:
         """
-        Observe a learning example, possibly updating internal state.
+        Observe a `LearningExample`, possibly updating internal state.
         """
 
     @abstractmethod
@@ -49,7 +54,8 @@ class LanguageLearner(Generic[_PerceptionT, _LinguisticDescriptionT], ABC):
         self, perception: _PerceptionT
     ) -> Mapping[_LinguisticDescriptionT, float]:
         """
-        Given a perception of a situation, produce one or more linguistic descriptions of it.
+        Given a `PerceptualRepresentation` of a situation, produce one or more
+        `LinguisticDescription`\ s of it.
 
         The descriptions are returned as a mapping from linguistic descriptions to their scores.
         The scores are not defined other than "higher is better."
@@ -65,10 +71,10 @@ class MemorizingLanguageLearner(
     LanguageLearner[_PerceptionT, _LinguisticDescriptionT],
 ):
     """
-    A trivial implementation of LanguageLearner which just memorizes situations it has seen before
+    A trivial implementation of `LanguageLearner` which just memorizes situations it has seen before
     and cannot produce descriptions of any other situations.
 
-    If this learner observes the same perceptual representation multiple times, only the final
+    If this learner observes the same `PerceptualRepresentation` multiple times, only the final
     description is memorized.
 
     This implementation is only useful for testing.

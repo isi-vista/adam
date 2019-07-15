@@ -12,6 +12,6 @@ class Situation(ABC):
     A Curriculum is a sequence of situations.
 
     Situations are a high-level description intended to make it easy for human beings to specify
-    curricula.  Situations will be transformed into pairs of PerceptualRepresentations and
-    LinguisticDescriptions for input to a Learner.
+    curricula.  Situations will be transformed into pairs of `PerceptualRepresentation`\ s and
+    `LinguisticDescription`\ s for input to a `LanguageLearner`\ .
     """
