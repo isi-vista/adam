@@ -181,3 +181,8 @@ autodoc_default_options = {
     'undoc-members': True
 }
 
+# some standard library types generate spurious warnings
+nitpick_ignore = [('py:class', 'typing.Mapping'),
+                  ('py:class', 'float')]
+
+
