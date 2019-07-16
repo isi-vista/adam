@@ -10,8 +10,6 @@ install:
 
 jobs:
     include:
-        - stage: lint Docs
-          script: sphinx-build -nWT -b dummy docs docs/_build/html
         - stage: test
           script:
               - echo "python version $(python --version) running"

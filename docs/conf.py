@@ -180,4 +180,5 @@ autodoc_default_options = {
 # some standard library types generate spurious warnings
 nitpick_ignore = [('py:class', 'typing.Mapping'),
                   ('py:class', 'typing.Tuple'),
-                  ('py:class', 'float')]
+                  ('py:class', 'float'),
+                  ('py:class', 'str')]

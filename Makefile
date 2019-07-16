@@ -50,6 +50,9 @@ black-fix:
 black-check:
 	black --check $(SOURCE_DIR_NAME) tests 
 
-check: black-check lint mypy flake8
+doc-lint:
+	sphinx-build -nWT -b dummy docs docs/_build/html
+
+check: black-check doc-lint lint mypy flake8
 
 precommit: black-fix check
