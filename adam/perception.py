@@ -4,6 +4,9 @@ This module provides classes related to the perceptual primitive representation 
 """
 from abc import ABC
 
+from attr import attrs, attrib
+from immutablecollections import ImmutableSet, immutableset
+
 
 class PerceptualRepresentation(ABC):
     r"""
@@ -12,3 +15,13 @@ class PerceptualRepresentation(ABC):
     This, paired with a `LinguisticDescription`\ , forms an observation that a `LanguageLearner`\
     learns from.
     """
+
+
+@attrs(frozen=True)
+class BagOfFeaturesPerceptualDescription(PerceptualRepresentation):
+    r"""
+    Represents a learner's perception of a `Situation` as an unstructured set of features.
+
+    For testing purposes only.
+    """
+    features: ImmutableSet[str] = attrib(converter=immutableset)
