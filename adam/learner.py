@@ -3,18 +3,15 @@ Interfaces for language learning code.
 """
 
 from abc import ABC, abstractmethod
-from typing import Generic, Mapping, TypeVar, Dict
+from typing import Generic, Mapping, Dict
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
 
 from immutablecollections import immutabledict
 
-from adam.linguistic_description import LinguisticDescription
-from adam.perception import PerceptualRepresentation
-
-_PerceptionT = TypeVar("_PerceptionT", bound=PerceptualRepresentation)
-_LinguisticDescriptionT = TypeVar("_LinguisticDescriptionT", bound=LinguisticDescription)
+from adam.linguistic_description import LinguisticDescription, _LinguisticDescriptionT
+from adam.perception import PerceptualRepresentation, _PerceptionT
 
 
 @attrs(frozen=True)

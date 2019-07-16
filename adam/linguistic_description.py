@@ -1,8 +1,8 @@
 r"""
 Representations of the linguistic input and outputs of a `LanguageLearner`\ .
 """
-from abc import ABC
-from typing import Tuple
+from abc import ABC, abstractmethod
+from typing import Tuple, TypeVar
 
 from attr import attrs, attrib
 from attr.validators import instance_of
@@ -19,6 +19,18 @@ class LinguisticDescription(ABC):
     `PerceptualRepresentation` of a `Situation`.
     """
 
+    @abstractmethod
+    def as_token_sequence(self) -> Tuple[str, ...]:
+        """
+        Get this description as a tuple of token strings.
+
+        Returns:
+            A tuple of token strings describing this `LinguisticDescription`
+        """
+
+
+_LinguisticDescriptionT = TypeVar("_LinguisticDescriptionT", bound=LinguisticDescription)
+
 
 @attrs(frozen=True)
 class TokenSequenceLinguisticDescription(LinguisticDescription):
@@ -27,3 +39,6 @@ class TokenSequenceLinguisticDescription(LinguisticDescription):
     """
 
     tokens: Tuple[str, ...] = attrib(validator=instance_of(tuple))
+
+    def as_token_sequence(self) -> Tuple[str, ...]:
+        return self.tokens
