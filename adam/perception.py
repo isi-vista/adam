@@ -3,6 +3,7 @@ This module provides classes related to the perceptual primitive representation 
 `Situation`\ s from the point-of-view of `LanguageLearner`\ s.
 """
 from abc import ABC
+from typing import TypeVar
 
 from attr import attrs, attrib
 from immutablecollections import ImmutableSet, immutableset
@@ -17,8 +18,11 @@ class PerceptualRepresentation(ABC):
     """
 
 
+_PerceptionT = TypeVar("_PerceptionT", bound=PerceptualRepresentation)
+
+
 @attrs(frozen=True)
-class BagOfFeaturesPerceptualDescription(PerceptualRepresentation):
+class BagOfFeaturesPerceptualRepresentation(PerceptualRepresentation):
     r"""
     Represents a learner's perception of a `Situation` as an unstructured set of features.
 

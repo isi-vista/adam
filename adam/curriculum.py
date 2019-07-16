@@ -3,16 +3,18 @@ Classes to represent a strategy for presenting `LearningExample`\ s to a `Langua
 """
 from abc import ABC, abstractmethod
 from random import Random
-from typing import Sequence, Tuple
-
-from attr import attrs, attrib
+from typing import Generic, Sequence
 
 from adam.learner import LearningExample
+from adam.linguistic_description import _LinguisticDescriptionT
+from adam.perception import _PerceptionT
 
 
-class CurriculumGenerator(ABC):
+class CurriculumGenerator(ABC, Generic[_PerceptionT, _LinguisticDescriptionT]):
     @abstractmethod
-    def generate_curriculum(self, rng: Random) -> Sequence[LearningExample]:
+    def generate_curriculum(
+        self, rng: Random
+    ) -> Sequence[LearningExample[_PerceptionT, _LinguisticDescriptionT]]:
         r"""
         Produce a sequence of `LearningExample`s for a `Learner`\ .
 
@@ -25,8 +27,9 @@ class CurriculumGenerator(ABC):
         """
 
     @staticmethod
-    def create_always_generating(curriculum: Sequence[LearningExample]) -> \
-            'CurriculumGenerator':
+    def create_always_generating(
+        curriculum: Sequence[LearningExample[_PerceptionT, _LinguisticDescriptionT]]
+    ) -> "CurriculumGenerator[_PerceptionT, _LinguisticDescriptionT]":
         r"""
         Get a `CurriculumGenerator` which always generates the specific curriculum.
 
@@ -36,17 +39,29 @@ class CurriculumGenerator(ABC):
         Returns:
             A `CurriculumGenerator` which always generates the specific curriculum.
         """
+        return _ExplicitCurriculumGenerator(curriculum)
 
 
-@attrs(frozen=True)
-class _ExplicitCurriculumGenerator(CurriculumGenerator):
-    """
+# for some reason attrs and mypy don't play well here, so we do this the old-fashioned way
+class _ExplicitCurriculumGenerator(
+    CurriculumGenerator[_PerceptionT, _LinguisticDescriptionT]
+):
+    r"""
     A curriculum generator which always returns the exact list of `LearningExample`\ s
     provided at its construction.
 
     This is useful for testing.
     """
-    _learning_examples: Tuple[LearningExample, ...] = attrib(converter=tuple)
 
-    def generate_curriculum(self, rng: Random) -> Sequence[LearningExample]:
+    def __init__(
+        self,
+        learning_examples: Sequence[
+            LearningExample[_PerceptionT, _LinguisticDescriptionT]
+        ],
+    ) -> None:
+        self._learning_examples = tuple(learning_examples)
+
+    def generate_curriculum(
+        self, rng: Random  # pylint:disable=unused-argument
+    ) -> Sequence[LearningExample[_PerceptionT, _LinguisticDescriptionT]]:
         return self._learning_examples

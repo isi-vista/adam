@@ -27,4 +27,4 @@ class BagOfFeaturesSituationRepresentation(Situation):
 
     For testing purposes only.
     """
-    features: ImmutableSet[str] = attrib(converter=immutableset())
+    features: ImmutableSet[str] = attrib(converter=immutableset)
