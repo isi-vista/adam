@@ -10,4 +10,5 @@ class UserInterface(ABC):
 
     This is just a placeholder for now.
     """
+
     pass

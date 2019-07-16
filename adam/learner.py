@@ -23,6 +23,7 @@ class LearningExample(Generic[_PerceptionT, _LinguisticDescriptionT]):
     A `PerceptualRepresentation` of a situation and its `LinguisticDescription`
     that a `LanguageLearner` can learn from.
     """
+
     # attrs can't check the generic types, so we just check the super-types
     perception: _PerceptionT = attrib(  # type:ignore
         validator=instance_of(PerceptualRepresentation)
@@ -33,7 +34,7 @@ class LearningExample(Generic[_PerceptionT, _LinguisticDescriptionT]):
 
 
 class LanguageLearner(Generic[_PerceptionT, _LinguisticDescriptionT], ABC):
-    """
+    r"""
     Models an infant learning language.
 
     A `LanguageLearner` learns language by observing a sequence of `LearningExample`\ s.
@@ -53,7 +54,7 @@ class LanguageLearner(Generic[_PerceptionT, _LinguisticDescriptionT], ABC):
     def describe(
         self, perception: _PerceptionT
     ) -> Mapping[_LinguisticDescriptionT, float]:
-        """
+        r"""
         Given a `PerceptualRepresentation` of a situation, produce one or more
         `LinguisticDescription`\ s of it.
 

@@ -5,7 +5,7 @@ from abc import ABC
 
 
 class Situation(ABC):
-    """
+    r"""
     A situation is a high-level representation of a configuration of objects, possibly including
     changes in the states of objects across time.
 
@@ -13,5 +13,5 @@ class Situation(ABC):
 
     Situations are a high-level description intended to make it easy for human beings to specify
     curricula.  Situations will be transformed into pairs of `PerceptualRepresentation`\ s and
-    `LinguisticDescription`\ s for input to a `LanguageLearner`\ .
+    `LinguisticDescription`\ s for input to a `LanguageLearner`.
     """
