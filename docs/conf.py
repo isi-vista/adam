@@ -34,6 +34,7 @@ sys.path.insert(0, os.path.abspath('..'))
 extensions = ['sphinx.ext.autodoc',
         'sphinx.ext.autosummary',
     'sphinx.ext.coverage',
+    'sphinx.ext.napoleon',
     'sphinx_autodoc_typehints'
     ]
 
@@ -175,5 +176,13 @@ texinfo_documents = [
      'Miscellaneous'),
 ]
 
+autodoc_default_options = {
+    'members': True,
+    'undoc-members': True
+}
+
+# some standard library types generate spurious warnings
+nitpick_ignore = [('py:class', 'typing.Mapping'),
+                  ('py:class', 'float')]
 
 

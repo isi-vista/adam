@@ -13,7 +13,7 @@ ADAM is ISI's effort under DARPA's Grounded Artificial Intelligence Language Acq
 
 # Documentation
 
-To generate documentation:
+To generate Sphinx documentation:
 ```
 cd docs
 make html
