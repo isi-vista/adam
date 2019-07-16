@@ -3,6 +3,9 @@ Structures for describing situations in the world at an abstacted, human-friendl
 """
 from abc import ABC
 
+from attr import attrs, attrib
+from immutablecollections import immutableset, ImmutableSet
+
 
 class Situation(ABC):
     r"""
@@ -15,3 +18,13 @@ class Situation(ABC):
     curricula.  Situations will be transformed into pairs of `PerceptualRepresentation`\ s and
     `LinguisticDescription`\ s for input to a `LanguageLearner`.
     """
+
+
+@attrs(frozen=True)
+class BagOfFeaturesSituationRepresentation(Situation):
+    r"""
+    Represents a `Situation` as an unstructured set of features.
+
+    For testing purposes only.
+    """
+    features: ImmutableSet[str] = attrib(converter=immutableset())
