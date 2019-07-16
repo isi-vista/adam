@@ -19,8 +19,8 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('..'))
 
+sys.path.insert(0, os.path.abspath('..'))
 
 # -- General configuration ------------------------------------------------
 
@@ -32,11 +32,11 @@ sys.path.insert(0, os.path.abspath('..'))
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = ['sphinx.ext.autodoc',
-        'sphinx.ext.autosummary',
-    'sphinx.ext.coverage',
-    'sphinx.ext.napoleon',
-    'sphinx_autodoc_typehints'
-    ]
+              'sphinx.ext.autosummary',
+              'sphinx.ext.coverage',
+              'sphinx.ext.napoleon',
+              'sphinx_autodoc_typehints'
+              ]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -84,7 +84,7 @@ pygments_style = 'sphinx'
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = False
 
-autosummary_generate=True
+autosummary_generate = True
 
 # -- Options for HTML output ----------------------------------------------
 
@@ -119,12 +119,10 @@ html_sidebars = {
     ]
 }
 
-
 # -- Options for HTMLHelp output ------------------------------------------
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'adamdoc'
-
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -154,7 +152,6 @@ latex_documents = [
      'Ryan Gabbard', 'manual'),
 ]
 
-
 # -- Options for manual page output ---------------------------------------
 
 # One entry per manual page. List of tuples
@@ -163,7 +160,6 @@ man_pages = [
     (master_doc, 'adam', 'adam Documentation',
      [author], 1)
 ]
-
 
 # -- Options for Texinfo output -------------------------------------------
 
@@ -183,6 +179,5 @@ autodoc_default_options = {
 
 # some standard library types generate spurious warnings
 nitpick_ignore = [('py:class', 'typing.Mapping'),
+                  ('py:class', 'typing.Tuple'),
                   ('py:class', 'float')]
-
-
