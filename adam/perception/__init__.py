@@ -3,26 +3,39 @@ This module provides classes related to the perceptual primitive representation 
 `Situation`\ s from the point-of-view of `LanguageLearner`\ s.
 """
 from abc import ABC
-from typing import TypeVar
+from typing import TypeVar, Generic, Tuple
 
 from attr import attrs, attrib
 from immutablecollections import ImmutableSet, immutableset
 
 
-class PerceptualRepresentation(ABC):
+class PerceptualRepresentationFrame(ABC):
     r"""
-    Represents a `LanguageLearner`\ 's perception of some `Situation`\ .
+    Represents a `LanguageLearner`\ 's perception of some `Situation`\ at a single moment.
 
-    This, paired with a `LinguisticDescription`\ , forms an observation that a `LanguageLearner`\
-    learns from.
+    One or more of these, paired with a `LinguisticDescription`\ , forms an observation that a
+    `LanguageLearner` learns from.
     """
 
 
-_PerceptionT = TypeVar("_PerceptionT", bound=PerceptualRepresentation)
+_PerceptionT = TypeVar("_PerceptionT", bound=PerceptualRepresentationFrame)
 
 
 @attrs(frozen=True)
-class BagOfFeaturesPerceptualRepresentation(PerceptualRepresentation):
+class PerceptualRepresentation(Generic[_PerceptionT]):
+    """
+    A learner's perception of a situation as a sequence of perceptual representations of
+    individual moments.
+
+    Usually for a static situation, this will be a single frame, but it could be two or
+    three for complex actions.
+    """
+
+    frames: Tuple[_PerceptionT, ...] = attrib(converter=tuple)
+
+
+@attrs(frozen=True)
+class BagOfFeaturesPerceptualRepresentationFrame(PerceptualRepresentationFrame):
     r"""
     Represents a learner's perception of a `Situation` as an unstructured set of features.
 
