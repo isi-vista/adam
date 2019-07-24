@@ -23,7 +23,7 @@ adam.perception
 ================
 .. automodule:: adam.perception
 
-adam.leaner
+adam.learner
 ===============
 .. automodule:: adam.learner
 
@@ -31,7 +31,9 @@ adam.ui
 =========
 .. automodule:: adam.ui
 
-
+adam.perception.marr
+======================
+.. automodule:: adam.perception.marr
 
 Indices and tables
 ==================
