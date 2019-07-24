@@ -11,7 +11,7 @@ from attr.validators import instance_of
 from immutablecollections import immutabledict
 
 from adam.linguistic_description import LinguisticDescription, _LinguisticDescriptionT
-from adam.perception import PerceptualRepresentation, _PerceptionT
+from adam.perception import _PerceptionT, PerceptualRepresentation
 
 
 @attrs(frozen=True)
@@ -22,7 +22,7 @@ class LearningExample(Generic[_PerceptionT, _LinguisticDescriptionT]):
     """
 
     # attrs can't check the generic types, so we just check the super-types
-    perception: _PerceptionT = attrib(  # type:ignore
+    perception: PerceptualRepresentation[_PerceptionT] = attrib(  # type:ignore
         validator=instance_of(PerceptualRepresentation)
     )
     linguistic_description: _LinguisticDescriptionT = attrib(  # type:ignore
@@ -49,7 +49,7 @@ class LanguageLearner(Generic[_PerceptionT, _LinguisticDescriptionT], ABC):
 
     @abstractmethod
     def describe(
-        self, perception: _PerceptionT
+        self, perception: PerceptualRepresentation[_PerceptionT]
     ) -> Mapping[_LinguisticDescriptionT, float]:
         r"""
         Given a `PerceptualRepresentation` of a situation, produce one or more
@@ -78,9 +78,9 @@ class MemorizingLanguageLearner(
     This implementation is only useful for testing.
     """
 
-    _memorized_situations: Dict[_PerceptionT, _LinguisticDescriptionT] = attrib(
-        init=False, default=Factory(dict)
-    )
+    _memorized_situations: Dict[
+        PerceptualRepresentation[_PerceptionT], _LinguisticDescriptionT
+    ] = attrib(init=False, default=Factory(dict))
 
     def observe(
         self, learning_example: LearningExample[_PerceptionT, _LinguisticDescriptionT]
@@ -90,7 +90,7 @@ class MemorizingLanguageLearner(
         ] = learning_example.linguistic_description
 
     def describe(
-        self, perception: _PerceptionT
+        self, perception: PerceptualRepresentation[_PerceptionT]
     ) -> Mapping[_LinguisticDescriptionT, float]:
         memorized_description = self._memorized_situations.get(perception)
         if memorized_description:
