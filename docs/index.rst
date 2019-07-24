@@ -35,6 +35,10 @@ adam.perception.marr
 ======================
 .. automodule:: adam.perception.marr
 
+adam.math_3d
+==============
+.. automodule: adam.math_3d
+
 Indices and tables
 ==================
 

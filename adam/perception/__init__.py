@@ -6,7 +6,10 @@ from abc import ABC
 from typing import TypeVar, Generic, Tuple
 
 from attr import attrs, attrib
+from attr.validators import instance_of
 from immutablecollections import ImmutableSet, immutableset
+
+from adam.math_3d import Point
 
 
 class PerceptualRepresentationFrame(ABC):
@@ -42,3 +45,17 @@ class BagOfFeaturesPerceptualRepresentationFrame(PerceptualRepresentationFrame):
     For testing purposes only.
     """
     features: ImmutableSet[str] = attrib(converter=immutableset)
+
+
+@attrs(frozen=True)
+class DummyVisualPerception:
+    """
+    A visual representation with a location and a tag, no structure or properties.
+
+    It simply says for e.g. a truck "this looks like a truck." and here is its (point) location.
+
+    This is only for testing purposes.
+    """
+
+    tag: str = attrib(validator=instance_of(str))
+    location: Point = attrib(validator=instance_of(Point))
