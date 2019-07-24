@@ -1,0 +1,112 @@
+<CoordinateSystem> { Z-up }
+
+<Comment> { "Simumatic Cylinder" }
+
+<Group> Cylinder{
+  <VertexPool> Cylinder{
+    <Vertex> 0 {
+      -0.5000 0.0000 0.5000
+      <UV> { 1.000000 1.000000 }
+    }
+    <Vertex> 1 {
+      -0.5000 0.3535 0.3535
+      <UV> { 1.000000 1.000000 }
+    }
+    <Vertex> 2 {
+      -0.5000 0.5000 0.0000
+      <UV> { 1.000000 1.000000 }
+    }
+    <Vertex> 3 {
+      -0.5000 0.3535 -0.3535
+      <UV> { 1.000000 1.000000 }
+    }
+    <Vertex> 4 {
+      -0.5000 0.0000 -0.5000
+      <UV> { 1.000000 1.000000 }
+    }
+    <Vertex> 5 {
+      -0.5000 -0.3535 -0.3535
+      <UV> { 1.000000 1.000000 }
+    }
+    <Vertex> 6 {
+      -0.5000 -0.5000 0.0000
+      <UV> { 1.000000 1.000000 }
+    }
+    <Vertex> 7 {
+      -0.5000 -0.3535 0.3535
+      <UV> { 1.000000 1.000000 }
+    }
+    <Vertex> 8 {
+      0.5000 0.0000 0.5000
+      <UV> { 1.000000 1.000000 }
+    }
+    <Vertex> 9 {
+      0.5000 0.3535 0.3535
+      <UV> { 1.000000 1.000000 }
+    }
+    <Vertex> 10 {
+      0.5000 0.5000 0.0000
+      <UV> { 1.000000 1.000000 }
+    }
+    <Vertex> 11 {
+      0.5000 0.3535 -0.3535
+      <UV> { 1.000000 1.000000 }
+    }
+    <Vertex> 12 {
+      0.5000 0.0000 -0.5000
+      <UV> { 1.000000 1.000000 }
+    }
+    <Vertex> 13 {
+      0.5000 -0.3535 -0.3535
+      <UV> { 1.000000 1.000000 }
+    }
+    <Vertex> 14 {
+      0.5000 -0.5000 0.0000
+      <UV> { 1.000000 1.000000 }
+    }
+    <Vertex> 15 {
+      0.5000 -0.3535 0.3535
+      <UV> { 1.000000 1.000000 }
+    }
+  }
+  <Polygon> {
+    <Normal> { -1.0 0.0 0.0 }
+    <VertexRef> { 0 1 2 3 4 5 6 7 <Ref> { Cylinder } }
+  }
+  <Polygon> {
+    <Normal> { 1.0 0.0 0.0 }
+    <VertexRef> { 15 14 13 12 11 10 9 8 <Ref> { Cylinder } }
+  }
+  <Polygon> {
+    <Normal> { 0.0 0.0 1.0 }
+    <VertexRef> { 0 8 9 1 <Ref> { Cylinder } }
+  }
+  <Polygon> {
+    <Normal> { 0.0 0.0 1.0 }
+    <VertexRef> { 1 9 10 2 <Ref> { Cylinder } }
+  }
+  <Polygon> {
+    <Normal> { 0.0 0.0 1.0 }
+    <VertexRef> { 2 10 11 3 <Ref> { Cylinder } }
+  }
+  <Polygon> {
+    <Normal> { 0.0 0.0 1.0 }
+    <VertexRef> { 3 11 12 4 <Ref> { Cylinder } }
+  }
+  <Polygon> {
+    <Normal> { 0.0 0.0 1.0 }
+    <VertexRef> { 4 12 13 5 <Ref> { Cylinder } }
+  }
+  <Polygon> {
+    <Normal> { 0.0 0.0 1.0 }
+    <VertexRef> { 5 13 14 6 <Ref> { Cylinder } }
+  }
+  <Polygon> {
+    <Normal> { 0.0 0.0 1.0 }
+    <VertexRef> { 6 14 15 7 <Ref> { Cylinder } }
+  }
+  <Polygon> {
+    <Normal> { 0.0 0.0 1.0 }
+    <VertexRef> { 7 15 8 0 <Ref> { Cylinder } }
+  }
+}

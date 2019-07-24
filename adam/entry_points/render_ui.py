@@ -51,7 +51,7 @@ class CylinderDrawer:
                       orientation_deg1: float, orientation_deg2:float, orientation_deg3: float,
                       diameter: float, length: float):
         # repeated load_models are cheap because they are cached by Panda3D
-        cylinder_model = self.base.loader.loadModel(str(model_dir / "cylinder"))
+        cylinder_model = self.base.loader.loadModel(str(model_dir / "cylinder.egg.model"))
         # todo: these are arbitrary, fix them!
         cylinder_model.setPos(start_x, start_y, start_z)
         cylinder_model.setScale(diameter, diameter, length)
