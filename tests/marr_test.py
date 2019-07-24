@@ -9,7 +9,6 @@ from adam.perception.marr import (
 )
 
 
-
 def make_test_human_object():
     person_instance_bounding_cylinder = Cylinder(
         # person height

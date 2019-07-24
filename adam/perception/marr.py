@@ -56,9 +56,9 @@ def _in_range(_range: Range[_T]) -> Callable[[Any, Any, Any], None]:
     return validator
 
 
-_positive = _in_range(Range.greater_than(0.0)) # pylint:disable=invalid-name
-_non_negative = _in_range(Range.at_least(0.0)) # pylint:disable=invalid-name
-_degrees = _in_range(Range.closed_open(-360.0, 360.0)) # pylint:disable=invalid-name
+_positive = _in_range(Range.greater_than(0.0))  # pylint:disable=invalid-name
+_non_negative = _in_range(Range.at_least(0.0))  # pylint:disable=invalid-name
+_degrees = _in_range(Range.closed_open(-360.0, 360.0))  # pylint:disable=invalid-name
 
 
 @attrs(frozen=True)
@@ -82,8 +82,12 @@ class CylinderRange:
     This is used for object recognition.
     """
 
-    length_range_in_meters: float = attrib(validator=instance_of(Range), kw_only=True)
-    diameter_range_in_meters: float = attrib(validator=instance_of(Range), kw_only=True)
+    length_range_in_meters: Range[float] = attrib(
+        validator=instance_of(Range), kw_only=True
+    )
+    diameter_range_in_meters: Range[float] = attrib(
+        validator=instance_of(Range), kw_only=True
+    )
 
 
 @attrs(frozen=True)
