@@ -7,6 +7,7 @@ cache:
 
 install:
     - pip install -r requirements.txt
+    - pip install codecov
 
 jobs:
     include:
@@ -14,5 +15,8 @@ jobs:
           script:
               - echo "python version $(python --version) running"
               - echo "pip version $(pip --version) running"
-              - make check test
+              - make check coverage
+
+after_success:
+  - codecov -t 452b6965-c9da-4306-97d5-a5e86626af8f
 

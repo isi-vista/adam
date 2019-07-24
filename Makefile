@@ -33,7 +33,7 @@ test:
 	pytest tests
 
 coverage:
-	pytest --cov tests
+	pytest --cov=adam tests
 
 lint:
 	$(PYLINT)
