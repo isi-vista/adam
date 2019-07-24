@@ -33,7 +33,7 @@ what it is you are looking at):
 - SpecificityIndexNode
 
 """
-from typing import Any, Callable, Mapping, TypeVar
+from typing import Any, Callable, Mapping, TypeVar, Tuple, Generic
 
 from attr import attrib, attrs, Attribute
 from attr.validators import instance_of
@@ -61,6 +61,9 @@ _non_negative = _in_range(Range.at_least(0.0)) # pylint:disable=invalid-name
 _degrees = _in_range(Range.closed_open(-360.0, 360.0)) # pylint:disable=invalid-name
 
 
+Vector = Tuple[float, float, float]
+
+
 @attrs(frozen=True)
 class Cylinder:
     """
@@ -73,6 +76,14 @@ class Cylinder:
     length_in_meters: float = attrib(validator=_positive, kw_only=True)
     diameter_in_meters: float = attrib(validator=_positive, kw_only=True)
 
+ObjType = TypeVar('ObjType')
+ObjType2 = TypeVar('ObjType2')
+
+@attrs(frozen=True)
+class Located(Generic[ObjType]):
+    obj: ObjType = attrib()
+    location_of_center_bottom: Vector = attrib(validator=instance_of(Tuple))
+    orientation_vector: Vector = attrib(validator=instance_of(Tuple))
 
 @attrs(frozen=True)
 class CylinderRange:
@@ -132,6 +143,22 @@ class AdjunctRelation:
                 iota_in_degrees=0.0,
                 phi_in_degrees=0.0,
             )
+
+        def orient(self, orientee: Cylinder, *, relative_to: Located[Cylinder]) -> Located[
+            Cylinder]:
+            # first we need to locate the bottom center point of the new object
+            orientee_displacement_along_reference_orientation_vector = \
+            vec_add(relative_to.location_of_center_bottom,
+                    relative_to.orientation_vector,
+                    b_scale=
+                relative_to.obj.length_in_meters * self.p_relative_to_reference_length)
+            # now we may need to offset ourselves from the axis using r
+            # TODO: clearest if not necessarily most efficient path is to have functions
+            # to convert cylindrical and spherical coordinates to vectors, then add them to
+            # the known vectors. hmm - but adding doesn't account for the tilting
+            # for that we also need to handle rotation and scaling
+
+
 
     s_relative_to_reference_length: float = attrib(validator=_positive, kw_only=True)
     orientation: Orientation = attrib(validator=instance_of(Orientation), kw_only=True)
@@ -283,3 +310,6 @@ def feet_to_meters(feet: float) -> float:
 
 def inches_to_meters(inches: float) -> float:
     return feet_to_meters(inches / 12.0)
+
+def vec_add(a: Vector, b: Vector, *, b_scale = 1.0) -> Vector:
+    return tuple(a[i] + b_scale*b[i] for i in range(0, 3))   # type: ignore
