@@ -5,12 +5,12 @@ This is for ADAM-internal use only.
 """
 from networkx import DiGraph
 
-from adam.ontology import OntologyNode, OntologyProperty
+from adam.ontology import OntologyNode, OntologyProperty, Ontology
 
 ANIMATE = OntologyProperty("animate")
 INANIMATE = OntologyProperty("inanimate")
 
-_ontology_graph = DiGraph()
+_ontology_graph = DiGraph()  # pylint:disable=invalid-name
 
 ACTION = OntologyNode("action")
 
@@ -30,3 +30,4 @@ _ontology_graph.add_edge(PERSON, ANIMATE_OBJECT)
 DOG = OntologyNode("dog")
 _ontology_graph.add_edge(DOG, ANIMATE_OBJECT)
 
+TESTING_ONTOLOGY = Ontology.from_directed_graph(_ontology_graph)

@@ -2,7 +2,7 @@
 Tools for working with situation templates, which allow a human to compactly describe a large
 number of possible situations.
 """
-from _random import Random
+import random
 from abc import ABC, abstractmethod
 from typing import AbstractSet, Generic, List, Sequence, Tuple, TypeVar
 
@@ -28,6 +28,12 @@ class SituationTemplate(ABC):
 _SituationTemplateT = TypeVar("_SituationTemplateT", bound=SituationTemplate)
 
 
+def _fixed_random_factory() -> random.Random:
+    ret = random.Random()
+    ret.seed(0)
+    return ret
+
+
 class SituationTemplateProcessor(ABC, Generic[_SituationTemplateT]):
     r"""
     Turns a `SituationTemplate` into one or more `Situation`\ s.
@@ -39,13 +45,13 @@ class SituationTemplateProcessor(ABC, Generic[_SituationTemplateT]):
         template: _SituationTemplateT,
         *,
         num_instantiations: int = 1,
-        rng: Random = Random(0)
+        rng: random.Random = Factory(_fixed_random_factory)
     ) -> AbstractSet[Situation]:
         r"""
         Generates one or more `Situation`\ s from a `SituationTemplate`\ .
 
         The behavior of this method should be deterministic conditional upon
-        an identically initialized `Random` being supplied.
+        an identically initialized ::class`random.Random` being supplied.
 
         Args:
             template: the template to instantiate
@@ -114,10 +120,3 @@ class SimpleSituationTemplate:
             return SimpleSituationTemplate(
                 self.objects, self.objects_to_properties, self.objects_to_ontology_types
             )
-
-
-# user can make object variable placeholder objects for each object in the scene
-# user can assert the object bear certain properties
-# user can assert certain relations must hold between the objects
-# user can make action variables and assert they obey certain properties
-# user can specify how object variables are related to actions

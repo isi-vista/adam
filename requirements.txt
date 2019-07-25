@@ -11,7 +11,7 @@ pytest-benchmark==3.2.2
 pytest==4.1.1
 pytest-cov==2.6.1
 coverage
-pylint==2.1.1
+pylint==2.3.0
 flake8==3.5.0
 mypy==0.620
 towncrier

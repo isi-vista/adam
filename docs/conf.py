@@ -36,7 +36,8 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.coverage',
               'sphinx.ext.napoleon',
               'sphinx_autodoc_typehints',
-              'sphinx.ext.mathjax'
+              'sphinx.ext.mathjax',
+               'sphinx.ext.intersphinx'
               ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -181,5 +182,19 @@ autodoc_default_options = {
 # some standard library types generate spurious warnings
 nitpick_ignore = [('py:class', 'typing.Mapping'),
                   ('py:class', 'typing.Tuple'),
+                  ('py:class', 'typing.AbstractSet'),
+                  ('py:class', 'typing.Abstractset'),
                   ('py:class', 'float'),
-                  ('py:class', 'str')]
+                  ('py:class', 'str'),
+                  ('py:class', 'int'),
+                  # awaiting fix for https://github.com/agronholm/sphinx-autodoc-typehints/issues/38
+                  ('py:class', 'networkx.classes.digraph.DiGraph'),
+                  # awaiting fix for https://github.com/agronholm/sphinx-autodoc-typehints/issues/39
+                  ("py:class", "_SituationTemplateT"),
+                  ("py:class", "random.Random")]
+
+
+intersphinx_mapping = {
+    'python': ('https://python.readthedocs.io/en/latest', None),
+    'networkx' : ('https://networkx.github.io/documentation/latest', None)
+}
