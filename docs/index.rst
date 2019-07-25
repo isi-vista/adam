@@ -27,6 +27,10 @@ adam.learner
 ===============
 .. automodule:: adam.learner
 
+adam.situation_templates
+=========================
+.. automodule: adam.situation_templates
+
 adam.ui
 =========
 .. automodule:: adam.ui
