@@ -94,7 +94,9 @@ class Ontology:
             for property_ in required_properties
         )
 
-    def properties_for_node(self, node: "OntologyNode") -> ImmutableSet["OntologyProperty"]:
+    def properties_for_node(
+        self, node: "OntologyNode"
+    ) -> ImmutableSet["OntologyProperty"]:
         r"""
         Get all properties a `OntologyNode` possesses.
 
@@ -160,5 +162,3 @@ class OntologyProperty:
 
     def __repr__(self) -> str:
         return f"+{self._handle}"
-
-

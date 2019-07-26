@@ -15,9 +15,13 @@ T = TypeVar("T")  # pylint:disable=invalid-name
 
 
 class SequenceChooser(ABC):
+    """
+    Abstraction over a strategy for selecting items from a sequence.
+    """
+
     def choice(self, elements: Sequence[T]) -> T:
         """
-        Choose one element from *elements* using some undefined.
+        Choose one element from *elements* using some undefined policy.
 
         Args:
             elements: The sequence of elements to choose from.  If this sequence is empty, an
