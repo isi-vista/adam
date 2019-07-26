@@ -184,7 +184,7 @@ class SimpleSituationTemplateProcessor(
         required_properties = template.objects_to_properties[template_object]
 
         compatible_ontology_types = self._ontology.nodes_with_properties(
-            superclass=object_supertype, required_properties=required_properties
+            root_node=object_supertype, required_properties=required_properties
         )
 
         if compatible_ontology_types:
