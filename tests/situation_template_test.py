@@ -12,8 +12,8 @@ from adam.situation.templates import (
 
 def build_objects_only_template() -> SimpleSituationTemplate:
     sit_b = SimpleSituationTemplate.Builder()
-    sit_b.object("object1", INANIMATE_OBJECT)
-    sit_b.object("person", ANIMATE_OBJECT)
+    sit_b.object_variable("object1", INANIMATE_OBJECT)
+    sit_b.object_variable("person", ANIMATE_OBJECT)
 
     return sit_b.build()
 

@@ -38,6 +38,7 @@ class SituationTemplate(ABC):
 _SituationTemplateT = TypeVar("_SituationTemplateT", bound=SituationTemplate)
 
 
+# provides a default for generate_situations
 def _fixed_random_factory() -> SequenceChooser:
     ret = random.Random()
     ret.seed(0)
@@ -61,7 +62,7 @@ class SituationTemplateProcessor(ABC, Generic[_SituationTemplateT]):
         Generates one or more `Situation`\ s from a `SituationTemplate`\ .
 
         The behavior of this method should be deterministic conditional upon
-        an identically initialized ::class`random.Random` being supplied.
+        an identically initialized and deterministic `SequenceChooser` being supplied.
 
         Args:
             template: the template to instantiate
@@ -85,15 +86,20 @@ class SituationTemplateObject:
 
 
 @attrs(slots=True, frozen=True)
-class SituationTemplatePropertyConstraint:
-    obj: SituationTemplateObject = attrib(validator=instance_of(SituationTemplateObject))
-    property: OntologyProperty = attrib(validator=instance_of(OntologyProperty))
-
-
-@attrs(slots=True, frozen=True)
 class SimpleSituationTemplate(SituationTemplate):
+    """
+    A minimal implementation of a situation template for objects only.
+
+    A template contains a collection of objects, a mapping of those objects to properties
+    they are required to have, and a mapping of objects to ontology nodes which specifying their
+    required ontology super-classes.
+
+    It is usually easiest to create a `SimpleSituationTemplate` using
+    `SimpleSituationTemplate.Builder` .
+    """
+
     objects: ImmutableSet[SituationTemplateObject] = attrib(converter=_to_immutableset)
-    objects_to_properties: ImmutableSetMultiDict[
+    objects_to_required_properties: ImmutableSetMultiDict[
         SituationTemplateObject, OntologyProperty
     ] = attrib(converter=_to_immutablesetmultidict)
     objects_to_ontology_types: ImmutableDict[
@@ -102,6 +108,10 @@ class SimpleSituationTemplate(SituationTemplate):
 
     @attrs(frozen=True, slots=True)
     class Builder:
+        """
+        The preferred means of creating a `SimpleSituationTemplate`
+        """
+
         objects: List[SituationTemplateObject] = attrib(init=False, default=Factory(list))
         objects_to_properties: List[
             Tuple[SituationTemplateObject, OntologyProperty]
@@ -110,12 +120,23 @@ class SimpleSituationTemplate(SituationTemplate):
             Tuple[SituationTemplateObject, OntologyNode]
         ] = attrib(init=False, default=Factory(list))
 
-        def object(
+        def object_variable(
             self,
             handle: str,
             ontology_type: OntologyNode,
             properties: Sequence[OntologyProperty] = (),
         ) -> SituationTemplateObject:
+            """
+            Add an object to a `SimpleSituationTemplate` being built.
+
+            Args:
+                handle: the debugging handle of the object
+                ontology_type: the `OntologyNode` which any object filling this slot must match.
+                properties: the properties any object filling this slot must have.
+
+            Returns:
+
+            """
             obj = SituationTemplateObject(handle)
             self.objects.append(obj)
 
@@ -181,7 +202,7 @@ class SimpleSituationTemplateProcessor(
         chooser: SequenceChooser,
     ) -> SituationObject:
         object_supertype = template.objects_to_ontology_types[template_object]
-        required_properties = template.objects_to_properties[template_object]
+        required_properties = template.objects_to_required_properties[template_object]
 
         compatible_ontology_types = self._ontology.nodes_with_properties(
             root_node=object_supertype, required_properties=required_properties
