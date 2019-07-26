@@ -189,9 +189,15 @@ nitpick_ignore = [('py:class', 'typing.Mapping'),
                   ('py:class', 'int'),
                   # awaiting fix for https://github.com/agronholm/sphinx-autodoc-typehints/issues/38
                   ('py:class', 'networkx.classes.digraph.DiGraph'),
+
                   # awaiting fix for https://github.com/agronholm/sphinx-autodoc-typehints/issues/39
                   ("py:class", "_SituationTemplateT"),
+                  ("py:class", "T"),
+
+                  # pending https://github.com/isi-vista/immutablecollections/issues/60
+                  ("py:class", "immutablecollections._immutableset.ImmutableSet"),
                   ("py:class", "random.Random")]
+
 
 
 intersphinx_mapping = {

@@ -47,6 +47,11 @@ adam.math_3d
 ==============
 .. automodule:: adam.math_3d
 
+adam.random_utils
+==================
+.. automodule:: adam.random_utils
+
+
 Indices and tables
 ==================
 
