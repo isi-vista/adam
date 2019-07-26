@@ -1,8 +1,10 @@
 from adam.random_utils import AlwaysChooseTheFirst
 from adam.ontology._testing_ontology import (
+    TESTING_ONTOLOGY,
+    ANIMATE,
+    INANIMATE,
     INANIMATE_OBJECT,
     ANIMATE_OBJECT,
-    TESTING_ONTOLOGY,
 )
 from adam.situation.templates import (
     SimpleSituationTemplate,
@@ -52,22 +54,12 @@ def test_simple_situation_generation():
     # check the objects are placed in distinct locations
     assert len(set(situation.objects_to_locations.values())) == 2
     assert (
-        len(
-            [
-                obj
-                for obj in situation.objects_to_locations
-                if ANIMATE_OBJECT in obj.properties
-            ]
-        )
+        len([obj for obj in situation.objects_to_locations if ANIMATE in obj.properties])
         == 1
     )
     assert (
         len(
-            [
-                obj
-                for obj in situation.objects_to_locations
-                if INANIMATE_OBJECT in obj.properties
-            ]
+            [obj for obj in situation.objects_to_locations if INANIMATE in obj.properties]
         )
         == 1
     )

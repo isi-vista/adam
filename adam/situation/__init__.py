@@ -52,6 +52,14 @@ class SituationObject:
         converter=_to_immutableset, default=immutableset()
     )
 
+    def __attrs_post_init__(self) -> None:
+        for property_ in self.properties:
+            if not isinstance(property_, OntologyProperty):
+                raise ValueError(
+                    f"Situation object property {property_} is not an "
+                    f"OntologyProperty"
+                )
+
 
 @attrs(frozen=True, slots=True)
 class LocatedObjectSituation(Situation):
