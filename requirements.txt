@@ -1,7 +1,8 @@
 # core requirements
 attrs==18.2.0
 vistautils==0.12.0
-immutablecollections==0.7.0
+immutablecollections==0.8.0
+networkx==2.3
 
 
 # extras for development
@@ -10,7 +11,7 @@ pytest-benchmark==3.2.2
 pytest==4.1.1
 pytest-cov==2.6.1
 coverage
-pylint==2.1.1
+pylint==2.3.0
 flake8==3.5.0
 mypy==0.620
 towncrier

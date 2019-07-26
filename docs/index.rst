@@ -27,6 +27,14 @@ adam.learner
 ===============
 .. automodule:: adam.learner
 
+adam.situation.templates
+=========================
+.. automodule:: adam.situation.templates
+
+adam.ontology
+=========================
+.. automodule:: adam.ontology
+
 adam.ui
 =========
 .. automodule:: adam.ui
@@ -37,7 +45,12 @@ adam.perception.marr
 
 adam.math_3d
 ==============
-.. automodule: adam.math_3d
+.. automodule:: adam.math_3d
+
+adam.random_utils
+==================
+.. automodule:: adam.random_utils
+
 
 Indices and tables
 ==================
