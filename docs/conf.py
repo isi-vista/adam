@@ -179,6 +179,10 @@ autodoc_default_options = {
     'undoc-members': True
 }
 
+# autodoc's default member order is alphabetical, but we put the classes in the source files in
+# the order we want the user to read them.
+autodoc_member_order = 'bysource'
+
 # some standard library types generate spurious warnings
 nitpick_ignore = [('py:class', 'typing.Mapping'),
                   ('py:class', 'typing.Tuple'),
