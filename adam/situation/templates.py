@@ -13,8 +13,8 @@ from immutablecollections import (
     ImmutableDict,
     ImmutableSet,
     ImmutableSetMultiDict,
-    immutableset,
     immutabledict,
+    immutableset,
 )
 from immutablecollections.converter_utils import (
     _to_immutabledict,
@@ -23,10 +23,11 @@ from immutablecollections.converter_utils import (
 )
 
 from adam import ontology
-from adam.random_utils import SequenceChooser, RandomChooser
+from adam.language.language_generator import SituationT
 from adam.math_3d import Point
-from adam.ontology import OntologyNode, OntologyProperty, Ontology
-from adam.situation import Situation, LocatedObjectSituation, SituationObject
+from adam.ontology import Ontology, OntologyNode, OntologyProperty
+from adam.random_utils import RandomChooser, SequenceChooser
+from adam.situation import LocatedObjectSituation, SituationObject
 
 
 class SituationTemplate(ABC):
@@ -45,7 +46,7 @@ def _fixed_random_factory() -> SequenceChooser:
     return RandomChooser(ret)
 
 
-class SituationTemplateProcessor(ABC, Generic[_SituationTemplateT]):
+class SituationTemplateProcessor(ABC, Generic[_SituationTemplateT, SituationT]):
     r"""
     Turns a `SituationTemplate` into one or more `Situation`\ s.
     """
@@ -57,7 +58,7 @@ class SituationTemplateProcessor(ABC, Generic[_SituationTemplateT]):
         *,
         num_instantiations: int = 1,
         chooser: SequenceChooser = Factory(_fixed_random_factory),
-    ) -> AbstractSet[Situation]:
+    ) -> AbstractSet[SituationT]:
         r"""
         Generates one or more `Situation`\ s from a `SituationTemplate`\ .
 
@@ -155,7 +156,7 @@ class SimpleSituationTemplate(SituationTemplate):
 
 @attrs(frozen=True, slots=True)
 class SimpleSituationTemplateProcessor(
-    SituationTemplateProcessor[SimpleSituationTemplate]
+    SituationTemplateProcessor[SimpleSituationTemplate, LocatedObjectSituation]
 ):
     """
     A trivial situation template processor for testing use.
@@ -211,7 +212,7 @@ class SimpleSituationTemplateProcessor(
         if compatible_ontology_types:
             ontology_node = chooser.choice(compatible_ontology_types)
             return SituationObject(
-                ontology_node.handle, self._ontology.properties_for_node(ontology_node)
+                ontology_node, self._ontology.properties_for_node(ontology_node)
             )
         else:
             raise RuntimeError(

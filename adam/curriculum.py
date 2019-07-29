@@ -6,15 +6,15 @@ from random import Random
 from typing import Generic, Sequence
 
 from adam.learner import LearningExample
-from adam.linguistic_description import _LinguisticDescriptionT
+from adam.language import LinguisticDescriptionT
 from adam.perception import _PerceptionT
 
 
-class CurriculumGenerator(ABC, Generic[_PerceptionT, _LinguisticDescriptionT]):
+class CurriculumGenerator(ABC, Generic[_PerceptionT, LinguisticDescriptionT]):
     @abstractmethod
     def generate_curriculum(
         self, rng: Random
-    ) -> Sequence[LearningExample[_PerceptionT, _LinguisticDescriptionT]]:
+    ) -> Sequence[LearningExample[_PerceptionT, LinguisticDescriptionT]]:
         r"""
         Produce a sequence of `LearningExample`s for a `Learner`\ .
 
@@ -28,8 +28,8 @@ class CurriculumGenerator(ABC, Generic[_PerceptionT, _LinguisticDescriptionT]):
 
     @staticmethod
     def create_always_generating(
-        curriculum: Sequence[LearningExample[_PerceptionT, _LinguisticDescriptionT]]
-    ) -> "CurriculumGenerator[_PerceptionT, _LinguisticDescriptionT]":
+        curriculum: Sequence[LearningExample[_PerceptionT, LinguisticDescriptionT]]
+    ) -> "CurriculumGenerator[_PerceptionT, LinguisticDescriptionT]":
         r"""
         Get a `CurriculumGenerator` which always generates the specific curriculum.
 
@@ -44,7 +44,7 @@ class CurriculumGenerator(ABC, Generic[_PerceptionT, _LinguisticDescriptionT]):
 
 # for some reason attrs and mypy don't play well here, so we do this the old-fashioned way
 class _ExplicitCurriculumGenerator(
-    CurriculumGenerator[_PerceptionT, _LinguisticDescriptionT]
+    CurriculumGenerator[_PerceptionT, LinguisticDescriptionT]
 ):
     r"""
     A curriculum generator which always returns the exact list of `LearningExample`\ s
@@ -56,12 +56,12 @@ class _ExplicitCurriculumGenerator(
     def __init__(
         self,
         learning_examples: Sequence[
-            LearningExample[_PerceptionT, _LinguisticDescriptionT]
+            LearningExample[_PerceptionT, LinguisticDescriptionT]
         ],
     ) -> None:
         self._learning_examples = tuple(learning_examples)
 
     def generate_curriculum(
         self, rng: Random  # pylint:disable=unused-argument
-    ) -> Sequence[LearningExample[_PerceptionT, _LinguisticDescriptionT]]:
+    ) -> Sequence[LearningExample[_PerceptionT, LinguisticDescriptionT]]:
         return self._learning_examples
