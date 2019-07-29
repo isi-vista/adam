@@ -2,14 +2,16 @@ r"""
 This module provides classes related to the perceptual primitive representation used to describe
 `Situation`\ s from the point-of-view of `LanguageLearner`\ s.
 """
-from abc import ABC
+from abc import ABC, abstractmethod
 from typing import TypeVar, Generic, Tuple
 
 from attr import attrs, attrib
 from attr.validators import instance_of
 from immutablecollections import ImmutableSet, immutableset
 
+from adam.language.language_generator import SituationT
 from adam.math_3d import Point
+from adam.random_utils import SequenceChooser, fixed_random_factory
 
 
 class PerceptualRepresentationFrame(ABC):
@@ -21,11 +23,11 @@ class PerceptualRepresentationFrame(ABC):
     """
 
 
-_PerceptionT = TypeVar("_PerceptionT", bound=PerceptualRepresentationFrame)
+PerceptionT = TypeVar("_PerceptionT", bound=PerceptualRepresentationFrame)
 
 
 @attrs(frozen=True)
-class PerceptualRepresentation(Generic[_PerceptionT]):
+class PerceptualRepresentation(Generic[PerceptionT]):
     """
     A learner's perception of a situation as a sequence of perceptual representations of
     individual moments.
@@ -34,7 +36,7 @@ class PerceptualRepresentation(Generic[_PerceptionT]):
     three for complex actions.
     """
 
-    frames: Tuple[_PerceptionT, ...] = attrib(converter=tuple)
+    frames: Tuple[PerceptionT, ...] = attrib(converter=tuple)
 
 
 @attrs(frozen=True)
@@ -59,3 +61,25 @@ class DummyVisualPerception:
 
     tag: str = attrib(validator=instance_of(str))
     location: Point = attrib(validator=instance_of(Point))
+
+
+class PerceptualRepresentationGenerator(Generic[SituationT, PerceptionT], ABC):
+    r"""
+    A way of generating `PerceptualRepresentation`\ s of `Situation` s.
+    """
+    @abstractmethod
+    def generate_perception(self, situation: SituationT, chooser: SequenceChooser =
+    fixed_random_factory()) -> PerceptualRepresentation[PerceptionT]:
+        """
+        Generate a `PerceptualRepresentation` of a `Situation`.
+
+        Args:
+            situation: The `Situation` to represent.
+            chooser: An optional `SequenceChooser` to be used for any required random choices. If
+                     none is provided, an unspecified but deterministic source of "random" choice
+                     is used.
+
+        Returns:
+            A `PerceptualRepresentation` of the `Situation`.
+        """
+
