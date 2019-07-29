@@ -21,6 +21,7 @@ class LanguageGenerator(Generic[SituationT, LinguisticDescriptionT], ABC):
     r"""
     A way of describing `Situation`\ s using human `LinguisticDescription`\ s.
     """
+
     @abstractmethod
     def generate_language(
         self, situation: SituationT, chooser: SequenceChooser
