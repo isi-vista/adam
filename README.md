@@ -3,6 +3,8 @@
 
 [![codecov](https://codecov.io/gh/isi-vista/adam/branch/master/graph/badge.svg)](https://codecov.io/gh/isi-vista/adam)
 
+[![docs](https://adam-language-learner.readthedocs.io/en/latest/?badge=latest)](https://adam-language-learner.readthedocs.io/en/latest/?badge=latest)
+
 # Introduction
 
 ADAM is ISI's effort under DARPA's Grounded Artificial Intelligence Language Acquisition (GAILA) program.  Background for the GAILA program is given in [DARPA's call for proposals](https://www.fbo.gov/utils/view?id=b084633eb2501d60932bb77bf5ffb192) and [here is a video](https://youtu.be/xGsIKHKqKdw) of a talk giving an overview of our plans for ADAM (targetted to an audience familiar with the GAILA program).
