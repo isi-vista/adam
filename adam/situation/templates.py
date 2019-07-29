@@ -2,7 +2,6 @@
 Tools for working with situation templates, which allow a human to compactly describe a large
 number of possible situations.
 """
-import random
 import sys
 from abc import ABC, abstractmethod
 from typing import AbstractSet, Generic, List, Sequence, Tuple, TypeVar
@@ -26,7 +25,7 @@ from adam import ontology
 from adam.language.language_generator import SituationT
 from adam.math_3d import Point
 from adam.ontology import Ontology, OntologyNode, OntologyProperty
-from adam.random_utils import RandomChooser, SequenceChooser
+from adam.random_utils import SequenceChooser, fixed_random_factory
 from adam.situation import LocatedObjectSituation, SituationObject
 
 
@@ -37,13 +36,6 @@ class SituationTemplate(ABC):
 
 
 _SituationTemplateT = TypeVar("_SituationTemplateT", bound=SituationTemplate)
-
-
-# provides a default for generate_situations
-def _fixed_random_factory() -> SequenceChooser:
-    ret = random.Random()
-    ret.seed(0)
-    return RandomChooser(ret)
 
 
 class SituationTemplateProcessor(ABC, Generic[_SituationTemplateT, SituationT]):
@@ -57,7 +49,7 @@ class SituationTemplateProcessor(ABC, Generic[_SituationTemplateT, SituationT]):
         template: _SituationTemplateT,
         *,
         num_instantiations: int = 1,
-        chooser: SequenceChooser = Factory(_fixed_random_factory),
+        chooser: SequenceChooser = Factory(fixed_random_factory),
     ) -> AbstractSet[SituationT]:
         r"""
         Generates one or more `Situation`\ s from a `SituationTemplate`\ .
@@ -173,7 +165,7 @@ class SimpleSituationTemplateProcessor(
         template: SimpleSituationTemplate,
         *,
         num_instantiations: int = 1,
-        chooser: SequenceChooser = Factory(_fixed_random_factory),
+        chooser: SequenceChooser = Factory(fixed_random_factory),
     ) -> ImmutableSet[LocatedObjectSituation]:
         assert num_instantiations >= 1
 

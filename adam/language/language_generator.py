@@ -11,7 +11,7 @@ from vistautils.iter_utils import only
 
 from adam.language import LinguisticDescriptionT, TokenSequenceLinguisticDescription
 from adam.language.ontology_dictionary import OntologyLexicon
-from adam.random_utils import SequenceChooser
+from adam.random_utils import SequenceChooser, fixed_random_factory
 from adam.situation import Situation, LocatedObjectSituation
 
 SituationT = TypeVar("SituationT", bound=Situation)
@@ -51,7 +51,7 @@ class SingleObjectLanguageGenerator(
     def generate_language(
         self,
         situation: LocatedObjectSituation,
-        chooser: SequenceChooser,  # pylint:disable=unused-argument
+        chooser: SequenceChooser = fixed_random_factory(),  # pylint:disable=unused-argument
     ) -> ImmutableSet[TokenSequenceLinguisticDescription]:
         if len(situation.objects_to_locations) != 1:
             raise ValueError(
