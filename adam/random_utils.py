@@ -4,6 +4,7 @@ Utilities for working with random numbers.
 This currently contains only an abstraction over `random.choice` which makes it easier to test
 things which make random choices.
 """
+import random
 from abc import ABC
 from random import Random
 from typing import TypeVar, Sequence
@@ -54,3 +55,14 @@ class RandomChooser(SequenceChooser):
 
     def choice(self, elements: Sequence[T]) -> T:
         return self._random.choice(elements)
+
+
+def fixed_random_factory() -> SequenceChooser:
+    """
+    Get a `RandomChooser` from a random number generator initialized with seed zero.
+
+    This is for use as a default `SequenceChooser` for optional method arguments.
+    """
+    ret = random.Random()
+    ret.seed(0)
+    return RandomChooser(ret)

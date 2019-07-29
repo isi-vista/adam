@@ -2,7 +2,7 @@
 Structures for describing situations in the world at an abstacted, human-friendly level.
 """
 from abc import ABC
-from typing import Mapping
+from typing import Mapping, Optional
 
 from attr import attrs, attrib
 from attr.validators import instance_of
@@ -12,7 +12,7 @@ from immutablecollections import immutableset, ImmutableSet, immutabledict
 from immutablecollections.converter_utils import _to_immutableset, _to_immutabledict
 
 from adam.math_3d import Point
-from adam.ontology import OntologyProperty
+from adam.ontology import OntologyProperty, OntologyNode
 
 
 class Situation(ABC):
@@ -43,16 +43,20 @@ class SituationObject:
     """
     An object present in some situation.
 
+    Every object must refer to an `OntologyNode` linking it to a type in an ontology.
+
     Unlike most of our classes, `SituationObject` has *id*-based hashing and equality.  This is
     because two objects with identical properties are nonetheless distinct.
     """
 
-    type_tag: str = attrib(validator=instance_of(str))
+    ontology_node: Optional[OntologyNode] = attrib(validator=instance_of(OntologyNode))
     properties: ImmutableSet[OntologyProperty] = attrib(
         converter=_to_immutableset, default=immutableset()
     )
 
     def __attrs_post_init__(self) -> None:
+        # disabled warning below is due to a PyCharm bug
+        # noinspection PyTypeChecker
         for property_ in self.properties:
             if not isinstance(property_, OntologyProperty):
                 raise ValueError(

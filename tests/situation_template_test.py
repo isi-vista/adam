@@ -1,14 +1,14 @@
 from adam.random_utils import AlwaysChooseTheFirst
-from adam.ontology._testing_ontology import (
-    TESTING_ONTOLOGY,
-    ANIMATE,
-    INANIMATE,
-    INANIMATE_OBJECT,
-    ANIMATE_OBJECT,
-)
 from adam.situation.templates import (
     SimpleSituationTemplate,
     SimpleSituationTemplateProcessor,
+)
+from tests.testing_ontology import (
+    INANIMATE_OBJECT,
+    ANIMATE_OBJECT,
+    TESTING_ONTOLOGY,
+    ANIMATE,
+    INANIMATE,
 )
 
 

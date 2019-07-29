@@ -10,14 +10,13 @@ Welcome to adam's documentation!
 .. autosummary::
    :toctree: _autosummary
 
-
 adam.situation
 ===============
 .. automodule:: adam.situation
 
-adam.linguistic_description
+adam.language
 ============================
-.. automodule:: adam.linguistic_description
+.. automodule:: adam.language
 
 adam.perception
 ================

@@ -29,7 +29,7 @@ class LinguisticDescription(ABC):
         """
 
 
-_LinguisticDescriptionT = TypeVar("_LinguisticDescriptionT", bound=LinguisticDescription)
+LinguisticDescriptionT = TypeVar("LinguisticDescriptionT", bound=LinguisticDescription)
 
 
 @attrs(frozen=True)
