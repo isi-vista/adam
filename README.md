@@ -3,7 +3,7 @@
 
 [![codecov](https://codecov.io/gh/isi-vista/adam/branch/master/graph/badge.svg)](https://codecov.io/gh/isi-vista/adam)
 
-[![docs](https://readthedocs.org/projects/docs/badge/?version=latest)](https://readthedocs.org/projects/docs/badge/?version=latest)
+[![docs](https://readthedocs.org/projects/adam-language-learner/badge/?version=latest)](https://readthedocs.org/projects/adam-language-learner/badge/?version=latest)
 
 # Introduction
 
