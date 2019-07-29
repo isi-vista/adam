@@ -45,7 +45,7 @@ class SingleObjectLanguageGenerator(
     `LanguageGenerator` for describing a single object.
 
     Describes a `Situation` containing a `SituationObject` with a single word: its name
-    according to some `OntologyDictionary`.
+    according to some `OntologyLexicon`.
 
     This language generator will throw a `ValueError` if it receives any situation which
     contains either multiple `SituationObject`\ s.

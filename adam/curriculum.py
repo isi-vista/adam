@@ -16,11 +16,11 @@ class CurriculumGenerator(ABC, Generic[_PerceptionT, LinguisticDescriptionT]):
         self, rng: Random
     ) -> Sequence[LearningExample[_PerceptionT, LinguisticDescriptionT]]:
         r"""
-        Produce a sequence of `LearningExample`s for a `Learner`\ .
+        Produce a sequence of `LearningExample`\ s for a `LanguageLearner`\ .
 
         Args:
             rng: random number generator to be used for random decisions (if any) made during the
-            curriculum generation process.
+                 curriculum generation process.
 
         Returns:
             A sequence of `LearningExample`\ s to be presented to a `LanguageLearner`.
