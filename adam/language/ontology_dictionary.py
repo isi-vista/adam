@@ -1,5 +1,5 @@
 r"""
-Mappings from `Ontology`\ s to pqrticular languages.
+Mappings from `Ontology`\ s to particular languages.
 """
 
 from attr import attrib, attrs

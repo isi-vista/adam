@@ -1,7 +1,7 @@
 """
 A lexicon of English words for building tests.
 
-It corresponds to the ontology in *_testing_ontology.py*
+It corresponds to the ontology in *testing_ontology.py*
 """
 from adam.language.lexicon import NOMINAL, LexiconEntry
 from adam.language.ontology_dictionary import OntologyLexicon
