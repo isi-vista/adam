@@ -25,9 +25,15 @@ class LearningExample(Generic[PerceptionT, LinguisticDescriptionT]):
     perception: PerceptualRepresentation[PerceptionT] = attrib(  # type:ignore
         validator=instance_of(PerceptualRepresentation)
     )
+    """
+    The `LanguageLearner`'s perception of the `Situation`
+    """
     linguistic_description: LinguisticDescriptionT = attrib(  # type:ignore
         validator=instance_of(LinguisticDescription)
     )
+    """
+    A human-language description of the `Situation`
+    """
 
 
 class LanguageLearner(ABC, Generic[PerceptionT, LinguisticDescriptionT]):

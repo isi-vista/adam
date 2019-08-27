@@ -32,6 +32,21 @@ class Experiment(Generic[SituationT, LinguisticDescriptionT, PerceptionT]):
     used and how it is configured, how the trained `LanguageLearner` is tested, and what
     analysis is done on the results.
 
+    At various stages in the experiment,
+    `DescriptionObserver`\ s will be able to examine
+    the descriptions of situations produced by the `LanguageLearner`.
+    Based on their observations, they can provide reports at the end of the experiment.
+
+    Note that `Experiment` objects should not be reused because components
+    (especially the observers) may maintain state.
+    """
+
+    name: str = attrib(validator=instance_of(str))
+    """A human-readable description of this experiment."""
+    training_stages: "Sequence[InstanceGroup[SituationT, LinguisticDescriptionT, PerceptionT]]" = attrib(
+        converter=_to_tuple, kw_only=True
+    )
+    """
     Every experiment has one or more *training_stages*;
     simple experiments will have only one,
     while those which reflect a curriculum
@@ -42,67 +57,57 @@ class Experiment(Generic[SituationT, LinguisticDescriptionT, PerceptionT]):
     There are many ways an `InstanceGroup` could be specified,
     ranging from simply a collection of these triples (e.g. `ExplicitWithSituationInstanceGroup`)
     to a complex rule-governed process (e.g. `GeneratedFromExplicitSituationsInstanceGroup`).
-
-    *learner_factory* specifies a no-argument function which will return the `LanguageLearner`
-    which should be trained.
-
-    *test_instance_groups* are the situations and perceptual representations
-    the trained `LanguageLearner` will be asked to describe.
-    These are specified by `InstanceGroup`\ s,
-    just like the training data.
-
-    *warmup_instance_groups* may optionally be provided
-    if at test time the `LanguageLearner` needs to be shown some observations
-    before evaluation
-    (for example, to introduce some new objects).
-
-    At various stages in the experiment,
-    `DescriptionObserver`\ s will be able to examine
-    the descriptions of situations produced by the `LanguageLearner`.
-    Based on their observations, they can provide reports at the end of the experiment.
-
-    *pre_example_training_observers* are provided
-    with the description a `LanguageLearner` would give to a situation during training
-    before it is shown the correct description.
-    *post_example_training_observers* are the same
-    except they receive the learner's description
-    after it has updated itself by seeing the correct description.
-    *test_observers* observe the descriptions given by the learner on the test instances.
-    These are what should be used for computing evaluation metrics.
-
-    Every experiment also has a *name* which is a human-readable description.
-    A *sequence_chooser* must also be provided to ensure reproducibility
-    of any random decisions made by components of the experiment.
-
-    Note that `Experiment` objects should not be reused because components
-    (especially the observers) may maintain state.
     """
-
-    name: str = attrib(validator=instance_of(str))
-    training_stages: "Sequence[InstanceGroup[SituationT, LinguisticDescriptionT, PerceptionT]]" = attrib(
-        converter=_to_tuple, kw_only=True
-    )
     learner_factory: Callable[
         [], LanguageLearner[PerceptionT, LinguisticDescriptionT]
     ] = attrib(kw_only=True)
+    """ A no-argument function which will return the `LanguageLearner` which should be trained."""
     sequence_chooser: SequenceChooser = attrib(
         validator=instance_of(SequenceChooser), kw_only=True
     )
+    """
+    Used for making all "random" decisions by all components to ensure reproducibility.
+    """
     pre_example_training_observers: "Tuple[DescriptionObserver[SituationT, LinguisticDescriptionT, PerceptionT]]" = attrib(  # type: ignore
         converter=_to_tuple, default=tuple(), kw_only=True
     )
+    r"""
+    These `DescriptionObserver`\ s are provided
+    with the description a `LanguageLearner` would give to a situation during training
+    before it is shown the correct description.
+    """
     post_example_training_observers: "Tuple[DescriptionObserver[SituationT, LinguisticDescriptionT, PerceptionT]]" = attrib(  # type: ignore
         converter=_to_tuple, default=tuple(), kw_only=True
     )
+    """
+    Same as *pre_example_training_observers*
+    except they receive the learner's description
+    after it has updated itself by seeing the correct description.
+    """
     warm_up_test_instance_groups: "Sequence[InstanceGroup[Any, LinguisticDescriptionT, PerceptionT]]" = attrib(
         converter=_to_tuple, default=tuple(), kw_only=True
     )
+    """
+    May optionally be provided
+    if at test time the `LanguageLearner` needs to be shown some observations before evaluation
+    (for example, to introduce some new objects).
+    """
     test_instance_groups: "Sequence[InstanceGroup[Any, LinguisticDescriptionT, PerceptionT]]" = attrib(
         converter=_to_tuple, default=tuple(), kw_only=True
     )
+    r"""
+    The situations and perceptual representations
+    the trained `LanguageLearner` will be asked to describe for evaluation.
+    These are specified by `InstanceGroup`\ s, just like the training data.
+    """
     test_observers: "Sequence[DescriptionObserver[SituationT, LinguisticDescriptionT, PerceptionT]]" = attrib(
         converter=_to_tuple, default=tuple(), kw_only=True
     )
+    r"""
+    These `DescriptionObserver`\ s observe the descriptions
+    given by the learner on the test instances.
+    These are what should be used for computing evaluation metrics.
+    """
 
     def __attrs_post_init__(self) -> None:
         check_arg(callable(self.learner_factory), "Learner factory must be callable")

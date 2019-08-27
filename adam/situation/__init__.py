@@ -1,5 +1,5 @@
 """
-Structures for describing situations in the world at an abstacted, human-friendly level.
+Structures for describing situations in the world at an abstracted, human-friendly level.
 """
 from abc import ABC
 from typing import Mapping, Optional
@@ -20,11 +20,17 @@ class Situation(ABC):
     A situation is a high-level representation of a configuration of objects, possibly including
     changes in the states of objects across time.
 
-    A Curriculum is a sequence of situations.
+    An example situation might represent
+    a person holding a toy truck and then putting it on a table.
+
+    A curriculum is a sequence of `Situation`\ s.
 
     Situations are a high-level description intended to make it easy for human beings to specify
-    curricula.  Situations will be transformed into pairs of `PerceptualRepresentation`\ s and
-    `LinguisticDescription`\ s for input to a `LanguageLearner`.
+    curricula.
+
+    Situations will be transformed into pairs of `PerceptualRepresentation`\ s and
+    `LinguisticDescription`\ s for input to a `LanguageLearner`
+    by `PerceptualRepresentationGenerator`\ s and `LanguageGenerator`\ s, respectively.
     """
 
 
@@ -35,7 +41,10 @@ class BagOfFeaturesSituationRepresentation(Situation):
 
     For testing purposes only.
     """
-    features: ImmutableSet[str] = attrib(converter=immutableset)
+    features: ImmutableSet[str] = attrib(converter=immutableset, default=immutableset())
+    """
+    The set of string features which describes this situation.
+    """
 
 
 @attrs(frozen=True, slots=True, hash=None, cmp=False)
@@ -52,9 +61,15 @@ class SituationObject:
     ontology_node: Optional[OntologyNode] = attrib(
         validator=optional(instance_of(OntologyNode)), default=None
     )
+    """
+    The `OntologyNode` specifying the type of thing this object is.
+    """
     properties: ImmutableSet[OntologyProperty] = attrib(
         converter=_to_immutableset, default=immutableset()
     )
+    r"""
+    The `OntologyProperty`\ s this object has.
+    """
 
     def __attrs_post_init__(self) -> None:
         # disabled warning below is due to a PyCharm bug
@@ -69,10 +84,13 @@ class SituationObject:
 
 @attrs(frozen=True, slots=True)
 class LocatedObjectSituation(Situation):
-    """
-    A representation of a situation as a set of objects located at particular points.
+    r"""
+    A representation of a `Situation` as a set of objects located at particular `Point`\ s.
     """
 
     objects_to_locations: Mapping[SituationObject, Point] = attrib(
         converter=_to_immutabledict, default=immutabledict()
     )
+    r"""
+    A mapping of `SituationObject`\ s to `Point`\ s giving their locations.
+    """

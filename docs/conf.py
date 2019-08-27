@@ -37,7 +37,7 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.napoleon',
               'sphinx_autodoc_typehints',
               'sphinx.ext.mathjax',
-               'sphinx.ext.intersphinx'
+              'sphinx.ext.intersphinx'
               ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -197,6 +197,7 @@ nitpick_ignore = [('py:class', 'typing.Mapping'),
                   # awaiting fix for https://github.com/agronholm/sphinx-autodoc-typehints/issues/39
                   ("py:class", "_SituationTemplateT"),
                   ("py:class", "PerceptionT"),
+                  ("py:class", "_PerceptionT2"),
                   ("py:class", "SituationT"),
                   ("py:class", "LinguisticDescriptionT"),
                   ("py:class", "T"),
@@ -205,9 +206,7 @@ nitpick_ignore = [('py:class', 'typing.Mapping'),
                   ("py:class", "immutablecollections._immutableset.ImmutableSet"),
                   ("py:class", "random.Random")]
 
-
-
 intersphinx_mapping = {
     'python': ('https://python.readthedocs.io/en/latest', None),
-    'networkx' : ('https://networkx.github.io/documentation/latest', None)
+    'networkx': ('https://networkx.github.io/documentation/latest', None)
 }
