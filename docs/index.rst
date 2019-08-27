@@ -4,8 +4,10 @@
 ADAM: Abduction to Demonstrate an Articulate Machine
 ####################################################
 
-.. contents::
-   :local:
+.. toctree::
+   :maxdepth: 2
+   :caption: Contents:
+
 
 .. autosummary::
    :toctree: _autosummary
@@ -88,74 +90,74 @@ In the documentation below, because we have tried to order the modules in a reco
 sub-modules of the same package will not necessarily be adjacent.
 
 adam.situation
-===============
+---------------
 .. automodule:: adam.situation
 
 adam.language
-============================
+-----------------------------
 .. automodule:: adam.language
 
 adam.perception
-================
+-----------------------------
 .. automodule:: adam.perception
 
 adam.learner
-===============
+-----------------------------
 .. automodule:: adam.learner
 
 adam.curriculum
-================
+-----------------------------
 .. automodule:: adam.curriculum
 
 adam.situation.templates
-=========================
+-----------------------------
 .. automodule:: adam.situation.templates
 
 adam.language.language_generator
-==================================
+-------------------------------------
 .. automodule:: adam.language.language_generator
 
 
 adam.ontology
-=========================
+-----------------------------
 .. automodule:: adam.ontology
 
 
 adam.language.lexicon
-======================
+-----------------------------
 .. automodule:: adam.language.lexicon
 
 
 adam.language.ontology_dictionary
-===================================
+-------------------------------------
 .. automodule:: adam.language.ontology_dictionary
 
 adam.experiment
-================
+-----------------------------
 .. automodule:: adam.experiment
 
 adam.experiment.instance_group
-==============================
+-------------------------------------
 .. automodule:: adam.experiment.instance_group
 
 adam.experiment.observer
-========================
+-----------------------------
 .. automodule:: adam.experiment.observer
 
 adam.ui
-=========
+-----------------------------
 .. automodule:: adam.ui
 
 adam.perception.marr
-======================
+-----------------------------
 .. automodule:: adam.perception.marr
 
 adam.math_3d
-==============
+-----------------------------
 .. automodule:: adam.math_3d
 
 adam.random_utils
-==================
+-----------------------------
 .. automodule:: adam.random_utils
 
 
