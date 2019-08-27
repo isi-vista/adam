@@ -37,7 +37,8 @@ from typing import Any, Callable, Mapping, TypeVar
 
 from attr import attrib, attrs, Attribute
 from attr.validators import instance_of
-from immutablecollections import immutabledict
+from immutablecollections import immutabledict, ImmutableDict
+from immutablecollections.converter_utils import _to_immutabledict
 from vistautils.range import Range
 
 
@@ -46,7 +47,7 @@ _T = TypeVar("_T")
 
 # TODO: move this to vistautils
 def _in_range(_range: Range[_T]) -> Callable[[Any, Any, Any], None]:
-    def validator(obj, attribute: Attribute, value) -> None:
+    def validator(obj, attribute: Attribute, value) -> None:  # type: ignore
         if value not in _range:
             raise ValueError(
                 f"Attribute {attribute.name}'s value is not in required range {_range} for object"
@@ -201,8 +202,8 @@ class Marr3dObject:
     """
     bounding_cylinder: Cylinder = attrib(validator=instance_of(Cylinder), kw_only=True)
     principal_cylinder: Cylinder = attrib(validator=instance_of(Cylinder), kw_only=True)
-    components: Mapping["Marr3dObject", AdjunctRelation.Orientation] = attrib(
-        converter=immutabledict, default=immutabledict(), kw_only=True
+    components: ImmutableDict["Marr3dObject", AdjunctRelation.Orientation] = attrib(
+        converter=_to_immutabledict, default=immutabledict(), kw_only=True
     )
 
     @staticmethod
@@ -243,41 +244,9 @@ class Marr3dModel:
     principal_cylinder_relative_to_bounding_cylinder: AdjunctRelation = attrib(
         validator=instance_of(AdjunctRelation)
     )
-    components: Mapping["Marr3dModel", AdjunctRelation] = attrib(converter=immutabledict)
-
-
-# @attrs(frozen=True, auto_attribs=True)
-# class SpecificityIndexNode:
-#     node_model: Marr3dModel
-#     child_models: ImmutableSet["SpecificityIndexNode"]
-#
-#     def dominated_models(self) -> AbstractSet[Marr3dModel]:
-#         ret: List[Marr3dModel] = [self.node_model]
-#         for child_model in self.child_models:
-#             ret.extend(child_model.dominated_models())
-#         return immutableset(ret)
-#
-#
-# @attrs(frozen=True)
-# class SpecificityIndex:
-#     root_models: ImmutableSet[SpecificityIndexNode]
-#
-#     def all_compatible_leaf_models(
-#         self, probe_model: Marr3dModel
-#     ) -> AbstractSet[Marr3dModel]:
-#         pass
-#
-#     def most_specific_compatible_nodes(
-#         self, probe_model: Marr3dModel
-#     ) -> AbstractSet[SpecificityIndexNode]:
-#         pass
-#
-#
-# @attrs(frozen=True)
-# class MarrModelIndex:
-#     specificity_index: SpecificityIndex = attrib(validator=instance_of(SpecificityIndex))
-#     # for the moment, we do not support the adjunct and specificity indices (p. 320),
-#     # although the submodel points on Marr3dModel partly account for the adjunct index
+    components: Mapping["Marr3dModel", AdjunctRelation] = attrib(
+        converter=_to_immutabledict
+    )
 
 
 # convenience methods for those of us who don't think in metric

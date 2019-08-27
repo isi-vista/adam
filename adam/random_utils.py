@@ -34,14 +34,16 @@ class SequenceChooser(ABC):
 
 
 @attrs(frozen=True, slots=True)
-class AlwaysChooseTheFirst(SequenceChooser):
+class FixedIndexChooser(SequenceChooser):
     """
-    A `SequenceChooser` which always chooses the first element.
+    A `SequenceChooser` which always chooses the element at the given index.
     """
+
+    _index_to_choose: int = attrib(validator=instance_of(int))
 
     # noinspection PyMethodMayBeStatic
     def choice(self, elements: Sequence[T]) -> T:
-        return elements[0]
+        return elements[self._index_to_choose]
 
 
 @attrs(frozen=True, slots=True)
@@ -56,13 +58,11 @@ class RandomChooser(SequenceChooser):
     def choice(self, elements: Sequence[T]) -> T:
         return self._random.choice(elements)
 
-
-def fixed_random_factory() -> SequenceChooser:
-    """
-    Get a `RandomChooser` from a random number generator initialized with seed zero.
-
-    This is for use as a default `SequenceChooser` for optional method arguments.
-    """
-    ret = random.Random()
-    ret.seed(0)
-    return RandomChooser(ret)
+    @staticmethod
+    def for_seed(seed: int = 0) -> "RandomChooser":
+        """
+        Get a `RandomChooser` from a random number generator initialized with the specified seed.
+        """
+        ret = random.Random()
+        ret.seed(seed)
+        return RandomChooser(ret)

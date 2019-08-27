@@ -4,15 +4,15 @@ Ways to produce human language descriptions of `Situation`\ s by rule.
 from abc import ABC, abstractmethod
 from typing import Generic, TypeVar
 
-from attr import attrs, attrib
+from attr import attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import ImmutableSet, immutableset
 from vistautils.iter_utils import only
 
 from adam.language import LinguisticDescriptionT, TokenSequenceLinguisticDescription
 from adam.language.ontology_dictionary import OntologyLexicon
-from adam.random_utils import SequenceChooser, fixed_random_factory
-from adam.situation import Situation, LocatedObjectSituation
+from adam.random_utils import SequenceChooser
+from adam.situation import LocatedObjectSituation, Situation
 
 SituationT = TypeVar("SituationT", bound=Situation)
 
@@ -38,6 +38,52 @@ class LanguageGenerator(Generic[SituationT, LinguisticDescriptionT], ABC):
 
 
 @attrs(frozen=True, slots=True)
+class ChooseFirstLanguageGenerator(LanguageGenerator[SituationT, LinguisticDescriptionT]):
+    """
+    A `LanguageGenerator` used to wrap another `LanguageGenerator` and discard all but its first
+    generated option.
+    """
+
+    _wrapped_generator: LanguageGenerator[SituationT, LinguisticDescriptionT] = attrib(
+        validator=instance_of(LanguageGenerator)
+    )
+
+    def generate_language(
+        self, situation: SituationT, chooser: SequenceChooser
+    ) -> ImmutableSet[LinguisticDescriptionT]:
+        wrapped_result = self._wrapped_generator.generate_language(situation, chooser)
+        if wrapped_result:
+            return immutableset([wrapped_result[0]])
+        else:
+            return immutableset()
+
+
+@attrs(frozen=True, slots=True)
+class ChooseRandomLanguageGenerator(
+    LanguageGenerator[SituationT, LinguisticDescriptionT]
+):
+    """
+    A `LanguageGenerator` used to wrap another `LanguageGenerator` and discard all but one of its
+    descriptions, selected at random using the provided `SequenceChooser` .
+    """
+
+    _wrapped_generator: LanguageGenerator[SituationT, LinguisticDescriptionT] = attrib(
+        validator=instance_of(LanguageGenerator)
+    )
+    _sequence_chooser: SequenceChooser = attrib(validator=instance_of(SequenceChooser))
+
+    def generate_language(
+        self, situation: SituationT, chooser: SequenceChooser
+    ) -> ImmutableSet[LinguisticDescriptionT]:
+        wrapped_result = self._wrapped_generator.generate_language(situation, chooser)
+        if wrapped_result:
+            # noinspection PyTypeChecker
+            return immutableset([self._sequence_chooser.choice(wrapped_result)])
+        else:
+            return immutableset()
+
+
+@attrs(frozen=True, slots=True)
 class SingleObjectLanguageGenerator(
     LanguageGenerator[LocatedObjectSituation, TokenSequenceLinguisticDescription]
 ):
@@ -55,7 +101,7 @@ class SingleObjectLanguageGenerator(
     def generate_language(
         self,
         situation: LocatedObjectSituation,
-        chooser: SequenceChooser = fixed_random_factory(),  # pylint:disable=unused-argument
+        chooser: SequenceChooser,  # pylint:disable=unused-argument
     ) -> ImmutableSet[TokenSequenceLinguisticDescription]:
         if len(situation.objects_to_locations) != 1:
             raise ValueError(

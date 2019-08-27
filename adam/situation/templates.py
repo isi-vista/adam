@@ -25,7 +25,7 @@ from adam import ontology
 from adam.language.language_generator import SituationT
 from adam.math_3d import Point
 from adam.ontology import Ontology, OntologyNode, OntologyProperty
-from adam.random_utils import SequenceChooser, fixed_random_factory
+from adam.random_utils import SequenceChooser, RandomChooser
 from adam.situation import LocatedObjectSituation, SituationObject
 
 
@@ -49,7 +49,7 @@ class SituationTemplateProcessor(ABC, Generic[_SituationTemplateT, SituationT]):
         template: _SituationTemplateT,
         *,
         num_instantiations: int = 1,
-        chooser: SequenceChooser = Factory(fixed_random_factory),
+        chooser: SequenceChooser = Factory(RandomChooser.for_seed),
     ) -> AbstractSet[SituationT]:
         r"""
         Generates one or more `Situation`\ s from a `SituationTemplate`\ .
@@ -165,7 +165,7 @@ class SimpleSituationTemplateProcessor(
         template: SimpleSituationTemplate,
         *,
         num_instantiations: int = 1,
-        chooser: SequenceChooser = Factory(fixed_random_factory),
+        chooser: SequenceChooser = Factory(RandomChooser.for_seed),
     ) -> ImmutableSet[LocatedObjectSituation]:
         assert num_instantiations >= 1
 

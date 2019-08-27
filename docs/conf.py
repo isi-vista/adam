@@ -196,6 +196,9 @@ nitpick_ignore = [('py:class', 'typing.Mapping'),
 
                   # awaiting fix for https://github.com/agronholm/sphinx-autodoc-typehints/issues/39
                   ("py:class", "_SituationTemplateT"),
+                  ("py:class", "PerceptionT"),
+                  ("py:class", "SituationT"),
+                  ("py:class", "LinguisticDescriptionT"),
                   ("py:class", "T"),
 
                   # pending https://github.com/isi-vista/immutablecollections/issues/60
