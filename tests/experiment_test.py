@@ -1,9 +1,6 @@
-from adam.experiment import (
-    Experiment,
-    GeneratedFromExplicitSituationsInstanceGroup,
-    TopChoiceExactMatchObserver,
-    execute_experiment,
-)
+from adam.experiment import Experiment, execute_experiment
+from adam.experiment.observer import TopChoiceExactMatchObserver
+from adam.experiment.instance_group import GeneratedFromExplicitSituationsInstanceGroup
 from adam.language.language_generator import SingleObjectLanguageGenerator
 from adam.learner import MemorizingLanguageLearner
 from adam.math_3d import Point

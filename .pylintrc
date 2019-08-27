@@ -198,7 +198,8 @@ indent-after-paren=4
 indent-string='    '
 
 # Maximum number of characters on a single line.
-max-line-length=100
+# We set this very high because we mostly rely on black to take care of this for us
+max-line-length=200
 
 # Maximum number of lines in a module
 max-module-lines=1000
