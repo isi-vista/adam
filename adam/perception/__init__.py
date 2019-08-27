@@ -8,10 +8,12 @@ from typing import TypeVar, Generic, Tuple
 from attr import attrs, attrib
 from attr.validators import instance_of
 from immutablecollections import ImmutableSet, immutableset
+from immutablecollections.converter_utils import _to_immutableset
 
 from adam.language.language_generator import SituationT
 from adam.math_3d import Point
-from adam.random_utils import SequenceChooser, fixed_random_factory
+from adam.random_utils import SequenceChooser
+from adam.situation import LocatedObjectSituation
 
 
 class PerceptualRepresentationFrame(ABC):
@@ -23,7 +25,9 @@ class PerceptualRepresentationFrame(ABC):
     """
 
 
-PerceptionT = TypeVar("_PerceptionT", bound=PerceptualRepresentationFrame)
+PerceptionT = TypeVar("PerceptionT", bound=PerceptualRepresentationFrame)
+
+PerceptionT2 = TypeVar("PerceptionT2", bound=PerceptualRepresentationFrame)
 
 
 @attrs(frozen=True)
@@ -38,8 +42,14 @@ class PerceptualRepresentation(Generic[PerceptionT]):
 
     frames: Tuple[PerceptionT, ...] = attrib(converter=tuple)
 
+    @staticmethod
+    def single_frame(
+        perception: PerceptionT2
+    ) -> "PerceptualRepresentation[PerceptionT2]":
+        return PerceptualRepresentation((perception,))
 
-@attrs(frozen=True)
+
+@attrs(frozen=True, slots=True)
 class BagOfFeaturesPerceptualRepresentationFrame(PerceptualRepresentationFrame):
     r"""
     Represents a learner's perception of a `Situation` as an unstructured set of features.
@@ -49,8 +59,8 @@ class BagOfFeaturesPerceptualRepresentationFrame(PerceptualRepresentationFrame):
     features: ImmutableSet[str] = attrib(converter=immutableset)
 
 
-@attrs(frozen=True)
-class DummyVisualPerception:
+@attrs(frozen=True, slots=True)
+class SingleObjectDummyVisualPerception:
     """
     A visual representation with a location and a tag, no structure or properties.
 
@@ -63,13 +73,28 @@ class DummyVisualPerception:
     location: Point = attrib(validator=instance_of(Point))
 
 
+@attrs(frozen=True, slots=True)
+class DummyVisualPerceptionFrame(PerceptualRepresentationFrame):
+    r"""
+    A visual representation made up of several objects represented by
+    `SingleObjectDummyVisualPerception`\ s.
+
+    This is only for testing purposes.
+    """
+    object_perceptions: ImmutableSet[SingleObjectDummyVisualPerception] = attrib(
+        converter=_to_immutableset, default=immutableset()
+    )
+
+
 class PerceptualRepresentationGenerator(Generic[SituationT, PerceptionT], ABC):
     r"""
     A way of generating `PerceptualRepresentation`\ s of `Situation` s.
     """
+
     @abstractmethod
-    def generate_perception(self, situation: SituationT, chooser: SequenceChooser =
-    fixed_random_factory()) -> PerceptualRepresentation[PerceptionT]:
+    def generate_perception(
+        self, situation: SituationT, chooser: SequenceChooser
+    ) -> PerceptualRepresentation[PerceptionT]:
         """
         Generate a `PerceptualRepresentation` of a `Situation`.
 
@@ -83,3 +108,19 @@ class PerceptualRepresentationGenerator(Generic[SituationT, PerceptionT], ABC):
             A `PerceptualRepresentation` of the `Situation`.
         """
 
+
+class DummyVisualPerceptionGenerator(
+    PerceptualRepresentationGenerator[LocatedObjectSituation, DummyVisualPerceptionFrame]
+):
+    def generate_perception(  # pylint:disable=unused-argument
+        self, situation: LocatedObjectSituation, chooser: SequenceChooser
+    ) -> PerceptualRepresentation[DummyVisualPerceptionFrame]:
+        return PerceptualRepresentation.single_frame(
+            DummyVisualPerceptionFrame(
+                SingleObjectDummyVisualPerception(
+                    tag=obj.ontology_node.handle if obj.ontology_node else "unknown",
+                    location=point,
+                )
+                for (obj, point) in situation.objects_to_locations.items()
+            )
+        )

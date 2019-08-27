@@ -1,4 +1,4 @@
-from adam.random_utils import AlwaysChooseTheFirst
+from adam.random_utils import FixedIndexChooser
 from adam.situation.templates import (
     SimpleSituationTemplate,
     SimpleSituationTemplateProcessor,
@@ -46,7 +46,7 @@ def test_objects_only_template():
 def test_simple_situation_generation():
     situation_processor = SimpleSituationTemplateProcessor(TESTING_ONTOLOGY)
     situations = situation_processor.generate_situations(
-        build_objects_only_template(), chooser=AlwaysChooseTheFirst()
+        build_objects_only_template(), chooser=FixedIndexChooser(0)
     )
     assert len(situations) == 1
     situation = situations[0]

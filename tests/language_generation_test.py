@@ -1,8 +1,17 @@
-from adam.language.language_generator import SingleObjectLanguageGenerator
+from immutablecollections import ImmutableSet, immutableset
+
+from adam.language import TokenSequenceLinguisticDescription
+from adam.language.language_generator import (
+    ChooseFirstLanguageGenerator,
+    ChooseRandomLanguageGenerator,
+    LanguageGenerator,
+    SingleObjectLanguageGenerator,
+)
 from adam.math_3d import Point
-from adam.situation import LocatedObjectSituation, SituationObject
+from adam.random_utils import FixedIndexChooser, RandomChooser, SequenceChooser
+from adam.situation import LocatedObjectSituation, Situation, SituationObject
 from .testing_lexicon import ENGLISH_TESTING_LEXICON
-from .testing_ontology import TRUCK, INANIMATE
+from .testing_ontology import INANIMATE, TRUCK
 
 
 def test_single_object_generator():
@@ -14,6 +23,50 @@ def test_single_object_generator():
 
     single_obj_generator = SingleObjectLanguageGenerator(ENGLISH_TESTING_LEXICON)
 
-    languages_for_situation = single_obj_generator.generate_language(situation)
+    languages_for_situation = single_obj_generator.generate_language(
+        situation, RandomChooser.for_seed(0)
+    )
     assert len(languages_for_situation) == 1
     assert languages_for_situation[0].as_token_sequence() == ("truck",)
+
+
+class DummyLanguageGenerator(
+    LanguageGenerator[Situation, TokenSequenceLinguisticDescription]
+):
+    def generate_language(  # pylint:disable=unused-argument
+        self, situation: Situation, chooser: SequenceChooser
+    ) -> ImmutableSet[TokenSequenceLinguisticDescription]:
+        return immutableset(
+            (
+                TokenSequenceLinguisticDescription(("hello", "world")),
+                TokenSequenceLinguisticDescription(("hello", "fred")),
+            )
+        )
+
+
+def test_choose_first():
+    generator = ChooseFirstLanguageGenerator(DummyLanguageGenerator())
+    # pycharm fails to recognize converter
+    # noinspection PyTypeChecker
+    situation = LocatedObjectSituation([(SituationObject(), Point(0, 0, 0))])
+
+    generated_descriptions = generator.generate_language(
+        situation, RandomChooser.for_seed(0)
+    )
+    assert len(generated_descriptions) == 1
+    assert generated_descriptions[0].as_token_sequence() == ("hello", "world")
+
+
+def test_choose_random():
+    generator = ChooseRandomLanguageGenerator(
+        DummyLanguageGenerator(), FixedIndexChooser(1)
+    )
+    # pycharm fails to recognize converter
+    # noinspection PyTypeChecker
+    situation = LocatedObjectSituation([(SituationObject(), Point(0, 0, 0))])
+
+    generated_descriptions = generator.generate_language(
+        situation, RandomChooser.for_seed(0)
+    )
+    assert len(generated_descriptions) == 1
+    assert generated_descriptions[0].as_token_sequence() == ("hello", "fred")

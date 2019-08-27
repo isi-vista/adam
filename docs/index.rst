@@ -61,6 +61,10 @@ adam.language.ontology_dictionary
 ===================================
 .. automodule:: adam.language.ontology_dictionary
 
+adam.experiment
+================
+.. automodule:: adam.experiment
+
 adam.ui
 =========
 .. automodule:: adam.ui

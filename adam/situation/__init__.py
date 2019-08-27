@@ -5,7 +5,7 @@ from abc import ABC
 from typing import Mapping, Optional
 
 from attr import attrs, attrib
-from attr.validators import instance_of
+from attr.validators import instance_of, optional
 from immutablecollections import immutableset, ImmutableSet, immutabledict
 
 # noinspection PyProtectedMember
@@ -49,7 +49,9 @@ class SituationObject:
     because two objects with identical properties are nonetheless distinct.
     """
 
-    ontology_node: Optional[OntologyNode] = attrib(validator=instance_of(OntologyNode))
+    ontology_node: Optional[OntologyNode] = attrib(
+        validator=optional(instance_of(OntologyNode)), default=None
+    )
     properties: ImmutableSet[OntologyProperty] = attrib(
         converter=_to_immutableset, default=immutableset()
     )

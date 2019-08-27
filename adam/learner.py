@@ -11,18 +11,18 @@ from attr.validators import instance_of
 from immutablecollections import immutabledict
 
 from adam.language import LinguisticDescription, LinguisticDescriptionT
-from adam.perception import _PerceptionT, PerceptualRepresentation
+from adam.perception import PerceptionT, PerceptualRepresentation
 
 
 @attrs(frozen=True)
-class LearningExample(Generic[_PerceptionT, LinguisticDescriptionT]):
+class LearningExample(Generic[PerceptionT, LinguisticDescriptionT]):
     """
     A `PerceptualRepresentation` of a situation and its `LinguisticDescription`
     that a `LanguageLearner` can learn from.
     """
 
     # attrs can't check the generic types, so we just check the super-types
-    perception: PerceptualRepresentation[_PerceptionT] = attrib(  # type:ignore
+    perception: PerceptualRepresentation[PerceptionT] = attrib(  # type:ignore
         validator=instance_of(PerceptualRepresentation)
     )
     linguistic_description: LinguisticDescriptionT = attrib(  # type:ignore
@@ -30,7 +30,7 @@ class LearningExample(Generic[_PerceptionT, LinguisticDescriptionT]):
     )
 
 
-class LanguageLearner(Generic[_PerceptionT, LinguisticDescriptionT], ABC):
+class LanguageLearner(ABC, Generic[PerceptionT, LinguisticDescriptionT]):
     r"""
     Models an infant learning language.
 
@@ -41,7 +41,7 @@ class LanguageLearner(Generic[_PerceptionT, LinguisticDescriptionT], ABC):
 
     @abstractmethod
     def observe(
-        self, learning_example: LearningExample[_PerceptionT, LinguisticDescriptionT]
+        self, learning_example: LearningExample[PerceptionT, LinguisticDescriptionT]
     ) -> None:
         """
         Observe a `LearningExample`, possibly updating internal state.
@@ -49,7 +49,7 @@ class LanguageLearner(Generic[_PerceptionT, LinguisticDescriptionT], ABC):
 
     @abstractmethod
     def describe(
-        self, perception: PerceptualRepresentation[_PerceptionT]
+        self, perception: PerceptualRepresentation[PerceptionT]
     ) -> Mapping[LinguisticDescriptionT, float]:
         r"""
         Given a `PerceptualRepresentation` of a situation, produce one or more
@@ -65,8 +65,8 @@ class LanguageLearner(Generic[_PerceptionT, LinguisticDescriptionT], ABC):
 
 @attrs
 class MemorizingLanguageLearner(
-    Generic[_PerceptionT, LinguisticDescriptionT],
-    LanguageLearner[_PerceptionT, LinguisticDescriptionT],
+    Generic[PerceptionT, LinguisticDescriptionT],
+    LanguageLearner[PerceptionT, LinguisticDescriptionT],
 ):
     """
     A trivial implementation of `LanguageLearner` which just memorizes situations it has seen before
@@ -79,18 +79,18 @@ class MemorizingLanguageLearner(
     """
 
     _memorized_situations: Dict[
-        PerceptualRepresentation[_PerceptionT], LinguisticDescriptionT
+        PerceptualRepresentation[PerceptionT], LinguisticDescriptionT
     ] = attrib(init=False, default=Factory(dict))
 
     def observe(
-        self, learning_example: LearningExample[_PerceptionT, LinguisticDescriptionT]
+        self, learning_example: LearningExample[PerceptionT, LinguisticDescriptionT]
     ) -> None:
         self._memorized_situations[
             learning_example.perception
         ] = learning_example.linguistic_description
 
     def describe(
-        self, perception: PerceptualRepresentation[_PerceptionT]
+        self, perception: PerceptualRepresentation[PerceptionT]
     ) -> Mapping[LinguisticDescriptionT, float]:
         memorized_description = self._memorized_situations.get(perception)
         if memorized_description:
