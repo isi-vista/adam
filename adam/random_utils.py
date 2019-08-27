@@ -36,7 +36,7 @@ class SequenceChooser(ABC):
 @attrs(frozen=True, slots=True)
 class FixedIndexChooser(SequenceChooser):
     """
-    A `SequenceChooser` which always chooses the first element.
+    A `SequenceChooser` which always chooses the element at the given index.
     """
 
     _index_to_choose: int = attrib(validator=instance_of(int))
