@@ -144,21 +144,30 @@ class OntologyNode:
     """
 
     handle: str = attrib(validator=instance_of(str))
+    """
+    A simple human-readable description of this node,
+    used for debugging and testing only.
+    """
     _local_properties: ImmutableSet["OntologyProperty"] = attrib(
         converter=_to_immutableset, default=immutableset()
     )
+    r"""
+    `OntologyProperty`\ s of this `OntologyNode`.
+    These will be inherited by its children.
+    """
 
 
 @attrs(frozen=True, slots=True, repr=False)
 class OntologyProperty:
     r"""
     A property which a node in an `Ontology` may bear, such as "animate".
-
-    A `OntologyProperty` has a *handle*, which is a user-facing description used for debugging
-    and testing only.
     """
 
     _handle: str = attrib(validator=instance_of(str))
+    """
+    A simple human-readable description of this property,
+    used for debugging and testing only.
+    """
 
     def __repr__(self) -> str:
         return f"+{self._handle}"

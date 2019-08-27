@@ -20,6 +20,9 @@ class OntologyLexicon:
     _ontology_node_to_word: ImmutableSetMultiDict[OntologyNode, LexiconEntry] = attrib(
         converter=_to_immutablesetmultidict
     )
+    r"""
+    Maps `OntologyNode`\ s to `LexiconEntry`\ s which describe them in some particular language.
+    """
 
     def words_for_node(self, node: OntologyNode) -> ImmutableSet[LexiconEntry]:
         """
