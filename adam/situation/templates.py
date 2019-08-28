@@ -15,6 +15,8 @@ from immutablecollections import (
     immutabledict,
     immutableset,
 )
+
+# noinspection PyProtectedMember
 from immutablecollections.converter_utils import (
     _to_immutabledict,
     _to_immutableset,
@@ -30,8 +32,8 @@ from adam.situation import LocatedObjectSituation, SituationObject
 
 
 class SituationTemplate(ABC):
-    """
-    A compact description for a large number of situations.
+    r"""
+    A compact description for a large number of `Situation`\ s.
     """
 
 
@@ -70,34 +72,44 @@ class SituationTemplateProcessor(ABC, Generic[_SituationTemplateT, SituationT]):
 @attrs(slots=True, frozen=True)
 class SituationTemplateObject:
     """
-    An object in a situation template.
+    An object in a `SituationTemplate`.
 
-    Every object has a string *handle* which is used to name it for debugging purposes only
+    For example, a particular ball or person.
     """
 
     _handle: str = attrib(validator=instance_of(str))
+    """
+    Every object has a string *handle* which is used to name it for debugging purposes only
+    """
 
 
 @attrs(slots=True, frozen=True)
 class SimpleSituationTemplate(SituationTemplate):
     """
-    A minimal implementation of a situation template for objects only.
-
-    A template contains a collection of objects, a mapping of those objects to properties
-    they are required to have, and a mapping of objects to ontology nodes which specifying their
-    required ontology super-classes.
+    A minimal implementation of a situation template for objects only (no actions or relations).
 
     It is usually easiest to create a `SimpleSituationTemplate` using
     `SimpleSituationTemplate.Builder` .
     """
 
     objects: ImmutableSet[SituationTemplateObject] = attrib(converter=_to_immutableset)
+    r"""
+    The `SituationObject`\ s present in the `Situation`, e.g. {a person, a ball, a table}
+    """
     objects_to_required_properties: ImmutableSetMultiDict[
         SituationTemplateObject, OntologyProperty
     ] = attrib(converter=_to_immutablesetmultidict)
+    r"""
+    A mapping of each `SituationObject` in the `Situation` to `OntologyProperty`\ s it is
+    required to have.
+    """
     objects_to_ontology_types: ImmutableDict[
         SituationTemplateObject, OntologyNode
     ] = attrib(converter=_to_immutabledict)
+    r"""
+    A mapping of each `SituationObject` in the `Situation` to the `OntologyNode`\ s its type
+    must correspond to either directly or by inheritance.
+    """
 
     @attrs(frozen=True, slots=True)
     class Builder:
@@ -105,11 +117,13 @@ class SimpleSituationTemplate(SituationTemplate):
         The preferred means of creating a `SimpleSituationTemplate`
         """
 
-        objects: List[SituationTemplateObject] = attrib(init=False, default=Factory(list))
-        objects_to_properties: List[
+        _objects: List[SituationTemplateObject] = attrib(
+            init=False, default=Factory(list)
+        )
+        _objects_to_properties: List[
             Tuple[SituationTemplateObject, OntologyProperty]
         ] = attrib(init=False, default=Factory(list))
-        objects_to_ontology_types: List[
+        _objects_to_ontology_types: List[
             Tuple[SituationTemplateObject, OntologyNode]
         ] = attrib(init=False, default=Factory(list))
 
@@ -119,30 +133,32 @@ class SimpleSituationTemplate(SituationTemplate):
             ontology_type: OntologyNode,
             properties: Sequence[OntologyProperty] = (),
         ) -> SituationTemplateObject:
-            """
+            r"""
             Add an object to a `SimpleSituationTemplate` being built.
 
             Args:
                 handle: the debugging handle of the object
                 ontology_type: the `OntologyNode` which any object filling this slot must match.
-                properties: the properties any object filling this slot must have.
+                properties: the `OntologyProperty`\ s any object filling this slot must have.
 
             Returns:
-
+                the `SituationTemplateObject` which was created.
             """
             obj = SituationTemplateObject(handle)
-            self.objects.append(obj)
+            self._objects.append(obj)
 
-            self.objects_to_ontology_types.append((obj, ontology_type))
+            self._objects_to_ontology_types.append((obj, ontology_type))
 
             for _property in properties:
-                self.objects_to_properties.append((obj, _property))
+                self._objects_to_properties.append((obj, _property))
 
             return obj
 
         def build(self) -> "SimpleSituationTemplate":
             return SimpleSituationTemplate(
-                self.objects, self.objects_to_properties, self.objects_to_ontology_types
+                self._objects,
+                self._objects_to_properties,
+                self._objects_to_ontology_types,
             )
 
 
