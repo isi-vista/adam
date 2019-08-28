@@ -37,13 +37,16 @@ class SequenceChooser(ABC):
 class FixedIndexChooser(SequenceChooser):
     """
     A `SequenceChooser` which always chooses the element at the given index.
+
+    If the fixed index exceeds the length of the supplied (non-empty) sequence,
+    then the element at the fixed index modulo the sequence length is returned.
     """
 
     _index_to_choose: int = attrib(validator=instance_of(int))
 
     # noinspection PyMethodMayBeStatic
     def choice(self, elements: Sequence[T]) -> T:
-        return elements[self._index_to_choose]
+        return elements[self._index_to_choose % len(elements)]
 
 
 @attrs(frozen=True, slots=True)
@@ -66,3 +69,20 @@ class RandomChooser(SequenceChooser):
         ret = random.Random()
         ret.seed(seed)
         return RandomChooser(ret)
+
+
+@attrs(slots=True)
+class RotatingIndexChooser(SequenceChooser):
+    """
+    A `SequenceChooser` which increments the index it chooses after each choice.
+
+    If the current index exceeds the length of the supplied (non-empty) sequence,
+    then the element at the current index modulo the sequence length is returned.
+    """
+
+    _cur_index: int = attrib(default=0, init=False)
+
+    def choice(self, elements: Sequence[T]) -> T:
+        ret = elements[self._cur_index % len(elements)]
+        self._cur_index += 1
+        return ret

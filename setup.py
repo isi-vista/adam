@@ -18,12 +18,17 @@ setup(name='adam',
       # 3.6 and up, but not Python 4
       python_requires='~=3.6',
       install_requires=[
+          "attrs>=18.2.0",
+          "vistautils>=0.12.0",
+          "immutablecollections>=0.8.0",
+          "networkx>=2.3",
+          "more-itertools>=7.2.0"
       ],
       scripts=[
-          ],
+      ],
       classifiers=[
-        "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: MIT License",
-        "Operating System :: OS Independent",
-    ]
+          "Programming Language :: Python :: 3",
+          "License :: OSI Approved :: MIT License",
+          "Operating System :: OS Independent",
+      ]
       )

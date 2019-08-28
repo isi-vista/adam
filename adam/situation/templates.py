@@ -1,10 +1,13 @@
-"""
+r"""
 Tools for working with situation templates, which allow a human to compactly describe a large
 number of possible situations.
+
+Note that we provide convenience functions like `random_situation_templates` and
+`one_situation_per_template` to assist in supplying `Situation`\ s to `Experiment`\ s.
 """
 import sys
 from abc import ABC, abstractmethod
-from typing import AbstractSet, Generic, List, Sequence, Tuple, TypeVar
+from typing import AbstractSet, Generic, List, Sequence, Tuple, TypeVar, Iterable
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
@@ -22,6 +25,7 @@ from immutablecollections.converter_utils import (
     _to_immutableset,
     _to_immutablesetmultidict,
 )
+from more_itertools import flatten
 
 from adam import ontology
 from adam.language.language_generator import SituationT
@@ -234,3 +238,34 @@ class SimpleSituationTemplateProcessor(
     def _locations_in_a_line_1m_apart():
         for x_coordinate in range(0, sys.maxsize):
             yield Point(float(x_coordinate), 0.0, 0.0)
+
+
+def random_situation_templates(
+    situation_templates: Sequence[SituationTemplate],
+    num_random_templates: int,
+    sequence_chooser: SequenceChooser,
+) -> Iterable[SituationTemplate]:
+    r"""
+    Get *num_random_templates* random (with replacement) `SituationTemplate`\ s
+    from *situation_templates*, where "random" choices are given by
+    the provided `SequenceChooser`.
+    """
+    return (
+        sequence_chooser.choice(situation_templates)
+        for _ in range(0, num_random_templates)
+    )
+
+
+def one_situation_per_template(
+    situation_templates: Sequence[_SituationTemplateT],
+    situation_template_processor: SituationTemplateProcessor[
+        _SituationTemplateT, SituationT
+    ],
+    sequence_chooser: SequenceChooser,
+) -> Iterable[SituationT]:
+    return flatten(
+        situation_template_processor.generate_situations(
+            template=situation_template, num_instantiations=1, chooser=sequence_chooser
+        )
+        for situation_template in situation_templates
+    )
