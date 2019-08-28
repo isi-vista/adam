@@ -1,0 +1,23 @@
+from adam.ontology.phase1_ontology import AGENT, BALL, DESTINATION, MOM, ON, PUT, TABLE, THEME
+from adam.situation import SituationAction, SituationObject, SituationRelation, \
+    HighLevelSemanticsSituation
+
+
+def test_mom_put_ball_on_the_table():
+    mom = SituationObject(ontology_node=MOM)
+    ball = SituationObject(ontology_node=BALL)
+    table = SituationObject(ontology_node=TABLE)
+
+    mom_put_the_ball_on_the_table = HighLevelSemanticsSituation(
+        objects=[mom, ball, table],
+        relations=[],
+        actions=[
+            # What is the best way of representing the destination in the high-level semantics?
+            # Here we represent it as indicating a relation which should be true.
+            SituationAction(PUT, ((AGENT, mom),
+                                  (THEME, ball),
+                                  (DESTINATION, SituationRelation(ON, ball, table))))
+        ]
+    )
+    print(mom_put_the_ball_on_the_table)
+

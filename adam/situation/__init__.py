@@ -122,7 +122,7 @@ class SituationAction:
 
 
 @attrs(frozen=True, slots=True)
-class HighLevelSemanticSituation(Situation):
+class HighLevelSemanticsSituation(Situation):
     objects: ImmutableSet[SituationObject] = attrib(
         converter=_to_immutableset, default=immutableset()
     )
