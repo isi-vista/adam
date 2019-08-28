@@ -22,7 +22,7 @@ from immutablecollections.converter_utils import (
 )
 
 from adam.math_3d import Point
-from adam.ontology import OntologyProperty, OntologyNode
+from adam.ontology import OntologyProperty, OntologyNode, Ontology
 
 
 class Situation(ABC):
@@ -57,7 +57,7 @@ class BagOfFeaturesSituationRepresentation(Situation):
     """
 
 
-@attrs(frozen=True, slots=True, hash=None, cmp=False)
+@attrs(frozen=True, slots=True, hash=None, cmp=False, repr=False)
 class SituationObject:
     """
     An object present in some situation.
@@ -91,6 +91,14 @@ class SituationObject:
                     f"OntologyProperty"
                 )
 
+    def __repr__(self) -> str:
+        if self.properties:
+            additional_properties = ", ".join(repr(prop) for prop in self.properties)
+            additional_properties_string = f"[{additional_properties}]"
+        else:
+            additional_properties_string = ""
+        return f"{self.ontology_node.handle}{additional_properties_string}"
+
 
 @attrs(frozen=True, slots=True)
 class LocatedObjectSituation(Situation):
@@ -106,23 +114,30 @@ class LocatedObjectSituation(Situation):
     """
 
 
-@attrs(frozen=True, slots=True)
+@attrs(frozen=True, slots=True, repr=False)
 class SituationRelation:
     relation_type: OntologyNode = attrib(validator=instance_of(OntologyNode))
     first_slot: SituationObject = attrib(validator=instance_of(SituationObject))
     second_slot: SituationObject = attrib(validator=instance_of(SituationObject))
 
+    def __repr__(self) -> str:
+        return f"{self.relation_type}({self.first_slot}, {self.second_slot})"
 
-@attrs(frozen=True, slots=True)
+
+@attrs(frozen=True, slots=True, repr=False)
 class SituationAction:
     action_type: OntologyNode = attrib(validator=instance_of(OntologyNode))
     argument_roles_to_fillers: ImmutableSetMultiDict[
         OntologyNode, SituationObject
     ] = attrib(converter=_to_immutablesetmultidict, default=immutablesetmultidict())
 
+    def __repr__(self) -> str:
+        return f"{self.action_type}({self.argument_roles_to_fillers})"
 
-@attrs(frozen=True, slots=True)
+
+@attrs(frozen=True, slots=True, repr=False)
 class HighLevelSemanticsSituation(Situation):
+    ontology: Ontology = attrib(validator=instance_of(Ontology))
     objects: ImmutableSet[SituationObject] = attrib(
         converter=_to_immutableset, default=immutableset()
     )
@@ -132,3 +147,16 @@ class HighLevelSemanticsSituation(Situation):
     actions: ImmutableSet[SituationAction] = attrib(
         converter=_to_immutableset, default=immutableset()
     )
+
+    def __repr__(self) -> str:
+        # TODO: the way we currently repr situations doesn't handle multiple nodes
+        # of the same ontology type well.  We'd like to use subscripts (_0, _1)
+        # to distinguish them, which requires pulling all the repr logic up to this
+        # level and not delegating to the reprs of the sub-objects.
+        #
+        lines = ["{"]
+        lines.extend(f"\t{obj!r}" for obj in self.objects)
+        lines.extend(f"\t{relation!r}" for relation in self.relations)
+        lines.extend(f"\t{action!r}" for action in self.actions)
+        lines.append("}")
+        return "\n".join(lines)

@@ -1,4 +1,5 @@
-from adam.ontology.phase1_ontology import AGENT, BALL, DESTINATION, MOM, ON, PUT, TABLE, THEME
+from adam.ontology.phase1_ontology import AGENT, BALL, DESTINATION, MOM, ON, PUT, TABLE, THEME, \
+    GAILA_PHASE_1_ONTOLOGY
 from adam.situation import SituationAction, SituationObject, SituationRelation, \
     HighLevelSemanticsSituation
 
@@ -9,6 +10,7 @@ def test_mom_put_ball_on_the_table():
     table = SituationObject(ontology_node=TABLE)
 
     mom_put_the_ball_on_the_table = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
         objects=[mom, ball, table],
         relations=[],
         actions=[

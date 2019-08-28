@@ -65,4 +65,4 @@ subtype(THEME, SEMANTIC_ROLE)
 DESTINATION = OntologyNode("destination")
 subtype(DESTINATION, SEMANTIC_ROLE)
 
-PHASE_1_ONTOLOGY = Ontology.from_directed_graph(_ontology_graph)
+GAILA_PHASE_1_ONTOLOGY = Ontology.from_directed_graph(_ontology_graph)
