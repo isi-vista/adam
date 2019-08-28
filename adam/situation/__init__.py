@@ -6,10 +6,20 @@ from typing import Mapping, Optional
 
 from attr import attrs, attrib
 from attr.validators import instance_of, optional
-from immutablecollections import immutableset, ImmutableSet, immutabledict
+from immutablecollections import (
+    immutableset,
+    ImmutableSet,
+    immutabledict,
+    immutablesetmultidict,
+    ImmutableSetMultiDict,
+)
 
 # noinspection PyProtectedMember
-from immutablecollections.converter_utils import _to_immutableset, _to_immutabledict
+from immutablecollections.converter_utils import (
+    _to_immutableset,
+    _to_immutabledict,
+    _to_immutablesetmultidict,
+)
 
 from adam.math_3d import Point
 from adam.ontology import OntologyProperty, OntologyNode
@@ -94,3 +104,31 @@ class LocatedObjectSituation(Situation):
     r"""
     A mapping of `SituationObject`\ s to `Point`\ s giving their locations.
     """
+
+
+@attrs(frozen=True, slots=True)
+class SituationRelation:
+    relation_type: OntologyNode = attrib(validator=instance_of(OntologyNode))
+    first_slot: SituationObject = attrib(validator=instance_of(SituationObject))
+    second_slot: SituationObject = attrib(validator=instance_of(SituationObject))
+
+
+@attrs(frozen=True, slots=True)
+class SituationAction:
+    action_type: OntologyNode = attrib(validator=instance_of(OntologyNode))
+    argument_roles_to_fillers: ImmutableSetMultiDict[
+        OntologyNode, SituationObject
+    ] = attrib(converter=_to_immutablesetmultidict, default=immutablesetmultidict())
+
+
+@attrs(frozen=True, slots=True)
+class HighLevelSemanticSituation(Situation):
+    objects: ImmutableSet[SituationObject] = attrib(
+        converter=_to_immutableset, default=immutableset()
+    )
+    relations: ImmutableSet[SituationRelation] = attrib(
+        converter=_to_immutableset, default=immutableset()
+    )
+    actions: ImmutableSet[SituationAction] = attrib(
+        converter=_to_immutableset, default=immutableset()
+    )
