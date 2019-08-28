@@ -1,6 +1,6 @@
 from adam.experiment import Experiment, execute_experiment
 from adam.experiment.observer import TopChoiceExactMatchObserver
-from adam.experiment.instance_group import GeneratedFromExplicitSituationsInstanceGroup
+from adam.experiment.instance_group import GeneratedFromSituationsInstanceGroup
 from adam.language.language_generator import SingleObjectLanguageGenerator
 from adam.learner import MemorizingLanguageLearner
 from adam.math_3d import Point
@@ -15,7 +15,7 @@ def test_simple_experiment():
     language_generator = SingleObjectLanguageGenerator(ENGLISH_TESTING_LEXICON)
     perception_generator = DummyVisualPerceptionGenerator()
 
-    only_show_truck = GeneratedFromExplicitSituationsInstanceGroup(
+    only_show_truck = GeneratedFromSituationsInstanceGroup(
         name="only-truck",
         situations=[
             LocatedObjectSituation([(SituationObject(TRUCK), Point(0.0, 0.0, 0.0))])

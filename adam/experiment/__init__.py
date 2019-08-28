@@ -56,7 +56,7 @@ class Experiment(Generic[SituationT, LinguisticDescriptionT, PerceptionT]):
     with the corresponding `LinguisticDescription` and `PerceptualRepresentation`.
     There are many ways an `InstanceGroup` could be specified,
     ranging from simply a collection of these triples (e.g. `ExplicitWithSituationInstanceGroup`)
-    to a complex rule-governed process (e.g. `GeneratedFromExplicitSituationsInstanceGroup`).
+    to a complex rule-governed process (e.g. `GeneratedFromSituationsInstanceGroup`).
     """
     learner_factory: Callable[
         [], LanguageLearner[PerceptionT, LinguisticDescriptionT]

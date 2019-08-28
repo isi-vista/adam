@@ -70,7 +70,7 @@ Every `Experiment` needs to know
 
 There are a variety of ways to specify the situations for training and testing,
 but this is prototypically done by generating them procedurally
-using a `CurriculumGenerator`.
+using a `SituationTemplateProcessor`.
 The way a `Situation` is presented to the `LanguageLearner` is controlled
 by a `LanguageGenerator` and a `PerceptualRepresentationGenerator`.
 
@@ -105,10 +105,6 @@ adam.learner
 -----------------------------
 .. automodule:: adam.learner
 
-adam.curriculum
------------------------------
-.. automodule:: adam.curriculum
-
 adam.situation.templates
 -----------------------------
 .. automodule:: adam.situation.templates
@@ -117,16 +113,13 @@ adam.language.language_generator
 -------------------------------------
 .. automodule:: adam.language.language_generator
 
-
 adam.ontology
 -----------------------------
 .. automodule:: adam.ontology
 
-
 adam.language.lexicon
 -----------------------------
 .. automodule:: adam.language.lexicon
-
 
 adam.language.ontology_dictionary
 -------------------------------------

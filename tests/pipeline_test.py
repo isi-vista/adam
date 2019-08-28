@@ -1,8 +1,5 @@
-from random import Random
-
 from vistautils.iter_utils import only
 
-from adam.curriculum import CurriculumGenerator
 from adam.learner import LearningExample, MemorizingLanguageLearner
 from adam.language import TokenSequenceLinguisticDescription
 from adam.perception import (
@@ -12,24 +9,20 @@ from adam.perception import (
 
 
 def test_pipeline():
-    curriculum_generator = CurriculumGenerator.create_always_generating(
-        [
-            LearningExample(
-                perception=PerceptualRepresentation(
-                    [BagOfFeaturesPerceptualRepresentationFrame(("red", "truck"))]
-                ),
-                linguistic_description=TokenSequenceLinguisticDescription(
-                    ("red", "truck")
-                ),
-            )
-        ]
-    )
+    curriculum = [
+        LearningExample(
+            perception=PerceptualRepresentation(
+                [BagOfFeaturesPerceptualRepresentationFrame(("red", "truck"))]
+            ),
+            linguistic_description=TokenSequenceLinguisticDescription(("red", "truck")),
+        )
+    ]
 
     learner: MemorizingLanguageLearner[
         BagOfFeaturesPerceptualRepresentationFrame, TokenSequenceLinguisticDescription
     ] = MemorizingLanguageLearner()
 
-    for example in curriculum_generator.generate_curriculum(Random(0)):
+    for example in curriculum:
         learner.observe(example)
 
     # shouldn't be able to describe "red" or "truck" alone

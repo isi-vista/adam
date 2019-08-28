@@ -101,23 +101,38 @@ class ExplicitWithSituationInstanceGroup(
 
 
 @attrs(frozen=True, slots=True)
-class GeneratedFromExplicitSituationsInstanceGroup(
+class GeneratedFromSituationsInstanceGroup(
     InstanceGroup[SituationT, LinguisticDescriptionT, PerceptionT]
 ):
     r"""
     Creates a collection of instances
-    by taking an explicitly provided sequence of `Situation`\ s
+    by taking an iterable of `Situation`\ s
     and deriving the `LinguisticDescription`\ s and `PerceptualRepresentation`\ s
     by applying the *language_generator* and *perception_generator*, respectively.
     """
     _name: str = attrib(validator=instance_of(str))
+    """
+    The name of the instance group.
+    """
     _situations: Iterable[SituationT] = attrib(validator=instance_of(Iterable))
+    r"""
+    The sequence of `Situation`\ s to derive linguistic and perceptual representations from for
+    training.
+
+    These `Situation`\ s could themselves be produced by `SituationTemplate`\ s.
+    """
     _language_generator: LanguageGenerator[SituationT, LinguisticDescriptionT] = attrib(
         validator=instance_of(LanguageGenerator)
     )
+    """
+    How to generate the `LanguageRepresentation` of a training `Situation`.
+    """
     _perception_generator: PerceptualRepresentationGenerator[
         SituationT, PerceptionT
     ] = attrib(validator=instance_of(PerceptualRepresentationGenerator))
+    """
+    How to generate the `PerceptualRepresentation` of a training `Situation`
+    """
     _chooser: SequenceChooser = attrib(validator=instance_of(SequenceChooser))
 
     def name(self) -> str:
