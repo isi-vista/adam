@@ -2,13 +2,12 @@
 Representations for dependency trees
 """
 from abc import ABC, abstractmethod
-from itertools import chain
-from typing import Tuple, Iterable
+from typing import Iterable, Tuple
 
-from attr import attrs, attrib
+from attr import attrib, attrs
 from attr.validators import instance_of
-from immutablecollections import immutabledict, ImmutableDict, ImmutableSet, immutableset
-from immutablecollections.converter_utils import _to_tuple, _to_immutabledict
+from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
+from immutablecollections.converter_utils import _to_immutabledict, _to_tuple
 from more_itertools import flatten
 from networkx import DiGraph
 
@@ -23,7 +22,7 @@ class DependencyTree:
     since the dependencies are unordered.
 
     You can pair a `DependencyTree` with a surface order
-    to create an `OrderedDependencyTree`
+    to create an `LinearizedDependencyTree`
     """
 
     _graph: DiGraph = attrib(validator=instance_of(DiGraph))

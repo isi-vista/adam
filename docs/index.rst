@@ -82,12 +82,9 @@ but this will eventually change.
 In particular, there will eventually be an interactive demonstration
 which supports 3D rendering of scenes.
 
-*****************
-API Documentation
-*****************
-
-In the documentation below, because we have tried to order the modules in a recommended reading order,
-sub-modules of the same package will not necessarily be adjacent.
+******************************************
+Fundamental Interfaces
+******************************************
 
 adam.situation
 ---------------
@@ -109,25 +106,53 @@ adam.situation.templates
 -----------------------------
 .. automodule:: adam.situation.templates
 
-adam.language.language_generator
--------------------------------------
-.. automodule:: adam.language.language_generator
+adam.experiment
+-----------------------------
+.. automodule:: adam.experiment
+
+******************************************
+Supporting classes: Situations
+******************************************
 
 adam.ontology
 -----------------------------
 .. automodule:: adam.ontology
 
-adam.language.lexicon
------------------------------
-.. automodule:: adam.language.lexicon
-
 adam.language.ontology_dictionary
 -------------------------------------
 .. automodule:: adam.language.ontology_dictionary
 
-adam.experiment
+*********************************************
+Supporting classes: Linguistic Representation
+*********************************************
+
+adam.language.language_generator
+-------------------------------------
+.. automodule:: adam.language.language_generator
+
+adam.language.lexicon
 -----------------------------
-.. automodule:: adam.experiment
+.. automodule:: adam.language.lexicon
+
+adam.language.dependency
+-------------------------
+.. automodule:: adam.language.dependency
+
+adam.language.dependency.universal_dependencies
+------------------------------------------------
+.. automodule:: adam.language.dependency.universal_dependencies
+
+*********************************************
+Supporting classes: Perceptual Representation
+*********************************************
+
+adam.perception.marr
+-----------------------------
+.. automodule:: adam.perception.marr
+
+*********************************************
+Supporting classes: Experiments
+*********************************************
 
 adam.experiment.instance_group
 -------------------------------------
@@ -137,13 +162,13 @@ adam.experiment.observer
 -----------------------------
 .. automodule:: adam.experiment.observer
 
+*********************************************
+Other Code
+*********************************************
+
 adam.ui
 -----------------------------
 .. automodule:: adam.ui
-
-adam.perception.marr
------------------------------
-.. automodule:: adam.perception.marr
 
 adam.math_3d
 -----------------------------
@@ -153,6 +178,39 @@ adam.random_utils
 -----------------------------
 .. automodule:: adam.random_utils
 
+*********************************************
+GAILA-Specific
+*********************************************
+
+adam.ontology.phase1_ontology
+-----------------------------
+.. automodule:: adam.ontology.phase1_ontology
+
+adam.language_specific.english.english_phase_1_lexicon
+------------------------------------------------------
+.. automodule:: adam.language_specific.english.english_phase_1_lexicon
+
+
+*********************************************
+Language-Specific
+*********************************************
+
+adam.language_specific
+-----------------------------------------------------
+.. automodule:: adam.language_specific
+
+
+adam.language_specific.english
+------------------------------------------------------
+.. automodule:: adam.language_specific.english
+
+adam.language_specific.english.english_language_generator
+----------------------------------------------------------
+.. automodule:: adam.language_specific.english.english_language_generator
+
+adam.language_specific.english.english_syntax
+----------------------------------------------------------
+.. automodule:: adam.language_specific.english.english_syntax
 
 Indices and tables
 ==================
