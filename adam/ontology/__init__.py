@@ -158,8 +158,9 @@ class OntologyNode:
 
     def __repr__(self) -> str:
         if self._local_properties:
-            local_properties = ",".join(str(local_property) for local_property in \
-                    self._local_properties)
+            local_properties = ",".join(
+                str(local_property) for local_property in self._local_properties
+            )
             properties_string = f"[{local_properties}]"
         else:
             properties_string = ""

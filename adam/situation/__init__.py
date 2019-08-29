@@ -97,7 +97,12 @@ class SituationObject:
             additional_properties_string = f"[{additional_properties}]"
         else:
             additional_properties_string = ""
-        return f"{self.ontology_node.handle}{additional_properties_string}"
+        if self.ontology_node:
+            handle_string = self.ontology_node.handle
+        else:
+            handle_string = "???"
+
+        return f"{handle_string}{additional_properties_string}"
 
 
 @attrs(frozen=True, slots=True)

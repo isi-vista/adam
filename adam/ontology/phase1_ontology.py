@@ -20,8 +20,8 @@ which is assumed to be known to the `LanguageLearner`. The prototypical case her
 _ontology_graph = DiGraph()  # pylint:disable=invalid-name
 
 
-def subtype(sub: OntologyNode, super: OntologyNode) -> None:
-    _ontology_graph.add_edge(sub, super)
+def subtype(sub: OntologyNode, _super: OntologyNode) -> None:
+    _ontology_graph.add_edge(sub, _super)
 
 
 OBJECT = OntologyNode("object")
