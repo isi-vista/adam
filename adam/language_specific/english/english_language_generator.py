@@ -1,3 +1,5 @@
+from typing import Mapping
+
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import ImmutableSet, immutabledict, immutableset
@@ -9,16 +11,35 @@ from adam.language.dependency import (
     DependencyTreeLinearizer,
     DependencyTreeToken,
     LinearizedDependencyTree,
+    DependencyRole,
 )
 from adam.language.dependency.universal_dependencies import (
     DETERMINER,
     DETERMINER_ROLE,
     PROPER_NOUN,
+    NOMINAL_SUBJECT,
+    OBJECT,
+    OBLIQUE_NOMINAL,
 )
 from adam.language.language_generator import LanguageGenerator
+from adam.language.lexicon import LexiconEntry
 from adam.language.ontology_dictionary import OntologyLexicon
+from adam.ontology import OntologyNode
+from adam.ontology.phase1_ontology import AGENT, PATIENT, THEME, DESTINATION
 from adam.random_utils import SequenceChooser
-from adam.situation import HighLevelSemanticsSituation, SituationObject
+from adam.situation import HighLevelSemanticsSituation, SituationObject, SituationAction
+
+# TODO: this is actually complex and verb-dependent!
+_ARGUMENT_ROLES_TO_DEPENDENCY_ROLES: Mapping[
+    OntologyNode, DependencyRole
+] = immutabledict(
+    (
+        (AGENT, NOMINAL_SUBJECT),
+        (PATIENT, OBJECT),
+        (THEME, OBJECT),
+        (DESTINATION, OBLIQUE_NOMINAL),
+    )
+)
 
 
 @attrs(frozen=True, slots=True)
@@ -48,12 +69,22 @@ class SimpleRuleBasedEnglishLanguageGenerator(
         dependency_graph: DiGraph = attrib(init=False, default=Factory(DiGraph))
 
         def generate(self) -> ImmutableSet[LinearizedDependencyTree]:
-            immutabledict(
+            objects_to_nouns: Mapping[
+                SituationObject, DependencyTreeToken
+            ] = immutabledict(
                 [
                     (_object, self._translate_object_to_noun(_object))
                     for _object in self.situation.objects
                 ]
             )
+
+            immutabledict(
+                [
+                    (action, self._translate_action_to_verb(action, objects_to_nouns))
+                    for action in self.situation.actions
+                ]
+            )
+
             # TODO: currently only return a single interpretation
             return immutableset(
                 [
@@ -72,34 +103,61 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     f"an ontology node currently: {_object}"
                 )
             # TODO: we don't currently translate modifiers to nominals
+            lexicon_entry = self._unique_lexicon_entry(
+                _object.ontology_node  # pylint:disable=protected-access
+            )
+            dependency_node = DependencyTreeToken(
+                lexicon_entry.base_form, lexicon_entry.part_of_speech
+            )
+            self.dependency_graph.add_node(dependency_node)
+
+            # add articles to things which are not proper nouns (don't want "the Mom")
+            if dependency_node.pos_tag != PROPER_NOUN:
+                # TODO: address determiners other than "a" during language generation
+                determiner_node = DependencyTreeToken("a", DETERMINER)
+                self.dependency_graph.add_edge(
+                    determiner_node, dependency_node, role=DETERMINER_ROLE
+                )
+
+            return dependency_node
+
+        def _translate_action_to_verb(
+            self,
+            action: SituationAction,
+            objects_to_dependency_nodes: Mapping[SituationObject, DependencyTreeToken],
+        ) -> DependencyTreeToken:
+            lexicon_entry = self._unique_lexicon_entry(action.action_type)
+            # TODO: verb conjugation
+            verb_dependency_node = DependencyTreeToken(
+                lexicon_entry.base_form, lexicon_entry.part_of_speech
+            )
+            self.dependency_graph.add_node(verb_dependency_node)
+
+            for (argument_role, filler) in action.argument_roles_to_fillers.items():
+                filler_dependency_node = objects_to_dependency_nodes[filler]
+                self.dependency_graph.add_edge(
+                    filler_dependency_node,
+                    verb_dependency_node,
+                    role=self._translate_argument_role(argument_role),
+                )
+            return verb_dependency_node
+
+        # noinspection PyMethodMayBeStatic
+        def _translate_argument_role(self, argument_role: OntologyNode) -> DependencyRole:
+            return _ARGUMENT_ROLES_TO_DEPENDENCY_ROLES[argument_role]
+
+        def _unique_lexicon_entry(self, ontology_node: OntologyNode) -> LexiconEntry:
             lexicon_entries = self.generator._ontology_lexicon.words_for_node(  # pylint:disable=protected-access
-                _object.ontology_node
+                ontology_node
             )
             if lexicon_entries:
                 if len(lexicon_entries) == 1:
-                    lexicon_entry = only(lexicon_entries)
-                    # TODO: how to get proper noun?
-                    dependency_node = DependencyTreeToken(
-                        lexicon_entry.base_form, lexicon_entry.part_of_speech
-                    )
-                    self.dependency_graph.add_node(dependency_node)
-
-                    # add articles to things which are not proper nouns (don't want "the Mom")
-                    if dependency_node.pos_tag != PROPER_NOUN:
-                        # TODO: address determiners other than "a" during language generation
-                        determiner_node = DependencyTreeToken("a", DETERMINER)
-                        self.dependency_graph.add_edge(
-                            determiner_node, dependency_node, role=DETERMINER_ROLE
-                        )
-
-                    return dependency_node
+                    return only(lexicon_entries)
                 else:
                     raise RuntimeError(
                         f"We don't yet know how to deal with ontology nodes which "
                         f"could be realized by multiple lexical entries: "
-                        f"{_object.ontology_node} --> {lexicon_entries}"
+                        f"{ontology_node} --> {lexicon_entries}"
                     )
             else:
-                raise RuntimeError(
-                    f"No lexicon entry for ontology node {_object.ontology_node}"
-                )
+                raise RuntimeError(f"No lexicon entry for ontology node {ontology_node}")
