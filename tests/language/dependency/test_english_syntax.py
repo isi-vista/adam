@@ -1,7 +1,7 @@
 from networkx import DiGraph
 
 from adam.language.dependency import DependencyTreeToken, DependencyTree
-from adam.language.dependency.english_syntax import (
+from adam.language_specific.english.english_syntax import (
     SIMPLE_ENGLISH_DEPENDENCY_TREE_LINEARIZER,
 )
 from adam.language.dependency.universal_dependencies import (

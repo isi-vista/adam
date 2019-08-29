@@ -1,14 +1,12 @@
-from adam.language.lexicon import NOMINAL
-from .testing_lexicon import ENGLISH_TESTING_LEXICON
-from .testing_ontology import TRUCK
+from adam.language.dependency.universal_dependencies import NOUN
+from adam.language_specific.english.english_phase_1_lexicon import (
+    GAILA_PHASE_1_ENGLISH_LEXICON,
+)
+from adam.ontology.phase1_ontology import BALL
 
 
 def test_lexicon():
-    truck_words = ENGLISH_TESTING_LEXICON.words_for_node(TRUCK)
-    assert len(truck_words) == 1
-    assert truck_words[0].base_form == "truck"
-    assert set(truck_words[0].properties) == {NOMINAL}
-
-
-def test_lexicon_entry():
-    assert str(NOMINAL) == "+nominal"
+    ball_words = GAILA_PHASE_1_ENGLISH_LEXICON.words_for_node(BALL)
+    assert len(ball_words) == 1
+    assert ball_words[0].base_form == "ball"
+    assert ball_words[0].part_of_speech == NOUN

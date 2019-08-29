@@ -7,27 +7,29 @@ from adam.language.language_generator import (
     LanguageGenerator,
     SingleObjectLanguageGenerator,
 )
+from adam.language_specific.english.english_phase_1_lexicon import (
+    GAILA_PHASE_1_ENGLISH_LEXICON,
+)
 from adam.math_3d import Point
+from adam.ontology.phase1_ontology import BALL
 from adam.random_utils import FixedIndexChooser, RandomChooser, SequenceChooser
 from adam.situation import LocatedObjectSituation, Situation, SituationObject
-from .testing_lexicon import ENGLISH_TESTING_LEXICON
-from .testing_ontology import INANIMATE, TRUCK
 
 
 def test_single_object_generator():
     # warning due to PyCharm bug
     # noinspection PyTypeChecker
     situation = LocatedObjectSituation(
-        objects_to_locations=((SituationObject(TRUCK, [INANIMATE]), Point(0, 0, 0)),)
+        objects_to_locations=((SituationObject(BALL), Point(0, 0, 0)),)
     )
 
-    single_obj_generator = SingleObjectLanguageGenerator(ENGLISH_TESTING_LEXICON)
+    single_obj_generator = SingleObjectLanguageGenerator(GAILA_PHASE_1_ENGLISH_LEXICON)
 
     languages_for_situation = single_obj_generator.generate_language(
         situation, RandomChooser.for_seed(0)
     )
     assert len(languages_for_situation) == 1
-    assert languages_for_situation[0].as_token_sequence() == ("truck",)
+    assert languages_for_situation[0].as_token_sequence() == ("ball",)
 
 
 class DummyLanguageGenerator(

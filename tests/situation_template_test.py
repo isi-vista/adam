@@ -1,21 +1,21 @@
+from adam.ontology.phase1_ontology import (
+    INANIMATE_OBJECT,
+    ANIMATE,
+    PERSON,
+    INANIMATE,
+    GAILA_PHASE_1_ONTOLOGY,
+)
 from adam.random_utils import FixedIndexChooser
 from adam.situation.templates import (
     SimpleSituationTemplate,
     SimpleSituationTemplateProcessor,
-)
-from tests.testing_ontology import (
-    INANIMATE_OBJECT,
-    ANIMATE_OBJECT,
-    TESTING_ONTOLOGY,
-    ANIMATE,
-    INANIMATE,
 )
 
 
 def build_objects_only_template() -> SimpleSituationTemplate:
     sit_b = SimpleSituationTemplate.Builder()
     sit_b.object_variable("object1", INANIMATE_OBJECT)
-    sit_b.object_variable("person", ANIMATE_OBJECT)
+    sit_b.object_variable("person", PERSON)
 
     return sit_b.build()
 
@@ -40,11 +40,11 @@ def test_objects_only_template():
     assert len(possible_persons) == 1
     person = possible_persons[0]
 
-    assert obj_only_template.objects_to_ontology_types[person] == ANIMATE_OBJECT
+    assert obj_only_template.objects_to_ontology_types[person] == PERSON
 
 
 def test_simple_situation_generation():
-    situation_processor = SimpleSituationTemplateProcessor(TESTING_ONTOLOGY)
+    situation_processor = SimpleSituationTemplateProcessor(GAILA_PHASE_1_ONTOLOGY)
     situations = situation_processor.generate_situations(
         build_objects_only_template(), chooser=FixedIndexChooser(0)
     )
