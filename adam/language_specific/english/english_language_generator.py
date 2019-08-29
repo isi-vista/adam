@@ -1,4 +1,4 @@
-from typing import Mapping
+from typing import Mapping, MutableMapping
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
@@ -20,14 +20,22 @@ from adam.language.dependency.universal_dependencies import (
     NOMINAL_SUBJECT,
     OBJECT,
     OBLIQUE_NOMINAL,
+    ADPOSITION,
+    CASE_MARKING,
 )
 from adam.language.language_generator import LanguageGenerator
 from adam.language.lexicon import LexiconEntry
 from adam.language.ontology_dictionary import OntologyLexicon
 from adam.ontology import OntologyNode
-from adam.ontology.phase1_ontology import AGENT, PATIENT, THEME, DESTINATION
+from adam.ontology.phase1_ontology import AGENT, PATIENT, THEME, DESTINATION, ON
 from adam.random_utils import SequenceChooser
-from adam.situation import HighLevelSemanticsSituation, SituationObject, SituationAction
+from adam.situation import (
+    HighLevelSemanticsSituation,
+    SituationObject,
+    SituationAction,
+    SituationNode,
+    SituationRelation,
+)
 
 # TODO: this is actually complex and verb-dependent!
 _ARGUMENT_ROLES_TO_DEPENDENCY_ROLES: Mapping[
@@ -67,23 +75,16 @@ class SimpleRuleBasedEnglishLanguageGenerator(
         generator: "SimpleRuleBasedEnglishLanguageGenerator" = attrib()
         situation: HighLevelSemanticsSituation = attrib()
         dependency_graph: DiGraph = attrib(init=False, default=Factory(DiGraph))
+        objects_to_dependency_nodes: MutableMapping[
+            SituationObject, DependencyTreeToken
+        ] = dict()
 
         def generate(self) -> ImmutableSet[LinearizedDependencyTree]:
-            objects_to_nouns: Mapping[
-                SituationObject, DependencyTreeToken
-            ] = immutabledict(
-                [
-                    (_object, self._translate_object_to_noun(_object))
-                    for _object in self.situation.objects
-                ]
-            )
+            for _object in self.situation.objects:
+                self._translate_object_to_noun(_object)
 
-            immutabledict(
-                [
-                    (action, self._translate_action_to_verb(action, objects_to_nouns))
-                    for action in self.situation.actions
-                ]
-            )
+            for action in self.situation.actions:
+                self._translate_action_to_verb(action)
 
             # TODO: currently only return a single interpretation
             return immutableset(
@@ -110,6 +111,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 lexicon_entry.base_form, lexicon_entry.part_of_speech
             )
             self.dependency_graph.add_node(dependency_node)
+            self.objects_to_dependency_nodes[_object] = dependency_node
 
             # add articles to things which are not proper nouns (don't want "the Mom")
             if dependency_node.pos_tag != PROPER_NOUN:
@@ -122,9 +124,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             return dependency_node
 
         def _translate_action_to_verb(
-            self,
-            action: SituationAction,
-            objects_to_dependency_nodes: Mapping[SituationObject, DependencyTreeToken],
+            self, action: SituationAction
         ) -> DependencyTreeToken:
             lexicon_entry = self._unique_lexicon_entry(action.action_type)
             # TODO: verb conjugation
@@ -134,13 +134,65 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             self.dependency_graph.add_node(verb_dependency_node)
 
             for (argument_role, filler) in action.argument_roles_to_fillers.items():
-                filler_dependency_node = objects_to_dependency_nodes[filler]
+                self.handle_argument(action, argument_role, filler, verb_dependency_node)
+            return verb_dependency_node
+
+        def handle_argument(
+            self,
+            action: SituationAction,
+            argument_role: OntologyNode,
+            filler: SituationNode,
+            verb_dependency_node: DependencyTreeToken,
+        ):
+            if isinstance(filler, SituationObject):
+                filler_dependency_node = self.objects_to_dependency_nodes[filler]
                 self.dependency_graph.add_edge(
                     filler_dependency_node,
                     verb_dependency_node,
                     role=self._translate_argument_role(argument_role),
                 )
-            return verb_dependency_node
+            elif isinstance(filler, SituationRelation):
+                # TODO: this is a hack to handle prepositional arguments! Do something smarter
+                #  later.
+                if filler.relation_type == ON:
+                    thing_on_something_situation_node = filler.first_slot
+
+                    if (
+                        thing_on_something_situation_node
+                        not in action.argument_roles_to_fillers[THEME]
+                    ):
+                        raise RuntimeError(
+                            "We only know how to handle the on case if "
+                            "the first slot of the on-relation matches the "
+                            "verb's theme"
+                        )
+
+                    thing_it_is_on_dependency_node = self.objects_to_dependency_nodes[
+                        filler.second_slot
+                    ]
+                    self.dependency_graph.add_edge(
+                        thing_it_is_on_dependency_node,
+                        verb_dependency_node,
+                        role=OBLIQUE_NOMINAL,
+                    )
+                    on_dependency_node = DependencyTreeToken("on", ADPOSITION)
+                    self.dependency_graph.add_edge(
+                        on_dependency_node,
+                        thing_it_is_on_dependency_node,
+                        role=CASE_MARKING,
+                    )
+
+                else:
+                    raise RuntimeError(
+                        "The only relation we currently understand how to "
+                        "handle is 'on'"
+                    )
+            else:
+                raise RuntimeError(
+                    f"Don't know how to handle {filler} as a filler of"
+                    f" argument slot {argument_role} of verb "
+                    f"{verb_dependency_node}"
+                )
 
         # noinspection PyMethodMayBeStatic
         def _translate_argument_role(self, argument_role: OntologyNode) -> DependencyRole:

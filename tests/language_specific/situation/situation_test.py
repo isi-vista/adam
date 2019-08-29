@@ -18,11 +18,14 @@ from adam.situation import (
 
 
 def test_mom_put_ball_on_the_table():
+    make_mom_put_ball_on_table()
+
+
+def make_mom_put_ball_on_table():
     mom = SituationObject(ontology_node=MOM)
     ball = SituationObject(ontology_node=BALL)
     table = SituationObject(ontology_node=TABLE)
-
-    mom_put_the_ball_on_the_table = HighLevelSemanticsSituation(
+    return HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         objects=[mom, ball, table],
         relations=[],
@@ -39,4 +42,3 @@ def test_mom_put_ball_on_the_table():
             )
         ],
     )
-    print(mom_put_the_ball_on_the_table)

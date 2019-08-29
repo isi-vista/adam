@@ -57,8 +57,12 @@ class BagOfFeaturesSituationRepresentation(Situation):
     """
 
 
+class SituationNode:
+    pass
+
+
 @attrs(frozen=True, slots=True, hash=None, cmp=False, repr=False)
-class SituationObject:
+class SituationObject(SituationNode):
     """
     An object present in some situation.
 
@@ -120,7 +124,7 @@ class LocatedObjectSituation(Situation):
 
 
 @attrs(frozen=True, slots=True, repr=False)
-class SituationRelation:
+class SituationRelation(SituationNode):
     relation_type: OntologyNode = attrib(validator=instance_of(OntologyNode))
     first_slot: SituationObject = attrib(validator=instance_of(SituationObject))
     second_slot: SituationObject = attrib(validator=instance_of(SituationObject))
@@ -130,10 +134,10 @@ class SituationRelation:
 
 
 @attrs(frozen=True, slots=True, repr=False)
-class SituationAction:
+class SituationAction(SituationNode):
     action_type: OntologyNode = attrib(validator=instance_of(OntologyNode))
     argument_roles_to_fillers: ImmutableSetMultiDict[
-        OntologyNode, SituationObject
+        OntologyNode, SituationNode
     ] = attrib(converter=_to_immutablesetmultidict, default=immutablesetmultidict())
 
     def __repr__(self) -> str:
