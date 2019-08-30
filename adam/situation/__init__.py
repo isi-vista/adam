@@ -58,6 +58,11 @@ class BagOfFeaturesSituationRepresentation(Situation):
 
 
 class SituationNode:
+    """
+    A general interface encompassing `SituationObject`, `SituationRelation`, and `SituationAction`.
+
+    Currently its only function is to help with type checking.
+    """
     pass
 
 
@@ -125,6 +130,9 @@ class LocatedObjectSituation(Situation):
 
 @attrs(frozen=True, slots=True, repr=False)
 class SituationRelation(SituationNode):
+    """
+    A relationship which holds between two objects in a `Situation`.
+    """
     relation_type: OntologyNode = attrib(validator=instance_of(OntologyNode))
     first_slot: SituationObject = attrib(validator=instance_of(SituationObject))
     second_slot: SituationObject = attrib(validator=instance_of(SituationObject))
@@ -135,10 +143,19 @@ class SituationRelation(SituationNode):
 
 @attrs(frozen=True, slots=True, repr=False)
 class SituationAction(SituationNode):
+    """
+    An action occurring in a `Situation`.
+    """
     action_type: OntologyNode = attrib(validator=instance_of(OntologyNode))
     argument_roles_to_fillers: ImmutableSetMultiDict[
         OntologyNode, SituationNode
     ] = attrib(converter=_to_immutablesetmultidict, default=immutablesetmultidict())
+    """
+    A mapping of semantic roles (given as `OntologyNode`\ s) to their fillers.
+    
+    There may be multiple fillers for the same semantic role 
+    (e.g. conjoined arguments).
+    """
 
     def __repr__(self) -> str:
         return f"{self.action_type}({self.argument_roles_to_fillers})"
@@ -146,23 +163,43 @@ class SituationAction(SituationNode):
 
 @attrs(frozen=True, slots=True, repr=False)
 class HighLevelSemanticsSituation(Situation):
+    """
+    A human-friendly representation of `Situation`.
+    """
     ontology: Ontology = attrib(validator=instance_of(Ontology))
+    """
+    What `Ontology` items from the objects, relations, and actions 
+    in this `Situation` will come from.
+    """
     objects: ImmutableSet[SituationObject] = attrib(
         converter=_to_immutableset, default=immutableset()
     )
+    """
+    All the objects present in a `Situation`.
+    """
     relations: ImmutableSet[SituationRelation] = attrib(
         converter=_to_immutableset, default=immutableset()
     )
+    """
+    The relations which hold in this `Situation`.
+    
+    It is not necessary to state every relationship which holds through.
+    Rather this should contain the salient relationships
+    which should be expressed in the linguistic description.
+    """
     actions: ImmutableSet[SituationAction] = attrib(
         converter=_to_immutableset, default=immutableset()
     )
+    """
+    The actions occuring in this `Situation`
+    """
 
     def __repr__(self) -> str:
         # TODO: the way we currently repr situations doesn't handle multiple nodes
         # of the same ontology type well.  We'd like to use subscripts (_0, _1)
         # to distinguish them, which requires pulling all the repr logic up to this
         # level and not delegating to the reprs of the sub-objects.
-        #
+        # https://github.com/isi-vista/adam/issues/62
         lines = ["{"]
         lines.extend(f"\t{obj!r}" for obj in self.objects)
         lines.extend(f"\t{relation!r}" for relation in self.relations)

@@ -23,7 +23,8 @@ INANIMATE = OntologyProperty("inanimate")
 RECOGNIZED_PARTICULAR = OntologyProperty("recognized-particular")
 """
 Indicates that a node in the ontology corresponds to a particular (rather than a class)
-which is assumed to be known to the `LanguageLearner`. The prototypical case here is *Mom*.
+which is assumed to be known to the `LanguageLearner`. 
+The prototypical cases here are *Mom* and *Dad*.
 """
 
 _ontology_graph = DiGraph()  # pylint:disable=invalid-name

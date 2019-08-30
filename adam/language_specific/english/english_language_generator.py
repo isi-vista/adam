@@ -26,6 +26,7 @@ from adam.language.dependency.universal_dependencies import (
 from adam.language.language_generator import LanguageGenerator
 from adam.language.lexicon import LexiconEntry
 from adam.language.ontology_dictionary import OntologyLexicon
+from adam.language_specific.english.english_syntax import SIMPLE_ENGLISH_DEPENDENCY_TREE_LINEARIZER
 from adam.ontology import OntologyNode
 from adam.ontology.phase1_ontology import AGENT, PATIENT, THEME, DESTINATION, ON
 from adam.random_utils import SequenceChooser
@@ -37,29 +38,32 @@ from adam.situation import (
     SituationRelation,
 )
 
-# TODO: this is actually complex and verb-dependent!
-_ARGUMENT_ROLES_TO_DEPENDENCY_ROLES: Mapping[
-    OntologyNode, DependencyRole
-] = immutabledict(
-    (
-        (AGENT, NOMINAL_SUBJECT),
-        (PATIENT, OBJECT),
-        (THEME, OBJECT),
-        (DESTINATION, OBLIQUE_NOMINAL),
-    )
-)
-
 
 @attrs(frozen=True, slots=True)
 class SimpleRuleBasedEnglishLanguageGenerator(
     LanguageGenerator[HighLevelSemanticsSituation, LinearizedDependencyTree]
 ):
+    r"""
+    A simple rule-based approach for translating `HighLevelSemanticSituation`\ s
+    to English dependency trees.
+
+    We currently only generate a single possible `LinearizedDependencyTree`
+    for a given situation.
+    """
     _ontology_lexicon: OntologyLexicon = attrib(
         validator=instance_of(OntologyLexicon), kw_only=True
     )
+    """
+    A mapping from nodes in our concept ontology to English words.
+    """
     _dependency_tree_linearizer: DependencyTreeLinearizer = attrib(
-        validator=instance_of(DependencyTreeLinearizer), kw_only=True
+        init=False, default=SIMPLE_ENGLISH_DEPENDENCY_TREE_LINEARIZER
     )
+    """
+    How to assign a word order to our dependency trees.
+    
+    This is hard-coded for now but may become flexible in the future.
+    """
 
     def generate_language(
         self,
@@ -72,8 +76,16 @@ class SimpleRuleBasedEnglishLanguageGenerator(
 
     @attrs(frozen=True, slots=True)
     class _Generation:
+        """
+        This object encapsulates all the mutable state for an execution
+        of `SimpleRuleBasedEnglishLanguageGenerator` on a single input.
+        """
+        # we need to keep this reference explicitly
+        # because Python doesn't have real inner classes.
         generator: "SimpleRuleBasedEnglishLanguageGenerator" = attrib()
+        # the situation being translated to language
         situation: HighLevelSemanticsSituation = attrib()
+        # the dependency tree we are building
         dependency_graph: DiGraph = attrib(init=False, default=Factory(DiGraph))
         objects_to_dependency_nodes: MutableMapping[
             SituationObject, DependencyTreeToken
@@ -83,10 +95,12 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             for _object in self.situation.objects:
                 self._translate_object_to_noun(_object)
 
+            if len(self.situation.actions) > 1:
+                raise RuntimeError("Currently only situations with 0 or 1 actions are supported")
+
             for action in self.situation.actions:
                 self._translate_action_to_verb(action)
 
-            # TODO: currently only return a single interpretation
             return immutableset(
                 [
                     self.generator._dependency_tree_linearizer.linearize(  # pylint:disable=protected-access
@@ -103,7 +117,8 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     f"Don't know how to handle objects which don't correspond to "
                     f"an ontology node currently: {_object}"
                 )
-            # TODO: we don't currently translate modifiers to nominals
+            # TODO: we don't currently translate modifiers of nouns.
+            # Issue: https://github.com/isi-vista/adam/issues/58
             lexicon_entry = self._unique_lexicon_entry(
                 _object.ontology_node  # pylint:disable=protected-access
             )
@@ -111,11 +126,14 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 lexicon_entry.base_form, lexicon_entry.part_of_speech
             )
             self.dependency_graph.add_node(dependency_node)
+            # we remember what dependency node goes with this object
+            # so that we can link to it when e.g. it appears
+            # as an argument of a verb
             self.objects_to_dependency_nodes[_object] = dependency_node
 
-            # add articles to things which are not proper nouns (don't want "the Mom")
-            if dependency_node.pos_tag != PROPER_NOUN:
-                # TODO: address determiners other than "a" during language generation
+            # add articles to things which are not proper nouns
+            # ("a ball" but not "a Mom")
+            if dependency_node.part_of_speech != PROPER_NOUN:
                 determiner_node = DependencyTreeToken("a", DETERMINER)
                 self.dependency_graph.add_edge(
                     determiner_node, dependency_node, role=DETERMINER_ROLE
@@ -127,17 +145,18 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             self, action: SituationAction
         ) -> DependencyTreeToken:
             lexicon_entry = self._unique_lexicon_entry(action.action_type)
-            # TODO: verb conjugation
+            # TODO: we don't currently handle verbal morphology.
+            # https://github.com/isi-vista/adam/issues/60
             verb_dependency_node = DependencyTreeToken(
                 lexicon_entry.base_form, lexicon_entry.part_of_speech
             )
             self.dependency_graph.add_node(verb_dependency_node)
 
             for (argument_role, filler) in action.argument_roles_to_fillers.items():
-                self.handle_argument(action, argument_role, filler, verb_dependency_node)
+                self._translate_verb_argument(action, argument_role, filler, verb_dependency_node)
             return verb_dependency_node
 
-        def handle_argument(
+        def _translate_verb_argument(
             self,
             action: SituationAction,
             argument_role: OntologyNode,
@@ -152,8 +171,8 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     role=self._translate_argument_role(argument_role),
                 )
             elif isinstance(filler, SituationRelation):
-                # TODO: this is a hack to handle prepositional arguments! Do something smarter
-                #  later.
+                # TODO: this is a hack to handle prepositional arguments!
+                # See https://github.com/isi-vista/adam/issues/61
                 if filler.relation_type == ON:
                     thing_on_something_situation_node = filler.first_slot
 
@@ -164,7 +183,8 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                         raise RuntimeError(
                             "We only know how to handle the on case if "
                             "the first slot of the on-relation matches the "
-                            "verb's theme"
+                            "verb's theme. See "
+                            "https://github.com/isi-vista/adam/issues/61"
                         )
 
                     thing_it_is_on_dependency_node = self.objects_to_dependency_nodes[
@@ -185,7 +205,8 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 else:
                     raise RuntimeError(
                         "The only relation we currently understand how to "
-                        "handle is 'on'"
+                        "handle is 'on'. See "
+                        "https://github.com/isi-vista/adam/issues/61"
                     )
             else:
                 raise RuntimeError(
@@ -209,7 +230,23 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     raise RuntimeError(
                         f"We don't yet know how to deal with ontology nodes which "
                         f"could be realized by multiple lexical entries: "
-                        f"{ontology_node} --> {lexicon_entries}"
+                        f"{ontology_node} --> {lexicon_entries}. "
+                        f"This is https://github.com/isi-vista/adam/issues/59 ."
                     )
             else:
                 raise RuntimeError(f"No lexicon entry for ontology node {ontology_node}")
+
+
+# the relationship of argument roles to dependency roles
+# is actually complex and verb-dependent.
+# This is just a placeholder for a more sophisticated treatment.
+_ARGUMENT_ROLES_TO_DEPENDENCY_ROLES: Mapping[
+    OntologyNode, DependencyRole
+] = immutabledict(
+    (
+        (AGENT, NOMINAL_SUBJECT),
+        (PATIENT, OBJECT),
+        (THEME, OBJECT),
+        (DESTINATION, OBLIQUE_NOMINAL),
+    )
+)

@@ -27,7 +27,7 @@ _ENGLISH_HEAD_TO_ROLE_ORDER: ImmutableDict[
     [
         (VERB, (NOMINAL_SUBJECT, HEAD, INDIRECT_OBJECT, OBJECT, OBLIQUE_NOMINAL)),
         # At the moment we put CASE_MARKING first because in our current example
-        # it corresponds to a preposition, but we will probably need to do somethign
+        # it corresponds to a preposition, but we will probably need to do something
         # more sophisticated later.
         (
             NOUN,
