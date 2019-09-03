@@ -1,7 +1,8 @@
 from attr import attrs, attrib
-from attr.validators import instance_of
+from attr.validators import instance_of, in_
 from immutablecollections import ImmutableSet, immutableset
 from immutablecollections.converter_utils import _to_immutableset
+from vistautils.range import Range
 
 from adam.ontology import OntologyNode, Ontology
 from adam.ontology.phase1_ontology import RECOGNIZED_PARTICULAR
@@ -50,6 +51,27 @@ class HasProperty(DevelopmentalPrimitivePropertyAssertion):
 
     def __repr__(self) -> str:
         return f"hasProperty({self.perceived_object}, {self.property}"
+
+
+@attrs(slots=True, frozen=True, repr=False)
+class Color:
+    red: int = attrib(validator=in_(Range.closed(0, 255)))
+    green: int = attrib(validator=in_(Range.closed(0, 255)))
+    blue: int = attrib(validator=in_(Range.closed(0, 255)))
+
+    def __repr__(self) -> str:
+        """
+        We represent colors by hex strings because these are easy to visualize using web tools.
+        Returns:
+
+        """
+        return f"#{self.red:02x}{self.green:02x}{self.blue:02x}"
+
+
+@attrs(slots=True, frozen=True, repr=False)
+class HasColor(DevelopmentalPrimitivePropertyAssertion):
+    perceived_object = attrib(validator=instance_of(DevelopmentalPrimitiveObject))
+    color = attrib(validator=instance_of(Color))
 
 
 @attrs(slots=True, frozen=True, repr=False)

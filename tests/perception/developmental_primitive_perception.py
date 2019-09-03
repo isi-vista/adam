@@ -4,6 +4,8 @@ from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitiveObject,
     SENTIENT,
     HasProperty,
+    Color,
+    HasColor,
 )
 
 
@@ -12,14 +14,21 @@ def test_recognized_particular():
     mom = DevelopmentalPrimitiveObject("mom")
     dad = DevelopmentalPrimitiveObject("dad")
 
-    PerceptualRepresentation(
-        frames=[
-            DevelopmentalPrimitivePerception(
-                perceived_objects=[mom, dad],
-                property_assertions=[
-                    HasProperty(mom, SENTIENT),
-                    HasProperty(dad, SENTIENT),
-                ],
-            )
-        ]
+    PerceptualRepresentation.single_frame(
+        DevelopmentalPrimitivePerception(
+            perceived_objects=[mom, dad],
+            property_assertions=[HasProperty(mom, SENTIENT), HasProperty(dad, SENTIENT)],
+        )
+    )
+
+
+def test_color():
+    # create a situation with a red ball
+    red = Color(255, 0, 0)
+    ball = DevelopmentalPrimitiveObject("ball")
+
+    PerceptualRepresentation.single_frame(
+        DevelopmentalPrimitivePerception(
+            perceived_objects=[ball], property_assertions=[HasColor(ball, red)]
+        )
     )
