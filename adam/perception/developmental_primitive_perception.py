@@ -17,6 +17,9 @@ class DevelopmentalPrimitivePerception(PerceptualRepresentationFrame):
     property_assertions: ImmutableSet["DevelopmentalPrimitivePropertyAssertion"] = attrib(
         converter=_to_immutableset, default=immutableset()
     )
+    relations: ImmutableSet["DevelopmentalPrimitiveRelation"] = attrib(
+        converter=_to_immutableset, default=immutableset()
+    )
 
 
 @attrs(slots=True, frozen=True, repr=False)
@@ -95,6 +98,45 @@ class IsRecognizedParticular(DevelopmentalPrimitivePropertyAssertion):
         return f"recognizedAs({self.perceived_object}, {self.particular_ontology_node})"
 
 
+@attrs(slots=True, frozen=True, repr=False)
+class DevelopmentalPrimitiveRelationType:
+    debug_string: str = attrib(validator=instance_of(str))
+
+    def __repr__(self) -> str:
+        return f"{self.debug_string}"
+
+
+@attrs(slots=True, frozen=True, repr=False)
+class DevelopmentalPrimitiveRelation:
+    """
+    Symmetric relations should be included in the perceptual representation in both directions.
+    """
+
+    relation_type: DevelopmentalPrimitiveRelationType = attrib(
+        validator=instance_of(DevelopmentalPrimitiveRelationType)
+    )
+    arg1: DevelopmentalPrimitiveObject = attrib(
+        validator=instance_of(DevelopmentalPrimitiveObject)
+    )
+    arg2: DevelopmentalPrimitiveObject = attrib(
+        validator=instance_of(DevelopmentalPrimitiveObject)
+    )
+
+    def __repr__(self) -> str:
+        return f"{self.relation_type.debug_string}({self.arg1}, {self.arg2})"
+
+
+SUPPORTS = DevelopmentalPrimitiveRelationType("supports")
+CONTACTS = DevelopmentalPrimitiveRelationType("contacts")
+ABOVE = DevelopmentalPrimitiveRelationType("above")
+BELOW = DevelopmentalPrimitiveRelationType("below")
+
+# TODO: representaton of size
+# TODO: hierarchical object representation
+# TODO: surfaces
+# TODO: left/right/non-vertical position
+# TODO: paths
+
 # CONSTANT
 # Mom isa person
 # Person has right leg
@@ -107,7 +149,7 @@ class IsRecognizedParticular(DevelopmentalPrimitivePropertyAssertion):
 # Arm has hand
 # Hand has finger1
 # Hand has finger2
-# Person is Sentient [etc]
+# *Person is Sentient [etc]
 # …
 # [links from description above to Marr Geons]
 # …
