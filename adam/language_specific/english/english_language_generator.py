@@ -57,7 +57,8 @@ class SimpleRuleBasedEnglishLanguageGenerator(
     A mapping from nodes in our concept ontology to English words.
     """
     _dependency_tree_linearizer: DependencyTreeLinearizer = attrib(
-        init=False, default=SIMPLE_ENGLISH_DEPENDENCY_TREE_LINEARIZER
+        init=False, default=SIMPLE_ENGLISH_DEPENDENCY_TREE_LINEARIZER,
+        kw_only=True
     )
     """
     How to assign a word order to our dependency trees.

@@ -23,9 +23,7 @@ from adam.situation import HighLevelSemanticsSituation, SituationObject, Situati
 from language_specific.situation.situation_test import make_mom_put_ball_on_table
 
 _SIMPLE_GENERATOR = SimpleRuleBasedEnglishLanguageGenerator(
-    ontology_lexicon=GAILA_PHASE_1_ENGLISH_LEXICON,
-    dependency_tree_linearizer=SIMPLE_ENGLISH_DEPENDENCY_TREE_LINEARIZER,
-)
+    ontology_lexicon=GAILA_PHASE_1_ENGLISH_LEXICON)
 
 
 def test_common_noun():
