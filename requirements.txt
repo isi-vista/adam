@@ -10,6 +10,7 @@ black==18.9b0
 pytest-benchmark==3.2.2
 pytest==4.1.1
 pytest-cov==2.6.1
+pytest-pythonpath==0.7.3
 coverage
 pylint==2.3.0
 flake8==3.5.0

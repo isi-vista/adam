@@ -9,6 +9,8 @@ from attr.validators import instance_of
 from immutablecollections import ImmutableSet, immutableset
 from immutablecollections.converter_utils import _to_immutableset
 
+from adam.language.dependency import PartOfSpeechTag
+
 
 @attrs(frozen=True, slots=True)
 class LexiconEntry:
@@ -21,6 +23,7 @@ class LexiconEntry:
     For example, in English, the base form for nouns might be the singular, while the base form
     for verbs might be the present tense.
     """
+    part_of_speech: PartOfSpeechTag = attrib(validator=instance_of(PartOfSpeechTag))
     properties: ImmutableSet["LexiconProperty"] = attrib(
         converter=_to_immutableset, default=immutableset()
     )
@@ -31,15 +34,10 @@ class LexiconProperty:
     """
     A linguistic property that a `LexiconEntry` may possess.
 
-    For example, *singular*, *active*, *verbal*, etc.
+    For example, *singular*, *active*, etc.
     """
 
     name: str = attrib(validator=instance_of(str))
 
     def __str__(self) -> str:
         return f"+{self.name}"
-
-
-# certain standard LexiconProperties
-NOMINAL = LexiconProperty("nominal")
-VERBAL = LexiconProperty("verbal")

@@ -131,7 +131,7 @@ class Ontology:
         return immutableset(node_properties)
 
 
-@attrs(frozen=True, slots=True)
+@attrs(frozen=True, slots=True, repr=False)
 class OntologyNode:
     r"""
     A node in an ontology representing some type of object, action, or relation, such as
@@ -155,6 +155,16 @@ class OntologyNode:
     `OntologyProperty`\ s of this `OntologyNode`.
     These will be inherited by its children.
     """
+
+    def __repr__(self) -> str:
+        if self._local_properties:
+            local_properties = ",".join(
+                str(local_property) for local_property in self._local_properties
+            )
+            properties_string = f"[{local_properties}]"
+        else:
+            properties_string = ""
+        return f"{self.handle}{properties_string}"
 
 
 @attrs(frozen=True, slots=True, repr=False)
