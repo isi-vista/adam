@@ -1,63 +1,154 @@
-from attr import attrs, attrib
-from attr.validators import instance_of, in_
+from abc import ABC
+
+from attr import attrib, attrs
+from attr.validators import in_, instance_of
 from immutablecollections import ImmutableSet, immutableset
 from immutablecollections.converter_utils import _to_immutableset
 from vistautils.range import Range
 
-from adam.ontology import OntologyNode, Ontology
+from adam.ontology import Ontology, OntologyNode
 from adam.ontology.phase1_ontology import RECOGNIZED_PARTICULAR
 from adam.perception import PerceptualRepresentationFrame
 
 
 @attrs(slots=True, frozen=True, repr=False)
-class DevelopmentalPrimitivePerception(PerceptualRepresentationFrame):
-    perceived_objects: ImmutableSet["DevelopmentalPrimitiveObject"] = attrib(
+class DevelopmentalPrimitivePerceptionFrame(PerceptualRepresentationFrame):
+    r"""
+    A static snapshot of a `Situation` based on developmentally-motivated perceptual primitives.
+
+    This represents a situation as
+
+    - a set of `ObjectPerception`\ s, with one corresponding to each
+      object in the scene (e.g. a ball, Mom, Dad, etc.)
+    - a set of `ObjectPerception`\ s which associate a `ObjectPerception` with perceived properties
+      of various sort (e.g. color, sentience, etc.)
+    - a set of `RelationPerception`\ s which describe the learner's perception of how two
+      `ObjectPerception`\ s are related.
+
+    This is the default perceptual representation for at least the first phase of the ADAM project.
+    """
+    perceived_objects: ImmutableSet["ObjectPerception"] = attrib(
         converter=_to_immutableset, default=immutableset()
     )
-    property_assertions: ImmutableSet["DevelopmentalPrimitivePropertyAssertion"] = attrib(
+    r"""
+    a set of `ObjectPerception`\ s, with one corresponding to each
+      object in the scene (e.g. a ball, Mom, Dad, etc.)
+    """
+    property_assertions: ImmutableSet["PropertyPerception"] = attrib(
         converter=_to_immutableset, default=immutableset()
     )
-    relations: ImmutableSet["DevelopmentalPrimitiveRelation"] = attrib(
+    r"""
+    a set of `ObjectPerception`\ s which associate a `ObjectPerception` with perceived properties
+      of various sort (e.g. color, sentience, etc.)
+    """
+    relations: ImmutableSet["RelationPerception"] = attrib(
         converter=_to_immutableset, default=immutableset()
     )
+    r"""
+    a set of `RelationPerception`\ s which describe the learner's perception of how two 
+      `ObjectPerception`\ s are related.
+      
+    Symmetric relations should be included as two separate relations, one in each direction.            
+    """
 
 
 @attrs(slots=True, frozen=True, repr=False)
-class DevelopmentalPrimitiveObject:
+class ObjectPerception:
+    r"""
+    The learner's perception of a particular object.
+
+    This object pretty much just represents the object's existence; its attributes are handled via
+    `PropertyPerception`\ s.
+    """
     debug_handle: str = attrib(validator=instance_of(str))
+    """
+    A human-readable string associated with this object.
+    
+    It is for debugging use only and should not be accessed by any algorithms.
+    """
 
     def __repr__(self) -> str:
         return self.debug_handle
 
 
+class PropertyPerception(ABC):
+    """
+    A learner's perception that the *perceived_object* possesses a certain property.
+
+    The particular property is specified in a sub-class dependent way.
+    """
+
+    perceived_object = attrib(validator=instance_of(ObjectPerception))
+
+
 @attrs(slots=True, frozen=True, repr=False)
-class DevelopmentalPrimitivePerceivableFlagProperty:
+class PerceptualRelationType:
+    r"""
+    A type of relationship which can be perceived between two objects.
+
+    For example, that one object is in contact with another.
+
+    This is for use with `RelationPerception`\ s.
+    """
+    debug_string: str = attrib(validator=instance_of(str))
+
+    def __repr__(self) -> str:
+        return f"{self.debug_string}"
+
+
+@attrs(slots=True, frozen=True, repr=False)
+class RelationPerception:
+    """
+    A learner's perecption that two objects, *arg1* and *arg2* have a relation of type
+    *relation_type* with one another.
+    """
+
+    relation_type: PerceptualRelationType = attrib(
+        validator=instance_of(PerceptualRelationType)
+    )
+    arg1: ObjectPerception = attrib(validator=instance_of(ObjectPerception))
+    arg2: ObjectPerception = attrib(validator=instance_of(ObjectPerception))
+
+    def __repr__(self) -> str:
+        return f"{self.relation_type.debug_string}({self.arg1}, {self.arg2})"
+
+
+@attrs(slots=True, frozen=True, repr=False)
+class FlagProperty:
+    r"""
+    A perceptual property of an object which is either present or absent.
+
+    An example would be "sentient".
+
+    This is for use in `PropertyPerception`\ s.
+    """
     debug_handle: str = attrib(validator=instance_of(str))
 
     def __repr__(self) -> str:
         return f"+{self.debug_handle}"
 
 
-SENTIENT = DevelopmentalPrimitivePerceivableFlagProperty("sentient")
-
-
-class DevelopmentalPrimitivePropertyAssertion:
-    pass
-
-
 @attrs(slots=True, frozen=True, repr=False)
-class HasProperty(DevelopmentalPrimitivePropertyAssertion):
-    perceived_object = attrib(validator=instance_of(DevelopmentalPrimitiveObject))
-    property = attrib(
-        validator=instance_of(DevelopmentalPrimitivePerceivableFlagProperty)
-    )
+class HasFlagProperty(PropertyPerception):
+    """
+    A learner's perception that *perceived_object* possesses the given *flag_property*.
+    """
+
+    flag_property = attrib(validator=instance_of(FlagProperty))
 
     def __repr__(self) -> str:
-        return f"hasProperty({self.perceived_object}, {self.property}"
+        return f"hasProperty({self.perceived_object}, {self.flag_property}"
+
+
+SENTIENT = FlagProperty("sentient")
 
 
 @attrs(slots=True, frozen=True, repr=False)
-class Color:
+class RgbColorPerception:
+    """
+    A perceived color.
+    """
+
     red: int = attrib(validator=in_(Range.closed(0, 255)))
     green: int = attrib(validator=in_(Range.closed(0, 255)))
     blue: int = attrib(validator=in_(Range.closed(0, 255)))
@@ -72,18 +163,27 @@ class Color:
 
 
 @attrs(slots=True, frozen=True, repr=False)
-class HasColor(DevelopmentalPrimitivePropertyAssertion):
-    perceived_object = attrib(validator=instance_of(DevelopmentalPrimitiveObject))
-    color = attrib(validator=instance_of(Color))
+class HasColor(PropertyPerception):
+    """
+    A learner's perception that *perceived_object* has the `RgbColorPerception` *color*.
+    """
+
+    color = attrib(validator=instance_of(RgbColorPerception))
 
 
 @attrs(slots=True, frozen=True, repr=False)
-class IsRecognizedParticular(DevelopmentalPrimitivePropertyAssertion):
-    ontology: Ontology = attrib(validator=instance_of(Ontology))
-    perceived_object: DevelopmentalPrimitiveObject = attrib(
-        validator=instance_of(DevelopmentalPrimitiveObject)
-    )
+class IsRecognizedParticular(PropertyPerception):
+    """
+    A learner's perception that the *perceived_object* is some particular instance that it knows,
+    given by an `OntologyNode` which must have the `RECOGNIZED_PARTICULAR` property.
+
+    The canonical examples here are "Mom" and "Dad".
+
+    An `Ontology` must be provided to verify that the node is a `RECOGNIZED_PARTICULAR`.
+    """
+
     particular_ontology_node: OntologyNode = attrib(validator=instance_of(OntologyNode))
+    ontology: Ontology = attrib(validator=instance_of(Ontology), kw_only=True)
 
     def __attrs_post_init__(self) -> None:
         if not self.ontology.has_all_properties(
@@ -98,97 +198,22 @@ class IsRecognizedParticular(DevelopmentalPrimitivePropertyAssertion):
         return f"recognizedAs({self.perceived_object}, {self.particular_ontology_node})"
 
 
-@attrs(slots=True, frozen=True, repr=False)
-class DevelopmentalPrimitiveRelationType:
-    debug_string: str = attrib(validator=instance_of(str))
-
-    def __repr__(self) -> str:
-        return f"{self.debug_string}"
-
-
-@attrs(slots=True, frozen=True, repr=False)
-class DevelopmentalPrimitiveRelation:
-    """
-    Symmetric relations should be included in the perceptual representation in both directions.
-    """
-
-    relation_type: DevelopmentalPrimitiveRelationType = attrib(
-        validator=instance_of(DevelopmentalPrimitiveRelationType)
-    )
-    arg1: DevelopmentalPrimitiveObject = attrib(
-        validator=instance_of(DevelopmentalPrimitiveObject)
-    )
-    arg2: DevelopmentalPrimitiveObject = attrib(
-        validator=instance_of(DevelopmentalPrimitiveObject)
-    )
-
-    def __repr__(self) -> str:
-        return f"{self.relation_type.debug_string}({self.arg1}, {self.arg2})"
-
-
-SUPPORTS = DevelopmentalPrimitiveRelationType("supports")
-CONTACTS = DevelopmentalPrimitiveRelationType("contacts")
-ABOVE = DevelopmentalPrimitiveRelationType("above")
-BELOW = DevelopmentalPrimitiveRelationType("below")
-
-# TODO: representaton of size
-# TODO: hierarchical object representation
-# TODO: surfaces
-# TODO: left/right/non-vertical position
-# TODO: paths
-
-# CONSTANT
-# Mom isa person
-# Person has right leg
-# Person has left leg
-# Person is (size big)
-#  [“is” means “has property”]
-# Leg has foot
-# Person has right arm
-# Person has left arm
-# Arm has hand
-# Hand has finger1
-# Hand has finger2
-# *Person is Sentient [etc]
-# …
-# [links from description above to Marr Geons]
-# …
-#
-# Ball1 isa ball
-# Ball1 is blue
-# Ball1 is (size medium)
-# Box1 isa box
-# Box1 is green
-# Box1 is (size medium)
-# Mom bigger than Ball1
-# BEFORE
-# ((Right arm of Mom) and (Left arm of Mom))   supports Ball1
-# [I’m assuming here that “supports” is a primitive.]
-# [From Biederman:]
-#
-# Ball1 above Hand of right arm of Mom
-# Ball1 contacts Hand of right arm of Mom
-# Ball1 above Hand of left arm of Mom
-# Ball1 contacts Hand of left arm of Mom
-# Mom left of Box1
-#
-# AFTER
-# Top of Box1 supports Ball1
-# Ball1 above Box1
-# Ball1 contacts Box1
-# Mom left of Box1
-# Mom beside Box1
-#
-# DELTA
-# Path(Mom, * right of Box1, * beside Box1)
-# Path(Hand of right arm of Mom,
-#           Region(right of  head of Mom),
-#            Region(below head of Mom)) [not quite right]
-# Path(Ball1,
-#         Region(above Hand of right arm of Mom),
-#          Region( above Box1))
-# SEMANTICS
-# Put(Agent: Mom, Theme: Ball1, Goal(On(Box1)))
-# Move(Agent:Mom,Theme: Ball1)
-# Move(Theme: right arm of Mom and left arm of
-#     Mom)
+SUPPORTS = PerceptualRelationType("supports")
+"""
+A relation indicating that  one object provides the force to counteract gravity and prevent another 
+object from falling.
+"""
+CONTACTS = PerceptualRelationType("contacts")
+"""
+A symmetric relation indicating that one object touches another.
+"""
+ABOVE = PerceptualRelationType("above")
+"""
+A relation indicating that (at least part of) one object occupies part of the region above another 
+object.
+"""
+BELOW = PerceptualRelationType("below")
+"""
+A relation indicating that (at least part of) one object occupies part of the region below another 
+object.
+"""
