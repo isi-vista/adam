@@ -63,7 +63,6 @@ class SituationNode:
 
     Currently its only function is to help with type checking.
     """
-    pass
 
 
 @attrs(frozen=True, slots=True, hash=None, cmp=False, repr=False)
@@ -133,6 +132,7 @@ class SituationRelation(SituationNode):
     """
     A relationship which holds between two objects in a `Situation`.
     """
+
     relation_type: OntologyNode = attrib(validator=instance_of(OntologyNode))
     first_slot: SituationObject = attrib(validator=instance_of(SituationObject))
     second_slot: SituationObject = attrib(validator=instance_of(SituationObject))
@@ -146,13 +146,14 @@ class SituationAction(SituationNode):
     """
     An action occurring in a `Situation`.
     """
+
     action_type: OntologyNode = attrib(validator=instance_of(OntologyNode))
     argument_roles_to_fillers: ImmutableSetMultiDict[
         OntologyNode, SituationNode
     ] = attrib(converter=_to_immutablesetmultidict, default=immutablesetmultidict())
-    """
+    r"""
     A mapping of semantic roles (given as `OntologyNode`\ s) to their fillers.
-    
+
     There may be multiple fillers for the same semantic role 
     (e.g. conjoined arguments).
     """
@@ -166,6 +167,7 @@ class HighLevelSemanticsSituation(Situation):
     """
     A human-friendly representation of `Situation`.
     """
+
     ontology: Ontology = attrib(validator=instance_of(Ontology))
     """
     What `Ontology` items from the objects, relations, and actions 

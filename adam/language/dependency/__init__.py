@@ -47,11 +47,11 @@ class DependencyTree:
         self, head: "DependencyTreeToken"
     ) -> ImmutableSet[Tuple["DependencyTreeToken", "DependencyRole"]]:
         r"""
-        All `DependencyTreeToken`\ s modifying `head` and their `DependencyRole`\ s.
+        All `DependencyTreeToken`\ s modifying *head* and their `DependencyRole`\ s.
 
         Returns:
             A set of (`DependencyTreeToken`, `DependencyRole`) tuples
-            corresponding to all modifications of `head`.
+            corresponding to all modifications of *head*.
         """
         return immutableset(
             (
@@ -100,6 +100,7 @@ class LinearizedDependencyTree(LinguisticDescription):
     """
     A `DependencyTree` paired with a surface word order.
     """
+
     dependency_tree: DependencyTree = attrib(validator=instance_of(DependencyTree))
     surface_token_order: Tuple["DependencyTreeToken", ...] = attrib(
         converter=_to_tuple, default=()
@@ -130,6 +131,7 @@ class PartOfSpeechTag:
     We provide constants for the Universal Dependencies POS tags in
     `adam.language.dependency.universal_dependencies`.
     """
+
     name: str = attrib(validator=instance_of(str))
 
 
@@ -138,6 +140,7 @@ class DependencyTreeToken:
     """
     A single word in a `DependencyTree`
     """
+
     token: str = attrib(validator=instance_of(str))
     part_of_speech: PartOfSpeechTag = attrib(validator=instance_of(PartOfSpeechTag))
 
@@ -150,6 +153,7 @@ class DependencyRole:
     We provide constants for the Universal Dependencies syntactic relations in
     `adam.language.dependency.universal_dependencies`.
     """
+
     name: str = attrib(validator=instance_of(str))
 
 
@@ -157,6 +161,7 @@ class DependencyTreeLinearizer(ABC):
     """
     A method for supplying a particular order to the words in a `DependencyTree`.
     """
+
     @abstractmethod
     def linearize(self, dependency_tree: DependencyTree) -> LinearizedDependencyTree:
         """
@@ -187,6 +192,7 @@ class RoleOrderDependencyTreeLinearizer(DependencyTreeLinearizer):
     The ordering of multiple modifiers with the same syntactic relation is undefined
     (`Issue #57 <https://github.com/isi-vista/adam/issues/57>`_).
     """
+
     _head_pos_to_role_order: ImmutableDict[
         PartOfSpeechTag, Tuple[DependencyRole, ...]
     ] = attrib(converter=_to_immutabledict, default=immutabledict())
@@ -241,8 +247,10 @@ class RoleOrderDependencyTreeLinearizer(DependencyTreeLinearizer):
     def __attrs_post_init__(self) -> None:
         for (pos_tag, role_order) in self._head_pos_to_role_order.items():
             if HEAD not in role_order:
-                raise RuntimeError(f"Part of speech to role-order map does not include a "
-                                   f"head value for POS tag {pos_tag}, so we do not know "
-                                   f"how to order modifiers relative to the head. Please "
-                                   f"mark the head position using the HEAD constant from "
-                                   f"this module.")
+                raise RuntimeError(
+                    f"Part of speech to role-order map does not include a "
+                    f"head value for POS tag {pos_tag}, so we do not know "
+                    f"how to order modifiers relative to the head. Please "
+                    f"mark the head position using the HEAD constant from "
+                    f"this module."
+                )

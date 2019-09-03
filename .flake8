@@ -15,5 +15,10 @@ ignore =
     E131
     # flake8's idea of spacing around ':' differs from black's
     E203
+    # both the following are related to whitespace.  We don't worry about whitepace issues
+    # and let black handle it all.
+    W291
+    W293
+
 # we primarily rely on black to take care of line length
 max-line-length = 200

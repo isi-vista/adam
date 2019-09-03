@@ -54,7 +54,7 @@ confidence=
 # we disable bad-continuation because we trust black's decisions here
 # we disable wrong-import-order because it is unreliable and we will soon switch to isort
 # TODO: Enable missing-docstring once it's not overwhelming
-disable=R,fixme,missing-docstring,no-member,unsupported-membership-test,unsubscriptable-object,unsupported-assignment-operation,not-an-iterable,too-many-lines,ungrouped-imports,import-error,bad-continuation,wrong-import-order,logging-fstring-interpolation
+disable=R,fixme,missing-docstring,no-member,unsupported-membership-test,unsubscriptable-object,unsupported-assignment-operation,not-an-iterable,too-many-lines,ungrouped-imports,import-error,bad-continuation,wrong-import-order,logging-fstring-interpolation,trailing-whitespace
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option

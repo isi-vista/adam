@@ -1,29 +1,27 @@
 from more_itertools import only
 
-from adam.language_specific.english.english_phase_1_lexicon import (
-    GAILA_PHASE_1_ENGLISH_LEXICON,
-)
-from adam.language_specific.english.english_syntax import (
-    SIMPLE_ENGLISH_DEPENDENCY_TREE_LINEARIZER,
-)
 from adam.language_specific.english.english_language_generator import (
     SimpleRuleBasedEnglishLanguageGenerator,
 )
+from adam.language_specific.english.english_phase_1_lexicon import (
+    GAILA_PHASE_1_ENGLISH_LEXICON,
+)
 from adam.ontology.phase1_ontology import (
-    GAILA_PHASE_1_ONTOLOGY,
-    BALL,
-    MOM,
-    TABLE,
-    PUSH,
     AGENT,
+    BALL,
+    GAILA_PHASE_1_ONTOLOGY,
+    MOM,
+    PUSH,
+    TABLE,
     THEME,
 )
 from adam.random_utils import FixedIndexChooser
-from adam.situation import HighLevelSemanticsSituation, SituationObject, SituationAction
+from adam.situation import HighLevelSemanticsSituation, SituationAction, SituationObject
 from language_specific.situation.situation_test import make_mom_put_ball_on_table
 
 _SIMPLE_GENERATOR = SimpleRuleBasedEnglishLanguageGenerator(
-    ontology_lexicon=GAILA_PHASE_1_ENGLISH_LEXICON)
+    ontology_lexicon=GAILA_PHASE_1_ENGLISH_LEXICON
+)
 
 
 def test_common_noun():

@@ -26,7 +26,9 @@ from adam.language.dependency.universal_dependencies import (
 from adam.language.language_generator import LanguageGenerator
 from adam.language.lexicon import LexiconEntry
 from adam.language.ontology_dictionary import OntologyLexicon
-from adam.language_specific.english.english_syntax import SIMPLE_ENGLISH_DEPENDENCY_TREE_LINEARIZER
+from adam.language_specific.english.english_syntax import (
+    SIMPLE_ENGLISH_DEPENDENCY_TREE_LINEARIZER,
+)
 from adam.ontology import OntologyNode
 from adam.ontology.phase1_ontology import AGENT, PATIENT, THEME, DESTINATION, ON
 from adam.random_utils import SequenceChooser
@@ -44,7 +46,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
     LanguageGenerator[HighLevelSemanticsSituation, LinearizedDependencyTree]
 ):
     r"""
-    A simple rule-based approach for translating `HighLevelSemanticSituation`\ s
+    A simple rule-based approach for translating `HighLevelSemanticsSituation`\ s
     to English dependency trees.
 
     We currently only generate a single possible `LinearizedDependencyTree`
@@ -57,8 +59,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
     A mapping from nodes in our concept ontology to English words.
     """
     _dependency_tree_linearizer: DependencyTreeLinearizer = attrib(
-        init=False, default=SIMPLE_ENGLISH_DEPENDENCY_TREE_LINEARIZER,
-        kw_only=True
+        init=False, default=SIMPLE_ENGLISH_DEPENDENCY_TREE_LINEARIZER, kw_only=True
     )
     """
     How to assign a word order to our dependency trees.
@@ -81,6 +82,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
         This object encapsulates all the mutable state for an execution
         of `SimpleRuleBasedEnglishLanguageGenerator` on a single input.
         """
+
         # we need to keep this reference explicitly
         # because Python doesn't have real inner classes.
         generator: "SimpleRuleBasedEnglishLanguageGenerator" = attrib()
@@ -97,7 +99,9 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 self._translate_object_to_noun(_object)
 
             if len(self.situation.actions) > 1:
-                raise RuntimeError("Currently only situations with 0 or 1 actions are supported")
+                raise RuntimeError(
+                    "Currently only situations with 0 or 1 actions are supported"
+                )
 
             for action in self.situation.actions:
                 self._translate_action_to_verb(action)
@@ -154,7 +158,9 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             self.dependency_graph.add_node(verb_dependency_node)
 
             for (argument_role, filler) in action.argument_roles_to_fillers.items():
-                self._translate_verb_argument(action, argument_role, filler, verb_dependency_node)
+                self._translate_verb_argument(
+                    action, argument_role, filler, verb_dependency_node
+                )
             return verb_dependency_node
 
         def _translate_verb_argument(
