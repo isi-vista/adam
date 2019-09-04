@@ -17,7 +17,7 @@ from adam.ontology.phase1_ontology import (
 )
 from adam.random_utils import FixedIndexChooser
 from adam.situation import HighLevelSemanticsSituation, SituationAction, SituationObject
-from language_specific.situation.situation_test import make_mom_put_ball_on_table
+from situation.situation_test import make_mom_put_ball_on_table
 
 _SIMPLE_GENERATOR = SimpleRuleBasedEnglishLanguageGenerator(
     ontology_lexicon=GAILA_PHASE_1_ENGLISH_LEXICON
