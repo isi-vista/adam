@@ -20,7 +20,8 @@ class DevelopmentalPrimitivePerceptionFrame(PerceptualRepresentationFrame):
 
     - a set of `ObjectPerception`\ s, with one corresponding to each
       object in the scene (e.g. a ball, Mom, Dad, etc.)
-    - a set of `ObjectPerception`\ s which associate a `ObjectPerception` with perceived properties
+    - a set of `PropertyPerception`\ s which associate a `ObjectPerception` with perceived
+    properties
       of various sort (e.g. color, sentience, etc.)
     - a set of `RelationPerception`\ s which describe the learner's perception of how two
       `ObjectPerception`\ s are related.
@@ -38,7 +39,7 @@ class DevelopmentalPrimitivePerceptionFrame(PerceptualRepresentationFrame):
         converter=_to_immutableset, default=immutableset()
     )
     r"""
-    a set of `ObjectPerception`\ s which associate a `ObjectPerception` with perceived properties
+    a set of `PropertyPerception`\ s which associate a `ObjectPerception` with perceived properties
       of various sort (e.g. color, sentience, etc.)
     """
     relations: ImmutableSet["RelationPerception"] = attrib(
