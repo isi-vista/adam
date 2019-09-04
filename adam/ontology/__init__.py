@@ -89,9 +89,9 @@ class Ontology:
             Whether *node* possesses all of *required_properties*, either directly or via
             inheritance from a dominating node.
         """
+        node_properties = self.properties_for_node(node)
         return all(
-            property_ in self.nodes_with_properties(node, required_properties)
-            for property_ in required_properties
+            property_ in node_properties for property_ in required_properties
         )
 
     def properties_for_node(

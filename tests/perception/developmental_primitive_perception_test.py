@@ -52,12 +52,12 @@ def test_relations():
     table = ObjectPerception("table")
 
     PerceptualRepresentation.single_frame(
-        ObjectPerception(
+        DevelopmentalPrimitivePerceptionFrame(
             perceived_objects=[ball, table],
             relations=[
                 RelationPerception(SUPPORTS, table, ball),
                 RelationPerception(ABOVE, ball, table),
-                ObjectPerception(BELOW, table, ball),
+                RelationPerception(BELOW, table, ball),
                 RelationPerception(CONTACTS, ball, table),
                 RelationPerception(CONTACTS, table, ball),
             ],

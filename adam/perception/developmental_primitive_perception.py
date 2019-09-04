@@ -71,6 +71,7 @@ class ObjectPerception:
         return self.debug_handle
 
 
+@attrs(slots=True, frozen=True, repr=False)
 class PropertyPerception(ABC):
     """
     A learner's perception that the *perceived_object* possesses a certain property.
