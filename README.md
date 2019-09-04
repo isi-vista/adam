@@ -38,8 +38,11 @@ If you are using PyCharm, please set your docstring format to "Google" and your 
 
 # Contributors
 
+* Deniz Beser
 * Marjorie Freedman
 * Ryan Gabbard
+* Elizabeth Lee
+* Jacob Lichtefeld
 * Mitch Marcus
 * Ralph Weischedel
 * Charles Yang
