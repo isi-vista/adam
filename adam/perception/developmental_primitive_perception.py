@@ -200,6 +200,24 @@ class IsRecognizedParticular(PropertyPerception):
         return f"recognizedAs({self.perceived_object}, {self.particular_ontology_node})"
 
 
+PART_OF = PerceptualRelationType("partOf")
+"""
+A relation indicating that one object is part of another object.
+"""
+BIGGER_THAN = PerceptualRelationType("biggerThan")
+"""
+A relation indicating that one object is bigger than another object.
+
+This is a placeholder for a more sophisticated representation of size:
+https://github.com/isi-vista/adam/issues/70
+"""
+SMALLER_THAN = PerceptualRelationType("smallerThan")
+"""
+A relation indicating that one object is smaller than another object.
+
+This is a placeholder for a more sophisticated representation of size:
+https://github.com/isi-vista/adam/issues/70
+"""
 SUPPORTS = PerceptualRelationType("supports")
 """
 A relation indicating that  one object provides the force to counteract gravity and prevent another 
