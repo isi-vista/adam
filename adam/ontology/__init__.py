@@ -90,9 +90,7 @@ class Ontology:
             inheritance from a dominating node.
         """
         node_properties = self.properties_for_node(node)
-        return all(
-            property_ in node_properties for property_ in required_properties
-        )
+        return all(property_ in node_properties for property_ in required_properties)
 
     def properties_for_node(
         self, node: "OntologyNode"

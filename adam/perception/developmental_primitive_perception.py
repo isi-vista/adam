@@ -21,7 +21,7 @@ class DevelopmentalPrimitivePerceptionFrame(PerceptualRepresentationFrame):
     - a set of `ObjectPerception`\ s, with one corresponding to each
       object in the scene (e.g. a ball, Mom, Dad, etc.)
     - a set of `PropertyPerception`\ s which associate a `ObjectPerception` with perceived
-    properties
+      properties
       of various sort (e.g. color, sentience, etc.)
     - a set of `RelationPerception`\ s which describe the learner's perception of how two
       `ObjectPerception`\ s are related.
