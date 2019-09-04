@@ -4,13 +4,12 @@ Representations for simple ontologies.
 These ontologies are intended to be used when describing `Situation`\ s and writing
 `SituationTemplate`\ s.
 """
-import itertools
 from typing import Iterable, List
 
 from attr import attrib, attrs
 from attr.validators import instance_of
-from immutablecollections import ImmutableSet, immutableset
-from immutablecollections.converter_utils import _to_immutableset
+from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
+from immutablecollections.converter_utils import _to_immutabledict, _to_immutableset
 from networkx import DiGraph, dfs_preorder_nodes, simple_cycles
 
 
@@ -25,6 +24,9 @@ class Ontology:
     """
 
     _graph: DiGraph = attrib(validator=instance_of(DiGraph))
+    hierarchical_object_schemata: ImmutableDict[
+        "OntologyNode", "HierarchicalObjectSchema"
+    ] = attrib(converter=_to_immutabledict, default=immutabledict())
 
     def __attrs_post_init__(self) -> None:
         for cycle in simple_cycles(self._graph):
@@ -179,3 +181,26 @@ class OntologyProperty:
 
     def __repr__(self) -> str:
         return f"+{self._handle}"
+
+
+@attrs(frozen=True, slots=True, repr=False)
+class HierarchicalObjectSchema:
+    parent_object: OntologyNode = attrib(validator=instance_of(OntologyNode))
+    sub_objects: ImmutableSet["SubObject"] = attrib(
+        converter=_to_immutableset, default=immutableset()
+    )
+    sub_object_relations: ImmutableSet["SubObjectRelation"] = attrib(
+        converter=_to_immutableset, default=immutableset()
+    )
+
+
+@attrs(frozen=True, slots=True, repr=False)
+class SubObject:
+    schema: HierarchicalObjectSchema = attrib()
+
+
+@attrs(frozen=True, slots=True, repr=False)
+class SubObjectRelation:
+    relation_type: OntologyNode = attrib(validator=instance_of(OntologyNode))
+    arg1: SubObject = attrib()
+    arg2: SubObject = attrib()
