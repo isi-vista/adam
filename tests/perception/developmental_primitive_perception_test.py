@@ -14,7 +14,7 @@ from adam.perception.developmental_primitive_perception import (
     ABOVE,
     IsRecognizedParticular,
 )
-from adam.perception.perception_frame_difference import DevelopmentalPrimitivePerceptionFrameDiff
+from adam.perception.perception_frame_difference import diff_primitive_perception_frames
 
 
 def test_recognized_particular():
@@ -90,5 +90,5 @@ def test_difference():
             ],
         )
 
-    diff = DevelopmentalPrimitivePerceptionFrameDiff(before_frame=first_frame, after_frame=second_frame)
-    assert len(diff.get_removed_relations()) == 2
+    diff = diff_primitive_perception_frames(before=first_frame, after=second_frame)
+    assert len(diff.removed_relations) == 2

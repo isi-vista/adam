@@ -15,9 +15,6 @@ class PerceptionFrameDiff(ABC):
     """
 
 
-PerceptionDiffT = TypeVar("PerceptionDiffT", bound="PerceptionFrameDiff")
-
-
 @attrs(slots=True, frozen=True)
 class DevelopmentalPrimitivePerceptionFrameDiff(PerceptionFrameDiff):
     r"""
@@ -25,49 +22,51 @@ class DevelopmentalPrimitivePerceptionFrameDiff(PerceptionFrameDiff):
     of two different moments as sets of added and removed relations, perceived_objects, and property assertions.
     """
 
-    before_frame: DevelopmentalPrimitivePerceptionFrame = attrib(
-        validator=instance_of(DevelopmentalPrimitivePerceptionFrame))
+    added_objects: ImmutableSet["ObjectPerception"] = attrib(validator=instance_of(ImmutableSet))
     r"""
-    a `DevelopmentalPrimitivePerceptionFrame` representing the first perception frame.
+    the set of `ObjectPerception`\ s, that were present on the second perception frame, but not the first.
     """
-    after_frame: DevelopmentalPrimitivePerceptionFrame = attrib(
-        validator=instance_of(DevelopmentalPrimitivePerceptionFrame))
+    removed_objects: ImmutableSet["ObjectPerception"] = attrib(validator=instance_of(ImmutableSet))
     r"""
-    a `DevelopmentalPrimitivePerceptionFrame` representing the second perception frame.
+    the set of `ObjectPerception`\ s, that were present on the first perception frame, but not the second.
+    """
+    added_property_assertions: ImmutableSet["PropertyPerception"] = attrib(validator=instance_of(ImmutableSet))
+    r"""
+    the set of `PropertyPerception`\ s, that were present on the second perception frame, but not the first.
+    """
+    removed_property_assertions: ImmutableSet["PropertyPerception"] = attrib(validator=instance_of(ImmutableSet))
+    r"""
+    the set of `PropertyPerception`\ s, that were present on the first perception frame, but not the second.
+    """
+    added_relations: ImmutableSet["RelationPerception"] = attrib(validator=instance_of(ImmutableSet))
+    r"""
+    the set of `RelationPerception`\ s, that were present on the second perception frame, but not the first.
+    """
+    removed_relations: ImmutableSet["RelationPerception"] = attrib(validator=instance_of(ImmutableSet))
+    r"""
+    the set of `RelationPerception`\ s, that were present on the first perception frame, but not the second
     """
 
-    def get_added_perceived_objects(self) -> ImmutableSet["ObjectPerception"]:
-        r"""
-        returns the set of `ObjectPerception`\ s, that were present on the second perception frame, but not the first.
-        """
-        return self.after_frame.perceived_objects.difference(self.before_frame.perceived_objects)
+def diff_primitive_perception_frames(before: DevelopmentalPrimitivePerceptionFrame,
+                                     after: DevelopmentalPrimitivePerceptionFrame) \
+        -> DevelopmentalPrimitivePerceptionFrameDiff:
+    r"""
+    Given a before and an after frame, computes the difference between two frames and
+    returns a `DevelopmentalPrimitivePerceptionFrameDiff` object.
+    """
 
-    def get_removed_perceived_objects(self) -> ImmutableSet["ObjectPerception"]:
-        r"""
-        returns the set of `ObjectPerception`\ s, that were present on the first perception frame, but not the second.
-        """
-        return self.before_frame.perceived_objects.difference(self.after_frame.perceived_objects)
+    added_objects: ImmutableSet["ObjectPerception"] = \
+        after.perceived_objects.difference(before.perceived_objects)
+    removed_objects: ImmutableSet["ObjectPerception"] = \
+        before.perceived_objects.difference(after.perceived_objects)
+    added_property_assertions: ImmutableSet["PropertyPerception"] = \
+        after.property_assertions.difference(before.property_assertions)
+    removed_property_assertions: ImmutableSet["PropertyPerception"] = \
+        before.property_assertions.difference(after.property_assertions)
+    added_relations: ImmutableSet["RelationPerception"] = \
+        after.relations.difference(before.relations)
+    removed_relations: ImmutableSet["RelationPerception"] = \
+        before.relations.difference(after.relations)
 
-    def get_added_property_assertions(self) -> ImmutableSet["PropertyPerception"]:
-        r"""
-        returns the set of `PropertyPerception`\ s, that were present on the second perception frame, but not the first.
-        """
-        return self.after_frame.property_assertions.difference(self.before_frame.property_assertions)
-
-    def get_removed_property_assertions(self) -> ImmutableSet["PropertyPerception"]:
-        r"""
-        returns the set of `PropertyPerception`\ s, that were present on the first perception frame, but not the second.
-        """
-        return self.before_frame.property_assertions.difference(self.after_frame.property_assertions)
-
-    def get_added_relations(self) -> ImmutableSet["RelationPerception"]:
-        r"""
-        returns the set of `RelationPerception`\ s, that were present on the second perception frame, but not the first.
-        """
-        return self.after_frame.relations.difference(self.before_frame.relations)
-
-    def get_removed_relations(self) -> ImmutableSet["RelationPerception"]:
-        r"""
-        returns the set of `RelationPerception`\ s, that were present on the first perception frame, but not the second
-        """
-        return self.before_frame.relations.difference(self.after_frame.relations)
+    return DevelopmentalPrimitivePerceptionFrameDiff(added_objects, removed_objects, added_property_assertions,
+                                                     removed_property_assertions, added_relations, removed_relations)
