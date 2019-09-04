@@ -4,12 +4,20 @@ Representations for simple ontologies.
 These ontologies are intended to be used when describing `Situation`\ s and writing
 `SituationTemplate`\ s.
 """
-from typing import Iterable, List, Tuple
+from typing import Iterable, List
 
 from attr import attrib, attrs
 from attr.validators import instance_of
-from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
-from immutablecollections.converter_utils import _to_immutabledict, _to_immutableset
+from immutablecollections import (
+    ImmutableSet,
+    immutableset,
+    ImmutableSetMultiDict,
+    immutablesetmultidict,
+)
+from immutablecollections.converter_utils import (
+    _to_immutableset,
+    _to_immutablesetmultidict,
+)
 from more_itertools import flatten
 from networkx import DiGraph, dfs_preorder_nodes, simple_cycles
 
@@ -25,9 +33,9 @@ class Ontology:
     """
 
     _graph: DiGraph = attrib(validator=instance_of(DiGraph))
-    hierarchical_object_schemata: ImmutableDict[
+    hierarchical_object_schemata: ImmutableSetMultiDict[
         "OntologyNode", "HierarchicalObjectSchema"
-    ] = attrib(converter=_to_immutabledict, default=immutabledict())
+    ] = attrib(converter=_to_immutablesetmultidict, default=immutablesetmultidict())
 
     def __attrs_post_init__(self) -> None:
         for cycle in simple_cycles(self._graph):
