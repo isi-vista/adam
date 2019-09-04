@@ -4,12 +4,13 @@ Representations for simple ontologies.
 These ontologies are intended to be used when describing `Situation`\ s and writing
 `SituationTemplate`\ s.
 """
-from typing import Iterable, List
+from typing import Iterable, List, Tuple
 
 from attr import attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
 from immutablecollections.converter_utils import _to_immutabledict, _to_immutableset
+from more_itertools import flatten
 from networkx import DiGraph, dfs_preorder_nodes, simple_cycles
 
 
@@ -204,3 +205,12 @@ class SubObjectRelation:
     relation_type: OntologyNode = attrib(validator=instance_of(OntologyNode))
     arg1: SubObject = attrib()
     arg2: SubObject = attrib()
+
+
+# DSL to make writing object hierarchies easier
+
+
+def sub_object_relations(
+    relation_collections: Iterable[Iterable[SubObjectRelation]]
+) -> ImmutableSet[SubObjectRelation]:
+    return immutableset(flatten(relation_collections))

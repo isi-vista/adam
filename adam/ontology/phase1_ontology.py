@@ -13,6 +13,8 @@ The following will eventually end up here:
 - Relations, Modifiers, Function Words: basic color terms (red, blue, green, white, black…), one,
   two, I, me, my, you, your, to, in, on, [beside, behind, in front of, over, under], up, down
 """
+from typing import Tuple
+
 from networkx import DiGraph
 
 from adam.ontology import (
@@ -22,6 +24,7 @@ from adam.ontology import (
     HierarchicalObjectSchema,
     SubObject,
     SubObjectRelation,
+    sub_object_relations,
 )
 
 ANIMATE = OntologyProperty("animate")
@@ -116,6 +119,14 @@ https://github.com/isi-vista/adam/issues/70
 """
 subtype(SMALLER_THAN, SIZE_RELATION)
 
+
+def bigger_than(obj1: SubObject, obj2: SubObject) -> Tuple[SubObjectRelation, ...]:
+    return (
+        SubObjectRelation(BIGGER_THAN, obj1, obj2),
+        SubObjectRelation(SMALLER_THAN, obj2, obj1),
+    )
+
+
 SUPPORTS = OntologyNode("supports")
 """
 A relation indicating that  one object provides the force to counteract gravity and prevent another 
@@ -123,11 +134,24 @@ object from falling.
 """
 subtype(SUPPORTS, SPATIAL_RELATION)
 
+
+def supports(obj1: SubObject, obj2: SubObject) -> Tuple[SubObjectRelation, ...]:
+    return (SubObjectRelation(SUPPORTS, obj1, obj2),)
+
+
 CONTACTS = OntologyNode("contacts")
 """
 A symmetric relation indicating that one object touches another.
 """
 subtype(CONTACTS, SPATIAL_RELATION)
+
+
+def contacts(obj1: SubObject, obj2: SubObject) -> Tuple[SubObjectRelation, ...]:
+    return (
+        SubObjectRelation(CONTACTS, obj1, obj2),
+        SubObjectRelation(CONTACTS, obj2, obj1),
+    )
+
 
 ABOVE = OntologyNode("above")
 """
@@ -142,6 +166,10 @@ A relation indicating that (at least part of) one object occupies part of the re
 object.
 """
 subtype(BELOW, SPATIAL_RELATION)
+
+
+def above(obj1: SubObject, obj2: SubObject) -> Tuple[SubObjectRelation, ...]:
+    return (SubObjectRelation(ABOVE, obj1, obj2), SubObjectRelation(BELOW, obj2, obj1))
 
 
 # Semantic Roles
@@ -182,23 +210,20 @@ PERSON_SCHEMA = HierarchicalObjectSchema(
         _PERSON_SCHEMA_LEFT_LEG,
         _PERSON_SCHEMA_RIGHT_LEG,
     ],
-    sub_object_relations=[
-        SubObjectRelation(CONTACTS, _PERSON_SCHEMA_HEAD, _PERSON_SCHEMA_TORSO),
-        SubObjectRelation(CONTACTS, _PERSON_SCHEMA_TORSO, _PERSON_SCHEMA_HEAD),
-        SubObjectRelation(SUPPORTS, _PERSON_SCHEMA_TORSO, _PERSON_SCHEMA_HEAD),
-        SubObjectRelation(ABOVE, _PERSON_SCHEMA_HEAD, _PERSON_SCHEMA_TORSO),
-        SubObjectRelation(BELOW, _PERSON_SCHEMA_TORSO, _PERSON_SCHEMA_HEAD),
-        SubObjectRelation(SMALLER_THAN, _PERSON_SCHEMA_HEAD, _PERSON_SCHEMA_TORSO),
-        SubObjectRelation(BIGGER_THAN, _PERSON_SCHEMA_TORSO, _PERSON_SCHEMA_HEAD),
-        SubObjectRelation(CONTACTS, _PERSON_SCHEMA_LEFT_ARM, _PERSON_SCHEMA_TORSO),
-        SubObjectRelation(CONTACTS, _PERSON_SCHEMA_TORSO, _PERSON_SCHEMA_LEFT_ARM),
-        SubObjectRelation(CONTACTS, _PERSON_SCHEMA_RIGHT_ARM, _PERSON_SCHEMA_TORSO),
-        SubObjectRelation(CONTACTS, _PERSON_SCHEMA_TORSO, _PERSON_SCHEMA_RIGHT_ARM),
-        SubObjectRelation(CONTACTS, _PERSON_SCHEMA_LEFT_LEG, _PERSON_SCHEMA_TORSO),
-        SubObjectRelation(CONTACTS, _PERSON_SCHEMA_TORSO, _PERSON_SCHEMA_LEFT_LEG),
-        SubObjectRelation(CONTACTS, _PERSON_SCHEMA_RIGHT_LEG, _PERSON_SCHEMA_TORSO),
-        SubObjectRelation(CONTACTS, _PERSON_SCHEMA_TORSO, _PERSON_SCHEMA_RIGHT_LEG),
-    ],
+    sub_object_relations=sub_object_relations(
+        [
+            # relation of head to torso
+            contacts(_PERSON_SCHEMA_HEAD, _PERSON_SCHEMA_TORSO),
+            supports(_PERSON_SCHEMA_TORSO, _PERSON_SCHEMA_HEAD),
+            above(_PERSON_SCHEMA_HEAD, _PERSON_SCHEMA_TORSO),
+            bigger_than(_PERSON_SCHEMA_TORSO, _PERSON_SCHEMA_HEAD),
+            # relation of limbs to torso
+            contacts(_PERSON_SCHEMA_TORSO, _PERSON_SCHEMA_LEFT_ARM),
+            contacts(_PERSON_SCHEMA_TORSO, _PERSON_SCHEMA_LEFT_ARM),
+            contacts(_PERSON_SCHEMA_TORSO, _PERSON_SCHEMA_LEFT_LEG),
+            contacts(_PERSON_SCHEMA_TORSO, _PERSON_SCHEMA_RIGHT_LEG),
+        ]
+    ),
 )
 
 GAILA_PHASE_1_ONTOLOGY = Ontology.from_directed_graph(_ontology_graph)
