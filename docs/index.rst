@@ -146,6 +146,10 @@ adam.language.dependency.universal_dependencies
 Supporting classes: Perceptual Representation
 *********************************************
 
+adam.perception.developmental_primitive_perception
+---------------------------------------------------
+.. automodule:: adam.perception.developmental_primitive_perception
+
 adam.perception.marr
 -----------------------------
 .. automodule:: adam.perception.marr
