@@ -195,49 +195,54 @@ class OntologyProperty:
 @attrs(frozen=True, slots=True, repr=False)
 class HierarchicalObjectSchema:
     """
-    A representation of objects made of `SubObject` via `SubObjectRelation`
+    A hierarchical representation of the internal structure of some type of object.
 
-    The Hierarchical Objects allow for the representation of complex objects as more individual
-    parts. For example a Person has a head, torso, left arm, right arm, left leg, right leg as
-    parts of a whole relationship. The schema also contains the relationship the subobjects have
-    with each other.
+    A `HierarchicalObjectSchema` represents the general pattern of the structure of an object,
+    rather than the structure of any particular object
+     (e.g. people in general, rather than a particular person).
+
+    For example a person's body is made up of a head, torso, left arm, right arm, left leg, and right leg.
+    These sub-objects have various relations to one another
+    (e.g. the head is above and supported by the torso).
+
+    `HierarchicalObjectSchema` can be verbose see `SubObjectRelations` for additional details.
     """
 
     parent_object: OntologyNode = attrib(validator=instance_of(OntologyNode))
     """
-    The top-level `OntologyNode` which this Schema represents
+    The `OntologyNode` this `HierarchicalObjectSchema` represents the structure of.
     """
     sub_objects: ImmutableSet["SubObject"] = attrib(
         converter=_to_immutableset, default=immutableset()
     )
-    """
-    A set of `SubObject` which form parts of the whole. SubObjects themselves are a hierarchy
+    r"""
+    The component parts which make up an object of the type *parent_object*.
+    
+    These `SubObject`\ s themselves wrap `HierarchicalObjectSchema`\ s 
+    and can therefore themselves have complex internal structure.
     """
     sub_object_relations: ImmutableSet["SubObjectRelation"] = attrib(
         converter=_to_immutableset, default=immutableset()
     )
-    """
-    A set of `SubObjectRelation` which define how the `SubObject` relate to one another. These 
-    relationships are considered "true at time of perception" but not always true because a Person 
-    can move their arm either above or below their head.
-    
-    Does this need to be addressed?
+    r"""
+    A set of `SubObjectRelation` which define how the `SubObject`\ s relate to one another. 
     """
 
 
 @attrs(frozen=True, slots=True, repr=False)
 class SubObject:
-    """
-    A `HierarchicalObjectSchema` which is a part of a whole.
+    r"""
+    A sub-component of a generic type of object.
 
-    SubObjects should not exist outside of `HierarchicalObjectSchema`
+    This is for use only in constructing `HierarchicalObjectSchema`\ ta.
     """
 
     schema: HierarchicalObjectSchema = attrib()
     """
-    SubObjects themselves can be a HierarchicalObject. 
+    The `HierarchicalObjectSchema` describing the internal structure of this sub-component.
     
-    Example: A PERSON has a ARM which has a HAND.
+    For example, an ARM is a sub-component of a PERSON, but ARM itself has a complex structure
+    (e.g. it includes a hand)
     """
 
 
@@ -253,18 +258,28 @@ class SubObjectRelation:
     """
     arg1: SubObject = attrib()
     """
-    A `SubObject` which is the parent of the relation_type
+    A `SubObject` which is the first argument of the relation_type
     """
     arg2: SubObject = attrib()
     """
-    A `SubObject` which is the child of the relation_type
+    A `SubObject` which is the second argument of the relation_type
     """
 
-
 # DSL to make writing object hierarchies easier
-
-
 def sub_object_relations(
     relation_collections: Iterable[Iterable[SubObjectRelation]]
 ) -> ImmutableSet[SubObjectRelation]:
+    """
+    Convenience method to enable writing sub-object relations in a `HierarchicalObjectSchema` more easily.
+
+    This method simply flattens collections of items in the input iterable.
+
+    This is useful because it allows you to write methods
+    for your relations which produce collections of relations
+    as their output.
+    This allows you to use such DSL-like methods to enforce constraints
+    between the relations.
+
+    Please see the  `adam.ontology.phase1_ontology.PERSON_SCHEMA` for an example of how this is useful.
+    """
     return immutableset(flatten(relation_collections))

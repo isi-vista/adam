@@ -104,10 +104,10 @@ class HasBinaryProperty(PropertyPerception):
     A learner's perception that *perceived_object* possesses the given *flag_property*.
     """
 
-    flag_property = attrib(validator=instance_of(OntologyProperty))
+    binary_property = attrib(validator=instance_of(OntologyProperty))
 
     def __repr__(self) -> str:
-        return f"hasProperty({self.perceived_object}, {self.flag_property}"
+        return f"hasProperty({self.perceived_object}, {self.binary_property}"
 
 
 @attrs(slots=True, frozen=True, repr=False)
