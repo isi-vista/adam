@@ -104,13 +104,12 @@ subtype(DOG, NONHUMAN_ANIMAL)
 BIRD = OntologyNode("bird")
 subtype(BIRD, NONHUMAN_ANIMAL)
 
-# head, arm, torso, and leg are not part of the phase 1
-# vocabulary but are useful for describing the structure
-# of PERSON. Additional terms are for hierarchical objects
-HEAD = OntologyNode("head")
-ARM = OntologyNode("arm")
-TORSO = OntologyNode("torso")
-LEG = OntologyNode("leg")
+
+# Terms below are internal and can only be accessed as parts of other objects
+_HEAD = OntologyNode("head")
+_ARM = OntologyNode("arm")
+_TORSO = OntologyNode("torso")
+_LEG = OntologyNode("leg")
 _CHAIR_BACK = OntologyNode("chairback")
 _CHAIR_SEAT = OntologyNode("chairseat")
 _TABLETOP = OntologyNode("tabletop")
@@ -266,10 +265,10 @@ subtype(DESTINATION, SEMANTIC_ROLE)
 
 # Hierarchical structure of objects
 
-HEAD_SCHEMA = HierarchicalObjectSchema(HEAD)
-TORSO_SCHEMA = HierarchicalObjectSchema(TORSO)
-ARM_SCHEMA = HierarchicalObjectSchema(ARM)
-LEG_SCHEMA = HierarchicalObjectSchema(LEG)
+HEAD_SCHEMA = HierarchicalObjectSchema(_HEAD)
+TORSO_SCHEMA = HierarchicalObjectSchema(_TORSO)
+ARM_SCHEMA = HierarchicalObjectSchema(_ARM)
+LEG_SCHEMA = HierarchicalObjectSchema(_LEG)
 CHAIRBACK_SCHEMA = HierarchicalObjectSchema(_CHAIR_BACK)
 CHAIR_SEAT_SCHEMA = HierarchicalObjectSchema(_CHAIR_SEAT)
 TABLETOP_SCHEMA = HierarchicalObjectSchema(_TABLETOP)
@@ -360,7 +359,7 @@ TABLE_SCHEMA = HierarchicalObjectSchema(
         _TABLE_SCHEMA_LEG_2,
         _TABLE_SCHEMA_LEG_3,
         _TABLE_SCHEMA_LEG_4,
-        _TABLE_SCHEMA_TABLETOP
+        _TABLE_SCHEMA_TABLETOP,
     ],
     sub_object_relations=sub_object_relations(
         [
@@ -378,7 +377,7 @@ TABLE_SCHEMA = HierarchicalObjectSchema(
             supports(_TABLE_SCHEMA_LEG_3, _TABLE_SCHEMA_TABLETOP),
             supports(_TABLE_SCHEMA_LEG_4, _TABLE_SCHEMA_TABLETOP),
         ]
-    )
+    ),
 )
 
 GAILA_PHASE_1_ONTOLOGY = Ontology.from_directed_graph(_ontology_graph)
