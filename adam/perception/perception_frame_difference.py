@@ -17,37 +17,37 @@ class DevelopmentalPrimitivePerceptionFrameDiff:
     of two different moments as sets of added and removed relations, perceived_objects, and property assertions.
     """
 
-    added_objects: ImmutableSet["ObjectPerception"] = attrib(
+    added_objects: ImmutableSet[ObjectPerception] = attrib(
         kw_only=True, converter=_to_immutableset, default=immutableset()
     )
     r"""
     the set of `ObjectPerception`\ s, that were present on the second perception frame, but not the first.
     """
-    removed_objects: ImmutableSet["ObjectPerception"] = attrib(
+    removed_objects: ImmutableSet[ObjectPerception] = attrib(
         kw_only=True, converter=_to_immutableset, default=immutableset()
     )
     r"""
     the set of `ObjectPerception`\ s, that were present on the first perception frame, but not the second.
     """
-    added_property_assertions: ImmutableSet["PropertyPerception"] = attrib(
+    added_property_assertions: ImmutableSet[PropertyPerception] = attrib(
         kw_only=True, converter=_to_immutableset, default=immutableset()
     )
     r"""
     the set of `PropertyPerception`\ s, that were present on the second perception frame, but not the first.
     """
-    removed_property_assertions: ImmutableSet["PropertyPerception"] = attrib(
+    removed_property_assertions: ImmutableSet[PropertyPerception] = attrib(
         kw_only=True, converter=_to_immutableset, default=immutableset()
     )
     r"""
     the set of `PropertyPerception`\ s, that were present on the first perception frame, but not the second.
     """
-    added_relations: ImmutableSet["RelationPerception"] = attrib(
+    added_relations: ImmutableSet[RelationPerception] = attrib(
         kw_only=True, converter=_to_immutableset, default=immutableset()
     )
     r"""
     the set of `RelationPerception`\ s, that were present on the second perception frame, but not the first.
     """
-    removed_relations: ImmutableSet["RelationPerception"] = attrib(
+    removed_relations: ImmutableSet[RelationPerception] = attrib(
         kw_only=True, converter=_to_immutableset, default=immutableset()
     )
     r"""
