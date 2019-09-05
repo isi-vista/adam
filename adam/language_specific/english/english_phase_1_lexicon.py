@@ -2,11 +2,30 @@ from adam.language.dependency.universal_dependencies import PROPER_NOUN, NOUN, V
 from adam.language.lexicon import LexiconEntry
 from adam.language.ontology_dictionary import OntologyLexicon
 from adam.ontology.phase1_ontology import (
-    MOM, BALL, TABLE, PUT, PUSH,
-    BOOK, HOUSE, CAR, WATER, JUICE,
-    CUP, BOX, CHAIR, HEAD, MILK,
-    HAND, TRUCK, DOOR, HAT, COOKIE,
-    DAD, BABY, DOG, BIRD
+    MOM,
+    BALL,
+    TABLE,
+    PUT,
+    PUSH,
+    BOOK,
+    HOUSE,
+    CAR,
+    WATER,
+    JUICE,
+    CUP,
+    BOX,
+    CHAIR,
+    HEAD,
+    MILK,
+    HAND,
+    TRUCK,
+    DOOR,
+    HAT,
+    COOKIE,
+    DAD,
+    BABY,
+    DOG,
+    BIRD,
 )
 
 GAILA_PHASE_1_ENGLISH_LEXICON = OntologyLexicon(
@@ -34,6 +53,6 @@ GAILA_PHASE_1_ENGLISH_LEXICON = OntologyLexicon(
         (DAD, LexiconEntry("Dad", PROPER_NOUN)),
         (BABY, LexiconEntry("bird", NOUN)),
         (DOG, LexiconEntry("dog", NOUN)),
-        (BIRD, LexiconEntry("bird", NOUN))
+        (BIRD, LexiconEntry("bird", NOUN)),
     )
 )
