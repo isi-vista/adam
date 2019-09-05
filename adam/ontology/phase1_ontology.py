@@ -65,14 +65,12 @@ subtype(MOM, PERSON)
 DAD = OntologyNode("dad", [RECOGNIZED_PARTICULAR])
 subtype(DAD, PERSON)
 
-# head, arm, torso, and leg are not part of the phase 1
-# vocabulary but are useful for describing the structure
-# of PERSON. Additional terms are for hierarchical objects
-HEAD = OntologyNode("head")
-ARM = OntologyNode("arm")
-TORSO = OntologyNode("torso")
-LEG = OntologyNode("leg")
-TABLETOP = OntologyNode("tabletop")
+# Terms below are internal and can only be accessed as parts of other objects
+_HEAD = OntologyNode("head")
+_ARM = OntologyNode("arm")
+_TORSO = OntologyNode("torso")
+_LEG = OntologyNode("leg")
+_TABLETOP = OntologyNode("tabletop")
 
 # Verbs
 
@@ -220,11 +218,11 @@ subtype(DESTINATION, SEMANTIC_ROLE)
 
 # Hierarchical structure of objects
 
-HEAD_SCHEMA = HierarchicalObjectSchema(HEAD)
-TORSO_SCHEMA = HierarchicalObjectSchema(TORSO)
-ARM_SCHEMA = HierarchicalObjectSchema(ARM)
-LEG_SCHEMA = HierarchicalObjectSchema(LEG)
-TABLETOP_SCHEMA = HierarchicalObjectSchema(TABLETOP)
+HEAD_SCHEMA = HierarchicalObjectSchema(_HEAD)
+TORSO_SCHEMA = HierarchicalObjectSchema(_TORSO)
+ARM_SCHEMA = HierarchicalObjectSchema(_ARM)
+LEG_SCHEMA = HierarchicalObjectSchema(_LEG)
+TABLETOP_SCHEMA = HierarchicalObjectSchema(_TABLETOP)
 
 # schemata describing the hierarchical physical structure of objects
 _PERSON_SCHEMA_HEAD = SubObject(HEAD_SCHEMA)
@@ -275,7 +273,7 @@ TABLE_SCHEMA = HierarchicalObjectSchema(
         _TABLE_SCHEMA_LEG_2,
         _TABLE_SCHEMA_LEG_3,
         _TABLE_SCHEMA_LEG_4,
-        _TABLE_SCHEMA_TABLETOP
+        _TABLE_SCHEMA_TABLETOP,
     ],
     sub_object_relations=sub_object_relations(
         [
@@ -293,7 +291,7 @@ TABLE_SCHEMA = HierarchicalObjectSchema(
             supports(_TABLE_SCHEMA_LEG_3, _TABLE_SCHEMA_TABLETOP),
             supports(_TABLE_SCHEMA_LEG_4, _TABLE_SCHEMA_TABLETOP),
         ]
-    )
+    ),
 )
 
 GAILA_PHASE_1_ONTOLOGY = Ontology.from_directed_graph(_ontology_graph)
