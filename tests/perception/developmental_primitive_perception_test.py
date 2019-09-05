@@ -14,6 +14,7 @@ from adam.perception.developmental_primitive_perception import (
     ABOVE,
     IsRecognizedParticular,
 )
+from adam.perception.perception_frame_difference import diff_primitive_perception_frames
 
 
 def test_recognized_particular():
@@ -63,3 +64,31 @@ def test_relations():
             ],
         )
     )
+
+
+def test_difference():
+    ball = ObjectPerception("ball")
+    table = ObjectPerception("table")
+
+    first_frame = DevelopmentalPrimitivePerceptionFrame(
+        perceived_objects=[ball, table],
+        relations=[
+            RelationPerception(SUPPORTS, table, ball),
+            RelationPerception(ABOVE, ball, table),
+            RelationPerception(BELOW, table, ball),
+            RelationPerception(CONTACTS, ball, table),
+            RelationPerception(CONTACTS, table, ball),
+        ],
+    )
+
+    second_frame = DevelopmentalPrimitivePerceptionFrame(
+        perceived_objects=[ball, table],
+        relations=[
+            RelationPerception(SUPPORTS, table, ball),
+            RelationPerception(ABOVE, ball, table),
+            RelationPerception(BELOW, table, ball),
+        ],
+    )
+
+    diff = diff_primitive_perception_frames(before=first_frame, after=second_frame)
+    assert len(diff.removed_relations) == 2
