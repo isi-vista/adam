@@ -111,6 +111,8 @@ HEAD = OntologyNode("head")
 ARM = OntologyNode("arm")
 TORSO = OntologyNode("torso")
 LEG = OntologyNode("leg")
+_CHAIR_BACK = OntologyNode("chairback")
+_CHAIR_SEAT = OntologyNode("chairseat")
 
 # Verbs
 
@@ -267,6 +269,8 @@ HEAD_SCHEMA = HierarchicalObjectSchema(HEAD)
 TORSO_SCHEMA = HierarchicalObjectSchema(TORSO)
 ARM_SCHEMA = HierarchicalObjectSchema(ARM)
 LEG_SCHEMA = HierarchicalObjectSchema(LEG)
+_CHAIRBACK_SCHEMA = HierarchicalObjectSchema(_CHAIR_BACK)
+_CHAIR_SEAT_SCHEMA = HierarchicalObjectSchema(_CHAIR_SEAT)
 
 # schemata describing the hierarchical physical structure of objects
 _PERSON_SCHEMA_HEAD = SubObject(HEAD_SCHEMA)
@@ -275,7 +279,6 @@ _PERSON_SCHEMA_LEFT_ARM = SubObject(ARM_SCHEMA)
 _PERSON_SCHEMA_RIGHT_ARM = SubObject(ARM_SCHEMA)
 _PERSON_SCHEMA_LEFT_LEG = SubObject(LEG_SCHEMA)
 _PERSON_SCHEMA_RIGHT_LEG = SubObject(LEG_SCHEMA)
-
 
 PERSON_SCHEMA = HierarchicalObjectSchema(
     PERSON,
@@ -299,6 +302,44 @@ PERSON_SCHEMA = HierarchicalObjectSchema(
             contacts(_PERSON_SCHEMA_TORSO, _PERSON_SCHEMA_LEFT_ARM),
             contacts(_PERSON_SCHEMA_TORSO, _PERSON_SCHEMA_LEFT_LEG),
             contacts(_PERSON_SCHEMA_TORSO, _PERSON_SCHEMA_RIGHT_LEG),
+        ]
+    ),
+)
+
+_CHAIR_SCHMEA_BACK = SubObject(_CHAIRBACK_SCHEMA)
+_CHAIR_SCHEMA_LEG_1 = SubObject(LEG_SCHEMA)
+_CHAIR_SCHEMA_LEG_2 = SubObject(LEG_SCHEMA)
+_CHAIR_SCHEMA_LEG_3 = SubObject(LEG_SCHEMA)
+_CHAIR_SCHEMA_LEG_4 = SubObject(LEG_SCHEMA)
+_CHAIR_SCHEMA_SEAT = SubObject(_CHAIR_SEAT_SCHEMA)
+
+CHAIR_SCHEMA = HierarchicalObjectSchema(
+    CHAIR,
+    sub_objects=[
+        _CHAIR_SCHMEA_BACK,
+        _CHAIR_SCHEMA_SEAT,
+        _CHAIR_SCHEMA_LEG_1,
+        _CHAIR_SCHEMA_LEG_2,
+        _CHAIR_SCHEMA_LEG_3,
+        _CHAIR_SCHEMA_LEG_4,
+    ],
+    sub_object_relations=sub_object_relations(
+        [
+            contacts(_CHAIR_SCHMEA_BACK, _CHAIR_SCHEMA_SEAT),
+            contacts(_CHAIR_SCHEMA_LEG_1, _CHAIR_SCHEMA_SEAT),
+            contacts(_CHAIR_SCHEMA_LEG_2, _CHAIR_SCHEMA_SEAT),
+            contacts(_CHAIR_SCHEMA_LEG_3, _CHAIR_SCHEMA_SEAT),
+            contacts(_CHAIR_SCHEMA_LEG_4, _CHAIR_SCHEMA_SEAT),
+            supports(_CHAIR_SCHEMA_LEG_1, _CHAIR_SCHEMA_SEAT),
+            supports(_CHAIR_SCHEMA_LEG_2, _CHAIR_SCHEMA_SEAT),
+            supports(_CHAIR_SCHEMA_LEG_3, _CHAIR_SCHEMA_SEAT),
+            supports(_CHAIR_SCHEMA_LEG_4, _CHAIR_SCHEMA_SEAT),
+            supports(_CHAIR_SCHEMA_SEAT, _CHAIR_SCHMEA_BACK),
+            above(_CHAIR_SCHMEA_BACK, _CHAIR_SCHEMA_SEAT),
+            above(_CHAIR_SCHEMA_SEAT, _CHAIR_SCHEMA_LEG_1),
+            above(_CHAIR_SCHEMA_SEAT, _CHAIR_SCHEMA_LEG_2),
+            above(_CHAIR_SCHEMA_SEAT, _CHAIR_SCHEMA_LEG_3),
+            above(_CHAIR_SCHEMA_SEAT, _CHAIR_SCHEMA_LEG_4),
         ]
     ),
 )
