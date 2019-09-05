@@ -194,25 +194,71 @@ class OntologyProperty:
 
 @attrs(frozen=True, slots=True, repr=False)
 class HierarchicalObjectSchema:
+    """
+    A representation of objects made of `SubObject` via `SubObjectRelation`
+
+    The Hierarchical Objects allow for the representation of complex objects as more individual
+    parts. For example a Person has a head, torso, left arm, right arm, left leg, right leg as
+    parts of a whole relationship. The schema also contains the relationship the subobjects have
+    with each other.
+    """
+
     parent_object: OntologyNode = attrib(validator=instance_of(OntologyNode))
+    """
+    The top-level `OntologyNode` which this Schema represents
+    """
     sub_objects: ImmutableSet["SubObject"] = attrib(
         converter=_to_immutableset, default=immutableset()
     )
+    """
+    A set of `SubObject` which form parts of the whole. SubObjects themselves are a hierarchy
+    """
     sub_object_relations: ImmutableSet["SubObjectRelation"] = attrib(
         converter=_to_immutableset, default=immutableset()
     )
+    """
+    A set of `SubObjectRelation` which define how the `SubObject` relate to one another. These 
+    relationships are considered "true at time of perception" but not always true because a Person 
+    can move their arm either above or below their head.
+    
+    Does this need to be addressed?
+    """
 
 
 @attrs(frozen=True, slots=True, repr=False)
 class SubObject:
+    """
+    A `HierarchicalObjectSchema` which is a part of a whole.
+
+    SubObjects should not exist outside of `HierarchicalObjectSchema`
+    """
+
     schema: HierarchicalObjectSchema = attrib()
+    """
+    SubObjects themselves can be a HierarchicalObject. 
+    
+    Example: A PERSON has a ARM which has a HAND.
+    """
 
 
 @attrs(frozen=True, slots=True, repr=False)
 class SubObjectRelation:
+    """
+    This class defines the relationships between `SubObject` of a `HierarchicalObjectSchema`
+    """
+
     relation_type: OntologyNode = attrib(validator=instance_of(OntologyNode))
+    """
+    An `OntologyNode` which gives the relationship type between the args
+    """
     arg1: SubObject = attrib()
+    """
+    A `SubObject` which is the parent of the relation_type
+    """
     arg2: SubObject = attrib()
+    """
+    A `SubObject` which is the child of the relation_type
+    """
 
 
 # DSL to make writing object hierarchies easier

@@ -136,6 +136,15 @@ subtype(SUPPORTS, SPATIAL_RELATION)
 
 
 def supports(obj1: SubObject, obj2: SubObject) -> Tuple[SubObjectRelation, ...]:
+    """
+    Define a support `SubObjectRelation` for `HierarchicalObjectSchema`
+
+    Args:
+        obj1: The `SubObject` which supports obj2
+        obj2: The `SubObject` being supported
+    Returns:
+        `SubObjectRelation` of relationship type supports
+    """
     return (SubObjectRelation(SUPPORTS, obj1, obj2),)
 
 
@@ -147,6 +156,17 @@ subtype(CONTACTS, SPATIAL_RELATION)
 
 
 def contacts(obj1: SubObject, obj2: SubObject) -> Tuple[SubObjectRelation, ...]:
+    """
+    DSL for constructing a 'contacts' spatial_relationship
+
+    Args:
+        obj1: The `SubObject` which has a reciprocal contacts relationship with
+        obj2: The `SubObject` which contacts obj1
+
+    Returns:
+        A contextualized `SubObjectRelation` between the given SubObjects which both objects contact
+        the other
+    """
     return (
         SubObjectRelation(CONTACTS, obj1, obj2),
         SubObjectRelation(CONTACTS, obj2, obj1),
@@ -169,6 +189,19 @@ subtype(BELOW, SPATIAL_RELATION)
 
 
 def above(obj1: SubObject, obj2: SubObject) -> Tuple[SubObjectRelation, ...]:
+    """
+    Establishes an "above" relationship with the corresponding "below"
+
+    When one entity is above another, the inverse is also true. This function provides the implicit
+    inverse assertion for hierarchical objects.
+
+    Args:
+        obj1: The `SubObject` which is above obj2
+        obj2: The `SubObject` which is below obj1
+
+    Returns:
+        A tuple of `SubObjectRelation` where the above and below relationship is established
+    """
     return (SubObjectRelation(ABOVE, obj1, obj2), SubObjectRelation(BELOW, obj2, obj1))
 
 
