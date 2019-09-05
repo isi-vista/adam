@@ -1,16 +1,23 @@
 r"""
 Representations for simple ontologies.
 
-These ontologies are intended to be used when describing `Situation`\ s and writing
-`SituationTemplate`\ s.
+These ontologies are intended to be used when describing `Situation`\ s and writing `SituationTemplate`\ s.
 """
-import itertools
 from typing import Iterable, List
 
 from attr import attrib, attrs
 from attr.validators import instance_of
-from immutablecollections import ImmutableSet, immutableset
-from immutablecollections.converter_utils import _to_immutableset
+from immutablecollections import (
+    ImmutableSet,
+    immutableset,
+    ImmutableSetMultiDict,
+    immutablesetmultidict,
+)
+from immutablecollections.converter_utils import (
+    _to_immutableset,
+    _to_immutablesetmultidict,
+)
+from more_itertools import flatten
 from networkx import DiGraph, dfs_preorder_nodes, simple_cycles
 
 
@@ -25,6 +32,9 @@ class Ontology:
     """
 
     _graph: DiGraph = attrib(validator=instance_of(DiGraph))
+    hierarchical_object_schemata: ImmutableSetMultiDict[
+        "OntologyNode", "HierarchicalObjectSchema"
+    ] = attrib(converter=_to_immutablesetmultidict, default=immutablesetmultidict())
 
     def __attrs_post_init__(self) -> None:
         for cycle in simple_cycles(self._graph):
@@ -179,3 +189,95 @@ class OntologyProperty:
 
     def __repr__(self) -> str:
         return f"+{self._handle}"
+
+
+@attrs(frozen=True, slots=True, repr=False)
+class HierarchicalObjectSchema:
+    r"""
+    A hierarchical representation of the internal structure of some type of object.
+
+    A `HierarchicalObjectSchema` represents the general pattern of the structure of an object,
+    rather than the structure of any particular object
+    (e.g. people in general, rather than a particular person).
+
+    For example a person's body is made up of a head, torso, left arm, right arm, left leg, and
+    right leg. These sub-objects have various relations to one another
+    (e.g. the head is above and supported by the torso).
+
+    `HierarchicalObjectSchema` can be verbose see `SubObjectRelation`\ s for additional details.
+    """
+
+    parent_object: OntologyNode = attrib(validator=instance_of(OntologyNode))
+    """
+    The `OntologyNode` this `HierarchicalObjectSchema` represents the structure of.
+    """
+    sub_objects: ImmutableSet["SubObject"] = attrib(
+        converter=_to_immutableset, default=immutableset()
+    )
+    r"""
+    The component parts which make up an object of the type *parent_object*.
+    
+    These `SubObject`\ s themselves wrap `HierarchicalObjectSchema`\ s 
+    and can therefore themselves have complex internal structure.
+    """
+    sub_object_relations: ImmutableSet["SubObjectRelation"] = attrib(
+        converter=_to_immutableset, default=immutableset()
+    )
+    r"""
+    A set of `SubObjectRelation` which define how the `SubObject`\ s relate to one another. 
+    """
+
+
+@attrs(frozen=True, slots=True, repr=False)
+class SubObject:
+    r"""
+    A sub-component of a generic type of object.
+
+    This is for use only in constructing `HierarchicalObjectSchema`\ ta.
+    """
+
+    schema: HierarchicalObjectSchema = attrib()
+    """
+    The `HierarchicalObjectSchema` describing the internal structure of this sub-component.
+    
+    For example, an ARM is a sub-component of a PERSON, but ARM itself has a complex structure
+    (e.g. it includes a hand)
+    """
+
+
+@attrs(frozen=True, slots=True, repr=False)
+class SubObjectRelation:
+    """
+    This class defines the relationships between `SubObject` of a `HierarchicalObjectSchema`
+    """
+
+    relation_type: OntologyNode = attrib(validator=instance_of(OntologyNode))
+    """
+    An `OntologyNode` which gives the relationship type between the args
+    """
+    arg1: SubObject = attrib()
+    """
+    A `SubObject` which is the first argument of the relation_type
+    """
+    arg2: SubObject = attrib()
+    """
+    A `SubObject` which is the second argument of the relation_type
+    """
+
+
+# DSL to make writing object hierarchies easier
+def sub_object_relations(
+    relation_collections: Iterable[Iterable[SubObjectRelation]]
+) -> ImmutableSet[SubObjectRelation]:
+    """
+    Convenience method to enable writing sub-object relations in a `HierarchicalObjectSchema` more easily.
+
+    This method simply flattens collections of items in the input iterable.
+
+    This is useful because it allows you to write methods for your relations which produce
+    collections of relations as their output. This allows you to use such DSL-like methods to
+    enforce constraints between the relations.
+
+    Please see adam.ontology.phase1_ontology.PERSON_SCHEMA for an example of how this is useful.
+    """
+    return immutableset(flatten(relation_collections))
