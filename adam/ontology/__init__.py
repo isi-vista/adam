@@ -1,8 +1,7 @@
 r"""
 Representations for simple ontologies.
 
-These ontologies are intended to be used when describing `Situation`\ s and writing
-`SituationTemplate`\ s.
+These ontologies are intended to be used when describing `Situation`\ s and writing `SituationTemplate`\ s.
 """
 from typing import Iterable, List
 
@@ -194,18 +193,18 @@ class OntologyProperty:
 
 @attrs(frozen=True, slots=True, repr=False)
 class HierarchicalObjectSchema:
-    """
+    r"""
     A hierarchical representation of the internal structure of some type of object.
 
     A `HierarchicalObjectSchema` represents the general pattern of the structure of an object,
     rather than the structure of any particular object
-     (e.g. people in general, rather than a particular person).
+    (e.g. people in general, rather than a particular person).
 
-    For example a person's body is made up of a head, torso, left arm, right arm, left leg, and right leg.
-    These sub-objects have various relations to one another
+    For example a person's body is made up of a head, torso, left arm, right arm, left leg, and
+    right leg. These sub-objects have various relations to one another
     (e.g. the head is above and supported by the torso).
 
-    `HierarchicalObjectSchema` can be verbose see `SubObjectRelations` for additional details.
+    `HierarchicalObjectSchema` can be verbose see `SubObjectRelation`\ s for additional details.
     """
 
     parent_object: OntologyNode = attrib(validator=instance_of(OntologyNode))
@@ -265,6 +264,7 @@ class SubObjectRelation:
     A `SubObject` which is the second argument of the relation_type
     """
 
+
 # DSL to make writing object hierarchies easier
 def sub_object_relations(
     relation_collections: Iterable[Iterable[SubObjectRelation]]
@@ -274,12 +274,10 @@ def sub_object_relations(
 
     This method simply flattens collections of items in the input iterable.
 
-    This is useful because it allows you to write methods
-    for your relations which produce collections of relations
-    as their output.
-    This allows you to use such DSL-like methods to enforce constraints
-    between the relations.
+    This is useful because it allows you to write methods for your relations which produce
+    collections of relations as their output. This allows you to use such DSL-like methods to
+    enforce constraints between the relations.
 
-    Please see the  `adam.ontology.phase1_ontology.PERSON_SCHEMA` for an example of how this is useful.
+    Please see adam.ontology.phase1_ontology.PERSON_SCHEMA for an example of how this is useful.
     """
     return immutableset(flatten(relation_collections))
