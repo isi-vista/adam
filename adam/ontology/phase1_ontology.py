@@ -13,6 +13,7 @@ The following will eventually end up here:
 - Relations, Modifiers, Function Words: basic color terms (red, blue, green, white, black…), one,
   two, I, me, my, you, your, to, in, on, [beside, behind, in front of, over, under], up, down
 """
+
 from more_itertools import flatten
 from networkx import DiGraph
 
@@ -20,7 +21,7 @@ from adam.ontology import (
     OntologyProperty,
     OntologyNode,
     Ontology,
-    HierarchicalObjectSchema,
+    ObjectStructuralSchema,
     SubObject,
     sub_object_relations,
     make_dsl_relation,
@@ -28,11 +29,11 @@ from adam.ontology import (
     make_opposite_dsl_relation,
 )
 
-ANIMATE = OntologyProperty("animate")
-INANIMATE = OntologyProperty("inanimate")
-SENTIENT = OntologyProperty("sentient")
+ANIMATE = OntologyProperty("animate", perceivable=True)
+INANIMATE = OntologyProperty("inanimate", perceivable=True)
+SENTIENT = OntologyProperty("sentient", perceivable=True)
 
-RECOGNIZED_PARTICULAR = OntologyProperty("recognized-particular")
+RECOGNIZED_PARTICULAR = OntologyProperty("recognized-particular", perceivable=True)
 """
 Indicates that a node in the ontology corresponds to a particular (rather than a class)
 which is assumed to be known to the `LanguageLearner`. 
@@ -205,7 +206,6 @@ object.
 """
 subtype(BELOW, SPATIAL_RELATION)
 
-
 above = make_opposite_dsl_relation(  # pylint:disable=invalid-name
     ABOVE, opposite_type=BELOW
 )
@@ -270,12 +270,13 @@ PERSON_SCHEMA = HierarchicalObjectSchema(
     ),
 )
 
-_CHAIR_SCHMEA_BACK = SubObject(CHAIRBACK_SCHEMA)
-_CHAIR_SCHEMA_LEG_1 = SubObject(LEG_SCHEMA)
-_CHAIR_SCHEMA_LEG_2 = SubObject(LEG_SCHEMA)
-_CHAIR_SCHEMA_LEG_3 = SubObject(LEG_SCHEMA)
-_CHAIR_SCHEMA_LEG_4 = SubObject(LEG_SCHEMA)
-_CHAIR_SCHEMA_SEAT = SubObject(CHAIR_SEAT_SCHEMA)
+_CHAIR_SCHMEA_BACK = SubObject(_CHAIRBACK_SCHEMA)
+_CHAIR_SCHEMA_LEG_1 = SubObject(_LEG_SCHEMA)
+_CHAIR_SCHEMA_LEG_2 = SubObject(_LEG_SCHEMA)
+_CHAIR_SCHEMA_LEG_3 = SubObject(_LEG_SCHEMA)
+_CHAIR_SCHEMA_LEG_4 = SubObject(_LEG_SCHEMA)
+_CHAIR_SCHEMA_SEAT = SubObject(_CHAIR_SEAT_SCHEMA)
+
 
 _CHAIR_LEGS = [
     _CHAIR_SCHEMA_LEG_1,
@@ -319,7 +320,7 @@ _TABLE_LEGS = [
     _TABLE_SCHEMA_LEG_4,
 ]
 
-TABLE_SCHEMA = HierarchicalObjectSchema(
+_TABLE_SCHEMA = ObjectStructuralSchema(
     TABLE,
     sub_objects=[
         _TABLE_SCHEMA_LEG_1,
@@ -421,4 +422,16 @@ BIRD_SCHEMA = HierarchicalObjectSchema(
     ),
 )
 
-GAILA_PHASE_1_ONTOLOGY = Ontology.from_directed_graph(_ontology_graph)
+_BALL_SCHEMA = ObjectStructuralSchema(BALL)
+
+GAILA_PHASE_1_ONTOLOGY = Ontology.from_directed_graph(
+    _ontology_graph,
+    immutablesetmultidict(
+        [
+            (BALL, _BALL_SCHEMA),
+            (CHAIR, _CHAIR_SCHEMA),
+            (PERSON, _PERSON_SCHEMA),
+            (TABLE, _TABLE_SCHEMA),
+        ]
+    ),
+)

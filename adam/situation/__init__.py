@@ -193,7 +193,7 @@ class HighLevelSemanticsSituation(Situation):
         converter=_to_immutableset, default=immutableset()
     )
     """
-    The actions occuring in this `Situation`
+    The actions occurring in this `Situation`
     """
 
     def __repr__(self) -> str:

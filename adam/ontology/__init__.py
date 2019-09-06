@@ -32,8 +32,8 @@ class Ontology:
     """
 
     _graph: DiGraph = attrib(validator=instance_of(DiGraph))
-    hierarchical_object_schemata: ImmutableSetMultiDict[
-        "OntologyNode", "HierarchicalObjectSchema"
+    structural_schemata: ImmutableSetMultiDict[
+        "OntologyNode", "ObjectStructuralSchema"
     ] = attrib(converter=_to_immutablesetmultidict, default=immutablesetmultidict())
 
     def __attrs_post_init__(self) -> None:
@@ -41,7 +41,12 @@ class Ontology:
             raise ValueError(f"The ontology graph may not have cycles but got {cycle}")
 
     @staticmethod
-    def from_directed_graph(graph: DiGraph) -> "Ontology":
+    def from_directed_graph(
+        graph: DiGraph,
+        structural_schemata: ImmutableSetMultiDict[
+            "OntologyNode", "ObjectStructuralSchema"
+        ] = immutablesetmultidict(),
+    ) -> "Ontology":
         r"""
         Create an `Ontology` from an acyclic NetworkX ::class`DiGraph`.
 
@@ -53,7 +58,7 @@ class Ontology:
         Returns:
             The `Ontology` encoding the relationships in the `networkx.DiGraph`.
         """
-        return Ontology(graph)
+        return Ontology(graph, structural_schemata)
 
     def nodes_with_properties(
         self, root_node: "OntologyNode", required_properties: Iterable["OntologyProperty"]
@@ -186,17 +191,22 @@ class OntologyProperty:
     A simple human-readable description of this property,
     used for debugging and testing only.
     """
+    perceivable: bool = attrib(default=False, kw_only=True)
+    """
+    A boolean indicating whether an ontological property is perceivable for the learner.
+    E.g. sentience and animacy, which we assume to be known at a pre-linguistic stage. 
+    """
 
     def __repr__(self) -> str:
-        return f"+{self._handle}"
+        return f"+{self._handle}" + ("%" if self.perceivable else "")
 
 
 @attrs(frozen=True, slots=True, repr=False)
-class HierarchicalObjectSchema:
+class ObjectStructuralSchema:
     r"""
     A hierarchical representation of the internal structure of some type of object.
 
-    A `HierarchicalObjectSchema` represents the general pattern of the structure of an object,
+    An `ObjectStructuralSchema` represents the general pattern of the structure of an object,
     rather than the structure of any particular object
     (e.g. people in general, rather than a particular person).
 
@@ -204,12 +214,13 @@ class HierarchicalObjectSchema:
     right leg. These sub-objects have various relations to one another
     (e.g. the head is above and supported by the torso).
 
-    `HierarchicalObjectSchema` can be verbose see `SubObjectRelation`\ s for additional details.
+    Declaring an `ObjectStructuralSchema` can be verbose;
+     see `SubObjectRelation`\ s for additional tips on how to make this more compact.
     """
 
     parent_object: OntologyNode = attrib(validator=instance_of(OntologyNode))
     """
-    The `OntologyNode` this `HierarchicalObjectSchema` represents the structure of.
+    The `OntologyNode` this `ObjectStructuralSchema` represents the structure of.
     """
     sub_objects: ImmutableSet["SubObject"] = attrib(
         converter=_to_immutableset, default=immutableset()
@@ -217,7 +228,7 @@ class HierarchicalObjectSchema:
     r"""
     The component parts which make up an object of the type *parent_object*.
     
-    These `SubObject`\ s themselves wrap `HierarchicalObjectSchema`\ s 
+    These `SubObject`\ s themselves wrap `ObjectStructuralSchema`\ s 
     and can therefore themselves have complex internal structure.
     """
     sub_object_relations: ImmutableSet["SubObjectRelation"] = attrib(
@@ -228,17 +239,19 @@ class HierarchicalObjectSchema:
     """
 
 
-@attrs(frozen=True, slots=True, repr=False)
+# need cmp=False to keep otherwise identical sub-components distinct
+# (e.g. left arm, right arm)
+@attrs(frozen=True, slots=True, repr=False, cmp=False)
 class SubObject:
     r"""
     A sub-component of a generic type of object.
 
-    This is for use only in constructing `HierarchicalObjectSchema`\ ta.
+    This is for use only in constructing `ObjectStructuralSchema`\ ta.
     """
 
-    schema: HierarchicalObjectSchema = attrib()
+    schema: ObjectStructuralSchema = attrib()
     """
-    The `HierarchicalObjectSchema` describing the internal structure of this sub-component.
+    The `ObjectStructuralSchema` describing the internal structure of this sub-component.
     
     For example, an ARM is a sub-component of a PERSON, but ARM itself has a complex structure
     (e.g. it includes a hand)
@@ -248,7 +261,7 @@ class SubObject:
 @attrs(frozen=True, slots=True, repr=False)
 class SubObjectRelation:
     """
-    This class defines the relationships between `SubObject` of a `HierarchicalObjectSchema`
+    This class defines the relationships between `SubObject` of a `ObjectStructuralSchema`
     """
 
     relation_type: OntologyNode = attrib(validator=instance_of(OntologyNode))
@@ -270,7 +283,8 @@ def sub_object_relations(
     relation_collections: Iterable[Iterable[SubObjectRelation]]
 ) -> ImmutableSet[SubObjectRelation]:
     """
-    Convenience method to enable writing sub-object relations in a `HierarchicalObjectSchema` more easily.
+    Convenience method to enable writing sub-object relations
+    in an `ObjectStructuralSchema` more easily.
 
     This method simply flattens collections of items in the input iterable.
 

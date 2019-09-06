@@ -150,6 +150,10 @@ adam.perception.developmental_primitive_perception
 ---------------------------------------------------
 .. automodule:: adam.perception.developmental_primitive_perception
 
+adam.perception.high_level_semantics_situation_to_developmental_primitive_perception
+-------------------------------------------------------------------------------------
+..automodule:: adam.perception.high_level_semantics_situation_to_developmental_primitive_perception
+
 adam.perception.marr
 -----------------------------
 .. automodule:: adam.perception.marr
