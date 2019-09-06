@@ -299,6 +299,7 @@ def make_dsl_relation(
 
     See `adam.ontology.phase1_ontology` for many examples.
     """
+
     def dsl_relation_function(
         arg1s: _OneOrMoreSubObjects, arg2s: _OneOrMoreSubObjects
     ) -> Tuple[SubObjectRelation, ...]:
@@ -314,7 +315,87 @@ def make_dsl_relation(
 
     return dsl_relation_function
 
+
 # TODOs for Jacob
 # similar functions for
 # make_symmetric_dsl_relation (e.g. contacts)
 # make_dsl_relation_with_opposite (e.g. above/below) [for this one, be sure opposite is kw-only]
+
+
+def make_symetric_dsl_relation(
+    relation_type: OntologyNode
+) -> Callable[
+    [_OneOrMoreSubObjects, _OneOrMoreSubObjects], Tuple[SubObjectRelation, ...]
+]:
+    r"""
+    Make a function which, when given either single or groups
+    of sub-object arguments for two slots of a relation,
+    generates a symmetric `SubObjectRelation`\ s of type *relation_type*
+    for the cross-product of the arguments.
+
+    See `adam.ontology.phase1_ontology` for many examples.
+    """
+
+    def dsl_symetric_function(
+        arg1s: _OneOrMoreSubObjects, arg2s: _OneOrMoreSubObjects
+    ) -> Tuple[SubObjectRelation, ...]:
+        if isinstance(arg1s, SubObject):
+            arg1s = (arg1s,)
+        if isinstance(arg2s, SubObject):
+            arg2s = (arg2s,)
+        return flatten(
+            [
+                tuple(
+                    SubObjectRelation(relation_type, arg1, arg2)
+                    for arg1 in arg1s
+                    for arg2 in arg2s
+                ),
+                tuple(
+                    SubObjectRelation(relation_type, arg2, arg1)
+                    for arg2 in arg2s
+                    for arg1 in arg1s
+                ),
+            ]
+        )
+
+    return dsl_symetric_function
+
+
+def make_opposite_dsl_relation(
+    relation_type: OntologyNode, *, opposite_type: OntologyNode
+) -> Callable[
+    [_OneOrMoreSubObjects, _OneOrMoreSubObjects], Tuple[SubObjectRelation, ...]
+]:
+    r"""
+    Make a function which, when given either single or groups
+    of sub-object arguments for two slots of a relation,
+    generates a  `SubObjectRelation`\ s of type *relation_type*
+    and an inverse of type *opposite_type* for the cross-product
+    of the arguments.
+
+    See `adam.ontology.phase1_ontology` for many examples.
+    """
+
+    def dsl_opposite_function(
+        arg1s: _OneOrMoreSubObjects, arg2s: _OneOrMoreSubObjects
+    ) -> Tuple[SubObjectRelation, ...]:
+        if isinstance(arg1s, SubObject):
+            arg1s = (arg1s,)
+        if isinstance(arg2s, SubObject):
+            arg2s = (arg2s,)
+        return flatten(
+            [
+                tuple(
+                    SubObjectRelation(relation_type, arg1, arg2)
+                    for arg1 in arg1s
+                    for arg2 in arg2s
+                ),
+                tuple(
+                    SubObjectRelation(opposite_type, arg2, arg1)
+                    for arg1 in arg1s
+                    for arg2 in arg2s
+                ),
+            ]
+        )
+
+    return dsl_opposite_function

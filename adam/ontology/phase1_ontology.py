@@ -13,8 +13,6 @@ The following will eventually end up here:
 - Relations, Modifiers, Function Words: basic color terms (red, blue, green, white, black…), one,
   two, I, me, my, you, your, to, in, on, [beside, behind, in front of, over, under], up, down
 """
-from typing import Tuple
-
 from networkx import DiGraph
 
 from adam.ontology import (
@@ -23,9 +21,10 @@ from adam.ontology import (
     Ontology,
     HierarchicalObjectSchema,
     SubObject,
-    SubObjectRelation,
     sub_object_relations,
     make_dsl_relation,
+    make_symetric_dsl_relation,
+    make_opposite_dsl_relation,
 )
 
 ANIMATE = OntologyProperty("animate")
@@ -164,11 +163,9 @@ https://github.com/isi-vista/adam/issues/70
 subtype(SMALLER_THAN, SIZE_RELATION)
 
 
-def bigger_than(obj1: SubObject, obj2: SubObject) -> Tuple[SubObjectRelation, ...]:
-    return (
-        SubObjectRelation(BIGGER_THAN, obj1, obj2),
-        SubObjectRelation(SMALLER_THAN, obj2, obj1),
-    )
+bigger_than = make_opposite_dsl_relation(
+    BIGGER_THAN, opposite_type=SMALLER_THAN
+)  # pylint:disable=invalid-name
 
 
 SUPPORTS = OntologyNode("supports")
@@ -190,23 +187,7 @@ A symmetric relation indicating that one object touches another.
 subtype(CONTACTS, SPATIAL_RELATION)
 
 
-def contacts(obj1: SubObject, obj2: SubObject) -> Tuple[SubObjectRelation, ...]:
-    """
-    Convenience methord for indicating that one `SubObject` in a `HierarchicalObjectSchema` has a `CONTACTS` relation with another.
-
-    For us with `SubObjectRelation`.
-
-    Args:
-        *obj1*: The `SubObject` which has a reciprocal contacts relationship with
-        *obj2*: The `SubObject` which contacts obj1
-
-    Returns:
-        Tuple[`SubObjectRelation`,...] see `SubObjectRelation` for more information
-    """
-    return (
-        SubObjectRelation(CONTACTS, obj1, obj2),
-        SubObjectRelation(CONTACTS, obj2, obj1),
-    )
+contacts = make_symetric_dsl_relation(CONTACTS)  # pylint:disable=invalid-name
 
 
 ABOVE = OntologyNode("above")
@@ -224,23 +205,9 @@ object.
 subtype(BELOW, SPATIAL_RELATION)
 
 
-def above(obj1: SubObject, obj2: SubObject) -> Tuple[SubObjectRelation, ...]:
-    """
-    Convenience methord for indicating that one `SubObject` in a `HierarchicalObjectSchema` has a `ABOVE` relation with another.
-
-    When one entity is above another, the inverse is also true. This function provides the implicit
-    inverse assertion for hierarchical objects.
-
-    For us with `SubObjectRelation`.
-
-    Args:
-        obj1: The `SubObject` which is above obj2
-        obj2: The `SubObject` which is below obj1
-
-    Returns:
-        Tuple[`SubObjectRelation`,...] see `SubObjectRelation` for more information
-    """
-    return (SubObjectRelation(ABOVE, obj1, obj2), SubObjectRelation(BELOW, obj2, obj1))
+above = make_opposite_dsl_relation(
+    ABOVE, opposite_type=BELOW
+)  # pylint:disable=invalid-name
 
 
 # Semantic Roles
@@ -309,11 +276,11 @@ _CHAIR_SCHEMA_LEG_4 = SubObject(LEG_SCHEMA)
 _CHAIR_SCHEMA_SEAT = SubObject(CHAIR_SEAT_SCHEMA)
 
 _CHAIR_LEGS = [
-                    _CHAIR_SCHEMA_LEG_1,
-                    _CHAIR_SCHEMA_LEG_2,
-                    _CHAIR_SCHEMA_LEG_3,
-                    _CHAIR_SCHEMA_LEG_4,
-                ]
+    _CHAIR_SCHEMA_LEG_1,
+    _CHAIR_SCHEMA_LEG_2,
+    _CHAIR_SCHEMA_LEG_3,
+    _CHAIR_SCHEMA_LEG_4,
+]
 
 CHAIR_SCHEMA = HierarchicalObjectSchema(
     CHAIR,
