@@ -26,6 +26,11 @@ from adam.ontology import (
     make_dsl_relation,
     make_symetric_dsl_relation,
     make_opposite_dsl_relation,
+    PROPERTY,
+    ACTION,
+    RELATION,
+    META_PROPERTY,
+    THING,
 )
 
 _ontology_graph = DiGraph()  # pylint:disable=invalid-name
@@ -35,37 +40,39 @@ def subtype(sub: OntologyNode, _super: OntologyNode) -> None:
     _ontology_graph.add_edge(sub, _super)
 
 
-META_PROPERTY = OntologyNode("meta-property")
+# these are "properties of properties" (e.g. whether a property is perceivable by the learner)
 PERCEIVABLE = OntologyNode("perceivable")
 subtype(PERCEIVABLE, META_PROPERTY)
 BINARY = OntologyNode("binary")
 subtype(BINARY, META_PROPERTY)
 
-PROPERTY = OntologyNode("property")
-ANIMATE = OntologyNode("animate", local_properties=[PERCEIVABLE, BINARY])
-subtype(ANIMATE, PROPERTY)
-INANIMATE = OntologyNode("inanimate", local_properties=[PERCEIVABLE, BINARY])
-subtype(INANIMATE, PROPERTY)
-SENTIENT = OntologyNode("sentient", local_properties=[PERCEIVABLE, BINARY])
-subtype(SENTIENT, PROPERTY)
-
-RECOGNIZED_PARTICULAR = OntologyNode(
-    "recognized-particular", local_properties=[PERCEIVABLE, BINARY]
+# properties of objects
+PERCEIVABLE_PROPERTY = OntologyNode(
+    "perceivable-property", local_properties=[PERCEIVABLE]
 )
+subtype(PERCEIVABLE_PROPERTY, PROPERTY)
+ANIMATE = OntologyNode("animate", local_properties=[BINARY])
+subtype(ANIMATE, PERCEIVABLE_PROPERTY)
+INANIMATE = OntologyNode("inanimate", local_properties=[BINARY])
+subtype(INANIMATE, PERCEIVABLE_PROPERTY)
+SENTIENT = OntologyNode("sentient", local_properties=[BINARY])
+subtype(SENTIENT, PERCEIVABLE_PROPERTY)
+
+RECOGNIZED_PARTICULAR = OntologyNode("recognized-particular", local_properties=[BINARY])
 """
 Indicates that a node in the ontology corresponds to a particular (rather than a class)
 which is assumed to be known to the `LanguageLearner`. 
 The prototypical cases here are *Mom* and *Dad*.
 """
-subtype(RECOGNIZED_PARTICULAR, PROPERTY)
-
+subtype(RECOGNIZED_PARTICULAR, PERCEIVABLE_PROPERTY)
 
 COLOR = OntologyNode("color")
-RED = OntologyNode("red", local_properties=[COLOR, PERCEIVABLE])
-BLUE = OntologyNode("blue", local_properties=[COLOR, PERCEIVABLE])
-GREEN = OntologyNode("green", local_properties=[COLOR, PERCEIVABLE])
-BLACK = OntologyNode("black", local_properties=[COLOR, PERCEIVABLE])
-WHITE = OntologyNode("white", local_properties=[COLOR, PERCEIVABLE])
+subtype(COLOR, PERCEIVABLE_PROPERTY)
+RED = OntologyNode("red", local_properties=[PERCEIVABLE])
+BLUE = OntologyNode("blue", local_properties=[PERCEIVABLE])
+GREEN = OntologyNode("green", local_properties=[PERCEIVABLE])
+BLACK = OntologyNode("black", local_properties=[PERCEIVABLE])
+WHITE = OntologyNode("white", local_properties=[PERCEIVABLE])
 subtype(RED, COLOR)
 subtype(BLUE, COLOR)
 subtype(GREEN, COLOR)
@@ -97,10 +104,8 @@ COLORS_TO_RGBS = {
 # Information about the hierarchical structure of objects
 # is given at the end of this module because it is so bulky.
 
-PHYSICAL_OBJECT = OntologyNode("object")
-
 INANIMATE_OBJECT = OntologyNode("inanimate-object", [INANIMATE])
-subtype(INANIMATE_OBJECT, PHYSICAL_OBJECT)
+subtype(INANIMATE_OBJECT, THING)
 TABLE = OntologyNode("table")
 subtype(TABLE, INANIMATE_OBJECT)
 BALL = OntologyNode("ball")
@@ -137,7 +142,7 @@ COOKIE = OntologyNode("cookie")
 subtype(COOKIE, INANIMATE_OBJECT)
 
 PERSON = OntologyNode("person", [ANIMATE])
-subtype(PERSON, PHYSICAL_OBJECT)
+subtype(PERSON, THING)
 MOM = OntologyNode("mom", [RECOGNIZED_PARTICULAR])
 subtype(MOM, PERSON)
 DAD = OntologyNode("dad", [RECOGNIZED_PARTICULAR])
@@ -146,7 +151,7 @@ BABY = OntologyNode("baby")
 subtype(BABY, PERSON)
 
 NONHUMAN_ANIMAL = OntologyNode("animal", [ANIMATE])
-subtype(NONHUMAN_ANIMAL, PHYSICAL_OBJECT)
+subtype(NONHUMAN_ANIMAL, THING)
 DOG = OntologyNode("dog")
 subtype(DOG, NONHUMAN_ANIMAL)
 BIRD = OntologyNode("bird")
@@ -199,7 +204,6 @@ _BODY = OntologyNode("body")
 
 # Verbs
 
-ACTION = OntologyNode("action")
 STATE = OntologyNode("state")
 CONSUME = OntologyNode("consume")
 subtype(CONSUME, ACTION)
@@ -242,7 +246,6 @@ subtype(FLY, ACTION)
 # Relations
 # These are used both for situations and in the perceptual representation
 
-RELATION = OntologyNode("relation")
 SPATIAL_RELATION = OntologyNode("spatial-relation")
 subtype(RELATION, SPATIAL_RELATION)
 # On is an English-specific bundle of semantics, but that's okay, because this is just for

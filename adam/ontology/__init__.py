@@ -3,14 +3,14 @@ Representations for simple ontologies.
 
 These ontologies are intended to be used when describing `Situation`\ s and writing `SituationTemplate`\ s.
 """
-from typing import Iterable, List, Union, Callable, Tuple
+from typing import Callable, Iterable, List, Tuple, Union
 
 from attr import attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import (
     ImmutableSet,
-    immutableset,
     ImmutableSetMultiDict,
+    immutableset,
     immutablesetmultidict,
 )
 from immutablecollections.converter_utils import (
@@ -18,7 +18,8 @@ from immutablecollections.converter_utils import (
     _to_immutablesetmultidict,
 )
 from more_itertools import flatten
-from networkx import DiGraph, dfs_preorder_nodes, simple_cycles
+from networkx import DiGraph, dfs_preorder_nodes, simple_cycles, has_path
+from vistautils.preconditions import check_arg
 
 
 @attrs(frozen=True, slots=True)
@@ -29,6 +30,9 @@ class Ontology:
     Types are represented by `OntologyNode`\ s with parent-child relationships.
 
     Every `OntologyNode` may have a set of properties which are inherited by all child nodes.
+
+    Every `Ontology` must contain the special nodes `THING`, `RELATION`, `ACTION`,
+    `PROPERTY` and `META_PROPERTY`.
     """
 
     _graph: DiGraph = attrib(validator=instance_of(DiGraph))
@@ -39,6 +43,11 @@ class Ontology:
     def __attrs_post_init__(self) -> None:
         for cycle in simple_cycles(self._graph):
             raise ValueError(f"The ontology graph may not have cycles but got {cycle}")
+        check_arg(THING in self, "Ontology lacks required OBJECT node")
+        check_arg(RELATION in self, "Ontology lacks required RELATION node")
+        check_arg(ACTION in self, "Ontology lacks required ACTION node")
+        check_arg(PROPERTY in self, "Ontology lacks required PROPERTY node")
+        check_arg(META_PROPERTY in self, "Ontology lacks required META_PROPERTY node")
 
     @staticmethod
     def from_directed_graph(
@@ -59,6 +68,15 @@ class Ontology:
             The `Ontology` encoding the relationships in the `networkx.DiGraph`.
         """
         return Ontology(graph, structural_schemata)
+
+    def is_subtype_of(
+        self, node: "OntologyNode", query_supertype: "OntologyNode"
+    ) -> bool:
+        """
+        Determines whether *node* is a sub-type of *query_supertype*.
+        """
+        # graph edges run from sub-types to super-types
+        return has_path(self._graph, node, query_supertype)
 
     def nodes_with_properties(
         self, root_node: "OntologyNode", required_properties: Iterable["OntologyNode"]
@@ -141,6 +159,9 @@ class Ontology:
                 break
         return immutableset(node_properties)
 
+    def __contains__(self, item: "OntologyNode") -> bool:
+        return item in self._graph.nodes
+
 
 @attrs(frozen=True, slots=True, repr=False)
 class OntologyNode:
@@ -176,6 +197,42 @@ class OntologyNode:
         else:
             properties_string = ""
         return f"{self.handle}{properties_string}"
+
+
+# by convention, the following should appear in all Ontologies
+THING = OntologyNode("thing")
+r"""
+Ancestor of all objects in an `Ontology`.
+
+By convention this should appear in all `Ontology`\ s.
+"""
+RELATION = OntologyNode("relation")
+r"""
+Ancestor of all relations in an `Ontology`.
+
+By convention this should appear in all `Ontology`\ s.
+"""
+ACTION = OntologyNode("action")
+r"""
+Ancestor of all actions in an `Ontology`.
+
+By convention this should appear in all `Ontology`\ s.
+"""
+PROPERTY = OntologyNode("property")
+r"""
+Ancestor of all properties in an `Ontology`.
+
+By convention this should appear in all `Ontology`\ s.
+"""
+
+META_PROPERTY = OntologyNode("meta-property")
+r"""
+A property of a property.
+
+For example, whether it is perceivable or binary.
+
+By convention this should appear in all `Ontology`\ s.
+"""
 
 
 @attrs(frozen=True, slots=True, repr=False)
