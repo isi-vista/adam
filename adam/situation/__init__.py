@@ -22,7 +22,7 @@ from immutablecollections.converter_utils import (
 )
 
 from adam.math_3d import Point
-from adam.ontology import OntologyProperty, OntologyNode, Ontology
+from adam.ontology import OntologyNode, Ontology
 
 
 class Situation(ABC):
@@ -76,27 +76,26 @@ class SituationObject(SituationNode):
     because two objects with identical properties are nonetheless distinct.
     """
 
-    ontology_node: Optional[OntologyNode] = attrib(
-        validator=optional(instance_of(OntologyNode)), default=None
+    ontology_node: OntologyNode = attrib(
+        validator=instance_of(OntologyNode), default=None
     )
     """
     The `OntologyNode` specifying the type of thing this object is.
     """
-    properties: ImmutableSet[OntologyProperty] = attrib(
+    properties: ImmutableSet[OntologyNode] = attrib(
         converter=_to_immutableset, default=immutableset()
     )
     r"""
-    The `OntologyProperty`\ s this object has.
+    The `OntologyNode`\ s representing the properties this object has.
     """
 
     def __attrs_post_init__(self) -> None:
         # disabled warning below is due to a PyCharm bug
         # noinspection PyTypeChecker
         for property_ in self.properties:
-            if not isinstance(property_, OntologyProperty):
+            if not isinstance(property_, OntologyNode):
                 raise ValueError(
-                    f"Situation object property {property_} is not an "
-                    f"OntologyProperty"
+                    f"Situation object property {property_} is not an " f"OntologyNode"
                 )
 
     def __repr__(self) -> str:

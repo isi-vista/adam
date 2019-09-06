@@ -61,7 +61,7 @@ class Ontology:
         return Ontology(graph, structural_schemata)
 
     def nodes_with_properties(
-        self, root_node: "OntologyNode", required_properties: Iterable["OntologyProperty"]
+        self, root_node: "OntologyNode", required_properties: Iterable["OntologyNode"]
     ) -> ImmutableSet["OntologyNode"]:
         r"""
         Get all `OntologyNode`\ s which are a dominated by *root_node* (or are *root_node*
@@ -70,7 +70,7 @@ class Ontology:
 
         Args:
             root_node: the node to search the ontology tree at and under
-            required_properties: the `OntologyProperty`\ s every returned node must have
+            required_properties: the `OntologyNode`\ s every returned node must have
 
         Returns:
              All `OntologyNode`\ s which are a dominated by *root_node* (or are *root_node*
@@ -91,14 +91,14 @@ class Ontology:
         )
 
     def has_all_properties(
-        self, node: "OntologyNode", required_properties: Iterable["OntologyProperty"]
+        self, node: "OntologyNode", required_properties: Iterable["OntologyNode"]
     ) -> bool:
         r"""
-        Checks an `OntologyNode` for a collection of `OntologyProperty`\ s.
+        Checks an `OntologyNode` for a collection of `OntologyNode`\ s.
 
         Args:
             node: the `OntologyNode` being inquired about
-            required_properties: the `OntologyProperty`\ s being inquired about
+            required_properties: the `OntologyNode`\ s being inquired about
 
         Returns:
             Whether *node* possesses all of *required_properties*, either directly or via
@@ -107,9 +107,7 @@ class Ontology:
         node_properties = self.properties_for_node(node)
         return all(property_ in node_properties for property_ in required_properties)
 
-    def properties_for_node(
-        self, node: "OntologyNode"
-    ) -> ImmutableSet["OntologyProperty"]:
+    def properties_for_node(self, node: "OntologyNode") -> ImmutableSet["OntologyNode"]:
         r"""
         Get all properties a `OntologyNode` possesses.
 
@@ -120,7 +118,7 @@ class Ontology:
             All properties `OntologyNode` possesses, whether directly or by inheritance from a
             dominating node.
         """
-        node_properties: List[OntologyProperty] = []
+        node_properties: List[OntologyNode] = []
 
         cur_node = node
         while cur_node:
@@ -161,11 +159,11 @@ class OntologyNode:
     A simple human-readable description of this node,
     used for debugging and testing only.
     """
-    _local_properties: ImmutableSet["OntologyProperty"] = attrib(
+    _local_properties: ImmutableSet["OntologyNode"] = attrib(
         converter=_to_immutableset, default=immutableset()
     )
     r"""
-    `OntologyProperty`\ s of this `OntologyNode`.
+    Properties of the `OntologyNode`, as a set of `OntologyNodes`\ s.
     These will be inherited by its children.
     """
 
@@ -178,27 +176,6 @@ class OntologyNode:
         else:
             properties_string = ""
         return f"{self.handle}{properties_string}"
-
-
-@attrs(frozen=True, slots=True, repr=False)
-class OntologyProperty:
-    r"""
-    A property which a node in an `Ontology` may bear, such as "animate".
-    """
-
-    _handle: str = attrib(validator=instance_of(str))
-    """
-    A simple human-readable description of this property,
-    used for debugging and testing only.
-    """
-    perceivable: bool = attrib(default=False, kw_only=True)
-    """
-    A boolean indicating whether an ontological property is perceivable for the learner.
-    E.g. sentience and animacy, which we assume to be known at a pre-linguistic stage. 
-    """
-
-    def __repr__(self) -> str:
-        return f"+{self._handle}" + ("%" if self.perceivable else "")
 
 
 @attrs(frozen=True, slots=True, repr=False)

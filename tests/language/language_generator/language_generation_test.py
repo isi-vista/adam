@@ -50,7 +50,7 @@ def test_choose_first():
     generator = ChooseFirstLanguageGenerator(DummyLanguageGenerator())
     # pycharm fails to recognize converter
     # noinspection PyTypeChecker
-    situation = LocatedObjectSituation([(SituationObject(), Point(0, 0, 0))])
+    situation = LocatedObjectSituation([(SituationObject(BALL), Point(0, 0, 0))])
 
     generated_descriptions = generator.generate_language(
         situation, RandomChooser.for_seed(0)
@@ -65,7 +65,7 @@ def test_choose_random():
     )
     # pycharm fails to recognize converter
     # noinspection PyTypeChecker
-    situation = LocatedObjectSituation([(SituationObject(), Point(0, 0, 0))])
+    situation = LocatedObjectSituation([(SituationObject(BALL), Point(0, 0, 0))])
 
     generated_descriptions = generator.generate_language(
         situation, RandomChooser.for_seed(0)
