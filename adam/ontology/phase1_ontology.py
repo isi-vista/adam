@@ -27,11 +27,11 @@ from adam.ontology import (
     sub_object_relations,
 )
 
-ANIMATE = OntologyProperty("animate")
-INANIMATE = OntologyProperty("inanimate")
-SENTIENT = OntologyProperty("sentient")
+ANIMATE = OntologyProperty("animate", perceivable=True)
+INANIMATE = OntologyProperty("inanimate", perceivable=True)
+SENTIENT = OntologyProperty("sentient", perceivable=True)
 
-RECOGNIZED_PARTICULAR = OntologyProperty("recognized-particular")
+RECOGNIZED_PARTICULAR = OntologyProperty("recognized-particular", perceivable=True)
 """
 Indicates that a node in the ontology corresponds to a particular (rather than a class)
 which is assumed to be known to the `LanguageLearner`. 
