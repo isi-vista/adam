@@ -13,9 +13,8 @@ The following will eventually end up here:
 - Relations, Modifiers, Function Words: basic color terms (red, blue, green, white, black…), one,
   two, I, me, my, you, your, to, in, on, [beside, behind, in front of, over, under], up, down
 """
-from typing import Tuple
-
 from immutablecollections import immutablesetmultidict
+from more_itertools import flatten
 from networkx import DiGraph
 
 from adam.ontology import (
@@ -24,8 +23,10 @@ from adam.ontology import (
     Ontology,
     ObjectStructuralSchema,
     SubObject,
-    SubObjectRelation,
     sub_object_relations,
+    make_dsl_relation,
+    make_symetric_dsl_relation,
+    make_opposite_dsl_relation,
 )
 
 ANIMATE = OntologyProperty("animate", perceivable=True)
@@ -114,7 +115,8 @@ _LEG = OntologyNode("leg")
 _CHAIR_BACK = OntologyNode("chairback")
 _CHAIR_SEAT = OntologyNode("chairseat")
 _TABLETOP = OntologyNode("tabletop")
-
+_TAIL = OntologyNode("tail")
+_WING = OntologyNode("wing")
 
 # Verbs
 
@@ -163,35 +165,21 @@ https://github.com/isi-vista/adam/issues/70
 subtype(SMALLER_THAN, SIZE_RELATION)
 
 
-def bigger_than(obj1: SubObject, obj2: SubObject) -> Tuple[SubObjectRelation, ...]:
-    return (
-        SubObjectRelation(BIGGER_THAN, obj1, obj2),
-        SubObjectRelation(SMALLER_THAN, obj2, obj1),
-    )
+bigger_than = make_opposite_dsl_relation(  # pylint:disable=invalid-name
+    BIGGER_THAN, opposite_type=SMALLER_THAN
+)
 
 
 SUPPORTS = OntologyNode("supports")
 """
 A relation indicating that  one object provides the force to counteract gravity and prevent another 
 object from falling.
+
+Needs refinement to solve ambiguity: https://github.com/isi-vista/adam/issues/88
 """
 subtype(SUPPORTS, SPATIAL_RELATION)
 
-
-def supports(obj1: SubObject, obj2: SubObject) -> Tuple[SubObjectRelation, ...]:
-    """
-    Convenience method for indicating that one `SubObject` in a `ObjectStructuralSchema`
-    has a `SUPPORTS` relation with another.
-
-    For us with `SubObjectRelation`.
-
-    Args:
-        *obj1*: The `SubObject` which supports obj2
-        *obj2*: The `SubObject` being supported
-    Returns:
-        Tuple[`SubObjectRelation`,...] see `SubObjectRelation` for more information
-    """
-    return (SubObjectRelation(SUPPORTS, obj1, obj2),)
+supports = make_dsl_relation(SUPPORTS)  # pylint:disable=invalid-name
 
 
 CONTACTS = OntologyNode("contacts")
@@ -201,24 +189,7 @@ A symmetric relation indicating that one object touches another.
 subtype(CONTACTS, SPATIAL_RELATION)
 
 
-def contacts(obj1: SubObject, obj2: SubObject) -> Tuple[SubObjectRelation, ...]:
-    """
-    Convenience methord for indicating that one `SubObject` in a `ObjectStructuralSchema`
-    has a `CONTACTS` relation with another.
-
-    For us with `SubObjectRelation`.
-
-    Args:
-        *obj1*: The `SubObject` which has a reciprocal contacts relationship with
-        *obj2*: The `SubObject` which contacts obj1
-
-    Returns:
-        Tuple[`SubObjectRelation`,...] see `SubObjectRelation` for more information
-    """
-    return (
-        SubObjectRelation(CONTACTS, obj1, obj2),
-        SubObjectRelation(CONTACTS, obj2, obj1),
-    )
+contacts = make_symetric_dsl_relation(CONTACTS)  # pylint:disable=invalid-name
 
 
 ABOVE = OntologyNode("above")
@@ -235,25 +206,9 @@ object.
 """
 subtype(BELOW, SPATIAL_RELATION)
 
-
-def above(obj1: SubObject, obj2: SubObject) -> Tuple[SubObjectRelation, ...]:
-    """
-    Convenience methord for indicating that one `SubObject` in a `ObjectStructuralSchema`
-    has an `ABOVE` relation with another.
-
-    When one entity is above another, the inverse is also true. This function provides the implicit
-    inverse assertion for hierarchical objects.
-
-    For us with `SubObjectRelation`.
-
-    Args:
-        obj1: The `SubObject` which is above obj2
-        obj2: The `SubObject` which is below obj1
-
-    Returns:
-        Tuple[`SubObjectRelation`,...] see `SubObjectRelation` for more information
-    """
-    return (SubObjectRelation(ABOVE, obj1, obj2), SubObjectRelation(BELOW, obj2, obj1))
+above = make_opposite_dsl_relation(  # pylint:disable=invalid-name
+    ABOVE, opposite_type=BELOW
+)
 
 
 # Semantic Roles
@@ -269,7 +224,6 @@ DESTINATION = OntologyNode("destination")
 subtype(DESTINATION, SEMANTIC_ROLE)
 
 # Hierarchical structure of objects
-
 _HEAD_SCHEMA = ObjectStructuralSchema(_HEAD)
 _TORSO_SCHEMA = ObjectStructuralSchema(_TORSO)
 _ARM_SCHEMA = ObjectStructuralSchema(_ARM)
@@ -277,6 +231,8 @@ _LEG_SCHEMA = ObjectStructuralSchema(_LEG)
 _CHAIRBACK_SCHEMA = ObjectStructuralSchema(_CHAIR_BACK)
 _CHAIR_SEAT_SCHEMA = ObjectStructuralSchema(_CHAIR_SEAT)
 _TABLETOP_SCHEMA = ObjectStructuralSchema(_TABLETOP)
+_TAIL_SCHEMA = ObjectStructuralSchema(_TAIL)
+_WING_SCHEMA = ObjectStructuralSchema(_WING)
 
 # schemata describing the hierarchical physical structure of objects
 _PERSON_SCHEMA_HEAD = SubObject(_HEAD_SCHEMA)
@@ -286,6 +242,13 @@ _PERSON_SCHEMA_RIGHT_ARM = SubObject(_ARM_SCHEMA)
 _PERSON_SCHEMA_LEFT_LEG = SubObject(_LEG_SCHEMA)
 _PERSON_SCHEMA_RIGHT_LEG = SubObject(_LEG_SCHEMA)
 
+_PERSON_SCHEMA_APPENDAGES = [
+    _PERSON_SCHEMA_LEFT_ARM,
+    _PERSON_SCHEMA_LEFT_LEG,
+    _PERSON_SCHEMA_RIGHT_ARM,
+    _PERSON_SCHEMA_RIGHT_LEG,
+    _PERSON_SCHEMA_HEAD,
+]
 _PERSON_SCHEMA = ObjectStructuralSchema(
     PERSON,
     sub_objects=[
@@ -298,16 +261,10 @@ _PERSON_SCHEMA = ObjectStructuralSchema(
     ],
     sub_object_relations=sub_object_relations(
         [
-            # relation of head to torso
-            contacts(_PERSON_SCHEMA_HEAD, _PERSON_SCHEMA_TORSO),
             supports(_PERSON_SCHEMA_TORSO, _PERSON_SCHEMA_HEAD),
             above(_PERSON_SCHEMA_HEAD, _PERSON_SCHEMA_TORSO),
             bigger_than(_PERSON_SCHEMA_TORSO, _PERSON_SCHEMA_HEAD),
-            # relation of limbs to torso
-            contacts(_PERSON_SCHEMA_TORSO, _PERSON_SCHEMA_LEFT_ARM),
-            contacts(_PERSON_SCHEMA_TORSO, _PERSON_SCHEMA_LEFT_ARM),
-            contacts(_PERSON_SCHEMA_TORSO, _PERSON_SCHEMA_LEFT_LEG),
-            contacts(_PERSON_SCHEMA_TORSO, _PERSON_SCHEMA_RIGHT_LEG),
+            contacts(_PERSON_SCHEMA_TORSO, _PERSON_SCHEMA_APPENDAGES),
         ]
     ),
 )
@@ -318,6 +275,14 @@ _CHAIR_SCHEMA_LEG_2 = SubObject(_LEG_SCHEMA)
 _CHAIR_SCHEMA_LEG_3 = SubObject(_LEG_SCHEMA)
 _CHAIR_SCHEMA_LEG_4 = SubObject(_LEG_SCHEMA)
 _CHAIR_SCHEMA_SEAT = SubObject(_CHAIR_SEAT_SCHEMA)
+
+
+_CHAIR_LEGS = [
+    _CHAIR_SCHEMA_LEG_1,
+    _CHAIR_SCHEMA_LEG_2,
+    _CHAIR_SCHEMA_LEG_3,
+    _CHAIR_SCHEMA_LEG_4,
+]
 
 _CHAIR_SCHEMA = ObjectStructuralSchema(
     CHAIR,
@@ -331,21 +296,12 @@ _CHAIR_SCHEMA = ObjectStructuralSchema(
     ],
     sub_object_relations=sub_object_relations(
         [
+            contacts(_CHAIR_LEGS, _CHAIR_SCHEMA_SEAT),
+            supports(_CHAIR_LEGS, _CHAIR_SCHEMA_SEAT),
+            above(_CHAIR_SCHEMA_SEAT, _CHAIR_LEGS),
             contacts(_CHAIR_SCHMEA_BACK, _CHAIR_SCHEMA_SEAT),
-            contacts(_CHAIR_SCHEMA_LEG_1, _CHAIR_SCHEMA_SEAT),
-            contacts(_CHAIR_SCHEMA_LEG_2, _CHAIR_SCHEMA_SEAT),
-            contacts(_CHAIR_SCHEMA_LEG_3, _CHAIR_SCHEMA_SEAT),
-            contacts(_CHAIR_SCHEMA_LEG_4, _CHAIR_SCHEMA_SEAT),
-            supports(_CHAIR_SCHEMA_LEG_1, _CHAIR_SCHEMA_SEAT),
-            supports(_CHAIR_SCHEMA_LEG_2, _CHAIR_SCHEMA_SEAT),
-            supports(_CHAIR_SCHEMA_LEG_3, _CHAIR_SCHEMA_SEAT),
-            supports(_CHAIR_SCHEMA_LEG_4, _CHAIR_SCHEMA_SEAT),
             supports(_CHAIR_SCHEMA_SEAT, _CHAIR_SCHMEA_BACK),
             above(_CHAIR_SCHMEA_BACK, _CHAIR_SCHEMA_SEAT),
-            above(_CHAIR_SCHEMA_SEAT, _CHAIR_SCHEMA_LEG_1),
-            above(_CHAIR_SCHEMA_SEAT, _CHAIR_SCHEMA_LEG_2),
-            above(_CHAIR_SCHEMA_SEAT, _CHAIR_SCHEMA_LEG_3),
-            above(_CHAIR_SCHEMA_SEAT, _CHAIR_SCHEMA_LEG_4),
         ]
     ),
 )
@@ -356,6 +312,12 @@ _TABLE_SCHEMA_LEG_2 = SubObject(_LEG_SCHEMA)
 _TABLE_SCHEMA_LEG_3 = SubObject(_LEG_SCHEMA)
 _TABLE_SCHEMA_LEG_4 = SubObject(_LEG_SCHEMA)
 _TABLE_SCHEMA_TABLETOP = SubObject(_TABLETOP_SCHEMA)
+_TABLE_LEGS = [
+    _TABLE_SCHEMA_LEG_1,
+    _TABLE_SCHEMA_LEG_2,
+    _TABLE_SCHEMA_LEG_3,
+    _TABLE_SCHEMA_LEG_4,
+]
 
 _TABLE_SCHEMA = ObjectStructuralSchema(
     TABLE,
@@ -369,58 +331,107 @@ _TABLE_SCHEMA = ObjectStructuralSchema(
     sub_object_relations=sub_object_relations(
         [
             # Relationship of tabletop to the legs
-            contacts(_TABLE_SCHEMA_TABLETOP, _TABLE_SCHEMA_LEG_4),
-            contacts(_TABLE_SCHEMA_TABLETOP, _TABLE_SCHEMA_LEG_3),
-            contacts(_TABLE_SCHEMA_TABLETOP, _TABLE_SCHEMA_LEG_2),
-            contacts(_TABLE_SCHEMA_TABLETOP, _TABLE_SCHEMA_LEG_1),
-            above(_TABLE_SCHEMA_TABLETOP, _TABLE_SCHEMA_LEG_4),
-            above(_TABLE_SCHEMA_TABLETOP, _TABLE_SCHEMA_LEG_3),
-            above(_TABLE_SCHEMA_TABLETOP, _TABLE_SCHEMA_LEG_2),
-            above(_TABLE_SCHEMA_TABLETOP, _TABLE_SCHEMA_LEG_1),
-            supports(_TABLE_SCHEMA_LEG_1, _TABLE_SCHEMA_TABLETOP),
-            supports(_TABLE_SCHEMA_LEG_2, _TABLE_SCHEMA_TABLETOP),
-            supports(_TABLE_SCHEMA_LEG_3, _TABLE_SCHEMA_TABLETOP),
-            supports(_TABLE_SCHEMA_LEG_4, _TABLE_SCHEMA_TABLETOP),
+            contacts(_TABLE_SCHEMA_TABLETOP, _TABLE_LEGS),
+            above(_TABLE_SCHEMA_TABLETOP, _TABLE_LEGS),
+            supports(_TABLE_LEGS, _TABLE_SCHEMA_TABLETOP),
         ]
     ),
 )
 
 # schemata describing the hierarchical physical structure of objects
-_TABLE_SCHEMA_LEG_1 = SubObject(_LEG_SCHEMA)
-_TABLE_SCHEMA_LEG_2 = SubObject(_LEG_SCHEMA)
-_TABLE_SCHEMA_LEG_3 = SubObject(_LEG_SCHEMA)
-_TABLE_SCHEMA_LEG_4 = SubObject(_LEG_SCHEMA)
-_TABLE_SCHEMA_TABLETOP = SubObject(_TABLETOP_SCHEMA)
+_DOG_SCHEMA_LEG_1 = SubObject(_LEG_SCHEMA)
+_DOG_SCHEMA_LEG_2 = SubObject(_LEG_SCHEMA)
+_DOG_SCHEMA_LEG_3 = SubObject(_LEG_SCHEMA)
+_DOG_SCHEMA_LEG_4 = SubObject(_LEG_SCHEMA)
+_DOG_SCHEMA_TORSO = SubObject(_TORSO_SCHEMA)
+_DOG_SCHEMA_HEAD = SubObject(_HEAD_SCHEMA)
+_DOG_SCHEMA_TAIL = SubObject(_TAIL_SCHEMA)
 
-_TABLE_SCHEMA = ObjectStructuralSchema(
-    TABLE,
+_DOG_LEGS = [_DOG_SCHEMA_LEG_1, _DOG_SCHEMA_LEG_2, _DOG_SCHEMA_LEG_3, _DOG_SCHEMA_LEG_4]
+
+_DOG_APPENDAGES = [
+    _DOG_SCHEMA_LEG_1,
+    _DOG_SCHEMA_LEG_2,
+    _DOG_SCHEMA_LEG_3,
+    _DOG_SCHEMA_LEG_4,
+    _DOG_SCHEMA_HEAD,
+    _DOG_SCHEMA_TAIL,
+]
+
+_DOG_SCHEMA = ObjectStructuralSchema(
+    DOG,
     sub_objects=[
-        _TABLE_SCHEMA_LEG_1,
-        _TABLE_SCHEMA_LEG_2,
-        _TABLE_SCHEMA_LEG_3,
-        _TABLE_SCHEMA_LEG_4,
-        _TABLE_SCHEMA_TABLETOP,
+        _DOG_SCHEMA_HEAD,
+        _DOG_SCHEMA_TORSO,
+        _DOG_SCHEMA_TAIL,
+        _DOG_SCHEMA_LEG_1,
+        _DOG_SCHEMA_LEG_2,
+        _DOG_SCHEMA_LEG_3,
+        _DOG_SCHEMA_LEG_4,
     ],
     sub_object_relations=sub_object_relations(
         [
-            # Relationship of tabletop to the legs
-            contacts(_TABLE_SCHEMA_TABLETOP, _TABLE_SCHEMA_LEG_4),
-            contacts(_TABLE_SCHEMA_TABLETOP, _TABLE_SCHEMA_LEG_3),
-            contacts(_TABLE_SCHEMA_TABLETOP, _TABLE_SCHEMA_LEG_2),
-            contacts(_TABLE_SCHEMA_TABLETOP, _TABLE_SCHEMA_LEG_1),
-            above(_TABLE_SCHEMA_TABLETOP, _TABLE_SCHEMA_LEG_4),
-            above(_TABLE_SCHEMA_TABLETOP, _TABLE_SCHEMA_LEG_3),
-            above(_TABLE_SCHEMA_TABLETOP, _TABLE_SCHEMA_LEG_2),
-            above(_TABLE_SCHEMA_TABLETOP, _TABLE_SCHEMA_LEG_1),
-            supports(_TABLE_SCHEMA_LEG_1, _TABLE_SCHEMA_TABLETOP),
-            supports(_TABLE_SCHEMA_LEG_2, _TABLE_SCHEMA_TABLETOP),
-            supports(_TABLE_SCHEMA_LEG_3, _TABLE_SCHEMA_TABLETOP),
-            supports(_TABLE_SCHEMA_LEG_4, _TABLE_SCHEMA_TABLETOP),
+            contacts(_DOG_SCHEMA_TORSO, _DOG_APPENDAGES),
+            supports(_DOG_SCHEMA_TORSO, _DOG_SCHEMA_HEAD),
+            supports(_DOG_SCHEMA_TORSO, _DOG_SCHEMA_TAIL),
+            supports(_DOG_LEGS, _DOG_SCHEMA_TORSO),
+            above(_DOG_SCHEMA_HEAD, _DOG_SCHEMA_TORSO),
+            above(_DOG_SCHEMA_TORSO, _DOG_LEGS),
+            bigger_than(_DOG_SCHEMA_TORSO, _DOG_SCHEMA_TAIL),
+        ]
+    ),
+)
+
+# schemata describing the hierarchical physical structure of objects
+_BIRD_SCHEMA_HEAD = SubObject(_HEAD_SCHEMA)
+_BIRD_SCHEMA_TORSO = SubObject(_TORSO_SCHEMA)
+_BIRD_SCHEMA_LEFT_LEG = SubObject(_LEG_SCHEMA)
+_BIRD_SCHEMA_RIGHT_LEG = SubObject(_LEG_SCHEMA)
+_BIRD_SCHEMA_TAIL = SubObject(_TAIL_SCHEMA)
+_BIRD_SCHEMA_LEFT_WING = SubObject(_WING_SCHEMA)
+_BIRD_SCHEMA_RIGHT_WING = SubObject(_WING_SCHEMA)
+_BIRD_LEGS = [_BIRD_SCHEMA_LEFT_LEG, _BIRD_SCHEMA_RIGHT_LEG]
+_BIRD_WINGS = [_BIRD_SCHEMA_LEFT_WING, _BIRD_SCHEMA_RIGHT_WING]
+_BIRD_APPENDAGES = flatten(
+    [_BIRD_LEGS, _BIRD_WINGS, [_BIRD_SCHEMA_HEAD, _BIRD_SCHEMA_TAIL]]
+)
+
+# Bird designed with a Robin or similar garden bird in mind
+_BIRD_SCHEMA = ObjectStructuralSchema(
+    BIRD,
+    sub_objects=[
+        _BIRD_SCHEMA_HEAD,
+        _BIRD_SCHEMA_TORSO,
+        _BIRD_SCHEMA_LEFT_LEG,
+        _BIRD_SCHEMA_RIGHT_LEG,
+        _BIRD_SCHEMA_LEFT_WING,
+        _BIRD_SCHEMA_RIGHT_WING,
+        _BIRD_SCHEMA_TAIL,
+    ],
+    sub_object_relations=sub_object_relations(
+        [
+            contacts(_BIRD_SCHEMA_TORSO, _BIRD_APPENDAGES),
+            above(_BIRD_SCHEMA_HEAD, _BIRD_SCHEMA_TORSO),
+            above(_BIRD_SCHEMA_TORSO, _BIRD_LEGS),
+            bigger_than(_BIRD_SCHEMA_TORSO, _BIRD_SCHEMA_HEAD),
+            bigger_than(_BIRD_SCHEMA_TORSO, _BIRD_LEGS),
+            supports(_BIRD_LEGS, _BIRD_SCHEMA_TORSO),
+            supports(_BIRD_SCHEMA_TORSO, _BIRD_SCHEMA_HEAD),
+            supports(_BIRD_SCHEMA_TORSO, _BIRD_SCHEMA_TAIL),
+            supports(_BIRD_SCHEMA_TORSO, _BIRD_WINGS),
         ]
     ),
 )
 
 _BALL_SCHEMA = ObjectStructuralSchema(BALL)
+_BOX_SCHEMA = ObjectStructuralSchema(BOX)
+_WATER_SCHEMA = ObjectStructuralSchema(WATER)
+_JUICE_SCHEMA = ObjectStructuralSchema(JUICE)
+_BOX_SCHEMA = ObjectStructuralSchema(BOX)
+_MILK_SCHEMA = ObjectStructuralSchema(MILK)
+_DOOR_SCHEMA = ObjectStructuralSchema(DOOR)
+_HAT_SCHEMA = ObjectStructuralSchema(HAT)
+_COOKIE_SCHEMA = ObjectStructuralSchema(COOKIE)
 
 GAILA_PHASE_1_ONTOLOGY = Ontology.from_directed_graph(
     _ontology_graph,
@@ -430,6 +441,15 @@ GAILA_PHASE_1_ONTOLOGY = Ontology.from_directed_graph(
             (CHAIR, _CHAIR_SCHEMA),
             (PERSON, _PERSON_SCHEMA),
             (TABLE, _TABLE_SCHEMA),
+            (DOG, _DOG_SCHEMA),
+            (BIRD, _BIRD_SCHEMA),
+            (BOX, _BOX_SCHEMA),
+            (WATER, _WATER_SCHEMA),
+            (JUICE, _JUICE_SCHEMA),
+            (MILK, _MILK_SCHEMA),
+            (DOOR, _DOOR_SCHEMA),
+            (HAT, _HAT_SCHEMA),
+            (COOKIE, _COOKIE_SCHEMA),
         ]
     ),
 )
