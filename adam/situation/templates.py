@@ -30,7 +30,7 @@ from more_itertools import flatten
 from adam import ontology
 from adam.language.language_generator import SituationT
 from adam.math_3d import Point
-from adam.ontology import Ontology, OntologyNode, OntologyProperty
+from adam.ontology import Ontology, OntologyNode
 from adam.random_utils import SequenceChooser, RandomChooser
 from adam.situation import LocatedObjectSituation, SituationObject
 
@@ -101,10 +101,10 @@ class SimpleSituationTemplate(SituationTemplate):
     The `SituationObject`\ s present in the `Situation`, e.g. {a person, a ball, a table}
     """
     objects_to_required_properties: ImmutableSetMultiDict[
-        SituationTemplateObject, OntologyProperty
+        SituationTemplateObject, OntologyNode
     ] = attrib(converter=_to_immutablesetmultidict)
     r"""
-    A mapping of each `SituationObject` in the `Situation` to `OntologyProperty`\ s it is
+    A mapping of each `SituationObject` in the `Situation` to `OntologyNode`\ s it is
     required to have.
     """
     objects_to_ontology_types: ImmutableDict[
@@ -125,7 +125,7 @@ class SimpleSituationTemplate(SituationTemplate):
             init=False, default=Factory(list)
         )
         _objects_to_properties: List[
-            Tuple[SituationTemplateObject, OntologyProperty]
+            Tuple[SituationTemplateObject, OntologyNode]
         ] = attrib(init=False, default=Factory(list))
         _objects_to_ontology_types: List[
             Tuple[SituationTemplateObject, OntologyNode]
@@ -135,7 +135,7 @@ class SimpleSituationTemplate(SituationTemplate):
             self,
             handle: str,
             ontology_type: OntologyNode,
-            properties: Sequence[OntologyProperty] = (),
+            properties: Sequence[OntologyNode] = (),
         ) -> SituationTemplateObject:
             r"""
             Add an object to a `SimpleSituationTemplate` being built.
@@ -143,7 +143,7 @@ class SimpleSituationTemplate(SituationTemplate):
             Args:
                 handle: the debugging handle of the object
                 ontology_type: the `OntologyNode` which any object filling this slot must match.
-                properties: the `OntologyProperty`\ s any object filling this slot must have.
+                properties: the `OntologyNode`\ s any object filling this slot must have.
 
             Returns:
                 the `SituationTemplateObject` which was created.

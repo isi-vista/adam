@@ -18,7 +18,6 @@ from more_itertools import flatten
 from networkx import DiGraph
 
 from adam.ontology import (
-    OntologyProperty,
     OntologyNode,
     Ontology,
     ObjectStructuralSchema,
@@ -29,22 +28,41 @@ from adam.ontology import (
     make_opposite_dsl_relation,
 )
 
-ANIMATE = OntologyProperty("animate", perceivable=True)
-INANIMATE = OntologyProperty("inanimate", perceivable=True)
-SENTIENT = OntologyProperty("sentient", perceivable=True)
-
-RECOGNIZED_PARTICULAR = OntologyProperty("recognized-particular", perceivable=True)
-"""
-Indicates that a node in the ontology corresponds to a particular (rather than a class)
-which is assumed to be known to the `LanguageLearner`. 
-The prototypical cases here are *Mom* and *Dad*.
-"""
-
 _ontology_graph = DiGraph()  # pylint:disable=invalid-name
 
 
 def subtype(sub: OntologyNode, _super: OntologyNode) -> None:
     _ontology_graph.add_edge(sub, _super)
+
+
+META_PROPERTY = OntologyNode("meta-property")
+PERCEIVABLE = OntologyNode("perceivable")
+subtype(PERCEIVABLE, META_PROPERTY)
+BINARY = OntologyNode("binary")
+subtype(BINARY, META_PROPERTY)
+
+PROPERTY = OntologyNode("property")
+ANIMATE = OntologyNode("animate", local_properties=[PERCEIVABLE, BINARY])
+subtype(ANIMATE, PROPERTY)
+INANIMATE = OntologyNode("inanimate", local_properties=[PERCEIVABLE, BINARY])
+subtype(INANIMATE, PROPERTY)
+SENTIENT = OntologyNode("sentient", local_properties=[PERCEIVABLE, BINARY])
+subtype(SENTIENT, PROPERTY)
+
+RECOGNIZED_PARTICULAR = OntologyNode(
+    "recognized-particular", local_properties=[PERCEIVABLE, BINARY]
+)
+"""
+Indicates that a node in the ontology corresponds to a particular (rather than a class)
+which is assumed to be known to the `LanguageLearner`. 
+The prototypical cases here are *Mom* and *Dad*.
+"""
+subtype(RECOGNIZED_PARTICULAR, PROPERTY)
+
+
+COLOR = OntologyNode("color")
+RED = OntologyNode("red", local_properties=[COLOR, PERCEIVABLE])
+BLUE = OntologyNode("blue", local_properties=[COLOR, PERCEIVABLE])
 
 
 # Objects

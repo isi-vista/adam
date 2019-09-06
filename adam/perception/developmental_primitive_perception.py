@@ -6,7 +6,7 @@ from immutablecollections import ImmutableSet, immutableset
 from immutablecollections.converter_utils import _to_immutableset
 from vistautils.range import Range
 
-from adam.ontology import Ontology, OntologyNode, OntologyProperty
+from adam.ontology import Ontology, OntologyNode
 from adam.ontology.phase1_ontology import RECOGNIZED_PARTICULAR
 from adam.perception import PerceptualRepresentationFrame
 
@@ -104,7 +104,7 @@ class HasBinaryProperty(PropertyPerception):
     A learner's perception that *perceived_object* possesses the given *flag_property*.
     """
 
-    binary_property = attrib(validator=instance_of(OntologyProperty))
+    binary_property = attrib(validator=instance_of(OntologyNode))
 
     def __repr__(self) -> str:
         return f"hasProperty({self.perceived_object}, {self.binary_property}"

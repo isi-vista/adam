@@ -7,12 +7,14 @@ from more_itertools import only
 from vistautils.preconditions import check_arg
 
 from adam.ontology import ObjectStructuralSchema, Ontology, SubObject
-from adam.ontology.phase1_ontology import PART_OF
+from adam.ontology.phase1_ontology import PART_OF, PERCEIVABLE, BINARY, COLOR
 from adam.perception import PerceptualRepresentation, PerceptualRepresentationGenerator
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
     ObjectPerception,
     RelationPerception,
+    PropertyPerception,
+    HasBinaryProperty,
 )
 from adam.random_utils import SequenceChooser
 from adam.situation import HighLevelSemanticsSituation, SituationObject
@@ -111,6 +113,12 @@ class _PerceptionGeneration:
     r"""
     `RelationPerception`\ s perceived by the learner.
     """
+    _property_assertion_perceptions: List[PropertyPerception] = attrib(
+        init=False, default=Factory(list)
+    )
+    r"""
+    `PropertyPerception`\ s perceived by the learner.
+    """
 
     def do(self) -> PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]:
         # The first step is to determine what objects are perceived.
@@ -118,14 +126,48 @@ class _PerceptionGeneration:
 
         # TODO: translate property assertions
         # https://github.com/isi-vista/adam/issues/85
+        self._perceive_property_assertions()
+
         # TODO: translate actions
         # https://github.com/isi-vista/adam/issues/86
         return PerceptualRepresentation.single_frame(
             DevelopmentalPrimitivePerceptionFrame(
                 perceived_objects=self._object_perceptions,
                 relations=self._relation_perceptions,
+                property_assertions=self._property_assertion_perceptions,
             )
         )
+
+    def _perceive_property_assertions(self) -> None:
+        for situation_object in self._situation.objects:
+            # Add the perceivable properties of each situation object into the perception
+            object_properties_from_ontology = self._generator.ontology.properties_for_node(
+                situation_object.ontology_node
+            )
+            for property_ in object_properties_from_ontology.union(
+                situation_object.properties
+            ):
+                # for each property such as animate, sentient, etc
+                attributes_of_property = self._generator.ontology.properties_for_node(
+                    property_
+                )
+                # e.g. is this a perceivable property, binary property, color, etc...
+                if PERCEIVABLE in attributes_of_property:
+                    perceived_object = self._objects_to_perceptions[situation_object]
+                    # Convert the property (which as an OntologyNode object) into PropertyPerception object
+                    if BINARY in attributes_of_property:
+                        perceived_property = HasBinaryProperty(
+                            perceived_object, property_
+                        )
+                    elif COLOR in attributes_of_property:
+                        # TODO: issue: generate perception of colors
+                        raise RuntimeError("Fix this issue COLOR property")
+                    else:
+                        raise RuntimeError(
+                            f"Not sure how to generate perception for property {property_} "
+                            f"which is marked as perceivable"
+                        )
+                    self._property_assertion_perceptions.append(perceived_property)
 
     def _perceive_objects(self) -> None:
         for situation_object in self._situation.objects:
