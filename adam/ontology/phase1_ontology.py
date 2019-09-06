@@ -174,6 +174,8 @@ SUPPORTS = OntologyNode("supports")
 """
 A relation indicating that  one object provides the force to counteract gravity and prevent another 
 object from falling.
+
+Needs refinement to solve ambiguity: https://github.com/isi-vista/adam/issues/88
 """
 subtype(SUPPORTS, SPATIAL_RELATION)
 
@@ -498,6 +500,12 @@ BIRD_SCHEMA = HierarchicalObjectSchema(
             bigger_than(_BIRD_SCHEMA_TORSO, _BIRD_SCHEMA_HEAD),
             bigger_than(_BIRD_SCHEMA_TORSO, _BIRD_SCHEMA_LEFT_LEG),
             bigger_than(_BIRD_SCHEMA_TORSO, _BIRD_SCHEMA_RIGHT_LEG),
+            supports(_BIRD_SCHEMA_RIGHT_LEG, _BIRD_SCHEMA_TORSO),
+            supports(_BIRD_SCHEMA_LEFT_LEG, _BIRD_SCHEMA_TORSO),
+            supports(_BIRD_SCHEMA_TORSO, _BIRD_SCHEMA_HEAD),
+            supports(_BIRD_SCHEMA_TORSO, _BIRD_SCHEMA_TAIL),
+            supports(_BIRD_SCHEMA_TORSO, _BIRD_SCHEMA_LEFT_WING),
+            supports(_BIRD_SCHEMA_TORSO, _BIRD_SCHEMA_RIGHT_WING),
         ]
     ),
 )
