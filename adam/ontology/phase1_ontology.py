@@ -15,13 +15,14 @@ The following will eventually end up here:
 """
 from typing import Tuple
 
+from immutablecollections import immutablesetmultidict
 from networkx import DiGraph
 
 from adam.ontology import (
     OntologyProperty,
     OntologyNode,
     Ontology,
-    HierarchicalObjectSchema,
+    ObjectStructuralSchema,
     SubObject,
     SubObjectRelation,
     sub_object_relations,
@@ -179,7 +180,8 @@ subtype(SUPPORTS, SPATIAL_RELATION)
 
 def supports(obj1: SubObject, obj2: SubObject) -> Tuple[SubObjectRelation, ...]:
     """
-    Convenience method for indicating that one `SubObject` in a `HierarchicalObjectSchema` has a `SUPPORTS` relation with another.
+    Convenience method for indicating that one `SubObject` in a `ObjectStructuralSchema`
+    has a `SUPPORTS` relation with another.
 
     For us with `SubObjectRelation`.
 
@@ -201,7 +203,8 @@ subtype(CONTACTS, SPATIAL_RELATION)
 
 def contacts(obj1: SubObject, obj2: SubObject) -> Tuple[SubObjectRelation, ...]:
     """
-    Convenience methord for indicating that one `SubObject` in a `HierarchicalObjectSchema` has a `CONTACTS` relation with another.
+    Convenience methord for indicating that one `SubObject` in a `ObjectStructuralSchema`
+    has a `CONTACTS` relation with another.
 
     For us with `SubObjectRelation`.
 
@@ -235,7 +238,8 @@ subtype(BELOW, SPATIAL_RELATION)
 
 def above(obj1: SubObject, obj2: SubObject) -> Tuple[SubObjectRelation, ...]:
     """
-    Convenience methord for indicating that one `SubObject` in a `HierarchicalObjectSchema` has a `ABOVE` relation with another.
+    Convenience methord for indicating that one `SubObject` in a `ObjectStructuralSchema`
+    has an `ABOVE` relation with another.
 
     When one entity is above another, the inverse is also true. This function provides the implicit
     inverse assertion for hierarchical objects.
@@ -266,24 +270,23 @@ subtype(DESTINATION, SEMANTIC_ROLE)
 
 # Hierarchical structure of objects
 
-HEAD_SCHEMA = HierarchicalObjectSchema(_HEAD)
-TORSO_SCHEMA = HierarchicalObjectSchema(_TORSO)
-ARM_SCHEMA = HierarchicalObjectSchema(_ARM)
-LEG_SCHEMA = HierarchicalObjectSchema(_LEG)
-CHAIRBACK_SCHEMA = HierarchicalObjectSchema(_CHAIR_BACK)
-CHAIR_SEAT_SCHEMA = HierarchicalObjectSchema(_CHAIR_SEAT)
-TABLETOP_SCHEMA = HierarchicalObjectSchema(_TABLETOP)
-
+_HEAD_SCHEMA = ObjectStructuralSchema(_HEAD)
+_TORSO_SCHEMA = ObjectStructuralSchema(_TORSO)
+_ARM_SCHEMA = ObjectStructuralSchema(_ARM)
+_LEG_SCHEMA = ObjectStructuralSchema(_LEG)
+_CHAIRBACK_SCHEMA = ObjectStructuralSchema(_CHAIR_BACK)
+_CHAIR_SEAT_SCHEMA = ObjectStructuralSchema(_CHAIR_SEAT)
+_TABLETOP_SCHEMA = ObjectStructuralSchema(_TABLETOP)
 
 # schemata describing the hierarchical physical structure of objects
-_PERSON_SCHEMA_HEAD = SubObject(HEAD_SCHEMA)
-_PERSON_SCHEMA_TORSO = SubObject(TORSO_SCHEMA)
-_PERSON_SCHEMA_LEFT_ARM = SubObject(ARM_SCHEMA)
-_PERSON_SCHEMA_RIGHT_ARM = SubObject(ARM_SCHEMA)
-_PERSON_SCHEMA_LEFT_LEG = SubObject(LEG_SCHEMA)
-_PERSON_SCHEMA_RIGHT_LEG = SubObject(LEG_SCHEMA)
+_PERSON_SCHEMA_HEAD = SubObject(_HEAD_SCHEMA)
+_PERSON_SCHEMA_TORSO = SubObject(_TORSO_SCHEMA)
+_PERSON_SCHEMA_LEFT_ARM = SubObject(_ARM_SCHEMA)
+_PERSON_SCHEMA_RIGHT_ARM = SubObject(_ARM_SCHEMA)
+_PERSON_SCHEMA_LEFT_LEG = SubObject(_LEG_SCHEMA)
+_PERSON_SCHEMA_RIGHT_LEG = SubObject(_LEG_SCHEMA)
 
-PERSON_SCHEMA = HierarchicalObjectSchema(
+_PERSON_SCHEMA = ObjectStructuralSchema(
     PERSON,
     sub_objects=[
         _PERSON_SCHEMA_HEAD,
@@ -309,14 +312,14 @@ PERSON_SCHEMA = HierarchicalObjectSchema(
     ),
 )
 
-_CHAIR_SCHMEA_BACK = SubObject(CHAIRBACK_SCHEMA)
-_CHAIR_SCHEMA_LEG_1 = SubObject(LEG_SCHEMA)
-_CHAIR_SCHEMA_LEG_2 = SubObject(LEG_SCHEMA)
-_CHAIR_SCHEMA_LEG_3 = SubObject(LEG_SCHEMA)
-_CHAIR_SCHEMA_LEG_4 = SubObject(LEG_SCHEMA)
-_CHAIR_SCHEMA_SEAT = SubObject(CHAIR_SEAT_SCHEMA)
+_CHAIR_SCHMEA_BACK = SubObject(_CHAIRBACK_SCHEMA)
+_CHAIR_SCHEMA_LEG_1 = SubObject(_LEG_SCHEMA)
+_CHAIR_SCHEMA_LEG_2 = SubObject(_LEG_SCHEMA)
+_CHAIR_SCHEMA_LEG_3 = SubObject(_LEG_SCHEMA)
+_CHAIR_SCHEMA_LEG_4 = SubObject(_LEG_SCHEMA)
+_CHAIR_SCHEMA_SEAT = SubObject(_CHAIR_SEAT_SCHEMA)
 
-CHAIR_SCHEMA = HierarchicalObjectSchema(
+_CHAIR_SCHEMA = ObjectStructuralSchema(
     CHAIR,
     sub_objects=[
         _CHAIR_SCHMEA_BACK,
@@ -348,13 +351,13 @@ CHAIR_SCHEMA = HierarchicalObjectSchema(
 )
 
 # schemata describing the hierarchical physical structure of objects
-_TABLE_SCHEMA_LEG_1 = SubObject(LEG_SCHEMA)
-_TABLE_SCHEMA_LEG_2 = SubObject(LEG_SCHEMA)
-_TABLE_SCHEMA_LEG_3 = SubObject(LEG_SCHEMA)
-_TABLE_SCHEMA_LEG_4 = SubObject(LEG_SCHEMA)
-_TABLE_SCHEMA_TABLETOP = SubObject(TABLETOP_SCHEMA)
+_TABLE_SCHEMA_LEG_1 = SubObject(_LEG_SCHEMA)
+_TABLE_SCHEMA_LEG_2 = SubObject(_LEG_SCHEMA)
+_TABLE_SCHEMA_LEG_3 = SubObject(_LEG_SCHEMA)
+_TABLE_SCHEMA_LEG_4 = SubObject(_LEG_SCHEMA)
+_TABLE_SCHEMA_TABLETOP = SubObject(_TABLETOP_SCHEMA)
 
-TABLE_SCHEMA = HierarchicalObjectSchema(
+_TABLE_SCHEMA = ObjectStructuralSchema(
     TABLE,
     sub_objects=[
         _TABLE_SCHEMA_LEG_1,
@@ -383,13 +386,13 @@ TABLE_SCHEMA = HierarchicalObjectSchema(
 )
 
 # schemata describing the hierarchical physical structure of objects
-_TABLE_SCHEMA_LEG_1 = SubObject(LEG_SCHEMA)
-_TABLE_SCHEMA_LEG_2 = SubObject(LEG_SCHEMA)
-_TABLE_SCHEMA_LEG_3 = SubObject(LEG_SCHEMA)
-_TABLE_SCHEMA_LEG_4 = SubObject(LEG_SCHEMA)
-_TABLE_SCHEMA_TABLETOP = SubObject(TABLETOP_SCHEMA)
+_TABLE_SCHEMA_LEG_1 = SubObject(_LEG_SCHEMA)
+_TABLE_SCHEMA_LEG_2 = SubObject(_LEG_SCHEMA)
+_TABLE_SCHEMA_LEG_3 = SubObject(_LEG_SCHEMA)
+_TABLE_SCHEMA_LEG_4 = SubObject(_LEG_SCHEMA)
+_TABLE_SCHEMA_TABLETOP = SubObject(_TABLETOP_SCHEMA)
 
-TABLE_SCHEMA = HierarchicalObjectSchema(
+_TABLE_SCHEMA = ObjectStructuralSchema(
     TABLE,
     sub_objects=[
         _TABLE_SCHEMA_LEG_1,
@@ -417,4 +420,16 @@ TABLE_SCHEMA = HierarchicalObjectSchema(
     ),
 )
 
-GAILA_PHASE_1_ONTOLOGY = Ontology.from_directed_graph(_ontology_graph)
+_BALL_SCHEMA = ObjectStructuralSchema(BALL)
+
+GAILA_PHASE_1_ONTOLOGY = Ontology.from_directed_graph(
+    _ontology_graph,
+    immutablesetmultidict(
+        [
+            (BALL, _BALL_SCHEMA),
+            (CHAIR, _CHAIR_SCHEMA),
+            (PERSON, _PERSON_SCHEMA),
+            (TABLE, _TABLE_SCHEMA),
+        ]
+    ),
+)
