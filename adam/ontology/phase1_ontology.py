@@ -104,15 +104,16 @@ subtype(DOG, NONHUMAN_ANIMAL)
 BIRD = OntologyNode("bird")
 subtype(BIRD, NONHUMAN_ANIMAL)
 
-# head, arm, torso, and leg are not part of the phase 1
-# vocabulary but are useful for describing the structure
-# of PERSON
-HEAD = OntologyNode("head")
-ARM = OntologyNode("arm")
-TORSO = OntologyNode("torso")
-LEG = OntologyNode("leg")
+
+# Terms below are internal and can only be accessed as parts of other objects
+_HEAD = OntologyNode("head")
+_ARM = OntologyNode("arm")
+_TORSO = OntologyNode("torso")
+_LEG = OntologyNode("leg")
 _CHAIR_BACK = OntologyNode("chairback")
 _CHAIR_SEAT = OntologyNode("chairseat")
+_TABLETOP = OntologyNode("tabletop")
+
 
 # Verbs
 
@@ -265,12 +266,14 @@ subtype(DESTINATION, SEMANTIC_ROLE)
 
 # Hierarchical structure of objects
 
-HEAD_SCHEMA = HierarchicalObjectSchema(HEAD)
-TORSO_SCHEMA = HierarchicalObjectSchema(TORSO)
-ARM_SCHEMA = HierarchicalObjectSchema(ARM)
-LEG_SCHEMA = HierarchicalObjectSchema(LEG)
-_CHAIRBACK_SCHEMA = HierarchicalObjectSchema(_CHAIR_BACK)
-_CHAIR_SEAT_SCHEMA = HierarchicalObjectSchema(_CHAIR_SEAT)
+HEAD_SCHEMA = HierarchicalObjectSchema(_HEAD)
+TORSO_SCHEMA = HierarchicalObjectSchema(_TORSO)
+ARM_SCHEMA = HierarchicalObjectSchema(_ARM)
+LEG_SCHEMA = HierarchicalObjectSchema(_LEG)
+CHAIRBACK_SCHEMA = HierarchicalObjectSchema(_CHAIR_BACK)
+CHAIR_SEAT_SCHEMA = HierarchicalObjectSchema(_CHAIR_SEAT)
+TABLETOP_SCHEMA = HierarchicalObjectSchema(_TABLETOP)
+
 
 # schemata describing the hierarchical physical structure of objects
 _PERSON_SCHEMA_HEAD = SubObject(HEAD_SCHEMA)
@@ -306,12 +309,12 @@ PERSON_SCHEMA = HierarchicalObjectSchema(
     ),
 )
 
-_CHAIR_SCHMEA_BACK = SubObject(_CHAIRBACK_SCHEMA)
+_CHAIR_SCHMEA_BACK = SubObject(CHAIRBACK_SCHEMA)
 _CHAIR_SCHEMA_LEG_1 = SubObject(LEG_SCHEMA)
 _CHAIR_SCHEMA_LEG_2 = SubObject(LEG_SCHEMA)
 _CHAIR_SCHEMA_LEG_3 = SubObject(LEG_SCHEMA)
 _CHAIR_SCHEMA_LEG_4 = SubObject(LEG_SCHEMA)
-_CHAIR_SCHEMA_SEAT = SubObject(_CHAIR_SEAT_SCHEMA)
+_CHAIR_SCHEMA_SEAT = SubObject(CHAIR_SEAT_SCHEMA)
 
 CHAIR_SCHEMA = HierarchicalObjectSchema(
     CHAIR,
@@ -340,6 +343,76 @@ CHAIR_SCHEMA = HierarchicalObjectSchema(
             above(_CHAIR_SCHEMA_SEAT, _CHAIR_SCHEMA_LEG_2),
             above(_CHAIR_SCHEMA_SEAT, _CHAIR_SCHEMA_LEG_3),
             above(_CHAIR_SCHEMA_SEAT, _CHAIR_SCHEMA_LEG_4),
+        ]
+    ),
+)
+
+# schemata describing the hierarchical physical structure of objects
+_TABLE_SCHEMA_LEG_1 = SubObject(LEG_SCHEMA)
+_TABLE_SCHEMA_LEG_2 = SubObject(LEG_SCHEMA)
+_TABLE_SCHEMA_LEG_3 = SubObject(LEG_SCHEMA)
+_TABLE_SCHEMA_LEG_4 = SubObject(LEG_SCHEMA)
+_TABLE_SCHEMA_TABLETOP = SubObject(TABLETOP_SCHEMA)
+
+TABLE_SCHEMA = HierarchicalObjectSchema(
+    TABLE,
+    sub_objects=[
+        _TABLE_SCHEMA_LEG_1,
+        _TABLE_SCHEMA_LEG_2,
+        _TABLE_SCHEMA_LEG_3,
+        _TABLE_SCHEMA_LEG_4,
+        _TABLE_SCHEMA_TABLETOP,
+    ],
+    sub_object_relations=sub_object_relations(
+        [
+            # Relationship of tabletop to the legs
+            contacts(_TABLE_SCHEMA_TABLETOP, _TABLE_SCHEMA_LEG_4),
+            contacts(_TABLE_SCHEMA_TABLETOP, _TABLE_SCHEMA_LEG_3),
+            contacts(_TABLE_SCHEMA_TABLETOP, _TABLE_SCHEMA_LEG_2),
+            contacts(_TABLE_SCHEMA_TABLETOP, _TABLE_SCHEMA_LEG_1),
+            above(_TABLE_SCHEMA_TABLETOP, _TABLE_SCHEMA_LEG_4),
+            above(_TABLE_SCHEMA_TABLETOP, _TABLE_SCHEMA_LEG_3),
+            above(_TABLE_SCHEMA_TABLETOP, _TABLE_SCHEMA_LEG_2),
+            above(_TABLE_SCHEMA_TABLETOP, _TABLE_SCHEMA_LEG_1),
+            supports(_TABLE_SCHEMA_LEG_1, _TABLE_SCHEMA_TABLETOP),
+            supports(_TABLE_SCHEMA_LEG_2, _TABLE_SCHEMA_TABLETOP),
+            supports(_TABLE_SCHEMA_LEG_3, _TABLE_SCHEMA_TABLETOP),
+            supports(_TABLE_SCHEMA_LEG_4, _TABLE_SCHEMA_TABLETOP),
+        ]
+    ),
+)
+
+# schemata describing the hierarchical physical structure of objects
+_TABLE_SCHEMA_LEG_1 = SubObject(LEG_SCHEMA)
+_TABLE_SCHEMA_LEG_2 = SubObject(LEG_SCHEMA)
+_TABLE_SCHEMA_LEG_3 = SubObject(LEG_SCHEMA)
+_TABLE_SCHEMA_LEG_4 = SubObject(LEG_SCHEMA)
+_TABLE_SCHEMA_TABLETOP = SubObject(TABLETOP_SCHEMA)
+
+TABLE_SCHEMA = HierarchicalObjectSchema(
+    TABLE,
+    sub_objects=[
+        _TABLE_SCHEMA_LEG_1,
+        _TABLE_SCHEMA_LEG_2,
+        _TABLE_SCHEMA_LEG_3,
+        _TABLE_SCHEMA_LEG_4,
+        _TABLE_SCHEMA_TABLETOP,
+    ],
+    sub_object_relations=sub_object_relations(
+        [
+            # Relationship of tabletop to the legs
+            contacts(_TABLE_SCHEMA_TABLETOP, _TABLE_SCHEMA_LEG_4),
+            contacts(_TABLE_SCHEMA_TABLETOP, _TABLE_SCHEMA_LEG_3),
+            contacts(_TABLE_SCHEMA_TABLETOP, _TABLE_SCHEMA_LEG_2),
+            contacts(_TABLE_SCHEMA_TABLETOP, _TABLE_SCHEMA_LEG_1),
+            above(_TABLE_SCHEMA_TABLETOP, _TABLE_SCHEMA_LEG_4),
+            above(_TABLE_SCHEMA_TABLETOP, _TABLE_SCHEMA_LEG_3),
+            above(_TABLE_SCHEMA_TABLETOP, _TABLE_SCHEMA_LEG_2),
+            above(_TABLE_SCHEMA_TABLETOP, _TABLE_SCHEMA_LEG_1),
+            supports(_TABLE_SCHEMA_LEG_1, _TABLE_SCHEMA_TABLETOP),
+            supports(_TABLE_SCHEMA_LEG_2, _TABLE_SCHEMA_TABLETOP),
+            supports(_TABLE_SCHEMA_LEG_3, _TABLE_SCHEMA_TABLETOP),
+            supports(_TABLE_SCHEMA_LEG_4, _TABLE_SCHEMA_TABLETOP),
         ]
     ),
 )
