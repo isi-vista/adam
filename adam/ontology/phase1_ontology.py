@@ -270,23 +270,23 @@ subtype(DESTINATION, SEMANTIC_ROLE)
 
 # Hierarchical structure of objects
 
-HEAD_SCHEMA = ObjectStructuralSchema(_HEAD)
-TORSO_SCHEMA = ObjectStructuralSchema(_TORSO)
-ARM_SCHEMA = ObjectStructuralSchema(_ARM)
-LEG_SCHEMA = ObjectStructuralSchema(_LEG)
-CHAIRBACK_SCHEMA = ObjectStructuralSchema(_CHAIR_BACK)
-CHAIR_SEAT_SCHEMA = ObjectStructuralSchema(_CHAIR_SEAT)
-TABLETOP_SCHEMA = ObjectStructuralSchema(_TABLETOP)
+_HEAD_SCHEMA = ObjectStructuralSchema(_HEAD)
+_TORSO_SCHEMA = ObjectStructuralSchema(_TORSO)
+_ARM_SCHEMA = ObjectStructuralSchema(_ARM)
+_LEG_SCHEMA = ObjectStructuralSchema(_LEG)
+_CHAIRBACK_SCHEMA = ObjectStructuralSchema(_CHAIR_BACK)
+_CHAIR_SEAT_SCHEMA = ObjectStructuralSchema(_CHAIR_SEAT)
+_TABLETOP_SCHEMA = ObjectStructuralSchema(_TABLETOP)
 
 # schemata describing the hierarchical physical structure of objects
-_PERSON_SCHEMA_HEAD = SubObject(HEAD_SCHEMA)
-_PERSON_SCHEMA_TORSO = SubObject(TORSO_SCHEMA)
-_PERSON_SCHEMA_LEFT_ARM = SubObject(ARM_SCHEMA)
-_PERSON_SCHEMA_RIGHT_ARM = SubObject(ARM_SCHEMA)
-_PERSON_SCHEMA_LEFT_LEG = SubObject(LEG_SCHEMA)
-_PERSON_SCHEMA_RIGHT_LEG = SubObject(LEG_SCHEMA)
+_PERSON_SCHEMA_HEAD = SubObject(_HEAD_SCHEMA)
+_PERSON_SCHEMA_TORSO = SubObject(_TORSO_SCHEMA)
+_PERSON_SCHEMA_LEFT_ARM = SubObject(_ARM_SCHEMA)
+_PERSON_SCHEMA_RIGHT_ARM = SubObject(_ARM_SCHEMA)
+_PERSON_SCHEMA_LEFT_LEG = SubObject(_LEG_SCHEMA)
+_PERSON_SCHEMA_RIGHT_LEG = SubObject(_LEG_SCHEMA)
 
-PERSON_SCHEMA = ObjectStructuralSchema(
+_PERSON_SCHEMA = ObjectStructuralSchema(
     PERSON,
     sub_objects=[
         _PERSON_SCHEMA_HEAD,
@@ -312,14 +312,14 @@ PERSON_SCHEMA = ObjectStructuralSchema(
     ),
 )
 
-_CHAIR_SCHMEA_BACK = SubObject(CHAIRBACK_SCHEMA)
-_CHAIR_SCHEMA_LEG_1 = SubObject(LEG_SCHEMA)
-_CHAIR_SCHEMA_LEG_2 = SubObject(LEG_SCHEMA)
-_CHAIR_SCHEMA_LEG_3 = SubObject(LEG_SCHEMA)
-_CHAIR_SCHEMA_LEG_4 = SubObject(LEG_SCHEMA)
-_CHAIR_SCHEMA_SEAT = SubObject(CHAIR_SEAT_SCHEMA)
+_CHAIR_SCHMEA_BACK = SubObject(_CHAIRBACK_SCHEMA)
+_CHAIR_SCHEMA_LEG_1 = SubObject(_LEG_SCHEMA)
+_CHAIR_SCHEMA_LEG_2 = SubObject(_LEG_SCHEMA)
+_CHAIR_SCHEMA_LEG_3 = SubObject(_LEG_SCHEMA)
+_CHAIR_SCHEMA_LEG_4 = SubObject(_LEG_SCHEMA)
+_CHAIR_SCHEMA_SEAT = SubObject(_CHAIR_SEAT_SCHEMA)
 
-CHAIR_SCHEMA = ObjectStructuralSchema(
+_CHAIR_SCHEMA = ObjectStructuralSchema(
     CHAIR,
     sub_objects=[
         _CHAIR_SCHMEA_BACK,
@@ -351,13 +351,13 @@ CHAIR_SCHEMA = ObjectStructuralSchema(
 )
 
 # schemata describing the hierarchical physical structure of objects
-_TABLE_SCHEMA_LEG_1 = SubObject(LEG_SCHEMA)
-_TABLE_SCHEMA_LEG_2 = SubObject(LEG_SCHEMA)
-_TABLE_SCHEMA_LEG_3 = SubObject(LEG_SCHEMA)
-_TABLE_SCHEMA_LEG_4 = SubObject(LEG_SCHEMA)
-_TABLE_SCHEMA_TABLETOP = SubObject(TABLETOP_SCHEMA)
+_TABLE_SCHEMA_LEG_1 = SubObject(_LEG_SCHEMA)
+_TABLE_SCHEMA_LEG_2 = SubObject(_LEG_SCHEMA)
+_TABLE_SCHEMA_LEG_3 = SubObject(_LEG_SCHEMA)
+_TABLE_SCHEMA_LEG_4 = SubObject(_LEG_SCHEMA)
+_TABLE_SCHEMA_TABLETOP = SubObject(_TABLETOP_SCHEMA)
 
-TABLE_SCHEMA = ObjectStructuralSchema(
+_TABLE_SCHEMA = ObjectStructuralSchema(
     TABLE,
     sub_objects=[
         _TABLE_SCHEMA_LEG_1,
@@ -386,13 +386,13 @@ TABLE_SCHEMA = ObjectStructuralSchema(
 )
 
 # schemata describing the hierarchical physical structure of objects
-_TABLE_SCHEMA_LEG_1 = SubObject(LEG_SCHEMA)
-_TABLE_SCHEMA_LEG_2 = SubObject(LEG_SCHEMA)
-_TABLE_SCHEMA_LEG_3 = SubObject(LEG_SCHEMA)
-_TABLE_SCHEMA_LEG_4 = SubObject(LEG_SCHEMA)
-_TABLE_SCHEMA_TABLETOP = SubObject(TABLETOP_SCHEMA)
+_TABLE_SCHEMA_LEG_1 = SubObject(_LEG_SCHEMA)
+_TABLE_SCHEMA_LEG_2 = SubObject(_LEG_SCHEMA)
+_TABLE_SCHEMA_LEG_3 = SubObject(_LEG_SCHEMA)
+_TABLE_SCHEMA_LEG_4 = SubObject(_LEG_SCHEMA)
+_TABLE_SCHEMA_TABLETOP = SubObject(_TABLETOP_SCHEMA)
 
-TABLE_SCHEMA = ObjectStructuralSchema(
+_TABLE_SCHEMA = ObjectStructuralSchema(
     TABLE,
     sub_objects=[
         _TABLE_SCHEMA_LEG_1,
@@ -420,16 +420,16 @@ TABLE_SCHEMA = ObjectStructuralSchema(
     ),
 )
 
-BALL_SCHEMA = ObjectStructuralSchema(BALL)
+_BALL_SCHEMA = ObjectStructuralSchema(BALL)
 
 GAILA_PHASE_1_ONTOLOGY = Ontology.from_directed_graph(
     _ontology_graph,
     immutablesetmultidict(
         [
-            (BALL, BALL_SCHEMA),
-            (CHAIR, CHAIR_SCHEMA),
-            (PERSON, PERSON_SCHEMA),
-            (TABLE, TABLE_SCHEMA),
+            (BALL, _BALL_SCHEMA),
+            (CHAIR, _CHAIR_SCHEMA),
+            (PERSON, _PERSON_SCHEMA),
+            (TABLE, _TABLE_SCHEMA),
         ]
     ),
 )
