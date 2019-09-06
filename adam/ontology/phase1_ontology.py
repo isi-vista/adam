@@ -344,7 +344,7 @@ CHAIR_SCHEMA = HierarchicalObjectSchema(
             above(_CHAIR_SCHEMA_SEAT, _CHAIR_SCHEMA_LEG_3),
             above(_CHAIR_SCHEMA_SEAT, _CHAIR_SCHEMA_LEG_4),
         ]
-    )
+    ),
 )
 
 # schemata describing the hierarchical physical structure of objects
