@@ -330,12 +330,6 @@ def make_dsl_relation(
     return dsl_relation_function
 
 
-# TODOs for Jacob
-# similar functions for
-# make_symmetric_dsl_relation (e.g. contacts)
-# make_dsl_relation_with_opposite (e.g. above/below) [for this one, be sure opposite is kw-only]
-
-
 def make_symetric_dsl_relation(
     relation_type: OntologyNode
 ) -> Callable[
@@ -384,8 +378,8 @@ def make_opposite_dsl_relation(
     Make a function which, when given either single or groups
     of sub-object arguments for two slots of a relation,
     generates a  `SubObjectRelation`\ s of type *relation_type*
-    and an inverse of type *opposite_type* for the cross-product
-    of the arguments.
+    and an inverse of type *opposite_type* for the for the
+    reversed cross-product of the arguments
 
     See `adam.ontology.phase1_ontology` for many examples.
     """

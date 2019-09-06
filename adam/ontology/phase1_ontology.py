@@ -242,7 +242,7 @@ _PERSON_SCHEMA_RIGHT_ARM = SubObject(_ARM_SCHEMA)
 _PERSON_SCHEMA_LEFT_LEG = SubObject(_LEG_SCHEMA)
 _PERSON_SCHEMA_RIGHT_LEG = SubObject(_LEG_SCHEMA)
 
-_PERSON_SCHEMA_LIMBS = [
+_PERSON_SCHEMA_APPENDAGES = [
     _PERSON_SCHEMA_LEFT_ARM,
     _PERSON_SCHEMA_LEFT_LEG,
     _PERSON_SCHEMA_RIGHT_ARM,
@@ -264,7 +264,7 @@ _PERSON_SCHEMA = ObjectStructuralSchema(
             supports(_PERSON_SCHEMA_TORSO, _PERSON_SCHEMA_HEAD),
             above(_PERSON_SCHEMA_HEAD, _PERSON_SCHEMA_TORSO),
             bigger_than(_PERSON_SCHEMA_TORSO, _PERSON_SCHEMA_HEAD),
-            contacts(_PERSON_SCHEMA_TORSO, _PERSON_SCHEMA_LIMBS),
+            contacts(_PERSON_SCHEMA_TORSO, _PERSON_SCHEMA_APPENDAGES),
         ]
     ),
 )
@@ -349,7 +349,7 @@ _DOG_SCHEMA_TAIL = SubObject(_TAIL_SCHEMA)
 
 _DOG_LEGS = [_DOG_SCHEMA_LEG_1, _DOG_SCHEMA_LEG_2, _DOG_SCHEMA_LEG_3, _DOG_SCHEMA_LEG_4]
 
-_DOG_LIMBS = [
+_DOG_APPENDAGES = [
     _DOG_SCHEMA_LEG_1,
     _DOG_SCHEMA_LEG_2,
     _DOG_SCHEMA_LEG_3,
@@ -371,7 +371,7 @@ _DOG_SCHEMA = ObjectStructuralSchema(
     ],
     sub_object_relations=sub_object_relations(
         [
-            contacts(_DOG_SCHEMA_TORSO, _DOG_LIMBS),
+            contacts(_DOG_SCHEMA_TORSO, _DOG_APPENDAGES),
             supports(_DOG_SCHEMA_TORSO, _DOG_SCHEMA_HEAD),
             supports(_DOG_SCHEMA_TORSO, _DOG_SCHEMA_TAIL),
             supports(_DOG_LEGS, _DOG_SCHEMA_TORSO),
@@ -392,7 +392,9 @@ _BIRD_SCHEMA_LEFT_WING = SubObject(_WING_SCHEMA)
 _BIRD_SCHEMA_RIGHT_WING = SubObject(_WING_SCHEMA)
 _BIRD_LEGS = [_BIRD_SCHEMA_LEFT_LEG, _BIRD_SCHEMA_RIGHT_LEG]
 _BIRD_WINGS = [_BIRD_SCHEMA_LEFT_WING, _BIRD_SCHEMA_RIGHT_WING]
-_BIRD_LIMBS = flatten([_BIRD_LEGS, _BIRD_WINGS, [_BIRD_SCHEMA_HEAD, _BIRD_SCHEMA_TAIL]])
+_BIRD_APPENDAGES = flatten(
+    [_BIRD_LEGS, _BIRD_WINGS, [_BIRD_SCHEMA_HEAD, _BIRD_SCHEMA_TAIL]]
+)
 
 # Bird designed with a Robin or similar garden bird in mind
 _BIRD_SCHEMA = ObjectStructuralSchema(
@@ -408,7 +410,7 @@ _BIRD_SCHEMA = ObjectStructuralSchema(
     ],
     sub_object_relations=sub_object_relations(
         [
-            contacts(_BIRD_SCHEMA_TORSO, _BIRD_LIMBS),
+            contacts(_BIRD_SCHEMA_TORSO, _BIRD_APPENDAGES),
             above(_BIRD_SCHEMA_HEAD, _BIRD_SCHEMA_TORSO),
             above(_BIRD_SCHEMA_TORSO, _BIRD_LEGS),
             bigger_than(_BIRD_SCHEMA_TORSO, _BIRD_SCHEMA_HEAD),
