@@ -13,8 +13,8 @@ The following will eventually end up here:
 - Relations, Modifiers, Function Words: basic color terms (red, blue, green, white, black…), one,
   two, I, me, my, you, your, to, in, on, [beside, behind, in front of, over, under], up, down
 """
-from immutablecollections import immutablesetmultidict
 from more_itertools import flatten
+from immutablecollections import immutablesetmultidict, immutableset
 from networkx import DiGraph
 
 from adam.ontology import (
@@ -152,6 +152,32 @@ subtype(DOG, NONHUMAN_ANIMAL)
 BIRD = OntologyNode("bird")
 subtype(BIRD, NONHUMAN_ANIMAL)
 
+PHASE_1_CURRICULUM_OBJECTS = immutableset(
+    [
+        BABY,
+        BALL,
+        BIRD,
+        BOOK,
+        BOX,
+        CAR,
+        CHAIR,
+        COOKIE,
+        CUP,
+        DAD,
+        DOG,
+        DOOR,
+        HAND,
+        HAT,
+        HEAD,
+        HOUSE,
+        JUICE,
+        MILK,
+        MOM,
+        TABLE,
+        TRUCK,
+        WATER,
+    ]
+)
 
 # Terms below are internal and can only be accessed as parts of other objects
 _ARM = OntologyNode("arm")
