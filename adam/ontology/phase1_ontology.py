@@ -424,6 +424,14 @@ _BIRD_SCHEMA = ObjectStructuralSchema(
 )
 
 _BALL_SCHEMA = ObjectStructuralSchema(BALL)
+_BOX_SCHEMA = ObjectStructuralSchema(BOX)
+_WATER_SCHEMA = ObjectStructuralSchema(WATER)
+_JUICE_SCHEMA = ObjectStructuralSchema(JUICE)
+_BOX_SCHEMA = ObjectStructuralSchema(BOX)
+_MILK_SCHEMA = ObjectStructuralSchema(MILK)
+_DOOR_SCHEMA = ObjectStructuralSchema(DOOR)
+_HAT_SCHEMA = ObjectStructuralSchema(HAT)
+_COOKIE_SCHEMA = ObjectStructuralSchema(COOKIE)
 
 GAILA_PHASE_1_ONTOLOGY = Ontology.from_directed_graph(
     _ontology_graph,
@@ -435,6 +443,13 @@ GAILA_PHASE_1_ONTOLOGY = Ontology.from_directed_graph(
             (TABLE, _TABLE_SCHEMA),
             (DOG, _DOG_SCHEMA),
             (BIRD, _BIRD_SCHEMA),
+            (BOX, _BOX_SCHEMA),
+            (WATER, _WATER_SCHEMA),
+            (JUICE, _JUICE_SCHEMA),
+            (MILK, _MILK_SCHEMA),
+            (DOOR, _DOOR_SCHEMA),
+            (HAT, _HAT_SCHEMA),
+            (COOKIE, _COOKIE_SCHEMA),
         ]
     ),
 )
