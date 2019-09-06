@@ -159,6 +159,15 @@ adam.perception.marr
 .. automodule:: adam.perception.marr
 
 *********************************************
+Supporting classes: Curricula
+*********************************************
+
+adam.curriculum
+----------------------------------
+.. automodule:: adam.curriculum
+
+
+*********************************************
 Supporting classes: Experiments
 *********************************************
 
@@ -198,6 +207,9 @@ adam.language_specific.english.english_phase_1_lexicon
 ------------------------------------------------------
 .. automodule:: adam.language_specific.english.english_phase_1_lexicon
 
+adam.curriculum.phase1_curriculum
+----------------------------------
+.. automodule:: adam.curriculum.phase1_curriculum
 
 *********************************************
 Language-Specific
