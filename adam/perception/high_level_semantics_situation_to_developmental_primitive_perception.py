@@ -117,7 +117,9 @@ class _PerceptionGeneration:
         self._perceive_objects()
 
         # TODO: translate property assertions
+        # https://github.com/isi-vista/adam/issues/85
         # TODO: translate actions
+        # https://github.com/isi-vista/adam/issues/86
         return PerceptualRepresentation.single_frame(
             DevelopmentalPrimitivePerceptionFrame(
                 perceived_objects=self._object_perceptions,
@@ -141,6 +143,7 @@ class _PerceptionGeneration:
                 raise RuntimeError(f"No structural schema found for {situation_object}")
             if len(object_schemata) > 1:
                 # TODO: add issue for this
+                # https://github.com/isi-vista/adam/issues/87
                 raise RuntimeError(
                     f"Support for objects with multiple structural schemata has not "
                     f"yet keep implemented."
@@ -189,6 +192,7 @@ class _PerceptionGeneration:
         for sub_object_relation in schema.sub_object_relations:
             # TODO: right now we translate all situation relations directly to perceptual
             # relations without modification. This is not always the right thing.
+            # See https://github.com/isi-vista/adam/issues/80 .
             self._relation_perceptions.append(
                 RelationPerception(
                     sub_object_relation.relation_type,
