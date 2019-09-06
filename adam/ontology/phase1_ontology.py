@@ -25,6 +25,7 @@ from adam.ontology import (
     SubObject,
     SubObjectRelation,
     sub_object_relations,
+    make_dsl_relation,
 )
 
 ANIMATE = OntologyProperty("animate")
@@ -179,20 +180,7 @@ Needs refinement to solve ambiguity: https://github.com/isi-vista/adam/issues/88
 """
 subtype(SUPPORTS, SPATIAL_RELATION)
 
-
-def supports(obj1: SubObject, obj2: SubObject) -> Tuple[SubObjectRelation, ...]:
-    """
-    Convenience method for indicating that one `SubObject` in a `HierarchicalObjectSchema` has a `SUPPORTS` relation with another.
-
-    For us with `SubObjectRelation`.
-
-    Args:
-        *obj1*: The `SubObject` which supports obj2
-        *obj2*: The `SubObject` being supported
-    Returns:
-        Tuple[`SubObjectRelation`,...] see `SubObjectRelation` for more information
-    """
-    return (SubObjectRelation(SUPPORTS, obj1, obj2),)
+supports = make_dsl_relation(SUPPORTS)  # pylint:disable=invalid-name
 
 
 CONTACTS = OntologyNode("contacts")
@@ -320,6 +308,13 @@ _CHAIR_SCHEMA_LEG_3 = SubObject(LEG_SCHEMA)
 _CHAIR_SCHEMA_LEG_4 = SubObject(LEG_SCHEMA)
 _CHAIR_SCHEMA_SEAT = SubObject(CHAIR_SEAT_SCHEMA)
 
+_CHAIR_LEGS = [
+                    _CHAIR_SCHEMA_LEG_1,
+                    _CHAIR_SCHEMA_LEG_2,
+                    _CHAIR_SCHEMA_LEG_3,
+                    _CHAIR_SCHEMA_LEG_4,
+                ]
+
 CHAIR_SCHEMA = HierarchicalObjectSchema(
     CHAIR,
     sub_objects=[
@@ -337,10 +332,7 @@ CHAIR_SCHEMA = HierarchicalObjectSchema(
             contacts(_CHAIR_SCHEMA_LEG_2, _CHAIR_SCHEMA_SEAT),
             contacts(_CHAIR_SCHEMA_LEG_3, _CHAIR_SCHEMA_SEAT),
             contacts(_CHAIR_SCHEMA_LEG_4, _CHAIR_SCHEMA_SEAT),
-            supports(_CHAIR_SCHEMA_LEG_1, _CHAIR_SCHEMA_SEAT),
-            supports(_CHAIR_SCHEMA_LEG_2, _CHAIR_SCHEMA_SEAT),
-            supports(_CHAIR_SCHEMA_LEG_3, _CHAIR_SCHEMA_SEAT),
-            supports(_CHAIR_SCHEMA_LEG_4, _CHAIR_SCHEMA_SEAT),
+            supports(_CHAIR_LEGS, _CHAIR_SCHEMA_SEAT),
             supports(_CHAIR_SCHEMA_SEAT, _CHAIR_SCHMEA_BACK),
             above(_CHAIR_SCHMEA_BACK, _CHAIR_SCHEMA_SEAT),
             above(_CHAIR_SCHEMA_SEAT, _CHAIR_SCHEMA_LEG_1),
