@@ -113,7 +113,8 @@ _LEG = OntologyNode("leg")
 _CHAIR_BACK = OntologyNode("chairback")
 _CHAIR_SEAT = OntologyNode("chairseat")
 _TABLETOP = OntologyNode("tabletop")
-
+_TAIL = OntologyNode("tail")
+_WING = OntologyNode("wing")
 
 # Verbs
 
@@ -273,7 +274,8 @@ LEG_SCHEMA = HierarchicalObjectSchema(_LEG)
 CHAIRBACK_SCHEMA = HierarchicalObjectSchema(_CHAIR_BACK)
 CHAIR_SEAT_SCHEMA = HierarchicalObjectSchema(_CHAIR_SEAT)
 TABLETOP_SCHEMA = HierarchicalObjectSchema(_TABLETOP)
-
+TAIL_SCHEMA = HierarchicalObjectSchema(_TAIL)
+WING_SCHEMA = HierarchicalObjectSchema(_WING)
 
 # schemata describing the hierarchical physical structure of objects
 _PERSON_SCHEMA_HEAD = SubObject(HEAD_SCHEMA)
@@ -413,6 +415,89 @@ TABLE_SCHEMA = HierarchicalObjectSchema(
             supports(_TABLE_SCHEMA_LEG_2, _TABLE_SCHEMA_TABLETOP),
             supports(_TABLE_SCHEMA_LEG_3, _TABLE_SCHEMA_TABLETOP),
             supports(_TABLE_SCHEMA_LEG_4, _TABLE_SCHEMA_TABLETOP),
+        ]
+    ),
+)
+
+# schemata describing the hierarchical physical structure of objects
+_DOG_SCHEMA_LEG_1 = SubObject(LEG_SCHEMA)
+_DOG_SCHEMA_LEG_2 = SubObject(LEG_SCHEMA)
+_DOG_SCHEMA_LEG_3 = SubObject(LEG_SCHEMA)
+_DOG_SCHEMA_LEG_4 = SubObject(LEG_SCHEMA)
+_DOG_SCHEMA_TORSO = SubObject(TORSO_SCHEMA)
+_DOG_SCHEMA_HEAD = SubObject(HEAD_SCHEMA)
+_DOG_SCHEMA_TAIL = SubObject(TAIL_SCHEMA)
+
+DOG_SCHEMA = HierarchicalObjectSchema(
+    DOG,
+    sub_objects=[
+        _DOG_SCHEMA_HEAD,
+        _DOG_SCHEMA_TORSO,
+        _DOG_SCHEMA_TAIL,
+        _DOG_SCHEMA_LEG_1,
+        _DOG_SCHEMA_LEG_2,
+        _DOG_SCHEMA_LEG_3,
+        _DOG_SCHEMA_LEG_4,
+    ],
+    sub_object_relations=sub_object_relations(
+        [
+            contacts(_DOG_SCHEMA_LEG_4, _DOG_SCHEMA_TORSO),
+            contacts(_DOG_SCHEMA_LEG_3, _DOG_SCHEMA_TORSO),
+            contacts(_DOG_SCHEMA_LEG_2, _DOG_SCHEMA_TORSO),
+            contacts(_DOG_SCHEMA_LEG_1, _DOG_SCHEMA_TORSO),
+            contacts(_DOG_SCHEMA_TAIL, _DOG_SCHEMA_TORSO),
+            contacts(_DOG_SCHEMA_HEAD, _DOG_SCHEMA_TORSO),
+            supports(_DOG_SCHEMA_TORSO, _DOG_SCHEMA_HEAD),
+            supports(_DOG_SCHEMA_TORSO, _DOG_SCHEMA_TAIL),
+            supports(_DOG_SCHEMA_LEG_4, _DOG_SCHEMA_TORSO),
+            supports(_DOG_SCHEMA_LEG_3, _DOG_SCHEMA_TORSO),
+            supports(_DOG_SCHEMA_LEG_2, _DOG_SCHEMA_TORSO),
+            supports(_DOG_SCHEMA_LEG_1, _DOG_SCHEMA_TORSO),
+            above(_DOG_SCHEMA_HEAD, _DOG_SCHEMA_TORSO),
+            above(_DOG_SCHEMA_TORSO, _DOG_SCHEMA_LEG_4),
+            above(_DOG_SCHEMA_TORSO, _DOG_SCHEMA_LEG_3),
+            above(_DOG_SCHEMA_TORSO, _DOG_SCHEMA_LEG_2),
+            above(_DOG_SCHEMA_TORSO, _DOG_SCHEMA_LEG_1),
+            bigger_than(_DOG_SCHEMA_TORSO, _DOG_SCHEMA_TAIL),
+        ]
+    ),
+)
+
+# schemata describing the hierarchical physical structure of objects
+_BIRD_SCHEMA_HEAD = SubObject(HEAD_SCHEMA)
+_BIRD_SCHEMA_TORSO = SubObject(TORSO_SCHEMA)
+_BIRD_SCHEMA_LEFT_LEG = SubObject(LEG_SCHEMA)
+_BIRD_SCHEMA_RIGHT_LEG = SubObject(LEG_SCHEMA)
+_BIRD_SCHEMA_TAIL = SubObject(TAIL_SCHEMA)
+_BIRD_SCHEMA_LEFT_WING = SubObject(WING_SCHEMA)
+_BIRD_SCHEMA_RIGHT_WING = SubObject(WING_SCHEMA)
+
+# Bird designed with a Robin or similar garden bird in mind
+BIRD_SCHEMA = HierarchicalObjectSchema(
+    BIRD,
+    sub_objects=[
+        _BIRD_SCHEMA_HEAD,
+        _BIRD_SCHEMA_TORSO,
+        _BIRD_SCHEMA_LEFT_LEG,
+        _BIRD_SCHEMA_RIGHT_LEG,
+        _BIRD_SCHEMA_LEFT_WING,
+        _BIRD_SCHEMA_RIGHT_WING,
+        _BIRD_SCHEMA_TAIL,
+    ],
+    sub_object_relations=sub_object_relations(
+        [
+            contacts(_BIRD_SCHEMA_TORSO, _BIRD_SCHEMA_HEAD),
+            contacts(_BIRD_SCHEMA_TORSO, _BIRD_SCHEMA_TAIL),
+            contacts(_BIRD_SCHEMA_TORSO, _BIRD_SCHEMA_RIGHT_WING),
+            contacts(_BIRD_SCHEMA_TORSO, _BIRD_SCHEMA_LEFT_WING),
+            contacts(_BIRD_SCHEMA_TORSO, _BIRD_SCHEMA_RIGHT_LEG),
+            contacts(_BIRD_SCHEMA_TORSO, _BIRD_SCHEMA_LEFT_LEG),
+            above(_BIRD_SCHEMA_HEAD, _BIRD_SCHEMA_TORSO),
+            above(_BIRD_SCHEMA_TORSO, _BIRD_SCHEMA_LEFT_LEG),
+            above(_BIRD_SCHEMA_TORSO, _BIRD_SCHEMA_RIGHT_LEG),
+            bigger_than(_BIRD_SCHEMA_TORSO, _BIRD_SCHEMA_HEAD),
+            bigger_than(_BIRD_SCHEMA_TORSO, _BIRD_SCHEMA_LEFT_LEG),
+            bigger_than(_BIRD_SCHEMA_TORSO, _BIRD_SCHEMA_RIGHT_LEG),
         ]
     ),
 )
