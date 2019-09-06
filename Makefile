@@ -53,6 +53,6 @@ black-check:
 doc-lint:
 	sphinx-build -nWT -b dummy docs docs/_build/html
 
-check: black-check doc-lint lint mypy flake8
+check: black-check mypy flake8 doc-lint lint
 
 precommit: black-fix check
