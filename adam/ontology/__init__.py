@@ -3,12 +3,17 @@ Representations for simple ontologies.
 
 These ontologies are intended to be used when describing `Situation`\ s and writing `SituationTemplate`\ s.
 """
-from typing import Iterable, Union, Callable, Tuple
+from typing import Callable, Iterable, Tuple, Union
 
 from attr import attrib, attrs
 from attr.validators import instance_of
-from immutablecollections import ImmutableSet, immutableset
-from immutablecollections.converter_utils import _to_immutableset
+from immutablecollections import (
+    ImmutableSet,
+    immutableset,
+)
+from immutablecollections.converter_utils import (
+    _to_immutableset,
+)
 from more_itertools import flatten
 
 
@@ -46,6 +51,42 @@ class OntologyNode:
         else:
             properties_string = ""
         return f"{self.handle}{properties_string}"
+
+
+# by convention, the following should appear in all Ontologies
+THING = OntologyNode("thing")
+r"""
+Ancestor of all objects in an `Ontology`.
+
+By convention this should appear in all `Ontology`\ s.
+"""
+RELATION = OntologyNode("relation")
+r"""
+Ancestor of all relations in an `Ontology`.
+
+By convention this should appear in all `Ontology`\ s.
+"""
+ACTION = OntologyNode("action")
+r"""
+Ancestor of all actions in an `Ontology`.
+
+By convention this should appear in all `Ontology`\ s.
+"""
+PROPERTY = OntologyNode("property")
+r"""
+Ancestor of all properties in an `Ontology`.
+
+By convention this should appear in all `Ontology`\ s.
+"""
+
+META_PROPERTY = OntologyNode("meta-property")
+r"""
+A property of a property.
+
+For example, whether it is perceivable or binary.
+
+By convention this should appear in all `Ontology`\ s.
+"""
 
 
 @attrs(frozen=True, slots=True, repr=False)
@@ -177,7 +218,7 @@ def make_dsl_relation(
     return dsl_relation_function
 
 
-def make_symetric_dsl_relation(
+def make_symmetric_dsl_relation(
     relation_type: OntologyNode
 ) -> Callable[
     [_OneOrMoreSubObjects, _OneOrMoreSubObjects], Tuple[SubObjectRelation, ...]

@@ -170,8 +170,8 @@ class _PerceptionGeneration:
                         perceived_property: PropertyPerception = HasBinaryProperty(
                             perceived_object, property_
                         )
-                    elif COLOR in attributes_of_property:
-                        # Sample an RGB value for the color property and generate perception for it
+                    elif self._generator.ontology.is_subtype_of(property_, COLOR):
+                    # Sample an RGB value for the color property and generate perception for it
                         if property_ in COLORS_TO_RGBS:
                             r, g, b = self._chooser.choice(COLORS_TO_RGBS[property_])
                             perceived_property = HasColor(
@@ -182,7 +182,6 @@ class _PerceptionGeneration:
                                 f"Not sure how to generate perception for the unknown property {property_} "
                                 f"which is marked as COLOR"
                             )
-
                     else:
                         raise RuntimeError(
                             f"Not sure how to generate perception for property {property_} "

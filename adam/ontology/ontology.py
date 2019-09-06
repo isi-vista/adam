@@ -9,17 +9,24 @@ from immutablecollections import (
     immutablesetmultidict,
 )
 from immutablecollections.converter_utils import _to_immutablesetmultidict
-from networkx import DiGraph, dfs_preorder_nodes, simple_cycles
+from networkx import DiGraph, dfs_preorder_nodes, simple_cycles, has_path
+from vistautils.preconditions import check_arg
 
-from adam.ontology import OntologyNode, ObjectStructuralSchema
+from adam.ontology import OntologyNode, ObjectStructuralSchema, THING, RELATION, ACTION, PROPERTY, \
+    META_PROPERTY
 
 
 @attrs(frozen=True, slots=True)
 class Ontology:
     r"""
     A hierarchical collection of types for objects, actions, etc.
+
     Types are represented by `OntologyNode`\ s with parent-child relationships.
+
     Every `OntologyNode` may have a set of properties which are inherited by all child nodes.
+
+    Every `Ontology` must contain the special nodes `THING`, `RELATION`, `ACTION`,
+    `PROPERTY` and `META_PROPERTY`.
     """
 
     _graph: DiGraph = attrib(validator=instance_of(DiGraph))
@@ -32,6 +39,20 @@ class Ontology:
     def __attrs_post_init__(self) -> None:
         for cycle in simple_cycles(self._graph):
             raise ValueError(f"The ontology graph may not have cycles but got {cycle}")
+        check_arg(THING in self, "Ontology lacks required OBJECT node")
+        check_arg(RELATION in self, "Ontology lacks required RELATION node")
+        check_arg(ACTION in self, "Ontology lacks required ACTION node")
+        check_arg(PROPERTY in self, "Ontology lacks required PROPERTY node")
+        check_arg(META_PROPERTY in self, "Ontology lacks required META_PROPERTY node")
+
+    def is_subtype_of(
+        self, node: "OntologyNode", query_supertype: "OntologyNode"
+    ) -> bool:
+        """
+        Determines whether *node* is a sub-type of *query_supertype*.
+        """
+        # graph edges run from sub-types to super-types
+        return has_path(self._graph, node, query_supertype)
 
     def nodes_with_properties(
         self, root_node: "OntologyNode", required_properties: Iterable["OntologyNode"]
@@ -107,3 +128,6 @@ class Ontology:
                 # we have reached a root
                 break
         return immutableset(node_properties)
+
+    def __contains__(self, item: "OntologyNode") -> bool:
+        return item in self._graph.nodes
