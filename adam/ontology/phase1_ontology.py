@@ -114,6 +114,7 @@ _CHAIR_BACK = OntologyNode("chairback")
 _CHAIR_SEAT = OntologyNode("chairseat")
 _TABLETOP = OntologyNode("tabletop")
 
+
 # Verbs
 
 ACTION = OntologyNode("action")
@@ -272,6 +273,7 @@ LEG_SCHEMA = HierarchicalObjectSchema(_LEG)
 CHAIRBACK_SCHEMA = HierarchicalObjectSchema(_CHAIR_BACK)
 CHAIR_SEAT_SCHEMA = HierarchicalObjectSchema(_CHAIR_SEAT)
 TABLETOP_SCHEMA = HierarchicalObjectSchema(_TABLETOP)
+
 
 # schemata describing the hierarchical physical structure of objects
 _PERSON_SCHEMA_HEAD = SubObject(HEAD_SCHEMA)
