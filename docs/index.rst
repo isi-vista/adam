@@ -183,10 +183,6 @@ adam.curriculum
 Supporting classes: Experiments
 *********************************************
 
-adam.experiment.instance_group
--------------------------------------
-.. automodule:: adam.experiment.instance_group
-
 adam.experiment.observer
 -----------------------------
 .. automodule:: adam.experiment.observer
