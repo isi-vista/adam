@@ -394,7 +394,7 @@ _PERSON_SCHEMA = ObjectStructuralSchema(
 )
 
 
-# schemata describing the sub-object structural nature of a Chair
+# schema describing the sub-object structural nature of a Chair
 _CHAIR_SCHEMA_BACK = SubObject(_CHAIRBACK_SCHEMA)
 _CHAIR_SCHEMA_LEG_1 = SubObject(_LEG_SCHEMA)
 _CHAIR_SCHEMA_LEG_2 = SubObject(_LEG_SCHEMA)
