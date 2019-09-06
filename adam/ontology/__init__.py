@@ -186,9 +186,14 @@ class OntologyProperty:
     A simple human-readable description of this property,
     used for debugging and testing only.
     """
+    perceivable: bool = attrib(default=False, kw_only=True)
+    """
+    A boolean indicator whether an ontological property is perceivable for the learner.
+    E.g. sentience and animacy, which are innately known. 
+    """
 
     def __repr__(self) -> str:
-        return f"+{self._handle}"
+        return f"+{self._handle},{self.perceivable}"
 
 
 @attrs(frozen=True, slots=True, repr=False)
