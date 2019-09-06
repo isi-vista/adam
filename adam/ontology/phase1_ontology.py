@@ -13,7 +13,7 @@ The following will eventually end up here:
 - Relations, Modifiers, Function Words: basic color terms (red, blue, green, white, black…), one,
   two, I, me, my, you, your, to, in, on, [beside, behind, in front of, over, under], up, down
 """
-
+from immutablecollections import immutablesetmultidict
 from more_itertools import flatten
 from networkx import DiGraph
 
@@ -224,24 +224,23 @@ DESTINATION = OntologyNode("destination")
 subtype(DESTINATION, SEMANTIC_ROLE)
 
 # Hierarchical structure of objects
-
-HEAD_SCHEMA = HierarchicalObjectSchema(_HEAD)
-TORSO_SCHEMA = HierarchicalObjectSchema(_TORSO)
-ARM_SCHEMA = HierarchicalObjectSchema(_ARM)
-LEG_SCHEMA = HierarchicalObjectSchema(_LEG)
-CHAIRBACK_SCHEMA = HierarchicalObjectSchema(_CHAIR_BACK)
-CHAIR_SEAT_SCHEMA = HierarchicalObjectSchema(_CHAIR_SEAT)
-TABLETOP_SCHEMA = HierarchicalObjectSchema(_TABLETOP)
-TAIL_SCHEMA = HierarchicalObjectSchema(_TAIL)
-WING_SCHEMA = HierarchicalObjectSchema(_WING)
+_HEAD_SCHEMA = ObjectStructuralSchema(_HEAD)
+_TORSO_SCHEMA = ObjectStructuralSchema(_TORSO)
+_ARM_SCHEMA = ObjectStructuralSchema(_ARM)
+_LEG_SCHEMA = ObjectStructuralSchema(_LEG)
+_CHAIRBACK_SCHEMA = ObjectStructuralSchema(_CHAIR_BACK)
+_CHAIR_SEAT_SCHEMA = ObjectStructuralSchema(_CHAIR_SEAT)
+_TABLETOP_SCHEMA = ObjectStructuralSchema(_TABLETOP)
+_TAIL_SCHEMA = ObjectStructuralSchema(_TAIL)
+_WING_SCHEMA = ObjectStructuralSchema(_WING)
 
 # schemata describing the hierarchical physical structure of objects
-_PERSON_SCHEMA_HEAD = SubObject(HEAD_SCHEMA)
-_PERSON_SCHEMA_TORSO = SubObject(TORSO_SCHEMA)
-_PERSON_SCHEMA_LEFT_ARM = SubObject(ARM_SCHEMA)
-_PERSON_SCHEMA_RIGHT_ARM = SubObject(ARM_SCHEMA)
-_PERSON_SCHEMA_LEFT_LEG = SubObject(LEG_SCHEMA)
-_PERSON_SCHEMA_RIGHT_LEG = SubObject(LEG_SCHEMA)
+_PERSON_SCHEMA_HEAD = SubObject(_HEAD_SCHEMA)
+_PERSON_SCHEMA_TORSO = SubObject(_TORSO_SCHEMA)
+_PERSON_SCHEMA_LEFT_ARM = SubObject(_ARM_SCHEMA)
+_PERSON_SCHEMA_RIGHT_ARM = SubObject(_ARM_SCHEMA)
+_PERSON_SCHEMA_LEFT_LEG = SubObject(_LEG_SCHEMA)
+_PERSON_SCHEMA_RIGHT_LEG = SubObject(_LEG_SCHEMA)
 
 _PERSON_SCHEMA_LIMBS = [
     _PERSON_SCHEMA_LEFT_ARM,
@@ -250,7 +249,7 @@ _PERSON_SCHEMA_LIMBS = [
     _PERSON_SCHEMA_RIGHT_LEG,
     _PERSON_SCHEMA_HEAD,
 ]
-PERSON_SCHEMA = HierarchicalObjectSchema(
+_PERSON_SCHEMA = ObjectStructuralSchema(
     PERSON,
     sub_objects=[
         _PERSON_SCHEMA_HEAD,
@@ -285,7 +284,7 @@ _CHAIR_LEGS = [
     _CHAIR_SCHEMA_LEG_4,
 ]
 
-CHAIR_SCHEMA = HierarchicalObjectSchema(
+_CHAIR_SCHEMA = ObjectStructuralSchema(
     CHAIR,
     sub_objects=[
         _CHAIR_SCHMEA_BACK,
@@ -308,11 +307,11 @@ CHAIR_SCHEMA = HierarchicalObjectSchema(
 )
 
 # schemata describing the hierarchical physical structure of objects
-_TABLE_SCHEMA_LEG_1 = SubObject(LEG_SCHEMA)
-_TABLE_SCHEMA_LEG_2 = SubObject(LEG_SCHEMA)
-_TABLE_SCHEMA_LEG_3 = SubObject(LEG_SCHEMA)
-_TABLE_SCHEMA_LEG_4 = SubObject(LEG_SCHEMA)
-_TABLE_SCHEMA_TABLETOP = SubObject(TABLETOP_SCHEMA)
+_TABLE_SCHEMA_LEG_1 = SubObject(_LEG_SCHEMA)
+_TABLE_SCHEMA_LEG_2 = SubObject(_LEG_SCHEMA)
+_TABLE_SCHEMA_LEG_3 = SubObject(_LEG_SCHEMA)
+_TABLE_SCHEMA_LEG_4 = SubObject(_LEG_SCHEMA)
+_TABLE_SCHEMA_TABLETOP = SubObject(_TABLETOP_SCHEMA)
 _TABLE_LEGS = [
     _TABLE_SCHEMA_LEG_1,
     _TABLE_SCHEMA_LEG_2,
@@ -340,13 +339,13 @@ _TABLE_SCHEMA = ObjectStructuralSchema(
 )
 
 # schemata describing the hierarchical physical structure of objects
-_DOG_SCHEMA_LEG_1 = SubObject(LEG_SCHEMA)
-_DOG_SCHEMA_LEG_2 = SubObject(LEG_SCHEMA)
-_DOG_SCHEMA_LEG_3 = SubObject(LEG_SCHEMA)
-_DOG_SCHEMA_LEG_4 = SubObject(LEG_SCHEMA)
-_DOG_SCHEMA_TORSO = SubObject(TORSO_SCHEMA)
-_DOG_SCHEMA_HEAD = SubObject(HEAD_SCHEMA)
-_DOG_SCHEMA_TAIL = SubObject(TAIL_SCHEMA)
+_DOG_SCHEMA_LEG_1 = SubObject(_LEG_SCHEMA)
+_DOG_SCHEMA_LEG_2 = SubObject(_LEG_SCHEMA)
+_DOG_SCHEMA_LEG_3 = SubObject(_LEG_SCHEMA)
+_DOG_SCHEMA_LEG_4 = SubObject(_LEG_SCHEMA)
+_DOG_SCHEMA_TORSO = SubObject(_TORSO_SCHEMA)
+_DOG_SCHEMA_HEAD = SubObject(_HEAD_SCHEMA)
+_DOG_SCHEMA_TAIL = SubObject(_TAIL_SCHEMA)
 
 _DOG_LEGS = [_DOG_SCHEMA_LEG_1, _DOG_SCHEMA_LEG_2, _DOG_SCHEMA_LEG_3, _DOG_SCHEMA_LEG_4]
 
@@ -359,7 +358,7 @@ _DOG_LIMBS = [
     _DOG_SCHEMA_TAIL,
 ]
 
-DOG_SCHEMA = HierarchicalObjectSchema(
+_DOG_SCHEMA = ObjectStructuralSchema(
     DOG,
     sub_objects=[
         _DOG_SCHEMA_HEAD,
@@ -384,19 +383,19 @@ DOG_SCHEMA = HierarchicalObjectSchema(
 )
 
 # schemata describing the hierarchical physical structure of objects
-_BIRD_SCHEMA_HEAD = SubObject(HEAD_SCHEMA)
-_BIRD_SCHEMA_TORSO = SubObject(TORSO_SCHEMA)
-_BIRD_SCHEMA_LEFT_LEG = SubObject(LEG_SCHEMA)
-_BIRD_SCHEMA_RIGHT_LEG = SubObject(LEG_SCHEMA)
-_BIRD_SCHEMA_TAIL = SubObject(TAIL_SCHEMA)
-_BIRD_SCHEMA_LEFT_WING = SubObject(WING_SCHEMA)
-_BIRD_SCHEMA_RIGHT_WING = SubObject(WING_SCHEMA)
+_BIRD_SCHEMA_HEAD = SubObject(_HEAD_SCHEMA)
+_BIRD_SCHEMA_TORSO = SubObject(_TORSO_SCHEMA)
+_BIRD_SCHEMA_LEFT_LEG = SubObject(_LEG_SCHEMA)
+_BIRD_SCHEMA_RIGHT_LEG = SubObject(_LEG_SCHEMA)
+_BIRD_SCHEMA_TAIL = SubObject(_TAIL_SCHEMA)
+_BIRD_SCHEMA_LEFT_WING = SubObject(_WING_SCHEMA)
+_BIRD_SCHEMA_RIGHT_WING = SubObject(_WING_SCHEMA)
 _BIRD_LEGS = [_BIRD_SCHEMA_LEFT_LEG, _BIRD_SCHEMA_RIGHT_LEG]
 _BIRD_WINGS = [_BIRD_SCHEMA_LEFT_WING, _BIRD_SCHEMA_RIGHT_WING]
 _BIRD_LIMBS = flatten([_BIRD_LEGS, _BIRD_WINGS, [_BIRD_SCHEMA_HEAD, _BIRD_SCHEMA_TAIL]])
 
 # Bird designed with a Robin or similar garden bird in mind
-BIRD_SCHEMA = HierarchicalObjectSchema(
+_BIRD_SCHEMA = ObjectStructuralSchema(
     BIRD,
     sub_objects=[
         _BIRD_SCHEMA_HEAD,
@@ -432,6 +431,8 @@ GAILA_PHASE_1_ONTOLOGY = Ontology.from_directed_graph(
             (CHAIR, _CHAIR_SCHEMA),
             (PERSON, _PERSON_SCHEMA),
             (TABLE, _TABLE_SCHEMA),
+            (DOG, _DOG_SCHEMA),
+            (BIRD, _BIRD_SCHEMA),
         ]
     ),
 )
