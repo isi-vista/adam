@@ -382,4 +382,39 @@ TABLE_SCHEMA = HierarchicalObjectSchema(
     ),
 )
 
+# schemata describing the hierarchical physical structure of objects
+_TABLE_SCHEMA_LEG_1 = SubObject(LEG_SCHEMA)
+_TABLE_SCHEMA_LEG_2 = SubObject(LEG_SCHEMA)
+_TABLE_SCHEMA_LEG_3 = SubObject(LEG_SCHEMA)
+_TABLE_SCHEMA_LEG_4 = SubObject(LEG_SCHEMA)
+_TABLE_SCHEMA_TABLETOP = SubObject(TABLETOP_SCHEMA)
+
+TABLE_SCHEMA = HierarchicalObjectSchema(
+    TABLE,
+    sub_objects=[
+        _TABLE_SCHEMA_LEG_1,
+        _TABLE_SCHEMA_LEG_2,
+        _TABLE_SCHEMA_LEG_3,
+        _TABLE_SCHEMA_LEG_4,
+        _TABLE_SCHEMA_TABLETOP,
+    ],
+    sub_object_relations=sub_object_relations(
+        [
+            # Relationship of tabletop to the legs
+            contacts(_TABLE_SCHEMA_TABLETOP, _TABLE_SCHEMA_LEG_4),
+            contacts(_TABLE_SCHEMA_TABLETOP, _TABLE_SCHEMA_LEG_3),
+            contacts(_TABLE_SCHEMA_TABLETOP, _TABLE_SCHEMA_LEG_2),
+            contacts(_TABLE_SCHEMA_TABLETOP, _TABLE_SCHEMA_LEG_1),
+            above(_TABLE_SCHEMA_TABLETOP, _TABLE_SCHEMA_LEG_4),
+            above(_TABLE_SCHEMA_TABLETOP, _TABLE_SCHEMA_LEG_3),
+            above(_TABLE_SCHEMA_TABLETOP, _TABLE_SCHEMA_LEG_2),
+            above(_TABLE_SCHEMA_TABLETOP, _TABLE_SCHEMA_LEG_1),
+            supports(_TABLE_SCHEMA_LEG_1, _TABLE_SCHEMA_TABLETOP),
+            supports(_TABLE_SCHEMA_LEG_2, _TABLE_SCHEMA_TABLETOP),
+            supports(_TABLE_SCHEMA_LEG_3, _TABLE_SCHEMA_TABLETOP),
+            supports(_TABLE_SCHEMA_LEG_4, _TABLE_SCHEMA_TABLETOP),
+        ]
+    ),
+)
+
 GAILA_PHASE_1_ONTOLOGY = Ontology.from_directed_graph(_ontology_graph)
