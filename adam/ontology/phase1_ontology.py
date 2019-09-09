@@ -369,6 +369,7 @@ _HAND_SCHEMA = ObjectStructuralSchema(HAND)
 _HEAD_SCHEMA = ObjectStructuralSchema(HEAD)
 
 # Hierarchical structure of objects
+_HEAD_SCHEMA = ObjectStructuralSchema(_HEAD)
 _TORSO_SCHEMA = ObjectStructuralSchema(_TORSO)
 _LEG_SCHEMA = ObjectStructuralSchema(_LEG)
 _CHAIRBACK_SCHEMA = ObjectStructuralSchema(_CHAIR_BACK)
