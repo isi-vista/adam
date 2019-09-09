@@ -145,6 +145,10 @@ _BONE = OntologyNode("bone")
 _WALL = OntologyNode("wall")
 _ROOF = OntologyNode("roof")
 _WINDOW = OntologyNode("window")
+_TIRE = OntologyNode("tire")
+_TRUCK_CAB = OntologyNode("truckcab")
+_TRAILER = OntologyNode("trailer")
+_FLATBED = OntologyNode("flatbed")
 
 # Verbs
 
@@ -270,6 +274,8 @@ _BONE_SCHEMA = ObjectStructuralSchema(_BONE)
 _WINDOW_SCHEMA = ObjectStructuralSchema(_WINDOW)
 _ROOF_SCHEMA = ObjectStructuralSchema(_ROOF)
 _WALL_SCHEMA = ObjectStructuralSchema(_WALL)
+_TIRE_SCHEMA = ObjectStructuralSchema(_TIRE)
+_FLATBED_SCHEMA = ObjectStructuralSchema(_FLATBED)
 
 # Structural Schema Below are Vocabulary Options
 _DOOR_SCHEMA = ObjectStructuralSchema(DOOR)
@@ -611,6 +617,200 @@ _HOUSE_SCHEMA = ObjectStructuralSchema(
     ),
 )
 
+# schemata describing the hierarchical physical structure of objects
+_CAR_SCHEMA_FRONT_WINDOW = SubObject(_WINDOW_SCHEMA)
+_CAR_SCHEMA_REAR_WINDOW = SubObject(_WINDOW_SCHEMA)
+_CAR_SCHEMA_DRIVER_WINDOW = SubObject(_WINDOW_SCHEMA)
+_CAR_SCHEMA_PASSENGER_WINDOW = SubObject(_WINDOW_SCHEMA)
+_CAR_SCHEMA_RIGHT_REAR_WINDOW = SubObject(_WINDOW_SCHEMA)
+_CAR_SCHEMA_LEFT_REAR_WINDOW = SubObject(_WINDOW_SCHEMA)
+_CAR_SCHEMA_DRIVER_DOOR = SubObject(_DOOR_SCHEMA)
+_CAR_SCHEMA_PASSENGER_DOOR = SubObject(_DOOR_SCHEMA)
+_CAR_SCHEMA_LEFT_REAR_DOOR = SubObject(_DOOR_SCHEMA)
+_CAR_SCHEMA_RIGHT_REAR_DOOR = SubObject(_DOOR_SCHEMA)
+_CAR_SCHEMA_TRUNK_DOOR = SubObject(_DOOR_SCHEMA)
+_CAR_SCHEMA_FRONT_LEFT_TIRE = SubObject(_TIRE_SCHEMA)
+_CAR_SCHEMA_FRONT_RIGHT_TIRE = SubObject(_TIRE_SCHEMA)
+_CAR_SCHEMA_REAR_LEFT_TIRE = SubObject(_TIRE_SCHEMA)
+_CAR_SCHEMA_REAR_RIGHT_TIRE = SubObject(_TIRE_SCHEMA)
+_CAR_SCHEMA_ROOF = SubObject(_ROOF_SCHEMA)
+
+# Improve Car Stuctural Schema once surfaces are introduced
+# Git Issue: https://github.com/isi-vista/adam/issues/69
+_CAR_SCHEMA = ObjectStructuralSchema(
+    CAR,
+    sub_objects=[
+        _CAR_SCHEMA_FRONT_WINDOW,
+        _CAR_SCHEMA_REAR_WINDOW,
+        _CAR_SCHEMA_DRIVER_WINDOW,
+        _CAR_SCHEMA_PASSENGER_WINDOW,
+        _CAR_SCHEMA_RIGHT_REAR_WINDOW,
+        _CAR_SCHEMA_LEFT_REAR_WINDOW,
+        _CAR_SCHEMA_DRIVER_DOOR,
+        _CAR_SCHEMA_PASSENGER_DOOR,
+        _CAR_SCHEMA_LEFT_REAR_DOOR,
+        _CAR_SCHEMA_RIGHT_REAR_DOOR,
+        _CAR_SCHEMA_TRUNK_DOOR,
+        _CAR_SCHEMA_FRONT_LEFT_TIRE,
+        _CAR_SCHEMA_FRONT_RIGHT_TIRE,
+        _CAR_SCHEMA_REAR_LEFT_TIRE,
+        _CAR_SCHEMA_REAR_RIGHT_TIRE,
+        _CAR_SCHEMA_ROOF,
+    ],
+    sub_object_relations=sub_object_relations(
+        [
+            contacts(_CAR_SCHEMA_DRIVER_WINDOW, _CAR_SCHEMA_DRIVER_DOOR),
+            contacts(_CAR_SCHEMA_PASSENGER_WINDOW, _CAR_SCHEMA_PASSENGER_DOOR),
+            contacts(_CAR_SCHEMA_LEFT_REAR_WINDOW, _CAR_SCHEMA_LEFT_REAR_DOOR),
+            contacts(_CAR_SCHEMA_RIGHT_REAR_WINDOW, _CAR_SCHEMA_RIGHT_REAR_DOOR),
+            contacts(
+                _CAR_SCHEMA_FRONT_WINDOW,
+                [_CAR_SCHEMA_PASSENGER_DOOR, _CAR_SCHEMA_DRIVER_DOOR],
+            ),
+            contacts(_CAR_SCHEMA_REAR_WINDOW, _CAR_SCHEMA_TRUNK_DOOR),
+            bigger_than(
+                [
+                    _CAR_SCHEMA_DRIVER_DOOR,
+                    _CAR_SCHEMA_PASSENGER_DOOR,
+                    _CAR_SCHEMA_LEFT_REAR_DOOR,
+                    _CAR_SCHEMA_RIGHT_REAR_DOOR,
+                ],
+                [
+                    _CAR_SCHEMA_LEFT_REAR_WINDOW,
+                    _CAR_SCHEMA_RIGHT_REAR_WINDOW,
+                    _CAR_SCHEMA_DRIVER_WINDOW,
+                    _CAR_SCHEMA_PASSENGER_WINDOW,
+                ],
+            ),
+            above(
+                _CAR_SCHEMA_ROOF,
+                [
+                    _CAR_SCHEMA_FRONT_WINDOW,
+                    _CAR_SCHEMA_REAR_WINDOW,
+                    _CAR_SCHEMA_DRIVER_WINDOW,
+                    _CAR_SCHEMA_PASSENGER_WINDOW,
+                    _CAR_SCHEMA_RIGHT_REAR_WINDOW,
+                    _CAR_SCHEMA_LEFT_REAR_WINDOW,
+                    _CAR_SCHEMA_DRIVER_DOOR,
+                    _CAR_SCHEMA_PASSENGER_DOOR,
+                    _CAR_SCHEMA_LEFT_REAR_DOOR,
+                    _CAR_SCHEMA_RIGHT_REAR_DOOR,
+                    _CAR_SCHEMA_TRUNK_DOOR,
+                    _CAR_SCHEMA_FRONT_LEFT_TIRE,
+                    _CAR_SCHEMA_FRONT_RIGHT_TIRE,
+                    _CAR_SCHEMA_REAR_LEFT_TIRE,
+                    _CAR_SCHEMA_REAR_RIGHT_TIRE,
+                ],
+            ),
+        ]
+    ),
+)
+
+# schemata describing the hierarchical physical structure of objects
+_TRUCK_CAB_ROOF = SubObject(_ROOF_SCHEMA)
+_TRUCK_CAB_TIRE_1 = SubObject(_TIRE_SCHEMA)
+_TRUCK_CAB_TIRE_2 = SubObject(_TIRE_SCHEMA)
+_TRUCK_CAB_TIRE_3 = SubObject(_TIRE_SCHEMA)
+_TRUCK_CAB_TIRE_4 = SubObject(_TIRE_SCHEMA)
+_TRUCK_CAB_DRIVER_DOOR = SubObject(_DOOR_SCHEMA)
+_TRUCK_CAB_PASSENGER_DOOR = SubObject(_DOOR_SCHEMA)
+_TRUCK_CAB_FRONT_WINDOW = SubObject(_WINDOW_SCHEMA)
+
+_TRUCK_CAB_TIRES = [
+    _TRUCK_CAB_TIRE_1,
+    _TRUCK_CAB_TIRE_2,
+    _TRUCK_CAB_TIRE_3,
+    _TRUCK_CAB_TIRE_4,
+]
+
+_TRUCK_CAB_SCHEMA = ObjectStructuralSchema(
+    _TRUCK_CAB,
+    sub_objects=[
+        _TRUCK_CAB_ROOF,
+        _TRUCK_CAB_DRIVER_DOOR,
+        _TRUCK_CAB_PASSENGER_DOOR,
+        _TRUCK_CAB_TIRE_1,
+        _TRUCK_CAB_TIRE_2,
+        _TRUCK_CAB_TIRE_3,
+        _TRUCK_CAB_TIRE_4,
+        _TRUCK_CAB_FRONT_WINDOW,
+    ],
+    sub_object_relations=sub_object_relations(
+        [
+            above(
+                [
+                    _TRUCK_CAB_FRONT_WINDOW,
+                    _TRUCK_CAB_PASSENGER_DOOR,
+                    _TRUCK_CAB_DRIVER_DOOR,
+                    _TRUCK_CAB_ROOF,
+                ],
+                _TRUCK_CAB_TIRES,
+            ),
+            above(
+                _TRUCK_CAB_ROOF,
+                [
+                    _TRUCK_CAB_DRIVER_DOOR,
+                    _TRUCK_CAB_PASSENGER_DOOR,
+                    _TRUCK_CAB_FRONT_WINDOW,
+                ],
+            ),
+            contacts(
+                _TRUCK_CAB_ROOF,
+                [
+                    _TRUCK_CAB_PASSENGER_DOOR,
+                    _TRUCK_CAB_DRIVER_DOOR,
+                    _TRUCK_CAB_FRONT_WINDOW,
+                ],
+            ),
+        ]
+    ),
+)
+
+_TRUCK_TRAILER_TIRE_1 = SubObject(_TIRE_SCHEMA)
+_TRUCK_TRAILER_TIRE_2 = SubObject(_TIRE_SCHEMA)
+_TRUCK_TRAILER_TIRE_3 = SubObject(_TIRE_SCHEMA)
+_TRUCK_TRAILER_TIRE_4 = SubObject(_TIRE_SCHEMA)
+_TRUCK_TRAILER_FLATBED = SubObject(_FLATBED_SCHEMA)
+_TRUCK_TRAILER_TIRES = [
+    _TRUCK_TRAILER_TIRE_1,
+    _TRUCK_TRAILER_TIRE_2,
+    _TRUCK_TRAILER_TIRE_3,
+    _TRUCK_TRAILER_TIRE_4,
+]
+
+_TRUCK_TRAILER_SCHEMA = ObjectStructuralSchema(
+    _TRAILER,
+    sub_objects=[
+        _TRUCK_TRAILER_TIRE_1,
+        _TRUCK_TRAILER_TIRE_2,
+        _TRUCK_TRAILER_TIRE_3,
+        _TRUCK_TRAILER_TIRE_4,
+        _TRUCK_TRAILER_FLATBED,
+    ],
+    sub_object_relations=sub_object_relations(
+        [
+            contacts(_TRUCK_TRAILER_FLATBED, _TRUCK_TRAILER_TIRES),
+            supports(_TRUCK_TRAILER_TIRES, _TRUCK_TRAILER_FLATBED),
+            above(_TRUCK_TRAILER_FLATBED, _TRUCK_TRAILER_TIRES),
+            bigger_than(_TRUCK_TRAILER_FLATBED, _TRUCK_TRAILER_TIRES),
+        ]
+    ),
+)
+# Truck in mind is a Semi Trailer with flat bed trailer
+_TRUCK_SCHEMA_CAB = SubObject(_TRUCK_CAB_SCHEMA)
+_TRUCK_SCHEMA_TRAILER = SubObject(_TRUCK_TRAILER_SCHEMA)
+
+_TRUCK_SCHEMA = ObjectStructuralSchema(
+    TRUCK,
+    sub_objects=[_TRUCK_SCHEMA_CAB, _TRUCK_SCHEMA_TRAILER],
+    sub_object_relations=sub_object_relations(
+        [
+            contacts(_TRUCK_SCHEMA_CAB, _TRUCK_SCHEMA_TRAILER),
+            bigger_than(_TRUCK_SCHEMA_TRAILER, _TRUCK_SCHEMA_CAB),
+        ]
+    ),
+)
+
 GAILA_PHASE_1_ONTOLOGY = Ontology.from_directed_graph(
     _ontology_graph,
     immutablesetmultidict(
@@ -634,8 +834,8 @@ GAILA_PHASE_1_ONTOLOGY = Ontology.from_directed_graph(
             (BOOK, _BOOK_SCHEMA),
             (HOUSE, _HOUSE_SCHEMA),
             (HAND, _HAND_SCHEMA),
-            # (CAR, _CAR_SCHEMA),
-            # (TRUCK, _TRUCK_SCHEMA)
+            (CAR, _CAR_SCHEMA),
+            (TRUCK, _TRUCK_SCHEMA),
         ]
     ),
 )
