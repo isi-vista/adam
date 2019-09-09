@@ -126,7 +126,7 @@ subtype(BIRD, NONHUMAN_ANIMAL)
 
 
 # Terms below are internal and can only be accessed as parts of other objects
-_HEAD = OntologyNode("head")
+# _HEAD = OntologyNode("head") # Head is in our standard vocabulary
 _ARM = OntologyNode("arm")
 _TORSO = OntologyNode("torso")
 _LEG = OntologyNode("leg")
@@ -135,6 +135,16 @@ _CHAIR_SEAT = OntologyNode("chairseat")
 _TABLETOP = OntologyNode("tabletop")
 _TAIL = OntologyNode("tail")
 _WING = OntologyNode("wing")
+_EYE = OntologyNode("eye")
+_MOUTH = OntologyNode("mouth")
+_NOSE = OntologyNode("nose")
+_EAR = OntologyNode("ear")
+_FINGER = OntologyNode("finger")
+_PALM = OntologyNode("palm")
+_BONE = OntologyNode("bone")
+_WALL = OntologyNode("wall")
+_ROOF = OntologyNode("roof")
+_WINDOW = OntologyNode("window")
 
 # Verbs
 
@@ -242,15 +252,112 @@ DESTINATION = OntologyNode("destination")
 subtype(DESTINATION, SEMANTIC_ROLE)
 
 # Hierarchical structure of objects
-_HEAD_SCHEMA = ObjectStructuralSchema(_HEAD)
 _TORSO_SCHEMA = ObjectStructuralSchema(_TORSO)
-_ARM_SCHEMA = ObjectStructuralSchema(_ARM)
+# _ARM_SCHEMA = ObjectStructuralSchema(_ARM)
 _LEG_SCHEMA = ObjectStructuralSchema(_LEG)
 _CHAIRBACK_SCHEMA = ObjectStructuralSchema(_CHAIR_BACK)
 _CHAIR_SEAT_SCHEMA = ObjectStructuralSchema(_CHAIR_SEAT)
 _TABLETOP_SCHEMA = ObjectStructuralSchema(_TABLETOP)
 _TAIL_SCHEMA = ObjectStructuralSchema(_TAIL)
 _WING_SCHEMA = ObjectStructuralSchema(_WING)
+_EYE_SCHEMA = ObjectStructuralSchema(_EYE)
+_MOUTH_SCHEMA = ObjectStructuralSchema(_MOUTH)
+_EAR_SCHEMA = ObjectStructuralSchema(_EAR)
+_NOSE_SCHEMA = ObjectStructuralSchema(_NOSE)
+_FINGER_SCHEMA = ObjectStructuralSchema(_FINGER)
+_PALM_SCHEMA = ObjectStructuralSchema(_PALM)
+_BONE_SCHEMA = ObjectStructuralSchema(_BONE)
+_WINDOW_SCHEMA = ObjectStructuralSchema(_WINDOW)
+_ROOF_SCHEMA = ObjectStructuralSchema(_ROOF)
+_WALL_SCHEMA = ObjectStructuralSchema(_WALL)
+
+# Structural Schema Below are Vocabulary Options
+_DOOR_SCHEMA = ObjectStructuralSchema(DOOR)
+_BALL_SCHEMA = ObjectStructuralSchema(BALL)
+_BOX_SCHEMA = ObjectStructuralSchema(BOX)
+_WATER_SCHEMA = ObjectStructuralSchema(WATER)
+_JUICE_SCHEMA = ObjectStructuralSchema(JUICE)
+_BOX_SCHEMA = ObjectStructuralSchema(BOX)
+_MILK_SCHEMA = ObjectStructuralSchema(MILK)
+_HAT_SCHEMA = ObjectStructuralSchema(HAT)
+_COOKIE_SCHEMA = ObjectStructuralSchema(COOKIE)
+_CUP_SCHEMA = ObjectStructuralSchema(CUP)
+_BOOK_SCHEMA = ObjectStructuralSchema(BOOK)
+
+# schemata describing the hierarchical physical structure of objects
+_HEAD_SCHEMA_PINKY_FINGER = SubObject(_FINGER_SCHEMA)
+_HEAD_SCHEMA_RING_FINGER = SubObject(_FINGER_SCHEMA)
+_HEAD_SCHEMA_MIDDLE_FINGER = SubObject(_FINGER_SCHEMA)
+_HEAD_SCHEMA_INDEX_FINGER = SubObject(_FINGER_SCHEMA)
+_HEAD_SCHEMA_THUMB = SubObject(_FINGER_SCHEMA)
+_HEAD_SCHEMA_PALM = SubObject(_PALM_SCHEMA)
+_HEAD_SCHEMA_FINGERS = [
+    _HEAD_SCHEMA_PINKY_FINGER,
+    _HEAD_SCHEMA_RING_FINGER,
+    _HEAD_SCHEMA_MIDDLE_FINGER,
+    _HEAD_SCHEMA_INDEX_FINGER,
+    _HEAD_SCHEMA_THUMB,
+]
+
+_HAND_SCHEMA = ObjectStructuralSchema(
+    HAND,
+    sub_objects=[
+        _HEAD_SCHEMA_PINKY_FINGER,
+        _HEAD_SCHEMA_RING_FINGER,
+        _HEAD_SCHEMA_MIDDLE_FINGER,
+        _HEAD_SCHEMA_INDEX_FINGER,
+        _HEAD_SCHEMA_THUMB,
+        _HEAD_SCHEMA_PALM,
+    ],
+    sub_object_relations=sub_object_relations(
+        [
+            contacts(_HEAD_SCHEMA_FINGERS, _HEAD_SCHEMA_PALM),
+            supports(_HEAD_SCHEMA_PALM, _HEAD_SCHEMA_FINGERS),
+        ]
+    ),
+)
+
+# schemata describing the hierarchical physical structure of objects
+_ARM_SCHEMA_HAND = SubObject(_HAND_SCHEMA)
+_ARM_SCHEMA_UPPER = SubObject(_BONE_SCHEMA)  # Is that the correct sub-object we want?
+_ARM_SCHEMA_LOWER = SubObject(_BONE_SCHEMA)
+
+_ARM_SCHEMA = ObjectStructuralSchema(
+    _ARM,
+    sub_objects=[_ARM_SCHEMA_HAND, _ARM_SCHEMA_LOWER, _ARM_SCHEMA_UPPER],
+    sub_object_relations=sub_object_relations(
+        [contacts([_ARM_SCHEMA_UPPER, _ARM_SCHEMA_HAND], _ARM_SCHEMA_LOWER)]
+    ),
+)
+
+# schemata describing the hierarchical physical structure of objects
+_HEAD_SCHEMA_LEFT_EYE = SubObject(_EYE_SCHEMA)
+_HEAD_SCHEMA_RIGHT_EYE = SubObject(_EYE_SCHEMA)
+_HEAD_SCHEMA_LEFT_EAR = SubObject(_EAR_SCHEMA)
+_HEAD_SCHEMA_RIGHT_EAR = SubObject(_EAR_SCHEMA)
+_HEAD_SCHEMA_MOUTH = SubObject(_MOUTH_SCHEMA)
+_HEAD_SCHEMA_NOSE = SubObject(_NOSE_SCHEMA)
+
+_HEAD_SCHEMA = ObjectStructuralSchema(
+    HEAD,
+    sub_objects=[
+        _HEAD_SCHEMA_LEFT_EYE,
+        _HEAD_SCHEMA_RIGHT_EYE,
+        _HEAD_SCHEMA_LEFT_EAR,
+        _HEAD_SCHEMA_RIGHT_EAR,
+        _HEAD_SCHEMA_MOUTH,
+        _HEAD_SCHEMA_NOSE,
+    ],
+    sub_object_relations=sub_object_relations(
+        [
+            above(
+                [_HEAD_SCHEMA_NOSE, _HEAD_SCHEMA_LEFT_EYE, _HEAD_SCHEMA_RIGHT_EYE],
+                _HEAD_SCHEMA_MOUTH,
+            ),
+            above([_HEAD_SCHEMA_LEFT_EYE, _HEAD_SCHEMA_RIGHT_EYE], _HEAD_SCHEMA_NOSE),
+        ]
+    ),
+)
 
 # schemata describing the hierarchical physical structure of objects
 _PERSON_SCHEMA_HEAD = SubObject(_HEAD_SCHEMA)
@@ -390,8 +497,7 @@ _DOG_SCHEMA = ObjectStructuralSchema(
     sub_object_relations=sub_object_relations(
         [
             contacts(_DOG_SCHEMA_TORSO, _DOG_APPENDAGES),
-            supports(_DOG_SCHEMA_TORSO, _DOG_SCHEMA_HEAD),
-            supports(_DOG_SCHEMA_TORSO, _DOG_SCHEMA_TAIL),
+            supports(_DOG_SCHEMA_TORSO, [_DOG_SCHEMA_HEAD, _DOG_SCHEMA_TAIL]),
             supports(_DOG_LEGS, _DOG_SCHEMA_TORSO),
             above(_DOG_SCHEMA_HEAD, _DOG_SCHEMA_TORSO),
             above(_DOG_SCHEMA_TORSO, _DOG_LEGS),
@@ -434,22 +540,76 @@ _BIRD_SCHEMA = ObjectStructuralSchema(
             bigger_than(_BIRD_SCHEMA_TORSO, _BIRD_SCHEMA_HEAD),
             bigger_than(_BIRD_SCHEMA_TORSO, _BIRD_LEGS),
             supports(_BIRD_LEGS, _BIRD_SCHEMA_TORSO),
-            supports(_BIRD_SCHEMA_TORSO, _BIRD_SCHEMA_HEAD),
-            supports(_BIRD_SCHEMA_TORSO, _BIRD_SCHEMA_TAIL),
-            supports(_BIRD_SCHEMA_TORSO, _BIRD_WINGS),
+            supports(
+                _BIRD_SCHEMA_TORSO,
+                [
+                    _BIRD_SCHEMA_HEAD,
+                    _BIRD_SCHEMA_TAIL,
+                    _BIRD_SCHEMA_LEFT_WING,
+                    _BIRD_SCHEMA_RIGHT_WING,
+                ],
+            ),
         ]
     ),
 )
 
-_BALL_SCHEMA = ObjectStructuralSchema(BALL)
-_BOX_SCHEMA = ObjectStructuralSchema(BOX)
-_WATER_SCHEMA = ObjectStructuralSchema(WATER)
-_JUICE_SCHEMA = ObjectStructuralSchema(JUICE)
-_BOX_SCHEMA = ObjectStructuralSchema(BOX)
-_MILK_SCHEMA = ObjectStructuralSchema(MILK)
-_DOOR_SCHEMA = ObjectStructuralSchema(DOOR)
-_HAT_SCHEMA = ObjectStructuralSchema(HAT)
-_COOKIE_SCHEMA = ObjectStructuralSchema(COOKIE)
+# schemata describing the hierarchical physical structure of objects
+_HOUSE_SCHEMA_LEFT_WINDOW = SubObject(_WINDOW_SCHEMA)
+_HOUSE_SCHEMA_RIGHT_WINDOW = SubObject(_WINDOW_SCHEMA)
+_HOUSE_SCHEMA_DOOR = SubObject(_DOOR_SCHEMA)
+_HOUSE_SCHEMA_ROOF = SubObject(_ROOF_SCHEMA)
+_HOUSE_SCHEMA_WALL = SubObject(_WALL_SCHEMA)
+
+# House modeled after a simple 1 story home as commonly seen in child's books
+# Stick example below -- ASCII art perhaps isn't the best demonstration form
+#      / \
+#    /     \
+#  /         \
+# /           \
+# -------------
+# | []  _  [] |
+# [----| |----]
+_HOUSE_SCHEMA = ObjectStructuralSchema(
+    HOUSE,
+    sub_objects=[
+        _HOUSE_SCHEMA_DOOR,
+        _HOUSE_SCHEMA_LEFT_WINDOW,
+        _HOUSE_SCHEMA_RIGHT_WINDOW,
+        _HOUSE_SCHEMA_ROOF,
+        _HOUSE_SCHEMA_WALL,
+    ],
+    sub_object_relations=sub_object_relations(
+        [
+            contacts(
+                [
+                    _HOUSE_SCHEMA_DOOR,
+                    _HOUSE_SCHEMA_ROOF,
+                    _HOUSE_SCHEMA_RIGHT_WINDOW,
+                    _HOUSE_SCHEMA_LEFT_WINDOW,
+                ],
+                _HOUSE_SCHEMA_WALL,
+            ),
+            supports(_HOUSE_SCHEMA_WALL, _HOUSE_SCHEMA_ROOF),
+            above(
+                _HOUSE_SCHEMA_ROOF,
+                [
+                    _HOUSE_SCHEMA_WALL,
+                    _HOUSE_SCHEMA_LEFT_WINDOW,
+                    _HOUSE_SCHEMA_RIGHT_WINDOW,
+                    _HOUSE_SCHEMA_DOOR,
+                ],
+            ),
+            bigger_than(
+                [_HOUSE_SCHEMA_WALL, _HOUSE_SCHEMA_ROOF],
+                [
+                    _HOUSE_SCHEMA_DOOR,
+                    _HOUSE_SCHEMA_RIGHT_WINDOW,
+                    _HOUSE_SCHEMA_LEFT_WINDOW,
+                ],
+            ),
+        ]
+    ),
+)
 
 GAILA_PHASE_1_ONTOLOGY = Ontology.from_directed_graph(
     _ontology_graph,
@@ -468,6 +628,14 @@ GAILA_PHASE_1_ONTOLOGY = Ontology.from_directed_graph(
             (DOOR, _DOOR_SCHEMA),
             (HAT, _HAT_SCHEMA),
             (COOKIE, _COOKIE_SCHEMA),
+            (HEAD, _HEAD_SCHEMA),
+            (CUP, _CUP_SCHEMA),
+            (BOX, _BOX_SCHEMA),
+            (BOOK, _BOOK_SCHEMA),
+            (HOUSE, _HOUSE_SCHEMA),
+            (HAND, _HAND_SCHEMA),
+            # (CAR, _CAR_SCHEMA),
+            # (TRUCK, _TRUCK_SCHEMA)
         ]
     ),
 )
