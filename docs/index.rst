@@ -106,6 +106,10 @@ adam.situation.templates
 -----------------------------
 .. automodule:: adam.situation.templates
 
+adam.situation.templates.phase1_templates
+------------------------------------------
+.. automodule: adam.situation.templates.phase1_templates
+
 adam.experiment
 -----------------------------
 .. automodule:: adam.experiment
