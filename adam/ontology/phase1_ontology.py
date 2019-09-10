@@ -63,6 +63,24 @@ subtype(RECOGNIZED_PARTICULAR, PROPERTY)
 COLOR = OntologyNode("color")
 RED = OntologyNode("red", local_properties=[COLOR, PERCEIVABLE])
 BLUE = OntologyNode("blue", local_properties=[COLOR, PERCEIVABLE])
+subtype(RED, COLOR)
+subtype(BLUE, COLOR)
+RED_RGBS = [
+    (255, 0, 0),
+    (237, 28, 36),
+    (196, 2, 51),
+    (242, 0, 60),
+    (237, 41, 57),
+    (238, 32, 77),
+]
+BLUE_RGBS = [
+    (0, 0, 255),
+    (51, 51, 153),
+    (0, 135, 189),
+    (0, 147, 175),
+    (0, 24, 168),
+    (31, 117, 254),
+]
 
 
 # Objects

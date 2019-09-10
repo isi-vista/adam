@@ -1,3 +1,4 @@
+import random
 from typing import Dict, List, Optional
 
 from attr import Factory, attrib, attrs
@@ -7,7 +8,16 @@ from more_itertools import only
 from vistautils.preconditions import check_arg
 
 from adam.ontology import ObjectStructuralSchema, Ontology, SubObject
-from adam.ontology.phase1_ontology import PART_OF, PERCEIVABLE, BINARY, COLOR
+from adam.ontology.phase1_ontology import (
+    PART_OF,
+    PERCEIVABLE,
+    BINARY,
+    COLOR,
+    RED,
+    BLUE,
+    RED_RGBS,
+    BLUE_RGBS,
+)
 from adam.perception import PerceptualRepresentation, PerceptualRepresentationGenerator
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -15,9 +25,13 @@ from adam.perception.developmental_primitive_perception import (
     RelationPerception,
     PropertyPerception,
     HasBinaryProperty,
+    RgbColorPerception,
+    HasColor,
 )
 from adam.random_utils import SequenceChooser
 from adam.situation import HighLevelSemanticsSituation, SituationObject
+
+random.seed(0)
 
 
 @attrs(frozen=True, slots=True)
@@ -129,6 +143,7 @@ class _PerceptionGeneration:
         self._perceive_property_assertions()
 
         # TODO: translate actions
+        #
         # https://github.com/isi-vista/adam/issues/86
         return PerceptualRepresentation.single_frame(
             DevelopmentalPrimitivePerceptionFrame(
@@ -156,12 +171,27 @@ class _PerceptionGeneration:
                     perceived_object = self._objects_to_perceptions[situation_object]
                     # Convert the property (which as an OntologyNode object) into PropertyPerception object
                     if BINARY in attributes_of_property:
-                        perceived_property = HasBinaryProperty(
+                        perceived_property: PropertyPerception = HasBinaryProperty(
                             perceived_object, property_
                         )
                     elif COLOR in attributes_of_property:
-                        # TODO: issue: generate perception of colors
-                        raise RuntimeError("Fix this issue COLOR property")
+                        # Sample an RGB value for the color property and generate perception for it
+                        # TODO: Color perception is currently phase-1-ontology-specific, should be changed
+                        if property_ == RED:
+                            r, g, b = random.choice(RED_RGBS)
+                            perceived_property = HasColor(
+                                perceived_object, RgbColorPerception(r, g, b)
+                            )
+                        elif property_ == BLUE:
+                            r, g, b = random.choice(BLUE_RGBS)
+                            perceived_property = HasColor(
+                                perceived_object, RgbColorPerception(r, g, b)
+                            )
+                        else:
+                            raise RuntimeError(
+                                f"Not sure how to generate perception for the unknown property {property_} "
+                                f"which is marked as COLOR"
+                            )
                     else:
                         raise RuntimeError(
                             f"Not sure how to generate perception for property {property_} "
