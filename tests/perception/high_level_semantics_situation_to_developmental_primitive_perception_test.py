@@ -54,14 +54,11 @@ def test_person_and_ball_color():
         person_and_ball_situation, chooser=RandomChooser.for_seed(0)
     )
 
-    perceived_objects = person_and_ball_perception.frames[0].perceived_objects
-    print(perceived_objects)
     assert len(person_and_ball_perception.frames) == 1
-    print(person_and_ball_perception.frames[0].property_assertions)
     assert len(person_and_ball_perception.frames[0].property_assertions) == 3
 
     property_handles = set(
-        repr(assertion)
+        str(assertion)
         for assertion in person_and_ball_perception.frames[0].property_assertions
     )
     assert property_handles == {

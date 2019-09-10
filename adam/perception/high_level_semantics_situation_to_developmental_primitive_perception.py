@@ -1,4 +1,3 @@
-import random
 from typing import Dict, List, Optional
 
 from attr import Factory, attrib, attrs
@@ -30,8 +29,6 @@ from adam.perception.developmental_primitive_perception import (
 )
 from adam.random_utils import SequenceChooser
 from adam.situation import HighLevelSemanticsSituation, SituationObject
-
-random.seed(0)
 
 
 @attrs(frozen=True, slots=True)
@@ -178,12 +175,12 @@ class _PerceptionGeneration:
                         # Sample an RGB value for the color property and generate perception for it
                         # TODO: Color perception is currently phase-1-ontology-specific, should be changed
                         if property_ == RED:
-                            r, g, b = random.choice(RED_RGBS)
+                            r, g, b = self._chooser.choice(RED_RGBS)
                             perceived_property = HasColor(
                                 perceived_object, RgbColorPerception(r, g, b)
                             )
                         elif property_ == BLUE:
-                            r, g, b = random.choice(BLUE_RGBS)
+                            r, g, b = self._chooser.choice(BLUE_RGBS)
                             perceived_property = HasColor(
                                 perceived_object, RgbColorPerception(r, g, b)
                             )
