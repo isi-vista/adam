@@ -40,7 +40,7 @@ from adam.ontology.phase1_ontology import (
     JUMP,
     HAVE,
     ROLL,
-    FLY
+    FLY,
 )
 
 MASS_NOUN = LexiconProperty("mass-noun")

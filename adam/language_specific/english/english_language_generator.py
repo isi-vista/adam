@@ -139,7 +139,9 @@ class SimpleRuleBasedEnglishLanguageGenerator(
 
             # add articles to things which are not proper nouns
             # ("a ball" but not "a Mom")
-            if (dependency_node.part_of_speech != PROPER_NOUN) and (MASS_NOUN not in lexicon_entry.properties):
+            if (dependency_node.part_of_speech != PROPER_NOUN) and (
+                MASS_NOUN not in lexicon_entry.properties
+            ):
                 determiner_node = DependencyTreeToken("a", DETERMINER)
                 self.dependency_graph.add_edge(
                     determiner_node, dependency_node, role=DETERMINER_ROLE
