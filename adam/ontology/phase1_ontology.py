@@ -134,10 +134,9 @@ _CHAIR_SEAT = OntologyNode("chairseat")
 _TABLETOP = OntologyNode("tabletop")
 _TAIL = OntologyNode("tail")
 _WING = OntologyNode("wing")
-_BONE = OntologyNode("bone")
+_ARM_SEGMENT = OntologyNode("armsegment")
 _WALL = OntologyNode("wall")
 _ROOF = OntologyNode("roof")
-_WINDOW = OntologyNode("window")
 _TIRE = OntologyNode("tire")
 _TRUCK_CAB = OntologyNode("truckcab")
 _TRAILER = OntologyNode("trailer")
@@ -273,8 +272,7 @@ _CHAIR_SEAT_SCHEMA = ObjectStructuralSchema(_CHAIR_SEAT)
 _TABLETOP_SCHEMA = ObjectStructuralSchema(_TABLETOP)
 _TAIL_SCHEMA = ObjectStructuralSchema(_TAIL)
 _WING_SCHEMA = ObjectStructuralSchema(_WING)
-_BONE_SCHEMA = ObjectStructuralSchema(_BONE)
-_WINDOW_SCHEMA = ObjectStructuralSchema(_WINDOW)
+_ARM_SEGMENT_SCHEMA = ObjectStructuralSchema(_ARM_SEGMENT)
 _ROOF_SCHEMA = ObjectStructuralSchema(_ROOF)
 _WALL_SCHEMA = ObjectStructuralSchema(_WALL)
 _TIRE_SCHEMA = ObjectStructuralSchema(_TIRE)
@@ -283,8 +281,10 @@ _BODY_SCHEMA = ObjectStructuralSchema(_BODY)
 
 # schemata describing the sub-object structural nature of a Human Arm
 _ARM_SCHEMA_HAND = SubObject(_HAND_SCHEMA)
-_ARM_SCHEMA_UPPER = SubObject(_BONE_SCHEMA)  # Is that the correct sub-object we want?
-_ARM_SCHEMA_LOWER = SubObject(_BONE_SCHEMA)
+_ARM_SCHEMA_UPPER = SubObject(
+    _ARM_SEGMENT_SCHEMA
+)  # Is that the correct sub-object we want?
+_ARM_SCHEMA_LOWER = SubObject(_ARM_SEGMENT_SCHEMA)
 
 _ARM_SCHEMA = ObjectStructuralSchema(
     _ARM,
