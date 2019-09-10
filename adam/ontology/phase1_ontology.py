@@ -13,27 +13,28 @@ The following will eventually end up here:
 - Relations, Modifiers, Function Words: basic color terms (red, blue, green, white, black…), one,
   two, I, me, my, you, your, to, in, on, [beside, behind, in front of, over, under], up, down
 """
+from immutablecollections import immutableset, immutablesetmultidict
 from more_itertools import flatten
-from immutablecollections import immutablesetmultidict, immutableset
-from networkx import DiGraph
 
 from adam.ontology import (
-    OntologyNode,
-    Ontology,
-    ObjectStructuralSchema,
-    SubObject,
-    sub_object_relations,
-    make_dsl_relation,
-    make_symetric_dsl_relation,
-    make_opposite_dsl_relation,
-    PROPERTY,
+    ABSTRACT,
     ACTION,
-    RELATION,
     META_PROPERTY,
+    ObjectStructuralSchema,
+    Ontology,
+    OntologyNode,
+    PROPERTY,
+    RELATION,
+    SubObject,
     THING,
+    make_dsl_relation,
+    make_opposite_dsl_relation,
+    make_symetric_dsl_relation,
+    minimal_ontology_graph,
+    sub_object_relations,
 )
 
-_ontology_graph = DiGraph()  # pylint:disable=invalid-name
+_ontology_graph = minimal_ontology_graph()  # pylint:disable=invalid-name
 
 
 def subtype(sub: OntologyNode, _super: OntologyNode) -> None:
@@ -47,18 +48,16 @@ BINARY = OntologyNode("binary")
 subtype(BINARY, META_PROPERTY)
 
 # properties of objects
-PERCEIVABLE_PROPERTY = OntologyNode(
-    "perceivable-property", local_properties=[PERCEIVABLE]
-)
+PERCEIVABLE_PROPERTY = OntologyNode("perceivable-property", [PERCEIVABLE])
 subtype(PERCEIVABLE_PROPERTY, PROPERTY)
-ANIMATE = OntologyNode("animate", local_properties=[BINARY])
+ANIMATE = OntologyNode("animate", [BINARY])
 subtype(ANIMATE, PERCEIVABLE_PROPERTY)
-INANIMATE = OntologyNode("inanimate", local_properties=[BINARY])
+INANIMATE = OntologyNode("inanimate", [BINARY])
 subtype(INANIMATE, PERCEIVABLE_PROPERTY)
-SENTIENT = OntologyNode("sentient", local_properties=[BINARY])
+SENTIENT = OntologyNode("sentient", [BINARY])
 subtype(SENTIENT, PERCEIVABLE_PROPERTY)
 
-RECOGNIZED_PARTICULAR = OntologyNode("recognized-particular", local_properties=[BINARY])
+RECOGNIZED_PARTICULAR = OntologyNode("recognized-particular", [BINARY])
 """
 Indicates that a node in the ontology corresponds to a particular (rather than a class)
 which is assumed to be known to the `LanguageLearner`. 
@@ -104,7 +103,11 @@ COLORS_TO_RGBS = {
 # Information about the hierarchical structure of objects
 # is given at the end of this module because it is so bulky.
 
-INANIMATE_OBJECT = OntologyNode("inanimate-object", [INANIMATE])
+INANIMATE_OBJECT = OntologyNode(
+    "inanimate-object",
+    inheritable_properties=[INANIMATE],
+    non_inheritable_properties=[ABSTRACT],
+)
 subtype(INANIMATE_OBJECT, THING)
 TABLE = OntologyNode("table")
 subtype(TABLE, INANIMATE_OBJECT)
@@ -141,7 +144,9 @@ subtype(HAT, INANIMATE_OBJECT)
 COOKIE = OntologyNode("cookie")
 subtype(COOKIE, INANIMATE_OBJECT)
 
-PERSON = OntologyNode("person", [ANIMATE])
+PERSON = OntologyNode(
+    "person", inheritable_properties=[ANIMATE], non_inheritable_properties=[ABSTRACT]
+)
 subtype(PERSON, THING)
 MOM = OntologyNode("mom", [RECOGNIZED_PARTICULAR])
 subtype(MOM, PERSON)
@@ -150,7 +155,9 @@ subtype(DAD, PERSON)
 BABY = OntologyNode("baby")
 subtype(BABY, PERSON)
 
-NONHUMAN_ANIMAL = OntologyNode("animal", [ANIMATE])
+NONHUMAN_ANIMAL = OntologyNode(
+    "animal", inheritable_properties=[ANIMATE], non_inheritable_properties=[ABSTRACT]
+)
 subtype(NONHUMAN_ANIMAL, THING)
 DOG = OntologyNode("dog")
 subtype(DOG, NONHUMAN_ANIMAL)

@@ -7,6 +7,7 @@ Note that we provide convenience functions like `random_situation_templates` and
 """
 import sys
 from abc import ABC, abstractmethod
+from itertools import islice
 from typing import AbstractSet, Generic, List, Sequence, Tuple, TypeVar, Iterable
 
 from attr import Factory, attrib, attrs
@@ -54,9 +55,8 @@ class SituationTemplateProcessor(ABC, Generic[_SituationTemplateT, SituationT]):
         self,
         template: _SituationTemplateT,
         *,
-        num_instantiations: int = 1,
         chooser: SequenceChooser = Factory(RandomChooser.for_seed),
-    ) -> AbstractSet[SituationT]:
+    ) -> Iterable[SituationT]:
         r"""
         Generates one or more `Situation`\ s from a `SituationTemplate`\ .
 
@@ -264,8 +264,12 @@ def one_situation_per_template(
     sequence_chooser: SequenceChooser,
 ) -> Iterable[SituationT]:
     return flatten(
-        situation_template_processor.generate_situations(
-            template=situation_template, num_instantiations=1, chooser=sequence_chooser
+        islice(
+            situation_template_processor.generate_situations(
+                template=situation_template, chooser=sequence_chooser
+            ),
+            start=0,
+            stop=1,
         )
         for situation_template in situation_templates
     )
