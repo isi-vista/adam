@@ -126,7 +126,6 @@ subtype(BIRD, NONHUMAN_ANIMAL)
 
 
 # Terms below are internal and can only be accessed as parts of other objects
-# _HEAD = OntologyNode("head") # Head is in our standard vocabulary
 _ARM = OntologyNode("arm")
 _TORSO = OntologyNode("torso")
 _LEG = OntologyNode("leg")
@@ -149,6 +148,7 @@ _TIRE = OntologyNode("tire")
 _TRUCK_CAB = OntologyNode("truckcab")
 _TRAILER = OntologyNode("trailer")
 _FLATBED = OntologyNode("flatbed")
+_BODY = OntologyNode("body")
 
 # Verbs
 
@@ -255,29 +255,8 @@ subtype(THEME, SEMANTIC_ROLE)
 DESTINATION = OntologyNode("destination")
 subtype(DESTINATION, SEMANTIC_ROLE)
 
-# Hierarchical structure of objects
-_TORSO_SCHEMA = ObjectStructuralSchema(_TORSO)
-# _ARM_SCHEMA = ObjectStructuralSchema(_ARM)
-_LEG_SCHEMA = ObjectStructuralSchema(_LEG)
-_CHAIRBACK_SCHEMA = ObjectStructuralSchema(_CHAIR_BACK)
-_CHAIR_SEAT_SCHEMA = ObjectStructuralSchema(_CHAIR_SEAT)
-_TABLETOP_SCHEMA = ObjectStructuralSchema(_TABLETOP)
-_TAIL_SCHEMA = ObjectStructuralSchema(_TAIL)
-_WING_SCHEMA = ObjectStructuralSchema(_WING)
-_EYE_SCHEMA = ObjectStructuralSchema(_EYE)
-_MOUTH_SCHEMA = ObjectStructuralSchema(_MOUTH)
-_EAR_SCHEMA = ObjectStructuralSchema(_EAR)
-_NOSE_SCHEMA = ObjectStructuralSchema(_NOSE)
-_FINGER_SCHEMA = ObjectStructuralSchema(_FINGER)
-_PALM_SCHEMA = ObjectStructuralSchema(_PALM)
-_BONE_SCHEMA = ObjectStructuralSchema(_BONE)
-_WINDOW_SCHEMA = ObjectStructuralSchema(_WINDOW)
-_ROOF_SCHEMA = ObjectStructuralSchema(_ROOF)
-_WALL_SCHEMA = ObjectStructuralSchema(_WALL)
-_TIRE_SCHEMA = ObjectStructuralSchema(_TIRE)
-_FLATBED_SCHEMA = ObjectStructuralSchema(_FLATBED)
-
-# Structural Schema Below are Vocabulary Options
+# Structural Objects without Sub-Parts which are part of our Phase 1 Vocabulary
+# These may need to evolve to reflect the changes for visualization of phase 1
 _DOOR_SCHEMA = ObjectStructuralSchema(DOOR)
 _BALL_SCHEMA = ObjectStructuralSchema(BALL)
 _BOX_SCHEMA = ObjectStructuralSchema(BOX)
@@ -289,41 +268,26 @@ _HAT_SCHEMA = ObjectStructuralSchema(HAT)
 _COOKIE_SCHEMA = ObjectStructuralSchema(COOKIE)
 _CUP_SCHEMA = ObjectStructuralSchema(CUP)
 _BOOK_SCHEMA = ObjectStructuralSchema(BOOK)
+_HAND_SCHEMA = ObjectStructuralSchema(HAND)
+_HEAD_SCHEMA = ObjectStructuralSchema(HEAD)
 
-# schemata describing the hierarchical physical structure of objects
-_HEAD_SCHEMA_PINKY_FINGER = SubObject(_FINGER_SCHEMA)
-_HEAD_SCHEMA_RING_FINGER = SubObject(_FINGER_SCHEMA)
-_HEAD_SCHEMA_MIDDLE_FINGER = SubObject(_FINGER_SCHEMA)
-_HEAD_SCHEMA_INDEX_FINGER = SubObject(_FINGER_SCHEMA)
-_HEAD_SCHEMA_THUMB = SubObject(_FINGER_SCHEMA)
-_HEAD_SCHEMA_PALM = SubObject(_PALM_SCHEMA)
-_HEAD_SCHEMA_FINGERS = [
-    _HEAD_SCHEMA_PINKY_FINGER,
-    _HEAD_SCHEMA_RING_FINGER,
-    _HEAD_SCHEMA_MIDDLE_FINGER,
-    _HEAD_SCHEMA_INDEX_FINGER,
-    _HEAD_SCHEMA_THUMB,
-]
+# Hierarchical structure of objects
+_TORSO_SCHEMA = ObjectStructuralSchema(_TORSO)
+_LEG_SCHEMA = ObjectStructuralSchema(_LEG)
+_CHAIRBACK_SCHEMA = ObjectStructuralSchema(_CHAIR_BACK)
+_CHAIR_SEAT_SCHEMA = ObjectStructuralSchema(_CHAIR_SEAT)
+_TABLETOP_SCHEMA = ObjectStructuralSchema(_TABLETOP)
+_TAIL_SCHEMA = ObjectStructuralSchema(_TAIL)
+_WING_SCHEMA = ObjectStructuralSchema(_WING)
+_BONE_SCHEMA = ObjectStructuralSchema(_BONE)
+_WINDOW_SCHEMA = ObjectStructuralSchema(_WINDOW)
+_ROOF_SCHEMA = ObjectStructuralSchema(_ROOF)
+_WALL_SCHEMA = ObjectStructuralSchema(_WALL)
+_TIRE_SCHEMA = ObjectStructuralSchema(_TIRE)
+_FLATBED_SCHEMA = ObjectStructuralSchema(_FLATBED)
+_BODY_SCHEMA = ObjectStructuralSchema(_BODY)
 
-_HAND_SCHEMA = ObjectStructuralSchema(
-    HAND,
-    sub_objects=[
-        _HEAD_SCHEMA_PINKY_FINGER,
-        _HEAD_SCHEMA_RING_FINGER,
-        _HEAD_SCHEMA_MIDDLE_FINGER,
-        _HEAD_SCHEMA_INDEX_FINGER,
-        _HEAD_SCHEMA_THUMB,
-        _HEAD_SCHEMA_PALM,
-    ],
-    sub_object_relations=sub_object_relations(
-        [
-            contacts(_HEAD_SCHEMA_FINGERS, _HEAD_SCHEMA_PALM),
-            supports(_HEAD_SCHEMA_PALM, _HEAD_SCHEMA_FINGERS),
-        ]
-    ),
-)
-
-# schemata describing the hierarchical physical structure of objects
+# schemata describing the sub-object structural nature of a Human Arm
 _ARM_SCHEMA_HAND = SubObject(_HAND_SCHEMA)
 _ARM_SCHEMA_UPPER = SubObject(_BONE_SCHEMA)  # Is that the correct sub-object we want?
 _ARM_SCHEMA_LOWER = SubObject(_BONE_SCHEMA)
@@ -336,36 +300,7 @@ _ARM_SCHEMA = ObjectStructuralSchema(
     ),
 )
 
-# schemata describing the hierarchical physical structure of objects
-_HEAD_SCHEMA_LEFT_EYE = SubObject(_EYE_SCHEMA)
-_HEAD_SCHEMA_RIGHT_EYE = SubObject(_EYE_SCHEMA)
-_HEAD_SCHEMA_LEFT_EAR = SubObject(_EAR_SCHEMA)
-_HEAD_SCHEMA_RIGHT_EAR = SubObject(_EAR_SCHEMA)
-_HEAD_SCHEMA_MOUTH = SubObject(_MOUTH_SCHEMA)
-_HEAD_SCHEMA_NOSE = SubObject(_NOSE_SCHEMA)
-
-_HEAD_SCHEMA = ObjectStructuralSchema(
-    HEAD,
-    sub_objects=[
-        _HEAD_SCHEMA_LEFT_EYE,
-        _HEAD_SCHEMA_RIGHT_EYE,
-        _HEAD_SCHEMA_LEFT_EAR,
-        _HEAD_SCHEMA_RIGHT_EAR,
-        _HEAD_SCHEMA_MOUTH,
-        _HEAD_SCHEMA_NOSE,
-    ],
-    sub_object_relations=sub_object_relations(
-        [
-            above(
-                [_HEAD_SCHEMA_NOSE, _HEAD_SCHEMA_LEFT_EYE, _HEAD_SCHEMA_RIGHT_EYE],
-                _HEAD_SCHEMA_MOUTH,
-            ),
-            above([_HEAD_SCHEMA_LEFT_EYE, _HEAD_SCHEMA_RIGHT_EYE], _HEAD_SCHEMA_NOSE),
-        ]
-    ),
-)
-
-# schemata describing the hierarchical physical structure of objects
+# schemata describing the sub-object structural nature of a Person
 _PERSON_SCHEMA_HEAD = SubObject(_HEAD_SCHEMA)
 _PERSON_SCHEMA_TORSO = SubObject(_TORSO_SCHEMA)
 _PERSON_SCHEMA_LEFT_ARM = SubObject(_ARM_SCHEMA)
@@ -400,14 +335,14 @@ _PERSON_SCHEMA = ObjectStructuralSchema(
     ),
 )
 
-_CHAIR_SCHMEA_BACK = SubObject(_CHAIRBACK_SCHEMA)
+
+# schemata describing the sub-object structural nature of a Chair
+_CHAIR_SCHEMA_BACK = SubObject(_CHAIRBACK_SCHEMA)
 _CHAIR_SCHEMA_LEG_1 = SubObject(_LEG_SCHEMA)
 _CHAIR_SCHEMA_LEG_2 = SubObject(_LEG_SCHEMA)
 _CHAIR_SCHEMA_LEG_3 = SubObject(_LEG_SCHEMA)
 _CHAIR_SCHEMA_LEG_4 = SubObject(_LEG_SCHEMA)
 _CHAIR_SCHEMA_SEAT = SubObject(_CHAIR_SEAT_SCHEMA)
-
-
 _CHAIR_LEGS = [
     _CHAIR_SCHEMA_LEG_1,
     _CHAIR_SCHEMA_LEG_2,
@@ -418,7 +353,7 @@ _CHAIR_LEGS = [
 _CHAIR_SCHEMA = ObjectStructuralSchema(
     CHAIR,
     sub_objects=[
-        _CHAIR_SCHMEA_BACK,
+        _CHAIR_SCHEMA_BACK,
         _CHAIR_SCHEMA_SEAT,
         _CHAIR_SCHEMA_LEG_1,
         _CHAIR_SCHEMA_LEG_2,
@@ -430,14 +365,14 @@ _CHAIR_SCHEMA = ObjectStructuralSchema(
             contacts(_CHAIR_LEGS, _CHAIR_SCHEMA_SEAT),
             supports(_CHAIR_LEGS, _CHAIR_SCHEMA_SEAT),
             above(_CHAIR_SCHEMA_SEAT, _CHAIR_LEGS),
-            contacts(_CHAIR_SCHMEA_BACK, _CHAIR_SCHEMA_SEAT),
-            supports(_CHAIR_SCHEMA_SEAT, _CHAIR_SCHMEA_BACK),
-            above(_CHAIR_SCHMEA_BACK, _CHAIR_SCHEMA_SEAT),
+            contacts(_CHAIR_SCHEMA_BACK, _CHAIR_SCHEMA_SEAT),
+            supports(_CHAIR_SCHEMA_SEAT, _CHAIR_SCHEMA_BACK),
+            above(_CHAIR_SCHEMA_BACK, _CHAIR_SCHEMA_SEAT),
         ]
     ),
 )
 
-# schemata describing the hierarchical physical structure of objects
+# schemata describing the sub-object structural nature of a Table
 _TABLE_SCHEMA_LEG_1 = SubObject(_LEG_SCHEMA)
 _TABLE_SCHEMA_LEG_2 = SubObject(_LEG_SCHEMA)
 _TABLE_SCHEMA_LEG_3 = SubObject(_LEG_SCHEMA)
@@ -469,7 +404,7 @@ _TABLE_SCHEMA = ObjectStructuralSchema(
     ),
 )
 
-# schemata describing the hierarchical physical structure of objects
+# schemata describing the sub-object structural nature of a dog
 _DOG_SCHEMA_LEG_1 = SubObject(_LEG_SCHEMA)
 _DOG_SCHEMA_LEG_2 = SubObject(_LEG_SCHEMA)
 _DOG_SCHEMA_LEG_3 = SubObject(_LEG_SCHEMA)
@@ -512,7 +447,7 @@ _DOG_SCHEMA = ObjectStructuralSchema(
     ),
 )
 
-# schemata describing the hierarchical physical structure of objects
+# schemata describing the sub-object structural nature of a bird
 _BIRD_SCHEMA_HEAD = SubObject(_HEAD_SCHEMA)
 _BIRD_SCHEMA_TORSO = SubObject(_TORSO_SCHEMA)
 _BIRD_SCHEMA_LEFT_LEG = SubObject(_LEG_SCHEMA)
@@ -559,12 +494,9 @@ _BIRD_SCHEMA = ObjectStructuralSchema(
     ),
 )
 
-# schemata describing the hierarchical physical structure of objects
-_HOUSE_SCHEMA_LEFT_WINDOW = SubObject(_WINDOW_SCHEMA)
-_HOUSE_SCHEMA_RIGHT_WINDOW = SubObject(_WINDOW_SCHEMA)
-_HOUSE_SCHEMA_DOOR = SubObject(_DOOR_SCHEMA)
+# schemata describing the sub-object structural nature of a house
 _HOUSE_SCHEMA_ROOF = SubObject(_ROOF_SCHEMA)
-_HOUSE_SCHEMA_WALL = SubObject(_WALL_SCHEMA)
+_HOUSE_SCHEMA_GROUND_FLOOR = SubObject(_WALL_SCHEMA)
 
 # House modeled after a simple 1 story home as commonly seen in child's books
 # Stick example below -- ASCII art perhaps isn't the best demonstration form
@@ -577,144 +509,54 @@ _HOUSE_SCHEMA_WALL = SubObject(_WALL_SCHEMA)
 # [----| |----]
 _HOUSE_SCHEMA = ObjectStructuralSchema(
     HOUSE,
-    sub_objects=[
-        _HOUSE_SCHEMA_DOOR,
-        _HOUSE_SCHEMA_LEFT_WINDOW,
-        _HOUSE_SCHEMA_RIGHT_WINDOW,
-        _HOUSE_SCHEMA_ROOF,
-        _HOUSE_SCHEMA_WALL,
-    ],
+    sub_objects=[_HOUSE_SCHEMA_ROOF, _HOUSE_SCHEMA_GROUND_FLOOR],
     sub_object_relations=sub_object_relations(
         [
-            contacts(
-                [
-                    _HOUSE_SCHEMA_DOOR,
-                    _HOUSE_SCHEMA_ROOF,
-                    _HOUSE_SCHEMA_RIGHT_WINDOW,
-                    _HOUSE_SCHEMA_LEFT_WINDOW,
-                ],
-                _HOUSE_SCHEMA_WALL,
-            ),
-            supports(_HOUSE_SCHEMA_WALL, _HOUSE_SCHEMA_ROOF),
-            above(
-                _HOUSE_SCHEMA_ROOF,
-                [
-                    _HOUSE_SCHEMA_WALL,
-                    _HOUSE_SCHEMA_LEFT_WINDOW,
-                    _HOUSE_SCHEMA_RIGHT_WINDOW,
-                    _HOUSE_SCHEMA_DOOR,
-                ],
-            ),
-            bigger_than(
-                [_HOUSE_SCHEMA_WALL, _HOUSE_SCHEMA_ROOF],
-                [
-                    _HOUSE_SCHEMA_DOOR,
-                    _HOUSE_SCHEMA_RIGHT_WINDOW,
-                    _HOUSE_SCHEMA_LEFT_WINDOW,
-                ],
-            ),
+            contacts(_HOUSE_SCHEMA_ROOF, _HOUSE_SCHEMA_GROUND_FLOOR),
+            supports(_HOUSE_SCHEMA_GROUND_FLOOR, _HOUSE_SCHEMA_ROOF),
+            above(_HOUSE_SCHEMA_ROOF, _HOUSE_SCHEMA_GROUND_FLOOR),
         ]
     ),
 )
 
-# schemata describing the hierarchical physical structure of objects
-_CAR_SCHEMA_FRONT_WINDOW = SubObject(_WINDOW_SCHEMA)
-_CAR_SCHEMA_REAR_WINDOW = SubObject(_WINDOW_SCHEMA)
-_CAR_SCHEMA_DRIVER_WINDOW = SubObject(_WINDOW_SCHEMA)
-_CAR_SCHEMA_PASSENGER_WINDOW = SubObject(_WINDOW_SCHEMA)
-_CAR_SCHEMA_RIGHT_REAR_WINDOW = SubObject(_WINDOW_SCHEMA)
-_CAR_SCHEMA_LEFT_REAR_WINDOW = SubObject(_WINDOW_SCHEMA)
-_CAR_SCHEMA_DRIVER_DOOR = SubObject(_DOOR_SCHEMA)
-_CAR_SCHEMA_PASSENGER_DOOR = SubObject(_DOOR_SCHEMA)
-_CAR_SCHEMA_LEFT_REAR_DOOR = SubObject(_DOOR_SCHEMA)
-_CAR_SCHEMA_RIGHT_REAR_DOOR = SubObject(_DOOR_SCHEMA)
-_CAR_SCHEMA_TRUNK_DOOR = SubObject(_DOOR_SCHEMA)
+# schemata describing the sub-object structural nature of a car
 _CAR_SCHEMA_FRONT_LEFT_TIRE = SubObject(_TIRE_SCHEMA)
 _CAR_SCHEMA_FRONT_RIGHT_TIRE = SubObject(_TIRE_SCHEMA)
 _CAR_SCHEMA_REAR_LEFT_TIRE = SubObject(_TIRE_SCHEMA)
 _CAR_SCHEMA_REAR_RIGHT_TIRE = SubObject(_TIRE_SCHEMA)
-_CAR_SCHEMA_ROOF = SubObject(_ROOF_SCHEMA)
+_CAR_SCHEMA_BODY = SubObject(_BODY_SCHEMA)
+_CAR_SCHEMA_TIRES = [
+    _CAR_SCHEMA_FRONT_LEFT_TIRE,
+    _CAR_SCHEMA_FRONT_RIGHT_TIRE,
+    _CAR_SCHEMA_REAR_LEFT_TIRE,
+    _CAR_SCHEMA_REAR_RIGHT_TIRE,
+]
 
 # Improve Car Stuctural Schema once surfaces are introduced
 # Git Issue: https://github.com/isi-vista/adam/issues/69
 _CAR_SCHEMA = ObjectStructuralSchema(
     CAR,
     sub_objects=[
-        _CAR_SCHEMA_FRONT_WINDOW,
-        _CAR_SCHEMA_REAR_WINDOW,
-        _CAR_SCHEMA_DRIVER_WINDOW,
-        _CAR_SCHEMA_PASSENGER_WINDOW,
-        _CAR_SCHEMA_RIGHT_REAR_WINDOW,
-        _CAR_SCHEMA_LEFT_REAR_WINDOW,
-        _CAR_SCHEMA_DRIVER_DOOR,
-        _CAR_SCHEMA_PASSENGER_DOOR,
-        _CAR_SCHEMA_LEFT_REAR_DOOR,
-        _CAR_SCHEMA_RIGHT_REAR_DOOR,
-        _CAR_SCHEMA_TRUNK_DOOR,
         _CAR_SCHEMA_FRONT_LEFT_TIRE,
         _CAR_SCHEMA_FRONT_RIGHT_TIRE,
         _CAR_SCHEMA_REAR_LEFT_TIRE,
         _CAR_SCHEMA_REAR_RIGHT_TIRE,
-        _CAR_SCHEMA_ROOF,
+        _CAR_SCHEMA_BODY,
     ],
     sub_object_relations=sub_object_relations(
         [
-            contacts(_CAR_SCHEMA_DRIVER_WINDOW, _CAR_SCHEMA_DRIVER_DOOR),
-            contacts(_CAR_SCHEMA_PASSENGER_WINDOW, _CAR_SCHEMA_PASSENGER_DOOR),
-            contacts(_CAR_SCHEMA_LEFT_REAR_WINDOW, _CAR_SCHEMA_LEFT_REAR_DOOR),
-            contacts(_CAR_SCHEMA_RIGHT_REAR_WINDOW, _CAR_SCHEMA_RIGHT_REAR_DOOR),
-            contacts(
-                _CAR_SCHEMA_FRONT_WINDOW,
-                [_CAR_SCHEMA_PASSENGER_DOOR, _CAR_SCHEMA_DRIVER_DOOR],
-            ),
-            contacts(_CAR_SCHEMA_REAR_WINDOW, _CAR_SCHEMA_TRUNK_DOOR),
-            bigger_than(
-                [
-                    _CAR_SCHEMA_DRIVER_DOOR,
-                    _CAR_SCHEMA_PASSENGER_DOOR,
-                    _CAR_SCHEMA_LEFT_REAR_DOOR,
-                    _CAR_SCHEMA_RIGHT_REAR_DOOR,
-                ],
-                [
-                    _CAR_SCHEMA_LEFT_REAR_WINDOW,
-                    _CAR_SCHEMA_RIGHT_REAR_WINDOW,
-                    _CAR_SCHEMA_DRIVER_WINDOW,
-                    _CAR_SCHEMA_PASSENGER_WINDOW,
-                ],
-            ),
-            above(
-                _CAR_SCHEMA_ROOF,
-                [
-                    _CAR_SCHEMA_FRONT_WINDOW,
-                    _CAR_SCHEMA_REAR_WINDOW,
-                    _CAR_SCHEMA_DRIVER_WINDOW,
-                    _CAR_SCHEMA_PASSENGER_WINDOW,
-                    _CAR_SCHEMA_RIGHT_REAR_WINDOW,
-                    _CAR_SCHEMA_LEFT_REAR_WINDOW,
-                    _CAR_SCHEMA_DRIVER_DOOR,
-                    _CAR_SCHEMA_PASSENGER_DOOR,
-                    _CAR_SCHEMA_LEFT_REAR_DOOR,
-                    _CAR_SCHEMA_RIGHT_REAR_DOOR,
-                    _CAR_SCHEMA_TRUNK_DOOR,
-                    _CAR_SCHEMA_FRONT_LEFT_TIRE,
-                    _CAR_SCHEMA_FRONT_RIGHT_TIRE,
-                    _CAR_SCHEMA_REAR_LEFT_TIRE,
-                    _CAR_SCHEMA_REAR_RIGHT_TIRE,
-                ],
-            ),
+            contacts(_CAR_SCHEMA_TIRES, _CAR_SCHEMA_BODY),
+            supports(_CAR_SCHEMA_TIRES, _CAR_SCHEMA_BODY),
         ]
     ),
 )
 
-# schemata describing the hierarchical physical structure of objects
-_TRUCK_CAB_ROOF = SubObject(_ROOF_SCHEMA)
+# schemata describing the sub-object structural nature of a truck cab
 _TRUCK_CAB_TIRE_1 = SubObject(_TIRE_SCHEMA)
 _TRUCK_CAB_TIRE_2 = SubObject(_TIRE_SCHEMA)
 _TRUCK_CAB_TIRE_3 = SubObject(_TIRE_SCHEMA)
 _TRUCK_CAB_TIRE_4 = SubObject(_TIRE_SCHEMA)
-_TRUCK_CAB_DRIVER_DOOR = SubObject(_DOOR_SCHEMA)
-_TRUCK_CAB_PASSENGER_DOOR = SubObject(_DOOR_SCHEMA)
-_TRUCK_CAB_FRONT_WINDOW = SubObject(_WINDOW_SCHEMA)
+_TRUCK_CAB_BODY = SubObject(_BODY_SCHEMA)
 
 _TRUCK_CAB_TIRES = [
     _TRUCK_CAB_TIRE_1,
@@ -726,46 +568,22 @@ _TRUCK_CAB_TIRES = [
 _TRUCK_CAB_SCHEMA = ObjectStructuralSchema(
     _TRUCK_CAB,
     sub_objects=[
-        _TRUCK_CAB_ROOF,
-        _TRUCK_CAB_DRIVER_DOOR,
-        _TRUCK_CAB_PASSENGER_DOOR,
         _TRUCK_CAB_TIRE_1,
         _TRUCK_CAB_TIRE_2,
         _TRUCK_CAB_TIRE_3,
         _TRUCK_CAB_TIRE_4,
-        _TRUCK_CAB_FRONT_WINDOW,
+        _TRUCK_CAB_BODY,
     ],
     sub_object_relations=sub_object_relations(
         [
-            above(
-                [
-                    _TRUCK_CAB_FRONT_WINDOW,
-                    _TRUCK_CAB_PASSENGER_DOOR,
-                    _TRUCK_CAB_DRIVER_DOOR,
-                    _TRUCK_CAB_ROOF,
-                ],
-                _TRUCK_CAB_TIRES,
-            ),
-            above(
-                _TRUCK_CAB_ROOF,
-                [
-                    _TRUCK_CAB_DRIVER_DOOR,
-                    _TRUCK_CAB_PASSENGER_DOOR,
-                    _TRUCK_CAB_FRONT_WINDOW,
-                ],
-            ),
-            contacts(
-                _TRUCK_CAB_ROOF,
-                [
-                    _TRUCK_CAB_PASSENGER_DOOR,
-                    _TRUCK_CAB_DRIVER_DOOR,
-                    _TRUCK_CAB_FRONT_WINDOW,
-                ],
-            ),
+            above(_TRUCK_CAB_BODY, _TRUCK_CAB_TIRES),
+            contacts(_TRUCK_CAB_BODY, _TRUCK_CAB_TIRES),
+            supports(_TRUCK_CAB_TIRES, _TRUCK_CAB_BODY),
         ]
     ),
 )
 
+# schemata describing the sub-object structural nature of a truck trailer
 _TRUCK_TRAILER_TIRE_1 = SubObject(_TIRE_SCHEMA)
 _TRUCK_TRAILER_TIRE_2 = SubObject(_TIRE_SCHEMA)
 _TRUCK_TRAILER_TIRE_3 = SubObject(_TIRE_SCHEMA)
@@ -796,7 +614,9 @@ _TRUCK_TRAILER_SCHEMA = ObjectStructuralSchema(
         ]
     ),
 )
+
 # Truck in mind is a Semi Trailer with flat bed trailer
+# Schemata describing the sub-object structural nature of a truck
 _TRUCK_SCHEMA_CAB = SubObject(_TRUCK_CAB_SCHEMA)
 _TRUCK_SCHEMA_TRAILER = SubObject(_TRUCK_TRAILER_SCHEMA)
 
