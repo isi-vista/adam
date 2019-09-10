@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import AbstractSet, Iterable
+from typing import AbstractSet
 
 from attr import attrib, attrs
 from attr.validators import instance_of
@@ -7,7 +7,7 @@ from immutablecollections import ImmutableSet, immutableset
 from immutablecollections.converter_utils import _to_immutableset
 from vistautils.preconditions import check_arg
 
-from adam.ontology import Ontology, OntologyNode, THING
+from adam.ontology import Ontology, OntologyNode
 
 
 class OntologyNodeSelector(ABC):
@@ -48,17 +48,13 @@ class ByHierarchyAndProperties(OntologyNodeSelector):
     _required_properties: ImmutableSet[OntologyNode] = attrib(
         converter=_to_immutableset, default=immutableset()
     )
+    _banned_properties: ImmutableSet[OntologyNode] = attrib(
+        converter=_to_immutableset, default=immutableset()
+    )
 
     def select_nodes(self, ontology: Ontology) -> AbstractSet[OntologyNode]:
         return ontology.nodes_with_properties(
-            self._descendents_of, self._required_properties
+            self._descendents_of,
+            self._required_properties,
+            banned_properties=self._banned_properties,
         )
-
-
-def object_variable(
-    root_node: OntologyNode = THING,
-    with_properties: Iterable[OntologyNode] = immutableset(),
-):
-    return ByHierarchyAndProperties(
-        descendents_of=root_node, required_properties=with_properties
-    )

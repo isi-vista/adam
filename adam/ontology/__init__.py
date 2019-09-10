@@ -34,18 +34,25 @@ class OntologyNode:
     A simple human-readable description of this node,
     used for debugging and testing only.
     """
-    _local_properties: ImmutableSet["OntologyNode"] = attrib(
+    inheritable_properties: ImmutableSet["OntologyNode"] = attrib(
         converter=_to_immutableset, default=immutableset()
     )
     r"""
-    Properties of the `OntologyNode`, as a set of `OntologyNodes`\ s.
-    These will be inherited by its children.
+    Properties of the `OntologyNode`, as a set of `OntologyNode`\ s
+    which should be inherited by its children.
+    """
+    non_inheritable_properties: ImmutableSet["OntologyNode"] = attrib(
+        converter=_to_immutableset, default=immutableset(), kw_only=True
+    )
+    r"""
+    Properties of the `OntologyNode`, as a set of `OntologyNode`\ s
+    which should not be inherited by its children.
     """
 
     def __repr__(self) -> str:
-        if self._local_properties:
+        if self.inheritable_properties:
             local_properties = ",".join(
-                str(local_property) for local_property in self._local_properties
+                str(local_property) for local_property in self.inheritable_properties
             )
             properties_string = f"[{local_properties}]"
         else:
@@ -54,6 +61,11 @@ class OntologyNode:
 
 
 # by convention, the following should appear in all Ontologies
+ABSTRACT = OntologyNode("abstract")
+r"""
+A property indicating that a node can't be instantiated in a scene.
+"""
+
 THING = OntologyNode("thing")
 r"""
 Ancestor of all objects in an `Ontology`.
@@ -87,6 +99,9 @@ For example, whether it is perceivable or binary.
 
 By convention this should appear in all `Ontology`\ s.
 """
+
+REQUIRED_ONTOLOGY_NODES = immutableset([THING, RELATION, ACTION, PROPERTY, META_PROPERTY,
+                                        ABSTRACT])
 
 
 @attrs(frozen=True, slots=True, repr=False)
