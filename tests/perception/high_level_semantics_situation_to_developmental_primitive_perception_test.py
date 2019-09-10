@@ -32,7 +32,13 @@ def test_person_and_ball():
         "head_0",
         "torso_0",
         "arm_0",
+        "armsegment_0",
+        "armsegment_1",
+        "hand_0",
         "arm_1",
+        "armsegment_2",
+        "armsegment_3",
+        "hand_1",
         "leg_0",
         "leg_1",
     }
