@@ -1,5 +1,5 @@
 from adam.language.dependency.universal_dependencies import PROPER_NOUN, NOUN, VERB
-from adam.language.lexicon import LexiconEntry
+from adam.language.lexicon import LexiconEntry, LexiconProperty
 from adam.language.ontology_dictionary import OntologyLexicon
 from adam.ontology.phase1_ontology import (
     MOM,
@@ -26,7 +26,24 @@ from adam.ontology.phase1_ontology import (
     BABY,
     DOG,
     BIRD,
+    GO,
+    COME,
+    TAKE,
+    EAT,
+    GIVE,
+    TURN,
+    SIT,
+    DRINK,
+    FALL,
+    THROW,
+    MOVE,
+    JUMP,
+    HAVE,
+    ROLL,
+    FLY,
 )
+
+MASS_NOUN = LexiconProperty("mass-noun")
 
 GAILA_PHASE_1_ENGLISH_LEXICON = OntologyLexicon(
     (
@@ -38,13 +55,13 @@ GAILA_PHASE_1_ENGLISH_LEXICON = OntologyLexicon(
         (BOOK, LexiconEntry("book", NOUN)),
         (HOUSE, LexiconEntry("house", NOUN)),
         (CAR, LexiconEntry("car", NOUN)),
-        (WATER, LexiconEntry("water", NOUN)),
-        (JUICE, LexiconEntry("juice", NOUN)),
+        (WATER, LexiconEntry("water", NOUN, [MASS_NOUN])),
+        (JUICE, LexiconEntry("juice", NOUN, [MASS_NOUN])),
         (CUP, LexiconEntry("cup", NOUN)),
         (BOX, LexiconEntry("box", NOUN)),
         (CHAIR, LexiconEntry("chair", NOUN)),
         (HEAD, LexiconEntry("head", NOUN)),
-        (MILK, LexiconEntry("milk", NOUN)),
+        (MILK, LexiconEntry("milk", NOUN, [MASS_NOUN])),
         (HAND, LexiconEntry("hand", NOUN)),
         (TRUCK, LexiconEntry("truck", NOUN)),
         (DOOR, LexiconEntry("door", NOUN)),
@@ -54,5 +71,20 @@ GAILA_PHASE_1_ENGLISH_LEXICON = OntologyLexicon(
         (BABY, LexiconEntry("bird", NOUN)),
         (DOG, LexiconEntry("dog", NOUN)),
         (BIRD, LexiconEntry("bird", NOUN)),
+        (GO, LexiconEntry("go", VERB)),
+        (COME, LexiconEntry("come", VERB)),
+        (TAKE, LexiconEntry("take", VERB)),
+        (EAT, LexiconEntry("eat", VERB)),
+        (GIVE, LexiconEntry("give", VERB)),
+        (TURN, LexiconEntry("turn", VERB)),
+        (SIT, LexiconEntry("sit", VERB)),
+        (DRINK, LexiconEntry("drink", VERB)),
+        (FALL, LexiconEntry("fall", VERB)),
+        (THROW, LexiconEntry("throw", VERB)),
+        (MOVE, LexiconEntry("move", VERB)),
+        (JUMP, LexiconEntry("jump", VERB)),
+        (HAVE, LexiconEntry("have", VERB)),
+        (ROLL, LexiconEntry("roll", VERB)),
+        (FLY, LexiconEntry("fly", VERB)),
     )
 )

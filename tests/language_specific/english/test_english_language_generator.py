@@ -14,10 +14,11 @@ from adam.ontology.phase1_ontology import (
     PUSH,
     TABLE,
     THEME,
+    WATER,
 )
 from adam.random_utils import FixedIndexChooser
 from adam.situation import HighLevelSemanticsSituation, SituationAction, SituationObject
-from situation.situation_test import make_mom_put_ball_on_table
+from tests.situation.situation_test import make_mom_put_ball_on_table
 
 _SIMPLE_GENERATOR = SimpleRuleBasedEnglishLanguageGenerator(
     ontology_lexicon=GAILA_PHASE_1_ENGLISH_LEXICON
@@ -31,6 +32,15 @@ def test_common_noun():
     assert only(
         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
     ).as_token_sequence() == ("a", "ball")
+
+
+def test_mass_noun():
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY, objects=[SituationObject(WATER)]
+    )
+    assert only(
+        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
+    ).as_token_sequence() == ("water",)
 
 
 def test_proper_noun():
