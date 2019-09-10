@@ -29,6 +29,7 @@ from adam.language.ontology_dictionary import OntologyLexicon
 from adam.language_specific.english.english_syntax import (
     SIMPLE_ENGLISH_DEPENDENCY_TREE_LINEARIZER,
 )
+from adam.language_specific.english.english_phase_1_lexicon import MASS_NOUN
 from adam.ontology import OntologyNode
 from adam.ontology.phase1_ontology import AGENT, PATIENT, THEME, DESTINATION, ON
 from adam.random_utils import SequenceChooser
@@ -138,7 +139,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
 
             # add articles to things which are not proper nouns
             # ("a ball" but not "a Mom")
-            if dependency_node.part_of_speech != PROPER_NOUN:
+            if (dependency_node.part_of_speech != PROPER_NOUN) and (MASS_NOUN not in lexicon_entry.properties):
                 determiner_node = DependencyTreeToken("a", DETERMINER)
                 self.dependency_graph.add_edge(
                     determiner_node, dependency_node, role=DETERMINER_ROLE
