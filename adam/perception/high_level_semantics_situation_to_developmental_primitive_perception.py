@@ -7,7 +7,13 @@ from more_itertools import only
 from vistautils.preconditions import check_arg
 
 from adam.ontology import ObjectStructuralSchema, Ontology, SubObject
-from adam.ontology.phase1_ontology import PART_OF, PERCEIVABLE, BINARY, COLOR
+from adam.ontology.phase1_ontology import (
+    PART_OF,
+    PERCEIVABLE,
+    BINARY,
+    COLOR,
+    COLORS_TO_RGBS,
+)
 from adam.perception import PerceptualRepresentation, PerceptualRepresentationGenerator
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -15,6 +21,8 @@ from adam.perception.developmental_primitive_perception import (
     RelationPerception,
     PropertyPerception,
     HasBinaryProperty,
+    RgbColorPerception,
+    HasColor,
 )
 from adam.random_utils import SequenceChooser
 from adam.situation import HighLevelSemanticsSituation, SituationObject
@@ -129,6 +137,7 @@ class _PerceptionGeneration:
         self._perceive_property_assertions()
 
         # TODO: translate actions
+        #
         # https://github.com/isi-vista/adam/issues/86
         return PerceptualRepresentation.single_frame(
             DevelopmentalPrimitivePerceptionFrame(
@@ -156,12 +165,22 @@ class _PerceptionGeneration:
                     perceived_object = self._objects_to_perceptions[situation_object]
                     # Convert the property (which as an OntologyNode object) into PropertyPerception object
                     if BINARY in attributes_of_property:
-                        perceived_property = HasBinaryProperty(
+                        perceived_property: PropertyPerception = HasBinaryProperty(
                             perceived_object, property_
                         )
                     elif COLOR in attributes_of_property:
-                        # TODO: issue: generate perception of colors
-                        raise RuntimeError("Fix this issue COLOR property")
+                        # Sample an RGB value for the color property and generate perception for it
+                        if property_ in COLORS_TO_RGBS:
+                            r, g, b = self._chooser.choice(COLORS_TO_RGBS[property_])
+                            perceived_property = HasColor(
+                                perceived_object, RgbColorPerception(r, g, b)
+                            )
+                        else:
+                            raise RuntimeError(
+                                f"Not sure how to generate perception for the unknown property {property_} "
+                                f"which is marked as COLOR"
+                            )
+
                     else:
                         raise RuntimeError(
                             f"Not sure how to generate perception for property {property_} "

@@ -107,7 +107,7 @@ class HasBinaryProperty(PropertyPerception):
     binary_property = attrib(validator=instance_of(OntologyNode))
 
     def __repr__(self) -> str:
-        return f"hasProperty({self.perceived_object}, {self.binary_property}"
+        return f"hasProperty({self.perceived_object}, {self.binary_property})"
 
 
 @attrs(slots=True, frozen=True, repr=False)
@@ -136,6 +136,9 @@ class HasColor(PropertyPerception):
     """
 
     color = attrib(validator=instance_of(RgbColorPerception))
+
+    def __repr__(self) -> str:
+        return f"hasColor({self.perceived_object}, {self.color})"
 
 
 @attrs(slots=True, frozen=True, repr=False)

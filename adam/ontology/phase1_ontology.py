@@ -63,7 +63,35 @@ subtype(RECOGNIZED_PARTICULAR, PROPERTY)
 COLOR = OntologyNode("color")
 RED = OntologyNode("red", local_properties=[COLOR, PERCEIVABLE])
 BLUE = OntologyNode("blue", local_properties=[COLOR, PERCEIVABLE])
-
+GREEN = OntologyNode("green", local_properties=[COLOR, PERCEIVABLE])
+BLACK = OntologyNode("black", local_properties=[COLOR, PERCEIVABLE])
+WHITE = OntologyNode("white", local_properties=[COLOR, PERCEIVABLE])
+subtype(RED, COLOR)
+subtype(BLUE, COLOR)
+subtype(GREEN, COLOR)
+subtype(BLACK, COLOR)
+subtype(WHITE, COLOR)
+COLORS_TO_RGBS = {
+    RED: [
+        (255, 0, 0),
+        (237, 28, 36),
+        (196, 2, 51),
+        (242, 0, 60),
+        (237, 41, 57),
+        (238, 32, 77),
+    ],
+    BLUE: [
+        (0, 0, 255),
+        (51, 51, 153),
+        (0, 135, 189),
+        (0, 147, 175),
+        (0, 24, 168),
+        (31, 117, 254),
+    ],
+    GREEN: [(0, 255, 0), (75, 111, 68), (86, 130, 3), (34, 139, 34)],
+    BLACK: [(0, 0, 0), (12, 2, 15), (53, 56, 57), (52, 52, 52)],
+    WHITE: [(255, 255, 255), (248, 248, 255), (245, 245, 245), (254, 254, 250)],
+}
 
 # Objects
 # Information about the hierarchical structure of objects
