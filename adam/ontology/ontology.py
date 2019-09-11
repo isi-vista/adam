@@ -42,6 +42,8 @@ class Ontology:
 
     Every `Ontology` must contain the special nodes `THING`, `RELATION`, `ACTION`,
     `PROPERTY` and `META_PROPERTY`.
+
+    To assist in creating legal `Ontology`\ s, we provide `minimal_ontology_graph`.
     """
 
     _graph: DiGraph = attrib(validator=instance_of(DiGraph), converter=_copy_digraph)

@@ -14,6 +14,7 @@ from adam.ontology.phase1_ontology import (
     BINARY,
     COLOR,
     COLORS_TO_RGBS,
+    GAILA_PHASE_1_ONTOLOGY,
 )
 from adam.perception import PerceptualRepresentation, PerceptualRepresentationGenerator
 from adam.perception.developmental_primitive_perception import (
@@ -263,3 +264,8 @@ class _PerceptionGeneration:
                 )
             )
         return root_object_perception
+
+
+GAILA_PHASE_1_PERCEPTION_GENERATOR = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
+    GAILA_PHASE_1_ONTOLOGY
+)

@@ -15,6 +15,8 @@ from immutablecollections.converter_utils import (
     _to_immutableset,
 )
 from more_itertools import flatten
+from networkx import DiGraph, dfs_preorder_nodes, has_path, simple_cycles
+from vistautils.preconditions import check_arg
 
 
 @attrs(frozen=True, slots=True, repr=False)
@@ -100,8 +102,9 @@ For example, whether it is perceivable or binary.
 By convention this should appear in all `Ontology`\ s.
 """
 
-REQUIRED_ONTOLOGY_NODES = immutableset([THING, RELATION, ACTION, PROPERTY, META_PROPERTY,
-                                        ABSTRACT])
+REQUIRED_ONTOLOGY_NODES = immutableset(
+    [THING, RELATION, ACTION, PROPERTY, META_PROPERTY, ABSTRACT]
+)
 
 
 @attrs(frozen=True, slots=True, repr=False)
