@@ -12,12 +12,7 @@ from adam.ontology.phase1_ontology import (
     PERCEIVABLE,
     BINARY,
     COLOR,
-    RED,
-    BLUE,
-    GREEN,
-    BLACK,
     COLORS_TO_RGBS,
-    WHITE,
 )
 from adam.perception import PerceptualRepresentation, PerceptualRepresentationGenerator
 from adam.perception.developmental_primitive_perception import (
@@ -175,7 +170,7 @@ class _PerceptionGeneration:
                         )
                     elif COLOR in attributes_of_property:
                         # Sample an RGB value for the color property and generate perception for it
-                        if property_ in [RED, BLUE, GREEN, BLACK, WHITE]:
+                        if property_ in COLORS_TO_RGBS:
                             r, g, b = self._chooser.choice(COLORS_TO_RGBS[property_])
                             perceived_property = HasColor(
                                 perceived_object, RgbColorPerception(r, g, b)
