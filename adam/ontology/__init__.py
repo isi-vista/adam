@@ -37,7 +37,8 @@ class Ontology:
     Every `OntologyNode` may have a set of properties which are inherited by all child nodes.
 
     Every `Ontology` must contain the special nodes `THING`, `RELATION`, `ACTION`,
-    `PROPERTY` and `META_PROPERTY`.
+    `PROPERTY`, `META_PROPERTY`, and `ABSTRACT`.
+    To assist in creating legal `Ontology`\ s, we provide `minimal_ontology_graph`.
     """
 
     _graph: DiGraph = attrib(validator=instance_of(DiGraph), converter=_copy_digraph)
@@ -266,8 +267,9 @@ For example, whether it is perceivable or binary.
 By convention this should appear in all `Ontology`\ s.
 """
 
-REQUIRED_ONTOLOGY_NODES = immutableset([THING, RELATION, ACTION, PROPERTY, META_PROPERTY,
-                                        ABSTRACT])
+REQUIRED_ONTOLOGY_NODES = immutableset(
+    [THING, RELATION, ACTION, PROPERTY, META_PROPERTY, ABSTRACT]
+)
 
 
 def minimal_ontology_graph():

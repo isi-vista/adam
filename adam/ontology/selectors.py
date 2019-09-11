@@ -41,7 +41,10 @@ class Is(OntologyNodeSelector):
 @attrs(frozen=True, slots=True)
 class ByHierarchyAndProperties(OntologyNodeSelector):
     """
-    An `OntologyNodeSelector` which selects all nodes which possess certain properties.
+    An `OntologyNodeSelector` which selects all nodes
+     which are descendents of *descendents_of*,
+     which possess all of *required_properties*,
+     and which possess none of *banned_properties*.
     """
 
     _descendents_of: OntologyNode = attrib(validator=instance_of(OntologyNode))
