@@ -138,7 +138,7 @@ class HasColor(PropertyPerception):
     color = attrib(validator=instance_of(RgbColorPerception))
 
     def __repr__(self) -> str:
-        return f"hasProperty({self.perceived_object}, {self.color})"
+        return f"hasColor({self.perceived_object}, {self.color})"
 
 
 @attrs(slots=True, frozen=True, repr=False)

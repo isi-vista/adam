@@ -1,4 +1,9 @@
 from adam.ontology.phase1_ontology import BALL, GAILA_PHASE_1_ONTOLOGY, PERSON, RED
+from adam.perception.developmental_primitive_perception import (
+    PropertyPerception,
+    HasBinaryProperty,
+    HasColor,
+)
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
 )
@@ -57,12 +62,22 @@ def test_person_and_ball_color():
     assert len(person_and_ball_perception.frames) == 1
     assert len(person_and_ball_perception.frames[0].property_assertions) == 3
 
-    property_handles = set(
-        str(assertion)
-        for assertion in person_and_ball_perception.frames[0].property_assertions
+    property_assertions = person_and_ball_perception.frames[0].property_assertions
+    assert (
+        prop_assertion is PropertyPerception for prop_assertion in property_assertions
     )
-    assert property_handles == {
-        "hasProperty(person_0, animate[perceivable,binary])",
-        "hasProperty(ball_0, inanimate[perceivable,binary])",
-        "hasProperty(ball_0, #f2003c)",
-    }
+    # Check binary properties
+    assert {
+        (prop.perceived_object.debug_handle, prop.binary_property.handle)
+        for prop in property_assertions
+        if isinstance(prop, HasBinaryProperty)
+    } == {("person_0", "animate"), ("ball_0", "inanimate")}
+    # Check colors
+    assert {
+        (
+            prop.perceived_object.debug_handle,
+            f"#{prop.color.red:02x}{prop.color.green:02x}{prop.color.blue:02x}",
+        )
+        for prop in property_assertions
+        if isinstance(prop, HasColor)
+    } == {("ball_0", "#f2003c")}
