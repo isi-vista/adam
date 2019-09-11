@@ -182,34 +182,22 @@ class _PerceptionGeneration:
                         # TODO: Color perception is currently phase-1-ontology-specific, should be changed
                         if property_ == RED:
                             r, g, b = self._chooser.choice(RED_RGBS)
-                            perceived_property = HasColor(
-                                perceived_object, RgbColorPerception(r, g, b)
-                            )
                         elif property_ == BLUE:
                             r, g, b = self._chooser.choice(BLUE_RGBS)
-                            perceived_property = HasColor(
-                                perceived_object, RgbColorPerception(r, g, b)
-                            )
                         elif property_ == GREEN:
                             r, g, b = self._chooser.choice(GREEN_RGBS)
-                            perceived_property = HasColor(
-                                perceived_object, RgbColorPerception(r, g, b)
-                            )
                         elif property_ == BLACK:
                             r, g, b = self._chooser.choice(BLACK_RGBS)
-                            perceived_property = HasColor(
-                                perceived_object, RgbColorPerception(r, g, b)
-                            )
                         elif property_ == WHITE:
                             r, g, b = self._chooser.choice(WHITE_RGBS)
-                            perceived_property = HasColor(
-                                perceived_object, RgbColorPerception(r, g, b)
-                            )
                         else:
                             raise RuntimeError(
                                 f"Not sure how to generate perception for the unknown property {property_} "
                                 f"which is marked as COLOR"
                             )
+                        perceived_property = HasColor(
+                            perceived_object, RgbColorPerception(r, g, b)
+                        )
                     else:
                         raise RuntimeError(
                             f"Not sure how to generate perception for property {property_} "
