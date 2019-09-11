@@ -17,10 +17,21 @@ class OntologyNodeSelector(ABC):
     This is for use in specifying `SituationTemplate`\ s.
     """
 
-    @abstractmethod
-    def select_nodes(self, ontology: Ontology) -> AbstractSet[OntologyNode]:
+    def select_nodes(
+        self, ontology: Ontology, *, require_non_empty_result=False
+    ) -> AbstractSet[OntologyNode]:
         """
         Select and return some subset of the nodes in *ontology*.
+        """
+        ret = self._select_nodes(ontology)
+        if require_non_empty_result and not ret:
+            raise RuntimeError(f"No node in {ontology} satisfied {self}")
+        return ret
+
+    @abstractmethod
+    def _select_nodes(self, ontology: Ontology) -> AbstractSet[OntologyNode]:
+        """
+        Method sub-classes should override to perform the actual selection.
         """
 
 
@@ -30,9 +41,9 @@ class Is(OntologyNodeSelector):
     An `OntologyNodeSelector` which always selects exactly the specified node.
     """
 
-    _nodes: ImmutableSet[OntologyNode] = attrib(validator=instance_of(OntologyNode))
+    _nodes: ImmutableSet[OntologyNode] = attrib(converter=_to_immutableset)
 
-    def select_nodes(self, ontology: Ontology) -> AbstractSet[OntologyNode]:
+    def _select_nodes(self, ontology: Ontology) -> AbstractSet[OntologyNode]:
         for node in self._nodes:
             check_arg(node in ontology, f"{node} is not in the ontology")
         return self._nodes
@@ -55,7 +66,7 @@ class ByHierarchyAndProperties(OntologyNodeSelector):
         converter=_to_immutableset, default=immutableset()
     )
 
-    def select_nodes(self, ontology: Ontology) -> AbstractSet[OntologyNode]:
+    def _select_nodes(self, ontology: Ontology) -> AbstractSet[OntologyNode]:
         return ontology.nodes_with_properties(
             self._descendents_of,
             self._required_properties,

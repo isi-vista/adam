@@ -9,10 +9,11 @@ from adam.ontology import (
     Ontology,
     ABSTRACT,
 )
+from adam.random_utils import RandomChooser
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
-    Phase1CrossProductSituationTemplateGenerator,
     object_variable,
+    all_possible,
 )
 
 _TESTING_ONTOLOGY_GRAPH = DiGraph()
@@ -49,14 +50,12 @@ _subtype(_DAD, _PERSON)
 
 _TESTING_ONTOLOGY = Ontology(_TESTING_ONTOLOGY_GRAPH)
 
-_GENERATOR = Phase1CrossProductSituationTemplateGenerator(ontology=_TESTING_ONTOLOGY)
-
 
 def test_two_objects():
     two_object_template = Phase1SituationTemplate(
         object_variables=[
             object_variable("person", root_node=_PERSON),
-            object_variable("toy_vehicle", with_properties=[_TOY_VEHICLE]),
+            object_variable("toy_vehicle", with_meta_properties=[_TOY_VEHICLE]),
         ]
     )
 
@@ -69,7 +68,11 @@ def test_two_objects():
 
     generated_object_sets = set(
         immutableset(situation_object.handle for situation_object in situation.objects)
-        for situation in _GENERATOR.generate_situations(two_object_template)
+        for situation in all_possible(
+            two_object_template,
+            ontology=_TESTING_ONTOLOGY,
+            chooser=RandomChooser.for_seed(0),
+        )
     )
 
     assert generated_object_sets == reference_object_sets
