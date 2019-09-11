@@ -1,6 +1,7 @@
 from adam.language.dependency.universal_dependencies import NOUN, VERB
 from adam.language_specific.english.english_phase_1_lexicon import (
-    GAILA_PHASE_1_ENGLISH_LEXICON, MASS_NOUN
+    GAILA_PHASE_1_ENGLISH_LEXICON,
+    MASS_NOUN,
 )
 from adam.ontology.phase1_ontology import BALL, MILK, PUT
 
