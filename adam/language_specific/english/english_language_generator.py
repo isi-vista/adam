@@ -156,7 +156,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             # TODO: we don't currently handle verbal morphology.
             # https://github.com/isi-vista/adam/issues/60
             verb_dependency_node = DependencyTreeToken(
-                lexicon_entry.base_form, lexicon_entry.part_of_speech
+                lexicon_entry.verb_form_3SG_PRS, lexicon_entry.part_of_speech
             )
             self.dependency_graph.add_node(verb_dependency_node)
 
