@@ -67,11 +67,11 @@ def test_simple_verb():
     # TODO: address morphology to capture verb conjugation here
     assert only(
         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
-    ).as_token_sequence() == ("Mom", "push", "a", "table")
+    ).as_token_sequence() == ("Mom", "pushes", "a", "table")
 
 
 def test_mom_put_a_ball_on_the_table():
     situation = make_mom_put_ball_on_table()
     assert only(
         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
-    ).as_token_sequence() == ("Mom", "put", "a", "ball", "on", "a", "table")
+    ).as_token_sequence() == ("Mom", "puts", "a", "ball", "on", "a", "table")
