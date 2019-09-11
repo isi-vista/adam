@@ -16,6 +16,12 @@ from adam.ontology.phase1_ontology import (
     BLUE,
     RED_RGBS,
     BLUE_RGBS,
+    GREEN_RGBS,
+    GREEN,
+    BLACK,
+    BLACK_RGBS,
+    WHITE_RGBS,
+    WHITE,
 )
 from adam.perception import PerceptualRepresentation, PerceptualRepresentationGenerator
 from adam.perception.developmental_primitive_perception import (
@@ -181,6 +187,21 @@ class _PerceptionGeneration:
                             )
                         elif property_ == BLUE:
                             r, g, b = self._chooser.choice(BLUE_RGBS)
+                            perceived_property = HasColor(
+                                perceived_object, RgbColorPerception(r, g, b)
+                            )
+                        elif property_ == GREEN:
+                            r, g, b = self._chooser.choice(GREEN_RGBS)
+                            perceived_property = HasColor(
+                                perceived_object, RgbColorPerception(r, g, b)
+                            )
+                        elif property_ == BLACK:
+                            r, g, b = self._chooser.choice(BLACK_RGBS)
+                            perceived_property = HasColor(
+                                perceived_object, RgbColorPerception(r, g, b)
+                            )
+                        elif property_ == WHITE:
+                            r, g, b = self._chooser.choice(WHITE_RGBS)
                             perceived_property = HasColor(
                                 perceived_object, RgbColorPerception(r, g, b)
                             )
