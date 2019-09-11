@@ -43,7 +43,7 @@ class Phase1SituationTemplate(SituationTemplate):
 
 
 @attrs(frozen=True, slots=True)
-class Phase1SituationTemplateGenerator(
+class Phase1CrossProductSituationTemplateGenerator(
     SituationTemplateProcessor[Phase1SituationTemplate, HighLevelSemanticsSituation]
 ):
     r"""
@@ -75,6 +75,7 @@ class Phase1SituationTemplateGenerator(
             yield HighLevelSemanticsSituation(
                 ontology=self.ontology, objects=object_combination
             )
+
 
 
 _T = TypeVar("_T")
@@ -129,4 +130,4 @@ def object_variable(
     )
 
 
-GAILA_PHASE_1_TEMPLATE_GENERATOR = Phase1SituationTemplateGenerator()
+GAILA_PHASE_1_TEMPLATE_GENERATOR = Phase1CrossProductSituationTemplateGenerator()

@@ -11,7 +11,7 @@ from adam.ontology import (
 )
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
-    Phase1SituationTemplateGenerator,
+    Phase1CrossProductSituationTemplateGenerator,
     object_variable,
 )
 
@@ -49,7 +49,7 @@ _subtype(_DAD, _PERSON)
 
 _TESTING_ONTOLOGY = Ontology(_TESTING_ONTOLOGY_GRAPH)
 
-_GENERATOR = Phase1SituationTemplateGenerator(ontology=_TESTING_ONTOLOGY)
+_GENERATOR = Phase1CrossProductSituationTemplateGenerator(ontology=_TESTING_ONTOLOGY)
 
 
 def test_two_objects():

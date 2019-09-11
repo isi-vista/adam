@@ -30,3 +30,4 @@ EACH_OBJECT_BY_ITSELF_CURRICULUM = GeneratedFromSituationsInstanceGroup(
     perception_generator=GAILA_PHASE_1_PERCEPTION_GENERATOR,
     chooser=_CHOOSER,
 )
+
