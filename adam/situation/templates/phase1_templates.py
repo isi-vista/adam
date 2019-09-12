@@ -54,6 +54,9 @@ def all_possible(
     ontology: Ontology,
     chooser: SequenceChooser
 ) -> Iterable[HighLevelSemanticsSituation]:
+    """
+    Generator for all possible instantiations of *situation_template* with *ontology*.
+    """
     return _Phase1SituationTemplateGenerator(
         ontology=ontology, variable_assigner=_CrossProductVariableAssigner()
     ).generate_situations(situation_template, chooser=chooser)
@@ -66,6 +69,9 @@ def sampled(
     chooser: SequenceChooser,
     max_to_sample: int
 ) -> Iterable[HighLevelSemanticsSituation]:
+    """
+    Gets *max_to_sample* instantiations of *situation_template* with *ontology*
+    """
     check_arg(max_to_sample > 0)
     return take(
         max_to_sample,
@@ -83,11 +89,11 @@ class _Phase1SituationTemplateGenerator(
     Generates `HighLevelSemanticsSituation`\ s from `Phase1SituationTemplate`\ s
     by sampling a valid filler for each object variable.
 
-    This generates an infinite stream of `Situation`\ s, so be sure to wrap this in
-    more_itertools.take .
+    This can potentially generate an infinite stream of `Situation`\ s,
+    so be sure to wrap this in more_itertools.take .
     """
-    # can be set to something besides GAILA_PHASE_1_ONTOLOGY for testing purposes
     _variable_assigner: "_VariableAssigner" = attrib(kw_only=True)
+    # can be set to something besides GAILA_PHASE_1_ONTOLOGY for testing purposes
     ontology: Ontology = attrib(default=GAILA_PHASE_1_ONTOLOGY, kw_only=True)
 
     def generate_situations(
@@ -98,6 +104,7 @@ class _Phase1SituationTemplateGenerator(
             RandomChooser.for_seed
         )  # pylint:disable=unused-argument
     ) -> Iterable[HighLevelSemanticsSituation]:
+        # gather property variables from object variables
         property_variables = immutableset(
             property_
             for obj_var in template.object_variables
@@ -114,11 +121,13 @@ class _Phase1SituationTemplateGenerator(
             yield HighLevelSemanticsSituation(
                 ontology=self.ontology,
                 objects=[
+                    # instantiate all objects in the situation according to the variable assignment.
                     SituationObject(
                         ontology_node=variable_assignment.object_variables_to_fillers[
                             obj_var
                         ],
                         properties=[
+                            # instantiate any property variables associated with this object
                             variable_assignment.property_variables_to_fillers[prop_var]
                             for prop_var in obj_var.asserted_properties
                         ],
@@ -129,6 +138,10 @@ class _Phase1SituationTemplateGenerator(
 
 
 class _TemplateVariable(Protocol):
+    """
+    This is not for public use; use `object_variable` and `property_variable` instead.
+    """
+
     node_selector: OntologyNodeSelector
 
 
@@ -241,11 +254,19 @@ def property_variable(
 
 
 def color_variable(debug_handle: str) -> TemplatePropertyVariable:
+    r"""
+    Create a `TemplatePropertyVariable` with the specified *debug_handle*
+    which ranges over all colors in the ontology.
+    """
     return property_variable(debug_handle, COLOR)
 
 
 @attrs(frozen=True, slots=True)
 class _VariableAssignment:
+    """
+    An assignment of ontology types to object and property variables in a situation.
+    """
+
     object_variables_to_fillers: ImmutableDict[
         "TemplateObjectVariable", OntologyNode
     ] = attrib(converter=_to_immutabledict, default=immutabledict())
@@ -264,8 +285,9 @@ class _VariableAssigner(ABC):
         property_variables: AbstractSet["TemplatePropertyVariable"],
         chooser: SequenceChooser
     ) -> Iterable[_VariableAssignment]:
-        """
-        FILL ME IN
+        r"""
+        Produce a (potentially infinite) stream of `_VariableAssignment`\ s of nodes from *ontology*
+        to the given object and property variables.
         """
 
 
@@ -273,6 +295,10 @@ _VarT = TypeVar("_VarT", bound=_TemplateVariable)
 
 
 class _CrossProductVariableAssigner(_VariableAssigner):
+    """
+    Iterates over all possible assignments to the given variables.
+    """
+
     def variable_assignments(
         self,
         *,
@@ -282,6 +308,7 @@ class _CrossProductVariableAssigner(_VariableAssigner):
         chooser: SequenceChooser  # pylint: disable=unused-argument
     ) -> Iterable[_VariableAssignment]:
         # TODO: fix hard-coded rng
+        # https://github.com/isi-vista/adam/issues/123
         rng = Random()
         rng.seed(0)
 
@@ -300,6 +327,7 @@ class _CrossProductVariableAssigner(_VariableAssigner):
         self, variables: AbstractSet[_VarT], *, ontology: Ontology, rng: Random
     ) -> Iterable[Mapping[_VarT, OntologyNode]]:
         var_to_options = {
+            # tuple() needed to make it hashable
             var: tuple(
                 _shuffled(
                     var.node_selector.select_nodes(
@@ -313,13 +341,22 @@ class _CrossProductVariableAssigner(_VariableAssigner):
 
         if var_to_options:
             for combination in product(*var_to_options.values()):
+                # this makes a dictionary where the keys are the variables and the values
+                # correspond to one of the possible assignments.
                 yield immutabledict(zip(var_to_options.keys(), combination))
 
         else:
+            # in this case, there are no variables, so the only possible assignment
+            # is the empty assignment.
             yield dict()
 
 
 class _SamplingVariableAssigner(_VariableAssigner):
+    """
+    Provides an infinite stream of variable assignments
+    where each variable is randomly sampled from its possible values.
+    """
+
     def variable_assignments(
         self,
         *,
@@ -347,6 +384,7 @@ class _SamplingVariableAssigner(_VariableAssigner):
         chooser: SequenceChooser
     ) -> Iterable[Mapping[_VarT, OntologyNode]]:
         var_to_options = {
+            # beware - the values in this map are infinite generators!
             var: _samples(
                 var.node_selector.select_nodes(ontology, require_non_empty_result=True),
                 chooser,
@@ -356,9 +394,13 @@ class _SamplingVariableAssigner(_VariableAssigner):
 
         if var_to_options:
             for combination in zip(*var_to_options.values()):
+                #  this makes a dictionary where the keys are the variables and the values
+                # correspond to one of the possible assignments.
                 yield immutabledict(zip(var_to_options.keys(), combination))
         else:
             while True:
+                # if there are no variables to assign, the only possible assignment
+                # is the empty assignment
                 yield dict()
 
 

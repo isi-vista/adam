@@ -26,7 +26,7 @@ from immutablecollections.converter_utils import (
     _to_immutableset,
     _to_immutablesetmultidict,
 )
-from more_itertools import flatten
+from more_itertools import flatten, take
 
 from adam.language.language_generator import SituationT
 from adam.math_3d import Point
@@ -263,13 +263,12 @@ def one_situation_per_template(
     ],
     sequence_chooser: SequenceChooser,
 ) -> Iterable[SituationT]:
-    return flatten(
-        islice(
+    return (
+        take(
+            1,
             situation_template_processor.generate_situations(
                 template=situation_template, chooser=sequence_chooser
             ),
-            start=0,
-            stop=1,
         )
         for situation_template in situation_templates
     )

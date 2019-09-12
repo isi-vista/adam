@@ -1,3 +1,6 @@
+"""
+Utilities for specifying a sub-set of the nodes in an `Ontology`
+"""
 from abc import ABC, abstractmethod
 from typing import AbstractSet
 

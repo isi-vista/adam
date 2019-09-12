@@ -39,6 +39,12 @@ class Ontology:
 
     Every `Ontology` must contain the special nodes `THING`, `RELATION`, `ACTION`,
     `PROPERTY`, `META_PROPERTY`, and `ABSTRACT`.
+
+    An `Ontology` must have an `ObjectStructuralSchema` associated with
+    each non-`ABSTRACT` `THING`.  `ObjectStructuralSchema`\ ta are inherited,
+    but any which are explicitly-specified will cause any inherited schemata
+    to be ignored.
+
     To assist in creating legal `Ontology`\ s, we provide `minimal_ontology_graph`.
     """
 
@@ -76,7 +82,7 @@ class Ontology:
         for node in self.ancestors(node):
             if node in self._structural_schemata:
                 return self._structural_schemata[node]
-        raise KeyError(f"No structural schema known for {node}")
+        return immutableset()
 
     def is_subtype_of(
         self, node: "OntologyNode", query_supertype: "OntologyNode"

@@ -35,6 +35,9 @@ def _phase1_instances(
     LinearizedDependencyTree,
     DevelopmentalPrimitivePerceptionFrame,
 ]:
+    """
+    Convenience method for more compactly creating sub-curricula for phase 1.
+    """
 
     return GeneratedFromSituationsInstanceGroup(
         description,
@@ -44,6 +47,8 @@ def _phase1_instances(
         chooser=_CHOOSER,
     )
 
+
+# Show each object once by itself
 
 SINGLE_OBJECT_TEMPLATE = Phase1SituationTemplate(
     object_variables=[object_variable("object")]
@@ -56,6 +61,8 @@ EACH_OBJECT_BY_ITSELF_SUB_CURRICULUM = _phase1_instances(
     ),
 )
 
+# Show each object in 20 different colors
+
 _COLOR = color_variable("color")
 _COLOR_OBJECT = object_variable("object", added_properties=[_COLOR])
 _OBJECT_WITH_COLOR_TEMPLATE = Phase1SituationTemplate(object_variables=[_COLOR_OBJECT])
@@ -66,7 +73,7 @@ OBJECTS_WITH_COLORS_SUB_CURRICULUM = _phase1_instances(
         _OBJECT_WITH_COLOR_TEMPLATE,
         chooser=_CHOOSER,
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        max_to_sample=100,
+        max_to_sample=20,
     ),
 )
 
@@ -75,3 +82,6 @@ GAILA_PHASE_1_CURRICULUM = [
     EACH_OBJECT_BY_ITSELF_SUB_CURRICULUM,
     OBJECTS_WITH_COLORS_SUB_CURRICULUM,
 ]
+"""
+One particular instantiation of the curriculum for GAILA Phase 1.
+"""
