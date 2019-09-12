@@ -25,6 +25,9 @@ from adam.ontology import (
     make_dsl_relation,
     make_symetric_dsl_relation,
     make_opposite_dsl_relation)
+from adam.ontology.action_description import ActionDescriptionEntity, ActionDescriptionRelation, \
+    ActionDescriptionPropertyAssertion, ActionDescriptionSubtypeAssertion, ActionDescriptionFrame, \
+    ActionDescription
 from adam.ontology.ontology import Ontology
 from adam.situation import SituationObject, SituationRelation
 
@@ -691,9 +694,71 @@ _TRUCK_SCHEMA = ObjectStructuralSchema(
     ),
 )
 
-GAILA_PHASE_1_ONTOLOGY = Ontology.from_directed_graph(
+# Action descriptions
+_PUT_AGENT = ActionDescriptionEntity("putter")
+_PUT_THEME = ActionDescriptionEntity("puttee")
+_PUT_GOAL = ActionDescriptionEntity("put-goal")
+_PUT_MANIPULATOR = ActionDescriptionEntity("put-manipulator")
+
+_PUT_ACTION_DESCRIPTION = ActionDescription(
+    frames=[ActionDescriptionFrame(
+        {
+            AGENT: _PUT_AGENT,
+            THEME: _PUT_THEME,
+            DESTINATION: _PUT_GOAL
+        }
+    )],
+    preconditions=[
+        ActionDescriptionPropertyAssertion(_PUT_AGENT, ANIMATE),
+        ActionDescriptionSubtypeAssertion(_PUT_THEME, PHYSICAL_OBJECT),
+        ActionDescriptionRelation(SMALLER_THAN, _PUT_THEME, _PUT_AGENT),
+        # TODO: that theme is not already located in GOAL
+        ActionDescriptionRelation(PART_OF, _PUT_MANIPULATOR, _PUT_AGENT),
+        ActionDescriptionRelation(CONTACTS, _PUT_MANIPULATOR, _PUT_THEME),
+        ActionDescriptionRelation(SUPPORTS, _PUT_MANIPULATOR, _PUT_THEME),
+    ],
+    postconditions=[
+        # TODO: that theme is located in GOAL
+        ActionDescriptionRelation(CONTACTS, _PUT_MANIPULATOR, _PUT_THEME,
+                                  negated=True),
+        ActionDescriptionRelation(SUPPORTS, _PUT_MANIPULATOR, _PUT_THEME,
+                                  negated=True)
+    ]
+)
+
+_PUT_AGENT = SituationObject(PHYSICAL_OBJECT, properties=[ANIMATE])
+_PUT_THEME = SituationObject(PHYSICAL_OBJECT)
+_PUT_GOAL = SituationObject()
+_PUT_MANIPULATOR = SituationObject(PHYSICAL_OBJECT, properties=[CAN_MANIPULATE_OBJECTS])
+
+_PUT_ACTION_DESCRIPTION = ActionDescription(
+    frames=[ActionDescriptionFrame(
+        {
+            AGENT: _PUT_AGENT,
+            THEME: _PUT_THEME,
+            DESTINATION: _PUT_GOAL
+        }
+    )],
+    preconditions=[
+        SituationRelation(SMALLER_THAN, _PUT_THEME, _PUT_AGENT),
+        # TODO: that theme is not already located in GOAL
+        SituationRelation(PART_OF, _PUT_MANIPULATOR, _PUT_AGENT),
+        SituationRelation(CONTACTS, _PUT_MANIPULATOR, _PUT_THEME),
+        SituationRelation(SUPPORTS, _PUT_MANIPULATOR, _PUT_THEME),
+    ],
+    postconditions=[
+        # TODO: that theme is located in GOAL
+        SituationRelation(CONTACTS, _PUT_MANIPULATOR, _PUT_THEME,
+                                  negated=True),
+        SituationRelation(SUPPORTS, _PUT_MANIPULATOR, _PUT_THEME,
+                                  negated=True)
+    ]
+)
+
+
+GAILA_PHASE_1_ONTOLOGY = Ontology(
     _ontology_graph,
-    immutablesetmultidict(
+    structural_schemata=immutablesetmultidict(
         [
             (BALL, _BALL_SCHEMA),
             (CHAIR, _CHAIR_SCHEMA),
@@ -718,4 +783,8 @@ GAILA_PHASE_1_ONTOLOGY = Ontology.from_directed_graph(
             (TRUCK, _TRUCK_SCHEMA),
         ]
     ),
+    action_to_description = immutabledict([
+        (PUT, _PUT_ACTION_DESCRIPTION)
+        ]
+    )
 )

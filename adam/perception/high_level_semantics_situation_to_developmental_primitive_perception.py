@@ -138,6 +138,26 @@ class _PerceptionGeneration:
         # https://github.com/isi-vista/adam/issues/85
         self._perceive_property_assertions()
 
+        # Perform the action on
+        if not self._situation.actions.empty():
+            action = list(self._situation.actions)[0]
+            # e.g: SituationAction(PUT, ((AGENT, mom),(THEME, ball),(DESTINATION, SituationRelation(ON, ball, table))))
+            action_description = (
+                action.action_type.action_description
+            )  # Get description from PUT
+
+            for precondition in action_description.preconditions:
+                self._relation_perceptions.append(
+                    precondition.generate_perceptual_relation(
+                        action.argument_roles_to_fillers
+                    )
+                )
+
+            # Iterate over properties of action type (to be added to ontology)
+            # Use this info to generate before and after frames
+            # 1) Extract a list of pre and post conditions based on the actions (create a new class for action-descriptions)
+            # 2) Generate a frame using each
+
         # TODO: translate actions
         #
         # https://github.com/isi-vista/adam/issues/86
@@ -146,8 +166,7 @@ class _PerceptionGeneration:
                 perceived_objects=self._object_perceptions,
                 relations=self._relation_perceptions,
                 property_assertions=self._property_assertion_perceptions,
-            )
-        )
+
 
     def _perceive_property_assertions(self) -> None:
         for situation_object in self._situation.objects:
