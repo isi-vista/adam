@@ -7,13 +7,8 @@ from typing import Callable, Iterable, Tuple, Union
 
 from attr import attrib, attrs
 from attr.validators import instance_of
-from immutablecollections import (
-    ImmutableSet,
-    immutableset,
-)
-from immutablecollections.converter_utils import (
-    _to_immutableset,
-)
+from immutablecollections import ImmutableSet, immutableset
+from immutablecollections.converter_utils import _to_immutableset
 from more_itertools import flatten
 from networkx import DiGraph, dfs_preorder_nodes, has_path, simple_cycles
 from vistautils.preconditions import check_arg

@@ -1,4 +1,4 @@
-from typing import Iterable, List
+from typing import Iterable, List, AbstractSet
 
 from attr import attrib, attrs
 from attr.validators import instance_of
@@ -19,6 +19,7 @@ from adam.ontology import ObjectStructuralSchema, OntologyNode, REQUIRED_ONTOLOG
 def _copy_digraph(digraph: DiGraph) -> DiGraph:
     return digraph.copy()
 
+
 def minimal_ontology_graph():
     """
     Get the NetworkX DiGraph corresponding to the minimum legal ontology,
@@ -30,6 +31,7 @@ def minimal_ontology_graph():
     for node in REQUIRED_ONTOLOGY_NODES:
         ret.add_node(node)
     return ret
+
 
 @attrs(frozen=True, slots=True)
 class Ontology:
@@ -72,11 +74,11 @@ class Ontology:
         return has_path(self._graph, node, query_supertype)
 
     def nodes_with_properties(
-            self,
-            root_node: "OntologyNode",
-            required_properties: Iterable["OntologyNode"],
-            *,
-            banned_properties: AbstractSet["OntologyNode"] = immutableset(),
+        self,
+        root_node: "OntologyNode",
+        required_properties: Iterable["OntologyNode"],
+        *,
+        banned_properties: AbstractSet["OntologyNode"] = immutableset(),
     ) -> ImmutableSet["OntologyNode"]:
         r"""
         Get all `OntologyNode`\ s which are a dominated by *root_node* (or are *root_node*
@@ -110,11 +112,11 @@ class Ontology:
         )
 
     def has_all_properties(
-            self,
-            node: "OntologyNode",
-            required_properties: Iterable["OntologyNode"],
-            *,
-            banned_properties: AbstractSet["OntologyNode"] = immutableset(),
+        self,
+        node: "OntologyNode",
+        required_properties: Iterable["OntologyNode"],
+        *,
+        banned_properties: AbstractSet["OntologyNode"] = immutableset(),
     ) -> bool:
         r"""
         Checks an `OntologyNode` for a collection of `OntologyNode`\ s.
@@ -147,13 +149,14 @@ class Ontology:
             dominating node.
         """
         node_properties: List[OntologyNode] = []
+        node_properties.extend(node.non_inheritable_properties)
 
         cur_node = node
         while cur_node:
             # noinspection PyProtectedMember
             for (
                 property_
-            ) in cur_node._local_properties:  # pylint:disable=protected-access
+            ) in cur_node.inheritable_properties:  # pylint:disable=protected-access
                 node_properties.append(property_)
             # need to make a tuple because we can't len() the returned iterator
             parents = tuple(self._graph.successors(cur_node))

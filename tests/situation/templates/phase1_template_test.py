@@ -1,14 +1,8 @@
 from immutablecollections import immutableset
 from networkx import DiGraph
 
-from adam.ontology import (
-    OntologyNode,
-    REQUIRED_ONTOLOGY_NODES,
-    PROPERTY,
-    THING,
-    Ontology,
-    ABSTRACT,
-)
+from adam.ontology import OntologyNode, REQUIRED_ONTOLOGY_NODES, PROPERTY, THING, ABSTRACT
+from adam.ontology.ontology import Ontology
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
     Phase1SituationTemplateGenerator,

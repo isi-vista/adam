@@ -16,9 +16,18 @@ The following will eventually end up here:
 from immutablecollections import immutableset, immutablesetmultidict
 from more_itertools import flatten
 
-from adam.ontology import (ObjectStructuralSchema, OntologyNode, RELATION, SubObject, THING,
-                           make_symmetric_dsl_relation, ABSTRACT, make_opposite_dsl_relation,
-                           make_dsl_relation, sub_object_relations)
+from adam.ontology import (
+    ObjectStructuralSchema,
+    OntologyNode,
+    RELATION,
+    SubObject,
+    THING,
+    make_symmetric_dsl_relation,
+    ABSTRACT,
+    make_opposite_dsl_relation,
+    make_dsl_relation,
+    sub_object_relations,
+)
 from adam.ontology.ontology import minimal_ontology_graph, Ontology
 
 _ontology_graph = minimal_ontology_graph()  # pylint:disable=invalid-name
@@ -51,21 +60,19 @@ subtype(BINARY, META_PROPERTY)
 PROPERTY = OntologyNode("property")
 
 # properties of objects
-PERCEIVABLE_PROPERTY = OntologyNode(
-    "perceivable-property", [PERCEIVABLE])
+PERCEIVABLE_PROPERTY = OntologyNode("perceivable-property", [PERCEIVABLE])
 
 ANIMATE = OntologyNode("animate", [BINARY])
-subtype(ANIMATE, PROPERTY)
+subtype(ANIMATE, PERCEIVABLE_PROPERTY)
 INANIMATE = OntologyNode("inanimate", [BINARY])
-subtype(INANIMATE, PROPERTY)
+subtype(INANIMATE, PERCEIVABLE_PROPERTY)
 SENTIENT = OntologyNode("sentient", [BINARY])
-subtype(SENTIENT, PROPERTY)
+subtype(SENTIENT, PERCEIVABLE_PROPERTY)
+
 CAN_MANIPULATE_OBJECTS = OntologyNode("sentient")
 subtype(CAN_MANIPULATE_OBJECTS, PROPERTY)
 
-RECOGNIZED_PARTICULAR = OntologyNode(
-    "recognized-particular", [BINARY]
-)
+RECOGNIZED_PARTICULAR = OntologyNode("recognized-particular", [BINARY])
 
 """
 Indicates that a node in the ontology corresponds to a particular (rather than a class)
@@ -76,11 +83,11 @@ subtype(RECOGNIZED_PARTICULAR, PERCEIVABLE_PROPERTY)
 
 COLOR = OntologyNode("color")
 subtype(COLOR, PERCEIVABLE_PROPERTY)
-RED = OntologyNode("red", local_properties=[COLOR, PERCEIVABLE])
-BLUE = OntologyNode("blue", local_properties=[COLOR, PERCEIVABLE])
-GREEN = OntologyNode("green", local_properties=[COLOR, PERCEIVABLE])
-BLACK = OntologyNode("black", local_properties=[COLOR, PERCEIVABLE])
-WHITE = OntologyNode("white", local_properties=[COLOR, PERCEIVABLE])
+RED = OntologyNode("red")
+BLUE = OntologyNode("blue")
+GREEN = OntologyNode("green")
+BLACK = OntologyNode("black")
+WHITE = OntologyNode("white")
 subtype(RED, COLOR)
 subtype(BLUE, COLOR)
 subtype(GREEN, COLOR)

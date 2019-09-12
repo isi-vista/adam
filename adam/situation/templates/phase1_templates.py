@@ -11,11 +11,12 @@ from attr.validators import instance_of
 from immutablecollections import ImmutableSet, immutableset
 from immutablecollections.converter_utils import _to_immutableset
 
-from adam.ontology import Ontology, OntologyNode, THING, ABSTRACT
+from adam.ontology import OntologyNode, THING, ABSTRACT
+from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
 from adam.ontology.selectors import ByHierarchyAndProperties, OntologyNodeSelector
 from adam.random_utils import RandomChooser, SequenceChooser
-from adam.situation import HighLevelSemanticsSituation
+from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.situation.templates import (
     SituationTemplate,
     SituationTemplateObject,
