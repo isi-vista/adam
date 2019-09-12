@@ -64,7 +64,7 @@ class CurriculumToHtml:
             return 1
         html = open(outputdestination, "w")
         html.write(f"<h1>{title} - {instance.name()}</h1>\n")
-        x = 0
+        instance_number = 0
         for inst in instance.instances():
             if not isinstance(inst[0], HighLevelSemanticsSituation):
                 raise RuntimeError(
@@ -81,16 +81,16 @@ class CurriculumToHtml:
                     f"Expected the Perceptual Representation to contain DevelopmentalPrimitivePerceptionFrame got {type(inst[2].frames)}"
                 )
             html.write(
-                f'<table>\n<thead><tr><th colspan="3"><h2>Scene {x}</h2>\n</th></tr></thead>'
-                f'<tbody><tr><td><h3 id="situation{x}">Situation Description</h3></td>'
-                f'<td><h3 id="lingustics{x}">Linguistic Descrption</h3></td>'
-                f'<td><h3 id="perception{x}">Perception Description</h3></td></tr>\n<tr>'
+                f'<table>\n<thead><tr><th colspan="3"><h2>Scene {instance_number}</h2>\n</th></tr></thead>'
+                f'<tbody><tr><td><h3 id="situation{instance_number}">Situation Description</h3></td>'
+                f'<td><h3 id="lingustics{instance_number}">Linguistic Descrption</h3></td>'
+                f'<td><h3 id="perception{instance_number}">Perception Description</h3></td></tr>\n<tr>'
             )
             html.writelines(CurriculumToHtml._situationtext(inst[0]))
             html.writelines(CurriculumToHtml._linguistictext(inst[1]))
             html.writelines(CurriculumToHtml._perceptiontext(inst[2]))
             html.write("</tr></tbody>")
-            x = x + 1
+            instance_number = instance_number + 1
         html.close()
         return 0
 
@@ -135,9 +135,9 @@ class CurriculumToHtml:
 
         """
         outputtext = [f"<td>"]
-        x = 0
+        frame_number = 0
         for frame in perception.frames:
-            outputtext.append(f"<h4>Frame {x}</h4>")
+            outputtext.append(f"<h4>Frame {frame_number}</h4>")
             outputtext.append("<h5>Perceived Objects</h5>\n<ul>")
             for obj in frame.perceived_objects:
                 outputtext.append(f"<li>{obj.debug_handle}</li>")
@@ -154,7 +154,7 @@ class CurriculumToHtml:
                         f"<li>{rel.relation_type.handle}({rel.arg1},{rel.arg2})"
                     )
                 outputtext.append("</ul>")
-            x = x + 1
+            frame_number = frame_number + 1
         outputtext.append("</td>")
         return outputtext
 
