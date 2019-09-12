@@ -6,7 +6,8 @@ from immutablecollections import ImmutableSet, immutableset
 from immutablecollections.converter_utils import _to_immutableset
 from vistautils.range import Range
 
-from adam.ontology import Ontology, OntologyNode
+from adam.ontology import OntologyNode
+from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import RECOGNIZED_PARTICULAR
 from adam.perception import PerceptualRepresentationFrame
 

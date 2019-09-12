@@ -13,26 +13,39 @@ The following will eventually end up here:
 - Relations, Modifiers, Function Words: basic color terms (red, blue, green, white, black…), one,
   two, I, me, my, you, your, to, in, on, [beside, behind, in front of, over, under], up, down
 """
-from immutablecollections import immutablesetmultidict
+from immutablecollections import immutablesetmultidict, immutabledict
 from more_itertools import flatten
 from networkx import DiGraph
 
 from adam.ontology import (
     OntologyNode,
-    Ontology,
     ObjectStructuralSchema,
     SubObject,
     sub_object_relations,
     make_dsl_relation,
     make_symetric_dsl_relation,
-    make_opposite_dsl_relation,
-)
+    make_opposite_dsl_relation)
+from adam.ontology.ontology import Ontology
+from adam.situation import SituationObject, SituationRelation
 
 _ontology_graph = DiGraph()  # pylint:disable=invalid-name
 
 
 def subtype(sub: OntologyNode, _super: OntologyNode) -> None:
     _ontology_graph.add_edge(sub, _super)
+
+
+# Semantic Roles
+
+SEMANTIC_ROLE = OntologyNode("semantic-role")
+AGENT = OntologyNode("agent")
+subtype(AGENT, SEMANTIC_ROLE)
+PATIENT = OntologyNode("patient")
+subtype(PATIENT, SEMANTIC_ROLE)
+THEME = OntologyNode("theme")
+subtype(THEME, SEMANTIC_ROLE)
+DESTINATION = OntologyNode("destination")
+subtype(DESTINATION, SEMANTIC_ROLE)
 
 
 META_PROPERTY = OntologyNode("meta-property")
@@ -48,6 +61,8 @@ INANIMATE = OntologyNode("inanimate", local_properties=[PERCEIVABLE, BINARY])
 subtype(INANIMATE, PROPERTY)
 SENTIENT = OntologyNode("sentient", local_properties=[PERCEIVABLE, BINARY])
 subtype(SENTIENT, PROPERTY)
+CAN_MANIPULATE_OBJECTS = OntologyNode("sentient")
+subtype(CAN_MANIPULATE_OBJECTS, PROPERTY)
 
 RECOGNIZED_PARTICULAR = OntologyNode(
     "recognized-particular", local_properties=[PERCEIVABLE, BINARY]
@@ -125,7 +140,7 @@ HEAD = OntologyNode("head")
 subtype(HEAD, INANIMATE_OBJECT)
 MILK = OntologyNode("milk")
 subtype(MILK, INANIMATE_OBJECT)
-HAND = OntologyNode("hand")
+HAND = OntologyNode("hand", [CAN_MANIPULATE_OBJECTS])
 subtype(HAND, INANIMATE_OBJECT)
 TRUCK = OntologyNode("truck")
 subtype(TRUCK, INANIMATE_OBJECT)
@@ -177,7 +192,9 @@ ACTION = OntologyNode("action")
 STATE = OntologyNode("state")
 CONSUME = OntologyNode("consume")
 subtype(CONSUME, ACTION)
-PUT = OntologyNode("put")
+PUT = OntologyNode(
+    "put"
+)
 PUSH = OntologyNode("push")
 subtype(PUT, ACTION)
 subtype(PUSH, ACTION)
@@ -296,19 +313,6 @@ subtype(BELOW, SPATIAL_RELATION)
 above = make_opposite_dsl_relation(  # pylint:disable=invalid-name
     ABOVE, opposite_type=BELOW
 )
-
-
-# Semantic Roles
-
-SEMANTIC_ROLE = OntologyNode("semantic-role")
-AGENT = OntologyNode("agent")
-subtype(AGENT, SEMANTIC_ROLE)
-PATIENT = OntologyNode("patient")
-subtype(PATIENT, SEMANTIC_ROLE)
-THEME = OntologyNode("theme")
-subtype(THEME, SEMANTIC_ROLE)
-DESTINATION = OntologyNode("destination")
-subtype(DESTINATION, SEMANTIC_ROLE)
 
 # Structural Objects without Sub-Parts which are part of our Phase 1 Vocabulary
 # These may need to evolve to reflect the changes for visualization of phase 1

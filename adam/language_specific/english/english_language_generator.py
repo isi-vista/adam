@@ -34,12 +34,12 @@ from adam.ontology import OntologyNode
 from adam.ontology.phase1_ontology import AGENT, PATIENT, THEME, DESTINATION, ON
 from adam.random_utils import SequenceChooser
 from adam.situation import (
-    HighLevelSemanticsSituation,
     SituationObject,
     SituationAction,
     SituationNode,
     SituationRelation,
 )
+from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 
 
 @attrs(frozen=True, slots=True)

@@ -30,7 +30,8 @@ from more_itertools import flatten
 from adam import ontology
 from adam.language.language_generator import SituationT
 from adam.math_3d import Point
-from adam.ontology import Ontology, OntologyNode
+from adam.ontology import OntologyNode
+from adam.ontology.ontology import Ontology
 from adam.random_utils import SequenceChooser, RandomChooser
 from adam.situation import LocatedObjectSituation, SituationObject
 

@@ -13,8 +13,8 @@ from adam.situation import (
     SituationAction,
     SituationObject,
     SituationRelation,
-    HighLevelSemanticsSituation,
 )
+from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 
 
 def test_mom_put_ball_on_the_table():
