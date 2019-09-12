@@ -8,7 +8,8 @@ from adam.perception.high_level_semantics_situation_to_developmental_primitive_p
     HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
 )
 from adam.random_utils import RandomChooser
-from adam.situation import HighLevelSemanticsSituation, SituationObject
+from adam.situation import SituationObject
+from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 
 _PERCEPTION_GENERATOR = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
     GAILA_PHASE_1_ONTOLOGY

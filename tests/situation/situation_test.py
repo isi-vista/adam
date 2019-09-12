@@ -9,12 +9,8 @@ from adam.ontology.phase1_ontology import (
     THEME,
     GAILA_PHASE_1_ONTOLOGY,
 )
-from adam.situation import (
-    SituationAction,
-    SituationObject,
-    SituationRelation,
-    HighLevelSemanticsSituation,
-)
+from adam.situation import SituationAction, SituationObject, SituationRelation
+from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 
 
 def test_mom_put_ball_on_the_table():

@@ -5,7 +5,7 @@ import random
 from _random import Random
 from abc import ABC, abstractmethod
 from itertools import product
-from typing import (AbstractSet, Iterable, Mapping, Protocol, Sequence, TypeVar, Union)
+from typing import AbstractSet, Iterable, Mapping, Protocol, Sequence, TypeVar, Union
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of

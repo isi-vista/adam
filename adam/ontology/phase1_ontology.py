@@ -17,22 +17,11 @@ from immutablecollections import immutableset, immutablesetmultidict
 from more_itertools import flatten
 
 from adam.ontology import (
-    ABSTRACT,
-    ACTION,
-    META_PROPERTY,
-    ObjectStructuralSchema,
-    Ontology,
-    OntologyNode,
-    PROPERTY,
-    RELATION,
-    SubObject,
-    THING,
-    make_dsl_relation,
-    make_opposite_dsl_relation,
-    make_symetric_dsl_relation,
-    minimal_ontology_graph,
     sub_object_relations,
-)
+    minimal_ontology_graph, OntologyNode, PROPERTY, ABSTRACT, THING, ACTION, RELATION,
+    make_opposite_dsl_relation, make_symetric_dsl_relation, make_dsl_relation,
+    ObjectStructuralSchema, SubObject)
+from adam.ontology.ontology import Ontology
 
 _ontology_graph = minimal_ontology_graph()  # pylint:disable=invalid-name
 
@@ -40,8 +29,22 @@ _ontology_graph = minimal_ontology_graph()  # pylint:disable=invalid-name
 def subtype(sub: OntologyNode, _super: OntologyNode) -> None:
     _ontology_graph.add_edge(sub, _super)
 
+# Semantic Roles
+
+SEMANTIC_ROLE = OntologyNode("semantic-role")
+AGENT = OntologyNode("agent")
+subtype(AGENT, SEMANTIC_ROLE)
+PATIENT = OntologyNode("patient")
+subtype(PATIENT, SEMANTIC_ROLE)
+THEME = OntologyNode("theme")
+subtype(THEME, SEMANTIC_ROLE)
+DESTINATION = OntologyNode("destination")
+subtype(DESTINATION, SEMANTIC_ROLE)
+
 
 # these are "properties of properties" (e.g. whether a property is perceivable by the learner)
+
+META_PROPERTY = OntologyNode("meta-property")
 PERCEIVABLE = OntologyNode("perceivable")
 subtype(PERCEIVABLE, META_PROPERTY)
 BINARY = OntologyNode("binary")
@@ -58,6 +61,11 @@ SENTIENT = OntologyNode("sentient", [BINARY])
 subtype(SENTIENT, PERCEIVABLE_PROPERTY)
 
 RECOGNIZED_PARTICULAR = OntologyNode("recognized-particular", [BINARY])
+subtype(RECOGNIZED_PARTICULAR, PERCEIVABLE_PROPERTY)
+
+CAN_MANIPULATE_OBJECTS = OntologyNode("sentient")
+subtype(CAN_MANIPULATE_OBJECTS, PROPERTY)
+
 """
 Indicates that a node in the ontology corresponds to a particular (rather than a class)
 which is assumed to be known to the `LanguageLearner`. 
@@ -133,7 +141,7 @@ HEAD = OntologyNode("head")
 subtype(HEAD, INANIMATE_OBJECT)
 MILK = OntologyNode("milk")
 subtype(MILK, INANIMATE_OBJECT)
-HAND = OntologyNode("hand")
+HAND = OntologyNode("hand", [CAN_MANIPULATE_OBJECTS])
 subtype(HAND, INANIMATE_OBJECT)
 TRUCK = OntologyNode("truck")
 subtype(TRUCK, INANIMATE_OBJECT)
@@ -332,19 +340,6 @@ subtype(BELOW, SPATIAL_RELATION)
 above = make_opposite_dsl_relation(  # pylint:disable=invalid-name
     ABOVE, opposite_type=BELOW
 )
-
-
-# Semantic Roles
-
-SEMANTIC_ROLE = OntologyNode("semantic-role")
-AGENT = OntologyNode("agent")
-subtype(AGENT, SEMANTIC_ROLE)
-PATIENT = OntologyNode("patient")
-subtype(PATIENT, SEMANTIC_ROLE)
-THEME = OntologyNode("theme")
-subtype(THEME, SEMANTIC_ROLE)
-DESTINATION = OntologyNode("destination")
-subtype(DESTINATION, SEMANTIC_ROLE)
 
 # Structural Objects without Sub-Parts which are part of our Phase 1 Vocabulary
 # These may need to evolve to reflect the changes for visualization of phase 1
@@ -723,9 +718,9 @@ _TRUCK_SCHEMA = ObjectStructuralSchema(
     ),
 )
 
-GAILA_PHASE_1_ONTOLOGY = Ontology.from_directed_graph(
+GAILA_PHASE_1_ONTOLOGY = Ontology(
     _ontology_graph,
-    immutablesetmultidict(
+    structural_schemata=immutablesetmultidict(
         [
             (BALL, _BALL_SCHEMA),
             (CHAIR, _CHAIR_SCHEMA),

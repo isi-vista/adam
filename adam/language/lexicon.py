@@ -27,6 +27,7 @@ class LexiconEntry:
     properties: ImmutableSet["LexiconProperty"] = attrib(
         converter=_to_immutableset, default=immutableset()
     )
+    verb_form_3SG_PRS: str = attrib(validator=instance_of(str), default="", kw_only=True)
 
 
 @attrs(frozen=True, slots=True)

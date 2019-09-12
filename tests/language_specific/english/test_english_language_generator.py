@@ -17,7 +17,8 @@ from adam.ontology.phase1_ontology import (
     WATER,
 )
 from adam.random_utils import FixedIndexChooser
-from adam.situation import HighLevelSemanticsSituation, SituationAction, SituationObject
+from adam.situation import SituationAction, SituationObject
+from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from tests.situation.situation_test import make_mom_put_ball_on_table
 
 _SIMPLE_GENERATOR = SimpleRuleBasedEnglishLanguageGenerator(
@@ -67,11 +68,11 @@ def test_simple_verb():
     # TODO: address morphology to capture verb conjugation here
     assert only(
         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
-    ).as_token_sequence() == ("Mom", "push", "a", "table")
+    ).as_token_sequence() == ("Mom", "pushes", "a", "table")
 
 
 def test_mom_put_a_ball_on_the_table():
     situation = make_mom_put_ball_on_table()
     assert only(
         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
-    ).as_token_sequence() == ("Mom", "put", "a", "ball", "on", "a", "table")
+    ).as_token_sequence() == ("Mom", "puts", "a", "ball", "on", "a", "table")

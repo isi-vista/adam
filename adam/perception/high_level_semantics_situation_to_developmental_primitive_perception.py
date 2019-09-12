@@ -6,7 +6,8 @@ from immutablecollections import ImmutableDict, immutabledict
 from more_itertools import only
 from vistautils.preconditions import check_arg
 
-from adam.ontology import ObjectStructuralSchema, Ontology, SubObject
+from adam.ontology import ObjectStructuralSchema, SubObject
+from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
     PART_OF,
     PERCEIVABLE,
@@ -26,7 +27,8 @@ from adam.perception.developmental_primitive_perception import (
     HasColor,
 )
 from adam.random_utils import SequenceChooser
-from adam.situation import HighLevelSemanticsSituation, SituationObject
+from adam.situation import SituationObject
+from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 
 
 @attrs(frozen=True, slots=True)
