@@ -2,10 +2,10 @@
 Structures for describing situations in the world at an abstracted, human-friendly level.
 """
 from abc import ABC
-from typing import Mapping, Optional
+from typing import Mapping
 
 from attr import attrs, attrib
-from attr.validators import instance_of, optional
+from attr.validators import instance_of
 from immutablecollections import (
     immutableset,
     ImmutableSet,
@@ -22,7 +22,7 @@ from immutablecollections.converter_utils import (
 )
 
 from adam.math_3d import Point
-from adam.ontology import OntologyNode, Ontology
+from adam.ontology import OntologyNode
 
 
 class Situation(ABC):
@@ -135,6 +135,7 @@ class SituationRelation(SituationNode):
     relation_type: OntologyNode = attrib(validator=instance_of(OntologyNode))
     first_slot: SituationObject = attrib(validator=instance_of(SituationObject))
     second_slot: SituationObject = attrib(validator=instance_of(SituationObject))
+    negated: bool = attrib(validator=instance_of(bool), default=False, kw_only=True)
 
     def __repr__(self) -> str:
         return f"{self.relation_type}({self.first_slot}, {self.second_slot})"
@@ -159,51 +160,3 @@ class SituationAction(SituationNode):
 
     def __repr__(self) -> str:
         return f"{self.action_type}({self.argument_roles_to_fillers})"
-
-
-@attrs(frozen=True, slots=True, repr=False)
-class HighLevelSemanticsSituation(Situation):
-    """
-    A human-friendly representation of `Situation`.
-    """
-
-    ontology: Ontology = attrib(validator=instance_of(Ontology))
-    """
-    What `Ontology` items from the objects, relations, and actions 
-    in this `Situation` will come from.
-    """
-    objects: ImmutableSet[SituationObject] = attrib(
-        converter=_to_immutableset, default=immutableset()
-    )
-    """
-    All the objects present in a `Situation`.
-    """
-    relations: ImmutableSet[SituationRelation] = attrib(
-        converter=_to_immutableset, default=immutableset()
-    )
-    """
-    The relations which hold in this `Situation`.
-    
-    It is not necessary to state every relationship which holds through.
-    Rather this should contain the salient relationships
-    which should be expressed in the linguistic description.
-    """
-    actions: ImmutableSet[SituationAction] = attrib(
-        converter=_to_immutableset, default=immutableset()
-    )
-    """
-    The actions occurring in this `Situation`
-    """
-
-    def __repr__(self) -> str:
-        # TODO: the way we currently repr situations doesn't handle multiple nodes
-        # of the same ontology type well.  We'd like to use subscripts (_0, _1)
-        # to distinguish them, which requires pulling all the repr logic up to this
-        # level and not delegating to the reprs of the sub-objects.
-        # https://github.com/isi-vista/adam/issues/62
-        lines = ["{"]
-        lines.extend(f"\t{obj!r}" for obj in self.objects)
-        lines.extend(f"\t{relation!r}" for relation in self.relations)
-        lines.extend(f"\t{action!r}" for action in self.actions)
-        lines.append("}")
-        return "\n".join(lines)
