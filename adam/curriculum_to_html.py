@@ -1,5 +1,4 @@
 import os
-from itertools import count
 from typing import List
 
 from attr import attrs
@@ -21,12 +20,18 @@ class CurriculumToHtml:
 
     def generate(
         self,
-        instances: List[InstanceGroup],
+        instances: List[
+            InstanceGroup[
+                HighLevelSemanticsSituation,
+                LinearizedDependencyTree,
+                DevelopmentalPrimitivePerceptionFrame,
+            ]
+        ],
         outputdestination: str,
         title: str = "Instance Group",
         overwrite: bool = False,
     ) -> int:
-        for x in range(count(instances)):
+        for x in range(len(instances)):
             self._generate(
                 instance=instances[x],
                 outputdestination=f"${outputdestination}${title}${x}.html",
@@ -36,7 +41,15 @@ class CurriculumToHtml:
         return 1
 
     def _generate(
-        self, instance: InstanceGroup, title: str, overwrite: bool, outputdestination: str
+        self,
+        instance: InstanceGroup[
+            HighLevelSemanticsSituation,
+            LinearizedDependencyTree,
+            DevelopmentalPrimitivePerceptionFrame,
+        ],
+        title: str,
+        overwrite: bool,
+        outputdestination: str,
     ) -> int:
         """
 
@@ -47,7 +60,7 @@ class CurriculumToHtml:
         Returns:
 
         """
-        if os.path.isFile(outputdestination) and not overwrite:
+        if os.path.isfile(outputdestination) and not overwrite:
             return 1
         html = open(outputdestination, "w")
         html.write(f"<h1>${title} - ${instance.name()}</h1>\n")
@@ -73,8 +86,9 @@ class CurriculumToHtml:
             html.writelines(self._perceptiontext(inst[2]))
             html.write("</div>")
         html.close()
+        return 0
 
-    def _situationtext(self, situation: HighLevelSemanticsSituation) -> list[str]:
+    def _situationtext(self, situation: HighLevelSemanticsSituation):
         """
 
         Returns:
@@ -106,7 +120,7 @@ class CurriculumToHtml:
 
     def _perceptiontext(
         self, perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]
-    ) -> list[str]:
+    ):
         """
 
         Returns:
@@ -134,7 +148,7 @@ class CurriculumToHtml:
         outputtext.append("</div>")
         return outputtext
 
-    def _linguistictext(self, linguistic: LinearizedDependencyTree) -> list[str]:
+    def _linguistictext(self, linguistic: LinearizedDependencyTree):
         """
 
         Returns:
