@@ -14,6 +14,7 @@ from adam.ontology.phase1_ontology import (
     PUSH,
     TABLE,
     THEME,
+    BOX,
     WATER,
 )
 from adam.random_utils import FixedIndexChooser
@@ -68,6 +69,16 @@ def test_simple_verb():
     assert only(
         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
     ).as_token_sequence() == ("Mom", "pushes", "a", "table")
+
+
+def test_simple_quantifier():
+    box = SituationObject(BOX)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY, objects=[box]
+    )
+    assert only(
+        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
+    ).as_token_sequence() == ("two", "boxes")
 
 
 def test_mom_put_a_ball_on_the_table():

@@ -27,6 +27,7 @@ class LexiconEntry:
     properties: ImmutableSet["LexiconProperty"] = attrib(
         converter=_to_immutableset, default=immutableset()
     )
+    plural_form: str = attrib(validator=instance_of(str), default="", kw_only=True)
     verb_form_3SG_PRS: str = attrib(validator=instance_of(str), default="", kw_only=True)
 
 
