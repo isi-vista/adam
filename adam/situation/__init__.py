@@ -135,8 +135,7 @@ class SituationRelation(SituationNode):
     relation_type: OntologyNode = attrib(validator=instance_of(OntologyNode))
     first_slot: SituationObject = attrib(validator=instance_of(SituationObject))
     second_slot: SituationObject = attrib(validator=instance_of(SituationObject))
-    negated: SituationObject = attrib(validator=instance_of(bool),
-                                      default=False, kw_only=True)
+    negated: bool = attrib(validator=instance_of(bool), default=False, kw_only=True)
 
     def __repr__(self) -> str:
         return f"{self.relation_type}({self.first_slot}, {self.second_slot})"
@@ -150,7 +149,7 @@ class SituationAction(SituationNode):
 
     action_type: OntologyNode = attrib(validator=instance_of(OntologyNode))
     argument_roles_to_fillers: ImmutableSetMultiDict[
-        OntologyNode, SituationNode
+        OntologyNode, SituationObject
     ] = attrib(converter=_to_immutablesetmultidict, default=immutablesetmultidict())
     r"""
     A mapping of semantic roles (given as `OntologyNode`\ s) to their fillers.
@@ -161,5 +160,3 @@ class SituationAction(SituationNode):
 
     def __repr__(self) -> str:
         return f"{self.action_type}({self.argument_roles_to_fillers})"
-
-

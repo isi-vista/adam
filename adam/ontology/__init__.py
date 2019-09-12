@@ -7,13 +7,8 @@ from typing import Iterable, Union, Callable, Tuple
 
 from attr import attrib, attrs
 from attr.validators import instance_of
-from immutablecollections import (
-    ImmutableSet,
-    immutableset,
-)
-from immutablecollections.converter_utils import (
-    _to_immutableset,
-)
+from immutablecollections import ImmutableSet, immutableset
+from immutablecollections.converter_utils import _to_immutableset
 from more_itertools import flatten
 
 
@@ -259,5 +254,3 @@ def make_opposite_dsl_relation(
         )
 
     return dsl_opposite_function
-
-

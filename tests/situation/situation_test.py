@@ -9,11 +9,7 @@ from adam.ontology.phase1_ontology import (
     THEME,
     GAILA_PHASE_1_ONTOLOGY,
 )
-from adam.situation import (
-    SituationAction,
-    SituationObject,
-    SituationRelation,
-)
+from adam.situation import SituationAction, SituationObject, SituationRelation
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 
 

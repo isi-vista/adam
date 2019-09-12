@@ -1,12 +1,17 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
-from immutablecollections import ImmutableDict, immutabledict
+from immutablecollections import (
+    ImmutableDict,
+    immutabledict,
+    ImmutableSet,
+    ImmutableSetMultiDict,
+)
 from more_itertools import only
 from vistautils.preconditions import check_arg
 
-from adam.ontology import ObjectStructuralSchema, SubObject
+from adam.ontology import ObjectStructuralSchema, SubObject, OntologyNode
 from adam.ontology.action_description import ActionDescription
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
@@ -15,7 +20,7 @@ from adam.ontology.phase1_ontology import (
     BINARY,
     COLOR,
     COLORS_TO_RGBS,
-    GAILA_PHASE_1_ONTOLOGY
+    GAILA_PHASE_1_ONTOLOGY,
 )
 from adam.perception import PerceptualRepresentation, PerceptualRepresentationGenerator
 from adam.perception.developmental_primitive_perception import (
@@ -28,7 +33,7 @@ from adam.perception.developmental_primitive_perception import (
     HasColor,
 )
 from adam.random_utils import SequenceChooser
-from adam.situation import SituationObject
+from adam.situation import SituationObject, SituationRelation, SituationNode
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 
 
@@ -141,33 +146,7 @@ class _PerceptionGeneration:
         # https://github.com/isi-vista/adam/issues/85
         self._perceive_property_assertions()
 
-        # Perform the action on
-        if not self._situation.actions.empty():
-            situation_action = list(self._situation.actions)[0]
-            # e.g: SituationAction(PUT, ((AGENT, mom),(THEME, ball),(DESTINATION, SituationRelation(ON, ball, table))))
-            # Get description from PUT (PUT is action_type)
-            action_description: ActionDescription = \
-                GAILA_PHASE_1_ONTOLOGY.action_to_description[situation_action.action_type]
-            # Dict of AGENT (ont node): mom etc (sit obj)
-            action_roles_to_fillers = situation_action.argument_roles_to_fillers
-            # TODO: Handle multiple frames (i.e. "mom moved" vs "mom moved the box")
-            action_description_frame = action_description.frames[0]
-
-            for precondition in action_description.preconditions:  # each one is a SituationRelation
-                relation_type, first_slot, second_slot, negated = \
-                    precondition.relation_type, precondition.first_slot, precondition.second_slot, precondition.negated
-
-                # obj_in_situation = action_roles_to_fillers[role_ont_node]
-
-                # object_perception = self._objects_to_perceptions[obj_in_situation]
-                relation_perception = RelationPerception(relation_type=relation_type, arg1=first_slot, arg2=second_slot)
-
-                obj1 = None
-                obj2 = None
-                self._relation_perceptions.append()
-
-            # TODO: translate actions
-            # https://github.com/isi-vista/adam/issues/86
+        if len(self._situation.actions) <= 0:
             return PerceptualRepresentation.single_frame(
                 DevelopmentalPrimitivePerceptionFrame(
                     perceived_objects=self._object_perceptions,
@@ -175,6 +154,99 @@ class _PerceptionGeneration:
                     property_assertions=self._property_assertion_perceptions,
                 )
             )
+
+        before_relations, after_relations = self._perceive_action()
+        first_frame = DevelopmentalPrimitivePerceptionFrame(
+            perceived_objects=self._object_perceptions,
+            relations=before_relations,
+            property_assertions=self._property_assertion_perceptions,
+        )
+        second_frame = DevelopmentalPrimitivePerceptionFrame(
+            perceived_objects=self._object_perceptions,
+            relations=after_relations,
+            property_assertions=self._property_assertion_perceptions,
+        )
+
+        return PerceptualRepresentation(frames=(first_frame, second_frame))
+
+    def _perceive_action(self) -> Tuple[List[RelationPerception], ...]:
+        # Extract relations from action
+        situation_action = list(self._situation.actions)[0]
+        # e.g: SituationAction(PUT, ((AGENT, mom),(THEME, ball),(DESTINATION, SituationRelation(ON, ball, table))))
+        # Get description from PUT (PUT is action_type)
+        action_description: ActionDescription = GAILA_PHASE_1_ONTOLOGY.action_to_description[
+            situation_action.action_type
+        ]
+        # Dict of AGENT (ont node): mom etc (sit obj)
+        action_roles_to_fillers = situation_action.argument_roles_to_fillers
+
+        # TODO: Handle finding manipulator
+
+        before_relations = self._get_relations_from_condition(
+            conditions=action_description.preconditions,
+            action_description=action_description,
+            action_roles_to_fillers=action_roles_to_fillers,
+        )
+        after_relations = self._get_relations_from_condition(
+            conditions=action_description.postconditions,
+            action_description=action_description,
+            action_roles_to_fillers=action_roles_to_fillers,
+        )
+
+        return before_relations, after_relations
+
+    def _get_relations_from_condition(
+        self,
+        conditions: ImmutableSet[SituationRelation],
+        action_description: ActionDescription,
+        action_roles_to_fillers: ImmutableSetMultiDict[OntologyNode, SituationObject],
+    ):
+        # TODO: Handle multiple frames (i.e. "mom moved" vs "mom moved the box")
+        entities_to_roles = action_description.frames[0].entities_to_roles
+        for condition in conditions:  # each one is a SituationRelation
+            relation_type, first_slot, second_slot, negated = (
+                condition.relation_type,
+                condition.first_slot,
+                condition.second_slot,
+                condition.negated,
+            )
+
+            # TODO: Handle multiple semantic roles
+            if (
+                len(entities_to_roles[first_slot]) > 1
+                or len(action_roles_to_fillers[list(entities_to_roles[first_slot])[0]])
+                > 1
+            ):
+                raise RuntimeError("Can not handle multiple semantic roles")
+            situation_object_1 = list(
+                action_roles_to_fillers[list(entities_to_roles[first_slot])[0]]
+            )[
+                0
+            ]  # e.g. mom
+
+            if (
+                len(entities_to_roles[second_slot]) > 1
+                or len(action_roles_to_fillers[list(entities_to_roles[second_slot])[0]])
+                > 1
+            ):
+                raise RuntimeError("Can not handle multiple semantic roles")
+            situation_object_2 = list(
+                action_roles_to_fillers[list(entities_to_roles[second_slot])[0]]
+            )[
+                0
+            ]  # e.g. ball
+
+            perception_1 = self._objects_to_perceptions[situation_object_1]
+            perception_2 = self._objects_to_perceptions[situation_object_2]
+            relation_perception = RelationPerception(
+                relation_type=relation_type, arg1=perception_1, arg2=perception_2
+            )
+
+            # TODO: Implement negation
+            if not negated:
+                self._relation_perceptions.append(relation_perception)
+
+        return self._relation_perceptions.copy()
 
     def _perceive_property_assertions(self) -> None:
         for situation_object in self._situation.objects:

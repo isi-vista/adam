@@ -1,4 +1,16 @@
-from adam.ontology.phase1_ontology import BALL, GAILA_PHASE_1_ONTOLOGY, PERSON, RED
+from adam.ontology.phase1_ontology import (
+    BALL,
+    GAILA_PHASE_1_ONTOLOGY,
+    PERSON,
+    RED,
+    PUT,
+    AGENT,
+    THEME,
+    DESTINATION,
+    MOM,
+    TABLE,
+    ON,
+)
 from adam.perception.developmental_primitive_perception import (
     PropertyPerception,
     HasBinaryProperty,
@@ -8,7 +20,7 @@ from adam.perception.high_level_semantics_situation_to_developmental_primitive_p
     HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
 )
 from adam.random_utils import RandomChooser
-from adam.situation import SituationObject
+from adam.situation import SituationObject, SituationAction, SituationRelation
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 
 _PERCEPTION_GENERATOR = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
@@ -88,3 +100,41 @@ def test_person_and_ball_color():
         for prop in property_assertions
         if isinstance(prop, HasColor)
     } == {("ball_0", "#f2003c")}
+
+
+def test_person_put_ball_on_table():
+    person = SituationObject(ontology_node=PERSON)
+    ball = SituationObject(ontology_node=BALL)
+    table = SituationObject(ontology_node=TABLE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        objects=[person, ball, table],
+        relations=[],
+        actions=[
+            # What is the best way of representing the destination in the high-level semantics?
+            # Here we represent it as indicating a relation which should be true.
+            SituationAction(PUT, ((AGENT, person), (THEME, ball), (DESTINATION, table)))
+        ],
+    )
+
+    perception = _PERCEPTION_GENERATOR.generate_perception(
+        situation, chooser=RandomChooser.for_seed(0)
+    )
+    assert len(perception.frames) == 2
+    assert len(perception.frames[0].property_assertions) == 3
+
+    first_frame_relations = perception.frames[0].relations
+    second_frame_relations = perception.frames[1].relations
+
+    assert len(first_frame_relations) == 61
+    assert len(second_frame_relations) == 62
+
+    assert "smallerThan(ball_0, person_0)" in {
+        f"{r.relation_type}({r.arg1}, {r.arg2})" for r in first_frame_relations
+    }
+    assert "smallerThan(ball_0, person_0)" in {
+        f"{r.relation_type}({r.arg1}, {r.arg2})" for r in second_frame_relations
+    }
+    assert "contacts(ball_0, table_0)" in {
+        f"{r.relation_type}({r.arg1}, {r.arg2})" for r in second_frame_relations
+    }

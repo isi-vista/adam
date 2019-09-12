@@ -2,12 +2,21 @@ from typing import Iterable, List
 
 from attr import attrs, attrib
 from attr.validators import instance_of
-from immutablecollections import ImmutableSetMultiDict, immutablesetmultidict, ImmutableSet, \
-    immutableset, ImmutableDict, immutabledict
-from immutablecollections.converter_utils import _to_immutablesetmultidict, _to_immutabledict
+from immutablecollections import (
+    ImmutableSetMultiDict,
+    immutablesetmultidict,
+    ImmutableSet,
+    immutableset,
+    ImmutableDict,
+    immutabledict,
+)
+from immutablecollections.converter_utils import (
+    _to_immutablesetmultidict,
+    _to_immutabledict,
+)
 from networkx import DiGraph, simple_cycles, dfs_preorder_nodes
 
-from adam.ontology import OntologyNode
+from adam.ontology import OntologyNode, ObjectStructuralSchema
 from adam.ontology.action_description import ActionDescription
 
 
@@ -24,11 +33,12 @@ class Ontology:
     _graph: DiGraph = attrib(validator=instance_of(DiGraph))
     structural_schemata: ImmutableSetMultiDict[
         "OntologyNode", "ObjectStructuralSchema"
-    ] = attrib(converter=_to_immutablesetmultidict, default=immutablesetmultidict(),
-               kw_only=True)
-    action_to_description: ImmutableDict[
-        OntologyNode, ActionDescription
-    ] = attrib(converter=_to_immutabledict, default=immutabledict(), kw_only=True)
+    ] = attrib(
+        converter=_to_immutablesetmultidict, default=immutablesetmultidict(), kw_only=True
+    )
+    action_to_description: ImmutableDict[OntologyNode, ActionDescription] = attrib(
+        converter=_to_immutabledict, default=immutabledict(), kw_only=True
+    )
 
     def __attrs_post_init__(self) -> None:
         for cycle in simple_cycles(self._graph):
