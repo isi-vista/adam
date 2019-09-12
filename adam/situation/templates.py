@@ -27,10 +27,10 @@ from immutablecollections.converter_utils import (
 )
 from more_itertools import flatten
 
-from adam import ontology
 from adam.language.language_generator import SituationT
 from adam.math_3d import Point
-from adam.ontology import Ontology, OntologyNode
+from adam.ontology import OntologyNode
+from adam.ontology.ontology import Ontology
 from adam.random_utils import SequenceChooser, RandomChooser
 from adam.situation import LocatedObjectSituation, SituationObject
 
@@ -174,8 +174,8 @@ class SimpleSituationTemplateProcessor(
     A trivial situation template processor for testing use.
 
     This cannot handle anything in situation templates except object variables.  This object
-    variables are instantiated with random compatible objects from the provided `Ontology` ;
-    they are positioned in a line one meter apart.
+    variables are instantiated with random compatible objects from the provided
+    `Ontology` ; they are positioned in a line one meter apart.
     """
 
     _ontology: Ontology = attrib(validator=instance_of(Ontology))
@@ -231,7 +231,7 @@ class SimpleSituationTemplateProcessor(
                 f"When attempting to instantiate object {template_object} in"
                 f" {template}: no node at or under {object_supertype} with "
                 f"properties {required_properties} exists in the ontology "
-                f"{ontology}"
+                f"{self._ontology}"
             )
 
     @staticmethod

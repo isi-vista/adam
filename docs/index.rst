@@ -114,9 +114,21 @@ adam.experiment
 Supporting classes: Situations
 ******************************************
 
+adam.situation.high_level_semantics_situation
+-----------------------------------------------
+.. automodule:: adam.situation.high_level_semantics_situation
+
+******************************************
+Supporting classes: Ontologies
+******************************************
+
 adam.ontology
 -----------------------------
 .. automodule:: adam.ontology
+
+adam.ontology.ontology
+-----------------------------
+.. automodule:: adam.ontology.ontology
 
 adam.language.ontology_dictionary
 -------------------------------------

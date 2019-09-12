@@ -18,21 +18,34 @@ from more_itertools import flatten
 from networkx import DiGraph
 
 from adam.ontology import (
-    OntologyNode,
-    Ontology,
     ObjectStructuralSchema,
+    OntologyNode,
     SubObject,
-    sub_object_relations,
     make_dsl_relation,
-    make_symetric_dsl_relation,
     make_opposite_dsl_relation,
+    make_symetric_dsl_relation,
+    sub_object_relations,
 )
+from adam.ontology.ontology import Ontology
 
 _ontology_graph = DiGraph()  # pylint:disable=invalid-name
 
 
 def subtype(sub: OntologyNode, _super: OntologyNode) -> None:
     _ontology_graph.add_edge(sub, _super)
+
+
+# Semantic Roles
+
+SEMANTIC_ROLE = OntologyNode("semantic-role")
+AGENT = OntologyNode("agent")
+subtype(AGENT, SEMANTIC_ROLE)
+PATIENT = OntologyNode("patient")
+subtype(PATIENT, SEMANTIC_ROLE)
+THEME = OntologyNode("theme")
+subtype(THEME, SEMANTIC_ROLE)
+DESTINATION = OntologyNode("destination")
+subtype(DESTINATION, SEMANTIC_ROLE)
 
 
 META_PROPERTY = OntologyNode("meta-property")
@@ -48,6 +61,8 @@ INANIMATE = OntologyNode("inanimate", local_properties=[PERCEIVABLE, BINARY])
 subtype(INANIMATE, PROPERTY)
 SENTIENT = OntologyNode("sentient", local_properties=[PERCEIVABLE, BINARY])
 subtype(SENTIENT, PROPERTY)
+CAN_MANIPULATE_OBJECTS = OntologyNode("sentient")
+subtype(CAN_MANIPULATE_OBJECTS, PROPERTY)
 
 RECOGNIZED_PARTICULAR = OntologyNode(
     "recognized-particular", local_properties=[PERCEIVABLE, BINARY]
@@ -125,7 +140,7 @@ HEAD = OntologyNode("head")
 subtype(HEAD, INANIMATE_OBJECT)
 MILK = OntologyNode("milk")
 subtype(MILK, INANIMATE_OBJECT)
-HAND = OntologyNode("hand")
+HAND = OntologyNode("hand", [CAN_MANIPULATE_OBJECTS])
 subtype(HAND, INANIMATE_OBJECT)
 TRUCK = OntologyNode("truck")
 subtype(TRUCK, INANIMATE_OBJECT)
@@ -296,19 +311,6 @@ subtype(BELOW, SPATIAL_RELATION)
 above = make_opposite_dsl_relation(  # pylint:disable=invalid-name
     ABOVE, opposite_type=BELOW
 )
-
-
-# Semantic Roles
-
-SEMANTIC_ROLE = OntologyNode("semantic-role")
-AGENT = OntologyNode("agent")
-subtype(AGENT, SEMANTIC_ROLE)
-PATIENT = OntologyNode("patient")
-subtype(PATIENT, SEMANTIC_ROLE)
-THEME = OntologyNode("theme")
-subtype(THEME, SEMANTIC_ROLE)
-DESTINATION = OntologyNode("destination")
-subtype(DESTINATION, SEMANTIC_ROLE)
 
 # Structural Objects without Sub-Parts which are part of our Phase 1 Vocabulary
 # These may need to evolve to reflect the changes for visualization of phase 1
@@ -687,9 +689,9 @@ _TRUCK_SCHEMA = ObjectStructuralSchema(
     ),
 )
 
-GAILA_PHASE_1_ONTOLOGY = Ontology.from_directed_graph(
+GAILA_PHASE_1_ONTOLOGY = Ontology(
     _ontology_graph,
-    immutablesetmultidict(
+    structural_schemata=immutablesetmultidict(
         [
             (BALL, _BALL_SCHEMA),
             (CHAIR, _CHAIR_SCHEMA),
