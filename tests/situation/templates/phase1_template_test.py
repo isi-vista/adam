@@ -1,7 +1,9 @@
-from immutablecollections import immutableset
+from typing import Iterable
+from immutablecollections import immutableset, ImmutableSetMultiDict, immutablesetmultidict
 from networkx import DiGraph
 
-from adam.ontology import OntologyNode, REQUIRED_ONTOLOGY_NODES, PROPERTY, THING, ABSTRACT
+from adam.ontology import OntologyNode, REQUIRED_ONTOLOGY_NODES, PROPERTY, THING, ABSTRACT, \
+    ObjectStructuralSchema
 from adam.ontology.ontology import Ontology
 from adam.random_utils import RandomChooser
 from adam.situation.templates.phase1_templates import (
@@ -42,7 +44,14 @@ _subtype(_MOM, _PERSON)
 _DAD = OntologyNode("dad")
 _subtype(_DAD, _PERSON)
 
-_TESTING_ONTOLOGY = Ontology(_TESTING_ONTOLOGY_GRAPH)
+def _testing_schemata(nodes: Iterable[OntologyNode]) -> ImmutableSetMultiDict[OntologyNode,
+                                                               ObjectStructuralSchema]:
+    return immutablesetmultidict((node, ObjectStructuralSchema(node))
+                                  for node in nodes)
+
+_TESTING_ONTOLOGY = Ontology(_TESTING_ONTOLOGY_GRAPH,
+                             structural_schemata= _testing_schemata([_MOM, _DAD,
+                                                                     _BALL, _TRUCK, _CAR]))
 
 
 def test_two_objects():
