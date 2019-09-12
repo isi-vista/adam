@@ -18,9 +18,19 @@ from more_itertools import flatten
 
 from adam.ontology import (
     sub_object_relations,
-    minimal_ontology_graph, OntologyNode, PROPERTY, ABSTRACT, THING, ACTION, RELATION,
-    make_opposite_dsl_relation, make_symetric_dsl_relation, make_dsl_relation,
-    ObjectStructuralSchema, SubObject)
+    minimal_ontology_graph,
+    OntologyNode,
+    PROPERTY,
+    ABSTRACT,
+    THING,
+    ACTION,
+    RELATION,
+    make_opposite_dsl_relation,
+    make_symetric_dsl_relation,
+    make_dsl_relation,
+    ObjectStructuralSchema,
+    SubObject,
+)
 from adam.ontology.ontology import Ontology
 
 _ontology_graph = minimal_ontology_graph()  # pylint:disable=invalid-name
@@ -28,6 +38,7 @@ _ontology_graph = minimal_ontology_graph()  # pylint:disable=invalid-name
 
 def subtype(sub: OntologyNode, _super: OntologyNode) -> None:
     _ontology_graph.add_edge(sub, _super)
+
 
 # Semantic Roles
 
@@ -61,19 +72,19 @@ SENTIENT = OntologyNode("sentient", [BINARY])
 subtype(SENTIENT, PERCEIVABLE_PROPERTY)
 
 RECOGNIZED_PARTICULAR = OntologyNode("recognized-particular", [BINARY])
-subtype(RECOGNIZED_PARTICULAR, PERCEIVABLE_PROPERTY)
-
-CAN_MANIPULATE_OBJECTS = OntologyNode("sentient")
-subtype(CAN_MANIPULATE_OBJECTS, PROPERTY)
-
 """
 Indicates that a node in the ontology corresponds to a particular (rather than a class)
 which is assumed to be known to the `LanguageLearner`. 
 The prototypical cases here are *Mom* and *Dad*.
 """
+
 subtype(RECOGNIZED_PARTICULAR, PERCEIVABLE_PROPERTY)
 
-COLOR = OntologyNode("color")
+CAN_MANIPULATE_OBJECTS = OntologyNode("sentient")
+subtype(CAN_MANIPULATE_OBJECTS, PROPERTY)
+
+
+COLOR = OntologyNode("color", non_inheritable_properties=[ABSTRACT])
 subtype(COLOR, PERCEIVABLE_PROPERTY)
 RED = OntologyNode("red")
 BLUE = OntologyNode("blue")

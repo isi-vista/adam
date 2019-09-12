@@ -1,14 +1,8 @@
 from immutablecollections import immutableset
 from networkx import DiGraph
 
-from adam.ontology import (
-    OntologyNode,
-    REQUIRED_ONTOLOGY_NODES,
-    PROPERTY,
-    THING,
-    Ontology,
-    ABSTRACT,
-)
+from adam.ontology import OntologyNode, REQUIRED_ONTOLOGY_NODES, PROPERTY, THING, ABSTRACT
+from adam.ontology.ontology import Ontology
 from adam.random_utils import RandomChooser
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
@@ -55,7 +49,7 @@ def test_two_objects():
     two_object_template = Phase1SituationTemplate(
         object_variables=[
             object_variable("person", root_node=_PERSON),
-            object_variable("toy_vehicle", with_meta_properties=[_TOY_VEHICLE]),
+            object_variable("toy_vehicle", required_properties=[_TOY_VEHICLE]),
         ]
     )
 
@@ -67,7 +61,10 @@ def test_two_objects():
     }
 
     generated_object_sets = set(
-        immutableset(situation_object.handle for situation_object in situation.objects)
+        immutableset(
+            situation_object.ontology_node.handle
+            for situation_object in situation.objects
+        )
         for situation in all_possible(
             two_object_template,
             ontology=_TESTING_ONTOLOGY,

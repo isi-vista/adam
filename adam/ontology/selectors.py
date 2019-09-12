@@ -7,7 +7,8 @@ from immutablecollections import ImmutableSet, immutableset
 from immutablecollections.converter_utils import _to_immutableset
 from vistautils.preconditions import check_arg
 
-from adam.ontology import Ontology, OntologyNode
+from adam.ontology import OntologyNode
+from adam.ontology.ontology import Ontology
 
 
 class OntologyNodeSelector(ABC):

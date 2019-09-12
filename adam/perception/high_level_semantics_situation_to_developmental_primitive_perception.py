@@ -183,7 +183,6 @@ class _PerceptionGeneration:
                                 f"Not sure how to generate perception for the unknown property {property_} "
                                 f"which is marked as COLOR"
                             )
-
                     else:
                         raise RuntimeError(
                             f"Not sure how to generate perception for property {property_} "
@@ -200,9 +199,9 @@ class _PerceptionGeneration:
                 )
             # these are the possible internal structures of objects of this type
             # that the ontology is aware of.
-            object_schemata = self._generator.ontology.structural_schemata[
+            object_schemata = self._generator.ontology.structural_schemata(
                 situation_object.ontology_node
-            ]
+            )
             if not object_schemata:
                 raise RuntimeError(f"No structural schema found for {situation_object}")
             if len(object_schemata) > 1:

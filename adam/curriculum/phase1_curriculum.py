@@ -1,7 +1,7 @@
 """
 Curricula for DARPA GAILA Phase 1
 """
-from typing import Any, Iterable
+from typing import Iterable
 
 from adam.curriculum import GeneratedFromSituationsInstanceGroup, InstanceGroup
 from adam.language.dependency import LinearizedDependencyTree
@@ -16,7 +16,7 @@ from adam.perception.high_level_semantics_situation_to_developmental_primitive_p
     GAILA_PHASE_1_PERCEPTION_GENERATOR,
 )
 from adam.random_utils import RandomChooser
-from adam.situation import HighLevelSemanticsSituation
+from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
     all_possible,

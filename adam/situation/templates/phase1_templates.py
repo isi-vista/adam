@@ -5,19 +5,23 @@ import random
 from _random import Random
 from abc import ABC, abstractmethod
 from itertools import product
-from typing import AbstractSet, Iterable, Mapping, Protocol, Sequence, TypeVar, Union
+from typing import AbstractSet, Iterable, Mapping, Sequence, TypeVar, Union
+from typing_extensions import Protocol
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
 from immutablecollections.converter_utils import _to_immutabledict, _to_immutableset
 from more_itertools import take
+from vistautils.preconditions import check_arg
 
-from adam.ontology import ABSTRACT, Ontology, OntologyNode, PROPERTY, THING
+from adam.ontology import ABSTRACT, OntologyNode, PROPERTY, THING
+from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import COLOR, GAILA_PHASE_1_ONTOLOGY
 from adam.ontology.selectors import ByHierarchyAndProperties, Is, OntologyNodeSelector
 from adam.random_utils import RandomChooser, SequenceChooser
-from adam.situation import HighLevelSemanticsSituation, SituationObject
+from adam.situation import SituationObject
+from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.situation.templates import (
     SituationTemplate,
     SituationTemplateObject,
@@ -62,11 +66,12 @@ def sampled(
     chooser: SequenceChooser,
     max_to_sample: int
 ) -> Iterable[HighLevelSemanticsSituation]:
+    check_arg(max_to_sample > 0)
     return take(
+        max_to_sample,
         _Phase1SituationTemplateGenerator(
             ontology=ontology, variable_assigner=_SamplingVariableAssigner()
         ).generate_situations(situation_template, chooser=chooser),
-        max_to_sample,
     )
 
 
@@ -228,7 +233,9 @@ def property_variable(
     return TemplatePropertyVariable(
         debug_handle,
         ByHierarchyAndProperties(
-            descendents_of=root_node, required_properties=with_meta_properties
+            descendents_of=root_node,
+            required_properties=with_meta_properties,
+            banned_properties=[ABSTRACT],
         ),
     )
 
@@ -272,7 +279,7 @@ class _CrossProductVariableAssigner(_VariableAssigner):
         ontology: Ontology,
         object_variables: AbstractSet["TemplateObjectVariable"],
         property_variables: AbstractSet["TemplatePropertyVariable"],
-        chooser: SequenceChooser
+        chooser: SequenceChooser  # pylint: disable=unused-argument
     ) -> Iterable[_VariableAssignment]:
         # TODO: fix hard-coded rng
         rng = Random()
@@ -293,16 +300,20 @@ class _CrossProductVariableAssigner(_VariableAssigner):
         self, variables: AbstractSet[_VarT], *, ontology: Ontology, rng: Random
     ) -> Iterable[Mapping[_VarT, OntologyNode]]:
         var_to_options = {
-            var: _shuffled(
-                var.node_selector.select_nodes(ontology, require_non_empty_result=True),
-                rng,
+            var: tuple(
+                _shuffled(
+                    var.node_selector.select_nodes(
+                        ontology, require_non_empty_result=True
+                    ),
+                    rng,
+                )
             )
             for var in variables
         }
 
         if var_to_options:
             for combination in product(*var_to_options.values()):
-                yield immutabledict(zip(var_to_options.values(), combination))
+                yield immutabledict(zip(var_to_options.keys(), combination))
 
         else:
             yield dict()
@@ -344,8 +355,8 @@ class _SamplingVariableAssigner(_VariableAssigner):
         }
 
         if var_to_options:
-            for combination in product(*var_to_options.values()):
-                yield immutabledict(zip(var_to_options.values(), combination))
+            for combination in zip(*var_to_options.values()):
+                yield immutabledict(zip(var_to_options.keys(), combination))
         else:
             while True:
                 yield dict()

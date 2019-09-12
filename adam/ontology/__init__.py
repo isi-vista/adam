@@ -63,7 +63,7 @@ r"""
 A property indicating that a node can't be instantiated in a scene.
 """
 
-THING = OntologyNode("thing")
+THING = OntologyNode("thing", non_inheritable_properties=[ABSTRACT])
 r"""
 Ancestor of all objects in an `Ontology`.
 

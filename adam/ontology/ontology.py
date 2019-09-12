@@ -1,3 +1,5 @@
+from itertools import chain
+
 from typing import Iterable, List, AbstractSet
 
 from attr import attrib, attrs
@@ -9,10 +11,16 @@ from immutablecollections import (
     immutablesetmultidict,
 )
 from immutablecollections.converter_utils import _to_immutablesetmultidict
-from networkx import DiGraph, dfs_preorder_nodes, simple_cycles, has_path
+from networkx import DiGraph, dfs_preorder_nodes, simple_cycles, has_path, ancestors
 from vistautils.preconditions import check_arg
 
-from adam.ontology import OntologyNode, ObjectStructuralSchema, REQUIRED_ONTOLOGY_NODES
+from adam.ontology import (
+    OntologyNode,
+    ObjectStructuralSchema,
+    REQUIRED_ONTOLOGY_NODES,
+    THING,
+    ABSTRACT,
+)
 
 
 # convenience method for use in Ontology
@@ -35,7 +43,7 @@ class Ontology:
     """
 
     _graph: DiGraph = attrib(validator=instance_of(DiGraph), converter=_copy_digraph)
-    structural_schemata: ImmutableSetMultiDict[
+    _structural_schemata: ImmutableSetMultiDict[
         "OntologyNode", "ObjectStructuralSchema"
     ] = attrib(converter=_to_immutablesetmultidict, default=immutablesetmultidict())
 
@@ -48,25 +56,27 @@ class Ontology:
                 f"Ontology lacks required {required_node.handle} node",
             )
 
-    @staticmethod
-    def from_directed_graph(
-        graph: DiGraph,
-        structural_schemata: ImmutableSetMultiDict[
-            "OntologyNode", "ObjectStructuralSchema"
-        ] = immutablesetmultidict(),
-    ) -> "Ontology":
-        r"""
-        Create an `Ontology` from an acyclic NetworkX ::class`DiGraph`.
+        # every sub-type of THING must either have a structural schema
+        # or be a sub-type of something with a structural schema
+        for thing_node in dfs_preorder_nodes(self._graph.reverse(copy=False), THING):
+            if not any(
+                node in self._structural_schemata for node in self.ancestors(thing_node)
+            ):
+                if not self.has_all_properties(thing_node, [ABSTRACT]):
+                    raise RuntimeError(
+                        f"No structural schema is available for {thing_node}"
+                    )
 
-        Args:
-            graph: a NetworkX graph representing the ontology.  Sub-class
-                `OntologyNode`\ s should have edges pointing to super-class `OntologyNode`\ s.
-                If the graph is not acyclic, the result is undefined.
+    def ancestors(self, node: OntologyNode) -> Iterable[OntologyNode]:
+        return chain([node], ancestors(self._graph.reverse(copy=False), node))
 
-        Returns:
-            The `Ontology` encoding the relationships in the `networkx.DiGraph`.
-        """
-        return Ontology(graph, structural_schemata)
+    def structural_schemata(
+        self, node: OntologyNode
+    ) -> AbstractSet[ObjectStructuralSchema]:
+        for node in self.ancestors(node):
+            if node in self._structural_schemata:
+                return self._structural_schemata[node]
+        raise KeyError(f"No structural schema known for {node}")
 
     def is_subtype_of(
         self, node: "OntologyNode", query_supertype: "OntologyNode"
