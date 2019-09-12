@@ -15,7 +15,7 @@ from adam.situation.high_level_semantics_situation import HighLevelSemanticsSitu
 @attrs(frozen=True, slots=True)
 class CurriculumToHtml:
     """
-
+    Class to turn an `InstanceGroup` into an html document
     """
 
     def generate(
@@ -31,7 +31,7 @@ class CurriculumToHtml:
         title: str = "Instance Group",
         overwrite: bool = False,
     ) -> int:
-        for x in range(len(instances)):
+        for x in range(len(instances)):  # pylint:disable=consider-using-enumerate
             self._generate(
                 instance=instances[x],
                 outputdestination=f"${outputdestination}${title}${x}.html",
@@ -101,8 +101,8 @@ class CurriculumToHtml:
         for obj in situation.objects:
             outputtext.append(f"<li>${obj.ontology_node.handle}</li>")
             outputtext.append(f"<li>Properties:\n<ul>")
-            for property in obj.properties:
-                outputtext.append(f"<li>${property.handle}</li>")
+            for prop in obj.properties:
+                outputtext.append(f"<li>${prop.handle}</li>")
             outputtext.append("</ul></li>")
         outputtext.append("</ul>\n<h3>Actions</h3>\n<ul>")
         for acts in situation.actions:

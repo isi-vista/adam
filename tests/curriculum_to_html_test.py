@@ -44,5 +44,5 @@ def test_simple_curriculum_html():
         name="Test Group", instances=Tuple[Tuple[situation, linguistics, perception]]
     )
     instances.append(group)
-    htmlExporter = curriculum_to_html.CurriculumToHtml()
-    htmlExporter.generate(instances, "./", overwrite=True, title="Test Objects")
+    html_exporter = curriculum_to_html.CurriculumToHtml()
+    html_exporter.generate(instances, "./", overwrite=True, title="Test Objects")
