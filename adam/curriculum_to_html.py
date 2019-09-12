@@ -10,7 +10,7 @@ from adam.perception import PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
-from adam.situation import HighLevelSemanticsSituation
+from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 
 
 @attrs(frozen=True, slots=True)
