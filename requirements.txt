@@ -1,5 +1,5 @@
 # core requirements
-attrs==18.2.0
+attrs==19.1.0
 vistautils==0.12.0
 immutablecollections==0.8.0
 networkx==2.3
