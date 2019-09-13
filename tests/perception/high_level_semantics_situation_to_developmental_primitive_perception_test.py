@@ -6,10 +6,12 @@ from adam.ontology.phase1_ontology import (
     BALL,
     GAILA_PHASE_1_ONTOLOGY,
     IS_SPEAKER,
+    JUICE,
+    LEARNER,
+    LIQUID,
     PERSON,
     RED,
-    LIQUID,
-    JUICE,
+    IS_LEARNER,
 )
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -150,9 +152,16 @@ def test_liquid_perceivable():
             ontology=GAILA_PHASE_1_ONTOLOGY, objects=[SituationObject(JUICE)]
         ),
         chooser=RandomChooser.for_seed(0),
-    )
-    assert any(
-        isinstance(prop_assertion, HasBinaryProperty)
-        and prop_assertion.binary_property == LIQUID
-        for prop_assertion in juice_perception.frames[0].property_assertions
-    )
+    ).frames[0]
+    assert _some_object_has_binary_property(juice_perception, LIQUID)
+
+
+def test_learner_perceivable():
+    learner_perception = _PERCEPTION_GENERATOR.generate_perception(
+        HighLevelSemanticsSituation(
+            ontology=GAILA_PHASE_1_ONTOLOGY, objects=[SituationObject(LEARNER)]
+        ),
+        chooser=RandomChooser.for_seed(0),
+    ).frames[0]
+
+    assert _some_object_has_binary_property(learner_perception, IS_LEARNER)

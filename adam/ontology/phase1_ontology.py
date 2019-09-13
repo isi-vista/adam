@@ -73,14 +73,15 @@ subtype(SENTIENT, PERCEIVABLE_PROPERTY)
 LIQUID = OntologyNode("liquid", [BINARY])
 subtype(LIQUID, PERCEIVABLE_PROPERTY)
 
-RECOGNIZED_PARTICULAR = OntologyNode("recognized-particular", [BINARY])
+RECOGNIZED_PARTICULAR_PROPERTY = OntologyNode("recognized-particular", [BINARY, ABSTRACT])
 """
-Indicates that a node in the ontology corresponds to a particular (rather than a class)
+Indicates that a property in the ontology indicates the identity of an object
+as a known particular object (rather than a class)
 which is assumed to be known to the `LanguageLearner`. 
 The prototypical cases here are *Mom* and *Dad*.
 """
 
-subtype(RECOGNIZED_PARTICULAR, PERCEIVABLE_PROPERTY)
+subtype(RECOGNIZED_PARTICULAR_PROPERTY, PERCEIVABLE_PROPERTY)
 
 IS_SPEAKER = OntologyNode("is-speaker", [BINARY])
 """
@@ -181,12 +182,28 @@ PERSON = OntologyNode(
     "person", inheritable_properties=[ANIMATE], non_inheritable_properties=[ABSTRACT]
 )
 subtype(PERSON, THING)
-MOM = OntologyNode("mom", [RECOGNIZED_PARTICULAR])
+IS_MOM = OntologyNode("is-mom")
+subtype(IS_MOM, RECOGNIZED_PARTICULAR_PROPERTY)
+MOM = OntologyNode("mom", [IS_MOM])
 subtype(MOM, PERSON)
-DAD = OntologyNode("dad", [RECOGNIZED_PARTICULAR])
+
+IS_DAD = OntologyNode("is-dad")
+subtype(IS_DAD, RECOGNIZED_PARTICULAR_PROPERTY)
+DAD = OntologyNode("dad", [IS_DAD])
 subtype(DAD, PERSON)
+
 BABY = OntologyNode("baby")
 subtype(BABY, PERSON)
+
+IS_LEARNER = OntologyNode("is-learner")
+subtype(IS_LEARNER, RECOGNIZED_PARTICULAR_PROPERTY)
+LEARNER = OntologyNode("learner", [IS_LEARNER])
+"""
+We represent the language learner itself in the situation,
+because the size or position of objects relative to the learner itself
+may be significant for learning.
+"""
+subtype(LEARNER, BABY)
 
 NONHUMAN_ANIMAL = OntologyNode(
     "animal", inheritable_properties=[ANIMATE], non_inheritable_properties=[ABSTRACT]

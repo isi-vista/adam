@@ -8,7 +8,7 @@ from adam.language.dependency import LinearizedDependencyTree
 from adam.language_specific.english.english_language_generator import (
     GAILA_PHASE_1_LANGUAGE_GENERATOR,
 )
-from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
+from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY, LEARNER
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
@@ -50,8 +50,10 @@ def _phase1_instances(
 
 # Show each object once by itself
 
+_LEARNER_OBJECT = object_variable("learner", LEARNER)
+
 SINGLE_OBJECT_TEMPLATE = Phase1SituationTemplate(
-    object_variables=[object_variable("object")]
+    object_variables=[object_variable("object"), _LEARNER_OBJECT]
 )
 
 EACH_OBJECT_BY_ITSELF_SUB_CURRICULUM = _phase1_instances(
@@ -65,7 +67,9 @@ EACH_OBJECT_BY_ITSELF_SUB_CURRICULUM = _phase1_instances(
 
 _COLOR = color_variable("color")
 _COLOR_OBJECT = object_variable("object", added_properties=[_COLOR])
-_OBJECT_WITH_COLOR_TEMPLATE = Phase1SituationTemplate(object_variables=[_COLOR_OBJECT])
+_OBJECT_WITH_COLOR_TEMPLATE = Phase1SituationTemplate(
+    object_variables=[_COLOR_OBJECT, _LEARNER_OBJECT]
+)
 
 OBJECTS_WITH_COLORS_SUB_CURRICULUM = _phase1_instances(
     "objects with colors",

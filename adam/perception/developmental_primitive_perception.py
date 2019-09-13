@@ -1,5 +1,4 @@
 from abc import ABC
-
 from attr import attrib, attrs
 from attr.validators import in_, instance_of
 from immutablecollections import ImmutableSet, immutableset
@@ -7,8 +6,6 @@ from immutablecollections.converter_utils import _to_immutableset
 from vistautils.range import Range
 
 from adam.ontology import OntologyNode
-from adam.ontology.ontology import Ontology
-from adam.ontology.phase1_ontology import RECOGNIZED_PARTICULAR
 from adam.perception import PerceptualRepresentationFrame
 
 
@@ -140,30 +137,3 @@ class HasColor(PropertyPerception):
 
     def __repr__(self) -> str:
         return f"hasColor({self.perceived_object}, {self.color})"
-
-
-@attrs(slots=True, frozen=True, repr=False)
-class IsRecognizedParticular(PropertyPerception):
-    """
-    A learner's perception that the *perceived_object* is some particular instance that it knows,
-    given by an `OntologyNode` which must have the `RECOGNIZED_PARTICULAR` property.
-
-    The canonical examples here are "Mom" and "Dad".
-
-    An `Ontology` must be provided to verify that the node is a `RECOGNIZED_PARTICULAR`.
-    """
-
-    particular_ontology_node: OntologyNode = attrib(validator=instance_of(OntologyNode))
-    ontology: Ontology = attrib(validator=instance_of(Ontology), kw_only=True)
-
-    def __attrs_post_init__(self) -> None:
-        if not self.ontology.has_all_properties(
-            self.particular_ontology_node, [RECOGNIZED_PARTICULAR]
-        ):
-            raise RuntimeError(
-                "The learner can only perceive the ontology node of an object "
-                "if it is a recognized particular (e.g. Mom, Dad)"
-            )
-
-    def __repr__(self) -> str:
-        return f"recognizedAs({self.perceived_object}, {self.particular_ontology_node})"
