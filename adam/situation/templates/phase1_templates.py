@@ -17,7 +17,12 @@ from vistautils.preconditions import check_arg
 
 from adam.ontology import ABSTRACT, OntologyNode, PROPERTY, THING
 from adam.ontology.ontology import Ontology
-from adam.ontology.phase1_ontology import COLOR, GAILA_PHASE_1_ONTOLOGY
+from adam.ontology.phase1_ontology import (
+    COLOR,
+    GAILA_PHASE_1_ONTOLOGY,
+    IS_LEARNER,
+    LEARNER,
+)
 from adam.ontology.selectors import ByHierarchyAndProperties, Is, OntologyNodeSelector
 from adam.random_utils import RandomChooser, SequenceChooser
 from adam.situation import SituationObject
@@ -216,12 +221,17 @@ def object_variable(
     Use *added_properties* for things like
     "whatever fills this variable, make it red."
     """
+    banned_properties = [ABSTRACT]
+    if root_node is not LEARNER:
+        # we never use the learner to fill an object variable in a situation
+        # unless explicitly request. Our learner is an observer, not a participant.
+        banned_properties.append(IS_LEARNER)
     return TemplateObjectVariable(
         debug_handle,
         ByHierarchyAndProperties(
             descendents_of=root_node,
             required_properties=required_properties,
-            banned_properties=immutableset([ABSTRACT]),
+            banned_properties=banned_properties,
         ),
         asserted_properties=[
             property_

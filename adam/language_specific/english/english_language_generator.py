@@ -34,7 +34,7 @@ from adam.language_specific.english.english_syntax import (
 )
 from adam.language_specific.english.english_phase_1_lexicon import MASS_NOUN
 from adam.ontology import OntologyNode
-from adam.ontology.phase1_ontology import AGENT, PATIENT, THEME, DESTINATION, ON
+from adam.ontology.phase1_ontology import AGENT, PATIENT, THEME, DESTINATION, ON, LEARNER
 from adam.random_utils import SequenceChooser
 from adam.situation import (
     SituationObject,
@@ -100,7 +100,10 @@ class SimpleRuleBasedEnglishLanguageGenerator(
 
         def generate(self) -> ImmutableSet[LinearizedDependencyTree]:
             for _object in self.situation.objects:
-                self._translate_object_to_noun(_object)
+                # We put the learner in the situation to express certain perceivable relations
+                # relative to them, but we don't talk about the learner itself.
+                if not _object.ontology_node == LEARNER:
+                    self._translate_object_to_noun(_object)
 
             if len(self.situation.actions) > 1:
                 raise RuntimeError(
