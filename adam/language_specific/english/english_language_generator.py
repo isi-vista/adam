@@ -15,8 +15,6 @@ from adam.language.dependency import (
     DependencyRole,
 )
 from adam.language.dependency.universal_dependencies import (
-    ADJECTIVAL_MODIFIER,
-    ADJECTIVE,
     DETERMINER,
     DETERMINER_ROLE,
     PROPER_NOUN,
@@ -139,6 +137,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             # separated by their respective relations and actions
             # (e.g. in a situation where one box is on a table and one is below it,
             # don't output "two boxes")
+            # https://github.com/isi-vista/adam/issues/129
             if not _object.ontology_node:
                 raise RuntimeError(
                     f"Don't know how to handle objects which don't correspond to "
@@ -153,9 +152,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 word_form = lexicon_entry.plural_form
             else:
                 word_form = lexicon_entry.base_form
-            dependency_node = DependencyTreeToken(
-                str(word_form), lexicon_entry.part_of_speech
-            )
+            dependency_node = DependencyTreeToken(word_form, lexicon_entry.part_of_speech)
 
             self.dependency_graph.add_node(dependency_node)
             # we remember what dependency node goes with this object
@@ -176,8 +173,8 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     quantifier_role = NUMERIC_MODIFIER
                 # Currently, any number of objects greater than two is considered "many"
                 else:
-                    quantifier_node = DependencyTreeToken("many", ADJECTIVE)
-                    quantifier_role = ADJECTIVAL_MODIFIER
+                    quantifier_node = DependencyTreeToken("many", DETERMINER)
+                    quantifier_role = DETERMINER_ROLE
                 self.dependency_graph.add_edge(
                     quantifier_node, dependency_node, role=quantifier_role
                 )
@@ -190,9 +187,14 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             lexicon_entry = self._unique_lexicon_entry(action.action_type)
             # TODO: we don't currently handle verbal morphology.
             # https://github.com/isi-vista/adam/issues/60
-            verb_dependency_node = DependencyTreeToken(
-                str(lexicon_entry.verb_form_3SG_PRS), lexicon_entry.part_of_speech
-            )
+            if lexicon_entry.verb_form_3SG_PRS:
+                verb_dependency_node = DependencyTreeToken(
+                    lexicon_entry.verb_form_3SG_PRS, lexicon_entry.part_of_speech
+                )
+            else:
+                raise RuntimeError(
+                    f"Verb has no 3SG present tense form: {lexicon_entry.base_form}"
+                )
             self.dependency_graph.add_node(verb_dependency_node)
 
             for (argument_role, filler) in action.argument_roles_to_fillers.items():

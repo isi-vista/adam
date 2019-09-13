@@ -53,24 +53,6 @@ def test_proper_noun():
     ).as_token_sequence() == ("Mom",)
 
 
-def test_simple_verb():
-    mom = SituationObject(MOM)
-    table = SituationObject(TABLE)
-    situation = HighLevelSemanticsSituation(
-        ontology=GAILA_PHASE_1_ONTOLOGY,
-        objects=[mom, table],
-        actions=[
-            SituationAction(
-                action_type=PUSH, argument_roles_to_fillers=[(AGENT, mom), (THEME, table)]
-            )
-        ],
-    )
-    # TODO: address morphology to capture verb conjugation here
-    assert only(
-        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
-    ).as_token_sequence() == ("Mom", "pushes", "a", "table")
-
-
 def test_one_object():
     box = SituationObject(BOX)
     situation = HighLevelSemanticsSituation(
@@ -102,6 +84,24 @@ def test_many_objects():
     assert only(
         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
     ).as_token_sequence() == ("many", "balls")
+
+
+def test_simple_verb():
+    mom = SituationObject(MOM)
+    table = SituationObject(TABLE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        objects=[mom, table],
+        actions=[
+            SituationAction(
+                action_type=PUSH, argument_roles_to_fillers=[(AGENT, mom), (THEME, table)]
+            )
+        ],
+    )
+    # TODO: address morphology to capture verb conjugation here
+    assert only(
+        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
+    ).as_token_sequence() == ("Mom", "pushes", "a", "table")
 
 
 def test_mom_put_a_ball_on_the_table():
