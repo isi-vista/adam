@@ -21,6 +21,8 @@ from adam.ontology.phase1_ontology import (
     IS_SPEAKER,
     PART_OF,
     PERCEIVABLE,
+    AGENT,
+    CAN_MANIPULATE_OBJECTS,
 )
 from adam.perception import PerceptualRepresentation, PerceptualRepresentationGenerator
 from adam.perception.developmental_primitive_perception import (
@@ -251,21 +253,38 @@ class _PerceptionGeneration:
                     raise RuntimeError(
                         "Don't yet handle multiple fillers for the same semantic role"
                     )
-            first_relation_slot_filler_role_in_action = only(
-                entities_to_roles[condition.first_slot]
-            )
-            situation_object_1 = only(
-                action_roles_to_fillers[first_relation_slot_filler_role_in_action]
-            )
-            second_relation_slot_filler_role_in_action = only(
-                entities_to_roles[condition.second_slot]
-            )
-            situation_object_2 = only(
-                action_roles_to_fillers[second_relation_slot_filler_role_in_action]
-            )
 
-            perception_1 = self._objects_to_perceptions[situation_object_1]
-            perception_2 = self._objects_to_perceptions[situation_object_2]
+            # Check for manipulator in first slot
+            if CAN_MANIPULATE_OBJECTS in condition.first_slot.properties:
+                manipulator_ontology_node = self._get_manipulator_of_agent(
+                    only(action_roles_to_fillers[AGENT])
+                )
+                perception_1 = ObjectPerception(manipulator_ontology_node.handle)
+            else:
+                first_relation_slot_filler_role_in_action = only(
+                    entities_to_roles[condition.first_slot]
+                )
+
+                situation_object_1 = only(
+                    action_roles_to_fillers[first_relation_slot_filler_role_in_action]
+                )
+                perception_1 = self._objects_to_perceptions[situation_object_1]
+
+            # Check for manipulator in first slot
+            if CAN_MANIPULATE_OBJECTS in condition.second_slot.properties:
+                manipulator_ontology_node = self._get_manipulator_of_agent(
+                    only(action_roles_to_fillers[AGENT])
+                )
+                perception_2 = ObjectPerception(manipulator_ontology_node.handle)
+            else:
+                second_relation_slot_filler_role_in_action = only(
+                    entities_to_roles[condition.second_slot]
+                )
+                situation_object_2 = only(
+                    action_roles_to_fillers[second_relation_slot_filler_role_in_action]
+                )
+                perception_2 = self._objects_to_perceptions[situation_object_2]
+
             relation_perception = RelationPerception(
                 relation_type=condition.relation_type,
                 arg1=perception_1,
@@ -277,6 +296,28 @@ class _PerceptionGeneration:
                 relations.append(relation_perception)
 
         return relations
+
+    def _get_manipulator_of_agent(self, agent_object: SituationObject) -> OntologyNode:
+        # search for object in AGENT
+        ontology_of_agent = agent_object.ontology_node
+        schemas = GAILA_PHASE_1_ONTOLOGY.structural_schemata(ontology_of_agent)
+
+        #  Perform a BFS over sub objects of agent and return the first manipulator
+        next_sub_objects = [obj for schema in schemas for obj in schema.sub_objects]
+        manipulator = None
+        while next_sub_objects:
+            next_sub_object = next_sub_objects.pop(0)
+            if (
+                CAN_MANIPULATE_OBJECTS
+                in next_sub_object.schema.parent_object.inheritable_properties
+            ):
+                manipulator = next_sub_object.schema.parent_object
+                break
+            else:
+                next_sub_objects.extend(next_sub_object.schema.sub_objects)
+        if not manipulator:
+            raise RuntimeError("Could not find the manipulator of agent")
+        return manipulator
 
     def _perceive_property_assertions(self) -> None:
         for situation_object in self._situation.objects:
