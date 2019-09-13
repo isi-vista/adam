@@ -74,6 +74,14 @@ SENTIENT = OntologyNode("sentient", [BINARY])
 subtype(SENTIENT, PERCEIVABLE_PROPERTY)
 LIQUID = OntologyNode("liquid", [BINARY])
 subtype(LIQUID, PERCEIVABLE_PROPERTY)
+HOLLOW = OntologyNode("hollow", [BINARY])
+"""
+Whether an object should be though of as empty on the inside.
+In particular, hollow objects may serve as containers.
+
+Jackendoff and Landau argue this should be regarded as a primitive of object perception.
+"""
+subtype(HOLLOW, PERCEIVABLE_PROPERTY)
 
 RECOGNIZED_PARTICULAR_PROPERTY = OntologyNode("recognized-particular", [BINARY, ABSTRACT])
 """
@@ -151,27 +159,30 @@ BALL = OntologyNode("ball")
 subtype(BALL, INANIMATE_OBJECT)
 BOOK = OntologyNode("book")
 subtype(BOOK, INANIMATE_OBJECT)
-HOUSE = OntologyNode("house")
+HOUSE = OntologyNode("house", [HOLLOW])
 subtype(HOUSE, INANIMATE_OBJECT)
-CAR = OntologyNode("car")
+CAR = OntologyNode("car", [HOLLOW])
 subtype(CAR, INANIMATE_OBJECT)
 WATER = OntologyNode("water", [LIQUID])
 subtype(WATER, INANIMATE_OBJECT)
 JUICE = OntologyNode("juice", [LIQUID])
 subtype(JUICE, INANIMATE_OBJECT)
-CUP = OntologyNode("cup")
+CUP = OntologyNode("cup", [HOLLOW])
 subtype(CUP, INANIMATE_OBJECT)
-BOX = OntologyNode("box")
+BOX = OntologyNode("box", [HOLLOW])
 subtype(BOX, INANIMATE_OBJECT)
 CHAIR = OntologyNode("chair")
 subtype(CHAIR, INANIMATE_OBJECT)
-HEAD = OntologyNode("head")
+# should a HEAD be hollow? We are answering yes for now,
+# because food and liquids can enter it,
+# but we eventually want something more sophisticated.
+HEAD = OntologyNode("head", [HOLLOW])
 subtype(HEAD, INANIMATE_OBJECT)
 MILK = OntologyNode("milk", [LIQUID])
 subtype(MILK, INANIMATE_OBJECT)
 HAND = OntologyNode("hand", [CAN_MANIPULATE_OBJECTS])
 subtype(HAND, INANIMATE_OBJECT)
-TRUCK = OntologyNode("truck")
+TRUCK = OntologyNode("truck", [HOLLOW])
 subtype(TRUCK, INANIMATE_OBJECT)
 DOOR = OntologyNode("door")
 subtype(DOOR, INANIMATE_OBJECT)
