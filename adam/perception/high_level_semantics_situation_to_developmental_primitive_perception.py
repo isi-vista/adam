@@ -217,10 +217,13 @@ class _PerceptionGeneration:
         action_description: ActionDescription,
         action_roles_to_fillers: ImmutableSetMultiDict[OntologyNode, SituationObject],
         already_known_relations=[],
-    ):
+    ) -> List[RelationPerception]:
         entities_to_roles = action_description.frames[0].entities_to_roles
-        for condition in conditions:  # each one is a SituationRelation
+        relations = [
+            relation for relation in already_known_relations
+        ]  # build on already known relations
 
+        for condition in conditions:  # each one is a SituationRelation
             # TODO: Handle multiple semantic roles
             for entity in (condition.first_slot, condition.second_slot):
                 if len(entities_to_roles[entity]) > 1:
@@ -255,9 +258,6 @@ class _PerceptionGeneration:
             )
 
             # TODO: Implement negation issue #121
-            relations = [
-                relation for relation in already_known_relations
-            ]  # build on already known relations
             if not condition.negated:
                 relations.append(relation_perception)
 
