@@ -1,31 +1,18 @@
-from typing import Dict, List, Optional
-
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import ImmutableDict, immutabledict
-from more_itertools import only
+from more_itertools import only, quantify
+from typing import Dict, List, Optional
 from vistautils.preconditions import check_arg
 
 from adam.ontology import ObjectStructuralSchema, SubObject
 from adam.ontology.ontology import Ontology
-from adam.ontology.phase1_ontology import (
-    PART_OF,
-    PERCEIVABLE,
-    BINARY,
-    COLOR,
-    COLORS_TO_RGBS,
-    GAILA_PHASE_1_ONTOLOGY,
-)
+from adam.ontology.phase1_ontology import (BINARY, COLOR, COLORS_TO_RGBS, GAILA_PHASE_1_ONTOLOGY,
+                                           IS_SPEAKER, PART_OF, PERCEIVABLE)
 from adam.perception import PerceptualRepresentation, PerceptualRepresentationGenerator
 from adam.perception.developmental_primitive_perception import (
-    DevelopmentalPrimitivePerceptionFrame,
-    ObjectPerception,
-    RelationPerception,
-    PropertyPerception,
-    HasBinaryProperty,
-    RgbColorPerception,
-    HasColor,
-)
+    DevelopmentalPrimitivePerceptionFrame, HasBinaryProperty, HasColor, ObjectPerception,
+    PropertyPerception, RelationPerception, RgbColorPerception)
 from adam.random_utils import SequenceChooser
 from adam.situation import SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
@@ -132,6 +119,8 @@ class _PerceptionGeneration:
     """
 
     def do(self) -> PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]:
+        self._sanity_check_situation()
+
         # The first step is to determine what objects are perceived.
         self._perceive_objects()
 
@@ -149,6 +138,17 @@ class _PerceptionGeneration:
                 property_assertions=self._property_assertion_perceptions,
             )
         )
+
+    def _sanity_check_situation(self) -> None:
+        if quantify(
+            isinstance(property_, HasBinaryProperty)
+            and property_.binary_property == IS_SPEAKER
+            for object_ in self._situation.objects
+            for property_ in object_.properties
+        ):
+            raise TooManySpeakersException(
+                f"Situations with multiple speakers are not supported: {self._situation}"
+            )
 
     def _perceive_property_assertions(self) -> None:
         for situation_object in self._situation.objects:
@@ -269,3 +269,8 @@ class _PerceptionGeneration:
 GAILA_PHASE_1_PERCEPTION_GENERATOR = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
     GAILA_PHASE_1_ONTOLOGY
 )
+
+
+@attrs(auto_exc=True)
+class TooManySpeakersException(RuntimeError):
+    pass

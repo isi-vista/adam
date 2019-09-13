@@ -61,7 +61,7 @@ subtype(PERCEIVABLE, META_PROPERTY)
 BINARY = OntologyNode("binary")
 subtype(BINARY, META_PROPERTY)
 
-# properties of objects
+# properties of objects which can be perceived by the learner
 PERCEIVABLE_PROPERTY = OntologyNode("perceivable-property", [PERCEIVABLE])
 subtype(PERCEIVABLE_PROPERTY, PROPERTY)
 ANIMATE = OntologyNode("animate", [BINARY])
@@ -80,7 +80,19 @@ The prototypical cases here are *Mom* and *Dad*.
 
 subtype(RECOGNIZED_PARTICULAR, PERCEIVABLE_PROPERTY)
 
-CAN_MANIPULATE_OBJECTS = OntologyNode("sentient")
+IS_SPEAKER = OntologyNode("is-speaker", [BINARY])
+"""
+Indicates that the marked object is the one who is speaking 
+the linguistic description of the situation. 
+This will not be present for all situations.
+It only makes sense to apply this to sub-types of PERSON,
+but this is not currently enforced.
+"""
+subtype(IS_SPEAKER, PERCEIVABLE_PROPERTY)
+
+# Properties not perceived by the learner, but useful for situation generation
+
+CAN_MANIPULATE_OBJECTS = OntologyNode("can-manipulate-objects")
 subtype(CAN_MANIPULATE_OBJECTS, PROPERTY)
 
 

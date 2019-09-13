@@ -1,11 +1,13 @@
-from adam.ontology.phase1_ontology import BALL, GAILA_PHASE_1_ONTOLOGY, PERSON, RED
+import pytest
+from more_itertools import quantify
+
+from adam.ontology import OntologyNode
+from adam.ontology.phase1_ontology import (BALL, GAILA_PHASE_1_ONTOLOGY, IS_SPEAKER, PERSON, RED)
 from adam.perception.developmental_primitive_perception import (
-    PropertyPerception,
-    HasBinaryProperty,
-    HasColor,
-)
+    DevelopmentalPrimitivePerceptionFrame, HasBinaryProperty, HasColor, PropertyPerception)
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
+    TooManySpeakersException,
 )
 from adam.random_utils import RandomChooser
 from adam.situation import SituationObject
@@ -88,3 +90,43 @@ def test_person_and_ball_color():
         for prop in property_assertions
         if isinstance(prop, HasColor)
     } == {("ball_0", "#f2003c")}
+
+
+def _some_object_has_binary_property(
+    perception_frame: DevelopmentalPrimitivePerceptionFrame, query_property: OntologyNode
+) -> bool:
+    return (
+        quantify(
+            isinstance(property_assertion, HasBinaryProperty)
+            and property_assertion.binary_property == query_property
+            for property_assertion in perception_frame.property_assertions
+        )
+        > 0
+    )
+
+
+def test_speaker_perceivable():
+    speaker_situation_perception = _PERCEPTION_GENERATOR.generate_perception(
+        HighLevelSemanticsSituation(
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+            objects=[SituationObject(PERSON, [IS_SPEAKER])],
+        ),
+        chooser=RandomChooser.for_seed(0),
+    )
+    assert _some_object_has_binary_property(
+        speaker_situation_perception.frames[0], IS_SPEAKER
+    )
+
+
+def test_not_two_speakers():
+    with pytest.raises(TooManySpeakersException):
+        _PERCEPTION_GENERATOR.generate_perception(
+            HighLevelSemanticsSituation(
+                ontology=GAILA_PHASE_1_ONTOLOGY,
+                objects=[
+                    SituationObject(PERSON, [IS_SPEAKER]),
+                    SituationObject(PERSON, [IS_SPEAKER]),
+                ],
+            ),
+            chooser=RandomChooser.for_seed(0),
+        )
