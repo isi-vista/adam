@@ -7,6 +7,7 @@ Note that we provide convenience functions like `random_situation_templates` and
 """
 import sys
 from abc import ABC, abstractmethod
+from itertools import islice
 from typing import AbstractSet, Generic, List, Sequence, Tuple, TypeVar, Iterable
 
 from attr import Factory, attrib, attrs
@@ -25,7 +26,7 @@ from immutablecollections.converter_utils import (
     _to_immutableset,
     _to_immutablesetmultidict,
 )
-from more_itertools import flatten
+from more_itertools import flatten, take
 
 from adam.language.language_generator import SituationT
 from adam.math_3d import Point
@@ -54,9 +55,8 @@ class SituationTemplateProcessor(ABC, Generic[_SituationTemplateT, SituationT]):
         self,
         template: _SituationTemplateT,
         *,
-        num_instantiations: int = 1,
         chooser: SequenceChooser = Factory(RandomChooser.for_seed),
-    ) -> AbstractSet[SituationT]:
+    ) -> Iterable[SituationT]:
         r"""
         Generates one or more `Situation`\ s from a `SituationTemplate`\ .
 
@@ -263,9 +263,12 @@ def one_situation_per_template(
     ],
     sequence_chooser: SequenceChooser,
 ) -> Iterable[SituationT]:
-    return flatten(
-        situation_template_processor.generate_situations(
-            template=situation_template, num_instantiations=1, chooser=sequence_chooser
+    return (
+        take(
+            1,
+            situation_template_processor.generate_situations(
+                template=situation_template, chooser=sequence_chooser
+            ),
         )
         for situation_template in situation_templates
     )

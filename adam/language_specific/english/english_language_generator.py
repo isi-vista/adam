@@ -26,6 +26,9 @@ from adam.language.dependency.universal_dependencies import (
 from adam.language.language_generator import LanguageGenerator
 from adam.language.lexicon import LexiconEntry
 from adam.language.ontology_dictionary import OntologyLexicon
+from adam.language_specific.english.english_phase_1_lexicon import (
+    GAILA_PHASE_1_ENGLISH_LEXICON,
+)
 from adam.language_specific.english.english_syntax import (
     SIMPLE_ENGLISH_DEPENDENCY_TREE_LINEARIZER,
 )
@@ -259,4 +262,8 @@ _ARGUMENT_ROLES_TO_DEPENDENCY_ROLES: Mapping[
         (THEME, OBJECT),
         (DESTINATION, OBLIQUE_NOMINAL),
     )
+)
+
+GAILA_PHASE_1_LANGUAGE_GENERATOR = SimpleRuleBasedEnglishLanguageGenerator(
+    ontology_lexicon=GAILA_PHASE_1_ENGLISH_LEXICON
 )

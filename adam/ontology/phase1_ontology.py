@@ -13,22 +13,27 @@ The following will eventually end up here:
 - Relations, Modifiers, Function Words: basic color terms (red, blue, green, white, black…), one,
   two, I, me, my, you, your, to, in, on, [beside, behind, in front of, over, under], up, down
 """
-from immutablecollections import immutablesetmultidict
+from immutablecollections import immutableset, immutablesetmultidict
 from more_itertools import flatten
-from networkx import DiGraph
 
 from adam.ontology import (
-    ObjectStructuralSchema,
+    sub_object_relations,
+    minimal_ontology_graph,
     OntologyNode,
-    SubObject,
-    make_dsl_relation,
+    PROPERTY,
+    ABSTRACT,
+    THING,
+    ACTION,
+    RELATION,
     make_opposite_dsl_relation,
     make_symetric_dsl_relation,
-    sub_object_relations,
+    make_dsl_relation,
+    ObjectStructuralSchema,
+    SubObject,
 )
 from adam.ontology.ontology import Ontology
 
-_ontology_graph = DiGraph()  # pylint:disable=invalid-name
+_ontology_graph = minimal_ontology_graph()  # pylint:disable=invalid-name
 
 
 def subtype(sub: OntologyNode, _super: OntologyNode) -> None:
@@ -48,39 +53,44 @@ DESTINATION = OntologyNode("destination")
 subtype(DESTINATION, SEMANTIC_ROLE)
 
 
+# these are "properties of properties" (e.g. whether a property is perceivable by the learner)
+
 META_PROPERTY = OntologyNode("meta-property")
 PERCEIVABLE = OntologyNode("perceivable")
 subtype(PERCEIVABLE, META_PROPERTY)
 BINARY = OntologyNode("binary")
 subtype(BINARY, META_PROPERTY)
 
-PROPERTY = OntologyNode("property")
-ANIMATE = OntologyNode("animate", local_properties=[PERCEIVABLE, BINARY])
-subtype(ANIMATE, PROPERTY)
-INANIMATE = OntologyNode("inanimate", local_properties=[PERCEIVABLE, BINARY])
-subtype(INANIMATE, PROPERTY)
-SENTIENT = OntologyNode("sentient", local_properties=[PERCEIVABLE, BINARY])
-subtype(SENTIENT, PROPERTY)
-CAN_MANIPULATE_OBJECTS = OntologyNode("sentient")
-subtype(CAN_MANIPULATE_OBJECTS, PROPERTY)
+# properties of objects
+PERCEIVABLE_PROPERTY = OntologyNode("perceivable-property", [PERCEIVABLE])
+subtype(PERCEIVABLE_PROPERTY, PROPERTY)
+ANIMATE = OntologyNode("animate", [BINARY])
+subtype(ANIMATE, PERCEIVABLE_PROPERTY)
+INANIMATE = OntologyNode("inanimate", [BINARY])
+subtype(INANIMATE, PERCEIVABLE_PROPERTY)
+SENTIENT = OntologyNode("sentient", [BINARY])
+subtype(SENTIENT, PERCEIVABLE_PROPERTY)
 
-RECOGNIZED_PARTICULAR = OntologyNode(
-    "recognized-particular", local_properties=[PERCEIVABLE, BINARY]
-)
+RECOGNIZED_PARTICULAR = OntologyNode("recognized-particular", [BINARY])
 """
 Indicates that a node in the ontology corresponds to a particular (rather than a class)
 which is assumed to be known to the `LanguageLearner`. 
 The prototypical cases here are *Mom* and *Dad*.
 """
-subtype(RECOGNIZED_PARTICULAR, PROPERTY)
+
+subtype(RECOGNIZED_PARTICULAR, PERCEIVABLE_PROPERTY)
+
+CAN_MANIPULATE_OBJECTS = OntologyNode("sentient")
+subtype(CAN_MANIPULATE_OBJECTS, PROPERTY)
 
 
-COLOR = OntologyNode("color")
-RED = OntologyNode("red", local_properties=[COLOR, PERCEIVABLE])
-BLUE = OntologyNode("blue", local_properties=[COLOR, PERCEIVABLE])
-GREEN = OntologyNode("green", local_properties=[COLOR, PERCEIVABLE])
-BLACK = OntologyNode("black", local_properties=[COLOR, PERCEIVABLE])
-WHITE = OntologyNode("white", local_properties=[COLOR, PERCEIVABLE])
+COLOR = OntologyNode("color", non_inheritable_properties=[ABSTRACT])
+subtype(COLOR, PERCEIVABLE_PROPERTY)
+RED = OntologyNode("red")
+BLUE = OntologyNode("blue")
+GREEN = OntologyNode("green")
+BLACK = OntologyNode("black")
+WHITE = OntologyNode("white")
 subtype(RED, COLOR)
 subtype(BLUE, COLOR)
 subtype(GREEN, COLOR)
@@ -112,10 +122,12 @@ COLORS_TO_RGBS = {
 # Information about the hierarchical structure of objects
 # is given at the end of this module because it is so bulky.
 
-PHYSICAL_OBJECT = OntologyNode("object")
-
-INANIMATE_OBJECT = OntologyNode("inanimate-object", [INANIMATE])
-subtype(INANIMATE_OBJECT, PHYSICAL_OBJECT)
+INANIMATE_OBJECT = OntologyNode(
+    "inanimate-object",
+    inheritable_properties=[INANIMATE],
+    non_inheritable_properties=[ABSTRACT],
+)
+subtype(INANIMATE_OBJECT, THING)
 TABLE = OntologyNode("table")
 subtype(TABLE, INANIMATE_OBJECT)
 BALL = OntologyNode("ball")
@@ -151,8 +163,10 @@ subtype(HAT, INANIMATE_OBJECT)
 COOKIE = OntologyNode("cookie")
 subtype(COOKIE, INANIMATE_OBJECT)
 
-PERSON = OntologyNode("person", [ANIMATE])
-subtype(PERSON, PHYSICAL_OBJECT)
+PERSON = OntologyNode(
+    "person", inheritable_properties=[ANIMATE], non_inheritable_properties=[ABSTRACT]
+)
+subtype(PERSON, THING)
 MOM = OntologyNode("mom", [RECOGNIZED_PARTICULAR])
 subtype(MOM, PERSON)
 DAD = OntologyNode("dad", [RECOGNIZED_PARTICULAR])
@@ -160,13 +174,41 @@ subtype(DAD, PERSON)
 BABY = OntologyNode("baby")
 subtype(BABY, PERSON)
 
-NONHUMAN_ANIMAL = OntologyNode("animal", [ANIMATE])
-subtype(NONHUMAN_ANIMAL, PHYSICAL_OBJECT)
+NONHUMAN_ANIMAL = OntologyNode(
+    "animal", inheritable_properties=[ANIMATE], non_inheritable_properties=[ABSTRACT]
+)
+subtype(NONHUMAN_ANIMAL, THING)
 DOG = OntologyNode("dog")
 subtype(DOG, NONHUMAN_ANIMAL)
 BIRD = OntologyNode("bird")
 subtype(BIRD, NONHUMAN_ANIMAL)
 
+PHASE_1_CURRICULUM_OBJECTS = immutableset(
+    [
+        BABY,
+        BALL,
+        BIRD,
+        BOOK,
+        BOX,
+        CAR,
+        CHAIR,
+        COOKIE,
+        CUP,
+        DAD,
+        DOG,
+        DOOR,
+        HAND,
+        HAT,
+        HEAD,
+        HOUSE,
+        JUICE,
+        MILK,
+        MOM,
+        TABLE,
+        TRUCK,
+        WATER,
+    ]
+)
 
 # Terms below are internal and can only be accessed as parts of other objects
 _ARM = OntologyNode("arm")
@@ -188,7 +230,6 @@ _BODY = OntologyNode("body")
 
 # Verbs
 
-ACTION = OntologyNode("action")
 STATE = OntologyNode("state")
 CONSUME = OntologyNode("consume")
 subtype(CONSUME, ACTION)
@@ -231,7 +272,6 @@ subtype(FLY, ACTION)
 # Relations
 # These are used both for situations and in the perceptual representation
 
-RELATION = OntologyNode("relation")
 SPATIAL_RELATION = OntologyNode("spatial-relation")
 subtype(RELATION, SPATIAL_RELATION)
 # On is an English-specific bundle of semantics, but that's okay, because this is just for

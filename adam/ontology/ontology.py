@@ -1,4 +1,6 @@
-from typing import Iterable, List
+from itertools import chain
+
+from typing import Iterable, List, AbstractSet
 
 from attr import attrib, attrs
 from attr.validators import instance_of
@@ -9,44 +11,110 @@ from immutablecollections import (
     immutablesetmultidict,
 )
 from immutablecollections.converter_utils import _to_immutablesetmultidict
-from networkx import DiGraph, dfs_preorder_nodes, simple_cycles
+from networkx import DiGraph, dfs_preorder_nodes, simple_cycles, has_path, ancestors
+from vistautils.preconditions import check_arg
 
-from adam.ontology import OntologyNode, ObjectStructuralSchema
+from adam.ontology import (
+    OntologyNode,
+    ObjectStructuralSchema,
+    REQUIRED_ONTOLOGY_NODES,
+    THING,
+    ABSTRACT,
+)
+
+
+# convenience method for use in Ontology
+def _copy_digraph(digraph: DiGraph) -> DiGraph:
+    return digraph.copy()
 
 
 @attrs(frozen=True, slots=True)
 class Ontology:
     r"""
     A hierarchical collection of types for objects, actions, etc.
+
     Types are represented by `OntologyNode`\ s with parent-child relationships.
+
     Every `OntologyNode` may have a set of properties which are inherited by all child nodes.
+
+    Every `Ontology` must contain the special nodes `THING`, `RELATION`, `ACTION`,
+    `PROPERTY`, `META_PROPERTY`, and `ABSTRACT`.
+
+    An `Ontology` must have an `ObjectStructuralSchema` associated with
+    each non-`ABSTRACT` `THING`.  `ObjectStructuralSchema`\ ta are inherited,
+    but any which are explicitly-specified will cause any inherited schemata
+    to be ignored.
+
+    To assist in creating legal `Ontology`\ s, we provide `minimal_ontology_graph`.
     """
 
-    _graph: DiGraph = attrib(validator=instance_of(DiGraph))
-    structural_schemata: ImmutableSetMultiDict[
-        OntologyNode, ObjectStructuralSchema
-    ] = attrib(
-        converter=_to_immutablesetmultidict, default=immutablesetmultidict(), kw_only=True
-    )
+    _graph: DiGraph = attrib(validator=instance_of(DiGraph), converter=_copy_digraph)
+    _structural_schemata: ImmutableSetMultiDict[
+        "OntologyNode", "ObjectStructuralSchema"
+    ] = attrib(converter=_to_immutablesetmultidict, default=immutablesetmultidict())
 
     def __attrs_post_init__(self) -> None:
         for cycle in simple_cycles(self._graph):
             raise ValueError(f"The ontology graph may not have cycles but got {cycle}")
+        for required_node in REQUIRED_ONTOLOGY_NODES:
+            check_arg(
+                required_node in self,
+                f"Ontology lacks required {required_node.handle} node",
+            )
+
+        # every sub-type of THING must either have a structural schema
+        # or be a sub-type of something with a structural schema
+        for thing_node in dfs_preorder_nodes(self._graph.reverse(copy=False), THING):
+            if not any(
+                node in self._structural_schemata for node in self.ancestors(thing_node)
+            ):
+                if not self.has_all_properties(thing_node, [ABSTRACT]):
+                    raise RuntimeError(
+                        f"No structural schema is available for {thing_node}"
+                    )
+
+    def ancestors(self, node: OntologyNode) -> Iterable[OntologyNode]:
+        return chain([node], ancestors(self._graph.reverse(copy=False), node))
+
+    def structural_schemata(
+        self, node: OntologyNode
+    ) -> AbstractSet[ObjectStructuralSchema]:
+        for node in self.ancestors(node):
+            if node in self._structural_schemata:
+                return self._structural_schemata[node]
+        return immutableset()
+
+    def is_subtype_of(
+        self, node: "OntologyNode", query_supertype: "OntologyNode"
+    ) -> bool:
+        """
+        Determines whether *node* is a sub-type of *query_supertype*.
+        """
+        # graph edges run from sub-types to super-types
+        return has_path(self._graph, node, query_supertype)
 
     def nodes_with_properties(
-        self, root_node: "OntologyNode", required_properties: Iterable["OntologyNode"]
+        self,
+        root_node: "OntologyNode",
+        required_properties: Iterable["OntologyNode"],
+        *,
+        banned_properties: AbstractSet["OntologyNode"] = immutableset(),
     ) -> ImmutableSet["OntologyNode"]:
         r"""
         Get all `OntologyNode`\ s which are a dominated by *root_node* (or are *root_node*
-        itself) which possess all the *required_properties*, either directly or by inheritance
-        from a dominating node.
+        itself) which possess all the *required_properties* and none of the *banned_properties*,
+        either directly or by inheritance from a dominating node.
+
         Args:
             root_node: the node to search the ontology tree at and under
-            required_properties: the `OntologyNode`\ s every returned node must have
+            required_properties: the properties (as `OntologyNode`\ s) every returned node must have
+            banned_properties: the properties (as `OntologyNode`\ s) which no returned node may
+                               have
+
         Returns:
              All `OntologyNode`\ s which are a dominated by *root_node* (or are *root_node*
-             itself) which possess all the *required_properties*, either directly or by inheritance
-             from a dominating node.
+             itself) which possess all the *required_properties* and none of the
+             *banned_properties*, either directly or by inheritance from a dominating node.
         """
 
         if root_node not in self._graph:
@@ -57,43 +125,56 @@ class Ontology:
 
         return immutableset(
             node
-            for node in dfs_preorder_nodes(self._graph, root_node)
-            if self.has_all_properties(node, required_properties)
+            for node in dfs_preorder_nodes(self._graph.reverse(copy=False), root_node)
+            if self.has_all_properties(
+                node, required_properties, banned_properties=banned_properties
+            )
         )
 
     def has_all_properties(
-        self, node: "OntologyNode", required_properties: Iterable["OntologyNode"]
+        self,
+        node: "OntologyNode",
+        required_properties: Iterable["OntologyNode"],
+        *,
+        banned_properties: AbstractSet["OntologyNode"] = immutableset(),
     ) -> bool:
         r"""
         Checks an `OntologyNode` for a collection of `OntologyNode`\ s.
+
         Args:
             node: the `OntologyNode` being inquired about
             required_properties: the `OntologyNode`\ s being inquired about
+            banned_properties: this function will return false if *node* contains any of these
+                               properties. Defaults to the empty set.
+
         Returns:
-            Whether *node* possesses all of *required_properties*, either directly or via
-            inheritance from a dominating node.
+            Whether *node* possesses all of *required_properties* and none of *banned_properties*,
+            either directly or via inheritance from a dominating node.
         """
+        if not required_properties and not banned_properties:
+            return True
+
         node_properties = self.properties_for_node(node)
-        return all(property_ in node_properties for property_ in required_properties)
+        return all(
+            property_ in node_properties for property_ in required_properties
+        ) and not any(property_ in banned_properties for property_ in node_properties)
 
     def properties_for_node(self, node: "OntologyNode") -> ImmutableSet["OntologyNode"]:
         r"""
         Get all properties a `OntologyNode` possesses.
+
         Args:
             node: the `OntologyNode` whose properties you want.
+
         Returns:
             All properties `OntologyNode` possesses, whether directly or by inheritance from a
             dominating node.
         """
-        node_properties: List[OntologyNode] = []
+        node_properties: List[OntologyNode] = list(node.non_inheritable_properties)
 
         cur_node = node
         while cur_node:
-            # noinspection PyProtectedMember
-            for (
-                property_
-            ) in cur_node._local_properties:  # pylint:disable=protected-access
-                node_properties.append(property_)
+            node_properties.extend(cur_node.inheritable_properties)
             # need to make a tuple because we can't len() the returned iterator
             parents = tuple(self._graph.successors(cur_node))
             if len(parents) == 1:
@@ -107,3 +188,6 @@ class Ontology:
                 # we have reached a root
                 break
         return immutableset(node_properties)
+
+    def __contains__(self, item: "OntologyNode") -> bool:
+        return item in self._graph.nodes

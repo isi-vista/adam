@@ -1,3 +1,6 @@
+r"""
+Code to specify what is shown to `LanguageLearner`\ s and in what order.
+"""
 from abc import ABC, abstractmethod
 from typing import Generic, Iterable, Tuple, Optional
 

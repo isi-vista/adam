@@ -14,6 +14,7 @@ from adam.ontology.phase1_ontology import (
     BINARY,
     COLOR,
     COLORS_TO_RGBS,
+    GAILA_PHASE_1_ONTOLOGY,
 )
 from adam.perception import PerceptualRepresentation, PerceptualRepresentationGenerator
 from adam.perception.developmental_primitive_perception import (
@@ -170,7 +171,7 @@ class _PerceptionGeneration:
                         perceived_property: PropertyPerception = HasBinaryProperty(
                             perceived_object, property_
                         )
-                    elif COLOR in attributes_of_property:
+                    elif self._generator.ontology.is_subtype_of(property_, COLOR):
                         # Sample an RGB value for the color property and generate perception for it
                         if property_ in COLORS_TO_RGBS:
                             r, g, b = self._chooser.choice(COLORS_TO_RGBS[property_])
@@ -182,7 +183,6 @@ class _PerceptionGeneration:
                                 f"Not sure how to generate perception for the unknown property {property_} "
                                 f"which is marked as COLOR"
                             )
-
                     else:
                         raise RuntimeError(
                             f"Not sure how to generate perception for property {property_} "
@@ -199,9 +199,9 @@ class _PerceptionGeneration:
                 )
             # these are the possible internal structures of objects of this type
             # that the ontology is aware of.
-            object_schemata = self._generator.ontology.structural_schemata[
+            object_schemata = self._generator.ontology.structural_schemata(
                 situation_object.ontology_node
-            ]
+            )
             if not object_schemata:
                 raise RuntimeError(f"No structural schema found for {situation_object}")
             if len(object_schemata) > 1:
@@ -264,3 +264,8 @@ class _PerceptionGeneration:
                 )
             )
         return root_object_perception
+
+
+GAILA_PHASE_1_PERCEPTION_GENERATOR = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
+    GAILA_PHASE_1_ONTOLOGY
+)
