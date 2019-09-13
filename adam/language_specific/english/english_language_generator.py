@@ -109,9 +109,10 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                         node_counts[_object.ontology_node] += 1
                     except KeyError:
                         node_counts.update({_object.ontology_node: 1})
-                object_counts: Dict[SituationObject, int] = dict()
-                for _object in self.situation.objects:
-                    object_counts.update({_object: node_counts[_object.ontology_node]})
+                object_counts: Dict[SituationObject, int] = {
+                    _object: node_counts[_object.ontology_node]
+                    for _object in self.situation.objects
+                }
                 # Use the counts to apply the appropriate quantifiers
                 for _object in object_counts:
                     self._translate_object_to_noun(_object, object_counts[_object])
