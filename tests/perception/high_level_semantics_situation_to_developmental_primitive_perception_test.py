@@ -2,9 +2,19 @@ import pytest
 from more_itertools import quantify
 
 from adam.ontology import OntologyNode
-from adam.ontology.phase1_ontology import (BALL, GAILA_PHASE_1_ONTOLOGY, IS_SPEAKER, PERSON, RED)
+from adam.ontology.phase1_ontology import (
+    BALL,
+    GAILA_PHASE_1_ONTOLOGY,
+    IS_SPEAKER,
+    PERSON,
+    RED,
+)
 from adam.perception.developmental_primitive_perception import (
-    DevelopmentalPrimitivePerceptionFrame, HasBinaryProperty, HasColor, PropertyPerception)
+    DevelopmentalPrimitivePerceptionFrame,
+    HasBinaryProperty,
+    HasColor,
+    PropertyPerception,
+)
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
     TooManySpeakersException,

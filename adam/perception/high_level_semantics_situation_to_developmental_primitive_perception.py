@@ -7,12 +7,25 @@ from vistautils.preconditions import check_arg
 
 from adam.ontology import ObjectStructuralSchema, SubObject
 from adam.ontology.ontology import Ontology
-from adam.ontology.phase1_ontology import (BINARY, COLOR, COLORS_TO_RGBS, GAILA_PHASE_1_ONTOLOGY,
-                                           IS_SPEAKER, PART_OF, PERCEIVABLE)
+from adam.ontology.phase1_ontology import (
+    BINARY,
+    COLOR,
+    COLORS_TO_RGBS,
+    GAILA_PHASE_1_ONTOLOGY,
+    IS_SPEAKER,
+    PART_OF,
+    PERCEIVABLE,
+)
 from adam.perception import PerceptualRepresentation, PerceptualRepresentationGenerator
 from adam.perception.developmental_primitive_perception import (
-    DevelopmentalPrimitivePerceptionFrame, HasBinaryProperty, HasColor, ObjectPerception,
-    PropertyPerception, RelationPerception, RgbColorPerception)
+    DevelopmentalPrimitivePerceptionFrame,
+    HasBinaryProperty,
+    HasColor,
+    ObjectPerception,
+    PropertyPerception,
+    RelationPerception,
+    RgbColorPerception,
+)
 from adam.random_utils import SequenceChooser
 from adam.situation import SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
