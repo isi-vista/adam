@@ -98,7 +98,7 @@ class CurriculumToHtmlDumper:
                 html_out.write("</tr></tbody>")
 
     @staticmethod
-    def _situation_text(situation: HighLevelSemanticsSituation) -> [str]:
+    def _situation_text(situation: HighLevelSemanticsSituation) -> Iterable[str]:
         """
         Converts a situation description into its sub-parts as a table entry
         """
@@ -129,7 +129,7 @@ class CurriculumToHtmlDumper:
     @staticmethod
     def _perception_text(
         perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]
-    ) -> [str]:
+    ) -> Iterable[str]:
         """
         Turns a perception into a list of items in the perceptions frames.
         """
@@ -158,7 +158,7 @@ class CurriculumToHtmlDumper:
         return output_text
 
     @staticmethod
-    def _linguistic_text(linguistic: LinearizedDependencyTree) -> [str]:
+    def _linguistic_text(linguistic: LinearizedDependencyTree) -> Iterable[str]:
         """
         Parses the Linguistic Description of a Linearized Dependency Tree into a table entry
 
