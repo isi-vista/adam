@@ -1,8 +1,10 @@
-import os
-from typing import List
+from pathlib import Path
+from typing import Iterable
 
 from attr import attrs
+from vistautils.parameters import Parameters
 
+from adam.curriculum.phase1_curriculum import GAILA_PHASE_1_CURRICULUM
 from adam.experiment import InstanceGroup
 from adam.language.dependency import LinearizedDependencyTree
 from adam.perception import PerceptualRepresentation
@@ -13,50 +15,47 @@ from adam.situation.high_level_semantics_situation import HighLevelSemanticsSitu
 
 
 @attrs(frozen=True, slots=True)
-class CurriculumToHtml:
+class CurriculumToHtmlDumper:
     """
     Class to turn an `InstanceGroup` into an html document
     """
 
-    @staticmethod
-    def generate(
-        instances: List[
+    def dump_to_html(
+        self,
+        instance_groups: Iterable[
             InstanceGroup[
                 HighLevelSemanticsSituation,
                 LinearizedDependencyTree,
                 DevelopmentalPrimitivePerceptionFrame,
             ]
         ],
-        outputdestination: str,
+        *,
+        output_destination: Path,
         title: str = "Instance Group",
-        overwrite: bool = False,
     ):
         r"""
-        Static method to take a list of `InstanceGroup`\ s and turns each one into an indivual page
+        Method to take a list of `InstanceGroup`\ s and turns each one into an individual page
         
         Given a list of InstanceGroups and an output directory of *outputdestination* along with 
         a *title* for the pages the generator loops through each group and calls the internal 
-        method to create HTML pages. *overwrite* indicates is previously existing HTML files should
-        be overwritten or not
+        method to create HTML pages.
         """
-        for x in range(len(instances)):  # pylint:disable=consider-using-enumerate
-            CurriculumToHtml._generate(
-                instance=instances[x],
-                outputdestination=f"{outputdestination}{title}{x}.html",
-                title=title + f" {x}",
-                overwrite=overwrite,
+        for (idx, instance_group) in enumerate(instance_groups):
+            CurriculumToHtmlDumper._dump_instance_group(
+                instance=instance_group,
+                output_destination=output_destination.joinpath(f"{title}{idx}.html"),
+                title=f"{title} {idx}",
             )
 
     @staticmethod
-    def _generate(
+    def _dump_instance_group(
         instance: InstanceGroup[
             HighLevelSemanticsSituation,
             LinearizedDependencyTree,
             DevelopmentalPrimitivePerceptionFrame,
         ],
         title: str,
-        overwrite: bool,
-        outputdestination: str,
+        output_destination: Path,
     ):
         """
         Internal generation method for individual instance groups into HTML pages
@@ -66,119 +65,113 @@ class CurriculumToHtml:
         creates an html page at the given *outputdestination* and *title*. If the file already
         exists and *overwrite* is set to False an error is raised in execution. Each page turns an
         instance group with each "instance" as an indiviudal section on the page.
-
-        No returns
-
         """
-        if os.path.isfile(outputdestination) and not overwrite:
-            raise RuntimeError(f"Not able to create new HTML file in {outputdestination}")
-        html = open(outputdestination, "w")
-        html.write(f"<h1>{title} - {instance.name()}</h1>\n")
-        instance_number = 0
-        for inst in instance.instances():
-            if not isinstance(inst[0], HighLevelSemanticsSituation):
-                raise RuntimeError(
-                    f"Expected the Situation to be HighLevelSemanticsSituation got {type(inst[0])}"
+        with open(output_destination, "w") as html_out:
+            html_out.write(f"<h1>{title} - {instance.name()}</h1>\n")
+            for (instance_number, inst) in enumerate(instance.instances()):
+                if not isinstance(inst[0], HighLevelSemanticsSituation):
+                    raise RuntimeError(
+                        f"Expected the Situation to be HighLevelSemanticsSituation got {type(inst[0])}"
+                    )
+                if not isinstance(inst[1], LinearizedDependencyTree):
+                    raise RuntimeError(
+                        f"Expected the Lingustics to be LinearizedDependencyTree got {type(inst[1])}"
+                    )
+                if not (
+                    isinstance(inst[2], PerceptualRepresentation)
+                    and isinstance(
+                        inst[2].frames[0], DevelopmentalPrimitivePerceptionFrame
+                    )
+                ):
+                    raise RuntimeError(
+                        f"Expected the Perceptual Representation to contain DevelopmentalPrimitivePerceptionFrame got {type(inst[2].frames)}"
+                    )
+                html_out.write(
+                    f'<table>\n<thead>\n\t<tr>\n\t\t<th colspan="3">\n\t\t\t<h2>Scene {instance_number}</h2>\n\t\t</th>\n\t</tr>\n</thead>\n'
+                    f'<tbody>\n\t<tr>\n\t\t<td>\n\t\t\t<h3 id="situation-{instance_number}">Situation Description</h3>\n\t\t</td>\n\t\t'
+                    f'<td>\n\t\t\t<h3 id="lingustics-{instance_number}">Linguistic Descrption</h3>\n\t\t</td>\n\t\t'
+                    f'<td>\n\t\t\t<h3 id="perception-{instance_number}">Perception Description</h3>\n\t\t</td>\n\t</tr>\n\t<tr>'
                 )
-            if not isinstance(inst[1], LinearizedDependencyTree):
-                raise RuntimeError(
-                    f"Expected the Lingustics to be LinearizedDependencyTree got {type(inst[1])}"
-                )
-            if not isinstance(inst[2], PerceptualRepresentation) and not isinstance(
-                inst[2].frames, DevelopmentalPrimitivePerceptionFrame
-            ):
-                raise RuntimeError(
-                    f"Expected the Perceptual Representation to contain DevelopmentalPrimitivePerceptionFrame got {type(inst[2].frames)}"
-                )
-            html.write(
-                f'<table>\n<thead><tr><th colspan="3"><h2>Scene {instance_number}</h2>\n</th></tr></thead>'
-                f'<tbody><tr><td><h3 id="situation{instance_number}">Situation Description</h3></td>'
-                f'<td><h3 id="lingustics{instance_number}">Linguistic Descrption</h3></td>'
-                f'<td><h3 id="perception{instance_number}">Perception Description</h3></td></tr>\n<tr>'
-            )
-            html.writelines(CurriculumToHtml._situationtext(inst[0]))
-            html.writelines(CurriculumToHtml._linguistictext(inst[1]))
-            html.writelines(CurriculumToHtml._perceptiontext(inst[2]))
-            html.write("</tr></tbody>")
-            instance_number = instance_number + 1
-        html.close()
+                html_out.writelines(CurriculumToHtmlDumper._situation_text(inst[0]))
+                html_out.writelines(CurriculumToHtmlDumper._linguistic_text(inst[1]))
+                html_out.writelines(CurriculumToHtmlDumper._perception_text(inst[2]))
+                html_out.write("</tr></tbody>")
 
     @staticmethod
-    def _situationtext(situation: HighLevelSemanticsSituation):
+    def _situation_text(situation: HighLevelSemanticsSituation) -> [str]:
         """
         Converts a situation description into its sub-parts as a table entry
-
-        Receiving a `HighLevelSemanticsSituation` the objects, actions, and relations are displayed
-        in a table entry. Returns a List[str]
-
         """
-        outputtext = [f"<td>\n", "<h4>Objects</h4>\n<ul>"]
+        output_text = [f"\t\t<td>\n\t\t\t<h4>Objects</h4>\n\t\t\t<ul>"]
         for obj in situation.objects:
-            outputtext.append(f"<li>{obj.ontology_node.handle}</li>")
+            output_text.append(f"\t\t\t\t<li>{obj.ontology_node.handle}</li>")
             # Reintroduce Properties as [] around the object
-            # outputtext.append(f"<li>Properties:\n<ul>")
+            # output_text.append(f"<li>Properties:\n<ul>")
             # for prop in obj.properties:
-            #    outputtext.append(f"<li>{prop.handle}</li>")
-            # outputtext.append("</ul></li>")
-        outputtext.append("</ul>")
-        if not situation.actions:
-            outputtext.append("<h4>Actions</h4>\n<ul>")
+            #    output_text.append(f"<li>{prop.handle}</li>")
+            # output_text.append("</ul></li>")
+        output_text.append("\t\t\t</ul>")
+        if situation.actions:
+            output_text.append("\t\t\t<h4>Actions</h4>\n\t\t\t\t<ul>")
             for acts in situation.actions:
-                outputtext.append(f"<li>{acts.action_type.handle}</li>")
-            outputtext.append("</ul>")
-        if not situation.relations:
-            outputtext.append("<h4>Relations</h4>\n<ul>")
+                output_text.append(f"\t\t\t\t<li>{acts.action_type.handle}</li>")
+            output_text.append("\t\t\t</ul>")
+        if situation.relations:
+            output_text.append("\t\t\t<h4>Relations</h4>\n\t\t\t<ul>")
             for rel in situation.relations:
-                outputtext.append(
-                    f"<li>{rel.relation_type.handle}({rel.first_slot.ontology_node.handle},{rel.second_slot.ontology_node.handle})</li>"
+                output_text.append(
+                    f"\t\t\t\t<li>{rel.relation_type.handle}({rel.first_slot.ontology_node.handle},{rel.second_slot.ontology_node.handle})</li>"
                 )
-            outputtext.append("</ul>")
-        outputtext.append("</td>")
-        return outputtext
+            output_text.append("\t\t\t</ul>")
+        output_text.append("\t\t</td>")
+        return output_text
 
     @staticmethod
-    def _perceptiontext(
+    def _perception_text(
         perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]
-    ):
+    ) -> [str]:
         """
         Turns a perception into a list of items in the perceptions frames.
-
-        Given a `PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]` the information
-        within is converted into a table entry with headings for the informaiton contained within
-        the example. Returns a List[str]
-
         """
-        outputtext = [f"<td>"]
+        output_text = [f"\t\t<td>"]
         frame_number = 0
         for frame in perception.frames:
-            outputtext.append(f"<h4>Frame {frame_number}</h4>")
-            outputtext.append("<h5>Perceived Objects</h5>\n<ul>")
+            output_text.append(f"\t\t\t<h4>Frame {frame_number}</h4>")
+            output_text.append("\t\t\t\t<h5>Perceived Objects</h5>\n\t\t\t\t<ul>")
             for obj in frame.perceived_objects:
-                outputtext.append(f"<li>{obj.debug_handle}</li>")
-            outputtext.append("</ul>")
-            if not frame.property_assertions:
-                outputtext.append("<h5>Property Assertions</h5>\n<ul>")
+                output_text.append(f"\t\t\t\t\t<li>{obj.debug_handle}</li>")
+            output_text.append("\t\t\t\t</ul>")
+            if frame.property_assertions:
+                output_text.append("\t\t\t\t<h5>Property Assertions</h5>\n\t\t\t\t<ul>")
                 for prop in frame.property_assertions:
-                    outputtext.append(f"<li>{prop}")
-                outputtext.append("</ul>")
-            if not frame.relations:
-                outputtext.append("<h5>Relations</h5>\n<ul>")
+                    output_text.append(f"\t\t\t\t\t<li>{prop}")
+                output_text.append("\t\t\t\t</ul>")
+            if frame.relations:
+                output_text.append("\t\t\t\t<h5>Relations</h5>\n\t\t\t\t<ul>")
                 for rel in frame.relations:
-                    outputtext.append(
-                        f"<li>{rel.relation_type.handle}({rel.arg1},{rel.arg2})"
+                    output_text.append(
+                        f"\t\t\t\t\t<li>{rel.relation_type.handle}({rel.arg1},{rel.arg2})"
                     )
-                outputtext.append("</ul>")
+                output_text.append("\t\t\t\t</ul>")
             frame_number = frame_number + 1
-        outputtext.append("</td>")
-        return outputtext
+        output_text.append("\t\t</td>")
+        return output_text
 
     @staticmethod
-    def _linguistictext(linguistic: LinearizedDependencyTree):
+    def _linguistic_text(linguistic: LinearizedDependencyTree) -> [str]:
         """
         Parses the Linguistic Description of a Linearized Dependency Tree into a table entry
 
         Takes a `LinearizedDependencyTree` which is turned into a token sequence and
         phrased as a sentence for display. Returns a List[str]
         """
-        outputtext = [f"<td>", " ".join(linguistic.as_token_sequence()), "</td>"]
-        return outputtext
+        return [f"\t\t<td>", " ".join(linguistic.as_token_sequence()), "\t\t</td>"]
+
+
+def main(params: Parameters):
+    curriculum_dumper = CurriculumToHtmlDumper()
+    curriculum_dumper.dump_to_html(
+        GAILA_PHASE_1_CURRICULUM,
+        output_destination=params.get("output_directory", Path),
+        title="GAILA PHASE 1 CURRICULUM",
+    )
