@@ -30,7 +30,15 @@ class CurriculumToHtml:
         outputdestination: str,
         title: str = "Instance Group",
         overwrite: bool = False,
-    ) -> int:
+    ):
+        r"""
+        Static method to take a list of `InstanceGroup`\ s and turns each one into an indivual page
+        
+        Given a list of InstanceGroups and an output directory of *outputdestination* along with 
+        a *title* for the pages the generator loops through each group and calls the internal 
+        method to create HTML pages. *overwrite* indicates is previously existing HTML files should
+        be overwritten or not
+        """
         for x in range(len(instances)):  # pylint:disable=consider-using-enumerate
             CurriculumToHtml._generate(
                 instance=instances[x],
@@ -38,7 +46,6 @@ class CurriculumToHtml:
                 title=title + f" {x}",
                 overwrite=overwrite,
             )
-        return 1
 
     @staticmethod
     def _generate(
@@ -50,18 +57,21 @@ class CurriculumToHtml:
         title: str,
         overwrite: bool,
         outputdestination: str,
-    ) -> int:
+    ):
         """
+        Internal generation method for individual instance groups into HTML pages
 
-        Args:
-            overwrite:
-            title:
+        Given an `InstanceGroup` with a `HighLevelSemanticsSituation`,
+        `LinearizedDependencyTree`, and `DevelopmentalPrimitivePerceptionFrame` this function
+        creates an html page at the given *outputdestination* and *title*. If the file already
+        exists and *overwrite* is set to False an error is raised in execution. Each page turns an
+        instance group with each "instance" as an indiviudal section on the page.
 
-        Returns:
+        No returns
 
         """
         if os.path.isfile(outputdestination) and not overwrite:
-            return 1
+            raise RuntimeError(f"Not able to create new HTML file in {outputdestination}")
         html = open(outputdestination, "w")
         html.write(f"<h1>{title} - {instance.name()}</h1>\n")
         instance_number = 0
@@ -92,13 +102,14 @@ class CurriculumToHtml:
             html.write("</tr></tbody>")
             instance_number = instance_number + 1
         html.close()
-        return 0
 
     @staticmethod
     def _situationtext(situation: HighLevelSemanticsSituation):
         """
+        Converts a situation description into its sub-parts as a table entry
 
-        Returns:
+        Receiving a `HighLevelSemanticsSituation` the objects, actions, and relations are displayed
+        in a table entry. Returns a List[str]
 
         """
         outputtext = [f"<td>\n", "<h4>Objects</h4>\n<ul>"]
@@ -130,8 +141,11 @@ class CurriculumToHtml:
         perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]
     ):
         """
+        Turns a perception into a list of items in the perceptions frames.
 
-        Returns:
+        Given a `PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]` the information
+        within is converted into a table entry with headings for the informaiton contained within
+        the example. Returns a List[str]
 
         """
         outputtext = [f"<td>"]
@@ -161,9 +175,10 @@ class CurriculumToHtml:
     @staticmethod
     def _linguistictext(linguistic: LinearizedDependencyTree):
         """
+        Parses the Linguistic Description of a Linearized Dependency Tree into a table entry
 
-        Returns:
-
+        Takes a `LinearizedDependencyTree` which is turned into a token sequence and
+        phrased as a sentence for display. Returns a List[str]
         """
         outputtext = [f"<td>", " ".join(linguistic.as_token_sequence()), "</td>"]
         return outputtext
