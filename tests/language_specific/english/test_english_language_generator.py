@@ -14,6 +14,7 @@ from adam.ontology.phase1_ontology import (
     PUSH,
     TABLE,
     THEME,
+    BOX,
     WATER,
 )
 from adam.random_utils import FixedIndexChooser
@@ -51,6 +52,39 @@ def test_proper_noun():
     assert only(
         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
     ).as_token_sequence() == ("Mom",)
+
+
+def test_one_object():
+    box = SituationObject(BOX)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY, objects=[box]
+    )
+    assert only(
+        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
+    ).as_token_sequence() == ("a", "box")
+
+
+def test_two_objects():
+    box_1 = SituationObject(BOX)
+    box_2 = SituationObject(BOX)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY, objects=[box_1, box_2]
+    )
+    assert only(
+        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
+    ).as_token_sequence() == ("two", "boxes")
+
+
+def test_many_objects():
+    ball_1 = SituationObject(BALL)
+    ball_2 = SituationObject(BALL)
+    ball_3 = SituationObject(BALL)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY, objects=[ball_1, ball_2, ball_3]
+    )
+    assert only(
+        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
+    ).as_token_sequence() == ("many", "balls")
 
 
 def test_simple_verb():
