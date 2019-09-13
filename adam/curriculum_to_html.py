@@ -175,7 +175,7 @@ def main(params: Parameters) -> None:
     curriculum_dumper = CurriculumToHtmlDumper()
     curriculum_dumper.dump_to_html(
         GAILA_PHASE_1_CURRICULUM,
-        output_destination=params.creatableDirectory("output_directory"),
+        output_destination=params.creatable_directory("output_directory"),
         title="GAILA PHASE 1 CURRICULUM",
     )
 
