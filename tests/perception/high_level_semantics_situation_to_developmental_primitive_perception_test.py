@@ -1,26 +1,21 @@
-from adam.ontology.phase1_ontology import (
-    BALL,
-    GAILA_PHASE_1_ONTOLOGY,
-    PERSON,
-    RED,
-    PUT,
-    AGENT,
-    THEME,
-    DESTINATION,
-    MOM,
-    TABLE,
-    ON,
-)
+import pytest
+from more_itertools import quantify
+
+from adam.ontology import OntologyNode
+from adam.ontology.phase1_ontology import AGENT, BALL, DESTINATION, GAILA_PHASE_1_ONTOLOGY, \
+    IS_LEARNER, IS_SPEAKER, JUICE, LEARNER, LIQUID, PERSON, PUT, RED, TABLE, THEME
 from adam.perception.developmental_primitive_perception import (
-    PropertyPerception,
+    DevelopmentalPrimitivePerceptionFrame,
     HasBinaryProperty,
     HasColor,
+    PropertyPerception,
 )
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
+    TooManySpeakersException,
 )
 from adam.random_utils import RandomChooser
-from adam.situation import SituationObject, SituationAction, SituationRelation
+from adam.situation import SituationAction, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 
 _PERCEPTION_GENERATOR = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
@@ -138,3 +133,63 @@ def test_person_put_ball_on_table():
     assert "contacts(ball_0, table_0)" in {
         f"{r.relation_type}({r.arg1}, {r.arg2})" for r in second_frame_relations
     }
+
+def _some_object_has_binary_property(
+    perception_frame: DevelopmentalPrimitivePerceptionFrame, query_property: OntologyNode
+) -> bool:
+    return (
+        quantify(
+            isinstance(property_assertion, HasBinaryProperty)
+            and property_assertion.binary_property == query_property
+            for property_assertion in perception_frame.property_assertions
+        )
+        > 0
+    )
+
+
+def test_speaker_perceivable():
+    speaker_situation_perception = _PERCEPTION_GENERATOR.generate_perception(
+        HighLevelSemanticsSituation(
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+            objects=[SituationObject(PERSON, [IS_SPEAKER])],
+        ),
+        chooser=RandomChooser.for_seed(0),
+    )
+    assert _some_object_has_binary_property(
+        speaker_situation_perception.frames[0], IS_SPEAKER
+    )
+
+
+def test_not_two_speakers():
+    with pytest.raises(TooManySpeakersException):
+        _PERCEPTION_GENERATOR.generate_perception(
+            HighLevelSemanticsSituation(
+                ontology=GAILA_PHASE_1_ONTOLOGY,
+                objects=[
+                    SituationObject(PERSON, [IS_SPEAKER]),
+                    SituationObject(PERSON, [IS_SPEAKER]),
+                ],
+            ),
+            chooser=RandomChooser.for_seed(0),
+        )
+
+
+def test_liquid_perceivable():
+    juice_perception = _PERCEPTION_GENERATOR.generate_perception(
+        HighLevelSemanticsSituation(
+            ontology=GAILA_PHASE_1_ONTOLOGY, objects=[SituationObject(JUICE)]
+        ),
+        chooser=RandomChooser.for_seed(0),
+    ).frames[0]
+    assert _some_object_has_binary_property(juice_perception, LIQUID)
+
+
+def test_learner_perceivable():
+    learner_perception = _PERCEPTION_GENERATOR.generate_perception(
+        HighLevelSemanticsSituation(
+            ontology=GAILA_PHASE_1_ONTOLOGY, objects=[SituationObject(LEARNER)]
+        ),
+        chooser=RandomChooser.for_seed(0),
+    ).frames[0]
+
+    assert _some_object_has_binary_property(learner_perception, IS_LEARNER)

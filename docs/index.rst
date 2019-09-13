@@ -106,6 +106,10 @@ adam.situation.templates
 -----------------------------
 .. automodule:: adam.situation.templates
 
+adam.situation.templates.phase1_templates
+------------------------------------------
+.. automodule: adam.situation.templates.phase1_templates
+
 adam.experiment
 -----------------------------
 .. automodule:: adam.experiment
@@ -114,9 +118,21 @@ adam.experiment
 Supporting classes: Situations
 ******************************************
 
+adam.situation.high_level_semantics_situation
+-----------------------------------------------
+.. automodule:: adam.situation.high_level_semantics_situation
+
+******************************************
+Supporting classes: Ontologies
+******************************************
+
 adam.ontology
 -----------------------------
 .. automodule:: adam.ontology
+
+adam.ontology.ontology
+-----------------------------
+.. automodule:: adam.ontology.ontology
 
 adam.language.ontology_dictionary
 -------------------------------------
@@ -159,12 +175,17 @@ adam.perception.marr
 .. automodule:: adam.perception.marr
 
 *********************************************
-Supporting classes: Experiments
+Supporting classes: Curricula
 *********************************************
 
-adam.experiment.instance_group
--------------------------------------
-.. automodule:: adam.experiment.instance_group
+adam.curriculum
+----------------------------------
+.. automodule:: adam.curriculum
+
+
+*********************************************
+Supporting classes: Experiments
+*********************************************
 
 adam.experiment.observer
 -----------------------------
@@ -198,6 +219,9 @@ adam.language_specific.english.english_phase_1_lexicon
 ------------------------------------------------------
 .. automodule:: adam.language_specific.english.english_phase_1_lexicon
 
+adam.curriculum.phase1_curriculum
+----------------------------------
+.. automodule:: adam.curriculum.phase1_curriculum
 
 *********************************************
 Language-Specific

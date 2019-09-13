@@ -1,39 +1,34 @@
-from typing import Dict, List, Optional, Tuple, cast
-
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
-from immutablecollections import (
-    ImmutableDict,
-    immutabledict,
-    ImmutableSet,
-    ImmutableSetMultiDict,
-)
-from more_itertools import only
+from immutablecollections import ImmutableDict, ImmutableSet, ImmutableSetMultiDict, immutabledict
+from more_itertools import only, quantify
+from typing import Dict, List, Optional, Tuple, cast
 from vistautils.preconditions import check_arg
 
-from adam.ontology import ObjectStructuralSchema, SubObject, OntologyNode
+from adam.ontology import ObjectStructuralSchema, OntologyNode, SubObject
 from adam.ontology.action_description import ActionDescription
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
-    PART_OF,
-    PERCEIVABLE,
     BINARY,
     COLOR,
     COLORS_TO_RGBS,
     GAILA_PHASE_1_ONTOLOGY,
+    IS_SPEAKER,
+    PART_OF,
+    PERCEIVABLE,
 )
 from adam.perception import PerceptualRepresentation, PerceptualRepresentationGenerator
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
-    ObjectPerception,
-    RelationPerception,
-    PropertyPerception,
     HasBinaryProperty,
-    RgbColorPerception,
     HasColor,
+    ObjectPerception,
+    PropertyPerception,
+    RelationPerception,
+    RgbColorPerception,
 )
 from adam.random_utils import SequenceChooser
-from adam.situation import SituationObject, SituationRelation, SituationNode
+from adam.situation import SituationObject, SituationRelation
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 
 
@@ -139,6 +134,8 @@ class _PerceptionGeneration:
 
     @property
     def do(self) -> PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]:
+        self._sanity_check_situation()
+
         # The first step is to determine what objects are perceived.
         self._perceive_objects()
 
@@ -168,6 +165,19 @@ class _PerceptionGeneration:
         )
 
         return PerceptualRepresentation(frames=(first_frame, second_frame))
+
+    def _sanity_check_situation(self) -> None:
+        if (
+            quantify(
+                property_ == IS_SPEAKER
+                for object_ in self._situation.objects
+                for property_ in object_.properties
+            )
+            > 1
+        ):
+            raise TooManySpeakersException(
+                f"Situations with multiple speakers are not supported: {self._situation}"
+            )
 
     def _perceive_action(self) -> Tuple[List[RelationPerception], ...]:
         # Extract relations from action
@@ -284,7 +294,7 @@ class _PerceptionGeneration:
                         perceived_property: PropertyPerception = HasBinaryProperty(
                             perceived_object, property_
                         )
-                    elif COLOR in attributes_of_property:
+                    elif self._generator.ontology.is_subtype_of(property_, COLOR):
                         # Sample an RGB value for the color property and generate perception for it
                         if property_ in COLORS_TO_RGBS:
                             r, g, b = self._chooser.choice(COLORS_TO_RGBS[property_])
@@ -296,7 +306,6 @@ class _PerceptionGeneration:
                                 f"Not sure how to generate perception for the unknown property {property_} "
                                 f"which is marked as COLOR"
                             )
-
                     else:
                         raise RuntimeError(
                             f"Not sure how to generate perception for property {property_} "
@@ -313,9 +322,9 @@ class _PerceptionGeneration:
                 )
             # these are the possible internal structures of objects of this type
             # that the ontology is aware of.
-            object_schemata = self._generator.ontology.structural_schemata[
+            object_schemata = self._generator.ontology.structural_schemata(
                 situation_object.ontology_node
-            ]
+            )
             if not object_schemata:
                 raise RuntimeError(f"No structural schema found for {situation_object}")
             if len(object_schemata) > 1:
@@ -378,3 +387,13 @@ class _PerceptionGeneration:
                 )
             )
         return root_object_perception
+
+
+GAILA_PHASE_1_PERCEPTION_GENERATOR = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
+    GAILA_PHASE_1_ONTOLOGY
+)
+
+
+@attrs(auto_exc=True, auto_attribs=True)
+class TooManySpeakersException(RuntimeError):
+    msg: str

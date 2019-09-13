@@ -19,7 +19,7 @@ from adam.language.language_generator import SituationT
 from adam.learner import LanguageLearner, LearningExample
 from adam.perception import PerceptionT
 from adam.random_utils import SequenceChooser
-from adam.experiment.instance_group import InstanceGroup
+from adam.curriculum import InstanceGroup
 from adam.experiment.observer import DescriptionObserver
 
 

@@ -204,7 +204,7 @@ nitpick_ignore = [('py:class', 'typing.Mapping'),
 
                   # pending https://github.com/isi-vista/immutablecollections/issues/60
                   ("py:class", "immutablecollections._immutableset.ImmutableSet"),
-                  ("py:class", "HierarchicalObjectSchema"),
+                  ("py:class", "HierarchicalObjectSchema")
                   ]
 
 intersphinx_mapping = {

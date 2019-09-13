@@ -1,22 +1,20 @@
 from adam.ontology.phase1_ontology import (
-    GAILA_PHASE_1_ONTOLOGY,
-    MOM,
-    DAD,
-    SENTIENT,
-    SUPPORTS,
-    CONTACTS,
     ABOVE,
     BELOW,
+    CONTACTS,
+    IS_DAD,
+    IS_MOM,
+    SENTIENT,
+    SUPPORTS,
 )
 from adam.perception import PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
-    ObjectPerception,
     HasBinaryProperty,
-    RgbColorPerception,
     HasColor,
+    ObjectPerception,
     RelationPerception,
-    IsRecognizedParticular,
+    RgbColorPerception,
 )
 from adam.perception.perception_frame_difference import diff_primitive_perception_frames
 
@@ -32,8 +30,8 @@ def test_recognized_particular():
             property_assertions=[
                 HasBinaryProperty(mom, SENTIENT),
                 HasBinaryProperty(dad, SENTIENT),
-                IsRecognizedParticular(mom, MOM, ontology=GAILA_PHASE_1_ONTOLOGY),
-                IsRecognizedParticular(dad, DAD, ontology=GAILA_PHASE_1_ONTOLOGY),
+                HasBinaryProperty(mom, IS_MOM),
+                HasBinaryProperty(dad, IS_DAD),
             ],
         )
     )
