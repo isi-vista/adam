@@ -146,7 +146,7 @@ class _PerceptionGeneration:
         # https://github.com/isi-vista/adam/issues/85
         self._perceive_property_assertions()
 
-        if len(self._situation.actions) <= 0:
+        if not self._situation.actions:
             return PerceptualRepresentation.single_frame(
                 DevelopmentalPrimitivePerceptionFrame(
                     perceived_objects=self._object_perceptions,
@@ -171,35 +171,42 @@ class _PerceptionGeneration:
 
     def _perceive_action(self) -> Tuple[List[RelationPerception], ...]:
         # Extract relations from action
-        situation_action = list(self._situation.actions)[0]
+        situation_action = self._situation.actions[0]
+        # TODO: Handle multiple actions
+        if len(self._situation.actions) > 1:
+            raise RuntimeError("Cannot handle multiple situation actions")
+
         # e.g: SituationAction(PUT, ((AGENT, mom),(THEME, ball),(DESTINATION, SituationRelation(ON, ball, table))))
         # Get description from PUT (PUT is action_type)
         action_description: ActionDescription = GAILA_PHASE_1_ONTOLOGY.action_to_description[
             situation_action.action_type
         ]
-        # Dict of AGENT (ont node): mom etc (sit obj)
         if any(
             not isinstance(filler, SituationObject)
             for fillers in situation_action.argument_roles_to_fillers.value_groups()
             for filler in fillers
         ):
             raise RuntimeError("Cant translate non situation objects yet")
+
+        # Dictionary of AGENT (ont node): mom etc (sit obj)
         action_roles_to_fillers = cast(
             ImmutableSetMultiDict[OntologyNode, SituationObject],
             situation_action.argument_roles_to_fillers,
         )
 
-        # TODO: Handle finding manipulator
+        # TODO: Handle finding manipulator issue #122
 
         before_relations = self._get_relations_from_condition(
             conditions=action_description.preconditions,
             action_description=action_description,
             action_roles_to_fillers=action_roles_to_fillers,
+            already_known_relations=self._relation_perceptions,
         )
         after_relations = self._get_relations_from_condition(
             conditions=action_description.postconditions,
             action_description=action_description,
             action_roles_to_fillers=action_roles_to_fillers,
+            already_known_relations=before_relations,
         )
 
         return before_relations, after_relations
@@ -209,53 +216,52 @@ class _PerceptionGeneration:
         conditions: ImmutableSet[SituationRelation],
         action_description: ActionDescription,
         action_roles_to_fillers: ImmutableSetMultiDict[OntologyNode, SituationObject],
+        already_known_relations=[],
     ):
-        # TODO: Handle multiple frames (i.e. "mom moved" vs "mom moved the box")
         entities_to_roles = action_description.frames[0].entities_to_roles
         for condition in conditions:  # each one is a SituationRelation
-            relation_type, first_slot, second_slot, negated = (
-                condition.relation_type,
-                condition.first_slot,
-                condition.second_slot,
-                condition.negated,
-            )
 
             # TODO: Handle multiple semantic roles
-            if (
-                len(entities_to_roles[first_slot]) > 1
-                or len(action_roles_to_fillers[list(entities_to_roles[first_slot])[0]])
-                > 1
-            ):
-                raise RuntimeError("Can not handle multiple semantic roles")
-            situation_object_1 = list(
-                action_roles_to_fillers[list(entities_to_roles[first_slot])[0]]
-            )[
-                0
-            ]  # e.g. mom
+            for entity in (condition.first_slot, condition.second_slot):
+                if len(entities_to_roles[entity]) > 1:
+                    raise RuntimeError(
+                        "Don't yet handle multiple semantic roles for the same entity"
+                    )
 
-            if (
-                len(entities_to_roles[second_slot]) > 1
-                or len(action_roles_to_fillers[list(entities_to_roles[second_slot])[0]])
-                > 1
-            ):
-                raise RuntimeError("Can not handle multiple semantic roles")
-            situation_object_2 = list(
-                action_roles_to_fillers[list(entities_to_roles[second_slot])[0]]
-            )[
-                0
-            ]  # e.g. ball
+            for fillers in action_roles_to_fillers.value_groups():
+                if len(fillers) > 1:
+                    raise RuntimeError(
+                        "Don't yet handle multiple fillers for the same semantic role"
+                    )
+            first_relation_slot_filler_role_in_action = only(
+                entities_to_roles[condition.first_slot]
+            )
+            situation_object_1 = only(
+                action_roles_to_fillers[first_relation_slot_filler_role_in_action]
+            )
+            second_relation_slot_filler_role_in_action = only(
+                entities_to_roles[condition.second_slot]
+            )
+            situation_object_2 = only(
+                action_roles_to_fillers[second_relation_slot_filler_role_in_action]
+            )
 
             perception_1 = self._objects_to_perceptions[situation_object_1]
             perception_2 = self._objects_to_perceptions[situation_object_2]
             relation_perception = RelationPerception(
-                relation_type=relation_type, arg1=perception_1, arg2=perception_2
+                relation_type=condition.relation_type,
+                arg1=perception_1,
+                arg2=perception_2,
             )
 
-            # TODO: Implement negation
-            if not negated:
-                self._relation_perceptions.append(relation_perception)
+            # TODO: Implement negation issue #121
+            relations = [
+                relation for relation in already_known_relations
+            ]  # build on already known relations
+            if not condition.negated:
+                relations.append(relation_perception)
 
-        return self._relation_perceptions.copy()
+        return relations
 
     def _perceive_property_assertions(self) -> None:
         for situation_object in self._situation.objects:

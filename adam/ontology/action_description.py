@@ -36,6 +36,9 @@ class ActionDescriptionFrame:
 
 @attrs(frozen=True, slots=True)
 class ActionDescription:
+    # Frames: a set of action description frames each of which carries information about the mappings
+    # between general semantic roles and to entities specific to the action
+    # e.g. AGENT -> _PUT_AGENT (PUT_AGENT would carry action-specific info, and 'mom ' would be an instance of it.
     frames: ImmutableSet[ActionDescriptionFrame] = attrib(
         converter=_to_immutableset, default=immutableset(), kw_only=True
     )
