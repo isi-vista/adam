@@ -9,6 +9,7 @@ from adam.ontology.phase1_ontology import (
     PERSON,
     RED,
     LIQUID,
+    JUICE,
 )
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -141,6 +142,7 @@ def test_not_two_speakers():
             ),
             chooser=RandomChooser.for_seed(0),
         )
+
 
 def test_liquid_perceivable():
     juice_perception = _PERCEPTION_GENERATOR.generate_perception(

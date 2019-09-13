@@ -153,11 +153,13 @@ class _PerceptionGeneration:
         )
 
     def _sanity_check_situation(self) -> None:
-        if quantify(
-            isinstance(property_, HasBinaryProperty)
-            and property_.binary_property == IS_SPEAKER
-            for object_ in self._situation.objects
-            for property_ in object_.properties
+        if (
+            quantify(
+                property_ == IS_SPEAKER
+                for object_ in self._situation.objects
+                for property_ in object_.properties
+            )
+            > 1
         ):
             raise TooManySpeakersException(
                 f"Situations with multiple speakers are not supported: {self._situation}"
@@ -284,6 +286,6 @@ GAILA_PHASE_1_PERCEPTION_GENERATOR = HighLevelSemanticsSituationToDevelopmentalP
 )
 
 
-@attrs(auto_exc=True)
+@attrs(auto_exc=True, auto_attribs=True)
 class TooManySpeakersException(RuntimeError):
-    pass
+    msg: str
