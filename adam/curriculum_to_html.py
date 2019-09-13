@@ -3,6 +3,7 @@ from typing import Iterable
 
 from attr import attrs
 from vistautils.parameters import Parameters
+from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 
 from adam.curriculum.phase1_curriculum import GAILA_PHASE_1_CURRICULUM
 from adam.experiment import InstanceGroup
@@ -42,14 +43,15 @@ class CurriculumToHtmlDumper:
         """
         for (idx, instance_group) in enumerate(instance_groups):
             CurriculumToHtmlDumper._dump_instance_group(
-                instance=instance_group,
+                self,
+                instance_group=instance_group,
                 output_destination=output_destination.joinpath(f"{title}{idx}.html"),
                 title=f"{title} {idx}",
             )
 
-    @staticmethod
     def _dump_instance_group(
-        instance: InstanceGroup[
+        self,
+        instance_group: InstanceGroup[
             HighLevelSemanticsSituation,
             LinearizedDependencyTree,
             DevelopmentalPrimitivePerceptionFrame,
@@ -67,8 +69,8 @@ class CurriculumToHtmlDumper:
         instance group with each "instance" as an indiviudal section on the page.
         """
         with open(output_destination, "w") as html_out:
-            html_out.write(f"<h1>{title} - {instance.name()}</h1>\n")
-            for (instance_number, inst) in enumerate(instance.instances()):
+            html_out.write(f"<h1>{title} - {instance_group.name()}</h1>\n")
+            for (instance_number, inst) in enumerate(instance_group.instances()):
                 if not isinstance(inst[0], HighLevelSemanticsSituation):
                     raise RuntimeError(
                         f"Expected the Situation to be HighLevelSemanticsSituation got {type(inst[0])}"
@@ -92,13 +94,16 @@ class CurriculumToHtmlDumper:
                     f'<td>\n\t\t\t<h3 id="lingustics-{instance_number}">Linguistic Descrption</h3>\n\t\t</td>\n\t\t'
                     f'<td>\n\t\t\t<h3 id="perception-{instance_number}">Perception Description</h3>\n\t\t</td>\n\t</tr>\n\t<tr>'
                 )
-                html_out.writelines(CurriculumToHtmlDumper._situation_text(inst[0]))
-                html_out.writelines(CurriculumToHtmlDumper._linguistic_text(inst[1]))
-                html_out.writelines(CurriculumToHtmlDumper._perception_text(inst[2]))
+                html_out.writelines(CurriculumToHtmlDumper._situation_text(self, inst[0]))
+                html_out.writelines(
+                    CurriculumToHtmlDumper._linguistic_text(self, inst[1])
+                )
+                html_out.writelines(
+                    CurriculumToHtmlDumper._perception_text(self, inst[2])
+                )
                 html_out.write("</tr></tbody>")
 
-    @staticmethod
-    def _situation_text(situation: HighLevelSemanticsSituation) -> Iterable[str]:
+    def _situation_text(self, situation: HighLevelSemanticsSituation) -> Iterable[str]:
         """
         Converts a situation description into its sub-parts as a table entry
         """
@@ -126,9 +131,8 @@ class CurriculumToHtmlDumper:
         output_text.append("\t\t</td>")
         return output_text
 
-    @staticmethod
     def _perception_text(
-        perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]
+        self, perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]
     ) -> Iterable[str]:
         """
         Turns a perception into a list of items in the perceptions frames.
@@ -157,8 +161,7 @@ class CurriculumToHtmlDumper:
         output_text.append("\t\t</td>")
         return output_text
 
-    @staticmethod
-    def _linguistic_text(linguistic: LinearizedDependencyTree) -> Iterable[str]:
+    def _linguistic_text(self, linguistic: LinearizedDependencyTree) -> Iterable[str]:
         """
         Parses the Linguistic Description of a Linearized Dependency Tree into a table entry
 
@@ -168,10 +171,18 @@ class CurriculumToHtmlDumper:
         return [f"\t\t<td>", " ".join(linguistic.as_token_sequence()), "\t\t</td>"]
 
 
-def main(params: Parameters):
+def main(params: Parameters) -> None:
     curriculum_dumper = CurriculumToHtmlDumper()
     curriculum_dumper.dump_to_html(
         GAILA_PHASE_1_CURRICULUM,
-        output_destination=params.get("output_directory", Path),
+        output_destination=params.creatableDirectory("output_directory"),
         title="GAILA PHASE 1 CURRICULUM",
     )
+
+
+USAGE_MESSAGE = (
+    "This main function only expects an output_directory location. Please provide it."
+)
+
+if __name__ == "__main__":
+    parameters_only_entry_point(main, usage_message=USAGE_MESSAGE)
