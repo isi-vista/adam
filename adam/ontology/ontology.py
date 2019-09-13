@@ -9,8 +9,13 @@ from immutablecollections import (
     ImmutableSetMultiDict,
     immutableset,
     immutablesetmultidict,
+    ImmutableDict,
+    immutabledict,
 )
-from immutablecollections.converter_utils import _to_immutablesetmultidict
+from immutablecollections.converter_utils import (
+    _to_immutablesetmultidict,
+    _to_immutabledict,
+)
 from networkx import DiGraph, dfs_preorder_nodes, simple_cycles, has_path, ancestors
 from vistautils.preconditions import check_arg
 
@@ -24,6 +29,9 @@ from adam.ontology import (
 
 
 # convenience method for use in Ontology
+from adam.ontology.action_description import ActionDescription
+
+
 def _copy_digraph(digraph: DiGraph) -> DiGraph:
     return digraph.copy()
 
@@ -52,10 +60,14 @@ class Ontology:
     _structural_schemata: ImmutableSetMultiDict[
         "OntologyNode", "ObjectStructuralSchema"
     ] = attrib(converter=_to_immutablesetmultidict, default=immutablesetmultidict())
+    action_to_description: ImmutableDict[OntologyNode, ActionDescription] = attrib(
+        converter=_to_immutabledict, default=immutabledict(), kw_only=True
+    )
 
     def __attrs_post_init__(self) -> None:
         for cycle in simple_cycles(self._graph):
             raise ValueError(f"The ontology graph may not have cycles but got {cycle}")
+
         for required_node in REQUIRED_ONTOLOGY_NODES:
             check_arg(
                 required_node in self,

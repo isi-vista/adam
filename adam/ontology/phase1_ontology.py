@@ -13,25 +13,27 @@ The following will eventually end up here:
 - Relations, Modifiers, Function Words: basic color terms (red, blue, green, white, black…), one,
   two, I, me, my, you, your, to, in, on, [beside, behind, in front of, over, under], up, down
 """
-from immutablecollections import immutableset, immutablesetmultidict
+from immutablecollections import immutabledict, immutableset, immutablesetmultidict
 from more_itertools import flatten
 
 from adam.ontology import (
-    sub_object_relations,
-    minimal_ontology_graph,
+    ABSTRACT,
+    ACTION,
+    ObjectStructuralSchema,
     OntologyNode,
     PROPERTY,
-    ABSTRACT,
-    THING,
-    ACTION,
     RELATION,
+    SubObject,
+    THING,
+    make_dsl_relation,
     make_opposite_dsl_relation,
     make_symetric_dsl_relation,
-    make_dsl_relation,
-    ObjectStructuralSchema,
-    SubObject,
+    minimal_ontology_graph,
+    sub_object_relations,
 )
+from adam.ontology.action_description import ActionDescription, ActionDescriptionFrame
 from adam.ontology.ontology import Ontology
+from adam.situation import SituationObject, SituationRelation
 
 _ontology_graph = minimal_ontology_graph()  # pylint:disable=invalid-name
 
@@ -760,6 +762,33 @@ _TRUCK_SCHEMA = ObjectStructuralSchema(
     ),
 )
 
+_PUT_AGENT = SituationObject(THING, properties=[ANIMATE])
+_PUT_THEME = SituationObject(THING)
+_PUT_GOAL = SituationObject(THING)
+_PUT_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
+
+_PUT_ACTION_DESCRIPTION = ActionDescription(
+    frames=[
+        ActionDescriptionFrame(
+            {AGENT: _PUT_AGENT, THEME: _PUT_THEME, DESTINATION: _PUT_GOAL}
+        )
+    ],
+    preconditions=[
+        SituationRelation(SMALLER_THAN, _PUT_THEME, _PUT_AGENT),
+        # TODO: that theme is not already located in GOAL
+        # SituationRelation(PART_OF, _PUT_MANIPULATOR, _PUT_AGENT),
+        # SituationRelation(CONTACTS, _PUT_MANIPULATOR, _PUT_THEME),
+        # SituationRelation(SUPPORTS, _PUT_MANIPULATOR, _PUT_THEME),
+    ],
+    postconditions=[
+        # TODO: that theme is located in GOAL
+        # SituationRelation(CONTACTS, _PUT_MANIPULATOR, _PUT_THEME, negated=True),
+        # SituationRelation(SUPPORTS, _PUT_MANIPULATOR, _PUT_THEME, negated=True),
+        SituationRelation(CONTACTS, _PUT_THEME, _PUT_GOAL)
+    ],
+)
+
+
 GAILA_PHASE_1_ONTOLOGY = Ontology(
     _ontology_graph,
     structural_schemata=immutablesetmultidict(
@@ -787,4 +816,5 @@ GAILA_PHASE_1_ONTOLOGY = Ontology(
             (TRUCK, _TRUCK_SCHEMA),
         ]
     ),
+    action_to_description=immutabledict([(PUT, _PUT_ACTION_DESCRIPTION)]),
 )
