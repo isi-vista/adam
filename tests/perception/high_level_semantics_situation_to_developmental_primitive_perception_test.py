@@ -8,6 +8,7 @@ from adam.ontology.phase1_ontology import (
     IS_SPEAKER,
     PERSON,
     RED,
+    LIQUID,
 )
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -140,3 +141,16 @@ def test_not_two_speakers():
             ),
             chooser=RandomChooser.for_seed(0),
         )
+
+def test_liquid_perceivable():
+    juice_perception = _PERCEPTION_GENERATOR.generate_perception(
+        HighLevelSemanticsSituation(
+            ontology=GAILA_PHASE_1_ONTOLOGY, objects=[SituationObject(JUICE)]
+        ),
+        chooser=RandomChooser.for_seed(0),
+    )
+    assert any(
+        isinstance(prop_assertion, HasBinaryProperty)
+        and prop_assertion.binary_property == LIQUID
+        for prop_assertion in juice_perception.frames[0].property_assertions
+    )
