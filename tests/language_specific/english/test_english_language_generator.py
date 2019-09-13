@@ -72,13 +72,26 @@ def test_simple_verb():
 
 
 def test_simple_quantifier():
-    box = SituationObject(BOX)
+    box_1 = SituationObject(BOX)
+    box_2 = SituationObject(BOX)
     situation = HighLevelSemanticsSituation(
-        ontology=GAILA_PHASE_1_ONTOLOGY, objects=[box]
+        ontology=GAILA_PHASE_1_ONTOLOGY, objects=[box_1, box_2]
     )
     assert only(
         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
     ).as_token_sequence() == ("two", "boxes")
+
+
+def test_many_nouns():
+    ball_1 = SituationObject(BALL)
+    ball_2 = SituationObject(BALL)
+    ball_3 = SituationObject(BALL)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY, objects=[ball_1, ball_2, ball_3]
+    )
+    assert only(
+        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
+    ).as_token_sequence() == ("many", "balls")
 
 
 def test_mom_put_a_ball_on_the_table():

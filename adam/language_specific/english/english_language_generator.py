@@ -1,4 +1,4 @@
-from typing import Mapping, MutableMapping
+from typing import Dict, Mapping, MutableMapping
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
@@ -14,10 +14,14 @@ from adam.language.dependency import (
     DependencyRole,
 )
 from adam.language.dependency.universal_dependencies import (
+    ADJECTIVAL_MODIFIER,
+    ADJECTIVE,
     DETERMINER,
     DETERMINER_ROLE,
     PROPER_NOUN,
     NOMINAL_SUBJECT,
+    NUMERAL,
+    NUMERIC_MODIFIER,
     OBJECT,
     OBLIQUE_NOMINAL,
     ADPOSITION,
@@ -96,8 +100,24 @@ class SimpleRuleBasedEnglishLanguageGenerator(
         ] = dict()
 
         def generate(self) -> ImmutableSet[LinearizedDependencyTree]:
-            for _object in self.situation.objects:
-                self._translate_object_to_noun(_object)
+            # For now, only apply quantifiers to object-only situations
+            if self.situation.actions == ImmutableSet.empty():
+                # Get number of objects of each type
+                node_counts: Dict[OntologyNode, int] = dict()
+                for _object in self.situation.objects:
+                    try:
+                        node_counts[_object.ontology_node] += 1
+                    except KeyError:
+                        node_counts.update({_object.ontology_node: 1})
+                object_counts: Dict[SituationObject, int] = dict()
+                for _object in self.situation.objects:
+                    object_counts.update({_object: node_counts[_object.ontology_node]})
+                # Use the counts to apply the appropriate quantifiers
+                for _object in object_counts:
+                    self._translate_object_to_noun(_object, object_counts[_object])
+            else:
+                for _object in self.situation.objects:
+                    self._translate_object_to_noun(_object)
 
             if len(self.situation.actions) > 1:
                 raise RuntimeError(
@@ -116,7 +136,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             )
 
         def _translate_object_to_noun(
-            self, _object: SituationObject
+            self, _object: SituationObject, count: int = 1
         ) -> DependencyTreeToken:
             if not _object.ontology_node:
                 raise RuntimeError(
@@ -128,9 +148,14 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             lexicon_entry = self._unique_lexicon_entry(
                 _object.ontology_node  # pylint:disable=protected-access
             )
-            dependency_node = DependencyTreeToken(
-                lexicon_entry.base_form, lexicon_entry.part_of_speech
-            )
+            if count > 1:
+                dependency_node = DependencyTreeToken(
+                    lexicon_entry.plural_form, lexicon_entry.part_of_speech
+                )
+            else:
+                dependency_node = DependencyTreeToken(
+                    lexicon_entry.base_form, lexicon_entry.part_of_speech
+                )
             self.dependency_graph.add_node(dependency_node)
             # we remember what dependency node goes with this object
             # so that we can link to it when e.g. it appears
@@ -142,10 +167,22 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             if (dependency_node.part_of_speech != PROPER_NOUN) and (
                 MASS_NOUN not in lexicon_entry.properties
             ):
-                determiner_node = DependencyTreeToken("a", DETERMINER)
-                self.dependency_graph.add_edge(
-                    determiner_node, dependency_node, role=DETERMINER_ROLE
-                )
+                if count == 1:
+                    determiner_node = DependencyTreeToken("a", DETERMINER)
+                    self.dependency_graph.add_edge(
+                        determiner_node, dependency_node, role=DETERMINER_ROLE
+                    )
+                elif count == 2:
+                    numeral_node = DependencyTreeToken("two", NUMERAL)
+                    self.dependency_graph.add_edge(
+                        numeral_node, dependency_node, role=NUMERIC_MODIFIER
+                    )
+                # Currently, any number of objects greater than two is considered "many"
+                else:
+                    adjective_node = DependencyTreeToken("many", ADJECTIVE)
+                    self.dependency_graph.add_edge(
+                        adjective_node, dependency_node, role=ADJECTIVAL_MODIFIER
+                    )
 
             return dependency_node
 

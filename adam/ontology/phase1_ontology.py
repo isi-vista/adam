@@ -213,17 +213,6 @@ FLY = OntologyNode("fly")
 subtype(FLY, ACTION)
 
 
-# Quantifiers
-
-QUANTIFIER = OntologyNode("quantifier")
-NUMBER = OntologyNode("number")
-subtype(NUMBER, QUANTIFIER)
-TWO = OntologyNode("two")
-subtype(TWO, NUMBER)
-MANY = OntologyNode("many")
-subtype(MANY, QUANTIFIER)
-
-
 # Relations
 # These are used both for situations and in the perceptual representation
 

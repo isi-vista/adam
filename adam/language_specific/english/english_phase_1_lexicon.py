@@ -1,10 +1,4 @@
-from adam.language.dependency.universal_dependencies import (
-    ADJECTIVE,
-    PROPER_NOUN,
-    NOUN,
-    NUMERAL,
-    VERB,
-)
+from adam.language.dependency.universal_dependencies import PROPER_NOUN, NOUN, VERB
 from adam.language.lexicon import LexiconEntry, LexiconProperty
 from adam.language.ontology_dictionary import OntologyLexicon
 from adam.ontology.phase1_ontology import (
@@ -47,8 +41,6 @@ from adam.ontology.phase1_ontology import (
     HAVE,
     ROLL,
     FLY,
-    TWO,
-    MANY,
 )
 
 MASS_NOUN = LexiconProperty("mass-noun")
@@ -94,7 +86,5 @@ GAILA_PHASE_1_ENGLISH_LEXICON = OntologyLexicon(
         (HAVE, LexiconEntry("have", VERB, verb_form_3SG_PRS="has")),
         (ROLL, LexiconEntry("roll", VERB, verb_form_3SG_PRS="rolls")),
         (FLY, LexiconEntry("fly", VERB, verb_form_3SG_PRS="flies")),
-        (TWO, LexiconEntry("two", NUMERAL)),
-        (MANY, LexiconEntry("many", ADJECTIVE)),
     )
 )
