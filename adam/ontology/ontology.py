@@ -9,8 +9,13 @@ from immutablecollections import (
     ImmutableSetMultiDict,
     immutableset,
     immutablesetmultidict,
-    ImmutableDict, immutabledict)
-from immutablecollections.converter_utils import _to_immutablesetmultidict, _to_immutabledict
+    ImmutableDict,
+    immutabledict,
+)
+from immutablecollections.converter_utils import (
+    _to_immutablesetmultidict,
+    _to_immutabledict,
+)
 from networkx import DiGraph, dfs_preorder_nodes, simple_cycles, has_path, ancestors
 from vistautils.preconditions import check_arg
 
@@ -29,6 +34,7 @@ from adam.ontology.action_description import ActionDescription
 
 def _copy_digraph(digraph: DiGraph) -> DiGraph:
     return digraph.copy()
+
 
 @attrs(frozen=True, slots=True)
 class Ontology:

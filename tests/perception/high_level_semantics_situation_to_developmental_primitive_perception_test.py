@@ -2,8 +2,22 @@ import pytest
 from more_itertools import quantify
 
 from adam.ontology import OntologyNode
-from adam.ontology.phase1_ontology import AGENT, BALL, DESTINATION, GAILA_PHASE_1_ONTOLOGY, \
-    IS_LEARNER, IS_SPEAKER, JUICE, LEARNER, LIQUID, PERSON, PUT, RED, TABLE, THEME
+from adam.ontology.phase1_ontology import (
+    AGENT,
+    BALL,
+    DESTINATION,
+    GAILA_PHASE_1_ONTOLOGY,
+    IS_LEARNER,
+    IS_SPEAKER,
+    JUICE,
+    LEARNER,
+    LIQUID,
+    PERSON,
+    PUT,
+    RED,
+    TABLE,
+    THEME,
+)
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
     HasBinaryProperty,
@@ -133,6 +147,7 @@ def test_person_put_ball_on_table():
     assert "contacts(ball_0, table_0)" in {
         f"{r.relation_type}({r.arg1}, {r.arg2})" for r in second_frame_relations
     }
+
 
 def _some_object_has_binary_property(
     perception_frame: DevelopmentalPrimitivePerceptionFrame, query_property: OntologyNode

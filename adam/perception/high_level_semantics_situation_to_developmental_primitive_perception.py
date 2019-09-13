@@ -1,6 +1,11 @@
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
-from immutablecollections import ImmutableDict, ImmutableSet, ImmutableSetMultiDict, immutabledict
+from immutablecollections import (
+    ImmutableDict,
+    ImmutableSet,
+    ImmutableSetMultiDict,
+    immutabledict,
+)
 from more_itertools import only, quantify
 from typing import Dict, List, Optional, Tuple, cast
 from vistautils.preconditions import check_arg
@@ -226,7 +231,7 @@ class _PerceptionGeneration:
         conditions: ImmutableSet[SituationRelation],
         action_description: ActionDescription,
         action_roles_to_fillers: ImmutableSetMultiDict[OntologyNode, SituationObject],
-        already_known_relations=[],
+        already_known_relations=tuple(),
     ) -> List[RelationPerception]:
         entities_to_roles = action_description.frames[0].entities_to_roles
         relations = [

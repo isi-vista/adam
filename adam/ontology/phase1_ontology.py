@@ -16,10 +16,21 @@ The following will eventually end up here:
 from immutablecollections import immutabledict, immutableset, immutablesetmultidict
 from more_itertools import flatten
 
-from adam.ontology import (ABSTRACT, ACTION, ObjectStructuralSchema, OntologyNode, PROPERTY,
-                           RELATION, SubObject, THING, make_dsl_relation,
-                           make_opposite_dsl_relation, make_symetric_dsl_relation,
-                           minimal_ontology_graph, sub_object_relations)
+from adam.ontology import (
+    ABSTRACT,
+    ACTION,
+    ObjectStructuralSchema,
+    OntologyNode,
+    PROPERTY,
+    RELATION,
+    SubObject,
+    THING,
+    make_dsl_relation,
+    make_opposite_dsl_relation,
+    make_symetric_dsl_relation,
+    minimal_ontology_graph,
+    sub_object_relations,
+)
 from adam.ontology.action_description import ActionDescription, ActionDescriptionFrame
 from adam.ontology.ontology import Ontology
 from adam.situation import SituationObject, SituationRelation

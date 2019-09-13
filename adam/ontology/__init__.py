@@ -13,6 +13,7 @@ from immutablecollections.converter_utils import _to_immutableset
 from more_itertools import flatten
 from networkx import DiGraph
 
+
 @attrs(frozen=True, slots=True, repr=False)
 class OntologyNode:
     r"""

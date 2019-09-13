@@ -1,15 +1,13 @@
-from typing import Mapping, Union
-
-from attr import attrs, attrib
+from attr import attrib, attrs
 from immutablecollections import (
-    ImmutableSet,
-    immutableset,
-    ImmutableSetMultiDict,
-    immutablesetmultidict,
     ImmutableDict,
+    ImmutableSet,
+    ImmutableSetMultiDict,
     immutabledict,
+    immutableset,
+    immutablesetmultidict,
 )
-from immutablecollections.converter_utils import _to_immutableset, _to_immutabledict
+from immutablecollections.converter_utils import _to_immutabledict, _to_immutableset
 
 from adam.ontology import OntologyNode
 from adam.situation import SituationObject, SituationRelation
