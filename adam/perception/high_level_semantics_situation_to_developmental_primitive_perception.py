@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, cast
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
@@ -178,7 +178,16 @@ class _PerceptionGeneration:
             situation_action.action_type
         ]
         # Dict of AGENT (ont node): mom etc (sit obj)
-        action_roles_to_fillers = situation_action.argument_roles_to_fillers
+        if any(
+            not isinstance(filler, SituationObject)
+            for fillers in situation_action.argument_roles_to_fillers.value_groups()
+            for filler in fillers
+        ):
+            raise RuntimeError("Cant translate non situation objects yet")
+        action_roles_to_fillers = cast(
+            ImmutableSetMultiDict[OntologyNode, SituationObject],
+            situation_action.argument_roles_to_fillers,
+        )
 
         # TODO: Handle finding manipulator
 

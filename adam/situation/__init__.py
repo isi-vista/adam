@@ -149,7 +149,7 @@ class SituationAction(SituationNode):
 
     action_type: OntologyNode = attrib(validator=instance_of(OntologyNode))
     argument_roles_to_fillers: ImmutableSetMultiDict[
-        OntologyNode, SituationObject
+        OntologyNode, SituationNode
     ] = attrib(converter=_to_immutablesetmultidict, default=immutablesetmultidict())
     r"""
     A mapping of semantic roles (given as `OntologyNode`\ s) to their fillers.
