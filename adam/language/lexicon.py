@@ -4,6 +4,8 @@ Data structures for human language words.
 These are not used by the `LanguageLearner`,
 but rather for generating the linguistic descriptions for situations.
 """
+from typing import Optional
+
 from attr import attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import ImmutableSet, immutableset
@@ -27,8 +29,8 @@ class LexiconEntry:
     properties: ImmutableSet["LexiconProperty"] = attrib(
         converter=_to_immutableset, default=immutableset()
     )
-    plural_form: str = attrib(validator=instance_of(str), default="", kw_only=True)
-    verb_form_3SG_PRS: str = attrib(validator=instance_of(str), default="", kw_only=True)
+    plural_form: Optional[str] = attrib(default=None, kw_only=True)
+    verb_form_3SG_PRS: Optional[str] = attrib(default=None, kw_only=True)
 
 
 @attrs(frozen=True, slots=True)

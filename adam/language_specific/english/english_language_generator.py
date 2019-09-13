@@ -1,4 +1,5 @@
-from typing import Dict, Mapping, MutableMapping
+import collections
+from typing import Counter, Mapping, MutableMapping
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
@@ -101,24 +102,19 @@ class SimpleRuleBasedEnglishLanguageGenerator(
 
         def generate(self) -> ImmutableSet[LinearizedDependencyTree]:
             # For now, only apply quantifiers to object-only situations
-            if self.situation.actions == ImmutableSet.empty():
-                # Get number of objects of each type
-                node_counts: Dict[OntologyNode, int] = dict()
-                for _object in self.situation.objects:
-                    try:
-                        node_counts[_object.ontology_node] += 1
-                    except KeyError:
-                        node_counts.update({_object.ontology_node: 1})
-                object_counts: Dict[SituationObject, int] = {
-                    _object: node_counts[_object.ontology_node]
-                    for _object in self.situation.objects
-                }
-                # Use the counts to apply the appropriate quantifiers
-                for _object in object_counts:
-                    self._translate_object_to_noun(_object, object_counts[_object])
-            else:
+            if self.situation.actions:
                 for _object in self.situation.objects:
                     self._translate_object_to_noun(_object)
+            else:
+                # Get number of objects of each type
+                node_counts: Counter[OntologyNode] = collections.Counter(
+                    [_object.ontology_node for _object in self.situation.objects]
+                )
+                # Use the counts to apply the appropriate quantifiers
+                for _object in self.situation.objects:
+                    self._translate_object_to_noun(
+                        _object, node_counts[_object.ontology_node]
+                    )
 
             if len(self.situation.actions) > 1:
                 raise RuntimeError(
@@ -139,6 +135,10 @@ class SimpleRuleBasedEnglishLanguageGenerator(
         def _translate_object_to_noun(
             self, _object: SituationObject, count: int = 1
         ) -> DependencyTreeToken:
+            # Eventually we will need to ensure that pluralized objects are
+            # separated by their respective relations and actions
+            # (e.g. in a situation where one box is on a table and one is below it,
+            # don't output "two boxes")
             if not _object.ontology_node:
                 raise RuntimeError(
                     f"Don't know how to handle objects which don't correspond to "
@@ -149,14 +149,14 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             lexicon_entry = self._unique_lexicon_entry(
                 _object.ontology_node  # pylint:disable=protected-access
             )
-            if count > 1:
-                dependency_node = DependencyTreeToken(
-                    lexicon_entry.plural_form, lexicon_entry.part_of_speech
-                )
+            if count > 1 and lexicon_entry.plural_form:
+                word_form = lexicon_entry.plural_form
             else:
-                dependency_node = DependencyTreeToken(
-                    lexicon_entry.base_form, lexicon_entry.part_of_speech
-                )
+                word_form = lexicon_entry.base_form
+            dependency_node = DependencyTreeToken(
+                str(word_form), lexicon_entry.part_of_speech
+            )
+
             self.dependency_graph.add_node(dependency_node)
             # we remember what dependency node goes with this object
             # so that we can link to it when e.g. it appears
@@ -169,21 +169,18 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 MASS_NOUN not in lexicon_entry.properties
             ):
                 if count == 1:
-                    determiner_node = DependencyTreeToken("a", DETERMINER)
-                    self.dependency_graph.add_edge(
-                        determiner_node, dependency_node, role=DETERMINER_ROLE
-                    )
+                    quantifier_node = DependencyTreeToken("a", DETERMINER)
+                    quantifier_role = DETERMINER_ROLE
                 elif count == 2:
-                    numeral_node = DependencyTreeToken("two", NUMERAL)
-                    self.dependency_graph.add_edge(
-                        numeral_node, dependency_node, role=NUMERIC_MODIFIER
-                    )
+                    quantifier_node = DependencyTreeToken("two", NUMERAL)
+                    quantifier_role = NUMERIC_MODIFIER
                 # Currently, any number of objects greater than two is considered "many"
                 else:
-                    adjective_node = DependencyTreeToken("many", ADJECTIVE)
-                    self.dependency_graph.add_edge(
-                        adjective_node, dependency_node, role=ADJECTIVAL_MODIFIER
-                    )
+                    quantifier_node = DependencyTreeToken("many", ADJECTIVE)
+                    quantifier_role = ADJECTIVAL_MODIFIER
+                self.dependency_graph.add_edge(
+                    quantifier_node, dependency_node, role=quantifier_role
+                )
 
             return dependency_node
 
@@ -194,7 +191,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             # TODO: we don't currently handle verbal morphology.
             # https://github.com/isi-vista/adam/issues/60
             verb_dependency_node = DependencyTreeToken(
-                lexicon_entry.verb_form_3SG_PRS, lexicon_entry.part_of_speech
+                str(lexicon_entry.verb_form_3SG_PRS), lexicon_entry.part_of_speech
             )
             self.dependency_graph.add_node(verb_dependency_node)
 

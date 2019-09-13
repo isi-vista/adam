@@ -71,7 +71,17 @@ def test_simple_verb():
     ).as_token_sequence() == ("Mom", "pushes", "a", "table")
 
 
-def test_simple_quantifier():
+def test_one_object():
+    box = SituationObject(BOX)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY, objects=[box]
+    )
+    assert only(
+        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
+    ).as_token_sequence() == ("a", "box")
+
+
+def test_two_objects():
     box_1 = SituationObject(BOX)
     box_2 = SituationObject(BOX)
     situation = HighLevelSemanticsSituation(
@@ -82,7 +92,7 @@ def test_simple_quantifier():
     ).as_token_sequence() == ("two", "boxes")
 
 
-def test_many_nouns():
+def test_many_objects():
     ball_1 = SituationObject(BALL)
     ball_2 = SituationObject(BALL)
     ball_3 = SituationObject(BALL)
