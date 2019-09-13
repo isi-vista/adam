@@ -1,4 +1,11 @@
-from adam.ontology.phase1_ontology import BALL, GAILA_PHASE_1_ONTOLOGY, PERSON, RED
+from adam.ontology.phase1_ontology import (
+    BALL,
+    GAILA_PHASE_1_ONTOLOGY,
+    PERSON,
+    RED,
+    JUICE,
+    LIQUID,
+)
 from adam.perception.developmental_primitive_perception import (
     PropertyPerception,
     HasBinaryProperty,
@@ -88,3 +95,17 @@ def test_person_and_ball_color():
         for prop in property_assertions
         if isinstance(prop, HasColor)
     } == {("ball_0", "#f2003c")}
+
+
+def test_liquid_perceivable():
+    juice_perception = _PERCEPTION_GENERATOR.generate_perception(
+        HighLevelSemanticsSituation(
+            ontology=GAILA_PHASE_1_ONTOLOGY, objects=[SituationObject(JUICE)]
+        ),
+        chooser=RandomChooser.for_seed(0),
+    )
+    assert any(
+        isinstance(prop_assertion, HasBinaryProperty)
+        and prop_assertion.binary_property == LIQUID
+        for prop_assertion in juice_perception.frames[0].property_assertions
+    )
