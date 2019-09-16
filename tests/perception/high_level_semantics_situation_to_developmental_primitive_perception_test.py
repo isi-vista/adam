@@ -50,7 +50,6 @@ def test_person_and_ball():
     )
 
     perceived_objects = person_and_ball_perception.frames[0].perceived_objects
-    print(perceived_objects)
     object_handles = set(obj.debug_handle for obj in perceived_objects)
     assert len(person_and_ball_perception.frames) == 1
     assert object_handles == {
@@ -69,9 +68,8 @@ def test_person_and_ball():
         "leg_0",
         "leg_1",
     }
-    print(person_and_ball_perception.frames[0].relations)
+
     assert person_and_ball_perception.frames[0].relations
-    print(person_and_ball_perception.frames[0].property_assertions)
     assert len(person_and_ball_perception.frames[0].property_assertions) == 2
 
 

@@ -301,16 +301,6 @@ class _PerceptionGeneration:
                     for necessary_property in slot.properties
                 ):
                     found_objects.append(object_perception)
-            print(
-                set(
-                    [
-                        self._object_perceptions_to_ontology_nodes[
-                            obj
-                        ].inheritable_properties
-                        for obj in found_objects
-                    ]
-                )
-            )
             if not found_objects:
                 raise RuntimeError(f"Can not find object with properties {slot}")
             elif len(found_objects) > 1:
