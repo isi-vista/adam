@@ -118,6 +118,12 @@ class _PerceptionGeneration:
     _object_perceptions: List[ObjectPerception] = attrib(
         init=False, default=Factory(list)
     )
+    _object_perceptions_to_ontology_nodes: Dict[ObjectPerception, OntologyNode] = attrib(
+        init=False, default=Factory(dict)
+    )
+    r"""
+    Maps `ObjectPerception`\ s to the learner's `OntologyNode`\ s of them.
+    """
     _object_handle_generator: _ObjectHandleGenerator = attrib(
         init=False, default=Factory(_ObjectHandleGenerator)
     )
@@ -191,7 +197,8 @@ class _PerceptionGeneration:
         if len(self._situation.actions) > 1:
             raise RuntimeError("Cannot handle multiple situation actions")
 
-        # e.g: SituationAction(PUT, ((AGENT, mom),(THEME, ball),(DESTINATION, SituationRelation(ON, ball, table))))
+        # e.g: SituationAction(PUT, ((AGENT, mom),(THEME, ball),(DESTINATION, SituationRelation(
+        # ON, ball, table))))
         # Get description from PUT (PUT is action_type)
         action_description: ActionDescription = GAILA_PHASE_1_ONTOLOGY.action_to_description[
             situation_action.action_type
@@ -251,21 +258,19 @@ class _PerceptionGeneration:
                     raise RuntimeError(
                         "Don't yet handle multiple fillers for the same semantic role"
                     )
-            first_relation_slot_filler_role_in_action = only(
-                entities_to_roles[condition.first_slot]
+
+            # Generate perceptions for situation objects in the given condition.
+            perception_1 = self._find_perception_object_for_situation_object(
+                slot=condition.first_slot,
+                entities_to_roles=entities_to_roles,
+                action_roles_to_fillers=action_roles_to_fillers,
             )
-            situation_object_1 = only(
-                action_roles_to_fillers[first_relation_slot_filler_role_in_action]
-            )
-            second_relation_slot_filler_role_in_action = only(
-                entities_to_roles[condition.second_slot]
-            )
-            situation_object_2 = only(
-                action_roles_to_fillers[second_relation_slot_filler_role_in_action]
+            perception_2 = self._find_perception_object_for_situation_object(
+                slot=condition.second_slot,
+                entities_to_roles=entities_to_roles,
+                action_roles_to_fillers=action_roles_to_fillers,
             )
 
-            perception_1 = self._objects_to_perceptions[situation_object_1]
-            perception_2 = self._objects_to_perceptions[situation_object_2]
             relation_perception = RelationPerception(
                 relation_type=condition.relation_type,
                 arg1=perception_1,
@@ -277,6 +282,47 @@ class _PerceptionGeneration:
                 relations.append(relation_perception)
 
         return relations
+
+    def _find_perception_object_for_situation_object(
+        self,
+        slot: SituationObject,
+        entities_to_roles: ImmutableSetMultiDict[SituationObject, OntologyNode],
+        action_roles_to_fillers: ImmutableSetMultiDict[OntologyNode, SituationObject],
+    ) -> ObjectPerception:
+        ontology = self._generator.ontology
+        # If we know what the situation object is (e.g. agent) we just look it up
+        if slot in entities_to_roles:
+            filler_role_in_action = only(entities_to_roles[slot])
+            situation_object = only(action_roles_to_fillers[filler_role_in_action])
+            return self._objects_to_perceptions[situation_object]
+        # Otherwise, we need to search through the other situation objects to see if
+        # any matches the constraints we know to hold for the situation object.
+        else:
+            objects_matching_constraints = [
+                object_perception
+                for (
+                    object_perception,
+                    ontology_node,
+                ) in self._object_perceptions_to_ontology_nodes.items()
+                if ontology.has_all_properties(ontology_node, slot.properties)
+            ]
+            if len(objects_matching_constraints) == 1:
+                return only(objects_matching_constraints)
+            elif not objects_matching_constraints:
+                raise RuntimeError(f"Can not find object with properties {slot}")
+            else:
+                distinct_property_sets_for_matching_object_types = set(
+                    ontology.properties_for_node(
+                        self._object_perceptions_to_ontology_nodes[obj]
+                    )
+                    for obj in objects_matching_constraints
+                )
+                # if the found objects have identical properties, we choose one arbitrarily
+                # e.g. a person with two hands
+                if len(distinct_property_sets_for_matching_object_types) == 1:
+                    return objects_matching_constraints[0]
+                else:
+                    raise RuntimeError(f"Found multiple objects with properties {slot}")
 
     def _perceive_property_assertions(self) -> None:
         for situation_object in self._situation.objects:
@@ -294,7 +340,8 @@ class _PerceptionGeneration:
                 # e.g. is this a perceivable property, binary property, color, etc...
                 if PERCEIVABLE in attributes_of_property:
                     perceived_object = self._objects_to_perceptions[situation_object]
-                    # Convert the property (which as an OntologyNode object) into PropertyPerception object
+                    # Convert the property (which as an OntologyNode object) into
+                    # PropertyPerception object
                     if BINARY in attributes_of_property:
                         perceived_property: PropertyPerception = HasBinaryProperty(
                             perceived_object, property_
@@ -374,6 +421,9 @@ class _PerceptionGeneration:
         for sub_object in schema.sub_objects:
             sub_object_perception = sub_object_to_object_perception[sub_object]
             self._object_perceptions.append(sub_object_perception)
+            self._object_perceptions_to_ontology_nodes[
+                sub_object_perception
+            ] = sub_object.schema.parent_object
             # every sub-component has an implicit partOf relationship to its parent object.
             self._relation_perceptions.append(
                 RelationPerception(PART_OF, root_object_perception, sub_object_perception)

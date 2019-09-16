@@ -6,23 +6,18 @@ from _random import Random
 from abc import ABC, abstractmethod
 from itertools import product
 from typing import AbstractSet, Iterable, Mapping, Sequence, TypeVar, Union
-from typing_extensions import Protocol
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
 from immutablecollections.converter_utils import _to_immutabledict, _to_immutableset
 from more_itertools import take
+from typing_extensions import Protocol
 from vistautils.preconditions import check_arg
 
-from adam.ontology import ABSTRACT, OntologyNode, PROPERTY, THING
+from adam.ontology import CAN_FILL_TEMPLATE_SLOT, OntologyNode, PROPERTY, THING
 from adam.ontology.ontology import Ontology
-from adam.ontology.phase1_ontology import (
-    COLOR,
-    GAILA_PHASE_1_ONTOLOGY,
-    IS_LEARNER,
-    LEARNER,
-)
+from adam.ontology.phase1_ontology import COLOR, GAILA_PHASE_1_ONTOLOGY, LEARNER
 from adam.ontology.selectors import ByHierarchyAndProperties, Is, OntologyNodeSelector
 from adam.random_utils import RandomChooser, SequenceChooser
 from adam.situation import SituationObject
@@ -49,8 +44,11 @@ class Phase1SituationTemplate(SituationTemplate):
     or the number of possible values of the variables is even moderately large.
     """
     object_variables: ImmutableSet["TemplateObjectVariable"] = attrib(
-        converter=_to_immutableset, default=immutableset()
+        converter=_to_immutableset
     )
+
+    def __attrs_post_init__(self) -> None:
+        check_arg(self.object_variables, "A situation must contain at least one object")
 
 
 def all_possible(
@@ -221,17 +219,16 @@ def object_variable(
     Use *added_properties* for things like
     "whatever fills this variable, make it red."
     """
-    banned_properties = [ABSTRACT]
-    if root_node is not LEARNER:
-        # we never use the learner to fill an object variable in a situation
-        # unless explicitly request. Our learner is an observer, not a participant.
-        banned_properties.append(IS_LEARNER)
+    real_required_properties = list(required_properties)
+    if root_node != LEARNER:
+        # the learner is a special case of something we want to be
+        # explicitly instantiable but not instantiable by variable
+        real_required_properties.append(CAN_FILL_TEMPLATE_SLOT)
+
     return TemplateObjectVariable(
         debug_handle,
         ByHierarchyAndProperties(
-            descendents_of=root_node,
-            required_properties=required_properties,
-            banned_properties=banned_properties,
+            descendents_of=root_node, required_properties=real_required_properties
         ),
         asserted_properties=[
             property_
@@ -253,12 +250,13 @@ def property_variable(
     (or is exactly) *root_node*
     and which possesses all properties in *with_properties*.
     """
+    real_required_properties = list(with_meta_properties)
+    real_required_properties.append(CAN_FILL_TEMPLATE_SLOT)
+
     return TemplatePropertyVariable(
         debug_handle,
         ByHierarchyAndProperties(
-            descendents_of=root_node,
-            required_properties=with_meta_properties,
-            banned_properties=[ABSTRACT],
+            descendents_of=root_node, required_properties=real_required_properties
         ),
     )
 

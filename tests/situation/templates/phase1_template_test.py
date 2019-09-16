@@ -11,8 +11,8 @@ from adam.ontology import (
     REQUIRED_ONTOLOGY_NODES,
     PROPERTY,
     THING,
-    ABSTRACT,
     ObjectStructuralSchema,
+    CAN_FILL_TEMPLATE_SLOT,
 )
 from adam.ontology.ontology import Ontology
 from adam.random_utils import RandomChooser
@@ -38,20 +38,24 @@ for required_ontology_node in REQUIRED_ONTOLOGY_NODES:
 _TOY_VEHICLE = OntologyNode("toy_vehicle")
 _subtype(_TOY_VEHICLE, PROPERTY)
 
-_TOY = OntologyNode("toy", non_inheritable_properties=[ABSTRACT])
+_TOY = OntologyNode("toy")
 _subtype(_TOY, THING)
-_BALL = OntologyNode("ball")
+_BALL = OntologyNode("ball", [CAN_FILL_TEMPLATE_SLOT])
 _subtype(_BALL, _TOY)
-_TRUCK = OntologyNode("toy_truck", inheritable_properties=[_TOY_VEHICLE])
+_TRUCK = OntologyNode(
+    "toy_truck", inheritable_properties=[_TOY_VEHICLE, CAN_FILL_TEMPLATE_SLOT]
+)
 _subtype(_TRUCK, _TOY)
-_CAR = OntologyNode("toy_car", inheritable_properties=[_TOY_VEHICLE])
+_CAR = OntologyNode(
+    "toy_car", inheritable_properties=[_TOY_VEHICLE, CAN_FILL_TEMPLATE_SLOT]
+)
 _subtype(_CAR, _TOY)
 
-_PERSON = OntologyNode("person", non_inheritable_properties=[ABSTRACT])
+_PERSON = OntologyNode("person")
 _subtype(_PERSON, THING)
-_MOM = OntologyNode("mom")
+_MOM = OntologyNode("mom", [CAN_FILL_TEMPLATE_SLOT])
 _subtype(_MOM, _PERSON)
-_DAD = OntologyNode("dad")
+_DAD = OntologyNode("dad", [CAN_FILL_TEMPLATE_SLOT])
 _subtype(_DAD, _PERSON)
 
 

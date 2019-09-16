@@ -1,32 +1,30 @@
 from itertools import chain
-
-from typing import Iterable, List, AbstractSet
+from typing import AbstractSet, Iterable, List
 
 from attr import attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import (
+    ImmutableDict,
     ImmutableSet,
     ImmutableSetMultiDict,
+    immutabledict,
     immutableset,
     immutablesetmultidict,
-    ImmutableDict,
-    immutabledict,
 )
 from immutablecollections.converter_utils import (
-    _to_immutablesetmultidict,
     _to_immutabledict,
+    _to_immutablesetmultidict,
 )
-from networkx import DiGraph, dfs_preorder_nodes, simple_cycles, has_path, ancestors
+from networkx import DiGraph, ancestors, dfs_preorder_nodes, has_path, simple_cycles
 from vistautils.preconditions import check_arg
 
 from adam.ontology import (
-    OntologyNode,
+    CAN_FILL_TEMPLATE_SLOT,
     ObjectStructuralSchema,
+    OntologyNode,
     REQUIRED_ONTOLOGY_NODES,
     THING,
-    ABSTRACT,
 )
-
 
 # convenience method for use in Ontology
 from adam.ontology.action_description import ActionDescription
@@ -46,10 +44,10 @@ class Ontology:
     Every `OntologyNode` may have a set of properties which are inherited by all child nodes.
 
     Every `Ontology` must contain the special nodes `THING`, `RELATION`, `ACTION`,
-    `PROPERTY`, `META_PROPERTY`, and `ABSTRACT`.
+    `PROPERTY`, `META_PROPERTY`, and `CAN_FILL_TEMPLATE_SLOT`.
 
     An `Ontology` must have an `ObjectStructuralSchema` associated with
-    each non-`ABSTRACT` `THING`.  `ObjectStructuralSchema`\ ta are inherited,
+    each `CAN_FILL_TEMPLATE_SLOT` `THING`.  `ObjectStructuralSchema`\ ta are inherited,
     but any which are explicitly-specified will cause any inherited schemata
     to be ignored.
 
@@ -80,7 +78,7 @@ class Ontology:
             if not any(
                 node in self._structural_schemata for node in self.ancestors(thing_node)
             ):
-                if not self.has_all_properties(thing_node, [ABSTRACT]):
+                if self.has_all_properties(thing_node, [CAN_FILL_TEMPLATE_SLOT]):
                     raise RuntimeError(
                         f"No structural schema is available for {thing_node}"
                     )
