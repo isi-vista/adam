@@ -120,6 +120,12 @@ class _PerceptionGeneration:
     _object_perceptions: List[ObjectPerception] = attrib(
         init=False, default=Factory(list)
     )
+    _object_perceptions_to_ontology_nodes: Dict[ObjectPerception, OntologyNode] = attrib(
+        init=False, default=Factory(dict)
+    )
+    r"""
+    Maps `ObjectPerception`\ s to the learner's `OntologyNode`\ s of them.
+    """
     _object_handle_generator: _ObjectHandleGenerator = attrib(
         init=False, default=Factory(_ObjectHandleGenerator)
     )
@@ -288,29 +294,24 @@ class _PerceptionGeneration:
             perception = self._objects_to_perceptions[situation_object]
         else:
             found_objects = []
-            for situation_object in self._objects_to_perceptions.keys(): # situation object such as the agent
+            for object_perception, ontology_node in self._object_perceptions_to_ontology_nodes.items():
                 # check all the sub objects in the situation
-                ontology_of_situation_object = situation_object.ontology_node
-                schemas = GAILA_PHASE_1_ONTOLOGY.structural_schemata(ontology_of_situation_object)
-
-                #  Perform a BFS over sub objects of agent and return the first manipulator
-                next_sub_objects = [obj for schema in schemas for obj in schema.sub_objects]
-                while next_sub_objects:
-                    next_sub_object = next_sub_objects.pop(0)
-                    if all(necessary_property in next_sub_object.schema.parent_object.inheritable_properties
-                           for necessary_property in slot.properties):
-                        found_objects.append(next_sub_object.schema.parent_object)
-                        break
-                    else:
-                        next_sub_objects.extend(next_sub_object.schema.sub_objects)
-                if len(found_objects) > 0:
-                    break
+                if all(necessary_property in ontology_node.inheritable_properties
+                       for necessary_property in slot.properties):
+                    found_objects.append(object_perception)
+            print(set([self._object_perceptions_to_ontology_nodes[obj].inheritable_properties
+                                for obj in found_objects]))
             if len(found_objects) == 0:
                 raise RuntimeError(f'Can not find object with properties {slot}')
             elif len(found_objects) > 1:
-                raise RuntimeError(f'Found multiple objects with properties {slot}')
+                if len(set([self._object_perceptions_to_ontology_nodes[obj].inheritable_properties
+                            for obj in found_objects])) == 1:
+                    # if the found objects have identical properties
+                    return found_objects[0]
+                else:
+                    raise RuntimeError(f'Found multiple objects with properties {slot}')
             else:
-                perception = ObjectPerception(found_objects[0].handle)
+                perception = found_objects[0]
         return perception
 
 
@@ -410,6 +411,7 @@ class _PerceptionGeneration:
         for sub_object in schema.sub_objects:
             sub_object_perception = sub_object_to_object_perception[sub_object]
             self._object_perceptions.append(sub_object_perception)
+            self._object_perceptions_to_ontology_nodes[sub_object_perception] = sub_object.schema.parent_object
             # every sub-component has an implicit partOf relationship to its parent object.
             self._relation_perceptions.append(
                 RelationPerception(PART_OF, root_object_perception, sub_object_perception)

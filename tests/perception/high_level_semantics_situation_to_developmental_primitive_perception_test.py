@@ -144,9 +144,9 @@ def test_person_put_ball_on_table():
         f"{r.relation_type}({r.arg1}, {r.arg2})" for r in second_frame_relations
     }
     assert "smallerThan(ball_0, person_0)" in first_frame_relations_strings
-    assert "partOf(hand, person_0)" in first_frame_relations_strings
-    assert "contacts(hand, ball_0)" in first_frame_relations_strings
-    assert "supports(hand, ball_0)" in first_frame_relations_strings
+    assert "partOf(hand_0, person_0)" in first_frame_relations_strings
+    assert "contacts(hand_0, ball_0)" in first_frame_relations_strings
+    assert "supports(hand_0, ball_0)" in first_frame_relations_strings
     assert "smallerThan(ball_0, person_0)" in second_frame_relations_strings
     assert "contacts(ball_0, table_0)" in second_frame_relations_strings
 
