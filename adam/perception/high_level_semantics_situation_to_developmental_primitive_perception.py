@@ -254,36 +254,15 @@ class _PerceptionGeneration:
                         "Don't yet handle multiple fillers for the same semantic role"
                     )
 
-            # Check for manipulator in first slot
-            if CAN_MANIPULATE_OBJECTS in condition.first_slot.properties:
-                manipulator_ontology_node = self._get_manipulator_of_agent(
-                    only(action_roles_to_fillers[AGENT])
-                )
-                perception_1 = ObjectPerception(manipulator_ontology_node.handle)
-            else:
-                first_relation_slot_filler_role_in_action = only(
-                    entities_to_roles[condition.first_slot]
-                )
-
-                situation_object_1 = only(
-                    action_roles_to_fillers[first_relation_slot_filler_role_in_action]
-                )
-                perception_1 = self._objects_to_perceptions[situation_object_1]
-
-            # Check for manipulator in first slot
-            if CAN_MANIPULATE_OBJECTS in condition.second_slot.properties:
-                manipulator_ontology_node = self._get_manipulator_of_agent(
-                    only(action_roles_to_fillers[AGENT])
-                )
-                perception_2 = ObjectPerception(manipulator_ontology_node.handle)
-            else:
-                second_relation_slot_filler_role_in_action = only(
-                    entities_to_roles[condition.second_slot]
-                )
-                situation_object_2 = only(
-                    action_roles_to_fillers[second_relation_slot_filler_role_in_action]
-                )
-                perception_2 = self._objects_to_perceptions[situation_object_2]
+            # Generate perceptions for situation objects in the given condition.
+            perception_1 = self._find_perception_object_for_situation_object(
+                slot=condition.first_slot,
+                entities_to_roles=entities_to_roles,
+                action_roles_to_fillers=action_roles_to_fillers)
+            perception_2 = self._find_perception_object_for_situation_object(
+                slot=condition.second_slot,
+                entities_to_roles=entities_to_roles,
+                action_roles_to_fillers=action_roles_to_fillers)
 
             relation_perception = RelationPerception(
                 relation_type=condition.relation_type,
@@ -297,27 +276,43 @@ class _PerceptionGeneration:
 
         return relations
 
-    def _get_manipulator_of_agent(self, agent_object: SituationObject) -> OntologyNode:
-        # search for object in AGENT
-        ontology_of_agent = agent_object.ontology_node
-        schemas = GAILA_PHASE_1_ONTOLOGY.structural_schemata(ontology_of_agent)
+    def _find_perception_object_for_situation_object(self, slot: SituationObject, entities_to_roles,
+                                                     action_roles_to_fillers) -> ObjectPerception:
+        if slot in entities_to_roles.keys():
+            filler_role_in_action = only(
+                entities_to_roles[slot]
+            )
+            situation_object = only(
+                action_roles_to_fillers[filler_role_in_action]
+            )
+            perception = self._objects_to_perceptions[situation_object]
+        else:
+            found_objects = []
+            for situation_object in self._objects_to_perceptions.keys(): # situation object such as the agent
+                # check all the sub objects in the situation
+                ontology_of_situation_object = situation_object.ontology_node
+                schemas = GAILA_PHASE_1_ONTOLOGY.structural_schemata(ontology_of_situation_object)
 
-        #  Perform a BFS over sub objects of agent and return the first manipulator
-        next_sub_objects = [obj for schema in schemas for obj in schema.sub_objects]
-        manipulator = None
-        while next_sub_objects:
-            next_sub_object = next_sub_objects.pop(0)
-            if (
-                CAN_MANIPULATE_OBJECTS
-                in next_sub_object.schema.parent_object.inheritable_properties
-            ):
-                manipulator = next_sub_object.schema.parent_object
-                break
+                #  Perform a BFS over sub objects of agent and return the first manipulator
+                next_sub_objects = [obj for schema in schemas for obj in schema.sub_objects]
+                while next_sub_objects:
+                    next_sub_object = next_sub_objects.pop(0)
+                    if all(necessary_property in next_sub_object.schema.parent_object.inheritable_properties
+                           for necessary_property in slot.properties):
+                        found_objects.append(next_sub_object.schema.parent_object)
+                        break
+                    else:
+                        next_sub_objects.extend(next_sub_object.schema.sub_objects)
+                if len(found_objects) > 0:
+                    break
+            if len(found_objects) == 0:
+                raise RuntimeError(f'Can not find object with properties {slot}')
+            elif len(found_objects) > 1:
+                raise RuntimeError(f'Found multiple objects with properties {slot}')
             else:
-                next_sub_objects.extend(next_sub_object.schema.sub_objects)
-        if not manipulator:
-            raise RuntimeError("Could not find the manipulator of agent")
-        return manipulator
+                perception = ObjectPerception(found_objects[0].handle)
+        return perception
+
 
     def _perceive_property_assertions(self) -> None:
         for situation_object in self._situation.objects:
