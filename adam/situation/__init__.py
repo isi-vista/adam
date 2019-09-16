@@ -2,7 +2,7 @@
 Structures for describing situations in the world at an abstracted, human-friendly level.
 """
 from abc import ABC
-from typing import Mapping
+from typing import Mapping, Union
 
 from attr import attrs, attrib
 from attr.validators import instance_of
@@ -20,9 +20,10 @@ from immutablecollections.converter_utils import (
     _to_immutabledict,
     _to_immutablesetmultidict,
 )
+from vistautils.preconditions import check_arg
 
 from adam.math_3d import Point
-from adam.ontology import OntologyNode
+from adam.ontology import OntologyNode, Region, IN_REGION
 
 
 class Situation(ABC):
@@ -129,13 +130,24 @@ class LocatedObjectSituation(Situation):
 @attrs(frozen=True, slots=True, repr=False)
 class SituationRelation(SituationNode):
     """
-    A relationship which holds between two objects in a `Situation`.
+    A relationship which holds between two objects in a `Situation`,
+    or between a `SituationObject` and a `Region`.
+    The latter case is allowed only for the special relation `IN_REGION` .
     """
 
     relation_type: OntologyNode = attrib(validator=instance_of(OntologyNode))
     first_slot: SituationObject = attrib(validator=instance_of(SituationObject))
-    second_slot: SituationObject = attrib(validator=instance_of(SituationObject))
+    # for type ignore see
+    # https://github.com/isi-vista/adam/issues/144
+    second_slot: Union[SituationObject, Region[SituationObject]] = attrib(
+        validator=instance_of((SituationObject, Region))  # type: ignore
+    )
     negated: bool = attrib(validator=instance_of(bool), default=False, kw_only=True)
+
+    def __attrs_post_init__(self) -> None:
+        check_arg(
+            not isinstance(self.second_slot, Region) or self.relation_type == IN_REGION
+        )
 
     def __repr__(self) -> str:
         return f"{self.relation_type}({self.first_slot}, {self.second_slot})"
@@ -149,7 +161,7 @@ class SituationAction(SituationNode):
 
     action_type: OntologyNode = attrib(validator=instance_of(OntologyNode))
     argument_roles_to_fillers: ImmutableSetMultiDict[
-        OntologyNode, SituationNode
+        OntologyNode, Union[SituationNode, Region[SituationObject]]
     ] = attrib(converter=_to_immutablesetmultidict, default=immutablesetmultidict())
     r"""
     A mapping of semantic roles (given as `OntologyNode`\ s) to their fillers.

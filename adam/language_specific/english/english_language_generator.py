@@ -1,5 +1,5 @@
 import collections
-from typing import Counter, Mapping, MutableMapping
+from typing import Mapping, MutableMapping, Union
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
@@ -8,43 +8,39 @@ from more_itertools import only
 from networkx import DiGraph
 
 from adam.language.dependency import (
+    DependencyRole,
     DependencyTree,
     DependencyTreeLinearizer,
     DependencyTreeToken,
     LinearizedDependencyTree,
-    DependencyRole,
 )
 from adam.language.dependency.universal_dependencies import (
+    ADPOSITION,
+    CASE_MARKING,
     DETERMINER,
     DETERMINER_ROLE,
-    PROPER_NOUN,
     NOMINAL_SUBJECT,
     NUMERAL,
     NUMERIC_MODIFIER,
     OBJECT,
     OBLIQUE_NOMINAL,
-    ADPOSITION,
-    CASE_MARKING,
+    PROPER_NOUN,
 )
 from adam.language.language_generator import LanguageGenerator
 from adam.language.lexicon import LexiconEntry
 from adam.language.ontology_dictionary import OntologyLexicon
 from adam.language_specific.english.english_phase_1_lexicon import (
     GAILA_PHASE_1_ENGLISH_LEXICON,
+    MASS_NOUN,
 )
 from adam.language_specific.english.english_syntax import (
     SIMPLE_ENGLISH_DEPENDENCY_TREE_LINEARIZER,
 )
-from adam.language_specific.english.english_phase_1_lexicon import MASS_NOUN
-from adam.ontology import OntologyNode
-from adam.ontology.phase1_ontology import AGENT, PATIENT, THEME, DESTINATION, ON, LEARNER
+from adam.ontology import OntologyNode, Region
+from adam.ontology.phase1_ontology import AGENT, GOAL, LEARNER, PATIENT, THEME
+from adam.ontology.phase1_spatial_relations import EXTERIOR_BUT_IN_CONTACT, INTERIOR
 from adam.random_utils import SequenceChooser
-from adam.situation import (
-    SituationObject,
-    SituationAction,
-    SituationNode,
-    SituationRelation,
-)
+from adam.situation import SituationAction, SituationNode, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 
 
@@ -110,20 +106,26 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 if not object_.ontology_node == LEARNER
             ]
 
-            # For now, only apply quantifiers to object-only situations
-            if self.situation.actions:
-                for _object in objects_to_translate:
-                    self._translate_object_to_noun(_object)
-            else:
-                # Get number of objects of each type
-                node_counts: Counter[OntologyNode] = collections.Counter(
+            node_counts: Mapping[OntologyNode, int]
+            # Get number of objects of each type
+            if not self.situation.actions:
+                # For now, only apply quantifiers to object-only situations
+                node_counts = collections.Counter(
                     [_object.ontology_node for _object in self.situation.objects]
                 )
-                # Use the counts to apply the appropriate quantifiers
-                for _object in objects_to_translate:
-                    self._translate_object_to_noun(
-                        _object, node_counts[_object.ontology_node]
+            else:
+                node_counts = {
+                    ontology_node: 1
+                    for ontology_node in immutableset(
+                        object_.ontology_node for object_ in objects_to_translate
                     )
+                }
+
+            # Use the counts to apply the appropriate quantifiers
+            for _object in objects_to_translate:
+                self._translate_object_to_noun(
+                    _object, node_counts[_object.ontology_node], node_counts
+                )
 
             if len(self.situation.actions) > 1:
                 raise RuntimeError(
@@ -135,7 +137,8 @@ class SimpleRuleBasedEnglishLanguageGenerator(
 
             return immutableset(
                 [
-                    self.generator._dependency_tree_linearizer.linearize(  # pylint:disable=protected-access
+                    self.generator._dependency_tree_linearizer.linearize(
+                        # pylint:disable=protected-access
                         DependencyTree(self.dependency_graph)
                     )
                 ]
@@ -218,9 +221,10 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             self,
             action: SituationAction,
             argument_role: OntologyNode,
-            filler: SituationNode,
+            filler: Union[SituationNode, Region[SituationObject]],
             verb_dependency_node: DependencyTreeToken,
         ):
+            # TODO: to alternation
             if isinstance(filler, SituationObject):
                 filler_dependency_node = self.objects_to_dependency_nodes[filler]
                 self.dependency_graph.add_edge(
@@ -228,43 +232,35 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     verb_dependency_node,
                     role=self._translate_argument_role(argument_role),
                 )
-            elif isinstance(filler, SituationRelation):
-                # TODO: this is a hack to handle prepositional arguments!
-                # See https://github.com/isi-vista/adam/issues/61
-                if filler.relation_type == ON:
-                    thing_on_something_situation_node = filler.first_slot
-
-                    if (
-                        thing_on_something_situation_node
-                        not in action.argument_roles_to_fillers[THEME]
-                    ):
+            elif isinstance(filler, Region):
+                if argument_role == GOAL:
+                    if THEME not in action.argument_roles_to_fillers:
                         raise RuntimeError(
-                            "We only know how to handle the on case if "
-                            "the first slot of the on-relation matches the "
-                            "verb's theme. See "
-                            "https://github.com/isi-vista/adam/issues/61"
+                            "Only know how to make English for a GOAL if"
+                            "the verb has a THEME"
                         )
 
-                    thing_it_is_on_dependency_node = self.objects_to_dependency_nodes[
-                        filler.second_slot
+                    reference_object_dependency_node = self.objects_to_dependency_nodes[
+                        filler.reference_object
                     ]
                     self.dependency_graph.add_edge(
-                        thing_it_is_on_dependency_node,
+                        reference_object_dependency_node,
                         verb_dependency_node,
                         role=OBLIQUE_NOMINAL,
                     )
-                    on_dependency_node = DependencyTreeToken("on", ADPOSITION)
+
+                    on_dependency_node = DependencyTreeToken(
+                        self._preposition_for_region_as_goal(filler), ADPOSITION
+                    )
                     self.dependency_graph.add_edge(
                         on_dependency_node,
-                        thing_it_is_on_dependency_node,
+                        reference_object_dependency_node,
                         role=CASE_MARKING,
                     )
-
                 else:
                     raise RuntimeError(
-                        "The only relation we currently understand how to "
-                        "handle is 'on'. See "
-                        "https://github.com/isi-vista/adam/issues/61"
+                        "The only argument role we can currently handle regions as a filler "
+                        "for is DESTINATION"
                     )
             else:
                 raise RuntimeError(
@@ -277,8 +273,28 @@ class SimpleRuleBasedEnglishLanguageGenerator(
         def _translate_argument_role(self, argument_role: OntologyNode) -> DependencyRole:
             return _ARGUMENT_ROLES_TO_DEPENDENCY_ROLES[argument_role]
 
+        def _preposition_for_region_as_goal(self, region: Region[SituationObject]) -> str:
+            """
+            When a `Region` appears as the filler of the semantic role `GOAL`,
+            determine what preposition to use to express it in English.
+            """
+            if region.distance == INTERIOR:
+                return "in"
+            elif (
+                region.distance == EXTERIOR_BUT_IN_CONTACT
+                and region.direction
+                and region.direction.positive
+                # TODO: put constraints on the axis
+            ):
+                return "on"
+            else:
+                raise RuntimeError(
+                    f"Don't know how to translate {region} to a preposition yet"
+                )
+
         def _unique_lexicon_entry(self, ontology_node: OntologyNode) -> LexiconEntry:
-            lexicon_entries = self.generator._ontology_lexicon.words_for_node(  # pylint:disable=protected-access
+            lexicon_entries = self.generator._ontology_lexicon.words_for_node(
+                # pylint:disable=protected-access
                 ontology_node
             )
             if lexicon_entries:
@@ -305,7 +321,7 @@ _ARGUMENT_ROLES_TO_DEPENDENCY_ROLES: Mapping[
         (AGENT, NOMINAL_SUBJECT),
         (PATIENT, OBJECT),
         (THEME, OBJECT),
-        (DESTINATION, OBLIQUE_NOMINAL),
+        (GOAL, OBLIQUE_NOMINAL),
     )
 )
 

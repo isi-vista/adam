@@ -6,6 +6,7 @@ from adam.language_specific.english.english_language_generator import (
 from adam.language_specific.english.english_phase_1_lexicon import (
     GAILA_PHASE_1_ENGLISH_LEXICON,
 )
+from adam.ontology import Region
 from adam.ontology.phase1_ontology import (
     AGENT,
     BALL,
@@ -16,7 +17,12 @@ from adam.ontology.phase1_ontology import (
     THEME,
     BOX,
     WATER,
+    COOKIE,
+    DAD,
+    PUT,
+    GOAL,
 )
+from adam.ontology.phase1_spatial_relations import INTERIOR
 from adam.random_utils import FixedIndexChooser
 from adam.situation import SituationAction, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
@@ -105,8 +111,33 @@ def test_simple_verb():
     ).as_token_sequence() == ("Mom", "pushes", "a", "table")
 
 
-def test_mom_put_a_ball_on_the_table():
+def test_mom_put_a_ball_on_a_table():
     situation = make_mom_put_ball_on_table()
     assert only(
         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
     ).as_token_sequence() == ("Mom", "puts", "a", "ball", "on", "a", "table")
+
+
+def test_dad_put_a_cookie_in_a_box():
+    dad = SituationObject(ontology_node=DAD)
+    cookie = SituationObject(ontology_node=COOKIE)
+    box = SituationObject(ontology_node=BOX)
+    return HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        objects=[dad, cookie, box],
+        relations=[],
+        actions=[
+            SituationAction(
+                PUT,
+                (
+                    (AGENT, dad),
+                    (THEME, cookie),
+                    (GOAL, Region(reference_object=box, distance=INTERIOR)),
+                ),
+            )
+        ],
+    )
+
+    assert only(
+        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
+    ).as_token_sequence() == ("Dad", "puts", "a", "cookie", "in", "a", "box")

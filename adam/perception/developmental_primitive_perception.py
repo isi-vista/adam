@@ -1,11 +1,14 @@
 from abc import ABC
+from typing import Union
+
 from attr import attrib, attrs
 from attr.validators import in_, instance_of
 from immutablecollections import ImmutableSet, immutableset
 from immutablecollections.converter_utils import _to_immutableset
+from vistautils.preconditions import check_arg
 from vistautils.range import Range
 
-from adam.ontology import OntologyNode
+from adam.ontology import OntologyNode, Region, IN_REGION
 from adam.perception import PerceptualRepresentationFrame
 
 
@@ -86,11 +89,25 @@ class RelationPerception:
     """
     A learner's perecption that two objects, *arg1* and *arg2* have a relation of type
     *relation_type* with one another.
+
+    *arg2* will be a `Region` instead of an `ObjectPerception` if and only if
+    the *relation_type* is `IN_REGION`.
     """
 
     relation_type: OntologyNode = attrib(validator=instance_of(OntologyNode))
     arg1: ObjectPerception = attrib(validator=instance_of(ObjectPerception))
-    arg2: ObjectPerception = attrib(validator=instance_of(ObjectPerception))
+    # for type ignore see
+    # https://github.com/isi-vista/adam/issues/144
+    arg2: Union[ObjectPerception, Region[ObjectPerception]] = attrib(
+        validator=instance_of(
+            (ObjectPerception, Region[ObjectPerception])  # type: ignore
+        )
+    )
+
+    def __attrs_post_init__(self) -> None:
+        check_arg(
+            not isinstance(self.arg2, ObjectPerception) or self.relation_type == IN_REGION
+        )
 
     def __repr__(self) -> str:
         return f"{self.relation_type}({self.arg1}, {self.arg2})"

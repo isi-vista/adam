@@ -5,7 +5,7 @@ from adam.ontology import OntologyNode
 from adam.ontology.phase1_ontology import (
     AGENT,
     BALL,
-    DESTINATION,
+    GOAL,
     GAILA_PHASE_1_ONTOLOGY,
     IS_LEARNER,
     IS_SPEAKER,
@@ -120,7 +120,7 @@ def test_person_put_ball_on_table():
         actions=[
             # What is the best way of representing the destination in the high-level semantics?
             # Here we represent it as indicating a relation which should be true.
-            SituationAction(PUT, ((AGENT, person), (THEME, ball), (DESTINATION, table)))
+            SituationAction(PUT, ((AGENT, person), (THEME, ball), (GOAL, table)))
         ],
     )
 
