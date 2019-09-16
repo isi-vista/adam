@@ -283,47 +283,51 @@ class _PerceptionGeneration:
         return relations
 
     def _find_perception_object_for_situation_object(
-        self, slot: SituationObject, entities_to_roles, action_roles_to_fillers
+        self,
+        slot: SituationObject,
+        entities_to_roles: ImmutableSetMultiDict[SituationObject, OntologyNode],
+        action_roles_to_fillers: ImmutableSetMultiDict[OntologyNode, SituationObject],
     ) -> ObjectPerception:
-        if slot in entities_to_roles.keys():
+        # If we know what the situation object is (e.g. agent) we just look it up
+        if slot in entities_to_roles:
             filler_role_in_action = only(entities_to_roles[slot])
             situation_object = only(action_roles_to_fillers[filler_role_in_action])
-            perception = self._objects_to_perceptions[situation_object]
+            return self._objects_to_perceptions[situation_object]
+        # Otherwise, we need to search through the other situation objects to see if
+        # any matches the constraints we know to hold for the situation object.
         else:
-            found_objects = []
+            objects_matching_constraints = []
             for (
                 object_perception,
                 ontology_node,
             ) in self._object_perceptions_to_ontology_nodes.items():
                 # check all the sub objects in the situation
+                # TODO: we don't currently handle constraints due to relations; issue #143
                 if all(
                     necessary_property in ontology_node.inheritable_properties
                     for necessary_property in slot.properties
                 ):
-                    found_objects.append(object_perception)
-            if not found_objects:
+                    objects_matching_constraints.append(object_perception)
+            if not objects_matching_constraints:
                 raise RuntimeError(f"Can not find object with properties {slot}")
-            elif len(found_objects) > 1:
+            elif len(objects_matching_constraints) > 1:
                 if (
                     len(
                         set(
-                            [
-                                self._object_perceptions_to_ontology_nodes[
-                                    obj
-                                ].inheritable_properties
-                                for obj in found_objects
-                            ]
+                            self._object_perceptions_to_ontology_nodes[
+                                obj
+                            ].inheritable_properties
+                            for obj in objects_matching_constraints
                         )
                     )
                     == 1
                 ):
-                    # if the found objects have identical properties
-                    return found_objects[0]
+                    # if the found objects have identical properties; e.g. a person has two hands
+                    return objects_matching_constraints[0]
                 else:
                     raise RuntimeError(f"Found multiple objects with properties {slot}")
             else:
-                perception = found_objects[0]
-        return perception
+                return objects_matching_constraints[0]
 
     def _perceive_property_assertions(self) -> None:
         for situation_object in self._situation.objects:
