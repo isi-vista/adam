@@ -2,6 +2,7 @@ from attr import attrs, attrib
 from attr.validators import instance_of
 from immutablecollections import ImmutableSet, immutableset
 from immutablecollections.converter_utils import _to_immutableset
+from vistautils.preconditions import check_arg
 
 from adam.ontology.ontology import Ontology
 from adam.situation import Situation, SituationObject, SituationRelation, SituationAction
@@ -18,9 +19,7 @@ class HighLevelSemanticsSituation(Situation):
     What `Ontology` items from the objects, relations, and actions 
     in this `Situation` will come from.
     """
-    objects: ImmutableSet[SituationObject] = attrib(
-        converter=_to_immutableset, default=immutableset()
-    )
+    objects: ImmutableSet[SituationObject] = attrib(converter=_to_immutableset)
     """
     All the objects present in a `Situation`.
     """
@@ -40,6 +39,9 @@ class HighLevelSemanticsSituation(Situation):
     """
     The actions occurring in this `Situation`
     """
+
+    def __attrs_post_init__(self) -> None:
+        check_arg(self.objects, "A situation must contain at least one object")
 
     def __repr__(self) -> str:
         # TODO: the way we currently repr situations doesn't handle multiple nodes

@@ -17,7 +17,6 @@ from immutablecollections import immutabledict, immutableset, immutablesetmultid
 from more_itertools import flatten
 
 from adam.ontology import (
-    ABSTRACT,
     ACTION,
     ObjectStructuralSchema,
     OntologyNode,
@@ -30,6 +29,7 @@ from adam.ontology import (
     make_symetric_dsl_relation,
     minimal_ontology_graph,
     sub_object_relations,
+    CAN_FILL_TEMPLATE_SLOT,
 )
 from adam.ontology.action_description import ActionDescription, ActionDescriptionFrame
 from adam.ontology.ontology import Ontology
@@ -83,7 +83,7 @@ Jackendoff and Landau argue this should be regarded as a primitive of object per
 """
 subtype(HOLLOW, PERCEIVABLE_PROPERTY)
 
-RECOGNIZED_PARTICULAR_PROPERTY = OntologyNode("recognized-particular", [BINARY, ABSTRACT])
+RECOGNIZED_PARTICULAR_PROPERTY = OntologyNode("recognized-particular", [BINARY])
 """
 Indicates that a property in the ontology indicates the identity of an object
 as a known particular object (rather than a class)
@@ -109,13 +109,13 @@ CAN_MANIPULATE_OBJECTS = OntologyNode("can-manipulate-objects")
 subtype(CAN_MANIPULATE_OBJECTS, PROPERTY)
 
 
-COLOR = OntologyNode("color", non_inheritable_properties=[ABSTRACT])
+COLOR = OntologyNode("color")
 subtype(COLOR, PERCEIVABLE_PROPERTY)
-RED = OntologyNode("red")
-BLUE = OntologyNode("blue")
-GREEN = OntologyNode("green")
-BLACK = OntologyNode("black")
-WHITE = OntologyNode("white")
+RED = OntologyNode("red", [CAN_FILL_TEMPLATE_SLOT])
+BLUE = OntologyNode("blue", [CAN_FILL_TEMPLATE_SLOT])
+GREEN = OntologyNode("green", [CAN_FILL_TEMPLATE_SLOT])
+BLACK = OntologyNode("black", [CAN_FILL_TEMPLATE_SLOT])
+WHITE = OntologyNode("white", [CAN_FILL_TEMPLATE_SLOT])
 subtype(RED, COLOR)
 subtype(BLUE, COLOR)
 subtype(GREEN, COLOR)
@@ -147,65 +147,59 @@ COLORS_TO_RGBS = {
 # Information about the hierarchical structure of objects
 # is given at the end of this module because it is so bulky.
 
-INANIMATE_OBJECT = OntologyNode(
-    "inanimate-object",
-    inheritable_properties=[INANIMATE],
-    non_inheritable_properties=[ABSTRACT],
-)
+INANIMATE_OBJECT = OntologyNode("inanimate-object", inheritable_properties=[INANIMATE])
 subtype(INANIMATE_OBJECT, THING)
-TABLE = OntologyNode("table")
+TABLE = OntologyNode("table", [CAN_FILL_TEMPLATE_SLOT])
 subtype(TABLE, INANIMATE_OBJECT)
-BALL = OntologyNode("ball")
+BALL = OntologyNode("ball", [CAN_FILL_TEMPLATE_SLOT])
 subtype(BALL, INANIMATE_OBJECT)
 BOOK = OntologyNode("book")
 subtype(BOOK, INANIMATE_OBJECT)
-HOUSE = OntologyNode("house", [HOLLOW])
+HOUSE = OntologyNode("house", [HOLLOW, CAN_FILL_TEMPLATE_SLOT])
 subtype(HOUSE, INANIMATE_OBJECT)
-CAR = OntologyNode("car", [HOLLOW])
+CAR = OntologyNode("car", [HOLLOW, CAN_FILL_TEMPLATE_SLOT])
 subtype(CAR, INANIMATE_OBJECT)
-WATER = OntologyNode("water", [LIQUID])
+WATER = OntologyNode("water", [LIQUID, CAN_FILL_TEMPLATE_SLOT])
 subtype(WATER, INANIMATE_OBJECT)
-JUICE = OntologyNode("juice", [LIQUID])
+JUICE = OntologyNode("juice", [LIQUID, CAN_FILL_TEMPLATE_SLOT])
 subtype(JUICE, INANIMATE_OBJECT)
-CUP = OntologyNode("cup", [HOLLOW])
+CUP = OntologyNode("cup", [HOLLOW, CAN_FILL_TEMPLATE_SLOT])
 subtype(CUP, INANIMATE_OBJECT)
-BOX = OntologyNode("box", [HOLLOW])
+BOX = OntologyNode("box", [HOLLOW, CAN_FILL_TEMPLATE_SLOT])
 subtype(BOX, INANIMATE_OBJECT)
-CHAIR = OntologyNode("chair")
+CHAIR = OntologyNode("chair", [CAN_FILL_TEMPLATE_SLOT])
 subtype(CHAIR, INANIMATE_OBJECT)
 # should a HEAD be hollow? We are answering yes for now,
 # because food and liquids can enter it,
 # but we eventually want something more sophisticated.
-HEAD = OntologyNode("head", [HOLLOW])
+HEAD = OntologyNode("head", [HOLLOW, CAN_FILL_TEMPLATE_SLOT])
 subtype(HEAD, INANIMATE_OBJECT)
-MILK = OntologyNode("milk", [LIQUID])
+MILK = OntologyNode("milk", [LIQUID, CAN_FILL_TEMPLATE_SLOT])
 subtype(MILK, INANIMATE_OBJECT)
-HAND = OntologyNode("hand", [CAN_MANIPULATE_OBJECTS])
+HAND = OntologyNode("hand", [CAN_MANIPULATE_OBJECTS, CAN_FILL_TEMPLATE_SLOT])
 subtype(HAND, INANIMATE_OBJECT)
-TRUCK = OntologyNode("truck", [HOLLOW])
+TRUCK = OntologyNode("truck", [HOLLOW, CAN_FILL_TEMPLATE_SLOT])
 subtype(TRUCK, INANIMATE_OBJECT)
-DOOR = OntologyNode("door")
+DOOR = OntologyNode("door", [CAN_FILL_TEMPLATE_SLOT])
 subtype(DOOR, INANIMATE_OBJECT)
-HAT = OntologyNode("hat")
+HAT = OntologyNode("hat", [CAN_FILL_TEMPLATE_SLOT])
 subtype(HAT, INANIMATE_OBJECT)
-COOKIE = OntologyNode("cookie")
+COOKIE = OntologyNode("cookie", [CAN_FILL_TEMPLATE_SLOT])
 subtype(COOKIE, INANIMATE_OBJECT)
 
-PERSON = OntologyNode(
-    "person", inheritable_properties=[ANIMATE], non_inheritable_properties=[ABSTRACT]
-)
+PERSON = OntologyNode("person", inheritable_properties=[ANIMATE])
 subtype(PERSON, THING)
 IS_MOM = OntologyNode("is-mom")
 subtype(IS_MOM, RECOGNIZED_PARTICULAR_PROPERTY)
-MOM = OntologyNode("mom", [IS_MOM])
+MOM = OntologyNode("mom", non_inheritable_properties=[IS_MOM, CAN_FILL_TEMPLATE_SLOT])
 subtype(MOM, PERSON)
 
 IS_DAD = OntologyNode("is-dad")
 subtype(IS_DAD, RECOGNIZED_PARTICULAR_PROPERTY)
-DAD = OntologyNode("dad", [IS_DAD])
+DAD = OntologyNode("dad", non_inheritable_properties=[IS_DAD, CAN_FILL_TEMPLATE_SLOT])
 subtype(DAD, PERSON)
 
-BABY = OntologyNode("baby")
+BABY = OntologyNode("baby", non_inheritable_properties=[CAN_FILL_TEMPLATE_SLOT])
 subtype(BABY, PERSON)
 
 IS_LEARNER = OntologyNode("is-learner")
@@ -218,13 +212,11 @@ may be significant for learning.
 """
 subtype(LEARNER, BABY)
 
-NONHUMAN_ANIMAL = OntologyNode(
-    "animal", inheritable_properties=[ANIMATE], non_inheritable_properties=[ABSTRACT]
-)
+NONHUMAN_ANIMAL = OntologyNode("animal", inheritable_properties=[ANIMATE])
 subtype(NONHUMAN_ANIMAL, THING)
-DOG = OntologyNode("dog")
+DOG = OntologyNode("dog", [CAN_FILL_TEMPLATE_SLOT])
 subtype(DOG, NONHUMAN_ANIMAL)
-BIRD = OntologyNode("bird")
+BIRD = OntologyNode("bird", [CAN_FILL_TEMPLATE_SLOT])
 subtype(BIRD, NONHUMAN_ANIMAL)
 
 PHASE_1_CURRICULUM_OBJECTS = immutableset(
@@ -255,22 +247,40 @@ PHASE_1_CURRICULUM_OBJECTS = immutableset(
 )
 
 # Terms below are internal and can only be accessed as parts of other objects
+_BODY_PART = OntologyNode("body-part")
+subtype(_BODY_PART, THING)
 _ARM = OntologyNode("arm")
+subtype(_ARM, INANIMATE_OBJECT)
 _TORSO = OntologyNode("torso")
+subtype(_TORSO, _BODY_PART)
 _LEG = OntologyNode("leg")
+subtype(_LEG, _BODY_PART)
 _CHAIR_BACK = OntologyNode("chairback")
+subtype(_ARM, INANIMATE_OBJECT)
 _CHAIR_SEAT = OntologyNode("chairseat")
+subtype(_ARM, INANIMATE_OBJECT)
 _TABLETOP = OntologyNode("tabletop")
+subtype(_TABLETOP, INANIMATE_OBJECT)
 _TAIL = OntologyNode("tail")
+subtype(_TAIL, _BODY_PART)
 _WING = OntologyNode("wing")
+subtype(_WING, _BODY_PART)
 _ARM_SEGMENT = OntologyNode("armsegment")
+subtype(_ARM_SEGMENT, _BODY_PART)
 _WALL = OntologyNode("wall")
+subtype(_ARM, INANIMATE_OBJECT)
 _ROOF = OntologyNode("roof")
+subtype(_ARM, INANIMATE_OBJECT)
 _TIRE = OntologyNode("tire")
+subtype(_ARM, INANIMATE_OBJECT)
 _TRUCK_CAB = OntologyNode("truckcab")
+subtype(_ARM, INANIMATE_OBJECT)
 _TRAILER = OntologyNode("trailer")
+subtype(_ARM, INANIMATE_OBJECT)
 _FLATBED = OntologyNode("flatbed")
+subtype(_ARM, INANIMATE_OBJECT)
 _BODY = OntologyNode("body")
+subtype(_BODY, _BODY_PART)
 
 # Verbs
 
