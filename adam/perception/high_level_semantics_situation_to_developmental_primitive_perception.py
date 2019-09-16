@@ -21,8 +21,6 @@ from adam.ontology.phase1_ontology import (
     IS_SPEAKER,
     PART_OF,
     PERCEIVABLE,
-    AGENT,
-    CAN_MANIPULATE_OBJECTS,
 )
 from adam.perception import PerceptualRepresentation, PerceptualRepresentationGenerator
 from adam.perception.developmental_primitive_perception import (
@@ -264,11 +262,13 @@ class _PerceptionGeneration:
             perception_1 = self._find_perception_object_for_situation_object(
                 slot=condition.first_slot,
                 entities_to_roles=entities_to_roles,
-                action_roles_to_fillers=action_roles_to_fillers)
+                action_roles_to_fillers=action_roles_to_fillers,
+            )
             perception_2 = self._find_perception_object_for_situation_object(
                 slot=condition.second_slot,
                 entities_to_roles=entities_to_roles,
-                action_roles_to_fillers=action_roles_to_fillers)
+                action_roles_to_fillers=action_roles_to_fillers,
+            )
 
             relation_perception = RelationPerception(
                 relation_type=condition.relation_type,
@@ -282,38 +282,58 @@ class _PerceptionGeneration:
 
         return relations
 
-    def _find_perception_object_for_situation_object(self, slot: SituationObject, entities_to_roles,
-                                                     action_roles_to_fillers) -> ObjectPerception:
+    def _find_perception_object_for_situation_object(
+        self, slot: SituationObject, entities_to_roles, action_roles_to_fillers
+    ) -> ObjectPerception:
         if slot in entities_to_roles.keys():
-            filler_role_in_action = only(
-                entities_to_roles[slot]
-            )
-            situation_object = only(
-                action_roles_to_fillers[filler_role_in_action]
-            )
+            filler_role_in_action = only(entities_to_roles[slot])
+            situation_object = only(action_roles_to_fillers[filler_role_in_action])
             perception = self._objects_to_perceptions[situation_object]
         else:
             found_objects = []
-            for object_perception, ontology_node in self._object_perceptions_to_ontology_nodes.items():
+            for (
+                object_perception,
+                ontology_node,
+            ) in self._object_perceptions_to_ontology_nodes.items():
                 # check all the sub objects in the situation
-                if all(necessary_property in ontology_node.inheritable_properties
-                       for necessary_property in slot.properties):
+                if all(
+                    necessary_property in ontology_node.inheritable_properties
+                    for necessary_property in slot.properties
+                ):
                     found_objects.append(object_perception)
-            print(set([self._object_perceptions_to_ontology_nodes[obj].inheritable_properties
-                                for obj in found_objects]))
-            if len(found_objects) == 0:
-                raise RuntimeError(f'Can not find object with properties {slot}')
+            print(
+                set(
+                    [
+                        self._object_perceptions_to_ontology_nodes[
+                            obj
+                        ].inheritable_properties
+                        for obj in found_objects
+                    ]
+                )
+            )
+            if not found_objects:
+                raise RuntimeError(f"Can not find object with properties {slot}")
             elif len(found_objects) > 1:
-                if len(set([self._object_perceptions_to_ontology_nodes[obj].inheritable_properties
-                            for obj in found_objects])) == 1:
+                if (
+                    len(
+                        set(
+                            [
+                                self._object_perceptions_to_ontology_nodes[
+                                    obj
+                                ].inheritable_properties
+                                for obj in found_objects
+                            ]
+                        )
+                    )
+                    == 1
+                ):
                     # if the found objects have identical properties
                     return found_objects[0]
                 else:
-                    raise RuntimeError(f'Found multiple objects with properties {slot}')
+                    raise RuntimeError(f"Found multiple objects with properties {slot}")
             else:
                 perception = found_objects[0]
         return perception
-
 
     def _perceive_property_assertions(self) -> None:
         for situation_object in self._situation.objects:
@@ -411,7 +431,9 @@ class _PerceptionGeneration:
         for sub_object in schema.sub_objects:
             sub_object_perception = sub_object_to_object_perception[sub_object]
             self._object_perceptions.append(sub_object_perception)
-            self._object_perceptions_to_ontology_nodes[sub_object_perception] = sub_object.schema.parent_object
+            self._object_perceptions_to_ontology_nodes[
+                sub_object_perception
+            ] = sub_object.schema.parent_object
             # every sub-component has an implicit partOf relationship to its parent object.
             self._relation_perceptions.append(
                 RelationPerception(PART_OF, root_object_perception, sub_object_perception)
