@@ -1,3 +1,5 @@
+from typing import Dict, List, Optional, Tuple, cast
+
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import (
@@ -7,7 +9,6 @@ from immutablecollections import (
     immutabledict,
 )
 from more_itertools import only, quantify
-from typing import Dict, List, Optional, Tuple, cast
 from vistautils.preconditions import check_arg
 
 from adam.ontology import ObjectStructuralSchema, OntologyNode, SubObject
@@ -278,45 +279,80 @@ class _PerceptionGeneration:
 
         return relations
 
+    def _has_perceived_color(self, situation_object: SituationObject) -> bool:
+        for property_ in self._property_assertion_perceptions:
+            if property_.perceived_object == situation_object:
+                if isinstance(property_, RgbColorPerception):
+                    return True
+        return False
+
     def _perceive_property_assertions(self) -> None:
+        situation_object: SituationObject
         for situation_object in self._situation.objects:
             # Add the perceivable properties of each situation object into the perception
-            object_properties_from_ontology = self._generator.ontology.properties_for_node(
-                situation_object.ontology_node
-            )
-            for property_ in object_properties_from_ontology.union(
-                situation_object.properties
-            ):
-                # for each property such as animate, sentient, etc
-                attributes_of_property = self._generator.ontology.properties_for_node(
-                    property_
+            for property_ in situation_object.properties:
+                # Handle the situation specific properties of the object
+                self._analyze_property(
+                    self._generator.ontology.properties_for_node(property_),
+                    self._objects_to_perceptions[situation_object],
+                    property_,
                 )
-                # e.g. is this a perceivable property, binary property, color, etc...
-                if PERCEIVABLE in attributes_of_property:
-                    perceived_object = self._objects_to_perceptions[situation_object]
-                    # Convert the property (which as an OntologyNode object) into PropertyPerception object
-                    if BINARY in attributes_of_property:
-                        perceived_property: PropertyPerception = HasBinaryProperty(
-                            perceived_object, property_
-                        )
-                    elif self._generator.ontology.is_subtype_of(property_, COLOR):
-                        # Sample an RGB value for the color property and generate perception for it
-                        if property_ in COLORS_TO_RGBS:
-                            r, g, b = self._chooser.choice(COLORS_TO_RGBS[property_])
-                            perceived_property = HasColor(
-                                perceived_object, RgbColorPerception(r, g, b)
-                            )
-                        else:
-                            raise RuntimeError(
-                                f"Not sure how to generate perception for the unknown property {property_} "
-                                f"which is marked as COLOR"
-                            )
-                    else:
-                        raise RuntimeError(
-                            f"Not sure how to generate perception for property {property_} "
-                            f"which is marked as perceivable"
-                        )
-                    self._property_assertion_perceptions.append(perceived_property)
+            prototypical_colors = []
+            for property_ in self._generator.ontology.properties_for_node(
+                situation_object.ontology_node
+            ):
+                # Handle the properties from the OntologyNode
+                if self._generator.ontology.is_subtype_of(property_, COLOR):
+                    # Assume colors from OntologyNode are prototypical
+                    prototypical_colors.append(property_)
+                else:
+                    # Assign all other properties from OntologyNode which are PERCEIVABLE
+                    self._analyze_property(
+                        self._generator.ontology.properties_for_node(property_),
+                        self._objects_to_perceptions[situation_object],
+                        property_,
+                    )
+            # if an object doesn't have a perceived color AND there were prototypical colors on the
+            # OntologyNode assign one at "random"
+            if not self._has_perceived_color(situation_object) and prototypical_colors:
+                color = self._chooser.choice(prototypical_colors)
+                self._analyze_property(
+                    self._generator.ontology.properties_for_node(color),
+                    self._objects_to_perceptions[situation_object],
+                    color,
+                )
+
+    def _analyze_property(
+        self,
+        attributes_of_property: ImmutableSet[OntologyNode],
+        perceived_object: ObjectPerception,
+        property_: OntologyNode,
+    ) -> None:
+        # e.g. is this a perceivable property, binary property, color, etc...
+        if PERCEIVABLE in attributes_of_property:
+            # Convert the property (which as an OntologyNode object) into PropertyPerception object
+            if BINARY in attributes_of_property:
+                perceived_property: PropertyPerception = HasBinaryProperty(
+                    perceived_object, property_
+                )
+            elif self._generator.ontology.is_subtype_of(property_, COLOR):
+                # Sample an RGB value for the color property and generate perception for it
+                if property_ in COLORS_TO_RGBS:
+                    r, g, b = self._chooser.choice(COLORS_TO_RGBS[property_])
+                    perceived_property = HasColor(
+                        perceived_object, RgbColorPerception(r, g, b)
+                    )
+                else:
+                    raise RuntimeError(
+                        f"Not sure how to generate perception for the unknown property {property_} "
+                        f"which is marked as COLOR"
+                    )
+            else:
+                raise RuntimeError(
+                    f"Not sure how to generate perception for property {property_} "
+                    f"which is marked as perceivable"
+                )
+            self._property_assertion_perceptions.append(perceived_property)
 
     def _perceive_objects(self) -> None:
         for situation_object in self._situation.objects:

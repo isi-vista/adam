@@ -13,7 +13,11 @@ The following will eventually end up here:
 - Relations, Modifiers, Function Words: basic color terms (red, blue, green, white, black…), one,
   two, I, me, my, you, your, to, in, on, [beside, behind, in front of, over, under], up, down
 """
-from immutablecollections import immutabledict, immutableset, immutablesetmultidict
+from immutablecollections import (
+    immutabledict,
+    immutableset,
+    immutablesetmultidict,
+)
 from more_itertools import flatten
 
 from adam.ontology import (
@@ -163,7 +167,7 @@ HOUSE = OntologyNode("house", [HOLLOW])
 subtype(HOUSE, INANIMATE_OBJECT)
 CAR = OntologyNode("car", [HOLLOW])
 subtype(CAR, INANIMATE_OBJECT)
-WATER = OntologyNode("water", [LIQUID])
+WATER = OntologyNode("water", [LIQUID, RED])
 subtype(WATER, INANIMATE_OBJECT)
 JUICE = OntologyNode("juice", [LIQUID])
 subtype(JUICE, INANIMATE_OBJECT)
@@ -178,7 +182,7 @@ subtype(CHAIR, INANIMATE_OBJECT)
 # but we eventually want something more sophisticated.
 HEAD = OntologyNode("head", [HOLLOW])
 subtype(HEAD, INANIMATE_OBJECT)
-MILK = OntologyNode("milk", [LIQUID])
+MILK = OntologyNode("milk", [LIQUID, WHITE])
 subtype(MILK, INANIMATE_OBJECT)
 HAND = OntologyNode("hand", [CAN_MANIPULATE_OBJECTS])
 subtype(HAND, INANIMATE_OBJECT)
