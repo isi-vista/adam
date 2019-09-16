@@ -153,16 +153,20 @@ def test_person_put_ball_on_table():
     # assert we generate at least some relations in each frame
     assert first_frame_relations
     assert second_frame_relations
+
     first_frame_relations_strings = {
-        f"{r.relation_type}({r.arg1}, {r.arg2})" for r in first_frame_relations
+        f"{r.relation_type}({r.arg1}, {r.arg2})" for r in perception.frames[0].relations
     }
     second_frame_relations_strings = {
-        f"{r.relation_type}({r.arg1}, {r.arg2})" for r in second_frame_relations
+        f"{r.relation_type}({r.arg1}, {r.arg2})" for r in perception.frames[1].relations
     }
     assert "smallerThan(ball_0, person_0)" in first_frame_relations_strings
     assert "partOf(hand_0, person_0)" in first_frame_relations_strings
     assert "contacts(hand_0, ball_0)" in first_frame_relations_strings
+    assert "contacts(ball_0, person_0)" in first_frame_relations_strings
     assert "supports(hand_0, ball_0)" in first_frame_relations_strings
+
+    # continuing relations:
     assert "smallerThan(ball_0, person_0)" in second_frame_relations_strings
 
 
