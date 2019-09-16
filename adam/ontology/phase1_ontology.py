@@ -117,6 +117,10 @@ subtype(IS_SPEAKER, PERCEIVABLE_PROPERTY)
 
 CAN_MANIPULATE_OBJECTS = OntologyNode("can-manipulate-objects")
 subtype(CAN_MANIPULATE_OBJECTS, PROPERTY)
+EDIBLE = OntologyNode("edible")
+subtype(EDIBLE, PROPERTY)
+ROLLABLE = OntologyNode("rollable")
+subtype(ROLLABLE, PROPERTY)
 
 
 COLOR = OntologyNode("color")
@@ -865,7 +869,7 @@ _GO_ACTION_DESCRIPTION = ActionDescription(
     ],
     preconditions=[],
     postconditions=[
-        #TODO: that AGENT is located in GOAL
+        # TODO: that AGENT is located in GOAL
     ],
 )
 
@@ -880,9 +884,9 @@ _COME_ACTION_DESCRIPTION = ActionDescription(
         )
     ],
     preconditions=[],
-        # TODO: that speaker is located in GOAL?
+    # TODO: that speaker is located in GOAL?
     postconditions=[
-        #TODO: that AGENT is located in GOAL
+        # TODO: that AGENT is located in GOAL
     ],
 )
 
@@ -901,22 +905,15 @@ _TAKE_ACTION_DESCRIPTION = ActionDescription(
         SituationRelation(SMALLER_THAN, _TAKE_THEME, _TAKE_AGENT),
         # SituationRelation(PART_OF, _TAKE_MANIPULATOR, _TAKE_AGENT),
     ],
-    postconditions=[
-        SituationRelation(CONTACTS, _TAKE_MANIPULATOR, _TAKE_THEME)
-    ],
+    postconditions=[SituationRelation(CONTACTS, _TAKE_MANIPULATOR, _TAKE_THEME)],
 )
 
 _EAT_AGENT = SituationObject(THING, properties=[ANIMATE])
-# Should we have an EDIBLE property?
-_EAT_THEME = SituationObject(THING)
+_EAT_THEME = SituationObject(THING, properties=[EDIBLE])
 _EAT_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
 
 _EAT_ACTION_DESCRIPTION = ActionDescription(
-    frames=[
-        ActionDescriptionFrame(
-            {AGENT: _EAT_AGENT, THEME: _EAT_THEME}
-        )
-    ],
+    frames=[ActionDescriptionFrame({AGENT: _EAT_AGENT, THEME: _EAT_THEME})],
     preconditions=[
         SituationRelation(SMALLER_THAN, _EAT_THEME, _EAT_AGENT),
         # SituationRelation(PART_OF, _EAT_MANIPULATOR, _EAT_AGENT),
@@ -929,7 +926,6 @@ _EAT_ACTION_DESCRIPTION = ActionDescription(
 
 _GIVE_AGENT = SituationObject(THING, properties=[ANIMATE])
 _GIVE_THEME = SituationObject(THING)
-# GOAL or RECIPIENT?
 _GIVE_GOAL = SituationObject(THING, properties=[ANIMATE])
 _GIVE_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
 _GIVE_GOAL_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
@@ -945,9 +941,7 @@ _GIVE_ACTION_DESCRIPTION = ActionDescription(
         # SituationRelation(PART_OF, _GIVE_MANIPULATOR, _GIVE_AGENT),
         # SituationRelation(PART_OF, _GIVE_GOAL_MANIPULATOR, _GIVE_GOAL),
     ],
-    postconditions=[
-        SituationRelation(CONTACTS, _GIVE_GOAL_MANIPULATOR, _GIVE_THEME),
-    ],
+    postconditions=[SituationRelation(CONTACTS, _GIVE_GOAL_MANIPULATOR, _GIVE_THEME)],
 )
 
 _TURN_AGENT = SituationObject(THING, properties=[ANIMATE])
@@ -955,11 +949,7 @@ _TURN_THEME = SituationObject(THING)
 _TURN_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
 
 _TURN_ACTION_DESCRIPTION = ActionDescription(
-    frames=[
-        ActionDescriptionFrame(
-            {AGENT: _TURN_AGENT, THEME: _TURN_THEME}
-        )
-    ],
+    frames=[ActionDescriptionFrame({AGENT: _TURN_AGENT, THEME: _TURN_THEME})],
     preconditions=[
         SituationRelation(SMALLER_THAN, _TURN_THEME, _TURN_AGENT),
         # SituationRelation(PART_OF, _TURN_MANIPULATOR, _TURN_AGENT),
@@ -980,9 +970,7 @@ _SIT_ACTION_DESCRIPTION = ActionDescription(
         )
     ],
     preconditions=[],
-    postconditions=[
-        SituationRelation(CONTACTS, _SIT_AGENT, _SIT_GOAL)
-    ],
+    postconditions=[SituationRelation(CONTACTS, _SIT_AGENT, _SIT_GOAL)],
 )
 
 _DRINK_AGENT = SituationObject(THING, properties=[ANIMATE])
@@ -991,11 +979,7 @@ _DRINK_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
 _DRINK_CONTAINER = SituationObject(THING, properties=[HOLLOW])
 
 _DRINK_ACTION_DESCRIPTION = ActionDescription(
-    frames=[
-        ActionDescriptionFrame(
-            {AGENT: _DRINK_AGENT, THEME: _DRINK_THEME}
-        )
-    ],
+    frames=[ActionDescriptionFrame({AGENT: _DRINK_AGENT, THEME: _DRINK_THEME})],
     preconditions=[
         SituationRelation(SMALLER_THAN, _DRINK_CONTAINER, _DRINK_AGENT),
         SituationRelation(CONTACTS, _DRINK_MANIPULATOR, _DRINK_CONTAINER),
@@ -1019,9 +1003,7 @@ _FALL_ACTION_DESCRIPTION = ActionDescription(
     preconditions=[
         # TODO: that PATIENT coordinates are higher than GOAL coordinates
     ],
-    postconditions=[
-        SituationRelation(CONTACTS, _FALL_PATIENT, _FALL_GOAL),
-    ],
+    postconditions=[SituationRelation(CONTACTS, _FALL_PATIENT, _FALL_GOAL)],
 )
 
 _THROW_AGENT = SituationObject(THING, properties=[ANIMATE])
@@ -1060,7 +1042,7 @@ _MOVE_ACTION_DESCRIPTION = ActionDescription(
         # SituationRelation(PART_OF, _MOVE_MANIPULATOR, _MOVE_AGENT),
     ],
     postconditions=[
-        #TODO: that THEME is located in GOAL
+        # TODO: that THEME is located in GOAL
     ],
 )
 
@@ -1075,13 +1057,12 @@ _JUMP_ACTION_DESCRIPTION = ActionDescription(
     ],
     preconditions=[],
     postconditions=[
-        #TODO: that AGENT is located in GOAL
+        # TODO: that AGENT is located in GOAL
     ],
 )
 
 _ROLL_AGENT = SituationObject(THING, properties=[ANIMATE])
-# TODO: make ROUND a property?
-_ROLL_THEME = SituationObject(THING)
+_ROLL_THEME = SituationObject(THING, properties=[ROLLABLE])
 _ROLL_GOAL = SituationObject(THING)
 
 _ROLL_ACTION_DESCRIPTION = ActionDescription(
@@ -1092,18 +1073,14 @@ _ROLL_ACTION_DESCRIPTION = ActionDescription(
     ],
     preconditions=[],
     postconditions=[
-        #TODO: that THEME is away from AGENT?
+        # TODO: that THEME is away from AGENT?
     ],
 )
 
 _FLY_AGENT = SituationObject(THING, properties=[ANIMATE])
 
 _FLY_ACTION_DESCRIPTION = ActionDescription(
-    frames=[
-        ActionDescriptionFrame(
-            {AGENT: _FLY_AGENT}
-        )
-    ],
+    frames=[ActionDescriptionFrame({AGENT: _FLY_AGENT})],
     preconditions=[],
     postconditions=[],
 )
