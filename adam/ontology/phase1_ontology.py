@@ -13,11 +13,7 @@ The following will eventually end up here:
 - Relations, Modifiers, Function Words: basic color terms (red, blue, green, white, black…), one,
   two, I, me, my, you, your, to, in, on, [beside, behind, in front of, over, under], up, down
 """
-from immutablecollections import (
-    immutabledict,
-    immutableset,
-    immutablesetmultidict,
-)
+from immutablecollections import immutabledict, immutableset, immutablesetmultidict
 from more_itertools import flatten
 
 from adam.ontology import (
