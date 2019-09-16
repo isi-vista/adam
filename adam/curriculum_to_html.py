@@ -181,7 +181,11 @@ def main(params: Parameters) -> None:
 
 
 USAGE_MESSAGE = (
-    "This main function only expects an output_directory location. Please provide it."
+    """
+    curriculum_to_html.py param_file
+     \twhere param_file has the following parameter:
+     \t\toutput_directory: where to write the HTML output
+   """
 )
 
 if __name__ == "__main__":
