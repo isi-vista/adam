@@ -197,7 +197,8 @@ class _PerceptionGeneration:
         if len(self._situation.actions) > 1:
             raise RuntimeError("Cannot handle multiple situation actions")
 
-        # e.g: SituationAction(PUT, ((AGENT, mom),(THEME, ball),(DESTINATION, SituationRelation(ON, ball, table))))
+        # e.g: SituationAction(PUT, ((AGENT, mom),(THEME, ball),(DESTINATION, SituationRelation(
+        # ON, ball, table))))
         # Get description from PUT (PUT is action_type)
         action_description: ActionDescription = GAILA_PHASE_1_ONTOLOGY.action_to_description[
             situation_action.action_type
@@ -288,6 +289,7 @@ class _PerceptionGeneration:
         entities_to_roles: ImmutableSetMultiDict[SituationObject, OntologyNode],
         action_roles_to_fillers: ImmutableSetMultiDict[OntologyNode, SituationObject],
     ) -> ObjectPerception:
+        ontology = self._generator.ontology
         # If we know what the situation object is (e.g. agent) we just look it up
         if slot in entities_to_roles:
             filler_role_in_action = only(entities_to_roles[slot])
@@ -296,38 +298,31 @@ class _PerceptionGeneration:
         # Otherwise, we need to search through the other situation objects to see if
         # any matches the constraints we know to hold for the situation object.
         else:
-            objects_matching_constraints = []
-            for (
-                object_perception,
-                ontology_node,
-            ) in self._object_perceptions_to_ontology_nodes.items():
-                # check all the sub objects in the situation
-                # TODO: we don't currently handle constraints due to relations; issue #143
-                if all(
-                    necessary_property in ontology_node.inheritable_properties
-                    for necessary_property in slot.properties
-                ):
-                    objects_matching_constraints.append(object_perception)
-            if not objects_matching_constraints:
+            objects_matching_constraints = [
+                object_perception
+                for (
+                    object_perception,
+                    ontology_node,
+                ) in self._object_perceptions_to_ontology_nodes.items()
+                if ontology.has_all_properties(ontology_node, slot.properties)
+            ]
+            if len(objects_matching_constraints) == 1:
+                return only(objects_matching_constraints)
+            elif not objects_matching_constraints:
                 raise RuntimeError(f"Can not find object with properties {slot}")
-            elif len(objects_matching_constraints) > 1:
-                if (
-                    len(
-                        set(
-                            self._object_perceptions_to_ontology_nodes[
-                                obj
-                            ].inheritable_properties
-                            for obj in objects_matching_constraints
-                        )
+            else:
+                distinct_property_sets_for_matching_object_types = set(
+                    ontology.properties_for_node(
+                        self._object_perceptions_to_ontology_nodes[obj]
                     )
-                    == 1
-                ):
-                    # if the found objects have identical properties; e.g. a person has two hands
+                    for obj in objects_matching_constraints
+                )
+                # if the found objects have identical properties, we choose one arbitrarily
+                # e.g. a person with two hands
+                if len(distinct_property_sets_for_matching_object_types) == 1:
                     return objects_matching_constraints[0]
                 else:
                     raise RuntimeError(f"Found multiple objects with properties {slot}")
-            else:
-                return objects_matching_constraints[0]
 
     def _perceive_property_assertions(self) -> None:
         for situation_object in self._situation.objects:
@@ -345,7 +340,8 @@ class _PerceptionGeneration:
                 # e.g. is this a perceivable property, binary property, color, etc...
                 if PERCEIVABLE in attributes_of_property:
                     perceived_object = self._objects_to_perceptions[situation_object]
-                    # Convert the property (which as an OntologyNode object) into PropertyPerception object
+                    # Convert the property (which as an OntologyNode object) into
+                    # PropertyPerception object
                     if BINARY in attributes_of_property:
                         perceived_property: PropertyPerception = HasBinaryProperty(
                             perceived_object, property_
