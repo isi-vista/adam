@@ -180,13 +180,11 @@ def main(params: Parameters) -> None:
     )
 
 
-USAGE_MESSAGE = (
-    """
+USAGE_MESSAGE = """
     curriculum_to_html.py param_file
      \twhere param_file has the following parameter:
      \t\toutput_directory: where to write the HTML output
    """
-)
 
 if __name__ == "__main__":
     parameters_only_entry_point(main, usage_message=USAGE_MESSAGE)
