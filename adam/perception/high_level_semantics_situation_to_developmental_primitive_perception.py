@@ -1,4 +1,3 @@
-from itertools import chain
 from typing import Dict, List, Optional, Tuple, cast
 
 from attr import Factory, attrib, attrs
@@ -8,7 +7,8 @@ from immutablecollections import (
     ImmutableSet,
     ImmutableSetMultiDict,
     immutabledict,
-    immutableset)
+    immutableset,
+)
 from more_itertools import only, quantify
 from vistautils.preconditions import check_arg
 
@@ -59,7 +59,7 @@ class HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
     """
 
     def generate_perception(
-            self, situation: HighLevelSemanticsSituation, chooser: SequenceChooser
+        self, situation: HighLevelSemanticsSituation, chooser: SequenceChooser
     ) -> PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]:
         check_arg(
             situation.ontology == self.ontology,
@@ -175,12 +175,12 @@ class _PerceptionGeneration:
 
     def _sanity_check_situation(self) -> None:
         if (
-                quantify(
-                    property_ == IS_SPEAKER
-                    for object_ in self._situation.objects
-                    for property_ in object_.properties
-                )
-                > 1
+            quantify(
+                property_ == IS_SPEAKER
+                for object_ in self._situation.objects
+                for property_ in object_.properties
+            )
+            > 1
         ):
             raise TooManySpeakersException(
                 f"Situations with multiple speakers are not supported: {self._situation}"
@@ -200,9 +200,9 @@ class _PerceptionGeneration:
             situation_action.action_type
         ]
         if any(
-                not isinstance(filler, SituationObject)
-                for fillers in situation_action.argument_roles_to_fillers.value_groups()
-                for filler in fillers
+            not isinstance(filler, SituationObject)
+            for fillers in situation_action.argument_roles_to_fillers.value_groups()
+            for filler in fillers
         ):
             raise RuntimeError("Cant translate non situation objects yet")
 
@@ -230,11 +230,11 @@ class _PerceptionGeneration:
         return before_relations, after_relations
 
     def _get_relations_from_condition(
-            self,
-            conditions: ImmutableSet[SituationRelation],
-            action_description: ActionDescription,
-            action_roles_to_fillers: ImmutableSetMultiDict[OntologyNode, SituationObject],
-            already_known_relations=tuple(),
+        self,
+        conditions: ImmutableSet[SituationRelation],
+        action_description: ActionDescription,
+        action_roles_to_fillers: ImmutableSetMultiDict[OntologyNode, SituationObject],
+        already_known_relations=tuple(),
     ) -> List[RelationPerception]:
         entities_to_roles = action_description.frames[0].entities_to_roles
         relations = [
@@ -289,14 +289,19 @@ class _PerceptionGeneration:
             all_object_properties.extend(situation_object.properties)
             # Implicit properties are derived from what type of thing an object is,
             # e.g. that people are ANIMATE.
-            all_object_properties.extend(self._generator.ontology.properties_for_node(
-                situation_object.ontology_node))
+            all_object_properties.extend(
+                self._generator.ontology.properties_for_node(
+                    situation_object.ontology_node
+                )
+            )
 
             # Colors require special processing, so we strip them all out and then
             # add back only the (at most) single color we determined an object has.
-            properties_to_perceive = [property_
-                                      for property_ in all_object_properties
-                                      if not self._generator.ontology.is_subtype_of(property_, COLOR)]
+            properties_to_perceive = [
+                property_
+                for property_ in all_object_properties
+                if not self._generator.ontology.is_subtype_of(property_, COLOR)
+            ]
             color = self._determine_color(situation_object)
             if color:
                 properties_to_perceive.append(color)
@@ -311,10 +316,10 @@ class _PerceptionGeneration:
                 )
 
     def _perceive_property(
-            self,
-            attributes_of_property: ImmutableSet[OntologyNode],
-            perceived_object: ObjectPerception,
-            property_: OntologyNode,
+        self,
+        attributes_of_property: ImmutableSet[OntologyNode],
+        perceived_object: ObjectPerception,
+        property_: OntologyNode,
     ) -> None:
         # e.g. is this a perceivable property, binary property, color, etc...
         if PERCEIVABLE in attributes_of_property:
@@ -342,7 +347,9 @@ class _PerceptionGeneration:
                 )
             self._property_assertion_perceptions.append(perceived_property)
 
-    def _determine_color(self, situation_object: SituationObject) -> Optional[OntologyNode]:
+    def _determine_color(
+        self, situation_object: SituationObject
+    ) -> Optional[OntologyNode]:
         explicitly_specified_colors = immutableset(
             property_
             for property_ in situation_object.properties
@@ -352,7 +359,8 @@ class _PerceptionGeneration:
         prototypical_colors_for_object_type = immutableset(
             property_
             for property_ in self._generator.ontology.properties_for_node(
-                situation_object.ontology_node)
+                situation_object.ontology_node
+            )
             if self._generator.ontology.is_subtype_of(property_, COLOR)
         )
 
@@ -397,12 +405,12 @@ class _PerceptionGeneration:
             )
 
     def _instantiate_object_schema(
-            self,
-            schema: ObjectStructuralSchema,
-            *,
-            # if the object being instantiated corresponds to an object
-            # in the situation description, then this will track that object
-            situation_object: Optional[SituationObject] = None,
+        self,
+        schema: ObjectStructuralSchema,
+        *,
+        # if the object being instantiated corresponds to an object
+        # in the situation description, then this will track that object
+        situation_object: Optional[SituationObject] = None,
     ) -> ObjectPerception:
         root_object_perception = ObjectPerception(
             debug_handle=self._object_handle_generator.subscripted_handle(schema)
@@ -446,10 +454,9 @@ class _PerceptionGeneration:
         return root_object_perception
 
 
-GAILA_PHASE_1_PERCEPTION_GENERATOR = \
-    HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
-        GAILA_PHASE_1_ONTOLOGY
-    )
+GAILA_PHASE_1_PERCEPTION_GENERATOR = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
+    GAILA_PHASE_1_ONTOLOGY
+)
 
 
 @attrs(auto_exc=True, auto_attribs=True)
