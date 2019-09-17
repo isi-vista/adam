@@ -62,7 +62,7 @@ class Direction:
 ReferenceObjectT = TypeVar("ReferenceObjectT")
 
 
-@attrs(slots=True, frozen=True)
+@attrs(frozen=True)
 class Region(Generic[ReferenceObjectT]):
     """
     A region of space perceived by the learner.
