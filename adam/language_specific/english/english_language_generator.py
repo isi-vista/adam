@@ -260,7 +260,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 else:
                     raise RuntimeError(
                         "The only argument role we can currently handle regions as a filler "
-                        "for is DESTINATION"
+                        "for is GOAL"
                     )
             else:
                 raise RuntimeError(
