@@ -23,7 +23,8 @@ from immutablecollections.converter_utils import (
 from vistautils.preconditions import check_arg
 
 from adam.math_3d import Point
-from adam.ontology import OntologyNode, Region, IN_REGION
+from adam.ontology import OntologyNode, IN_REGION
+from adam.ontology.phase1_spatial_relations import Region
 
 
 class Situation(ABC):

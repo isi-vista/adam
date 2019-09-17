@@ -38,6 +38,7 @@ Distances used by Landau and Jackendoff in describing spatial relations.
 """
 
 
+@attrs(frozen=True, slots=True)
 class Direction:
     r"""
     Represents the direction one object may have relative to another.

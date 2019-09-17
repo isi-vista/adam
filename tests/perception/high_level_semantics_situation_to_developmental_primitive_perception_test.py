@@ -1,7 +1,7 @@
 import pytest
 from more_itertools import quantify
 
-from adam.ontology import OntologyNode
+from adam.ontology import OntologyNode, Region
 from adam.ontology.phase1_ontology import (
     AGENT,
     BALL,
@@ -18,6 +18,7 @@ from adam.ontology.phase1_ontology import (
     TABLE,
     THEME,
 )
+from adam.ontology.phase1_spatial_relations import EXTERIOR_BUT_IN_CONTACT, Direction
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
     HasBinaryProperty,
@@ -120,7 +121,13 @@ def test_person_put_ball_on_table():
         actions=[
             # What is the best way of representing the destination in the high-level semantics?
             # Here we represent it as indicating a relation which should be true.
-            SituationAction(PUT, ((AGENT, person), (THEME, ball), (GOAL, table)))
+            SituationAction(PUT, ((AGENT, person), (THEME, ball),
+                                  (GOAL, Region(reference_object=table,
+                                                distance=EXTERIOR_BUT_IN_CONTACT,
+                                                direction=Direction(
+                                                    positive=True,
+                                                    relative_to_axis="vertical w.r.t. gravity"
+                                                )))))
         ],
     )
 

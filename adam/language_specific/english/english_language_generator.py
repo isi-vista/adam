@@ -124,7 +124,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             # Use the counts to apply the appropriate quantifiers
             for _object in objects_to_translate:
                 self._translate_object_to_noun(
-                    _object, node_counts[_object.ontology_node], node_counts
+                    _object, count=node_counts[_object.ontology_node]
                 )
 
             if len(self.situation.actions) > 1:
@@ -145,7 +145,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             )
 
         def _translate_object_to_noun(
-            self, _object: SituationObject, count: int = 1
+            self, _object: SituationObject, *, count: int = 1
         ) -> DependencyTreeToken:
             # Eventually we will need to ensure that pluralized objects are
             # separated by their respective relations and actions
