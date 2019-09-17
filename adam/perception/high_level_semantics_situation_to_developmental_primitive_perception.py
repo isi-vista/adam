@@ -417,9 +417,19 @@ class _PerceptionGeneration:
                 arg2=perception_2,
             )
 
-            # TODO: Implement negation issue #121
             if not condition.negated:
                 relations.append(relation_perception)
+            else:
+                # Remove the relation from already known relations
+                relations = [
+                    relation
+                    for relation in relations
+                    if not (
+                        relation.relation_type == condition.relation_type
+                        and relation.arg1 == perception_1
+                        and relation.arg2 == perception_2
+                    )
+                ]
 
         return immutableset(relations)
 
