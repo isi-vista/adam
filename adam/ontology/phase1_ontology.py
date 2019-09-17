@@ -13,7 +13,14 @@ The following will eventually end up here:
 - Relations, Modifiers, Function Words: basic color terms (red, blue, green, white, black…), one,
   two, I, me, my, you, your, to, in, on, [beside, behind, in front of, over, under], up, down
 """
-from immutablecollections import immutabledict, immutableset, immutablesetmultidict
+from typing import Optional, Sequence, Tuple
+
+from immutablecollections import (
+    immutabledict,
+    immutableset,
+    immutablesetmultidict,
+    ImmutableDict,
+)
 from more_itertools import flatten
 
 from adam.ontology import (
@@ -119,32 +126,44 @@ BLUE = OntologyNode("blue", [CAN_FILL_TEMPLATE_SLOT])
 GREEN = OntologyNode("green", [CAN_FILL_TEMPLATE_SLOT])
 BLACK = OntologyNode("black", [CAN_FILL_TEMPLATE_SLOT])
 WHITE = OntologyNode("white", [CAN_FILL_TEMPLATE_SLOT])
+TRANSPARENT = OntologyNode("transparent", [CAN_FILL_TEMPLATE_SLOT])
 subtype(RED, COLOR)
 subtype(BLUE, COLOR)
 subtype(GREEN, COLOR)
 subtype(BLACK, COLOR)
 subtype(WHITE, COLOR)
-COLORS_TO_RGBS = {
-    RED: [
-        (255, 0, 0),
-        (237, 28, 36),
-        (196, 2, 51),
-        (242, 0, 60),
-        (237, 41, 57),
-        (238, 32, 77),
-    ],
-    BLUE: [
-        (0, 0, 255),
-        (51, 51, 153),
-        (0, 135, 189),
-        (0, 147, 175),
-        (0, 24, 168),
-        (31, 117, 254),
-    ],
-    GREEN: [(0, 255, 0), (75, 111, 68), (86, 130, 3), (34, 139, 34)],
-    BLACK: [(0, 0, 0), (12, 2, 15), (53, 56, 57), (52, 52, 52)],
-    WHITE: [(255, 255, 255), (248, 248, 255), (245, 245, 245), (254, 254, 250)],
-}
+subtype(TRANSPARENT, COLOR)
+_RED_HEX = [
+    (255, 0, 0),
+    (237, 28, 36),
+    (196, 2, 51),
+    (242, 0, 60),
+    (237, 41, 57),
+    (238, 32, 77),
+]
+_BLUE_HEX = [
+    (0, 0, 255),
+    (51, 51, 153),
+    (0, 135, 189),
+    (0, 147, 175),
+    (0, 24, 168),
+    (31, 117, 254),
+]
+_GREEN_HEX = [(0, 255, 0), (75, 111, 68), (86, 130, 3), (34, 139, 34)]
+_BLACK_HEX = [(0, 0, 0), (12, 2, 15), (53, 56, 57), (52, 52, 52)]
+_WHITE_HEX = [(255, 255, 255), (248, 248, 255), (245, 245, 245), (254, 254, 250)]
+COLORS_TO_RGBS: ImmutableDict[
+    OntologyNode, Optional[Sequence[Tuple[int, int, int]]]
+] = immutabledict(
+    [
+        (RED, _RED_HEX),
+        (BLUE, _BLUE_HEX),
+        (GREEN, _GREEN_HEX),
+        (BLACK, _BLACK_HEX),
+        (WHITE, _WHITE_HEX),
+        (TRANSPARENT, None),
+    ]
+)
 
 # Objects
 # Information about the hierarchical structure of objects
@@ -162,9 +181,13 @@ HOUSE = OntologyNode("house", [HOLLOW, CAN_FILL_TEMPLATE_SLOT])
 subtype(HOUSE, INANIMATE_OBJECT)
 CAR = OntologyNode("car", [HOLLOW, CAN_FILL_TEMPLATE_SLOT])
 subtype(CAR, INANIMATE_OBJECT)
-WATER = OntologyNode("water", [LIQUID, CAN_FILL_TEMPLATE_SLOT])
+WATER = OntologyNode(
+    "water", [LIQUID], non_inheritable_properties=[TRANSPARENT, CAN_FILL_TEMPLATE_SLOT]
+)
 subtype(WATER, INANIMATE_OBJECT)
-JUICE = OntologyNode("juice", [LIQUID, CAN_FILL_TEMPLATE_SLOT])
+JUICE = OntologyNode(
+    "juice", [LIQUID], non_inheritable_properties=[RED, CAN_FILL_TEMPLATE_SLOT]
+)
 subtype(JUICE, INANIMATE_OBJECT)
 CUP = OntologyNode("cup", [HOLLOW, CAN_FILL_TEMPLATE_SLOT])
 subtype(CUP, INANIMATE_OBJECT)
@@ -177,7 +200,9 @@ subtype(CHAIR, INANIMATE_OBJECT)
 # but we eventually want something more sophisticated.
 HEAD = OntologyNode("head", [HOLLOW, CAN_FILL_TEMPLATE_SLOT])
 subtype(HEAD, INANIMATE_OBJECT)
-MILK = OntologyNode("milk", [LIQUID, CAN_FILL_TEMPLATE_SLOT])
+MILK = OntologyNode(
+    "milk", [LIQUID], non_inheritable_properties=[WHITE, CAN_FILL_TEMPLATE_SLOT]
+)
 subtype(MILK, INANIMATE_OBJECT)
 HAND = OntologyNode("hand", [CAN_MANIPULATE_OBJECTS, CAN_FILL_TEMPLATE_SLOT])
 subtype(HAND, INANIMATE_OBJECT)
