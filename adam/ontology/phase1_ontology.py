@@ -13,9 +13,14 @@ The following will eventually end up here:
 - Relations, Modifiers, Function Words: basic color terms (red, blue, green, white, black…), one,
   two, I, me, my, you, your, to, in, on, [beside, behind, in front of, over, under], up, down
 """
-from typing import Optional
+from typing import Optional, Sequence, Tuple
 
-from immutablecollections import immutabledict, immutableset, immutablesetmultidict
+from immutablecollections import (
+    immutabledict,
+    immutableset,
+    immutablesetmultidict,
+    ImmutableDict,
+)
 from more_itertools import flatten
 
 from adam.ontology import (
@@ -125,28 +130,37 @@ subtype(GREEN, COLOR)
 subtype(BLACK, COLOR)
 subtype(WHITE, COLOR)
 subtype(TRANSPARENT, COLOR)
-COLORS_TO_RGBS: immutabledict[OntologyNode, Optional[(int, int, int)]] = {
-    RED: [
-        (255, 0, 0),
-        (237, 28, 36),
-        (196, 2, 51),
-        (242, 0, 60),
-        (237, 41, 57),
-        (238, 32, 77),
-    ],
-    BLUE: [
-        (0, 0, 255),
-        (51, 51, 153),
-        (0, 135, 189),
-        (0, 147, 175),
-        (0, 24, 168),
-        (31, 117, 254),
-    ],
-    GREEN: [(0, 255, 0), (75, 111, 68), (86, 130, 3), (34, 139, 34)],
-    BLACK: [(0, 0, 0), (12, 2, 15), (53, 56, 57), (52, 52, 52)],
-    WHITE: [(255, 255, 255), (248, 248, 255), (245, 245, 245), (254, 254, 250)],
-    TRANSPARENT: None,
-}
+_RED_HEX = [
+    (255, 0, 0),
+    (237, 28, 36),
+    (196, 2, 51),
+    (242, 0, 60),
+    (237, 41, 57),
+    (238, 32, 77),
+]
+_BLUE_HEX = [
+    (0, 0, 255),
+    (51, 51, 153),
+    (0, 135, 189),
+    (0, 147, 175),
+    (0, 24, 168),
+    (31, 117, 254),
+]
+_GREEN_HEX = [(0, 255, 0), (75, 111, 68), (86, 130, 3), (34, 139, 34)]
+_BLACK_HEX = [(0, 0, 0), (12, 2, 15), (53, 56, 57), (52, 52, 52)]
+_WHITE_HEX = [(255, 255, 255), (248, 248, 255), (245, 245, 245), (254, 254, 250)]
+COLORS_TO_RGBS: ImmutableDict[
+    OntologyNode, Optional[Sequence[Tuple[int, int, int]]]
+] = immutabledict(
+    [
+        (RED, _RED_HEX),
+        (BLUE, _BLUE_HEX),
+        (GREEN, _GREEN_HEX),
+        (BLACK, _BLACK_HEX),
+        (WHITE, _WHITE_HEX),
+        (TRANSPARENT, None),
+    ]
+)
 
 # Objects
 # Information about the hierarchical structure of objects
