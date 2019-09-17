@@ -1,11 +1,11 @@
 import pytest
 from more_itertools import quantify
 
-from adam.ontology import OntologyNode
+from adam.ontology import OntologyNode, Region
 from adam.ontology.phase1_ontology import (
     AGENT,
     BALL,
-    DESTINATION,
+    GOAL,
     GAILA_PHASE_1_ONTOLOGY,
     IS_LEARNER,
     IS_SPEAKER,
@@ -18,6 +18,7 @@ from adam.ontology.phase1_ontology import (
     TABLE,
     THEME,
 )
+from adam.ontology.phase1_spatial_relations import EXTERIOR_BUT_IN_CONTACT, Direction
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
     HasBinaryProperty,
@@ -50,7 +51,6 @@ def test_person_and_ball():
     )
 
     perceived_objects = person_and_ball_perception.frames[0].perceived_objects
-    print(perceived_objects)
     object_handles = set(obj.debug_handle for obj in perceived_objects)
     assert len(person_and_ball_perception.frames) == 1
     assert object_handles == {
@@ -69,9 +69,8 @@ def test_person_and_ball():
         "leg_0",
         "leg_1",
     }
-    print(person_and_ball_perception.frames[0].relations)
+
     assert person_and_ball_perception.frames[0].relations
-    print(person_and_ball_perception.frames[0].property_assertions)
     assert len(person_and_ball_perception.frames[0].property_assertions) == 2
 
 
@@ -122,7 +121,23 @@ def test_person_put_ball_on_table():
         actions=[
             # What is the best way of representing the destination in the high-level semantics?
             # Here we represent it as indicating a relation which should be true.
-            SituationAction(PUT, ((AGENT, person), (THEME, ball), (DESTINATION, table)))
+            SituationAction(
+                PUT,
+                (
+                    (AGENT, person),
+                    (THEME, ball),
+                    (
+                        GOAL,
+                        Region(
+                            reference_object=table,
+                            distance=EXTERIOR_BUT_IN_CONTACT,
+                            direction=Direction(
+                                positive=True, relative_to_axis="vertical w.r.t. gravity"
+                            ),
+                        ),
+                    ),
+                ),
+            )
         ],
     )
 
@@ -135,18 +150,20 @@ def test_person_put_ball_on_table():
     first_frame_relations = perception.frames[0].relations
     second_frame_relations = perception.frames[1].relations
 
-    assert len(first_frame_relations) == 61
-    assert len(second_frame_relations) == 62
-
-    assert "smallerThan(ball_0, person_0)" in {
+    # assert we generate at least some relations in each frame
+    assert first_frame_relations
+    assert second_frame_relations
+    first_frame_relations_strings = {
         f"{r.relation_type}({r.arg1}, {r.arg2})" for r in first_frame_relations
     }
-    assert "smallerThan(ball_0, person_0)" in {
+    second_frame_relations_strings = {
         f"{r.relation_type}({r.arg1}, {r.arg2})" for r in second_frame_relations
     }
-    assert "contacts(ball_0, table_0)" in {
-        f"{r.relation_type}({r.arg1}, {r.arg2})" for r in second_frame_relations
-    }
+    assert "smallerThan(ball_0, person_0)" in first_frame_relations_strings
+    assert "partOf(hand_0, person_0)" in first_frame_relations_strings
+    assert "contacts(hand_0, ball_0)" in first_frame_relations_strings
+    assert "supports(hand_0, ball_0)" in first_frame_relations_strings
+    assert "smallerThan(ball_0, person_0)" in second_frame_relations_strings
 
 
 def _some_object_has_binary_property(

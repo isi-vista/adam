@@ -12,6 +12,9 @@ from immutablecollections import ImmutableSet, immutableset
 from immutablecollections.converter_utils import _to_immutableset
 from more_itertools import flatten
 from networkx import DiGraph
+from vistautils.preconditions import check_arg
+
+from adam.ontology.phase1_spatial_relations import Distance, Region
 
 
 @attrs(frozen=True, slots=True, repr=False)
@@ -58,12 +61,23 @@ class OntologyNode:
 
 
 # by convention, the following should appear in all Ontologies
-ABSTRACT = OntologyNode("abstract")
+
+CAN_FILL_TEMPLATE_SLOT = OntologyNode("can-fill-template-slot")
 r"""
-A property indicating that a node can't be instantiated in a scene.
+A property indicating that a node can be instantiated in a scene.
+
+The ontology contains many nodes which, 
+while useful for various purposes,
+do not themselves form part of our primary concept vocabulary.
+This property distinguishes the elements of our core "concept vocabulary"
+from such auxiliary concepts.
+
+For example, PERSON is one of our core concepts; 
+we have a concept of ARM which is used in defining the `ObjectStructuralSchema` of PERSON
+but disembodied arms should never be instantiated in templates directly.
 """
 
-THING = OntologyNode("thing", non_inheritable_properties=[ABSTRACT])
+THING = OntologyNode("thing")
 r"""
 Ancestor of all objects in an `Ontology`.
 
@@ -97,8 +111,15 @@ For example, whether it is perceivable or binary.
 By convention this should appear in all `Ontology`\ s.
 """
 
+IN_REGION = OntologyNode("in-region")
+"""
+Indicates that an object is located in a `Region`.
+
+This is used to support the Landau and Jackendoff interpretation of prepositions.
+"""
+
 REQUIRED_ONTOLOGY_NODES = immutableset(
-    [THING, RELATION, ACTION, PROPERTY, META_PROPERTY, ABSTRACT]
+    [THING, RELATION, ACTION, PROPERTY, META_PROPERTY, CAN_FILL_TEMPLATE_SLOT, IN_REGION]
 )
 
 
@@ -112,6 +133,7 @@ def minimal_ontology_graph():
     ret = DiGraph()
     for node in REQUIRED_ONTOLOGY_NODES:
         ret.add_node(node)
+    ret.add_edge(IN_REGION, RELATION)
     return ret
 
 
@@ -182,14 +204,23 @@ class SubObjectRelation:
     """
     An `OntologyNode` which gives the relationship type between the args
     """
-    arg1: SubObject = attrib()
+    arg1: SubObject = attrib(validator=instance_of(SubObject))
     """
     A `SubObject` which is the first argument of the relation_type
     """
-    arg2: SubObject = attrib()
+    # for type ignore see
+    # https://github.com/isi-vista/adam/issues/144
+    arg2: Union[SubObject, Region[SubObject]] = attrib(
+        validator=instance_of((SubObject, Region[SubObject]))  # type: ignore
+    )
+    r"""
+    A `SubObject` or `Region` which is the second argument of the relation_type.
+    
+    `Region`\ s may only be the second argument for `IN_REGION` relations.
     """
-    A `SubObject` which is the second argument of the relation_type
-    """
+
+    def __attrs_post_init__(self) -> None:
+        check_arg(not isinstance(self.arg2, Region) or self.relation_type == IN_REGION)
 
 
 # DSL to make writing object hierarchies easier
