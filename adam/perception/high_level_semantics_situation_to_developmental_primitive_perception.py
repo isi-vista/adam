@@ -1,14 +1,10 @@
 from itertools import chain
-from typing import AbstractSet, Dict, List, Mapping, Optional, Tuple, Union, cast
 
-from immutablecollections import (
-    ImmutableDict,
-    ImmutableSet,
-    ImmutableSetMultiDict,
-    immutabledict,
-    immutableset,
-)
+from attr import Factory, attrib, attrs
+from attr.validators import instance_of
+from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
 from more_itertools import only, quantify
+from typing import AbstractSet, Dict, List, Mapping, Optional, Tuple, Union, cast
 from vistautils.preconditions import check_arg
 
 from adam.ontology import ObjectStructuralSchema, OntologyNode, Region, SubObject
