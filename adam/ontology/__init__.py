@@ -56,6 +56,26 @@ class OntologyNode:
         return f"{self.handle}{properties_string}"
 
 
+@attrs(frozen=True, slots=True)
+class OntologyNodeRelation:
+    r"""
+    This class defines the relationships between `OntologyNode`\ s
+    """
+
+    relation_type: OntologyNode = attrib(validator=instance_of(OntologyNode))
+    """
+    An `OntologyNode` which gives the relationship type between the args
+    """
+    arg1: OntologyNode = attrib(validator=instance_of(OntologyNode))
+    """
+    An `OntologyNode` which is the first argument of the relation_type
+    """
+    arg2: OntologyNode = attrib(validator=instance_of(OntologyNode))
+    """
+    An `OntologyNode` which is the second argument of the relation_type
+    """
+
+
 # by convention, the following should appear in all Ontologies
 
 CAN_FILL_TEMPLATE_SLOT = OntologyNode("can-fill-template-slot")
