@@ -995,9 +995,7 @@ _PUSH_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
 
 _PUSH_ACTION_DESCRIPTION = ActionDescription(
     frames=[
-        ActionDescriptionFrame(
-            {AGENT: _PUSH_AGENT, THEME: _PUSH_THEME, GOAL: _PUSH_GOAL}
-        )
+        ActionDescriptionFrame({AGENT: _PUSH_AGENT, THEME: _PUSH_THEME, GOAL: _PUSH_GOAL})
     ],
     preconditions=[],
     postconditions=[],
@@ -1038,9 +1036,7 @@ _TAKE_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
 
 _TAKE_ACTION_DESCRIPTION = ActionDescription(
     frames=[
-        ActionDescriptionFrame(
-            {AGENT: _TAKE_AGENT, THEME: _TAKE_THEME, GOAL: _TAKE_GOAL}
-        )
+        ActionDescriptionFrame({AGENT: _TAKE_AGENT, THEME: _TAKE_THEME, GOAL: _TAKE_GOAL})
     ],
     preconditions=[
         SituationRelation(SMALLER_THAN, _TAKE_THEME, _TAKE_AGENT),
@@ -1073,9 +1069,7 @@ _GIVE_GOAL_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJEC
 
 _GIVE_ACTION_DESCRIPTION = ActionDescription(
     frames=[
-        ActionDescriptionFrame(
-            {AGENT: _GIVE_AGENT, THEME: _GIVE_THEME, GOAL: _GIVE_GOAL}
-        )
+        ActionDescriptionFrame({AGENT: _GIVE_AGENT, THEME: _GIVE_THEME, GOAL: _GIVE_GOAL})
     ],
     preconditions=[
         SituationRelation(SMALLER_THAN, _GIVE_THEME, _GIVE_AGENT),
