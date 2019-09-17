@@ -224,6 +224,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             verb_dependency_node: DependencyTreeToken,
         ):
             # TODO: to alternation
+            # https://github.com/isi-vista/adam/issues/150
             if isinstance(filler, SituationObject):
                 filler_dependency_node = self.objects_to_dependency_nodes[filler]
                 self.dependency_graph.add_edge(
