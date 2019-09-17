@@ -1121,7 +1121,7 @@ GAILA_PHASE_1_ONTOLOGY = Ontology(
             (TABLE, DOOR),
             (MOM, DAD),
             (DOG, BOX, CHAIR),
-            (BABY, DOG),
+            (BABY,),
             (HAND, HEAD),
             (BALL, BIRD, BOOK, COOKIE, CUP, HAT),
         ),
