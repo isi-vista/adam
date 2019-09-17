@@ -340,7 +340,7 @@ subtype(SIT, ACTION)
 DRINK = OntologyNode("drink")
 subtype(DRINK, CONSUME)
 FALL = OntologyNode("fall")
-subtype(FALL, ACTION)  # ?
+subtype(FALL, ACTION)
 THROW = OntologyNode("throw")
 subtype(THROW, ACTION)
 MOVE = OntologyNode("move")
@@ -850,9 +850,7 @@ _PUSH_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
 
 _PUSH_ACTION_DESCRIPTION = ActionDescription(
     frames=[
-        ActionDescriptionFrame(
-            {AGENT: _PUSH_AGENT, THEME: _PUSH_THEME, GOAL: _PUSH_GOAL}
-        )
+        ActionDescriptionFrame({AGENT: _PUSH_AGENT, THEME: _PUSH_THEME, GOAL: _PUSH_GOAL})
     ],
     preconditions=[],
     postconditions=[],
@@ -862,11 +860,7 @@ _GO_AGENT = SituationObject(THING, properties=[ANIMATE])
 _GO_GOAL = SituationObject(THING)
 
 _GO_ACTION_DESCRIPTION = ActionDescription(
-    frames=[
-        ActionDescriptionFrame(
-            {AGENT: _GO_AGENT, GOAL: _GO_GOAL}
-        )
-    ],
+    frames=[ActionDescriptionFrame({AGENT: _GO_AGENT, GOAL: _GO_GOAL})],
     preconditions=[],
     postconditions=[
         # TODO: that AGENT is located in GOAL
@@ -897,9 +891,7 @@ _TAKE_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
 
 _TAKE_ACTION_DESCRIPTION = ActionDescription(
     frames=[
-        ActionDescriptionFrame(
-            {AGENT: _TAKE_AGENT, THEME: _TAKE_THEME, GOAL: _TAKE_GOAL}
-        )
+        ActionDescriptionFrame({AGENT: _TAKE_AGENT, THEME: _TAKE_THEME, GOAL: _TAKE_GOAL})
     ],
     preconditions=[
         SituationRelation(SMALLER_THAN, _TAKE_THEME, _TAKE_AGENT),
@@ -932,9 +924,7 @@ _GIVE_GOAL_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJEC
 
 _GIVE_ACTION_DESCRIPTION = ActionDescription(
     frames=[
-        ActionDescriptionFrame(
-            {AGENT: _GIVE_AGENT, THEME: _GIVE_THEME, GOAL: _GIVE_GOAL}
-        )
+        ActionDescriptionFrame({AGENT: _GIVE_AGENT, THEME: _GIVE_THEME, GOAL: _GIVE_GOAL})
     ],
     preconditions=[
         SituationRelation(SMALLER_THAN, _GIVE_THEME, _GIVE_AGENT),
@@ -964,11 +954,7 @@ _SIT_AGENT = SituationObject(THING, properties=[ANIMATE])
 _SIT_GOAL = SituationObject(THING)
 
 _SIT_ACTION_DESCRIPTION = ActionDescription(
-    frames=[
-        ActionDescriptionFrame(
-            {AGENT: _SIT_AGENT, GOAL: _SIT_GOAL}
-        )
-    ],
+    frames=[ActionDescriptionFrame({AGENT: _SIT_AGENT, GOAL: _SIT_GOAL})],
     preconditions=[],
     postconditions=[SituationRelation(CONTACTS, _SIT_AGENT, _SIT_GOAL)],
 )
@@ -995,11 +981,7 @@ _FALL_PATIENT = SituationObject(THING)
 _FALL_GOAL = SituationObject(THING)
 
 _FALL_ACTION_DESCRIPTION = ActionDescription(
-    frames=[
-        ActionDescriptionFrame(
-            {AGENT: _FALL_PATIENT, GOAL: _FALL_GOAL}
-        )
-    ],
+    frames=[ActionDescriptionFrame({AGENT: _FALL_PATIENT, GOAL: _FALL_GOAL})],
     preconditions=[
         # TODO: that PATIENT coordinates are higher than GOAL coordinates
     ],
@@ -1034,9 +1016,7 @@ _MOVE_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
 
 _MOVE_ACTION_DESCRIPTION = ActionDescription(
     frames=[
-        ActionDescriptionFrame(
-            {AGENT: _MOVE_AGENT, THEME: _MOVE_THEME, GOAL: _MOVE_GOAL}
-        )
+        ActionDescriptionFrame({AGENT: _MOVE_AGENT, THEME: _MOVE_THEME, GOAL: _MOVE_GOAL})
     ],
     preconditions=[
         # SituationRelation(PART_OF, _MOVE_MANIPULATOR, _MOVE_AGENT),
@@ -1050,11 +1030,7 @@ _JUMP_AGENT = SituationObject(THING, properties=[ANIMATE])
 _JUMP_GOAL = SituationObject(THING)
 
 _JUMP_ACTION_DESCRIPTION = ActionDescription(
-    frames=[
-        ActionDescriptionFrame(
-            {AGENT: _JUMP_AGENT, GOAL: _JUMP_GOAL}
-        )
-    ],
+    frames=[ActionDescriptionFrame({AGENT: _JUMP_AGENT, GOAL: _JUMP_GOAL})],
     preconditions=[],
     postconditions=[
         # TODO: that AGENT is located in GOAL
@@ -1067,9 +1043,7 @@ _ROLL_GOAL = SituationObject(THING)
 
 _ROLL_ACTION_DESCRIPTION = ActionDescription(
     frames=[
-        ActionDescriptionFrame(
-            {AGENT: _ROLL_AGENT, THEME: _ROLL_THEME, GOAL: _ROLL_GOAL}
-        )
+        ActionDescriptionFrame({AGENT: _ROLL_AGENT, THEME: _ROLL_THEME, GOAL: _ROLL_GOAL})
     ],
     preconditions=[],
     postconditions=[
