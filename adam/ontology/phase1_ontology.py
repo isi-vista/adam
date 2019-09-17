@@ -832,9 +832,6 @@ _PUT_ACTION_DESCRIPTION = ActionDescription(
         SituationRelation(IN_REGION, _PUT_THEME, _CONTACTING_MANIPULATOR),
         # TODO: that theme is not already located in GOAL
         SituationRelation(PART_OF, _PUT_MANIPULATOR, _PUT_AGENT),
-        SituationRelation(CONTACTS, _PUT_MANIPULATOR, _PUT_THEME),
-        SituationRelation(CONTACTS, _PUT_THEME, _PUT_AGENT),
-        SituationRelation(SUPPORTS, _PUT_MANIPULATOR, _PUT_THEME),
     ],
     postconditions=[
         SituationRelation(IN_REGION, _PUT_THEME, _CONTACTING_MANIPULATOR, negated=True),
