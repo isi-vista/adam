@@ -54,7 +54,7 @@ PATIENT = OntologyNode("patient")
 subtype(PATIENT, SEMANTIC_ROLE)
 THEME = OntologyNode("theme")
 subtype(THEME, SEMANTIC_ROLE)
-GOAL = OntologyNode("destination")
+GOAL = OntologyNode("goal")
 subtype(GOAL, SEMANTIC_ROLE)
 
 
