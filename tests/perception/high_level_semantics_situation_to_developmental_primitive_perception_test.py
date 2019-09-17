@@ -162,24 +162,29 @@ def test_person_put_ball_on_table():
     }
     assert "smallerThan(ball_0, person_0)" in first_frame_relations_strings
     assert "partOf(hand_0, person_0)" in first_frame_relations_strings
-    assert "in-region(ball_0, Region(reference_object=hand_0, " \
-           "distance=Distance(name='exterior-but-in-contact'), direction=None))" \
-            in first_frame_relations_strings
+    assert (
+        "in-region(ball_0, Region(reference_object=hand_0, "
+        "distance=Distance(name='exterior-but-in-contact'), direction=None))"
+        in first_frame_relations_strings
+    )
 
     # continuing relations:
     assert "smallerThan(ball_0, person_0)" in second_frame_relations_strings
 
     # new relations:
-    assert "in-region(ball_0, Region(reference_object=table_0, " \
-           "distance=Distance(name='exterior-but-in-contact'), " \
-           "direction=Direction(positive=True, relative_to_axis='vertical w.r.t. gravity')))" \
-           in second_frame_relations_strings
+    assert (
+        "in-region(ball_0, Region(reference_object=table_0, "
+        "distance=Distance(name='exterior-but-in-contact'), "
+        "direction=Direction(positive=True, relative_to_axis='vertical w.r.t. gravity')))"
+        in second_frame_relations_strings
+    )
 
     # removed relations:
-    assert "in-region(ball_0, Region(reference_object=hand_0, " \
-           "distance=Distance(name='exterior-but-in-contact'), direction=None))" \
-            not in second_frame_relations_strings
-
+    assert (
+        "in-region(ball_0, Region(reference_object=hand_0, "
+        "distance=Distance(name='exterior-but-in-contact'), direction=None))"
+        not in second_frame_relations_strings
+    )
 
 
 def _some_object_has_binary_property(
