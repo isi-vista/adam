@@ -33,7 +33,7 @@ from adam.ontology import (
     Region,
     THING,
     minimal_ontology_graph,
-)
+    build_size_relationships)
 from adam.ontology.action_description import ActionDescription, ActionDescriptionFrame
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_spatial_relations import (
@@ -1113,5 +1113,19 @@ GAILA_PHASE_1_ONTOLOGY = Ontology(
             (ROLL, _ROLL_ACTION_DESCRIPTION),
             (FLY, _FLY_ACTION_DESCRIPTION),
         ]
+    ),
+    node_to_relations=build_size_relationships(
+        (
+            (HOUSE,),
+            (CAR, TRUCK),
+            (TABLE, DOOR),
+            (MOM, DAD),
+            (DOG, BOX, CHAIR),
+            (BABY, DOG),
+            (HAND, HEAD),
+            (BALL, BIRD, BOOK, COOKIE, CUP, HAT),
+        ),
+        relation_type=BIGGER_THAN,
+        opposite_type=SMALLER_THAN,
     ),
 )

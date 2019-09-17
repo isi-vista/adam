@@ -23,6 +23,7 @@ from adam.ontology import (
     OntologyNode,
     REQUIRED_ONTOLOGY_NODES,
     THING,
+    OntologyNodeRelation,
 )
 from adam.ontology.structural_schema import ObjectStructuralSchema
 
@@ -61,6 +62,9 @@ class Ontology:
     action_to_description: ImmutableDict[OntologyNode, ActionDescription] = attrib(
         converter=_to_immutabledict, default=immutabledict(), kw_only=True
     )
+    _node_to_relations: ImmutableDict[
+        OntologyNode, ImmutableSet[OntologyNodeRelation]
+    ] = attrib(converter=_to_immutabledict, default=immutabledict(), kw_only=True)
 
     def __attrs_post_init__(self) -> None:
         for cycle in simple_cycles(self._graph):

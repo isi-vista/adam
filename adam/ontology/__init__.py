@@ -76,6 +76,36 @@ class OntologyNodeRelation:
     """
 
 
+_OneOrMoreOntologyNodes = Union[OntologyNode, Iterable[OntologyNode]]
+
+
+def build_size_relationships(
+    relative_size_nodes: Tuple[Tuple[OntologyNode, ...], ...],
+    *,
+    relation_type: OntologyNode,
+    opposite_type: OntologyNode,
+) -> ImmutableDict[OntologyNode, ImmutableSet[OntologyNodeRelation]]:
+    node_to_relations: Dict[OntologyNode, List[OntologyNodeRelation]] = {}
+    bigger: List[OntologyNode] = []
+    for nodes in relative_size_nodes:
+        for node in nodes:
+            if node not in node_to_relations.keys():
+                node_to_relations.update({node: []})
+            for entry in bigger:
+                node_to_relations[node].append(
+                    OntologyNodeRelation(
+                        relation_type=opposite_type, arg1=node, arg2=entry
+                    )
+                )
+                node_to_relations[entry].append(
+                    OntologyNodeRelation(
+                        relation_type=relation_type, arg1=entry, arg2=node
+                    )
+                )
+        bigger.append(flatten(nodes))
+    return _to_immutabledict(node_to_relations)
+
+
 # by convention, the following should appear in all Ontologies
 
 CAN_FILL_TEMPLATE_SLOT = OntologyNode("can-fill-template-slot")
