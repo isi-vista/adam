@@ -91,6 +91,8 @@ class SituationObject(SituationNode):
     The `OntologyNode`\ s representing the properties this object has.
     """
 
+    debug_handle: str = attrib(validator=instance_of(str))
+
     def __attrs_post_init__(self) -> None:
         # disabled warning below is due to a PyCharm bug
         # noinspection PyTypeChecker
@@ -100,18 +102,25 @@ class SituationObject(SituationNode):
                     f"Situation object property {property_} is not an " f"OntologyNode"
                 )
 
+    @debug_handle.default
+    def _default_debug_handle(self) -> str:
+        return f"{self.ontology_node.handle}_{id(self)}"
+
     def __repr__(self) -> str:
         if self.properties:
             additional_properties = ", ".join(repr(prop) for prop in self.properties)
             additional_properties_string = f"[{additional_properties}]"
         else:
             additional_properties_string = ""
-        if self.ontology_node:
-            handle_string = self.ontology_node.handle
-        else:
-            handle_string = "???"
 
-        return f"{handle_string}{additional_properties_string}"
+        if self.ontology_node and not self.debug_handle.startswith(
+            self.ontology_node.handle
+        ):
+            handle_string = f"[{self.ontology_node.handle}]"
+        else:
+            handle_string = ""
+
+        return f"{self.debug_handle}{handle_string}{additional_properties_string}"
 
 
 @attrs(frozen=True, slots=True)
@@ -132,7 +141,7 @@ class LocatedObjectSituation(Situation):
 class SituationRelation(SituationNode):
     """
     A relationship which holds between two objects in a `Situation`,
-    or between a `SituationObject` and a `Region`.
+    or between a `SituationObject` and a Region.
     The latter case is allowed only for the special relation `IN_REGION` .
     """
 

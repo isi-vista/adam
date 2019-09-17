@@ -1,6 +1,14 @@
 from adam.ontology import Region
-from adam.ontology.phase1_ontology import (AGENT, BALL, GAILA_PHASE_1_ONTOLOGY, GOAL, MOM, PUT,
-                                           TABLE, THEME)
+from adam.ontology.phase1_ontology import (
+    AGENT,
+    BALL,
+    GAILA_PHASE_1_ONTOLOGY,
+    GOAL,
+    MOM,
+    PUT,
+    TABLE,
+    THEME,
+)
 from adam.ontology.phase1_spatial_relations import Direction, EXTERIOR_BUT_IN_CONTACT
 from adam.situation import SituationAction, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
@@ -31,7 +39,8 @@ def make_mom_put_ball_on_table():
                             distance=EXTERIOR_BUT_IN_CONTACT,
                             direction=Direction(
                                 positive=True,
-                                relative_to_axis="Vertical axis of table " "relative to earth",
+                                relative_to_axis="Vertical axis of table "
+                                "relative to earth",
                             ),
                         ),
                     ),

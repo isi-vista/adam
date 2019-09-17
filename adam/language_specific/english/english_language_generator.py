@@ -137,8 +137,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
 
             return immutableset(
                 [
-                    self.generator._dependency_tree_linearizer.linearize(
-                        # pylint:disable=protected-access
+                    self.generator._dependency_tree_linearizer.linearize(  # pylint:disable=protected-access
                         DependencyTree(self.dependency_graph)
                     )
                 ]
@@ -293,8 +292,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 )
 
         def _unique_lexicon_entry(self, ontology_node: OntologyNode) -> LexiconEntry:
-            lexicon_entries = self.generator._ontology_lexicon.words_for_node(
-                # pylint:disable=protected-access
+            lexicon_entries = self.generator._ontology_lexicon.words_for_node(  # pylint:disable=protected-access
                 ontology_node
             )
             if lexicon_entries:

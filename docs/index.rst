@@ -114,6 +114,13 @@ adam.experiment
 -----------------------------
 .. automodule:: adam.experiment
 
+*******************************************
+Supporting Classes: Spatial Representation
+*******************************************
+adam.ontology.phase1_spatial_relations
+---------------------------------------
+.. automodule:: adam.ontology.phase1_spatial_relations
+
 ******************************************
 Supporting classes: Situations
 ******************************************

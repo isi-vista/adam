@@ -1,18 +1,13 @@
 from itertools import chain
+from typing import AbstractSet, Dict, List, Mapping, Optional, Tuple, Union, cast
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
-from immutablecollections import (
-    ImmutableDict,
-    ImmutableSet,
-    ImmutableSetMultiDict,
-    immutabledict,
-    immutableset)
+from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
 from more_itertools import only, quantify
-from typing import Dict, List, Optional, Tuple, cast, Union, Mapping
 from vistautils.preconditions import check_arg
 
-from adam.ontology import ObjectStructuralSchema, OntologyNode, SubObject, Region
+from adam.ontology import ObjectStructuralSchema, OntologyNode, Region, SubObject
 from adam.ontology.action_description import ActionDescription
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
@@ -35,7 +30,7 @@ from adam.perception.developmental_primitive_perception import (
     RgbColorPerception,
 )
 from adam.random_utils import SequenceChooser
-from adam.situation import SituationObject, SituationRelation, SituationAction
+from adam.situation import SituationAction, SituationObject, SituationRelation
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 
 
@@ -59,7 +54,7 @@ class HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
     """
 
     def generate_perception(
-            self, situation: HighLevelSemanticsSituation, chooser: SequenceChooser
+        self, situation: HighLevelSemanticsSituation, chooser: SequenceChooser
     ) -> PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]:
         check_arg(
             situation.ontology == self.ontology,
@@ -132,9 +127,9 @@ class _PerceptionGeneration:
     """
     Used for tracking sub-scripts of objects.
     """
-    _regions_to_perceptions: Dict[Region[SituationObject], Region[ObjectPerception]] = attrib(
-        init=False, default=Factory(dict)
-    )
+    _regions_to_perceptions: Dict[
+        Region[SituationObject], Region[ObjectPerception]
+    ] = attrib(init=False, default=Factory(dict))
     """
     Tracks the correspondence between spatial regions in the situation description
     and those in the perceptual representation.
@@ -189,12 +184,12 @@ class _PerceptionGeneration:
 
     def _sanity_check_situation(self) -> None:
         if (
-                quantify(
-                    property_ == IS_SPEAKER
-                    for object_ in self._situation.objects
-                    for property_ in object_.properties
-                )
-                > 1
+            quantify(
+                property_ == IS_SPEAKER
+                for object_ in self._situation.objects
+                for property_ in object_.properties
+            )
+            > 1
         ):
             raise TooManySpeakersException(
                 f"Situations with multiple speakers are not supported: {self._situation}"
@@ -204,22 +199,33 @@ class _PerceptionGeneration:
         # gather all places a region can appear in the situation representation
         possible_regions = chain(
             (relation.second_slot for relation in self._situation.relations),
-            (filler for action in self._situation.actions
-             for (_, filler) in action.argument_roles_to_fillers.items())
+            (
+                filler
+                for action in self._situation.actions
+                for (_, filler) in action.argument_roles_to_fillers.items()
+            ),
         )
         regions = immutableset(
-            possible_region for possible_region in possible_regions
+            possible_region
+            for possible_region in possible_regions
             if isinstance(possible_region, Region)
         )
 
         # map each of these to a region perception
-        self._regions_to_perceptions.update({
-            region: Region(reference_object=self._objects_to_perceptions[region.reference_object],
-                           distance=region.distance, direction=region.direction)
-            for region in regions
-        })
+        self._regions_to_perceptions.update(
+            {
+                region: Region(
+                    reference_object=self._objects_to_perceptions[
+                        region.reference_object
+                    ],
+                    distance=region.distance,
+                    direction=region.direction,
+                )
+                for region in regions
+            }
+        )
 
-    def _perceive_action(self) -> Tuple[List[RelationPerception], ...]:
+    def _perceive_action(self) -> Tuple[AbstractSet[RelationPerception], ...]:
         # Extract relations from action
         situation_action = self._situation.actions[0]
         # TODO: Handle multiple actions
@@ -233,45 +239,63 @@ class _PerceptionGeneration:
             situation_action.action_type
         ]
 
-        action_objects_variables_to_perceived_objects = self._bind_action_objects_variables_to_perceived_objects(situation_action,
-                                                                     action_description)
+        action_objects_variables_to_perceived_objects = self._bind_action_objects_variables_to_perceived_objects(
+            situation_action, action_description
+        )
 
-        before_relations = self._get_relations_from_condition(
+        before_relations = self._perceive_action_relations(
             conditions=action_description.preconditions,
-            action_description=action_description,
-            action_roles_to_fillers=action_roles_to_fillers,
+            action_object_variables_to_object_perceptions=action_objects_variables_to_perceived_objects,
             already_known_relations=self._relation_perceptions,
         )
-        after_relations = self._get_relations_from_condition(
+        after_relations = self._perceive_action_relations(
             conditions=action_description.postconditions,
-            action_description=action_description,
-            action_roles_to_fillers=action_roles_to_fillers,
+            action_object_variables_to_object_perceptions=action_objects_variables_to_perceived_objects,
             already_known_relations=before_relations,
         )
 
         return before_relations, after_relations
 
     def _bind_action_objects_variables_to_perceived_objects(
-            self, situation_action: SituationAction, action_description: ActionDescription) -> \
-            Mapping[SituationObject, ObjectPerception]:
+        self, situation_action: SituationAction, action_description: ActionDescription
+    ) -> Mapping[SituationObject, Union[Region[ObjectPerception], ObjectPerception]]:
         if len(action_description.frames) != 1:
-            raise RuntimeError("Currently we can only handle verbs with exactly one "
-                               "subcategorization frame")
-        if any(len(fillers) > 1 for fillers in
-               situation_action.argument_roles_to_fillers.value_groups()):
+            raise RuntimeError(
+                "Currently we can only handle verbs with exactly one "
+                "subcategorization frame"
+            )
+        if any(
+            len(fillers) > 1
+            for fillers in situation_action.argument_roles_to_fillers.value_groups()
+        ):
             raise RuntimeError("Cannot handle multiple fillers for an argument role yet.")
+
+        bindings: Dict[
+            SituationObject, Union[ObjectPerception, Region[ObjectPerception]]
+        ] = {}
 
         # for action description objects which play semantic roles,
         # the SituationAction gives us the binding directly
         subcategorization_frame = only(action_description.frames)
-        ret: Dict[SituationObject, ObjectPerception] = {
-            action_object: only(situation_action.argument_roles_to_fillers[role])
-            for (role, action_object) in subcategorization_frame.roles_to_entities.items()
+        for (role, action_object) in subcategorization_frame.roles_to_entities.items():
             # Regions can also fill certain semantic roles,
             # but Regions are always relative to objects,
             # so we can translate them after we have translated the action objects
-            if isinstance(action_object, SituationObject)
-        }
+            situation_object_bound_to_role = only(
+                situation_action.argument_roles_to_fillers[role]
+            )
+            if isinstance(situation_object_bound_to_role, SituationObject):
+                bindings[action_object] = self._objects_to_perceptions[
+                    situation_object_bound_to_role
+                ]
+            elif isinstance(situation_object_bound_to_role, Region):
+                bindings[action_object] = Region(
+                    reference_object=self._objects_to_perceptions[
+                        situation_object_bound_to_role.reference_object
+                    ],
+                    distance=situation_object_bound_to_role.distance,
+                    direction=situation_object_bound_to_role.direction,
+                )
 
         # but there are also action description objects
         # which don't fill semantic roles directly.
@@ -284,25 +308,35 @@ class _PerceptionGeneration:
             # We use immutableset to remove duplicates
             # while maintaining deterministic iteration order.
             slot_filler
-            for condition_set in (action_description.preconditions,
-                                  action_description.postconditions)
+            for condition_set in (
+                action_description.preconditions,
+                action_description.postconditions,
+            )
             for condition in condition_set
             for slot_filler in (condition.first_slot, condition.second_slot)
             # some slot fillers will be Regions;
             # we can translate these after the action objects have been translated.
-            if (isinstance(slot_filler, SituationObject)
+            if (
+                isinstance(slot_filler, SituationObject)
                 # = not already mapped by a semantic role
-                and slot_filler not in ret)
+                and slot_filler not in bindings
+            )
         )
 
-        ret.update({unbound_action_object_variable: self._bind_action_object_variable(
-            unbound_action_object_variable)
-            for unbound_action_object_variable in unbound_action_object_variables})
+        bindings.update(
+            {
+                unbound_action_object_variable: self._bind_action_object_variable(
+                    unbound_action_object_variable
+                )
+                for unbound_action_object_variable in unbound_action_object_variables
+            }
+        )
 
-        return ret
+        return bindings
 
-    def _bind_action_object_variable(self,
-                                     action_object_variable: SituationObject) -> ObjectPerception:
+    def _bind_action_object_variable(
+        self, action_object_variable: SituationObject
+    ) -> ObjectPerception:
         """
         Binds an action object variable to an object that we have perceived.
 
@@ -317,12 +351,16 @@ class _PerceptionGeneration:
                 object_perception,
                 ontology_node,
             ) in self._object_perceptions_to_ontology_nodes.items()
-            if ontology.has_all_properties(ontology_node, action_object_variable.properties)
+            if ontology.has_all_properties(
+                ontology_node, action_object_variable.properties
+            )
         ]
         if len(perceived_objects_matching_constraints) == 1:
             return only(perceived_objects_matching_constraints)
         elif not perceived_objects_matching_constraints:
-            raise RuntimeError(f"Can not find object with properties {action_object_variable}")
+            raise RuntimeError(
+                f"Can not find object with properties {action_object_variable}"
+            )
         else:
             distinct_property_sets_for_matching_object_types = set(
                 ontology.properties_for_node(
@@ -336,49 +374,41 @@ class _PerceptionGeneration:
                 return perceived_objects_matching_constraints[0]
             else:
                 raise RuntimeError(
-                    f"Found multiple objects with properties {action_object_variable}"
+                    f"Found multiple objects with properties {action_object_variable}: "
+                    f"{perceived_objects_matching_constraints}"
                 )
 
-    def _get_relations_from_condition(
-            self,
-            conditions: ImmutableSet[SituationRelation],
-            action_description: ActionDescription,
-            action_object_variables_to_object_perceptions: ImmutableSetMultiDict[OntologyNode,
-                                                                      SituationObject],
-            already_known_relations=tuple(),
-    ) -> List[RelationPerception]:
-        entities_to_roles = action_description.frames[0].entities_to_roles
+    def _perceive_action_relations(
+        self,
+        conditions: ImmutableSet[SituationRelation],
+        *,
+        action_object_variables_to_object_perceptions: Mapping[
+            SituationObject, Union[ObjectPerception, Region[ObjectPerception]]
+        ],
+        already_known_relations=tuple(),
+    ) -> AbstractSet[RelationPerception]:
+        """
+
+        Args:
+            already_known_relations: relations to automatically include in our returned output.
+                                     This is to support putting thing perceived from an actions
+                                     preconditions into its post-conditions as well.
+        """
         relations = [
             relation for relation in already_known_relations
         ]  # build on already known relations
 
         for condition in conditions:  # each one is a SituationRelation
-            # TODO: Handle multiple semantic roles for the same entity
-            for entity in (condition.first_slot, condition.second_slot):
-                if (
-                        isinstance(entity, SituationObject)
-                        and len(entities_to_roles[entity]) > 1
-                ):
-                    raise RuntimeError(
-                        "Don't yet handle multiple semantic roles for the same entity"
-                    )
-
-            for fillers in action_roles_to_fillers.value_groups():
-                if len(fillers) > 1:
-                    raise RuntimeError(
-                        "Don't yet handle multiple fillers for the same semantic role"
-                    )
-
             # Generate perceptions for situation objects in the given condition.
-            perception_1 = self._perceive_object_relation_filler(
-                slot_filler=condition.first_slot,
-                entities_to_roles=entities_to_roles,
-                action_roles_to_fillers=action_roles_to_fillers,
+            perception_1 = cast(
+                ObjectPerception,
+                action_object_variables_to_object_perceptions[condition.first_slot],
             )
+            # the second slot of a relation can be a SituationObject or a Region,
+            # so the mapping logic is more complicated.
             perception_2 = self._perceive_object_or_region_relation_filler(
                 slot_filler=condition.second_slot,
-                entities_to_roles=entities_to_roles,
-                action_roles_to_fillers=action_roles_to_fillers,
+                action_object_variables_to_object_perceptions=action_object_variables_to_object_perceptions,
             )
 
             relation_perception = RelationPerception(
@@ -391,63 +421,38 @@ class _PerceptionGeneration:
             if not condition.negated:
                 relations.append(relation_perception)
 
-        return relations
+        return immutableset(relations)
 
     def _perceive_object_or_region_relation_filler(
-            self,
-            slot_filler: Union[SituationObject, Region[SituationObject]],
-            entities_to_roles: ImmutableSetMultiDict[SituationObject, OntologyNode],
-            action_roles_to_fillers: ImmutableSetMultiDict[OntologyNode, SituationObject],
+        self,
+        slot_filler: Union[SituationObject, Region[SituationObject]],
+        *,
+        action_object_variables_to_object_perceptions: Mapping[
+            SituationObject, Union[ObjectPerception, Region[ObjectPerception]]
+        ],
     ) -> Union[ObjectPerception, Region[ObjectPerception]]:
         if isinstance(slot_filler, Region):
-            return self._regions_to_perceptions[slot_filler]
-        else:
-            return self._perceive_object_relation_filler(
-                slot_filler, entities_to_roles, action_roles_to_fillers
-            )
-
-    def _perceive_object_relation_filler(
-            self,
-            slot_filler: SituationObject,
-            entities_to_roles: ImmutableSetMultiDict[SituationObject, OntologyNode],
-            action_roles_to_fillers: ImmutableSetMultiDict[OntologyNode, SituationObject],
-    ) -> ObjectPerception:
-        ontology = self._generator.ontology
-        # If we know what the situation object is (e.g. agent) we just look it up
-        if slot_filler in entities_to_roles:
-            filler_role_in_action = only(entities_to_roles[slot_filler])
-            situation_object = only(action_roles_to_fillers[filler_role_in_action])
-            return self._objects_to_perceptions[situation_object]
-        # Otherwise, we need to search through the other situation objects to see if
-        # any matches the constraints we know to hold for the situation object.
-        else:
-            objects_matching_constraints = [
-                object_perception
-                for (
-                    object_perception,
-                    ontology_node,
-                ) in self._object_perceptions_to_ontology_nodes.items()
-                if ontology.has_all_properties(ontology_node, slot_filler.properties)
-            ]
-            if len(objects_matching_constraints) == 1:
-                return only(objects_matching_constraints)
-            elif not objects_matching_constraints:
-                raise RuntimeError(f"Can not find object with properties {slot_filler}")
+            # Region is not a real possibility here, but using this type lets us put the cast
+            # in only one place.
+            perceived_reference_object: Union[ObjectPerception, Region[ObjectPerception]]
+            if slot_filler.reference_object in self._objects_to_perceptions:
+                # this handles the case of a region that the user has explicitly bound
+                # to something in the situation, like table in put(theme=book, goal=on(table))
+                perceived_reference_object = self._objects_to_perceptions[
+                    slot_filler.reference_object
+                ]
             else:
-                distinct_property_sets_for_matching_object_types = set(
-                    ontology.properties_for_node(
-                        self._object_perceptions_to_ontology_nodes[obj]
-                    )
-                    for obj in objects_matching_constraints
-                )
-                # if the found objects have identical properties, we choose one arbitrarily
-                # e.g. a person with two hands
-                if len(distinct_property_sets_for_matching_object_types) == 1:
-                    return objects_matching_constraints[0]
-                else:
-                    raise RuntimeError(
-                        f"Found multiple objects with properties {slot_filler}"
-                    )
+                perceived_reference_object = action_object_variables_to_object_perceptions[
+                    slot_filler.reference_object
+                ]
+            return Region(
+                # this will be an ObjectPerception by construction of the maps
+                reference_object=cast(ObjectPerception, perceived_reference_object),
+                direction=slot_filler.direction,
+                distance=slot_filler.distance,
+            )
+        else:
+            return action_object_variables_to_object_perceptions[slot_filler]
 
     def _perceive_property_assertions(self) -> None:
         for situation_object in self._situation.objects:
@@ -456,7 +461,7 @@ class _PerceptionGeneration:
                 situation_object.ontology_node
             )
             for property_ in object_properties_from_ontology.union(
-                    situation_object.properties
+                situation_object.properties
             ):
                 # for each property such as animate, sentient, etc
                 attributes_of_property = self._generator.ontology.properties_for_node(
@@ -480,8 +485,7 @@ class _PerceptionGeneration:
                             )
                         else:
                             raise RuntimeError(
-                                f"Not sure how to generate perception for the unknown property {
-                            property_} "
+                                f"Not sure how to generate perception for the unknown property {property_} "
                                 f"which is marked as COLOR"
                             )
                     else:
@@ -518,12 +522,12 @@ class _PerceptionGeneration:
             )
 
     def _instantiate_object_schema(
-            self,
-            schema: ObjectStructuralSchema,
-            *,
-            # if the object being instantiated corresponds to an object
-            # in the situation description, then this will track that object
-            situation_object: Optional[SituationObject] = None,
+        self,
+        schema: ObjectStructuralSchema,
+        *,
+        # if the object being instantiated corresponds to an object
+        # in the situation description, then this will track that object
+        situation_object: Optional[SituationObject] = None,
     ) -> ObjectPerception:
         root_object_perception = ObjectPerception(
             debug_handle=self._object_handle_generator.subscripted_handle(schema)

@@ -26,7 +26,7 @@ def test_objects_only_template():
     possible_obj1s = [
         obj
         for obj in obj_only_template.objects
-        if obj._handle == "object1"  # pylint:disable=protected-access
+        if obj.handle == "object1"  # pylint:disable=protected-access
     ]
     assert len(possible_obj1s) == 1
     obj1 = possible_obj1s[0]
@@ -35,7 +35,7 @@ def test_objects_only_template():
     possible_persons = [
         obj
         for obj in obj_only_template.objects
-        if obj._handle == "person"  # pylint:disable=protected-access
+        if obj.handle == "person"  # pylint:disable=protected-access
     ]
     assert len(possible_persons) == 1
     person = possible_persons[0]

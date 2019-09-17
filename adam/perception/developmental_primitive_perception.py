@@ -99,16 +99,14 @@ class RelationPerception:
     # for type ignore see
     # https://github.com/isi-vista/adam/issues/144
     arg2: Union[ObjectPerception, Region[ObjectPerception]] = attrib(
-        validator=instance_of(  # type: ignore
-            (ObjectPerception, Region[ObjectPerception])
-        )
+        validator=instance_of((ObjectPerception, Region))  # type: ignore
     )
 
     def __attrs_post_init__(self) -> None:
         check_arg(
             not isinstance(self.arg2, Region) or self.relation_type == IN_REGION,
             "Unexpected second slot filler of relation perception: %s",
-            (self.arg2,)
+            (self.arg2,),
         )
 
     def __repr__(self) -> str:

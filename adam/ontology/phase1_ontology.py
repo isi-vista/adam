@@ -787,15 +787,16 @@ _TRUCK_SCHEMA = ObjectStructuralSchema(
     ),
 )
 
-_PUT_AGENT = SituationObject(THING, properties=[ANIMATE])
-_PUT_THEME = SituationObject(THING)
-_PUT_GOAL = SituationObject(THING)
-_PUT_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
+_PUT_AGENT = SituationObject(THING, properties=[ANIMATE], debug_handle="put_agent")
+_PUT_THEME = SituationObject(THING, debug_handle="put_theme")
+_PUT_GOAL = SituationObject(THING, debug_handle="put_goal")
+_PUT_MANIPULATOR = SituationObject(
+    THING, properties=[CAN_MANIPULATE_OBJECTS], debug_handle="put_manipulator"
+)
 
 _CONTACTING_MANIPULATOR = Region(
     reference_object=_PUT_MANIPULATOR, distance=EXTERIOR_BUT_IN_CONTACT
 )
-_CONTACTING_GOAL = Region(reference_object=_PUT_GOAL, distance=EXTERIOR_BUT_IN_CONTACT)
 
 _PUT_ACTION_DESCRIPTION = ActionDescription(
     frames=[
@@ -814,7 +815,7 @@ _PUT_ACTION_DESCRIPTION = ActionDescription(
         # SituationRelation(CONTACTS, _PUT_MANIPULATOR, _PUT_THEME, negated=True),
         # SituationRelation(SUPPORTS, _PUT_MANIPULATOR, _PUT_THEME, negated=True),
         SituationRelation(IN_REGION, _PUT_THEME, _CONTACTING_MANIPULATOR, negated=True),
-        SituationRelation(IN_REGION, _PUT_THEME, _CONTACTING_GOAL),
+        SituationRelation(IN_REGION, _PUT_THEME, _PUT_GOAL),
     ],
 )
 

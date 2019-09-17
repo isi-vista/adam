@@ -43,11 +43,11 @@ class Direction:
     r"""
     Represents the direction one object may have relative to another.
 
-    This is used to specify `PerceivedRegion`\ s.
+    This is used to specify `Region`\ s.
     """
     positive: bool = attrib(validator=instance_of(bool))
     """
-    TODO: standardize on what "positive" direction means. 
+    We need to standardize on what "positive" direction means. 
     It is clear for vertical axes but less clear for other things. 
     """
     relative_to_axis: str = attrib(validator=instance_of(str))
