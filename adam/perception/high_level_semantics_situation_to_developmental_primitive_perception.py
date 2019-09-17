@@ -332,9 +332,14 @@ class _PerceptionGeneration:
                 # Sample an RGB value for the color property and generate perception for it
                 if property_ in COLORS_TO_RGBS:
                     r, g, b = self._chooser.choice(COLORS_TO_RGBS[property_])
-                    perceived_property = HasColor(
-                        perceived_object, RgbColorPerception(r, g, b)
-                    )
+                    if r and g and b:
+                        perceived_property = HasColor(
+                            perceived_object, RgbColorPerception(r, g, b)
+                        )
+                    else:  # Handles the case of TRANSPARENT
+                        perceived_property = HasBinaryProperty(
+                            perceived_object, property_
+                        )
                 else:
                     raise RuntimeError(
                         f"Not sure how to generate perception for the unknown property {property_} "

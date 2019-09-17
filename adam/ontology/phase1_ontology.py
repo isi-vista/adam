@@ -13,6 +13,8 @@ The following will eventually end up here:
 - Relations, Modifiers, Function Words: basic color terms (red, blue, green, white, black…), one,
   two, I, me, my, you, your, to, in, on, [beside, behind, in front of, over, under], up, down
 """
+from typing import Optional
+
 from immutablecollections import immutabledict, immutableset, immutablesetmultidict
 from more_itertools import flatten
 
@@ -116,12 +118,14 @@ BLUE = OntologyNode("blue")
 GREEN = OntologyNode("green")
 BLACK = OntologyNode("black")
 WHITE = OntologyNode("white")
+TRANSPARENT = OntologyNode("transparent")
 subtype(RED, COLOR)
 subtype(BLUE, COLOR)
 subtype(GREEN, COLOR)
 subtype(BLACK, COLOR)
 subtype(WHITE, COLOR)
-COLORS_TO_RGBS = {
+subtype(TRANSPARENT, COLOR)
+COLORS_TO_RGBS: immutabledict[OntologyNode, Optional[(int, int, int)]] = {
     RED: [
         (255, 0, 0),
         (237, 28, 36),
@@ -141,6 +145,7 @@ COLORS_TO_RGBS = {
     GREEN: [(0, 255, 0), (75, 111, 68), (86, 130, 3), (34, 139, 34)],
     BLACK: [(0, 0, 0), (12, 2, 15), (53, 56, 57), (52, 52, 52)],
     WHITE: [(255, 255, 255), (248, 248, 255), (245, 245, 245), (254, 254, 250)],
+    TRANSPARENT: None,
 }
 
 # Objects
@@ -163,7 +168,7 @@ HOUSE = OntologyNode("house", [HOLLOW])
 subtype(HOUSE, INANIMATE_OBJECT)
 CAR = OntologyNode("car", [HOLLOW])
 subtype(CAR, INANIMATE_OBJECT)
-WATER = OntologyNode("water", [LIQUID])
+WATER = OntologyNode("water", [LIQUID], non_inheritable_properties=[TRANSPARENT])
 subtype(WATER, INANIMATE_OBJECT)
 JUICE = OntologyNode("juice", [LIQUID], non_inheritable_properties=[RED])
 subtype(JUICE, INANIMATE_OBJECT)
