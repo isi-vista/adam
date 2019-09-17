@@ -249,11 +249,11 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                         role=OBLIQUE_NOMINAL,
                     )
 
-                    on_dependency_node = DependencyTreeToken(
+                    preposition_dependency_node = DependencyTreeToken(
                         self._preposition_for_region_as_goal(filler), ADPOSITION
                     )
                     self.dependency_graph.add_edge(
-                        on_dependency_node,
+                        preposition_dependency_node,
                         reference_object_dependency_node,
                         role=CASE_MARKING,
                     )
