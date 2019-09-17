@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Union
 
 from attr import attrs
 from vistautils.parameters import Parameters
@@ -8,10 +8,12 @@ from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 from adam.curriculum.phase1_curriculum import GAILA_PHASE_1_CURRICULUM
 from adam.experiment import InstanceGroup
 from adam.language.dependency import LinearizedDependencyTree
+from adam.ontology import Region
 from adam.perception import PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
+from adam.situation import SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 
 
@@ -125,11 +127,20 @@ class CurriculumToHtmlDumper:
             output_text.append("\t\t\t<h4>Relations</h4>\n\t\t\t<ul>")
             for rel in situation.relations:
                 output_text.append(
-                    f"\t\t\t\t<li>{rel.relation_type.handle}({rel.first_slot.ontology_node.handle},{rel.second_slot.ontology_node.handle})</li>"
+                    f"\t\t\t\t<li>{rel.relation_type.handle}({rel.first_slot.ontology_node.handle},"
+                    f"{self._situation_object_or_region_text(rel.second_slot)})</li>"
                 )
             output_text.append("\t\t\t</ul>")
         output_text.append("\t\t</td>")
         return output_text
+
+    def _situation_object_or_region_text(
+        self, obj_or_region: Union[SituationObject, Region[SituationObject]]
+    ) -> str:
+        if isinstance(obj_or_region, SituationObject):
+            return obj_or_region.ontology_node.handle
+        else:
+            return str(obj_or_region)
 
     def _perception_text(
         self, perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]

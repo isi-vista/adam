@@ -30,9 +30,12 @@ from adam.ontology import (
     minimal_ontology_graph,
     sub_object_relations,
     CAN_FILL_TEMPLATE_SLOT,
+    IN_REGION,
+    Region,
 )
 from adam.ontology.action_description import ActionDescription, ActionDescriptionFrame
 from adam.ontology.ontology import Ontology
+from adam.ontology.phase1_spatial_relations import EXTERIOR_BUT_IN_CONTACT
 from adam.situation import SituationObject, SituationRelation
 
 _ontology_graph = minimal_ontology_graph()  # pylint:disable=invalid-name
@@ -51,8 +54,8 @@ PATIENT = OntologyNode("patient")
 subtype(PATIENT, SEMANTIC_ROLE)
 THEME = OntologyNode("theme")
 subtype(THEME, SEMANTIC_ROLE)
-DESTINATION = OntologyNode("destination")
-subtype(DESTINATION, SEMANTIC_ROLE)
+GOAL = OntologyNode("goal")
+subtype(GOAL, SEMANTIC_ROLE)
 
 
 # these are "properties of properties" (e.g. whether a property is perceivable by the learner)
@@ -327,7 +330,8 @@ subtype(FLY, ACTION)
 # These are used both for situations and in the perceptual representation
 
 SPATIAL_RELATION = OntologyNode("spatial-relation")
-subtype(RELATION, SPATIAL_RELATION)
+subtype(SPATIAL_RELATION, RELATION)
+
 # On is an English-specific bundle of semantics, but that's okay, because this is just for
 # data generation, and it will get decomposed before being presented as perceptions to the
 # learner.
@@ -783,19 +787,24 @@ _TRUCK_SCHEMA = ObjectStructuralSchema(
     ),
 )
 
-_PUT_AGENT = SituationObject(THING, properties=[ANIMATE])
-_PUT_THEME = SituationObject(THING)
-_PUT_GOAL = SituationObject(THING)
-_PUT_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
+_PUT_AGENT = SituationObject(THING, properties=[ANIMATE], debug_handle="put_agent")
+_PUT_THEME = SituationObject(THING, debug_handle="put_theme")
+_PUT_GOAL = SituationObject(THING, debug_handle="put_goal")
+_PUT_MANIPULATOR = SituationObject(
+    THING, properties=[CAN_MANIPULATE_OBJECTS], debug_handle="put_manipulator"
+)
+
+_CONTACTING_MANIPULATOR = Region(
+    reference_object=_PUT_MANIPULATOR, distance=EXTERIOR_BUT_IN_CONTACT
+)
 
 _PUT_ACTION_DESCRIPTION = ActionDescription(
     frames=[
-        ActionDescriptionFrame(
-            {AGENT: _PUT_AGENT, THEME: _PUT_THEME, DESTINATION: _PUT_GOAL}
-        )
+        ActionDescriptionFrame({AGENT: _PUT_AGENT, THEME: _PUT_THEME, GOAL: _PUT_GOAL})
     ],
     preconditions=[
         SituationRelation(SMALLER_THAN, _PUT_THEME, _PUT_AGENT),
+        SituationRelation(IN_REGION, _PUT_THEME, _CONTACTING_MANIPULATOR),
         # TODO: that theme is not already located in GOAL
         SituationRelation(PART_OF, _PUT_MANIPULATOR, _PUT_AGENT),
         SituationRelation(CONTACTS, _PUT_MANIPULATOR, _PUT_THEME),
@@ -805,7 +814,8 @@ _PUT_ACTION_DESCRIPTION = ActionDescription(
         # TODO: that theme is located in GOAL
         # SituationRelation(CONTACTS, _PUT_MANIPULATOR, _PUT_THEME, negated=True),
         # SituationRelation(SUPPORTS, _PUT_MANIPULATOR, _PUT_THEME, negated=True),
-        SituationRelation(CONTACTS, _PUT_THEME, _PUT_GOAL)
+        SituationRelation(IN_REGION, _PUT_THEME, _CONTACTING_MANIPULATOR, negated=True),
+        SituationRelation(IN_REGION, _PUT_THEME, _PUT_GOAL),
     ],
 )
 

@@ -1,15 +1,16 @@
+from adam.ontology import Region
 from adam.ontology.phase1_ontology import (
     AGENT,
     BALL,
-    DESTINATION,
+    GAILA_PHASE_1_ONTOLOGY,
+    GOAL,
     MOM,
-    ON,
     PUT,
     TABLE,
     THEME,
-    GAILA_PHASE_1_ONTOLOGY,
 )
-from adam.situation import SituationAction, SituationObject, SituationRelation
+from adam.ontology.phase1_spatial_relations import Direction, EXTERIOR_BUT_IN_CONTACT
+from adam.situation import SituationAction, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 
 
@@ -26,14 +27,23 @@ def make_mom_put_ball_on_table():
         objects=[mom, ball, table],
         relations=[],
         actions=[
-            # What is the best way of representing the destination in the high-level semantics?
-            # Here we represent it as indicating a relation which should be true.
             SituationAction(
                 PUT,
                 (
                     (AGENT, mom),
                     (THEME, ball),
-                    (DESTINATION, SituationRelation(ON, ball, table)),
+                    (
+                        GOAL,
+                        Region(
+                            reference_object=table,
+                            distance=EXTERIOR_BUT_IN_CONTACT,
+                            direction=Direction(
+                                positive=True,
+                                relative_to_axis="Vertical axis of table "
+                                "relative to earth",
+                            ),
+                        ),
+                    ),
                 ),
             )
         ],

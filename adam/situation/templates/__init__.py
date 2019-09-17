@@ -81,7 +81,7 @@ class SituationTemplateObject:
     For example, a particular ball or person.
     """
 
-    _handle: str = attrib(validator=instance_of(str))
+    handle: str = attrib(validator=instance_of(str))
     """
     Every object has a string *handle* which is used to name it for debugging purposes only
     """
@@ -224,7 +224,9 @@ class SimpleSituationTemplateProcessor(
         if compatible_ontology_types:
             ontology_node = chooser.choice(compatible_ontology_types)
             return SituationObject(
-                ontology_node, self._ontology.properties_for_node(ontology_node)
+                ontology_node,
+                self._ontology.properties_for_node(ontology_node),
+                debug_handle=template_object.handle,
             )
         else:
             raise RuntimeError(
