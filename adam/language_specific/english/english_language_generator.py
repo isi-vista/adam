@@ -25,6 +25,7 @@ from adam.language.dependency.universal_dependencies import (
     OBJECT,
     OBLIQUE_NOMINAL,
     PROPER_NOUN,
+    ADJECTIVAL_MODIFIER,
 )
 from adam.language.language_generator import LanguageGenerator
 from adam.language.lexicon import LexiconEntry
@@ -37,7 +38,7 @@ from adam.language_specific.english.english_syntax import (
     SIMPLE_ENGLISH_DEPENDENCY_TREE_LINEARIZER,
 )
 from adam.ontology import OntologyNode, Region
-from adam.ontology.phase1_ontology import AGENT, GOAL, LEARNER, PATIENT, THEME
+from adam.ontology.phase1_ontology import AGENT, GOAL, LEARNER, PATIENT, THEME, COLOR
 from adam.ontology.phase1_spatial_relations import EXTERIOR_BUT_IN_CONTACT, INTERIOR
 from adam.random_utils import SequenceChooser
 from adam.situation import SituationAction, SituationNode, SituationObject
@@ -191,6 +192,17 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 self.dependency_graph.add_edge(
                     quantifier_node, dependency_node, role=quantifier_role
                 )
+
+            # Begin work on translating modifiers of Nouns with Color
+            for property_ in _object.properties:
+                if self.situation.ontology.is_subtype_of(property_, COLOR):
+                    color_lexicon_entry = self._unique_lexicon_entry(property_)
+                    color_node = DependencyTreeToken(
+                        color_lexicon_entry.base_form, color_lexicon_entry.part_of_speech
+                    )
+                    self.dependency_graph.add_edge(
+                        color_node, dependency_node, role=ADJECTIVAL_MODIFIER
+                    )
 
             return dependency_node
 
