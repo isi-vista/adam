@@ -14,6 +14,7 @@ from immutablecollections import (
 from immutablecollections.converter_utils import (
     _to_immutabledict,
     _to_immutablesetmultidict,
+    _to_immutableset,
 )
 from networkx import DiGraph, ancestors, dfs_preorder_nodes, has_path, simple_cycles
 from vistautils.preconditions import check_arg
@@ -28,6 +29,7 @@ from adam.ontology.structural_schema import ObjectStructuralSchema
 
 # convenience method for use in Ontology
 from adam.ontology.action_description import ActionDescription
+from adam.relation import Relation
 
 
 def _copy_digraph(digraph: DiGraph) -> DiGraph:
@@ -60,6 +62,9 @@ class Ontology:
     ] = attrib(converter=_to_immutablesetmultidict, default=immutablesetmultidict())
     action_to_description: ImmutableDict[OntologyNode, ActionDescription] = attrib(
         converter=_to_immutabledict, default=immutabledict(), kw_only=True
+    )
+    _node_to_relations: ImmutableSet[Relation[OntologyNode]] = attrib(
+        converter=_to_immutableset, default=immutableset(), kw_only=True
     )
 
     def __attrs_post_init__(self) -> None:

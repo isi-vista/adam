@@ -128,12 +128,16 @@ adam.ontology.structural_schema
 ---------------------------------------
 .. automodule:: adam.ontology.structural_schema
 
-*******************************************
-Supporting Classes: Spatial Representation
-*******************************************
+***************************************************
+Supporting Classes: Spatial and Size Representation
+***************************************************
 adam.ontology.phase1_spatial_relations
 ---------------------------------------
 .. automodule:: adam.ontology.phase1_spatial_relations
+
+adam.ontology.phase1_size_relationships
+---------------------------------------
+.. automodule:: adam.ontology.phase1_size_relationships
 
 ******************************************
 Supporting classes: Situations
