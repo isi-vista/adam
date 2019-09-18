@@ -208,6 +208,7 @@ def test_dad_put_a_cookie_in_a_box_using_i():
         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
     ).as_token_sequence() == ("I", "put", "a", "cookie", "in", "a", "box")
 
+
 def test_green_ball():
     ball = SituationObject(BALL, [GREEN])
     situation = HighLevelSemanticsSituation(

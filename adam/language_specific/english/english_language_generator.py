@@ -14,11 +14,19 @@ from adam.language.dependency import (
     DependencyTreeToken,
     LinearizedDependencyTree,
 )
-from adam.language.dependency.universal_dependencies import (ADJECTIVAL_MODIFIER, ADPOSITION,
-                                                             CASE_MARKING, DETERMINER,
-                                                             DETERMINER_ROLE, NOMINAL_SUBJECT,
-                                                             NUMERAL, NUMERIC_MODIFIER, OBJECT,
-                                                             OBLIQUE_NOMINAL, PROPER_NOUN)
+from adam.language.dependency.universal_dependencies import (
+    ADJECTIVAL_MODIFIER,
+    ADPOSITION,
+    CASE_MARKING,
+    DETERMINER,
+    DETERMINER_ROLE,
+    NOMINAL_SUBJECT,
+    NUMERAL,
+    NUMERIC_MODIFIER,
+    OBJECT,
+    OBLIQUE_NOMINAL,
+    PROPER_NOUN,
+)
 from adam.language.language_generator import LanguageGenerator
 from adam.language.lexicon import LexiconEntry
 from adam.language.ontology_dictionary import OntologyLexicon
@@ -30,7 +38,15 @@ from adam.language_specific.english.english_syntax import (
     SIMPLE_ENGLISH_DEPENDENCY_TREE_LINEARIZER,
 )
 from adam.ontology import OntologyNode, Region
-from adam.ontology.phase1_ontology import AGENT, COLOR, GOAL, IS_SPEAKER, LEARNER, PATIENT, THEME
+from adam.ontology.phase1_ontology import (
+    AGENT,
+    COLOR,
+    GOAL,
+    IS_SPEAKER,
+    LEARNER,
+    PATIENT,
+    THEME,
+)
 from adam.ontology.phase1_spatial_relations import EXTERIOR_BUT_IN_CONTACT, INTERIOR
 from adam.random_utils import SequenceChooser
 from adam.situation import SituationAction, SituationObject

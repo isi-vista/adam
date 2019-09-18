@@ -10,6 +10,7 @@ from immutablecollections import (
 from immutablecollections.converter_utils import _to_immutabledict, _to_immutableset
 
 from adam.ontology import OntologyNode
+from adam.ontology.phase1_spatial_relations import SpatialPath
 from adam.relation import Relation
 from adam.situation import SituationObject
 
@@ -39,6 +40,12 @@ class ActionDescription:
     # between general semantic roles and to entities specific to the action
     # e.g. AGENT -> _PUT_AGENT (PUT_AGENT would carry action-specific info, and 'mom ' would be an instance of it.
     frames: ImmutableSet[ActionDescriptionFrame] = attrib(
+        converter=_to_immutableset, default=immutableset(), kw_only=True
+    )
+    paths: ImmutableDict[SituationObject, SpatialPath[SituationObject]] = attrib(
+        converter=_to_immutabledict, default=immutabledict(), kw_only=True
+    )
+    at_some_point_during_conditions: ImmutableSet[Relation[SituationObject]] = attrib(
         converter=_to_immutableset, default=immutableset(), kw_only=True
     )
     # conditions which hold both before and after the action
