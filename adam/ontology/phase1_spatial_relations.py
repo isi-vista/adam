@@ -91,3 +91,25 @@ class Region(Generic[ReferenceObjectT]):
             self.distance or self.direction,
             "A region must have either a " "distance or direction specified.",
         )
+
+
+@attrs(frozen=True, slots=True)
+class PathOperator:
+    name: str = attrib(validator=instance_of(str))
+
+VIA = PathOperator("via")
+TO = PathOperator("to")
+TOWARD = PathOperator("toward")
+FROM = PathOperator("from")
+AWAY_FROM = PathOperator("away-from")
+
+@attrs(frozen=True)
+class SpatialPath(Generic[ReferenceObjectT]):
+    operator: PathOperator = attrib(validator=instance_of(PathOperator))
+    reference_object: ReferenceObjectT = attrib()
+    reference_axis: Optional[str] = attrib(validator=optional(instance_of(str)),
+                                           default=None,
+                                           kw_only=True)
+    orientation_changed: bool = attrib(validator=instance_of(bool),
+                                       default=False,
+                                       kw_only=True)
