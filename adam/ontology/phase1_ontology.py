@@ -40,7 +40,7 @@ from adam.ontology.phase1_spatial_relations import (
     Direction,
     EXTERIOR_BUT_IN_CONTACT,
     INTERIOR,
-)
+    SpatialPath, FROM, TO)
 from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
 from adam.relation import (
     ObjectT,
@@ -827,6 +827,8 @@ _PUT_ACTION_DESCRIPTION = ActionDescription(
     frames=[
         ActionDescriptionFrame({AGENT: _PUT_AGENT, THEME: _PUT_THEME, GOAL: _PUT_GOAL})
     ],
+    paths=((_PUT_THEME, SpatialPath(FROM, _CONTACTING_MANIPULATOR),
+            (_PUT_THEME, SpatialPath(TO, _PUT_GOAL)))),
     enduring_conditions=[
         Relation(SMALLER_THAN, _PUT_THEME, _PUT_AGENT),
         Relation(PART_OF, _PUT_MANIPULATOR, _PUT_AGENT),

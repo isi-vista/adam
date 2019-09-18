@@ -7,7 +7,8 @@ from immutablecollections import (
     immutableset,
     immutablesetmultidict,
 )
-from immutablecollections.converter_utils import _to_immutabledict, _to_immutableset
+from immutablecollections.converter_utils import _to_immutabledict, _to_immutableset, \
+    _to_immutablesetmultidict
 
 from adam.ontology import OntologyNode
 from adam.ontology.phase1_spatial_relations import SpatialPath
@@ -42,8 +43,8 @@ class ActionDescription:
     frames: ImmutableSet[ActionDescriptionFrame] = attrib(
         converter=_to_immutableset, default=immutableset(), kw_only=True
     )
-    paths: ImmutableDict[SituationObject, SpatialPath[SituationObject]] = attrib(
-        converter=_to_immutabledict, default=immutabledict(), kw_only=True
+    paths: ImmutableSetMultiDict[SituationObject, SpatialPath[SituationObject]] = attrib(
+        converter=_to_immutablesetmultidict, default=immutablesetmultidict(), kw_only=True
     )
     at_some_point_during_conditions: ImmutableSet[Relation[SituationObject]] = attrib(
         converter=_to_immutableset, default=immutableset(), kw_only=True
