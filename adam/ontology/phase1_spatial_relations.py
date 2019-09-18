@@ -97,15 +97,19 @@ class Region(Generic[ReferenceObjectT]):
 class PathOperator:
     name: str = attrib(validator=instance_of(str))
 
+
 VIA = PathOperator("via")
 TO = PathOperator("to")
 TOWARD = PathOperator("toward")
 FROM = PathOperator("from")
 AWAY_FROM = PathOperator("away-from")
 
+
 @attrs(frozen=True)
 class SpatialPath(Generic[ReferenceObjectT]):
-    operator: Optional[PathOperator] = attrib(validator=instance_of(PathOperator))
+    operator: Optional[PathOperator] = attrib(
+        validator=optional(instance_of(PathOperator))
+    )
     reference_object: ReferenceObjectT = attrib()
     reference_axis: Optional[str] = attrib(
         validator=optional(instance_of(str)), default=None, kw_only=True
@@ -118,5 +122,7 @@ class SpatialPath(Generic[ReferenceObjectT]):
         # you either need a path operator
         #  or an orientation change around an axis
         #  (e.g. for rotation without translation)
-        check_arg(self.operator or all((self.reference_object, self.reference_axis,
-                                       self.orientation_changed)))
+        check_arg(
+            self.operator
+            or all((self.reference_object, self.reference_axis, self.orientation_changed))
+        )

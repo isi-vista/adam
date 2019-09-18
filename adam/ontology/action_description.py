@@ -1,7 +1,7 @@
-from typing import Generic, Optional
+from typing import Optional
 
 from attr import attrib, attrs
-from attr.validators import optional
+from attr.validators import optional, instance_of
 from immutablecollections import (
     ImmutableDict,
     ImmutableSet,
@@ -10,12 +10,11 @@ from immutablecollections import (
     immutableset,
     immutablesetmultidict,
 )
-from immutablecollections.converter_utils import _to_immutabledict, _to_immutableset, \
-    _to_immutablesetmultidict
+from immutablecollections.converter_utils import _to_immutabledict, _to_immutableset
 
 from adam.ontology import OntologyNode
-from adam.ontology.phase1_spatial_relations import SpatialPath
-from adam.relation import Relation, ObjectT
+from adam.ontology.during import DuringAction
+from adam.relation import Relation
 from adam.situation import SituationObject
 
 
@@ -37,18 +36,6 @@ class ActionDescriptionFrame:
             (entity, role) for role, entity in self.roles_to_entities.items()
         )
 
-@attrs(frozen=True, slots=True)
-class DuringActionDescription(Generic[ObjectT]):
-    paths: ImmutableSetMultiDict[ObjectT, SpatialPath[ObjectT]] = attrib(
-        converter=_to_immutablesetmultidict, default=immutablesetmultidict(), kw_only=True
-    )
-    at_some_point: ImmutableSet[Relation[ObjectT]] = attrib(
-        converter=_to_immutableset, default=immutableset(), kw_only=True
-    )
-    continuously: ImmutableSet[Relation[ObjectT]] = attrib(
-        converter=_to_immutableset, default=immutableset(), kw_only=True
-    )
-
 
 @attrs(frozen=True, slots=True)
 class ActionDescription:
@@ -58,8 +45,9 @@ class ActionDescription:
     frames: ImmutableSet[ActionDescriptionFrame] = attrib(
         converter=_to_immutableset, default=immutableset(), kw_only=True
     )
-    during: Optional[DuringActionDescription[SituationObject]] = attrib(
-        validator=optional(DuringActionDescription), default=None, kw_only=True
+    # nested generic in optional seems to be confusing mypy
+    during: Optional[DuringAction[SituationObject]] = attrib(  # type: ignore
+        validator=optional(instance_of(DuringAction)), default=None, kw_only=True
     )
     # conditions which hold both before and after the action
     enduring_conditions: ImmutableSet[Relation[SituationObject]] = attrib(
@@ -73,5 +61,3 @@ class ActionDescription:
     postconditions: ImmutableSet[Relation[SituationObject]] = attrib(
         converter=_to_immutableset, default=immutableset(), kw_only=True
     )
-
-

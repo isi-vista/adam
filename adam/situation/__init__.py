@@ -2,30 +2,29 @@
 Structures for describing situations in the world at an abstracted, human-friendly level.
 """
 from abc import ABC
-from typing import Mapping, Union
+from typing import Mapping, Optional, Union
 
-from attr import attrs, attrib
-from attr.validators import instance_of
+from attr import attrib, attrs
+from attr.validators import instance_of, optional
 from immutablecollections import (
-    immutableset,
     ImmutableSet,
-    immutabledict,
-    immutablesetmultidict,
     ImmutableSetMultiDict,
+    immutabledict,
+    immutableset,
+    immutablesetmultidict,
 )
 
 # noinspection PyProtectedMember
 from immutablecollections.converter_utils import (
-    _to_immutableset,
     _to_immutabledict,
+    _to_immutableset,
     _to_immutablesetmultidict,
 )
-from vistautils.preconditions import check_arg
 
 from adam.math_3d import Point
-from adam.ontology import OntologyNode, IN_REGION
+from adam.ontology import OntologyNode
+from adam.ontology.during import DuringAction
 from adam.ontology.phase1_spatial_relations import Region
-from adam.relation import Relation
 
 
 class Situation(ABC):
@@ -146,6 +145,10 @@ class SituationAction:
     There may be multiple fillers for the same semantic role 
     (e.g. conjoined arguments).
     """
+    # the optional below seems to confuse mypy?
+    during: Optional[DuringAction[SituationObject]] = attrib(  # type: ignore
+        validator=optional(instance_of(DuringAction)), default=None, kw_only=True
+    )
 
     def __repr__(self) -> str:
         return f"{self.action_type}({self.argument_roles_to_fillers})"
