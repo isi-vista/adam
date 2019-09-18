@@ -173,7 +173,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             if IS_SPEAKER in _object.properties:
                 word_form = "I"
             elif IS_ADDRESSEE in _object.properties:
-                word_form = "You"
+                word_form = "you"
             elif count > 1 and lexicon_entry.plural_form:
                 word_form = lexicon_entry.plural_form
             else:
