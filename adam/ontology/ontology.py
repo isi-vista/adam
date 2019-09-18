@@ -14,6 +14,7 @@ from immutablecollections import (
 from immutablecollections.converter_utils import (
     _to_immutabledict,
     _to_immutablesetmultidict,
+    _to_immutableset,
 )
 from networkx import DiGraph, ancestors, dfs_preorder_nodes, has_path, simple_cycles
 from vistautils.preconditions import check_arg
@@ -62,10 +63,8 @@ class Ontology:
     action_to_description: ImmutableDict[OntologyNode, ActionDescription] = attrib(
         converter=_to_immutabledict, default=immutabledict(), kw_only=True
     )
-    _node_to_relations: ImmutableSetMultiDict[
-        OntologyNode, ImmutableSet[Relation[OntologyNode]]
-    ] = attrib(
-        converter=_to_immutablesetmultidict, default=immutablesetmultidict(), kw_only=True
+    _node_to_relations: ImmutableSet[Relation[OntologyNode]] = attrib(
+        converter=_to_immutableset, default=immutableset(), kw_only=True
     )
 
     def __attrs_post_init__(self) -> None:

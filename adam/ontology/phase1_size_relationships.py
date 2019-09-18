@@ -1,6 +1,4 @@
-from typing import Tuple, Dict, List
-
-from immutablecollections.converter_utils import _to_immutableset
+from typing import Tuple, List
 
 from adam.ontology import OntologyNode
 from adam.relation import Relation
@@ -21,25 +19,20 @@ def build_size_relationships(
 
     For use see GAILA_PHASE_1_ONTOLOGY.
     """
-    node_to_relations: Dict[OntologyNode, List[Relation[OntologyNode]]] = {}
+    node_to_relations: List[Relation[OntologyNode]] = []
     bigger: List[OntologyNode] = []
     for nodes in relative_size_nodes:
         for node in nodes:
-            if node not in node_to_relations.keys():
-                node_to_relations.update({node: []})
             for entry in bigger:
-                node_to_relations[node].append(
+                node_to_relations.append(
                     Relation(
                         relation_type=opposite_type, first_slot=node, second_slot=entry
                     )
                 )
-                node_to_relations[entry].append(
+                node_to_relations.append(
                     Relation(
                         relation_type=relation_type, first_slot=entry, second_slot=node
                     )
                 )
         bigger.extend(nodes)
-    returner = []
-    for node in node_to_relations:
-        returner.append((node, _to_immutableset(node_to_relations[node])))
-    return returner
+    return node_to_relations
