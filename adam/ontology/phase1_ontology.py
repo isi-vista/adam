@@ -33,7 +33,8 @@ from adam.ontology import (
     Region,
     THING,
     minimal_ontology_graph,
-    build_size_relationships)
+    build_size_relationships,
+)
 from adam.ontology.action_description import ActionDescription, ActionDescriptionFrame
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_spatial_relations import (

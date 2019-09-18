@@ -23,7 +23,6 @@ from adam.ontology import (
     OntologyNode,
     REQUIRED_ONTOLOGY_NODES,
     THING,
-    OntologyNodeRelation,
 )
 from adam.ontology.structural_schema import ObjectStructuralSchema
 
