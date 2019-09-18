@@ -1,4 +1,7 @@
+from typing import Generic, Optional
+
 from attr import attrib, attrs
+from attr.validators import optional
 from immutablecollections import (
     ImmutableDict,
     ImmutableSet,
@@ -12,7 +15,7 @@ from immutablecollections.converter_utils import _to_immutabledict, _to_immutabl
 
 from adam.ontology import OntologyNode
 from adam.ontology.phase1_spatial_relations import SpatialPath
-from adam.relation import Relation
+from adam.relation import Relation, ObjectT
 from adam.situation import SituationObject
 
 
@@ -34,6 +37,18 @@ class ActionDescriptionFrame:
             (entity, role) for role, entity in self.roles_to_entities.items()
         )
 
+@attrs(frozen=True, slots=True)
+class DuringActionDescription(Generic[ObjectT]):
+    paths: ImmutableSetMultiDict[ObjectT, SpatialPath[ObjectT]] = attrib(
+        converter=_to_immutablesetmultidict, default=immutablesetmultidict(), kw_only=True
+    )
+    at_some_point: ImmutableSet[Relation[ObjectT]] = attrib(
+        converter=_to_immutableset, default=immutableset(), kw_only=True
+    )
+    continuously: ImmutableSet[Relation[ObjectT]] = attrib(
+        converter=_to_immutableset, default=immutableset(), kw_only=True
+    )
+
 
 @attrs(frozen=True, slots=True)
 class ActionDescription:
@@ -43,11 +58,8 @@ class ActionDescription:
     frames: ImmutableSet[ActionDescriptionFrame] = attrib(
         converter=_to_immutableset, default=immutableset(), kw_only=True
     )
-    paths: ImmutableSetMultiDict[SituationObject, SpatialPath[SituationObject]] = attrib(
-        converter=_to_immutablesetmultidict, default=immutablesetmultidict(), kw_only=True
-    )
-    at_some_point_during_conditions: ImmutableSet[Relation[SituationObject]] = attrib(
-        converter=_to_immutableset, default=immutableset(), kw_only=True
+    during: Optional[DuringActionDescription[SituationObject]] = attrib(
+        validator=optional(DuringActionDescription), default=None, kw_only=True
     )
     # conditions which hold both before and after the action
     enduring_conditions: ImmutableSet[Relation[SituationObject]] = attrib(
@@ -61,3 +73,5 @@ class ActionDescription:
     postconditions: ImmutableSet[Relation[SituationObject]] = attrib(
         converter=_to_immutableset, default=immutableset(), kw_only=True
     )
+
+
