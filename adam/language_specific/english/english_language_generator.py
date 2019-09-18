@@ -37,7 +37,7 @@ from adam.language_specific.english.english_syntax import (
     SIMPLE_ENGLISH_DEPENDENCY_TREE_LINEARIZER,
 )
 from adam.ontology import OntologyNode, Region
-from adam.ontology.phase1_ontology import AGENT, GOAL, LEARNER, PATIENT, THEME
+from adam.ontology.phase1_ontology import AGENT, GOAL, LEARNER, PATIENT, THEME, IS_SPEAKER
 from adam.ontology.phase1_spatial_relations import EXTERIOR_BUT_IN_CONTACT, INTERIOR
 from adam.random_utils import SequenceChooser
 from adam.situation import SituationAction, SituationNode, SituationObject
@@ -161,7 +161,10 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             lexicon_entry = self._unique_lexicon_entry(
                 _object.ontology_node  # pylint:disable=protected-access
             )
-            if count > 1 and lexicon_entry.plural_form:
+            # Check if the object is the speaker
+            if IS_SPEAKER in _object.properties:
+                word_form = "I"
+            elif count > 1 and lexicon_entry.plural_form:
                 word_form = lexicon_entry.plural_form
             else:
                 word_form = lexicon_entry.base_form
@@ -200,14 +203,26 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             lexicon_entry = self._unique_lexicon_entry(action.action_type)
             # TODO: we don't currently handle verbal morphology.
             # https://github.com/isi-vista/adam/issues/60
-            if lexicon_entry.verb_form_3SG_PRS:
-                verb_dependency_node = DependencyTreeToken(
-                    lexicon_entry.verb_form_3SG_PRS, lexicon_entry.part_of_speech
+            if len(self.situation.actions) > 1:
+                raise RuntimeError(
+                    "Currently only situations with 0 or 1 actions are supported"
                 )
+            elif (
+                IS_SPEAKER
+                in only(
+                    only(self.situation.actions).argument_roles_to_fillers[AGENT]
+                ).properties
+            ):
+                word_form = lexicon_entry.base_form
+            elif lexicon_entry.verb_form_3SG_PRS:
+                word_form = lexicon_entry.verb_form_3SG_PRS
             else:
                 raise RuntimeError(
                     f"Verb has no 3SG present tense form: {lexicon_entry.base_form}"
                 )
+            verb_dependency_node = DependencyTreeToken(
+                word_form, lexicon_entry.part_of_speech
+            )
             self.dependency_graph.add_node(verb_dependency_node)
 
             for (argument_role, filler) in action.argument_roles_to_fillers.items():
