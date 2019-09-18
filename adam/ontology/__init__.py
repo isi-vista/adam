@@ -84,7 +84,7 @@ def build_size_relationships(
     *,
     relation_type: OntologyNode,
     opposite_type: OntologyNode,
-) -> ImmutableDict[OntologyNode, ImmutableSet[OntologyNodeRelation]]:
+):
     """
     Build a dictionary to represent opposite relation_types between OntologyNodes
 
@@ -112,7 +112,10 @@ def build_size_relationships(
                     )
                 )
         bigger.extend(nodes)
-    return _to_immutabledict(node_to_relations)
+    returner = []
+    for node in node_to_relations:
+        returner.append((node, _to_immutableset(node_to_relations[node])))
+    return returner
 
 
 # by convention, the following should appear in all Ontologies
