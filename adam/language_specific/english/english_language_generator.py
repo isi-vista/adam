@@ -38,7 +38,7 @@ from adam.language_specific.english.english_phase_1_lexicon import (
 from adam.language_specific.english.english_syntax import (
     SIMPLE_ENGLISH_DEPENDENCY_TREE_LINEARIZER,
 )
-from adam.ontology import OntologyNode, Region, IN_REGION
+from adam.ontology import OntologyNode, IN_REGION
 from adam.ontology.phase1_ontology import (
     AGENT,
     COLOR,
@@ -54,7 +54,7 @@ from adam.ontology.phase1_spatial_relations import (
     GRAVITATIONAL_AXIS,
     PROXIMAL,
     DISTAL,
-)
+    Region)
 from adam.random_utils import SequenceChooser
 from adam.situation import SituationAction, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation

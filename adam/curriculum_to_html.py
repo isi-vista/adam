@@ -8,7 +8,7 @@ from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 from adam.curriculum.phase1_curriculum import GAILA_PHASE_1_CURRICULUM
 from adam.experiment import InstanceGroup
 from adam.language.dependency import LinearizedDependencyTree
-from adam.ontology import Region
+from adam.ontology.phase1_spatial_relations import Region
 from adam.perception import PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,

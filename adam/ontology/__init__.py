@@ -10,8 +10,6 @@ from immutablecollections import ImmutableSet, immutableset
 from immutablecollections.converter_utils import _to_immutableset
 from networkx import DiGraph
 
-from adam.ontology.phase1_spatial_relations import Distance, Region
-
 
 @attrs(frozen=True, slots=True, repr=False)
 class OntologyNode:

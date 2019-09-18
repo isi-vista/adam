@@ -6,7 +6,7 @@ from adam.language_specific.english.english_language_generator import (
 from adam.language_specific.english.english_phase_1_lexicon import (
     GAILA_PHASE_1_ENGLISH_LEXICON,
 )
-from adam.ontology import Region, IN_REGION
+from adam.ontology import IN_REGION
 from adam.ontology.during import DuringAction
 from adam.ontology.phase1_ontology import (
     AGENT,
@@ -25,7 +25,6 @@ from adam.ontology.phase1_ontology import (
     IS_SPEAKER,
     GREEN,
     BIRD,
-    HOUSE,
     FLY,
     ROLL,
 )
@@ -35,11 +34,12 @@ from adam.ontology.phase1_spatial_relations import (
     Direction,
     DISTAL,
     GRAVITATIONAL_AXIS,
-)
+    Region)
 from adam.random_utils import FixedIndexChooser
 from adam.relation import Relation
 from adam.situation import SituationAction, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
+from sample_situations import make_bird_flies_over_a_house
 from tests.situation.situation_test import make_mom_put_ball_on_table
 
 _SIMPLE_GENERATOR = SimpleRuleBasedEnglishLanguageGenerator(
@@ -226,33 +226,7 @@ def test_green_ball():
 
 
 def test_path_modifier():
-    bird = SituationObject(BIRD)
-    house = SituationObject(HOUSE)
-    situation = HighLevelSemanticsSituation(
-        ontology=GAILA_PHASE_1_ONTOLOGY,
-        objects=[bird, house],
-        actions=[
-            SituationAction(
-                FLY,
-                argument_roles_to_fillers=[(AGENT, bird)],
-                during=DuringAction(
-                    at_some_point=[
-                        Relation(
-                            IN_REGION,
-                            bird,
-                            Region(
-                                reference_object=house,
-                                distance=DISTAL,
-                                direction=Direction(
-                                    positive=True, relative_to_axis=GRAVITATIONAL_AXIS
-                                ),
-                            ),
-                        )
-                    ]
-                ),
-            )
-        ],
-    )
+    situation = make_bird_flies_over_a_house()
     assert only(
         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
     ).as_token_sequence() == ("a", "bird", "flies", "over", "a", "house")

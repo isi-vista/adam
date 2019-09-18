@@ -30,7 +30,6 @@ from adam.ontology import (
     OntologyNode,
     PROPERTY,
     RELATION,
-    Region,
     THING,
     minimal_ontology_graph,
 )
@@ -46,7 +45,8 @@ from adam.ontology.phase1_spatial_relations import (
     SpatialPath,
     TO,
     GRAVITATIONAL_AXIS,
-)
+    Axis,
+    Region)
 from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
 from adam.relation import (
     ObjectT,
@@ -975,7 +975,7 @@ _TURN_ACTION_DESCRIPTION = ActionDescription(
                 SpatialPath(
                     operator=None,
                     reference_object=_TURN_THEME,
-                    reference_axis="object primary axis",
+                    reference_axis=Axis.primary_of(_TURN_THEME),
                     orientation_changed=True,
                 ),
             )
@@ -1091,7 +1091,9 @@ _ROLL_ACTION_DESCRIPTION = ActionDescription(
                 SpatialPath(
                     operator=None,
                     reference_object=_ROLL_THEME,
-                    reference_axis="axis in direction of motion",
+                    reference_axis=Axis(
+                        reference_object=None, name="direction of motion"
+                    ),
                     orientation_changed=True,
                 ),
             )

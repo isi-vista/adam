@@ -1,7 +1,7 @@
 import pytest
 from more_itertools import quantify
 
-from adam.ontology import OntologyNode, Region, IN_REGION
+from adam.ontology import OntologyNode, IN_REGION
 from adam.ontology.phase1_ontology import (
     AGENT,
     BALL,
@@ -25,13 +25,13 @@ from adam.ontology.phase1_spatial_relations import (
     EXTERIOR_BUT_IN_CONTACT,
     Direction,
     GRAVITATIONAL_AXIS,
-)
+    DISTAL,
+    Region)
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
     HasBinaryProperty,
     HasColor,
     PropertyPerception,
-    ObjectPerception,
 )
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
@@ -41,21 +41,12 @@ from adam.random_utils import RandomChooser
 from adam.relation import Relation
 from adam.situation import SituationAction, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
+from sample_situations import make_bird_flies_over_a_house
+from test_utils import perception_with_handle
 
 _PERCEPTION_GENERATOR = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
     GAILA_PHASE_1_ONTOLOGY
 )
-
-
-def perception_with_handle(
-    frame: DevelopmentalPrimitivePerceptionFrame, handle: str
-) -> ObjectPerception:
-    for object_perception in frame.perceived_objects:
-        if object_perception.debug_handle == handle:
-            return object_perception
-    raise RuntimeError(
-        f"Could not find object perception with handle {handle} " f"in {frame}"
-    )
 
 
 def test_person_and_ball():
@@ -295,3 +286,25 @@ def test_learner_perceivable():
     ).frames[0]
 
     assert _some_object_has_binary_property(learner_perception, IS_LEARNER)
+
+
+def test_perceive_relations_during():
+    learner_perception = _PERCEPTION_GENERATOR.generate_perception(
+        make_bird_flies_over_a_house(), chooser=RandomChooser.for_seed(0)
+    )
+    assert learner_perception.during
+
+    bird = perception_with_handle(learner_perception.frames[0], "bird_0")
+    house = perception_with_handle(learner_perception.frames[0], "house_0")
+
+    bird_over_the_house = Relation(
+        IN_REGION,
+        bird,
+        Region(
+            reference_object=house,
+            distance=DISTAL,
+            direction=Direction(positive=True, relative_to_axis=GRAVITATIONAL_AXIS),
+        ),
+    )
+
+    assert bird_over_the_house in learner_perception.during.at_some_point

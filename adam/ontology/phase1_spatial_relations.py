@@ -1,4 +1,4 @@
-from typing import TypeVar, Optional, Generic
+from typing import TypeVar, Optional, Generic, Any, Mapping
 
 from attr import attrib, attrs
 from attr.validators import instance_of, in_, optional
@@ -37,17 +37,35 @@ LANDAU_AND_JACKENDOFF_DISTANCES = [INTERIOR, EXTERIOR_BUT_IN_CONTACT, PROXIMAL, 
 Distances used by Landau and Jackendoff in describing spatial relations.
 """
 
+ReferenceObjectT = TypeVar("ReferenceObjectT")
+NewObjectT = TypeVar("NewObjectT")
 
-@attrs(frozen=True, slots=True)
-class Axis:
+
+@attrs(frozen=True)
+class Axis(Generic[ReferenceObjectT]):
     name: str = attrib(validator=instance_of(str))
+    reference_object: Optional[ReferenceObjectT] = attrib(kw_only=True)
+
+    @staticmethod
+    def primary_of(reference_object: ReferenceObjectT) -> "Axis[ReferenceObjectT]":
+        return Axis("primary", reference_object=reference_object)
+
+    def copy_remapping_objects(
+        self, object_map: Mapping[ReferenceObjectT, NewObjectT]
+    ) -> "Axis[" "NewObjectT]":
+        return Axis(
+            name=self.name,
+            reference_object=object_map[self.reference_object]
+            if self.reference_object
+            else None,
+        )
 
 
-GRAVITATIONAL_AXIS = Axis("gravitational")
+GRAVITATIONAL_AXIS: Axis[Any] = Axis("gravitational", reference_object=None)
 
 
-@attrs(frozen=True, slots=True)
-class Direction:
+@attrs(frozen=True)
+class Direction(Generic[ReferenceObjectT]):
     r"""
     Represents the direction one object may have relative to another.
 
@@ -58,16 +76,15 @@ class Direction:
     We need to standardize on what "positive" direction means. 
     It is clear for vertical axes but less clear for other things. 
     """
-    relative_to_axis: Axis = attrib(validator=instance_of(Axis))
-    """
-    We store an arbitrary string for this pending determining the
-    proper representation.
+    relative_to_axis: Axis[ReferenceObjectT] = attrib(validator=instance_of(Axis))
 
-    https://github.com/isi-vista/adam/issues/137
-    """
-
-
-ReferenceObjectT = TypeVar("ReferenceObjectT")
+    def copy_remapping_objects(
+        self, object_map: Mapping[ReferenceObjectT, NewObjectT]
+    ) -> "Direction[NewObjectT]":
+        return Direction(
+            positive=self.positive,
+            relative_to_axis=self.relative_to_axis.copy_remapping_objects(object_map),
+        )
 
 
 @attrs(frozen=True)
@@ -90,9 +107,20 @@ class Region(Generic[ReferenceObjectT]):
     distance: Optional[Distance] = attrib(
         validator=optional(in_(LANDAU_AND_JACKENDOFF_DISTANCES)), default=None
     )
-    direction: Optional[Direction] = attrib(
+    direction: Optional[Direction[ReferenceObjectT]] = attrib(
         validator=optional(instance_of(Direction)), default=None
     )
+
+    def copy_remapping_objects(
+        self, object_map: Mapping[ReferenceObjectT, NewObjectT]
+    ) -> "Region[NewObjectT]":
+        return Region(
+            reference_object=object_map[self.reference_object],
+            distance=self.distance,
+            direction=self.direction.copy_remapping_objects(object_map)
+            if self.direction
+            else None,
+        )
 
     def __attrs_post_init__(self) -> None:
         check_arg(
@@ -119,8 +147,8 @@ class SpatialPath(Generic[ReferenceObjectT]):
         validator=optional(instance_of(PathOperator))
     )
     reference_object: ReferenceObjectT = attrib()
-    reference_axis: Optional[str] = attrib(
-        validator=optional(instance_of(str)), default=None, kw_only=True
+    reference_axis: Optional[Axis[ReferenceObjectT]] = attrib(
+        validator=optional(instance_of(Axis)), default=None, kw_only=True
     )
     orientation_changed: bool = attrib(
         validator=instance_of(bool), default=False, kw_only=True
@@ -133,4 +161,16 @@ class SpatialPath(Generic[ReferenceObjectT]):
         check_arg(
             self.operator
             or all((self.reference_object, self.reference_axis, self.orientation_changed))
+        )
+
+    def copy_remapping_objects(
+        self, object_mapping: Mapping[ReferenceObjectT, NewObjectT]
+    ) -> "SpatialPath[NewObjectT]":
+        return SpatialPath(
+            self.operator,
+            object_mapping[self.reference_object],
+            reference_axis=self.reference_axis.copy_remapping_objects(object_mapping)
+            if self.reference_axis
+            else None,
+            orientation_changed=self.orientation_changed,
         )
