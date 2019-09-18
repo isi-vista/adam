@@ -37,7 +37,15 @@ from adam.language_specific.english.english_syntax import (
     SIMPLE_ENGLISH_DEPENDENCY_TREE_LINEARIZER,
 )
 from adam.ontology import OntologyNode, Region
-from adam.ontology.phase1_ontology import AGENT, GOAL, LEARNER, PATIENT, THEME, IS_SPEAKER
+from adam.ontology.phase1_ontology import (
+    AGENT,
+    GOAL,
+    LEARNER,
+    PATIENT,
+    THEME,
+    IS_SPEAKER,
+    IS_ADDRESSEE,
+)
 from adam.ontology.phase1_spatial_relations import EXTERIOR_BUT_IN_CONTACT, INTERIOR
 from adam.random_utils import SequenceChooser
 from adam.situation import SituationAction, SituationObject
@@ -161,9 +169,11 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             lexicon_entry = self._unique_lexicon_entry(
                 _object.ontology_node  # pylint:disable=protected-access
             )
-            # Check if the object is the speaker
+            # Check if the situation object is the speaker
             if IS_SPEAKER in _object.properties:
                 word_form = "I"
+            elif IS_ADDRESSEE in _object.properties:
+                word_form = "You"
             elif count > 1 and lexicon_entry.plural_form:
                 word_form = lexicon_entry.plural_form
             else:
@@ -207,11 +217,12 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 raise RuntimeError(
                     "Currently only situations with 0 or 1 actions are supported"
                 )
-            elif (
-                IS_SPEAKER
+            elif any(
+                property_
                 in only(
                     only(self.situation.actions).argument_roles_to_fillers[AGENT]
                 ).properties
+                for property_ in [IS_SPEAKER, IS_ADDRESSEE]
             ):
                 word_form = lexicon_entry.base_form
             elif lexicon_entry.verb_form_3SG_PRS:
