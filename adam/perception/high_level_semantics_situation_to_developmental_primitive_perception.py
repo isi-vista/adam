@@ -569,10 +569,15 @@ class _PerceptionGeneration:
             return None
 
     def _perceive_objects(self) -> None:
-        has_ground = False
+        if not any(
+            situation_object.ontology_node == GROUND
+            for situation_object in self._situation.objects
+        ):
+            ground_schemata = only(self._generator.ontology.structural_schemata(GROUND))
+            self._instantiate_object_schema(
+                ground_schemata, situation_object=SituationObject(GROUND)
+            )
         for situation_object in self._situation.objects:
-            if situation_object.ontology_node == GROUND:
-                has_ground = True
             if not situation_object.ontology_node:
                 raise RuntimeError(
                     "Don't yet know how to handle situation objects without "
@@ -595,12 +600,6 @@ class _PerceptionGeneration:
 
             self._instantiate_object_schema(
                 only(object_schemata), situation_object=situation_object
-            )
-        # Add ground to _object_perceptions here
-        if not has_ground:
-            object_schemata = self._generator.ontology.structural_schemata(GROUND)
-            self._instantiate_object_schema(
-                only(object_schemata), situation_object=SituationObject(GROUND)
             )
 
     def _instantiate_object_schema(

@@ -250,7 +250,22 @@ def test_learner_perceivable():
     assert _some_object_has_binary_property(learner_perception, IS_LEARNER)
 
 
-def test_ground():
+def test_implicit_ground():
+    table_perception = _PERCEPTION_GENERATOR.generate_perception(
+        HighLevelSemanticsSituation(
+            ontology=GAILA_PHASE_1_ONTOLOGY, objects=[SituationObject(TABLE)]
+        ),
+        chooser=RandomChooser.for_seed(0),
+    )
+
+    perceived_objects = table_perception.frames[0].perceived_objects
+    object_handles = set(obj.debug_handle for obj in perceived_objects)
+
+    # assert that a "ground" object is perceived
+    assert "ground_0" in object_handles
+
+
+def test_explicit_ground():
     ground_perception = _PERCEPTION_GENERATOR.generate_perception(
         HighLevelSemanticsSituation(
             ontology=GAILA_PHASE_1_ONTOLOGY, objects=[SituationObject(GROUND)]
@@ -261,5 +276,5 @@ def test_ground():
     perceived_objects = ground_perception.frames[0].perceived_objects
     object_handles = set(obj.debug_handle for obj in perceived_objects)
 
-    # assert that only one "ground" object is perceived
+    # assert that a second "ground" object was not generated
     assert object_handles == {"ground_0"}

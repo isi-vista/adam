@@ -21,6 +21,7 @@ from adam.ontology.phase1_ontology import (
     DAD,
     PUT,
     GOAL,
+    GROUND,
 )
 from adam.ontology.phase1_spatial_relations import INTERIOR
 from adam.random_utils import FixedIndexChooser
@@ -125,6 +126,32 @@ def test_dad_put_a_cookie_in_a_box():
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         objects=[dad, cookie, box],
+        relations=[],
+        actions=[
+            SituationAction(
+                PUT,
+                (
+                    (AGENT, dad),
+                    (THEME, cookie),
+                    (GOAL, Region(reference_object=box, distance=INTERIOR)),
+                ),
+            )
+        ],
+    )
+
+    assert only(
+        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
+    ).as_token_sequence() == ("Dad", "puts", "a", "cookie", "in", "a", "box")
+
+
+def test_situation_with_ground():
+    dad = SituationObject(DAD)
+    cookie = SituationObject(COOKIE)
+    box = SituationObject(BOX)
+    ground = SituationObject(GROUND)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        objects=[dad, cookie, box, ground],
         relations=[],
         actions=[
             SituationAction(

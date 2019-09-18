@@ -37,7 +37,7 @@ from adam.language_specific.english.english_syntax import (
     SIMPLE_ENGLISH_DEPENDENCY_TREE_LINEARIZER,
 )
 from adam.ontology import OntologyNode, Region
-from adam.ontology.phase1_ontology import AGENT, GOAL, LEARNER, PATIENT, THEME
+from adam.ontology.phase1_ontology import AGENT, GOAL, LEARNER, PATIENT, THEME, GROUND
 from adam.ontology.phase1_spatial_relations import EXTERIOR_BUT_IN_CONTACT, INTERIOR
 from adam.random_utils import SequenceChooser
 from adam.situation import SituationAction, SituationNode, SituationObject
@@ -103,7 +103,9 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             objects_to_translate = [
                 object_
                 for object_ in self.situation.objects
-                if not object_.ontology_node == LEARNER
+                if not (
+                    object_.ontology_node == LEARNER or object_.ontology_node == GROUND
+                )
             ]
 
             node_counts: Mapping[OntologyNode, int]
