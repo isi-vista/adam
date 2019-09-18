@@ -192,7 +192,7 @@ def test_mom_put_a_ball_on_a_table_using_you():
     )
     assert only(
         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
-    ).as_token_sequence() == ("You", "put", "a", "ball", "on", "a", "table")
+    ).as_token_sequence() == ("you", "put", "a", "ball", "on", "a", "table")
 
 
 def test_dad_put_a_cookie_in_a_box():
@@ -267,7 +267,7 @@ def test_dad_put_a_cookie_in_a_box_using_you():
 
     assert only(
         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
-    ).as_token_sequence() == ("You", "put", "a", "cookie", "in", "a", "box")
+    ).as_token_sequence() == ("you", "put", "a", "cookie", "in", "a", "box")
 
 
 def test_green_ball():
