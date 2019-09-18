@@ -1,11 +1,11 @@
 import collections
+from typing import Mapping, MutableMapping, Union
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import ImmutableSet, immutabledict, immutableset
 from more_itertools import only
 from networkx import DiGraph
-from typing import Mapping, MutableMapping, Union
 
 from adam.language.dependency import (
     DependencyRole,
@@ -14,18 +14,11 @@ from adam.language.dependency import (
     DependencyTreeToken,
     LinearizedDependencyTree,
 )
-from adam.language.dependency.universal_dependencies import (
-    ADPOSITION,
-    CASE_MARKING,
-    DETERMINER,
-    DETERMINER_ROLE,
-    NOMINAL_SUBJECT,
-    NUMERAL,
-    NUMERIC_MODIFIER,
-    OBJECT,
-    OBLIQUE_NOMINAL,
-    PROPER_NOUN,
-)
+from adam.language.dependency.universal_dependencies import (ADJECTIVAL_MODIFIER, ADPOSITION,
+                                                             CASE_MARKING, DETERMINER,
+                                                             DETERMINER_ROLE, NOMINAL_SUBJECT,
+                                                             NUMERAL, NUMERIC_MODIFIER, OBJECT,
+                                                             OBLIQUE_NOMINAL, PROPER_NOUN)
 from adam.language.language_generator import LanguageGenerator
 from adam.language.lexicon import LexiconEntry
 from adam.language.ontology_dictionary import OntologyLexicon
@@ -37,7 +30,7 @@ from adam.language_specific.english.english_syntax import (
     SIMPLE_ENGLISH_DEPENDENCY_TREE_LINEARIZER,
 )
 from adam.ontology import OntologyNode, Region
-from adam.ontology.phase1_ontology import AGENT, GOAL, LEARNER, PATIENT, THEME, IS_SPEAKER
+from adam.ontology.phase1_ontology import AGENT, COLOR, GOAL, IS_SPEAKER, LEARNER, PATIENT, THEME
 from adam.ontology.phase1_spatial_relations import EXTERIOR_BUT_IN_CONTACT, INTERIOR
 from adam.random_utils import SequenceChooser
 from adam.situation import SituationAction, SituationObject
@@ -194,6 +187,17 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 self.dependency_graph.add_edge(
                     quantifier_node, dependency_node, role=quantifier_role
                 )
+
+            # Begin work on translating modifiers of Nouns with Color
+            for property_ in _object.properties:
+                if self.situation.ontology.is_subtype_of(property_, COLOR):
+                    color_lexicon_entry = self._unique_lexicon_entry(property_)
+                    color_node = DependencyTreeToken(
+                        color_lexicon_entry.base_form, color_lexicon_entry.part_of_speech
+                    )
+                    self.dependency_graph.add_edge(
+                        color_node, dependency_node, role=ADJECTIVAL_MODIFIER
+                    )
 
             return dependency_node
 

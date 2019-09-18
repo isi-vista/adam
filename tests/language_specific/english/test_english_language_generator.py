@@ -22,6 +22,7 @@ from adam.ontology.phase1_ontology import (
     PUT,
     GOAL,
     IS_SPEAKER,
+    GREEN,
 )
 from adam.ontology.phase1_spatial_relations import (
     INTERIOR,
@@ -206,3 +207,12 @@ def test_dad_put_a_cookie_in_a_box_using_i():
     assert only(
         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
     ).as_token_sequence() == ("I", "put", "a", "cookie", "in", "a", "box")
+
+def test_green_ball():
+    ball = SituationObject(BALL, [GREEN])
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY, objects=[ball], relations=[], actions=[]
+    )
+    assert only(
+        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
+    ).as_token_sequence() == ("a", "green", "ball")
