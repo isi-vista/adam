@@ -1,7 +1,7 @@
 import pytest
 from more_itertools import quantify
 
-from adam.ontology import OntologyNode, Region
+from adam.ontology import OntologyNode, Region, IN_REGION
 from adam.ontology.phase1_ontology import (
     AGENT,
     BALL,
@@ -21,7 +21,11 @@ from adam.ontology.phase1_ontology import (
     SELF_MOVING,
     INANIMATE,
 )
-from adam.ontology.phase1_spatial_relations import EXTERIOR_BUT_IN_CONTACT, Direction
+from adam.ontology.phase1_spatial_relations import (
+    EXTERIOR_BUT_IN_CONTACT,
+    Direction,
+    GRAVITATIONAL_AXIS,
+)
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
     HasBinaryProperty,
@@ -34,6 +38,7 @@ from adam.perception.high_level_semantics_situation_to_developmental_primitive_p
     TooManySpeakersException,
 )
 from adam.random_utils import RandomChooser
+from adam.relation import Relation
 from adam.situation import SituationAction, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 
@@ -154,7 +159,7 @@ def test_person_put_ball_on_table():
                             reference_object=table,
                             distance=EXTERIOR_BUT_IN_CONTACT,
                             direction=Direction(
-                                positive=True, relative_to_axis="vertical w.r.t. gravity"
+                                positive=True, relative_to_axis=GRAVITATIONAL_AXIS
                             ),
                         ),
                     ),
@@ -212,12 +217,16 @@ def test_person_put_ball_on_table():
     assert "smallerThan(ball_0, person_0)" in second_frame_relations_strings
 
     # new relations:
-    assert (
-        "in-region(ball_0, Region(reference_object=table_0, "
-        "distance=Distance(name='exterior-but-in-contact'), "
-        "direction=Direction(positive=True, relative_to_axis='vertical w.r.t. gravity')))"
-        in second_frame_relations_strings
+    ball_on_table_relation = Relation(
+        IN_REGION,
+        ball_perception,
+        Region(
+            table_perception,
+            distance=EXTERIOR_BUT_IN_CONTACT,
+            direction=Direction(positive=True, relative_to_axis=GRAVITATIONAL_AXIS),
+        ),
     )
+    assert ball_on_table_relation in second_frame_relations
 
     # removed relations:
     assert (

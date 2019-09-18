@@ -39,6 +39,14 @@ Distances used by Landau and Jackendoff in describing spatial relations.
 
 
 @attrs(frozen=True, slots=True)
+class Axis:
+    name: str = attrib(validator=instance_of(str))
+
+
+GRAVITATIONAL_AXIS = Axis("gravitational")
+
+
+@attrs(frozen=True, slots=True)
 class Direction:
     r"""
     Represents the direction one object may have relative to another.
@@ -50,7 +58,7 @@ class Direction:
     We need to standardize on what "positive" direction means. 
     It is clear for vertical axes but less clear for other things. 
     """
-    relative_to_axis: str = attrib(validator=instance_of(str))
+    relative_to_axis: Axis = attrib(validator=instance_of(Axis))
     """
     We store an arbitrary string for this pending determining the
     proper representation.

@@ -150,5 +150,13 @@ class SituationAction:
         validator=optional(instance_of(DuringAction)), default=None, kw_only=True
     )
 
+    def __attrs_post_init__(self) -> None:
+        for (role, filler) in self.argument_roles_to_fillers.items():
+            if not isinstance(filler, (Region, SituationObject)):
+                raise RuntimeError(
+                    f"Argument role fillers must be Regions or SituationObjects"
+                    f"but got {filler} in role {role} of {self}"
+                )
+
     def __repr__(self) -> str:
         return f"{self.action_type}({self.argument_roles_to_fillers})"

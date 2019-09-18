@@ -45,6 +45,7 @@ from adam.ontology.phase1_spatial_relations import (
     INTERIOR,
     SpatialPath,
     TO,
+    GRAVITATIONAL_AXIS,
 )
 from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
 from adam.relation import (
@@ -446,14 +447,14 @@ inside = make_dsl_region_relation(_inside_region_factory)  # pylint:disable=inva
 def _above_region_factory(reference_object: ObjectT) -> Region[ObjectT]:
     return Region(
         reference_object=reference_object,
-        direction=Direction(positive=True, relative_to_axis="vertical"),
+        direction=Direction(positive=True, relative_to_axis=GRAVITATIONAL_AXIS),
     )
 
 
 def _below_region_factory(reference_object: ObjectT) -> Region[ObjectT]:
     return Region(
         reference_object=reference_object,
-        direction=Direction(positive=False, relative_to_axis="vertical"),
+        direction=Direction(positive=False, relative_to_axis=GRAVITATIONAL_AXIS),
     )
 
 
