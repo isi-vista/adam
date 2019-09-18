@@ -124,6 +124,14 @@ It only makes sense to apply this to sub-types of PERSON,
 but this is not currently enforced.
 """
 subtype(IS_SPEAKER, PERCEIVABLE_PROPERTY)
+IS_ADDRESSEE = OntologyNode("is-addressee", [BINARY])
+"""
+Indicates that the marked object is the one who is addressed.
+This will not be present for all situations.
+It only makes sense to apply this to sub-types of PERSON,
+but this is not currently enforced. E.g. 'You put the ball on the table.'
+"""
+subtype(IS_ADDRESSEE, PERCEIVABLE_PROPERTY)
 
 # Properties not perceived by the learner, but useful for situation generation
 
