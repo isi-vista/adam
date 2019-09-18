@@ -3,6 +3,7 @@ Representations for simple ontologies.
 
 These ontologies are intended to be used when describing `Situation`\ s and writing `SituationTemplate`\ s.
 """
+from typing import List, Dict, Tuple
 
 from attr import attrib, attrs
 from attr.validators import instance_of
@@ -11,6 +12,7 @@ from immutablecollections.converter_utils import _to_immutableset
 from networkx import DiGraph
 
 from adam.ontology.phase1_spatial_relations import Distance, Region
+from adam.relation import Relation
 
 
 @attrs(frozen=True, slots=True, repr=False)
@@ -56,29 +58,6 @@ class OntologyNode:
         return f"{self.handle}{properties_string}"
 
 
-@attrs(frozen=True, slots=True)
-class OntologyNodeRelation:
-    r"""
-    This class defines the relationships between `OntologyNode`\ s
-    """
-
-    relation_type: OntologyNode = attrib(validator=instance_of(OntologyNode))
-    """
-    An `OntologyNode` which gives the relationship type between the args
-    """
-    arg1: OntologyNode = attrib(validator=instance_of(OntologyNode))
-    """
-    An `OntologyNode` which is the first argument of the relation_type
-    """
-    arg2: OntologyNode = attrib(validator=instance_of(OntologyNode))
-    """
-    An `OntologyNode` which is the second argument of the relation_type
-    """
-
-
-_OneOrMoreOntologyNodes = Union[OntologyNode, Iterable[OntologyNode]]
-
-
 def build_size_relationships(
     relative_size_nodes: Tuple[Tuple[OntologyNode, ...], ...],
     *,
@@ -94,7 +73,7 @@ def build_size_relationships(
 
     For use see GAILA_PHASE_1_ONTOLOGY.
     """
-    node_to_relations: Dict[OntologyNode, List[OntologyNodeRelation]] = {}
+    node_to_relations: Dict[OntologyNode, List[Relation[OntologyNode]]] = {}
     bigger: List[OntologyNode] = []
     for nodes in relative_size_nodes:
         for node in nodes:
@@ -102,13 +81,13 @@ def build_size_relationships(
                 node_to_relations.update({node: []})
             for entry in bigger:
                 node_to_relations[node].append(
-                    OntologyNodeRelation(
-                        relation_type=opposite_type, arg1=node, arg2=entry
+                    Relation(
+                        relation_type=opposite_type, first_slot=node, second_slot=entry
                     )
                 )
                 node_to_relations[entry].append(
-                    OntologyNodeRelation(
-                        relation_type=relation_type, arg1=entry, arg2=node
+                    Relation(
+                        relation_type=relation_type, first_slot=entry, second_slot=node
                     )
                 )
         bigger.extend(nodes)

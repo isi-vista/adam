@@ -29,6 +29,7 @@ from adam.ontology.structural_schema import ObjectStructuralSchema
 
 # convenience method for use in Ontology
 from adam.ontology.action_description import ActionDescription
+from adam.relation import Relation
 
 
 def _copy_digraph(digraph: DiGraph) -> DiGraph:
@@ -63,7 +64,7 @@ class Ontology:
         converter=_to_immutabledict, default=immutabledict(), kw_only=True
     )
     _node_to_relations: ImmutableSetMultiDict[
-        OntologyNode, ImmutableSet[OntologyNodeRelation]
+        OntologyNode, ImmutableSet[Relation[OntologyNode]]
     ] = attrib(
         converter=_to_immutablesetmultidict, default=immutablesetmultidict(), kw_only=True
     )
