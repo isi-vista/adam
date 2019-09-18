@@ -46,10 +46,11 @@ from adam.ontology.phase1_ontology import (
     THEME,
     IS_SPEAKER,
     IS_ADDRESSEE,
-)
+    HAS)
 from adam.ontology.phase1_ontology import COLOR
 from adam.ontology.phase1_spatial_relations import EXTERIOR_BUT_IN_CONTACT, INTERIOR
 from adam.random_utils import SequenceChooser
+from adam.relation import Relation
 from adam.situation import SituationAction, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 
@@ -193,7 +194,38 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             if (dependency_node.part_of_speech != PROPER_NOUN) and (
                 MASS_NOUN not in lexicon_entry.properties
             ):
-                if count == 1:
+
+                # Objects that might possess the noun
+                try:
+                    speaker_object = only(sit_object for sit_object in self.situation.objects
+                                          if IS_SPEAKER in sit_object.properties)
+                except:
+                    speaker_object = None
+                try:
+                    addressee_object = only(sit_object for sit_object in self.situation.objects
+                                                            if IS_ADDRESSEE in sit_object.properties)
+                except:
+                    addressee_object = None
+                try:
+                    agent_object = only(only(self.situation.actions).argument_roles_to_fillers[AGENT])
+                except:
+                    agent_object = None
+
+                # If speaker possesses the noun
+                if speaker_object and Relation(HAS, speaker_object, _object) in self.situation.relations:
+                    quantifier_node = DependencyTreeToken("my", DETERMINER)
+                    quantifier_role = DETERMINER_ROLE
+                # If addressee possess the noun
+                elif addressee_object and Relation(HAS,  addressee_object, _object) in self.situation.relations:
+                    quantifier_node = DependencyTreeToken("your", DETERMINER)
+                    quantifier_role = DETERMINER_ROLE
+                # otherwise, if the agent possess the noun
+                elif agent_object and Relation(HAS,  agent_object, _object) \
+                        in self.situation.relations:
+                    token = self.objects_to_dependency_nodes[agent_object].token+'\'s'
+                    quantifier_node = DependencyTreeToken(token, DETERMINER)
+                    quantifier_role = DETERMINER_ROLE
+                elif count == 1:
                     quantifier_node = DependencyTreeToken("a", DETERMINER)
                     quantifier_role = DETERMINER_ROLE
                 elif count == 2:
