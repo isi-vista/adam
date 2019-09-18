@@ -5,7 +5,7 @@ from more_itertools import flatten
 from typing import Callable, Generic, Iterable, Tuple, TypeVar, Union, Any
 from vistautils.preconditions import check_arg
 
-from adam.ontology import IN_REGION, OntologyNode, Region
+from adam.ontology import OntologyNode, IN_REGION, Region
 
 ObjectT = TypeVar("ObjectT")
 ObjectTOut = TypeVar("ObjectTOut", contravariant=True)
