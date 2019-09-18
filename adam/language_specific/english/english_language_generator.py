@@ -194,46 +194,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             if (dependency_node.part_of_speech != PROPER_NOUN) and (
                 MASS_NOUN not in lexicon_entry.properties
             ):
-
-                possession_relations = [
-                    relation
-                    for relation in self.situation.relations
-                    if relation.relation_type == HAS and relation.second_slot == _object
-                ]
-                if len(possession_relations) > 1:
-                    raise RuntimeError("Can not handle multiple possession relations")
-                elif len(possession_relations) == 1:
-                    possessor = possession_relations[0].first_slot
-                    # If speaker possesses the noun
-                    if IS_SPEAKER in possessor.properties:
-                        quantifier_node = DependencyTreeToken("my", DETERMINER)
-                        quantifier_role = DETERMINER_ROLE
-                    # If addressee possess the noun
-                    elif IS_ADDRESSEE in possessor.properties:
-                        quantifier_node = DependencyTreeToken("your", DETERMINER)
-                        quantifier_role = DETERMINER_ROLE
-                    # otherwise, if the agent possess the noun
-                    elif possessor == only(
-                        only(self.situation.actions).argument_roles_to_fillers[AGENT]
-                    ):
-                        token = self.objects_to_dependency_nodes[possessor].token + "'s"
-                        quantifier_node = DependencyTreeToken(token, DETERMINER)
-                        quantifier_role = DETERMINER_ROLE
-                    else:
-                        raise RuntimeError("Unknown possesor")
-                elif count == 1:
-                    quantifier_node = DependencyTreeToken("a", DETERMINER)
-                    quantifier_role = DETERMINER_ROLE
-                elif count == 2:
-                    quantifier_node = DependencyTreeToken("two", NUMERAL)
-                    quantifier_role = NUMERIC_MODIFIER
-                # Currently, any number of objects greater than two is considered "many"
-                else:
-                    quantifier_node = DependencyTreeToken("many", DETERMINER)
-                    quantifier_role = DETERMINER_ROLE
-                self.dependency_graph.add_edge(
-                    quantifier_node, dependency_node, role=quantifier_role
-                )
+                self.add_determiner(_object, count, dependency_node)
 
             # Begin work on translating modifiers of Nouns with Color
             for property_ in _object.properties:
@@ -247,6 +208,63 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     )
 
             return dependency_node
+
+        def add_determiner(
+            self,
+            _object: SituationObject,
+            count: int,
+            dependency_node: DependencyTreeToken,
+        ) -> None:
+            possession_relations = [
+                relation
+                for relation in self.situation.relations
+                if relation.relation_type == HAS and relation.second_slot == _object
+            ]
+            if len(possession_relations) > 1:
+                raise RuntimeError("Can not handle multiple possession relations")
+            else:
+                # If speaker possesses the noun
+                if (
+                    len(possession_relations) == 1
+                    and IS_SPEAKER in possession_relations[0].first_slot.properties
+                ):
+                    quantifier_node = DependencyTreeToken("my", DETERMINER)
+                    quantifier_role = DETERMINER_ROLE
+                # If addressee possess the noun
+                elif (
+                    len(possession_relations) == 1
+                    and IS_ADDRESSEE in possession_relations[0].first_slot.properties
+                ):
+                    quantifier_node = DependencyTreeToken("your", DETERMINER)
+                    quantifier_role = DETERMINER_ROLE
+                # add 's if a non-agent possess the noun
+                elif (
+                    len(possession_relations) == 1
+                    and possession_relations[0].first_slot
+                    not in only(self.situation.actions).argument_roles_to_fillers[AGENT]
+                ):
+                    token = (
+                        self.objects_to_dependency_nodes[
+                            possession_relations[0].first_slot
+                        ].token
+                        + "'s"
+                    )
+                    quantifier_node = DependencyTreeToken(token, DETERMINER)
+                    quantifier_role = DETERMINER_ROLE
+                # otherwise do the normal determiner behavior
+                elif count == 1:
+                    quantifier_node = DependencyTreeToken("a", DETERMINER)
+                    quantifier_role = DETERMINER_ROLE
+                elif count == 2:
+                    quantifier_node = DependencyTreeToken("two", NUMERAL)
+                    quantifier_role = NUMERIC_MODIFIER
+                # Currently, any number of objects greater than two is considered "many"
+                else:
+                    quantifier_node = DependencyTreeToken("many", DETERMINER)
+                    quantifier_role = DETERMINER_ROLE
+                self.dependency_graph.add_edge(
+                    quantifier_node, dependency_node, role=quantifier_role
+                )
 
         def _translate_action_to_verb(
             self, action: SituationAction

@@ -298,31 +298,6 @@ def test_dad_put_a_cookie_in_a_box_using_my_as_dad_speaker():
     ).as_token_sequence() == ("I", "put", "a", "cookie", "in", "my", "box")
 
 
-def test_dad_put_a_cookie_in_a_box_using_dads():
-    dad = SituationObject(DAD)
-    cookie = SituationObject(COOKIE)
-    box = SituationObject(BOX)
-    situation = HighLevelSemanticsSituation(
-        ontology=GAILA_PHASE_1_ONTOLOGY,
-        objects=[dad, cookie, box],
-        relations=[Relation(HAS, dad, box)],
-        actions=[
-            SituationAction(
-                PUT,
-                (
-                    (AGENT, dad),
-                    (THEME, cookie),
-                    (GOAL, Region(reference_object=box, distance=INTERIOR)),
-                ),
-            )
-        ],
-    )
-
-    assert only(
-        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
-    ).as_token_sequence() == ("Dad", "puts", "a", "cookie", "in", "Dad's", "box")
-
-
 def test_dad_put_a_cookie_in_a_box_using_you_your():
     dad = SituationObject(DAD, properties=[IS_ADDRESSEE])
     cookie = SituationObject(COOKIE)
