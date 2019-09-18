@@ -219,6 +219,13 @@ subtype(HAT, INANIMATE_OBJECT)
 COOKIE = OntologyNode("cookie", [CAN_FILL_TEMPLATE_SLOT])
 subtype(COOKIE, INANIMATE_OBJECT)
 
+IS_GROUND = OntologyNode("is-ground")
+subtype(IS_GROUND, RECOGNIZED_PARTICULAR_PROPERTY)
+GROUND = OntologyNode(
+    "ground", non_inheritable_properties=[IS_GROUND, CAN_FILL_TEMPLATE_SLOT]
+)
+subtype(GROUND, INANIMATE_OBJECT)
+
 PERSON = OntologyNode("person", inheritable_properties=[ANIMATE])
 subtype(PERSON, THING)
 IS_MOM = OntologyNode("is-mom")
@@ -454,6 +461,7 @@ _CUP_SCHEMA = ObjectStructuralSchema(CUP)
 _BOOK_SCHEMA = ObjectStructuralSchema(BOOK)
 _HAND_SCHEMA = ObjectStructuralSchema(HAND)
 _HEAD_SCHEMA = ObjectStructuralSchema(HEAD)
+_GROUND_SCHEMA = ObjectStructuralSchema(GROUND)
 
 # Hierarchical structure of objects
 _TORSO_SCHEMA = ObjectStructuralSchema(_TORSO)
@@ -1229,6 +1237,7 @@ GAILA_PHASE_1_ONTOLOGY = Ontology(
             (HAND, _HAND_SCHEMA),
             (CAR, _CAR_SCHEMA),
             (TRUCK, _TRUCK_SCHEMA),
+            (GROUND, _GROUND_SCHEMA),
         ]
     ),
     action_to_description=immutabledict(
