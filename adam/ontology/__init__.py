@@ -85,6 +85,15 @@ def build_size_relationships(
     relation_type: OntologyNode,
     opposite_type: OntologyNode,
 ) -> ImmutableDict[OntologyNode, ImmutableSet[OntologyNodeRelation]]:
+    """
+    Build a dictionary to represent opposite relation_types between OntologyNodes
+
+    Used primarily to represent relative size_of relationships, this function takes a ranking of
+    `OntologyNode` objects by *relative_size_nodes* which are then assigned the appropriate
+    *relation_type* and *opposite_type* respectively.
+
+    For use see GAILA_PHASE_1_ONTOLOGY.
+    """
     node_to_relations: Dict[OntologyNode, List[OntologyNodeRelation]] = {}
     bigger: List[OntologyNode] = []
     for nodes in relative_size_nodes:
@@ -102,7 +111,7 @@ def build_size_relationships(
                         relation_type=relation_type, arg1=entry, arg2=node
                     )
                 )
-        bigger.append(flatten(nodes))
+        bigger.extend(nodes)
     return _to_immutabledict(node_to_relations)
 
 
