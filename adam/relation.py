@@ -2,14 +2,14 @@ from attr import attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import ImmutableSet, immutableset
 from more_itertools import flatten
-from typing import Callable, Generic, Iterable, Tuple, TypeVar, Union
+from typing import Callable, Generic, Iterable, Tuple, TypeVar, Union, Any
 from vistautils.preconditions import check_arg
 
 from adam.ontology import IN_REGION, OntologyNode, Region
 
 ObjectT = TypeVar("ObjectT")
+ObjectTOut = TypeVar("ObjectTOut", contravariant=True)
 
-_SelfT = TypeVar("_SelfT")
 
 @attrs(frozen=True, repr=False)
 class Relation(Generic[ObjectT]):
@@ -29,8 +29,9 @@ class Relation(Generic[ObjectT]):
     second_slot: Union[ObjectT, Region[ObjectT]] = attrib()
     negated: bool = attrib(validator=instance_of(bool), default=False, kw_only=True)
 
-    def negated_copy(self: _SelfT) -> _SelfT:
-        return self.evolve(negated=not self.negated)
+    def negated_copy(self) -> "Relation[ObjectT]":
+        # mypy doesn't know attrs classes provide evolve for copying
+        return self.evolve(negated=not self.negated)  # type: ignore
 
     def __attrs_post_init__(self) -> None:
         check_arg(
@@ -47,9 +48,13 @@ class Relation(Generic[ObjectT]):
 # DSL to make writing object hierarchies easier
 
 
+# commented out is what should be the true type signature, but it seems to confuse mypy
+# def flatten_relations(
+#     relation_collections: Iterable[Union[Relation[ObjectT], Iterable[Relation[ObjectT]]]]
+# ) -> ImmutableSet[Relation[ObjectT]]:
 def flatten_relations(
-    relation_collections: Iterable[Union[ObjectT, Iterable[ObjectT]]]
-) -> ImmutableSet[Relation[ObjectT]]:
+    relation_collections: Iterable[Union[Relation[Any], Iterable[Relation[Any]]]]
+) -> ImmutableSet[Relation[Any]]:
     """
     Convenience method to enable writing sub-object relations
     in an `ObjectStructuralSchema` more easily.
@@ -85,8 +90,8 @@ def make_dsl_relation(
 ]:
     r"""
     Make a function which, when given either single or groups
-    of sub-object arguments for two slots of a relation,
-    generates `SubObjectRelation`\ s of type *relation_type*
+    of arguments for two slots of a `Relation`,
+    generates `Relation`\ s of type *relation_type*
     for the cross-product of the arguments.
 
     See `adam.ontology.phase1_ontology` for many examples.
@@ -112,8 +117,8 @@ def make_symetric_dsl_relation(
 ]:
     r"""
     Make a function which, when given either single or groups
-    of sub-object arguments for two slots of a relation,
-    generates a symmetric `SubObjectRelation`\ s of type *relation_type*
+    of arguments for two slots of a `Relation`,
+    generates a symmetric `Relation`\ s of type *relation_type*
     for the cross-product of the arguments.
 
     See `adam.ontology.phase1_ontology` for many examples.
@@ -150,8 +155,8 @@ def make_opposite_dsl_relation(
 ]:
     r"""
     Make a function which, when given either single or groups
-    of sub-object arguments for two slots of a relation,
-    generates a  `SubObjectRelation`\ s of type *relation_type*
+    of arguments for two slots of a `Relation`,
+    generates a  `Relation`\ s of type *relation_type*
     and an inverse of type *opposite_type* for the for the
     reversed cross-product of the arguments
 
@@ -181,11 +186,18 @@ def make_opposite_dsl_relation(
     return dsl_opposite_function
 
 
+# Proper signature commented-out, see https://github.com/isi-vista/adam/issues/161
+#
+# def make_dsl_region_relation(
+#     region_factory: Callable[[ObjectT], Region[ObjectT]]
+# ) -> Callable[
+#     [Union[ObjectT, Iterable[ObjectT]], Union[ObjectT, Iterable[ObjectT]]],
+#     Tuple[Relation[ObjectT], ...],
+# ]:
 def make_dsl_region_relation(
-    region_factory: Callable[[ObjectT], Region[ObjectT]]
+    region_factory: Callable[[Any], Region[Any]]
 ) -> Callable[
-    [Union[ObjectT, Iterable[ObjectT]], Union[ObjectT, Iterable[ObjectT]]],
-    Tuple[Relation[ObjectT], ...],
+    [Union[Any, Iterable[Any]], Union[Any, Iterable[Any]]], Tuple[Relation[Any], ...]
 ]:
     def dsl_relation_function(
         arg1s: Union[ObjectT, Iterable[ObjectT]], arg2s: Union[ObjectT, Iterable[ObjectT]]
@@ -199,11 +211,18 @@ def make_dsl_region_relation(
     return dsl_relation_function
 
 
+# Proper signature commented-out, see https://github.com/isi-vista/adam/issues/161
+#
+# def make_symmetric_dsl_region_relation(
+#     region_factory: Callable[[ObjectT], Region[ObjectT]]
+# ) -> Callable[
+#     [Union[ObjectT, Iterable[ObjectT]], Union[ObjectT, Iterable[ObjectT]]],
+#     Tuple[Relation[ObjectT], ...],
+# ]:
 def make_symmetric_dsl_region_relation(
     region_factory: Callable[[ObjectT], Region[ObjectT]]
 ) -> Callable[
-    [Union[ObjectT, Iterable[ObjectT]], Union[ObjectT, Iterable[ObjectT]]],
-    Tuple[Relation[ObjectT], ...],
+    [Union[Any, Iterable[Any]], Union[Any, Iterable[Any]]], Tuple[Relation[Any], ...]
 ]:
     def dsl_relation_function(
         arg1s: Union[ObjectT, Iterable[ObjectT]], arg2s: Union[ObjectT, Iterable[ObjectT]]
@@ -228,12 +247,20 @@ def make_symmetric_dsl_region_relation(
     return dsl_relation_function
 
 
+# Proper signature commented-out, see https://github.com/isi-vista/adam/issues/161
+#
+# def make_opposite_dsl_region_relation(
+#     region_factory: Callable[[ObjectT], Region[ObjectT]],
+#     opposite_region_factory: Callable[[ObjectT], Region[ObjectT]],
+# ) -> Callable[
+#     [Union[ObjectT, Iterable[ObjectT]], Union[ObjectT, Iterable[ObjectT]]],
+#     Tuple[Relation[ObjectT], ...],
+# ]:
 def make_opposite_dsl_region_relation(
-    region_factory: Callable[[ObjectT], Region[ObjectT]],
-    opposite_region_factory: Callable[[ObjectT], Region[ObjectT]],
+    region_factory: Callable[[Any], Region[Any]],
+    opposite_region_factory: Callable[[Any], Region[Any]],
 ) -> Callable[
-    [Union[ObjectT, Iterable[ObjectT]], Union[ObjectT, Iterable[ObjectT]]],
-    Tuple[Relation[ObjectT], ...],
+    [Union[Any, Iterable[Any]], Union[Any, Iterable[Any]]], Tuple[Relation[Any], ...]
 ]:
     def dsl_relation_function(
         arg1s: Union[ObjectT, Iterable[ObjectT]], arg2s: Union[ObjectT, Iterable[ObjectT]]

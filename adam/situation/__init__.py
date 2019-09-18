@@ -130,9 +130,6 @@ class LocatedObjectSituation(Situation):
     """
 
 
-SituationRelation = Relation[SituationObject]
-
-
 @attrs(frozen=True, slots=True, repr=False)
 class SituationAction:
     """

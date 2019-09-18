@@ -22,7 +22,7 @@ class DevelopmentalPrimitivePerceptionFrame(PerceptualRepresentationFrame):
     - a set of `PropertyPerception`\ s which associate a `ObjectPerception` with perceived
       properties
       of various sort (e.g. color, sentience, etc.)
-    - a set of `RelationPerception`\ s which describe the learner's perception of how two
+    - a set of `Relation`\ s which describe the learner's perception of how two
       `ObjectPerception`\ s are related.
 
     This is the default perceptual representation for at least the first phase of the ADAM project.
@@ -41,11 +41,11 @@ class DevelopmentalPrimitivePerceptionFrame(PerceptualRepresentationFrame):
     a set of `PropertyPerception`\ s which associate a `ObjectPerception` with perceived properties
       of various sort (e.g. color, sentience, etc.)
     """
-    relations: ImmutableSet[Relation["ObjectPerception"]] = attrib(
+    relations: ImmutableSet[Relation["ObjectPerception"]] = attrib(  # type: ignore
         converter=flatten_relations, default=immutableset()
     )
     r"""
-    a set of `RelationPerception`\ s which describe the learner's perception of how two 
+    a set of `Relation`\ s which describe the learner's perception of how two 
       `ObjectPerception`\ s are related.
       
     Symmetric relations should be included as two separate relations, one in each direction.            
@@ -80,9 +80,6 @@ class PropertyPerception(ABC):
     """
 
     perceived_object = attrib(validator=instance_of(ObjectPerception))
-
-
-RelationPerception = Relation[ObjectPerception]
 
 
 @attrs(slots=True, frozen=True, repr=False)

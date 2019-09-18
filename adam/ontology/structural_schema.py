@@ -21,7 +21,7 @@ class ObjectStructuralSchema:
     (e.g. the head is above and supported by the torso).
 
     Declaring an `ObjectStructuralSchema` can be verbose;
-     see `SubObjectRelation`\ s for additional tips on how to make this more compact.
+     see `Relation`\ s for additional tips on how to make this more compact.
     """
 
     parent_object: OntologyNode = attrib(validator=instance_of(OntologyNode))
@@ -37,11 +37,11 @@ class ObjectStructuralSchema:
     These `SubObject`\ s themselves wrap `ObjectStructuralSchema`\ s 
     and can therefore themselves have complex internal structure.
     """
-    sub_object_relations: ImmutableSet["SubObjectRelation"] = attrib(
+    sub_object_relations: ImmutableSet[Relation["SubObject"]] = attrib(
         converter=_to_immutableset, default=immutableset()
     )
     r"""
-    A set of `SubObjectRelation` which define how the `SubObject`\ s relate to one another. 
+    A set of `Relation`\ s which define how the `SubObject`\ s relate to one another. 
     """
 
 
@@ -62,6 +62,3 @@ class SubObject:
     For example, an ARM is a sub-component of a PERSON, but ARM itself has a complex structure
     (e.g. it includes a hand)
     """
-
-
-SubObjectRelation = Relation[SubObject]

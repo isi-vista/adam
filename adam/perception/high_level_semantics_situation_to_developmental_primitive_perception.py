@@ -1,14 +1,13 @@
 from itertools import chain
+from typing import AbstractSet, Dict, List, Mapping, Optional, Tuple, Union, cast
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
 from more_itertools import only, quantify
-from typing import AbstractSet, Dict, List, Mapping, Optional, Tuple, Union, cast
 from vistautils.preconditions import check_arg
 
 from adam.ontology import OntologyNode, Region
-from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
 from adam.ontology.action_description import ActionDescription
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
@@ -20,6 +19,7 @@ from adam.ontology.phase1_ontology import (
     PART_OF,
     PERCEIVABLE,
 )
+from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
 from adam.perception import PerceptualRepresentation, PerceptualRepresentationGenerator
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -27,12 +27,11 @@ from adam.perception.developmental_primitive_perception import (
     HasColor,
     ObjectPerception,
     PropertyPerception,
-    RelationPerception,
     RgbColorPerception,
 )
 from adam.random_utils import SequenceChooser
 from adam.relation import Relation
-from adam.situation import SituationAction, SituationObject, SituationRelation
+from adam.situation import SituationAction, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 
 
@@ -136,11 +135,11 @@ class _PerceptionGeneration:
     Tracks the correspondence between spatial regions in the situation description
     and those in the perceptual representation.
     """
-    _relation_perceptions: List[RelationPerception] = attrib(
+    _relation_perceptions: List[Relation[ObjectPerception]] = attrib(
         init=False, default=Factory(list)
     )
     r"""
-    `RelationPerception`\ s perceived by the learner.
+    `Relation`\ s perceived by the learner.
     """
     _property_assertion_perceptions: List[PropertyPerception] = attrib(
         init=False, default=Factory(list)
@@ -227,7 +226,7 @@ class _PerceptionGeneration:
             }
         )
 
-    def _perceive_action(self) -> Tuple[AbstractSet[RelationPerception], ...]:
+    def _perceive_action(self) -> Tuple[AbstractSet[Relation[ObjectPerception]], ...]:
         # Extract relations from action
         situation_action = self._situation.actions[0]
         # TODO: Handle multiple actions
@@ -258,8 +257,10 @@ class _PerceptionGeneration:
             action_object_variables_to_object_perceptions=action_objects_variables_to_perceived_objects,
         )
 
-        return immutableset(chain(enduring_relations, before_relations)), \
-               immutableset(chain(enduring_relations, after_relations))
+        return (
+            immutableset(chain(enduring_relations, before_relations)),
+            immutableset(chain(enduring_relations, after_relations)),
+        )
 
     def _bind_action_objects_variables_to_perceived_objects(
         self, situation_action: SituationAction, action_description: ActionDescription
@@ -386,12 +387,12 @@ class _PerceptionGeneration:
 
     def _perceive_action_relations(
         self,
-        conditions: ImmutableSet[SituationRelation],
+        conditions: ImmutableSet[Relation[SituationObject]],
         *,
         action_object_variables_to_object_perceptions: Mapping[
             SituationObject, Union[ObjectPerception, Region[ObjectPerception]]
-        ]
-    ) -> AbstractSet[RelationPerception]:
+        ],
+    ) -> AbstractSet[Relation[ObjectPerception]]:
         """
 
         Args:
@@ -631,7 +632,7 @@ class _PerceptionGeneration:
             ] = sub_object.schema.parent_object
             # every sub-component has an implicit partOf relationship to its parent object.
             self._relation_perceptions.append(
-                RelationPerception(PART_OF, root_object_perception, sub_object_perception)
+                Relation(PART_OF, root_object_perception, sub_object_perception)
             )
 
         # translate sub-object relations specified by the object's structural schema
@@ -655,7 +656,7 @@ class _PerceptionGeneration:
                     direction=arg2.direction,
                 )
             self._relation_perceptions.append(
-                RelationPerception(
+                Relation(
                     sub_object_relation.relation_type, arg1_perception, arg2_perception
                 )
             )

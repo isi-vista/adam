@@ -10,7 +10,8 @@ from immutablecollections import (
 from immutablecollections.converter_utils import _to_immutabledict, _to_immutableset
 
 from adam.ontology import OntologyNode
-from adam.situation import SituationObject, SituationRelation
+from adam.relation import Relation
+from adam.situation import SituationObject
 
 
 @attrs(frozen=True, slots=True, auto_attribs=True)
@@ -41,14 +42,14 @@ class ActionDescription:
         converter=_to_immutableset, default=immutableset(), kw_only=True
     )
     # conditions which hold both before and after the action
-    enduring_conditions: ImmutableSet[SituationRelation] = attrib(
+    enduring_conditions: ImmutableSet[Relation[SituationObject]] = attrib(
         converter=_to_immutableset, default=immutableset(), kw_only=True
     )
     # Preconditions
-    preconditions: ImmutableSet[SituationRelation] = attrib(
+    preconditions: ImmutableSet[Relation[SituationObject]] = attrib(
         converter=_to_immutableset, default=immutableset(), kw_only=True
     )
     # Postconditions
-    postconditions: ImmutableSet[SituationRelation] = attrib(
+    postconditions: ImmutableSet[Relation[SituationObject]] = attrib(
         converter=_to_immutableset, default=immutableset(), kw_only=True
     )
