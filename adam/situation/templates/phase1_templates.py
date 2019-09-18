@@ -36,7 +36,7 @@ class Phase1SituationTemplate(SituationTemplate):
 
     Currently, this can only be a collection of `TemplateObjectVariable`\ s.
 
-    `Phase1SituationTemplateGenerator` will translate these
+    Phase1SituationTemplateGenerator will translate these
     to a sequence `HighLevelSemanticsSituation`\ s corresponding
     to the Cartesian product of the possible values of the *object_variables*.
 
@@ -151,7 +151,7 @@ class _TemplateVariable(Protocol):
 @attrs(frozen=True, slots=True, cmp=False)
 class TemplateObjectVariable(SituationTemplateObject, _TemplateVariable):
     r"""
-    A variable in a `Phase1SituationTemplateGenerator`
+    A variable in a `Phase1SituationTemplate`
     which could be filled by any object
     whose `OntologyNode` is selected by *node_selector*.
 
@@ -167,7 +167,7 @@ class TemplateObjectVariable(SituationTemplateObject, _TemplateVariable):
 
     We provide `object_variable` to make creating `TemplateObjectVariable`\ s more convenient.
 
-    `TemplateObjectVariables` with the same node selector are *not* equal to one another
+    `TemplateObjectVariable`\ s with the same node selector are *not* equal to one another
     so that you can have multiple objects in a `Situation` which obey the same constraints.
     """
 
@@ -182,13 +182,13 @@ class TemplateObjectVariable(SituationTemplateObject, _TemplateVariable):
 @attrs(frozen=True, slots=True, cmp=False)
 class TemplatePropertyVariable(SituationTemplateObject, _TemplateVariable):
     r"""
-    A variable in a `Phase1SituationTemplateGenerator`
+    A variable in a `Phase1SituationTemplate`
     which could be filled by any property
     whose `OntologyNode` is selected by *node_selector*.
 
     We provide `property_variable` to make creating `TemplatePropertyVariable`\ s more convenient.
 
-    `TemplatePropertyVariables` with the same node selector are *not* equal to one another
+    `TemplatePropertyVariable`\ s with the same node selector are *not* equal to one another
     so that you can have multiple objects in a `Situation` which obey the same constraints.
     """
 

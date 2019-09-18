@@ -108,11 +108,25 @@ adam.situation.templates
 
 adam.situation.templates.phase1_templates
 ------------------------------------------
-.. automodule: adam.situation.templates.phase1_templates
+.. automodule:: adam.situation.templates.phase1_templates
 
 adam.experiment
 -----------------------------
 .. automodule:: adam.experiment
+
+*******************************************
+Supporting Classes: Representing Relations
+*******************************************
+adam.relation
+--------------
+.. automodule:: adam.relation
+
+*******************************************
+Supporting Classes: Object Structure
+*******************************************
+adam.ontology.structural_schema
+---------------------------------------
+.. automodule:: adam.ontology.structural_schema
 
 *******************************************
 Supporting Classes: Spatial Representation

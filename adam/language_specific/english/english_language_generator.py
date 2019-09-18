@@ -1,11 +1,11 @@
 import collections
-from typing import Mapping, MutableMapping, Union
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import ImmutableSet, immutabledict, immutableset
 from more_itertools import only
 from networkx import DiGraph
+from typing import Mapping, MutableMapping, Union
 
 from adam.language.dependency import (
     DependencyRole,
@@ -40,7 +40,7 @@ from adam.ontology import OntologyNode, Region
 from adam.ontology.phase1_ontology import AGENT, GOAL, LEARNER, PATIENT, THEME, IS_SPEAKER
 from adam.ontology.phase1_spatial_relations import EXTERIOR_BUT_IN_CONTACT, INTERIOR
 from adam.random_utils import SequenceChooser
-from adam.situation import SituationAction, SituationNode, SituationObject
+from adam.situation import SituationAction, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 
 
@@ -235,7 +235,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             self,
             action: SituationAction,
             argument_role: OntologyNode,
-            filler: Union[SituationNode, Region[SituationObject]],
+            filler: Union[SituationObject, Region[SituationObject]],
             verb_dependency_node: DependencyTreeToken,
         ):
             # TODO: to alternation

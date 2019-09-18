@@ -1,15 +1,13 @@
 from abc import ABC
-from typing import Union
-
 from attr import attrib, attrs
 from attr.validators import in_, instance_of
 from immutablecollections import ImmutableSet, immutableset
 from immutablecollections.converter_utils import _to_immutableset
-from vistautils.preconditions import check_arg
 from vistautils.range import Range
 
-from adam.ontology import OntologyNode, Region, IN_REGION
+from adam.ontology import OntologyNode
 from adam.perception import PerceptualRepresentationFrame
+from adam.relation import Relation, flatten_relations
 
 
 @attrs(slots=True, frozen=True, repr=False)
@@ -24,7 +22,7 @@ class DevelopmentalPrimitivePerceptionFrame(PerceptualRepresentationFrame):
     - a set of `PropertyPerception`\ s which associate a `ObjectPerception` with perceived
       properties
       of various sort (e.g. color, sentience, etc.)
-    - a set of `RelationPerception`\ s which describe the learner's perception of how two
+    - a set of `Relation`\ s which describe the learner's perception of how two
       `ObjectPerception`\ s are related.
 
     This is the default perceptual representation for at least the first phase of the ADAM project.
@@ -43,11 +41,11 @@ class DevelopmentalPrimitivePerceptionFrame(PerceptualRepresentationFrame):
     a set of `PropertyPerception`\ s which associate a `ObjectPerception` with perceived properties
       of various sort (e.g. color, sentience, etc.)
     """
-    relations: ImmutableSet["RelationPerception"] = attrib(
-        converter=_to_immutableset, default=immutableset()
+    relations: ImmutableSet[Relation["ObjectPerception"]] = attrib(  # type: ignore
+        converter=flatten_relations, default=immutableset()
     )
     r"""
-    a set of `RelationPerception`\ s which describe the learner's perception of how two 
+    a set of `Relation`\ s which describe the learner's perception of how two 
       `ObjectPerception`\ s are related.
       
     Symmetric relations should be included as two separate relations, one in each direction.            
@@ -82,35 +80,6 @@ class PropertyPerception(ABC):
     """
 
     perceived_object = attrib(validator=instance_of(ObjectPerception))
-
-
-@attrs(slots=True, frozen=True, repr=False)
-class RelationPerception:
-    """
-    A learner's perecption that two objects, *arg1* and *arg2* have a relation of type
-    *relation_type* with one another.
-
-    *arg2* will be a `Region` instead of an `ObjectPerception` if and only if
-    the *relation_type* is `IN_REGION`.
-    """
-
-    relation_type: OntologyNode = attrib(validator=instance_of(OntologyNode))
-    arg1: ObjectPerception = attrib(validator=instance_of(ObjectPerception))
-    # for type ignore see
-    # https://github.com/isi-vista/adam/issues/144
-    arg2: Union[ObjectPerception, Region[ObjectPerception]] = attrib(
-        validator=instance_of((ObjectPerception, Region))  # type: ignore
-    )
-
-    def __attrs_post_init__(self) -> None:
-        check_arg(
-            not isinstance(self.arg2, Region) or self.relation_type == IN_REGION,
-            "Unexpected second slot filler of relation perception: %s",
-            (self.arg2,),
-        )
-
-    def __repr__(self) -> str:
-        return f"{self.relation_type}({self.arg1}, {self.arg2})"
 
 
 @attrs(slots=True, frozen=True, repr=False)
