@@ -1,12 +1,6 @@
-from adam.ontology.phase1_ontology import (
-    ABOVE,
-    BELOW,
-    CONTACTS,
-    IS_DAD,
-    IS_MOM,
-    SENTIENT,
-    SUPPORTS,
-)
+from adam.ontology import IN_REGION, Region
+from adam.ontology.phase1_ontology import IS_DAD, IS_MOM, SENTIENT, above
+from adam.ontology.phase1_spatial_relations import EXTERIOR_BUT_IN_CONTACT
 from adam.perception import PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -17,6 +11,7 @@ from adam.perception.developmental_primitive_perception import (
     RgbColorPerception,
 )
 from adam.perception.perception_frame_difference import diff_primitive_perception_frames
+from adam.relation import Relation, flatten_relations
 
 
 def test_recognized_particular():
@@ -57,12 +52,13 @@ def test_relations():
     PerceptualRepresentation.single_frame(
         DevelopmentalPrimitivePerceptionFrame(
             perceived_objects=[ball, table],
-            relations=[
-                RelationPerception(SUPPORTS, table, ball),
-                RelationPerception(ABOVE, ball, table),
-                RelationPerception(BELOW, table, ball),
-                RelationPerception(CONTACTS, ball, table),
-                RelationPerception(CONTACTS, table, ball),
+            relations=[above(ball, table),
+                Relation(
+                    IN_REGION, ball, Region(table, distance=EXTERIOR_BUT_IN_CONTACT)
+                ),
+                Relation(
+                    IN_REGION, table, Region(ball, distance=EXTERIOR_BUT_IN_CONTACT)
+                )
             ],
         )
     )
@@ -75,21 +71,19 @@ def test_difference():
     first_frame = DevelopmentalPrimitivePerceptionFrame(
         perceived_objects=[ball, table],
         relations=[
-            RelationPerception(SUPPORTS, table, ball),
-            RelationPerception(ABOVE, ball, table),
-            RelationPerception(BELOW, table, ball),
-            RelationPerception(CONTACTS, ball, table),
-            RelationPerception(CONTACTS, table, ball),
+            above(ball, table),
+            Relation(
+                IN_REGION, ball, Region(table, distance=EXTERIOR_BUT_IN_CONTACT)
+            ),
+            Relation(
+                IN_REGION, table, Region(ball, distance=EXTERIOR_BUT_IN_CONTACT)
+            )
         ],
     )
 
     second_frame = DevelopmentalPrimitivePerceptionFrame(
         perceived_objects=[ball, table],
-        relations=[
-            RelationPerception(SUPPORTS, table, ball),
-            RelationPerception(ABOVE, ball, table),
-            RelationPerception(BELOW, table, ball),
-        ],
+        relations=[above(ball, table)],
     )
 
     diff = diff_primitive_perception_frames(before=first_frame, after=second_frame)

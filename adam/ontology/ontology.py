@@ -20,11 +20,11 @@ from vistautils.preconditions import check_arg
 
 from adam.ontology import (
     CAN_FILL_TEMPLATE_SLOT,
-    ObjectStructuralSchema,
     OntologyNode,
     REQUIRED_ONTOLOGY_NODES,
     THING,
 )
+from adam.ontology.structural_schema import ObjectStructuralSchema
 
 # convenience method for use in Ontology
 from adam.ontology.action_description import ActionDescription

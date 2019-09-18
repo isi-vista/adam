@@ -40,6 +40,10 @@ class ActionDescription:
     frames: ImmutableSet[ActionDescriptionFrame] = attrib(
         converter=_to_immutableset, default=immutableset(), kw_only=True
     )
+    # conditions which hold both before and after the action
+    enduring_conditions: ImmutableSet[SituationRelation] = attrib(
+        converter=_to_immutableset, default=immutableset(), kw_only=True
+    )
     # Preconditions
     preconditions: ImmutableSet[SituationRelation] = attrib(
         converter=_to_immutableset, default=immutableset(), kw_only=True

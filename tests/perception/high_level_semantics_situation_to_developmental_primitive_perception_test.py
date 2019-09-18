@@ -17,14 +17,14 @@ from adam.ontology.phase1_ontology import (
     RED,
     TABLE,
     THEME,
-)
+    ANIMATE, SELF_MOVING, INANIMATE)
 from adam.ontology.phase1_spatial_relations import EXTERIOR_BUT_IN_CONTACT, Direction
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
     HasBinaryProperty,
     HasColor,
     PropertyPerception,
-)
+    ObjectPerception)
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
     TooManySpeakersException,
@@ -36,6 +36,15 @@ from adam.situation.high_level_semantics_situation import HighLevelSemanticsSitu
 _PERCEPTION_GENERATOR = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
     GAILA_PHASE_1_ONTOLOGY
 )
+
+
+def perception_with_handle(frame: DevelopmentalPrimitivePerceptionFrame, handle: str) -> \
+        ObjectPerception:
+    for object_perception in frame.perceived_objects:
+        if object_perception.debug_handle == handle:
+            return object_perception
+    raise RuntimeError(f"Could not find object perception with handle {handle} "
+                       f"in {frame}")
 
 
 def test_person_and_ball():
@@ -71,7 +80,16 @@ def test_person_and_ball():
     }
 
     assert person_and_ball_perception.frames[0].relations
-    assert len(person_and_ball_perception.frames[0].property_assertions) == 2
+
+    person_perception = perception_with_handle(person_and_ball_perception.frames[0],
+                                               "person_0")
+    ball_perception = perception_with_handle(person_and_ball_perception.frames[0],
+                                             "ball_0")
+
+    assert (set(person_and_ball_perception.frames[0].property_assertions)
+            == {HasBinaryProperty(person_perception, ANIMATE),
+                HasBinaryProperty(person_perception, SELF_MOVING),
+                HasBinaryProperty(ball_perception, INANIMATE)})
 
 
 def test_person_and_ball_color():
@@ -87,27 +105,19 @@ def test_person_and_ball_color():
     )
 
     assert len(person_and_ball_perception.frames) == 1
-    assert len(person_and_ball_perception.frames[0].property_assertions) == 3
+    frame = person_and_ball_perception.frames[0]
 
-    property_assertions = person_and_ball_perception.frames[0].property_assertions
     assert (
-        prop_assertion is PropertyPerception for prop_assertion in property_assertions
+        prop_assertion is PropertyPerception for prop_assertion in frame.property_assertions
     )
-    # Check binary properties
-    assert {
-        (prop.perceived_object.debug_handle, prop.binary_property.handle)
-        for prop in property_assertions
-        if isinstance(prop, HasBinaryProperty)
-    } == {("person_0", "animate"), ("ball_0", "inanimate")}
-    # Check colors
-    assert {
-        (
-            prop.perceived_object.debug_handle,
-            f"#{prop.color.red:02x}{prop.color.green:02x}{prop.color.blue:02x}",
-        )
-        for prop in property_assertions
-        if isinstance(prop, HasColor)
-    } == {("ball_0", "#f2003c")}
+
+    person_perception = perception_with_handle(frame, "person_0")
+    ball_perception = perception_with_handle(frame, "ball_0")
+    assert HasBinaryProperty(person_perception, ANIMATE) in frame.property_assertions
+    assert HasBinaryProperty(person_perception, SELF_MOVING) in frame.property_assertions
+    assert HasBinaryProperty(ball_perception, INANIMATE) in frame.property_assertions
+    assert any(isinstance(property_, HasColor) and property_.perceived_object == ball_perception
+               for property_ in frame.property_assertions)
 
 
 def test_person_put_ball_on_table():
@@ -145,9 +155,16 @@ def test_person_put_ball_on_table():
         situation, chooser=RandomChooser.for_seed(0)
     )
     assert len(perception.frames) == 2
-    assert len(perception.frames[0].property_assertions) == 3
+    first_frame = perception.frames[0]
+    person_perception = perception_with_handle(first_frame, "person_0")
+    ball_perception = perception_with_handle(first_frame, "ball_0")
+    table_perception = perception_with_handle(first_frame, "table_0")
+    assert HasBinaryProperty(person_perception, ANIMATE) in first_frame.property_assertions
+    assert HasBinaryProperty(person_perception, SELF_MOVING) in first_frame.property_assertions
+    assert HasBinaryProperty(ball_perception, INANIMATE) in first_frame.property_assertions
+    assert HasBinaryProperty(table_perception, INANIMATE) in first_frame.property_assertions
 
-    first_frame_relations = perception.frames[0].relations
+    first_frame_relations = first_frame.relations
     second_frame_relations = perception.frames[1].relations
 
     # assert we generate at least some relations in each frame
@@ -155,10 +172,10 @@ def test_person_put_ball_on_table():
     assert second_frame_relations
 
     first_frame_relations_strings = {
-        f"{r.relation_type}({r.arg1}, {r.arg2})" for r in perception.frames[0].relations
+        f"{r.relation_type}({r.first_slot}, {r.second_slot})" for r in first_frame.relations
     }
     second_frame_relations_strings = {
-        f"{r.relation_type}({r.arg1}, {r.arg2})" for r in perception.frames[1].relations
+        f"{r.relation_type}({r.first_slot}, {r.second_slot})" for r in perception.frames[1].relations
     }
     assert "smallerThan(ball_0, person_0)" in first_frame_relations_strings
     assert "partOf(hand_0, person_0)" in first_frame_relations_strings

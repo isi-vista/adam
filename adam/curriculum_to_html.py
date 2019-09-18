@@ -165,7 +165,7 @@ class CurriculumToHtmlDumper:
                 output_text.append("\t\t\t\t<h5>Relations</h5>\n\t\t\t\t<ul>")
                 for rel in frame.relations:
                     output_text.append(
-                        f"\t\t\t\t\t<li>{rel.relation_type.handle}({rel.arg1},{rel.arg2})"
+                        f"\t\t\t\t\t<li>{rel.relation_type.handle}({rel.first_slot},{rel.second_slot})"
                     )
                 output_text.append("\t\t\t\t</ul>")
             frame_number = frame_number + 1

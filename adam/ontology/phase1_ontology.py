@@ -13,36 +13,41 @@ The following will eventually end up here:
 - Relations, Modifiers, Function Words: basic color terms (red, blue, green, white, black…), one,
   two, I, me, my, you, your, to, in, on, [beside, behind, in front of, over, under], up, down
 """
-from typing import Optional, Sequence, Tuple
-
 from immutablecollections import (
+    ImmutableDict,
     immutabledict,
     immutableset,
     immutablesetmultidict,
-    ImmutableDict,
 )
 from more_itertools import flatten
+from typing import Optional, Sequence, Tuple
 
 from adam.ontology import (
     ACTION,
-    ObjectStructuralSchema,
+    CAN_FILL_TEMPLATE_SLOT,
+    IN_REGION,
     OntologyNode,
     PROPERTY,
     RELATION,
-    SubObject,
-    THING,
-    make_dsl_relation,
-    make_opposite_dsl_relation,
-    make_symetric_dsl_relation,
-    minimal_ontology_graph,
-    sub_object_relations,
-    CAN_FILL_TEMPLATE_SLOT,
-    IN_REGION,
     Region,
+    THING,
+    minimal_ontology_graph,
 )
+from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
+from adam.relation import (
+    flatten_relations,
+    make_opposite_dsl_relation,
+    make_symmetric_dsl_region_relation,
+    make_opposite_dsl_region_relation,
+    ObjectT,
+    make_dsl_relation, Relation, negate, make_dsl_region_relation)
 from adam.ontology.action_description import ActionDescription, ActionDescriptionFrame
 from adam.ontology.ontology import Ontology
-from adam.ontology.phase1_spatial_relations import EXTERIOR_BUT_IN_CONTACT
+from adam.ontology.phase1_spatial_relations import (
+    Direction,
+    EXTERIOR_BUT_IN_CONTACT,
+    INTERIOR,
+)
 from adam.situation import SituationObject, SituationRelation
 
 _ontology_graph = minimal_ontology_graph()  # pylint:disable=invalid-name
@@ -76,6 +81,8 @@ subtype(BINARY, META_PROPERTY)
 # properties of objects which can be perceived by the learner
 PERCEIVABLE_PROPERTY = OntologyNode("perceivable-property", [PERCEIVABLE])
 subtype(PERCEIVABLE_PROPERTY, PROPERTY)
+SELF_MOVING = OntologyNode("self-moving", [BINARY])
+subtype(SELF_MOVING, PERCEIVABLE_PROPERTY)
 ANIMATE = OntologyNode("animate", [BINARY])
 subtype(ANIMATE, PERCEIVABLE_PROPERTY)
 INANIMATE = OntologyNode("inanimate", [BINARY])
@@ -183,7 +190,7 @@ BOOK = OntologyNode("book")
 subtype(BOOK, INANIMATE_OBJECT)
 HOUSE = OntologyNode("house", [HOLLOW, CAN_FILL_TEMPLATE_SLOT])
 subtype(HOUSE, INANIMATE_OBJECT)
-CAR = OntologyNode("car", [HOLLOW, CAN_FILL_TEMPLATE_SLOT])
+CAR = OntologyNode("car", [HOLLOW, CAN_FILL_TEMPLATE_SLOT, SELF_MOVING])
 subtype(CAR, INANIMATE_OBJECT)
 WATER = OntologyNode(
     "water", [LIQUID], non_inheritable_properties=[TRANSPARENT, CAN_FILL_TEMPLATE_SLOT]
@@ -210,7 +217,7 @@ MILK = OntologyNode(
 subtype(MILK, INANIMATE_OBJECT)
 HAND = OntologyNode("hand", [CAN_MANIPULATE_OBJECTS, CAN_FILL_TEMPLATE_SLOT])
 subtype(HAND, INANIMATE_OBJECT)
-TRUCK = OntologyNode("truck", [HOLLOW, CAN_FILL_TEMPLATE_SLOT])
+TRUCK = OntologyNode("truck", [HOLLOW, CAN_FILL_TEMPLATE_SLOT, SELF_MOVING])
 subtype(TRUCK, INANIMATE_OBJECT)
 DOOR = OntologyNode("door", [CAN_FILL_TEMPLATE_SLOT])
 subtype(DOOR, INANIMATE_OBJECT)
@@ -219,7 +226,7 @@ subtype(HAT, INANIMATE_OBJECT)
 COOKIE = OntologyNode("cookie", [CAN_FILL_TEMPLATE_SLOT])
 subtype(COOKIE, INANIMATE_OBJECT)
 
-PERSON = OntologyNode("person", inheritable_properties=[ANIMATE])
+PERSON = OntologyNode("person", inheritable_properties=[ANIMATE, SELF_MOVING])
 subtype(PERSON, THING)
 IS_MOM = OntologyNode("is-mom")
 subtype(IS_MOM, RECOGNIZED_PARTICULAR_PROPERTY)
@@ -371,6 +378,7 @@ PART_OF = OntologyNode("partOf")
 A relation indicating that one object is part of another object.
 """
 subtype(PART_OF, RELATION)
+partOf = make_dsl_relation(PART_OF)
 
 SIZE_RELATION = OntologyNode("size-relation")
 subtype(SIZE_RELATION, RELATION)
@@ -398,46 +406,46 @@ bigger_than = make_opposite_dsl_relation(  # pylint:disable=invalid-name
     BIGGER_THAN, opposite_type=SMALLER_THAN
 )
 
+HAS = OntologyNode("has")
+subtype(HAS, RELATION)
+has = make_dsl_relation(HAS)
 
-SUPPORTS = OntologyNode("supports")
-"""
-A relation indicating that  one object provides the force to counteract gravity and prevent another 
-object from falling.
-
-Needs refinement to solve ambiguity: https://github.com/isi-vista/adam/issues/88
-"""
-subtype(SUPPORTS, SPATIAL_RELATION)
-
-supports = make_dsl_relation(SUPPORTS)  # pylint:disable=invalid-name
+def _contact_region_factory(reference_object: ObjectT) -> Region[ObjectT]:
+    return Region(reference_object=reference_object, distance=EXTERIOR_BUT_IN_CONTACT)
 
 
-CONTACTS = OntologyNode("contacts")
-"""
-A symmetric relation indicating that one object touches another.
-"""
-subtype(CONTACTS, SPATIAL_RELATION)
+# mypy's reveal_type says the type of "contacts" is
+# 'def (Union[ObjectT`-1, typing.Iterable[ObjectT`-1]], Union[ObjectT`-1, typing.Iterable[
+# ObjectT`-1]]) -> builtins.tuple[adam.relation.Relation[ObjectT`-1]]'
+# but `ObjectT`-1 won't bind, so when called below we get things like
+# Argument 2 has incompatible type "SubObject"; expected "Union[ObjectT, Iterable[ObjectT]]"
+# For now I'm just suppressing the typing and I'll look more into this later.
+contacts = make_symmetric_dsl_region_relation(_contact_region_factory)  # type: ignore
+
+def _inside_region_factory(reference_object: ObjectT) -> Region[ObjectT]:
+    return Region(reference_object=reference_object,
+                  distance=INTERIOR)
+
+inside = make_dsl_region_relation(_inside_region_factory)
+
+def _above_region_factory(reference_object: ObjectT) -> Region[ObjectT]:
+    return Region(
+        reference_object=reference_object,
+        direction=Direction(positive=True, relative_to_axis="vertical"),
+    )
 
 
-contacts = make_symetric_dsl_relation(CONTACTS)  # pylint:disable=invalid-name
+def _below_region_factory(reference_object: ObjectT) -> Region[ObjectT]:
+    return Region(
+        reference_object=reference_object,
+        direction=Direction(positive=False, relative_to_axis="vertical"),
+    )
 
 
-ABOVE = OntologyNode("above")
-"""
-A relation indicating that (at least part of) one object occupies part of the region above another 
-object.
-"""
-subtype(ABOVE, SPATIAL_RELATION)
-
-BELOW = OntologyNode("below")
-"""
-A relation indicating that (at least part of) one object occupies part of the region below another 
-object.
-"""
-subtype(BELOW, SPATIAL_RELATION)
-
-above = make_opposite_dsl_relation(  # pylint:disable=invalid-name
-    ABOVE, opposite_type=BELOW
+above = make_opposite_dsl_region_relation(  # pylint:disable=invalid-name
+    _above_region_factory, _below_region_factory
 )
+
 
 # Structural Objects without Sub-Parts which are part of our Phase 1 Vocabulary
 # These may need to evolve to reflect the changes for visualization of phase 1
@@ -480,7 +488,7 @@ _ARM_SCHEMA_LOWER = SubObject(_ARM_SEGMENT_SCHEMA)
 _ARM_SCHEMA = ObjectStructuralSchema(
     _ARM,
     sub_objects=[_ARM_SCHEMA_HAND, _ARM_SCHEMA_LOWER, _ARM_SCHEMA_UPPER],
-    sub_object_relations=sub_object_relations(
+    sub_object_relations=flatten_relations(
         [contacts([_ARM_SCHEMA_UPPER, _ARM_SCHEMA_HAND], _ARM_SCHEMA_LOWER)]
     ),
 )
@@ -510,9 +518,8 @@ _PERSON_SCHEMA = ObjectStructuralSchema(
         _PERSON_SCHEMA_LEFT_LEG,
         _PERSON_SCHEMA_RIGHT_LEG,
     ],
-    sub_object_relations=sub_object_relations(
+    sub_object_relations=flatten_relations(
         [
-            supports(_PERSON_SCHEMA_TORSO, _PERSON_SCHEMA_HEAD),
             above(_PERSON_SCHEMA_HEAD, _PERSON_SCHEMA_TORSO),
             bigger_than(_PERSON_SCHEMA_TORSO, _PERSON_SCHEMA_HEAD),
             contacts(_PERSON_SCHEMA_TORSO, _PERSON_SCHEMA_APPENDAGES),
@@ -545,13 +552,11 @@ _CHAIR_SCHEMA = ObjectStructuralSchema(
         _CHAIR_SCHEMA_LEG_3,
         _CHAIR_SCHEMA_LEG_4,
     ],
-    sub_object_relations=sub_object_relations(
+    sub_object_relations=flatten_relations(
         [
             contacts(_CHAIR_LEGS, _CHAIR_SCHEMA_SEAT),
-            supports(_CHAIR_LEGS, _CHAIR_SCHEMA_SEAT),
             above(_CHAIR_SCHEMA_SEAT, _CHAIR_LEGS),
             contacts(_CHAIR_SCHEMA_BACK, _CHAIR_SCHEMA_SEAT),
-            supports(_CHAIR_SCHEMA_SEAT, _CHAIR_SCHEMA_BACK),
             above(_CHAIR_SCHEMA_BACK, _CHAIR_SCHEMA_SEAT),
         ]
     ),
@@ -579,12 +584,11 @@ _TABLE_SCHEMA = ObjectStructuralSchema(
         _TABLE_SCHEMA_LEG_4,
         _TABLE_SCHEMA_TABLETOP,
     ],
-    sub_object_relations=sub_object_relations(
+    sub_object_relations=flatten_relations(
         [
             # Relationship of tabletop to the legs
             contacts(_TABLE_SCHEMA_TABLETOP, _TABLE_LEGS),
             above(_TABLE_SCHEMA_TABLETOP, _TABLE_LEGS),
-            supports(_TABLE_LEGS, _TABLE_SCHEMA_TABLETOP),
         ]
     ),
 )
@@ -620,11 +624,9 @@ _DOG_SCHEMA = ObjectStructuralSchema(
         _DOG_SCHEMA_LEG_3,
         _DOG_SCHEMA_LEG_4,
     ],
-    sub_object_relations=sub_object_relations(
+    sub_object_relations=flatten_relations(
         [
             contacts(_DOG_SCHEMA_TORSO, _DOG_APPENDAGES),
-            supports(_DOG_SCHEMA_TORSO, [_DOG_SCHEMA_HEAD, _DOG_SCHEMA_TAIL]),
-            supports(_DOG_LEGS, _DOG_SCHEMA_TORSO),
             above(_DOG_SCHEMA_HEAD, _DOG_SCHEMA_TORSO),
             above(_DOG_SCHEMA_TORSO, _DOG_LEGS),
             bigger_than(_DOG_SCHEMA_TORSO, _DOG_SCHEMA_TAIL),
@@ -658,23 +660,13 @@ _BIRD_SCHEMA = ObjectStructuralSchema(
         _BIRD_SCHEMA_RIGHT_WING,
         _BIRD_SCHEMA_TAIL,
     ],
-    sub_object_relations=sub_object_relations(
+    sub_object_relations=flatten_relations(
         [
             contacts(_BIRD_SCHEMA_TORSO, _BIRD_APPENDAGES),
             above(_BIRD_SCHEMA_HEAD, _BIRD_SCHEMA_TORSO),
             above(_BIRD_SCHEMA_TORSO, _BIRD_LEGS),
             bigger_than(_BIRD_SCHEMA_TORSO, _BIRD_SCHEMA_HEAD),
             bigger_than(_BIRD_SCHEMA_TORSO, _BIRD_LEGS),
-            supports(_BIRD_LEGS, _BIRD_SCHEMA_TORSO),
-            supports(
-                _BIRD_SCHEMA_TORSO,
-                [
-                    _BIRD_SCHEMA_HEAD,
-                    _BIRD_SCHEMA_TAIL,
-                    _BIRD_SCHEMA_LEFT_WING,
-                    _BIRD_SCHEMA_RIGHT_WING,
-                ],
-            ),
         ]
     ),
 )
@@ -695,10 +687,9 @@ _HOUSE_SCHEMA_GROUND_FLOOR = SubObject(_WALL_SCHEMA)
 _HOUSE_SCHEMA = ObjectStructuralSchema(
     HOUSE,
     sub_objects=[_HOUSE_SCHEMA_ROOF, _HOUSE_SCHEMA_GROUND_FLOOR],
-    sub_object_relations=sub_object_relations(
+    sub_object_relations=flatten_relations(
         [
             contacts(_HOUSE_SCHEMA_ROOF, _HOUSE_SCHEMA_GROUND_FLOOR),
-            supports(_HOUSE_SCHEMA_GROUND_FLOOR, _HOUSE_SCHEMA_ROOF),
             above(_HOUSE_SCHEMA_ROOF, _HOUSE_SCHEMA_GROUND_FLOOR),
         ]
     ),
@@ -728,11 +719,8 @@ _CAR_SCHEMA = ObjectStructuralSchema(
         _CAR_SCHEMA_REAR_RIGHT_TIRE,
         _CAR_SCHEMA_BODY,
     ],
-    sub_object_relations=sub_object_relations(
-        [
-            contacts(_CAR_SCHEMA_TIRES, _CAR_SCHEMA_BODY),
-            supports(_CAR_SCHEMA_TIRES, _CAR_SCHEMA_BODY),
-        ]
+    sub_object_relations=flatten_relations(
+        [contacts(_CAR_SCHEMA_TIRES, _CAR_SCHEMA_BODY)]
     ),
 )
 
@@ -759,11 +747,10 @@ _TRUCK_CAB_SCHEMA = ObjectStructuralSchema(
         _TRUCK_CAB_TIRE_4,
         _TRUCK_CAB_BODY,
     ],
-    sub_object_relations=sub_object_relations(
+    sub_object_relations=flatten_relations(
         [
             above(_TRUCK_CAB_BODY, _TRUCK_CAB_TIRES),
             contacts(_TRUCK_CAB_BODY, _TRUCK_CAB_TIRES),
-            supports(_TRUCK_CAB_TIRES, _TRUCK_CAB_BODY),
         ]
     ),
 )
@@ -790,10 +777,9 @@ _TRUCK_TRAILER_SCHEMA = ObjectStructuralSchema(
         _TRUCK_TRAILER_TIRE_4,
         _TRUCK_TRAILER_FLATBED,
     ],
-    sub_object_relations=sub_object_relations(
+    sub_object_relations=flatten_relations(
         [
             contacts(_TRUCK_TRAILER_FLATBED, _TRUCK_TRAILER_TIRES),
-            supports(_TRUCK_TRAILER_TIRES, _TRUCK_TRAILER_FLATBED),
             above(_TRUCK_TRAILER_FLATBED, _TRUCK_TRAILER_TIRES),
             bigger_than(_TRUCK_TRAILER_FLATBED, _TRUCK_TRAILER_TIRES),
         ]
@@ -808,7 +794,7 @@ _TRUCK_SCHEMA_TRAILER = SubObject(_TRUCK_TRAILER_SCHEMA)
 _TRUCK_SCHEMA = ObjectStructuralSchema(
     TRUCK,
     sub_objects=[_TRUCK_SCHEMA_CAB, _TRUCK_SCHEMA_TRAILER],
-    sub_object_relations=sub_object_relations(
+    sub_object_relations=flatten_relations(
         [
             contacts(_TRUCK_SCHEMA_CAB, _TRUCK_SCHEMA_TRAILER),
             bigger_than(_TRUCK_SCHEMA_TRAILER, _TRUCK_SCHEMA_CAB),
@@ -831,43 +817,50 @@ _PUT_ACTION_DESCRIPTION = ActionDescription(
     frames=[
         ActionDescriptionFrame({AGENT: _PUT_AGENT, THEME: _PUT_THEME, GOAL: _PUT_GOAL})
     ],
+    enduring_conditions=[
+        Relation(SMALLER_THAN, _PUT_THEME, _PUT_AGENT),
+        Relation(PART_OF, _PUT_MANIPULATOR, _PUT_AGENT),
+    ],
     preconditions=[
-        SituationRelation(SMALLER_THAN, _PUT_THEME, _PUT_AGENT),
-        SituationRelation(IN_REGION, _PUT_THEME, _CONTACTING_MANIPULATOR),
+        Relation(IN_REGION, _PUT_THEME, _CONTACTING_MANIPULATOR),
         # THEME is not already located in GOAL
-        SituationRelation(IN_REGION, _PUT_THEME, _PUT_GOAL,
-                          negated=True),
-        SituationRelation(PART_OF, _PUT_MANIPULATOR, _PUT_AGENT),
+        Relation(IN_REGION, _PUT_THEME, _PUT_GOAL, negated=True),
     ],
     postconditions=[
-        SituationRelation(IN_REGION, _PUT_THEME, _CONTACTING_MANIPULATOR, negated=True),
-        SituationRelation(IN_REGION, _PUT_THEME, _PUT_GOAL),
+        Relation(IN_REGION, _PUT_THEME, _CONTACTING_MANIPULATOR, negated=True),
+        Relation(IN_REGION, _PUT_THEME, _PUT_GOAL),
     ],
 )
 
 _PUSH_AGENT = SituationObject(THING, properties=[ANIMATE])
-_PUSH_THEME = SituationObject(THING)
+_PUSH_THEME = SituationObject(INANIMATE_OBJECT)
 _PUSH_GOAL = SituationObject(THING, debug_handle="push_goal")
 _PUSH_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
 
+
 _PUSH_ACTION_DESCRIPTION = ActionDescription(
     frames=[
-        ActionDescriptionFrame(
-            {AGENT: _PUSH_AGENT, THEME: _PUSH_THEME, GOAL: _PUSH_GOAL}
-        )
+        ActionDescriptionFrame({AGENT: _PUSH_AGENT, THEME: _PUSH_THEME, GOAL: _PUSH_GOAL})
     ],
-    preconditions=[],
-    postconditions=[],
+    enduring_conditions=[partOf(_PUSH_MANIPULATOR, _PUSH_AGENT),
+                         bigger_than(_PUSH_AGENT, _PUSH_THEME)],
+    preconditions=[contacts(_PUSH_MANIPULATOR, _PUSH_THEME),
+                   Relation(IN_REGION, _PUSH_THEME, _PUSH_GOAL, negated=True)],
+    postconditions=[negate(contacts(_PUSH_MANIPULATOR, _PUT_THEME)),
+                   Relation(IN_REGION, _PUSH_THEME, _PUSH_GOAL)],
+    # TODO: encode that the THEME's vertical position does not significantly change,
+    # unless there is e.g. a ramp
+    # TODO: encode the direction of the force relative to the path
 )
 
-_GO_AGENT = SituationObject(THING, properties=[ANIMATE])
+_GO_AGENT = SituationObject(THING, properties=[SELF_MOVING])
 _GO_GOAL = SituationObject(THING)
 
 _GO_ACTION_DESCRIPTION = ActionDescription(
     frames=[ActionDescriptionFrame({AGENT: _GO_AGENT, GOAL: _GO_GOAL})],
     preconditions=[],
     postconditions=[
-        # TODO: that AGENT is located in GOAL
+        Relation(IN_REGION, _GO_AGENT, _GO_GOAL)
     ],
 )
 
@@ -881,11 +874,14 @@ _COME_ACTION_DESCRIPTION = ActionDescription(
             {AGENT: _COME_AGENT, GOAL: _COME_GOAL}
         )
     ],
-    preconditions=[],
-    # TODO: that speaker is located in GOAL?
-    postconditions=[
-        # TODO: that AGENT is located in GOAL
+    preconditions=[
+        Relation(IN_REGION, _COME_AGENT, _COME_GOAL, negated=True)
     ],
+    postconditions=[
+        Relation(IN_REGION, _COME_AGENT, _COME_GOAL)
+    ],
+    # TODO: encode that the new location is relatively closer to the
+    # learner or speaker than the old location
 )
 
 _TAKE_AGENT = SituationObject(THING, properties=[ANIMATE])
@@ -895,51 +891,63 @@ _TAKE_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
 
 _TAKE_ACTION_DESCRIPTION = ActionDescription(
     frames=[
-        ActionDescriptionFrame(
-            {AGENT: _TAKE_AGENT, THEME: _TAKE_THEME, GOAL: _TAKE_GOAL}
-        )
+        ActionDescriptionFrame({AGENT: _TAKE_AGENT, THEME: _TAKE_THEME})
+    ],
+    enduring_conditions=[
+       bigger_than(_TAKE_AGENT, _TAKE_THEME),
+        partOf(_TAKE_MANIPULATOR, _TAKE_AGENT)
     ],
     preconditions=[
-        SituationRelation(SMALLER_THAN, _TAKE_THEME, _TAKE_AGENT),
-        # SituationRelation(PART_OF, _TAKE_MANIPULATOR, _TAKE_AGENT),
+        negate(has(_TAKE_AGENT, _TAKE_THEME))
     ],
-    postconditions=[SituationRelation(CONTACTS, _TAKE_MANIPULATOR, _TAKE_THEME)],
+    postconditions=[
+     has(_TAKE_AGENT, _TAKE_THEME)
+                                     ]
 )
 
 _EAT_AGENT = SituationObject(THING, properties=[ANIMATE])
-_EAT_THEME = SituationObject(THING, properties=[EDIBLE])
-_EAT_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
+_EAT_THEME = SituationObject(INANIMATE_OBJECT, properties=[EDIBLE])
 
 _EAT_ACTION_DESCRIPTION = ActionDescription(
     frames=[ActionDescriptionFrame({AGENT: _EAT_AGENT, THEME: _EAT_THEME})],
+    enduring_conditions=[bigger_than(_EAT_AGENT, _EAT_THEME)],
     preconditions=[
-        SituationRelation(SMALLER_THAN, _EAT_THEME, _EAT_AGENT),
-        # SituationRelation(PART_OF, _EAT_MANIPULATOR, _EAT_AGENT),
+
     ],
     postconditions=[
-        SituationRelation(CONTACTS, _EAT_MANIPULATOR, _EAT_THEME)
-        # TODO: that THEME is located in AGENT?
+        inside(_EAT_THEME, _EAT_AGENT)
     ],
+    # TODO: express role of mouth
 )
 
 _GIVE_AGENT = SituationObject(THING, properties=[ANIMATE])
-_GIVE_THEME = SituationObject(THING)
+_GIVE_THEME = SituationObject(INANIMATE_OBJECT)
 _GIVE_GOAL = SituationObject(THING, properties=[ANIMATE])
-_GIVE_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
+_GIVE_AGENT_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
 _GIVE_GOAL_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
 
 _GIVE_ACTION_DESCRIPTION = ActionDescription(
     frames=[
-        ActionDescriptionFrame(
-            {AGENT: _GIVE_AGENT, THEME: _GIVE_THEME, GOAL: _GIVE_GOAL}
-        )
+        ActionDescriptionFrame({AGENT: _GIVE_AGENT, THEME: _GIVE_THEME, GOAL: _GIVE_GOAL})
+    ],
+    enduring_conditions=[
+        bigger_than(_GIVE_AGENT, _GIVE_THEME),
+        bigger_than(_GIVE_GOAL, _GIVE_THEME),
+        partOf(_GIVE_AGENT_MANIPULATOR, _GIVE_AGENT),
+        partOf(_GIVE_GOAL_MANIPULATOR, _GIVE_GOAL)
     ],
     preconditions=[
-        SituationRelation(SMALLER_THAN, _GIVE_THEME, _GIVE_AGENT),
-        # SituationRelation(PART_OF, _GIVE_MANIPULATOR, _GIVE_AGENT),
-        # SituationRelation(PART_OF, _GIVE_GOAL_MANIPULATOR, _GIVE_GOAL),
+        has(_GIVE_AGENT, _GIVE_THEME),
+        negate(has(_GIVE_GOAL, _GIVE_THEME)),
+        contacts(_GIVE_AGENT_MANIPULATOR, _GIVE_THEME),
+        negate(contacts(_GIVE_GOAL_MANIPULATOR, _GIVE_THEME))
     ],
-    postconditions=[SituationRelation(CONTACTS, _GIVE_GOAL_MANIPULATOR, _GIVE_THEME)],
+    postconditions=[
+        negate(has(_GIVE_AGENT, _GIVE_THEME)),
+        has(_GIVE_GOAL, _GIVE_THEME),
+        negate(contacts(_GIVE_AGENT_MANIPULATOR, _GIVE_THEME)),
+        contacts(_GIVE_GOAL_MANIPULATOR, _GIVE_THEME)
+    ],
 )
 
 _TURN_AGENT = SituationObject(THING, properties=[ANIMATE])
@@ -949,13 +957,12 @@ _TURN_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
 _TURN_ACTION_DESCRIPTION = ActionDescription(
     frames=[ActionDescriptionFrame({AGENT: _TURN_AGENT, THEME: _TURN_THEME})],
     preconditions=[
-        SituationRelation(SMALLER_THAN, _TURN_THEME, _TURN_AGENT),
-        # SituationRelation(PART_OF, _TURN_MANIPULATOR, _TURN_AGENT),
+
     ],
     postconditions=[
-        SituationRelation(CONTACTS, _TURN_MANIPULATOR, _TURN_THEME),
-        # TODO: that THEME is facing a new angle?
+
     ],
+    # TODO: this depends almost entirely on path information!
 )
 
 _SIT_AGENT = SituationObject(THING, properties=[ANIMATE])
@@ -963,41 +970,42 @@ _SIT_GOAL = SituationObject(THING)
 
 _SIT_ACTION_DESCRIPTION = ActionDescription(
     frames=[ActionDescriptionFrame({AGENT: _SIT_AGENT, GOAL: _SIT_GOAL})],
-    preconditions=[],
-    postconditions=[SituationRelation(CONTACTS, _SIT_AGENT, _SIT_GOAL)],
+    preconditions=[
+        negate(contacts(_SIT_AGENT, _SIT_GOAL))
+    ],
+    postconditions=[
+        contacts(_SIT_AGENT, _SIT_GOAL),
+        above(_SIT_AGENT, _SIT_GOAL)
+    ],
 )
 
 _DRINK_AGENT = SituationObject(THING, properties=[ANIMATE])
 _DRINK_THEME = SituationObject(THING, properties=[LIQUID])
-_DRINK_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
 _DRINK_CONTAINER = SituationObject(THING, properties=[HOLLOW])
 
 _DRINK_ACTION_DESCRIPTION = ActionDescription(
     frames=[ActionDescriptionFrame({AGENT: _DRINK_AGENT, THEME: _DRINK_THEME})],
     preconditions=[
-        SituationRelation(SMALLER_THAN, _DRINK_CONTAINER, _DRINK_AGENT),
-        SituationRelation(CONTACTS, _DRINK_MANIPULATOR, _DRINK_CONTAINER),
-        # TODO: that THEME is inside CONTAINER
-        # SituationRelation(PART_OF, _EAT_MANIPULATOR, _EAT_AGENT),
+        inside(_DRINK_THEME, _DRINK_CONTAINER),
+        bigger_than(_DRINK_AGENT, _DRINK_CONTAINER),
     ],
     postconditions=[
-        # TODO: that THEME is located in AGENT?
+        inside(_DRINK_THEME, _DRINK_AGENT)
     ],
 )
 
 _FALL_PATIENT = SituationObject(THING)
-_FALL_GOAL = SituationObject(THING)
 
 _FALL_ACTION_DESCRIPTION = ActionDescription(
-    frames=[ActionDescriptionFrame({AGENT: _FALL_PATIENT, GOAL: _FALL_GOAL})],
+    frames=[ActionDescriptionFrame({AGENT: _FALL_PATIENT})],
     preconditions=[
-        # TODO: that PATIENT coordinates are higher than GOAL coordinates
     ],
-    postconditions=[SituationRelation(CONTACTS, _FALL_PATIENT, _FALL_GOAL)],
+    postconditions=[],
+    # TODO: this is another one where all the information is in the path
 )
 
 _THROW_AGENT = SituationObject(THING, properties=[ANIMATE])
-_THROW_THEME = SituationObject(THING)
+_THROW_THEME = SituationObject(INANIMATE_OBJECT)
 _THROW_GOAL = SituationObject(THING)
 _THROW_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
 
@@ -1007,14 +1015,19 @@ _THROW_ACTION_DESCRIPTION = ActionDescription(
             {AGENT: _THROW_AGENT, THEME: _THROW_THEME, GOAL: _THROW_GOAL}
         )
     ],
+    enduring_conditions=[
+        bigger_than(_THROW_AGENT, _THROW_THEME),
+        partOf(_THROW_MANIPULATOR, _THROW_AGENT)
+    ],
     preconditions=[
-        SituationRelation(SMALLER_THAN, _THROW_THEME, _THROW_AGENT),
-        # SituationRelation(PART_OF, _THROW_MANIPULATOR, _THROW_AGENT),
+        has(_THROW_AGENT, _THROW_THEME),
+        contacts(_THROW_MANIPULATOR, _THROW_THEME)
     ],
     postconditions=[
-        # TODO: that THEME is away from AGENT?
-        # (Does throwing something at a target necessarily mean it ends up at the target?)
+        Relation(IN_REGION, _THROW_THEME, _THROW_GOAL),
+        negate(        contacts(_THROW_MANIPULATOR, _THROW_THEME))
     ],
+    # TODO: path through the air
 )
 
 _MOVE_AGENT = SituationObject(THING, properties=[ANIMATE])
@@ -1022,25 +1035,22 @@ _MOVE_THEME = SituationObject(THING)
 _MOVE_GOAL = SituationObject(THING)
 _MOVE_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
 
+# TODO: a proper treatment of move awaits full treatment of multiple sub-categorization frames
 _MOVE_ACTION_DESCRIPTION = ActionDescription(
     frames=[
-        ActionDescriptionFrame(
-            {AGENT: _MOVE_AGENT, THEME: _MOVE_THEME, GOAL: _MOVE_GOAL}
-        )
+        ActionDescriptionFrame({AGENT: _MOVE_AGENT, THEME: _MOVE_THEME, GOAL: _MOVE_GOAL})
     ],
     preconditions=[
-        # SituationRelation(PART_OF, _MOVE_MANIPULATOR, _MOVE_AGENT),
     ],
     postconditions=[
-        # TODO: that THEME is located in GOAL
     ],
 )
 
 _JUMP_AGENT = SituationObject(THING, properties=[ANIMATE])
-_JUMP_GOAL = SituationObject(THING)
 
+# TODO: requires ground
 _JUMP_ACTION_DESCRIPTION = ActionDescription(
-    frames=[ActionDescriptionFrame({AGENT: _JUMP_AGENT, GOAL: _JUMP_GOAL})],
+    frames=[ActionDescriptionFrame({AGENT: _JUMP_AGENT})],
     preconditions=[],
     postconditions=[
         # TODO: that AGENT is located in GOAL
@@ -1048,19 +1058,22 @@ _JUMP_ACTION_DESCRIPTION = ActionDescription(
 )
 
 _ROLL_AGENT = SituationObject(THING, properties=[ANIMATE])
-_ROLL_THEME = SituationObject(THING, properties=[ROLLABLE])
+_ROLL_THEME = SituationObject(INANIMATE_OBJECT, properties=[ROLLABLE])
 _ROLL_GOAL = SituationObject(THING)
+_ROLL_SURFACE = SituationObject(INANIMATE_OBJECT)
 
 _ROLL_ACTION_DESCRIPTION = ActionDescription(
     frames=[
-        ActionDescriptionFrame(
-            {AGENT: _ROLL_AGENT, THEME: _ROLL_THEME, GOAL: _ROLL_GOAL}
-        )
+        ActionDescriptionFrame({AGENT: _ROLL_AGENT, THEME: _ROLL_THEME, GOAL: _ROLL_GOAL})
     ],
-    preconditions=[],
+    enduring_conditions=[],
+    preconditions=[
+        contacts(_ROLL_THEME, _ROLL_SURFACE)
+    ],
     postconditions=[
-        # TODO: that THEME is away from AGENT?
+        Relation(IN_REGION, _ROLL_THEME, _ROLL_GOAL)
     ],
+    # TODO: path information crucial here
 )
 
 _FLY_AGENT = SituationObject(THING, properties=[ANIMATE])
@@ -1069,6 +1082,7 @@ _FLY_ACTION_DESCRIPTION = ActionDescription(
     frames=[ActionDescriptionFrame({AGENT: _FLY_AGENT})],
     preconditions=[],
     postconditions=[],
+    # TODO: path information crucial here
 )
 
 GAILA_PHASE_1_ONTOLOGY = Ontology(
