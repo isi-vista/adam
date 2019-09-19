@@ -1,5 +1,5 @@
 import pytest
-from more_itertools import quantify
+from more_itertools import quantify, only
 
 from adam.ontology import OntologyNode, IN_REGION
 from adam.ontology.phase1_ontology import (
@@ -21,6 +21,11 @@ from adam.ontology.phase1_ontology import (
     ANIMATE,
     SELF_MOVING,
     INANIMATE,
+    BOX,
+    MOM,
+    on,
+    far,
+    near,
 )
 from adam.ontology.phase1_spatial_relations import (
     EXTERIOR_BUT_IN_CONTACT,
@@ -139,7 +144,6 @@ def test_person_put_ball_on_table():
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         objects=[person, ball, table],
-        relations=[],
         actions=[
             # What is the best way of representing the destination in the high-level semantics?
             # Here we represent it as indicating a relation which should be true.
@@ -349,3 +353,66 @@ def test_perceive_relations_during():
     )
 
     assert bird_over_the_house in learner_perception.during.at_some_point
+
+
+def test_perceive_explicit_relations():
+    # we want to test that relations explicitly called out in the situation are perceived.
+    # Such relations fall into three buckets:
+    # those which hold before an action,
+    # those which hold after an action,
+    # and those which hold both before and after an action.
+    # To test all three of these at once, we use a situation where
+    # (a) Mom is putting a ball on a table
+    # (b) before the action the ball is far from a box,
+    # (c) but after the action the ball is near the box,
+    # (d) throughout the action the box is on the table.
+    mom = SituationObject(MOM)
+    ball = SituationObject(BALL)
+    box = SituationObject(BOX)
+    table = SituationObject(TABLE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        objects=[mom, box, ball, table],
+        persisting_relations=[on(ball, table)],
+        before_action_relations=[far(ball, box)],
+        after_action_relations=[near(ball, box)],
+        actions=[
+            SituationAction(
+                PUT,
+                argument_roles_to_fillers=[
+                    (AGENT, mom),
+                    (THEME, ball),
+                    (
+                        GOAL,
+                        Region(
+                            reference_object=table,
+                            distance=EXTERIOR_BUT_IN_CONTACT,
+                            direction=Direction(
+                                positive=True, relative_to_axis=GRAVITATIONAL_AXIS
+                            ),
+                        ),
+                    ),
+                ],
+            )
+        ],
+    )
+    perception = _PERCEPTION_GENERATOR.generate_perception(
+        situation, chooser=RandomChooser.for_seed(0)
+    )
+
+    ball_perception = perception_with_handle(perception.frames[0], "ball_0")
+    box_perception = perception_with_handle(perception.frames[0], "box_0")
+    table_perception = perception_with_handle(perception.frames[0], "table_0")
+
+    assert only(on(ball_perception, table_perception)) in perception.frames[0].relations
+    assert only(on(ball_perception, table_perception)) in perception.frames[0].relations
+
+    assert only(far(ball_perception, box_perception)) in perception.frames[0].relations
+    assert (
+        only(far(ball_perception, box_perception)) not in perception.frames[1].relations
+    )
+
+    assert (
+        only(near(ball_perception, box_perception)) not in perception.frames[0].relations
+    )
+    assert only(near(ball_perception, box_perception)) in perception.frames[1].relations

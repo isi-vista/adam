@@ -164,6 +164,14 @@ class _PerceptionGeneration:
         self._perceive_regions()
         # Then we perceive the properties those objects possess
         self._perceive_property_assertions()
+        # Perceive any relations explicitly specified in the situation
+        # as holding both before and after any actions
+        self._relation_perceptions.extend(
+            self._perceive_relation(relation)
+            for relation in self._situation.persisting_relations
+        )
+
+        # Other relations implied by actions will be handled during action translation below.
 
         if not self._situation.actions:
             return PerceptualRepresentation.single_frame(
@@ -175,15 +183,34 @@ class _PerceptionGeneration:
             )
 
         # finally, if there are actions, we perceive the before and after states of the action
-        before_relations, after_relations = self._perceive_action()
+        before_relations_from_action, after_relations_from_action = (
+            self._perceive_action()
+        )
+        # sometimes additional before and after relations will be given explicitly by the user
+        explicit_before_relations = [
+            self._perceive_relation(relation)
+            for relation in self._situation.before_action_relations
+        ]
+        explicit_after_relations = [
+            self._perceive_relation(relation)
+            for relation in self._situation.after_action_relations
+        ]
         first_frame = DevelopmentalPrimitivePerceptionFrame(
             perceived_objects=self._object_perceptions,
-            relations=before_relations,
+            relations=chain(
+                self._relation_perceptions,
+                explicit_before_relations,
+                before_relations_from_action,
+            ),
             property_assertions=self._property_assertion_perceptions,
         )
         second_frame = DevelopmentalPrimitivePerceptionFrame(
             perceived_objects=self._object_perceptions,
-            relations=after_relations,
+            relations=chain(
+                self._relation_perceptions,
+                explicit_after_relations,
+                after_relations_from_action,
+            ),
             property_assertions=self._property_assertion_perceptions,
         )
 
@@ -207,7 +234,7 @@ class _PerceptionGeneration:
     def _perceive_regions(self) -> None:
         # gather all places a region can appear in the situation representation
         possible_regions = chain(
-            (relation.second_slot for relation in self._situation.relations),
+            (relation.second_slot for relation in self._situation.persisting_relations),
             (
                 filler
                 for action in self._situation.actions

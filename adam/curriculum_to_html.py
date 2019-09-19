@@ -194,9 +194,9 @@ class CurriculumToHtmlDumper:
             for acts in situation.actions:
                 output_text.append(f"\t\t\t\t<li>{acts.action_type.handle}</li>")
             output_text.append("\t\t\t</ul>")
-        if situation.relations:
+        if situation.persisting_relations:
             output_text.append("\t\t\t<h4>Relations</h4>\n\t\t\t<ul>")
-            for rel in situation.relations:
+            for rel in situation.persisting_relations:
                 output_text.append(
                     f"\t\t\t\t<li>{rel.relation_type.handle}({rel.first_slot.ontology_node.handle},"
                     f"{self._situation_object_or_region_text(rel.second_slot)})</li>"
