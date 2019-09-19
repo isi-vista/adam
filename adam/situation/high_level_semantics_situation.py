@@ -79,6 +79,11 @@ class HighLevelSemanticsSituation(Situation):
     """
     Bool representing whether the situation has any actions, i.e is dynamic. 
     """
+    focused_objects: ImmutableSet[SituationObject] = attrib(converter=_to_immutableset)
+    """
+    A set of SituationObjects which are the focus of the speaker. Defaults to all semantic role 
+    fillers of situation actions.
+    """
 
     def relation_always_holds(self, query_relation: Relation[SituationObject]) -> bool:
         # TODO: extend to handle transitive relations
@@ -146,3 +151,8 @@ class HighLevelSemanticsSituation(Situation):
         lines.extend(f"\t{action!r}" for action in self.actions)
         lines.append("}")
         return "\n".join(lines)
+
+    @focused_objects.default
+    def _determine_focused_objects(self):
+        # TODO: should default to all semantic role fillers of situation actions
+        pass
