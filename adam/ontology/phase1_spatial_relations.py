@@ -18,7 +18,7 @@ class Distance:
         return self.name
 
 
-INTERIOR = Distance("interor")
+INTERIOR = Distance("interior")
 """
 Figure is within the ground.
 """
