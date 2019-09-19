@@ -1,0 +1,4 @@
+_includes:
+    - root.params
+
+output_directory: "%adam_experiment_root%/curriculum_dump"
