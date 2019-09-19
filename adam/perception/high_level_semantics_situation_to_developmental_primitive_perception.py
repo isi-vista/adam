@@ -7,7 +7,7 @@ from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, imm
 from more_itertools import only, quantify
 from vistautils.preconditions import check_arg
 
-from adam.ontology import OntologyNode
+from adam.ontology import OntologyNode, IN_REGION
 from adam.ontology.action_description import ActionDescription
 from adam.ontology.during import DuringAction
 from adam.ontology.ontology import Ontology
@@ -20,6 +20,8 @@ from adam.ontology.phase1_ontology import (
     PART_OF,
     PERCEIVABLE,
     GROUND,
+    LIQUID,
+    TWO_DIMENSIONAL,
 )
 from adam.ontology.phase1_spatial_relations import SpatialPath, Region
 from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
@@ -516,6 +518,13 @@ class _PerceptionGeneration:
             color = self._determine_color(situation_object)
             if color:
                 properties_to_perceive.append(color)
+
+            # If it is a liquid not inside a container, add two-dimensional property
+            if situation_object.ontology_node == LIQUID and not any(
+                r.first_slot == SituationObject and r.relation_type == IN_REGION
+                for r in self._situation.persisting_relations
+            ):
+                properties_to_perceive.append(TWO_DIMENSIONAL)
 
             # We wrap an ImmutableSet around properties_to_perceive to remove duplicates
             # while still guaranteeing deterministic iteration order.
