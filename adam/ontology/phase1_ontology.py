@@ -156,6 +156,11 @@ CAN_HAVE_THINGS_RESTING_ON_THEM = OntologyNode("can-have-things-on-them")
 subtype(CAN_HAVE_THINGS_RESTING_ON_THEM, PROPERTY)
 IS_BODY_PART = OntologyNode("is-body-part")
 subtype(IS_BODY_PART, PROPERTY)
+HAS_A_SURFACE = OntologyNode("has-a-surface")
+"""
+This is a standin for a more complex representation of surfaces.
+"""
+subtype(HAS_A_SURFACE, PROPERTY)
 
 COLOR = OntologyNode("color")
 subtype(COLOR, PERCEIVABLE_PROPERTY)
