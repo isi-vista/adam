@@ -156,6 +156,12 @@ class _Phase1SituationTemplateGenerator(
                     relation.copy_remapping_objects(object_var_to_instantiations)
                     for relation in template.asserted_persisting_relations
                 ],
+                relations=[
+                    relation.copy_remapping_objects(
+                        variable_assignment.object_variables_to_fillers
+                    )
+                    for relation in template.asserted_relations
+                ],
             )
 
 
