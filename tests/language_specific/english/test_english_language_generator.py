@@ -25,7 +25,6 @@ from adam.ontology.phase1_ontology import (
     GREEN,
     IS_ADDRESSEE,
     HAS,
-    HAVE,
 )
 from adam.ontology.phase1_spatial_relations import (
     INTERIOR,
@@ -355,8 +354,8 @@ def test_dad_has_a_cookie():
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         objects=[dad, cookie],
-        relations=[],
-        actions=[SituationAction(HAVE, ((AGENT, dad), (THEME, cookie)))],
+        relations=[Relation(HAS, dad, cookie)],
+        actions=[],
     )
 
     assert only(

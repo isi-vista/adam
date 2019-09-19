@@ -26,6 +26,7 @@ from adam.language.dependency.universal_dependencies import (
     OBJECT,
     OBLIQUE_NOMINAL,
     PROPER_NOUN,
+    NOMINAL_MODIFIER_POSSESSIVE,
 )
 from adam.language.language_generator import LanguageGenerator
 from adam.language.lexicon import LexiconEntry
@@ -51,6 +52,7 @@ from adam.ontology.phase1_ontology import (
 from adam.ontology.phase1_ontology import COLOR
 from adam.ontology.phase1_spatial_relations import EXTERIOR_BUT_IN_CONTACT, INTERIOR
 from adam.random_utils import SequenceChooser
+from adam.relation import Relation
 from adam.situation import SituationAction, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 
@@ -143,8 +145,16 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     "Currently only situations with 0 or 1 actions are supported"
                 )
 
-            for action in self.situation.actions:
-                self._translate_action_to_verb(action)
+            if self.situation.is_dynamic:
+                for action in self.situation.actions:
+                    self._translate_action_to_verb(action)
+            else:
+                # Special cases for non-dynamic situations; translate if there is possession
+                possession_relations = [
+                    rel for rel in self.situation.relations if rel.relation_type == HAS
+                ]
+                if possession_relations:
+                    self._translate_relation_to_verb(only(possession_relations))
 
             return immutableset(
                 [
@@ -213,7 +223,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             self,
             _object: SituationObject,
             count: int,
-            dependency_node: DependencyTreeToken,
+            noun_dependency_node: DependencyTreeToken,
         ) -> None:
             possession_relations = [
                 relation
@@ -228,42 +238,45 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     len(possession_relations) == 1
                     and IS_SPEAKER in possession_relations[0].first_slot.properties
                 ):
-                    quantifier_node = DependencyTreeToken("my", DETERMINER)
-                    quantifier_role = DETERMINER_ROLE
+                    determiner_node = DependencyTreeToken("my", DETERMINER)
+                    determiner_role = NOMINAL_MODIFIER_POSSESSIVE
                 # If addressee possess the noun
                 elif (
                     len(possession_relations) == 1
                     and IS_ADDRESSEE in possession_relations[0].first_slot.properties
                 ):
-                    quantifier_node = DependencyTreeToken("your", DETERMINER)
-                    quantifier_role = DETERMINER_ROLE
+                    determiner_node = DependencyTreeToken("your", DETERMINER)
+                    determiner_role = DETERMINER_ROLE
                 # add 's if a non-agent possess the noun
                 elif (
                     len(possession_relations) == 1
+                    and self.situation.is_dynamic
                     and possession_relations[0].first_slot
                     not in only(self.situation.actions).argument_roles_to_fillers[AGENT]
                 ):
-                    token = (
-                        self.objects_to_dependency_nodes[
-                            possession_relations[0].first_slot
-                        ].token
-                        + "'s"
+                    token = self.objects_to_dependency_nodes[
+                        possession_relations[0].first_slot
+                    ].token
+                    determiner_node = DependencyTreeToken(token, DETERMINER)
+                    determiner_role = DETERMINER_ROLE
+                    case_node = DependencyTreeToken("'s", DETERMINER)
+                    case_role = CASE_MARKING
+                    self.dependency_graph.add_edge(
+                        case_node, determiner_node, role=case_role
                     )
-                    quantifier_node = DependencyTreeToken(token, DETERMINER)
-                    quantifier_role = DETERMINER_ROLE
                 # otherwise do the normal determiner behavior
                 elif count == 1:
-                    quantifier_node = DependencyTreeToken("a", DETERMINER)
-                    quantifier_role = DETERMINER_ROLE
+                    determiner_node = DependencyTreeToken("a", DETERMINER)
+                    determiner_role = DETERMINER_ROLE
                 elif count == 2:
-                    quantifier_node = DependencyTreeToken("two", NUMERAL)
-                    quantifier_role = NUMERIC_MODIFIER
+                    determiner_node = DependencyTreeToken("two", NUMERAL)
+                    determiner_role = NUMERIC_MODIFIER
                 # Currently, any number of objects greater than two is considered "many"
                 else:
-                    quantifier_node = DependencyTreeToken("many", DETERMINER)
-                    quantifier_role = DETERMINER_ROLE
+                    determiner_node = DependencyTreeToken("many", DETERMINER)
+                    determiner_role = DETERMINER_ROLE
                 self.dependency_graph.add_edge(
-                    quantifier_node, dependency_node, role=quantifier_role
+                    determiner_node, noun_dependency_node, role=determiner_role
                 )
 
         def _translate_action_to_verb(
@@ -376,6 +389,54 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 raise RuntimeError(
                     f"Don't know how to translate {region} to a preposition yet"
                 )
+
+        def _translate_relation_to_verb(
+            self, relation: Relation[SituationObject]
+        ) -> DependencyTreeToken:
+            lexicon_entry = self._unique_lexicon_entry(relation.relation_type)
+            if any(
+                property_ in relation.first_slot.properties
+                for property_ in [IS_SPEAKER, IS_ADDRESSEE]
+            ):
+                word_form = lexicon_entry.base_form
+            elif lexicon_entry.verb_form_3SG_PRS:
+                word_form = lexicon_entry.verb_form_3SG_PRS
+            else:
+                raise RuntimeError(
+                    f"Verb has no 3SG present tense form: {lexicon_entry.base_form}"
+                )
+            verb_dependency_node = DependencyTreeToken(
+                word_form, lexicon_entry.part_of_speech
+            )
+            self.dependency_graph.add_node(verb_dependency_node)
+
+            first_slot_dependency_node = self.objects_to_dependency_nodes[
+                relation.first_slot
+            ]
+            self.dependency_graph.add_edge(
+                first_slot_dependency_node,
+                verb_dependency_node,
+                role=self._translate_argument_role(AGENT),
+            )
+            if isinstance(relation.second_slot, SituationObject):
+                second_slot_dependency_node = self.objects_to_dependency_nodes[
+                    relation.second_slot
+                ]
+            elif isinstance(relation.second_slot, Region):
+                second_slot_dependency_node = self.objects_to_dependency_nodes[
+                    relation.second_slot.reference_object
+                ]
+            else:
+                raise RuntimeError(
+                    f"Unknown object type in relation {relation.second_slot}"
+                )
+            self.dependency_graph.add_edge(
+                second_slot_dependency_node,
+                verb_dependency_node,
+                role=self._translate_argument_role(THEME),
+            )
+
+            return verb_dependency_node
 
         def _unique_lexicon_entry(self, ontology_node: OntologyNode) -> LexiconEntry:
             lexicon_entries = self.generator._ontology_lexicon.words_for_node(  # pylint:disable=protected-access

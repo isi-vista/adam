@@ -11,7 +11,7 @@ from adam.relation import Relation
 from adam.situation import Situation, SituationAction, SituationObject
 
 
-@attrs(frozen=True, slots=True, repr=False)
+@attrs(slots=True, repr=False)
 class HighLevelSemanticsSituation(Situation):
     """
     A human-friendly representation of `Situation`.
@@ -42,9 +42,14 @@ class HighLevelSemanticsSituation(Situation):
     """
     The actions occurring in this `Situation`
     """
+    is_dynamic: bool = attrib(init=False)
+    """
+    Bool representing whether the situation has any actions, i.e is dynamic. 
+    """
 
     def __attrs_post_init__(self) -> None:
         check_arg(self.objects, "A situation must contain at least one object")
+        self.is_dynamic = len(self.actions) > 0
         for relation in self.relations:
             if (
                 isinstance(relation.second_slot, Region)
