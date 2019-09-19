@@ -17,6 +17,7 @@ from vistautils.preconditions import check_state
 from adam.curriculum.phase1_curriculum import GAILA_PHASE_1_CURRICULUM
 from adam.experiment import InstanceGroup
 from adam.language.dependency import LinearizedDependencyTree
+from adam.ontology import IN_REGION
 from adam.ontology.phase1_ontology import PART_OF
 from adam.ontology.phase1_spatial_relations import Region
 from adam.perception import ObjectPerception, PerceptualRepresentation
@@ -124,7 +125,7 @@ class CurriculumToHtmlDumper:
         """
         with open(output_destination, "w") as html_out:
             html_out.write(f"<head>\n\t<style>{CSS}\n\t</style>\n</head>")
-            html_out.write(f"<h1>{title} - {instance_group.name()}</h1>\n")
+            html_out.write(f"\n<body>\n\t<h1>{title} - {instance_group.name()}</h1>")
             for (instance_number, (situation, dependency_tree, perception)) in enumerate(
                 instance_group.instances()
             ):
@@ -148,37 +149,38 @@ class CurriculumToHtmlDumper:
                     )
 
                 html_out.write(
-                    f"<table>\n"
-                    f"\t<thead>\n"
-                    f"\t\t<tr>\n"
-                    f'\t\t\t<th colspan="3">\n'
-                    f"\t\t\t<h2>Scene {instance_number}</h2>\n"
-                    f"\t\t</th>\n\t</tr>\n"
-                    f"</thead>\n"
-                    f"<tbody>\n"
-                    f"\t<tr>\n"
-                    f"\t\t<td>\n"
-                    f'\t\t\t<h3 id="situation-{instance_number}">Situation</h3>\n'
-                    f"\t\t</td>\n"
-                    f"\t\t<td>\n"
-                    f'\t\t\t<h3 id="linguistic-{instance_number}">Language</h3>\n'
-                    f"\t\t</td>\n"
-                    f"\t\t<td>\n"
-                    f'\t\t\t<h3 id="perception-{instance_number}">Learner Perception</h3>\n'
-                    f"\t\t</td>\n"
-                    f"\t</tr>\n"
-                    f"\t<tr>\n"
-                    f'\t\t<td valign="top">{self._situation_text(situation)}</td>\n'
-                    f'\t\t<td valign="top">{self._linguistic_text(dependency_tree)}</td>\n'
-                    f'\t\t<td valign="top">{self._perception_text(perception)}</td>\n'
-                    f"</tr></tbody>"
+                    f"\n\t<table>\n"
+                    f"\t\t<thead>\n"
+                    f"\t\t\t<tr>\n"
+                    f'\t\t\t\t<th colspan="3">\n'
+                    f"\t\t\t\t\t<h2>Scene {instance_number}</h2>\n"
+                    f"\t\t\t\t</th>\n\t\t\t</tr>\n"
+                    f"\t\t</thead>\n"
+                    f"\t\t<tbody>\n"
+                    f"\t\t\t<tr>\n"
+                    f"\t\t\t\t<td>\n"
+                    f'\t\t\t\t\t<h3 id="situation-{instance_number}">Situation</h3>\n'
+                    f"\t\t\t\t</td>\n"
+                    f"\t\t\t\t<td>\n"
+                    f'\t\t\t\t\t<h3 id="linguistic-{instance_number}">Language</h3>\n'
+                    f"\t\t\t\t</td>\n"
+                    f"\t\t\t\t<td>\n"
+                    f'\t\t\t\t\t<h3 id="perception-{instance_number}">Learner Perception</h3>\n'
+                    f"\t\t\t\t</td>\n"
+                    f"\t\t\t</tr>\n"
+                    f"\t\t\t<tr>\n"
+                    f'\t\t\t\t<td valign="top">{self._situation_text(situation)}\n\t\t\t\t</td>\n'
+                    f'\t\t\t\t<td valign="top">{self._linguistic_text(dependency_tree)}</td>\n'
+                    f'\t\t\t\t<td valign="top">{self._perception_text(perception)}\n\t\t\t\t</td>\n'
+                    f"\t\t\t</tr>\n\t\t</tbody>\n\t</table>"
                 )
+            html_out.write("\n</body>")
 
     def _situation_text(self, situation: HighLevelSemanticsSituation) -> str:
         """
         Converts a situation description into its sub-parts as a table entry
         """
-        output_text = [f"\t\t\t<h4>Objects</h4>\n\t\t\t<ul>"]
+        output_text = [f"\n\t\t\t\t\t<h4>Objects</h4>\n\t\t\t\t\t<ul>"]
         for obj in situation.objects:
             property_string: str
             if obj.properties:
@@ -188,22 +190,22 @@ class CurriculumToHtmlDumper:
             else:
                 property_string = ""
             output_text.append(
-                f"\t\t\t\t<li>{obj.ontology_node.handle}{property_string}</li>"
+                f"\t\t\t\t\t\t<li>{obj.ontology_node.handle}{property_string}</li>"
             )
-        output_text.append("\t\t\t</ul>")
+        output_text.append("\t\t\t\t\t</ul>")
         if situation.actions:
-            output_text.append("\t\t\t<h4>Actions</h4>\n\t\t\t\t<ul>")
+            output_text.append("\t\t\t\t\t<h4>Actions</h4>\n\t\t\t\t\t<ul>")
             for acts in situation.actions:
-                output_text.append(f"\t\t\t\t<li>{acts.action_type.handle}</li>")
-            output_text.append("\t\t\t</ul>")
+                output_text.append(f"\t\t\t\t\t\t<li>{acts.action_type.handle}</li>")
+            output_text.append("\t\t\t\t\t</ul>")
         if situation.persisting_relations:
-            output_text.append("\t\t\t<h4>Relations</h4>\n\t\t\t<ul>")
+            output_text.append("\t\t\t\t\t<h4>Relations</h4>\n\t\t\t\t\t<ul>")
             for rel in situation.persisting_relations:
                 output_text.append(
-                    f"\t\t\t\t<li>{rel.relation_type.handle}({rel.first_slot.ontology_node.handle},"
+                    f"\t\t\t\t\t\t<li>{rel.relation_type.handle}({rel.first_slot.ontology_node.handle},"
                     f"{self._situation_object_or_region_text(rel.second_slot)})</li>"
                 )
-            output_text.append("\t\t\t</ul>")
+            output_text.append("\t\t\t\t\t</ul>")
         return "\n".join(output_text)
 
     def _situation_object_or_region_text(
@@ -348,9 +350,16 @@ class CurriculumToHtmlDumper:
                 graph.add_edge(relation_.first_slot, relation_.second_slot)
 
         # Next, we render objects, together with their properties, using preorder DFS Traversal
-        output_text.append("\t\t<h5>Perceived Objects</h5>\n\t\t")
+        # We also add in `In Region` relationships at this step for objects which have them.
+        output_text.append("\n\t\t\t\t\t<h5>Perceived Objects</h5>")
         visited = set()
+        region_relations = immutableset(
+            region for region in all_relations if region.relation_type == IN_REGION
+        )
+        expressed_relations = set()
 
+        # This loop doesn't quite get the tab spacing right. It could at the cost of increased
+        # complexity. Would need to track the "depth" we are currently at.
         def dfs_walk(node):
             visited.add(node)
             if not node == root:
@@ -358,27 +367,39 @@ class CurriculumToHtmlDumper:
                     node, static_objects, first_frame_objects
                 )
                 output_text.append(
-                    f"<ul><li>{obj_prefix}{render_object(node)}{obj_suffix}"
+                    f"\t\t\t\t\t\t<li>{obj_prefix}{render_object(node)}{obj_suffix}<ul>"
                 )
+                # Handle Region Relations
+                for region_relation in region_relations:
+                    if region_relation.first_slot == node:
+                        (relation_prefix, relation_suffix) = compute_arrow(
+                            region_relation, static_relations, first_frame_relations
+                        )
+                        output_text.append(
+                            f"\t\t\t\t\t\t<li>{relation_prefix}{region_relation}{relation_suffix}</li>"
+                        )
+                        expressed_relations.add(region_relation)
             for succ in graph.successors(node):
                 if succ not in visited:
                     dfs_walk(succ)
-            output_text.append("</li></ul>")
+            output_text.append("\t\t\t\t\t\t</ul></li>")
 
         dfs_walk(root)
+        output_text.append("\t\t\t\t\t</ul>")
 
         # Finally we render all relations between objects
         if all_relations:
-            output_text.append("\t\t\t\t<h5>Relations</h5>\n\t\t\t\t<ul>")
+            output_text.append("\t\t\t\t\t<h5>Relations</h5>\n\t\t\t\t\t<ul>")
 
             for relation in all_relations:
-                (relation_prefix, relation_suffix) = compute_arrow(
-                    relation, static_relations, first_frame_relations
-                )
-                output_text.append(
-                    f"\t\t<li>{relation_prefix}{relation}{relation_suffix}</li>"
-                )
-            output_text.append("\t\t</ul>")
+                if relation not in expressed_relations:
+                    (relation_prefix, relation_suffix) = compute_arrow(
+                        relation, static_relations, first_frame_relations
+                    )
+                    output_text.append(
+                        f"\t\t\t\t\t\t<li>{relation_prefix}{relation}{relation_suffix}</li>"
+                    )
+            output_text.append("\t\t\t\t\t</ul>")
 
         return "\n".join(output_text)
 
