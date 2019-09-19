@@ -4,6 +4,7 @@ from typing import Iterable, Union
 from attr import attrs
 from vistautils.parameters import Parameters
 from vistautils.parameters_only_entrypoint import parameters_only_entry_point
+from vistautils.preconditions import check_state
 
 from adam.curriculum.phase1_curriculum import GAILA_PHASE_1_CURRICULUM
 from adam.experiment import InstanceGroup
@@ -73,37 +74,37 @@ class CurriculumToHtmlDumper:
         """
         with open(output_destination, "w") as html_out:
             html_out.write(f"<h1>{title} - {instance_group.name()}</h1>\n")
-            for (instance_number, inst) in enumerate(instance_group.instances()):
-                if not isinstance(inst[0], HighLevelSemanticsSituation):
+            for (instance_number, (situation, dependency_tree, perception)) in enumerate(
+                instance_group.instances()
+            ):
+                if not isinstance(situation, HighLevelSemanticsSituation):
                     raise RuntimeError(
-                        f"Expected the Situation to be HighLevelSemanticsSituation got {type(inst[0])}"
+                        f"Expected the Situation to be HighLevelSemanticsSituation got {type(situation)}"
                     )
-                if not isinstance(inst[1], LinearizedDependencyTree):
+                if not isinstance(dependency_tree, LinearizedDependencyTree):
                     raise RuntimeError(
-                        f"Expected the Lingustics to be LinearizedDependencyTree got {type(inst[1])}"
+                        f"Expected the Lingustics to be LinearizedDependencyTree got {type(dependency_tree)}"
                     )
                 if not (
-                    isinstance(inst[2], PerceptualRepresentation)
+                    isinstance(perception, PerceptualRepresentation)
                     and isinstance(
-                        inst[2].frames[0], DevelopmentalPrimitivePerceptionFrame
+                        perception.frames[0], DevelopmentalPrimitivePerceptionFrame
                     )
                 ):
                     raise RuntimeError(
-                        f"Expected the Perceptual Representation to contain DevelopmentalPrimitivePerceptionFrame got {type(inst[2].frames)}"
+                        f"Expected the Perceptual Representation to contain DevelopmentalPrimitivePerceptionFrame got "
+                        f"{type(perception.frames)}"
                     )
+
                 html_out.write(
                     f'<table>\n<thead>\n\t<tr>\n\t\t<th colspan="3">\n\t\t\t<h2>Scene {instance_number}</h2>\n\t\t</th>\n\t</tr>\n</thead>\n'
                     f'<tbody>\n\t<tr>\n\t\t<td>\n\t\t\t<h3 id="situation-{instance_number}">Situation Description</h3>\n\t\t</td>\n\t\t'
                     f'<td>\n\t\t\t<h3 id="lingustics-{instance_number}">Linguistic Descrption</h3>\n\t\t</td>\n\t\t'
                     f'<td>\n\t\t\t<h3 id="perception-{instance_number}">Perception Description</h3>\n\t\t</td>\n\t</tr>\n\t<tr>'
                 )
-                html_out.writelines(CurriculumToHtmlDumper._situation_text(self, inst[0]))
-                html_out.writelines(
-                    CurriculumToHtmlDumper._linguistic_text(self, inst[1])
-                )
-                html_out.writelines(
-                    CurriculumToHtmlDumper._perception_text(self, inst[2])
-                )
+                html_out.writelines(self._situation_text(situation))
+                html_out.writelines(self._linguistic_text(dependency_tree))
+                html_out.writelines(self._perception_text(perception))
                 html_out.write("</tr></tbody>")
 
     def _situation_text(self, situation: HighLevelSemanticsSituation) -> Iterable[str]:
