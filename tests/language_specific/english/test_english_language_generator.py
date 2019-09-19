@@ -35,7 +35,8 @@ from adam.ontology.phase1_spatial_relations import (
     Direction,
     DISTAL,
     GRAVITATIONAL_AXIS,
-    Region)
+    Region,
+)
 from adam.random_utils import FixedIndexChooser
 from adam.relation import Relation
 from adam.situation import SituationAction, SituationObject
@@ -186,9 +187,7 @@ def test_mom_put_a_ball_on_a_table_using_you():
                             reference_object=table,
                             distance=EXTERIOR_BUT_IN_CONTACT,
                             direction=Direction(
-                                positive=True,
-                                relative_to_axis="Vertical axis of table "
-                                "relative to earth",
+                                positive=True, relative_to_axis=GRAVITATIONAL_AXIS
                             ),
                         ),
                     ),

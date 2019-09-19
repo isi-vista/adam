@@ -22,8 +22,11 @@ from adam.ontology.phase1_ontology import (
 )
 from adam.ontology.phase1_spatial_relations import SpatialPath, Region
 from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
-from adam.perception import PerceptualRepresentation, PerceptualRepresentationGenerator, \
-    ObjectPerception
+from adam.perception import (
+    PerceptualRepresentation,
+    PerceptualRepresentationGenerator,
+    ObjectPerception,
+)
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
     HasBinaryProperty,

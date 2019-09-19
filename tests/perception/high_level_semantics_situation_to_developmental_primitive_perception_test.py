@@ -26,7 +26,8 @@ from adam.ontology.phase1_spatial_relations import (
     Direction,
     GRAVITATIONAL_AXIS,
     DISTAL,
-    Region)
+    Region,
+)
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
     HasBinaryProperty,
@@ -42,7 +43,8 @@ from adam.relation import Relation
 from adam.situation import SituationAction, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from sample_situations import make_bird_flies_over_a_house
-from test_utils import perception_with_handle
+
+from adam_test_utils import perception_with_handle
 
 _PERCEPTION_GENERATOR = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
     GAILA_PHASE_1_ONTOLOGY

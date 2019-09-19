@@ -47,7 +47,8 @@ from adam.ontology.phase1_spatial_relations import (
     TO,
     GRAVITATIONAL_AXIS,
     Axis,
-    Region)
+    Region,
+)
 from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
 from adam.relation import (
     ObjectT,

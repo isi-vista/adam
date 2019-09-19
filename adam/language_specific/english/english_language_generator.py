@@ -47,14 +47,16 @@ from adam.ontology.phase1_ontology import (
     LEARNER,
     PATIENT,
     THEME,
-    IS_ADDRESSEE)
+    IS_ADDRESSEE,
+)
 from adam.ontology.phase1_spatial_relations import (
     EXTERIOR_BUT_IN_CONTACT,
     INTERIOR,
     GRAVITATIONAL_AXIS,
     PROXIMAL,
     DISTAL,
-    Region)
+    Region,
+)
 from adam.random_utils import SequenceChooser
 from adam.situation import SituationAction, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation

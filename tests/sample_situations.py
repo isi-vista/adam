@@ -1,7 +1,12 @@
 from adam.ontology import IN_REGION
 from adam.ontology.during import DuringAction
 from adam.ontology.phase1_ontology import BIRD, HOUSE, GAILA_PHASE_1_ONTOLOGY, FLY, AGENT
-from adam.ontology.phase1_spatial_relations import DISTAL, Direction, GRAVITATIONAL_AXIS, Region
+from adam.ontology.phase1_spatial_relations import (
+    DISTAL,
+    Direction,
+    GRAVITATIONAL_AXIS,
+    Region,
+)
 from adam.relation import Relation
 from adam.situation import SituationObject, SituationAction
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation

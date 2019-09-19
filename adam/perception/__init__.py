@@ -17,6 +17,25 @@ from adam.random_utils import SequenceChooser
 from adam.situation import LocatedObjectSituation
 
 
+@attrs(slots=True, frozen=True, repr=False)
+class ObjectPerception:
+    r"""
+    The learner's perception of a particular object.
+
+    This object pretty much just represents the object's existence; its attributes are handled via
+    `PropertyPerception`\ s.
+    """
+    debug_handle: str = attrib(validator=instance_of(str))
+    """
+    A human-readable string associated with this object.
+
+    It is for debugging use only and should not be accessed by any algorithms.
+    """
+
+    def __repr__(self) -> str:
+        return self.debug_handle
+
+
 class PerceptualRepresentationFrame(ABC):
     r"""
     Represents a `LanguageLearner`\ 's perception of some `Situation`\ at a single moment.
@@ -45,7 +64,7 @@ class PerceptualRepresentation(Generic[PerceptionT]):
     but there could be two or three for complex actions.
     """
     # mypy is confused by the instance_of with a generic class
-    during: Optional[DuringAction["ObjectPerception"]] = attrib(  # type: ignore
+    during: Optional[DuringAction[ObjectPerception]] = attrib(  # type: ignore
         validator=optional(instance_of(DuringAction)), default=None, kw_only=True
     )
 
@@ -164,22 +183,3 @@ class DummyVisualPerceptionGenerator(
                 for (obj, point) in situation.objects_to_locations.items()
             )
         )
-
-
-@attrs(slots=True, frozen=True, repr=False)
-class ObjectPerception:
-    r"""
-    The learner's perception of a particular object.
-
-    This object pretty much just represents the object's existence; its attributes are handled via
-    `PropertyPerception`\ s.
-    """
-    debug_handle: str = attrib(validator=instance_of(str))
-    """
-    A human-readable string associated with this object.
-    
-    It is for debugging use only and should not be accessed by any algorithms.
-    """
-
-    def __repr__(self) -> str:
-        return self.debug_handle
