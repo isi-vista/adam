@@ -17,7 +17,7 @@ from vistautils.preconditions import check_arg
 
 from adam.ontology import CAN_FILL_TEMPLATE_SLOT, OntologyNode, PROPERTY, THING
 from adam.ontology.ontology import Ontology
-from adam.ontology.phase1_ontology import COLOR, GAILA_PHASE_1_ONTOLOGY, LEARNER
+from adam.ontology.phase1_ontology import COLOR, GAILA_PHASE_1_ONTOLOGY, LEARNER, GROUND
 from adam.ontology.selectors import ByHierarchyAndProperties, Is, OntologyNodeSelector
 from adam.random_utils import RandomChooser, SequenceChooser
 from adam.situation import SituationObject
@@ -220,9 +220,9 @@ def object_variable(
     "whatever fills this variable, make it red."
     """
     real_required_properties = list(required_properties)
-    if root_node != LEARNER:
-        # the learner is a special case of something we want to be
-        # explicitly instantiable but not instantiable by variable
+    if root_node != LEARNER and root_node != GROUND:
+        # the learner and the ground are special cases of things we want to be
+        # explicitly instantiable but not instantiable by variable.
         real_required_properties.append(CAN_FILL_TEMPLATE_SLOT)
 
     return TemplateObjectVariable(

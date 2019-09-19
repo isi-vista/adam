@@ -207,7 +207,7 @@ subtype(INANIMATE_OBJECT, THING)
 IS_GROUND = OntologyNode("is-ground")
 subtype(IS_GROUND, RECOGNIZED_PARTICULAR_PROPERTY)
 GROUND = OntologyNode(
-    "ground", non_inheritable_properties=[IS_GROUND, CAN_FILL_TEMPLATE_SLOT]
+    "ground", non_inheritable_properties=[IS_GROUND]
 )
 subtype(GROUND, INANIMATE_OBJECT)
 
