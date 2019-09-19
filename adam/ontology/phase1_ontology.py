@@ -30,18 +30,24 @@ from adam.ontology import (
     OntologyNode,
     PROPERTY,
     RELATION,
-    Region,
     THING,
     minimal_ontology_graph,
 )
 from adam.ontology.phase1_size_relationships import build_size_relationships
 from adam.ontology.action_description import ActionDescription, ActionDescriptionFrame
+from adam.ontology.during import DuringAction
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_spatial_relations import (
+    AWAY_FROM,
     Direction,
     EXTERIOR_BUT_IN_CONTACT,
+    FROM,
     INTERIOR,
-)
+    SpatialPath,
+    TO,
+    GRAVITATIONAL_AXIS,
+    Axis,
+    Region)
 from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
 from adam.relation import (
     ObjectT,
@@ -450,14 +456,14 @@ inside = make_dsl_region_relation(_inside_region_factory)  # pylint:disable=inva
 def _above_region_factory(reference_object: ObjectT) -> Region[ObjectT]:
     return Region(
         reference_object=reference_object,
-        direction=Direction(positive=True, relative_to_axis="vertical"),
+        direction=Direction(positive=True, relative_to_axis=GRAVITATIONAL_AXIS),
     )
 
 
 def _below_region_factory(reference_object: ObjectT) -> Region[ObjectT]:
     return Region(
         reference_object=reference_object,
-        direction=Direction(positive=False, relative_to_axis="vertical"),
+        direction=Direction(positive=False, relative_to_axis=GRAVITATIONAL_AXIS),
     )
 
 
@@ -836,6 +842,12 @@ _PUT_ACTION_DESCRIPTION = ActionDescription(
     frames=[
         ActionDescriptionFrame({AGENT: _PUT_AGENT, THEME: _PUT_THEME, GOAL: _PUT_GOAL})
     ],
+    during=DuringAction(
+        paths=[
+            (_PUT_THEME, SpatialPath(FROM, _CONTACTING_MANIPULATOR)),
+            (_PUT_THEME, SpatialPath(TO, _PUT_GOAL)),
+        ]
+    ),
     enduring_conditions=[
         Relation(SMALLER_THAN, _PUT_THEME, _PUT_AGENT),
         Relation(PART_OF, _PUT_MANIPULATOR, _PUT_AGENT),
@@ -861,6 +873,10 @@ _PUSH_ACTION_DESCRIPTION = ActionDescription(
     frames=[
         ActionDescriptionFrame({AGENT: _PUSH_AGENT, THEME: _PUSH_THEME, GOAL: _PUSH_GOAL})
     ],
+    during=DuringAction(
+        continuously=flatten_relations([contacts(_PUT_MANIPULATOR, _PUT_THEME)]),
+        paths=[(_PUSH_THEME, SpatialPath(TO, _PUT_GOAL))],
+    ),
     enduring_conditions=[
         partOf(_PUSH_MANIPULATOR, _PUSH_AGENT),
         bigger_than(_PUSH_AGENT, _PUSH_THEME),
@@ -869,13 +885,9 @@ _PUSH_ACTION_DESCRIPTION = ActionDescription(
         contacts(_PUSH_MANIPULATOR, _PUSH_THEME),
         Relation(IN_REGION, _PUSH_THEME, _PUSH_GOAL, negated=True),
     ],
-    postconditions=[
-        negate(contacts(_PUSH_MANIPULATOR, _PUT_THEME)),
-        Relation(IN_REGION, _PUSH_THEME, _PUSH_GOAL),
-    ],
+    postconditions=[Relation(IN_REGION, _PUSH_THEME, _PUSH_GOAL)],
     # TODO: encode that the THEME's vertical position does not significantly change,
     # unless there is e.g. a ramp
-    # TODO: encode the direction of the force relative to the path
 )
 
 _GO_AGENT = SituationObject(THING, properties=[SELF_MOVING])
@@ -883,7 +895,7 @@ _GO_GOAL = SituationObject(THING)
 
 _GO_ACTION_DESCRIPTION = ActionDescription(
     frames=[ActionDescriptionFrame({AGENT: _GO_AGENT, GOAL: _GO_GOAL})],
-    preconditions=[],
+    during=DuringAction(paths=[(_GO_AGENT, SpatialPath(TO, _GO_GOAL))]),
     postconditions=[Relation(IN_REGION, _GO_AGENT, _GO_GOAL)],
 )
 
@@ -898,6 +910,7 @@ _COME_ACTION_DESCRIPTION = ActionDescription(
         )
     ],
     preconditions=[Relation(IN_REGION, _COME_AGENT, _COME_GOAL, negated=True)],
+    during=DuringAction(paths=[(_COME_AGENT, SpatialPath(TO, _COME_GOAL))]),
     postconditions=[Relation(IN_REGION, _COME_AGENT, _COME_GOAL)],
     # TODO: encode that the new location is relatively closer to the
     # learner or speaker than the old location
@@ -924,7 +937,6 @@ _EAT_THEME = SituationObject(INANIMATE_OBJECT, properties=[EDIBLE])
 _EAT_ACTION_DESCRIPTION = ActionDescription(
     frames=[ActionDescriptionFrame({AGENT: _EAT_AGENT, THEME: _EAT_THEME})],
     enduring_conditions=[bigger_than(_EAT_AGENT, _EAT_THEME)],
-    preconditions=[],
     postconditions=[inside(_EAT_THEME, _EAT_AGENT)],
     # TODO: express role of mouth
 )
@@ -965,9 +977,19 @@ _TURN_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
 
 _TURN_ACTION_DESCRIPTION = ActionDescription(
     frames=[ActionDescriptionFrame({AGENT: _TURN_AGENT, THEME: _TURN_THEME})],
-    preconditions=[],
-    postconditions=[],
-    # TODO: this depends almost entirely on path information!
+    during=DuringAction(
+        paths=[
+            (
+                _TURN_THEME,
+                SpatialPath(
+                    operator=None,
+                    reference_object=_TURN_THEME,
+                    reference_axis=Axis.primary_of(_TURN_THEME),
+                    orientation_changed=True,
+                ),
+            )
+        ]
+    ),
 )
 
 _SIT_AGENT = SituationObject(THING, properties=[ANIMATE])
@@ -999,6 +1021,7 @@ _FALL_ACTION_DESCRIPTION = ActionDescription(
     preconditions=[],
     postconditions=[],
     # TODO: this is another one where all the information is in the path
+    # TODO: this awaits GROUND representation: https://github.com/isi-vista/adam/issues/169
 )
 
 _THROW_AGENT = SituationObject(THING, properties=[ANIMATE])
@@ -1025,6 +1048,7 @@ _THROW_ACTION_DESCRIPTION = ActionDescription(
         negate(contacts(_THROW_MANIPULATOR, _THROW_THEME)),
     ],
     # TODO: path through the air
+    # TODO: this awaits GROUND representation: https://github.com/isi-vista/adam/issues/169
 )
 
 _MOVE_AGENT = SituationObject(THING, properties=[ANIMATE])
@@ -1042,14 +1066,21 @@ _MOVE_ACTION_DESCRIPTION = ActionDescription(
 )
 
 _JUMP_AGENT = SituationObject(THING, properties=[ANIMATE])
+_JUMP_INITIAL_SUPPORTER = SituationObject(THING)
 
-# TODO: requires ground
 _JUMP_ACTION_DESCRIPTION = ActionDescription(
     frames=[ActionDescriptionFrame({AGENT: _JUMP_AGENT})],
-    preconditions=[],
-    postconditions=[
-        # TODO: that AGENT is located in GOAL
+    preconditions=[
+        Relation(
+            IN_REGION,
+            _JUMP_AGENT,
+            Region(_JUMP_INITIAL_SUPPORTER, distance=EXTERIOR_BUT_IN_CONTACT),
+        )
     ],
+    # TODO: this awaits GROUND representation: https://github.com/isi-vista/adam/issues/169
+    during=DuringAction(
+        paths=[(_JUMP_AGENT, SpatialPath(AWAY_FROM, _JUMP_INITIAL_SUPPORTER))]
+    ),
 )
 
 _ROLL_AGENT = SituationObject(THING, properties=[ANIMATE])
@@ -1061,19 +1092,31 @@ _ROLL_ACTION_DESCRIPTION = ActionDescription(
     frames=[
         ActionDescriptionFrame({AGENT: _ROLL_AGENT, THEME: _ROLL_THEME, GOAL: _ROLL_GOAL})
     ],
-    enduring_conditions=[],
-    preconditions=[contacts(_ROLL_THEME, _ROLL_SURFACE)],
+    during=DuringAction(
+        continuously=[contacts(_ROLL_THEME, _ROLL_SURFACE)],
+        paths=[
+            (
+                _ROLL_THEME,
+                SpatialPath(
+                    operator=None,
+                    reference_object=_ROLL_THEME,
+                    reference_axis=Axis(
+                        reference_object=None, name="direction of motion"
+                    ),
+                    orientation_changed=True,
+                ),
+            )
+        ],
+    ),
     postconditions=[Relation(IN_REGION, _ROLL_THEME, _ROLL_GOAL)],
-    # TODO: path information crucial here
 )
 
 _FLY_AGENT = SituationObject(THING, properties=[ANIMATE])
 
 _FLY_ACTION_DESCRIPTION = ActionDescription(
     frames=[ActionDescriptionFrame({AGENT: _FLY_AGENT})],
-    preconditions=[],
-    postconditions=[],
     # TODO: path information crucial here
+    # TODO: this awaits GROUND representation: https://github.com/isi-vista/adam/issues/169
 )
 
 GAILA_PHASE_1_ONTOLOGY = Ontology(

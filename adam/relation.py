@@ -2,13 +2,15 @@ from attr import attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import ImmutableSet, immutableset
 from more_itertools import flatten
-from typing import Callable, Generic, Iterable, Tuple, TypeVar, Union, Any
+from typing import Callable, Generic, Iterable, Tuple, TypeVar, Union, Any, Mapping
 from vistautils.preconditions import check_arg
 
-from adam.ontology import OntologyNode, IN_REGION, Region
+from adam.ontology import IN_REGION, OntologyNode
+from adam.ontology.phase1_spatial_relations import Region
 
 ObjectT = TypeVar("ObjectT")
 ObjectTOut = TypeVar("ObjectTOut", contravariant=True)
+_NewObjectT = TypeVar("_NewObjectT")
 
 
 @attrs(frozen=True, repr=False)
@@ -32,6 +34,23 @@ class Relation(Generic[ObjectT]):
     def negated_copy(self) -> "Relation[ObjectT]":
         # mypy doesn't know attrs classes provide evolve for copying
         return self.evolve(negated=not self.negated)  # type: ignore
+
+    def copy_remapping_objects(
+        self, object_mapping: Mapping[ObjectT, _NewObjectT]
+    ) -> "Relation[_NewObjectT]":
+        translated_second_slot: Union[_NewObjectT, Region[_NewObjectT]]
+        if isinstance(self.second_slot, Region):
+            translated_second_slot = self.second_slot.copy_remapping_objects(
+                object_mapping
+            )
+        else:
+            translated_second_slot = object_mapping[self.second_slot]
+        return Relation(
+            self.relation_type,
+            first_slot=object_mapping[self.first_slot],
+            second_slot=translated_second_slot,
+            negated=self.negated,
+        )
 
     def __attrs_post_init__(self) -> None:
         check_arg(

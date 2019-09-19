@@ -7,8 +7,9 @@ from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, imm
 from more_itertools import only, quantify
 from vistautils.preconditions import check_arg
 
-from adam.ontology import OntologyNode, Region
+from adam.ontology import OntologyNode
 from adam.ontology.action_description import ActionDescription
+from adam.ontology.during import DuringAction
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
     BINARY,
@@ -19,13 +20,14 @@ from adam.ontology.phase1_ontology import (
     PART_OF,
     PERCEIVABLE,
 )
+from adam.ontology.phase1_spatial_relations import SpatialPath, Region
 from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
-from adam.perception import PerceptualRepresentation, PerceptualRepresentationGenerator
+from adam.perception import PerceptualRepresentation, PerceptualRepresentationGenerator, \
+    ObjectPerception
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
     HasBinaryProperty,
     HasColor,
-    ObjectPerception,
     PropertyPerception,
     RgbColorPerception,
 )
@@ -181,7 +183,9 @@ class _PerceptionGeneration:
             property_assertions=self._property_assertion_perceptions,
         )
 
-        return PerceptualRepresentation(frames=(first_frame, second_frame))
+        return PerceptualRepresentation(
+            frames=(first_frame, second_frame), during=self._compute_during()
+        )
 
     def _sanity_check_situation(self) -> None:
         if (
@@ -215,16 +219,15 @@ class _PerceptionGeneration:
         # map each of these to a region perception
         self._regions_to_perceptions.update(
             {
-                region: Region(
-                    reference_object=self._objects_to_perceptions[
-                        region.reference_object
-                    ],
-                    distance=region.distance,
-                    direction=region.direction,
-                )
+                region: region.copy_remapping_objects(self._objects_to_perceptions)
                 for region in regions
             }
         )
+
+    def _perceive_region(
+        self, region: Region[SituationObject]
+    ) -> Region[ObjectPerception]:
+        return region.copy_remapping_objects(self._objects_to_perceptions)
 
     def _perceive_action(self) -> Tuple[AbstractSet[Relation[ObjectPerception]], ...]:
         # Extract relations from action
@@ -446,25 +449,15 @@ class _PerceptionGeneration:
         ],
     ) -> Union[ObjectPerception, Region[ObjectPerception]]:
         if isinstance(slot_filler, Region):
-            # Region is not a real possibility here, but using this type lets us put the cast
-            # in only one place.
-            perceived_reference_object: Union[ObjectPerception, Region[ObjectPerception]]
-            if slot_filler.reference_object in self._objects_to_perceptions:
-                # this handles the case of a region that the user has explicitly bound
-                # to something in the situation, like table in put(theme=book, goal=on(table))
-                perceived_reference_object = self._objects_to_perceptions[
-                    slot_filler.reference_object
-                ]
-            else:
-                perceived_reference_object = action_object_variables_to_object_perceptions[
-                    slot_filler.reference_object
-                ]
-            return Region(
-                # this will be an ObjectPerception by construction of the maps
-                reference_object=cast(ObjectPerception, perceived_reference_object),
-                direction=slot_filler.direction,
-                distance=slot_filler.distance,
+            object_mapping: Dict[SituationObject, ObjectPerception] = {}
+            # regions are not a real possibility for lookup,
+            # so mypy's complaints here are irrelevant
+            object_mapping.update(self._objects_to_perceptions)  # type: ignore
+            object_mapping.update(  # type: ignore
+                action_object_variables_to_object_perceptions
             )
+
+            return slot_filler.copy_remapping_objects(object_mapping)
         else:
             return action_object_variables_to_object_perceptions[slot_filler]
 
@@ -650,10 +643,8 @@ class _PerceptionGeneration:
                 ]
             else:
                 arg2 = sub_object_relation.second_slot
-                arg2_perception = Region(
-                    sub_object_to_object_perception[arg2.reference_object],
-                    distance=arg2.distance,
-                    direction=arg2.direction,
+                arg2_perception = arg2.copy_remapping_objects(
+                    sub_object_to_object_perception
                 )
             self._relation_perceptions.append(
                 Relation(
@@ -661,6 +652,48 @@ class _PerceptionGeneration:
                 )
             )
         return root_object_perception
+
+    def _compute_during(self) -> Optional[DuringAction[ObjectPerception]]:
+        durings_to_translate = immutableset(
+            action.during for action in self._situation.actions if action.during
+        )
+
+        if not durings_to_translate:
+            # if nothing dynamic happened, there is nothing to describe actions "during"
+            return None
+
+        # TODO: also translate at SituationObject level
+        # Collapse together all "during"s from all actions in the situation
+        # and translate their components.
+        # In practice we currently only ever allow one action,
+        # but we might as well handle the general case.
+        return DuringAction(
+            paths=[
+                (self._objects_to_perceptions[object_], self._translate_path(path))
+                for during in durings_to_translate
+                for (object_, path) in during.paths.items()
+            ],
+            at_some_point=[
+                (self._perceive_relation(relation))
+                for during in durings_to_translate
+                for relation in during.at_some_point
+            ],
+            continuously=[
+                (self._perceive_relation(relation))
+                for during in durings_to_translate
+                for relation in during.continuously
+            ],
+        )
+
+    def _translate_path(
+        self, path: SpatialPath[SituationObject]
+    ) -> SpatialPath[ObjectPerception]:
+        return path.copy_remapping_objects(self._objects_to_perceptions)
+
+    def _perceive_relation(
+        self, relation: Relation[SituationObject]
+    ) -> Relation[ObjectPerception]:
+        return relation.copy_remapping_objects(self._objects_to_perceptions)
 
 
 GAILA_PHASE_1_PERCEPTION_GENERATOR = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(

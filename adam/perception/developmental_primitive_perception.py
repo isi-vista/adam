@@ -1,4 +1,5 @@
 from abc import ABC
+
 from attr import attrib, attrs
 from attr.validators import in_, instance_of
 from immutablecollections import ImmutableSet, immutableset
@@ -6,7 +7,7 @@ from immutablecollections.converter_utils import _to_immutableset
 from vistautils.range import Range
 
 from adam.ontology import OntologyNode
-from adam.perception import PerceptualRepresentationFrame
+from adam.perception import PerceptualRepresentationFrame, ObjectPerception
 from adam.relation import Relation, flatten_relations
 
 
@@ -50,25 +51,6 @@ class DevelopmentalPrimitivePerceptionFrame(PerceptualRepresentationFrame):
       
     Symmetric relations should be included as two separate relations, one in each direction.            
     """
-
-
-@attrs(slots=True, frozen=True, repr=False)
-class ObjectPerception:
-    r"""
-    The learner's perception of a particular object.
-
-    This object pretty much just represents the object's existence; its attributes are handled via
-    `PropertyPerception`\ s.
-    """
-    debug_handle: str = attrib(validator=instance_of(str))
-    """
-    A human-readable string associated with this object.
-    
-    It is for debugging use only and should not be accessed by any algorithms.
-    """
-
-    def __repr__(self) -> str:
-        return self.debug_handle
 
 
 @attrs(slots=True, frozen=True, repr=False)

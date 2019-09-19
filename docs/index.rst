@@ -128,9 +128,17 @@ adam.ontology.structural_schema
 ---------------------------------------
 .. automodule:: adam.ontology.structural_schema
 
+*******************************************
+Supporting Classes: Action Structure
+*******************************************
+adam.ontology.during
+---------------------
+.. automodule:: adam.ontology.during
+
 ***************************************************
 Supporting Classes: Spatial and Size Representation
 ***************************************************
+
 adam.ontology.phase1_spatial_relations
 ---------------------------------------
 .. automodule:: adam.ontology.phase1_spatial_relations

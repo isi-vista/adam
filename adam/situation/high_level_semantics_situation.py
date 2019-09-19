@@ -5,8 +5,8 @@ from immutablecollections.converter_utils import _to_immutableset
 from more_itertools import flatten
 from vistautils.preconditions import check_arg
 
-from adam.ontology import Region
 from adam.ontology.ontology import Ontology
+from adam.ontology.phase1_spatial_relations import Region
 from adam.relation import Relation
 from adam.situation import Situation, SituationAction, SituationObject
 

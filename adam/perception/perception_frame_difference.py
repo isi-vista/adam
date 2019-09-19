@@ -4,9 +4,9 @@ from immutablecollections.converter_utils import _to_immutableset
 
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
-    ObjectPerception,
     PropertyPerception,
 )
+from adam.perception import ObjectPerception
 from adam.relation import Relation
 
 
