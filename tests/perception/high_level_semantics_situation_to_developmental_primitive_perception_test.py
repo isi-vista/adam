@@ -202,10 +202,14 @@ def test_person_put_ball_on_table():
     }
     assert "smallerThan(ball_0, person_0)" in first_frame_relations_strings
     assert "partOf(hand_0, person_0)" in first_frame_relations_strings
+    hand_perception = perception_with_handle(perception.frames[0], "hand_0")
     assert (
-        "in-region(ball_0, Region(reference_object=hand_0, "
-        "distance=Distance(name='exterior-but-in-contact'), direction=None))"
-        in first_frame_relations_strings
+        Relation(
+            IN_REGION,
+            ball_perception,
+            Region(reference_object=hand_perception, distance=EXTERIOR_BUT_IN_CONTACT),
+        )
+        in first_frame_relations
     )
 
     # continuing relations:
@@ -225,9 +229,12 @@ def test_person_put_ball_on_table():
 
     # removed relations:
     assert (
-        "in-region(ball_0, Region(reference_object=hand_0, "
-        "distance=Distance(name='exterior-but-in-contact'), direction=None))"
-        not in second_frame_relations_strings
+        Relation(
+            IN_REGION,
+            ball_perception,
+            Region(reference_object=hand_perception, distance=EXTERIOR_BUT_IN_CONTACT),
+        )
+        not in second_frame_relations
     )
 
 

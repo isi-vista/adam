@@ -5,7 +5,7 @@ from attr.validators import instance_of, in_, optional
 from vistautils.preconditions import check_arg
 
 
-@attrs(frozen=True, slots=True)
+@attrs(frozen=True, slots=True, repr=False)
 class Distance:
     """
     A distance of the sort used by Landau and Jackendoff
@@ -13,6 +13,9 @@ class Distance:
     """
 
     name: str = attrib(validator=instance_of(str))
+
+    def __repr__(self) -> str:
+        return self.name
 
 
 INTERIOR = Distance("interor")
@@ -41,7 +44,7 @@ ReferenceObjectT = TypeVar("ReferenceObjectT")
 NewObjectT = TypeVar("NewObjectT")
 
 
-@attrs(frozen=True)
+@attrs(frozen=True, repr=False)
 class Axis(Generic[ReferenceObjectT]):
     name: str = attrib(validator=instance_of(str))
     reference_object: Optional[ReferenceObjectT] = attrib(kw_only=True)
@@ -60,11 +63,17 @@ class Axis(Generic[ReferenceObjectT]):
             else None,
         )
 
+    def __repr__(self) -> str:
+        if self.reference_object:
+            return f"{self.name}({self.reference_object})"
+        else:
+            return self.name
+
 
 GRAVITATIONAL_AXIS: Axis[Any] = Axis("gravitational", reference_object=None)
 
 
-@attrs(frozen=True)
+@attrs(frozen=True, repr=False)
 class Direction(Generic[ReferenceObjectT]):
     r"""
     Represents the direction one object may have relative to another.
@@ -85,6 +94,10 @@ class Direction(Generic[ReferenceObjectT]):
             positive=self.positive,
             relative_to_axis=self.relative_to_axis.copy_remapping_objects(object_map),
         )
+
+    def __repr__(self) -> str:
+        polarity = "+" if self.positive else "-"
+        return f"{polarity}{self.relative_to_axis}"
 
 
 @attrs(frozen=True)
