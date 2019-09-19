@@ -11,7 +11,7 @@ from adam.relation import Relation, flatten_relations
 from adam.situation import Situation, SituationAction, SituationObject
 
 
-@attrs(frozen=True, slots=True, repr=False)
+@attrs(slots=True, repr=False)
 class HighLevelSemanticsSituation(Situation):
     """
     A human-friendly representation of `Situation`.
@@ -74,6 +74,10 @@ class HighLevelSemanticsSituation(Situation):
     """
     The actions occurring in this `Situation`
     """
+    is_dynamic: bool = attrib(init=False)
+    """
+    Bool representing whether the situation has any actions, i.e is dynamic. 
+    """
 
     def __attrs_post_init__(self) -> None:
         check_arg(self.objects, "A situation must contain at least one object")
@@ -85,6 +89,8 @@ class HighLevelSemanticsSituation(Situation):
                     f"Relation fillers for situations must be situation objects "
                     f"but got {relation}"
                 )
+        self.is_dynamic = len(self.actions) > 0
+        for relation in self.persisting_relations:
             if (
                 isinstance(relation.second_slot, Region)
                 and relation.second_slot.reference_object not in self.objects

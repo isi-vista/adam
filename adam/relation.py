@@ -2,7 +2,7 @@ from attr import attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import ImmutableSet, immutableset
 from more_itertools import flatten
-from typing import Callable, Generic, Iterable, Tuple, TypeVar, Union, Any, Mapping
+from typing import Callable, Generic, Iterable, Tuple, TypeVar, Union, Any, Mapping, List
 from vistautils.preconditions import check_arg
 
 from adam.ontology import IN_REGION, OntologyNode
@@ -51,6 +51,17 @@ class Relation(Generic[ObjectT]):
             second_slot=translated_second_slot,
             negated=self.negated,
         )
+
+    def accumulate_referenced_objects(self, object_accumulator: List[ObjectT]) -> None:
+        r"""
+        Adds all objects referenced by this `Relation`
+        or any `Region`\ s it refers to to *object_accumulator*.
+        """
+        object_accumulator.append(self.first_slot)
+        if isinstance(self.second_slot, Region):
+            self.second_slot.accumulate_referenced_objects(object_accumulator)
+        else:
+            object_accumulator.append(self.second_slot)
 
     def __attrs_post_init__(self) -> None:
         check_arg(

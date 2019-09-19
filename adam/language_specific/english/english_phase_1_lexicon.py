@@ -43,7 +43,6 @@ from adam.ontology.phase1_ontology import (
     THROW,
     MOVE,
     JUMP,
-    HAVE,
     ROLL,
     FLY,
     RED,
@@ -52,12 +51,17 @@ from adam.ontology.phase1_ontology import (
     BLACK,
     WHITE,
     TRANSPARENT,
+    HAS,
+    GROUND,
+    GAILA_PHASE_1_ONTOLOGY,
 )
 
 MASS_NOUN = LexiconProperty("mass-noun")
 
 GAILA_PHASE_1_ENGLISH_LEXICON = OntologyLexicon(
-    (
+    ontology=GAILA_PHASE_1_ONTOLOGY,
+    ontology_node_to_word=(
+        (GROUND, LexiconEntry("ground", NOUN, plural_form="grounds")),
         (MOM, LexiconEntry("Mom", PROPER_NOUN)),
         (BALL, LexiconEntry("ball", NOUN, plural_form="balls")),
         (TABLE, LexiconEntry("table", NOUN, plural_form="tables")),
@@ -94,7 +98,7 @@ GAILA_PHASE_1_ENGLISH_LEXICON = OntologyLexicon(
         (THROW, LexiconEntry("throw", VERB, verb_form_3SG_PRS="throws")),
         (MOVE, LexiconEntry("move", VERB, verb_form_3SG_PRS="moves")),
         (JUMP, LexiconEntry("jump", VERB, verb_form_3SG_PRS="jumps")),
-        (HAVE, LexiconEntry("have", VERB, verb_form_3SG_PRS="has")),
+        (HAS, LexiconEntry("have", VERB, verb_form_3SG_PRS="has")),
         (ROLL, LexiconEntry("roll", VERB, verb_form_3SG_PRS="rolls")),
         (FLY, LexiconEntry("fly", VERB, verb_form_3SG_PRS="flies")),
         (RED, LexiconEntry("red", ADJECTIVE)),
@@ -103,5 +107,5 @@ GAILA_PHASE_1_ENGLISH_LEXICON = OntologyLexicon(
         (BLACK, LexiconEntry("black", ADJECTIVE)),
         (WHITE, LexiconEntry("white", ADJECTIVE)),
         (TRANSPARENT, LexiconEntry("transparent", ADJECTIVE)),
-    )
+    ),
 )

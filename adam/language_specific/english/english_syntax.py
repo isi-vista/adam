@@ -19,6 +19,8 @@ from adam.language.dependency.universal_dependencies import (
     DETERMINER_ROLE,
     NUMERIC_MODIFIER,
     ADJECTIVAL_MODIFIER,
+    NOMINAL_MODIFIER_POSSESSIVE,
+    PROPER_NOUN,
 )
 
 _ENGLISH_HEAD_TO_ROLE_ORDER: ImmutableDict[
@@ -31,8 +33,16 @@ _ENGLISH_HEAD_TO_ROLE_ORDER: ImmutableDict[
         # more sophisticated later.
         (
             NOUN,
-            (CASE_MARKING, DETERMINER_ROLE, NUMERIC_MODIFIER, ADJECTIVAL_MODIFIER, HEAD),
+            (
+                CASE_MARKING,
+                NOMINAL_MODIFIER_POSSESSIVE,
+                DETERMINER_ROLE,
+                NUMERIC_MODIFIER,
+                ADJECTIVAL_MODIFIER,
+                HEAD,
+            ),
         ),
+        (PROPER_NOUN, (ADJECTIVAL_MODIFIER, HEAD, CASE_MARKING)),
     ]
 )
 
