@@ -17,6 +17,7 @@ from vistautils.preconditions import check_state
 from adam.curriculum.phase1_curriculum import GAILA_PHASE_1_CURRICULUM
 from adam.experiment import InstanceGroup
 from adam.language.dependency import LinearizedDependencyTree
+from adam.ontology import IN_REGION
 from adam.ontology.phase1_ontology import PART_OF
 from adam.ontology.phase1_spatial_relations import Region
 from adam.perception import ObjectPerception, PerceptualRepresentation
@@ -348,8 +349,13 @@ class CurriculumToHtmlDumper:
                 graph.add_edge(relation_.first_slot, relation_.second_slot)
 
         # Next, we render objects, together with their properties, using preorder DFS Traversal
-        output_text.append("\t\t<h5>Perceived Objects</h5>\n\t\t")
+        # We also add in `In Region` relationships at this step for objects which have them.
+        output_text.append("\t\t<h5>Perceived Objects</h5><ul>\n\t\t")
         visited = set()
+        region_relations = immutableset(
+            region for region in all_relations if region.relation_type == IN_REGION
+        )
+        expressed_relations = set()
 
         def dfs_walk(node):
             visited.add(node)
@@ -358,26 +364,38 @@ class CurriculumToHtmlDumper:
                     node, static_objects, first_frame_objects
                 )
                 output_text.append(
-                    f"<ul><li>{obj_prefix}{render_object(node)}{obj_suffix}"
+                    f"<li>{obj_prefix}{render_object(node)}{obj_suffix}<ul>"
                 )
+                # Handle Region Relations
+                for region_relation in region_relations:
+                    if region_relation.first_slot == node:
+                        (relation_prefix, relation_suffix) = compute_arrow(
+                            region_relation, static_relations, first_frame_relations
+                        )
+                        output_text.append(
+                            f"\t\t<li>{relation_prefix}{region_relation}{relation_suffix}</li>"
+                        )
+                        expressed_relations.add(region_relation)
             for succ in graph.successors(node):
                 if succ not in visited:
                     dfs_walk(succ)
-            output_text.append("</li></ul>")
+            output_text.append("</ul></li>")
 
         dfs_walk(root)
+        output_text.append("</ul>")
 
         # Finally we render all relations between objects
         if all_relations:
-            output_text.append("\t\t\t\t<h5>Relations</h5>\n\t\t\t\t<ul>")
+            output_text.append("\t\t\t\t<h5>Other Relations</h5>\n\t\t\t\t<ul>")
 
             for relation in all_relations:
-                (relation_prefix, relation_suffix) = compute_arrow(
-                    relation, static_relations, first_frame_relations
-                )
-                output_text.append(
-                    f"\t\t<li>{relation_prefix}{relation}{relation_suffix}</li>"
-                )
+                if relation not in expressed_relations:
+                    (relation_prefix, relation_suffix) = compute_arrow(
+                        relation, static_relations, first_frame_relations
+                    )
+                    output_text.append(
+                        f"\t\t<li>{relation_prefix}{relation}{relation_suffix}</li>"
+                    )
             output_text.append("\t\t</ul>")
 
         return "\n".join(output_text)
