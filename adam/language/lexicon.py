@@ -11,7 +11,7 @@ from attr.validators import instance_of
 from immutablecollections import ImmutableSet, immutableset
 from immutablecollections.converter_utils import _to_immutableset
 
-from adam.language.dependency import PartOfSpeechTag
+from adam.language.dependency import PartOfSpeechTag, MorphosyntacticProperty
 
 
 @attrs(frozen=True, slots=True)
@@ -27,6 +27,9 @@ class LexiconEntry:
     """
     part_of_speech: PartOfSpeechTag = attrib(validator=instance_of(PartOfSpeechTag))
     properties: ImmutableSet["LexiconProperty"] = attrib(
+        converter=_to_immutableset, default=immutableset()
+    )
+    intrinsic_morphosyntactic_properties: ImmutableSet[MorphosyntacticProperty] = attrib(
         converter=_to_immutableset, default=immutableset()
     )
     plural_form: Optional[str] = attrib(default=None, kw_only=True)

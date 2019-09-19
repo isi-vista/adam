@@ -5,7 +5,7 @@ import random
 from _random import Random
 from abc import ABC, abstractmethod
 from itertools import product
-from typing import AbstractSet, Iterable, Mapping, Sequence, TypeVar, Union, Optional
+from typing import AbstractSet, Iterable, Mapping, Optional, Sequence, TypeVar, Union
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
@@ -15,25 +15,27 @@ from more_itertools import take
 from typing_extensions import Protocol
 from vistautils.preconditions import check_arg
 
-from adam.ontology import CAN_FILL_TEMPLATE_SLOT, OntologyNode, PROPERTY, THING, ACTION
+from adam.ontology import ACTION, CAN_FILL_TEMPLATE_SLOT, OntologyNode, PROPERTY, THING
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import COLOR, GAILA_PHASE_1_ONTOLOGY, GROUND, LEARNER
 from adam.ontology.selectors import (
+    AndOntologySelector,
     ByHierarchyAndProperties,
     Is,
     OntologyNodeSelector,
-    AndOntologySelector,
     SubcategorizationSelector,
 )
 from adam.random_utils import RandomChooser, SequenceChooser
 from adam.relation import Relation, flatten_relations
-from adam.situation import SituationObject, Action
+from adam.situation import Action, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.situation.templates import (
     SituationTemplate,
     SituationTemplateObject,
     SituationTemplateProcessor,
 )
+
+_ExplicitOrVariableActionType = Union[OntologyNode, "TemplateActionTypeVariable"]
 
 
 @attrs(frozen=True, slots=True)
@@ -71,7 +73,7 @@ class Phase1SituationTemplate(SituationTemplate):
     so don't make them too complex or constraining!
     """
     actions: ImmutableSet[
-        Action["TemplateActionVariable", "TemplateObjectVariable"]
+        Action[_ExplicitOrVariableActionType, "TemplateObjectVariable"]
     ] = attrib(converter=_to_immutableset, default=immutableset())
 
     def __attrs_post_init__(self) -> None:
@@ -142,12 +144,19 @@ class _Phase1SituationTemplateGenerator(
             if isinstance(property_, TemplatePropertyVariable)
         )
 
+        action_type_variables = immutableset(
+            action.action_type
+            for action in template.actions
+            if isinstance(action.action_type, TemplateActionTypeVariable)
+        )
+
         failures_in_a_row = 0
 
         for variable_assignment in self._variable_assigner.variable_assignments(
             ontology=self.ontology,
             object_variables=template.object_variables,
             property_variables=property_variables,
+            action_variables=action_type_variables,
             chooser=chooser,
         ):
 
@@ -170,12 +179,21 @@ class _Phase1SituationTemplateGenerator(
                 )
                 for obj_var in template.object_variables
             )
+
             situation = HighLevelSemanticsSituation(
                 ontology=self.ontology,
                 objects=object_var_to_instantiations.values(),
                 always_relations=[
                     relation.copy_remapping_objects(object_var_to_instantiations)
                     for relation in template.asserted_always_relations
+                ],
+                actions=[
+                    self._instantiate_action(
+                        action,
+                        object_var_to_instantiations,
+                        variable_assignment.action_variables_to_fillers,
+                    )
+                    for action in template.actions
                 ],
             )
             if self._satisfies_constraints(
@@ -206,6 +224,29 @@ class _Phase1SituationTemplateGenerator(
             ):
                 return False
         return True
+
+    def _instantiate_action(
+        self,
+        action: Action[_ExplicitOrVariableActionType, "TemplateObjectVariable"],
+        object_var_to_instantiations: Mapping["TemplateObjectVariable", SituationObject],
+        action_variables_to_fillers: Mapping["TemplateActionTypeVariable", OntologyNode],
+    ) -> Action[OntologyNode, SituationObject]:
+        def map_action_type() -> OntologyNode:
+            if isinstance(action.action_type, OntologyNode):
+                return action.action_type
+            else:
+                return action_variables_to_fillers[action.action_type]
+
+        return Action(
+            action_type=map_action_type(),
+            argument_roles_to_fillers=[
+                (role, object_var_to_instantiations[arg])
+                for (role, arg) in action.argument_roles_to_fillers.items()
+            ],
+            during=action.during.copy_remapping_objects(object_var_to_instantiations)
+            if action.during
+            else None,
+        )
 
 
 class _TemplateVariable(Protocol):
@@ -266,13 +307,13 @@ class TemplatePropertyVariable(SituationTemplateObject, _TemplateVariable):
 
 
 @attrs(frozen=True, slots=True, cmp=False)
-class TemplateActionVariable(SituationTemplateObject, _TemplateVariable):
+class TemplateActionTypeVariable(SituationTemplateObject, _TemplateVariable):
     r"""
     A variable in a `Phase1SituationTemplate`
     which could be filled by any action type
     whose `OntologyNode` is selected by *node_selector*.
 
-    We provide `action_variable` to make creating `TemplateActionVariable`\ s more convenient.
+    We provide `action_variable` to make creating `TemplateActionTypeVariable`\ s more convenient.
     """
 
     node_selector: OntologyNodeSelector = attrib(
@@ -353,7 +394,7 @@ def action_variable(
     *,
     with_subcategorization_frame: Optional[Iterable[OntologyNode]] = None,
     with_properties: Iterable[OntologyNode] = immutableset(),
-) -> TemplatePropertyVariable:
+) -> TemplateActionTypeVariable:
     r"""
     Create a `TemplatePropertyVariable` with the specified *debug_handle*
     which can be filled by any property whose `OntologyNode` is a descendant of
@@ -373,7 +414,7 @@ def action_variable(
                 SubcategorizationSelector(with_subcategorization_frame),
             ]
         )
-    return TemplatePropertyVariable(debug_handle, selector)
+    return TemplateActionTypeVariable(debug_handle, selector)
 
 
 def color_variable(debug_handle: str) -> TemplatePropertyVariable:
@@ -396,6 +437,9 @@ class _VariableAssignment:
     property_variables_to_fillers: ImmutableDict[
         "TemplatePropertyVariable", OntologyNode
     ] = attrib(converter=_to_immutabledict, default=immutabledict())
+    action_variables_to_fillers: ImmutableDict[
+        "TemplateActionTypeVariable", OntologyNode
+    ] = attrib(converter=_to_immutabledict, default=immutabledict())
 
 
 class _VariableAssigner(ABC):
@@ -406,6 +450,7 @@ class _VariableAssigner(ABC):
         ontology: Ontology,
         object_variables: AbstractSet["TemplateObjectVariable"],
         property_variables: AbstractSet["TemplatePropertyVariable"],
+        action_variables: AbstractSet["TemplateActionTypeVariable"],
         chooser: SequenceChooser,
     ) -> Iterable[_VariableAssignment]:
         r"""
@@ -428,6 +473,7 @@ class _CrossProductVariableAssigner(_VariableAssigner):
         ontology: Ontology,
         object_variables: AbstractSet["TemplateObjectVariable"],
         property_variables: AbstractSet["TemplatePropertyVariable"],
+        action_variables: AbstractSet["TemplateActionTypeVariable"],
         chooser: SequenceChooser,  # pylint: disable=unused-argument
     ) -> Iterable[_VariableAssignment]:
         # TODO: fix hard-coded rng
@@ -441,10 +487,14 @@ class _CrossProductVariableAssigner(_VariableAssigner):
             for property_combination in self._all_combinations(
                 property_variables, ontology=ontology, rng=rng
             ):
-                yield _VariableAssignment(
-                    object_variables_to_fillers=object_combination,
-                    property_variables_to_fillers=property_combination,
-                )
+                for action_combination in self._all_combinations(
+                    action_variables, ontology=ontology, rng=rng
+                ):
+                    yield _VariableAssignment(
+                        object_variables_to_fillers=object_combination,
+                        property_variables_to_fillers=property_combination,
+                        action_variables_to_fillers=action_combination,
+                    )
 
     def _all_combinations(
         self, variables: AbstractSet[_VarT], *, ontology: Ontology, rng: Random
@@ -486,6 +536,7 @@ class _SamplingVariableAssigner(_VariableAssigner):
         ontology: Ontology,
         object_variables: AbstractSet["TemplateObjectVariable"],
         property_variables: AbstractSet["TemplatePropertyVariable"],
+        action_variables: AbstractSet["TemplateActionTypeVariable"],
         chooser: SequenceChooser,
     ) -> Iterable[_VariableAssignment]:
         # we need to do the zip() below instead of using nested for loops
@@ -496,17 +547,23 @@ class _SamplingVariableAssigner(_VariableAssigner):
         property_combinations = self._sample_combinations(
             property_variables, ontology=ontology, chooser=chooser
         )
-        object_plus_property_combinations = zip(
-            object_combinations, property_combinations
+        action_combinations = self._sample_combinations(
+            action_variables, ontology=ontology, chooser=chooser
+        )
+
+        concatenated_combinations = zip(
+            object_combinations, property_combinations, action_combinations
         )
 
         for (
             object_combination,
             property_combination,
-        ) in object_plus_property_combinations:
+            action_combination,
+        ) in concatenated_combinations:
             yield _VariableAssignment(
                 object_variables_to_fillers=object_combination,
                 property_variables_to_fillers=property_combination,
+                action_variables_to_fillers=action_combination,
             )
 
     def _sample_combinations(

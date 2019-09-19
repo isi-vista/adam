@@ -1,10 +1,15 @@
 import collections
 from itertools import chain
-from typing import Iterable, List, Mapping, MutableMapping, Union, cast
+from typing import Iterable, List, Mapping, MutableMapping, Union, cast, Tuple
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
-from immutablecollections import ImmutableSet, immutabledict, immutableset
+from immutablecollections import (
+    ImmutableSet,
+    immutabledict,
+    immutableset,
+    immutablesetmultidict,
+)
 from more_itertools import only
 from networkx import DiGraph
 
@@ -36,9 +41,13 @@ from adam.language.ontology_dictionary import OntologyLexicon
 from adam.language_specific.english.english_phase_1_lexicon import (
     GAILA_PHASE_1_ENGLISH_LEXICON,
     MASS_NOUN,
+    I,
+    YOU,
 )
 from adam.language_specific.english.english_syntax import (
     SIMPLE_ENGLISH_DEPENDENCY_TREE_LINEARIZER,
+    FIRST_PERSON,
+    SECOND_PERSON,
 )
 from adam.ontology import IN_REGION, OntologyNode
 from adam.ontology.phase1_ontology import (
@@ -149,8 +158,13 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             for persisting_relation in self.situation.always_relations:
                 self._translate_relation(persisting_relation)
 
-            for action in self.situation.actions:
-                self._translate_action_to_verb(action)
+            if len(self.situation.actions) > 1:
+                raise RuntimeError(
+                    "Currently only situations with 0 or 1 actions are supported"
+                )
+
+            if self.situation.actions:
+                self._translate_action_to_verb(only(self.situation.actions))
 
             return immutableset(
                 [
@@ -177,35 +191,42 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 )
             # TODO: we don't currently translate modifiers of nouns.
             # Issue: https://github.com/isi-vista/adam/issues/58
-            lexicon_entry = self._unique_lexicon_entry(
-                _object.ontology_node  # pylint:disable=protected-access
-            )
+
             # Check if the situation object is the speaker
             if IS_SPEAKER in _object.properties:
-                word_form = "I"
+                noun_lexicon_entry = I
             elif IS_ADDRESSEE in _object.properties:
-                word_form = "you"
-            elif count > 1 and lexicon_entry.plural_form:
-                word_form = lexicon_entry.plural_form
+                noun_lexicon_entry = YOU
             else:
-                word_form = lexicon_entry.base_form
-            dependency_node = DependencyTreeToken(word_form, lexicon_entry.part_of_speech)
+                noun_lexicon_entry = self._unique_lexicon_entry(
+                    _object.ontology_node  # pylint:disable=protected-access
+                )
+
+            if count > 1 and noun_lexicon_entry.plural_form:
+                word_form = noun_lexicon_entry.plural_form
+            else:
+                word_form = noun_lexicon_entry.base_form
+
+            dependency_node = DependencyTreeToken(
+                word_form,
+                noun_lexicon_entry.part_of_speech,
+                morphosyntactic_properties=noun_lexicon_entry.intrinsic_morphosyntactic_properties,
+            )
 
             self.dependency_graph.add_node(dependency_node)
 
-            # add articles to things which are not proper nouns
-            # ("a ball" but not "a Mom")
-            if (dependency_node.part_of_speech != PROPER_NOUN) and (
-                MASS_NOUN not in lexicon_entry.properties
-            ):
-                self.add_determiner(_object, count, dependency_node)
+            self.add_determiner(
+                _object, count, dependency_node, noun_lexicon_entry=noun_lexicon_entry
+            )
 
             # Begin work on translating modifiers of Nouns with Color
             for property_ in _object.properties:
                 if self.situation.ontology.is_subtype_of(property_, COLOR):
                     color_lexicon_entry = self._unique_lexicon_entry(property_)
                     color_node = DependencyTreeToken(
-                        color_lexicon_entry.base_form, color_lexicon_entry.part_of_speech
+                        color_lexicon_entry.base_form,
+                        color_lexicon_entry.part_of_speech,
+                        color_lexicon_entry.intrinsic_morphosyntactic_properties,
                     )
                     self.dependency_graph.add_edge(
                         color_node, dependency_node, role=ADJECTIVAL_MODIFIER
@@ -231,7 +252,19 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             _object: SituationObject,
             count: int,
             noun_dependency_node: DependencyTreeToken,
+            *,
+            noun_lexicon_entry: LexiconEntry,
         ) -> None:
+            # not "the Mom"
+            if (
+                noun_dependency_node.part_of_speech == PROPER_NOUN
+                # not "a sand"
+                or MASS_NOUN in noun_lexicon_entry.properties
+                # not "a you"
+                or noun_lexicon_entry in (I, YOU)
+            ):
+                return
+
             possession_relations = [
                 relation
                 for relation in self.situation.always_relations
@@ -312,37 +345,61 @@ class SimpleRuleBasedEnglishLanguageGenerator(
         def _translate_action_to_verb(
             self, action: Action[OntologyNode, SituationObject]
         ) -> DependencyTreeToken:
-            lexicon_entry = self._unique_lexicon_entry(action.action_type)
-            # TODO: we don't currently handle verbal morphology.
-            # https://github.com/isi-vista/adam/issues/60
-            if len(self.situation.actions) > 1:
-                raise RuntimeError(
-                    "Currently only situations with 0 or 1 actions are supported"
-                )
-            elif any(
-                property_
-                in only(
-                    only(self.situation.actions).argument_roles_to_fillers[AGENT]
-                ).properties
-                for property_ in [IS_SPEAKER, IS_ADDRESSEE]
-            ):
-                word_form = lexicon_entry.base_form
-            elif lexicon_entry.verb_form_3SG_PRS:
-                word_form = lexicon_entry.verb_form_3SG_PRS
+            verb_lexical_entry = self._unique_lexicon_entry(action.action_type)
+
+            # first, we map all the arguments to chunks of dependency tree
+            syntactic_roles_to_argument_heads = immutablesetmultidict(
+                self._translate_verb_argument(action, argument_role, filler)
+                for (argument_role, filler) in action.argument_roles_to_fillers.items()
+            )
+
+            # determine the surface form of the verb,
+            # which in English depends on the subject
+            verb_word_form: str
+            subject_heads = syntactic_roles_to_argument_heads[NOMINAL_SUBJECT]
+            if subject_heads:
+                if len(subject_heads) == 1:
+                    subject_head = only(subject_heads)
+                    if (
+                        FIRST_PERSON in subject_head.morphosyntactic_properties
+                        or SECOND_PERSON in subject_head.morphosyntactic_properties
+                    ):
+                        verb_word_form = verb_lexical_entry.base_form
+                    elif verb_lexical_entry.verb_form_3SG_PRS:
+                        verb_word_form = verb_lexical_entry.verb_form_3SG_PRS
+                    else:
+                        raise RuntimeError(
+                            f"Verb has no 3SG present tense form: {verb_lexical_entry.base_form}"
+                        )
+                else:
+                    raise RuntimeError(
+                        f"Cannot currently handle multiple subject_heads: {action}; "
+                        f"semantic role mapping: {syntactic_roles_to_argument_heads}"
+                    )
             else:
                 raise RuntimeError(
-                    f"Verb has no 3SG present tense form: {lexicon_entry.base_form}"
+                    f"Cannot currently handle an absent subject: {action}; "
+                    f"semantic role mapping: {syntactic_roles_to_argument_heads}"
                 )
+
+            # actually add the verb to the dependency tree
             verb_dependency_node = DependencyTreeToken(
-                word_form, lexicon_entry.part_of_speech
+                verb_word_form,
+                verb_lexical_entry.part_of_speech,
+                morphosyntactic_properties=verb_lexical_entry.intrinsic_morphosyntactic_properties,
             )
             self.dependency_graph.add_node(verb_dependency_node)
 
-            for (argument_role, filler) in action.argument_roles_to_fillers.items():
-                self._translate_verb_argument(
-                    action, argument_role, filler, verb_dependency_node
+            # attach the arguments computed above to the verb's dependency tree node
+            for (
+                syntactic_role,
+                argument_head,
+            ) in syntactic_roles_to_argument_heads.items():
+                self.dependency_graph.add_edge(
+                    argument_head, verb_dependency_node, role=syntactic_role
                 )
 
+            # attach modifiers of the verbs (e.g. prepositions)
             for path_modifier in self._collect_action_modifiers(action):
                 self.dependency_graph.add_edge(
                     path_modifier, verb_dependency_node, role=OBLIQUE_NOMINAL
@@ -355,15 +412,13 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             action: Action[OntologyNode, SituationObject],
             argument_role: OntologyNode,
             filler: Union[SituationObject, Region[SituationObject]],
-            verb_dependency_node: DependencyTreeToken,
-        ):
+        ) -> Tuple[DependencyRole, DependencyTreeToken]:
             # TODO: to alternation
             # https://github.com/isi-vista/adam/issues/150
             if isinstance(filler, SituationObject):
-                self.dependency_graph.add_edge(
+                return (
+                    self._translate_argument_role(action, argument_role),
                     self._noun_for_object(filler),
-                    verb_dependency_node,
-                    role=self._translate_argument_role(argument_role),
                 )
             elif isinstance(filler, Region):
                 if argument_role == GOAL:
@@ -377,12 +432,6 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                         filler.reference_object
                     )
 
-                    self.dependency_graph.add_edge(
-                        reference_object_dependency_node,
-                        verb_dependency_node,
-                        role=OBLIQUE_NOMINAL,
-                    )
-
                     preposition_dependency_node = DependencyTreeToken(
                         self._preposition_for_region_as_goal(filler), ADPOSITION
                     )
@@ -391,6 +440,8 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                         reference_object_dependency_node,
                         role=CASE_MARKING,
                     )
+
+                    return (OBLIQUE_NOMINAL, reference_object_dependency_node)
                 else:
                     raise RuntimeError(
                         "The only argument role we can currently handle regions as a filler "
@@ -399,13 +450,36 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             else:
                 raise RuntimeError(
                     f"Don't know how to handle {filler} as a filler of"
-                    f" argument slot {argument_role} of verb "
-                    f"{verb_dependency_node}"
+                    f" argument slot {argument_role} of action "
+                    f"{action}"
                 )
 
         # noinspection PyMethodMayBeStatic
-        def _translate_argument_role(self, argument_role: OntologyNode) -> DependencyRole:
-            return _ARGUMENT_ROLES_TO_DEPENDENCY_ROLES[argument_role]
+        def _translate_argument_role(
+            self,
+            action: Action[OntologyNode, SituationObject],
+            argument_role: OntologyNode,
+        ) -> DependencyRole:
+            if argument_role == AGENT:
+                # Thomas reads the book.
+                return NOMINAL_SUBJECT
+            elif argument_role == PATIENT:
+                # James smashes the Lego castle.
+                return OBJECT
+            elif argument_role == THEME:
+                if AGENT in action.argument_roles_to_fillers:
+                    # Beatrice rolls the ball.
+                    return OBJECT
+                else:
+                    # the ball falls.
+                    return NOMINAL_SUBJECT
+            elif argument_role == GOAL:
+                return OBLIQUE_NOMINAL
+            else:
+                raise RuntimeError(
+                    f"Do not know how to map argument role "
+                    f"{argument_role} of {action} to a syntactic role."
+                )
 
         def _preposition_for_region_as_goal(self, region: Region[SituationObject]) -> str:
             """
@@ -589,19 +663,6 @@ class SimpleRuleBasedEnglishLanguageGenerator(
 
 ALWAYS_USE_THE_OBJECTS = immutableset([GROUND])
 
-# the relationship of argument roles to dependency roles
-# is actually complex and verb-dependent.
-# This is just a placeholder for a more sophisticated treatment.
-_ARGUMENT_ROLES_TO_DEPENDENCY_ROLES: Mapping[
-    OntologyNode, DependencyRole
-] = immutabledict(
-    (
-        (AGENT, NOMINAL_SUBJECT),
-        (PATIENT, OBJECT),
-        (THEME, OBJECT),
-        (GOAL, OBLIQUE_NOMINAL),
-    )
-)
 
 GAILA_PHASE_1_LANGUAGE_GENERATOR = SimpleRuleBasedEnglishLanguageGenerator(
     ontology_lexicon=GAILA_PHASE_1_ENGLISH_LEXICON
