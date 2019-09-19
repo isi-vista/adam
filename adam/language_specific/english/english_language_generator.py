@@ -162,7 +162,9 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             else:
                 # Special cases for non-dynamic situations; translate if there is possession
                 possession_relations = [
-                    rel for rel in self.situation.relations if rel.relation_type == HAS
+                    rel
+                    for rel in self.situation.persisting_relations
+                    if rel.relation_type == HAS
                 ]
                 if possession_relations:
                     self._translate_relation_to_verb(only(possession_relations))
@@ -217,7 +219,6 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             ):
                 self.add_determiner(_object, count, dependency_node)
 
-
             # Begin work on translating modifiers of Nouns with Color
             for property_ in _object.properties:
                 if self.situation.ontology.is_subtype_of(property_, COLOR):
@@ -239,7 +240,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
         ) -> None:
             possession_relations = [
                 relation
-                for relation in self.situation.relations
+                for relation in self.situation.persisting_relations
                 if relation.relation_type == HAS and relation.second_slot == _object
             ]
             if len(possession_relations) > 1:
@@ -520,9 +521,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 relation.first_slot
             ]
             self.dependency_graph.add_edge(
-                first_slot_dependency_node,
-                verb_dependency_node,
-                role=self._translate_argument_role(AGENT),
+                first_slot_dependency_node, verb_dependency_node, role=NOMINAL_SUBJECT
             )
             if isinstance(relation.second_slot, SituationObject):
                 second_slot_dependency_node = self.objects_to_dependency_nodes[
@@ -537,9 +536,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     f"Unknown object type in relation {relation.second_slot}"
                 )
             self.dependency_graph.add_edge(
-                second_slot_dependency_node,
-                verb_dependency_node,
-                role=self._translate_argument_role(THEME),
+                second_slot_dependency_node, verb_dependency_node, role=OBJECT
             )
 
             return verb_dependency_node

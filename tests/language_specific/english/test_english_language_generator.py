@@ -322,7 +322,7 @@ def test_dad_put_a_cookie_in_a_box_using_my_as_dad_speaker():
     ).as_token_sequence() == ("I", "put", "a", "cookie", "in", "my", "box")
 
 
-def test_dad_put_a_cookie_in_a_box_using_dads():
+def test_dad_put_a_cookie_in_a_box_using_possession():
     dad = SituationObject(DAD)
     cookie = SituationObject(COOKIE)
     box = SituationObject(BOX)
@@ -344,7 +344,7 @@ def test_dad_put_a_cookie_in_a_box_using_dads():
 
     assert only(
         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
-    ).as_token_sequence() == ("Dad", "puts", "a", "cookie", "in", "Dad\'s", "box")
+    ).as_token_sequence() == ("Dad", "puts", "a", "cookie", "in", "a", "box")
 
 
 def test_dad_put_a_cookie_in_a_box_using_you_your():
@@ -372,40 +372,15 @@ def test_dad_put_a_cookie_in_a_box_using_you_your():
     ).as_token_sequence() == ("you", "put", "a", "cookie", "in", "your", "box")
 
 
-# def test_dad_put_a_cookie_in_a_box_using_my_as_mom_speaker():
-#     dad = SituationObject(DAD)
-#     cookie = SituationObject(COOKIE)
-#     mom = SituationObject(MOM, properties=[IS_SPEAKER])
-#     box = SituationObject(BOX)
-#     situation = HighLevelSemanticsSituation(
-#         ontology=GAILA_PHASE_1_ONTOLOGY,
-#         objects=[dad, cookie, box, mom],
-#         persisting_relations=[Relation(HAS, mom, box)],
-#         actions=[
-#             SituationAction(
-#                 PUT,
-#                 (
-#                     (AGENT, dad),
-#                     (THEME, cookie),
-#                     (GOAL, Region(reference_object=box, distance=INTERIOR)),
-#                 ),
-#             )
-#         ],
-#     )
-#
-#     assert only(
-#         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
-#     ).as_token_sequence() == ("Dad", "put", "a", "cookie", "in", "my", "box")
-
-
-def test_dad_put_a_cookie_in_a_box_using_you():
-    dad = SituationObject(DAD, properties=[IS_ADDRESSEE])
+def test_dad_put_a_cookie_in_a_box_using_my_as_mom_speaker():
+    dad = SituationObject(DAD)
     cookie = SituationObject(COOKIE)
+    mom = SituationObject(MOM, properties=[IS_SPEAKER])
     box = SituationObject(BOX)
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         objects=[dad, cookie, box],
-        persisting_relations=[],
+        persisting_relations=[Relation(HAS, mom, box)],
         actions=[
             SituationAction(
                 PUT,
@@ -420,22 +395,23 @@ def test_dad_put_a_cookie_in_a_box_using_you():
 
     assert only(
         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
-    ).as_token_sequence() == ("you", "put", "a", "cookie", "in", "a", "box")
+    ).as_token_sequence() == ("Dad", "puts", "a", "cookie", "in", "my", "box")
 
 
-def test_dad_put_a_cookie_in_a_box_using_my_as_dad_speaker():
-    dad = SituationObject(DAD, properties=[IS_SPEAKER])
+def test_I_put_a_cookie_in_dads_box_using_my_as_mom_speaker():
+    dad = SituationObject(DAD)
     cookie = SituationObject(COOKIE)
+    mom = SituationObject(MOM, properties=[IS_SPEAKER])
     box = SituationObject(BOX)
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        objects=[dad, cookie, box],
-        relations=[Relation(HAS, dad, box)],
+        objects=[mom, cookie, box, dad],
+        persisting_relations=[Relation(HAS, dad, box)],
         actions=[
             SituationAction(
                 PUT,
                 (
-                    (AGENT, dad),
+                    (AGENT, mom),
                     (THEME, cookie),
                     (GOAL, Region(reference_object=box, distance=INTERIOR)),
                 ),
@@ -445,58 +421,7 @@ def test_dad_put_a_cookie_in_a_box_using_my_as_dad_speaker():
 
     assert only(
         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
-    ).as_token_sequence() == ("I", "put", "a", "cookie", "in", "my", "box")
-
-
-def test_dad_put_a_cookie_in_a_box_using_you_your():
-    dad = SituationObject(DAD, properties=[IS_ADDRESSEE])
-    cookie = SituationObject(COOKIE)
-    box = SituationObject(BOX)
-    situation = HighLevelSemanticsSituation(
-        ontology=GAILA_PHASE_1_ONTOLOGY,
-        objects=[dad, cookie, box],
-        relations=[Relation(HAS, dad, box)],
-        actions=[
-            SituationAction(
-                PUT,
-                (
-                    (AGENT, dad),
-                    (THEME, cookie),
-                    (GOAL, Region(reference_object=box, distance=INTERIOR)),
-                ),
-            )
-        ],
-    )
-
-    assert only(
-        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
-    ).as_token_sequence() == ("you", "put", "a", "cookie", "in", "your", "box")
-
-
-# def test_dad_put_a_cookie_in_a_box_using_my_as_mom_speaker():
-#     dad = SituationObject(DAD)
-#     cookie = SituationObject(COOKIE)
-#     mom = SituationObject(MOM, properties=[IS_SPEAKER])
-#     box = SituationObject(BOX)
-#     situation = HighLevelSemanticsSituation(
-#         ontology=GAILA_PHASE_1_ONTOLOGY,
-#         objects=[dad, cookie, box, mom],
-#         relations=[Relation(HAS, mom, box)],
-#         actions=[
-#             SituationAction(
-#                 PUT,
-#                 (
-#                     (AGENT, dad),
-#                     (THEME, cookie),
-#                     (GOAL, Region(reference_object=box, distance=INTERIOR)),
-#                 ),
-#             )
-#         ],
-#     )
-#
-#     assert only(
-#         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
-#     ).as_token_sequence() == ("Dad", "put", "a", "cookie", "in", "my", "box")
+    ).as_token_sequence() == ("I", "put", "a", "cookie", "in", "Dad", "\'s", "box")
 
 
 def test_dad_has_a_cookie():
@@ -505,7 +430,7 @@ def test_dad_has_a_cookie():
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         objects=[dad, cookie],
-        relations=[Relation(HAS, dad, cookie)],
+        persisting_relations=[Relation(HAS, dad, cookie)],
         actions=[],
     )
 
