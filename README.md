@@ -18,6 +18,11 @@ Documentation can be found [here](https://adam-language-learner.readthedocs.io/e
 
 1. Create a Python 3.6 Anaconda environment (or your favorite other means of creating a virtual environment): `conda create --name adam python=3.6` followed by `conda activate adam`.
 2. `pip install -r requirements.txt`
+3. Make a file under `parameters` called `root.params` which contains:
+    ```
+    adam_root: PATH_TO_WORKING_COPY_OF_THIS_REPO
+    adam_experiment_root: PATH_OUTSIDE_WORKING_COPY_TO_WRITE_EXPERIMENT_DATA_TO
+    ```
 
 # Documentation
 
@@ -28,6 +33,10 @@ make html
 ```
 
 The docs will be under `docs/_build/html`
+
+# To generate an HTML dump of the curriculum
+
+Run `adam.curriculum_to_html parameters/curriculum_to_html.params`
 
 # Contributing
 
