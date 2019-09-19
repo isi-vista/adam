@@ -168,7 +168,7 @@ class _PerceptionGeneration:
         # as holding both before and after any actions
         self._relation_perceptions.extend(
             self._perceive_relation(relation)
-            for relation in self._situation.persisting_relations
+            for relation in self._situation.always_relations
         )
 
         # Other relations implied by actions will be handled during action translation below.
@@ -234,7 +234,7 @@ class _PerceptionGeneration:
     def _perceive_regions(self) -> None:
         # gather all places a region can appear in the situation representation
         possible_regions = chain(
-            (relation.second_slot for relation in self._situation.persisting_relations),
+            (relation.second_slot for relation in self._situation.always_relations),
             (
                 filler
                 for action in self._situation.actions

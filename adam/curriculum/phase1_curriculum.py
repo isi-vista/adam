@@ -19,7 +19,7 @@ from adam.ontology.phase1_ontology import (
     GROUND,
     on,
     IS_BODY_PART,
-    HAS, PERSON, INANIMATE_OBJECT)
+    HAS, PERSON, INANIMATE_OBJECT, bigger_than)
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
@@ -136,7 +136,7 @@ _GROUND = object_variable("the ground", GROUND)
 
 _OBJECT_ON_GROUND_TEMPLATE = Phase1SituationTemplate(
     object_variables=[_GROUND, _NOT_A_BODY_PART],
-    asserted_persisting_relations=[on(_NOT_A_BODY_PART, _GROUND)],
+    asserted_always_relations=[on(_NOT_A_BODY_PART, _GROUND)],
 )
 
 _OBJECT_ON_GROUND_SUB_CURRICULUM = _phase1_instances(
@@ -151,7 +151,8 @@ PERSON_HAS_OBJECT_TEMPLATE = Phase1SituationTemplate(
     object_variables=[
         _person_0,
         _inanimate_object_0, _LEARNER_OBJECT],
-    asserted_persisting_relations=[Relation(HAS, _person_0, _inanimate_object_0)]
+    asserted_always_relations=[Relation(HAS, _person_0, _inanimate_object_0)],
+    constraining_relations=[bigger_than(_person_0, _inanimate_object_0)]
 )
 
 PERSON_HAS_OBJECT_SUB_CURRICULUM = _phase1_instances(

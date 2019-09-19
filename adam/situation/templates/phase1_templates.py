@@ -5,7 +5,7 @@ import random
 from _random import Random
 from abc import ABC, abstractmethod
 from itertools import product
-from typing import AbstractSet, Iterable, Mapping, Sequence, TypeVar, Union
+from typing import AbstractSet, Iterable, Mapping, Sequence, TypeVar, Union, Any
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
@@ -47,13 +47,22 @@ class Phase1SituationTemplate(SituationTemplate):
     object_variables: ImmutableSet["TemplateObjectVariable"] = attrib(
         converter=_to_immutableset
     )
-    asserted_persisting_relations: ImmutableSet[
+    asserted_always_relations: ImmutableSet[
         Relation["TemplateObjectVariable"]
     ] = attrib(converter=flatten_relations, default=immutableset())
     """
     This are relations we assert to hold true in the situation.
     This should be used to specify additional relations
     which cannot be deduced from the types of the objects alone.
+    """
+    constraining_relations: ImmutableSet[
+        Relation["TemplateObjectVariable"]
+    ] = attrib(converter=flatten_relations, default=immutableset())
+    """
+    These are relations which we required to be true
+    and are used in selecting assignments to object variables.
+    Our ability to enforce these constraints efficiently is very limited,
+    so don't make them too complex or constraining!
     """
 
     def __attrs_post_init__(self) -> None:
@@ -124,12 +133,15 @@ class _Phase1SituationTemplateGenerator(
             if isinstance(property_, TemplatePropertyVariable)
         )
 
+        failures_in_a_row = 0
+
         for variable_assignment in self._variable_assigner.variable_assignments(
             ontology=self.ontology,
             object_variables=template.object_variables,
             property_variables=property_variables,
             chooser=chooser,
         ):
+
             # instantiate all objects in the situation according to the variable assignment.
             object_var_to_instantiations: Mapping[
                 TemplateObjectVariable, SituationObject
@@ -149,14 +161,38 @@ class _Phase1SituationTemplateGenerator(
                 )
                 for obj_var in template.object_variables
             )
-            yield HighLevelSemanticsSituation(
-                ontology=self.ontology,
-                objects=object_var_to_instantiations.values(),
-                persisting_relations=[
-                    relation.copy_remapping_objects(object_var_to_instantiations)
-                    for relation in template.asserted_persisting_relations
-                ]
-            )
+            situation = HighLevelSemanticsSituation(ontology=self.ontology,
+                                                    objects=object_var_to_instantiations.values(),
+                                                    always_relations=[
+                                                        relation.copy_remapping_objects(
+                                                            object_var_to_instantiations) for
+                                                        relation in
+                                                        template.asserted_always_relations])
+            if self._satisfies_constraints(template, situation, object_var_to_instantiations):
+                failures_in_a_row = 0
+                yield situation
+            else:
+                failures_in_a_row += 1
+                if failures_in_a_row >= 250:
+                    raise RuntimeError(f"Failed to find a satisfying variable assignment "
+                                       f"for situation template constraints after "
+                                       f"{failures_in_a_row} consecutive attempts."
+                                       f"Try shifting constraints from relations to properties.")
+                continue
+
+    def _satisfies_constraints(self,
+                               template: Phase1SituationTemplate,
+                               instantiated_situation: HighLevelSemanticsSituation,
+                               variable_binding: Mapping[
+                "TemplateObjectVariable", SituationObject
+            ]) -> bool:
+        for constraining_relation in template.constraining_relations:
+            if not instantiated_situation.relation_always_holds(
+                constraining_relation.copy_remapping_objects(variable_binding)
+            ):
+                return False
+        return True
+
 
 
 class _TemplateVariable(Protocol):

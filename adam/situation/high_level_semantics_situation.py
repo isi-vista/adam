@@ -26,7 +26,7 @@ class HighLevelSemanticsSituation(Situation):
     """
     All the objects present in a `Situation`.
     """
-    persisting_relations: ImmutableSet[Relation[SituationObject]] = attrib(
+    always_relations: ImmutableSet[Relation[SituationObject]] = attrib(
         converter=flatten_relations, default=immutableset()
     )
     """
@@ -79,9 +79,14 @@ class HighLevelSemanticsSituation(Situation):
     Bool representing whether the situation has any actions, i.e is dynamic. 
     """
 
+    def relation_always_holds(self, query_relation: Relation[SituationObject]) -> bool:
+        # TODO: extend to handle transitive relations
+        # https://github.com/isi-vista/adam/issues/195
+        return query_relation in self.always_relations
+
     def __attrs_post_init__(self) -> None:
         check_arg(self.objects, "A situation must contain at least one object")
-        for relation in self.persisting_relations:
+        for relation in self.always_relations:
             if not isinstance(relation.first_slot, SituationObject) or not isinstance(
                 relation.second_slot, (SituationObject, Region)
             ):
@@ -90,7 +95,7 @@ class HighLevelSemanticsSituation(Situation):
                     f"but got {relation}"
                 )
         self.is_dynamic = len(self.actions) > 0
-        for relation in self.persisting_relations:
+        for relation in self.always_relations:
             if (
                 isinstance(relation.second_slot, Region)
                 and relation.second_slot.reference_object not in self.objects
@@ -136,7 +141,7 @@ class HighLevelSemanticsSituation(Situation):
         # https://github.com/isi-vista/adam/issues/62
         lines = ["{"]
         lines.extend(f"\t{obj!r}" for obj in self.objects)
-        lines.extend(f"\t{relation!r}" for relation in self.persisting_relations)
+        lines.extend(f"\t{relation!r}" for relation in self.always_relations)
         lines.extend(f"\t{action!r}" for action in self.actions)
         lines.append("}")
         return "\n".join(lines)

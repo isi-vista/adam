@@ -146,7 +146,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
 
             # We only translate those relations the user specifically calls out,
             # not the many "background" relations which are also true.
-            for persisting_relation in self.situation.persisting_relations:
+            for persisting_relation in self.situation.always_relations:
                 self._translate_relation(persisting_relation)
 
             for action in self.situation.actions:
@@ -234,7 +234,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
         ) -> None:
             possession_relations = [
                 relation
-                for relation in self.situation.persisting_relations
+                for relation in self.situation.always_relations
                 if relation.relation_type == HAS and relation.second_slot == _object
             ]
             if len(possession_relations) > 1:
