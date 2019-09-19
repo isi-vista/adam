@@ -705,6 +705,20 @@ class _PerceptionGeneration:
             self._relation_perceptions.append(
                 Relation(PART_OF, root_object_perception, sub_object_perception)
             )
+            # every sub-component inherits any prototypical color the parent
+            # object has
+            if situation_object:
+                colors = immutableset(
+                    property_
+                    for property_ in self._generator.ontology.properties_for_node(
+                        situation_object.ontology_node
+                    )
+                    if self._generator.ontology.is_subtype_of(property_, COLOR)
+                )
+                if colors:
+                    self._property_assertion_perceptions.append(
+                        HasColor(sub_object_perception, self._chooser.choice(colors))
+                    )
 
         # translate sub-object relations specified by the object's structural schema
         for sub_object_relation in schema.sub_object_relations:
