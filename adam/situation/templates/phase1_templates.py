@@ -20,6 +20,7 @@ from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import COLOR, GAILA_PHASE_1_ONTOLOGY, LEARNER, GROUND
 from adam.ontology.selectors import ByHierarchyAndProperties, Is, OntologyNodeSelector
 from adam.random_utils import RandomChooser, SequenceChooser
+from adam.relation import Relation
 from adam.situation import SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.situation.templates import (
@@ -46,6 +47,14 @@ class Phase1SituationTemplate(SituationTemplate):
     object_variables: ImmutableSet["TemplateObjectVariable"] = attrib(
         converter=_to_immutableset
     )
+    asserted_relations: ImmutableSet[Relation["TemplateObjectVariable"]] = attrib(
+        converter=_to_immutableset, default=immutableset()
+    )
+    """
+    This are relations we assert to hold true in the situation.
+    This should be used to specify additional relations
+    which cannot be deduced from the types of the objects alone.
+    """
 
     def __attrs_post_init__(self) -> None:
         check_arg(self.object_variables, "A situation must contain at least one object")
@@ -137,6 +146,8 @@ class _Phase1SituationTemplateGenerator(
                     )
                     for obj_var in template.object_variables
                 ],
+                relations=[relation.copy_remapping_objects(variable_assignment.object_variables_to_fillers) for relation in
+                           template.asserted_relations]
             )
 
 
