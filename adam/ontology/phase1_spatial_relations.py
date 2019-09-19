@@ -5,7 +5,7 @@ from attr.validators import instance_of, in_, optional
 from vistautils.preconditions import check_arg
 
 
-@attrs(frozen=True, slots=True)
+@attrs(frozen=True, slots=True, repr=False)
 class Distance:
     """
     A distance of the sort used by Landau and Jackendoff
@@ -13,6 +13,9 @@ class Distance:
     """
 
     name: str = attrib(validator=instance_of(str))
+
+    def __repr__(self) -> str:
+        return self.name
 
 
 INTERIOR = Distance("interor")
