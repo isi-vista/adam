@@ -39,10 +39,25 @@ from adam.language_specific.english.english_syntax import (
     SIMPLE_ENGLISH_DEPENDENCY_TREE_LINEARIZER,
 )
 from adam.ontology import IN_REGION, OntologyNode
-from adam.ontology.phase1_ontology import AGENT, COLOR, GOAL, GROUND, IS_ADDRESSEE, IS_SPEAKER, \
-    LEARNER, PATIENT, THEME
-from adam.ontology.phase1_spatial_relations import (DISTAL, EXTERIOR_BUT_IN_CONTACT,
-                                                    GRAVITATIONAL_AXIS, INTERIOR, PROXIMAL, Region)
+from adam.ontology.phase1_ontology import (
+    AGENT,
+    COLOR,
+    GOAL,
+    GROUND,
+    IS_ADDRESSEE,
+    IS_SPEAKER,
+    LEARNER,
+    PATIENT,
+    THEME,
+)
+from adam.ontology.phase1_spatial_relations import (
+    DISTAL,
+    EXTERIOR_BUT_IN_CONTACT,
+    GRAVITATIONAL_AXIS,
+    INTERIOR,
+    PROXIMAL,
+    Region,
+)
 from adam.random_utils import SequenceChooser
 from adam.situation import SituationAction, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation

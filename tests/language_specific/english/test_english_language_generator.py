@@ -251,6 +251,7 @@ def test_situation_with_ground():
         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
     ).as_token_sequence() == ("Dad", "puts", "a", "cookie", "in", "a", "box")
 
+
 def test_dad_put_a_cookie_in_a_box_using_i():
     dad = SituationObject(DAD, properties=[IS_SPEAKER])
     cookie = SituationObject(COOKIE)

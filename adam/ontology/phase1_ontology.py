@@ -1155,7 +1155,7 @@ GAILA_PHASE_1_ONTOLOGY = Ontology(
             (HAND, _HAND_SCHEMA),
             (CAR, _CAR_SCHEMA),
             (TRUCK, _TRUCK_SCHEMA),
-            (GROUND, _GROUND_SCHEMA)
+            (GROUND, _GROUND_SCHEMA),
         ]
     ),
     action_to_description=immutabledict(

@@ -321,6 +321,7 @@ def test_explicit_ground():
     # assert that a second "ground" object was not generated
     assert object_handles == {"ground_0"}
 
+
 def test_perceive_relations_during():
     learner_perception = _PERCEPTION_GENERATOR.generate_perception(
         make_bird_flies_over_a_house(), chooser=RandomChooser.for_seed(0)
