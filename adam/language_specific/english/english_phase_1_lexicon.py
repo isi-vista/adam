@@ -52,12 +52,16 @@ from adam.ontology.phase1_ontology import (
     WHITE,
     TRANSPARENT,
     HAS,
+    GROUND,
+    GAILA_PHASE_1_ONTOLOGY,
 )
 
 MASS_NOUN = LexiconProperty("mass-noun")
 
 GAILA_PHASE_1_ENGLISH_LEXICON = OntologyLexicon(
-    (
+    ontology=GAILA_PHASE_1_ONTOLOGY,
+    ontology_node_to_word=(
+        (GROUND, LexiconEntry("ground", NOUN, plural_form="grounds")),
         (MOM, LexiconEntry("Mom", PROPER_NOUN)),
         (BALL, LexiconEntry("ball", NOUN, plural_form="balls")),
         (TABLE, LexiconEntry("table", NOUN, plural_form="tables")),
@@ -103,5 +107,5 @@ GAILA_PHASE_1_ENGLISH_LEXICON = OntologyLexicon(
         (BLACK, LexiconEntry("black", ADJECTIVE)),
         (WHITE, LexiconEntry("white", ADJECTIVE)),
         (TRANSPARENT, LexiconEntry("transparent", ADJECTIVE)),
-    )
+    ),
 )

@@ -398,7 +398,7 @@ def test_dad_put_a_cookie_in_a_box_using_my_as_mom_speaker():
     ).as_token_sequence() == ("Dad", "puts", "a", "cookie", "in", "my", "box")
 
 
-def test_I_put_a_cookie_in_dads_box_using_my_as_mom_speaker():
+def test_i_put_a_cookie_in_dads_box_using_my_as_mom_speaker():
     dad = SituationObject(DAD)
     cookie = SituationObject(COOKIE)
     mom = SituationObject(MOM, properties=[IS_SPEAKER])
@@ -421,7 +421,7 @@ def test_I_put_a_cookie_in_dads_box_using_my_as_mom_speaker():
 
     assert only(
         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
-    ).as_token_sequence() == ("I", "put", "a", "cookie", "in", "Dad", "\'s", "box")
+    ).as_token_sequence() == ("I", "put", "a", "cookie", "in", "Dad", "'s", "box")
 
 
 def test_dad_has_a_cookie():

@@ -135,7 +135,9 @@ class Region(Generic[ReferenceObjectT]):
             else None,
         )
 
-    def accumulate_referenced_objects(self, object_accumulator: List[ReferenceObjectT]) -> None:
+    def accumulate_referenced_objects(
+        self, object_accumulator: List[ReferenceObjectT]
+    ) -> None:
         r"""
         Adds all objects referenced by this `Region` to *object_accumulator*.
         """

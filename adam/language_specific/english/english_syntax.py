@@ -20,6 +20,7 @@ from adam.language.dependency.universal_dependencies import (
     NUMERIC_MODIFIER,
     ADJECTIVAL_MODIFIER,
     NOMINAL_MODIFIER_POSSESSIVE,
+    PROPER_NOUN,
 )
 
 _ENGLISH_HEAD_TO_ROLE_ORDER: ImmutableDict[
@@ -41,6 +42,7 @@ _ENGLISH_HEAD_TO_ROLE_ORDER: ImmutableDict[
                 HEAD,
             ),
         ),
+        (PROPER_NOUN, (ADJECTIVAL_MODIFIER, HEAD, CASE_MARKING)),
     ]
 )
 
