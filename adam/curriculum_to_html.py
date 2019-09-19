@@ -89,6 +89,7 @@ class CurriculumToHtmlDumper:
         instance group with each "instance" as an indiviudal section on the page.
         """
         with open(output_destination, "w") as html_out:
+            html_out.write(f"<head>\n\t<style>{CSS}\n\t</style>\n</head>")
             html_out.write(f"<h1>{title} - {instance_group.name()}</h1>\n")
             for (instance_number, (situation, dependency_tree, perception)) in enumerate(
                 instance_group.instances()
@@ -224,5 +225,18 @@ class CurriculumToHtmlDumper:
         return " ".join(linguistic.as_token_sequence())
 
 
+CSS = """
+body {
+    font-size: 1em;
+    font-family: sans-serif;
+}
+
+table td { 
+    padding: 1em; 
+    background-color: #FAE5D3 ;
+}
+"""
+
 if __name__ == "__main__":
     parameters_only_entry_point(main, usage_message=USAGE_MESSAGE)
+
