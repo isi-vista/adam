@@ -340,6 +340,7 @@ class CurriculumToHtmlDumper:
         graph = DiGraph()
         root = ObjectPerception("root")
         graph.add_node(root)
+        expressed_relations = set()
 
         for object_ in all_objects:
             graph.add_node(object_)
@@ -348,15 +349,15 @@ class CurriculumToHtmlDumper:
         for relation_ in all_relations:
             if relation_.relation_type == PART_OF:
                 graph.add_edge(relation_.first_slot, relation_.second_slot)
+                expressed_relations.add(relation_)
 
         # Next, we render objects, together with their properties, using preorder DFS Traversal
         # We also add in `In Region` relationships at this step for objects which have them.
-        output_text.append("\n\t\t\t\t\t<h5>Perceived Objects</h5>")
+        output_text.append("\n\t\t\t\t\t<h5>Perceived Objects</h5>\n\t\t\t\t\t<ul>")
         visited = set()
         region_relations = immutableset(
             region for region in all_relations if region.relation_type == IN_REGION
         )
-        expressed_relations = set()
 
         # This loop doesn't quite get the tab spacing right. It could at the cost of increased
         # complexity. Would need to track the "depth" we are currently at.
@@ -389,7 +390,7 @@ class CurriculumToHtmlDumper:
 
         # Finally we render all relations between objects
         if all_relations:
-            output_text.append("\t\t\t\t\t<h5>Relations</h5>\n\t\t\t\t\t<ul>")
+            output_text.append("\t\t\t\t\t<h5>Other Relations</h5>\n\t\t\t\t\t<ul>")
 
             for relation in all_relations:
                 if relation not in expressed_relations:
