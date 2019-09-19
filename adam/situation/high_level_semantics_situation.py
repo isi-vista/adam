@@ -5,6 +5,7 @@ from immutablecollections.converter_utils import _to_immutableset
 from more_itertools import flatten
 from vistautils.preconditions import check_arg
 
+from adam.ontology import OntologyNode
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_spatial_relations import Region
 from adam.relation import Relation, flatten_relations
@@ -68,7 +69,7 @@ class HighLevelSemanticsSituation(Situation):
     Do not specify those relations here which are *implied* by any actions which occur.
     Those are handled automatically. 
     """
-    actions: ImmutableSet[Action[SituationObject]] = attrib(
+    actions: ImmutableSet[Action[OntologyNode, SituationObject]] = attrib(
         converter=_to_immutableset, default=immutableset()
     )
     """

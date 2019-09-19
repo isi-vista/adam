@@ -5,7 +5,7 @@ import random
 from _random import Random
 from abc import ABC, abstractmethod
 from itertools import product
-from typing import AbstractSet, Iterable, Mapping, Sequence, TypeVar, Union
+from typing import AbstractSet, Iterable, Mapping, Sequence, TypeVar, Union, Optional
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
@@ -15,13 +15,19 @@ from more_itertools import take
 from typing_extensions import Protocol
 from vistautils.preconditions import check_arg
 
-from adam.ontology import CAN_FILL_TEMPLATE_SLOT, OntologyNode, PROPERTY, THING
+from adam.ontology import CAN_FILL_TEMPLATE_SLOT, OntologyNode, PROPERTY, THING, ACTION
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import COLOR, GAILA_PHASE_1_ONTOLOGY, GROUND, LEARNER
-from adam.ontology.selectors import ByHierarchyAndProperties, Is, OntologyNodeSelector
+from adam.ontology.selectors import (
+    ByHierarchyAndProperties,
+    Is,
+    OntologyNodeSelector,
+    AndOntologySelector,
+    SubcategorizationSelector,
+)
 from adam.random_utils import RandomChooser, SequenceChooser
 from adam.relation import Relation, flatten_relations
-from adam.situation import SituationObject
+from adam.situation import SituationObject, Action
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.situation.templates import (
     SituationTemplate,
@@ -64,6 +70,9 @@ class Phase1SituationTemplate(SituationTemplate):
     Our ability to enforce these constraints efficiently is very limited,
     so don't make them too complex or constraining!
     """
+    actions: ImmutableSet[
+        Action["TemplateActionVariable", "TemplateObjectVariable"]
+    ] = attrib(converter=_to_immutableset, default=immutableset())
 
     def __attrs_post_init__(self) -> None:
         check_arg(self.object_variables, "A situation must contain at least one object")
@@ -256,6 +265,21 @@ class TemplatePropertyVariable(SituationTemplateObject, _TemplateVariable):
     )
 
 
+@attrs(frozen=True, slots=True, cmp=False)
+class TemplateActionVariable(SituationTemplateObject, _TemplateVariable):
+    r"""
+    A variable in a `Phase1SituationTemplate`
+    which could be filled by any action type
+    whose `OntologyNode` is selected by *node_selector*.
+
+    We provide `action_variable` to make creating `TemplateActionVariable`\ s more convenient.
+    """
+
+    node_selector: OntologyNodeSelector = attrib(
+        validator=instance_of(OntologyNodeSelector)
+    )
+
+
 def object_variable(
     debug_handle: str,
     root_node: OntologyNode = THING,
@@ -321,6 +345,35 @@ def property_variable(
             descendents_of=root_node, required_properties=real_required_properties
         ),
     )
+
+
+def action_variable(
+    debug_handle: str,
+    root_node: OntologyNode = ACTION,
+    *,
+    with_subcategorization_frame: Optional[Iterable[OntologyNode]] = None,
+    with_properties: Iterable[OntologyNode] = immutableset(),
+) -> TemplatePropertyVariable:
+    r"""
+    Create a `TemplatePropertyVariable` with the specified *debug_handle*
+    which can be filled by any property whose `OntologyNode` is a descendant of
+    (or is exactly) *root_node*
+    and which possesses all properties in *with_properties*.
+    """
+    hierarchy_and_properties_selector = ByHierarchyAndProperties(
+        descendents_of=root_node, required_properties=with_properties
+    )
+
+    selector: OntologyNodeSelector
+    # it could be empty for e.g. rain or snow
+    if with_subcategorization_frame is not None:
+        selector = AndOntologySelector(
+            [
+                hierarchy_and_properties_selector,
+                SubcategorizationSelector(with_subcategorization_frame),
+            ]
+        )
+    return TemplatePropertyVariable(debug_handle, selector)
 
 
 def color_variable(debug_handle: str) -> TemplatePropertyVariable:

@@ -23,6 +23,7 @@ from adam.ontology.phase1_ontology import (
     PERSON,
     INANIMATE_OBJECT,
     bigger_than,
+    THEME,
 )
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -32,7 +33,7 @@ from adam.perception.high_level_semantics_situation_to_developmental_primitive_p
 )
 from adam.random_utils import RandomChooser
 from adam.relation import Relation
-from adam.situation import SituationObject
+from adam.situation import SituationObject, Action
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
@@ -40,6 +41,7 @@ from adam.situation.templates.phase1_templates import (
     color_variable,
     object_variable,
     sampled,
+    action_variable,
 )
 
 _CHOOSER = RandomChooser.for_seed(0)
@@ -167,6 +169,29 @@ PERSON_HAS_OBJECT_TEMPLATE = Phase1SituationTemplate(
 #         max_to_sample=100,
 #     ),
 # )
+
+_VERB_WITH_ONLY_THEME = action_variable(
+    "verb_with_only_theme", with_subcategorization_frame=[THEME]
+)
+
+_ANY_OBJECT_INTRANSITIVES_TEMPLATE = Phase1SituationTemplate(
+    object_variables=[_ARBITRARY_OBJECT],
+    actions=[
+        Action(
+            action_type=_VERB_WITH_ONLY_THEME,
+            argument_roles_to_fillers=[(THEME, _ARBITRARY_OBJECT)],
+        )
+    ],
+)
+
+_ANY_OBJECT_INTRANSITIVES_SUBCURRICULUM = _phase1_instances(
+    "any object with an intransitive verb",
+    all_possible(
+        _ANY_OBJECT_INTRANSITIVES_TEMPLATE,
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        chooser=_CHOOSER,
+    ),
+)
 
 GAILA_PHASE_1_CURRICULUM = [
     EACH_OBJECT_BY_ITSELF_SUB_CURRICULUM,

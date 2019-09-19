@@ -1062,12 +1062,12 @@ _DRINK_ACTION_DESCRIPTION = ActionDescription(
     postconditions=[inside(_DRINK_THEME, _DRINK_AGENT)],
 )
 
-_FALL_PATIENT = SituationObject(THING)
+_FALL_THEME = SituationObject(THING)
 
 _FALL_ACTION_DESCRIPTION = ActionDescription(
-    frames=[ActionDescriptionFrame({AGENT: _FALL_PATIENT})],
+    frames=[ActionDescriptionFrame({THEME: _FALL_THEME})],
     during=DuringAction(
-        paths=[(_FALL_PATIENT, SpatialPath(operator=TOWARD, reference_object=GROUND))]
+        paths=[(_FALL_THEME, SpatialPath(operator=TOWARD, reference_object=GROUND))]
     ),
 )
 

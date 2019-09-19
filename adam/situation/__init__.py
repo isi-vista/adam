@@ -129,18 +129,19 @@ class LocatedObjectSituation(Situation):
     """
 
 
+_ActionTypeT = TypeVar("_ActionTypeT")
 _ObjectT = TypeVar("_ObjectT")
 
 
 @attrs(frozen=True, repr=False)
-class Action(Generic[_ObjectT]):
+class Action(Generic[_ActionTypeT, _ObjectT]):
     r"""
     An action.
 
     This can be bound to `SituationObject` to represent actions in `Situation`\ s
     or to `TemplateObjectVariable`\ s to represent actions in situation templates.
     """
-    action_type: OntologyNode = attrib(validator=instance_of(OntologyNode))
+    action_type: _ActionTypeT = attrib()
     argument_roles_to_fillers: ImmutableSetMultiDict[
         OntologyNode, Union[_ObjectT, Region[_ObjectT]]
     ] = attrib(converter=_to_immutablesetmultidict, default=immutablesetmultidict())

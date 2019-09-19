@@ -298,7 +298,7 @@ class _PerceptionGeneration:
 
     def _bind_action_objects_variables_to_perceived_objects(
         self,
-        situation_action: Action[SituationObject],
+        situation_action: Action[OntologyNode, SituationObject],
         action_description: ActionDescription,
     ) -> Mapping[SituationObject, Union[Region[ObjectPerception], ObjectPerception]]:
         if len(action_description.frames) != 1:
