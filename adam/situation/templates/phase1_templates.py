@@ -5,7 +5,7 @@ import random
 from _random import Random
 from abc import ABC, abstractmethod
 from itertools import product
-from typing import AbstractSet, Iterable, Mapping, Sequence, TypeVar, Union, Any
+from typing import AbstractSet, Iterable, Mapping, Sequence, TypeVar, Union
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
@@ -17,7 +17,7 @@ from vistautils.preconditions import check_arg
 
 from adam.ontology import CAN_FILL_TEMPLATE_SLOT, OntologyNode, PROPERTY, THING
 from adam.ontology.ontology import Ontology
-from adam.ontology.phase1_ontology import COLOR, GAILA_PHASE_1_ONTOLOGY, LEARNER, GROUND
+from adam.ontology.phase1_ontology import COLOR, GAILA_PHASE_1_ONTOLOGY, GROUND, LEARNER
 from adam.ontology.selectors import ByHierarchyAndProperties, Is, OntologyNodeSelector
 from adam.random_utils import RandomChooser, SequenceChooser
 from adam.relation import Relation, flatten_relations
@@ -47,17 +47,17 @@ class Phase1SituationTemplate(SituationTemplate):
     object_variables: ImmutableSet["TemplateObjectVariable"] = attrib(
         converter=_to_immutableset
     )
-    asserted_always_relations: ImmutableSet[
-        Relation["TemplateObjectVariable"]
-    ] = attrib(converter=flatten_relations, default=immutableset())
+    asserted_always_relations: ImmutableSet[Relation["TemplateObjectVariable"]] = attrib(
+        converter=flatten_relations, default=immutableset()
+    )
     """
     This are relations we assert to hold true in the situation.
     This should be used to specify additional relations
     which cannot be deduced from the types of the objects alone.
     """
-    constraining_relations: ImmutableSet[
-        Relation["TemplateObjectVariable"]
-    ] = attrib(converter=flatten_relations, default=immutableset())
+    constraining_relations: ImmutableSet[Relation["TemplateObjectVariable"]] = attrib(
+        converter=flatten_relations, default=immutableset()
+    )
     """
     These are relations which we required to be true
     and are used in selecting assignments to object variables.
@@ -73,7 +73,7 @@ def all_possible(
     situation_template: Phase1SituationTemplate,
     *,
     ontology: Ontology,
-    chooser: SequenceChooser
+    chooser: SequenceChooser,
 ) -> Iterable[HighLevelSemanticsSituation]:
     """
     Generator for all possible instantiations of *situation_template* with *ontology*.
@@ -88,7 +88,7 @@ def sampled(
     *,
     ontology: Ontology,
     chooser: SequenceChooser,
-    max_to_sample: int
+    max_to_sample: int,
 ) -> Iterable[HighLevelSemanticsSituation]:
     """
     Gets *max_to_sample* instantiations of *situation_template* with *ontology*
@@ -123,7 +123,7 @@ class _Phase1SituationTemplateGenerator(
         *,
         chooser: SequenceChooser = Factory(
             RandomChooser.for_seed
-        )  # pylint:disable=unused-argument
+        ),  # pylint:disable=unused-argument
     ) -> Iterable[HighLevelSemanticsSituation]:
         # gather property variables from object variables
         property_variables = immutableset(
@@ -161,38 +161,42 @@ class _Phase1SituationTemplateGenerator(
                 )
                 for obj_var in template.object_variables
             )
-            situation = HighLevelSemanticsSituation(ontology=self.ontology,
-                                                    objects=object_var_to_instantiations.values(),
-                                                    always_relations=[
-                                                        relation.copy_remapping_objects(
-                                                            object_var_to_instantiations) for
-                                                        relation in
-                                                        template.asserted_always_relations])
-            if self._satisfies_constraints(template, situation, object_var_to_instantiations):
+            situation = HighLevelSemanticsSituation(
+                ontology=self.ontology,
+                objects=object_var_to_instantiations.values(),
+                always_relations=[
+                    relation.copy_remapping_objects(object_var_to_instantiations)
+                    for relation in template.asserted_always_relations
+                ],
+            )
+            if self._satisfies_constraints(
+                template, situation, object_var_to_instantiations
+            ):
                 failures_in_a_row = 0
                 yield situation
             else:
                 failures_in_a_row += 1
                 if failures_in_a_row >= 250:
-                    raise RuntimeError(f"Failed to find a satisfying variable assignment "
-                                       f"for situation template constraints after "
-                                       f"{failures_in_a_row} consecutive attempts."
-                                       f"Try shifting constraints from relations to properties.")
+                    raise RuntimeError(
+                        f"Failed to find a satisfying variable assignment "
+                        f"for situation template constraints after "
+                        f"{failures_in_a_row} consecutive attempts."
+                        f"Try shifting constraints from relations to properties."
+                    )
                 continue
 
-    def _satisfies_constraints(self,
-                               template: Phase1SituationTemplate,
-                               instantiated_situation: HighLevelSemanticsSituation,
-                               variable_binding: Mapping[
-                "TemplateObjectVariable", SituationObject
-            ]) -> bool:
+    def _satisfies_constraints(
+        self,
+        template: Phase1SituationTemplate,
+        instantiated_situation: HighLevelSemanticsSituation,
+        variable_binding: Mapping["TemplateObjectVariable", SituationObject],
+    ) -> bool:
         for constraining_relation in template.constraining_relations:
             if not instantiated_situation.relation_always_holds(
                 constraining_relation.copy_remapping_objects(variable_binding)
             ):
                 return False
         return True
-
 
 
 class _TemplateVariable(Protocol):
@@ -260,7 +264,7 @@ def object_variable(
     banned_properties: Iterable[OntologyNode] = immutableset(),
     added_properties: Iterable[
         Union[OntologyNode, TemplatePropertyVariable]
-    ] = immutableset()
+    ] = immutableset(),
 ) -> TemplateObjectVariable:
     r"""
     Create a `TemplateObjectVariable` with the specified *debug_handle*
@@ -349,7 +353,7 @@ class _VariableAssigner(ABC):
         ontology: Ontology,
         object_variables: AbstractSet["TemplateObjectVariable"],
         property_variables: AbstractSet["TemplatePropertyVariable"],
-        chooser: SequenceChooser
+        chooser: SequenceChooser,
     ) -> Iterable[_VariableAssignment]:
         r"""
         Produce a (potentially infinite) stream of `_VariableAssignment`\ s of nodes from *ontology*
@@ -371,7 +375,7 @@ class _CrossProductVariableAssigner(_VariableAssigner):
         ontology: Ontology,
         object_variables: AbstractSet["TemplateObjectVariable"],
         property_variables: AbstractSet["TemplatePropertyVariable"],
-        chooser: SequenceChooser  # pylint: disable=unused-argument
+        chooser: SequenceChooser,  # pylint: disable=unused-argument
     ) -> Iterable[_VariableAssignment]:
         # TODO: fix hard-coded rng
         # https://github.com/isi-vista/adam/issues/123
@@ -429,19 +433,24 @@ class _SamplingVariableAssigner(_VariableAssigner):
         ontology: Ontology,
         object_variables: AbstractSet["TemplateObjectVariable"],
         property_variables: AbstractSet["TemplatePropertyVariable"],
-        chooser: SequenceChooser
+        chooser: SequenceChooser,
     ) -> Iterable[_VariableAssignment]:
         # we need to do the zip() below instead of using nested for loops
         # or you will get a bunch of propery combinations for the same object combination.
-        object_combinations = self._sample_combinations(object_variables, ontology=ontology,
-                                                 chooser=chooser)
-        property_combinations = self._sample_combinations(property_variables, ontology=ontology,
-                                                          chooser=chooser)
+        object_combinations = self._sample_combinations(
+            object_variables, ontology=ontology, chooser=chooser
+        )
+        property_combinations = self._sample_combinations(
+            property_variables, ontology=ontology, chooser=chooser
+        )
         object_plus_property_combinations = zip(
             object_combinations, property_combinations
         )
 
-        for (object_combination, property_combination) in object_plus_property_combinations:
+        for (
+            object_combination,
+            property_combination,
+        ) in object_plus_property_combinations:
             yield _VariableAssignment(
                 object_variables_to_fillers=object_combination,
                 property_variables_to_fillers=property_combination,
@@ -452,7 +461,7 @@ class _SamplingVariableAssigner(_VariableAssigner):
         variables: AbstractSet[_VarT],
         *,
         ontology: Ontology,
-        chooser: SequenceChooser
+        chooser: SequenceChooser,
     ) -> Iterable[Mapping[_VarT, OntologyNode]]:
         var_to_options = {
             # beware - the values in this map are infinite generators!

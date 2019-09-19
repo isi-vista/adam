@@ -46,7 +46,7 @@ from adam.perception.high_level_semantics_situation_to_developmental_primitive_p
 )
 from adam.random_utils import RandomChooser
 from adam.relation import Relation
-from adam.situation import SituationAction, SituationObject
+from adam.situation import SituationObject, Action
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from sample_situations import make_bird_flies_over_a_house
 
@@ -147,7 +147,7 @@ def test_person_put_ball_on_table():
         actions=[
             # What is the best way of representing the destination in the high-level semantics?
             # Here we represent it as indicating a relation which should be true.
-            SituationAction(
+            Action(
                 PUT,
                 (
                     (AGENT, person),
@@ -373,11 +373,11 @@ def test_perceive_explicit_relations():
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         objects=[mom, box, ball, table],
-        persisting_relations=[on(ball, table)],
+        always_relations=[on(ball, table)],
         before_action_relations=[far(ball, box)],
         after_action_relations=[near(ball, box)],
         actions=[
-            SituationAction(
+            Action(
                 PUT,
                 argument_roles_to_fillers=[
                     (AGENT, mom),

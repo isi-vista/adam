@@ -2,7 +2,7 @@
 Structures for describing situations in the world at an abstracted, human-friendly level.
 """
 from abc import ABC
-from typing import Mapping, Optional, Union
+from typing import Mapping, Optional, Union, TypeVar, Generic
 
 from attr import attrib, attrs
 from attr.validators import instance_of, optional
@@ -129,15 +129,20 @@ class LocatedObjectSituation(Situation):
     """
 
 
-@attrs(frozen=True, slots=True, repr=False)
-class SituationAction:
-    """
-    An action occurring in a `Situation`.
-    """
+_ObjectT = TypeVar("_ObjectT")
 
+
+@attrs(frozen=True, repr=False)
+class Action(Generic[_ObjectT]):
+    r"""
+    An action.
+
+    This can be bound to `SituationObject` to represent actions in `Situation`\ s
+    or to `TemplateObjectVariable`\ s to represent actions in situation templates.
+    """
     action_type: OntologyNode = attrib(validator=instance_of(OntologyNode))
     argument_roles_to_fillers: ImmutableSetMultiDict[
-        OntologyNode, Union[SituationObject, Region[SituationObject]]
+        OntologyNode, Union[_ObjectT, Region[_ObjectT]]
     ] = attrib(converter=_to_immutablesetmultidict, default=immutablesetmultidict())
     r"""
     A mapping of semantic roles (given as `OntologyNode`\ s) to their fillers.
@@ -146,17 +151,9 @@ class SituationAction:
     (e.g. conjoined arguments).
     """
     # the optional below seems to confuse mypy?
-    during: Optional[DuringAction[SituationObject]] = attrib(  # type: ignore
+    during: Optional[DuringAction[_ObjectT]] = attrib(  # type: ignore
         validator=optional(instance_of(DuringAction)), default=None, kw_only=True
     )
-
-    def __attrs_post_init__(self) -> None:
-        for (role, filler) in self.argument_roles_to_fillers.items():
-            if not isinstance(filler, (Region, SituationObject)):
-                raise RuntimeError(
-                    f"Argument role fillers must be Regions or SituationObjects"
-                    f"but got {filler} in role {role} of {self}"
-                )
 
     def __repr__(self) -> str:
         return f"{self.action_type}({self.argument_roles_to_fillers})"

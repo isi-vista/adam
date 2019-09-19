@@ -37,7 +37,7 @@ from adam.perception.developmental_primitive_perception import (
 )
 from adam.random_utils import SequenceChooser
 from adam.relation import Relation
-from adam.situation import SituationAction, SituationObject
+from adam.situation import SituationObject, Action
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 
 
@@ -297,7 +297,9 @@ class _PerceptionGeneration:
         )
 
     def _bind_action_objects_variables_to_perceived_objects(
-        self, situation_action: SituationAction, action_description: ActionDescription
+        self,
+        situation_action: Action[SituationObject],
+        action_description: ActionDescription,
     ) -> Mapping[SituationObject, Union[Region[ObjectPerception], ObjectPerception]]:
         if len(action_description.frames) != 1:
             raise RuntimeError(

@@ -63,7 +63,7 @@ from adam.ontology.phase1_spatial_relations import (
 )
 from adam.random_utils import SequenceChooser
 from adam.relation import Relation
-from adam.situation import SituationAction, SituationObject
+from adam.situation import Action, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 
 
@@ -310,7 +310,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 )
 
         def _translate_action_to_verb(
-            self, action: SituationAction
+            self, action: Action[SituationObject]
         ) -> DependencyTreeToken:
             lexicon_entry = self._unique_lexicon_entry(action.action_type)
             # TODO: we don't currently handle verbal morphology.
@@ -352,7 +352,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
 
         def _translate_verb_argument(
             self,
-            action: SituationAction,
+            action: Action[SituationObject],
             argument_role: OntologyNode,
             filler: Union[SituationObject, Region[SituationObject]],
             verb_dependency_node: DependencyTreeToken,
@@ -427,7 +427,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 )
 
         def _collect_action_modifiers(
-            self, action: SituationAction
+            self, action: Action[SituationObject]
         ) -> Iterable[DependencyTreeToken]:
             """
             Collect adverbial and other modifiers of an action.

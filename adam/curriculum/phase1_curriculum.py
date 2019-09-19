@@ -19,7 +19,11 @@ from adam.ontology.phase1_ontology import (
     GROUND,
     on,
     IS_BODY_PART,
-    HAS, PERSON, INANIMATE_OBJECT, bigger_than)
+    HAS,
+    PERSON,
+    INANIMATE_OBJECT,
+    bigger_than,
+)
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
@@ -143,32 +147,33 @@ _OBJECT_ON_GROUND_SUB_CURRICULUM = _phase1_instances(
     "object on ground",
     situations=all_possible(
         _OBJECT_ON_GROUND_TEMPLATE, ontology=GAILA_PHASE_1_ONTOLOGY, chooser=_CHOOSER
-    ))
-
-_person_0 = object_variable("person", PERSON)
-_inanimate_object_0 = object_variable("inanimate-object", INANIMATE_OBJECT)
-PERSON_HAS_OBJECT_TEMPLATE = Phase1SituationTemplate(
-    object_variables=[
-        _person_0,
-        _inanimate_object_0, _LEARNER_OBJECT],
-    asserted_always_relations=[Relation(HAS, _person_0, _inanimate_object_0)],
-    constraining_relations=[bigger_than(_person_0, _inanimate_object_0)]
-)
-
-PERSON_HAS_OBJECT_SUB_CURRICULUM = _phase1_instances(
-    "person has object",
-    situations=sampled(
-        PERSON_HAS_OBJECT_TEMPLATE, chooser=_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY,
-        max_to_sample=100
     ),
 )
+
+_PERSON_0 = object_variable("person", PERSON)
+_INANIMATE_OBJECT_0 = object_variable("inanimate-object", INANIMATE_OBJECT)
+PERSON_HAS_OBJECT_TEMPLATE = Phase1SituationTemplate(
+    object_variables=[_PERSON_0, _INANIMATE_OBJECT_0, _LEARNER_OBJECT],
+    asserted_always_relations=[Relation(HAS, _PERSON_0, _INANIMATE_OBJECT_0)],
+    constraining_relations=[bigger_than(_PERSON_0, _INANIMATE_OBJECT_0)],
+)
+
+# PERSON_HAS_OBJECT_SUB_CURRICULUM = _phase1_instances(
+#     "person has object",
+#     situations=sampled(
+#         PERSON_HAS_OBJECT_TEMPLATE,
+#         chooser=_CHOOSER,
+#         ontology=GAILA_PHASE_1_ONTOLOGY,
+#         max_to_sample=100,
+#     ),
+# )
 
 GAILA_PHASE_1_CURRICULUM = [
     EACH_OBJECT_BY_ITSELF_SUB_CURRICULUM,
     OBJECTS_WITH_COLORS_SUB_CURRICULUM,
     MULTIPLE_OF_THE_SAME_OBJECT_SUB_CURRICULUM,
     _OBJECT_ON_GROUND_SUB_CURRICULUM,
-    PERSON_HAS_OBJECT_SUB_CURRICULUM
+    #    PERSON_HAS_OBJECT_SUB_CURRICULUM,
 ]
 """
 One particular instantiation of the curriculum for GAILA Phase 1.
