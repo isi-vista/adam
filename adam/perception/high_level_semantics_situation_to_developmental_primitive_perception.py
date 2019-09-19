@@ -1,3 +1,4 @@
+import re
 from itertools import chain
 from typing import AbstractSet, Dict, List, Mapping, Optional, Union, cast
 
@@ -657,11 +658,18 @@ class _PerceptionGeneration:
                     f"yet keep implemented."
                 )
 
-            perceived_object = self._instantiate_object_schema(
-                only(object_schemata), situation_object=situation_object
+            colors = immutableset(
+                property_
+                for property_ in self._generator.ontology.properties_for_node(
+                    situation_object.ontology_node
+                )
+                if self._generator.ontology.is_subtype_of(property_, COLOR)
             )
-            self._object_perceptions_to_ontology_nodes.update(
-                {perceived_object: situation_object.ontology_node}
+
+            perceived_object = self._instantiate_object_schema(
+                only(object_schemata),
+                situation_object=situation_object,
+                inherited_colors=colors,
             )
 
             self._object_perceptions_to_ontology_nodes[
@@ -675,6 +683,7 @@ class _PerceptionGeneration:
         # if the object being instantiated corresponds to an object
         # in the situation description, then this will track that object
         situation_object: Optional[SituationObject] = None,
+        inherited_colors: Optional[ImmutableSet[OntologyNode]] = ImmutableSet.empty(),
     ) -> ObjectPerception:
         root_object_perception = ObjectPerception(
             debug_handle=self._object_handle_generator.subscripted_handle(schema)
@@ -705,20 +714,18 @@ class _PerceptionGeneration:
             self._relation_perceptions.append(
                 Relation(PART_OF, root_object_perception, sub_object_perception)
             )
-            # every sub-component inherits any prototypical color the parent
-            # object has
-            if situation_object:
-                colors = immutableset(
-                    property_
-                    for property_ in self._generator.ontology.properties_for_node(
-                        situation_object.ontology_node
+            # If the sub-object does not already have a color,
+            # use the parent's prototypical color if one exists
+            sub_object_color = re.findall(
+                r"hasColor\(%s, (#\d+)\)" % sub_object_perception,
+                str(self._property_assertion_perceptions),
+            )
+            if inherited_colors and not sub_object_color:
+                self._property_assertion_perceptions.append(
+                    HasColor(
+                        sub_object_perception, self._chooser.choice(inherited_colors)
                     )
-                    if self._generator.ontology.is_subtype_of(property_, COLOR)
                 )
-                if colors:
-                    self._property_assertion_perceptions.append(
-                        HasColor(sub_object_perception, self._chooser.choice(colors))
-                    )
 
         # translate sub-object relations specified by the object's structural schema
         for sub_object_relation in schema.sub_object_relations:
