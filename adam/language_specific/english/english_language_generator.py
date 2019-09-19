@@ -1,6 +1,6 @@
 import collections
 from itertools import chain
-from typing import Iterable, List, Mapping, MutableMapping, Optional, Union, cast
+from typing import Iterable, List, Mapping, MutableMapping, Union, cast
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
@@ -21,6 +21,7 @@ from adam.language.dependency.universal_dependencies import (
     CASE_MARKING,
     DETERMINER,
     DETERMINER_ROLE,
+    NOMINAL_MODIFIER,
     NOMINAL_MODIFIER_POSSESSIVE,
     NOMINAL_SUBJECT,
     NUMERAL,
@@ -143,18 +144,13 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 if not self._only_translate_if_referenced(object_):
                     self._noun_for_object(object_)
 
-            if self.situation.is_dynamic:
-                for action in self.situation.actions:
-                    self._translate_action_to_verb(action)
-            else:
-                # Special cases for non-dynamic situations; translate if there is possession
-                possession_relations = [
-                    rel
-                    for rel in self.situation.persisting_relations
-                    if rel.relation_type == HAS
-                ]
-                if possession_relations:
-                    self._translate_relation_to_verb(only(possession_relations))
+            # We only translate those relations the user specifically calls out,
+            # not the many "background" relations which are also true.
+            for persisting_relation in self.situation.persisting_relations:
+                self._translate_relation(persisting_relation)
+
+            for action in self.situation.actions:
+                self._translate_action_to_verb(action)
 
             return immutableset(
                 [
@@ -293,6 +289,26 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     determiner_node, noun_dependency_node, role=determiner_role
                 )
 
+        def _translate_relation(self, relation: Relation[SituationObject]) -> None:
+            if relation.relation_type == HAS:
+                # 'has' is a special case.
+                if self.situation.is_dynamic:
+                    # already handled by noun translation code
+                    pass
+                else:
+                    # otherwise, we realize it as the verb "has"
+                    self._translate_relation_to_verb(relation)
+            elif relation.relation_type == IN_REGION:
+                self.dependency_graph.add_edge(
+                    self.relation_to_prepositional_modifier(relation),
+                    self._noun_for_object(relation.first_slot),
+                    role=NOMINAL_MODIFIER,
+                )
+            else:
+                raise RuntimeError(
+                    f"Don't know how to translate relation " f"{relation} to English"
+                )
+
         def _translate_action_to_verb(
             self, action: SituationAction
         ) -> DependencyTreeToken:
@@ -428,7 +444,6 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     action.during.at_some_point, action.during.continuously
                 ):
                     if relation.relation_type == IN_REGION:
-                        preposition: Optional[str] = None
                         # the thing the relation is predicated of must be something plausibly
                         # moving, which for now is either..
                         fills_legal_argument_role = (
@@ -446,42 +461,9 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                             )
                         )
                         if fills_legal_argument_role:
-                            region = cast(Region[SituationObject], relation.second_slot)
-                            if (
-                                region.direction
-                                and region.direction.relative_to_axis
-                                == GRAVITATIONAL_AXIS
-                            ):
-                                if region.distance in (PROXIMAL, DISTAL):
-                                    if region.direction.positive:
-                                        preposition = "over"
-                                    else:
-                                        preposition = "under"
-                                elif (
-                                    region.distance == EXTERIOR_BUT_IN_CONTACT
-                                    and region.direction.positive
-                                ):
-                                    preposition = "on"
-                                else:
-                                    raise RuntimeError(
-                                        f"Don't know how to translate spatial "
-                                        f"modifier: {relation} in {action}"
-                                    )
-                            else:
-                                raise RuntimeError(
-                                    f"Don't know how to translate spatial modifiers "
-                                    f"which are not relative to the gravitational "
-                                    f"axis: {relation} in {action}"
-                                )
-                            reference_object_node = self._noun_for_object(
-                                region.reference_object
+                            modifiers.append(
+                                self.relation_to_prepositional_modifier(relation)
                             )
-                            self.dependency_graph.add_edge(
-                                DependencyTreeToken(preposition, ADPOSITION),
-                                reference_object_node,
-                                role=CASE_MARKING,
-                            )
-                            modifiers.append(reference_object_node)
                         else:
                             raise RuntimeError(
                                 f"To translate a spatial relation as a verbal "
@@ -497,6 +479,40 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                         )
 
             return modifiers
+
+        def relation_to_prepositional_modifier(self, relation) -> DependencyTreeToken:
+            region = cast(Region[SituationObject], relation.second_slot)
+            if (
+                region.direction
+                and region.direction.relative_to_axis == GRAVITATIONAL_AXIS
+            ):
+                if region.distance in (PROXIMAL, DISTAL):
+                    if region.direction.positive:
+                        preposition = "over"
+                    else:
+                        preposition = "under"
+                elif (
+                    region.distance == EXTERIOR_BUT_IN_CONTACT
+                    and region.direction.positive
+                ):
+                    preposition = "on"
+                else:
+                    raise RuntimeError(
+                        f"Don't know how to translate spatial " f"modifier: {relation}"
+                    )
+            else:
+                raise RuntimeError(
+                    f"Don't know how to translate spatial modifiers "
+                    f"which are not relative to the gravitational "
+                    f"axis: {relation}"
+                )
+            reference_object_node = self._noun_for_object(region.reference_object)
+            self.dependency_graph.add_edge(
+                DependencyTreeToken(preposition, ADPOSITION),
+                reference_object_node,
+                role=CASE_MARKING,
+            )
+            return reference_object_node
 
         def _translate_relation_to_verb(
             self, relation: Relation[SituationObject]
