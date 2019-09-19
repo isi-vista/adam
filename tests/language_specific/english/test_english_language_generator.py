@@ -423,6 +423,97 @@ def test_dad_put_a_cookie_in_a_box_using_you():
     ).as_token_sequence() == ("you", "put", "a", "cookie", "in", "a", "box")
 
 
+def test_dad_put_a_cookie_in_a_box_using_my_as_dad_speaker():
+    dad = SituationObject(DAD, properties=[IS_SPEAKER])
+    cookie = SituationObject(COOKIE)
+    box = SituationObject(BOX)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        objects=[dad, cookie, box],
+        relations=[Relation(HAS, dad, box)],
+        actions=[
+            SituationAction(
+                PUT,
+                (
+                    (AGENT, dad),
+                    (THEME, cookie),
+                    (GOAL, Region(reference_object=box, distance=INTERIOR)),
+                ),
+            )
+        ],
+    )
+
+    assert only(
+        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
+    ).as_token_sequence() == ("I", "put", "a", "cookie", "in", "my", "box")
+
+
+def test_dad_put_a_cookie_in_a_box_using_you_your():
+    dad = SituationObject(DAD, properties=[IS_ADDRESSEE])
+    cookie = SituationObject(COOKIE)
+    box = SituationObject(BOX)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        objects=[dad, cookie, box],
+        relations=[Relation(HAS, dad, box)],
+        actions=[
+            SituationAction(
+                PUT,
+                (
+                    (AGENT, dad),
+                    (THEME, cookie),
+                    (GOAL, Region(reference_object=box, distance=INTERIOR)),
+                ),
+            )
+        ],
+    )
+
+    assert only(
+        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
+    ).as_token_sequence() == ("you", "put", "a", "cookie", "in", "your", "box")
+
+
+# def test_dad_put_a_cookie_in_a_box_using_my_as_mom_speaker():
+#     dad = SituationObject(DAD)
+#     cookie = SituationObject(COOKIE)
+#     mom = SituationObject(MOM, properties=[IS_SPEAKER])
+#     box = SituationObject(BOX)
+#     situation = HighLevelSemanticsSituation(
+#         ontology=GAILA_PHASE_1_ONTOLOGY,
+#         objects=[dad, cookie, box, mom],
+#         relations=[Relation(HAS, mom, box)],
+#         actions=[
+#             SituationAction(
+#                 PUT,
+#                 (
+#                     (AGENT, dad),
+#                     (THEME, cookie),
+#                     (GOAL, Region(reference_object=box, distance=INTERIOR)),
+#                 ),
+#             )
+#         ],
+#     )
+#
+#     assert only(
+#         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
+#     ).as_token_sequence() == ("Dad", "put", "a", "cookie", "in", "my", "box")
+
+
+def test_dad_has_a_cookie():
+    dad = SituationObject(DAD)
+    cookie = SituationObject(COOKIE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        objects=[dad, cookie],
+        relations=[Relation(HAS, dad, cookie)],
+        actions=[],
+    )
+
+    assert only(
+        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
+    ).as_token_sequence() == ("Dad", "has", "a", "cookie")
+
+
 def test_green_ball():
     ball = SituationObject(BALL, [GREEN])
     situation = HighLevelSemanticsSituation(
