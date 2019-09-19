@@ -8,7 +8,14 @@ from adam.language.dependency import LinearizedDependencyTree
 from adam.language_specific.english.english_language_generator import (
     GAILA_PHASE_1_LANGUAGE_GENERATOR,
 )
-from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY, LEARNER
+from adam.ontology.ontology import Ontology
+from adam.ontology.phase1_ontology import (
+    GAILA_PHASE_1_ONTOLOGY,
+    LEARNER,
+    PHASE_1_CURRICULUM_OBJECTS,
+    RECOGNIZED_PARTICULAR_PROPERTY,
+    LIQUID,
+)
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
@@ -16,6 +23,7 @@ from adam.perception.high_level_semantics_situation_to_developmental_primitive_p
     GAILA_PHASE_1_PERCEPTION_GENERATOR,
 )
 from adam.random_utils import RandomChooser
+from adam.situation import SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
@@ -82,9 +90,43 @@ OBJECTS_WITH_COLORS_SUB_CURRICULUM = _phase1_instances(
 )
 
 
+def build_object_multiples_situations(
+    ontology: Ontology, *, samples_per_object: int = 3, chooser: RandomChooser
+) -> Iterable[HighLevelSemanticsSituation]:
+    for object_type in PHASE_1_CURRICULUM_OBJECTS:
+        # don't want multiples of named people
+        is_recognized_particular = any(
+            ontology.is_subtype_of(property_, RECOGNIZED_PARTICULAR_PROPERTY)
+            for property_ in ontology.properties_for_node(object_type)
+        )
+        is_liquid = ontology.has_all_properties(object_type, [LIQUID])
+        if not is_recognized_particular and not is_liquid:
+            for _ in range(samples_per_object):
+                num_objects = chooser.choice(range(2, 4))
+                yield HighLevelSemanticsSituation(
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                    objects=[
+                        SituationObject(
+                            ontology_node=object_type,
+                            debug_handle=object_type.handle + f"_{idx}",
+                        )
+                        for idx in range(num_objects)
+                    ],
+                )
+
+
+MULTIPLE_OF_THE_SAME_OBJECT_SUB_CURRICULUM = _phase1_instances(
+    "multiples of the same object",
+    build_object_multiples_situations(
+        GAILA_PHASE_1_ONTOLOGY, samples_per_object=3, chooser=_CHOOSER
+    ),
+)
+
+
 GAILA_PHASE_1_CURRICULUM = [
     EACH_OBJECT_BY_ITSELF_SUB_CURRICULUM,
     OBJECTS_WITH_COLORS_SUB_CURRICULUM,
+    MULTIPLE_OF_THE_SAME_OBJECT_SUB_CURRICULUM,
 ]
 """
 One particular instantiation of the curriculum for GAILA Phase 1.
