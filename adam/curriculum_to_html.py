@@ -1,7 +1,14 @@
 from pathlib import Path
-from typing import Iterable, Union, List
+from typing import AbstractSet, Any, Callable, Iterable, List, Tuple, TypeVar, Union
 
 from attr import attrs
+from immutablecollections import (
+    ImmutableSet,
+    ImmutableSetMultiDict,
+    immutableset,
+    immutablesetmultidict,
+)
+from more_itertools import flatten
 from vistautils.parameters import Parameters
 from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 from vistautils.preconditions import check_state
@@ -10,14 +17,15 @@ from adam.curriculum.phase1_curriculum import GAILA_PHASE_1_CURRICULUM
 from adam.experiment import InstanceGroup
 from adam.language.dependency import LinearizedDependencyTree
 from adam.ontology.phase1_spatial_relations import Region
-from adam.perception import PerceptualRepresentation
+from adam.perception import ObjectPerception, PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
+    HasBinaryProperty,
     HasColor,
+    PropertyPerception,
 )
 from adam.situation import SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
-
 
 USAGE_MESSAGE = """
     curriculum_to_html.py param_file
@@ -187,32 +195,123 @@ class CurriculumToHtmlDumper:
         Turns a perception into a list of items in the perceptions frames.
         """
         output_text: List[str] = []
-        frame_number = 0
-        for frame in perception.frames:
-            output_text.append(f"\t\t\t<h4>Frame {frame_number}</h4>")
-            output_text.append("\t\t\t\t<h5>Perceived Objects</h5>\n\t\t\t\t<ul>")
-            for obj in frame.perceived_objects:
-                output_text.append(f"\t\t\t\t\t<li>{obj.debug_handle}</li>")
-            output_text.append("\t\t\t\t</ul>")
-            if frame.property_assertions:
-                output_text.append("\t\t\t\t<h5>Property Assertions</h5>\n\t\t\t\t<ul>")
-                for prop in frame.property_assertions:
-                    if isinstance(prop, HasColor):
-                        output_text.append(
-                            f'\t\t\t\t\t<li>{prop} - <span style="background-color: {prop.color}; '
-                            f'color: {prop.color}; border: 1px solid black;">Object Color</span></li>'
-                        )
-                    else:
-                        output_text.append(f"\t\t\t\t\t<li>{prop}</li>")
-                output_text.append("\t\t\t\t</ul>")
-            if frame.relations:
-                output_text.append("\t\t\t\t<h5>Relations</h5>\n\t\t\t\t<ul>")
-                for rel in frame.relations:
-                    output_text.append(
-                        f"\t\t\t\t\t<li>{rel.relation_type.handle}({rel.first_slot},{rel.second_slot})"
+
+        check_state(
+            len(perception.frames) in (1, 2),
+            "Only know how to handle 1 or 2 frame " "perceptions for now",
+        )
+
+        perception_is_dynamic = len(perception.frames) > 1
+
+        def extract_subject(prop: PropertyPerception) -> ObjectPerception:
+            return prop.perceived_object
+
+        first_frame_properties = _index_to_setmultidict(
+            perception.frames[0].property_assertions, extract_subject
+        )
+        second_frame_properties = (
+            _index_to_setmultidict(
+                perception.frames[1].property_assertions, extract_subject
+            )
+            if perception_is_dynamic
+            else immutablesetmultidict()
+        )
+
+        first_frame_objects = perception.frames[0].perceived_objects
+        second_frame_objects = (
+            perception.frames[1].perceived_objects
+            if perception_is_dynamic
+            else immutableset()
+        )
+        static_objects = (
+            first_frame_objects.intersection(second_frame_objects)
+            if perception_is_dynamic
+            else first_frame_objects
+        )
+        all_objects = first_frame_objects.union(second_frame_objects)
+
+        # we use preceding or following arrows to indicate objects which came into being
+        # or ceased to exist between frames
+        def compute_arrow(
+            item: Any, static_items: AbstractSet[Any], first_frame_items: AbstractSet[Any]
+        ) -> Tuple[str, str]:
+            if item in static_items:
+                return ("", "")
+            elif item in first_frame_items:
+                return ("", " ---> Ø")
+            else:
+                return ("Ø ---> ", "")
+
+        def render_object(obj: ObjectPerception) -> str:
+            obj_text = f"<i>{obj.debug_handle}</i>"
+            first_frame_obj_properties = first_frame_properties[obj]
+            second_frame_obj_properties = second_frame_properties[obj]
+            static_properties = (
+                second_frame_obj_properties.intersection(first_frame_obj_properties)
+                if second_frame_obj_properties
+                else first_frame_obj_properties
+            )
+
+            def render_property(prop: PropertyPerception) -> str:
+                (prop_prefix, prop_suffix) = compute_arrow(
+                    prop, static_properties, first_frame_obj_properties
+                )
+                prop_string: str
+                if isinstance(prop, HasColor):
+                    prop_string = (
+                        f'<span style="background-color: {prop.color}; '
+                        f'color: {prop.color}; border: 1px solid black;">Object Color</span>'
                     )
-                output_text.append("\t\t\t\t</ul>")
-            frame_number = frame_number + 1
+                elif isinstance(prop, HasBinaryProperty):
+                    prop_string = str(prop.binary_property)
+                else:
+                    raise RuntimeError(f"Cannot render property: {prop}")
+
+                return f"{prop_prefix}{prop_string}{prop_suffix}"
+
+            all_properties: ImmutableSet[PropertyPerception] = immutableset(
+                flatten([first_frame_obj_properties, second_frame_obj_properties])
+            )
+            prop_strings = [render_property(prop) for prop in all_properties]
+
+            if prop_strings:
+                return f"{obj_text}[{'; '.join(prop_strings)}]"
+            else:
+                return obj_text
+
+        output_text.append("\t\t<h5>Perceived Objects</h5>\n\t\t<ul>")
+        for object_ in all_objects:
+            (obj_prefix, obj_suffix) = compute_arrow(
+                object_, static_objects, first_frame_objects
+            )
+            output_text.append(
+                f"<li>{obj_prefix}{render_object(object_)}{obj_suffix}</li>"
+            )
+        output_text.append("</ul>")
+
+        first_frame_relations = perception.frames[0].relations
+        second_frame_relations = (
+            perception.frames[1].relations if perception_is_dynamic else immutableset()
+        )
+        static_relations = (
+            second_frame_relations.intersection(first_frame_relations)
+            if perception_is_dynamic
+            else first_frame_relations
+        )
+        all_relations = first_frame_relations.union(second_frame_relations)
+
+        if all_relations:
+            output_text.append("\t\t\t\t<h5>Relations</h5>\n\t\t\t\t<ul>")
+
+            for relation in all_relations:
+                (relation_prefix, relation_suffix) = compute_arrow(
+                    relation, static_relations, first_frame_relations
+                )
+                output_text.append(
+                    f"\t\t<li>{relation_prefix}{relation}{relation_suffix}</li>"
+                )
+            output_text.append("\t\t</ul>")
+
         return "\n".join(output_text)
 
     def _linguistic_text(self, linguistic: LinearizedDependencyTree) -> str:
@@ -237,6 +336,15 @@ table td {
 }
 """
 
+_KT = TypeVar("_KT")
+_VT = TypeVar("_VT")
+
+
+def _index_to_setmultidict(
+    items: Iterable[_VT], index_func: Callable[[_VT], _KT]
+) -> ImmutableSetMultiDict[_KT, _VT]:
+    return immutablesetmultidict((index_func(x), x) for x in items)
+
+
 if __name__ == "__main__":
     parameters_only_entry_point(main, usage_message=USAGE_MESSAGE)
-
