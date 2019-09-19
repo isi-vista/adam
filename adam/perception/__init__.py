@@ -3,17 +3,37 @@ This module provides classes related to the perceptual primitive representation
 used to describe `Situation`\ s from the point-of-view of `LanguageLearner`\ s.
 """
 from abc import ABC, abstractmethod
-from typing import TypeVar, Generic, Tuple
+from typing import TypeVar, Generic, Tuple, Optional
 
 from attr import attrs, attrib
-from attr.validators import instance_of
+from attr.validators import instance_of, optional
 from immutablecollections import ImmutableSet, immutableset
 from immutablecollections.converter_utils import _to_immutableset
 
 from adam.language.language_generator import SituationT
 from adam.math_3d import Point
+from adam.ontology.during import DuringAction
 from adam.random_utils import SequenceChooser
 from adam.situation import LocatedObjectSituation
+
+
+@attrs(slots=True, frozen=True, repr=False)
+class ObjectPerception:
+    r"""
+    The learner's perception of a particular object.
+
+    This object pretty much just represents the object's existence; its attributes are handled via
+    `PropertyPerception`\ s.
+    """
+    debug_handle: str = attrib(validator=instance_of(str))
+    """
+    A human-readable string associated with this object.
+
+    It is for debugging use only and should not be accessed by any algorithms.
+    """
+
+    def __repr__(self) -> str:
+        return self.debug_handle
 
 
 class PerceptualRepresentationFrame(ABC):
@@ -43,6 +63,10 @@ class PerceptualRepresentation(Generic[PerceptionT]):
     Usually for a static situation, this will be a single frame,
     but there could be two or three for complex actions.
     """
+    # mypy is confused by the instance_of with a generic class
+    during: Optional[DuringAction[ObjectPerception]] = attrib(  # type: ignore
+        validator=optional(instance_of(DuringAction)), default=None, kw_only=True
+    )
 
     @staticmethod
     def single_frame(

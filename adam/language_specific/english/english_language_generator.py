@@ -1,5 +1,6 @@
 import collections
-from typing import Mapping, MutableMapping, Union
+from itertools import chain
+from typing import Iterable, List, Mapping, MutableMapping, Optional, Union, cast
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
@@ -15,6 +16,7 @@ from adam.language.dependency import (
     LinearizedDependencyTree,
 )
 from adam.language.dependency.universal_dependencies import (
+    ADJECTIVAL_MODIFIER,
     ADPOSITION,
     CASE_MARKING,
     DETERMINER,
@@ -36,11 +38,13 @@ from adam.language_specific.english.english_phase_1_lexicon import (
 from adam.language_specific.english.english_syntax import (
     SIMPLE_ENGLISH_DEPENDENCY_TREE_LINEARIZER,
 )
-from adam.ontology import OntologyNode, Region
-from adam.ontology.phase1_ontology import AGENT, GOAL, LEARNER, PATIENT, THEME, GROUND
-from adam.ontology.phase1_spatial_relations import EXTERIOR_BUT_IN_CONTACT, INTERIOR
+from adam.ontology import IN_REGION, OntologyNode
+from adam.ontology.phase1_ontology import AGENT, COLOR, GOAL, GROUND, IS_ADDRESSEE, IS_SPEAKER, \
+    LEARNER, PATIENT, THEME
+from adam.ontology.phase1_spatial_relations import (DISTAL, EXTERIOR_BUT_IN_CONTACT,
+                                                    GRAVITATIONAL_AXIS, INTERIOR, PROXIMAL, Region)
 from adam.random_utils import SequenceChooser
-from adam.situation import SituationAction, SituationNode, SituationObject
+from adam.situation import SituationAction, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 
 
@@ -163,7 +167,12 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             lexicon_entry = self._unique_lexicon_entry(
                 _object.ontology_node  # pylint:disable=protected-access
             )
-            if count > 1 and lexicon_entry.plural_form:
+            # Check if the situation object is the speaker
+            if IS_SPEAKER in _object.properties:
+                word_form = "I"
+            elif IS_ADDRESSEE in _object.properties:
+                word_form = "you"
+            elif count > 1 and lexicon_entry.plural_form:
                 word_form = lexicon_entry.plural_form
             else:
                 word_form = lexicon_entry.base_form
@@ -194,6 +203,17 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     quantifier_node, dependency_node, role=quantifier_role
                 )
 
+            # Begin work on translating modifiers of Nouns with Color
+            for property_ in _object.properties:
+                if self.situation.ontology.is_subtype_of(property_, COLOR):
+                    color_lexicon_entry = self._unique_lexicon_entry(property_)
+                    color_node = DependencyTreeToken(
+                        color_lexicon_entry.base_form, color_lexicon_entry.part_of_speech
+                    )
+                    self.dependency_graph.add_edge(
+                        color_node, dependency_node, role=ADJECTIVAL_MODIFIER
+                    )
+
             return dependency_node
 
         def _translate_action_to_verb(
@@ -202,27 +222,46 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             lexicon_entry = self._unique_lexicon_entry(action.action_type)
             # TODO: we don't currently handle verbal morphology.
             # https://github.com/isi-vista/adam/issues/60
-            if lexicon_entry.verb_form_3SG_PRS:
-                verb_dependency_node = DependencyTreeToken(
-                    lexicon_entry.verb_form_3SG_PRS, lexicon_entry.part_of_speech
+            if len(self.situation.actions) > 1:
+                raise RuntimeError(
+                    "Currently only situations with 0 or 1 actions are supported"
                 )
+            elif any(
+                property_
+                in only(
+                    only(self.situation.actions).argument_roles_to_fillers[AGENT]
+                ).properties
+                for property_ in [IS_SPEAKER, IS_ADDRESSEE]
+            ):
+                word_form = lexicon_entry.base_form
+            elif lexicon_entry.verb_form_3SG_PRS:
+                word_form = lexicon_entry.verb_form_3SG_PRS
             else:
                 raise RuntimeError(
                     f"Verb has no 3SG present tense form: {lexicon_entry.base_form}"
                 )
+            verb_dependency_node = DependencyTreeToken(
+                word_form, lexicon_entry.part_of_speech
+            )
             self.dependency_graph.add_node(verb_dependency_node)
 
             for (argument_role, filler) in action.argument_roles_to_fillers.items():
                 self._translate_verb_argument(
                     action, argument_role, filler, verb_dependency_node
                 )
+
+            for path_modifier in self._collect_action_modifiers(action):
+                self.dependency_graph.add_edge(
+                    path_modifier, verb_dependency_node, role=OBLIQUE_NOMINAL
+                )
+
             return verb_dependency_node
 
         def _translate_verb_argument(
             self,
             action: SituationAction,
             argument_role: OntologyNode,
-            filler: Union[SituationNode, Region[SituationObject]],
+            filler: Union[SituationObject, Region[SituationObject]],
             verb_dependency_node: DependencyTreeToken,
         ):
             # TODO: to alternation
@@ -293,6 +332,94 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 raise RuntimeError(
                     f"Don't know how to translate {region} to a preposition yet"
                 )
+
+        def _collect_action_modifiers(
+            self, action: SituationAction
+        ) -> Iterable[DependencyTreeToken]:
+            """
+            Collect adverbial and other modifiers of an action.
+
+            For right now we only handle a subset of spatial modifiers
+            which are realized as prepositions.
+            """
+            modifiers: List[DependencyTreeToken] = []
+
+            if action.during:
+                # so far we only handle IN_REGION relations which are asserted to hold
+                # either continuously or at some point during an action
+                for relation in chain(
+                    action.during.at_some_point, action.during.continuously
+                ):
+                    if relation.relation_type == IN_REGION:
+                        preposition: Optional[str] = None
+                        # the thing the relation is predicated of must be something plausibly
+                        # moving, which for now is either..
+                        fills_legal_argument_role = (
+                            # the theme
+                            relation.first_slot in action.argument_roles_to_fillers[THEME]
+                            # or the agent or patient if there is no theme (e.g. jumps, falls)
+                            or (
+                                (
+                                    relation.first_slot
+                                    in action.argument_roles_to_fillers[AGENT]
+                                    or relation.first_slot
+                                    not in action.argument_roles_to_fillers[THEME]
+                                )
+                                and not action.argument_roles_to_fillers[THEME]
+                            )
+                        )
+                        if fills_legal_argument_role:
+                            region = cast(Region[SituationObject], relation.second_slot)
+                            if (
+                                region.direction
+                                and region.direction.relative_to_axis
+                                == GRAVITATIONAL_AXIS
+                            ):
+                                if region.distance in (PROXIMAL, DISTAL):
+                                    if region.direction.positive:
+                                        preposition = "over"
+                                    else:
+                                        preposition = "under"
+                                elif (
+                                    region.distance == EXTERIOR_BUT_IN_CONTACT
+                                    and region.direction.positive
+                                ):
+                                    preposition = "on"
+                                else:
+                                    raise RuntimeError(
+                                        f"Don't know how to translate spatial "
+                                        f"modifier: {relation} in {action}"
+                                    )
+                            else:
+                                raise RuntimeError(
+                                    f"Don't know how to translate spatial modifiers "
+                                    f"which are not relative to the gravitational "
+                                    f"axis: {relation} in {action}"
+                                )
+                            reference_object_node = self.objects_to_dependency_nodes[
+                                region.reference_object
+                            ]
+                            self.dependency_graph.add_edge(
+                                DependencyTreeToken(preposition, ADPOSITION),
+                                reference_object_node,
+                                role=CASE_MARKING,
+                            )
+                            modifiers.append(reference_object_node)
+                        else:
+                            raise RuntimeError(
+                                f"To translate a spatial relation as a verbal "
+                                f"modifier, it must either be the theme or, if "
+                                f"it is another filler, the theme must be absent:"
+                                f" {relation} in {action} "
+                            )
+                    else:
+                        raise RuntimeError(
+                            f"Currently only know how to translate IN_REGION "
+                            f"for relations which hold during an action: "
+                            f"{relation} in {action}"
+                        )
+
+            return modifiers
 
         def _unique_lexicon_entry(self, ontology_node: OntologyNode) -> LexiconEntry:
             lexicon_entries = self.generator._ontology_lexicon.words_for_node(  # pylint:disable=protected-access

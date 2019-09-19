@@ -4,10 +4,10 @@ from immutablecollections.converter_utils import _to_immutableset
 
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
-    ObjectPerception,
     PropertyPerception,
-    RelationPerception,
 )
+from adam.perception import ObjectPerception
+from adam.relation import Relation
 
 
 @attrs(slots=True, frozen=True)
@@ -41,13 +41,13 @@ class DevelopmentalPrimitivePerceptionFrameDiff:
     r"""
     the set of `PropertyPerception`\ s, that were present on the first perception frame, but not the second.
     """
-    added_relations: ImmutableSet[RelationPerception] = attrib(
+    added_relations: ImmutableSet[Relation[ObjectPerception]] = attrib(
         kw_only=True, converter=_to_immutableset, default=immutableset()
     )
     r"""
     the set of `RelationPerception`\ s, that were present on the second perception frame, but not the first.
     """
-    removed_relations: ImmutableSet[RelationPerception] = attrib(
+    removed_relations: ImmutableSet[Relation[ObjectPerception]] = attrib(
         kw_only=True, converter=_to_immutableset, default=immutableset()
     )
     r"""

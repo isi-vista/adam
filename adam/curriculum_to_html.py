@@ -8,10 +8,11 @@ from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 from adam.curriculum.phase1_curriculum import GAILA_PHASE_1_CURRICULUM
 from adam.experiment import InstanceGroup
 from adam.language.dependency import LinearizedDependencyTree
-from adam.ontology import Region
+from adam.ontology.phase1_spatial_relations import Region
 from adam.perception import PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
+    HasColor,
 )
 from adam.situation import SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
@@ -159,13 +160,19 @@ class CurriculumToHtmlDumper:
             if frame.property_assertions:
                 output_text.append("\t\t\t\t<h5>Property Assertions</h5>\n\t\t\t\t<ul>")
                 for prop in frame.property_assertions:
-                    output_text.append(f"\t\t\t\t\t<li>{prop}")
+                    if isinstance(prop, HasColor):
+                        output_text.append(
+                            f'\t\t\t\t\t<li>{prop} - <span style="background-color: {prop.color}; '
+                            f'color: {prop.color}; border: 1px solid black;">Object Color</span></li>'
+                        )
+                    else:
+                        output_text.append(f"\t\t\t\t\t<li>{prop}</li>")
                 output_text.append("\t\t\t\t</ul>")
             if frame.relations:
                 output_text.append("\t\t\t\t<h5>Relations</h5>\n\t\t\t\t<ul>")
                 for rel in frame.relations:
                     output_text.append(
-                        f"\t\t\t\t\t<li>{rel.relation_type.handle}({rel.arg1},{rel.arg2})"
+                        f"\t\t\t\t\t<li>{rel.relation_type.handle}({rel.first_slot},{rel.second_slot})"
                     )
                 output_text.append("\t\t\t\t</ul>")
             frame_number = frame_number + 1

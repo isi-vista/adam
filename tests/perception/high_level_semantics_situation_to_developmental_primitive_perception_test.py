@@ -1,7 +1,7 @@
 import pytest
 from more_itertools import quantify
 
-from adam.ontology import OntologyNode, Region
+from adam.ontology import OntologyNode, IN_REGION
 from adam.ontology.phase1_ontology import (
     AGENT,
     BALL,
@@ -18,8 +18,17 @@ from adam.ontology.phase1_ontology import (
     TABLE,
     THEME,
     GROUND,
+    ANIMATE,
+    SELF_MOVING,
+    INANIMATE,
 )
-from adam.ontology.phase1_spatial_relations import EXTERIOR_BUT_IN_CONTACT, Direction
+from adam.ontology.phase1_spatial_relations import (
+    EXTERIOR_BUT_IN_CONTACT,
+    Direction,
+    GRAVITATIONAL_AXIS,
+    DISTAL,
+    Region,
+)
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
     HasBinaryProperty,
@@ -31,8 +40,12 @@ from adam.perception.high_level_semantics_situation_to_developmental_primitive_p
     TooManySpeakersException,
 )
 from adam.random_utils import RandomChooser
+from adam.relation import Relation
 from adam.situation import SituationAction, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
+from sample_situations import make_bird_flies_over_a_house
+
+from adam_test_utils import perception_with_handle
 
 _PERCEPTION_GENERATOR = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
     GAILA_PHASE_1_ONTOLOGY
@@ -73,7 +86,19 @@ def test_person_and_ball():
     }
 
     assert person_and_ball_perception.frames[0].relations
-    assert len(person_and_ball_perception.frames[0].property_assertions) == 2
+
+    person_perception = perception_with_handle(
+        person_and_ball_perception.frames[0], "person_0"
+    )
+    ball_perception = perception_with_handle(
+        person_and_ball_perception.frames[0], "ball_0"
+    )
+
+    assert set(person_and_ball_perception.frames[0].property_assertions) == {
+        HasBinaryProperty(person_perception, ANIMATE),
+        HasBinaryProperty(person_perception, SELF_MOVING),
+        HasBinaryProperty(ball_perception, INANIMATE),
+    }
 
 
 def test_person_and_ball_color():
@@ -89,27 +114,22 @@ def test_person_and_ball_color():
     )
 
     assert len(person_and_ball_perception.frames) == 1
-    assert len(person_and_ball_perception.frames[0].property_assertions) == 3
+    frame = person_and_ball_perception.frames[0]
 
-    property_assertions = person_and_ball_perception.frames[0].property_assertions
     assert (
-        prop_assertion is PropertyPerception for prop_assertion in property_assertions
+        prop_assertion is PropertyPerception
+        for prop_assertion in frame.property_assertions
     )
-    # Check binary properties
-    assert {
-        (prop.perceived_object.debug_handle, prop.binary_property.handle)
-        for prop in property_assertions
-        if isinstance(prop, HasBinaryProperty)
-    } == {("person_0", "animate"), ("ball_0", "inanimate")}
-    # Check colors
-    assert {
-        (
-            prop.perceived_object.debug_handle,
-            f"#{prop.color.red:02x}{prop.color.green:02x}{prop.color.blue:02x}",
-        )
-        for prop in property_assertions
-        if isinstance(prop, HasColor)
-    } == {("ball_0", "#f2003c")}
+
+    person_perception = perception_with_handle(frame, "person_0")
+    ball_perception = perception_with_handle(frame, "ball_0")
+    assert HasBinaryProperty(person_perception, ANIMATE) in frame.property_assertions
+    assert HasBinaryProperty(person_perception, SELF_MOVING) in frame.property_assertions
+    assert HasBinaryProperty(ball_perception, INANIMATE) in frame.property_assertions
+    assert any(
+        isinstance(property_, HasColor) and property_.perceived_object == ball_perception
+        for property_ in frame.property_assertions
+    )
 
 
 def test_person_put_ball_on_table():
@@ -134,7 +154,7 @@ def test_person_put_ball_on_table():
                             reference_object=table,
                             distance=EXTERIOR_BUT_IN_CONTACT,
                             direction=Direction(
-                                positive=True, relative_to_axis="vertical w.r.t. gravity"
+                                positive=True, relative_to_axis=GRAVITATIONAL_AXIS
                             ),
                         ),
                     ),
@@ -147,9 +167,25 @@ def test_person_put_ball_on_table():
         situation, chooser=RandomChooser.for_seed(0)
     )
     assert len(perception.frames) == 2
-    assert len(perception.frames[0].property_assertions) == 3
+    first_frame = perception.frames[0]
+    person_perception = perception_with_handle(first_frame, "person_0")
+    ball_perception = perception_with_handle(first_frame, "ball_0")
+    table_perception = perception_with_handle(first_frame, "table_0")
+    assert (
+        HasBinaryProperty(person_perception, ANIMATE) in first_frame.property_assertions
+    )
+    assert (
+        HasBinaryProperty(person_perception, SELF_MOVING)
+        in first_frame.property_assertions
+    )
+    assert (
+        HasBinaryProperty(ball_perception, INANIMATE) in first_frame.property_assertions
+    )
+    assert (
+        HasBinaryProperty(table_perception, INANIMATE) in first_frame.property_assertions
+    )
 
-    first_frame_relations = perception.frames[0].relations
+    first_frame_relations = first_frame.relations
     second_frame_relations = perception.frames[1].relations
 
     # assert we generate at least some relations in each frame
@@ -157,10 +193,12 @@ def test_person_put_ball_on_table():
     assert second_frame_relations
 
     first_frame_relations_strings = {
-        f"{r.relation_type}({r.arg1}, {r.arg2})" for r in perception.frames[0].relations
+        f"{r.relation_type}({r.first_slot}, {r.second_slot})"
+        for r in first_frame.relations
     }
     second_frame_relations_strings = {
-        f"{r.relation_type}({r.arg1}, {r.arg2})" for r in perception.frames[1].relations
+        f"{r.relation_type}({r.first_slot}, {r.second_slot})"
+        for r in perception.frames[1].relations
     }
     assert "smallerThan(ball_0, person_0)" in first_frame_relations_strings
     assert "partOf(hand_0, person_0)" in first_frame_relations_strings
@@ -174,12 +212,16 @@ def test_person_put_ball_on_table():
     assert "smallerThan(ball_0, person_0)" in second_frame_relations_strings
 
     # new relations:
-    assert (
-        "in-region(ball_0, Region(reference_object=table_0, "
-        "distance=Distance(name='exterior-but-in-contact'), "
-        "direction=Direction(positive=True, relative_to_axis='vertical w.r.t. gravity')))"
-        in second_frame_relations_strings
+    ball_on_table_relation = Relation(
+        IN_REGION,
+        ball_perception,
+        Region(
+            table_perception,
+            distance=EXTERIOR_BUT_IN_CONTACT,
+            direction=Direction(positive=True, relative_to_axis=GRAVITATIONAL_AXIS),
+        ),
     )
+    assert ball_on_table_relation in second_frame_relations
 
     # removed relations:
     assert (
@@ -278,3 +320,24 @@ def test_explicit_ground():
 
     # assert that a second "ground" object was not generated
     assert object_handles == {"ground_0"}
+
+def test_perceive_relations_during():
+    learner_perception = _PERCEPTION_GENERATOR.generate_perception(
+        make_bird_flies_over_a_house(), chooser=RandomChooser.for_seed(0)
+    )
+    assert learner_perception.during
+
+    bird = perception_with_handle(learner_perception.frames[0], "bird_0")
+    house = perception_with_handle(learner_perception.frames[0], "house_0")
+
+    bird_over_the_house = Relation(
+        IN_REGION,
+        bird,
+        Region(
+            reference_object=house,
+            distance=DISTAL,
+            direction=Direction(positive=True, relative_to_axis=GRAVITATIONAL_AXIS),
+        ),
+    )
+
+    assert bird_over_the_house in learner_perception.during.at_some_point

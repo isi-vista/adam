@@ -135,7 +135,7 @@ class PartOfSpeechTag:
     name: str = attrib(validator=instance_of(str))
 
 
-@attrs(frozen=True, slots=True)
+@attrs(frozen=True, slots=True, repr=False)
 class DependencyTreeToken:
     """
     A single word in a `DependencyTree`
@@ -143,6 +143,9 @@ class DependencyTreeToken:
 
     token: str = attrib(validator=instance_of(str))
     part_of_speech: PartOfSpeechTag = attrib(validator=instance_of(PartOfSpeechTag))
+
+    def __repr__(self) -> str:
+        return f"{self.token}/{self.part_of_speech}"
 
 
 @attrs(frozen=True, slots=True)

@@ -11,9 +11,9 @@ from adam.ontology import (
     REQUIRED_ONTOLOGY_NODES,
     PROPERTY,
     THING,
-    ObjectStructuralSchema,
     CAN_FILL_TEMPLATE_SLOT,
 )
+from adam.ontology.structural_schema import ObjectStructuralSchema
 from adam.ontology.ontology import Ontology
 from adam.random_utils import RandomChooser
 from adam.situation.templates.phase1_templates import (

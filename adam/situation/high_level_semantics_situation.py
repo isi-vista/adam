@@ -1,13 +1,14 @@
-from attr import attrs, attrib
+from attr import attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import ImmutableSet, immutableset
 from immutablecollections.converter_utils import _to_immutableset
 from more_itertools import flatten
 from vistautils.preconditions import check_arg
 
-from adam.ontology import Region
 from adam.ontology.ontology import Ontology
-from adam.situation import Situation, SituationObject, SituationRelation, SituationAction
+from adam.ontology.phase1_spatial_relations import Region
+from adam.relation import Relation
+from adam.situation import Situation, SituationAction, SituationObject
 
 
 @attrs(frozen=True, slots=True, repr=False)
@@ -25,7 +26,7 @@ class HighLevelSemanticsSituation(Situation):
     """
     All the objects present in a `Situation`.
     """
-    relations: ImmutableSet[SituationRelation] = attrib(
+    relations: ImmutableSet[Relation[SituationObject]] = attrib(
         converter=_to_immutableset, default=immutableset()
     )
     """
