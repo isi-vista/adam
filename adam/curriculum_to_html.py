@@ -203,6 +203,9 @@ class CurriculumToHtmlDumper:
 
         perception_is_dynamic = len(perception.frames) > 1
 
+        # first, we build an index of objects to their properties.
+        # This will be used so that when we list the objects,
+        # we can easily list their properties in brackets right after them.
         def extract_subject(prop: PropertyPerception) -> ObjectPerception:
             return prop.perceived_object
 
@@ -217,6 +220,8 @@ class CurriculumToHtmlDumper:
             else immutablesetmultidict()
         )
 
+        # Next, we determine what objects persist between both frames
+        # and which do not.
         first_frame_objects = perception.frames[0].perceived_objects
         second_frame_objects = (
             perception.frames[1].perceived_objects
@@ -230,18 +235,25 @@ class CurriculumToHtmlDumper:
         )
         all_objects = first_frame_objects.union(second_frame_objects)
 
-        # we use preceding or following arrows to indicate objects which came into being
-        # or ceased to exist between frames
+        # For objects, properties, and relations we will use arrows to indicate
+        # when something beings or ceased to exist between frames.
+        # Since the logic will be the same for all three types,
+        # we pull it out into a function.
         def compute_arrow(
             item: Any, static_items: AbstractSet[Any], first_frame_items: AbstractSet[Any]
         ) -> Tuple[str, str]:
             if item in static_items:
+                # item doesn't change - no arrow
                 return ("", "")
             elif item in first_frame_items:
+                # item ceases to exist
                 return ("", " ---> Ø")
             else:
+                # item beings to exist in the second frame
                 return ("Ø ---> ", "")
 
+        # the logic for rendering objects, which will be used in the loop below.
+        # This needs to be an inner function so it can access the frame property maps, etc.
         def render_object(obj: ObjectPerception) -> str:
             obj_text = f"<i>{obj.debug_handle}</i>"
             first_frame_obj_properties = first_frame_properties[obj]
@@ -252,6 +264,7 @@ class CurriculumToHtmlDumper:
                 else first_frame_obj_properties
             )
 
+            # logic for rendering properties, for use in the loop below.
             def render_property(prop: PropertyPerception) -> str:
                 (prop_prefix, prop_suffix) = compute_arrow(
                     prop, static_properties, first_frame_obj_properties
@@ -279,6 +292,7 @@ class CurriculumToHtmlDumper:
             else:
                 return obj_text
 
+        # Next, we render objects, together with their properties
         output_text.append("\t\t<h5>Perceived Objects</h5>\n\t\t<ul>")
         for object_ in all_objects:
             (obj_prefix, obj_suffix) = compute_arrow(
@@ -289,6 +303,7 @@ class CurriculumToHtmlDumper:
             )
         output_text.append("</ul>")
 
+        # Finally we render all relations between objects
         first_frame_relations = perception.frames[0].relations
         second_frame_relations = (
             perception.frames[1].relations if perception_is_dynamic else immutableset()
