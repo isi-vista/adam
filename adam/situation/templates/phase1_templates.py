@@ -155,13 +155,7 @@ class _Phase1SituationTemplateGenerator(
                 persisting_relations=[
                     relation.copy_remapping_objects(object_var_to_instantiations)
                     for relation in template.asserted_persisting_relations
-                ],
-                relations=[
-                    relation.copy_remapping_objects(
-                        variable_assignment.object_variables_to_fillers
-                    )
-                    for relation in template.asserted_relations
-                ],
+                ]
             )
 
 
@@ -401,16 +395,21 @@ class _SamplingVariableAssigner(_VariableAssigner):
         property_variables: AbstractSet["TemplatePropertyVariable"],
         chooser: SequenceChooser
     ) -> Iterable[_VariableAssignment]:
-        for object_combination in self._sample_combinations(
-            object_variables, ontology=ontology, chooser=chooser
-        ):
-            for property_combination in self._sample_combinations(
-                property_variables, ontology=ontology, chooser=chooser
-            ):
-                yield _VariableAssignment(
-                    object_variables_to_fillers=object_combination,
-                    property_variables_to_fillers=property_combination,
-                )
+        # we need to do the zip() below instead of using nested for loops
+        # or you will get a bunch of propery combinations for the same object combination.
+        object_combinations = self._sample_combinations(object_variables, ontology=ontology,
+                                                 chooser=chooser)
+        property_combinations = self._sample_combinations(property_variables, ontology=ontology,
+                                                          chooser=chooser)
+        object_plus_property_combinations = zip(
+            object_combinations, property_combinations
+        )
+
+        for (object_combination, property_combination) in object_plus_property_combinations:
+            yield _VariableAssignment(
+                object_variables_to_fillers=object_combination,
+                property_variables_to_fillers=property_combination,
+            )
 
     def _sample_combinations(
         self,

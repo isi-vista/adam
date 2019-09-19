@@ -19,7 +19,7 @@ from adam.ontology.phase1_ontology import (
     GROUND,
     on,
     IS_BODY_PART,
-)
+    HAS, PERSON, INANIMATE_OBJECT)
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
@@ -27,6 +27,7 @@ from adam.perception.high_level_semantics_situation_to_developmental_primitive_p
     GAILA_PHASE_1_PERCEPTION_GENERATOR,
 )
 from adam.random_utils import RandomChooser
+from adam.relation import Relation
 from adam.situation import SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.situation.templates.phase1_templates import (
@@ -142,6 +143,22 @@ _OBJECT_ON_GROUND_SUB_CURRICULUM = _phase1_instances(
     "object on ground",
     situations=all_possible(
         _OBJECT_ON_GROUND_TEMPLATE, ontology=GAILA_PHASE_1_ONTOLOGY, chooser=_CHOOSER
+    ))
+
+_person_0 = object_variable("person", PERSON)
+_inanimate_object_0 = object_variable("inanimate-object", INANIMATE_OBJECT)
+PERSON_HAS_OBJECT_TEMPLATE = Phase1SituationTemplate(
+    object_variables=[
+        _person_0,
+        _inanimate_object_0, _LEARNER_OBJECT],
+    asserted_persisting_relations=[Relation(HAS, _person_0, _inanimate_object_0)]
+)
+
+PERSON_HAS_OBJECT_SUB_CURRICULUM = _phase1_instances(
+    "person has object",
+    situations=sampled(
+        PERSON_HAS_OBJECT_TEMPLATE, chooser=_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY,
+        max_to_sample=100
     ),
 )
 
@@ -150,6 +167,7 @@ GAILA_PHASE_1_CURRICULUM = [
     OBJECTS_WITH_COLORS_SUB_CURRICULUM,
     MULTIPLE_OF_THE_SAME_OBJECT_SUB_CURRICULUM,
     _OBJECT_ON_GROUND_SUB_CURRICULUM,
+    PERSON_HAS_OBJECT_SUB_CURRICULUM
 ]
 """
 One particular instantiation of the curriculum for GAILA Phase 1.
