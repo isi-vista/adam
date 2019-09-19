@@ -19,6 +19,22 @@ from adam.situation import SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 
 
+USAGE_MESSAGE = """
+    curriculum_to_html.py param_file
+     \twhere param_file has the following parameter:
+     \t\toutput_directory: where to write the HTML output
+   """
+
+
+def main(params: Parameters) -> None:
+    curriculum_dumper = CurriculumToHtmlDumper()
+    curriculum_dumper.dump_to_html(
+        GAILA_PHASE_1_CURRICULUM,
+        output_destination=params.creatable_directory("output_directory"),
+        title="GAILA PHASE 1 CURRICULUM",
+    )
+
+
 @attrs(frozen=True, slots=True)
 class CurriculumToHtmlDumper:
     """
@@ -97,30 +113,30 @@ class CurriculumToHtmlDumper:
                     )
 
                 html_out.write(
-                    f'<table>\n'
-                    f'\t<thead>\n'
-                    f'\t\t<tr>\n'
+                    f"<table>\n"
+                    f"\t<thead>\n"
+                    f"\t\t<tr>\n"
                     f'\t\t\t<th colspan="3">\n'
-                    f'\t\t\t<h2>Scene {instance_number}</h2>\n'
-                    f'\t\t</th>\n\t</tr>\n'
-                    f'</thead>\n'
-                    f'<tbody>\n'
-                    f'\t<tr>\n'
-                    f'\t\t<td>\n'
+                    f"\t\t\t<h2>Scene {instance_number}</h2>\n"
+                    f"\t\t</th>\n\t</tr>\n"
+                    f"</thead>\n"
+                    f"<tbody>\n"
+                    f"\t<tr>\n"
+                    f"\t\t<td>\n"
                     f'\t\t\t<h3 id="situation-{instance_number}">Situation</h3>\n'
-                    f'\t\t</td>\n'
-                    f'\t\t<td>\n'
+                    f"\t\t</td>\n"
+                    f"\t\t<td>\n"
                     f'\t\t\t<h3 id="linguistic-{instance_number}">Language</h3>\n'
-                    f'\t\t</td>\n'
-                    f'\t\t<td>\n'
+                    f"\t\t</td>\n"
+                    f"\t\t<td>\n"
                     f'\t\t\t<h3 id="perception-{instance_number}">Learner Perception</h3>\n'
-                    f'\t\t</td>\n'
-                    f'\t</tr>\n'
-                    f'\t<tr>\n'
+                    f"\t\t</td>\n"
+                    f"\t</tr>\n"
+                    f"\t<tr>\n"
                     f'\t\t<td valign="top">{self._situation_text(situation)}</td>\n'
                     f'\t\t<td valign="top">{self._linguistic_text(dependency_tree)}</td>\n'
                     f'\t\t<td valign="top">{self._perception_text(perception)}</td>\n'
-                    f'</tr></tbody>'
+                    f"</tr></tbody>"
                 )
 
     def _situation_text(self, situation: HighLevelSemanticsSituation) -> str:
@@ -131,10 +147,14 @@ class CurriculumToHtmlDumper:
         for obj in situation.objects:
             property_string: str
             if obj.properties:
-                property_string = "[" + ",".join(prop.handle for prop in obj.properties) + "]"
+                property_string = (
+                    "[" + ",".join(prop.handle for prop in obj.properties) + "]"
+                )
             else:
                 property_string = ""
-            output_text.append(f"\t\t\t\t<li>{obj.ontology_node.handle}{property_string}</li>")
+            output_text.append(
+                f"\t\t\t\t<li>{obj.ontology_node.handle}{property_string}</li>"
+            )
         output_text.append("\t\t\t</ul>")
         if situation.actions:
             output_text.append("\t\t\t<h4>Actions</h4>\n\t\t\t\t<ul>")
@@ -203,21 +223,6 @@ class CurriculumToHtmlDumper:
         """
         return " ".join(linguistic.as_token_sequence())
 
-
-def main(params: Parameters) -> None:
-    curriculum_dumper = CurriculumToHtmlDumper()
-    curriculum_dumper.dump_to_html(
-        GAILA_PHASE_1_CURRICULUM,
-        output_destination=params.creatable_directory("output_directory"),
-        title="GAILA PHASE 1 CURRICULUM",
-    )
-
-
-USAGE_MESSAGE = """
-    curriculum_to_html.py param_file
-     \twhere param_file has the following parameter:
-     \t\toutput_directory: where to write the HTML output
-   """
 
 if __name__ == "__main__":
     parameters_only_entry_point(main, usage_message=USAGE_MESSAGE)
