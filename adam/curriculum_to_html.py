@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Iterable, Union
+from typing import Iterable, Union, List
 
 from attr import attrs
 from vistautils.parameters import Parameters
@@ -97,28 +97,44 @@ class CurriculumToHtmlDumper:
                     )
 
                 html_out.write(
-                    f'<table>\n<thead>\n\t<tr>\n\t\t<th colspan="3">\n\t\t\t<h2>Scene {instance_number}</h2>\n\t\t</th>\n\t</tr>\n</thead>\n'
-                    f'<tbody>\n\t<tr>\n\t\t<td>\n\t\t\t<h3 id="situation-{instance_number}">Situation Description</h3>\n\t\t</td>\n\t\t'
-                    f'<td>\n\t\t\t<h3 id="lingustics-{instance_number}">Linguistic Descrption</h3>\n\t\t</td>\n\t\t'
-                    f'<td>\n\t\t\t<h3 id="perception-{instance_number}">Perception Description</h3>\n\t\t</td>\n\t</tr>\n\t<tr>'
+                    f'<table>\n'
+                    f'\t<thead>\n'
+                    f'\t\t<tr>\n'
+                    f'\t\t\t<th colspan="3">\n'
+                    f'\t\t\t<h2>Scene {instance_number}</h2>\n'
+                    f'\t\t</th>\n\t</tr>\n'
+                    f'</thead>\n'
+                    f'<tbody>\n'
+                    f'\t<tr>\n'
+                    f'\t\t<td>\n'
+                    f'\t\t\t<h3 id="situation-{instance_number}">Situation</h3>\n'
+                    f'\t\t</td>\n'
+                    f'\t\t<td>\n'
+                    f'\t\t\t<h3 id="linguistic-{instance_number}">Language</h3>\n'
+                    f'\t\t</td>\n'
+                    f'\t\t<td>\n'
+                    f'\t\t\t<h3 id="perception-{instance_number}">Learner Perception</h3>\n'
+                    f'\t\t</td>\n'
+                    f'\t</tr>\n'
+                    f'\t<tr>\n'
+                    f'\t\t<td valign="top">{self._situation_text(situation)}</td>\n'
+                    f'\t\t<td valign="top">{self._linguistic_text(dependency_tree)}</td>\n'
+                    f'\t\t<td valign="top">{self._perception_text(perception)}</td>\n'
+                    f'</tr></tbody>'
                 )
-                html_out.writelines(self._situation_text(situation))
-                html_out.writelines(self._linguistic_text(dependency_tree))
-                html_out.writelines(self._perception_text(perception))
-                html_out.write("</tr></tbody>")
 
-    def _situation_text(self, situation: HighLevelSemanticsSituation) -> Iterable[str]:
+    def _situation_text(self, situation: HighLevelSemanticsSituation) -> str:
         """
         Converts a situation description into its sub-parts as a table entry
         """
-        output_text = [f"\t\t<td>\n\t\t\t<h4>Objects</h4>\n\t\t\t<ul>"]
+        output_text = [f"\t\t\t<h4>Objects</h4>\n\t\t\t<ul>"]
         for obj in situation.objects:
-            output_text.append(f"\t\t\t\t<li>{obj.ontology_node.handle}</li>")
-            # Reintroduce Properties as [] around the object
-            # output_text.append(f"<li>Properties:\n<ul>")
-            # for prop in obj.properties:
-            #    output_text.append(f"<li>{prop.handle}</li>")
-            # output_text.append("</ul></li>")
+            property_string: str
+            if obj.properties:
+                property_string = "[" + ",".join(prop.handle for prop in obj.properties) + "]"
+            else:
+                property_string = ""
+            output_text.append(f"\t\t\t\t<li>{obj.ontology_node.handle}{property_string}</li>")
         output_text.append("\t\t\t</ul>")
         if situation.actions:
             output_text.append("\t\t\t<h4>Actions</h4>\n\t\t\t\t<ul>")
@@ -133,8 +149,7 @@ class CurriculumToHtmlDumper:
                     f"{self._situation_object_or_region_text(rel.second_slot)})</li>"
                 )
             output_text.append("\t\t\t</ul>")
-        output_text.append("\t\t</td>")
-        return output_text
+        return "\n".join(output_text)
 
     def _situation_object_or_region_text(
         self, obj_or_region: Union[SituationObject, Region[SituationObject]]
@@ -146,11 +161,11 @@ class CurriculumToHtmlDumper:
 
     def _perception_text(
         self, perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]
-    ) -> Iterable[str]:
+    ) -> str:
         """
         Turns a perception into a list of items in the perceptions frames.
         """
-        output_text = [f"\t\t<td>"]
+        output_text: List[str] = []
         frame_number = 0
         for frame in perception.frames:
             output_text.append(f"\t\t\t<h4>Frame {frame_number}</h4>")
@@ -177,17 +192,16 @@ class CurriculumToHtmlDumper:
                     )
                 output_text.append("\t\t\t\t</ul>")
             frame_number = frame_number + 1
-        output_text.append("\t\t</td>")
-        return output_text
+        return "\n".join(output_text)
 
-    def _linguistic_text(self, linguistic: LinearizedDependencyTree) -> Iterable[str]:
+    def _linguistic_text(self, linguistic: LinearizedDependencyTree) -> str:
         """
         Parses the Linguistic Description of a Linearized Dependency Tree into a table entry
 
         Takes a `LinearizedDependencyTree` which is turned into a token sequence and
         phrased as a sentence for display. Returns a List[str]
         """
-        return [f"\t\t<td>", " ".join(linguistic.as_token_sequence()), "\t\t</td>"]
+        return " ".join(linguistic.as_token_sequence())
 
 
 def main(params: Parameters) -> None:
