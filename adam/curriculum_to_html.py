@@ -35,11 +35,13 @@ USAGE_MESSAGE = """
 
 
 def main(params: Parameters) -> None:
-    curriculum_dumper = CurriculumToHtmlDumper()
-    curriculum_dumper.dump_to_html(
+    root_output_directory = params.creatable_directory("output_directory")
+    phase1_curriculum_dir = root_output_directory / "gaila-phase-1"
+    phase1_curriculum_dir.mkdir(parents=True, exist_ok=True)
+    CurriculumToHtmlDumper().dump_to_html(
         GAILA_PHASE_1_CURRICULUM,
-        output_destination=params.creatable_directory("output_directory"),
-        title="GAILA PHASE 1 CURRICULUM",
+        output_directory=phase1_curriculum_dir,
+        title="GAILA Phase 1 Curriculum",
     )
 
 
@@ -59,23 +61,45 @@ class CurriculumToHtmlDumper:
             ]
         ],
         *,
-        output_destination: Path,
-        title: str = "Instance Group",
+        output_directory: Path,
+        title: str,
     ):
         r"""
         Method to take a list of `InstanceGroup`\ s and turns each one into an individual page
         
-        Given a list of InstanceGroups and an output directory of *outputdestination* along with 
-        a *title* for the pages the generator loops through each group and calls the internal 
-        method to create HTML pages.
+        Given a list of `InstanceGroup`\ s and an output directory of *outputdestination*
+        along with a *title* for the pages the generator loops through each group
+        and calls the internal method to create HTML pages.
         """
+        files_written: List[Tuple[str, str]] = []
+        # write each instance group to its own file
         for (idx, instance_group) in enumerate(instance_groups):
+            instance_group_header = f"{idx:03} - {instance_group.name()}"
+            # not absolute because when we use this to make links in index.html,
+            # we don't want them to break if the user moves the directory.
+            relative_filename = f"{instance_group_header}.html"
+            files_written.append((instance_group_header, relative_filename))
             CurriculumToHtmlDumper._dump_instance_group(
                 self,
                 instance_group=instance_group,
-                output_destination=output_destination.joinpath(f"{title}{idx}.html"),
-                title=f"{title} {idx}",
+                output_destination=output_directory / relative_filename,
+                title=f"{instance_group_header} - {title}",
             )
+
+        # write an table of contents to index.html
+        with open(output_directory / "index.html", "w") as index_out:
+            index_out.write(f"<head><title>{title}</title></head><body>")
+            index_out.write("<ul>")
+            for (
+                instance_group_title,
+                instance_group_dump_file_relative_path,
+            ) in files_written:
+                index_out.write(
+                    f"\t<li><a href='{instance_group_dump_file_relative_path}'>"
+                    f"{instance_group_title}</a></li>"
+                )
+            index_out.write("</ul>")
+            index_out.write("</body>")
 
     def _dump_instance_group(
         self,
