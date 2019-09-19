@@ -21,6 +21,7 @@ from adam.language.dependency.universal_dependencies import (
     ADJECTIVAL_MODIFIER,
     NOMINAL_MODIFIER_POSSESSIVE,
     PROPER_NOUN,
+    NOMINAL_MODIFIER,
 )
 
 _ENGLISH_HEAD_TO_ROLE_ORDER: ImmutableDict[
@@ -40,9 +41,14 @@ _ENGLISH_HEAD_TO_ROLE_ORDER: ImmutableDict[
                 NUMERIC_MODIFIER,
                 ADJECTIVAL_MODIFIER,
                 HEAD,
+                # Right now all our nmods are prepositional phrases,
+                # so this works, but we will need something more
+                # sophisticated than this map eventually to handle
+                # distinctions between noun modifier types.
+                NOMINAL_MODIFIER,
             ),
         ),
-        (PROPER_NOUN, (ADJECTIVAL_MODIFIER, HEAD, CASE_MARKING)),
+        (PROPER_NOUN, (ADJECTIVAL_MODIFIER, HEAD, CASE_MARKING, NOMINAL_MODIFIER)),
     ]
 )
 

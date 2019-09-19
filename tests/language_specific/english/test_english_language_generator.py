@@ -30,6 +30,7 @@ from adam.ontology.phase1_ontology import (
     FLY,
     ROLL,
     HAS,
+    on,
 )
 from adam.ontology.phase1_spatial_relations import (
     INTERIOR,
@@ -521,3 +522,17 @@ def test_path_modifier_on():
     assert only(
         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
     ).as_token_sequence() == ("Mom", "rolls", "a", "ball", "on", "a", "table")
+
+
+def test_noun_with_modifier():
+    table = SituationObject(TABLE)
+    ground = SituationObject(GROUND)
+
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        objects=[table, ground],
+        persisting_relations=[on(table, ground)],
+    )
+    assert only(
+        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
+    ).as_token_sequence() == ("a", "table", "on", "the", "ground")

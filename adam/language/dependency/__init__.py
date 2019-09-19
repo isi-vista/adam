@@ -120,7 +120,7 @@ class LinearizedDependencyTree(LinguisticDescription):
             )
 
 
-@attrs(frozen=True, slots=True)
+@attrs(frozen=True, slots=True, repr=False)
 class PartOfSpeechTag:
     """
     Part-of-speech tags.
@@ -133,6 +133,9 @@ class PartOfSpeechTag:
     """
 
     name: str = attrib(validator=instance_of(str))
+
+    def __repr__(self) -> str:
+        return self.name
 
 
 @attrs(frozen=True, slots=True, repr=False)
@@ -148,7 +151,7 @@ class DependencyTreeToken:
         return f"{self.token}/{self.part_of_speech}"
 
 
-@attrs(frozen=True, slots=True)
+@attrs(frozen=True, slots=True, repr=False)
 class DependencyRole:
     """
     The syntactic relationship between two nodes in a `DependencyTree`.
@@ -158,6 +161,9 @@ class DependencyRole:
     """
 
     name: str = attrib(validator=instance_of(str))
+
+    def __repr__(self) -> str:
+        return self.name
 
 
 class DependencyTreeLinearizer(ABC):

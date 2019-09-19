@@ -20,6 +20,7 @@ from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import COLOR, GAILA_PHASE_1_ONTOLOGY, LEARNER, GROUND
 from adam.ontology.selectors import ByHierarchyAndProperties, Is, OntologyNodeSelector
 from adam.random_utils import RandomChooser, SequenceChooser
+from adam.relation import Relation, flatten_relations
 from adam.situation import SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.situation.templates import (
@@ -46,6 +47,14 @@ class Phase1SituationTemplate(SituationTemplate):
     object_variables: ImmutableSet["TemplateObjectVariable"] = attrib(
         converter=_to_immutableset
     )
+    asserted_persisting_relations: ImmutableSet[
+        Relation["TemplateObjectVariable"]
+    ] = attrib(converter=flatten_relations, default=immutableset())
+    """
+    This are relations we assert to hold true in the situation.
+    This should be used to specify additional relations
+    which cannot be deduced from the types of the objects alone.
+    """
 
     def __attrs_post_init__(self) -> None:
         check_arg(self.object_variables, "A situation must contain at least one object")
@@ -121,10 +130,12 @@ class _Phase1SituationTemplateGenerator(
             property_variables=property_variables,
             chooser=chooser,
         ):
-            yield HighLevelSemanticsSituation(
-                ontology=self.ontology,
-                objects=[
-                    # instantiate all objects in the situation according to the variable assignment.
+            # instantiate all objects in the situation according to the variable assignment.
+            object_var_to_instantiations: Mapping[
+                TemplateObjectVariable, SituationObject
+            ] = immutabledict(
+                (
+                    obj_var,
                     SituationObject(
                         ontology_node=variable_assignment.object_variables_to_fillers[
                             obj_var
@@ -134,8 +145,16 @@ class _Phase1SituationTemplateGenerator(
                             variable_assignment.property_variables_to_fillers[prop_var]
                             for prop_var in obj_var.asserted_properties
                         ],
-                    )
-                    for obj_var in template.object_variables
+                    ),
+                )
+                for obj_var in template.object_variables
+            )
+            yield HighLevelSemanticsSituation(
+                ontology=self.ontology,
+                objects=object_var_to_instantiations.values(),
+                persisting_relations=[
+                    relation.copy_remapping_objects(object_var_to_instantiations)
+                    for relation in template.asserted_persisting_relations
                 ],
             )
 
@@ -202,6 +221,7 @@ def object_variable(
     root_node: OntologyNode = THING,
     *,
     required_properties: Iterable[OntologyNode] = immutableset(),
+    banned_properties: Iterable[OntologyNode] = immutableset(),
     added_properties: Iterable[
         Union[OntologyNode, TemplatePropertyVariable]
     ] = immutableset()
@@ -228,7 +248,9 @@ def object_variable(
     return TemplateObjectVariable(
         debug_handle,
         ByHierarchyAndProperties(
-            descendents_of=root_node, required_properties=real_required_properties
+            descendents_of=root_node,
+            required_properties=real_required_properties,
+            banned_properties=banned_properties,
         ),
         asserted_properties=[
             property_
