@@ -152,6 +152,8 @@ EDIBLE = OntologyNode("edible")
 subtype(EDIBLE, PROPERTY)
 ROLLABLE = OntologyNode("rollable")
 subtype(ROLLABLE, PROPERTY)
+CAN_HAVE_THINGS_RESTING_ON_THEM = OntologyNode("can-have-things-on-them")
+subtype(CAN_HAVE_THINGS_RESTING_ON_THEM, PROPERTY)
 
 
 COLOR = OntologyNode("color")
@@ -209,18 +211,19 @@ subtype(INANIMATE_OBJECT, THING)
 
 IS_GROUND = OntologyNode("is-ground")
 subtype(IS_GROUND, RECOGNIZED_PARTICULAR_PROPERTY)
-GROUND = OntologyNode("ground", non_inheritable_properties=[IS_GROUND])
+GROUND = OntologyNode("ground", non_inheritable_properties=[IS_GROUND,
+                                                            CAN_HAVE_THINGS_RESTING_ON_THEM])
 subtype(GROUND, INANIMATE_OBJECT)
 
-TABLE = OntologyNode("table", [CAN_FILL_TEMPLATE_SLOT])
+TABLE = OntologyNode("table", [CAN_FILL_TEMPLATE_SLOT, CAN_HAVE_THINGS_RESTING_ON_THEM])
 subtype(TABLE, INANIMATE_OBJECT)
 BALL = OntologyNode("ball", [CAN_FILL_TEMPLATE_SLOT])
 subtype(BALL, INANIMATE_OBJECT)
-BOOK = OntologyNode("book")
+BOOK = OntologyNode("book", [CAN_FILL_TEMPLATE_SLOT, CAN_HAVE_THINGS_RESTING_ON_THEM])
 subtype(BOOK, INANIMATE_OBJECT)
 HOUSE = OntologyNode("house", [HOLLOW, CAN_FILL_TEMPLATE_SLOT])
 subtype(HOUSE, INANIMATE_OBJECT)
-CAR = OntologyNode("car", [HOLLOW, CAN_FILL_TEMPLATE_SLOT, SELF_MOVING])
+CAR = OntologyNode("car", [HOLLOW, CAN_FILL_TEMPLATE_SLOT, SELF_MOVING, CAN_HAVE_THINGS_RESTING_ON_THEM])
 subtype(CAR, INANIMATE_OBJECT)
 WATER = OntologyNode(
     "water", [LIQUID], non_inheritable_properties=[TRANSPARENT, CAN_FILL_TEMPLATE_SLOT]
@@ -232,14 +235,14 @@ JUICE = OntologyNode(
 subtype(JUICE, INANIMATE_OBJECT)
 CUP = OntologyNode("cup", [HOLLOW, CAN_FILL_TEMPLATE_SLOT])
 subtype(CUP, INANIMATE_OBJECT)
-BOX = OntologyNode("box", [HOLLOW, CAN_FILL_TEMPLATE_SLOT])
+BOX = OntologyNode("box", [HOLLOW, CAN_FILL_TEMPLATE_SLOT, CAN_HAVE_THINGS_RESTING_ON_THEM])
 subtype(BOX, INANIMATE_OBJECT)
-CHAIR = OntologyNode("chair", [CAN_FILL_TEMPLATE_SLOT])
+CHAIR = OntologyNode("chair", [CAN_FILL_TEMPLATE_SLOT, CAN_HAVE_THINGS_RESTING_ON_THEM])
 subtype(CHAIR, INANIMATE_OBJECT)
 # should a HEAD be hollow? We are answering yes for now,
 # because food and liquids can enter it,
 # but we eventually want something more sophisticated.
-HEAD = OntologyNode("head", [HOLLOW, CAN_FILL_TEMPLATE_SLOT])
+HEAD = OntologyNode("head", [HOLLOW, CAN_FILL_TEMPLATE_SLOT, CAN_HAVE_THINGS_RESTING_ON_THEM])
 subtype(HEAD, INANIMATE_OBJECT)
 MILK = OntologyNode(
     "milk", [LIQUID], non_inheritable_properties=[WHITE, CAN_FILL_TEMPLATE_SLOT]
@@ -247,7 +250,7 @@ MILK = OntologyNode(
 subtype(MILK, INANIMATE_OBJECT)
 HAND = OntologyNode("hand", [CAN_MANIPULATE_OBJECTS, CAN_FILL_TEMPLATE_SLOT])
 subtype(HAND, INANIMATE_OBJECT)
-TRUCK = OntologyNode("truck", [HOLLOW, CAN_FILL_TEMPLATE_SLOT, SELF_MOVING])
+TRUCK = OntologyNode("truck", [HOLLOW, CAN_FILL_TEMPLATE_SLOT, SELF_MOVING, CAN_HAVE_THINGS_RESTING_ON_THEM])
 subtype(TRUCK, INANIMATE_OBJECT)
 DOOR = OntologyNode("door", [CAN_FILL_TEMPLATE_SLOT])
 subtype(DOOR, INANIMATE_OBJECT)
