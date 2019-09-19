@@ -416,3 +416,20 @@ def test_perceive_explicit_relations():
         only(near(ball_perception, box_perception)) not in perception.frames[0].relations
     )
     assert only(near(ball_perception, box_perception)) in perception.frames[1].relations
+
+
+def test_colors_across_part_of_relations():
+    """
+    Intended to test color inheritance across part-of relations
+    with objects that have a prototypical color
+    """
+    # learner_perception = _PERCEPTION_GENERATOR.generate_perception(
+    #     HighLevelSemanticsSituation(
+    #         ontology=GAILA_PHASE_1_ONTOLOGY, objects=[SituationObject(OBJECT)]
+    #     ),
+    #     chooser=RandomChooser.for_seed(0),
+    # ).frames[0]
+    # property_assertions = learner_perception.property_assertions
+    #
+    # assert HasColor(OBJECT, COLOR) in property_assertions
+    # assert HasColor(SUB-OBJECT, COLOR) in property_assertions
