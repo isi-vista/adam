@@ -9,6 +9,7 @@ from immutablecollections import (
     immutablesetmultidict,
 )
 from more_itertools import flatten
+from networkx import DiGraph
 from vistautils.parameters import Parameters
 from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 from vistautils.preconditions import check_state
@@ -16,6 +17,7 @@ from vistautils.preconditions import check_state
 from adam.curriculum.phase1_curriculum import GAILA_PHASE_1_CURRICULUM
 from adam.experiment import InstanceGroup
 from adam.language.dependency import LinearizedDependencyTree
+from adam.ontology.phase1_ontology import PART_OF
 from adam.ontology.phase1_spatial_relations import Region
 from adam.perception import ObjectPerception, PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
@@ -316,18 +318,9 @@ class CurriculumToHtmlDumper:
             else:
                 return obj_text
 
-        # Next, we render objects, together with their properties
-        output_text.append("\t\t<h5>Perceived Objects</h5>\n\t\t<ul>")
-        for object_ in all_objects:
-            (obj_prefix, obj_suffix) = compute_arrow(
-                object_, static_objects, first_frame_objects
-            )
-            output_text.append(
-                f"<li>{obj_prefix}{render_object(object_)}{obj_suffix}</li>"
-            )
-        output_text.append("</ul>")
-
-        # Finally we render all relations between objects
+        # Here we process the relations between the two scenes to determine all relations.
+        # This has to be done before rending objects so we can use the PART_OF relation to order
+        # the objects.
         first_frame_relations = perception.frames[0].relations
         second_frame_relations = (
             perception.frames[1].relations if perception_is_dynamic else immutableset()
@@ -339,6 +332,42 @@ class CurriculumToHtmlDumper:
         )
         all_relations = first_frame_relations.union(second_frame_relations)
 
+        # Here we add the perceived objects to a NetworkX DiGraph with PART_OF relations being the
+        # edges between objects. This allows us to do pre-order traversal of the Graph to make a
+        # nested <ul></ul> for the objects rather than a flat list.
+        graph = DiGraph()
+        root = ObjectPerception("root")
+        graph.add_node(root)
+
+        for object_ in all_objects:
+            graph.add_node(object_)
+            graph.add_edge(root, object_)
+
+        for relation_ in all_relations:
+            if relation_.relation_type == PART_OF:
+                graph.add_edge(relation_.first_slot, relation_.second_slot)
+
+        # Next, we render objects, together with their properties, using preorder DFS Traversal
+        output_text.append("\t\t<h5>Perceived Objects</h5>\n\t\t")
+        visited = set()
+
+        def dfs_walk(node):
+            visited.add(node)
+            if not node == root:
+                (obj_prefix, obj_suffix) = compute_arrow(
+                    node, static_objects, first_frame_objects
+                )
+                output_text.append(
+                    f"<ul><li>{obj_prefix}{render_object(node)}{obj_suffix}"
+                )
+            for succ in graph.successors(node):
+                if succ not in visited:
+                    dfs_walk(succ)
+            output_text.append("</li></ul>")
+
+        dfs_walk(root)
+
+        # Finally we render all relations between objects
         if all_relations:
             output_text.append("\t\t\t\t<h5>Relations</h5>\n\t\t\t\t<ul>")
 
