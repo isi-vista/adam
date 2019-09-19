@@ -48,6 +48,8 @@ from adam.ontology.phase1_spatial_relations import (
     GRAVITATIONAL_AXIS,
     Axis,
     Region,
+    TOWARD,
+    DISTAL,
 )
 from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
 from adam.relation import (
@@ -206,9 +208,7 @@ subtype(INANIMATE_OBJECT, THING)
 
 IS_GROUND = OntologyNode("is-ground")
 subtype(IS_GROUND, RECOGNIZED_PARTICULAR_PROPERTY)
-GROUND = OntologyNode(
-    "ground", non_inheritable_properties=[IS_GROUND]
-)
+GROUND = OntologyNode("ground", non_inheritable_properties=[IS_GROUND])
 subtype(GROUND, INANIMATE_OBJECT)
 
 TABLE = OntologyNode("table", [CAN_FILL_TEMPLATE_SLOT])
@@ -1029,10 +1029,9 @@ _FALL_PATIENT = SituationObject(THING)
 
 _FALL_ACTION_DESCRIPTION = ActionDescription(
     frames=[ActionDescriptionFrame({AGENT: _FALL_PATIENT})],
-    preconditions=[],
-    postconditions=[],
-    # TODO: this is another one where all the information is in the path
-    # TODO: this awaits GROUND representation: https://github.com/isi-vista/adam/issues/169
+    during=DuringAction(
+        paths=[(_FALL_PATIENT, SpatialPath(operator=TOWARD, reference_object=GROUND))]
+    ),
 )
 
 _THROW_AGENT = SituationObject(THING, properties=[ANIMATE])
@@ -1058,8 +1057,22 @@ _THROW_ACTION_DESCRIPTION = ActionDescription(
         Relation(IN_REGION, _THROW_THEME, _THROW_GOAL),
         negate(contacts(_THROW_MANIPULATOR, _THROW_THEME)),
     ],
-    # TODO: path through the air
-    # TODO: this awaits GROUND representation: https://github.com/isi-vista/adam/issues/169
+    during=DuringAction(
+        # must be above the ground at some point during the action
+        at_some_point=[
+            Relation(
+                IN_REGION,
+                _THROW_THEME,
+                Region(
+                    reference_object=GROUND,
+                    distance=DISTAL,
+                    direction=Direction(
+                        positive=True, relative_to_axis=GRAVITATIONAL_AXIS
+                    ),
+                ),
+            )
+        ]
+    ),
 )
 
 _MOVE_AGENT = SituationObject(THING, properties=[ANIMATE])
@@ -1088,9 +1101,11 @@ _JUMP_ACTION_DESCRIPTION = ActionDescription(
             Region(_JUMP_INITIAL_SUPPORTER, distance=EXTERIOR_BUT_IN_CONTACT),
         )
     ],
-    # TODO: this awaits GROUND representation: https://github.com/isi-vista/adam/issues/169
     during=DuringAction(
-        paths=[(_JUMP_AGENT, SpatialPath(AWAY_FROM, _JUMP_INITIAL_SUPPORTER))]
+        paths=[
+            (_JUMP_AGENT, SpatialPath(AWAY_FROM, _JUMP_INITIAL_SUPPORTER)),
+            (_JUMP_AGENT, SpatialPath(AWAY_FROM, GROUND)),
+        ]
     ),
 )
 
@@ -1126,8 +1141,21 @@ _FLY_AGENT = SituationObject(THING, properties=[ANIMATE])
 
 _FLY_ACTION_DESCRIPTION = ActionDescription(
     frames=[ActionDescriptionFrame({AGENT: _FLY_AGENT})],
-    # TODO: path information crucial here
-    # TODO: this awaits GROUND representation: https://github.com/isi-vista/adam/issues/169
+    during=DuringAction(
+        continuously=[
+            Relation(
+                IN_REGION,
+                _FLY_AGENT,
+                Region(
+                    reference_object=GROUND,
+                    distance=DISTAL,
+                    direction=Direction(
+                        positive=True, relative_to_axis=GRAVITATIONAL_AXIS
+                    ),
+                ),
+            )
+        ]
+    ),
 )
 
 GAILA_PHASE_1_ONTOLOGY = Ontology(
