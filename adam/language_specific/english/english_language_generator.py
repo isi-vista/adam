@@ -122,13 +122,21 @@ class SimpleRuleBasedEnglishLanguageGenerator(
         def generate(self) -> ImmutableSet[LinearizedDependencyTree]:
             # The learner appears in a situation so they items may have spatial relations
             # with respect to it, but our language currently never refers to the learner itself.
-            objects_to_translate = [
+
+            # We need to translate objects which appear in relations;
+            # right now we only translate persistent relations to language
+            # because it is unclear how to handle the others.
+            referenced_objects = list(self.situation.objects)
+            for persisting_relation in self.situation.persisting_relations:
+                persisting_relation.accumulate_referenced_objects(referenced_objects)
+
+            objects_to_translate = immutableset(
                 object_
-                for object_ in self.situation.objects
+                for object_ in referenced_objects
                 if not (
                     object_.ontology_node == LEARNER or object_.ontology_node == GROUND
                 )
-            ]
+            )
 
             node_counts: Mapping[OntologyNode, int]
             # Get number of objects of each type

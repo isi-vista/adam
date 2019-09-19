@@ -1,4 +1,4 @@
-from typing import Any, Generic, Mapping, Optional, TypeVar
+from typing import Any, Generic, Mapping, Optional, TypeVar, List
 
 from attr import attrib, attrs
 from attr.validators import in_, instance_of, optional
@@ -134,6 +134,14 @@ class Region(Generic[ReferenceObjectT]):
             if self.direction
             else None,
         )
+
+    def accumulate_referenced_objects(self, object_accumulator: List[ReferenceObjectT]) -> None:
+        r"""
+        Adds all objects referenced by this `Region` to *object_accumulator*.
+        """
+        object_accumulator.append(self.reference_object)
+        if self.direction and self.direction.relative_to_axis.reference_object:
+            object_accumulator.append(self.direction.relative_to_axis.reference_object)
 
     def __attrs_post_init__(self) -> None:
         check_arg(
