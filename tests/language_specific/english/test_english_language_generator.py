@@ -142,7 +142,6 @@ def test_mom_put_a_ball_on_a_table_using_i():
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         objects=[mom, ball, table],
-        relations=[],
         actions=[
             SituationAction(
                 PUT,
@@ -175,7 +174,6 @@ def test_mom_put_a_ball_on_a_table_using_you():
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         objects=[mom, ball, table],
-        relations=[],
         actions=[
             SituationAction(
                 PUT,
@@ -208,7 +206,6 @@ def test_dad_put_a_cookie_in_a_box():
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         objects=[dad, cookie, box],
-        relations=[],
         actions=[
             SituationAction(
                 PUT,
@@ -234,7 +231,6 @@ def test_situation_with_ground():
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         objects=[dad, cookie, box, ground],
-        relations=[],
         actions=[
             SituationAction(
                 PUT,
@@ -259,7 +255,6 @@ def test_dad_put_a_cookie_in_a_box_using_i():
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         objects=[dad, cookie, box],
-        relations=[],
         actions=[
             SituationAction(
                 PUT,
@@ -284,7 +279,6 @@ def test_dad_put_a_cookie_in_a_box_using_you():
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         objects=[dad, cookie, box],
-        relations=[],
         actions=[
             SituationAction(
                 PUT,
@@ -305,7 +299,7 @@ def test_dad_put_a_cookie_in_a_box_using_you():
 def test_green_ball():
     ball = SituationObject(BALL, [GREEN])
     situation = HighLevelSemanticsSituation(
-        ontology=GAILA_PHASE_1_ONTOLOGY, objects=[ball], relations=[], actions=[]
+        ontology=GAILA_PHASE_1_ONTOLOGY, objects=[ball]
     )
     assert only(
         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))

@@ -50,6 +50,7 @@ from adam.ontology.phase1_spatial_relations import (
     Region,
     TOWARD,
     DISTAL,
+    PROXIMAL,
 )
 from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
 from adam.relation import (
@@ -397,11 +398,35 @@ subtype(FLY, ACTION)
 SPATIAL_RELATION = OntologyNode("spatial-relation")
 subtype(SPATIAL_RELATION, RELATION)
 
+
 # On is an English-specific bundle of semantics, but that's okay, because this is just for
 # data generation, and it will get decomposed before being presented as perceptions to the
 # learner.
-ON = OntologyNode("on")
-subtype(ON, SPATIAL_RELATION)
+def _on_region_factory(reference_object: ObjectT) -> Region[ObjectT]:
+    return Region(
+        reference_object=reference_object,
+        distance=EXTERIOR_BUT_IN_CONTACT,
+        direction=Direction(positive=True, relative_to_axis=GRAVITATIONAL_AXIS),
+    )
+
+
+on = make_dsl_region_relation(_on_region_factory)  # pylint:disable=invalid-name
+
+
+def _near_region_factory(reference_object: ObjectT) -> Region[ObjectT]:
+    return Region(reference_object=reference_object, distance=PROXIMAL)
+
+
+near = make_dsl_region_relation(_near_region_factory)  # pylint:disable=invalid-name
+
+
+def _far_region_factory(reference_object: ObjectT) -> Region[ObjectT]:
+    return Region(reference_object=reference_object, distance=DISTAL)
+
+
+far = make_dsl_region_relation(_far_region_factory)  # pylint:disable=invalid-name
+
+
 PART_OF = OntologyNode("partOf")
 """
 A relation indicating that one object is part of another object.

@@ -1,7 +1,7 @@
-from typing import TypeVar, Optional, Generic, Any, Mapping
+from typing import Any, Generic, Mapping, Optional, TypeVar
 
 from attr import attrib, attrs
-from attr.validators import instance_of, in_, optional
+from attr.validators import in_, instance_of, optional
 from vistautils.preconditions import check_arg
 
 
@@ -100,7 +100,7 @@ class Direction(Generic[ReferenceObjectT]):
         return f"{polarity}{self.relative_to_axis}"
 
 
-@attrs(frozen=True)
+@attrs(frozen=True, repr=False)
 class Region(Generic[ReferenceObjectT]):
     """
     A region of space perceived by the learner.
@@ -140,6 +140,14 @@ class Region(Generic[ReferenceObjectT]):
             self.distance or self.direction,
             "A region must have either a " "distance or direction specified.",
         )
+
+    def __repr__(self) -> str:
+        parts = [str(self.reference_object)]
+        if self.distance:
+            parts.append(f"distance={self.distance}")
+        if self.direction:
+            parts.append(f"direction={self.direction}")
+        return f"Region({','.join(parts)})"
 
 
 @attrs(frozen=True, slots=True)

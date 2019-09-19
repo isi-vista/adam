@@ -7,7 +7,7 @@ from vistautils.preconditions import check_arg
 
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_spatial_relations import Region
-from adam.relation import Relation
+from adam.relation import Relation, flatten_relations
 from adam.situation import Situation, SituationAction, SituationObject
 
 
@@ -26,15 +26,47 @@ class HighLevelSemanticsSituation(Situation):
     """
     All the objects present in a `Situation`.
     """
-    relations: ImmutableSet[Relation[SituationObject]] = attrib(
-        converter=_to_immutableset, default=immutableset()
+    persisting_relations: ImmutableSet[Relation[SituationObject]] = attrib(
+        converter=flatten_relations, default=immutableset()
     )
     """
-    The relations which hold in this `Situation`.
+    The relations which hold in this `Situation`,
+    both before and after any actions which occur.
     
-    It is not necessary to state every relationship which holds through.
+    It is not necessary to state every relationship which holds in a situation.
     Rather this should contain the salient relationships
     which should be expressed in the linguistic description.
+    
+    Do not specify those relations here which are *implied* by any actions which occur.
+    Those are handled automatically. 
+    """
+    before_action_relations: ImmutableSet[Relation[SituationObject]] = attrib(
+        converter=flatten_relations, default=immutableset()
+    )
+    """
+    The relations which hold in this `Situation`,
+    before, but not necessarily after, any actions which occur.
+    
+    It is not necessary to state every relationship which holds in a situation.
+    Rather this should contain the salient relationships
+    which should be expressed in the linguistic description.
+    
+    Do not specify those relations here which are *implied* by any actions which occur.
+    Those are handled automatically. 
+    """
+    after_action_relations: ImmutableSet[Relation[SituationObject]] = attrib(
+        converter=flatten_relations, default=immutableset()
+    )
+    """
+    The relations which hold in this `Situation`,
+    after, but not necessarily before, any actions which occur.
+
+    It is not necessary to state every relationship which holds in a situation.
+    Rather this should contain the salient relationships
+    which should be expressed in the linguistic description.
+
+    Do not specify those relations here which are *implied* by any actions which occur.
+    Those are handled automatically. 
     """
     actions: ImmutableSet[SituationAction] = attrib(
         converter=_to_immutableset, default=immutableset()
@@ -45,14 +77,22 @@ class HighLevelSemanticsSituation(Situation):
 
     def __attrs_post_init__(self) -> None:
         check_arg(self.objects, "A situation must contain at least one object")
-        for relation in self.relations:
+        for relation in self.persisting_relations:
+            if not isinstance(relation.first_slot, SituationObject) or not isinstance(
+                relation.second_slot, (SituationObject, Region)
+            ):
+                raise RuntimeError(
+                    f"Relation fillers for situations must be situation objects "
+                    f"but got {relation}"
+                )
             if (
                 isinstance(relation.second_slot, Region)
                 and relation.second_slot.reference_object not in self.objects
             ):
                 raise RuntimeError(
-                    "Any object referred to by a region must be included in the "
-                    "set of situation objects."
+                    f"Any object referred to by a region must be included in the "
+                    f"set of situation objects but region {relation.second_slot}"
+                    f" with situation objects {self.objects}"
                 )
         for action in self.actions:
             for action_role_filler in flatten(
@@ -74,6 +114,13 @@ class HighLevelSemanticsSituation(Situation):
                         "Any object referred to by a region must be included in the "
                         "set of situation objects."
                     )
+        if not self.actions and (
+            self.before_action_relations or self.after_action_relations
+        ):
+            raise RuntimeError(
+                "Cannot specify relations to hold before or after actions "
+                "if there are no actions"
+            )
 
     def __repr__(self) -> str:
         # TODO: the way we currently repr situations doesn't handle multiple nodes
@@ -83,7 +130,7 @@ class HighLevelSemanticsSituation(Situation):
         # https://github.com/isi-vista/adam/issues/62
         lines = ["{"]
         lines.extend(f"\t{obj!r}" for obj in self.objects)
-        lines.extend(f"\t{relation!r}" for relation in self.relations)
+        lines.extend(f"\t{relation!r}" for relation in self.persisting_relations)
         lines.extend(f"\t{action!r}" for action in self.actions)
         lines.append("}")
         return "\n".join(lines)
