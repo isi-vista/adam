@@ -598,6 +598,7 @@ def test_transfer_of_possession():
 
             assert generated_tokens(situation) == reference_tokens
 
+
 def test_arguments_same_ontology_type():
     baby_0 = SituationObject(BABY)
     baby_1 = SituationObject(BABY)

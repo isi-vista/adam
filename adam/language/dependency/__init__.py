@@ -7,7 +7,11 @@ from typing import Iterable, Tuple
 from attr import attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
-from immutablecollections.converter_utils import (_to_immutabledict, _to_immutableset, _to_tuple)
+from immutablecollections.converter_utils import (
+    _to_immutabledict,
+    _to_immutableset,
+    _to_tuple,
+)
 from more_itertools import flatten
 from networkx import DiGraph
 

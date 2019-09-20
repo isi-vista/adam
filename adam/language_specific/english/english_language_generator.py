@@ -5,7 +5,7 @@ from typing import Iterable, List, Mapping, MutableMapping, Tuple, Union, cast
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import ImmutableSet, immutableset, immutablesetmultidict
-from more_itertools import only
+from more_itertools import only, first
 from networkx import DiGraph
 
 from adam.language.dependency import (
@@ -149,22 +149,35 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     "Currently only situations with 0 or 1 actions are supported"
                 )
 
-            for object_ in self.situation.objects:
-                if not self._only_translate_if_referenced(object_):
-                    self._noun_for_object(object_)
+            # handle the special case of a static situation with only
+            # multiple objects of the same type
+            object_types_in_situation = set(
+                object_.ontology_node for object_ in self.situation.objects
+            )
+            if len(object_types_in_situation) == 1 and not self.situation.is_dynamic:
+                # e.g. three boxes
+                # doesn't matter which object we choose; they are all the same
+                first_object = first(self.situation.objects)
+                self._noun_for_object(first_object)
+            else:
+                # the more common case of
+                # multiple objects of different types, or an action...
+                for object_ in self.situation.objects:
+                    if not self._only_translate_if_referenced(object_):
+                        self._noun_for_object(object_)
 
-            # We only translate those relations the user specifically calls out,
-            # not the many "background" relations which are also true.
-            for persisting_relation in self.situation.always_relations:
-                self._translate_relation(persisting_relation)
+                # We only translate those relations the user specifically calls out,
+                # not the many "background" relations which are also true.
+                for persisting_relation in self.situation.always_relations:
+                    self._translate_relation(persisting_relation)
 
-            if len(self.situation.actions) > 1:
-                raise RuntimeError(
-                    "Currently only situations with 0 or 1 actions are supported"
-                )
+                if len(self.situation.actions) > 1:
+                    raise RuntimeError(
+                        "Currently only situations with 0 or 1 actions are supported"
+                    )
 
-            if self.situation.actions:
-                self._translate_action_to_verb(only(self.situation.actions))
+                if self.situation.actions:
+                    self._translate_action_to_verb(only(self.situation.actions))
 
             return immutableset(
                 [
