@@ -12,7 +12,7 @@ from adam.ontology.phase1_ontology import (
     EAT,
     FALL,
     GAILA_PHASE_1_ONTOLOGY,
-    GAZE,
+    GAZED_AT,
     GOAL,
     GROUND,
     INANIMATE,
@@ -511,10 +511,10 @@ def test_gaze_default():
     cookie_perception = perception_with_handle(frame, "cookie_0")
     dad_perception = perception_with_handle(frame, "person_0")
     table_perception = perception_with_handle(frame, "table_0")
-    assert HasBinaryProperty(cookie_perception, GAZE) in frame.property_assertions
-    assert HasBinaryProperty(dad_perception, GAZE) in frame.property_assertions
+    assert HasBinaryProperty(cookie_perception, GAZED_AT) in frame.property_assertions
+    assert HasBinaryProperty(dad_perception, GAZED_AT) in frame.property_assertions
     # because the table does not occupy a semantic role in the situation
-    assert HasBinaryProperty(table_perception, GAZE) not in frame.property_assertions
+    assert HasBinaryProperty(table_perception, GAZED_AT) not in frame.property_assertions
 
 
 def test_gaze_specified():
@@ -537,6 +537,6 @@ def test_gaze_specified():
     dad_perception = perception_with_handle(frame, "person_0")
     table_perception = perception_with_handle(frame, "table_0")
     # only the cookie is gazed at, because the user said so.
-    assert HasBinaryProperty(cookie_perception, GAZE) in frame.property_assertions
-    assert HasBinaryProperty(dad_perception, GAZE) not in frame.property_assertions
-    assert HasBinaryProperty(table_perception, GAZE) not in frame.property_assertions
+    assert HasBinaryProperty(cookie_perception, GAZED_AT) in frame.property_assertions
+    assert HasBinaryProperty(dad_perception, GAZED_AT) not in frame.property_assertions
+    assert HasBinaryProperty(table_perception, GAZED_AT) not in frame.property_assertions
