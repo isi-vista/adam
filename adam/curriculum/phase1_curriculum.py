@@ -2,7 +2,9 @@
 Curricula for DARPA GAILA Phase 1
 """
 from itertools import chain
-from typing import Iterable
+from typing import Iterable, List
+
+from more_itertools import flatten
 
 from adam.curriculum import GeneratedFromSituationsInstanceGroup, InstanceGroup
 from adam.language.dependency import LinearizedDependencyTree
@@ -12,6 +14,7 @@ from adam.language_specific.english.english_language_generator import (
     PREFER_DITRANSITIVE,
 )
 from adam.ontology import THING
+from adam.ontology.during import DuringAction
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
     GAILA_PHASE_1_ONTOLOGY,
@@ -34,7 +37,8 @@ from adam.ontology.phase1_ontology import (
     TRANSFER_OF_POSSESSION,
     CAN_HAVE_THINGS_RESTING_ON_THEM,
     BIGGER_THAN,
-)
+    BIRD, FLY, HAS_SPACE_UNDER, above)
+from adam.ontology.phase1_spatial_relations import SpatialPath, TOWARD, AWAY_FROM
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
@@ -297,6 +301,72 @@ def _make_object_on_object_curriculum() -> _Phase1InstanceGroup:
         ),
     )
 
+def _make_fly_curriculum():
+    # fly under something which has an under
+    bird = object_variable("bird_0", BIRD)
+    object_0 = object_variable("object_0", THING)
+    object_with_space_under = object_variable("object_0", THING,
+                                              required_properties=[HAS_SPACE_UNDER])
+    ground = object_variable("ground", GROUND)
+
+    # "a bird flies up"
+    # "a bird flies down"
+    fly_up_down = [
+        Phase1SituationTemplate(
+        object_variables=[bird],
+            actions=[Action(FLY,
+                            argument_roles_to_fillers=[(AGENT, bird)],
+                            during=DuringAction(
+                                objects_to_paths=[
+                                    (AGENT, SpatialPath(
+                                        AWAY_FROM if up else TOWARD,
+                                        reference_object=ground
+                                    ))
+                                ]
+                            ))]
+    )
+        for up in (True, False)
+    ]
+
+    # "a bird flies over a house"
+    fly_over = Phase1SituationTemplate(
+        object_variables=[bird, object_0],
+            actions=[Action(FLY,
+                            argument_roles_to_fillers=[(AGENT, bird)],
+                            during=DuringAction(
+                                at_some_point=[above(bird, object_0)]
+                            ))]
+    )
+
+
+    # "a bird flies under a table"
+    fly_under = Phase1SituationTemplate(
+        object_variables=[bird, object_with_space_under],
+            actions=[Action(FLY,
+                            argument_roles_to_fillers=[(AGENT, bird)],
+                            during=DuringAction(
+                                at_some_point=[above(object_with_space_under, bird)]
+                            ))]
+    )
+
+
+    return _phase1_instances(
+        "flying",
+        chain(*[
+            flatten(all_possible(template, ontology=GAILA_PHASE_1_ONTOLOGY,
+                         chooser=_CHOOSER)
+                    for template in fly_up_down),
+            all_possible(fly_under, ontology=GAILA_PHASE_1_ONTOLOGY,
+                         chooser=_CHOOSER),
+            sampled(
+                fly_over,
+                max_to_sample=25,
+                chooser=_CHOOSER,
+                ontology=GAILA_PHASE_1_ONTOLOGY,
+            )
+        ])
+    )
+
 
 GAILA_PHASE_1_CURRICULUM = [
     EACH_OBJECT_BY_ITSELF_SUB_CURRICULUM,
@@ -308,6 +378,7 @@ GAILA_PHASE_1_CURRICULUM = [
     _OBJECTS_FALLING_SUBCURRICULUM,
     _make_transfer_of_possession_curriculum(),
     _make_object_on_object_curriculum(),
+    _make_fly_curriculum()
 ]
 """
 One particular instantiation of the curriculum for GAILA Phase 1.
