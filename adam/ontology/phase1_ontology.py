@@ -145,12 +145,12 @@ It only makes sense to apply this to sub-types of PERSON,
 but this is not currently enforced. E.g. 'You put the ball on the table.'
 """
 subtype(IS_ADDRESSEE, PERCEIVABLE_PROPERTY)
-GAZE = OntologyNode("gaze", [BINARY])
+GAZED_AT = OntologyNode("gazed-at", [BINARY])
 """
 Indicates the object of the focus of the speaker. This is not currently strictly enforced and is
 implicity generated in the perception step if not explicit in a situation.
 """
-subtype(GAZE, PERCEIVABLE_PROPERTY)
+subtype(GAZED_AT, PERCEIVABLE_PROPERTY)
 
 # Properties not perceived by the learner, but useful for situation generation
 
