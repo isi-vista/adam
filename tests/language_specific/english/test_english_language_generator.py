@@ -47,6 +47,9 @@ from adam.ontology.phase1_spatial_relations import (
     DISTAL,
     GRAVITATIONAL_AXIS,
     Region,
+    GRAVITATIONAL_UP,
+    SpatialPath,
+    AWAY_FROM,
 )
 from adam.random_utils import FixedIndexChooser
 from adam.relation import Relation
@@ -629,6 +632,61 @@ def test_arguments_same_ontology_type():
             reference_tokens = ("a", "baby", "gives", "a", "cookie", "to", "a", "baby")
 
         assert generated_tokens(situation) == reference_tokens
+
+
+def test_bird_flies_over_dad():
+    bird = SituationObject(BIRD)
+    dad = SituationObject(DAD)
+
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        objects=[bird, dad],
+        actions=[
+            Action(
+                FLY,
+                argument_roles_to_fillers=[(AGENT, bird)],
+                during=DuringAction(
+                    at_some_point=[
+                        Relation(
+                            IN_REGION,
+                            bird,
+                            Region(
+                                reference_object=dad,
+                                distance=DISTAL,
+                                direction=GRAVITATIONAL_UP,
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+    )
+
+    assert generated_tokens(situation) == ("a", "bird", "flies", "over", "Dad")
+
+
+def test_bird_flies_up():
+    bird = SituationObject(BIRD)
+    ground = SituationObject(GROUND)
+
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        objects=[bird],
+        actions=[
+            Action(
+                FLY,
+                argument_roles_to_fillers=[(AGENT, bird)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (bird, SpatialPath(operator=AWAY_FROM, reference_object=ground))
+                    ]
+                ),
+            )
+        ],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
+    )
+
+    assert generated_tokens(situation) == ("a", "bird", "flies", "up")
 
 
 def generated_tokens(situation):

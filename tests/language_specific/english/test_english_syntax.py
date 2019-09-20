@@ -1,19 +1,11 @@
 from networkx import DiGraph
 
-from adam.language.dependency import DependencyTreeToken, DependencyTree
+from adam.language.dependency import DependencyTree, DependencyTreeToken
+from adam.language.dependency.universal_dependencies import (ADPOSITION, CASE_SPATIAL, DETERMINER,
+                                                             DETERMINER_ROLE, NOMINAL_SUBJECT, NOUN,
+                                                             OBJECT, OBLIQUE_NOMINAL, VERB)
 from adam.language_specific.english.english_syntax import (
     SIMPLE_ENGLISH_DEPENDENCY_TREE_LINEARIZER,
-)
-from adam.language.dependency.universal_dependencies import (
-    DETERMINER,
-    ADPOSITION,
-    NOMINAL_SUBJECT,
-    DETERMINER_ROLE,
-    OBJECT,
-    CASE_MARKING,
-    OBLIQUE_NOMINAL,
-    NOUN,
-    VERB,
 )
 
 
@@ -30,7 +22,7 @@ def test_mom_put_the_ball_on_the_table():
     tree.add_edge(mom, put, role=NOMINAL_SUBJECT)
     tree.add_edge(the_0, ball, role=DETERMINER_ROLE)
     tree.add_edge(ball, put, role=OBJECT)
-    tree.add_edge(on, table, role=CASE_MARKING)
+    tree.add_edge(on, table, role=CASE_SPATIAL)
     tree.add_edge(the_1, table, role=DETERMINER_ROLE)
     tree.add_edge(table, put, role=OBLIQUE_NOMINAL)
 

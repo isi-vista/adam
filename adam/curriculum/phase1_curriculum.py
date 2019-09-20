@@ -322,6 +322,29 @@ def _make_fly_curriculum():
     )
     ground = object_variable("ground", GROUND)
 
+    bare_fly = [
+        Phase1SituationTemplate(
+            object_variables=[bird, ground],
+            actions=[
+                Action(
+                    FLY,
+                    argument_roles_to_fillers=[(AGENT, bird)],
+                    during=DuringAction(
+                        objects_to_paths=[
+                            (
+                                bird,
+                                SpatialPath(
+                                    AWAY_FROM if up else TOWARD, reference_object=ground
+                                ),
+                            )
+                        ]
+                    ),
+                )
+            ],
+        )
+        for up in (True, False)
+    ]
+
     # "a bird flies up"
     # "a bird flies down"
     fly_up_down = [
@@ -343,6 +366,7 @@ def _make_fly_curriculum():
                     ),
                 )
             ],
+            syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
         )
         for up in (True, False)
     ]
@@ -399,6 +423,12 @@ def _make_fly_curriculum():
         "flying",
         chain(
             *[
+                flatten(
+                    all_possible(
+                        template, ontology=GAILA_PHASE_1_ONTOLOGY, chooser=_CHOOSER
+                    )
+                    for template in bare_fly
+                ),
                 flatten(
                     all_possible(
                         template, ontology=GAILA_PHASE_1_ONTOLOGY, chooser=_CHOOSER
