@@ -1,6 +1,5 @@
-import re
 from itertools import chain
-from typing import AbstractSet, Dict, List, Mapping, Optional, Union, cast
+from typing import AbstractSet, Dict, List, Mapping, Optional, Union, cast, Any
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
@@ -605,13 +604,13 @@ class _PerceptionGeneration:
             if self._generator.ontology.is_subtype_of(property_, COLOR)
         )
 
-        prototypical_colors_for_object_type = immutableset(
-            property_
-            for property_ in self._generator.ontology.properties_for_node(
-                situation_object.ontology_node
-            )
-            if self._generator.ontology.is_subtype_of(property_, COLOR)
-        )
+        # prototypical_colors_for_object_type = immutableset(
+        #     property_
+        #     for property_ in self._generator.ontology.properties_for_node(
+        #         situation_object.ontology_node
+        #     )
+        #     if self._generator.ontology.is_subtype_of(property_, COLOR)
+        # )
 
         if explicitly_specified_colors:
             # If any color is specified explicitly, then ignore any which are just prototypical
@@ -620,8 +619,13 @@ class _PerceptionGeneration:
                 return only(explicitly_specified_colors)
             else:
                 raise RuntimeError("Cannot have multiple explicit colors on an object.")
-        elif prototypical_colors_for_object_type:
-            return self._chooser.choice(prototypical_colors_for_object_type)
+        # elif prototypical_colors_for_object_type:
+        #     # if an "inherited color" has already been set, skip
+        #     # to avoid re-assigning a random color
+        #     object_perception = self._objects_to_perceptions[situation_object].debug_handle
+        #     if r"HasColor\(%s #\d+\)" % object_perception in self._property_assertion_perceptions:
+        #         return None
+        #     return self._chooser.choice(prototypical_colors_for_object_type)
         else:
             # We have no idea what color this is, so we currently don't perceive any color.
             # https://github.com/isi-vista/adam/issues/113
@@ -657,6 +661,8 @@ class _PerceptionGeneration:
                     f"Support for objects with multiple structural schemata has not "
                     f"yet keep implemented."
                 )
+            # Get the inherited color, if there is one
+            inherited_color: Any = None
             colors = immutableset(
                 property_
                 for property_ in self._generator.ontology.properties_for_node(
@@ -664,16 +670,25 @@ class _PerceptionGeneration:
                 )
                 if self._generator.ontology.is_subtype_of(property_, COLOR)
             )
-            self._instantiate_object_schema(
-                only(object_schemata),
-                situation_object=situation_object,
-                inherited_colors=colors,
-            )
+            color = self._chooser.choice(colors) if colors else None
+            if color:
+                if color in COLORS_TO_RGBS.keys():
+                    color_options = COLORS_TO_RGBS[color]
+                    if color_options:
+                        r, g, b = self._chooser.choice(color_options)
+                        inherited_color = RgbColorPerception(r, g, b)
+                    else:  # Handles the case of TRANSPARENT
+                        inherited_color = color
+                else:
+                    raise RuntimeError(
+                        f"Not sure how to generate perception for the unknown property {color} "
+                        f"which is marked as COLOR"
+                    )
 
             perceived_object = self._instantiate_object_schema(
                 only(object_schemata),
                 situation_object=situation_object,
-                inherited_colors=colors,
+                inherited_color=inherited_color,
             )
 
             self._object_perceptions_to_ontology_nodes[
@@ -687,7 +702,7 @@ class _PerceptionGeneration:
         # if the object being instantiated corresponds to an object
         # in the situation description, then this will track that object
         situation_object: Optional[SituationObject] = None,
-        inherited_colors: Optional[ImmutableSet[OntologyNode]] = ImmutableSet.empty(),
+        inherited_color: Optional[Any] = None,
     ) -> ObjectPerception:
         root_object_perception = ObjectPerception(
             debug_handle=self._object_handle_generator.subscripted_handle(schema)
@@ -700,12 +715,26 @@ class _PerceptionGeneration:
         # to assist in translating SituationRelations and SituationActions.
         if situation_object:
             self._objects_to_perceptions[situation_object] = root_object_perception
+            if inherited_color:
+                if isinstance(inherited_color, RgbColorPerception):
+                    self._property_assertion_perceptions.append(
+                        HasColor(root_object_perception, inherited_color)
+                    )
+                else:
+                    self._property_assertion_perceptions.append(
+                        HasBinaryProperty(root_object_perception, inherited_color)
+                    )
 
         # recursively instantiate sub-components of this object
         sub_object_to_object_perception: ImmutableDict[
             SubObject, ObjectPerception
         ] = immutabledict(
-            (sub_object, self._instantiate_object_schema(sub_object.schema))
+            (
+                sub_object,
+                self._instantiate_object_schema(
+                    sub_object.schema, inherited_color=inherited_color
+                ),
+            )
             for sub_object in schema.sub_objects
         )
         for sub_object in schema.sub_objects:
@@ -720,16 +749,42 @@ class _PerceptionGeneration:
             )
             # If the sub-object does not already have a color,
             # use the parent's prototypical color if one exists
-            sub_object_color = re.findall(
-                r"hasColor\(%s, (#\d+)\)" % sub_object_perception,
-                str(self._property_assertion_perceptions),
-            )
-            if inherited_colors and not sub_object_color:
-                self._property_assertion_perceptions.append(
-                    HasColor(
-                        sub_object_perception, self._chooser.choice(inherited_colors)
-                    )
+            # TODO: ensure that each sub-object of the same type gets the same RgbColorPerception
+            # https://github.com/isi-vista/adam/issues/249
+            sub_object_colors = immutableset(
+                property_
+                for property_ in self._generator.ontology.properties_for_node(
+                    sub_object.schema.parent_object
                 )
+                if self._generator.ontology.is_subtype_of(property_, COLOR)
+            )
+
+            if sub_object_colors:
+                sub_object_color: Any = self._chooser.choice(sub_object_colors)
+                if sub_object_color in COLORS_TO_RGBS.keys():
+                    color_options = COLORS_TO_RGBS[sub_object_color]
+                    if color_options:
+                        r, g, b = self._chooser.choice(color_options)
+                        sub_object_color = RgbColorPerception(r, g, b)
+                else:
+                    raise RuntimeError(
+                        f"Not sure how to generate perception for the unknown property {sub_object_color} "
+                        f"which is marked as COLOR"
+                    )
+            elif inherited_color:
+                sub_object_color = inherited_color
+            else:
+                sub_object_color = None
+
+            if sub_object_color:
+                if isinstance(sub_object_color, RgbColorPerception):
+                    self._property_assertion_perceptions.append(
+                        HasColor(sub_object_perception, sub_object_color)
+                    )
+                else:  # Handles the case of TRANSPARENT
+                    self._property_assertion_perceptions.append(
+                        HasBinaryProperty(sub_object_perception, sub_object_color)
+                    )
 
         # translate sub-object relations specified by the object's structural schema
         for sub_object_relation in schema.sub_object_relations:

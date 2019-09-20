@@ -266,7 +266,14 @@ HAND = OntologyNode("hand", [CAN_MANIPULATE_OBJECTS, CAN_FILL_TEMPLATE_SLOT])
 subtype(HAND, INANIMATE_OBJECT)
 TRUCK = OntologyNode(
     "truck",
-    [HOLLOW, CAN_FILL_TEMPLATE_SLOT, SELF_MOVING, CAN_HAVE_THINGS_RESTING_ON_THEM],
+    [
+        BLUE,
+        RED,
+        HOLLOW,
+        CAN_FILL_TEMPLATE_SLOT,
+        SELF_MOVING,
+        CAN_HAVE_THINGS_RESTING_ON_THEM,
+    ],
 )
 subtype(TRUCK, INANIMATE_OBJECT)
 DOOR = OntologyNode("door", [CAN_FILL_TEMPLATE_SLOT])
@@ -360,7 +367,7 @@ _WALL = OntologyNode("wall")
 subtype(_WALL, INANIMATE_OBJECT)
 _ROOF = OntologyNode("roof")
 subtype(_ROOF, INANIMATE_OBJECT)
-_TIRE = OntologyNode("tire")
+_TIRE = OntologyNode("tire", [BLACK])
 subtype(_TIRE, INANIMATE_OBJECT)
 _TRUCK_CAB = OntologyNode("truckcab")
 subtype(_TRUCK_CAB, INANIMATE_OBJECT)

@@ -32,6 +32,10 @@ from adam.ontology.phase1_ontology import (
     far,
     near,
     on,
+    TRUCK,
+    BLUE,
+    BLACK,
+    COLORS_TO_RGBS,
 )
 from adam.ontology.phase1_spatial_relations import (
     DISTAL,
@@ -46,6 +50,7 @@ from adam.perception.developmental_primitive_perception import (
     HasBinaryProperty,
     HasColor,
     PropertyPerception,
+    RgbColorPerception,
 )
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
@@ -498,13 +503,40 @@ def test_colors_across_part_of_relations():
     Intended to test color inheritance across part-of relations
     with objects that have a prototypical color
     """
-    # learner_perception = _PERCEPTION_GENERATOR.generate_perception(
-    #     HighLevelSemanticsSituation(
-    #         ontology=GAILA_PHASE_1_ONTOLOGY, objects=[SituationObject(OBJECT)]
-    #     ),
-    #     chooser=RandomChooser.for_seed(0),
-    # ).frames[0]
-    # property_assertions = learner_perception.property_assertions
-    #
-    # assert HasColor(OBJECT, COLOR) in property_assertions
-    # assert HasColor(SUB-OBJECT, COLOR) in property_assertions
+    learner_perception = _PERCEPTION_GENERATOR.generate_perception(
+        HighLevelSemanticsSituation(
+            ontology=GAILA_PHASE_1_ONTOLOGY, objects=[SituationObject(TRUCK)]
+        ),
+        chooser=RandomChooser.for_seed(0),
+    )
+    frame = learner_perception.frames[0]
+    property_assertions = frame.property_assertions
+
+    truck_perception = perception_with_handle(frame, "truck_0")
+    flatbed_perception = perception_with_handle(frame, "flatbed_0")
+    tire_perception = perception_with_handle(frame, "tire_0")
+    blue_options = COLORS_TO_RGBS[BLUE]
+    blue_perceptions = [RgbColorPerception(r, g, b) for r, g, b in blue_options]
+    red_options = COLORS_TO_RGBS[RED]
+    red_perceptions = [RgbColorPerception(r, g, b) for r, g, b in red_options]
+    black_options = COLORS_TO_RGBS[BLACK]
+    black_perceptions = [RgbColorPerception(r, g, b) for r, g, b in black_options]
+
+    assert any(
+        HasColor(truck_perception, blue_perception) in property_assertions
+        for blue_perception in blue_perceptions
+    ) or any(
+        HasColor(truck_perception, red_perception) in property_assertions
+        for red_perception in red_perceptions
+    )
+    assert any(
+        HasColor(flatbed_perception, blue_perception) in property_assertions
+        for blue_perception in blue_perceptions
+    ) or any(
+        HasColor(flatbed_perception, red_perception) in property_assertions
+        for red_perception in red_perceptions
+    )
+    assert any(
+        HasColor(tire_perception, black_perception) in property_assertions
+        for black_perception in black_perceptions
+    )
