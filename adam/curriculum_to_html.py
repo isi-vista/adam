@@ -127,6 +127,22 @@ class CurriculumToHtmlDumper:
         with open(output_destination, "w") as html_out:
             html_out.write(f"<head>\n\t<style>{CSS}\n\t</style>\n</head>")
             html_out.write(f"\n<body>\n\t<h1>{title} - {instance_group.name()}</h1>")
+            html_out.write("\n<h4>How to read</h4>")
+            html_out.write(
+                "\n<p>A Situation is curriculum-designer-facing; it is not accessible to the learner. "
+                "Names on Perceptions are handles for debugging; they are not accessible to the "
+                'learner. "GAZED-AT" refers the object of focus of the speaker.</p> '
+            )
+            html_out.write(
+                "\n<p>Properties</p>\n<ul>"
+                "\n\t<li>These define characteristics of an object that may influence perception and fulfillment of "
+                "semantic roles.</li> "
+                "\n\t<li>OBJECT[PROPERTY["
+                "META_PROPERTY]]</li> "
+                "\n<p>Relations</p> "
+                "\n<p>Part-of nesting</p> "
+                "\n<p>Regions</p> "
+            )
             for (instance_number, (situation, dependency_tree, perception)) in enumerate(
                 instance_group.instances()
             ):
