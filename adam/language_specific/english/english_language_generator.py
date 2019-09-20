@@ -1,15 +1,10 @@
 import collections
 from itertools import chain
-from typing import Iterable, List, Mapping, MutableMapping, Union, cast, Tuple
+from typing import Iterable, List, Mapping, MutableMapping, Tuple, Union, cast
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
-from immutablecollections import (
-    ImmutableSet,
-    immutabledict,
-    immutableset,
-    immutablesetmultidict,
-)
+from immutablecollections import ImmutableSet, immutableset, immutablesetmultidict
 from more_itertools import only
 from networkx import DiGraph
 
@@ -40,14 +35,14 @@ from adam.language.lexicon import LexiconEntry
 from adam.language.ontology_dictionary import OntologyLexicon
 from adam.language_specific.english.english_phase_1_lexicon import (
     GAILA_PHASE_1_ENGLISH_LEXICON,
-    MASS_NOUN,
     I,
+    MASS_NOUN,
     YOU,
 )
 from adam.language_specific.english.english_syntax import (
-    SIMPLE_ENGLISH_DEPENDENCY_TREE_LINEARIZER,
     FIRST_PERSON,
     SECOND_PERSON,
+    SIMPLE_ENGLISH_DEPENDENCY_TREE_LINEARIZER,
 )
 from adam.ontology import IN_REGION, OntologyNode
 from adam.ontology.phase1_ontology import (

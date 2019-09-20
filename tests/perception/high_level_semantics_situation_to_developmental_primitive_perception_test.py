@@ -26,6 +26,7 @@ from adam.ontology.phase1_ontology import (
     on,
     far,
     near,
+    FALL,
 )
 from adam.ontology.phase1_spatial_relations import (
     EXTERIOR_BUT_IN_CONTACT,
@@ -33,6 +34,7 @@ from adam.ontology.phase1_spatial_relations import (
     GRAVITATIONAL_AXIS,
     DISTAL,
     Region,
+    TOWARD,
 )
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -416,3 +418,23 @@ def test_perceive_explicit_relations():
         only(near(ball_perception, box_perception)) not in perception.frames[0].relations
     )
     assert only(near(ball_perception, box_perception)) in perception.frames[1].relations
+
+
+def test_path_from_action_description():
+    ball = SituationObject(BALL)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        objects=[ball],
+        actions=[Action(FALL, argument_roles_to_fillers=[(THEME, ball)])],
+    )
+    perception = _PERCEPTION_GENERATOR.generate_perception(
+        situation, chooser=RandomChooser.for_seed(0)
+    )
+    ball_perception = perception_with_handle(perception.frames[0], "ball_0")
+    ground_perception = perception_with_handle(perception.frames[0], "ground_0")
+    assert perception.during
+    assert perception.during.objects_to_paths
+    assert len(perception.during.objects_to_paths) == 1
+    path = only(perception.during.objects_to_paths[ball_perception])
+    assert path.reference_object == ground_perception
+    assert path.operator == TOWARD

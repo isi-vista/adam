@@ -1,7 +1,7 @@
 from typing import Optional
 
 from attr import attrib, attrs
-from attr.validators import optional, instance_of
+from attr.validators import instance_of, optional
 from immutablecollections import (
     ImmutableDict,
     ImmutableSet,
