@@ -1249,7 +1249,7 @@ GAILA_PHASE_1_ONTOLOGY = Ontology(
             (FLY, _FLY_ACTION_DESCRIPTION),
         ]
     ),
-    node_to_relations=build_size_relationships(
+    relations=build_size_relationships(
         (
             (HOUSE,),
             (_ROOF, _WALL),

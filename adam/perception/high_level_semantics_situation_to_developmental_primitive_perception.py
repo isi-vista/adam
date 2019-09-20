@@ -170,6 +170,9 @@ class _PerceptionGeneration:
             for relation in self._situation.always_relations
         )
 
+        # Handle implicit size relations
+        self._perceive_implicit_size()
+
         # Other relations implied by actions will be handled during action translation below.
 
         if not self._situation.actions:
@@ -627,7 +630,6 @@ class _PerceptionGeneration:
                 ground_schemata, situation_object=SituationObject(GROUND)
             )
             self._object_perceptions_to_ontology_nodes[ground_observed] = GROUND
-
         for situation_object in self._situation.objects:
             if not situation_object.ontology_node:
                 raise RuntimeError(
@@ -651,6 +653,9 @@ class _PerceptionGeneration:
 
             perceived_object = self._instantiate_object_schema(
                 only(object_schemata), situation_object=situation_object
+            )
+            self._object_perceptions_to_ontology_nodes.update(
+                {perceived_object: situation_object.ontology_node}
             )
 
             self._object_perceptions_to_ontology_nodes[
@@ -749,6 +754,66 @@ class _PerceptionGeneration:
         self, relation: Relation[SituationObject]
     ) -> Relation[ObjectPerception]:
         return relation.copy_remapping_objects(self._objects_to_perceptions)
+
+    # TODO: We may need to rework this function to not use quadratic time but it works for now
+    # https://github.com/isi-vista/adam/issues/215
+    def _perceive_implicit_size(self):
+        for situation_object in self._object_perceptions:
+            # TODO: we should make a lookup map for this
+            # Explicit relation types are tracked so that implicitly defined ones from the Ontology
+            # do not overwrite them.
+            explicit_relations_predicated_of_object = immutableset(
+                relation
+                for relation in self._relation_perceptions
+                if relation.first_slot == situation_object
+            )
+            if situation_object not in self._object_perceptions_to_ontology_nodes:
+                raise RuntimeError(
+                    f"Unable to determine implicit relationship types for {situation_object}"
+                    f"which doesn't have an entry in the Object Perceptions "
+                    f"to Ontology Nodes dictionary."
+                )
+            relations_predicated_of_object_type = self._situation.ontology.subjects_to_relations[
+                self._object_perceptions_to_ontology_nodes[situation_object]
+            ]
+
+            for other_object in self._object_perceptions:
+                if not other_object == situation_object:
+                    # Track the explicit relationship types we run into so we can ignore the
+                    # implicit relationship if one exists.
+                    if other_object not in self._object_perceptions_to_ontology_nodes:
+                        raise RuntimeError(
+                            f"Unable to determine implicit relationship types for {other_object}"
+                            f" which doesn't have an entry in the Object Perceptions "
+                            f"to Ontology Nodes dictionary."
+                        )
+                    explicit_relation_types = []
+                    for explicit_relation in explicit_relations_predicated_of_object:
+                        if explicit_relation.second_slot == other_object:
+                            explicit_relation_types.append(
+                                explicit_relation.relation_type
+                            )
+                    for implicit_relation in relations_predicated_of_object_type:
+                        if (
+                            implicit_relation.second_slot
+                            == self._object_perceptions_to_ontology_nodes[other_object]
+                        ):
+                            if (
+                                implicit_relation.relation_type
+                                not in explicit_relation_types
+                            ):
+                                self._relation_perceptions.append(
+                                    implicit_relation.copy_remapping_objects(
+                                        {
+                                            self._object_perceptions_to_ontology_nodes[
+                                                other_object
+                                            ]: other_object,
+                                            self._object_perceptions_to_ontology_nodes[
+                                                situation_object
+                                            ]: situation_object,
+                                        }
+                                    )
+                                )
 
 
 GAILA_PHASE_1_PERCEPTION_GENERATOR = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
