@@ -25,9 +25,9 @@ from adam.ontology.phase1_ontology import (
     HAS,
     PERSON,
     INANIMATE_OBJECT,
-    bigger_than,
     THEME,
     FALL,
+    PERSON_CAN_HAVE,
     GIVE,
     AGENT,
     GOAL,
@@ -165,22 +165,23 @@ _OBJECT_ON_GROUND_SUB_CURRICULUM = _phase1_instances(
 )
 
 _PERSON_0 = object_variable("person", PERSON)
-_INANIMATE_OBJECT_0 = object_variable("inanimate-object", INANIMATE_OBJECT)
+_INANIMATE_OBJECT_0 = object_variable(
+    "inanimate-object", INANIMATE_OBJECT, required_properties=[PERSON_CAN_HAVE]
+)
 PERSON_HAS_OBJECT_TEMPLATE = Phase1SituationTemplate(
     object_variables=[_PERSON_0, _INANIMATE_OBJECT_0, _LEARNER_OBJECT],
     asserted_always_relations=[Relation(HAS, _PERSON_0, _INANIMATE_OBJECT_0)],
-    constraining_relations=[bigger_than(_PERSON_0, _INANIMATE_OBJECT_0)],
 )
 
-# PERSON_HAS_OBJECT_SUB_CURRICULUM = _phase1_instances(
-#     "person has object",
-#     situations=sampled(
-#         PERSON_HAS_OBJECT_TEMPLATE,
-#         chooser=_CHOOSER,
-#         ontology=GAILA_PHASE_1_ONTOLOGY,
-#         max_to_sample=100,
-#     ),
-# )
+PERSON_HAS_OBJECT_SUB_CURRICULUM = _phase1_instances(
+    "person has object",
+    situations=sampled(
+        PERSON_HAS_OBJECT_TEMPLATE,
+        chooser=_CHOOSER,
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        max_to_sample=100,
+    ),
+)
 
 _VERB_WITH_ONLY_THEME = action_variable(
     "verb_with_only_theme", with_subcategorization_frame=[THEME]
