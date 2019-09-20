@@ -1,5 +1,5 @@
 from itertools import chain
-from typing import Generic, Mapping, TypeVar, List
+from typing import Generic, List, Mapping, TypeVar
 
 from attr import attrib, attrs
 from immutablecollections import (
@@ -8,13 +8,10 @@ from immutablecollections import (
     immutableset,
     immutablesetmultidict,
 )
-from immutablecollections.converter_utils import (
-    _to_immutableset,
-    _to_immutablesetmultidict,
-)
+from immutablecollections.converter_utils import _to_immutablesetmultidict
 
 from adam.ontology.phase1_spatial_relations import SpatialPath
-from adam.relation import Relation
+from adam.relation import Relation, flatten_relations
 
 _ObjectT = TypeVar("_ObjectT")
 _NewObjectT = TypeVar("_NewObjectT")
@@ -26,10 +23,10 @@ class DuringAction(Generic[_ObjectT]):
         converter=_to_immutablesetmultidict, default=immutablesetmultidict(), kw_only=True
     )
     at_some_point: ImmutableSet[Relation[_ObjectT]] = attrib(
-        converter=_to_immutableset, default=immutableset(), kw_only=True
+        converter=flatten_relations, default=immutableset(), kw_only=True
     )
     continuously: ImmutableSet[Relation[_ObjectT]] = attrib(
-        converter=_to_immutableset, default=immutableset(), kw_only=True
+        converter=flatten_relations, default=immutableset(), kw_only=True
     )
 
     def copy_remapping_objects(

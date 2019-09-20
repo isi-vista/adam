@@ -168,6 +168,10 @@ PERSON_CAN_HAVE = OntologyNode("person-can-have")
 subtype(PERSON_CAN_HAVE, PROPERTY)
 TRANSFER_OF_POSSESSION = OntologyNode("transfer-of-possession")
 subtype(TRANSFER_OF_POSSESSION, PROPERTY)
+CAN_FLY = OntologyNode("can-fly")
+subtype(CAN_FLY, PROPERTY)
+HAS_SPACE_UNDER = OntologyNode("has-space-under")
+subtype(HAS_SPACE_UNDER, PROPERTY)
 
 COLOR = OntologyNode("color")
 subtype(COLOR, PERCEIVABLE_PROPERTY)
@@ -229,7 +233,9 @@ GROUND = OntologyNode(
 )
 subtype(GROUND, INANIMATE_OBJECT)
 
-TABLE = OntologyNode("table", [CAN_FILL_TEMPLATE_SLOT, CAN_HAVE_THINGS_RESTING_ON_THEM])
+TABLE = OntologyNode(
+    "table", [CAN_FILL_TEMPLATE_SLOT, CAN_HAVE_THINGS_RESTING_ON_THEM, HAS_SPACE_UNDER]
+)
 subtype(TABLE, INANIMATE_OBJECT)
 BALL = OntologyNode("ball", [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE])
 subtype(BALL, INANIMATE_OBJECT)
@@ -314,7 +320,7 @@ NONHUMAN_ANIMAL = OntologyNode("animal", inheritable_properties=[ANIMATE])
 subtype(NONHUMAN_ANIMAL, THING)
 DOG = OntologyNode("dog", [CAN_FILL_TEMPLATE_SLOT])
 subtype(DOG, NONHUMAN_ANIMAL)
-BIRD = OntologyNode("bird", [CAN_FILL_TEMPLATE_SLOT])
+BIRD = OntologyNode("bird", [CAN_FILL_TEMPLATE_SLOT, CAN_FLY])
 subtype(BIRD, NONHUMAN_ANIMAL)
 
 PHASE_1_CURRICULUM_OBJECTS = immutableset(

@@ -80,7 +80,7 @@ class ByHierarchyAndProperties(OntologyNodeSelector):
 
     def __repr__(self) -> str:
         required_properties = [f"+{property_}" for property_ in self._required_properties]
-        banned_properties = [f"-{property_}" for property_ in self._required_properties]
+        banned_properties = [f"-{property_}" for property_ in self._banned_properties]
 
         property_string: str
         if required_properties or banned_properties:
@@ -90,7 +90,7 @@ class ByHierarchyAndProperties(OntologyNodeSelector):
         else:
             property_string = ""
 
-        return f"ancestorIs({self._descendents_of}{property_string})"
+        return f"ancestorIs({self._descendents_of.handle}){property_string})"
 
 
 @attrs(frozen=True, slots=True, repr=False)
