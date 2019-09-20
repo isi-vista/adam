@@ -1,8 +1,11 @@
+from typing import Tuple
+
 from more_itertools import only
 
 from adam.language_specific.english.english_language_generator import (
     SimpleRuleBasedEnglishLanguageGenerator,
     USE_ADVERBIAL_PATH_MODIFIER,
+    PREFER_DITRANSITIVE,
 )
 from adam.language_specific.english.english_phase_1_lexicon import (
     GAILA_PHASE_1_ENGLISH_LEXICON,
@@ -33,6 +36,9 @@ from adam.ontology.phase1_ontology import (
     HAS,
     on,
     FALL,
+    BABY,
+    THROW,
+    GIVE,
 )
 from adam.ontology.phase1_spatial_relations import (
     INTERIOR,
@@ -556,11 +562,76 @@ def test_fall_down_syntax_hint():
         syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
     )
 
-    assert only(
-        _SIMPLE_GENERATOR.generate_language(
-            situation_without_modifier, FixedIndexChooser(0)
+    assert generated_tokens(situation_without_modifier) == ("a", "ball", "falls")
+    assert generated_tokens(situation_with_modifier) == ("a", "ball", "falls", "down")
+
+
+def test_transfer_of_possession():
+    mom = SituationObject(MOM)
+    baby = SituationObject(BABY)
+    cookie = SituationObject(COOKIE)
+
+    for (action, verb) in ((GIVE, "gives"), (THROW, "throws")):
+        for prefer_ditransitive in (True, False):
+            syntax_hints = [PREFER_DITRANSITIVE] if prefer_ditransitive else []
+            situation = HighLevelSemanticsSituation(
+                ontology=GAILA_PHASE_1_ONTOLOGY,
+                objects=[mom, baby, cookie],
+                actions=[
+                    Action(
+                        action_type=action,
+                        argument_roles_to_fillers=[
+                            (AGENT, mom),
+                            (GOAL, baby),
+                            (THEME, cookie),
+                        ],
+                    )
+                ],
+                syntax_hints=syntax_hints,
+            )
+
+            reference_tokens: Tuple[str, ...]
+            if prefer_ditransitive:
+                reference_tokens = ("Mom", verb, "a", "baby", "a", "cookie")
+            else:
+                reference_tokens = ("Mom", verb, "a", "cookie", "to", "a", "baby")
+
+            assert generated_tokens(situation) == reference_tokens
+
+
+def test_arguments_same_ontology_type():
+    baby_0 = SituationObject(BABY)
+    baby_1 = SituationObject(BABY)
+    cookie = SituationObject(COOKIE)
+
+    for prefer_ditransitive in (True, False):
+        syntax_hints = [PREFER_DITRANSITIVE] if prefer_ditransitive else []
+        situation = HighLevelSemanticsSituation(
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+            objects=[baby_0, baby_1, cookie],
+            actions=[
+                Action(
+                    action_type=GIVE,
+                    argument_roles_to_fillers=[
+                        (AGENT, baby_0),
+                        (GOAL, baby_1),
+                        (THEME, cookie),
+                    ],
+                )
+            ],
+            syntax_hints=syntax_hints,
         )
-    ).as_token_sequence() == ("a", "ball", "falls")
-    assert only(
-        _SIMPLE_GENERATOR.generate_language(situation_with_modifier, FixedIndexChooser(0))
-    ).as_token_sequence() == ("a", "ball", "falls", "down")
+
+        reference_tokens: Tuple[str, ...]
+        if prefer_ditransitive:
+            reference_tokens = ("a", "baby", "gives", "a", "baby", "a", "cookie")
+        else:
+            reference_tokens = ("a", "baby", "gives", "a", "cookie", "to", "a", "baby")
+
+        assert generated_tokens(situation) == reference_tokens
+
+
+def generated_tokens(situation):
+    return only(
+        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
+    ).as_token_sequence()

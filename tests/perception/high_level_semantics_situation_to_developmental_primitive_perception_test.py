@@ -32,6 +32,9 @@ from adam.ontology.phase1_ontology import (
     far,
     near,
     on,
+    TWO_DIMENSIONAL,
+    SMALLER_THAN,
+    PART_OF,
 )
 from adam.ontology.phase1_spatial_relations import (
     DISTAL,
@@ -40,6 +43,7 @@ from adam.ontology.phase1_spatial_relations import (
     GRAVITATIONAL_AXIS,
     Region,
     TOWARD,
+    INTERIOR,
 )
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -181,6 +185,7 @@ def test_person_put_ball_on_table():
     person_perception = perception_with_handle(first_frame, "person_0")
     ball_perception = perception_with_handle(first_frame, "ball_0")
     table_perception = perception_with_handle(first_frame, "table_0")
+    hand_perception = perception_with_handle(first_frame, "hand_0")
     assert (
         HasBinaryProperty(person_perception, ANIMATE) in first_frame.property_assertions
     )
@@ -202,17 +207,11 @@ def test_person_put_ball_on_table():
     assert first_frame_relations
     assert second_frame_relations
 
-    first_frame_relations_strings = {
-        f"{r.relation_type}({r.first_slot}, {r.second_slot})"
-        for r in first_frame.relations
-    }
-    second_frame_relations_strings = {
-        f"{r.relation_type}({r.first_slot}, {r.second_slot})"
-        for r in perception.frames[1].relations
-    }
-    assert "smallerThan(ball_0, person_0)" in first_frame_relations_strings
-    assert "partOf(hand_0, person_0)" in first_frame_relations_strings
-    hand_perception = perception_with_handle(perception.frames[0], "hand_0")
+    assert (
+        Relation(SMALLER_THAN, ball_perception, person_perception)
+        in first_frame_relations
+    )
+    assert Relation(PART_OF, hand_perception, person_perception) in first_frame_relations
     assert (
         Relation(
             IN_REGION,
@@ -223,7 +222,10 @@ def test_person_put_ball_on_table():
     )
 
     # continuing relations:
-    assert "smallerThan(ball_0, person_0)" in second_frame_relations_strings
+    assert (
+        Relation(SMALLER_THAN, ball_perception, person_perception)
+        in second_frame_relations
+    )
 
     # new relations:
     ball_on_table_relation = Relation(
@@ -245,6 +247,53 @@ def test_person_put_ball_on_table():
             Region(reference_object=hand_perception, distance=EXTERIOR_BUT_IN_CONTACT),
         )
         not in second_frame_relations
+    )
+
+
+def test_liquid_in_and_out_of_container():
+    juice = SituationObject(ontology_node=JUICE)
+    box = SituationObject(ontology_node=BOX)
+    table = SituationObject(ontology_node=TABLE)
+    two_d_situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        objects=[juice, table],
+        always_relations=[on(juice, table)],
+    )
+    two_d_perception = _PERCEPTION_GENERATOR.generate_perception(
+        two_d_situation, chooser=RandomChooser.for_seed(0)
+    )
+
+    three_d_situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        objects=[juice, box],
+        always_relations=[
+            Relation(IN_REGION, juice, Region(box, distance=INTERIOR, direction=None))
+        ],
+    )
+    three_d_perception = _PERCEPTION_GENERATOR.generate_perception(
+        three_d_situation, chooser=RandomChooser.for_seed(0)
+    )
+
+    two_perceived_objects = two_d_perception.frames[0].perceived_objects
+    two_object_handles = set(obj.debug_handle for obj in two_perceived_objects)
+    assert all(handle in two_object_handles for handle in {"juice_0", "table_0"})
+    three_perceived_objects = three_d_perception.frames[0].perceived_objects
+    three_object_handles = set(obj.debug_handle for obj in three_perceived_objects)
+    assert all(handle in three_object_handles for handle in {"juice_0", "box_0"})
+
+    assert any(
+        isinstance(p, HasBinaryProperty)
+        and perception_with_handle(two_d_perception.frames[0], "juice_0")
+        == p.perceived_object
+        and p.binary_property == TWO_DIMENSIONAL
+        for p in two_d_perception.frames[0].property_assertions
+    )
+    assert not any(
+        isinstance(p, HasBinaryProperty)
+        and perception_with_handle(three_d_perception.frames[0], "juice_0")
+        == p.perceived_object
+        and p.binary_property == TWO_DIMENSIONAL
+        for p in three_d_perception.frames[0].property_assertions
     )
 
 

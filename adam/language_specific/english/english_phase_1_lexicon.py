@@ -58,6 +58,7 @@ from adam.ontology.phase1_ontology import (
 )
 
 MASS_NOUN = LexiconProperty("mass-noun")
+ALLOWS_DITRANSITIVE = LexiconProperty("allows-ditransitive")
 
 I = LexiconEntry(  # noqa: E741
     "I", NOUN, plural_form="we", intrinsic_morphosyntactic_properties=[FIRST_PERSON]
@@ -99,12 +100,25 @@ GAILA_PHASE_1_ENGLISH_LEXICON = OntologyLexicon(
         (COME, LexiconEntry("come", VERB, verb_form_3SG_PRS="comes")),
         (TAKE, LexiconEntry("take", VERB, verb_form_3SG_PRS="takes")),
         (EAT, LexiconEntry("eat", VERB, verb_form_3SG_PRS="eats")),
-        (GIVE, LexiconEntry("give", VERB, verb_form_3SG_PRS="gives")),
+        (
+            GIVE,
+            LexiconEntry(
+                "give", VERB, verb_form_3SG_PRS="gives", properties=[ALLOWS_DITRANSITIVE]
+            ),
+        ),
         (TURN, LexiconEntry("turn", VERB, verb_form_3SG_PRS="turns")),
         (SIT, LexiconEntry("sit", VERB, verb_form_3SG_PRS="sits")),
         (DRINK, LexiconEntry("drink", VERB, verb_form_3SG_PRS="drinks")),
         (FALL, LexiconEntry("fall", VERB, verb_form_3SG_PRS="falls")),
-        (THROW, LexiconEntry("throw", VERB, verb_form_3SG_PRS="throws")),
+        (
+            THROW,
+            LexiconEntry(
+                "throw",
+                VERB,
+                verb_form_3SG_PRS="throws",
+                properties=[ALLOWS_DITRANSITIVE],
+            ),
+        ),
         (MOVE, LexiconEntry("move", VERB, verb_form_3SG_PRS="moves")),
         (JUMP, LexiconEntry("jump", VERB, verb_form_3SG_PRS="jumps")),
         (HAS, LexiconEntry("have", VERB, verb_form_3SG_PRS="has")),
