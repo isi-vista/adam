@@ -40,6 +40,7 @@ from adam.ontology.phase1_spatial_relations import (
     GRAVITATIONAL_AXIS,
     Region,
     TOWARD,
+    INTERIOR,
 )
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -246,6 +247,56 @@ def test_person_put_ball_on_table():
         )
         not in second_frame_relations
     )
+
+
+def test_liquid_in_and_out_of_container():
+    juice = SituationObject(ontology_node=JUICE)
+    box = SituationObject(ontology_node=BOX)
+    table = SituationObject(ontology_node=TABLE)
+    two_d_situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        objects=[juice, table],
+        always_relations=[on(juice, table)],
+    )
+
+    two_d_perception = _PERCEPTION_GENERATOR.generate_perception(
+        two_d_situation, chooser=RandomChooser.for_seed(0)
+    )
+
+    three_d_situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        objects=[juice, box],
+        always_relations=[
+            Relation(
+                IN_REGION,
+                juice,
+                Region(
+                    box,
+                    distance=INTERIOR,
+                    direction=Direction(
+                        positive=True, relative_to_axis=GRAVITATIONAL_AXIS
+                    ),
+                ),
+            )
+        ],
+    )
+
+    three_d_perception = _PERCEPTION_GENERATOR.generate_perception(
+        three_d_situation, chooser=RandomChooser.for_seed(0)
+    )
+
+    two_d_frame_property_strings = {
+        f"{p.perceived_object}, {p.binary_property}"
+        for p in two_d_perception.frames[0].property_assertions
+        if isinstance(p, HasBinaryProperty)
+    }
+    three_d_frame_property_strings = {
+        f"{p.perceived_object}, {p.binary_property}"
+        for p in three_d_perception.frames[0].property_assertions
+        if isinstance(p, HasBinaryProperty)
+    }
+    assert "juice_0, two-dimensional[binary]" in two_d_frame_property_strings
+    assert "juice_0, two-dimensional[binary]" not in three_d_frame_property_strings
 
 
 def _some_object_has_binary_property(

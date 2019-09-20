@@ -547,11 +547,16 @@ class _PerceptionGeneration:
                 properties_to_perceive.append(color)
 
             # If it is a liquid not inside a container, add two-dimensional property
-            if situation_object.ontology_node == LIQUID and not any(
-                r.first_slot == SituationObject
+            if LIQUID in GAILA_PHASE_1_ONTOLOGY.properties_for_node(
+                situation_object.ontology_node
+            ) and not any(
+                r.first_slot == situation_object
                 and r.relation_type == IN_REGION
                 and isinstance(r.second_slot, Region)
-                and HOLLOW in r.second_slot.reference_object.properties
+                and HOLLOW
+                in GAILA_PHASE_1_ONTOLOGY.properties_for_node(
+                    r.second_slot.reference_object.ontology_node
+                )
                 and r.second_slot.distance == INTERIOR
                 for r in self._situation.always_relations
             ):
