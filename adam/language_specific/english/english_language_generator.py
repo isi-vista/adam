@@ -419,12 +419,18 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             # TODO: to alternation
             # https://github.com/isi-vista/adam/issues/150
             if isinstance(filler, SituationObject):
-                return (
-                    self._translate_argument_role(
-                        action, verb_lexical_entry, argument_role
-                    ),
-                    self._noun_for_object(filler),
+                syntactic_role = self._translate_argument_role(
+                    action, verb_lexical_entry, argument_role
                 )
+                filler_noun = self._noun_for_object(filler)
+                # e.g. Mom gives a cookie *to a baby*
+                if argument_role == GOAL and syntactic_role == OBLIQUE_NOMINAL:
+                    self.dependency_graph.add_edge(
+                        DependencyTreeToken("to", ADPOSITION),
+                        filler_noun,
+                        role=CASE_MARKING,
+                    )
+                return (syntactic_role, filler_noun)
             elif isinstance(filler, Region):
                 if argument_role == GOAL:
                     if THEME not in action.argument_roles_to_fillers:
