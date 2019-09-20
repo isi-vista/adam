@@ -207,7 +207,7 @@ class _Phase1SituationTemplateGenerator(
                     )
                     always_relations.append(
                         Relation(
-                            SMALLER_THAN, relation.first_slot, relation.second_slot
+                            SMALLER_THAN, relation.second_slot, relation.first_slot
                         ).copy_remapping_objects(object_var_to_instantiations)
                     )
                 always_relations.append(
