@@ -31,6 +31,7 @@ from adam.language.dependency.universal_dependencies import (
     PROPER_NOUN,
     ADVERB,
     ADVERBIAL_MODIFIER,
+    INDIRECT_OBJECT,
 )
 from adam.language.language_generator import LanguageGenerator
 from adam.language.lexicon import LexiconEntry
@@ -40,6 +41,7 @@ from adam.language_specific.english.english_phase_1_lexicon import (
     I,
     MASS_NOUN,
     YOU,
+    ALLOWS_DITRANSITIVE,
 )
 from adam.language_specific.english.english_syntax import (
     FIRST_PERSON,
@@ -347,7 +349,9 @@ class SimpleRuleBasedEnglishLanguageGenerator(
 
             # first, we map all the arguments to chunks of dependency tree
             syntactic_roles_to_argument_heads = immutablesetmultidict(
-                self._translate_verb_argument(action, argument_role, filler)
+                self._translate_verb_argument(
+                    action, verb_lexical_entry, argument_role, filler
+                )
                 for (argument_role, filler) in action.argument_roles_to_fillers.items()
             )
 
@@ -408,6 +412,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
         def _translate_verb_argument(
             self,
             action: Action[OntologyNode, SituationObject],
+            verb_lexical_entry: LexiconEntry,
             argument_role: OntologyNode,
             filler: Union[SituationObject, Region[SituationObject]],
         ) -> Tuple[DependencyRole, DependencyTreeToken]:
@@ -415,7 +420,9 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             # https://github.com/isi-vista/adam/issues/150
             if isinstance(filler, SituationObject):
                 return (
-                    self._translate_argument_role(action, argument_role),
+                    self._translate_argument_role(
+                        action, verb_lexical_entry, argument_role
+                    ),
                     self._noun_for_object(filler),
                 )
             elif isinstance(filler, Region):
@@ -456,6 +463,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
         def _translate_argument_role(
             self,
             action: Action[OntologyNode, SituationObject],
+            verb_lexical_entry: LexiconEntry,
             argument_role: OntologyNode,
         ) -> DependencyRole:
             if argument_role == AGENT:
@@ -472,7 +480,16 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     # the ball falls.
                     return NOMINAL_SUBJECT
             elif argument_role == GOAL:
-                return OBLIQUE_NOMINAL
+                if (
+                    PREFER_DITRANSITIVE in self.situation.syntax_hints
+                    and ALLOWS_DITRANSITIVE in verb_lexical_entry.properties
+                ):
+                    # Mom gives a baby a cookie
+                    return INDIRECT_OBJECT
+                else:
+                    # Mom gives a cookie to a baby
+                    # Dad puts a box on a table
+                    return OBLIQUE_NOMINAL
             else:
                 raise RuntimeError(
                     f"Do not know how to map argument role "
