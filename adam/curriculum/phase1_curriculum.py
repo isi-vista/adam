@@ -17,38 +17,15 @@ from adam.language_specific.english.english_language_generator import (
 from adam.ontology import IN_REGION, THING
 from adam.ontology.during import DuringAction
 from adam.ontology.ontology import Ontology
-from adam.ontology.phase1_ontology import (
-    AGENT,
-    ANIMATE,
-    BIGGER_THAN,
-    BIRD,
-    CAN_HAVE_THINGS_RESTING_ON_THEM,
-    FALL,
-    FLY,
-    GAILA_PHASE_1_ONTOLOGY,
-    GIVE,
-    GOAL,
-    GROUND,
-    HAS,
-    HAS_SPACE_UNDER,
-    HOLLOW,
-    INANIMATE_OBJECT,
-    IS_BODY_PART,
-    LEARNER,
-    LIQUID,
-    PERSON,
-    PERSON_CAN_HAVE,
-    PHASE_1_CURRICULUM_OBJECTS,
-    RECOGNIZED_PARTICULAR_PROPERTY,
-    ROLL,
-    ROLLABLE,
-    ROLL_SURFACE_AUXILIARY,
-    THEME,
-    TRANSFER_OF_POSSESSION,
-    bigger_than,
-    inside,
-    on,
-    CAN_JUMP, JUMP, above)
+from adam.ontology.phase1_ontology import (AGENT, ANIMATE, BIGGER_THAN, BIRD,
+                                           CAN_HAVE_THINGS_RESTING_ON_THEM, CAN_JUMP, FALL, FLY,
+                                           GAILA_PHASE_1_ONTOLOGY, GIVE, GOAL, GROUND, HAS,
+                                           HAS_SPACE_UNDER, HOLLOW, INANIMATE_OBJECT, IS_BODY_PART,
+                                           JUMP, LEARNER, LIQUID, PERSON, PERSON_CAN_HAVE,
+                                           PHASE_1_CURRICULUM_OBJECTS,
+                                           RECOGNIZED_PARTICULAR_PROPERTY, ROLL, ROLLABLE,
+                                           ROLL_SURFACE_AUXILIARY, THEME, TRANSFER_OF_POSSESSION,
+                                           above, bigger_than, inside, on)
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
     DISTAL,
@@ -584,20 +561,13 @@ def _make_roll_curriculum():
 
 def _make_jump_curriculum():
     # make an object jump
-    ground = object_variable("ground_0", GROUND)
     jumper = object_variable("jumper_0", THING, required_properties=[CAN_JUMP])
     object_0 = object_variable("object_0", THING)
 
     # "A person jumps"
     jump_on_ground = Phase1SituationTemplate(
         object_variables=[jumper],
-        actions=[
-            Action(
-                JUMP,
-                argument_roles_to_fillers=[(AGENT, jumper)],
-                during=DuringAction(at_some_point=[above(jumper, ground)]),
-            )
-        ],
+        actions=[Action(JUMP, argument_roles_to_fillers=[(AGENT, jumper)])],
     )
 
     # "A person jumps over a ball"
@@ -610,6 +580,7 @@ def _make_jump_curriculum():
                 during=DuringAction(at_some_point=[above(jumper, object_0)]),
             )
         ],
+        constraining_relations=[Relation(BIGGER_THAN, jumper, object_0)],
     )
 
     return _phase1_instances(
