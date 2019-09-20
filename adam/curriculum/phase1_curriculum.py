@@ -34,7 +34,8 @@ from adam.ontology.phase1_ontology import (
     TRANSFER_OF_POSSESSION,
     CAN_HAVE_THINGS_RESTING_ON_THEM,
     BIGGER_THAN,
-    HOLLOW)
+    HOLLOW,
+)
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
@@ -301,9 +302,7 @@ def _make_object_on_object_curriculum() -> _Phase1InstanceGroup:
 def _make_object_in_other_object_curriculum() -> _Phase1InstanceGroup:
     object_ = object_variable("object_0", INANIMATE_OBJECT)
     containing_object = object_variable(
-        "object_1",
-        INANIMATE_OBJECT,
-        required_properties=[HOLLOW],
+        "object_1", INANIMATE_OBJECT, required_properties=[HOLLOW]
     )
     situation_template = Phase1SituationTemplate(
         object_variables=[object_, containing_object],
