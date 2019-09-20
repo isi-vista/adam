@@ -109,6 +109,10 @@ class Direction(Generic[ReferenceObjectT]):
         return f"{polarity}{self.relative_to_axis}"
 
 
+GRAVITATIONAL_UP = Direction(positive=True, relative_to_axis=GRAVITATIONAL_AXIS)
+GRAVITATIONAL_DOWN = Direction(positive=False, relative_to_axis=GRAVITATIONAL_AXIS)
+
+
 @attrs(frozen=True, repr=False)
 class Region(Generic[ReferenceObjectT]):
     """

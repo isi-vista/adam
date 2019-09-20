@@ -4,8 +4,17 @@ Our strategy for `SituationTemplate`\ s in Phase 1 of ADAM.
 import random
 from _random import Random
 from abc import ABC, abstractmethod
-from itertools import product
-from typing import AbstractSet, Iterable, Mapping, Optional, Sequence, TypeVar, Union
+from itertools import product, chain
+from typing import (
+    AbstractSet,
+    Iterable,
+    Mapping,
+    Optional,
+    Sequence,
+    TypeVar,
+    Union,
+    List,
+)
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
@@ -46,7 +55,7 @@ class _TemplateVariable(Protocol):
     node_selector: OntologyNodeSelector
 
 
-@attrs(frozen=True, slots=True, cmp=False)
+@attrs(frozen=True, slots=True, cmp=False, repr=False)
 class TemplateObjectVariable(SituationTemplateObject, _TemplateVariable):
     r"""
     A variable in a `Phase1SituationTemplate`
@@ -75,6 +84,12 @@ class TemplateObjectVariable(SituationTemplateObject, _TemplateVariable):
     asserted_properties: ImmutableSet["TemplatePropertyVariable"] = attrib(
         converter=_to_immutableset, default=immutableset()
     )
+
+    def __repr__(self) -> str:
+        props: List[str] = []
+        props.append(str(self.node_selector))
+        props.extend(f"assert({str(prop_var)})" for prop_var in self.asserted_properties)
+        return f"{self.handle}[{' ,'.join(props)}]"
 
 
 @attrs(frozen=True, slots=True, cmp=False)
@@ -160,6 +175,21 @@ class Phase1SituationTemplate(SituationTemplate):
     def __attrs_post_init__(self) -> None:
         check_arg(self.object_variables, "A situation must contain at least one object")
 
+        # ensure all objects referenced anywhere are on the object list
+        objects_referenced_accumulator = list(self.object_variables)
+        for relation in chain(
+            self.constraining_relations, self.asserted_always_relations
+        ):
+            relation.accumulate_referenced_objects(objects_referenced_accumulator)
+        for action in self.actions:
+            action.accumulate_referenced_objects(objects_referenced_accumulator)
+        unique_objects_referenced = immutableset(objects_referenced_accumulator)
+        if unique_objects_referenced != self.object_variables:
+            raise RuntimeError(
+                f"Set of referenced objects {unique_objects_referenced} does not match "
+                f"declared objects {self.object_variables} for template {self}"
+            )
+
 
 def all_possible(
     situation_template: Phase1SituationTemplate,
@@ -240,7 +270,6 @@ class _Phase1SituationTemplateGenerator(
             action_variables=action_type_variables,
             chooser=chooser,
         ):
-
             # instantiate all objects in the situation according to the variable assignment.
             object_var_to_instantiations: Mapping[
                 TemplateObjectVariable, SituationObject

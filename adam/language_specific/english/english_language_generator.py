@@ -5,7 +5,7 @@ from typing import Iterable, List, Mapping, MutableMapping, Tuple, Union, cast
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import ImmutableSet, immutableset, immutablesetmultidict
-from more_itertools import only, first
+from more_itertools import first, only
 from networkx import DiGraph
 
 from adam.language.dependency import (
@@ -18,9 +18,13 @@ from adam.language.dependency import (
 from adam.language.dependency.universal_dependencies import (
     ADJECTIVAL_MODIFIER,
     ADPOSITION,
-    CASE_MARKING,
+    ADVERB,
+    ADVERBIAL_MODIFIER,
+    CASE_POSSESSIVE,
+    CASE_SPATIAL,
     DETERMINER,
     DETERMINER_ROLE,
+    INDIRECT_OBJECT,
     NOMINAL_MODIFIER,
     NOMINAL_MODIFIER_POSSESSIVE,
     NOMINAL_SUBJECT,
@@ -29,19 +33,16 @@ from adam.language.dependency.universal_dependencies import (
     OBJECT,
     OBLIQUE_NOMINAL,
     PROPER_NOUN,
-    ADVERB,
-    ADVERBIAL_MODIFIER,
-    INDIRECT_OBJECT,
 )
 from adam.language.language_generator import LanguageGenerator
 from adam.language.lexicon import LexiconEntry
 from adam.language.ontology_dictionary import OntologyLexicon
 from adam.language_specific.english.english_phase_1_lexicon import (
+    ALLOWS_DITRANSITIVE,
     GAILA_PHASE_1_ENGLISH_LEXICON,
     I,
     MASS_NOUN,
     YOU,
-    ALLOWS_DITRANSITIVE,
 )
 from adam.language_specific.english.english_syntax import (
     FIRST_PERSON,
@@ -52,6 +53,7 @@ from adam.ontology import IN_REGION, OntologyNode
 from adam.ontology.phase1_ontology import (
     AGENT,
     COLOR,
+    FALL,
     GOAL,
     GROUND,
     HAS,
@@ -60,7 +62,6 @@ from adam.ontology.phase1_ontology import (
     LEARNER,
     PATIENT,
     THEME,
-    FALL,
 )
 from adam.ontology.phase1_spatial_relations import (
     DISTAL,
@@ -69,6 +70,7 @@ from adam.ontology.phase1_spatial_relations import (
     INTERIOR,
     PROXIMAL,
     Region,
+    TOWARD,
 )
 from adam.random_utils import SequenceChooser
 from adam.relation import Relation
@@ -317,7 +319,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     )
                     determiner_role = DETERMINER_ROLE
                     case_node = DependencyTreeToken("'s", DETERMINER)
-                    case_role = CASE_MARKING
+                    case_role = CASE_POSSESSIVE
                     self.dependency_graph.add_edge(
                         case_node, determiner_node, role=case_role
                     )
@@ -442,7 +444,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     self.dependency_graph.add_edge(
                         DependencyTreeToken("to", ADPOSITION),
                         filler_noun,
-                        role=CASE_MARKING,
+                        role=CASE_SPATIAL,
                     )
                 return (syntactic_role, filler_noun)
             elif isinstance(filler, Region):
@@ -463,7 +465,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     self.dependency_graph.add_edge(
                         preposition_dependency_node,
                         reference_object_dependency_node,
-                        role=CASE_MARKING,
+                        role=CASE_SPATIAL,
                     )
 
                     return (OBLIQUE_NOMINAL, reference_object_dependency_node)
@@ -590,13 +592,30 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                             f"{relation} in {action}"
                         )
 
-            # "fall down" is special-cased for right now
-            if (
-                action.action_type == FALL
-                and USE_ADVERBIAL_PATH_MODIFIER in self.situation.syntax_hints
-            ):
-                down = DependencyTreeToken("down", ADVERB)
-                modifiers.append((ADVERBIAL_MODIFIER, down))
+            # up and down modifiers
+            if USE_ADVERBIAL_PATH_MODIFIER in self.situation.syntax_hints:
+                if action.during:
+                    paths_involving_ground = immutableset(
+                        path
+                        for (_, path) in action.during.objects_to_paths.items()
+                        if path.reference_object.ontology_node == GROUND
+                    )
+                    if paths_involving_ground:
+                        # we just look at the first to determine the direction
+                        first_path = first(paths_involving_ground)
+                        if first_path.operator == TOWARD:
+                            modifiers.append(
+                                (ADVERBIAL_MODIFIER, DependencyTreeToken("down", ADVERB))
+                            )
+                        else:
+                            modifiers.append(
+                                (ADVERBIAL_MODIFIER, DependencyTreeToken("up", ADVERB))
+                            )
+                elif action.action_type == FALL:
+                    # hack, awaiting https://github.com/isi-vista/adam/issues/239
+                    modifiers.append(
+                        (ADVERBIAL_MODIFIER, DependencyTreeToken("down", ADVERB))
+                    )
 
             return modifiers
 
@@ -632,7 +651,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             self.dependency_graph.add_edge(
                 DependencyTreeToken(preposition, ADPOSITION),
                 reference_object_node,
-                role=CASE_MARKING,
+                role=CASE_SPATIAL,
             )
             return reference_object_node
 
