@@ -48,7 +48,7 @@ from adam.ontology.phase1_ontology import (
     bigger_than,
     inside,
     on,
-)
+    CAN_JUMP, JUMP, above)
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
     DISTAL,
@@ -582,6 +582,54 @@ def _make_roll_curriculum():
     )
 
 
+def _make_jump_curriculum():
+    # make an object jump
+    ground = object_variable("ground_0", GROUND)
+    jumper = object_variable("jumper_0", THING, required_properties=[CAN_JUMP])
+    object_0 = object_variable("object_0", THING)
+
+    # "A person jumps"
+    jump_on_ground = Phase1SituationTemplate(
+        object_variables=[jumper],
+        actions=[
+            Action(
+                JUMP,
+                argument_roles_to_fillers=[(AGENT, jumper)],
+                during=DuringAction(at_some_point=[above(jumper, ground)]),
+            )
+        ],
+    )
+
+    # "A person jumps over a ball"
+    jump_over_object = Phase1SituationTemplate(
+        object_variables=[jumper, object_0],
+        actions=[
+            Action(
+                JUMP,
+                argument_roles_to_fillers=[(AGENT, jumper)],
+                during=DuringAction(at_some_point=[above(jumper, object_0)]),
+            )
+        ],
+    )
+
+    return _phase1_instances(
+        "jumping",
+        chain(
+            *[
+                all_possible(
+                    jump_on_ground, ontology=GAILA_PHASE_1_ONTOLOGY, chooser=_CHOOSER
+                ),
+                sampled(
+                    jump_over_object,
+                    max_to_sample=25,
+                    chooser=_CHOOSER,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                ),
+            ]
+        ),
+    )
+
+
 GAILA_PHASE_1_CURRICULUM = [
     EACH_OBJECT_BY_ITSELF_SUB_CURRICULUM,
     OBJECTS_WITH_COLORS_SUB_CURRICULUM,
@@ -595,6 +643,7 @@ GAILA_PHASE_1_CURRICULUM = [
     _make_object_in_other_object_curriculum(),
     _make_fly_curriculum(),
     _make_roll_curriculum(),
+    _make_jump_curriculum(),
 ]
 """
 One particular instantiation of the curriculum for GAILA Phase 1.
