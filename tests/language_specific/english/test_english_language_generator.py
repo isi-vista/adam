@@ -2,6 +2,7 @@ from more_itertools import only
 
 from adam.language_specific.english.english_language_generator import (
     SimpleRuleBasedEnglishLanguageGenerator,
+    USE_ADVERBIAL_PATH_MODIFIER,
 )
 from adam.language_specific.english.english_phase_1_lexicon import (
     GAILA_PHASE_1_ENGLISH_LEXICON,
@@ -31,6 +32,7 @@ from adam.ontology.phase1_ontology import (
     ROLL,
     HAS,
     on,
+    FALL,
 )
 from adam.ontology.phase1_spatial_relations import (
     INTERIOR,
@@ -536,3 +538,29 @@ def test_noun_with_modifier():
     assert only(
         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
     ).as_token_sequence() == ("a", "table", "on", "the", "ground")
+
+
+def test_fall_down_syntax_hint():
+    ball = SituationObject(BALL)
+
+    situation_without_modifier = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        objects=[ball],
+        actions=[Action(FALL, argument_roles_to_fillers=[(THEME, ball)])],
+    )
+
+    situation_with_modifier = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        objects=[ball],
+        actions=[Action(FALL, argument_roles_to_fillers=[(THEME, ball)])],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
+    )
+
+    assert only(
+        _SIMPLE_GENERATOR.generate_language(
+            situation_without_modifier, FixedIndexChooser(0)
+        )
+    ).as_token_sequence() == ("a", "ball", "falls")
+    assert only(
+        _SIMPLE_GENERATOR.generate_language(situation_with_modifier, FixedIndexChooser(0))
+    ).as_token_sequence() == ("a", "ball", "falls", "down")
