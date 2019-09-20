@@ -6,6 +6,7 @@ from adam.language.dependency.universal_dependencies import (
 )
 from adam.language.lexicon import LexiconEntry, LexiconProperty
 from adam.language.ontology_dictionary import OntologyLexicon
+from adam.language_specific.english.english_syntax import FIRST_PERSON, SECOND_PERSON
 from adam.ontology.phase1_ontology import (
     MOM,
     BALL,
@@ -58,6 +59,14 @@ from adam.ontology.phase1_ontology import (
 
 MASS_NOUN = LexiconProperty("mass-noun")
 
+I = LexiconEntry(  # noqa: E741
+    "I", NOUN, plural_form="we", intrinsic_morphosyntactic_properties=[FIRST_PERSON]
+)
+
+YOU = LexiconEntry(
+    "you", NOUN, plural_form="y'all", intrinsic_morphosyntactic_properties=[SECOND_PERSON]
+)
+
 GAILA_PHASE_1_ENGLISH_LEXICON = OntologyLexicon(
     ontology=GAILA_PHASE_1_ONTOLOGY,
     ontology_node_to_word=(
@@ -83,7 +92,7 @@ GAILA_PHASE_1_ENGLISH_LEXICON = OntologyLexicon(
         (HAT, LexiconEntry("hat", NOUN, plural_form="hats")),
         (COOKIE, LexiconEntry("cookie", NOUN, plural_form="cookies")),
         (DAD, LexiconEntry("Dad", PROPER_NOUN)),
-        (BABY, LexiconEntry("bird", NOUN, plural_form="babies")),
+        (BABY, LexiconEntry("baby", NOUN, plural_form="babies")),
         (DOG, LexiconEntry("dog", NOUN, plural_form="dogs")),
         (BIRD, LexiconEntry("bird", NOUN, plural_form="birds")),
         (GO, LexiconEntry("go", VERB, verb_form_3SG_PRS="goes")),

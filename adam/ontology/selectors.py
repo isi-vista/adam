@@ -2,6 +2,7 @@
 Utilities for specifying a sub-set of the nodes in an `Ontology`
 """
 from abc import ABC, abstractmethod
+from itertools import chain
 from typing import AbstractSet
 
 from attr import attrib, attrs
@@ -53,7 +54,7 @@ class Is(OntologyNodeSelector):
         return self._nodes
 
 
-@attrs(frozen=True, slots=True)
+@attrs(frozen=True, slots=True, repr=False)
 class ByHierarchyAndProperties(OntologyNodeSelector):
     """
     An `OntologyNodeSelector` which selects all nodes
@@ -76,3 +77,66 @@ class ByHierarchyAndProperties(OntologyNodeSelector):
             self._required_properties,
             banned_properties=self._banned_properties,
         )
+
+    def __repr__(self) -> str:
+        required_properties = [f"+{property_}" for property_ in self._required_properties]
+        banned_properties = [f"-{property_}" for property_ in self._required_properties]
+
+        property_string: str
+        if required_properties or banned_properties:
+            property_string = (
+                f"[{', '.join(chain(required_properties, banned_properties))}]"
+            )
+        else:
+            property_string = ""
+
+        return f"ancestorIs({self._descendents_of}{property_string})"
+
+
+@attrs(frozen=True, slots=True, repr=False)
+class AndOntologySelector(OntologyNodeSelector):
+    _sub_selectors: ImmutableSet[OntologyNodeSelector] = attrib(
+        converter=_to_immutableset, default=immutableset()
+    )
+
+    def _select_nodes(self, ontology: Ontology) -> AbstractSet[OntologyNode]:
+        # we don't just use set.intersection here because we want to guarantee
+        # deterministic iteration ordering
+        matches = [selector.select_nodes(ontology) for selector in self._sub_selectors]
+
+        first_matches = matches[0]
+        later_matches = matches[1:]
+
+        return immutableset(
+            x
+            for x in first_matches
+            if all(x in later_match_set for later_match_set in later_matches)
+        )
+
+    def __attrs_post_init__(self) -> None:
+        check_arg(
+            len(self._sub_selectors) > 1, "_And requires at least two sub-selectors"
+        )
+
+    def __repr__(self) -> str:
+        return f"and({', '.join(str(sub) for sub in self._sub_selectors)})"
+
+
+@attrs(frozen=True, slots=True, repr=False)
+class SubcategorizationSelector(OntologyNodeSelector):
+    required_subcategorization_frame: ImmutableSet[OntologyNode] = attrib(
+        converter=_to_immutableset
+    )
+
+    def _select_nodes(self, ontology: Ontology) -> AbstractSet[OntologyNode]:
+        return immutableset(
+            action
+            for (action, action_description) in ontology.action_to_description.items()
+            if any(
+                frame.roles_to_entities.keys() == self.required_subcategorization_frame
+                for frame in action_description.frames
+            )
+        )
+
+    def __repr__(self) -> str:
+        return f"hasSubcat({self.required_subcategorization_frame!s})"

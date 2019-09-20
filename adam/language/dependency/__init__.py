@@ -7,11 +7,16 @@ from typing import Iterable, Tuple
 from attr import attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
-from immutablecollections.converter_utils import _to_immutabledict, _to_tuple
+from immutablecollections.converter_utils import (
+    _to_immutabledict,
+    _to_tuple,
+    _to_immutableset,
+)
 from more_itertools import flatten
 from networkx import DiGraph
 
 from adam.language import LinguisticDescription
+from adam.ontology import OntologyNode
 
 
 @attrs(frozen=True, slots=True)
@@ -139,6 +144,14 @@ class PartOfSpeechTag:
 
 
 @attrs(frozen=True, slots=True, repr=False)
+class MorphosyntacticProperty:
+    name: str = attrib(validator=instance_of(str))
+
+    def __repr__(self) -> str:
+        return self.name
+
+
+@attrs(frozen=True, slots=True, repr=False)
 class DependencyTreeToken:
     """
     A single word in a `DependencyTree`
@@ -146,9 +159,20 @@ class DependencyTreeToken:
 
     token: str = attrib(validator=instance_of(str))
     part_of_speech: PartOfSpeechTag = attrib(validator=instance_of(PartOfSpeechTag))
+    morphosyntactic_properties: ImmutableSet[MorphosyntacticProperty] = attrib(
+        converter=_to_immutableset, default=immutableset()
+    )
 
     def __repr__(self) -> str:
-        return f"{self.token}/{self.part_of_speech}"
+        msp_string: str
+        if self.morphosyntactic_properties:
+            msp_string = (
+                f"[{', '.join(str(prop) for prop in self.morphosyntactic_properties)}]"
+            )
+        else:
+            msp_string = ""
+
+        return f"{self.token}/{self.part_of_speech}{msp_string}"
 
 
 @attrs(frozen=True, slots=True, repr=False)

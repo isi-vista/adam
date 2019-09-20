@@ -1,4 +1,4 @@
-from typing import Any, Generic, Mapping, Optional, TypeVar, List
+from typing import Any, Generic, Mapping, Optional, TypeVar, List, Union
 
 from attr import attrib, attrs
 from attr.validators import in_, instance_of, optional
@@ -62,6 +62,15 @@ class Axis(Generic[ReferenceObjectT]):
             if self.reference_object
             else None,
         )
+
+    def accumulate_referenced_objects(
+        self, object_accumulator: List[ReferenceObjectT]
+    ) -> None:
+        r"""
+        Adds all objects referenced by this `Axis` to *object_accumulator*.
+        """
+        if self.reference_object:
+            object_accumulator.append(self.reference_object)
 
     def __repr__(self) -> str:
         if self.reference_object:
@@ -177,7 +186,7 @@ class SpatialPath(Generic[ReferenceObjectT]):
     operator: Optional[PathOperator] = attrib(
         validator=optional(instance_of(PathOperator))
     )
-    reference_object: ReferenceObjectT = attrib()
+    reference_object: Union[ReferenceObjectT, Region[ReferenceObjectT]] = attrib()
     reference_axis: Optional[Axis[ReferenceObjectT]] = attrib(
         validator=optional(instance_of(Axis)), default=None, kw_only=True
     )
@@ -199,9 +208,24 @@ class SpatialPath(Generic[ReferenceObjectT]):
     ) -> "SpatialPath[NewObjectT]":
         return SpatialPath(
             self.operator,
-            object_mapping[self.reference_object],
+            self.reference_object.copy_remapping_objects(object_mapping)
+            if isinstance(self.reference_object, Region)
+            else object_mapping[self.reference_object],
             reference_axis=self.reference_axis.copy_remapping_objects(object_mapping)
             if self.reference_axis
             else None,
             orientation_changed=self.orientation_changed,
         )
+
+    def accumulate_referenced_objects(
+        self, object_accumulator: List[ReferenceObjectT]
+    ) -> None:
+        r"""
+        Adds all objects referenced by this `Region` to *object_accumulator*.
+        """
+        if isinstance(self.reference_object, Region):
+            self.reference_object.accumulate_referenced_objects(object_accumulator)
+        else:
+            object_accumulator.append(self.reference_object)
+        if self.reference_axis:
+            self.reference_axis.accumulate_referenced_objects(object_accumulator)

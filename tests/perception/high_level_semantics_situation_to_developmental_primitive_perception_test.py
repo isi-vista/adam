@@ -1,38 +1,45 @@
 import pytest
-from more_itertools import quantify, only
+from more_itertools import only, quantify
 
-from adam.ontology import OntologyNode, IN_REGION
+from adam.ontology import IN_REGION, OntologyNode
 from adam.ontology.phase1_ontology import (
     AGENT,
+    ANIMATE,
     BALL,
-    GOAL,
+    BOX,
+    COOKIE,
+    DAD,
+    EAT,
+    FALL,
     GAILA_PHASE_1_ONTOLOGY,
+    GAZE,
+    GOAL,
+    GROUND,
+    INANIMATE,
     IS_LEARNER,
     IS_SPEAKER,
     JUICE,
     LEARNER,
     LIQUID,
+    MOM,
+    PATIENT,
     PERSON,
     PUT,
     RED,
+    SELF_MOVING,
     TABLE,
     THEME,
-    GROUND,
-    ANIMATE,
-    SELF_MOVING,
-    INANIMATE,
-    BOX,
-    MOM,
-    on,
     far,
     near,
+    on,
 )
 from adam.ontology.phase1_spatial_relations import (
-    EXTERIOR_BUT_IN_CONTACT,
-    Direction,
-    GRAVITATIONAL_AXIS,
     DISTAL,
+    Direction,
+    EXTERIOR_BUT_IN_CONTACT,
+    GRAVITATIONAL_AXIS,
     Region,
+    TOWARD,
 )
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -46,11 +53,10 @@ from adam.perception.high_level_semantics_situation_to_developmental_primitive_p
 )
 from adam.random_utils import RandomChooser
 from adam.relation import Relation
-from adam.situation import SituationAction, SituationObject
+from adam.situation import Action, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
-from sample_situations import make_bird_flies_over_a_house
-
 from adam_test_utils import perception_with_handle
+from sample_situations import make_bird_flies_over_a_house
 
 _PERCEPTION_GENERATOR = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
     GAILA_PHASE_1_ONTOLOGY
@@ -147,7 +153,7 @@ def test_person_put_ball_on_table():
         actions=[
             # What is the best way of representing the destination in the high-level semantics?
             # Here we represent it as indicating a relation which should be true.
-            SituationAction(
+            Action(
                 PUT,
                 (
                     (AGENT, person),
@@ -373,11 +379,11 @@ def test_perceive_explicit_relations():
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         objects=[mom, box, ball, table],
-        persisting_relations=[on(ball, table)],
+        always_relations=[on(ball, table)],
         before_action_relations=[far(ball, box)],
         after_action_relations=[near(ball, box)],
         actions=[
-            SituationAction(
+            Action(
                 PUT,
                 argument_roles_to_fillers=[
                     (AGENT, mom),
@@ -416,6 +422,75 @@ def test_perceive_explicit_relations():
         only(near(ball_perception, box_perception)) not in perception.frames[0].relations
     )
     assert only(near(ball_perception, box_perception)) in perception.frames[1].relations
+
+
+def test_path_from_action_description():
+    ball = SituationObject(BALL)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        objects=[ball],
+        actions=[Action(FALL, argument_roles_to_fillers=[(THEME, ball)])],
+    )
+    perception = _PERCEPTION_GENERATOR.generate_perception(
+        situation, chooser=RandomChooser.for_seed(0)
+    )
+    ball_perception = perception_with_handle(perception.frames[0], "ball_0")
+    ground_perception = perception_with_handle(perception.frames[0], "ground_0")
+    assert perception.during
+    assert perception.during.objects_to_paths
+    assert len(perception.during.objects_to_paths) == 1
+    path = only(perception.during.objects_to_paths[ball_perception])
+    assert path.reference_object == ground_perception
+    assert path.operator == TOWARD
+
+
+def test_gaze_default():
+    cookie = SituationObject(COOKIE)
+    table = SituationObject(TABLE)
+    dad = SituationObject(DAD)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        objects=[cookie, table, dad],
+        actions=[
+            Action(EAT, argument_roles_to_fillers=[(AGENT, dad), (PATIENT, cookie)])
+        ],
+    )
+    perception = _PERCEPTION_GENERATOR.generate_perception(
+        situation, chooser=RandomChooser.for_seed(0)
+    )
+    frame = perception.frames[0]
+    cookie_perception = perception_with_handle(frame, "cookie_0")
+    dad_perception = perception_with_handle(frame, "person_0")
+    table_perception = perception_with_handle(frame, "table_0")
+    assert HasBinaryProperty(cookie_perception, GAZE) in frame.property_assertions
+    assert HasBinaryProperty(dad_perception, GAZE) in frame.property_assertions
+    # because the table does not occupy a semantic role in the situation
+    assert HasBinaryProperty(table_perception, GAZE) not in frame.property_assertions
+
+
+def test_gaze_specified():
+    cookie = SituationObject(COOKIE)
+    table = SituationObject(TABLE)
+    dad = SituationObject(DAD)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        objects=[cookie, table, dad],
+        actions=[
+            Action(EAT, argument_roles_to_fillers=[(AGENT, dad), (PATIENT, cookie)])
+        ],
+        gazed_objects=[cookie],
+    )
+    perception = _PERCEPTION_GENERATOR.generate_perception(
+        situation, chooser=RandomChooser.for_seed(0)
+    )
+    frame = perception.frames[0]
+    cookie_perception = perception_with_handle(frame, "cookie_0")
+    dad_perception = perception_with_handle(frame, "person_0")
+    table_perception = perception_with_handle(frame, "table_0")
+    # only the cookie is gazed at, because the user said so.
+    assert HasBinaryProperty(cookie_perception, GAZE) in frame.property_assertions
+    assert HasBinaryProperty(dad_perception, GAZE) not in frame.property_assertions
+    assert HasBinaryProperty(table_perception, GAZE) not in frame.property_assertions
 
 
 def test_colors_across_part_of_relations():

@@ -63,9 +63,12 @@ class Ontology:
     action_to_description: ImmutableDict[OntologyNode, ActionDescription] = attrib(
         converter=_to_immutabledict, default=immutabledict(), kw_only=True
     )
-    _node_to_relations: ImmutableSet[Relation[OntologyNode]] = attrib(
+    relations: ImmutableSet[Relation[OntologyNode]] = attrib(
         converter=_to_immutableset, default=immutableset(), kw_only=True
     )
+    subjects_to_relations: ImmutableSetMultiDict[
+        OntologyNode, Relation[OntologyNode]
+    ] = attrib(init=False)
 
     def __attrs_post_init__(self) -> None:
         for cycle in simple_cycles(self._graph):
@@ -206,3 +209,11 @@ class Ontology:
 
     def __contains__(self, item: "OntologyNode") -> bool:
         return item in self._graph.nodes
+
+    @subjects_to_relations.default
+    def _subjects_to_relations(
+        self
+    ) -> ImmutableSetMultiDict[OntologyNode, Relation[OntologyNode]]:
+        return immutablesetmultidict(
+            (relation.first_slot, relation) for relation in self.relations
+        )
