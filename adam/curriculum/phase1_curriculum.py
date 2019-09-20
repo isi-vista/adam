@@ -318,7 +318,9 @@ def _make_object_on_object_curriculum() -> _Phase1InstanceGroup:
 
 def _make_object_in_other_object_curriculum() -> _Phase1InstanceGroup:
     object_ = object_variable("object_0", banned_properties=[IS_BODY_PART])
-    liquid = object_variable("liquid_0", required_properties=[LIQUID], banned_properties=[IS_BODY_PART])
+    liquid = object_variable(
+        "liquid_0", required_properties=[LIQUID], banned_properties=[IS_BODY_PART]
+    )
     containing_object = object_variable(
         "object_1", required_properties=[HOLLOW], banned_properties=[IS_BODY_PART]
     )
@@ -328,8 +330,8 @@ def _make_object_in_other_object_curriculum() -> _Phase1InstanceGroup:
         asserted_always_relations=[inside(object_, containing_object)],
     )
     liquid_template = Phase1SituationTemplate(
-        object_variables=[object_, containing_object],
-        asserted_always_relations=[inside(object_, containing_object)],
+        object_variables=[liquid, containing_object],
+        asserted_always_relations=[inside(liquid, containing_object)],
     )
 
     return _phase1_instances(
@@ -338,13 +340,13 @@ def _make_object_in_other_object_curriculum() -> _Phase1InstanceGroup:
             *[
                 sampled(
                     liquid_template,
-                    max_to_sample=100,
+                    max_to_sample=25,
                     chooser=_CHOOSER,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                 ),
                 sampled(
                     solid_template,
-                    max_to_sample=25,
+                    max_to_sample=75,
                     chooser=_CHOOSER,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                 ),
