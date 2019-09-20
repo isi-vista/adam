@@ -38,6 +38,78 @@ from adam.situation.templates import (
 _ExplicitOrVariableActionType = Union[OntologyNode, "TemplateActionTypeVariable"]
 
 
+class _TemplateVariable(Protocol):
+    """
+    This is not for public use; use `object_variable` and `property_variable` instead.
+    """
+
+    node_selector: OntologyNodeSelector
+
+
+@attrs(frozen=True, slots=True, cmp=False)
+class TemplateObjectVariable(SituationTemplateObject, _TemplateVariable):
+    r"""
+    A variable in a `Phase1SituationTemplate`
+    which could be filled by any object
+    whose `OntologyNode` is selected by *node_selector*.
+
+    *asserted_properties* allows you to specify what properties
+    should be asserted for this object in generated `Situation`\ s.
+    This is for specifying properties which are not intrinsic to an object
+    (e.g. if your object variable is constrained to be a sub-type of person
+    you don't need to and shouldn't specify *ANIMATE* as an asserted property)
+    and are not used to filter what object can fill this variable.
+    For example, if you wanted to specify that whatever fills this variable,
+    you want to make it red in this situation, you would specify *RED*
+    in *asserted_properties*.
+
+    We provide `object_variable` to make creating `TemplateObjectVariable`\ s more convenient.
+
+    `TemplateObjectVariable`\ s with the same node selector are *not* equal to one another
+    so that you can have multiple objects in a `Situation` which obey the same constraints.
+    """
+
+    node_selector: OntologyNodeSelector = attrib(
+        validator=instance_of(OntologyNodeSelector)
+    )
+    asserted_properties: ImmutableSet["TemplatePropertyVariable"] = attrib(
+        converter=_to_immutableset, default=immutableset()
+    )
+
+
+@attrs(frozen=True, slots=True, cmp=False)
+class TemplatePropertyVariable(SituationTemplateObject, _TemplateVariable):
+    r"""
+    A variable in a `Phase1SituationTemplate`
+    which could be filled by any property
+    whose `OntologyNode` is selected by *node_selector*.
+
+    We provide `property_variable` to make creating `TemplatePropertyVariable`\ s more convenient.
+
+    `TemplatePropertyVariable`\ s with the same node selector are *not* equal to one another
+    so that you can have multiple objects in a `Situation` which obey the same constraints.
+    """
+
+    node_selector: OntologyNodeSelector = attrib(
+        validator=instance_of(OntologyNodeSelector)
+    )
+
+
+@attrs(frozen=True, slots=True, cmp=False)
+class TemplateActionTypeVariable(SituationTemplateObject, _TemplateVariable):
+    r"""
+    A variable in a `Phase1SituationTemplate`
+    which could be filled by any action type
+    whose `OntologyNode` is selected by *node_selector*.
+
+    We provide `action_variable` to make creating `TemplateActionTypeVariable`\ s more convenient.
+    """
+
+    node_selector: OntologyNodeSelector = attrib(
+        validator=instance_of(OntologyNodeSelector)
+    )
+
+
 @attrs(frozen=True, slots=True)
 class Phase1SituationTemplate(SituationTemplate):
     r"""
@@ -259,78 +331,6 @@ class _Phase1SituationTemplateGenerator(
         )
 
 
-class _TemplateVariable(Protocol):
-    """
-    This is not for public use; use `object_variable` and `property_variable` instead.
-    """
-
-    node_selector: OntologyNodeSelector
-
-
-@attrs(frozen=True, slots=True, cmp=False)
-class TemplateObjectVariable(SituationTemplateObject, _TemplateVariable):
-    r"""
-    A variable in a `Phase1SituationTemplate`
-    which could be filled by any object
-    whose `OntologyNode` is selected by *node_selector*.
-
-    *asserted_properties* allows you to specify what properties
-    should be asserted for this object in generated `Situation`\ s.
-    This is for specifying properties which are not intrinsic to an object
-    (e.g. if your object variable is constrained to be a sub-type of person
-    you don't need to and shouldn't specify *ANIMATE* as an asserted property)
-    and are not used to filter what object can fill this variable.
-    For example, if you wanted to specify that whatever fills this variable,
-    you want to make it red in this situation, you would specify *RED*
-    in *asserted_properties*.
-
-    We provide `object_variable` to make creating `TemplateObjectVariable`\ s more convenient.
-
-    `TemplateObjectVariable`\ s with the same node selector are *not* equal to one another
-    so that you can have multiple objects in a `Situation` which obey the same constraints.
-    """
-
-    node_selector: OntologyNodeSelector = attrib(
-        validator=instance_of(OntologyNodeSelector)
-    )
-    asserted_properties: ImmutableSet["TemplatePropertyVariable"] = attrib(
-        converter=_to_immutableset, default=immutableset()
-    )
-
-
-@attrs(frozen=True, slots=True, cmp=False)
-class TemplatePropertyVariable(SituationTemplateObject, _TemplateVariable):
-    r"""
-    A variable in a `Phase1SituationTemplate`
-    which could be filled by any property
-    whose `OntologyNode` is selected by *node_selector*.
-
-    We provide `property_variable` to make creating `TemplatePropertyVariable`\ s more convenient.
-
-    `TemplatePropertyVariable`\ s with the same node selector are *not* equal to one another
-    so that you can have multiple objects in a `Situation` which obey the same constraints.
-    """
-
-    node_selector: OntologyNodeSelector = attrib(
-        validator=instance_of(OntologyNodeSelector)
-    )
-
-
-@attrs(frozen=True, slots=True, cmp=False)
-class TemplateActionTypeVariable(SituationTemplateObject, _TemplateVariable):
-    r"""
-    A variable in a `Phase1SituationTemplate`
-    which could be filled by any action type
-    whose `OntologyNode` is selected by *node_selector*.
-
-    We provide `action_variable` to make creating `TemplateActionTypeVariable`\ s more convenient.
-    """
-
-    node_selector: OntologyNodeSelector = attrib(
-        validator=instance_of(OntologyNodeSelector)
-    )
-
-
 def object_variable(
     debug_handle: str,
     root_node: OntologyNode = THING,
@@ -424,6 +424,8 @@ def action_variable(
                 SubcategorizationSelector(with_subcategorization_frame),
             ]
         )
+    else:
+        selector = hierarchy_and_properties_selector
     return TemplateActionTypeVariable(debug_handle, selector)
 
 

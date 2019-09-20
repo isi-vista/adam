@@ -9,6 +9,7 @@ from adam.language.dependency import LinearizedDependencyTree
 from adam.language_specific.english.english_language_generator import (
     GAILA_PHASE_1_LANGUAGE_GENERATOR,
     USE_ADVERBIAL_PATH_MODIFIER,
+    PREFER_DITRANSITIVE,
 )
 from adam.ontology import THING
 from adam.ontology.ontology import Ontology
@@ -27,6 +28,10 @@ from adam.ontology.phase1_ontology import (
     bigger_than,
     THEME,
     FALL,
+    GIVE,
+    AGENT,
+    GOAL,
+    TRANSFER_OF_POSSESSION,
 )
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -49,14 +54,16 @@ from adam.situation.templates.phase1_templates import (
 
 _CHOOSER = RandomChooser.for_seed(0)
 
-
-def _phase1_instances(
-    description: str, situations: Iterable[HighLevelSemanticsSituation]
-) -> InstanceGroup[
+_Phase1InstanceGroup = InstanceGroup[  # pylint:disable=invalid-name
     HighLevelSemanticsSituation,
     LinearizedDependencyTree,
     DevelopmentalPrimitivePerceptionFrame,
-]:
+]
+
+
+def _phase1_instances(
+    description: str, situations: Iterable[HighLevelSemanticsSituation]
+) -> _Phase1InstanceGroup:
     """
     Convenience method for more compactly creating sub-curricula for phase 1.
     """
@@ -227,6 +234,43 @@ _OBJECTS_FALLING_SUBCURRICULUM = _phase1_instances(
     ),
 )
 
+
+def _make_transfer_of_possession_curriculum() -> _Phase1InstanceGroup:
+    action_variable("transfer-verb", with_properties=[TRANSFER_OF_POSSESSION])
+    giver = object_variable("person_0", PERSON)
+    recipient = object_variable("person_1", PERSON)
+    given_object = object_variable("give_object_0", INANIMATE_OBJECT)
+
+    return _phase1_instances(
+        "transfer-of-possession",
+        chain(
+            *[
+                sampled(
+                    Phase1SituationTemplate(
+                        object_variables=[giver, recipient, given_object],
+                        #
+                        actions=[
+                            Action(
+                                GIVE,
+                                argument_roles_to_fillers=[
+                                    (AGENT, giver),
+                                    (GOAL, recipient),
+                                    (THEME, given_object),
+                                ],
+                            )
+                        ],
+                        syntax_hints=[PREFER_DITRANSITIVE] if prefer_ditransitive else [],
+                    ),
+                    max_to_sample=100,
+                    chooser=_CHOOSER,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                )
+                for prefer_ditransitive in (True, False)
+            ]
+        ),
+    )
+
+
 GAILA_PHASE_1_CURRICULUM = [
     EACH_OBJECT_BY_ITSELF_SUB_CURRICULUM,
     OBJECTS_WITH_COLORS_SUB_CURRICULUM,
@@ -235,6 +279,7 @@ GAILA_PHASE_1_CURRICULUM = [
     #    PERSON_HAS_OBJECT_SUB_CURRICULUM,
     _ANY_OBJECT_INTRANSITIVES_SUBCURRICULUM,
     _OBJECTS_FALLING_SUBCURRICULUM,
+    _make_transfer_of_possession_curriculum(),
 ]
 """
 One particular instantiation of the curriculum for GAILA Phase 1.

@@ -681,3 +681,4 @@ GAILA_PHASE_1_LANGUAGE_GENERATOR = SimpleRuleBasedEnglishLanguageGenerator(
 # to control its behavior
 # See https://github.com/isi-vista/adam/issues/222
 USE_ADVERBIAL_PATH_MODIFIER = "USE_ADVERBIAL_PATH_MODIFIER"
+PREFER_DITRANSITIVE = "PREFER_DITRANSITIVE"
