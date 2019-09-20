@@ -15,29 +15,54 @@ from adam.language.dependency import (
     DependencyTreeToken,
     LinearizedDependencyTree,
 )
-from adam.language.dependency.universal_dependencies import (ADJECTIVAL_MODIFIER, ADPOSITION,
-                                                             ADVERB, ADVERBIAL_MODIFIER,
-                                                             CASE_POSSESSIVE, CASE_SPATIAL,
-                                                             DETERMINER, DETERMINER_ROLE,
-                                                             INDIRECT_OBJECT, NOMINAL_MODIFIER,
-                                                             NOMINAL_MODIFIER_POSSESSIVE,
-                                                             NOMINAL_SUBJECT, NUMERAL,
-                                                             NUMERIC_MODIFIER, OBJECT,
-                                                             OBLIQUE_NOMINAL, PROPER_NOUN)
+from adam.language.dependency.universal_dependencies import (
+    ADJECTIVAL_MODIFIER,
+    ADPOSITION,
+    ADVERB,
+    ADVERBIAL_MODIFIER,
+    CASE_POSSESSIVE,
+    CASE_SPATIAL,
+    DETERMINER,
+    DETERMINER_ROLE,
+    INDIRECT_OBJECT,
+    NOMINAL_MODIFIER,
+    NOMINAL_MODIFIER_POSSESSIVE,
+    NOMINAL_SUBJECT,
+    NUMERAL,
+    NUMERIC_MODIFIER,
+    OBJECT,
+    OBLIQUE_NOMINAL,
+    PROPER_NOUN,
+)
 from adam.language.language_generator import LanguageGenerator
 from adam.language.lexicon import LexiconEntry
 from adam.language.ontology_dictionary import OntologyLexicon
-from adam.language_specific.english.english_phase_1_lexicon import (ALLOWS_DITRANSITIVE,
-                                                                    GAILA_PHASE_1_ENGLISH_LEXICON,
-                                                                    I, MASS_NOUN, YOU)
+from adam.language_specific.english.english_phase_1_lexicon import (
+    ALLOWS_DITRANSITIVE,
+    GAILA_PHASE_1_ENGLISH_LEXICON,
+    I,
+    MASS_NOUN,
+    YOU,
+)
 from adam.language_specific.english.english_syntax import (
     FIRST_PERSON,
     SECOND_PERSON,
     SIMPLE_ENGLISH_DEPENDENCY_TREE_LINEARIZER,
 )
 from adam.ontology import IN_REGION, OntologyNode
-from adam.ontology.phase1_ontology import (AGENT, COLOR, FALL, GOAL, GROUND, HAS, IS_ADDRESSEE,
-                                           IS_SPEAKER, LEARNER, PATIENT, THEME)
+from adam.ontology.phase1_ontology import (
+    AGENT,
+    COLOR,
+    FALL,
+    GOAL,
+    GROUND,
+    HAS,
+    IS_ADDRESSEE,
+    IS_SPEAKER,
+    LEARNER,
+    PATIENT,
+    THEME,
+)
 from adam.ontology.phase1_spatial_relations import (
     DISTAL,
     EXTERIOR_BUT_IN_CONTACT,

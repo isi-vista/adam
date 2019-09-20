@@ -1,9 +1,17 @@
 from networkx import DiGraph
 
 from adam.language.dependency import DependencyTree, DependencyTreeToken
-from adam.language.dependency.universal_dependencies import (ADPOSITION, CASE_SPATIAL, DETERMINER,
-                                                             DETERMINER_ROLE, NOMINAL_SUBJECT, NOUN,
-                                                             OBJECT, OBLIQUE_NOMINAL, VERB)
+from adam.language.dependency.universal_dependencies import (
+    ADPOSITION,
+    CASE_SPATIAL,
+    DETERMINER,
+    DETERMINER_ROLE,
+    NOMINAL_SUBJECT,
+    NOUN,
+    OBJECT,
+    OBLIQUE_NOMINAL,
+    VERB,
+)
 from adam.language_specific.english.english_syntax import (
     SIMPLE_ENGLISH_DEPENDENCY_TREE_LINEARIZER,
 )

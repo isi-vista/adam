@@ -2,16 +2,30 @@ from typing import Tuple
 
 from immutablecollections import ImmutableDict, immutabledict
 
-from adam.language.dependency import (DependencyRole, HEAD, MorphosyntacticProperty,
-                                      PartOfSpeechTag, RoleOrderDependencyTreeLinearizer)
-from adam.language.dependency.universal_dependencies import (ADJECTIVAL_MODIFIER,
-                                                             ADVERBIAL_MODIFIER, CASE_POSSESSIVE,
-                                                             CASE_SPATIAL, DETERMINER_ROLE,
-                                                             INDIRECT_OBJECT, NOMINAL_MODIFIER,
-                                                             NOMINAL_MODIFIER_POSSESSIVE,
-                                                             NOMINAL_SUBJECT, NOUN,
-                                                             NUMERIC_MODIFIER, OBJECT,
-                                                             OBLIQUE_NOMINAL, PROPER_NOUN, VERB)
+from adam.language.dependency import (
+    DependencyRole,
+    HEAD,
+    MorphosyntacticProperty,
+    PartOfSpeechTag,
+    RoleOrderDependencyTreeLinearizer,
+)
+from adam.language.dependency.universal_dependencies import (
+    ADJECTIVAL_MODIFIER,
+    ADVERBIAL_MODIFIER,
+    CASE_POSSESSIVE,
+    CASE_SPATIAL,
+    DETERMINER_ROLE,
+    INDIRECT_OBJECT,
+    NOMINAL_MODIFIER,
+    NOMINAL_MODIFIER_POSSESSIVE,
+    NOMINAL_SUBJECT,
+    NOUN,
+    NUMERIC_MODIFIER,
+    OBJECT,
+    OBLIQUE_NOMINAL,
+    PROPER_NOUN,
+    VERB,
+)
 
 _ENGLISH_HEAD_TO_ROLE_ORDER: ImmutableDict[
     PartOfSpeechTag, Tuple[DependencyRole, ...]
