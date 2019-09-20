@@ -318,7 +318,7 @@ def _make_fly_curriculum():
                             argument_roles_to_fillers=[(AGENT, bird)],
                             during=DuringAction(
                                 objects_to_paths=[
-                                    (AGENT, SpatialPath(
+                                    (bird, SpatialPath(
                                         AWAY_FROM if up else TOWARD,
                                         reference_object=ground
                                     ))
