@@ -22,8 +22,9 @@ from adam.ontology.phase1_ontology import (
     GROUND,
     LIQUID,
     TWO_DIMENSIONAL,
+    HOLLOW,
 )
-from adam.ontology.phase1_spatial_relations import SpatialPath, Region
+from adam.ontology.phase1_spatial_relations import SpatialPath, Region, INTERIOR
 from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
 from adam.perception import (
     PerceptualRepresentation,
@@ -521,7 +522,11 @@ class _PerceptionGeneration:
 
             # If it is a liquid not inside a container, add two-dimensional property
             if situation_object.ontology_node == LIQUID and not any(
-                r.first_slot == SituationObject and r.relation_type == IN_REGION
+                r.first_slot == SituationObject
+                and r.relation_type == IN_REGION
+                and isinstance(r.second_slot, Region)
+                and HOLLOW in r.second_slot.reference_object.properties
+                and r.second_slot.distance == INTERIOR
                 for r in self._situation.persisting_relations
             ):
                 properties_to_perceive.append(TWO_DIMENSIONAL)
