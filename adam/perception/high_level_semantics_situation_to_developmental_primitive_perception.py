@@ -7,7 +7,7 @@ from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, imm
 from more_itertools import only, quantify
 from vistautils.preconditions import check_arg
 
-from adam.ontology import OntologyNode
+from adam.ontology import OntologyNode, IN_REGION
 from adam.ontology.action_description import ActionDescription
 from adam.ontology.during import DuringAction
 from adam.ontology.ontology import Ontology
@@ -21,8 +21,11 @@ from adam.ontology.phase1_ontology import (
     IS_SPEAKER,
     PART_OF,
     PERCEIVABLE,
+    LIQUID,
+    TWO_DIMENSIONAL,
+    HOLLOW,
 )
-from adam.ontology.phase1_spatial_relations import Region, SpatialPath
+from adam.ontology.phase1_spatial_relations import SpatialPath, Region, INTERIOR
 from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
 from adam.perception import (
     ObjectPerception,
@@ -542,6 +545,22 @@ class _PerceptionGeneration:
             color = self._determine_color(situation_object)
             if color:
                 properties_to_perceive.append(color)
+
+            # If it is a liquid not inside a container, add two-dimensional property
+            if LIQUID in GAILA_PHASE_1_ONTOLOGY.properties_for_node(
+                situation_object.ontology_node
+            ) and not any(
+                r.first_slot == situation_object
+                and r.relation_type == IN_REGION
+                and isinstance(r.second_slot, Region)
+                and HOLLOW
+                in GAILA_PHASE_1_ONTOLOGY.properties_for_node(
+                    r.second_slot.reference_object.ontology_node
+                )
+                and r.second_slot.distance == INTERIOR
+                for r in self._situation.always_relations
+            ):
+                properties_to_perceive.append(TWO_DIMENSIONAL)
 
             # Focused Objects are in a special field of the Situation, we check if the situation_object
             # is a focused and apply the tag here if that is the case.
