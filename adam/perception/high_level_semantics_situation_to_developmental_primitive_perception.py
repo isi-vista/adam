@@ -21,7 +21,7 @@ from adam.ontology.phase1_ontology import (
     IS_SPEAKER,
     PART_OF,
     PERCEIVABLE,
-    SIZE_RELATION)
+    SIZE_RELATION, IMPLICIT_RELATION)
 from adam.ontology.phase1_spatial_relations import Region, SpatialPath
 from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
 from adam.perception import (
@@ -760,7 +760,9 @@ class _PerceptionGeneration:
         self, relation: Relation[SituationObject]
     ) -> Relation[ObjectPerception]:
         # We need to check if the relation we are percieving implies a relationship
-        explicit_relations_implicit = immutableset()
+        if self._situation.ontology.is_subtype_of(relation.relation_type, IMPLICIT_RELATION):
+            explicit_relations_implicit = immutableset(relation for relation in self._relation_perceptions if self._situation.ontology.is_subtype_of(relation.relation_type, IMPLICIT_RELATION))
+            relations_predicated_implicit = immutableset(relation for relation in self._situation.ontology.relations[relation.relation_type])
         return relation.copy_remapping_objects(self._objects_to_perceptions)
 
     # TODO: We may need to rework this function to not use quadratic time but it works for now
@@ -773,7 +775,7 @@ class _PerceptionGeneration:
             explicit_relations_predicated_of_object = immutableset(
                 relation
                 for relation in self._relation_perceptions
-                if self._situation.ontology.is_subtype_of(relation.type, SIZE_RELATION) and relation.first_slot == situation_object
+                if self._situation.ontology.is_subtype_of(relation.relation_type, SIZE_RELATION) and relation.first_slot == situation_object
             )
             if situation_object not in self._object_perceptions_to_ontology_nodes:
                 raise RuntimeError(
