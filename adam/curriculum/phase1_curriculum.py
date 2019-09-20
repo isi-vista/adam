@@ -479,6 +479,7 @@ def _make_fly_curriculum():
 
 _IS_SPEAKER = property_variable("is-speaker", IS_SPEAKER)
 _IS_ADDRESSEE = property_variable("is-addressee", IS_ADDRESSEE)
+# TODO: Ryan see the above, is this the correct way to add these properties to the objects?
 
 
 def _make_speaker_addressess_curriculum():
