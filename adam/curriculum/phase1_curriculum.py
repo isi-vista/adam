@@ -18,9 +18,7 @@ from adam.ontology.during import DuringAction
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
     AGENT,
-    BIGGER_THAN,
     BIRD,
-    CAN_HAVE_THINGS_RESTING_ON_THEM,
     FALL,
     FLY,
     GAILA_PHASE_1_ONTOLOGY,
