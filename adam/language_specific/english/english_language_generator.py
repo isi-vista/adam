@@ -5,7 +5,7 @@ from typing import Iterable, List, Mapping, MutableMapping, Tuple, Union, cast
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import ImmutableSet, immutableset, immutablesetmultidict
-from more_itertools import only
+from more_itertools import only, first
 from networkx import DiGraph
 
 from adam.language.dependency import (
@@ -31,6 +31,7 @@ from adam.language.dependency.universal_dependencies import (
     PROPER_NOUN,
     ADVERB,
     ADVERBIAL_MODIFIER,
+    INDIRECT_OBJECT,
 )
 from adam.language.language_generator import LanguageGenerator
 from adam.language.lexicon import LexiconEntry
@@ -40,6 +41,7 @@ from adam.language_specific.english.english_phase_1_lexicon import (
     I,
     MASS_NOUN,
     YOU,
+    ALLOWS_DITRANSITIVE,
 )
 from adam.language_specific.english.english_syntax import (
     FIRST_PERSON,
@@ -125,7 +127,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
         dependency_graph: DiGraph = attrib(init=False, default=Factory(DiGraph))
         objects_to_dependency_nodes: MutableMapping[
             SituationObject, DependencyTreeToken
-        ] = dict()
+        ] = attrib(init=False, factory=dict)
         """
         Don't access this directly;
         instead use `_noun_for_object`
@@ -147,22 +149,35 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     "Currently only situations with 0 or 1 actions are supported"
                 )
 
-            for object_ in self.situation.objects:
-                if not self._only_translate_if_referenced(object_):
-                    self._noun_for_object(object_)
+            # handle the special case of a static situation with only
+            # multiple objects of the same type
+            object_types_in_situation = set(
+                object_.ontology_node for object_ in self.situation.objects
+            )
+            if len(object_types_in_situation) == 1 and not self.situation.is_dynamic:
+                # e.g. three boxes
+                # doesn't matter which object we choose; they are all the same
+                first_object = first(self.situation.objects)
+                self._noun_for_object(first_object)
+            else:
+                # the more common case of
+                # multiple objects of different types, or an action...
+                for object_ in self.situation.objects:
+                    if not self._only_translate_if_referenced(object_):
+                        self._noun_for_object(object_)
 
-            # We only translate those relations the user specifically calls out,
-            # not the many "background" relations which are also true.
-            for persisting_relation in self.situation.always_relations:
-                self._translate_relation(persisting_relation)
+                # We only translate those relations the user specifically calls out,
+                # not the many "background" relations which are also true.
+                for persisting_relation in self.situation.always_relations:
+                    self._translate_relation(persisting_relation)
 
-            if len(self.situation.actions) > 1:
-                raise RuntimeError(
-                    "Currently only situations with 0 or 1 actions are supported"
-                )
+                if len(self.situation.actions) > 1:
+                    raise RuntimeError(
+                        "Currently only situations with 0 or 1 actions are supported"
+                    )
 
-            if self.situation.actions:
-                self._translate_action_to_verb(only(self.situation.actions))
+                if self.situation.actions:
+                    self._translate_action_to_verb(only(self.situation.actions))
 
             return immutableset(
                 [
@@ -230,6 +245,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                         color_node, dependency_node, role=ADJECTIVAL_MODIFIER
                     )
 
+            self.objects_to_dependency_nodes[_object] = dependency_node
             return dependency_node
 
         def _only_translate_if_referenced(self, object_: SituationObject) -> bool:
@@ -347,7 +363,9 @@ class SimpleRuleBasedEnglishLanguageGenerator(
 
             # first, we map all the arguments to chunks of dependency tree
             syntactic_roles_to_argument_heads = immutablesetmultidict(
-                self._translate_verb_argument(action, argument_role, filler)
+                self._translate_verb_argument(
+                    action, verb_lexical_entry, argument_role, filler
+                )
                 for (argument_role, filler) in action.argument_roles_to_fillers.items()
             )
 
@@ -408,16 +426,25 @@ class SimpleRuleBasedEnglishLanguageGenerator(
         def _translate_verb_argument(
             self,
             action: Action[OntologyNode, SituationObject],
+            verb_lexical_entry: LexiconEntry,
             argument_role: OntologyNode,
             filler: Union[SituationObject, Region[SituationObject]],
         ) -> Tuple[DependencyRole, DependencyTreeToken]:
             # TODO: to alternation
             # https://github.com/isi-vista/adam/issues/150
             if isinstance(filler, SituationObject):
-                return (
-                    self._translate_argument_role(action, argument_role),
-                    self._noun_for_object(filler),
+                syntactic_role = self._translate_argument_role(
+                    action, verb_lexical_entry, argument_role
                 )
+                filler_noun = self._noun_for_object(filler)
+                # e.g. Mom gives a cookie *to a baby*
+                if argument_role == GOAL and syntactic_role == OBLIQUE_NOMINAL:
+                    self.dependency_graph.add_edge(
+                        DependencyTreeToken("to", ADPOSITION),
+                        filler_noun,
+                        role=CASE_MARKING,
+                    )
+                return (syntactic_role, filler_noun)
             elif isinstance(filler, Region):
                 if argument_role == GOAL:
                     if THEME not in action.argument_roles_to_fillers:
@@ -456,6 +483,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
         def _translate_argument_role(
             self,
             action: Action[OntologyNode, SituationObject],
+            verb_lexical_entry: LexiconEntry,
             argument_role: OntologyNode,
         ) -> DependencyRole:
             if argument_role == AGENT:
@@ -472,7 +500,16 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     # the ball falls.
                     return NOMINAL_SUBJECT
             elif argument_role == GOAL:
-                return OBLIQUE_NOMINAL
+                if (
+                    PREFER_DITRANSITIVE in self.situation.syntax_hints
+                    and ALLOWS_DITRANSITIVE in verb_lexical_entry.properties
+                ):
+                    # Mom gives a baby a cookie
+                    return INDIRECT_OBJECT
+                else:
+                    # Mom gives a cookie to a baby
+                    # Dad puts a box on a table
+                    return OBLIQUE_NOMINAL
             else:
                 raise RuntimeError(
                     f"Do not know how to map argument role "
@@ -681,3 +718,4 @@ GAILA_PHASE_1_LANGUAGE_GENERATOR = SimpleRuleBasedEnglishLanguageGenerator(
 # to control its behavior
 # See https://github.com/isi-vista/adam/issues/222
 USE_ADVERBIAL_PATH_MODIFIER = "USE_ADVERBIAL_PATH_MODIFIER"
+PREFER_DITRANSITIVE = "PREFER_DITRANSITIVE"
