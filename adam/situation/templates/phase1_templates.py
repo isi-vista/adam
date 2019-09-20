@@ -201,7 +201,9 @@ class _Phase1SituationTemplateGenerator(
             # The following is not the way we want this to be check, we want to check via size
             # not via property
             for relation in template.asserted_always_relations:
-                if relation.relation_type == HAS:
+                if relation.relation_type == HAS and isinstance(
+                    relation.second_slot, TemplateObjectVariable
+                ):
                     always_relations.append(
                         Relation(
                             BIGGER_THAN, relation.first_slot, relation.second_slot
