@@ -145,6 +145,12 @@ It only makes sense to apply this to sub-types of PERSON,
 but this is not currently enforced. E.g. 'You put the ball on the table.'
 """
 subtype(IS_ADDRESSEE, PERCEIVABLE_PROPERTY)
+GAZE = OntologyNode("gaze", [BINARY])
+"""
+Indicates the object of the focus of the speaker. This is not currently strictly enforced and is
+implicity generated in the perception step if not explicit in a situation.
+"""
+subtype(GAZE, PERCEIVABLE_PROPERTY)
 
 # Properties not perceived by the learner, but useful for situation generation
 
@@ -341,9 +347,9 @@ subtype(_TORSO, _BODY_PART)
 _LEG = OntologyNode("leg")
 subtype(_LEG, _BODY_PART)
 _CHAIR_BACK = OntologyNode("chairback")
-subtype(_ARM, INANIMATE_OBJECT)
+subtype(_CHAIR_BACK, INANIMATE_OBJECT)
 _CHAIR_SEAT = OntologyNode("chairseat")
-subtype(_ARM, INANIMATE_OBJECT)
+subtype(_CHAIR_SEAT, INANIMATE_OBJECT)
 _TABLETOP = OntologyNode("tabletop")
 subtype(_TABLETOP, INANIMATE_OBJECT)
 _TAIL = OntologyNode("tail")
@@ -353,17 +359,17 @@ subtype(_WING, _BODY_PART)
 _ARM_SEGMENT = OntologyNode("armsegment")
 subtype(_ARM_SEGMENT, _BODY_PART)
 _WALL = OntologyNode("wall")
-subtype(_ARM, INANIMATE_OBJECT)
+subtype(_WALL, INANIMATE_OBJECT)
 _ROOF = OntologyNode("roof")
-subtype(_ARM, INANIMATE_OBJECT)
+subtype(_ROOF, INANIMATE_OBJECT)
 _TIRE = OntologyNode("tire")
-subtype(_ARM, INANIMATE_OBJECT)
+subtype(_TIRE, INANIMATE_OBJECT)
 _TRUCK_CAB = OntologyNode("truckcab")
-subtype(_ARM, INANIMATE_OBJECT)
+subtype(_TRUCK_CAB, INANIMATE_OBJECT)
 _TRAILER = OntologyNode("trailer")
-subtype(_ARM, INANIMATE_OBJECT)
+subtype(_TRAILER, INANIMATE_OBJECT)
 _FLATBED = OntologyNode("flatbed")
-subtype(_ARM, INANIMATE_OBJECT)
+subtype(_FLATBED, INANIMATE_OBJECT)
 _BODY = OntologyNode("body")
 subtype(_BODY, _BODY_PART)
 
@@ -893,7 +899,7 @@ _PUT_ACTION_DESCRIPTION = ActionDescription(
         ActionDescriptionFrame({AGENT: _PUT_AGENT, THEME: _PUT_THEME, GOAL: _PUT_GOAL})
     ],
     during=DuringAction(
-        paths=[
+        objects_to_paths=[
             (_PUT_THEME, SpatialPath(FROM, _CONTACTING_MANIPULATOR)),
             (_PUT_THEME, SpatialPath(TO, _PUT_GOAL)),
         ]
@@ -925,7 +931,7 @@ _PUSH_ACTION_DESCRIPTION = ActionDescription(
     ],
     during=DuringAction(
         continuously=flatten_relations([contacts(_PUT_MANIPULATOR, _PUT_THEME)]),
-        paths=[(_PUSH_THEME, SpatialPath(TO, _PUT_GOAL))],
+        objects_to_paths=[(_PUSH_THEME, SpatialPath(TO, _PUT_GOAL))],
     ),
     enduring_conditions=[
         partOf(_PUSH_MANIPULATOR, _PUSH_AGENT),
@@ -945,7 +951,7 @@ _GO_GOAL = SituationObject(THING)
 
 _GO_ACTION_DESCRIPTION = ActionDescription(
     frames=[ActionDescriptionFrame({AGENT: _GO_AGENT, GOAL: _GO_GOAL})],
-    during=DuringAction(paths=[(_GO_AGENT, SpatialPath(TO, _GO_GOAL))]),
+    during=DuringAction(objects_to_paths=[(_GO_AGENT, SpatialPath(TO, _GO_GOAL))]),
     postconditions=[Relation(IN_REGION, _GO_AGENT, _GO_GOAL)],
 )
 
@@ -960,7 +966,7 @@ _COME_ACTION_DESCRIPTION = ActionDescription(
         )
     ],
     preconditions=[Relation(IN_REGION, _COME_AGENT, _COME_GOAL, negated=True)],
-    during=DuringAction(paths=[(_COME_AGENT, SpatialPath(TO, _COME_GOAL))]),
+    during=DuringAction(objects_to_paths=[(_COME_AGENT, SpatialPath(TO, _COME_GOAL))]),
     postconditions=[Relation(IN_REGION, _COME_AGENT, _COME_GOAL)],
     # TODO: encode that the new location is relatively closer to the
     # learner or speaker than the old location
@@ -982,12 +988,12 @@ _TAKE_ACTION_DESCRIPTION = ActionDescription(
 )
 
 _EAT_AGENT = SituationObject(THING, properties=[ANIMATE])
-_EAT_THEME = SituationObject(INANIMATE_OBJECT, properties=[EDIBLE])
+_EAT_PATIENT = SituationObject(INANIMATE_OBJECT, properties=[EDIBLE])
 
 _EAT_ACTION_DESCRIPTION = ActionDescription(
-    frames=[ActionDescriptionFrame({AGENT: _EAT_AGENT, THEME: _EAT_THEME})],
-    enduring_conditions=[bigger_than(_EAT_AGENT, _EAT_THEME)],
-    postconditions=[inside(_EAT_THEME, _EAT_AGENT)],
+    frames=[ActionDescriptionFrame({AGENT: _EAT_AGENT, PATIENT: _EAT_PATIENT})],
+    enduring_conditions=[bigger_than(_EAT_AGENT, _EAT_PATIENT)],
+    postconditions=[inside(_EAT_PATIENT, _EAT_AGENT)],
     # TODO: express role of mouth
 )
 
@@ -1028,7 +1034,7 @@ _TURN_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
 _TURN_ACTION_DESCRIPTION = ActionDescription(
     frames=[ActionDescriptionFrame({AGENT: _TURN_AGENT, THEME: _TURN_THEME})],
     during=DuringAction(
-        paths=[
+        objects_to_paths=[
             (
                 _TURN_THEME,
                 SpatialPath(
@@ -1064,12 +1070,15 @@ _DRINK_ACTION_DESCRIPTION = ActionDescription(
     postconditions=[inside(_DRINK_THEME, _DRINK_AGENT)],
 )
 
-_FALL_PATIENT = SituationObject(THING)
+_FALL_THEME = SituationObject(THING)
+_FALL_GROUND = SituationObject(GROUND)
 
 _FALL_ACTION_DESCRIPTION = ActionDescription(
-    frames=[ActionDescriptionFrame({AGENT: _FALL_PATIENT})],
+    frames=[ActionDescriptionFrame({THEME: _FALL_THEME})],
     during=DuringAction(
-        paths=[(_FALL_PATIENT, SpatialPath(operator=TOWARD, reference_object=GROUND))]
+        objects_to_paths=[
+            (_FALL_THEME, SpatialPath(operator=TOWARD, reference_object=_FALL_GROUND))
+        ]
     ),
 )
 
@@ -1077,6 +1086,7 @@ _THROW_AGENT = SituationObject(THING, properties=[ANIMATE])
 _THROW_THEME = SituationObject(INANIMATE_OBJECT)
 _THROW_GOAL = SituationObject(THING)
 _THROW_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
+_THROW_GROUND = SituationObject(GROUND)
 
 _THROW_ACTION_DESCRIPTION = ActionDescription(
     frames=[
@@ -1103,7 +1113,7 @@ _THROW_ACTION_DESCRIPTION = ActionDescription(
                 IN_REGION,
                 _THROW_THEME,
                 Region(
-                    reference_object=GROUND,
+                    reference_object=_THROW_GROUND,
                     distance=DISTAL,
                     direction=Direction(
                         positive=True, relative_to_axis=GRAVITATIONAL_AXIS
@@ -1130,6 +1140,7 @@ _MOVE_ACTION_DESCRIPTION = ActionDescription(
 
 _JUMP_AGENT = SituationObject(THING, properties=[ANIMATE])
 _JUMP_INITIAL_SUPPORTER = SituationObject(THING)
+_JUMP_GROUND = SituationObject(GROUND)
 
 _JUMP_ACTION_DESCRIPTION = ActionDescription(
     frames=[ActionDescriptionFrame({AGENT: _JUMP_AGENT})],
@@ -1141,9 +1152,9 @@ _JUMP_ACTION_DESCRIPTION = ActionDescription(
         )
     ],
     during=DuringAction(
-        paths=[
+        objects_to_paths=[
             (_JUMP_AGENT, SpatialPath(AWAY_FROM, _JUMP_INITIAL_SUPPORTER)),
-            (_JUMP_AGENT, SpatialPath(AWAY_FROM, GROUND)),
+            (_JUMP_AGENT, SpatialPath(AWAY_FROM, _JUMP_GROUND)),
         ]
     ),
 )
@@ -1159,7 +1170,7 @@ _ROLL_ACTION_DESCRIPTION = ActionDescription(
     ],
     during=DuringAction(
         continuously=[contacts(_ROLL_THEME, _ROLL_SURFACE)],
-        paths=[
+        objects_to_paths=[
             (
                 _ROLL_THEME,
                 SpatialPath(
@@ -1177,6 +1188,7 @@ _ROLL_ACTION_DESCRIPTION = ActionDescription(
 )
 
 _FLY_AGENT = SituationObject(THING, properties=[ANIMATE])
+_FLY_GROUND = SituationObject(GROUND)
 
 _FLY_ACTION_DESCRIPTION = ActionDescription(
     frames=[ActionDescriptionFrame({AGENT: _FLY_AGENT})],
@@ -1186,7 +1198,7 @@ _FLY_ACTION_DESCRIPTION = ActionDescription(
                 IN_REGION,
                 _FLY_AGENT,
                 Region(
-                    reference_object=GROUND,
+                    reference_object=_FLY_GROUND,
                     distance=DISTAL,
                     direction=Direction(
                         positive=True, relative_to_axis=GRAVITATIONAL_AXIS
@@ -1245,7 +1257,7 @@ GAILA_PHASE_1_ONTOLOGY = Ontology(
             (FLY, _FLY_ACTION_DESCRIPTION),
         ]
     ),
-    node_to_relations=build_size_relationships(
+    relations=build_size_relationships(
         (
             (HOUSE,),
             (_ROOF, _WALL),

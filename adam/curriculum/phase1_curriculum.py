@@ -19,6 +19,11 @@ from adam.ontology.phase1_ontology import (
     GROUND,
     on,
     IS_BODY_PART,
+    HAS,
+    PERSON,
+    INANIMATE_OBJECT,
+    bigger_than,
+    THEME,
 )
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -27,7 +32,8 @@ from adam.perception.high_level_semantics_situation_to_developmental_primitive_p
     GAILA_PHASE_1_PERCEPTION_GENERATOR,
 )
 from adam.random_utils import RandomChooser
-from adam.situation import SituationObject
+from adam.relation import Relation
+from adam.situation import SituationObject, Action
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
@@ -35,6 +41,7 @@ from adam.situation.templates.phase1_templates import (
     color_variable,
     object_variable,
     sampled,
+    action_variable,
 )
 
 _CHOOSER = RandomChooser.for_seed(0)
@@ -135,7 +142,7 @@ _GROUND = object_variable("the ground", GROUND)
 
 _OBJECT_ON_GROUND_TEMPLATE = Phase1SituationTemplate(
     object_variables=[_GROUND, _NOT_A_BODY_PART],
-    asserted_persisting_relations=[on(_NOT_A_BODY_PART, _GROUND)],
+    asserted_always_relations=[on(_NOT_A_BODY_PART, _GROUND)],
 )
 
 _OBJECT_ON_GROUND_SUB_CURRICULUM = _phase1_instances(
@@ -145,11 +152,54 @@ _OBJECT_ON_GROUND_SUB_CURRICULUM = _phase1_instances(
     ),
 )
 
+_PERSON_0 = object_variable("person", PERSON)
+_INANIMATE_OBJECT_0 = object_variable("inanimate-object", INANIMATE_OBJECT)
+PERSON_HAS_OBJECT_TEMPLATE = Phase1SituationTemplate(
+    object_variables=[_PERSON_0, _INANIMATE_OBJECT_0, _LEARNER_OBJECT],
+    asserted_always_relations=[Relation(HAS, _PERSON_0, _INANIMATE_OBJECT_0)],
+    constraining_relations=[bigger_than(_PERSON_0, _INANIMATE_OBJECT_0)],
+)
+
+# PERSON_HAS_OBJECT_SUB_CURRICULUM = _phase1_instances(
+#     "person has object",
+#     situations=sampled(
+#         PERSON_HAS_OBJECT_TEMPLATE,
+#         chooser=_CHOOSER,
+#         ontology=GAILA_PHASE_1_ONTOLOGY,
+#         max_to_sample=100,
+#     ),
+# )
+
+_VERB_WITH_ONLY_THEME = action_variable(
+    "verb_with_only_theme", with_subcategorization_frame=[THEME]
+)
+
+_ANY_OBJECT_INTRANSITIVES_TEMPLATE = Phase1SituationTemplate(
+    object_variables=[_ARBITRARY_OBJECT],
+    actions=[
+        Action(
+            action_type=_VERB_WITH_ONLY_THEME,
+            argument_roles_to_fillers=[(THEME, _ARBITRARY_OBJECT)],
+        )
+    ],
+)
+
+_ANY_OBJECT_INTRANSITIVES_SUBCURRICULUM = _phase1_instances(
+    "any object with an intransitive verb",
+    all_possible(
+        _ANY_OBJECT_INTRANSITIVES_TEMPLATE,
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        chooser=_CHOOSER,
+    ),
+)
+
 GAILA_PHASE_1_CURRICULUM = [
     EACH_OBJECT_BY_ITSELF_SUB_CURRICULUM,
     OBJECTS_WITH_COLORS_SUB_CURRICULUM,
     MULTIPLE_OF_THE_SAME_OBJECT_SUB_CURRICULUM,
     _OBJECT_ON_GROUND_SUB_CURRICULUM,
+    #    PERSON_HAS_OBJECT_SUB_CURRICULUM,
+    _ANY_OBJECT_INTRANSITIVES_SUBCURRICULUM,
 ]
 """
 One particular instantiation of the curriculum for GAILA Phase 1.
