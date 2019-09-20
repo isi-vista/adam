@@ -198,6 +198,8 @@ class _Phase1SituationTemplateGenerator(
             )
 
             always_relations = []
+            # The following is not the way we want this to be check, we want to check via size
+            # not via property
             for relation in template.asserted_always_relations:
                 if relation.relation_type == HAS:
                     always_relations.append(
