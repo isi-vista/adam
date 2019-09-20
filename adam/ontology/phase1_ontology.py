@@ -270,14 +270,17 @@ subtype(CHAIR, INANIMATE_OBJECT)
 # because food and liquids can enter it,
 # but we eventually want something more sophisticated.
 HEAD = OntologyNode(
-    "head", [HOLLOW, CAN_FILL_TEMPLATE_SLOT, CAN_HAVE_THINGS_RESTING_ON_THEM]
+    "head",
+    [HOLLOW, CAN_FILL_TEMPLATE_SLOT, CAN_HAVE_THINGS_RESTING_ON_THEM, IS_BODY_PART],
 )
 subtype(HEAD, INANIMATE_OBJECT)
 MILK = OntologyNode(
     "milk", [LIQUID], non_inheritable_properties=[WHITE, CAN_FILL_TEMPLATE_SLOT]
 )
 subtype(MILK, INANIMATE_OBJECT)
-HAND = OntologyNode("hand", [CAN_MANIPULATE_OBJECTS, CAN_FILL_TEMPLATE_SLOT])
+HAND = OntologyNode(
+    "hand", [CAN_MANIPULATE_OBJECTS, CAN_FILL_TEMPLATE_SLOT, IS_BODY_PART]
+)
 subtype(HAND, INANIMATE_OBJECT)
 TRUCK = OntologyNode(
     "truck",

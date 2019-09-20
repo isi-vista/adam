@@ -1,6 +1,7 @@
 """
 Curricula for DARPA GAILA Phase 1
 """
+
 from itertools import chain
 from typing import Iterable
 
@@ -18,9 +19,7 @@ from adam.ontology.during import DuringAction
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
     AGENT,
-    BIGGER_THAN,
     BIRD,
-    CAN_HAVE_THINGS_RESTING_ON_THEM,
     FALL,
     FLY,
     GAILA_PHASE_1_ONTOLOGY,
@@ -39,6 +38,10 @@ from adam.ontology.phase1_ontology import (
     RECOGNIZED_PARTICULAR_PROPERTY,
     THEME,
     TRANSFER_OF_POSSESSION,
+    CAN_HAVE_THINGS_RESTING_ON_THEM,
+    BIGGER_THAN,
+    HOLLOW,
+    inside,
     on,
 )
 from adam.ontology.phase1_spatial_relations import (
@@ -313,6 +316,28 @@ def _make_object_on_object_curriculum() -> _Phase1InstanceGroup:
     )
 
 
+def _make_object_in_other_object_curriculum() -> _Phase1InstanceGroup:
+    object_ = object_variable("object_0", banned_properties=[IS_BODY_PART])
+    containing_object = object_variable(
+        "object_1", required_properties=[HOLLOW], banned_properties=[IS_BODY_PART]
+    )
+    situation_template = Phase1SituationTemplate(
+        object_variables=[object_, containing_object],
+        constraining_relations=[Relation(BIGGER_THAN, containing_object, object_)],
+        asserted_always_relations=[inside(object_, containing_object)],
+    )
+
+    return _phase1_instances(
+        "objects-in-other-objects",
+        sampled(
+            situation_template,
+            max_to_sample=100,
+            chooser=_CHOOSER,
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+        ),
+    )
+
+
 def _make_fly_curriculum():
     # fly under something which has an under
     bird = object_variable("bird_0", BIRD)
@@ -459,6 +484,7 @@ GAILA_PHASE_1_CURRICULUM = [
     _OBJECTS_FALLING_SUBCURRICULUM,
     _make_transfer_of_possession_curriculum(),
     _make_object_on_object_curriculum(),
+    _make_object_in_other_object_curriculum(),
     _make_fly_curriculum(),
 ]
 """
