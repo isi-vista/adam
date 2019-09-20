@@ -127,7 +127,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
         dependency_graph: DiGraph = attrib(init=False, default=Factory(DiGraph))
         objects_to_dependency_nodes: MutableMapping[
             SituationObject, DependencyTreeToken
-        ] = dict()
+        ] = attrib(init=False, factory=dict)
         """
         Don't access this directly;
         instead use `_noun_for_object`
@@ -232,6 +232,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                         color_node, dependency_node, role=ADJECTIVAL_MODIFIER
                     )
 
+            self.objects_to_dependency_nodes[_object] = dependency_node
             return dependency_node
 
         def _only_translate_if_referenced(self, object_: SituationObject) -> bool:

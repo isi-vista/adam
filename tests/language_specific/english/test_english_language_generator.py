@@ -598,6 +598,37 @@ def test_transfer_of_possession():
 
             assert generated_tokens(situation) == reference_tokens
 
+def test_arguments_same_ontology_type():
+    baby_0 = SituationObject(BABY)
+    baby_1 = SituationObject(BABY)
+    cookie = SituationObject(COOKIE)
+
+    for prefer_ditransitive in (True, False):
+        syntax_hints = [PREFER_DITRANSITIVE] if prefer_ditransitive else []
+        situation = HighLevelSemanticsSituation(
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+            objects=[baby_0, baby_1, cookie],
+            actions=[
+                Action(
+                    action_type=GIVE,
+                    argument_roles_to_fillers=[
+                        (AGENT, baby_0),
+                        (GOAL, baby_1),
+                        (THEME, cookie),
+                    ],
+                )
+            ],
+            syntax_hints=syntax_hints,
+        )
+
+        reference_tokens: Tuple[str, ...]
+        if prefer_ditransitive:
+            reference_tokens = ("a", "baby", "gives", "a", "baby", "a", "cookie")
+        else:
+            reference_tokens = ("a", "baby", "gives", "a", "cookie", "to", "a", "baby")
+
+        assert generated_tokens(situation) == reference_tokens
+
 
 def generated_tokens(situation):
     return only(

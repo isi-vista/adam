@@ -7,19 +7,14 @@ from typing import Iterable, Tuple
 from attr import attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
-from immutablecollections.converter_utils import (
-    _to_immutabledict,
-    _to_tuple,
-    _to_immutableset,
-)
+from immutablecollections.converter_utils import (_to_immutabledict, _to_immutableset, _to_tuple)
 from more_itertools import flatten
 from networkx import DiGraph
 
 from adam.language import LinguisticDescription
-from adam.ontology import OntologyNode
 
 
-@attrs(frozen=True, slots=True)
+@attrs(frozen=True, slots=True, cmp=False)
 class DependencyTree:
     r"""
     A syntactic dependency tree.
@@ -33,7 +28,7 @@ class DependencyTree:
     since the dependencies are unordered.
 
     You can pair a `DependencyTree` with a surface order
-    to create an `LinearizedDependencyTree`
+    to create an `LinearizedDependencyTree`.
     """
 
     _graph: DiGraph = attrib(validator=instance_of(DiGraph))
@@ -151,7 +146,9 @@ class MorphosyntacticProperty:
         return self.name
 
 
-@attrs(frozen=True, slots=True, repr=False)
+# cmp=False is needed because otherwise the same word
+# with the same POS could not occur twice in a tree.
+@attrs(frozen=True, slots=True, repr=False, cmp=False)
 class DependencyTreeToken:
     """
     A single word in a `DependencyTree`
