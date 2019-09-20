@@ -301,9 +301,32 @@ class _Phase1SituationTemplateGenerator(
         variable_binding: Mapping["TemplateObjectVariable", SituationObject],
     ) -> bool:
         for constraining_relation in template.constraining_relations:
-            if not instantiated_situation.relation_always_holds(
-                constraining_relation.copy_remapping_objects(variable_binding)
-            ):
+            # the constraint is satisfied if it is explicitly-specified as true
+            relation_bound_to_situation_objects = constraining_relation.copy_remapping_objects(variable_binding)
+            relation_explicitly_specified = instantiated_situation.relation_always_holds(
+                relation_bound_to_situation_objects)
+            # or if we can deduce it is true from general relations in the ontology
+            # (e.g. general tendencies like people being larger than balls)
+            # Note we do not currently allow overriding relations derived from the ontology.
+            # See https://github.com/isi-vista/adam/issues/229
+            relation_implied_by_ontology_relations: bool
+            if isinstance(relation_bound_to_situation_objects.second_slot, SituationObject):
+                # second slot could have been a region, in which case ontological relations
+                # do not apply
+                relation_in_terms_of_object_types = \
+                    relation_bound_to_situation_objects.copy_remapping_objects(
+                        {
+                            relation_bound_to_situation_objects.first_slot :
+                                relation_bound_to_situation_objects.first_slot.ontology_node,
+                            relation_bound_to_situation_objects.second_slot :
+                            relation_bound_to_situation_objects.second_slot.ontology_node
+                        }
+                    )
+                relation_implied_by_ontology_relations = relation_in_terms_of_object_types in \
+                                                         self.ontology.relations
+            else:
+                relation_implied_by_ontology_relations = False
+            if not (relation_explicitly_specified or relation_implied_by_ontology_relations):
                 return False
         return True
 
