@@ -40,6 +40,10 @@ from adam.ontology.phase1_ontology import (
     THEME,
     TRANSFER_OF_POSSESSION,
     on,
+    HOLLOW,
+    DRINK,
+    bigger_than,
+    inside,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -449,6 +453,38 @@ def _make_fly_curriculum():
     )
 
 
+def _make_drink_curriculum():
+    object_0 = object_variable(
+        "object_0", required_properties=[HOLLOW], banned_properties=[IS_BODY_PART]
+    )
+    liquid_0 = object_variable("liquid_0", required_properties=[LIQUID])
+    person_0 = object_variable("person_0", PERSON)
+
+    drink_liquid = Phase1SituationTemplate(
+        object_variables=[object_0, liquid_0, person_0],
+        actions=[
+            Action(
+                DRINK, argument_roles_to_fillers=[(AGENT, person_0), (THEME, liquid_0)]
+            )
+        ],
+        asserted_always_relations=[
+            bigger_than(person_0, object_0),
+            inside(liquid_0, object_0),
+        ],
+    )
+
+    return _phase1_instances(
+        "drinking",
+        chain(
+            *[
+                all_possible(
+                    drink_liquid, ontology=GAILA_PHASE_1_ONTOLOGY, chooser=_CHOOSER
+                )
+            ]
+        ),
+    )
+
+
 GAILA_PHASE_1_CURRICULUM = [
     EACH_OBJECT_BY_ITSELF_SUB_CURRICULUM,
     OBJECTS_WITH_COLORS_SUB_CURRICULUM,
@@ -460,6 +496,7 @@ GAILA_PHASE_1_CURRICULUM = [
     _make_transfer_of_possession_curriculum(),
     _make_object_on_object_curriculum(),
     _make_fly_curriculum(),
+    _make_drink_curriculum(),
 ]
 """
 One particular instantiation of the curriculum for GAILA Phase 1.

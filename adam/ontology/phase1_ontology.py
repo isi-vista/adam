@@ -1074,7 +1074,7 @@ _DRINK_AGENT = SituationObject(THING, properties=[ANIMATE])
 _DRINK_THEME = SituationObject(THING, properties=[LIQUID])
 _DRINK_CONTAINER = SituationObject(THING, properties=[HOLLOW])
 
-_DRINK_ACTION_DESCRIPTION = ActionDescription(
+_DRINK_ACTION_DESCRIPTION: ActionDescription = ActionDescription(
     frames=[ActionDescriptionFrame({AGENT: _DRINK_AGENT, THEME: _DRINK_THEME})],
     preconditions=[
         inside(_DRINK_THEME, _DRINK_CONTAINER),
