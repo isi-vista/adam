@@ -137,11 +137,19 @@ class CurriculumToHtmlDumper:
                 "\n<p>Properties</p>\n<ul>"
                 "\n\t<li>These define characteristics of an object that may influence perception and fulfillment of "
                 "semantic roles.</li> "
-                "\n\t<li>OBJECT[PROPERTY["
-                "META_PROPERTY]]</li> "
+                "\n\t<li>Meta-properties provide information about a property, e.g. whether or not a property can "
+                "be perceived by the learner.</li> "
+                "\n\t<li>OBJECT[PROPERTY_0[META_PROPERTY], PROPERTY_1, PROPERTY_2]</li> "
                 "\n<p>Relations</p> "
-                "\n<p>Part-of nesting</p> "
+                "\n<li>These define relations between two objects; e.g. smallerThan(A, B) indicates that object A is "
+                "smaller than object B.</li> "
+                "\n<li>RELATION(OBJECT_0, OBJECT_1)</li>"
+                "\n<p>Part-of nesting</p>"
+                "\n<li>PART_OF relations indicate that an object is a part of another. Objects that form a structural "
+                "schema can be represented in terms of several part-of relations.</li> "
+                "\n<li>e.g. a finger is a part of a hand which is part of an arm which is part of a body</li>"
                 "\n<p>Regions</p> "
+                "\n<li>These represent regions of space. They are defined in terms of distance and direction.</li>"
             )
             for (instance_number, (situation, dependency_tree, perception)) in enumerate(
                 instance_group.instances()
