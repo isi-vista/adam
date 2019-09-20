@@ -75,6 +75,15 @@ class Phase1SituationTemplate(SituationTemplate):
     actions: ImmutableSet[
         Action[_ExplicitOrVariableActionType, "TemplateObjectVariable"]
     ] = attrib(converter=_to_immutableset, default=immutableset())
+    syntax_hints: ImmutableSet[str] = attrib(
+        converter=_to_immutableset, default=immutableset()
+    )
+    """
+    A temporary hack to allow control of language generation decisions
+    using the situation template language.
+    
+    See https://github.com/isi-vista/adam/issues/222 .
+    """
 
     def __attrs_post_init__(self) -> None:
         check_arg(self.object_variables, "A situation must contain at least one object")
@@ -195,6 +204,7 @@ class _Phase1SituationTemplateGenerator(
                     )
                     for action in template.actions
                 ],
+                syntax_hints=template.syntax_hints,
             )
             if self._satisfies_constraints(
                 template, situation, object_var_to_instantiations
