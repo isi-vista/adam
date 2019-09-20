@@ -478,8 +478,16 @@ bigger_than = make_opposite_dsl_relation(  # pylint:disable=invalid-name
     BIGGER_THAN, opposite_type=SMALLER_THAN
 )
 
+IMPLICIT_RELATION = OntologyNode("implicit-relation")
+"""
+A relation which implies a relationship between it's contents.
+
+Example: HAS(MOM, TRUCK) implies a `SIZE_RELATION` between MOM and TRUCK
+"""
+subtype(IMPLICIT_RELATION, RELATION)
+
 HAS = OntologyNode("has")
-subtype(HAS, RELATION)
+subtype(HAS, IMPLICIT_RELATION)
 has = make_dsl_relation(HAS)  # pylint:disable=invalid-name
 
 
@@ -1255,26 +1263,31 @@ GAILA_PHASE_1_ONTOLOGY = Ontology(
             (FLY, _FLY_ACTION_DESCRIPTION),
         ]
     ),
-    relations=build_size_relationships(
+    relations=flatten_relations(
         (
-            (HOUSE,),
-            (_ROOF, _WALL),
-            (CAR, TRUCK),
-            (_TRAILER, _FLATBED),
-            (_TRUCK_CAB,),
-            (TABLE, DOOR),
-            (_TABLETOP,),
-            (MOM, DAD),
-            (DOG, BOX, CHAIR, _TIRE),
-            (BABY,),
-            (_BODY,),
-            (_TORSO, _CHAIR_BACK, _CHAIR_SEAT),
-            (_ARM, _LEG),
-            (HAND, HEAD, _ARM_SEGMENT),
-            (BALL, BIRD, BOOK, COOKIE, CUP, HAT),
-            (_TAIL, _WING),
-        ),
-        relation_type=BIGGER_THAN,
-        opposite_type=SMALLER_THAN,
-    ),
+            build_size_relationships(
+                (
+                    (HOUSE,),
+                    (_ROOF, _WALL),
+                    (CAR, TRUCK),
+                    (_TRAILER, _FLATBED),
+                    (_TRUCK_CAB,),
+                    (TABLE, DOOR),
+                    (_TABLETOP,),
+                    (MOM, DAD),
+                    (DOG, BOX, CHAIR, _TIRE),
+                    (BABY,),
+                    (_BODY,),
+                    (_TORSO, _CHAIR_BACK, _CHAIR_SEAT),
+                    (_ARM, _LEG),
+                    (HAND, HEAD, _ARM_SEGMENT),
+                    (BALL, BIRD, BOOK, COOKIE, CUP, HAT),
+                    (_TAIL, _WING),
+                ),
+                relation_type=BIGGER_THAN,
+                opposite_type=SMALLER_THAN,
+            ),
+            Relation(HAS, BIGGER_THAN, SMALLER_THAN),
+        )
+    )
 )

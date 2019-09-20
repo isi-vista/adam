@@ -21,7 +21,7 @@ from adam.ontology.phase1_ontology import (
     IS_SPEAKER,
     PART_OF,
     PERCEIVABLE,
-)
+    SIZE_RELATION)
 from adam.ontology.phase1_spatial_relations import Region, SpatialPath
 from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
 from adam.perception import (
@@ -456,7 +456,7 @@ class _PerceptionGeneration:
         """
 
         Args:
-            already_known_relations: relations to automatically include in our returned output.
+            conditions: relations to automatically include in our returned output.
                                      This is to support putting thing perceived from an actions
                                      preconditions into its post-conditions as well.
         """
@@ -759,6 +759,8 @@ class _PerceptionGeneration:
     def _perceive_relation(
         self, relation: Relation[SituationObject]
     ) -> Relation[ObjectPerception]:
+        # We need to check if the relation we are percieving implies a relationship
+        explicit_relations_implicit = immutableset()
         return relation.copy_remapping_objects(self._objects_to_perceptions)
 
     # TODO: We may need to rework this function to not use quadratic time but it works for now
@@ -771,7 +773,7 @@ class _PerceptionGeneration:
             explicit_relations_predicated_of_object = immutableset(
                 relation
                 for relation in self._relation_perceptions
-                if relation.first_slot == situation_object
+                if self._situation.ontology.is_subtype_of(relation.type, SIZE_RELATION) and relation.first_slot == situation_object
             )
             if situation_object not in self._object_perceptions_to_ontology_nodes:
                 raise RuntimeError(
@@ -779,9 +781,9 @@ class _PerceptionGeneration:
                     f"which doesn't have an entry in the Object Perceptions "
                     f"to Ontology Nodes dictionary."
                 )
-            relations_predicated_of_object_type = self._situation.ontology.subjects_to_relations[
+            relations_predicated_of_object_type = immutableset(relation for relation in self._situation.ontology.subjects_to_relations[
                 self._object_perceptions_to_ontology_nodes[situation_object]
-            ]
+            ] if self._situation.ontology.is_subtype_of(relation.relation_type, SIZE_RELATION))
 
             for other_object in self._object_perceptions:
                 if not other_object == situation_object:
