@@ -215,11 +215,7 @@ COLORS_TO_RGBS: ImmutableDict[
 # Information about the hierarchical structure of objects
 # is given at the end of this module because it is so bulky.
 
-INANIMATE_OBJECT = OntologyNode(
-    "inanimate-object",
-    inheritable_properties=[INANIMATE],
-    non_inheritable_properties=[PERSON_CAN_HAVE],
-)
+INANIMATE_OBJECT = OntologyNode("inanimate-object", inheritable_properties=[INANIMATE])
 subtype(INANIMATE_OBJECT, THING)
 
 IS_GROUND = OntologyNode("is-ground")

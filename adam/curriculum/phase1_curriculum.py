@@ -24,9 +24,9 @@ from adam.ontology.phase1_ontology import (
     HAS,
     PERSON,
     INANIMATE_OBJECT,
-    bigger_than,
     THEME,
     FALL,
+    PERSON_CAN_HAVE,
 )
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -156,11 +156,12 @@ _OBJECT_ON_GROUND_SUB_CURRICULUM = _phase1_instances(
 )
 
 _PERSON_0 = object_variable("person", PERSON)
-_INANIMATE_OBJECT_0 = object_variable("inanimate-object", INANIMATE_OBJECT)
+_INANIMATE_OBJECT_0 = object_variable(
+    "inanimate-object", INANIMATE_OBJECT, required_properties=[PERSON_CAN_HAVE]
+)
 PERSON_HAS_OBJECT_TEMPLATE = Phase1SituationTemplate(
     object_variables=[_PERSON_0, _INANIMATE_OBJECT_0, _LEARNER_OBJECT],
     asserted_always_relations=[Relation(HAS, _PERSON_0, _INANIMATE_OBJECT_0)],
-    constraining_relations=[bigger_than(_PERSON_0, _INANIMATE_OBJECT_0)],
 )
 
 PERSON_HAS_OBJECT_SUB_CURRICULUM = _phase1_instances(
