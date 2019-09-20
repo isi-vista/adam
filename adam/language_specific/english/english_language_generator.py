@@ -29,6 +29,8 @@ from adam.language.dependency.universal_dependencies import (
     OBJECT,
     OBLIQUE_NOMINAL,
     PROPER_NOUN,
+    ADVERB,
+    ADVERBIAL_MODIFIER,
 )
 from adam.language.language_generator import LanguageGenerator
 from adam.language.lexicon import LexiconEntry
@@ -56,6 +58,7 @@ from adam.ontology.phase1_ontology import (
     LEARNER,
     PATIENT,
     THEME,
+    FALL,
 )
 from adam.ontology.phase1_spatial_relations import (
     DISTAL,
@@ -395,9 +398,9 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 )
 
             # attach modifiers of the verbs (e.g. prepositions)
-            for path_modifier in self._collect_action_modifiers(action):
+            for (modifier_role, path_modifier) in self._collect_action_modifiers(action):
                 self.dependency_graph.add_edge(
-                    path_modifier, verb_dependency_node, role=OBLIQUE_NOMINAL
+                    path_modifier, verb_dependency_node, role=modifier_role
                 )
 
             return verb_dependency_node
@@ -497,14 +500,14 @@ class SimpleRuleBasedEnglishLanguageGenerator(
 
         def _collect_action_modifiers(
             self, action: Action[OntologyNode, SituationObject]
-        ) -> Iterable[DependencyTreeToken]:
+        ) -> Iterable[Tuple[DependencyRole, DependencyTreeToken]]:
             """
             Collect adverbial and other modifiers of an action.
 
             For right now we only handle a subset of spatial modifiers
             which are realized as prepositions.
             """
-            modifiers: List[DependencyTreeToken] = []
+            modifiers: List[Tuple[DependencyRole, DependencyTreeToken]] = []
 
             if action.during:
                 # so far we only handle IN_REGION relations which are asserted to hold
@@ -531,7 +534,10 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                         )
                         if fills_legal_argument_role:
                             modifiers.append(
-                                self.relation_to_prepositional_modifier(relation)
+                                (
+                                    OBLIQUE_NOMINAL,
+                                    self.relation_to_prepositional_modifier(relation),
+                                )
                             )
                         else:
                             raise RuntimeError(
@@ -546,6 +552,14 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                             f"for relations which hold during an action: "
                             f"{relation} in {action}"
                         )
+
+            # "fall down" is special-cased for right now
+            if (
+                action.action_type == FALL
+                and USE_ADVERBIAL_PATH_MODIFIER in self.situation.syntax_hints
+            ):
+                down = DependencyTreeToken("down", ADVERB)
+                modifiers.append((ADVERBIAL_MODIFIER, down))
 
             return modifiers
 
@@ -662,3 +676,8 @@ ALWAYS_USE_THE_OBJECTS = immutableset([GROUND])
 GAILA_PHASE_1_LANGUAGE_GENERATOR = SimpleRuleBasedEnglishLanguageGenerator(
     ontology_lexicon=GAILA_PHASE_1_ENGLISH_LEXICON
 )
+
+# these are "hints" situations can pass to the language generator
+# to control its behavior
+# See https://github.com/isi-vista/adam/issues/222
+USE_ADVERBIAL_PATH_MODIFIER = "USE_ADVERBIAL_PATH_MODIFIER"

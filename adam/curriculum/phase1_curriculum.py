@@ -1,12 +1,14 @@
 """
 Curricula for DARPA GAILA Phase 1
 """
+from itertools import chain
 from typing import Iterable
 
 from adam.curriculum import GeneratedFromSituationsInstanceGroup, InstanceGroup
 from adam.language.dependency import LinearizedDependencyTree
 from adam.language_specific.english.english_language_generator import (
     GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    USE_ADVERBIAL_PATH_MODIFIER,
 )
 from adam.ontology import THING
 from adam.ontology.ontology import Ontology
@@ -24,6 +26,7 @@ from adam.ontology.phase1_ontology import (
     INANIMATE_OBJECT,
     bigger_than,
     THEME,
+    FALL,
 )
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -193,6 +196,37 @@ _ANY_OBJECT_INTRANSITIVES_SUBCURRICULUM = _phase1_instances(
     ),
 )
 
+
+def _make_object_falls_template(
+    use_adverbvial_path_modifier: bool
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        object_variables=[_ARBITRARY_OBJECT],
+        actions=[
+            Action(
+                action_type=FALL, argument_roles_to_fillers=[(THEME, _ARBITRARY_OBJECT)]
+            )
+        ],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER]
+        if use_adverbvial_path_modifier
+        else [],
+    )
+
+
+_OBJECTS_FALLING_SUBCURRICULUM = _phase1_instances(
+    "any object falling",
+    chain(
+        *[
+            all_possible(
+                _make_object_falls_template(use_adv_mod),
+                ontology=GAILA_PHASE_1_ONTOLOGY,
+                chooser=_CHOOSER,
+            )
+            for use_adv_mod in (True, False)
+        ]
+    ),
+)
+
 GAILA_PHASE_1_CURRICULUM = [
     EACH_OBJECT_BY_ITSELF_SUB_CURRICULUM,
     OBJECTS_WITH_COLORS_SUB_CURRICULUM,
@@ -200,6 +234,7 @@ GAILA_PHASE_1_CURRICULUM = [
     _OBJECT_ON_GROUND_SUB_CURRICULUM,
     #    PERSON_HAS_OBJECT_SUB_CURRICULUM,
     _ANY_OBJECT_INTRANSITIVES_SUBCURRICULUM,
+    _OBJECTS_FALLING_SUBCURRICULUM,
 ]
 """
 One particular instantiation of the curriculum for GAILA Phase 1.
