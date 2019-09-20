@@ -65,7 +65,7 @@ def _testing_schemata(
     return immutablesetmultidict((node, ObjectStructuralSchema(node)) for node in nodes)
 
 
-_TESTING_ONTOLOGY = Ontology(
+_TESTING_ONTOLOGY = Ontology("test-ontology",
     _TESTING_ONTOLOGY_GRAPH,
     structural_schemata=_testing_schemata([_MOM, _DAD, _BALL, _TRUCK, _CAR]),
 )

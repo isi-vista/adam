@@ -36,7 +36,7 @@ def _copy_digraph(digraph: DiGraph) -> DiGraph:
     return digraph.copy()
 
 
-@attrs(frozen=True, slots=True)
+@attrs(frozen=True, slots=True, repr=False)
 class Ontology:
     r"""
     A hierarchical collection of types for objects, actions, etc.
@@ -56,6 +56,7 @@ class Ontology:
     To assist in creating legal `Ontology`\ s, we provide `minimal_ontology_graph`.
     """
 
+    _name: str = attrib(validator=instance_of(str))
     _graph: DiGraph = attrib(validator=instance_of(DiGraph), converter=_copy_digraph)
     _structural_schemata: ImmutableSetMultiDict[
         "OntologyNode", "ObjectStructuralSchema"
@@ -209,6 +210,9 @@ class Ontology:
 
     def __contains__(self, item: "OntologyNode") -> bool:
         return item in self._graph.nodes
+
+    def __repr__(self) -> str:
+        return f"Ontology({self._name})"
 
     @subjects_to_relations.default
     def _subjects_to_relations(

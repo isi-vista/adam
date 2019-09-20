@@ -237,7 +237,8 @@ TABLE = OntologyNode(
     "table", [CAN_FILL_TEMPLATE_SLOT, CAN_HAVE_THINGS_RESTING_ON_THEM, HAS_SPACE_UNDER]
 )
 subtype(TABLE, INANIMATE_OBJECT)
-BALL = OntologyNode("ball", [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE])
+BALL = OntologyNode("ball", [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE,
+                             ROLLABLE])
 subtype(BALL, INANIMATE_OBJECT)
 BOOK = OntologyNode(
     "book", [CAN_FILL_TEMPLATE_SLOT, CAN_HAVE_THINGS_RESTING_ON_THEM, PERSON_CAN_HAVE]
@@ -246,7 +247,8 @@ subtype(BOOK, INANIMATE_OBJECT)
 HOUSE = OntologyNode("house", [HOLLOW, CAN_FILL_TEMPLATE_SLOT])
 subtype(HOUSE, INANIMATE_OBJECT)
 CAR = OntologyNode(
-    "car", [HOLLOW, CAN_FILL_TEMPLATE_SLOT, SELF_MOVING, CAN_HAVE_THINGS_RESTING_ON_THEM]
+    "car", [HOLLOW, CAN_FILL_TEMPLATE_SLOT, SELF_MOVING, CAN_HAVE_THINGS_RESTING_ON_THEM,
+            ROLLABLE]
 )
 subtype(CAR, INANIMATE_OBJECT)
 WATER = OntologyNode(
@@ -281,14 +283,16 @@ HAND = OntologyNode("hand", [CAN_MANIPULATE_OBJECTS, CAN_FILL_TEMPLATE_SLOT])
 subtype(HAND, INANIMATE_OBJECT)
 TRUCK = OntologyNode(
     "truck",
-    [HOLLOW, CAN_FILL_TEMPLATE_SLOT, SELF_MOVING, CAN_HAVE_THINGS_RESTING_ON_THEM],
+    [HOLLOW, CAN_FILL_TEMPLATE_SLOT, SELF_MOVING, CAN_HAVE_THINGS_RESTING_ON_THEM,
+     ROLLABLE],
 )
 subtype(TRUCK, INANIMATE_OBJECT)
 DOOR = OntologyNode("door", [CAN_FILL_TEMPLATE_SLOT])
 subtype(DOOR, INANIMATE_OBJECT)
 HAT = OntologyNode("hat", [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE])
 subtype(HAT, INANIMATE_OBJECT)
-COOKIE = OntologyNode("cookie", [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE])
+COOKIE = OntologyNode("cookie", [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE,
+                                 ROLLABLE])
 subtype(COOKIE, INANIMATE_OBJECT)
 
 PERSON = OntologyNode("person", inheritable_properties=[ANIMATE, SELF_MOVING])
@@ -1179,7 +1183,8 @@ _ROLL_SURFACE = SituationObject(INANIMATE_OBJECT)
 
 _ROLL_ACTION_DESCRIPTION = ActionDescription(
     frames=[
-        ActionDescriptionFrame({AGENT: _ROLL_AGENT, THEME: _ROLL_THEME, GOAL: _ROLL_GOAL})
+        ActionDescriptionFrame({AGENT: _ROLL_AGENT}),
+        ActionDescriptionFrame({AGENT: _ROLL_AGENT, THEME: _ROLL_THEME}),
     ],
     during=DuringAction(
         continuously=[contacts(_ROLL_THEME, _ROLL_SURFACE)],
@@ -1222,7 +1227,7 @@ _FLY_ACTION_DESCRIPTION = ActionDescription(
     ),
 )
 
-GAILA_PHASE_1_ONTOLOGY = Ontology(
+GAILA_PHASE_1_ONTOLOGY = Ontology("gaila-phase-1",
     _ontology_graph,
     structural_schemata=immutablesetmultidict(
         [

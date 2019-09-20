@@ -40,7 +40,7 @@ from adam.ontology.phase1_ontology import (
     THEME,
     TRANSFER_OF_POSSESSION,
     on,
-)
+    ROLLABLE, ANIMATE, ROLL, bigger_than)
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
     DISTAL,
@@ -448,6 +448,75 @@ def _make_fly_curriculum():
         ),
     )
 
+def _make_roll_curriculum():
+    animate_0 = object_variable("object_0", THING, required_properties=[ANIMATE])
+    rollable_0 = object_variable("object_1", INANIMATE_OBJECT, required_properties=[ROLLABLE])
+    rolling_surface = object_variable("surface", THING,
+                                      required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM])
+
+    # rolls intransitively
+    # rolls transitively
+    # rolls on a surface
+    intransitive_roll = Phase1SituationTemplate(
+            object_variables=[animate_0, rolling_surface],
+            actions=[
+                Action(
+                    ROLL,
+                    argument_roles_to_fillers=[(AGENT, animate_0)],
+                    during=DuringAction(
+                        continuously=[on(animate_0, rolling_surface)]
+                    ),
+                ),
+            ],
+        constraining_relations=[bigger_than(rolling_surface, animate_0)]
+    )
+
+    transitive_roll = Phase1SituationTemplate(
+            object_variables=[animate_0, rollable_0],
+            actions=[
+                Action(
+                    ROLL,
+                    argument_roles_to_fillers=[(AGENT, animate_0),
+                                               (THEME, rollable_0)],
+                    during=DuringAction(
+                    ),
+                ),
+            ],
+        constraining_relations=[bigger_than(animate_0, rollable_0)]
+    )
+
+    transitive_roll_with_surface = Phase1SituationTemplate(
+            object_variables=[animate_0, rollable_0, rolling_surface],
+            actions=[
+                Action(
+                    ROLL,
+                    argument_roles_to_fillers=[(AGENT, animate_0),
+                                               (THEME, rollable_0)],
+                    during=DuringAction(
+                        continuously=[on(rollable_0, rolling_surface)]
+                    ),
+                ),
+            ],
+        constraining_relations=[bigger_than(rolling_surface, rollable_0),
+                                bigger_than(animate_0, rollable_0)]
+    )
+
+    return _phase1_instances(
+        "rolling",
+        chain(
+            *[
+                sampled(
+                    situation,
+                    max_to_sample=25,
+                    chooser=_CHOOSER,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                )
+            for situation in (intransitive_roll, transitive_roll, transitive_roll_with_surface)
+            ]
+        ),
+    )
+
+
 
 GAILA_PHASE_1_CURRICULUM = [
     EACH_OBJECT_BY_ITSELF_SUB_CURRICULUM,
@@ -460,6 +529,7 @@ GAILA_PHASE_1_CURRICULUM = [
     _make_transfer_of_possession_curriculum(),
     _make_object_on_object_curriculum(),
     _make_fly_curriculum(),
+    _make_roll_curriculum()
 ]
 """
 One particular instantiation of the curriculum for GAILA Phase 1.
