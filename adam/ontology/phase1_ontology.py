@@ -233,9 +233,9 @@ GROUND = OntologyNode(
 )
 subtype(GROUND, INANIMATE_OBJECT)
 
-TABLE = OntologyNode("table", [CAN_FILL_TEMPLATE_SLOT,
-                               CAN_HAVE_THINGS_RESTING_ON_THEM,
-                               HAS_SPACE_UNDER])
+TABLE = OntologyNode(
+    "table", [CAN_FILL_TEMPLATE_SLOT, CAN_HAVE_THINGS_RESTING_ON_THEM, HAS_SPACE_UNDER]
+)
 subtype(TABLE, INANIMATE_OBJECT)
 BALL = OntologyNode("ball", [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE])
 subtype(BALL, INANIMATE_OBJECT)

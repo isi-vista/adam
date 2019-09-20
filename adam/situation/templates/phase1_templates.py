@@ -5,7 +5,16 @@ import random
 from _random import Random
 from abc import ABC, abstractmethod
 from itertools import product, chain
-from typing import AbstractSet, Iterable, Mapping, Optional, Sequence, TypeVar, Union, List
+from typing import (
+    AbstractSet,
+    Iterable,
+    Mapping,
+    Optional,
+    Sequence,
+    TypeVar,
+    Union,
+    List,
+)
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
@@ -168,14 +177,18 @@ class Phase1SituationTemplate(SituationTemplate):
 
         # ensure all objects referenced anywhere are on the object list
         objects_referenced_accumulator = list(self.object_variables)
-        for relation in chain(self.constraining_relations, self.asserted_always_relations):
+        for relation in chain(
+            self.constraining_relations, self.asserted_always_relations
+        ):
             relation.accumulate_referenced_objects(objects_referenced_accumulator)
         for action in self.actions:
             action.accumulate_referenced_objects(objects_referenced_accumulator)
         unique_objects_referenced = immutableset(objects_referenced_accumulator)
         if unique_objects_referenced != self.object_variables:
-            raise RuntimeError(f"Set of referenced objects {unique_objects_referenced} does not match "
-                               f"declared objects {self.object_variables} for template {self}")
+            raise RuntimeError(
+                f"Set of referenced objects {unique_objects_referenced} does not match "
+                f"declared objects {self.object_variables} for template {self}"
+            )
 
 
 def all_possible(
@@ -362,19 +375,17 @@ class _Phase1SituationTemplateGenerator(
                 return action.action_type
             else:
                 return action_variables_to_fillers[action.action_type]
-        try:
-            return Action(
-                action_type=map_action_type(),
-                argument_roles_to_fillers=[
-                    (role, object_var_to_instantiations[arg])
-                    for (role, arg) in action.argument_roles_to_fillers.items()
-                ],
-                during=action.during.copy_remapping_objects(object_var_to_instantiations)
-                if action.during
-                else None,
-            )
-        except:
-            print("foo")
+
+        return Action(
+            action_type=map_action_type(),
+            argument_roles_to_fillers=[
+                (role, object_var_to_instantiations[arg])
+                for (role, arg) in action.argument_roles_to_fillers.items()
+            ],
+            during=action.during.copy_remapping_objects(object_var_to_instantiations)
+            if action.during
+            else None,
+        )
 
 
 def object_variable(

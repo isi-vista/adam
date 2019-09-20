@@ -8,9 +8,7 @@ from immutablecollections import (
     immutableset,
     immutablesetmultidict,
 )
-from immutablecollections.converter_utils import (
-    _to_immutablesetmultidict,
-)
+from immutablecollections.converter_utils import _to_immutablesetmultidict
 
 from adam.ontology.phase1_spatial_relations import SpatialPath
 from adam.relation import Relation, flatten_relations

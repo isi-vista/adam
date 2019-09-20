@@ -2,7 +2,7 @@
 Curricula for DARPA GAILA Phase 1
 """
 from itertools import chain
-from typing import Iterable, List
+from typing import Iterable
 
 from more_itertools import flatten
 
@@ -10,35 +10,46 @@ from adam.curriculum import GeneratedFromSituationsInstanceGroup, InstanceGroup
 from adam.language.dependency import LinearizedDependencyTree
 from adam.language_specific.english.english_language_generator import (
     GAILA_PHASE_1_LANGUAGE_GENERATOR,
-    USE_ADVERBIAL_PATH_MODIFIER,
     PREFER_DITRANSITIVE,
+    USE_ADVERBIAL_PATH_MODIFIER,
 )
-from adam.ontology import THING
+from adam.ontology import IN_REGION, THING
 from adam.ontology.during import DuringAction
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
+    AGENT,
+    BIGGER_THAN,
+    BIRD,
+    CAN_HAVE_THINGS_RESTING_ON_THEM,
+    FALL,
+    FLY,
     GAILA_PHASE_1_ONTOLOGY,
+    GIVE,
+    GOAL,
+    GROUND,
+    HAS,
+    HAS_SPACE_UNDER,
+    INANIMATE_OBJECT,
+    IS_BODY_PART,
     LEARNER,
+    LIQUID,
+    PERSON,
+    PERSON_CAN_HAVE,
     PHASE_1_CURRICULUM_OBJECTS,
     RECOGNIZED_PARTICULAR_PROPERTY,
-    LIQUID,
-    GROUND,
-    on,
-    IS_BODY_PART,
-    HAS,
-    PERSON,
-    INANIMATE_OBJECT,
     THEME,
-    FALL,
-    PERSON_CAN_HAVE,
-    GIVE,
-    AGENT,
-    GOAL,
     TRANSFER_OF_POSSESSION,
-    CAN_HAVE_THINGS_RESTING_ON_THEM,
-    BIGGER_THAN,
-    BIRD, FLY, HAS_SPACE_UNDER, above)
-from adam.ontology.phase1_spatial_relations import SpatialPath, TOWARD, AWAY_FROM
+    on,
+)
+from adam.ontology.phase1_spatial_relations import (
+    AWAY_FROM,
+    DISTAL,
+    GRAVITATIONAL_DOWN,
+    GRAVITATIONAL_UP,
+    Region,
+    SpatialPath,
+    TOWARD,
+)
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
@@ -47,15 +58,15 @@ from adam.perception.high_level_semantics_situation_to_developmental_primitive_p
 )
 from adam.random_utils import RandomChooser
 from adam.relation import Relation
-from adam.situation import SituationObject, Action
+from adam.situation import Action, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
+    action_variable,
     all_possible,
     color_variable,
     object_variable,
     sampled,
-    action_variable,
 )
 
 _CHOOSER = RandomChooser.for_seed(0)
@@ -301,70 +312,110 @@ def _make_object_on_object_curriculum() -> _Phase1InstanceGroup:
         ),
     )
 
+
 def _make_fly_curriculum():
     # fly under something which has an under
     bird = object_variable("bird_0", BIRD)
     object_0 = object_variable("object_0", THING)
-    object_with_space_under = object_variable("object_0", THING,
-                                              required_properties=[HAS_SPACE_UNDER])
+    object_with_space_under = object_variable(
+        "object_0", THING, required_properties=[HAS_SPACE_UNDER]
+    )
     ground = object_variable("ground", GROUND)
 
     # "a bird flies up"
     # "a bird flies down"
     fly_up_down = [
         Phase1SituationTemplate(
-        object_variables=[bird, ground],
-            actions=[Action(FLY,
-                            argument_roles_to_fillers=[(AGENT, bird)],
-                            during=DuringAction(
-                                objects_to_paths=[
-                                    (bird, SpatialPath(
-                                        AWAY_FROM if up else TOWARD,
-                                        reference_object=ground
-                                    ))
-                                ]
-                            ))]
-    )
+            object_variables=[bird, ground],
+            actions=[
+                Action(
+                    FLY,
+                    argument_roles_to_fillers=[(AGENT, bird)],
+                    during=DuringAction(
+                        objects_to_paths=[
+                            (
+                                bird,
+                                SpatialPath(
+                                    AWAY_FROM if up else TOWARD, reference_object=ground
+                                ),
+                            )
+                        ]
+                    ),
+                )
+            ],
+        )
         for up in (True, False)
     ]
 
     # "a bird flies over a house"
     fly_over = Phase1SituationTemplate(
         object_variables=[bird, object_0],
-            actions=[Action(FLY,
-                            argument_roles_to_fillers=[(AGENT, bird)],
-                            during=DuringAction(
-                                at_some_point=[above(bird, object_0)]
-                            ))]
+        actions=[
+            Action(
+                FLY,
+                argument_roles_to_fillers=[(AGENT, bird)],
+                during=DuringAction(
+                    at_some_point=[
+                        Relation(
+                            IN_REGION,
+                            bird,
+                            Region(
+                                reference_object=object_with_space_under,
+                                distance=DISTAL,
+                                direction=GRAVITATIONAL_UP,
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
     )
-
 
     # "a bird flies under a table"
     fly_under = Phase1SituationTemplate(
         object_variables=[bird, object_with_space_under],
-            actions=[Action(FLY,
-                            argument_roles_to_fillers=[(AGENT, bird)],
-                            during=DuringAction(
-                                at_some_point=[above(object_with_space_under, bird)]
-                            ))]
+        actions=[
+            Action(
+                FLY,
+                argument_roles_to_fillers=[(AGENT, bird)],
+                during=DuringAction(
+                    at_some_point=[
+                        Relation(
+                            IN_REGION,
+                            bird,
+                            Region(
+                                reference_object=object_with_space_under,
+                                distance=DISTAL,
+                                direction=GRAVITATIONAL_DOWN,
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
     )
-
 
     return _phase1_instances(
         "flying",
-        chain(*[
-            flatten(all_possible(template, ontology=GAILA_PHASE_1_ONTOLOGY,
-                         chooser=_CHOOSER)
-                    for template in fly_up_down),
-            all_possible(fly_under, ontology=GAILA_PHASE_1_ONTOLOGY,
-                         chooser=_CHOOSER),
-            sampled(
-                fly_over,
-                max_to_sample=25,
-                chooser=_CHOOSER,
-                ontology=GAILA_PHASE_1_ONTOLOGY,
-            )
-        ])
+        chain(
+            *[
+                flatten(
+                    all_possible(
+                        template, ontology=GAILA_PHASE_1_ONTOLOGY, chooser=_CHOOSER
+                    )
+                    for template in fly_up_down
+                ),
+                all_possible(
+                    fly_under, ontology=GAILA_PHASE_1_ONTOLOGY, chooser=_CHOOSER
+                ),
+                sampled(
+                    fly_over,
+                    max_to_sample=25,
+                    chooser=_CHOOSER,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                ),
+            ]
+        ),
     )
 
 
@@ -378,7 +429,7 @@ GAILA_PHASE_1_CURRICULUM = [
     _OBJECTS_FALLING_SUBCURRICULUM,
     _make_transfer_of_possession_curriculum(),
     _make_object_on_object_curriculum(),
-    _make_fly_curriculum()
+    _make_fly_curriculum(),
 ]
 """
 One particular instantiation of the curriculum for GAILA Phase 1.
