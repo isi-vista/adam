@@ -35,6 +35,10 @@ from adam.ontology.phase1_ontology import (
     CAN_HAVE_THINGS_RESTING_ON_THEM,
     BIGGER_THAN,
     HOLLOW,
+    CAR,
+    inside,
+    TRUCK,
+    HOUSE,
 )
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -307,11 +311,66 @@ def _make_object_in_other_object_curriculum() -> _Phase1InstanceGroup:
     situation_template = Phase1SituationTemplate(
         object_variables=[object_, containing_object],
         constraining_relations=[Relation(BIGGER_THAN, containing_object, object_)],
-        asserted_always_relations=[on(object_, containing_object)],
+        asserted_always_relations=[inside(object_, containing_object)],
     )
 
     return _phase1_instances(
         "objects-in-other-objects",
+        sampled(
+            situation_template,
+            max_to_sample=100,
+            chooser=_CHOOSER,
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+        ),
+    )
+
+
+def _make_people_in_cars_object_curriculum() -> _Phase1InstanceGroup:
+    person = object_variable("person_0", PERSON)
+    car = object_variable("car_0", CAR)
+    situation_template = Phase1SituationTemplate(
+        object_variables=[person, car], asserted_always_relations=[inside(person, car)]
+    )
+
+    return _phase1_instances(
+        "people-in-cars",
+        sampled(
+            situation_template,
+            max_to_sample=100,
+            chooser=_CHOOSER,
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+        ),
+    )
+
+
+def _make_people_in_trucks_object_curriculum() -> _Phase1InstanceGroup:
+    person = object_variable("person_0", PERSON)
+    truck = object_variable("truck_0", TRUCK)
+    situation_template = Phase1SituationTemplate(
+        object_variables=[person, truck],
+        asserted_always_relations=[inside(person, truck)],
+    )
+    return _phase1_instances(
+        "people-in-trucks",
+        sampled(
+            situation_template,
+            max_to_sample=100,
+            chooser=_CHOOSER,
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+        ),
+    )
+
+
+def _make_person_in_houses_object_curriculum() -> _Phase1InstanceGroup:
+    person = object_variable("person_0", PERSON)
+    house = object_variable("house_0", HOUSE)
+    situation_template = Phase1SituationTemplate(
+        object_variables=[person, house],
+        asserted_always_relations=[inside(person, house)],
+    )
+
+    return _phase1_instances(
+        "people-in-houses",
         sampled(
             situation_template,
             max_to_sample=100,
