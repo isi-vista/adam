@@ -32,7 +32,9 @@ from adam.ontology.phase1_ontology import (
     AGENT,
     GOAL,
     TRANSFER_OF_POSSESSION,
-    CAN_HAVE_THINGS_RESTING_ON_THEM, BIGGER_THAN)
+    CAN_HAVE_THINGS_RESTING_ON_THEM,
+    BIGGER_THAN,
+)
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
@@ -270,21 +272,30 @@ def _make_transfer_of_possession_curriculum() -> _Phase1InstanceGroup:
         ),
     )
 
+
 def _make_object_on_object_curriculum() -> _Phase1InstanceGroup:
     object_ = object_variable("object_0", INANIMATE_OBJECT)
-    object_with_surface = object_variable("object_1", INANIMATE_OBJECT,
-                                          required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM])
+    object_with_surface = object_variable(
+        "object_1",
+        INANIMATE_OBJECT,
+        required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM],
+    )
     situation_template = Phase1SituationTemplate(
         object_variables=[object_, object_with_surface],
         constraining_relations=[Relation(BIGGER_THAN, object_with_surface, object_)],
-        asserted_always_relations=[on(object_, object_with_surface)]
+        asserted_always_relations=[on(object_, object_with_surface)],
     )
 
-    return _phase1_instances("objects-on-surfaces",
-                             sampled(situation_template,
-                                     max_to_sample=100,
-                                     chooser=_CHOOSER,
-                                     ontology=GAILA_PHASE_1_ONTOLOGY))
+    return _phase1_instances(
+        "objects-on-surfaces",
+        sampled(
+            situation_template,
+            max_to_sample=100,
+            chooser=_CHOOSER,
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+        ),
+    )
+
 
 GAILA_PHASE_1_CURRICULUM = [
     EACH_OBJECT_BY_ITSELF_SUB_CURRICULUM,
@@ -295,7 +306,7 @@ GAILA_PHASE_1_CURRICULUM = [
     _ANY_OBJECT_INTRANSITIVES_SUBCURRICULUM,
     _OBJECTS_FALLING_SUBCURRICULUM,
     _make_transfer_of_possession_curriculum(),
-    _make_object_on_object_curriculum()
+    _make_object_on_object_curriculum(),
 ]
 """
 One particular instantiation of the curriculum for GAILA Phase 1.
