@@ -210,7 +210,9 @@ class _Phase1SituationTemplateGenerator(
                             SMALLER_THAN, relation.first_slot, relation.second_slot
                         ).copy_remapping_objects(object_var_to_instantiations)
                     )
-                relation.copy_remapping_objects(object_var_to_instantiations)
+                always_relations.append(
+                    relation.copy_remapping_objects(object_var_to_instantiations)
+                )
 
             situation = HighLevelSemanticsSituation(
                 ontology=self.ontology,
