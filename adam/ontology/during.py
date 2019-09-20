@@ -1,5 +1,5 @@
 from itertools import chain
-from typing import Generic, Mapping, TypeVar, List
+from typing import Generic, List, Mapping, TypeVar
 
 from attr import attrib, attrs
 from immutablecollections import (
@@ -9,7 +9,6 @@ from immutablecollections import (
     immutablesetmultidict,
 )
 from immutablecollections.converter_utils import (
-    _to_immutableset,
     _to_immutablesetmultidict,
 )
 

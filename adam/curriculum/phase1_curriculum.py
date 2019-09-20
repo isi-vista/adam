@@ -313,7 +313,7 @@ def _make_fly_curriculum():
     # "a bird flies down"
     fly_up_down = [
         Phase1SituationTemplate(
-        object_variables=[bird],
+        object_variables=[bird, ground],
             actions=[Action(FLY,
                             argument_roles_to_fillers=[(AGENT, bird)],
                             during=DuringAction(
