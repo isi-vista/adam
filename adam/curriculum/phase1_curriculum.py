@@ -163,15 +163,15 @@ PERSON_HAS_OBJECT_TEMPLATE = Phase1SituationTemplate(
     constraining_relations=[bigger_than(_PERSON_0, _INANIMATE_OBJECT_0)],
 )
 
-# PERSON_HAS_OBJECT_SUB_CURRICULUM = _phase1_instances(
-#     "person has object",
-#     situations=sampled(
-#         PERSON_HAS_OBJECT_TEMPLATE,
-#         chooser=_CHOOSER,
-#         ontology=GAILA_PHASE_1_ONTOLOGY,
-#         max_to_sample=100,
-#     ),
-# )
+PERSON_HAS_OBJECT_SUB_CURRICULUM = _phase1_instances(
+    "person has object",
+    situations=sampled(
+        PERSON_HAS_OBJECT_TEMPLATE,
+        chooser=_CHOOSER,
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        max_to_sample=100,
+    ),
+)
 
 _VERB_WITH_ONLY_THEME = action_variable(
     "verb_with_only_theme", with_subcategorization_frame=[THEME]

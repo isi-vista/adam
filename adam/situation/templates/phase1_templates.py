@@ -17,7 +17,15 @@ from vistautils.preconditions import check_arg
 
 from adam.ontology import ACTION, CAN_FILL_TEMPLATE_SLOT, OntologyNode, PROPERTY, THING
 from adam.ontology.ontology import Ontology
-from adam.ontology.phase1_ontology import COLOR, GAILA_PHASE_1_ONTOLOGY, GROUND, LEARNER
+from adam.ontology.phase1_ontology import (
+    COLOR,
+    GAILA_PHASE_1_ONTOLOGY,
+    GROUND,
+    LEARNER,
+    HAS,
+    BIGGER_THAN,
+    SMALLER_THAN,
+)
 from adam.ontology.selectors import (
     AndOntologySelector,
     ByHierarchyAndProperties,
@@ -189,13 +197,25 @@ class _Phase1SituationTemplateGenerator(
                 for obj_var in template.object_variables
             )
 
+            always_relations = []
+            for relation in template.asserted_always_relations:
+                if relation.relation_type == HAS:
+                    always_relations.append(
+                        Relation(
+                            BIGGER_THAN, relation.first_slot, relation.second_slot
+                        ).copy_remapping_objects(object_var_to_instantiations)
+                    )
+                    always_relations.append(
+                        Relation(
+                            SMALLER_THAN, relation.first_slot, relation.second_slot
+                        ).copy_remapping_objects(object_var_to_instantiations)
+                    )
+                relation.copy_remapping_objects(object_var_to_instantiations)
+
             situation = HighLevelSemanticsSituation(
                 ontology=self.ontology,
                 objects=object_var_to_instantiations.values(),
-                always_relations=[
-                    relation.copy_remapping_objects(object_var_to_instantiations)
-                    for relation in template.asserted_always_relations
-                ],
+                always_relations=always_relations,
                 actions=[
                     self._instantiate_action(
                         action,
