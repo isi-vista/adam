@@ -1,6 +1,7 @@
 """
 Curricula for DARPA GAILA Phase 1
 """
+
 from itertools import chain
 from typing import Iterable
 
@@ -40,10 +41,7 @@ from adam.ontology.phase1_ontology import (
     CAN_HAVE_THINGS_RESTING_ON_THEM,
     BIGGER_THAN,
     HOLLOW,
-    CAR,
     inside,
-    TRUCK,
-    HOUSE,
     on,
 )
 from adam.ontology.phase1_spatial_relations import (
@@ -319,14 +317,9 @@ def _make_object_on_object_curriculum() -> _Phase1InstanceGroup:
 
 
 def _make_object_in_other_object_curriculum() -> _Phase1InstanceGroup:
-    object_ = object_variable(
-        "object_0", INANIMATE_OBJECT, banned_properties=[IS_BODY_PART]
-    )
+    object_ = object_variable("object_0", banned_properties=[IS_BODY_PART])
     containing_object = object_variable(
-        "object_1",
-        INANIMATE_OBJECT,
-        required_properties=[HOLLOW],
-        banned_properties=[IS_BODY_PART],
+        "object_1", required_properties=[HOLLOW], banned_properties=[IS_BODY_PART]
     )
     situation_template = Phase1SituationTemplate(
         object_variables=[object_, containing_object],
@@ -336,61 +329,6 @@ def _make_object_in_other_object_curriculum() -> _Phase1InstanceGroup:
 
     return _phase1_instances(
         "objects-in-other-objects",
-        sampled(
-            situation_template,
-            max_to_sample=100,
-            chooser=_CHOOSER,
-            ontology=GAILA_PHASE_1_ONTOLOGY,
-        ),
-    )
-
-
-def _make_people_in_cars_object_curriculum() -> _Phase1InstanceGroup:
-    person = object_variable("person_0", PERSON)
-    car = object_variable("car_0", CAR)
-    situation_template = Phase1SituationTemplate(
-        object_variables=[person, car], asserted_always_relations=[inside(person, car)]
-    )
-
-    return _phase1_instances(
-        "people-in-cars",
-        sampled(
-            situation_template,
-            max_to_sample=100,
-            chooser=_CHOOSER,
-            ontology=GAILA_PHASE_1_ONTOLOGY,
-        ),
-    )
-
-
-def _make_people_in_trucks_object_curriculum() -> _Phase1InstanceGroup:
-    person = object_variable("person_0", PERSON)
-    truck = object_variable("truck_0", TRUCK)
-    situation_template = Phase1SituationTemplate(
-        object_variables=[person, truck],
-        asserted_always_relations=[inside(person, truck)],
-    )
-    return _phase1_instances(
-        "people-in-trucks",
-        sampled(
-            situation_template,
-            max_to_sample=100,
-            chooser=_CHOOSER,
-            ontology=GAILA_PHASE_1_ONTOLOGY,
-        ),
-    )
-
-
-def _make_person_in_houses_object_curriculum() -> _Phase1InstanceGroup:
-    person = object_variable("person_0", PERSON)
-    house = object_variable("house_0", HOUSE)
-    situation_template = Phase1SituationTemplate(
-        object_variables=[person, house],
-        asserted_always_relations=[inside(person, house)],
-    )
-
-    return _phase1_instances(
-        "people-in-houses",
         sampled(
             situation_template,
             max_to_sample=100,
@@ -547,9 +485,6 @@ GAILA_PHASE_1_CURRICULUM = [
     _make_transfer_of_possession_curriculum(),
     _make_object_on_object_curriculum(),
     _make_object_in_other_object_curriculum(),
-    _make_people_in_cars_object_curriculum(),
-    _make_people_in_trucks_object_curriculum(),
-    _make_person_in_houses_object_curriculum(),
     _make_fly_curriculum(),
 ]
 """
