@@ -304,9 +304,9 @@ def _make_object_on_object_curriculum() -> _Phase1InstanceGroup:
 
 
 def _make_object_in_other_object_curriculum() -> _Phase1InstanceGroup:
-    object_ = object_variable("object_0", INANIMATE_OBJECT)
+    object_ = object_variable("object_0", INANIMATE_OBJECT, banned_properties=[IS_BODY_PART])
     containing_object = object_variable(
-        "object_1", INANIMATE_OBJECT, required_properties=[HOLLOW]
+        "object_1", INANIMATE_OBJECT, required_properties=[HOLLOW], banned_properties=[IS_BODY_PART]
     )
     situation_template = Phase1SituationTemplate(
         object_variables=[object_, containing_object],
@@ -390,6 +390,10 @@ GAILA_PHASE_1_CURRICULUM = [
     _OBJECTS_FALLING_SUBCURRICULUM,
     _make_transfer_of_possession_curriculum(),
     _make_object_on_object_curriculum(),
+    _make_object_in_other_object_curriculum(),
+    _make_people_in_cars_object_curriculum(),
+    _make_people_in_trucks_object_curriculum(),
+    _make_person_in_houses_object_curriculum()
 ]
 """
 One particular instantiation of the curriculum for GAILA Phase 1.

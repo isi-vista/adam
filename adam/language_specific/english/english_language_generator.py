@@ -620,6 +620,8 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     raise RuntimeError(
                         f"Don't know how to translate spatial " f"modifier: {relation}"
                     )
+            elif region.distance == INTERIOR:
+                    preposition = 'in'
             else:
                 raise RuntimeError(
                     f"Don't know how to translate spatial modifiers "
