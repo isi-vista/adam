@@ -15,7 +15,7 @@ from adam.ontology.phase1_ontology import (
     BINARY,
     COLOR,
     COLORS_TO_RGBS,
-    FOCUSED,
+    GAZE,
     GAILA_PHASE_1_ONTOLOGY,
     GROUND,
     IS_SPEAKER,
@@ -545,8 +545,8 @@ class _PerceptionGeneration:
 
             # Focused Objects are in a special field of the Situation, we check if the situation_object
             # is a focused and apply the tag here if that is the case.
-            if situation_object in self._situation.focused_objects:
-                properties_to_perceive.append(FOCUSED)
+            if situation_object in self._situation.gazed_objects:
+                properties_to_perceive.append(GAZE)
 
             # We wrap an ImmutableSet around properties_to_perceive to remove duplicates
             # while still guaranteeing deterministic iteration order.

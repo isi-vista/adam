@@ -143,12 +143,12 @@ It only makes sense to apply this to sub-types of PERSON,
 but this is not currently enforced. E.g. 'You put the ball on the table.'
 """
 subtype(IS_ADDRESSEE, PERCEIVABLE_PROPERTY)
-FOCUSED = OntologyNode("focused", [BINARY])
+GAZE = OntologyNode("gaze", [BINARY])
 """
 Indicates the object of the focus of the speaker. This is not currently strictly enforced and is
 implicity generated in the perception step if not explicit in a situation.
 """
-subtype(FOCUSED, PERCEIVABLE_PROPERTY)
+subtype(GAZE, PERCEIVABLE_PROPERTY)
 
 # Properties not perceived by the learner, but useful for situation generation
 
@@ -986,12 +986,12 @@ _TAKE_ACTION_DESCRIPTION = ActionDescription(
 )
 
 _EAT_AGENT = SituationObject(THING, properties=[ANIMATE])
-_EAT_THEME = SituationObject(INANIMATE_OBJECT, properties=[EDIBLE])
+_EAT_PATIENT = SituationObject(INANIMATE_OBJECT, properties=[EDIBLE])
 
 _EAT_ACTION_DESCRIPTION = ActionDescription(
-    frames=[ActionDescriptionFrame({AGENT: _EAT_AGENT, THEME: _EAT_THEME})],
-    enduring_conditions=[bigger_than(_EAT_AGENT, _EAT_THEME)],
-    postconditions=[inside(_EAT_THEME, _EAT_AGENT)],
+    frames=[ActionDescriptionFrame({AGENT: _EAT_AGENT, PATIENT: _EAT_PATIENT})],
+    enduring_conditions=[bigger_than(_EAT_AGENT, _EAT_PATIENT)],
+    postconditions=[inside(_EAT_PATIENT, _EAT_AGENT)],
     # TODO: express role of mouth
 )
 

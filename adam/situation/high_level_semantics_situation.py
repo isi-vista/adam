@@ -79,10 +79,10 @@ class HighLevelSemanticsSituation(Situation):
     """
     Bool representing whether the situation has any actions, i.e is dynamic. 
     """
-    focused_objects: ImmutableSet[SituationObject] = attrib(converter=_to_immutableset)
-    """
-    A set of SituationObjects which are the focus of the speaker. Defaults to all semantic role 
-    fillers of situation actions.
+    gazed_objects: ImmutableSet[SituationObject] = attrib(converter=_to_immutableset)
+    r"""
+    A set of `SituationObject` s which are the focus of the speaker. 
+    Defaults to all semantic role fillers of situation actions.
     """
 
     def relation_always_holds(self, query_relation: Relation[SituationObject]) -> bool:
@@ -152,7 +152,10 @@ class HighLevelSemanticsSituation(Situation):
         lines.append("}")
         return "\n".join(lines)
 
-    @focused_objects.default
-    def _determine_focused_objects(self):
-        # TODO: should default to all semantic role fillers of situation actions
-        pass
+    @gazed_objects.default
+    def _determine_gazed_objects(self):
+        return immutableset(
+            object_
+            for action in self.actions
+            for (_, object_) in action.argument_roles_to_fillers.items()
+        )

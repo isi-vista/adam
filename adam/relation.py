@@ -1,4 +1,4 @@
-from attr import attrib, attrs
+from attr import attrib, attrs, evolve
 from attr.validators import instance_of
 from immutablecollections import ImmutableSet, immutableset
 from more_itertools import flatten
@@ -33,7 +33,7 @@ class Relation(Generic[ObjectT]):
 
     def negated_copy(self) -> "Relation[ObjectT]":
         # mypy doesn't know attrs classes provide evolve for copying
-        return self.evolve(negated=not self.negated)  # type: ignore
+        return evolve(self, negated=not self.negated)  # type: ignore
 
     def copy_remapping_objects(
         self, object_mapping: Mapping[ObjectT, _NewObjectT]
