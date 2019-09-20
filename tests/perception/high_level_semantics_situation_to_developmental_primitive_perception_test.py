@@ -26,6 +26,7 @@ from adam.ontology.phase1_ontology import (
     on,
     far,
     near,
+    FALL,
 )
 from adam.ontology.phase1_spatial_relations import (
     EXTERIOR_BUT_IN_CONTACT,
@@ -33,6 +34,7 @@ from adam.ontology.phase1_spatial_relations import (
     GRAVITATIONAL_AXIS,
     DISTAL,
     Region,
+    TOWARD,
 )
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -46,7 +48,7 @@ from adam.perception.high_level_semantics_situation_to_developmental_primitive_p
 )
 from adam.random_utils import RandomChooser
 from adam.relation import Relation
-from adam.situation import SituationAction, SituationObject
+from adam.situation import SituationObject, Action
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from sample_situations import make_bird_flies_over_a_house
 
@@ -147,7 +149,7 @@ def test_person_put_ball_on_table():
         actions=[
             # What is the best way of representing the destination in the high-level semantics?
             # Here we represent it as indicating a relation which should be true.
-            SituationAction(
+            Action(
                 PUT,
                 (
                     (AGENT, person),
@@ -373,11 +375,11 @@ def test_perceive_explicit_relations():
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         objects=[mom, box, ball, table],
-        persisting_relations=[on(ball, table)],
+        always_relations=[on(ball, table)],
         before_action_relations=[far(ball, box)],
         after_action_relations=[near(ball, box)],
         actions=[
-            SituationAction(
+            Action(
                 PUT,
                 argument_roles_to_fillers=[
                     (AGENT, mom),
@@ -416,3 +418,23 @@ def test_perceive_explicit_relations():
         only(near(ball_perception, box_perception)) not in perception.frames[0].relations
     )
     assert only(near(ball_perception, box_perception)) in perception.frames[1].relations
+
+
+def test_path_from_action_description():
+    ball = SituationObject(BALL)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        objects=[ball],
+        actions=[Action(FALL, argument_roles_to_fillers=[(THEME, ball)])],
+    )
+    perception = _PERCEPTION_GENERATOR.generate_perception(
+        situation, chooser=RandomChooser.for_seed(0)
+    )
+    ball_perception = perception_with_handle(perception.frames[0], "ball_0")
+    ground_perception = perception_with_handle(perception.frames[0], "ground_0")
+    assert perception.during
+    assert perception.during.objects_to_paths
+    assert len(perception.during.objects_to_paths) == 1
+    path = only(perception.during.objects_to_paths[ball_perception])
+    assert path.reference_object == ground_perception
+    assert path.operator == TOWARD

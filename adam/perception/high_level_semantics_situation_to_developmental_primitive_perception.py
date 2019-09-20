@@ -1,5 +1,5 @@
 from itertools import chain
-from typing import AbstractSet, Dict, List, Mapping, Optional, Tuple, Union, cast
+from typing import AbstractSet, Dict, List, Mapping, Optional, Union, cast
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
@@ -16,17 +16,17 @@ from adam.ontology.phase1_ontology import (
     COLOR,
     COLORS_TO_RGBS,
     GAILA_PHASE_1_ONTOLOGY,
+    GROUND,
     IS_SPEAKER,
     PART_OF,
     PERCEIVABLE,
-    GROUND,
 )
-from adam.ontology.phase1_spatial_relations import SpatialPath, Region
+from adam.ontology.phase1_spatial_relations import Region, SpatialPath
 from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
 from adam.perception import (
+    ObjectPerception,
     PerceptualRepresentation,
     PerceptualRepresentationGenerator,
-    ObjectPerception,
 )
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -37,7 +37,7 @@ from adam.perception.developmental_primitive_perception import (
 )
 from adam.random_utils import SequenceChooser
 from adam.relation import Relation
-from adam.situation import SituationAction, SituationObject
+from adam.situation import Action, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 
 
@@ -70,7 +70,7 @@ class HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
             "ontology.",
         )
         # all the work is done in a stateful _PerceptionGeneration object
-        return _PerceptionGeneration(self, situation, chooser).do
+        return _PerceptionGeneration(self, situation, chooser).do()
 
 
 @attrs(frozen=True, slots=True)
@@ -154,7 +154,6 @@ class _PerceptionGeneration:
     `PropertyPerception`\ s perceived by the learner.
     """
 
-    @property
     def do(self) -> PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]:
         self._sanity_check_situation()
 
@@ -168,7 +167,7 @@ class _PerceptionGeneration:
         # as holding both before and after any actions
         self._relation_perceptions.extend(
             self._perceive_relation(relation)
-            for relation in self._situation.persisting_relations
+            for relation in self._situation.always_relations
         )
 
         # Other relations implied by actions will be handled during action translation below.
@@ -183,9 +182,7 @@ class _PerceptionGeneration:
             )
 
         # finally, if there are actions, we perceive the before and after states of the action
-        before_relations_from_action, after_relations_from_action = (
-            self._perceive_action()
-        )
+        _action_perception = self._perceive_action()
         # sometimes additional before and after relations will be given explicitly by the user
         explicit_before_relations = [
             self._perceive_relation(relation)
@@ -195,12 +192,13 @@ class _PerceptionGeneration:
             self._perceive_relation(relation)
             for relation in self._situation.after_action_relations
         ]
+
         first_frame = DevelopmentalPrimitivePerceptionFrame(
             perceived_objects=self._object_perceptions,
             relations=chain(
                 self._relation_perceptions,
                 explicit_before_relations,
-                before_relations_from_action,
+                _action_perception.before_relations,
             ),
             property_assertions=self._property_assertion_perceptions,
         )
@@ -209,13 +207,16 @@ class _PerceptionGeneration:
             relations=chain(
                 self._relation_perceptions,
                 explicit_after_relations,
-                after_relations_from_action,
+                _action_perception.after_relations,
             ),
             property_assertions=self._property_assertion_perceptions,
         )
 
         return PerceptualRepresentation(
-            frames=(first_frame, second_frame), during=self._compute_during()
+            frames=(first_frame, second_frame),
+            during=self._compute_during(
+                during_from_action_description=_action_perception.during_action
+            ),
         )
 
     def _sanity_check_situation(self) -> None:
@@ -234,7 +235,7 @@ class _PerceptionGeneration:
     def _perceive_regions(self) -> None:
         # gather all places a region can appear in the situation representation
         possible_regions = chain(
-            (relation.second_slot for relation in self._situation.persisting_relations),
+            (relation.second_slot for relation in self._situation.always_relations),
             (
                 filler
                 for action in self._situation.actions
@@ -260,7 +261,13 @@ class _PerceptionGeneration:
     ) -> Region[ObjectPerception]:
         return region.copy_remapping_objects(self._objects_to_perceptions)
 
-    def _perceive_action(self) -> Tuple[AbstractSet[Relation[ObjectPerception]], ...]:
+    @attrs(frozen=True, slots=True)
+    class _ActionPerception:
+        before_relations: ImmutableSet[Relation[ObjectPerception]] = attrib()
+        after_relations: ImmutableSet[Relation[ObjectPerception]] = attrib()
+        during_action: Optional[DuringAction[ObjectPerception]] = attrib()
+
+    def _perceive_action(self) -> "_PerceptionGeneration._ActionPerception":
         # Extract relations from action
         situation_action = self._situation.actions[0]
         # TODO: Handle multiple actions
@@ -291,13 +298,23 @@ class _PerceptionGeneration:
             action_object_variables_to_object_perceptions=action_objects_variables_to_perceived_objects,
         )
 
-        return (
-            immutableset(chain(enduring_relations, before_relations)),
-            immutableset(chain(enduring_relations, after_relations)),
+        return _PerceptionGeneration._ActionPerception(
+            before_relations=immutableset(chain(enduring_relations, before_relations)),
+            after_relations=immutableset(chain(enduring_relations, after_relations)),
+            during_action=action_description.during.copy_remapping_objects(
+                cast(
+                    Mapping[SituationObject, ObjectPerception],
+                    action_objects_variables_to_perceived_objects,
+                )
+            )
+            if action_description.during
+            else None,
         )
 
     def _bind_action_objects_variables_to_perceived_objects(
-        self, situation_action: SituationAction, action_description: ActionDescription
+        self,
+        situation_action: Action[OntologyNode, SituationObject],
+        action_description: ActionDescription,
     ) -> Mapping[SituationObject, Union[Region[ObjectPerception], ObjectPerception]]:
         if len(action_description.frames) != 1:
             raise RuntimeError(
@@ -344,24 +361,27 @@ class _PerceptionGeneration:
         # We will use as a running example the object
         # corresponding to a person's hand used to move an object
         # for the action PUT.
+        action_variables_from_non_frames: List[SituationObject] = []
+        for condition_set in (
+            action_description.enduring_conditions,
+            action_description.preconditions,
+            action_description.postconditions,
+        ):
+            for condition in condition_set:
+                condition.accumulate_referenced_objects(action_variables_from_non_frames)
+        if action_description.during:
+            action_description.during.accumulate_referenced_objects(
+                action_variables_from_non_frames
+            )
+
         unbound_action_object_variables = immutableset(
             # We use immutableset to remove duplicates
             # while maintaining deterministic iteration order.
-            slot_filler
-            for condition_set in (
-                action_description.enduring_conditions,
-                action_description.preconditions,
-                action_description.postconditions,
-            )
-            for condition in condition_set
-            for slot_filler in (condition.first_slot, condition.second_slot)
-            # some slot fillers will be Regions;
-            # we can translate these after the action objects have been translated.
-            if (
-                isinstance(slot_filler, SituationObject)
-                # = not already mapped by a semantic role
-                and slot_filler not in bindings
-            )
+            action_variable
+            for action_variable in action_variables_from_non_frames
+            # not already mapped by a semantic role
+            if action_variable not in bindings
+            and isinstance(action_variable, SituationObject)
         )
 
         bindings.update(
@@ -392,10 +412,12 @@ class _PerceptionGeneration:
                 object_perception,
                 ontology_node,
             ) in self._object_perceptions_to_ontology_nodes.items()
-            if ontology.has_all_properties(
+            if ontology.is_subtype_of(ontology_node, action_object_variable.ontology_node)
+            and ontology.has_all_properties(
                 ontology_node, action_object_variable.properties
             )
         ]
+
         if len(perceived_objects_matching_constraints) == 1:
             return only(perceived_objects_matching_constraints)
         elif not perceived_objects_matching_constraints:
@@ -601,9 +623,11 @@ class _PerceptionGeneration:
             for situation_object in self._situation.objects
         ):
             ground_schemata = only(self._generator.ontology.structural_schemata(GROUND))
-            self._instantiate_object_schema(
+            ground_observed = self._instantiate_object_schema(
                 ground_schemata, situation_object=SituationObject(GROUND)
             )
+            self._object_perceptions_to_ontology_nodes[ground_observed] = GROUND
+
         for situation_object in self._situation.objects:
             if not situation_object.ontology_node:
                 raise RuntimeError(
@@ -625,9 +649,13 @@ class _PerceptionGeneration:
                     f"yet keep implemented."
                 )
 
-            self._instantiate_object_schema(
+            perceived_object = self._instantiate_object_schema(
                 only(object_schemata), situation_object=situation_object
             )
+
+            self._object_perceptions_to_ontology_nodes[
+                perceived_object
+            ] = situation_object.ontology_node
 
     def _instantiate_object_schema(
         self,
@@ -692,37 +720,25 @@ class _PerceptionGeneration:
             )
         return root_object_perception
 
-    def _compute_during(self) -> Optional[DuringAction[ObjectPerception]]:
-        durings_to_translate = immutableset(
-            action.during for action in self._situation.actions if action.during
-        )
+    def _compute_during(
+        self, during_from_action_description: Optional[DuringAction[ObjectPerception]]
+    ) -> Optional[DuringAction[ObjectPerception]]:
+        during_from_situation = only(self._situation.actions).during
 
-        if not durings_to_translate:
-            # if nothing dynamic happened, there is nothing to describe actions "during"
+        if during_from_situation:
+            remapped_during_from_situation = during_from_situation.copy_remapping_objects(
+                self._objects_to_perceptions
+            )
+            if during_from_action_description:
+                return remapped_during_from_situation.union(
+                    during_from_action_description
+                )
+            else:
+                return remapped_during_from_situation
+        elif during_from_action_description:
+            return during_from_action_description
+        else:
             return None
-
-        # TODO: also translate at SituationObject level
-        # Collapse together all "during"s from all actions in the situation
-        # and translate their components.
-        # In practice we currently only ever allow one action,
-        # but we might as well handle the general case.
-        return DuringAction(
-            paths=[
-                (self._objects_to_perceptions[object_], self._translate_path(path))
-                for during in durings_to_translate
-                for (object_, path) in during.paths.items()
-            ],
-            at_some_point=[
-                (self._perceive_relation(relation))
-                for during in durings_to_translate
-                for relation in during.at_some_point
-            ],
-            continuously=[
-                (self._perceive_relation(relation))
-                for during in durings_to_translate
-                for relation in during.continuously
-            ],
-        )
 
     def _translate_path(
         self, path: SpatialPath[SituationObject]

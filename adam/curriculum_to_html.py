@@ -18,8 +18,9 @@ from adam.curriculum.phase1_curriculum import GAILA_PHASE_1_CURRICULUM
 from adam.experiment import InstanceGroup
 from adam.language.dependency import LinearizedDependencyTree
 from adam.ontology import IN_REGION
+from adam.ontology.during import DuringAction
 from adam.ontology.phase1_ontology import PART_OF
-from adam.ontology.phase1_spatial_relations import Region
+from adam.ontology.phase1_spatial_relations import Region, SpatialPath
 from adam.perception import ObjectPerception, PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -198,9 +199,9 @@ class CurriculumToHtmlDumper:
             for acts in situation.actions:
                 output_text.append(f"\t\t\t\t\t\t<li>{acts.action_type.handle}</li>")
             output_text.append("\t\t\t\t\t</ul>")
-        if situation.persisting_relations:
+        if situation.always_relations:
             output_text.append("\t\t\t\t\t<h4>Relations</h4>\n\t\t\t\t\t<ul>")
-            for rel in situation.persisting_relations:
+            for rel in situation.always_relations:
                 output_text.append(
                     f"\t\t\t\t\t\t<li>{rel.relation_type.handle}({rel.first_slot.ontology_node.handle},"
                     f"{self._situation_object_or_region_text(rel.second_slot)})</li>"
@@ -402,7 +403,48 @@ class CurriculumToHtmlDumper:
                     )
             output_text.append("\t\t\t\t\t</ul>")
 
+        if perception.during:
+            output_text.append("\t\t\t\t\t<h5>During the action</h5>\n\t\t\t\t\t<ul>")
+            output_text.append(self._render_during(perception.during, indent_depth=5))
+
         return "\n".join(output_text)
+
+    def _render_during(
+        self, during: DuringAction[ObjectPerception], *, indent_depth: int = 0
+    ) -> str:
+        indent = "\t" * indent_depth
+        lines = [f"{indent}<ul>"]
+        if during.objects_to_paths:
+            lines.append(f"{indent}\t<li><b>Paths:</b>")
+            lines.append(f"{indent}\t<ul>")
+            for (object_, path) in during.objects_to_paths.items():
+                path_rendering = self._render_path(path, indent_depth=indent_depth + 2)
+                lines.append(f"{indent}\t\t<li>{object_}: {path_rendering}</li>")
+            lines.append(f"{indent}</ul></li>")
+        if during.continuously:
+            lines.append(f"{indent}\t<li><b>Relations which hold continuously:</b>")
+            lines.append(f"{indent}\t<ul>")
+            for relation in during.continuously:
+                lines.append(f"{indent}\t\t<li>{relation}</li>")
+            lines.append(f"{indent}</ul></li>")
+        if during.at_some_point:
+            lines.append(f"{indent}\t<li><b>Relations which hold at some point:</b>")
+            lines.append(f"{indent}\t<ul>")
+            for relation in during.at_some_point:
+                lines.append(f"{indent}\t\t<li>{relation}</li>")
+            lines.append(f"{indent}</ul></li>")
+
+        return "\n".join(lines)
+
+    def _render_path(
+        self, path: SpatialPath[ObjectPerception], *, indent_depth: int = 0
+    ) -> str:
+        indent = "\t" * indent_depth
+        lines = [f"{indent}<ul>"]
+        lines.append(f"{indent}\t<li>")
+        lines.append(str(path))
+        lines.append(f"{indent}\t</li>")
+        return "\n".join(lines)
 
     def _linguistic_text(self, linguistic: LinearizedDependencyTree) -> str:
         """

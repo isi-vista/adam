@@ -7,6 +7,7 @@ from adam.language.dependency import (
     RoleOrderDependencyTreeLinearizer,
     PartOfSpeechTag,
     DependencyRole,
+    MorphosyntacticProperty,
 )
 from adam.language.dependency.universal_dependencies import (
     VERB,
@@ -56,3 +57,7 @@ _ENGLISH_HEAD_TO_ROLE_ORDER: ImmutableDict[
 SIMPLE_ENGLISH_DEPENDENCY_TREE_LINEARIZER = RoleOrderDependencyTreeLinearizer(
     _ENGLISH_HEAD_TO_ROLE_ORDER
 )
+
+FIRST_PERSON = MorphosyntacticProperty("1p")
+SECOND_PERSON = MorphosyntacticProperty("1p")
+THIRD_PERSON = MorphosyntacticProperty("1p")

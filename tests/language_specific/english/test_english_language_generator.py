@@ -42,7 +42,7 @@ from adam.ontology.phase1_spatial_relations import (
 )
 from adam.random_utils import FixedIndexChooser
 from adam.relation import Relation
-from adam.situation import SituationAction, SituationObject
+from adam.situation import SituationObject, Action
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from tests.sample_situations import make_bird_flies_over_a_house
 from tests.situation.situation_test import make_mom_put_ball_on_table
@@ -119,7 +119,7 @@ def test_simple_verb():
         ontology=GAILA_PHASE_1_ONTOLOGY,
         objects=[mom, table],
         actions=[
-            SituationAction(
+            Action(
                 action_type=PUSH, argument_roles_to_fillers=[(AGENT, mom), (THEME, table)]
             )
         ],
@@ -145,7 +145,7 @@ def test_mom_put_a_ball_on_a_table_using_i():
         ontology=GAILA_PHASE_1_ONTOLOGY,
         objects=[mom, ball, table],
         actions=[
-            SituationAction(
+            Action(
                 PUT,
                 (
                     (AGENT, mom),
@@ -177,7 +177,7 @@ def test_mom_put_a_ball_on_a_table_using_you():
         ontology=GAILA_PHASE_1_ONTOLOGY,
         objects=[mom, ball, table],
         actions=[
-            SituationAction(
+            Action(
                 PUT,
                 (
                     (AGENT, mom),
@@ -209,7 +209,7 @@ def test_dad_put_a_cookie_in_a_box():
         ontology=GAILA_PHASE_1_ONTOLOGY,
         objects=[dad, cookie, box],
         actions=[
-            SituationAction(
+            Action(
                 PUT,
                 (
                     (AGENT, dad),
@@ -234,7 +234,7 @@ def test_situation_with_ground():
         ontology=GAILA_PHASE_1_ONTOLOGY,
         objects=[dad, cookie, box, ground],
         actions=[
-            SituationAction(
+            Action(
                 PUT,
                 (
                     (AGENT, dad),
@@ -258,7 +258,7 @@ def test_dad_put_a_cookie_in_a_box_using_i():
         ontology=GAILA_PHASE_1_ONTOLOGY,
         objects=[dad, cookie, box],
         actions=[
-            SituationAction(
+            Action(
                 PUT,
                 (
                     (AGENT, dad),
@@ -282,7 +282,7 @@ def test_dad_put_a_cookie_in_a_box_using_you():
         ontology=GAILA_PHASE_1_ONTOLOGY,
         objects=[dad, cookie, box],
         actions=[
-            SituationAction(
+            Action(
                 PUT,
                 (
                     (AGENT, dad),
@@ -305,9 +305,9 @@ def test_dad_put_a_cookie_in_a_box_using_my_as_dad_speaker():
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         objects=[dad, cookie, box],
-        persisting_relations=[Relation(HAS, dad, box)],
+        always_relations=[Relation(HAS, dad, box)],
         actions=[
-            SituationAction(
+            Action(
                 PUT,
                 (
                     (AGENT, dad),
@@ -330,9 +330,9 @@ def test_dad_put_a_cookie_in_a_box_using_possession():
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         objects=[dad, cookie, box],
-        persisting_relations=[Relation(HAS, dad, box)],
+        always_relations=[Relation(HAS, dad, box)],
         actions=[
-            SituationAction(
+            Action(
                 PUT,
                 (
                     (AGENT, dad),
@@ -355,9 +355,9 @@ def test_dad_put_a_cookie_in_a_box_using_you_your():
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         objects=[dad, cookie, box],
-        persisting_relations=[Relation(HAS, dad, box)],
+        always_relations=[Relation(HAS, dad, box)],
         actions=[
-            SituationAction(
+            Action(
                 PUT,
                 (
                     (AGENT, dad),
@@ -381,9 +381,9 @@ def test_dad_put_a_cookie_in_a_box_using_my_as_mom_speaker():
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         objects=[dad, cookie, box],
-        persisting_relations=[Relation(HAS, mom, box)],
+        always_relations=[Relation(HAS, mom, box)],
         actions=[
-            SituationAction(
+            Action(
                 PUT,
                 (
                     (AGENT, dad),
@@ -407,9 +407,9 @@ def test_i_put_a_cookie_in_dads_box_using_my_as_mom_speaker():
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         objects=[mom, cookie, box, dad],
-        persisting_relations=[Relation(HAS, dad, box)],
+        always_relations=[Relation(HAS, dad, box)],
         actions=[
-            SituationAction(
+            Action(
                 PUT,
                 (
                     (AGENT, mom),
@@ -431,7 +431,7 @@ def test_dad_has_a_cookie():
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         objects=[dad, cookie],
-        persisting_relations=[Relation(HAS, dad, cookie)],
+        always_relations=[Relation(HAS, dad, cookie)],
         actions=[],
     )
 
@@ -464,7 +464,7 @@ def test_path_modifier_under():
         ontology=GAILA_PHASE_1_ONTOLOGY,
         objects=[bird, table],
         actions=[
-            SituationAction(
+            Action(
                 FLY,
                 argument_roles_to_fillers=[(AGENT, bird)],
                 during=DuringAction(
@@ -498,7 +498,7 @@ def test_path_modifier_on():
         ontology=GAILA_PHASE_1_ONTOLOGY,
         objects=[mom, ball, table],
         actions=[
-            SituationAction(
+            Action(
                 ROLL,
                 argument_roles_to_fillers=[(AGENT, mom), (THEME, ball)],
                 during=DuringAction(
@@ -531,7 +531,7 @@ def test_noun_with_modifier():
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         objects=[table, ground],
-        persisting_relations=[on(table, ground)],
+        always_relations=[on(table, ground)],
     )
     assert only(
         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
