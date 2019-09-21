@@ -1,4 +1,4 @@
-from typing import Any, Generic, Mapping, Optional, TypeVar, List, Union
+from typing import Any, Generic, List, Mapping, Optional, TypeVar, Union
 
 from attr import attrib, attrs
 from attr.validators import in_, instance_of, optional

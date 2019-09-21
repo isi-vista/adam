@@ -1,11 +1,11 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import Generic, Optional, Mapping, Tuple
+from typing import Generic, Mapping, Optional, Tuple
 
-from attr import attrs, attrib
+from attr import attrib, attrs
 from attr.validators import instance_of
 
-from adam.language import LinguisticDescriptionT, LinguisticDescription
+from adam.language import LinguisticDescription, LinguisticDescriptionT
 from adam.language.language_generator import SituationT
 from adam.perception import PerceptionT, PerceptualRepresentation
 

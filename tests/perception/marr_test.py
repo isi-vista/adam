@@ -1,11 +1,11 @@
 from immutablecollections import immutabledict
 
 from adam.perception.marr import (
-    feet_to_meters,
-    Cylinder,
-    inches_to_meters,
-    Marr3dObject,
     AdjunctRelation,
+    Cylinder,
+    Marr3dObject,
+    feet_to_meters,
+    inches_to_meters,
 )
 
 

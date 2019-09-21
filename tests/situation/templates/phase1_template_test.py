@@ -1,25 +1,26 @@
 from typing import Iterable
+
 from immutablecollections import (
-    immutableset,
     ImmutableSetMultiDict,
+    immutableset,
     immutablesetmultidict,
 )
 from networkx import DiGraph
 
 from adam.ontology import (
-    OntologyNode,
-    REQUIRED_ONTOLOGY_NODES,
-    PROPERTY,
-    THING,
     CAN_FILL_TEMPLATE_SLOT,
+    OntologyNode,
+    PROPERTY,
+    REQUIRED_ONTOLOGY_NODES,
+    THING,
 )
-from adam.ontology.structural_schema import ObjectStructuralSchema
 from adam.ontology.ontology import Ontology
+from adam.ontology.structural_schema import ObjectStructuralSchema
 from adam.random_utils import RandomChooser
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
-    object_variable,
     all_possible,
+    object_variable,
 )
 
 _TESTING_ONTOLOGY_GRAPH = DiGraph()
@@ -65,7 +66,8 @@ def _testing_schemata(
     return immutablesetmultidict((node, ObjectStructuralSchema(node)) for node in nodes)
 
 
-_TESTING_ONTOLOGY = Ontology("test-ontology",
+_TESTING_ONTOLOGY = Ontology(
+    "test-ontology",
     _TESTING_ONTOLOGY_GRAPH,
     structural_schemata=_testing_schemata([_MOM, _DAD, _BALL, _TRUCK, _CAR]),
 )
@@ -73,10 +75,11 @@ _TESTING_ONTOLOGY = Ontology("test-ontology",
 
 def test_two_objects():
     two_object_template = Phase1SituationTemplate(
-        object_variables=[
+        "two-objects",
+        salient_object_variables=[
             object_variable("person", root_node=_PERSON),
             object_variable("toy_vehicle", required_properties=[_TOY_VEHICLE]),
-        ]
+        ],
     )
 
     reference_object_sets = {

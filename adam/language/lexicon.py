@@ -11,7 +11,7 @@ from attr.validators import instance_of
 from immutablecollections import ImmutableSet, immutableset
 from immutablecollections.converter_utils import _to_immutableset
 
-from adam.language.dependency import PartOfSpeechTag, MorphosyntacticProperty
+from adam.language.dependency import MorphosyntacticProperty, PartOfSpeechTag
 
 
 @attrs(frozen=True, slots=True)

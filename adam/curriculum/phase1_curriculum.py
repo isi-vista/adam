@@ -18,6 +18,7 @@ from adam.ontology.during import DuringAction
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
     AGENT,
+    ANIMATE,
     BIGGER_THAN,
     BIRD,
     CAN_HAVE_THINGS_RESTING_ON_THEM,
@@ -37,10 +38,14 @@ from adam.ontology.phase1_ontology import (
     PERSON_CAN_HAVE,
     PHASE_1_CURRICULUM_OBJECTS,
     RECOGNIZED_PARTICULAR_PROPERTY,
+    ROLL,
+    ROLLABLE,
+    ROLL_SURFACE_AUXILIARY,
     THEME,
     TRANSFER_OF_POSSESSION,
+    bigger_than,
     on,
-    ROLLABLE, ANIMATE, ROLL, bigger_than)
+)
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
     DISTAL,
@@ -104,7 +109,7 @@ _NOT_A_BODY_PART = object_variable(
 _LEARNER_OBJECT = object_variable("learner", LEARNER)
 
 SINGLE_OBJECT_TEMPLATE = Phase1SituationTemplate(
-    object_variables=[object_variable("object"), _LEARNER_OBJECT]
+    "single-object", salient_object_variables=[object_variable("object"), _LEARNER_OBJECT]
 )
 
 EACH_OBJECT_BY_ITSELF_SUB_CURRICULUM = _phase1_instances(
@@ -119,7 +124,7 @@ EACH_OBJECT_BY_ITSELF_SUB_CURRICULUM = _phase1_instances(
 _COLOR = color_variable("color")
 _COLOR_OBJECT = object_variable("object", added_properties=[_COLOR])
 _OBJECT_WITH_COLOR_TEMPLATE = Phase1SituationTemplate(
-    object_variables=[_COLOR_OBJECT, _LEARNER_OBJECT]
+    "object-with-color", salient_object_variables=[_COLOR_OBJECT, _LEARNER_OBJECT]
 )
 
 OBJECTS_WITH_COLORS_SUB_CURRICULUM = _phase1_instances(
@@ -168,7 +173,8 @@ MULTIPLE_OF_THE_SAME_OBJECT_SUB_CURRICULUM = _phase1_instances(
 _GROUND = object_variable("the ground", GROUND)
 
 _OBJECT_ON_GROUND_TEMPLATE = Phase1SituationTemplate(
-    object_variables=[_GROUND, _NOT_A_BODY_PART],
+    "object-on-ground",
+    salient_object_variables=[_GROUND, _NOT_A_BODY_PART],
     asserted_always_relations=[on(_NOT_A_BODY_PART, _GROUND)],
 )
 
@@ -184,7 +190,8 @@ _INANIMATE_OBJECT_0 = object_variable(
     "inanimate-object", INANIMATE_OBJECT, required_properties=[PERSON_CAN_HAVE]
 )
 PERSON_HAS_OBJECT_TEMPLATE = Phase1SituationTemplate(
-    object_variables=[_PERSON_0, _INANIMATE_OBJECT_0, _LEARNER_OBJECT],
+    "person-has-object",
+    salient_object_variables=[_PERSON_0, _INANIMATE_OBJECT_0, _LEARNER_OBJECT],
     asserted_always_relations=[Relation(HAS, _PERSON_0, _INANIMATE_OBJECT_0)],
 )
 
@@ -203,7 +210,8 @@ _VERB_WITH_ONLY_THEME = action_variable(
 )
 
 _ANY_OBJECT_INTRANSITIVES_TEMPLATE = Phase1SituationTemplate(
-    object_variables=[_ARBITRARY_OBJECT],
+    "any-object-intransitive",
+    salient_object_variables=[_ARBITRARY_OBJECT],
     actions=[
         Action(
             action_type=_VERB_WITH_ONLY_THEME,
@@ -223,18 +231,17 @@ _ANY_OBJECT_INTRANSITIVES_SUBCURRICULUM = _phase1_instances(
 
 
 def _make_object_falls_template(
-    use_adverbvial_path_modifier: bool
+    use_adverbial_path_modifier: bool
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
-        object_variables=[_ARBITRARY_OBJECT],
+        "object-falls",
+        salient_object_variables=[_ARBITRARY_OBJECT],
         actions=[
             Action(
                 action_type=FALL, argument_roles_to_fillers=[(THEME, _ARBITRARY_OBJECT)]
             )
         ],
-        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER]
-        if use_adverbvial_path_modifier
-        else [],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER] if use_adverbial_path_modifier else [],
     )
 
 
@@ -265,8 +272,8 @@ def _make_transfer_of_possession_curriculum() -> _Phase1InstanceGroup:
             *[
                 sampled(
                     Phase1SituationTemplate(
-                        object_variables=[giver, recipient, given_object],
-                        #
+                        "transfer-of-possession",
+                        salient_object_variables=[giver, recipient, given_object],
                         actions=[
                             Action(
                                 GIVE,
@@ -297,7 +304,8 @@ def _make_object_on_object_curriculum() -> _Phase1InstanceGroup:
         required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM],
     )
     situation_template = Phase1SituationTemplate(
-        object_variables=[object_, object_with_surface],
+        "object-on-surface",
+        salient_object_variables=[object_, object_with_surface],
         constraining_relations=[Relation(BIGGER_THAN, object_with_surface, object_)],
         asserted_always_relations=[on(object_, object_with_surface)],
     )
@@ -324,7 +332,8 @@ def _make_fly_curriculum():
 
     bare_fly = [
         Phase1SituationTemplate(
-            object_variables=[bird, ground],
+            "fly",
+            salient_object_variables=[bird, ground],
             actions=[
                 Action(
                     FLY,
@@ -349,7 +358,8 @@ def _make_fly_curriculum():
     # "a bird flies down"
     fly_up_down = [
         Phase1SituationTemplate(
-            object_variables=[bird, ground],
+            "fly-up-down",
+            salient_object_variables=[bird, ground],
             actions=[
                 Action(
                     FLY,
@@ -373,7 +383,8 @@ def _make_fly_curriculum():
 
     # "a bird flies over a house"
     fly_over = Phase1SituationTemplate(
-        object_variables=[bird, object_0],
+        "fly-over",
+        salient_object_variables=[bird, object_0],
         actions=[
             Action(
                 FLY,
@@ -397,7 +408,8 @@ def _make_fly_curriculum():
 
     # "a bird flies under a table"
     fly_under = Phase1SituationTemplate(
-        object_variables=[bird, object_with_space_under],
+        "fly-under",
+        salient_object_variables=[bird, object_with_space_under],
         actions=[
             Action(
                 FLY,
@@ -448,57 +460,62 @@ def _make_fly_curriculum():
         ),
     )
 
+
 def _make_roll_curriculum():
     animate_0 = object_variable("object_0", THING, required_properties=[ANIMATE])
-    rollable_0 = object_variable("object_1", INANIMATE_OBJECT, required_properties=[ROLLABLE])
-    rolling_surface = object_variable("surface", THING,
-                                      required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM])
+    rollable_0 = object_variable(
+        "object_1", INANIMATE_OBJECT, required_properties=[ROLLABLE]
+    )
+    rolling_surface = object_variable(
+        "surface", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
+    )
 
     # rolls intransitively
     # rolls transitively
     # rolls on a surface
     intransitive_roll = Phase1SituationTemplate(
-            object_variables=[animate_0, rolling_surface],
-            actions=[
-                Action(
-                    ROLL,
-                    argument_roles_to_fillers=[(AGENT, animate_0)],
-                    during=DuringAction(
-                        continuously=[on(animate_0, rolling_surface)]
-                    ),
-                ),
-            ],
-        constraining_relations=[bigger_than(rolling_surface, animate_0)]
+        "roll-intransitive",
+        salient_object_variables=[animate_0, rolling_surface],
+        actions=[
+            Action(
+                ROLL,
+                argument_roles_to_fillers=[(AGENT, animate_0)],
+                auxiliary_variable_bindings=[(ROLL_SURFACE_AUXILIARY, rolling_surface)],
+                during=DuringAction(continuously=[on(animate_0, rolling_surface)]),
+            )
+        ],
+        constraining_relations=[bigger_than(rolling_surface, animate_0)],
     )
 
     transitive_roll = Phase1SituationTemplate(
-            object_variables=[animate_0, rollable_0],
-            actions=[
-                Action(
-                    ROLL,
-                    argument_roles_to_fillers=[(AGENT, animate_0),
-                                               (THEME, rollable_0)],
-                    during=DuringAction(
-                    ),
-                ),
-            ],
-        constraining_relations=[bigger_than(animate_0, rollable_0)]
+        "roll-transitive",
+        salient_object_variables=[animate_0, rollable_0],
+        actions=[
+            Action(
+                ROLL,
+                argument_roles_to_fillers=[(AGENT, animate_0), (THEME, rollable_0)],
+                during=DuringAction(continuously=[on(rollable_0, rolling_surface)]),
+                auxiliary_variable_bindings=[(ROLL_SURFACE_AUXILIARY, rolling_surface)],
+            )
+        ],
+        constraining_relations=[bigger_than(animate_0, rollable_0)],
     )
 
     transitive_roll_with_surface = Phase1SituationTemplate(
-            object_variables=[animate_0, rollable_0, rolling_surface],
-            actions=[
-                Action(
-                    ROLL,
-                    argument_roles_to_fillers=[(AGENT, animate_0),
-                                               (THEME, rollable_0)],
-                    during=DuringAction(
-                        continuously=[on(rollable_0, rolling_surface)]
-                    ),
-                ),
-            ],
-        constraining_relations=[bigger_than(rolling_surface, rollable_0),
-                                bigger_than(animate_0, rollable_0)]
+        "roll-transitive-with-salient-surface",
+        salient_object_variables=[animate_0, rollable_0, rolling_surface],
+        actions=[
+            Action(
+                ROLL,
+                argument_roles_to_fillers=[(AGENT, animate_0), (THEME, rollable_0)],
+                during=DuringAction(continuously=[on(rollable_0, rolling_surface)]),
+                auxiliary_variable_bindings=[(ROLL_SURFACE_AUXILIARY, rolling_surface)],
+            )
+        ],
+        constraining_relations=[
+            bigger_than(rolling_surface, rollable_0),
+            bigger_than(animate_0, rollable_0),
+        ],
     )
 
     return _phase1_instances(
@@ -511,11 +528,14 @@ def _make_roll_curriculum():
                     chooser=_CHOOSER,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                 )
-            for situation in (intransitive_roll, transitive_roll, transitive_roll_with_surface)
+                for situation in (
+                    intransitive_roll,
+                    transitive_roll,
+                    transitive_roll_with_surface,
+                )
             ]
         ),
     )
-
 
 
 GAILA_PHASE_1_CURRICULUM = [
@@ -529,7 +549,7 @@ GAILA_PHASE_1_CURRICULUM = [
     _make_transfer_of_possession_curriculum(),
     _make_object_on_object_curriculum(),
     _make_fly_curriculum(),
-    _make_roll_curriculum()
+    _make_roll_curriculum(),
 ]
 """
 One particular instantiation of the curriculum for GAILA Phase 1.

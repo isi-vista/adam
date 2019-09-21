@@ -7,8 +7,7 @@ Note that we provide convenience functions like `random_situation_templates` and
 """
 import sys
 from abc import ABC, abstractmethod
-from itertools import islice
-from typing import AbstractSet, Generic, List, Sequence, Tuple, TypeVar, Iterable
+from typing import Generic, Iterable, List, Sequence, Tuple, TypeVar
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
@@ -26,13 +25,13 @@ from immutablecollections.converter_utils import (
     _to_immutableset,
     _to_immutablesetmultidict,
 )
-from more_itertools import flatten, take
+from more_itertools import take
 
 from adam.language.language_generator import SituationT
 from adam.math_3d import Point
 from adam.ontology import OntologyNode
 from adam.ontology.ontology import Ontology
-from adam.random_utils import SequenceChooser, RandomChooser
+from adam.random_utils import RandomChooser, SequenceChooser
 from adam.situation import LocatedObjectSituation, SituationObject
 
 

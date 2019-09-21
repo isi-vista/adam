@@ -132,10 +132,8 @@ class SubcategorizationSelector(OntologyNodeSelector):
         return immutableset(
             action
             for (action, action_description) in ontology.action_to_description.items()
-            if any(
-                frame.roles_to_entities.keys() == self.required_subcategorization_frame
-                for frame in action_description.frames
-            )
+            if action_description.frame.roles_to_variables.keys()
+            == self.required_subcategorization_frame
         )
 
     def __repr__(self) -> str:
