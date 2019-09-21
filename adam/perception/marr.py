@@ -35,12 +35,11 @@ what it is you are looking at):
 """
 from typing import Any, Callable, Mapping, TypeVar
 
-from attr import attrib, attrs, Attribute
+from attr import Attribute, attrib, attrs
 from attr.validators import instance_of
-from immutablecollections import immutabledict, ImmutableDict
+from immutablecollections import ImmutableDict, immutabledict
 from immutablecollections.converter_utils import _to_immutabledict
 from vistautils.range import Range
-
 
 _T = TypeVar("_T")
 

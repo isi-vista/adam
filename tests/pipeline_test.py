@@ -1,7 +1,7 @@
 from vistautils.iter_utils import only
 
-from adam.learner import LearningExample, MemorizingLanguageLearner
 from adam.language import TokenSequenceLinguisticDescription
+from adam.learner import LearningExample, MemorizingLanguageLearner
 from adam.perception import (
     BagOfFeaturesPerceptualRepresentationFrame,
     PerceptualRepresentation,

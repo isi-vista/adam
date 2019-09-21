@@ -5,7 +5,7 @@ These are provided for convenience when writing `LanguageGenerator`\ s.
 
 See https://universaldependencies.org/
 """
-from adam.language.dependency import PartOfSpeechTag, DependencyRole
+from adam.language.dependency import DependencyRole, PartOfSpeechTag
 
 ADJECTIVE = PartOfSpeechTag("adj")
 ADPOSITION = PartOfSpeechTag("adp")
