@@ -191,11 +191,14 @@ class Phase1SituationTemplate(SituationTemplate):
             relation.accumulate_referenced_objects(objects_referenced_accumulator)
         for action in self.actions:
             action.accumulate_referenced_objects(objects_referenced_accumulator)
+
         unique_objects_referenced = immutableset(objects_referenced_accumulator)
-        if unique_objects_referenced != self.all_object_variables:
+        missing_objects = unique_objects_referenced - self.all_object_variables
+        if missing_objects:
             raise RuntimeError(
                 f"Set of referenced objects {unique_objects_referenced} does not match "
-                f"declared objects {self.salient_object_variables} for template {self}"
+                f"object variables {self.all_object_variables} for template {self}: "
+                f"the following are missing {missing_objects}"
             )
 
     @all_object_variables.default

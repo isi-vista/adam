@@ -46,6 +46,8 @@ from adam.ontology.phase1_spatial_relations import (
     SpatialPath,
     TO,
     TOWARD,
+    GRAVITATIONAL_UP,
+    GRAVITATIONAL_DOWN,
 )
 from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
 from adam.relation import (
@@ -549,6 +551,23 @@ def _below_region_factory(reference_object: ObjectT) -> Region[ObjectT]:
 
 above = make_opposite_dsl_region_relation(  # pylint:disable=invalid-name
     _above_region_factory, _below_region_factory
+)
+
+
+def _strictly_above_region_factory(reference_object: ObjectT) -> Region[ObjectT]:
+    return Region(
+        reference_object=reference_object, distance=DISTAL, direction=GRAVITATIONAL_UP
+    )
+
+
+def _strictly_below_region_factory(reference_object: ObjectT) -> Region[ObjectT]:
+    return Region(
+        reference_object=reference_object, distance=DISTAL, direction=GRAVITATIONAL_DOWN
+    )
+
+
+strictly_above = make_opposite_dsl_region_relation(  # pylint:disable=invalid-name
+    _strictly_above_region_factory, _strictly_below_region_factory
 )
 
 
@@ -1158,26 +1177,33 @@ _MOVE_ACTION_DESCRIPTION = ActionDescription(
     postconditions=[],
 )
 
-_JUMP_AGENT = SituationObject(THING, properties=[ANIMATE])
-_JUMP_INITIAL_SUPPORTER = SituationObject(THING)
-_JUMP_GROUND = SituationObject(GROUND)
+JUMP_INITIAL_SUPPORTER_AUX = SituationObject(THING)
 
-_JUMP_ACTION_DESCRIPTION = ActionDescription(
-    frame=ActionDescriptionFrame({AGENT: _JUMP_AGENT}),
-    preconditions=[
-        Relation(
-            IN_REGION,
-            _JUMP_AGENT,
-            Region(_JUMP_INITIAL_SUPPORTER, distance=EXTERIOR_BUT_IN_CONTACT),
-        )
-    ],
-    during=DuringAction(
-        objects_to_paths=[
-            (_JUMP_AGENT, SpatialPath(AWAY_FROM, _JUMP_INITIAL_SUPPORTER)),
-            (_JUMP_AGENT, SpatialPath(AWAY_FROM, _JUMP_GROUND)),
-        ]
-    ),
-)
+
+def _make_jump_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
+    jump_agent = SituationObject(THING, properties=[ANIMATE])
+    jump_ground = SituationObject(GROUND)
+
+    yield (
+        JUMP,
+        ActionDescription(
+            frame=ActionDescriptionFrame({AGENT: jump_agent}),
+            preconditions=[
+                Relation(
+                    IN_REGION,
+                    jump_agent,
+                    Region(JUMP_INITIAL_SUPPORTER_AUX, distance=EXTERIOR_BUT_IN_CONTACT),
+                )
+            ],
+            during=DuringAction(
+                objects_to_paths=[
+                    (jump_agent, SpatialPath(AWAY_FROM, JUMP_INITIAL_SUPPORTER_AUX)),
+                    (jump_agent, SpatialPath(AWAY_FROM, jump_ground)),
+                ]
+            ),
+        ),
+    )
+
 
 ROLL_SURFACE_AUXILIARY = SituationObject(
     INANIMATE_OBJECT, [CAN_HAVE_THINGS_RESTING_ON_THEM], debug_handle="roll-surface-aux"
@@ -1261,11 +1287,11 @@ _ACTIONS_TO_DESCRIPTIONS = [
     (FALL, _FALL_ACTION_DESCRIPTION),
     (THROW, _THROW_ACTION_DESCRIPTION),
     (MOVE, _MOVE_ACTION_DESCRIPTION),
-    (JUMP, _JUMP_ACTION_DESCRIPTION),
     (FLY, _FLY_ACTION_DESCRIPTION),
 ]
 
 _ACTIONS_TO_DESCRIPTIONS.extend(_make_roll_description())
+_ACTIONS_TO_DESCRIPTIONS.extend(_make_jump_description())
 
 GAILA_PHASE_1_ONTOLOGY = Ontology(
     "gaila-phase-1",
