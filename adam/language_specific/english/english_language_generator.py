@@ -181,6 +181,10 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 if self.situation.actions:
                     self._translate_action_to_verb(only(self.situation.actions))
 
+                if self.situation.after_action_relations:
+                    for relation in self.situation.after_action_relations:
+                        self._translate_relation(relation)
+
             return immutableset(
                 [
                     self.generator._dependency_tree_linearizer.linearize(  # pylint:disable=protected-access

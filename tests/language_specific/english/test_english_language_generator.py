@@ -760,6 +760,20 @@ def test_mom_eats_cookie():
     assert generated_tokens(situation) == ("Mom", "eats", "a", "cookie")
 
 
+def test_ball_fell_on_ground():
+    ball = SituationObject(BALL)
+    ground = SituationObject(GROUND)
+
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[ball, ground],
+        actions=[Action(FALL, argument_roles_to_fillers=[(THEME, ball)])],
+        after_action_relations=[on(ball, ground)],
+    )
+
+    assert generated_tokens(situation) == ("a", "ball", "falls", "on", "the", "ground")
+
+
 def generated_tokens(situation):
     return only(
         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
