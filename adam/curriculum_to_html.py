@@ -127,7 +127,7 @@ class CurriculumToHtmlDumper:
         with open(output_destination, "w") as html_out:
             html_out.write(f"<head>\n\t<style>{CSS}\n\t</style>\n</head>")
             html_out.write(f"\n<body>\n\t<h1>{title} - {instance_group.name()}</h1>")
-            html_out.write("\n<h4>How to read</h4>")
+            html_out.write("\n<h2>How to read</h2>")
             html_out.write(
                 "\n<p>A Situation is curriculum-designer-facing; it is not accessible to the learner. "
                 "Names on Perceptions are handles for debugging; they are not accessible to the "
@@ -143,7 +143,8 @@ class CurriculumToHtmlDumper:
                 "\n</ul>\n<ul>\n<p>Relations</p> "
                 "\n\t<li>These define relations between two objects; e.g. smallerThan(A, B) indicates that object A is "
                 "smaller than object B.</li> "
-                "\n\t<li>IN_REGION is a special relation that holds between a SituationObject and a Region."
+                "\n\t<li>IN_REGION is a special relation that holds between a SituationObject and a Region. These "
+                "relations can be nested, and for readability, they do not fall under 'Other Relations'."
                 "\n\t<li>RELATION(OBJECT_0, OBJECT_1)</li>"
                 "\n</ul>\n<ul>\n<p>Part-of nesting</p>"
                 "\n\t<li>PART_OF relations indicate that an object is a part of another. Objects that form a "
