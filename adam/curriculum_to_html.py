@@ -371,6 +371,8 @@ class CurriculumToHtmlDumper:
                 output_text.append(
                     f"\t\t\t\t\t\t<li>{obj_prefix}{render_object(node)}{obj_suffix}<ul>"
                 )
+                if node.geon:
+                    output_text.append((f"\t\t\t\t\t\t<li>Geon: {node.geon}</li>"))
                 # Handle Region Relations
                 for region_relation in region_relations:
                     if region_relation.first_slot == node:

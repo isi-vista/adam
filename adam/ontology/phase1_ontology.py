@@ -48,8 +48,19 @@ from adam.ontology.phase1_spatial_relations import (
     TOWARD,
     GRAVITATIONAL_UP,
     GRAVITATIONAL_DOWN,
-    Geon, OVALISH, SMALL_TO_LARGE_TO_SMALL, CONSTANT, RECTANGULAR, CIRCULAR, LARGE_TO_SMALL,
-    SMALL_TO_LARGE, IRREGULAR)
+    Geon,
+    OVALISH,
+    SMALL_TO_LARGE_TO_SMALL,
+    CONSTANT,
+    RECTANGULAR,
+    CIRCULAR,
+    LARGE_TO_SMALL,
+    SMALL_TO_LARGE,
+    IRREGULAR,
+    symmetric,
+    directed,
+    straight_up,
+)
 from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
 from adam.relation import (
     ObjectT,
@@ -599,126 +610,118 @@ _GROUND_SCHEMA = ObjectStructuralSchema(ontology_node=GROUND)
 
 # Structural Objects without Sub-Parts which are part of our Phase 1 Vocabulary
 # These may need to evolve to reflect the changes for visualization of phase 1
-_DOOR_SCHEMA = ObjectStructuralSchema(ontology_node=DOOR,
-                                      geon=Geon(
-                                          cross_section=RECTANGULAR,
-                                          cross_section_size=CONSTANT
-                                      ))
-_BALL_SCHEMA = ObjectStructuralSchema(ontology_node=BALL,
-                                      geon=Geon(
-                                          cross_section=CIRCULAR,
-                                          cross_section_size=SMALL_TO_LARGE_TO_SMALL
-                                      ))
+_DOOR_SCHEMA = ObjectStructuralSchema(
+    ontology_node=DOOR, geon=Geon(cross_section=RECTANGULAR, cross_section_size=CONSTANT)
+)
+_BALL_SCHEMA = ObjectStructuralSchema(
+    ontology_node=BALL,
+    geon=Geon(cross_section=CIRCULAR, cross_section_size=SMALL_TO_LARGE_TO_SMALL),
+)
 _WATER_SCHEMA = ObjectStructuralSchema(WATER)
 _JUICE_SCHEMA = ObjectStructuralSchema(JUICE)
-_BOX_SCHEMA = ObjectStructuralSchema(ontology_node=BOX,
-                                     geon=Geon(
-                                         cross_section=RECTANGULAR,
-                                         cross_section_size=CONSTANT
-                                     ))
+_BOX_SCHEMA = ObjectStructuralSchema(
+    ontology_node=BOX, geon=Geon(cross_section=RECTANGULAR, cross_section_size=CONSTANT)
+)
 _MILK_SCHEMA = ObjectStructuralSchema(MILK)
-_HAT_SCHEMA = ObjectStructuralSchema(ontology_node=HAT,
-                                     geon=Geon(
-                                         cross_section=OVALISH,
-                                         cross_section_size=LARGE_TO_SMALL
-                                     ))
-_COOKIE_SCHEMA = ObjectStructuralSchema(ontology_node=COOKIE,
-                                        geon=Geon(
-                                            cross_section=CIRCULAR,
-                                            cross_section_size=CONSTANT
-                                        ))
-_CUP_SCHEMA = ObjectStructuralSchema(ontology_node=CUP,
-                                     geon=Geon(
-                                         cross_section=CIRCULAR,
-                                         cross_section_size=SMALL_TO_LARGE
-                                     ))
-_BOOK_SCHEMA = ObjectStructuralSchema(ontology_node=BOOK,
-                                      geon=Geon(
-                                          cross_section=RECTANGULAR,
-                                          cross_section_size=CONSTANT
-                                      )
-                                      )
-_HAND_SCHEMA = ObjectStructuralSchema(ontology_node=HAND,
-                                      # we do not currently represent fingers
-                                      geon=Geon(
-                                          cross_section=RECTANGULAR,
-                                          cross_section_size=CONSTANT
-                                      )
-                                      )
-_HEAD_SCHEMA = ObjectStructuralSchema(HEAD,
-                                      geon=Geon(
-                                          cross_section=OVALISH,
-                                          cross_section_size=SMALL_TO_LARGE_TO_SMALL
-                                      ))
+_HAT_SCHEMA = ObjectStructuralSchema(
+    ontology_node=HAT, geon=Geon(cross_section=OVALISH, cross_section_size=LARGE_TO_SMALL)
+)
+_COOKIE_SCHEMA = ObjectStructuralSchema(
+    ontology_node=COOKIE, geon=Geon(cross_section=CIRCULAR, cross_section_size=CONSTANT)
+)
+_CUP_SCHEMA = ObjectStructuralSchema(
+    ontology_node=CUP,
+    geon=Geon(cross_section=CIRCULAR, cross_section_size=SMALL_TO_LARGE),
+)
+_BOOK_SCHEMA = ObjectStructuralSchema(
+    ontology_node=BOOK, geon=Geon(cross_section=RECTANGULAR, cross_section_size=CONSTANT)
+)
+_HAND_SCHEMA = ObjectStructuralSchema(
+    ontology_node=HAND,
+    # we do not currently represent fingers
+    geon=Geon(
+        cross_section=RECTANGULAR,
+        cross_section_size=CONSTANT,
+        generating_axis=directed(),
+        orienting_axes=[directed(), symmetric()],
+    ),
+)
+_HEAD_SCHEMA = ObjectStructuralSchema(
+    HEAD,
+    geon=Geon(
+        cross_section=OVALISH,
+        cross_section_size=SMALL_TO_LARGE_TO_SMALL,
+        generating_axis=straight_up(),
+        orienting_axes=[directed(), symmetric()],
+    ),
+)
 
 # Hierarchical structure of objects
-_TORSO_SCHEMA = ObjectStructuralSchema(_TORSO,
-                                       geon=Geon(
-                                           cross_section=OVALISH,
-                                           cross_section_size=CONSTANT
-                                       ))
+_TORSO_SCHEMA = ObjectStructuralSchema(
+    _TORSO,
+    geon=Geon(
+        cross_section=OVALISH,
+        cross_section_size=CONSTANT,
+        generating_axis=straight_up(),
+        orienting_axes=[directed(), symmetric()],
+    ),
+)
 # TODO: we shouldn't share a leg schema between humans and tables
 # https://github.com/isi-vista/adam/issues/265
-_LEG_SCHEMA = ObjectStructuralSchema(_LEG,
-                                     geon=Geon(
-                                         cross_section=OVALISH,
-                                         cross_section_size=CONSTANT,
-                                     ))
-_CHAIRBACK_SCHEMA = ObjectStructuralSchema(ontology_node=_CHAIR_BACK,
-                                           geon=Geon(
-                                               cross_section=IRREGULAR,
-                                               cross_section_size=CONSTANT
-                                           ))
-_CHAIR_SEAT_SCHEMA = ObjectStructuralSchema(ontology_node=_CHAIR_SEAT,
-                                            geon=Geon(
-                                                cross_section=OVALISH,
-                                                cross_section_size=CONSTANT
-                                            ))
-_TABLETOP_SCHEMA = ObjectStructuralSchema(ontology_node=_TABLETOP,
-                                          geon=Geon(
-                                              cross_section=RECTANGULAR,
-                                              cross_section_size=CONSTANT
-                                          ))
-_TAIL_SCHEMA = ObjectStructuralSchema(ontology_node=_TAIL,
-                                      geon=Geon(
-                                          cross_section=OVALISH,
-                                          cross_section_size=LARGE_TO_SMALL
-                                      ))
-_WING_SCHEMA = ObjectStructuralSchema(ontology_node=_WING,
-                                      geon=Geon(
-                                          cross_section=IRREGULAR,
-                                          cross_section_size=CONSTANT
-                                      ))
-_ARM_SEGMENT_SCHEMA = ObjectStructuralSchema(ontology_node=_ARM_SEGMENT,
-                                             geon=Geon(
-                                                 cross_section=OVALISH,
-                                                 cross_section_size=CONSTANT
-                                             ))
-_ROOF_SCHEMA = ObjectStructuralSchema(ontology_node=_ROOF,
-                                      geon=Geon(
-                                          cross_section=RECTANGULAR,
-                                          cross_section_size=LARGE_TO_SMALL
-                                      ))
-_WALL_SCHEMA = ObjectStructuralSchema(ontology_node=_WALL,
-                                      geon=Geon(
-                                          cross_section=RECTANGULAR,
-                                          cross_section_size=CONSTANT
-                                      ))
-_TIRE_SCHEMA = ObjectStructuralSchema(ontology_node=_TIRE,
-                                      geon=Geon(
-                                          cross_section=CIRCULAR,
-                                          cross_section_size=CONSTANT
-                                      ))
-_FLATBED_SCHEMA = ObjectStructuralSchema(ontology_node=_FLATBED,
-                                         geon=Geon(
-                                             cross_section=RECTANGULAR,
-                                             cross_section_size=CONSTANT
-                                         ))
-_BODY_SCHEMA = ObjectStructuralSchema(ontology_node=_BODY,
-                                      geon=Geon(
-                                          cross_section=IRREGULAR,
-                                          cross_section_size=CONSTANT
-                                      ))
+_LEG_SCHEMA = ObjectStructuralSchema(
+    _LEG,
+    geon=Geon(
+        cross_section=OVALISH,
+        cross_section_size=CONSTANT,
+        generating_axis=directed(),
+        orienting_axes=[symmetric(), symmetric()],
+    ),
+)
+_CHAIRBACK_SCHEMA = ObjectStructuralSchema(
+    ontology_node=_CHAIR_BACK,
+    geon=Geon(cross_section=IRREGULAR, cross_section_size=CONSTANT),
+)
+_CHAIR_SEAT_SCHEMA = ObjectStructuralSchema(
+    ontology_node=_CHAIR_SEAT,
+    geon=Geon(cross_section=OVALISH, cross_section_size=CONSTANT),
+)
+_TABLETOP_SCHEMA = ObjectStructuralSchema(
+    ontology_node=_TABLETOP,
+    geon=Geon(cross_section=RECTANGULAR, cross_section_size=CONSTANT),
+)
+_TAIL_SCHEMA = ObjectStructuralSchema(
+    ontology_node=_TAIL,
+    geon=Geon(cross_section=OVALISH, cross_section_size=LARGE_TO_SMALL),
+)
+_WING_SCHEMA = ObjectStructuralSchema(
+    ontology_node=_WING, geon=Geon(cross_section=IRREGULAR, cross_section_size=CONSTANT)
+)
+_ARM_SEGMENT_SCHEMA = ObjectStructuralSchema(
+    ontology_node=_ARM_SEGMENT,
+    geon=Geon(
+        cross_section=OVALISH,
+        cross_section_size=CONSTANT,
+        generating_axis=directed(),
+        orienting_axes=[symmetric(), symmetric()],
+    ),
+)
+_ROOF_SCHEMA = ObjectStructuralSchema(
+    ontology_node=_ROOF,
+    geon=Geon(cross_section=RECTANGULAR, cross_section_size=LARGE_TO_SMALL),
+)
+_WALL_SCHEMA = ObjectStructuralSchema(
+    ontology_node=_WALL, geon=Geon(cross_section=RECTANGULAR, cross_section_size=CONSTANT)
+)
+_TIRE_SCHEMA = ObjectStructuralSchema(
+    ontology_node=_TIRE, geon=Geon(cross_section=CIRCULAR, cross_section_size=CONSTANT)
+)
+_FLATBED_SCHEMA = ObjectStructuralSchema(
+    ontology_node=_FLATBED,
+    geon=Geon(cross_section=RECTANGULAR, cross_section_size=CONSTANT),
+)
+_BODY_SCHEMA = ObjectStructuralSchema(
+    ontology_node=_BODY, geon=Geon(cross_section=IRREGULAR, cross_section_size=CONSTANT)
+)
 
 # schemata describing the sub-object structural nature of a Human Arm
 _ARM_SCHEMA_HAND = SubObject(_HAND_SCHEMA)
@@ -729,10 +732,7 @@ _ARM_SCHEMA_LOWER = SubObject(_ARM_SEGMENT_SCHEMA)
 
 _ARM_SCHEMA = ObjectStructuralSchema(
     ontology_node=_ARM,
-    geon=Geon(
-        cross_section=OVALISH,
-        cross_section_size=CONSTANT
-    ),
+    geon=Geon(cross_section=OVALISH, cross_section_size=CONSTANT),
     sub_objects=[_ARM_SCHEMA_HAND, _ARM_SCHEMA_LOWER, _ARM_SCHEMA_UPPER],
     sub_object_relations=flatten_relations(
         [contacts([_ARM_SCHEMA_UPPER, _ARM_SCHEMA_HAND], _ARM_SCHEMA_LOWER)]
