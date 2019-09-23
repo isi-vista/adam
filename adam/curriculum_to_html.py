@@ -130,6 +130,9 @@ class CurriculumToHtmlDumper:
             html_out.write("\n<h2>How to read</h2>")
             html_out.write(
                 "\n<p>A Situation is curriculum-designer-facing; it is not accessible to the learner. "
+                "The name of a perceived object is derived from the type of the corresponding SituationObject, and the "
+                "number indicates which object of its type it is - e.g. if there are two babies in a situation, "
+                "the perceived objects will be 'person_0' and 'person_1'. "
                 "Names on Perceptions are handles for debugging; they are not accessible to the "
                 'learner. "GAZED-AT" refers the object of focus of the speaker.</p> '
             )
@@ -146,6 +149,10 @@ class CurriculumToHtmlDumper:
                 "\n\t<li>IN_REGION is a special relation that holds between a SituationObject and a Region. These "
                 "relations can be nested, and for readability, they do not fall under 'Other Relations'."
                 "\n\t<li>RELATION(OBJECT_0, OBJECT_1)</li>"
+                "\n</ul>\n<ul>\n<p>Arrows</p>"
+                "\n\t<li>A relation preceded by 'Ø --->' is one that begins to exist by the end of the situation.</li>"
+                "\n\t<li>A relation followed by '---> Ø' is one that ceases to exist by the end of the situation.</li>"
+                "\n\t<li>A relation without an arrow holds true through the duration of the situation.</li>"
                 "\n</ul>\n<ul>\n<p>Part-of nesting</p>"
                 "\n\t<li>PART_OF relations indicate that an object is a part of another. Objects that form a "
                 "structural schema can be represented in terms of several part-of relations.</li> "
