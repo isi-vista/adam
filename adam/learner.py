@@ -3,11 +3,10 @@ Interfaces for language learning code.
 """
 
 from abc import ABC, abstractmethod
-from typing import Generic, Mapping, Dict
+from typing import Dict, Generic, Mapping
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
-
 from immutablecollections import immutabledict
 
 from adam.language import LinguisticDescription, LinguisticDescriptionT

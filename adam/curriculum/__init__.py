@@ -2,14 +2,14 @@ r"""
 Code to specify what is shown to `LanguageLearner`\ s and in what order.
 """
 from abc import ABC, abstractmethod
-from typing import Generic, Iterable, Tuple, Optional
+from typing import Generic, Iterable, Optional, Tuple
 
-from attr import attrs, attrib
+from attr import attrib, attrs
 from attr.validators import instance_of
 from immutablecollections.converter_utils import _to_tuple
 
 from adam.language import LinguisticDescriptionT
-from adam.language.language_generator import SituationT, LanguageGenerator
+from adam.language.language_generator import LanguageGenerator, SituationT
 from adam.perception import (
     PerceptionT,
     PerceptualRepresentation,

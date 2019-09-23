@@ -3,9 +3,9 @@ This module provides classes related to the perceptual primitive representation
 used to describe `Situation`\ s from the point-of-view of `LanguageLearner`\ s.
 """
 from abc import ABC, abstractmethod
-from typing import TypeVar, Generic, Tuple, Optional
+from typing import Generic, Optional, Tuple, TypeVar
 
-from attr import attrs, attrib
+from attr import attrib, attrs
 from attr.validators import instance_of, optional
 from immutablecollections import ImmutableSet, immutableset
 from immutablecollections.converter_utils import _to_immutableset

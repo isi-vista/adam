@@ -9,7 +9,7 @@ from adam.ontology import OntologyNode
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_spatial_relations import Region
 from adam.relation import Relation, flatten_relations
-from adam.situation import Situation, SituationObject, Action
+from adam.situation import Action, Situation, SituationObject
 
 
 @attrs(slots=True, repr=False)

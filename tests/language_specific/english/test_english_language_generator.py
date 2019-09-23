@@ -3,9 +3,9 @@ from typing import Tuple
 from more_itertools import only
 
 from adam.language_specific.english.english_language_generator import (
+    PREFER_DITRANSITIVE,
     SimpleRuleBasedEnglishLanguageGenerator,
     USE_ADVERBIAL_PATH_MODIFIER,
-    PREFER_DITRANSITIVE,
 )
 from adam.language_specific.english.english_phase_1_lexicon import (
     GAILA_PHASE_1_ENGLISH_LEXICON,
@@ -14,46 +14,46 @@ from adam.ontology import IN_REGION
 from adam.ontology.during import DuringAction
 from adam.ontology.phase1_ontology import (
     AGENT,
+    BABY,
     BALL,
-    GAILA_PHASE_1_ONTOLOGY,
-    MOM,
-    PUSH,
-    TABLE,
-    THEME,
+    BIRD,
     BOX,
-    WATER,
     COOKIE,
     DAD,
-    PUT,
-    GOAL,
-    GROUND,
-    IS_SPEAKER,
-    GREEN,
-    IS_ADDRESSEE,
-    BIRD,
-    FLY,
-    ROLL,
-    HAS,
-    on,
     FALL,
-    BABY,
-    THROW,
+    FLY,
+    GAILA_PHASE_1_ONTOLOGY,
     GIVE,
+    GOAL,
+    GREEN,
+    GROUND,
+    HAS,
+    IS_ADDRESSEE,
+    IS_SPEAKER,
+    MOM,
+    PUSH,
+    PUT,
+    ROLL,
+    TABLE,
+    THEME,
+    THROW,
+    WATER,
+    on,
 )
 from adam.ontology.phase1_spatial_relations import (
-    INTERIOR,
-    EXTERIOR_BUT_IN_CONTACT,
-    Direction,
-    DISTAL,
-    GRAVITATIONAL_AXIS,
-    Region,
-    GRAVITATIONAL_UP,
-    SpatialPath,
     AWAY_FROM,
+    DISTAL,
+    Direction,
+    EXTERIOR_BUT_IN_CONTACT,
+    GRAVITATIONAL_AXIS,
+    GRAVITATIONAL_UP,
+    INTERIOR,
+    Region,
+    SpatialPath,
 )
 from adam.random_utils import FixedIndexChooser
 from adam.relation import Relation
-from adam.situation import SituationObject, Action
+from adam.situation import Action, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from tests.sample_situations import make_bird_flies_over_a_house
 from tests.situation.situation_test import make_mom_put_ball_on_table

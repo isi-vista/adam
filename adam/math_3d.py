@@ -3,7 +3,7 @@ Contains math utilities for working in three-dimensional space.
 
 We are not going to work with very large 3D models, so this is no optimized for speed.
 """
-from attr import attrs, attrib
+from attr import attrib, attrs
 from attr.validators import instance_of
 
 
