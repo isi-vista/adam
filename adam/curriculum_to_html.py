@@ -398,12 +398,27 @@ class CurriculumToHtmlDumper:
                     (relation_prefix, relation_suffix) = compute_arrow(
                         relation, static_relations, first_frame_relations
                     )
-                    # if smallerThan/biggerThan relations exist, print as single relation
+                    # if matching smallerThan/biggerThan relations exist, give as single relation
+                    opposite_relations = {
+                        SMALLER_THAN: BIGGER_THAN,
+                        BIGGER_THAN: SMALLER_THAN,
+                    }
                     single_size_relation = None
-                    if relation.relation_type == SMALLER_THAN:
-                        single_size_relation = f"{relation.second_slot} > {relation.first_slot}"
-                    elif relation.relation_type == BIGGER_THAN:
-                        single_size_relation = f"{relation.first_slot} > {relation.second_slot}"
+                    if relation.relation_type in opposite_relations:
+                        if any(
+                            r.relation_type == opposite_relations[relation.relation_type]
+                            and r.first_slot == relation.second_slot
+                            and r.second_slot == relation.first_slot
+                            for r in all_relations
+                        ):
+                            if relation.relation_type == SMALLER_THAN:
+                                single_size_relation = (
+                                    f"{relation.second_slot} > {relation.first_slot}"
+                                )
+                            else:
+                                single_size_relation = (
+                                    f"{relation.first_slot} > {relation.second_slot}"
+                                )
                     if single_size_relation:
                         size_output = f"\t\t\t\t\t\t<li>{relation_prefix}{single_size_relation}{relation_suffix}</li>"
                         if size_output not in output_text:
