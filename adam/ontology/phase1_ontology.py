@@ -149,6 +149,29 @@ implicity generated in the perception step if not explicit in a situation.
 """
 subtype(GAZED_AT, PERCEIVABLE_PROPERTY)
 
+
+# Dowty's Proto-Roles: Issue 104; Dotwy, 91, page 572.
+# Agent Proto-Roles properties:
+VOLITIONALLY_INVOLVED = OntologyNode("volitionally-involved", [BINARY])
+subtype(VOLITIONALLY_INVOLVED, PERCEIVABLE_PROPERTY)
+SENTIENT_OR_PERCEIVES = OntologyNode("sentient-or-perceives", [BINARY])
+subtype(SENTIENT_OR_PERCEIVES, PERCEIVABLE_PROPERTY)
+CAUSES_CHANGE = OntologyNode("causes-change", [BINARY])
+subtype(CAUSES_CHANGE, PERCEIVABLE_PROPERTY)
+MOVES = OntologyNode("moves", [BINARY])
+subtype(MOVES, PERCEIVABLE_PROPERTY)
+
+# Patient Proto-Roles:
+UNDERGOES_CHANGE = OntologyNode("undergoes-change", [BINARY])
+subtype(UNDERGOES_CHANGE, PERCEIVABLE_PROPERTY)
+INCREMENTAL_THEME = OntologyNode("incremental-theme", [BINARY])
+subtype(INCREMENTAL_THEME, PERCEIVABLE_PROPERTY)
+CAUSALLY_AFFECTED = OntologyNode("causally-affected", [BINARY])
+subtype(CAUSALLY_AFFECTED, PERCEIVABLE_PROPERTY)
+STATIONARY = OntologyNode("stationary", [BINARY])
+subtype(STATIONARY, PERCEIVABLE_PROPERTY)
+
+
 # Properties not perceived by the learner, but useful for situation generation
 
 CAN_MANIPULATE_OBJECTS = OntologyNode("can-manipulate-objects")
@@ -959,6 +982,12 @@ _PUT_ACTION_DESCRIPTION = ActionDescription(
     postconditions=[
         Relation(IN_REGION, _PUT_THEME, _CONTACTING_MANIPULATOR, negated=True),
         Relation(IN_REGION, _PUT_THEME, _PUT_GOAL),
+    ],
+    asserted_properties=[
+        (_PUT_AGENT, VOLITIONALLY_INVOLVED),
+        (_PUT_AGENT, CAUSES_CHANGE),
+        (_PUT_THEME, CAUSALLY_AFFECTED),
+        (_PUT_GOAL, STATIONARY),
     ],
 )
 

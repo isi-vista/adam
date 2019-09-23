@@ -581,6 +581,35 @@ class _PerceptionGeneration:
                     property_,
                 )
 
+        # Properties derived from the role of the situation object in the action
+        for action in self._situation.actions:
+            action_description: ActionDescription = GAILA_PHASE_1_ONTOLOGY.required_action_description(
+                action.action_type, action.argument_roles_to_fillers.keys()
+            )
+            for role in action_description.frame.semantic_roles:  # e.g. AGENT
+                variable = action_description.frame.roles_to_variables[
+                    role
+                ]  # e.g. _PUT_AGENT
+                fillers = action.argument_roles_to_fillers[role]  # e.g. {Mom}
+                for property_ in action_description.asserted_properties[variable]:
+                    for situation_or_region in fillers:
+                        if isinstance(situation_or_region, SituationObject):
+                            perception_of_object = self._objects_to_perceptions[
+                                situation_or_region
+                            ]
+                        else:
+                            # We are propagating properties asserted on regions to their
+                            # reference objects.
+                            # TODO: issue #263
+                            perception_of_object = self._objects_to_perceptions[
+                                situation_or_region.reference_object
+                            ]
+                        self._perceive_property(
+                            self._generator.ontology.properties_for_node(property_),
+                            perception_of_object,
+                            property_,
+                        )
+
     def _perceive_property(
         self,
         attributes_of_property: ImmutableSet[OntologyNode],
