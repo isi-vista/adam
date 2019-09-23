@@ -54,6 +54,9 @@ from adam.ontology.phase1_ontology import (
     DRINK_CONTAINER_AUX,
     HOLLOW,
     DRINK,
+    EDIBLE,
+    EAT,
+    PATIENT,
 )
 from adam.ontology.phase1_spatial_relations import AWAY_FROM, SpatialPath, TOWARD
 from adam.perception.developmental_primitive_perception import (
@@ -643,6 +646,44 @@ def _make_drink_curriculum():
             *[
                 all_possible(
                     drink_liquid, ontology=GAILA_PHASE_1_ONTOLOGY, chooser=_CHOOSER
+                )
+            ]
+        ),
+    )
+
+
+def _make_eat_curriculum():
+    object_to_eat = object_variable(
+        "object_0",
+        INANIMATE_OBJECT,
+        required_properties=[EDIBLE],
+        banned_properties=[LIQUID],
+    )
+    eater = object_variable("eater_0", THING, required_properties=[ANIMATE])
+
+    # "Mom eats a cookie"
+    eat_object = Phase1SituationTemplate(
+        "eat-object",
+        salient_object_variables=[object_to_eat, eater],
+        actions=[
+            Action(
+                EAT, argument_roles_to_fillers=[(AGENT, eater), (PATIENT, object_to_eat)]
+            )
+        ],
+    )
+
+    # TODO: "eat it up"
+    # https://github.com/isi-vista/adam/issues/267
+
+    return _phase1_instances(
+        "eating",
+        chain(
+            *[
+                sampled(
+                    eat_object,
+                    max_to_sample=25,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                    chooser=_CHOOSER,
                 )
             ]
         ),

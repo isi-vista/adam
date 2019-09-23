@@ -50,6 +50,8 @@ from adam.ontology.phase1_ontology import (
     DRINK,
     DRINK_CONTAINER_AUX,
     CHAIR,
+    PATIENT,
+    EAT,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -741,6 +743,21 @@ def test_mom_drinks_juice():
     )
 
     assert generated_tokens(situation) == ("Mom", "drinks", "juice")
+
+
+def test_mom_eats_cookie():
+    mom = SituationObject(MOM)
+    cookie = SituationObject(COOKIE)
+
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom, cookie],
+        actions=[
+            Action(EAT, argument_roles_to_fillers=[(AGENT, mom), (PATIENT, cookie)])
+        ],
+    )
+
+    assert generated_tokens(situation) == ("Mom", "eats", "a", "cookie")
 
 
 def generated_tokens(situation):
