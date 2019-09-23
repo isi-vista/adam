@@ -634,6 +634,8 @@ _GROUND_SCHEMA = ObjectStructuralSchema(ontology_node=GROUND)
 
 # Structural Objects without Sub-Parts which are part of our Phase 1 Vocabulary
 # These may need to evolve to reflect the changes for visualization of phase 1
+
+
 def _make_door_schema() -> ObjectStructuralSchema:
     hinges_to_edge = directed("hinges-to-edge")
     bottom_to_top = directed("bottom-to-top")
