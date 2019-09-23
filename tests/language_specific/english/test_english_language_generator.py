@@ -39,6 +39,10 @@ from adam.ontology.phase1_ontology import (
     THROW,
     WATER,
     on,
+    JUICE,
+    CUP,
+    DRINK,
+    DRINK_CONTAINER_AUX,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -687,6 +691,26 @@ def test_bird_flies_up():
     )
 
     assert generated_tokens(situation) == ("a", "bird", "flies", "up")
+
+
+def test_mom_drinks_juice():
+    mom = SituationObject(MOM)
+    juice = SituationObject(JUICE)
+    cup = SituationObject(CUP)
+
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        objects=[mom, juice],
+        actions=[
+            Action(
+                DRINK,
+                argument_roles_to_fillers=[(AGENT, mom), (THEME, juice)],
+                auxiliary_variable_bindings=[(DRINK_CONTAINER_AUX, cup)],
+            )
+        ],
+    )
+
+    assert generated_tokens(situation) == ("Mom", "drinks", "juice")
 
 
 def generated_tokens(situation):

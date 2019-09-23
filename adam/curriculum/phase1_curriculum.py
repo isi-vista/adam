@@ -49,7 +49,8 @@ from adam.ontology.phase1_ontology import (
     DRINK,
     bigger_than,
     inside,
-    DRINK_CONTAINER_AUX)
+    DRINK_CONTAINER_AUX,
+)
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
     DISTAL,
@@ -592,7 +593,7 @@ def _make_drink_curriculum():
 
     drink_liquid = Phase1SituationTemplate(
         "drink",
-        salient_object_variables=[object_0, liquid_0, person_0],
+        salient_object_variables=[liquid_0, person_0],
         actions=[
             Action(
                 DRINK,
@@ -600,7 +601,6 @@ def _make_drink_curriculum():
                 auxiliary_variable_bindings=[(DRINK_CONTAINER_AUX, object_0)],
             )
         ],
-        asserted_always_relations=[inside(liquid_0, object_0)],
     )
 
     return _phase1_instances(
