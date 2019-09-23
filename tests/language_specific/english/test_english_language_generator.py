@@ -730,7 +730,7 @@ def test_mom_drinks_juice():
 
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        objects=[mom, juice],
+        salient_objects=[mom, juice],
         actions=[
             Action(
                 DRINK,

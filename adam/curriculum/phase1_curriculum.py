@@ -52,7 +52,9 @@ from adam.ontology.phase1_ontology import (
     on,
     strictly_above,
     DRINK_CONTAINER_AUX,
-    HOLLOW, DRINK)
+    HOLLOW,
+    DRINK,
+)
 from adam.ontology.phase1_spatial_relations import AWAY_FROM, SpatialPath, TOWARD
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
