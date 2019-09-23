@@ -35,6 +35,9 @@ from adam.ontology.phase1_ontology import (
     far,
     near,
     on,
+    VOLITIONALLY_INVOLVED,
+    CAUSES_CHANGE,
+    CAUSALLY_AFFECTED,
 )
 from adam.ontology.phase1_spatial_relations import (
     DISTAL,
@@ -247,6 +250,20 @@ def test_person_put_ball_on_table():
             Region(reference_object=hand_perception, distance=EXTERIOR_BUT_IN_CONTACT),
         )
         not in second_frame_relations
+    )
+
+    # proto-role properties
+    assert (
+        HasBinaryProperty(person_perception, VOLITIONALLY_INVOLVED)
+        in first_frame.property_assertions
+    )
+    assert (
+        HasBinaryProperty(person_perception, CAUSES_CHANGE)
+        in first_frame.property_assertions
+    )
+    assert (
+        HasBinaryProperty(ball_perception, CAUSALLY_AFFECTED)
+        in first_frame.property_assertions
     )
 
 
