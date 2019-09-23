@@ -1127,18 +1127,25 @@ _SIT_ACTION_DESCRIPTION = ActionDescription(
     postconditions=[contacts(_SIT_AGENT, _SIT_GOAL), above(_SIT_AGENT, _SIT_GOAL)],
 )
 
-_DRINK_AGENT = SituationObject(THING, properties=[ANIMATE])
-_DRINK_THEME = SituationObject(THING, properties=[LIQUID])
-_DRINK_CONTAINER = SituationObject(THING, properties=[HOLLOW])
+DRINK_CONTAINER_AUX = SituationObject(THING, properties=[HOLLOW])
 
-_DRINK_ACTION_DESCRIPTION = ActionDescription(
-    frame=ActionDescriptionFrame({AGENT: _DRINK_AGENT, THEME: _DRINK_THEME}),
-    preconditions=[
-        inside(_DRINK_THEME, _DRINK_CONTAINER),
-        bigger_than(_DRINK_AGENT, _DRINK_CONTAINER),
-    ],
-    postconditions=[inside(_DRINK_THEME, _DRINK_AGENT)],
-)
+
+def _make_drink_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
+    drink_agent = SituationObject(THING, properties=[ANIMATE])
+    drink_theme = SituationObject(THING, properties=[LIQUID])
+
+    yield (
+        DRINK,
+        ActionDescription(
+            frame=ActionDescriptionFrame({AGENT: drink_agent, THEME: drink_theme}),
+            preconditions=[
+                inside(drink_theme, DRINK_CONTAINER_AUX),
+                bigger_than(drink_agent, DRINK_CONTAINER_AUX),
+            ],
+            postconditions=[inside(drink_theme, drink_agent)],
+        ),
+    )
+
 
 _FALL_THEME = SituationObject(THING)
 _FALL_GROUND = SituationObject(GROUND)
@@ -1312,7 +1319,6 @@ _ACTIONS_TO_DESCRIPTIONS = [
     (EAT, _EAT_ACTION_DESCRIPTION),
     (TURN, _TURN_ACTION_DESCRIPTION),
     (SIT, _SIT_ACTION_DESCRIPTION),
-    (DRINK, _DRINK_ACTION_DESCRIPTION),
     (FALL, _FALL_ACTION_DESCRIPTION),
     (THROW, _THROW_ACTION_DESCRIPTION),
     (MOVE, _MOVE_ACTION_DESCRIPTION),
@@ -1321,6 +1327,7 @@ _ACTIONS_TO_DESCRIPTIONS = [
 
 _ACTIONS_TO_DESCRIPTIONS.extend(_make_roll_description())
 _ACTIONS_TO_DESCRIPTIONS.extend(_make_jump_description())
+_ACTIONS_TO_DESCRIPTIONS.extend(_make_drink_description())
 
 GAILA_PHASE_1_ONTOLOGY = Ontology(
     "gaila-phase-1",

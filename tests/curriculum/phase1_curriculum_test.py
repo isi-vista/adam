@@ -4,6 +4,7 @@ from adam.curriculum.phase1_curriculum import (
     _make_fly_curriculum,
     _make_roll_curriculum,
     _make_jump_curriculum,
+    _make_drink_curriculum,
 )
 
 
@@ -30,3 +31,7 @@ def test_roll_curriculum():
 
 def test_jump_curriculum():
     _test_curriculum(_make_jump_curriculum())
+
+
+def test_drink_curriculum():
+    _test_curriculum(_make_drink_curriculum())

@@ -32,7 +32,6 @@ from adam.ontology.phase1_ontology import (
     GROUND,
     HAS,
     HAS_SPACE_UNDER,
-    HOLLOW,
     INANIMATE_OBJECT,
     IS_BODY_PART,
     JUMP,
@@ -52,6 +51,9 @@ from adam.ontology.phase1_ontology import (
     inside,
     on,
     strictly_above,
+    DRINK_CONTAINER_AUX,
+    HOLLOW,
+    DRINK,
 )
 from adam.ontology.phase1_spatial_relations import AWAY_FROM, SpatialPath, TOWARD
 from adam.perception.developmental_primitive_perception import (
@@ -616,6 +618,37 @@ def make_jump_over_object_template():
     )
 
 
+def _make_drink_curriculum():
+    object_0 = object_variable(
+        "object_0", required_properties=[HOLLOW], banned_properties=[IS_BODY_PART]
+    )
+    liquid_0 = object_variable("liquid_0", required_properties=[LIQUID])
+    person_0 = object_variable("person_0", PERSON)
+
+    drink_liquid = Phase1SituationTemplate(
+        "drink",
+        salient_object_variables=[liquid_0, person_0],
+        actions=[
+            Action(
+                DRINK,
+                argument_roles_to_fillers=[(AGENT, person_0), (THEME, liquid_0)],
+                auxiliary_variable_bindings=[(DRINK_CONTAINER_AUX, object_0)],
+            )
+        ],
+    )
+
+    return _phase1_instances(
+        "drinking",
+        chain(
+            *[
+                all_possible(
+                    drink_liquid, ontology=GAILA_PHASE_1_ONTOLOGY, chooser=_CHOOSER
+                )
+            ]
+        ),
+    )
+
+
 GAILA_PHASE_1_CURRICULUM = [
     EACH_OBJECT_BY_ITSELF_SUB_CURRICULUM,
     OBJECTS_WITH_COLORS_SUB_CURRICULUM,
@@ -630,6 +663,7 @@ GAILA_PHASE_1_CURRICULUM = [
     _make_fly_curriculum(),
     _make_roll_curriculum(),
     _make_jump_curriculum(),
+    _make_drink_curriculum(),
 ]
 """
 One particular instantiation of the curriculum for GAILA Phase 1.
