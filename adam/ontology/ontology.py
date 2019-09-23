@@ -23,7 +23,6 @@ from adam.ontology import (
     REQUIRED_ONTOLOGY_NODES,
     THING,
 )
-
 # convenience method for use in Ontology
 from adam.ontology.action_description import ActionDescription
 from adam.ontology.structural_schema import ObjectStructuralSchema

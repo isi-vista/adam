@@ -140,6 +140,14 @@ class SimpleRuleBasedEnglishLanguageGenerator(
         """
 
         def generate(self) -> ImmutableSet[LinearizedDependencyTree]:
+            try:
+                return self._real_generate()
+            except Exception as e:
+                raise RuntimeError(
+                    f"Error while generating English for situation " f"{self.situation}"
+                ) from e
+
+        def _real_generate(self) -> ImmutableSet[LinearizedDependencyTree]:
             # The learner appears in a situation so they items may have spatial relations
             # with respect to it, but our language currently never refers to the learner itself.
 

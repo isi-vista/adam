@@ -3,13 +3,11 @@ Allows managing experimental configurations in code.
 """
 import logging
 from itertools import chain
-
 # for some reason, pylint doesn't recognize the types used in quoted type annotations
 from typing import Any, Callable, Generic, Sequence, Tuple  # pylint:disable=unused-import
 
 from attr import attrib, attrs
 from attr.validators import instance_of
-
 # noinspection PyProtectedMember
 from immutablecollections.converter_utils import _to_tuple
 from vistautils.preconditions import check_arg

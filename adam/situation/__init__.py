@@ -14,7 +14,6 @@ from immutablecollections import (
     immutableset,
     immutablesetmultidict,
 )
-
 # noinspection PyProtectedMember
 from immutablecollections.converter_utils import (
     _to_immutabledict,

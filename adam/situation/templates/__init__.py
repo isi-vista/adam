@@ -18,7 +18,6 @@ from immutablecollections import (
     immutabledict,
     immutableset,
 )
-
 # noinspection PyProtectedMember
 from immutablecollections.converter_utils import (
     _to_immutabledict,
