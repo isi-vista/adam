@@ -128,55 +128,33 @@ class CurriculumToHtmlDumper:
             html_out.write(f"<head>\n\t<style>{CSS}\n\t</style>\n</head>")
             html_out.write(f"\n<body>\n\t<h1>{title} - {instance_group.name()}</h1>")
             html_out.write("\n<h2>How to read</h2>")
+            html_out.write(f"\n<p>Our curiculum is designed in two levels: The objective, here - {instance_group.name()}")
             html_out.write(
-                "\n<p>Our curiculum is designed in two levels: The objective, here - {instance_group.name},"
                 "\n and a set of scenes for each objective. The scenes are in the shaded table below."
                 "\n For each scene, we display: "
                 "\n\t<li>Situation (column 1), which is used by the curriculum developer to specify key objects and actions,"
                 "\n but is unseen by the learner</li>."  
                 "\n\t<li>Language (column 2), the text presented to the learner</li>."  
                 "\n\t<li>Learner Perception (column 3), a textual representaiton of the perceptual features"
-                "\n presented to the learner</li>"             )
+                "\n presented to the learner</li>")
             html_out.write(
                 "<p> The perceptual features described in column 3 are presented to the learner in a"
                 "\n machine interpretable fashion (e.g. as attributes, variables, spatial properties). Here "
                 "\n to assist interpretation of the curriculum we serialize them as debugging text strings." 
                 "\n The following are descriptions of some of the perceptual inputs (and their serialization). "
             )
-            html_out.write(   
-                "\n<p>Properties</p>\n<ul>"
-                "\n\t<li>These define characteristics of an object that may influence perception and fulfillment of "
-                "semantic roles.</li> "
-                "\n\t<li>Meta-properties provide information about a property, e.g. whether or not a property can "
-                "be perceived by the learner.</li> "
-                "\n\t<li>OBJECT[PROPERTY_0[META_PROPERTY], PROPERTY_1, PROPERTY_2]</li> "
-                "\n</ul>\n<ul>\n<p>Relations</p> "
-                "\n\t<li>These define relations between two objects; e.g. smallerThan(A, B) indicates that object A is "
-                "smaller than object B.</li> "
-                "\n\t<li>IN_REGION is a special relation that holds between a SituationObject and a Region. These "
-                "relations can be nested, and for readability, they do not fall under 'Other Relations'."
-                "\n\t<li>RELATION(OBJECT_0, OBJECT_1)</li>"
-                "\n</ul>\n<ul>\n<p>Arrows</p>"
-                "\n\t<li>A relation preceded by 'Ø --->' is one that begins to exist by the end of the situation.</li>"
-                "\n\t<li>A relation followed by '---> Ø' is one that ceases to exist by the end of the situation.</li>"
-                "\n\t<li>A relation without an arrow holds true through the duration of the situation.</li>"
-                "\n</ul>\n<ul>\n<p>Part-of nesting</p>"
-                "\n\t<li>PART_OF relations indicate that an object is a part of another. Objects that form a "
-                "structural schema can be represented in terms of several part-of relations.</li> "
-                "\n\t<li>e.g. a finger is a part of a hand which is part of an arm which is part of a body</li>"
-                "\n</ul>\n<ul>\n<p>Regions</p> "
-                "\n\t<li>These represent regions of space. They are defined in terms of distance and/or direction with "
-                "respect to a reference object.</li>"
-                "\n\t<li>e.g. the inside of a box may be represented as Region(box, distance=INTERIOR, "
-                "direction=None)</li> "
-                "\n\t<li>Region(REFERENCE_OBJECT, distance=DISTANCE, direction=DIRECTION)</li>"
-                "\n</ul>\n<ul>\n<p>Spatial Paths</p>"
-                "\n\t<li>A SpatialPath specifies the path that some object takes during a situation. These are "
-                "defined in terms of a PathOperator and whether or not the orientation changed, with respect to a "
-                "reference object and an optional reference axis.</li>"
-                "\n\t<li>e.g. the path of a falling object may be represented as SpatialPath(operator=TOWARD, "
-                "reference_object=GROUND, reference_axis=None, orientation_changed=False)</li>"
-                "\n\t<li>SpatialPath(OPERATOR, REFERENCE_OBJECT, REFERENCE_AXIS, ORIENTATION_CHANGED)</li>"
+
+            html_out.write(
+                "\n\t<li>Part of relations (e.g. a head being a part of a person) are represented with the parts 
+                "\n\t appearing as sub-bullets of an object (e.g. head as a sub-bullet under person).</li>"
+                "\n\t<li>Numeric indices (e.g. person_0 person_1 leg_0, leg_1) distinguish between objects of the"
+                "\n\t same class. </li>"
+                "\n\t<li>Region and in-region relations describe the spatial relations between objects</li>"
+                "\n\t<li>SpatialPath describes the path that a object takes during a situation. The path"
+                "\n\t specifies if (and how) an object changes orientation. </li>"
+                "\n\t<li>State changes or relations are described with arrows. Relations that are instatiated"
+                "\n\t during the scene are preceded by 'Ø --->'. Those that cease to exist during a scene are" 
+                "\n\t followed by '---> Ø'  </li>"                
             )
             for (instance_number, (situation, dependency_tree, perception)) in enumerate(
                 instance_group.instances()
