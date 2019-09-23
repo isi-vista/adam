@@ -508,73 +508,6 @@ def _make_fly_curriculum():
     )
 
 
-_IS_SPEAKER = property_variable("is-speaker", IS_SPEAKER)
-_IS_ADDRESSEE = property_variable("is-addressee", IS_ADDRESSEE)
-
-
-def _make_speaker_addressess_curriculum():
-    speaker = object_variable("speaker_0", PERSON, added_properties=[_IS_SPEAKER])
-    addressee = object_variable("addressee_0", PERSON, added_properties=[_IS_ADDRESSEE])
-    given_object = object_variable("given_object", INANIMATE_OBJECT)
-
-    # "you give Mom the cookie"
-    addressee_as_agent = [
-        Phase1SituationTemplate(
-            "addressee-agent",
-            salient_object_variables=[speaker, addressee, given_object],
-            actions=[
-                Action(
-                    GIVE,
-                    argument_roles_to_fillers=[
-                        (AGENT, addressee),
-                        (GOAL, speaker),
-                        (THEME, given_object),
-                    ],
-                )
-            ],
-            syntax_hints=[PREFER_DITRANSITIVE] if prefer_ditransitive else [],
-        )
-        for prefer_ditransitive in (True, False)
-    ]
-
-    # "Mom gives you the cookie"
-    addressee_as_goal = [
-        Phase1SituationTemplate(
-            "addressee-goal",
-            salient_object_variables=[speaker, addressee, given_object],
-            actions=[
-                Action(
-                    GIVE,
-                    argument_roles_to_fillers=[
-                        (AGENT, speaker),
-                        (GOAL, addressee),
-                        (THEME, given_object),
-                    ],
-                )
-            ],
-            syntax_hints=[PREFER_DITRANSITIVE] if prefer_ditransitive else [],
-        )
-        for prefer_ditransitive in (True, False)
-    ]
-
-    return _phase1_instances(
-        "addressee_curriculum",
-        chain(
-            *[
-                flatten(
-                    sampled(
-                        template,
-                        max_to_sample=25,
-                        chooser=_CHOOSER,
-                        ontology=GAILA_PHASE_1_ONTOLOGY,
-                    )
-                    for template in (addressee_as_agent, addressee_as_goal)
-                ),
-            ]
-        ),
-    )
-
-
 def _make_roll_curriculum():
     animate_0 = object_variable("object_0", THING, required_properties=[ANIMATE])
     rollable_0 = object_variable(
@@ -647,6 +580,69 @@ def _make_roll_curriculum():
                     transitive_roll,
                     transitive_roll_with_surface,
                 )
+            ]
+        ),
+    )
+
+
+def _make_speaker_addressess_curriculum():
+    speaker = object_variable("speaker_0", PERSON, added_properties=[IS_SPEAKER])
+    addressee = object_variable("addressee_0", PERSON, added_properties=[IS_ADDRESSEE])
+    given_object = object_variable("given_object", INANIMATE_OBJECT)
+
+    # "you give Mom the cookie"
+    addressee_as_agent = [
+        Phase1SituationTemplate(
+            "addressee-agent",
+            salient_object_variables=[speaker, addressee, given_object],
+            actions=[
+                Action(
+                    GIVE,
+                    argument_roles_to_fillers=[
+                        (AGENT, addressee),
+                        (GOAL, speaker),
+                        (THEME, given_object),
+                    ],
+                )
+            ],
+            syntax_hints=[PREFER_DITRANSITIVE] if prefer_ditransitive else [],
+        )
+        for prefer_ditransitive in (True, False)
+    ]
+
+    # "Mom gives you the cookie"
+    addressee_as_goal = [
+        Phase1SituationTemplate(
+            "addressee-goal",
+            salient_object_variables=[speaker, addressee, given_object],
+            actions=[
+                Action(
+                    GIVE,
+                    argument_roles_to_fillers=[
+                        (AGENT, speaker),
+                        (GOAL, addressee),
+                        (THEME, given_object),
+                    ],
+                )
+            ],
+            syntax_hints=[PREFER_DITRANSITIVE] if prefer_ditransitive else [],
+        )
+        for prefer_ditransitive in (True, False)
+    ]
+
+    return _phase1_instances(
+        "addressee_curriculum",
+        chain(
+            *[
+                flatten(
+                    sampled(
+                        template,
+                        max_to_sample=25,
+                        chooser=_CHOOSER,
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                    )
+                    for template in (addressee_as_agent, addressee_as_goal)
+                ),
             ]
         ),
     )
