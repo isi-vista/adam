@@ -40,14 +40,14 @@ from adam.ontology.phase1_spatial_relations import (
     EXTERIOR_BUT_IN_CONTACT,
     FROM,
     GRAVITATIONAL_AXIS,
+    GRAVITATIONAL_DOWN,
+    GRAVITATIONAL_UP,
     INTERIOR,
     PROXIMAL,
     Region,
     SpatialPath,
     TO,
     TOWARD,
-    GRAVITATIONAL_UP,
-    GRAVITATIONAL_DOWN,
 )
 from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
 from adam.relation import (
@@ -1441,3 +1441,10 @@ GAILA_PHASE_1_ONTOLOGY = Ontology(
         opposite_type=SMALLER_THAN,
     ),
 )
+
+
+def is_recognized_particular(ontology: Ontology, node: OntologyNode) -> bool:
+    return any(
+        ontology.is_subtype_of(property_, RECOGNIZED_PARTICULAR_PROPERTY)
+        for property_ in ontology.properties_for_node(node)
+    )

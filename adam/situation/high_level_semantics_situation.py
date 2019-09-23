@@ -1,3 +1,4 @@
+from collections import Counter
 from itertools import chain
 
 from attr import attrib, attrs
@@ -9,6 +10,7 @@ from vistautils.preconditions import check_arg
 
 from adam.ontology import OntologyNode
 from adam.ontology.ontology import Ontology
+from adam.ontology.phase1_ontology import is_recognized_particular
 from adam.ontology.phase1_spatial_relations import Region
 from adam.relation import Relation, flatten_relations
 from adam.situation import Action, Situation, SituationObject
@@ -162,6 +164,21 @@ class HighLevelSemanticsSituation(Situation):
                 "Cannot specify relations to hold before or after actions "
                 "if there are no actions"
             )
+
+        # A situation cannot have multiple instances of the same recognized particular.
+        # This blocks e.g. Dad gave Dad a house.
+        recognized_particular_count = Counter(
+            object_.ontology_node
+            for object_ in self.all_objects
+            if is_recognized_particular(self.ontology, object_.ontology_node)
+        )
+        for (recognized_particular, count) in recognized_particular_count.items():
+            if count > 1:
+                raise RuntimeError(
+                    f"Cannot have two instances of a recognized particular in a "
+                    f"situation, but got {count} instances of {recognized_particular}"
+                    f" in {self}"
+                )
 
     def __repr__(self) -> str:
         # TODO: the way we currently repr situations doesn't handle multiple nodes
