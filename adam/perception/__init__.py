@@ -13,6 +13,7 @@ from immutablecollections.converter_utils import _to_immutableset
 from adam.language.language_generator import SituationT
 from adam.math_3d import Point
 from adam.ontology.during import DuringAction
+from adam.ontology.phase1_spatial_relations import Geon
 from adam.random_utils import SequenceChooser
 from adam.situation import LocatedObjectSituation
 
@@ -31,6 +32,7 @@ class ObjectPerception:
 
     It is for debugging use only and should not be accessed by any algorithms.
     """
+    geon: Optional[Geon] = attrib(validator=optional(instance_of(Geon)), default=None)
 
     def __repr__(self) -> str:
         return self.debug_handle

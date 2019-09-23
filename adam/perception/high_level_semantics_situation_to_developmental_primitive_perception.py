@@ -730,7 +730,8 @@ class _PerceptionGeneration:
         situation_object: Optional[SituationObject] = None,
     ) -> ObjectPerception:
         root_object_perception = ObjectPerception(
-            debug_handle=self._object_handle_generator.subscripted_handle(schema)
+            debug_handle=self._object_handle_generator.subscripted_handle(schema),
+            geon=schema.geon,
         )
         self._object_perceptions.append(root_object_perception)
 
@@ -753,7 +754,7 @@ class _PerceptionGeneration:
             self._object_perceptions.append(sub_object_perception)
             self._object_perceptions_to_ontology_nodes[
                 sub_object_perception
-            ] = sub_object.schema.parent_object
+            ] = sub_object.schema.ontology_node
             # every sub-component has an implicit partOf relationship to its parent object.
             self._relation_perceptions.append(
                 Relation(PART_OF, root_object_perception, sub_object_perception)

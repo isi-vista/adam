@@ -1,7 +1,7 @@
 from typing import Optional
 
 from attr import attrib, attrs
-from attr.validators import instance_of
+from attr.validators import instance_of, optional
 from immutablecollections import ImmutableSet, immutableset
 from immutablecollections.converter_utils import _to_immutableset
 
@@ -28,9 +28,6 @@ class ObjectStructuralSchema:
     """
 
     ontology_node: OntologyNode = attrib(validator=instance_of(OntologyNode))
-    geon: Optional[Geon] = attrib(validator=instance_of(Geon), default=None,
-                                  kw_only=True)
-
     """
     The `OntologyNode` this `ObjectStructuralSchema` represents the structure of.
     """
@@ -49,6 +46,9 @@ class ObjectStructuralSchema:
     r"""
     A set of `Relation`\ s which define how the `SubObject`\ s relate to one another. 
     """
+    geon: Optional[Geon] = attrib(
+        validator=optional(instance_of(Geon)), default=None, kw_only=True
+    )
 
 
 # need cmp=False to keep otherwise identical sub-components distinct

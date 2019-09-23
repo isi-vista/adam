@@ -48,7 +48,15 @@ from adam.ontology.phase1_spatial_relations import (
     TOWARD,
     GRAVITATIONAL_UP,
     GRAVITATIONAL_DOWN,
-    Geon, OVALISH, SMALL_TO_LARGE_TO_SMALL, CONSTANT, RECTANGULAR)
+    Geon,
+    OVALISH,
+    SMALL_TO_LARGE_TO_SMALL,
+    CONSTANT,
+    RECTANGULAR,
+    directed,
+    symmetric,
+    straight_up,
+)
 from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
 from adam.relation import (
     ObjectT,
@@ -609,38 +617,61 @@ _HAT_SCHEMA = ObjectStructuralSchema(HAT)
 _COOKIE_SCHEMA = ObjectStructuralSchema(COOKIE)
 _CUP_SCHEMA = ObjectStructuralSchema(CUP)
 _BOOK_SCHEMA = ObjectStructuralSchema(BOOK)
-_HAND_SCHEMA = ObjectStructuralSchema(ontology_node=HAND,
-                                      # we do not currently represent fingers
-                                      geon=Geon(
-                                          cross_section=RECTANGULAR,
-                                          cross_section_size=CONSTANT
-                                      )
-                                      )
-_HEAD_SCHEMA = ObjectStructuralSchema(HEAD,
-                                      geon=Geon(
-                                          cross_section=OVALISH,
-                                          cross_section_size=SMALL_TO_LARGE_TO_SMALL
-                                      ))
+_HAND_SCHEMA = ObjectStructuralSchema(
+    ontology_node=HAND,
+    # we do not currently represent fingers
+    geon=Geon(
+        cross_section=RECTANGULAR,
+        cross_section_size=CONSTANT,
+        generating_axis=directed(),
+        orienting_axes=[directed(), symmetric()],
+    ),
+)
+_HEAD_SCHEMA = ObjectStructuralSchema(
+    HEAD,
+    geon=Geon(
+        cross_section=OVALISH,
+        cross_section_size=SMALL_TO_LARGE_TO_SMALL,
+        generating_axis=straight_up(),
+        orienting_axes=[directed(), symmetric()],
+    ),
+)
 
 # Hierarchical structure of objects
-_TORSO_SCHEMA = ObjectStructuralSchema(_TORSO,
-                                       geon=Geon(
-                                           cross_section=OVALISH,
-                                           cross_section_size=CONSTANT
-                                       ))
+_TORSO_SCHEMA = ObjectStructuralSchema(
+    _TORSO,
+    geon=Geon(
+        cross_section=OVALISH,
+        cross_section_size=CONSTANT,
+        generating_axis=straight_up(),
+        orienting_axes=[directed(), symmetric()],
+    ),
+)
 # TODO: we shouldn't share a leg schema between humans and tables
 # https://github.com/isi-vista/adam/issues/265
-_LEG_SCHEMA = ObjectStructuralSchema(_LEG,
-                                     geon=Geon(
-                                         cross_section=OVALISH,
-                                         cross_section_size=CONSTANT,
-                                     ))
+_LEG_SCHEMA = ObjectStructuralSchema(
+    _LEG,
+    geon=Geon(
+        cross_section=OVALISH,
+        cross_section_size=CONSTANT,
+        generating_axis=directed(),
+        orienting_axes=[symmetric(), symmetric()],
+    ),
+)
 _CHAIRBACK_SCHEMA = ObjectStructuralSchema(_CHAIR_BACK)
 _CHAIR_SEAT_SCHEMA = ObjectStructuralSchema(_CHAIR_SEAT)
 _TABLETOP_SCHEMA = ObjectStructuralSchema(_TABLETOP)
 _TAIL_SCHEMA = ObjectStructuralSchema(_TAIL)
 _WING_SCHEMA = ObjectStructuralSchema(_WING)
-_ARM_SEGMENT_SCHEMA = ObjectStructuralSchema(_ARM_SEGMENT)
+_ARM_SEGMENT_SCHEMA = ObjectStructuralSchema(
+    _ARM_SEGMENT,
+    geon=Geon(
+        cross_section=OVALISH,
+        cross_section_size=CONSTANT,
+        generating_axis=directed(),
+        orienting_axes=[symmetric(), symmetric()],
+    ),
+)
 _ROOF_SCHEMA = ObjectStructuralSchema(_ROOF)
 _WALL_SCHEMA = ObjectStructuralSchema(_WALL)
 _TIRE_SCHEMA = ObjectStructuralSchema(_TIRE)
@@ -656,10 +687,6 @@ _ARM_SCHEMA_LOWER = SubObject(_ARM_SEGMENT_SCHEMA)
 
 _ARM_SCHEMA = ObjectStructuralSchema(
     ontology_node=_ARM,
-    geon=Geon(
-        cross_section=OVALISH,
-        cross_section_size=CONSTANT
-    ),
     sub_objects=[_ARM_SCHEMA_HAND, _ARM_SCHEMA_LOWER, _ARM_SCHEMA_UPPER],
     sub_object_relations=flatten_relations(
         [contacts([_ARM_SCHEMA_UPPER, _ARM_SCHEMA_HAND], _ARM_SCHEMA_LOWER)]
