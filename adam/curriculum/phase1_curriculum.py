@@ -31,7 +31,6 @@ from adam.ontology.phase1_ontology import (
     GROUND,
     HAS,
     HAS_SPACE_UNDER,
-    HOLLOW,
     INANIMATE_OBJECT,
     IS_BODY_PART,
     LEARNER,
@@ -45,14 +44,12 @@ from adam.ontology.phase1_ontology import (
     ROLL_SURFACE_AUXILIARY,
     THEME,
     TRANSFER_OF_POSSESSION,
-    bigger_than,
-    inside,
     on,
     HOLLOW,
     DRINK,
     bigger_than,
     inside,
-)
+    DRINK_CONTAINER_AUX)
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
     DISTAL,
@@ -598,12 +595,12 @@ def _make_drink_curriculum():
         salient_object_variables=[object_0, liquid_0, person_0],
         actions=[
             Action(
-                DRINK, argument_roles_to_fillers=[(AGENT, person_0), (THEME, liquid_0)]
+                DRINK,
+                argument_roles_to_fillers=[(AGENT, person_0), (THEME, liquid_0)],
+                auxiliary_variable_bindings=[(DRINK_CONTAINER_AUX, object_0)],
             )
         ],
-        asserted_always_relations=[
-            inside(liquid_0, object_0),
-        ],
+        asserted_always_relations=[inside(liquid_0, object_0)],
     )
 
     return _phase1_instances(
