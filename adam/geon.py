@@ -64,6 +64,10 @@ def symmetric(debug_name: str) -> GeonAxis:
     return GeonAxis(debug_name, directed=False)
 
 
+def symmetric_verical(debug_name: str) -> GeonAxis:
+    return GeonAxis(debug_name, directed=False, aligned_to_gravitational=True)
+
+
 @attrs(slots=True, frozen=True)
 class Geon:
     cross_section: CrossSection = attrib(

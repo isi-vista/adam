@@ -31,6 +31,7 @@ from adam.geon import (
     directed,
     straight_up,
     symmetric,
+    symmetric_verical,
 )
 from adam.ontology import (
     ACTION,
@@ -633,32 +634,142 @@ _GROUND_SCHEMA = ObjectStructuralSchema(ontology_node=GROUND)
 
 # Structural Objects without Sub-Parts which are part of our Phase 1 Vocabulary
 # These may need to evolve to reflect the changes for visualization of phase 1
-_DOOR_SCHEMA = ObjectStructuralSchema(
-    ontology_node=DOOR, geon=Geon(cross_section=RECTANGULAR, cross_section_size=CONSTANT)
-)
-_BALL_SCHEMA = ObjectStructuralSchema(
-    ontology_node=BALL,
-    geon=Geon(cross_section=CIRCULAR, cross_section_size=SMALL_TO_LARGE_TO_SMALL),
-)
+def _make_door_schema() -> ObjectStructuralSchema:
+    hinges_to_edge = directed("hinges-to-edge")
+    bottom_to_top = directed("bottom-to-top")
+    interior_to_exterior = directed("interior-to-exterior")
+
+    return ObjectStructuralSchema(
+        ontology_node=DOOR,
+        geon=Geon(
+            cross_section=RECTANGULAR,
+            cross_section_size=CONSTANT,
+            generating_axis=interior_to_exterior,
+            orienting_axes=[hinges_to_edge, bottom_to_top],
+            axis_relations=[
+                bigger_than(bottom_to_top, hinges_to_edge),
+                much_bigger_than(bottom_to_top, interior_to_exterior),
+                bigger_than(hinges_to_edge, interior_to_exterior),
+            ],
+        ),
+    )
+
+
+_DOOR_SCHEMA = _make_door_schema()
+
+
+def _make_ball_schema() -> ObjectStructuralSchema:
+    generating_axis = symmetric_verical("ball-generating")
+    orienting_axis = symmetric("ball-orienting")
+
+    return ObjectStructuralSchema(
+        ontology_node=BALL,
+        geon=Geon(
+            cross_section=CIRCULAR,
+            cross_section_size=SMALL_TO_LARGE_TO_SMALL,
+            generating_axis=generating_axis,
+            orienting_axes=[orienting_axis, orienting_axis],
+        ),
+    )
+
+
+_BALL_SCHEMA = _make_ball_schema()
+
+
 _WATER_SCHEMA = ObjectStructuralSchema(WATER)
 _JUICE_SCHEMA = ObjectStructuralSchema(JUICE)
-_BOX_SCHEMA = ObjectStructuralSchema(
-    ontology_node=BOX, geon=Geon(cross_section=RECTANGULAR, cross_section_size=CONSTANT)
-)
+
+
+def _make_box_schema() -> ObjectStructuralSchema:
+    top_to_bottom = straight_up("top-to-bottom")
+    side_to_side = symmetric("side-to-side")
+
+    return ObjectStructuralSchema(
+        ontology_node=BOX,
+        geon=Geon(
+            cross_section=RECTANGULAR,
+            cross_section_size=CONSTANT,
+            generating_axis=top_to_bottom,
+            orienting_axes=[side_to_side, side_to_side],
+        ),
+    )
+
+
+_BOX_SCHEMA = _make_box_schema()
 _MILK_SCHEMA = ObjectStructuralSchema(MILK)
-_HAT_SCHEMA = ObjectStructuralSchema(
-    ontology_node=HAT, geon=Geon(cross_section=OVALISH, cross_section_size=LARGE_TO_SMALL)
-)
-_COOKIE_SCHEMA = ObjectStructuralSchema(
-    ontology_node=COOKIE, geon=Geon(cross_section=CIRCULAR, cross_section_size=CONSTANT)
-)
-_CUP_SCHEMA = ObjectStructuralSchema(
-    ontology_node=CUP,
-    geon=Geon(cross_section=CIRCULAR, cross_section_size=SMALL_TO_LARGE),
-)
-_BOOK_SCHEMA = ObjectStructuralSchema(
-    ontology_node=BOOK, geon=Geon(cross_section=RECTANGULAR, cross_section_size=CONSTANT)
-)
+
+
+def _make_hat_schema() -> ObjectStructuralSchema:
+    brim_to_top = straight_up("brim-to-top")
+    side_to_side = symmetric("side-to-side")
+
+    return ObjectStructuralSchema(
+        ontology_node=HAT,
+        geon=Geon(
+            cross_section=OVALISH,
+            cross_section_size=LARGE_TO_SMALL,
+            generating_axis=brim_to_top,
+            orienting_axes=[side_to_side, side_to_side],
+        ),
+    )
+
+
+_HAT_SCHEMA = _make_hat_schema()
+
+
+def _make_cookie_schema() -> ObjectStructuralSchema:
+    bottom_to_top = straight_up("bottom-to-top")
+    side_to_side = symmetric("side-to-side")
+
+    return ObjectStructuralSchema(
+        ontology_node=COOKIE,
+        geon=Geon(
+            cross_section=CIRCULAR,
+            cross_section_size=CONSTANT,
+            generating_axis=bottom_to_top,
+            orienting_axes=[side_to_side, side_to_side],
+        ),
+    )
+
+
+_COOKIE_SCHEMA = _make_cookie_schema()
+
+
+def _make_cup_schema() -> ObjectStructuralSchema:
+    bottom_to_top = straight_up("bottom-to-top")
+    side_to_side = symmetric("side-to-side")
+
+    return ObjectStructuralSchema(
+        ontology_node=CUP,
+        geon=Geon(
+            cross_section=CIRCULAR,
+            cross_section_size=SMALL_TO_LARGE,
+            generating_axis=bottom_to_top,
+            orienting_axes=[side_to_side, side_to_side],
+        ),
+    )
+
+
+_CUP_SCHEMA = _make_cup_schema()
+
+
+def _make_book_schema() -> ObjectStructuralSchema:
+    back_cover_to_front_cover = directed("back-cover-to-front-cover")
+    spine_to_edges = directed("spine-to-edges")
+    edges_to_edges = straight_up("edges-to-edges")
+
+    return ObjectStructuralSchema(
+        ontology_node=BOOK,
+        geon=Geon(
+            cross_section=RECTANGULAR,
+            cross_section_size=CONSTANT,
+            generating_axis=edges_to_edges,
+            orienting_axes=[back_cover_to_front_cover, spine_to_edges],
+        ),
+    )
+
+
+_BOOK_SCHEMA = _make_book_schema()
 
 
 def _make_hand_schema() -> ObjectStructuralSchema:
@@ -757,51 +868,215 @@ def _make_human_leg_schema():
 # https://github.com/isi-vista/adam/issues/265
 _LEG_SCHEMA = _make_human_leg_schema()
 
-_CHAIRBACK_SCHEMA = ObjectStructuralSchema(
-    ontology_node=_CHAIR_BACK,
-    geon=Geon(cross_section=IRREGULAR, cross_section_size=CONSTANT),
-)
-_CHAIR_SEAT_SCHEMA = ObjectStructuralSchema(
-    ontology_node=_CHAIR_SEAT,
-    geon=Geon(cross_section=OVALISH, cross_section_size=CONSTANT),
-)
-_TABLETOP_SCHEMA = ObjectStructuralSchema(
-    ontology_node=_TABLETOP,
-    geon=Geon(cross_section=RECTANGULAR, cross_section_size=CONSTANT),
-)
-_TAIL_SCHEMA = ObjectStructuralSchema(
-    ontology_node=_TAIL,
-    geon=Geon(cross_section=OVALISH, cross_section_size=LARGE_TO_SMALL),
-)
-_WING_SCHEMA = ObjectStructuralSchema(
-    ontology_node=_WING, geon=Geon(cross_section=IRREGULAR, cross_section_size=CONSTANT)
-)
-_ARM_SEGMENT_SCHEMA = ObjectStructuralSchema(
-    ontology_node=_ARM_SEGMENT,
-    geon=Geon(
-        cross_section=OVALISH,
-        cross_section_size=CONSTANT,
-        generating_axis=directed(),
-        orienting_axes=[symmetric(), symmetric()],
-    ),
-)
-_ROOF_SCHEMA = ObjectStructuralSchema(
-    ontology_node=_ROOF,
-    geon=Geon(cross_section=RECTANGULAR, cross_section_size=LARGE_TO_SMALL),
-)
-_WALL_SCHEMA = ObjectStructuralSchema(
-    ontology_node=_WALL, geon=Geon(cross_section=RECTANGULAR, cross_section_size=CONSTANT)
-)
-_TIRE_SCHEMA = ObjectStructuralSchema(
-    ontology_node=_TIRE, geon=Geon(cross_section=CIRCULAR, cross_section_size=CONSTANT)
-)
-_FLATBED_SCHEMA = ObjectStructuralSchema(
-    ontology_node=_FLATBED,
-    geon=Geon(cross_section=RECTANGULAR, cross_section_size=CONSTANT),
-)
-_BODY_SCHEMA = ObjectStructuralSchema(
-    ontology_node=_BODY, geon=Geon(cross_section=IRREGULAR, cross_section_size=CONSTANT)
-)
+
+def _make_chair_back_schema() -> ObjectStructuralSchema:
+    bottom_to_top = straight_up("bottom-to-top")
+    front_to_back = directed("front-to-back")
+    side_to_side = directed("side-to-side")
+
+    return ObjectStructuralSchema(
+        ontology_node=_CHAIR_BACK,
+        geon=Geon(
+            cross_section=IRREGULAR,
+            cross_section_size=CONSTANT,
+            generating_axis=front_to_back,
+            orienting_axes=[bottom_to_top, side_to_side],
+            axis_relations=[
+                bigger_than(bottom_to_top, front_to_back),
+                bigger_than(bottom_to_top, side_to_side),
+            ],
+        ),
+    )
+
+
+_CHAIRBACK_SCHEMA = _make_chair_back_schema()
+
+
+def _make_chair_seat_schema() -> ObjectStructuralSchema:
+    bottom_to_top = straight_up("bottom-to-top")
+    front_edge_to_back_edge = directed("front-to-back")
+    side_to_side = directed("side-to-side")
+
+    return ObjectStructuralSchema(
+        ontology_node=_CHAIR_SEAT,
+        geon=Geon(
+            cross_section=OVALISH,
+            cross_section_size=CONSTANT,
+            generating_axis=bottom_to_top,
+            orienting_axes=[front_edge_to_back_edge, side_to_side],
+        ),
+    )
+
+
+_CHAIR_SEAT_SCHEMA = _make_chair_seat_schema()
+
+
+def _make_table_top_schema() -> ObjectStructuralSchema:
+    bottom_to_top = straight_up("bottom-to-top")
+    side_to_side = directed("side-to-side")
+    front_to_back = directed("front-to-back")
+
+    return ObjectStructuralSchema(
+        ontology_node=_TABLETOP,
+        geon=Geon(
+            cross_section=RECTANGULAR,
+            cross_section_size=CONSTANT,
+            generating_axis=bottom_to_top,
+            orienting_axes=[side_to_side, front_to_back],
+            axis_relations=[
+                bigger_than(side_to_side, bottom_to_top),
+                bigger_than(front_to_back, bottom_to_top),
+            ],
+        ),
+    )
+
+
+_TABLETOP_SCHEMA = _make_table_top_schema()
+
+
+def _make_tail_schema() -> ObjectStructuralSchema:
+    edge_to_tip = directed("edge-to-tip")
+    side_to_side = symmetric("side-to-side")
+
+    return ObjectStructuralSchema(
+        ontology_node=_TAIL,
+        geon=Geon(
+            cross_section=OVALISH,
+            cross_section_size=LARGE_TO_SMALL,
+            generating_axis=edge_to_tip,
+            orienting_axes=[side_to_side, side_to_side],
+            axis_relations=[bigger_than(edge_to_tip, side_to_side)],
+        ),
+    )
+
+
+_TAIL_SCHEMA = _make_tail_schema()
+
+
+def _make_wing_schema() -> ObjectStructuralSchema:
+    edge_to_tip = directed("edge-to-tip")
+    bottom_to_top = straight_up("bottom-to-top")
+    front_to_back = directed("front-to-back")
+
+    return ObjectStructuralSchema(
+        ontology_node=_WING,
+        geon=Geon(
+            cross_section=IRREGULAR,
+            cross_section_size=CONSTANT,
+            generating_axis=edge_to_tip,
+            orienting_axes=[bottom_to_top, front_to_back],
+            axis_relations=[
+                bigger_than(edge_to_tip, bottom_to_top),
+                bigger_than(front_to_back, bottom_to_top),
+            ],
+        ),
+    )
+
+
+_WING_SCHEMA = _make_wing_schema()
+
+
+def _make_roof_schema() -> ObjectStructuralSchema:
+    bottom_to_shingles = straight_up("bottom-to-shingles")
+    front_to_back = directed("front-to-back")
+    side_to_side = directed("side-to-side")
+
+    return ObjectStructuralSchema(
+        ontology_node=_ROOF,
+        geon=Geon(
+            cross_section=RECTANGULAR,
+            cross_section_size=LARGE_TO_SMALL,
+            generating_axis=bottom_to_shingles,
+            orienting_axes=[front_to_back, side_to_side],
+        ),
+    )
+
+
+_ROOF_SCHEMA = _make_roof_schema()
+
+
+def _make_wall_schema() -> ObjectStructuralSchema:
+    bottom_to_top = straight_up("bottom-to-top")
+    edge_to_edge = directed("edge-to-edge")
+    face_to_face = directed("face-to-face")
+
+    return ObjectStructuralSchema(
+        ontology_node=_WALL,
+        geon=Geon(
+            cross_section=RECTANGULAR,
+            cross_section_size=CONSTANT,
+            generating_axis=bottom_to_top,
+            orienting_axes=[edge_to_edge, face_to_face],
+            axis_relations=[
+                bigger_than(edge_to_edge, face_to_face),
+                bigger_than(bottom_to_top, face_to_face),
+            ],
+        ),
+    )
+
+
+_WALL_SCHEMA = _make_wall_schema()
+
+
+def _make_tire_schema() -> ObjectStructuralSchema:
+    front_to_back = directed("front-to-back")
+    tread_to_tread = symmetric("tread-to-tread")
+
+    return ObjectStructuralSchema(
+        ontology_node=_TIRE,
+        geon=Geon(
+            cross_section=CIRCULAR,
+            cross_section_size=CONSTANT,
+            generating_axis=front_to_back,
+            orienting_axes=[tread_to_tread, tread_to_tread],
+        ),
+    )
+
+
+_TIRE_SCHEMA = _make_tire_schema()
+
+
+def _make_flat_bed_schema() -> ObjectStructuralSchema:
+    bottom_to_bed = straight_up("bottom-to-bed")
+    front_to_back = directed("front-to-back")
+    side_to_side = directed("side-to-side")
+
+    return ObjectStructuralSchema(
+        ontology_node=_FLATBED,
+        geon=Geon(
+            cross_section=RECTANGULAR,
+            cross_section_size=CONSTANT,
+            generating_axis=bottom_to_bed,
+            orienting_axes=[front_to_back, side_to_side],
+            axis_relations=[
+                bigger_than(front_to_back, side_to_side),
+                bigger_than(front_to_back, bottom_to_bed),
+                bigger_than(side_to_side, bottom_to_bed),
+            ],
+        ),
+    )
+
+
+_FLATBED_SCHEMA = _make_flat_bed_schema()
+
+
+def _make_body_schema() -> ObjectStructuralSchema:
+    bottom_to_top = straight_up("bottom-to-top")
+    front_to_back = directed("front-to-back")
+    side_to_side = directed("side-to-side")
+
+    return ObjectStructuralSchema(
+        ontology_node=_BODY,
+        geon=Geon(
+            cross_section=IRREGULAR,
+            cross_section_size=CONSTANT,
+            generating_axis=bottom_to_top,
+            orienting_axes=[front_to_back, side_to_side],
+        ),
+    )
+
+
+_BODY_SCHEMA = _make_body_schema()
 
 
 def _make_human_arm_segment():
@@ -825,11 +1100,6 @@ def _make_human_arm_segment():
 
 
 _ARM_SEGMENT_SCHEMA = _make_human_arm_segment()
-_ROOF_SCHEMA = ObjectStructuralSchema(_ROOF)
-_WALL_SCHEMA = ObjectStructuralSchema(_WALL)
-_TIRE_SCHEMA = ObjectStructuralSchema(_TIRE)
-_FLATBED_SCHEMA = ObjectStructuralSchema(_FLATBED)
-_BODY_SCHEMA = ObjectStructuralSchema(_BODY)
 
 # schemata describing the sub-object structural nature of a Human Arm
 _ARM_SCHEMA_HAND = SubObject(_HAND_SCHEMA)
@@ -840,7 +1110,6 @@ _ARM_SCHEMA_LOWER = SubObject(_ARM_SEGMENT_SCHEMA)
 
 _ARM_SCHEMA = ObjectStructuralSchema(
     ontology_node=_ARM,
-    geon=Geon(cross_section=OVALISH, cross_section_size=CONSTANT),
     sub_objects=[_ARM_SCHEMA_HAND, _ARM_SCHEMA_LOWER, _ARM_SCHEMA_UPPER],
     sub_object_relations=flatten_relations(
         [contacts([_ARM_SCHEMA_UPPER, _ARM_SCHEMA_HAND], _ARM_SCHEMA_LOWER)]
