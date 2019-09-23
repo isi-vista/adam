@@ -230,7 +230,7 @@ class _PerceptionGeneration:
         if (
             quantify(
                 property_ == IS_SPEAKER
-                for object_ in self._situation.objects
+                for object_ in self._situation.all_objects
                 for property_ in object_.properties
             )
             > 1
@@ -527,7 +527,7 @@ class _PerceptionGeneration:
             return action_object_variables_to_object_perceptions[slot_filler]
 
     def _perceive_property_assertions(self) -> None:
-        for situation_object in self._situation.objects:
+        for situation_object in self._situation.all_objects:
             # process explicitly and implicitly-specified properties
             all_object_properties: List[OntologyNode] = []
             # Explicit properties are stipulated by the user in the situation description.
@@ -653,14 +653,14 @@ class _PerceptionGeneration:
     def _perceive_objects(self) -> None:
         if not any(
             situation_object.ontology_node == GROUND
-            for situation_object in self._situation.objects
+            for situation_object in self._situation.all_objects
         ):
             ground_schemata = only(self._generator.ontology.structural_schemata(GROUND))
             ground_observed = self._instantiate_object_schema(
                 ground_schemata, situation_object=SituationObject(GROUND)
             )
             self._object_perceptions_to_ontology_nodes[ground_observed] = GROUND
-        for situation_object in self._situation.objects:
+        for situation_object in self._situation.all_objects:
             if not situation_object.ontology_node:
                 raise RuntimeError(
                     "Don't yet know how to handle situation objects without "
