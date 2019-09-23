@@ -673,6 +673,7 @@ def _make_eat_curriculum():
     )
 
     # TODO: "eat it up"
+    # https://github.com/isi-vista/adam/issues/267
 
     return _phase1_instances(
         "eating",
