@@ -24,6 +24,7 @@ from adam.ontology.phase1_ontology import (
     PART_OF,
     PERCEIVABLE,
     TWO_DIMENSIONAL,
+    LEARNER,
 )
 from adam.ontology.phase1_spatial_relations import INTERIOR, Region, SpatialPath
 from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
@@ -689,6 +690,15 @@ class _PerceptionGeneration:
                 ground_schemata, situation_object=SituationObject(GROUND)
             )
             self._object_perceptions_to_ontology_nodes[ground_observed] = GROUND
+        if not any(
+            situation_object.ontology_node == LEARNER
+            for situation_object in self._situation.all_objects
+        ):
+            learner_schemata = only(self._generator.ontology.structural_schemata(LEARNER))
+            learner_observed = self._instantiate_object_schema(
+                learner_schemata, situation_object=SituationObject(LEARNER)
+            )
+            self._object_perceptions_to_ontology_nodes[learner_observed] = LEARNER
         for situation_object in self._situation.all_objects:
             if not situation_object.ontology_node:
                 raise RuntimeError(

@@ -601,6 +601,7 @@ strictly_above = make_opposite_dsl_region_relation(  # pylint:disable=invalid-na
 
 
 _GROUND_SCHEMA = ObjectStructuralSchema(GROUND)
+_LEARNER_SCHEMA = ObjectStructuralSchema(LEARNER)
 
 # Structural Objects without Sub-Parts which are part of our Phase 1 Vocabulary
 # These may need to evolve to reflect the changes for visualization of phase 1
@@ -1416,6 +1417,7 @@ GAILA_PHASE_1_ONTOLOGY = Ontology(
         (CAR, _CAR_SCHEMA),
         (TRUCK, _TRUCK_SCHEMA),
         (GROUND, _GROUND_SCHEMA),
+        (LEARNER, _LEARNER_SCHEMA),
     ],
     action_to_description=_ACTIONS_TO_DESCRIPTIONS,
     relations=build_size_relationships(
