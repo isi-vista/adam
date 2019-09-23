@@ -194,6 +194,8 @@ CAN_FLY = OntologyNode("can-fly")
 subtype(CAN_FLY, PROPERTY)
 HAS_SPACE_UNDER = OntologyNode("has-space-under")
 subtype(HAS_SPACE_UNDER, PROPERTY)
+EDIBLE = OntologyNode("edible")
+subtype(EDIBLE, PROPERTY)
 
 COLOR = OntologyNode("color")
 subtype(COLOR, PERCEIVABLE_PROPERTY)
@@ -279,11 +281,13 @@ CAR = OntologyNode(
 )
 subtype(CAR, INANIMATE_OBJECT)
 WATER = OntologyNode(
-    "water", [LIQUID], non_inheritable_properties=[TRANSPARENT, CAN_FILL_TEMPLATE_SLOT]
+    "water",
+    [LIQUID],
+    non_inheritable_properties=[TRANSPARENT, CAN_FILL_TEMPLATE_SLOT, EDIBLE],
 )
 subtype(WATER, INANIMATE_OBJECT)
 JUICE = OntologyNode(
-    "juice", [LIQUID], non_inheritable_properties=[RED, CAN_FILL_TEMPLATE_SLOT]
+    "juice", [LIQUID], non_inheritable_properties=[RED, CAN_FILL_TEMPLATE_SLOT, EDIBLE]
 )
 subtype(JUICE, INANIMATE_OBJECT)
 CUP = OntologyNode("cup", [HOLLOW, CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE])
@@ -304,7 +308,7 @@ HEAD = OntologyNode(
 )
 subtype(HEAD, INANIMATE_OBJECT)
 MILK = OntologyNode(
-    "milk", [LIQUID], non_inheritable_properties=[WHITE, CAN_FILL_TEMPLATE_SLOT]
+    "milk", [LIQUID], non_inheritable_properties=[WHITE, CAN_FILL_TEMPLATE_SLOT, EDIBLE]
 )
 subtype(MILK, INANIMATE_OBJECT)
 HAND = OntologyNode(
@@ -326,7 +330,9 @@ DOOR = OntologyNode("door", [CAN_FILL_TEMPLATE_SLOT])
 subtype(DOOR, INANIMATE_OBJECT)
 HAT = OntologyNode("hat", [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE])
 subtype(HAT, INANIMATE_OBJECT)
-COOKIE = OntologyNode("cookie", [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, ROLLABLE])
+COOKIE = OntologyNode(
+    "cookie", [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, ROLLABLE, EDIBLE]
+)
 subtype(COOKIE, INANIMATE_OBJECT)
 
 PERSON = OntologyNode("person", inheritable_properties=[ANIMATE, SELF_MOVING, CAN_JUMP])
