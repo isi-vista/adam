@@ -510,7 +510,6 @@ def _make_fly_curriculum():
 
 _IS_SPEAKER = property_variable("is-speaker", IS_SPEAKER)
 _IS_ADDRESSEE = property_variable("is-addressee", IS_ADDRESSEE)
-# TODO: Ryan see the above, is this the correct way to add these properties to the objects?
 
 
 def _make_speaker_addressess_curriculum():
@@ -521,7 +520,8 @@ def _make_speaker_addressess_curriculum():
     # "you give Mom the cookie"
     addressee_as_agent = [
         Phase1SituationTemplate(
-            object_variables=[speaker, addressee, given_object],
+            "addressee-agent",
+            salient_object_variables=[speaker, addressee, given_object],
             actions=[
                 Action(
                     GIVE,
@@ -540,7 +540,8 @@ def _make_speaker_addressess_curriculum():
     # "Mom gives you the cookie"
     addressee_as_goal = [
         Phase1SituationTemplate(
-            object_variables=[speaker, addressee, given_object],
+            "addressee-goal",
+            salient_object_variables=[speaker, addressee, given_object],
             actions=[
                 Action(
                     GIVE,
@@ -563,20 +564,11 @@ def _make_speaker_addressess_curriculum():
                 flatten(
                     sampled(
                         template,
-                        max_to_sample=50,
+                        max_to_sample=25,
                         chooser=_CHOOSER,
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                     )
-                    for template in addressee_as_agent
-                ),
-                flatten(
-                    sampled(
-                        template,
-                        max_to_sample=50,
-                        chooser=_CHOOSER,
-                        ontology=GAILA_PHASE_1_ONTOLOGY,
-                    )
-                    for template in addressee_as_goal
+                    for template in (addressee_as_agent, addressee_as_goal)
                 ),
             ]
         ),
