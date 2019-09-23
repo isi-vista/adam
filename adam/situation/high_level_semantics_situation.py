@@ -1,3 +1,5 @@
+from itertools import chain
+
 from attr import attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import ImmutableSet, immutableset
@@ -23,12 +25,23 @@ class HighLevelSemanticsSituation(Situation):
     What `Ontology` items from the objects, relations, and actions 
     in this `Situation` will come from.
     """
-    objects: ImmutableSet[SituationObject] = attrib(converter=_to_immutableset)
+    salient_objects: ImmutableSet[SituationObject] = attrib(converter=_to_immutableset)
     """
-    All the objects present in a `Situation`.
+    The salient objects present in a `Situation`.  
+    This will usually be the ones expressed in the linguistic form.
     """
+    other_objects: ImmutableSet[SituationObject] = attrib(
+        converter=_to_immutableset, default=immutableset()
+    )
+    r"""
+    These are other objects appearing in the situation which are less important.
+    For example, the cup holding a liquid being drunk.
+    
+    These typically correspond to auxiliary variables in `ActionDescription`\ s.
+    """
+    all_objects: ImmutableSet[SituationObject] = attrib(init=False)
     always_relations: ImmutableSet[Relation[SituationObject]] = attrib(
-        converter=flatten_relations, default=immutableset()
+        converter=flatten_relations, default=immutableset(), kw_only=True
     )
     """
     The relations which hold in this `Situation`,
@@ -42,7 +55,7 @@ class HighLevelSemanticsSituation(Situation):
     Those are handled automatically. 
     """
     before_action_relations: ImmutableSet[Relation[SituationObject]] = attrib(
-        converter=flatten_relations, default=immutableset()
+        converter=flatten_relations, default=immutableset(), kw_only=True
     )
     """
     The relations which hold in this `Situation`,
@@ -56,7 +69,7 @@ class HighLevelSemanticsSituation(Situation):
     Those are handled automatically. 
     """
     after_action_relations: ImmutableSet[Relation[SituationObject]] = attrib(
-        converter=flatten_relations, default=immutableset()
+        converter=flatten_relations, default=immutableset(), kw_only=True
     )
     """
     The relations which hold in this `Situation`,
@@ -70,7 +83,7 @@ class HighLevelSemanticsSituation(Situation):
     Those are handled automatically. 
     """
     actions: ImmutableSet[Action[OntologyNode, SituationObject]] = attrib(
-        converter=_to_immutableset, default=immutableset()
+        converter=_to_immutableset, default=immutableset(), kw_only=True
     )
     """
     The actions occurring in this `Situation`
@@ -79,13 +92,15 @@ class HighLevelSemanticsSituation(Situation):
     """
     Bool representing whether the situation has any actions, i.e is dynamic. 
     """
-    gazed_objects: ImmutableSet[SituationObject] = attrib(converter=_to_immutableset)
+    gazed_objects: ImmutableSet[SituationObject] = attrib(
+        converter=_to_immutableset, kw_only=True
+    )
     r"""
     A set of `SituationObject` s which are the focus of the speaker. 
     Defaults to all semantic role fillers of situation actions.
     """
     syntax_hints: ImmutableSet[str] = attrib(
-        converter=_to_immutableset, default=immutableset()
+        converter=_to_immutableset, default=immutableset(), kw_only=True
     )
     """
     A temporary hack to allow control of language generation decisions
@@ -100,7 +115,7 @@ class HighLevelSemanticsSituation(Situation):
         return query_relation in self.always_relations
 
     def __attrs_post_init__(self) -> None:
-        check_arg(self.objects, "A situation must contain at least one object")
+        check_arg(self.salient_objects, "A situation must contain at least one object")
         for relation in self.always_relations:
             if not isinstance(relation.first_slot, SituationObject) or not isinstance(
                 relation.second_slot, (SituationObject, Region)
@@ -113,12 +128,12 @@ class HighLevelSemanticsSituation(Situation):
         for relation in self.always_relations:
             if (
                 isinstance(relation.second_slot, Region)
-                and relation.second_slot.reference_object not in self.objects
+                and relation.second_slot.reference_object not in self.all_objects
             ):
                 raise RuntimeError(
                     f"Any object referred to by a region must be included in the "
                     f"set of situation objects but region {relation.second_slot}"
-                    f" with situation objects {self.objects}"
+                    f" with situation objects {self.all_objects}"
                 )
         for action in self.actions:
             for action_role_filler in flatten(
@@ -126,7 +141,7 @@ class HighLevelSemanticsSituation(Situation):
             ):
                 if (
                     isinstance(action_role_filler, SituationObject)
-                    and action_role_filler not in self.objects
+                    and action_role_filler not in self.all_objects
                 ):
                     raise RuntimeError(
                         "Any object filling a semantic role must be included in the "
@@ -134,7 +149,7 @@ class HighLevelSemanticsSituation(Situation):
                     )
                 elif (
                     isinstance(action_role_filler, Region)
-                    and action_role_filler.reference_object not in self.objects
+                    and action_role_filler.reference_object not in self.all_objects
                 ):
                     raise RuntimeError(
                         "Any object referred to by a region must be included in the "
@@ -155,7 +170,7 @@ class HighLevelSemanticsSituation(Situation):
         # level and not delegating to the reprs of the sub-objects.
         # https://github.com/isi-vista/adam/issues/62
         lines = ["{"]
-        lines.extend(f"\t{obj!r}" for obj in self.objects)
+        lines.extend(f"\t{obj!r}" for obj in self.all_objects)
         lines.extend(f"\t{relation!r}" for relation in self.always_relations)
         lines.extend(f"\t{action!r}" for action in self.actions)
         lines.append("}")
@@ -168,3 +183,7 @@ class HighLevelSemanticsSituation(Situation):
             for action in self.actions
             for (_, object_) in action.argument_roles_to_fillers.items()
         )
+
+    @all_objects.default
+    def _init_all_objects(self) -> ImmutableSet[SituationObject]:
+        return immutableset(chain(self.salient_objects, self.other_objects))

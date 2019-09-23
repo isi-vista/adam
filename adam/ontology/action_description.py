@@ -11,7 +11,10 @@ from immutablecollections import (
     immutableset,
     immutablesetmultidict,
 )
-from immutablecollections.converter_utils import _to_immutabledict
+from immutablecollections.converter_utils import (
+    _to_immutabledict,
+    _to_immutablesetmultidict,
+)
 
 from adam.ontology import OntologyNode
 from adam.ontology.during import DuringAction
@@ -63,6 +66,10 @@ class ActionDescription:
     # Postconditions
     postconditions: ImmutableSet[Relation[SituationObject]] = attrib(
         converter=flatten_relations, default=immutableset(), kw_only=True
+    )
+    # Asserted properties of objects in action
+    asserted_properties: ImmutableSetMultiDict[SituationObject, OntologyNode] = attrib(
+        converter=_to_immutablesetmultidict, default=immutablesetmultidict(), kw_only=True
     )
     auxiliary_variables: ImmutableSet[SituationObject] = attrib(init=False)
     """

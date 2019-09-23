@@ -230,7 +230,7 @@ class _PerceptionGeneration:
         if (
             quantify(
                 property_ == IS_SPEAKER
-                for object_ in self._situation.objects
+                for object_ in self._situation.all_objects
                 for property_ in object_.properties
             )
             > 1
@@ -527,7 +527,7 @@ class _PerceptionGeneration:
             return action_object_variables_to_object_perceptions[slot_filler]
 
     def _perceive_property_assertions(self) -> None:
-        for situation_object in self._situation.objects:
+        for situation_object in self._situation.all_objects:
             # process explicitly and implicitly-specified properties
             all_object_properties: List[OntologyNode] = []
             # Explicit properties are stipulated by the user in the situation description.
@@ -580,6 +580,35 @@ class _PerceptionGeneration:
                     self._objects_to_perceptions[situation_object],
                     property_,
                 )
+
+        # Properties derived from the role of the situation object in the action
+        for action in self._situation.actions:
+            action_description: ActionDescription = GAILA_PHASE_1_ONTOLOGY.required_action_description(
+                action.action_type, action.argument_roles_to_fillers.keys()
+            )
+            for role in action_description.frame.semantic_roles:  # e.g. AGENT
+                variable = action_description.frame.roles_to_variables[
+                    role
+                ]  # e.g. _PUT_AGENT
+                fillers = action.argument_roles_to_fillers[role]  # e.g. {Mom}
+                for property_ in action_description.asserted_properties[variable]:
+                    for situation_or_region in fillers:
+                        if isinstance(situation_or_region, SituationObject):
+                            perception_of_object = self._objects_to_perceptions[
+                                situation_or_region
+                            ]
+                        else:
+                            # We are propagating properties asserted on regions to their
+                            # reference objects.
+                            # TODO: issue #263
+                            perception_of_object = self._objects_to_perceptions[
+                                situation_or_region.reference_object
+                            ]
+                        self._perceive_property(
+                            self._generator.ontology.properties_for_node(property_),
+                            perception_of_object,
+                            property_,
+                        )
 
     def _perceive_property(
         self,
@@ -653,14 +682,14 @@ class _PerceptionGeneration:
     def _perceive_objects(self) -> None:
         if not any(
             situation_object.ontology_node == GROUND
-            for situation_object in self._situation.objects
+            for situation_object in self._situation.all_objects
         ):
             ground_schemata = only(self._generator.ontology.structural_schemata(GROUND))
             ground_observed = self._instantiate_object_schema(
                 ground_schemata, situation_object=SituationObject(GROUND)
             )
             self._object_perceptions_to_ontology_nodes[ground_observed] = GROUND
-        for situation_object in self._situation.objects:
+        for situation_object in self._situation.all_objects:
             if not situation_object.ontology_node:
                 raise RuntimeError(
                     "Don't yet know how to handle situation objects without "

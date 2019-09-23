@@ -92,7 +92,7 @@ def test_two_objects():
     generated_object_sets = set(
         immutableset(
             situation_object.ontology_node.handle
-            for situation_object in situation.objects
+            for situation_object in situation.salient_objects
         )
         for situation in all_possible(
             two_object_template,

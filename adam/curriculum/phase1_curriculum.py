@@ -14,7 +14,7 @@ from adam.language_specific.english.english_language_generator import (
     PREFER_DITRANSITIVE,
     USE_ADVERBIAL_PATH_MODIFIER,
 )
-from adam.ontology import IN_REGION, THING
+from adam.ontology import THING
 from adam.ontology.during import DuringAction
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
@@ -23,6 +23,7 @@ from adam.ontology.phase1_ontology import (
     BIGGER_THAN,
     BIRD,
     CAN_HAVE_THINGS_RESTING_ON_THEM,
+    CAN_JUMP,
     FALL,
     FLY,
     GAILA_PHASE_1_ONTOLOGY,
@@ -33,6 +34,8 @@ from adam.ontology.phase1_ontology import (
     HAS_SPACE_UNDER,
     INANIMATE_OBJECT,
     IS_BODY_PART,
+    JUMP,
+    JUMP_INITIAL_SUPPORTER_AUX,
     LEARNER,
     LIQUID,
     PERSON,
@@ -44,22 +47,13 @@ from adam.ontology.phase1_ontology import (
     ROLL_SURFACE_AUXILIARY,
     THEME,
     TRANSFER_OF_POSSESSION,
-    on,
-    HOLLOW,
-    DRINK,
     bigger_than,
     inside,
+    on,
+    strictly_above,
     DRINK_CONTAINER_AUX,
-)
-from adam.ontology.phase1_spatial_relations import (
-    AWAY_FROM,
-    DISTAL,
-    GRAVITATIONAL_DOWN,
-    GRAVITATIONAL_UP,
-    Region,
-    SpatialPath,
-    TOWARD,
-)
+    HOLLOW, DRINK)
+from adam.ontology.phase1_spatial_relations import AWAY_FROM, SpatialPath, TOWARD
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
@@ -104,6 +98,7 @@ def _phase1_instances(
     )
 
 
+_GROUND_OBJECT = object_variable("ground", GROUND)
 _ARBITRARY_OBJECT = object_variable("object_0", THING)
 _NOT_A_BODY_PART = object_variable(
     "not-body-part_object_0", THING, banned_properties=[IS_BODY_PART]
@@ -158,7 +153,7 @@ def build_object_multiples_situations(
                 num_objects = chooser.choice(range(2, 4))
                 yield HighLevelSemanticsSituation(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    objects=[
+                    salient_objects=[
                         SituationObject(
                             ontology_node=object_type,
                             debug_handle=object_type.handle + f"_{idx}",
@@ -175,12 +170,10 @@ MULTIPLE_OF_THE_SAME_OBJECT_SUB_CURRICULUM = _phase1_instances(
     ),
 )
 
-_GROUND = object_variable("the ground", GROUND)
-
 _OBJECT_ON_GROUND_TEMPLATE = Phase1SituationTemplate(
     "object-on-ground",
-    salient_object_variables=[_GROUND, _NOT_A_BODY_PART],
-    asserted_always_relations=[on(_NOT_A_BODY_PART, _GROUND)],
+    salient_object_variables=[_GROUND_OBJECT, _NOT_A_BODY_PART],
+    asserted_always_relations=[on(_NOT_A_BODY_PART, _GROUND_OBJECT)],
 )
 
 _OBJECT_ON_GROUND_SUB_CURRICULUM = _phase1_instances(
@@ -374,12 +367,11 @@ def _make_fly_curriculum():
     object_with_space_under = object_variable(
         "object_0", THING, required_properties=[HAS_SPACE_UNDER]
     )
-    ground = object_variable("ground", GROUND)
 
     bare_fly = [
         Phase1SituationTemplate(
             "fly",
-            salient_object_variables=[bird, ground],
+            salient_object_variables=[bird, _GROUND_OBJECT],
             actions=[
                 Action(
                     FLY,
@@ -389,7 +381,8 @@ def _make_fly_curriculum():
                             (
                                 bird,
                                 SpatialPath(
-                                    AWAY_FROM if up else TOWARD, reference_object=ground
+                                    AWAY_FROM if up else TOWARD,
+                                    reference_object=_GROUND_OBJECT,
                                 ),
                             )
                         ]
@@ -405,7 +398,7 @@ def _make_fly_curriculum():
     fly_up_down = [
         Phase1SituationTemplate(
             "fly-up-down",
-            salient_object_variables=[bird, ground],
+            salient_object_variables=[bird, _GROUND_OBJECT],
             actions=[
                 Action(
                     FLY,
@@ -415,7 +408,8 @@ def _make_fly_curriculum():
                             (
                                 bird,
                                 SpatialPath(
-                                    AWAY_FROM if up else TOWARD, reference_object=ground
+                                    AWAY_FROM if up else TOWARD,
+                                    reference_object=_GROUND_OBJECT,
                                 ),
                             )
                         ]
@@ -435,19 +429,7 @@ def _make_fly_curriculum():
             Action(
                 FLY,
                 argument_roles_to_fillers=[(AGENT, bird)],
-                during=DuringAction(
-                    at_some_point=[
-                        Relation(
-                            IN_REGION,
-                            bird,
-                            Region(
-                                reference_object=object_with_space_under,
-                                distance=DISTAL,
-                                direction=GRAVITATIONAL_UP,
-                            ),
-                        )
-                    ]
-                ),
+                during=DuringAction(at_some_point=[strictly_above(bird, object_0)]),
             )
         ],
     )
@@ -461,17 +443,7 @@ def _make_fly_curriculum():
                 FLY,
                 argument_roles_to_fillers=[(AGENT, bird)],
                 during=DuringAction(
-                    at_some_point=[
-                        Relation(
-                            IN_REGION,
-                            bird,
-                            Region(
-                                reference_object=object_with_space_under,
-                                distance=DISTAL,
-                                direction=GRAVITATIONAL_DOWN,
-                            ),
-                        )
-                    ]
+                    at_some_point=[strictly_above(object_with_space_under, bird)]
                 ),
             )
         ],
@@ -584,6 +556,66 @@ def _make_roll_curriculum():
     )
 
 
+JUMPER = object_variable("jumper_0", THING, required_properties=[CAN_JUMP])
+JUMPED_OVER = object_variable("jumped_over", THING)
+
+
+def _make_jump_curriculum():
+    # "A person jumps"
+    jump_on_ground = Phase1SituationTemplate(
+        "jump",
+        salient_object_variables=[JUMPER],
+        actions=[
+            Action(
+                JUMP,
+                argument_roles_to_fillers=[(AGENT, JUMPER)],
+                auxiliary_variable_bindings=[
+                    (JUMP_INITIAL_SUPPORTER_AUX, _GROUND_OBJECT)
+                ],
+            )
+        ],
+    )
+
+    # "A person jumps over a ball"
+    jump_over_object = make_jump_over_object_template()
+
+    return _phase1_instances(
+        "jumping",
+        chain(
+            *[
+                all_possible(
+                    jump_on_ground, ontology=GAILA_PHASE_1_ONTOLOGY, chooser=_CHOOSER
+                ),
+                sampled(
+                    jump_over_object,
+                    max_to_sample=25,
+                    chooser=_CHOOSER,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                ),
+            ]
+        ),
+    )
+
+
+# public for use in a test
+def make_jump_over_object_template():
+    return Phase1SituationTemplate(
+        "jump-over",
+        salient_object_variables=[JUMPER, JUMPED_OVER],
+        actions=[
+            Action(
+                JUMP,
+                argument_roles_to_fillers=[(AGENT, JUMPER)],
+                during=DuringAction(at_some_point=[strictly_above(JUMPER, JUMPED_OVER)]),
+                auxiliary_variable_bindings=[
+                    (JUMP_INITIAL_SUPPORTER_AUX, _GROUND_OBJECT)
+                ],
+            )
+        ],
+        constraining_relations=[Relation(BIGGER_THAN, JUMPER, JUMPED_OVER)],
+    )
+
+
 def _make_drink_curriculum():
     object_0 = object_variable(
         "object_0", required_properties=[HOLLOW], banned_properties=[IS_BODY_PART]
@@ -628,6 +660,7 @@ GAILA_PHASE_1_CURRICULUM = [
     _make_object_in_other_object_curriculum(),
     _make_fly_curriculum(),
     _make_roll_curriculum(),
+    _make_jump_curriculum(),
     _make_drink_curriculum(),
 ]
 """
