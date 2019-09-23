@@ -19,7 +19,7 @@ from adam.experiment import InstanceGroup
 from adam.language.dependency import LinearizedDependencyTree
 from adam.ontology import IN_REGION
 from adam.ontology.during import DuringAction
-from adam.ontology.phase1_ontology import PART_OF
+from adam.ontology.phase1_ontology import PART_OF, SMALLER_THAN, BIGGER_THAN
 from adam.ontology.phase1_spatial_relations import Region, SpatialPath
 from adam.perception import ObjectPerception, PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
@@ -398,9 +398,20 @@ class CurriculumToHtmlDumper:
                     (relation_prefix, relation_suffix) = compute_arrow(
                         relation, static_relations, first_frame_relations
                     )
-                    output_text.append(
-                        f"\t\t\t\t\t\t<li>{relation_prefix}{relation}{relation_suffix}</li>"
-                    )
+                    # if smallerThan/biggerThan relations exist, print as single relation
+                    single_size_relation = None
+                    if relation.relation_type == SMALLER_THAN:
+                        single_size_relation = f"{relation.second_slot} > {relation.first_slot}"
+                    elif relation.relation_type == BIGGER_THAN:
+                        single_size_relation = f"{relation.first_slot} > {relation.second_slot}"
+                    if single_size_relation:
+                        size_output = f"\t\t\t\t\t\t<li>{relation_prefix}{single_size_relation}{relation_suffix}</li>"
+                        if size_output not in output_text:
+                            output_text.append(size_output)
+                    else:
+                        output_text.append(
+                            f"\t\t\t\t\t\t<li>{relation_prefix}{relation}{relation_suffix}</li>"
+                        )
             output_text.append("\t\t\t\t\t</ul>")
 
         if perception.during:
