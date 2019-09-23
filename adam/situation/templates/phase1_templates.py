@@ -4,23 +4,23 @@ Our strategy for `SituationTemplate`\ s in Phase 1 of ADAM.
 import random
 from _random import Random
 from abc import ABC, abstractmethod
-from itertools import product, chain
+from itertools import chain, product
 from typing import (
     AbstractSet,
     Iterable,
+    List,
     Mapping,
     Optional,
     Sequence,
     TypeVar,
     Union,
-    List,
 )
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
 from immutablecollections.converter_utils import _to_immutabledict, _to_immutableset
-from more_itertools import take
+from more_itertools import flatten, take
 from typing_extensions import Protocol
 from vistautils.preconditions import check_arg
 
@@ -139,7 +139,8 @@ class Phase1SituationTemplate(SituationTemplate):
     Beware that this can be very large if the number of object variables
     or the number of possible values of the variables is even moderately large.
     """
-    object_variables: ImmutableSet["TemplateObjectVariable"] = attrib(
+    name: str = attrib(validator=instance_of(str))
+    salient_object_variables: ImmutableSet["TemplateObjectVariable"] = attrib(
         converter=_to_immutableset
     )
     asserted_always_relations: ImmutableSet[Relation["TemplateObjectVariable"]] = attrib(
@@ -171,12 +172,19 @@ class Phase1SituationTemplate(SituationTemplate):
     
     See https://github.com/isi-vista/adam/issues/222 .
     """
+    all_object_variables: ImmutableSet[TemplateObjectVariable] = attrib(init=False)
+    r"""
+    All `TemplateObjectVariable`\ s in the situation, 
+    both salient and auxiliary to actions.
+    """
 
     def __attrs_post_init__(self) -> None:
-        check_arg(self.object_variables, "A situation must contain at least one object")
+        check_arg(
+            self.salient_object_variables, "A situation must contain at least one object"
+        )
 
         # ensure all objects referenced anywhere are on the object list
-        objects_referenced_accumulator = list(self.object_variables)
+        objects_referenced_accumulator = list(self.salient_object_variables)
         for relation in chain(
             self.constraining_relations, self.asserted_always_relations
         ):
@@ -184,11 +192,23 @@ class Phase1SituationTemplate(SituationTemplate):
         for action in self.actions:
             action.accumulate_referenced_objects(objects_referenced_accumulator)
         unique_objects_referenced = immutableset(objects_referenced_accumulator)
-        if unique_objects_referenced != self.object_variables:
+        if unique_objects_referenced != self.all_object_variables:
             raise RuntimeError(
                 f"Set of referenced objects {unique_objects_referenced} does not match "
-                f"declared objects {self.object_variables} for template {self}"
+                f"declared objects {self.salient_object_variables} for template {self}"
             )
+
+    @all_object_variables.default
+    def _init_all_object_variables(self) -> ImmutableSet[TemplateObjectVariable]:
+        object_variables_as_auxiliary_variables_in_actions = flatten(
+            action.auxiliary_variable_bindings.values() for action in self.actions
+        )
+        return immutableset(
+            chain(
+                self.salient_object_variables,
+                object_variables_as_auxiliary_variables_in_actions,
+            )
+        )
 
 
 def all_possible(
@@ -247,81 +267,106 @@ class _Phase1SituationTemplateGenerator(
             RandomChooser.for_seed
         ),  # pylint:disable=unused-argument
     ) -> Iterable[HighLevelSemanticsSituation]:
-        # gather property variables from object variables
-        property_variables = immutableset(
-            property_
-            for obj_var in template.object_variables
-            for property_ in obj_var.asserted_properties
-            if isinstance(property_, TemplatePropertyVariable)
-        )
-
-        action_type_variables = immutableset(
-            action.action_type
-            for action in template.actions
-            if isinstance(action.action_type, TemplateActionTypeVariable)
-        )
-
-        failures_in_a_row = 0
-
-        for variable_assignment in self._variable_assigner.variable_assignments(
-            ontology=self.ontology,
-            object_variables=template.object_variables,
-            property_variables=property_variables,
-            action_variables=action_type_variables,
-            chooser=chooser,
-        ):
-            # instantiate all objects in the situation according to the variable assignment.
-            object_var_to_instantiations: Mapping[
-                TemplateObjectVariable, SituationObject
-            ] = immutabledict(
-                (
-                    obj_var,
-                    SituationObject(
-                        ontology_node=variable_assignment.object_variables_to_fillers[
-                            obj_var
-                        ],
-                        properties=[
-                            # instantiate any property variables associated with this object
-                            variable_assignment.property_variables_to_fillers[prop_var]
-                            for prop_var in obj_var.asserted_properties
-                        ],
-                    ),
-                )
-                for obj_var in template.object_variables
+        try:
+            # gather property variables from object variables
+            property_variables = immutableset(
+                property_
+                for obj_var in template.salient_object_variables
+                for property_ in obj_var.asserted_properties
+                if isinstance(property_, TemplatePropertyVariable)
             )
 
-            situation = HighLevelSemanticsSituation(
+            action_type_variables = immutableset(
+                action.action_type
+                for action in template.actions
+                if isinstance(action.action_type, TemplateActionTypeVariable)
+            )
+
+            failures_in_a_row = 0
+
+            for variable_assignment in self._variable_assigner.variable_assignments(
                 ontology=self.ontology,
-                objects=object_var_to_instantiations.values(),
-                always_relations=[
-                    relation.copy_remapping_objects(object_var_to_instantiations)
-                    for relation in template.asserted_always_relations
-                ],
-                actions=[
-                    self._instantiate_action(
-                        action,
-                        object_var_to_instantiations,
-                        variable_assignment.action_variables_to_fillers,
-                    )
-                    for action in template.actions
-                ],
-                syntax_hints=template.syntax_hints,
-            )
-            if self._satisfies_constraints(
-                template, situation, object_var_to_instantiations
+                object_variables=template.all_object_variables,
+                property_variables=property_variables,
+                action_variables=action_type_variables,
+                chooser=chooser,
             ):
-                failures_in_a_row = 0
-                yield situation
-            else:
-                failures_in_a_row += 1
-                if failures_in_a_row >= 250:
-                    raise RuntimeError(
-                        f"Failed to find a satisfying variable assignment "
-                        f"for situation template constraints after "
-                        f"{failures_in_a_row} consecutive attempts."
-                        f"Try shifting constraints from relations to properties."
-                    )
-                continue
+                # instantiate all objects in the situation according to the variable assignment.
+                object_var_to_instantiations = self._instantiate_objects(
+                    template, variable_assignment
+                )
+                # use them to instantiate the entire situation
+                situation = self._instantiate_situation(
+                    template, variable_assignment, object_var_to_instantiations
+                )
+                if self._satisfies_constraints(
+                    template, situation, object_var_to_instantiations
+                ):
+                    failures_in_a_row = 0
+                    yield situation
+                else:
+                    failures_in_a_row += 1
+                    if failures_in_a_row >= 250:
+                        raise RuntimeError(
+                            f"Failed to find a satisfying variable assignment "
+                            f"for situation template constraints after "
+                            f"{failures_in_a_row} consecutive attempts."
+                            f"Try shifting constraints from relations to properties."
+                        )
+                    continue
+        except Exception as e:
+            raise RuntimeError(
+                f"Exception while generating from situation template {template}"
+            ) from e
+
+    def _instantiate_objects(
+        self,
+        template: Phase1SituationTemplate,
+        variable_assignment: "_VariableAssignment",
+    ):
+        object_var_to_instantiations: Mapping[
+            TemplateObjectVariable, SituationObject
+        ] = immutabledict(
+            (
+                obj_var,
+                SituationObject(
+                    ontology_node=variable_assignment.object_variables_to_fillers[
+                        obj_var
+                    ],
+                    properties=[
+                        # instantiate any property variables associated with this object
+                        variable_assignment.property_variables_to_fillers[prop_var]
+                        for prop_var in obj_var.asserted_properties
+                    ],
+                ),
+            )
+            for obj_var in template.all_object_variables
+        )
+        return object_var_to_instantiations
+
+    def _instantiate_situation(
+        self,
+        template: Phase1SituationTemplate,
+        variable_assignment: "_VariableAssignment",
+        object_var_to_instantiations,
+    ) -> HighLevelSemanticsSituation:
+        return HighLevelSemanticsSituation(
+            ontology=self.ontology,
+            objects=object_var_to_instantiations.values(),
+            always_relations=[
+                relation.copy_remapping_objects(object_var_to_instantiations)
+                for relation in template.asserted_always_relations
+            ],
+            actions=[
+                self._instantiate_action(
+                    action,
+                    object_var_to_instantiations,
+                    variable_assignment.action_variables_to_fillers,
+                )
+                for action in template.actions
+            ],
+            syntax_hints=template.syntax_hints,
+        )
 
     def _satisfies_constraints(
         self,
@@ -385,6 +430,16 @@ class _Phase1SituationTemplateGenerator(
             during=action.during.copy_remapping_objects(object_var_to_instantiations)
             if action.during
             else None,
+            auxiliary_variable_bindings=[
+                (
+                    auxiliary_variable,
+                    object_var_to_instantiations[auxiliary_variable_binding],
+                )
+                for (
+                    auxiliary_variable,
+                    auxiliary_variable_binding,
+                ) in action.auxiliary_variable_bindings.items()
+            ],
         )
 
 

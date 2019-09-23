@@ -14,7 +14,7 @@ from adam.ontology.phase1_spatial_relations import (
     GRAVITATIONAL_AXIS,
     Region,
 )
-from adam.situation import SituationObject, Action
+from adam.situation import Action, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 
 
