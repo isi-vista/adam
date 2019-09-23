@@ -48,7 +48,7 @@ from adam.ontology.phase1_spatial_relations import (
     TOWARD,
     GRAVITATIONAL_UP,
     GRAVITATIONAL_DOWN,
-)
+    Geon, OVALISH, SMALL_TO_LARGE_TO_SMALL, CONSTANT, RECTANGULAR)
 from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
 from adam.relation import (
     ObjectT,
@@ -609,12 +609,32 @@ _HAT_SCHEMA = ObjectStructuralSchema(HAT)
 _COOKIE_SCHEMA = ObjectStructuralSchema(COOKIE)
 _CUP_SCHEMA = ObjectStructuralSchema(CUP)
 _BOOK_SCHEMA = ObjectStructuralSchema(BOOK)
-_HAND_SCHEMA = ObjectStructuralSchema(HAND)
-_HEAD_SCHEMA = ObjectStructuralSchema(HEAD)
+_HAND_SCHEMA = ObjectStructuralSchema(ontology_node=HAND,
+                                      # we do not currently represent fingers
+                                      geon=Geon(
+                                          cross_section=RECTANGULAR,
+                                          cross_section_size=CONSTANT
+                                      )
+                                      )
+_HEAD_SCHEMA = ObjectStructuralSchema(HEAD,
+                                      geon=Geon(
+                                          cross_section=OVALISH,
+                                          cross_section_size=SMALL_TO_LARGE_TO_SMALL
+                                      ))
 
 # Hierarchical structure of objects
-_TORSO_SCHEMA = ObjectStructuralSchema(_TORSO)
-_LEG_SCHEMA = ObjectStructuralSchema(_LEG)
+_TORSO_SCHEMA = ObjectStructuralSchema(_TORSO,
+                                       geon=Geon(
+                                           cross_section=OVALISH,
+                                           cross_section_size=CONSTANT
+                                       ))
+# TODO: we shouldn't share a leg schema between humans and tables
+# https://github.com/isi-vista/adam/issues/265
+_LEG_SCHEMA = ObjectStructuralSchema(_LEG,
+                                     geon=Geon(
+                                         cross_section=OVALISH,
+                                         cross_section_size=CONSTANT,
+                                     ))
 _CHAIRBACK_SCHEMA = ObjectStructuralSchema(_CHAIR_BACK)
 _CHAIR_SEAT_SCHEMA = ObjectStructuralSchema(_CHAIR_SEAT)
 _TABLETOP_SCHEMA = ObjectStructuralSchema(_TABLETOP)
@@ -635,7 +655,11 @@ _ARM_SCHEMA_UPPER = SubObject(
 _ARM_SCHEMA_LOWER = SubObject(_ARM_SEGMENT_SCHEMA)
 
 _ARM_SCHEMA = ObjectStructuralSchema(
-    _ARM,
+    ontology_node=_ARM,
+    geon=Geon(
+        cross_section=OVALISH,
+        cross_section_size=CONSTANT
+    ),
     sub_objects=[_ARM_SCHEMA_HAND, _ARM_SCHEMA_LOWER, _ARM_SCHEMA_UPPER],
     sub_object_relations=flatten_relations(
         [contacts([_ARM_SCHEMA_UPPER, _ARM_SCHEMA_HAND], _ARM_SCHEMA_LOWER)]
@@ -658,7 +682,7 @@ _PERSON_SCHEMA_APPENDAGES = [
     _PERSON_SCHEMA_HEAD,
 ]
 _PERSON_SCHEMA = ObjectStructuralSchema(
-    PERSON,
+    ontology_node=PERSON,
     sub_objects=[
         _PERSON_SCHEMA_HEAD,
         _PERSON_SCHEMA_TORSO,

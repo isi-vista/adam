@@ -92,7 +92,7 @@ class _ObjectHandleGenerator:
     _object_handles_seen: List[str] = attrib(init=False, default=Factory(list))
 
     def subscripted_handle(self, object_schema: ObjectStructuralSchema) -> str:
-        unsubscripted_handle = object_schema.parent_object.handle
+        unsubscripted_handle = object_schema.ontology_node.handle
         # using count() here makes subscript computation linear time
         # in the number of objects in a situation,
         # but this should be small enough not to matter.

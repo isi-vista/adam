@@ -2,6 +2,7 @@ from typing import Any, Generic, List, Mapping, Optional, TypeVar, Union
 
 from attr import attrib, attrs
 from attr.validators import in_, instance_of, optional
+from immutablecollections import ImmutableDict
 from vistautils.preconditions import check_arg
 
 
@@ -233,3 +234,91 @@ class SpatialPath(Generic[ReferenceObjectT]):
             object_accumulator.append(self.reference_object)
         if self.reference_axis:
             self.reference_axis.accumulate_referenced_objects(object_accumulator)
+
+# any direction has a reference axis
+# almost always currently gravitationa;
+
+
+@attrs(frozen=True, slots=True)
+class CrossSectionSize:
+    name: str
+
+CONSTANT = CrossSectionSize('constant')
+"""
+Indicates the size of the cross-section of a geon 
+remains roughly constant along its generating axis.
+"""
+
+SMALL_TO_LARGE = CrossSectionSize('small-to-large')
+"""
+Indicates the size of the cross-section of a geon 
+increases along its generating axis.
+"""
+
+LARGE_TO_SMALL = CrossSectionSize('large-to-small')
+"""
+Indicates the size of the cross-section of a geon 
+decreases along its generating axis.
+"""
+
+SMALL_TO_LARGE_TO_SMALL = CrossSectionSize('small-to-large-to-small')
+"""
+Indicates the size of the cross-section of a geon 
+initially increases along the generating axis,
+but then decreases.
+"""
+
+@attrs(frozen=True, slots=True)
+class CrossSection:
+    has_rotational_symmetry: bool = attrib(validator=instance_of(bool),
+                                           default=False, kw_only=True)
+    has_reflective_symmetry: bool = attrib(validator=instance_of(bool),
+                                           default=False, kw_only=True)
+    curved: bool = attrib(validator=instance_of(bool),
+                          default=False, kw_only=True)
+
+CIRCULAR = CrossSection(has_rotational_symmetry=True,
+                        has_reflective_symmetry=True,
+                        curved=True)
+SQUARE = CrossSection(has_rotational_symmetry=True,
+                      has_reflective_symmetry=True,
+                      curved=False)
+OVALISH = CrossSection(has_rotational_symmetry=False,
+                       has_reflective_symmetry=True,
+                       curved=True)
+RECTANGULAR = CrossSection(has_rotational_symmetry=False,
+                           has_reflective_symmetry=True,
+                           curved=False)
+IRREGULAR = CrossSection(has_reflective_symmetry=False,
+                         has_rotational_symmetry=False,
+                         curved=False)
+
+# MUCH_SMALLER, SMALLER, SIMILAR, LARGER, MUCH_LARGER
+#class AspectRatio:
+#    name: str
+#class GeonAxis:
+#    curved: bool
+#    directed: bool
+#    aligned_to_gravitational: bool
+
+@attrs(slots=True, frozen=True)
+class Geon:
+    cross_section: CrossSection = attrib(validator=instance_of(CrossSection),
+                                         kw_only=True)
+    cross_section_size: CrossSectionSize = attrib(validator=instance_of(CrossSectionSize),
+                                                  kw_only=True)
+
+    #generating_axis: Axis2
+    #point_termination: bool
+    #axis_to_aspect_ratio: ImmutableDict[Axis2, AspectRatio]
+    #primary_axis: Axis2 # not always generating axis; consider a bench
+
+# TODO: handle direction of motion as a path/axis
+
+# choice of primary axis: prefer longest, then prefer vertical
+#
+# nature of objects joints:
+#
+# side
+# end-to-end or end-to-side
+# which surface of each is used in the join?
