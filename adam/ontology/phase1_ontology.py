@@ -992,7 +992,7 @@ _PUT_ACTION_DESCRIPTION = ActionDescription(
     asserted_properties=[
         (_PUT_AGENT, VOLITIONALLY_INVOLVED),
         (_PUT_AGENT, CAUSES_CHANGE),
-        (_PUT_THEME, CAUSALLY_AFFECTED),
+        (_PUT_THEME, UNDERGOES_CHANGE),
         (_PUT_GOAL, STATIONARY),
     ],
 )
@@ -1022,6 +1022,11 @@ _PUSH_ACTION_DESCRIPTION = ActionDescription(
     postconditions=[Relation(IN_REGION, _PUSH_THEME, _PUSH_GOAL)],
     # TODO: encode that the THEME's vertical position does not significantly change,
     # unless there is e.g. a ramp
+    asserted_properties=[
+        (_PUSH_AGENT, VOLITIONALLY_INVOLVED),
+        (_PUSH_AGENT, CAUSES_CHANGE),
+        (_PUSH_THEME, UNDERGOES_CHANGE),
+    ],
 )
 
 _GO_AGENT = SituationObject(THING, properties=[SELF_MOVING])
@@ -1031,6 +1036,7 @@ _GO_ACTION_DESCRIPTION = ActionDescription(
     frame=ActionDescriptionFrame({AGENT: _GO_AGENT, GOAL: _GO_GOAL}),
     during=DuringAction(objects_to_paths=[(_GO_AGENT, SpatialPath(TO, _GO_GOAL))]),
     postconditions=[Relation(IN_REGION, _GO_AGENT, _GO_GOAL)],
+    asserted_properties=[(_GO_AGENT, VOLITIONALLY_INVOLVED), (_GO_AGENT, MOVES)],
 )
 
 _COME_AGENT = SituationObject(THING, properties=[ANIMATE])
@@ -1046,6 +1052,7 @@ _COME_ACTION_DESCRIPTION = ActionDescription(
     postconditions=[Relation(IN_REGION, _COME_AGENT, _COME_GOAL)],
     # TODO: encode that the new location is relatively closer to the
     # learner or speaker than the old location
+    asserted_properties=[(_COME_AGENT, VOLITIONALLY_INVOLVED), (_COME_AGENT, MOVES)],
 )
 
 _TAKE_AGENT = SituationObject(THING, properties=[ANIMATE])
@@ -1061,6 +1068,11 @@ _TAKE_ACTION_DESCRIPTION = ActionDescription(
     ],
     preconditions=[negate(has(_TAKE_AGENT, _TAKE_THEME))],
     postconditions=[has(_TAKE_AGENT, _TAKE_THEME)],
+    asserted_properties=[
+        (_TAKE_AGENT, VOLITIONALLY_INVOLVED),
+        (_TAKE_AGENT, CAUSES_CHANGE),
+        (_TAKE_THEME, UNDERGOES_CHANGE),
+    ],
 )
 
 _EAT_AGENT = SituationObject(THING, properties=[ANIMATE])
@@ -1071,6 +1083,11 @@ _EAT_ACTION_DESCRIPTION = ActionDescription(
     enduring_conditions=[bigger_than(_EAT_AGENT, _EAT_PATIENT)],
     postconditions=[inside(_EAT_PATIENT, _EAT_AGENT)],
     # TODO: express role of mouth
+    asserted_properties=[
+        (_EAT_AGENT, VOLITIONALLY_INVOLVED),
+        (_EAT_AGENT, CAUSES_CHANGE),
+        (_EAT_PATIENT, UNDERGOES_CHANGE),
+    ],
 )
 
 _GIVE_AGENT = SituationObject(THING, properties=[ANIMATE])
@@ -1101,6 +1118,11 @@ _GIVE_ACTION_DESCRIPTION = ActionDescription(
         negate(contacts(_GIVE_AGENT_MANIPULATOR, _GIVE_THEME)),
         contacts(_GIVE_GOAL_MANIPULATOR, _GIVE_THEME),
     ],
+    asserted_properties=[
+        (_GIVE_AGENT, VOLITIONALLY_INVOLVED),
+        (_GIVE_AGENT, CAUSES_CHANGE),
+        (_GIVE_THEME, UNDERGOES_CHANGE),
+    ],
 )
 
 _TURN_AGENT = SituationObject(THING, properties=[ANIMATE])
@@ -1122,6 +1144,11 @@ _TURN_ACTION_DESCRIPTION = ActionDescription(
             )
         ]
     ),
+    asserted_properties=[
+        (_TURN_AGENT, VOLITIONALLY_INVOLVED),
+        (_TURN_AGENT, CAUSES_CHANGE),
+        (_TURN_THEME, UNDERGOES_CHANGE),
+    ],
 )
 
 _SIT_AGENT = SituationObject(THING, properties=[ANIMATE])
@@ -1131,6 +1158,7 @@ _SIT_ACTION_DESCRIPTION = ActionDescription(
     frame=ActionDescriptionFrame({AGENT: _SIT_AGENT, GOAL: _SIT_GOAL}),
     preconditions=[negate(contacts(_SIT_AGENT, _SIT_GOAL))],
     postconditions=[contacts(_SIT_AGENT, _SIT_GOAL), above(_SIT_AGENT, _SIT_GOAL)],
+    asserted_properties=[(_SIT_AGENT, VOLITIONALLY_INVOLVED), (_SIT_AGENT, MOVES)],
 )
 
 DRINK_CONTAINER_AUX = SituationObject(THING, properties=[HOLLOW])
@@ -1149,6 +1177,11 @@ def _make_drink_description() -> Iterable[Tuple[OntologyNode, ActionDescription]
                 bigger_than(drink_agent, DRINK_CONTAINER_AUX),
             ],
             postconditions=[inside(drink_theme, drink_agent)],
+            asserted_properties=[
+                (drink_agent, VOLITIONALLY_INVOLVED),
+                (drink_agent, CAUSES_CHANGE),
+                (drink_theme, UNDERGOES_CHANGE),
+            ],
         ),
     )
 
@@ -1163,6 +1196,7 @@ _FALL_ACTION_DESCRIPTION = ActionDescription(
             (_FALL_THEME, SpatialPath(operator=TOWARD, reference_object=_FALL_GROUND))
         ]
     ),
+    asserted_properties=[(_FALL_THEME, MOVES)],
 )
 
 _THROW_AGENT = SituationObject(THING, properties=[ANIMATE])
@@ -1203,6 +1237,11 @@ _THROW_ACTION_DESCRIPTION = ActionDescription(
             )
         ]
     ),
+    asserted_properties=[
+        (_THROW_AGENT, VOLITIONALLY_INVOLVED),
+        (_THROW_AGENT, CAUSES_CHANGE),
+        (_THROW_THEME, UNDERGOES_CHANGE),
+    ],
 )
 
 _MOVE_AGENT = SituationObject(THING, properties=[ANIMATE])
@@ -1217,6 +1256,11 @@ _MOVE_ACTION_DESCRIPTION = ActionDescription(
     ),
     preconditions=[],
     postconditions=[],
+    asserted_properties=[
+        (_MOVE_AGENT, VOLITIONALLY_INVOLVED),
+        (_MOVE_AGENT, CAUSES_CHANGE),
+        (_MOVE_THEME, UNDERGOES_CHANGE),
+    ],
 )
 
 JUMP_INITIAL_SUPPORTER_AUX = SituationObject(THING)
@@ -1243,6 +1287,10 @@ def _make_jump_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
                     (jump_agent, SpatialPath(AWAY_FROM, jump_ground)),
                 ]
             ),
+            asserted_properties=[
+                (jump_agent, VOLITIONALLY_INVOLVED),
+                (jump_agent, MOVES),
+            ],
         ),
     )
 
@@ -1280,6 +1328,11 @@ def _make_roll_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
         ActionDescription(
             frame=ActionDescriptionFrame({AGENT: roll_agent, THEME: roll_theme}),
             during=make_during(roll_theme),
+            asserted_properties=[
+                (roll_agent, VOLITIONALLY_INVOLVED),
+                (roll_agent, CAUSES_CHANGE),
+                (roll_theme, UNDERGOES_CHANGE),
+            ],
         ),
     )
 
@@ -1289,6 +1342,7 @@ def _make_roll_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
         ActionDescription(
             frame=ActionDescriptionFrame({AGENT: roll_agent}),
             during=make_during(roll_agent),
+            asserted_properties=[(roll_agent, MOVES)],
         ),
     )
 
@@ -1313,6 +1367,7 @@ _FLY_ACTION_DESCRIPTION = ActionDescription(
             )
         ]
     ),
+    asserted_properties=[(_FLY_AGENT, VOLITIONALLY_INVOLVED), (_FLY_AGENT, MOVES)],
 )
 
 _ACTIONS_TO_DESCRIPTIONS = [
