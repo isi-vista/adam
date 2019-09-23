@@ -129,14 +129,21 @@ class CurriculumToHtmlDumper:
             html_out.write(f"\n<body>\n\t<h1>{title} - {instance_group.name()}</h1>")
             html_out.write("\n<h2>How to read</h2>")
             html_out.write(
-                "\n<p>A Situation is curriculum-designer-facing; it is not accessible to the learner. "
-                "The name of a perceived object is derived from the type of the corresponding SituationObject, and the "
-                "number indicates which object of its type it is - e.g. if there are two babies in a situation, "
-                "the perceived objects will be 'person_0' and 'person_1'. "
-                "Names on Perceptions are handles for debugging; they are not accessible to the "
-                "learner. 'GAZED-AT' refers the object of focus of the speaker.</p> "
-            )
+                "\n<p>Our curiculum is designed in two levels: The objective, here - {instance_group.name},"
+                "\n and a set of scenes for each objective. The scenes are in the shaded table below."
+                "\n For each scene, we display: "
+                "\n\t<li>Situation (column 1), which is used by the curriculum developer to specify key objects and actions,"
+                "\n but is unseen by the learner</li>."  
+                "\n\t<li>Language (column 2), the text presented to the learner</li>."  
+                "\n\t<li>Learner Perception (column 3), a textual representaiton of the perceptual features"
+                "\n presented to the learner</li>"             )
             html_out.write(
+                "<p> The perceptual features described in column 3 are presented to the learner in a"
+                "\n machine interpretable fashion (e.g. as attributes, variables, spatial properties). Here "
+                "\n to assist interpretation of the curriculum we serialize them as debugging text strings." 
+                "\n The following are descriptions of some of the perceptual inputs (and their serialization). "
+            )
+            html_out.write(   
                 "\n<p>Properties</p>\n<ul>"
                 "\n\t<li>These define characteristics of an object that may influence perception and fulfillment of "
                 "semantic roles.</li> "
