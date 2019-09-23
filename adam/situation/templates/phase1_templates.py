@@ -4,6 +4,7 @@ Our strategy for `SituationTemplate`\ s in Phase 1 of ADAM.
 import random
 from _random import Random
 from abc import ABC, abstractmethod
+from collections import Counter
 from itertools import chain, product
 from typing import (
     AbstractSet,
@@ -26,7 +27,13 @@ from vistautils.preconditions import check_arg
 
 from adam.ontology import ACTION, CAN_FILL_TEMPLATE_SLOT, OntologyNode, PROPERTY, THING
 from adam.ontology.ontology import Ontology
-from adam.ontology.phase1_ontology import COLOR, GAILA_PHASE_1_ONTOLOGY, GROUND, LEARNER
+from adam.ontology.phase1_ontology import (
+    COLOR,
+    GAILA_PHASE_1_ONTOLOGY,
+    GROUND,
+    LEARNER,
+    is_recognized_particular,
+)
 from adam.ontology.selectors import (
     AndOntologySelector,
     ByHierarchyAndProperties,
@@ -310,6 +317,14 @@ class _Phase1SituationTemplateGenerator(
                 object_var_to_instantiations = self._instantiate_objects(
                     template, variable_assignment
                 )
+
+                # Cannot have multiple instantiations of the same recognized particular.
+                # e.g. "Dad gave Dad a box"
+                if self._has_multiple_recognized_particulars(
+                    object_var_to_instantiations
+                ):
+                    continue
+
                 # use them to instantiate the entire situation
                 situation = self._instantiate_situation(
                     template, variable_assignment, object_var_to_instantiations
@@ -392,6 +407,21 @@ class _Phase1SituationTemplateGenerator(
                 for action in template.actions
             ],
             syntax_hints=template.syntax_hints,
+        )
+
+    def _has_multiple_recognized_particulars(
+        self, variable_binding: Mapping["TemplateObjectVariable", SituationObject]
+    ) -> bool:
+        # First, we check for a universal constraint that a situation
+        # cannot contain multiple recognized particulars.
+        recognized_particular_counts = Counter(
+            object_binding.ontology_node
+            for object_binding in variable_binding.values()
+            if is_recognized_particular(self.ontology, object_binding.ontology_node)
+        )
+        return bool(
+            recognized_particular_counts
+            and max(recognized_particular_counts.values()) > 1
         )
 
     def _satisfies_constraints(

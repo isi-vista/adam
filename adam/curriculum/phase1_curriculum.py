@@ -24,6 +24,10 @@ from adam.ontology.phase1_ontology import (
     BIRD,
     CAN_HAVE_THINGS_RESTING_ON_THEM,
     CAN_JUMP,
+    DRINK,
+    DRINK_CONTAINER_AUX,
+    EAT,
+    EDIBLE,
     FALL,
     FLY,
     GAILA_PHASE_1_ONTOLOGY,
@@ -32,16 +36,17 @@ from adam.ontology.phase1_ontology import (
     GROUND,
     HAS,
     HAS_SPACE_UNDER,
+    HOLLOW,
     INANIMATE_OBJECT,
     IS_BODY_PART,
     JUMP,
     JUMP_INITIAL_SUPPORTER_AUX,
     LEARNER,
     LIQUID,
+    PATIENT,
     PERSON,
     PERSON_CAN_HAVE,
     PHASE_1_CURRICULUM_OBJECTS,
-    RECOGNIZED_PARTICULAR_PROPERTY,
     ROLL,
     ROLLABLE,
     ROLL_SURFACE_AUXILIARY,
@@ -49,14 +54,9 @@ from adam.ontology.phase1_ontology import (
     TRANSFER_OF_POSSESSION,
     bigger_than,
     inside,
+    is_recognized_particular,
     on,
     strictly_above,
-    DRINK_CONTAINER_AUX,
-    HOLLOW,
-    DRINK,
-    EDIBLE,
-    EAT,
-    PATIENT,
 )
 from adam.ontology.phase1_spatial_relations import AWAY_FROM, SpatialPath, TOWARD
 from adam.perception.developmental_primitive_perception import (
@@ -147,13 +147,9 @@ def build_object_multiples_situations(
     ontology: Ontology, *, samples_per_object: int = 3, chooser: RandomChooser
 ) -> Iterable[HighLevelSemanticsSituation]:
     for object_type in PHASE_1_CURRICULUM_OBJECTS:
-        # don't want multiples of named people
-        is_recognized_particular = any(
-            ontology.is_subtype_of(property_, RECOGNIZED_PARTICULAR_PROPERTY)
-            for property_ in ontology.properties_for_node(object_type)
-        )
         is_liquid = ontology.has_all_properties(object_type, [LIQUID])
-        if not is_recognized_particular and not is_liquid:
+        # don't want multiples of named people
+        if not is_recognized_particular(ontology, object_type) and not is_liquid:
             for _ in range(samples_per_object):
                 num_objects = chooser.choice(range(2, 4))
                 yield HighLevelSemanticsSituation(
