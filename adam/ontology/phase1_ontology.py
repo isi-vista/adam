@@ -150,28 +150,24 @@ subtype(GAZED_AT, PERCEIVABLE_PROPERTY)
 
 # Dowty's Proto-Roles: Issue 104; Dotwy, 91, page 572.
 # Agent Proto-Roles properties:
-AGENT_PROTO_ROLE = OntologyNode("agent-proto-role")
-subtype(AGENT_PROTO_ROLE, PERCEIVABLE_PROPERTY)
 VOLITIONALLY_INVOLVED = OntologyNode("volitionally-involved", [BINARY])
-subtype(VOLITIONALLY_INVOLVED, AGENT_PROTO_ROLE)
+subtype(VOLITIONALLY_INVOLVED, PERCEIVABLE_PROPERTY)
 SENTIENT_OR_PERCEIVES = OntologyNode("sentient-or-perceives", [BINARY])
-subtype(SENTIENT_OR_PERCEIVES, AGENT_PROTO_ROLE)
+subtype(SENTIENT_OR_PERCEIVES, PERCEIVABLE_PROPERTY)
 CAUSES_CHANGE = OntologyNode("causes-change", [BINARY])
-subtype(CAUSES_CHANGE, AGENT_PROTO_ROLE)
+subtype(CAUSES_CHANGE, PERCEIVABLE_PROPERTY)
 MOVES = OntologyNode("moves", [BINARY])
-subtype(MOVES, AGENT_PROTO_ROLE)
+subtype(MOVES, PERCEIVABLE_PROPERTY)
 
 # Patient Proto-Roles:
-PATIENT_PROTO_ROLE = OntologyNode("patient-proto-role")
-subtype(PATIENT_PROTO_ROLE, PERCEIVABLE_PROPERTY)
 UNDERGOES_CHANGE = OntologyNode("undergoes-change", [BINARY])
-subtype(UNDERGOES_CHANGE, PATIENT_PROTO_ROLE)
+subtype(UNDERGOES_CHANGE, PERCEIVABLE_PROPERTY)
 INCREMENTAL_THEME = OntologyNode("incremental-theme", [BINARY])
-subtype(INCREMENTAL_THEME, PATIENT_PROTO_ROLE)
+subtype(INCREMENTAL_THEME, PERCEIVABLE_PROPERTY)
 CAUSALLY_AFFECTED = OntologyNode("causally-affected", [BINARY])
-subtype(CAUSALLY_AFFECTED, PATIENT_PROTO_ROLE)
+subtype(CAUSALLY_AFFECTED, PERCEIVABLE_PROPERTY)
 STATIONARY = OntologyNode("stationary", [BINARY])
-subtype(STATIONARY, PATIENT_PROTO_ROLE)
+subtype(STATIONARY, PERCEIVABLE_PROPERTY)
 
 
 # Properties not perceived by the learner, but useful for situation generation
@@ -970,6 +966,7 @@ _PUT_ACTION_DESCRIPTION = ActionDescription(
         (_PUT_AGENT, VOLITIONALLY_INVOLVED),
         (_PUT_AGENT, CAUSES_CHANGE),
         (_PUT_THEME, CAUSALLY_AFFECTED),
+        (_PUT_GOAL, STATIONARY),
     ],
 )
 

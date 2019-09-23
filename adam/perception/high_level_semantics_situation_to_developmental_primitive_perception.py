@@ -598,6 +598,9 @@ class _PerceptionGeneration:
                                 situation_or_region
                             ]
                         else:
+                            # We are propagating properties asserted on regions to their
+                            # reference objects.
+                            # TODO: issue #263
                             perception_of_object = self._objects_to_perceptions[
                                 situation_or_region.reference_object
                             ]

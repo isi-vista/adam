@@ -38,6 +38,7 @@ from adam.ontology.phase1_ontology import (
     VOLITIONALLY_INVOLVED,
     CAUSES_CHANGE,
     CAUSALLY_AFFECTED,
+    STATIONARY,
 )
 from adam.ontology.phase1_spatial_relations import (
     DISTAL,
@@ -264,6 +265,9 @@ def test_person_put_ball_on_table():
     assert (
         HasBinaryProperty(ball_perception, CAUSALLY_AFFECTED)
         in first_frame.property_assertions
+    )
+    assert (
+        HasBinaryProperty(table_perception, STATIONARY) in first_frame.property_assertions
     )
 
 
