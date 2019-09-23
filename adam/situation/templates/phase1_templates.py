@@ -355,7 +355,18 @@ class _Phase1SituationTemplateGenerator(
     ) -> HighLevelSemanticsSituation:
         return HighLevelSemanticsSituation(
             ontology=self.ontology,
-            objects=object_var_to_instantiations.values(),
+            salient_objects=[
+                object_var_to_instantiations[obj_var]
+                for obj_var in template.salient_object_variables
+            ],
+            other_objects=[
+                object_var_to_instantiations[obj_var]
+                for obj_var in (
+                    template.all_object_variables.difference(
+                        template.salient_object_variables
+                    )
+                )
+            ],
             always_relations=[
                 relation.copy_remapping_objects(object_var_to_instantiations)
                 for relation in template.asserted_always_relations

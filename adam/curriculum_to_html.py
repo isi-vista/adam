@@ -182,7 +182,7 @@ class CurriculumToHtmlDumper:
         Converts a situation description into its sub-parts as a table entry
         """
         output_text = [f"\n\t\t\t\t\t<h4>Objects</h4>\n\t\t\t\t\t<ul>"]
-        for obj in situation.objects:
+        for obj in situation.all_objects:
             property_string: str
             if obj.properties:
                 property_string = (

@@ -154,17 +154,17 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             # handle the special case of a static situation with only
             # multiple objects of the same type
             object_types_in_situation = set(
-                object_.ontology_node for object_ in self.situation.objects
+                object_.ontology_node for object_ in self.situation.salient_objects
             )
             if len(object_types_in_situation) == 1 and not self.situation.is_dynamic:
                 # e.g. three boxes
                 # doesn't matter which object we choose; they are all the same
-                first_object = first(self.situation.objects)
+                first_object = first(self.situation.salient_objects)
                 self._noun_for_object(first_object)
             else:
                 # the more common case of
                 # multiple objects of different types, or an action...
-                for object_ in self.situation.objects:
+                for object_ in self.situation.salient_objects:
                     if not self._only_translate_if_referenced(object_):
                         self._noun_for_object(object_)
 
@@ -717,13 +717,17 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             if not self.situation.actions:
                 # For now, only apply quantifiers to object-only situations
                 return collections.Counter(
-                    [_object.ontology_node for _object in self.situation.objects]
+                    [_object.ontology_node for _object in self.situation.salient_objects]
                 )
             else:
                 return {
                     ontology_node: 1
                     for ontology_node in immutableset(
-                        object_.ontology_node for object_ in self.situation.objects
+                        # even though only salient objects have linguistic expression
+                        # by default,
+                        # we gather counts over all objects in the scene.
+                        object_.ontology_node
+                        for object_ in self.situation.all_objects
                     )
                 }
 

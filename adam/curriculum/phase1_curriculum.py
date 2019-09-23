@@ -17,20 +17,43 @@ from adam.language_specific.english.english_language_generator import (
 from adam.ontology import THING
 from adam.ontology.during import DuringAction
 from adam.ontology.ontology import Ontology
-from adam.ontology.phase1_ontology import (AGENT, ANIMATE, BIGGER_THAN, BIRD,
-                                           CAN_HAVE_THINGS_RESTING_ON_THEM, CAN_JUMP, FALL, FLY,
-                                           GAILA_PHASE_1_ONTOLOGY, GIVE, GOAL, GROUND, HAS,
-                                           HAS_SPACE_UNDER, HOLLOW, INANIMATE_OBJECT, IS_BODY_PART,
-                                           JUMP, JUMP_INITIAL_SUPPORTER_AUX, LEARNER, LIQUID,
-                                           PERSON, PERSON_CAN_HAVE, PHASE_1_CURRICULUM_OBJECTS,
-                                           RECOGNIZED_PARTICULAR_PROPERTY, ROLL, ROLLABLE,
-                                           ROLL_SURFACE_AUXILIARY, THEME, TRANSFER_OF_POSSESSION,
-                                           bigger_than, inside, on, strictly_above)
-from adam.ontology.phase1_spatial_relations import (
-    AWAY_FROM,
-    SpatialPath,
-    TOWARD,
+from adam.ontology.phase1_ontology import (
+    AGENT,
+    ANIMATE,
+    BIGGER_THAN,
+    BIRD,
+    CAN_HAVE_THINGS_RESTING_ON_THEM,
+    CAN_JUMP,
+    FALL,
+    FLY,
+    GAILA_PHASE_1_ONTOLOGY,
+    GIVE,
+    GOAL,
+    GROUND,
+    HAS,
+    HAS_SPACE_UNDER,
+    HOLLOW,
+    INANIMATE_OBJECT,
+    IS_BODY_PART,
+    JUMP,
+    JUMP_INITIAL_SUPPORTER_AUX,
+    LEARNER,
+    LIQUID,
+    PERSON,
+    PERSON_CAN_HAVE,
+    PHASE_1_CURRICULUM_OBJECTS,
+    RECOGNIZED_PARTICULAR_PROPERTY,
+    ROLL,
+    ROLLABLE,
+    ROLL_SURFACE_AUXILIARY,
+    THEME,
+    TRANSFER_OF_POSSESSION,
+    bigger_than,
+    inside,
+    on,
+    strictly_above,
 )
+from adam.ontology.phase1_spatial_relations import AWAY_FROM, SpatialPath, TOWARD
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
@@ -129,7 +152,7 @@ def build_object_multiples_situations(
                 num_objects = chooser.choice(range(2, 4))
                 yield HighLevelSemanticsSituation(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    objects=[
+                    salient_objects=[
                         SituationObject(
                             ontology_node=object_type,
                             debug_handle=object_type.handle + f"_{idx}",

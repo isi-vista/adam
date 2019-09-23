@@ -28,7 +28,7 @@ def make_mom_put_ball_on_table():
     table = SituationObject(ontology_node=TABLE)
     return HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        objects=[mom, ball, table],
+        salient_objects=[mom, ball, table],
         actions=[
             Action(
                 PUT,
