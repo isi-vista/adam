@@ -594,14 +594,14 @@ def _make_drink_curriculum():
     person_0 = object_variable("person_0", PERSON)
 
     drink_liquid = Phase1SituationTemplate(
-        object_variables=[object_0, liquid_0, person_0],
+        "drink",
+        salient_object_variables=[object_0, liquid_0, person_0],
         actions=[
             Action(
                 DRINK, argument_roles_to_fillers=[(AGENT, person_0), (THEME, liquid_0)]
             )
         ],
         asserted_always_relations=[
-            bigger_than(person_0, object_0),
             inside(liquid_0, object_0),
         ],
     )
