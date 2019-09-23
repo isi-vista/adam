@@ -1,21 +1,19 @@
 from itertools import chain
-from typing import AbstractSet, Iterable, List
+from typing import AbstractSet, Any, Iterable, List
 
 from attr import attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import (
-    ImmutableDict,
     ImmutableSet,
     ImmutableSetMultiDict,
-    immutabledict,
     immutableset,
     immutablesetmultidict,
 )
 from immutablecollections.converter_utils import (
-    _to_immutabledict,
-    _to_immutablesetmultidict,
     _to_immutableset,
+    _to_immutablesetmultidict,
 )
+from more_itertools import only
 from networkx import DiGraph, ancestors, dfs_preorder_nodes, has_path, simple_cycles
 from vistautils.preconditions import check_arg
 
@@ -25,10 +23,10 @@ from adam.ontology import (
     REQUIRED_ONTOLOGY_NODES,
     THING,
 )
-from adam.ontology.structural_schema import ObjectStructuralSchema
 
 # convenience method for use in Ontology
 from adam.ontology.action_description import ActionDescription
+from adam.ontology.structural_schema import ObjectStructuralSchema
 from adam.relation import Relation
 
 
@@ -36,7 +34,7 @@ def _copy_digraph(digraph: DiGraph) -> DiGraph:
     return digraph.copy()
 
 
-@attrs(frozen=True, slots=True)
+@attrs(frozen=True, slots=True, repr=False)
 class Ontology:
     r"""
     A hierarchical collection of types for objects, actions, etc.
@@ -56,12 +54,15 @@ class Ontology:
     To assist in creating legal `Ontology`\ s, we provide `minimal_ontology_graph`.
     """
 
+    _name: str = attrib(validator=instance_of(str))
     _graph: DiGraph = attrib(validator=instance_of(DiGraph), converter=_copy_digraph)
     _structural_schemata: ImmutableSetMultiDict[
         "OntologyNode", "ObjectStructuralSchema"
     ] = attrib(converter=_to_immutablesetmultidict, default=immutablesetmultidict())
-    action_to_description: ImmutableDict[OntologyNode, ActionDescription] = attrib(
-        converter=_to_immutabledict, default=immutabledict(), kw_only=True
+    action_to_description: ImmutableSetMultiDict[
+        OntologyNode, ActionDescription
+    ] = attrib(
+        converter=_to_immutablesetmultidict, default=immutablesetmultidict(), kw_only=True
     )
     relations: ImmutableSet[Relation[OntologyNode]] = attrib(
         converter=_to_immutableset, default=immutableset(), kw_only=True
@@ -207,8 +208,42 @@ class Ontology:
                 break
         return immutableset(node_properties)
 
+    def required_action_description(
+        self, action_type: OntologyNode, semantic_roles: Iterable[OntologyNode]
+    ) -> ActionDescription:
+        semantic_roles_set = immutableset(semantic_roles)
+        descriptions_for_action_type = self.action_to_description[action_type]
+        matching_descriptions = immutableset(
+            description
+            for description in descriptions_for_action_type
+            if description.frame.semantic_roles == semantic_roles_set
+        )
+
+        if matching_descriptions:
+            if len(matching_descriptions) == 1:
+                return only(matching_descriptions)
+            else:
+                raise RuntimeError(
+                    f"Multiple action descriptions match action type "
+                    f"{action_type} and roles {semantic_roles_set}"
+                )
+        else:
+            available_frames: Any = [
+                immutableset(description.frame.roles_to_variables.keys())
+                for description in descriptions_for_action_type
+            ]
+            raise RuntimeError(
+                f"No action descriptions match action type "
+                f"{action_type} and roles {semantic_roles_set}. "
+                f"Known frames for {action_type} are "
+                f"{available_frames}"
+            )
+
     def __contains__(self, item: "OntologyNode") -> bool:
         return item in self._graph.nodes
+
+    def __repr__(self) -> str:
+        return f"Ontology({self._name})"
 
     @subjects_to_relations.default
     def _subjects_to_relations(

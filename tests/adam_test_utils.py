@@ -1,7 +1,7 @@
+from adam.perception import ObjectPerception
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
-from adam.perception import ObjectPerception
 
 
 def perception_with_handle(

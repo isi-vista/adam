@@ -1,7 +1,7 @@
 from adam.ontology import IN_REGION
 from adam.ontology.phase1_ontology import IS_DAD, IS_MOM, SENTIENT, above
 from adam.ontology.phase1_spatial_relations import EXTERIOR_BUT_IN_CONTACT, Region
-from adam.perception import PerceptualRepresentation, ObjectPerception
+from adam.perception import ObjectPerception, PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
     HasBinaryProperty,

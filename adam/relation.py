@@ -1,8 +1,9 @@
+from typing import Any, Callable, Generic, Iterable, List, Mapping, Tuple, TypeVar, Union
+
 from attr import attrib, attrs, evolve
 from attr.validators import instance_of
 from immutablecollections import ImmutableSet, immutableset
 from more_itertools import flatten
-from typing import Callable, Generic, Iterable, Tuple, TypeVar, Union, Any, Mapping, List
 from vistautils.preconditions import check_arg
 
 from adam.ontology import IN_REGION, OntologyNode

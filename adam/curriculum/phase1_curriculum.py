@@ -1,6 +1,7 @@
 """
 Curricula for DARPA GAILA Phase 1
 """
+
 from itertools import chain
 from typing import Iterable
 
@@ -13,14 +14,16 @@ from adam.language_specific.english.english_language_generator import (
     PREFER_DITRANSITIVE,
     USE_ADVERBIAL_PATH_MODIFIER,
 )
-from adam.ontology import IN_REGION, THING
+from adam.ontology import THING
 from adam.ontology.during import DuringAction
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
     AGENT,
+    ANIMATE,
     BIGGER_THAN,
     BIRD,
     CAN_HAVE_THINGS_RESTING_ON_THEM,
+    CAN_JUMP,
     FALL,
     FLY,
     GAILA_PHASE_1_ONTOLOGY,
@@ -31,25 +34,31 @@ from adam.ontology.phase1_ontology import (
     HAS_SPACE_UNDER,
     INANIMATE_OBJECT,
     IS_BODY_PART,
+    JUMP,
+    JUMP_INITIAL_SUPPORTER_AUX,
     LEARNER,
     LIQUID,
     PERSON,
     PERSON_CAN_HAVE,
     PHASE_1_CURRICULUM_OBJECTS,
     RECOGNIZED_PARTICULAR_PROPERTY,
+    ROLL,
+    ROLLABLE,
+    ROLL_SURFACE_AUXILIARY,
     THEME,
     TRANSFER_OF_POSSESSION,
+    bigger_than,
+    inside,
     on,
+    strictly_above,
+    DRINK_CONTAINER_AUX,
+    HOLLOW,
+    DRINK,
+    EDIBLE,
+    EAT,
+    PATIENT,
 )
-from adam.ontology.phase1_spatial_relations import (
-    AWAY_FROM,
-    DISTAL,
-    GRAVITATIONAL_DOWN,
-    GRAVITATIONAL_UP,
-    Region,
-    SpatialPath,
-    TOWARD,
-)
+from adam.ontology.phase1_spatial_relations import AWAY_FROM, SpatialPath, TOWARD
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
@@ -94,6 +103,7 @@ def _phase1_instances(
     )
 
 
+_GROUND_OBJECT = object_variable("ground", GROUND)
 _ARBITRARY_OBJECT = object_variable("object_0", THING)
 _NOT_A_BODY_PART = object_variable(
     "not-body-part_object_0", THING, banned_properties=[IS_BODY_PART]
@@ -104,7 +114,7 @@ _NOT_A_BODY_PART = object_variable(
 _LEARNER_OBJECT = object_variable("learner", LEARNER)
 
 SINGLE_OBJECT_TEMPLATE = Phase1SituationTemplate(
-    object_variables=[object_variable("object"), _LEARNER_OBJECT]
+    "single-object", salient_object_variables=[object_variable("object"), _LEARNER_OBJECT]
 )
 
 EACH_OBJECT_BY_ITSELF_SUB_CURRICULUM = _phase1_instances(
@@ -119,7 +129,7 @@ EACH_OBJECT_BY_ITSELF_SUB_CURRICULUM = _phase1_instances(
 _COLOR = color_variable("color")
 _COLOR_OBJECT = object_variable("object", added_properties=[_COLOR])
 _OBJECT_WITH_COLOR_TEMPLATE = Phase1SituationTemplate(
-    object_variables=[_COLOR_OBJECT, _LEARNER_OBJECT]
+    "object-with-color", salient_object_variables=[_COLOR_OBJECT, _LEARNER_OBJECT]
 )
 
 OBJECTS_WITH_COLORS_SUB_CURRICULUM = _phase1_instances(
@@ -148,7 +158,7 @@ def build_object_multiples_situations(
                 num_objects = chooser.choice(range(2, 4))
                 yield HighLevelSemanticsSituation(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    objects=[
+                    salient_objects=[
                         SituationObject(
                             ontology_node=object_type,
                             debug_handle=object_type.handle + f"_{idx}",
@@ -165,11 +175,10 @@ MULTIPLE_OF_THE_SAME_OBJECT_SUB_CURRICULUM = _phase1_instances(
     ),
 )
 
-_GROUND = object_variable("the ground", GROUND)
-
 _OBJECT_ON_GROUND_TEMPLATE = Phase1SituationTemplate(
-    object_variables=[_GROUND, _NOT_A_BODY_PART],
-    asserted_always_relations=[on(_NOT_A_BODY_PART, _GROUND)],
+    "object-on-ground",
+    salient_object_variables=[_GROUND_OBJECT, _NOT_A_BODY_PART],
+    asserted_always_relations=[on(_NOT_A_BODY_PART, _GROUND_OBJECT)],
 )
 
 _OBJECT_ON_GROUND_SUB_CURRICULUM = _phase1_instances(
@@ -184,7 +193,8 @@ _INANIMATE_OBJECT_0 = object_variable(
     "inanimate-object", INANIMATE_OBJECT, required_properties=[PERSON_CAN_HAVE]
 )
 PERSON_HAS_OBJECT_TEMPLATE = Phase1SituationTemplate(
-    object_variables=[_PERSON_0, _INANIMATE_OBJECT_0, _LEARNER_OBJECT],
+    "person-has-object",
+    salient_object_variables=[_PERSON_0, _INANIMATE_OBJECT_0, _LEARNER_OBJECT],
     asserted_always_relations=[Relation(HAS, _PERSON_0, _INANIMATE_OBJECT_0)],
 )
 
@@ -203,7 +213,8 @@ _VERB_WITH_ONLY_THEME = action_variable(
 )
 
 _ANY_OBJECT_INTRANSITIVES_TEMPLATE = Phase1SituationTemplate(
-    object_variables=[_ARBITRARY_OBJECT],
+    "any-object-intransitive",
+    salient_object_variables=[_ARBITRARY_OBJECT],
     actions=[
         Action(
             action_type=_VERB_WITH_ONLY_THEME,
@@ -223,18 +234,17 @@ _ANY_OBJECT_INTRANSITIVES_SUBCURRICULUM = _phase1_instances(
 
 
 def _make_object_falls_template(
-    use_adverbvial_path_modifier: bool
+    use_adverbial_path_modifier: bool
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
-        object_variables=[_ARBITRARY_OBJECT],
+        "object-falls",
+        salient_object_variables=[_ARBITRARY_OBJECT],
         actions=[
             Action(
                 action_type=FALL, argument_roles_to_fillers=[(THEME, _ARBITRARY_OBJECT)]
             )
         ],
-        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER]
-        if use_adverbvial_path_modifier
-        else [],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER] if use_adverbial_path_modifier else [],
     )
 
 
@@ -265,8 +275,8 @@ def _make_transfer_of_possession_curriculum() -> _Phase1InstanceGroup:
             *[
                 sampled(
                     Phase1SituationTemplate(
-                        object_variables=[giver, recipient, given_object],
-                        #
+                        "transfer-of-possession",
+                        salient_object_variables=[giver, recipient, given_object],
                         actions=[
                             Action(
                                 GIVE,
@@ -297,7 +307,8 @@ def _make_object_on_object_curriculum() -> _Phase1InstanceGroup:
         required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM],
     )
     situation_template = Phase1SituationTemplate(
-        object_variables=[object_, object_with_surface],
+        "object-on-surface",
+        salient_object_variables=[object_, object_with_surface],
         constraining_relations=[Relation(BIGGER_THAN, object_with_surface, object_)],
         asserted_always_relations=[on(object_, object_with_surface)],
     )
@@ -313,6 +324,47 @@ def _make_object_on_object_curriculum() -> _Phase1InstanceGroup:
     )
 
 
+def _make_object_in_other_object_curriculum() -> _Phase1InstanceGroup:
+    object_ = object_variable("object_0", banned_properties=[IS_BODY_PART])
+    liquid = object_variable(
+        "liquid_0", required_properties=[LIQUID], banned_properties=[IS_BODY_PART]
+    )
+    containing_object = object_variable(
+        "object_1", required_properties=[HOLLOW], banned_properties=[IS_BODY_PART]
+    )
+    solid_template = Phase1SituationTemplate(
+        "solid-containment",
+        salient_object_variables=[object_, containing_object],
+        constraining_relations=[Relation(BIGGER_THAN, containing_object, object_)],
+        asserted_always_relations=[inside(object_, containing_object)],
+    )
+    liquid_template = Phase1SituationTemplate(
+        "liquid-containment",
+        salient_object_variables=[liquid, containing_object],
+        asserted_always_relations=[inside(liquid, containing_object)],
+    )
+
+    return _phase1_instances(
+        "objects-in-other-objects",
+        chain(
+            *[
+                sampled(
+                    liquid_template,
+                    max_to_sample=25,
+                    chooser=_CHOOSER,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                ),
+                sampled(
+                    solid_template,
+                    max_to_sample=75,
+                    chooser=_CHOOSER,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                ),
+            ]
+        ),
+    )
+
+
 def _make_fly_curriculum():
     # fly under something which has an under
     bird = object_variable("bird_0", BIRD)
@@ -320,11 +372,11 @@ def _make_fly_curriculum():
     object_with_space_under = object_variable(
         "object_0", THING, required_properties=[HAS_SPACE_UNDER]
     )
-    ground = object_variable("ground", GROUND)
 
     bare_fly = [
         Phase1SituationTemplate(
-            object_variables=[bird, ground],
+            "fly",
+            salient_object_variables=[bird, _GROUND_OBJECT],
             actions=[
                 Action(
                     FLY,
@@ -334,7 +386,8 @@ def _make_fly_curriculum():
                             (
                                 bird,
                                 SpatialPath(
-                                    AWAY_FROM if up else TOWARD, reference_object=ground
+                                    AWAY_FROM if up else TOWARD,
+                                    reference_object=_GROUND_OBJECT,
                                 ),
                             )
                         ]
@@ -349,7 +402,8 @@ def _make_fly_curriculum():
     # "a bird flies down"
     fly_up_down = [
         Phase1SituationTemplate(
-            object_variables=[bird, ground],
+            "fly-up-down",
+            salient_object_variables=[bird, _GROUND_OBJECT],
             actions=[
                 Action(
                     FLY,
@@ -359,7 +413,8 @@ def _make_fly_curriculum():
                             (
                                 bird,
                                 SpatialPath(
-                                    AWAY_FROM if up else TOWARD, reference_object=ground
+                                    AWAY_FROM if up else TOWARD,
+                                    reference_object=_GROUND_OBJECT,
                                 ),
                             )
                         ]
@@ -373,47 +428,27 @@ def _make_fly_curriculum():
 
     # "a bird flies over a house"
     fly_over = Phase1SituationTemplate(
-        object_variables=[bird, object_0],
+        "fly-over",
+        salient_object_variables=[bird, object_0],
         actions=[
             Action(
                 FLY,
                 argument_roles_to_fillers=[(AGENT, bird)],
-                during=DuringAction(
-                    at_some_point=[
-                        Relation(
-                            IN_REGION,
-                            bird,
-                            Region(
-                                reference_object=object_with_space_under,
-                                distance=DISTAL,
-                                direction=GRAVITATIONAL_UP,
-                            ),
-                        )
-                    ]
-                ),
+                during=DuringAction(at_some_point=[strictly_above(bird, object_0)]),
             )
         ],
     )
 
     # "a bird flies under a table"
     fly_under = Phase1SituationTemplate(
-        object_variables=[bird, object_with_space_under],
+        "fly-under",
+        salient_object_variables=[bird, object_with_space_under],
         actions=[
             Action(
                 FLY,
                 argument_roles_to_fillers=[(AGENT, bird)],
                 during=DuringAction(
-                    at_some_point=[
-                        Relation(
-                            IN_REGION,
-                            bird,
-                            Region(
-                                reference_object=object_with_space_under,
-                                distance=DISTAL,
-                                direction=GRAVITATIONAL_DOWN,
-                            ),
-                        )
-                    ]
+                    at_some_point=[strictly_above(object_with_space_under, bird)]
                 ),
             )
         ],
@@ -449,6 +484,212 @@ def _make_fly_curriculum():
     )
 
 
+def _make_roll_curriculum():
+    animate_0 = object_variable("object_0", THING, required_properties=[ANIMATE])
+    rollable_0 = object_variable(
+        "object_1", INANIMATE_OBJECT, required_properties=[ROLLABLE]
+    )
+    rolling_surface = object_variable(
+        "surface", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
+    )
+
+    # rolls intransitively
+    # rolls transitively
+    # rolls on a surface
+    intransitive_roll = Phase1SituationTemplate(
+        "roll-intransitive",
+        salient_object_variables=[animate_0, rolling_surface],
+        actions=[
+            Action(
+                ROLL,
+                argument_roles_to_fillers=[(AGENT, animate_0)],
+                auxiliary_variable_bindings=[(ROLL_SURFACE_AUXILIARY, rolling_surface)],
+                during=DuringAction(continuously=[on(animate_0, rolling_surface)]),
+            )
+        ],
+        constraining_relations=[bigger_than(rolling_surface, animate_0)],
+    )
+
+    transitive_roll = Phase1SituationTemplate(
+        "roll-transitive",
+        salient_object_variables=[animate_0, rollable_0],
+        actions=[
+            Action(
+                ROLL,
+                argument_roles_to_fillers=[(AGENT, animate_0), (THEME, rollable_0)],
+                during=DuringAction(continuously=[on(rollable_0, rolling_surface)]),
+                auxiliary_variable_bindings=[(ROLL_SURFACE_AUXILIARY, rolling_surface)],
+            )
+        ],
+        constraining_relations=[bigger_than(animate_0, rollable_0)],
+    )
+
+    transitive_roll_with_surface = Phase1SituationTemplate(
+        "roll-transitive-with-salient-surface",
+        salient_object_variables=[animate_0, rollable_0, rolling_surface],
+        actions=[
+            Action(
+                ROLL,
+                argument_roles_to_fillers=[(AGENT, animate_0), (THEME, rollable_0)],
+                during=DuringAction(continuously=[on(rollable_0, rolling_surface)]),
+                auxiliary_variable_bindings=[(ROLL_SURFACE_AUXILIARY, rolling_surface)],
+            )
+        ],
+        constraining_relations=[
+            bigger_than(rolling_surface, rollable_0),
+            bigger_than(animate_0, rollable_0),
+        ],
+    )
+
+    return _phase1_instances(
+        "rolling",
+        chain(
+            *[
+                sampled(
+                    situation,
+                    max_to_sample=25,
+                    chooser=_CHOOSER,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                )
+                for situation in (
+                    intransitive_roll,
+                    transitive_roll,
+                    transitive_roll_with_surface,
+                )
+            ]
+        ),
+    )
+
+
+JUMPER = object_variable("jumper_0", THING, required_properties=[CAN_JUMP])
+JUMPED_OVER = object_variable("jumped_over", THING)
+
+
+def _make_jump_curriculum():
+    # "A person jumps"
+    jump_on_ground = Phase1SituationTemplate(
+        "jump",
+        salient_object_variables=[JUMPER],
+        actions=[
+            Action(
+                JUMP,
+                argument_roles_to_fillers=[(AGENT, JUMPER)],
+                auxiliary_variable_bindings=[
+                    (JUMP_INITIAL_SUPPORTER_AUX, _GROUND_OBJECT)
+                ],
+            )
+        ],
+    )
+
+    # "A person jumps over a ball"
+    jump_over_object = make_jump_over_object_template()
+
+    return _phase1_instances(
+        "jumping",
+        chain(
+            *[
+                all_possible(
+                    jump_on_ground, ontology=GAILA_PHASE_1_ONTOLOGY, chooser=_CHOOSER
+                ),
+                sampled(
+                    jump_over_object,
+                    max_to_sample=25,
+                    chooser=_CHOOSER,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                ),
+            ]
+        ),
+    )
+
+
+# public for use in a test
+def make_jump_over_object_template():
+    return Phase1SituationTemplate(
+        "jump-over",
+        salient_object_variables=[JUMPER, JUMPED_OVER],
+        actions=[
+            Action(
+                JUMP,
+                argument_roles_to_fillers=[(AGENT, JUMPER)],
+                during=DuringAction(at_some_point=[strictly_above(JUMPER, JUMPED_OVER)]),
+                auxiliary_variable_bindings=[
+                    (JUMP_INITIAL_SUPPORTER_AUX, _GROUND_OBJECT)
+                ],
+            )
+        ],
+        constraining_relations=[Relation(BIGGER_THAN, JUMPER, JUMPED_OVER)],
+    )
+
+
+def _make_drink_curriculum():
+    object_0 = object_variable(
+        "object_0", required_properties=[HOLLOW], banned_properties=[IS_BODY_PART]
+    )
+    liquid_0 = object_variable("liquid_0", required_properties=[LIQUID])
+    person_0 = object_variable("person_0", PERSON)
+
+    drink_liquid = Phase1SituationTemplate(
+        "drink",
+        salient_object_variables=[liquid_0, person_0],
+        actions=[
+            Action(
+                DRINK,
+                argument_roles_to_fillers=[(AGENT, person_0), (THEME, liquid_0)],
+                auxiliary_variable_bindings=[(DRINK_CONTAINER_AUX, object_0)],
+            )
+        ],
+    )
+
+    return _phase1_instances(
+        "drinking",
+        chain(
+            *[
+                all_possible(
+                    drink_liquid, ontology=GAILA_PHASE_1_ONTOLOGY, chooser=_CHOOSER
+                )
+            ]
+        ),
+    )
+
+
+def _make_eat_curriculum():
+    object_to_eat = object_variable(
+        "object_0",
+        INANIMATE_OBJECT,
+        required_properties=[EDIBLE],
+        banned_properties=[LIQUID],
+    )
+    eater = object_variable("eater_0", THING, required_properties=[ANIMATE])
+
+    # "Mom eats a cookie"
+    eat_object = Phase1SituationTemplate(
+        "eat-object",
+        salient_object_variables=[object_to_eat, eater],
+        actions=[
+            Action(
+                EAT, argument_roles_to_fillers=[(AGENT, eater), (PATIENT, object_to_eat)]
+            )
+        ],
+    )
+
+    # TODO: "eat it up"
+    # https://github.com/isi-vista/adam/issues/267
+
+    return _phase1_instances(
+        "eating",
+        chain(
+            *[
+                sampled(
+                    eat_object,
+                    max_to_sample=25,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                    chooser=_CHOOSER,
+                )
+            ]
+        ),
+    )
+
+
 GAILA_PHASE_1_CURRICULUM = [
     EACH_OBJECT_BY_ITSELF_SUB_CURRICULUM,
     OBJECTS_WITH_COLORS_SUB_CURRICULUM,
@@ -459,7 +700,11 @@ GAILA_PHASE_1_CURRICULUM = [
     _OBJECTS_FALLING_SUBCURRICULUM,
     _make_transfer_of_possession_curriculum(),
     _make_object_on_object_curriculum(),
+    _make_object_in_other_object_curriculum(),
     _make_fly_curriculum(),
+    _make_roll_curriculum(),
+    _make_jump_curriculum(),
+    _make_drink_curriculum(),
 ]
 """
 One particular instantiation of the curriculum for GAILA Phase 1.

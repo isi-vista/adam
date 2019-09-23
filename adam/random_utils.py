@@ -7,9 +7,9 @@ things which make random choices.
 import random
 from abc import ABC
 from random import Random
-from typing import TypeVar, Sequence
+from typing import Sequence, TypeVar
 
-from attr import attrs, attrib
+from attr import attrib, attrs
 from attr.validators import instance_of
 
 T = TypeVar("T")  # pylint:disable=invalid-name

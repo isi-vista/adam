@@ -1,11 +1,11 @@
 from immutablecollections import immutableset
 
 from adam.ontology.phase1_ontology import (
-    GOAL,
     AGENT,
-    THEME,
-    GAILA_PHASE_1_ONTOLOGY,
     FALL,
+    GAILA_PHASE_1_ONTOLOGY,
+    GOAL,
+    THEME,
     THROW,
 )
 from adam.ontology.selectors import SubcategorizationSelector

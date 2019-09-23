@@ -4,7 +4,7 @@ Representations of the linguistic input and outputs of a `LanguageLearner`\ .
 from abc import ABC, abstractmethod
 from typing import Tuple, TypeVar
 
-from attr import attrs, attrib
+from attr import attrib, attrs
 from attr.validators import instance_of
 
 

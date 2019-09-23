@@ -13,14 +13,9 @@ The following will eventually end up here:
 - Relations, Modifiers, Function Words: basic color terms (red, blue, green, white, black…), one,
   two, I, me, my, you, your, to, in, on, [beside, behind, in front of, over, under], up, down
 """
-from typing import Optional, Sequence, Tuple
+from typing import Iterable, Optional, Sequence, Tuple
 
-from immutablecollections import (
-    ImmutableDict,
-    immutabledict,
-    immutableset,
-    immutablesetmultidict,
-)
+from immutablecollections import ImmutableDict, immutabledict, immutableset
 from more_itertools import flatten
 
 from adam.ontology import (
@@ -33,24 +28,26 @@ from adam.ontology import (
     THING,
     minimal_ontology_graph,
 )
-from adam.ontology.phase1_size_relationships import build_size_relationships
 from adam.ontology.action_description import ActionDescription, ActionDescriptionFrame
 from adam.ontology.during import DuringAction
 from adam.ontology.ontology import Ontology
+from adam.ontology.phase1_size_relationships import build_size_relationships
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
+    Axis,
+    DISTAL,
     Direction,
     EXTERIOR_BUT_IN_CONTACT,
     FROM,
+    GRAVITATIONAL_AXIS,
     INTERIOR,
+    PROXIMAL,
+    Region,
     SpatialPath,
     TO,
-    GRAVITATIONAL_AXIS,
-    Axis,
-    Region,
     TOWARD,
-    DISTAL,
-    PROXIMAL,
+    GRAVITATIONAL_UP,
+    GRAVITATIONAL_DOWN,
 )
 from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
 from adam.relation import (
@@ -152,6 +149,29 @@ implicity generated in the perception step if not explicit in a situation.
 """
 subtype(GAZED_AT, PERCEIVABLE_PROPERTY)
 
+
+# Dowty's Proto-Roles: Issue 104; Dotwy, 91, page 572.
+# Agent Proto-Roles properties:
+VOLITIONALLY_INVOLVED = OntologyNode("volitionally-involved", [BINARY])
+subtype(VOLITIONALLY_INVOLVED, PERCEIVABLE_PROPERTY)
+SENTIENT_OR_PERCEIVES = OntologyNode("sentient-or-perceives", [BINARY])
+subtype(SENTIENT_OR_PERCEIVES, PERCEIVABLE_PROPERTY)
+CAUSES_CHANGE = OntologyNode("causes-change", [BINARY])
+subtype(CAUSES_CHANGE, PERCEIVABLE_PROPERTY)
+MOVES = OntologyNode("moves", [BINARY])
+subtype(MOVES, PERCEIVABLE_PROPERTY)
+
+# Patient Proto-Roles:
+UNDERGOES_CHANGE = OntologyNode("undergoes-change", [BINARY])
+subtype(UNDERGOES_CHANGE, PERCEIVABLE_PROPERTY)
+INCREMENTAL_THEME = OntologyNode("incremental-theme", [BINARY])
+subtype(INCREMENTAL_THEME, PERCEIVABLE_PROPERTY)
+CAUSALLY_AFFECTED = OntologyNode("causally-affected", [BINARY])
+subtype(CAUSALLY_AFFECTED, PERCEIVABLE_PROPERTY)
+STATIONARY = OntologyNode("stationary", [BINARY])
+subtype(STATIONARY, PERCEIVABLE_PROPERTY)
+
+
 # Properties not perceived by the learner, but useful for situation generation
 
 CAN_MANIPULATE_OBJECTS = OntologyNode("can-manipulate-objects")
@@ -168,10 +188,14 @@ PERSON_CAN_HAVE = OntologyNode("person-can-have")
 subtype(PERSON_CAN_HAVE, PROPERTY)
 TRANSFER_OF_POSSESSION = OntologyNode("transfer-of-possession")
 subtype(TRANSFER_OF_POSSESSION, PROPERTY)
+CAN_JUMP = OntologyNode("can-jump")
+subtype(CAN_JUMP, PROPERTY)
 CAN_FLY = OntologyNode("can-fly")
 subtype(CAN_FLY, PROPERTY)
 HAS_SPACE_UNDER = OntologyNode("has-space-under")
 subtype(HAS_SPACE_UNDER, PROPERTY)
+EDIBLE = OntologyNode("edible")
+subtype(EDIBLE, PROPERTY)
 
 COLOR = OntologyNode("color")
 subtype(COLOR, PERCEIVABLE_PROPERTY)
@@ -237,7 +261,7 @@ TABLE = OntologyNode(
     "table", [CAN_FILL_TEMPLATE_SLOT, CAN_HAVE_THINGS_RESTING_ON_THEM, HAS_SPACE_UNDER]
 )
 subtype(TABLE, INANIMATE_OBJECT)
-BALL = OntologyNode("ball", [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE])
+BALL = OntologyNode("ball", [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, ROLLABLE])
 subtype(BALL, INANIMATE_OBJECT)
 BOOK = OntologyNode(
     "book", [CAN_FILL_TEMPLATE_SLOT, CAN_HAVE_THINGS_RESTING_ON_THEM, PERSON_CAN_HAVE]
@@ -246,15 +270,24 @@ subtype(BOOK, INANIMATE_OBJECT)
 HOUSE = OntologyNode("house", [HOLLOW, CAN_FILL_TEMPLATE_SLOT])
 subtype(HOUSE, INANIMATE_OBJECT)
 CAR = OntologyNode(
-    "car", [HOLLOW, CAN_FILL_TEMPLATE_SLOT, SELF_MOVING, CAN_HAVE_THINGS_RESTING_ON_THEM]
+    "car",
+    [
+        HOLLOW,
+        CAN_FILL_TEMPLATE_SLOT,
+        SELF_MOVING,
+        CAN_HAVE_THINGS_RESTING_ON_THEM,
+        ROLLABLE,
+    ],
 )
 subtype(CAR, INANIMATE_OBJECT)
 WATER = OntologyNode(
-    "water", [LIQUID], non_inheritable_properties=[TRANSPARENT, CAN_FILL_TEMPLATE_SLOT]
+    "water",
+    [LIQUID],
+    non_inheritable_properties=[TRANSPARENT, CAN_FILL_TEMPLATE_SLOT, EDIBLE],
 )
 subtype(WATER, INANIMATE_OBJECT)
 JUICE = OntologyNode(
-    "juice", [LIQUID], non_inheritable_properties=[RED, CAN_FILL_TEMPLATE_SLOT]
+    "juice", [LIQUID], non_inheritable_properties=[RED, CAN_FILL_TEMPLATE_SLOT, EDIBLE]
 )
 subtype(JUICE, INANIMATE_OBJECT)
 CUP = OntologyNode("cup", [HOLLOW, CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE])
@@ -270,28 +303,39 @@ subtype(CHAIR, INANIMATE_OBJECT)
 # because food and liquids can enter it,
 # but we eventually want something more sophisticated.
 HEAD = OntologyNode(
-    "head", [HOLLOW, CAN_FILL_TEMPLATE_SLOT, CAN_HAVE_THINGS_RESTING_ON_THEM]
+    "head",
+    [HOLLOW, CAN_FILL_TEMPLATE_SLOT, CAN_HAVE_THINGS_RESTING_ON_THEM, IS_BODY_PART],
 )
 subtype(HEAD, INANIMATE_OBJECT)
 MILK = OntologyNode(
-    "milk", [LIQUID], non_inheritable_properties=[WHITE, CAN_FILL_TEMPLATE_SLOT]
+    "milk", [LIQUID], non_inheritable_properties=[WHITE, CAN_FILL_TEMPLATE_SLOT, EDIBLE]
 )
 subtype(MILK, INANIMATE_OBJECT)
-HAND = OntologyNode("hand", [CAN_MANIPULATE_OBJECTS, CAN_FILL_TEMPLATE_SLOT])
+HAND = OntologyNode(
+    "hand", [CAN_MANIPULATE_OBJECTS, CAN_FILL_TEMPLATE_SLOT, IS_BODY_PART]
+)
 subtype(HAND, INANIMATE_OBJECT)
 TRUCK = OntologyNode(
     "truck",
-    [HOLLOW, CAN_FILL_TEMPLATE_SLOT, SELF_MOVING, CAN_HAVE_THINGS_RESTING_ON_THEM],
+    [
+        HOLLOW,
+        CAN_FILL_TEMPLATE_SLOT,
+        SELF_MOVING,
+        CAN_HAVE_THINGS_RESTING_ON_THEM,
+        ROLLABLE,
+    ],
 )
 subtype(TRUCK, INANIMATE_OBJECT)
 DOOR = OntologyNode("door", [CAN_FILL_TEMPLATE_SLOT])
 subtype(DOOR, INANIMATE_OBJECT)
 HAT = OntologyNode("hat", [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE])
 subtype(HAT, INANIMATE_OBJECT)
-COOKIE = OntologyNode("cookie", [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE])
+COOKIE = OntologyNode(
+    "cookie", [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, ROLLABLE, EDIBLE]
+)
 subtype(COOKIE, INANIMATE_OBJECT)
 
-PERSON = OntologyNode("person", inheritable_properties=[ANIMATE, SELF_MOVING])
+PERSON = OntologyNode("person", inheritable_properties=[ANIMATE, SELF_MOVING, CAN_JUMP])
 subtype(PERSON, THING)
 IS_MOM = OntologyNode("is-mom")
 subtype(IS_MOM, RECOGNIZED_PARTICULAR_PROPERTY)
@@ -318,7 +362,7 @@ subtype(LEARNER, BABY)
 
 NONHUMAN_ANIMAL = OntologyNode("animal", inheritable_properties=[ANIMATE])
 subtype(NONHUMAN_ANIMAL, THING)
-DOG = OntologyNode("dog", [CAN_FILL_TEMPLATE_SLOT])
+DOG = OntologyNode("dog", [CAN_FILL_TEMPLATE_SLOT, CAN_JUMP])
 subtype(DOG, NONHUMAN_ANIMAL)
 BIRD = OntologyNode("bird", [CAN_FILL_TEMPLATE_SLOT, CAN_FLY])
 subtype(BIRD, NONHUMAN_ANIMAL)
@@ -536,6 +580,23 @@ def _below_region_factory(reference_object: ObjectT) -> Region[ObjectT]:
 
 above = make_opposite_dsl_region_relation(  # pylint:disable=invalid-name
     _above_region_factory, _below_region_factory
+)
+
+
+def _strictly_above_region_factory(reference_object: ObjectT) -> Region[ObjectT]:
+    return Region(
+        reference_object=reference_object, distance=DISTAL, direction=GRAVITATIONAL_UP
+    )
+
+
+def _strictly_below_region_factory(reference_object: ObjectT) -> Region[ObjectT]:
+    return Region(
+        reference_object=reference_object, distance=DISTAL, direction=GRAVITATIONAL_DOWN
+    )
+
+
+strictly_above = make_opposite_dsl_region_relation(  # pylint:disable=invalid-name
+    _strictly_above_region_factory, _strictly_below_region_factory
 )
 
 
@@ -908,9 +969,7 @@ _CONTACTING_MANIPULATOR = Region(
 )
 
 _PUT_ACTION_DESCRIPTION = ActionDescription(
-    frames=[
-        ActionDescriptionFrame({AGENT: _PUT_AGENT, THEME: _PUT_THEME, GOAL: _PUT_GOAL})
-    ],
+    frame=ActionDescriptionFrame({AGENT: _PUT_AGENT, THEME: _PUT_THEME, GOAL: _PUT_GOAL}),
     during=DuringAction(
         objects_to_paths=[
             (_PUT_THEME, SpatialPath(FROM, _CONTACTING_MANIPULATOR)),
@@ -930,6 +989,12 @@ _PUT_ACTION_DESCRIPTION = ActionDescription(
         Relation(IN_REGION, _PUT_THEME, _CONTACTING_MANIPULATOR, negated=True),
         Relation(IN_REGION, _PUT_THEME, _PUT_GOAL),
     ],
+    asserted_properties=[
+        (_PUT_AGENT, VOLITIONALLY_INVOLVED),
+        (_PUT_AGENT, CAUSES_CHANGE),
+        (_PUT_THEME, UNDERGOES_CHANGE),
+        (_PUT_GOAL, STATIONARY),
+    ],
 )
 
 _PUSH_AGENT = SituationObject(THING, properties=[ANIMATE])
@@ -939,9 +1004,9 @@ _PUSH_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
 
 
 _PUSH_ACTION_DESCRIPTION = ActionDescription(
-    frames=[
-        ActionDescriptionFrame({AGENT: _PUSH_AGENT, THEME: _PUSH_THEME, GOAL: _PUSH_GOAL})
-    ],
+    frame=ActionDescriptionFrame(
+        {AGENT: _PUSH_AGENT, THEME: _PUSH_THEME, GOAL: _PUSH_GOAL}
+    ),
     during=DuringAction(
         continuously=flatten_relations([contacts(_PUT_MANIPULATOR, _PUT_THEME)]),
         objects_to_paths=[(_PUSH_THEME, SpatialPath(TO, _PUT_GOAL))],
@@ -957,32 +1022,37 @@ _PUSH_ACTION_DESCRIPTION = ActionDescription(
     postconditions=[Relation(IN_REGION, _PUSH_THEME, _PUSH_GOAL)],
     # TODO: encode that the THEME's vertical position does not significantly change,
     # unless there is e.g. a ramp
+    asserted_properties=[
+        (_PUSH_AGENT, VOLITIONALLY_INVOLVED),
+        (_PUSH_AGENT, CAUSES_CHANGE),
+        (_PUSH_THEME, UNDERGOES_CHANGE),
+    ],
 )
 
 _GO_AGENT = SituationObject(THING, properties=[SELF_MOVING])
 _GO_GOAL = SituationObject(THING)
 
 _GO_ACTION_DESCRIPTION = ActionDescription(
-    frames=[ActionDescriptionFrame({AGENT: _GO_AGENT, GOAL: _GO_GOAL})],
+    frame=ActionDescriptionFrame({AGENT: _GO_AGENT, GOAL: _GO_GOAL}),
     during=DuringAction(objects_to_paths=[(_GO_AGENT, SpatialPath(TO, _GO_GOAL))]),
     postconditions=[Relation(IN_REGION, _GO_AGENT, _GO_GOAL)],
+    asserted_properties=[(_GO_AGENT, VOLITIONALLY_INVOLVED), (_GO_AGENT, MOVES)],
 )
 
 _COME_AGENT = SituationObject(THING, properties=[ANIMATE])
 _COME_GOAL = SituationObject(THING)
 
 _COME_ACTION_DESCRIPTION = ActionDescription(
-    frames=[
-        ActionDescriptionFrame(
-            # AGENT comes to DESTINATION
-            {AGENT: _COME_AGENT, GOAL: _COME_GOAL}
-        )
-    ],
+    frame=ActionDescriptionFrame(
+        # AGENT comes to DESTINATION
+        {AGENT: _COME_AGENT, GOAL: _COME_GOAL}
+    ),
     preconditions=[Relation(IN_REGION, _COME_AGENT, _COME_GOAL, negated=True)],
     during=DuringAction(objects_to_paths=[(_COME_AGENT, SpatialPath(TO, _COME_GOAL))]),
     postconditions=[Relation(IN_REGION, _COME_AGENT, _COME_GOAL)],
     # TODO: encode that the new location is relatively closer to the
     # learner or speaker than the old location
+    asserted_properties=[(_COME_AGENT, VOLITIONALLY_INVOLVED), (_COME_AGENT, MOVES)],
 )
 
 _TAKE_AGENT = SituationObject(THING, properties=[ANIMATE])
@@ -991,23 +1061,33 @@ _TAKE_GOAL = SituationObject(THING)
 _TAKE_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
 
 _TAKE_ACTION_DESCRIPTION = ActionDescription(
-    frames=[ActionDescriptionFrame({AGENT: _TAKE_AGENT, THEME: _TAKE_THEME})],
+    frame=ActionDescriptionFrame({AGENT: _TAKE_AGENT, THEME: _TAKE_THEME}),
     enduring_conditions=[
         bigger_than(_TAKE_AGENT, _TAKE_THEME),
         partOf(_TAKE_MANIPULATOR, _TAKE_AGENT),
     ],
     preconditions=[negate(has(_TAKE_AGENT, _TAKE_THEME))],
     postconditions=[has(_TAKE_AGENT, _TAKE_THEME)],
+    asserted_properties=[
+        (_TAKE_AGENT, VOLITIONALLY_INVOLVED),
+        (_TAKE_AGENT, CAUSES_CHANGE),
+        (_TAKE_THEME, UNDERGOES_CHANGE),
+    ],
 )
 
 _EAT_AGENT = SituationObject(THING, properties=[ANIMATE])
 _EAT_PATIENT = SituationObject(INANIMATE_OBJECT, properties=[EDIBLE])
 
 _EAT_ACTION_DESCRIPTION = ActionDescription(
-    frames=[ActionDescriptionFrame({AGENT: _EAT_AGENT, PATIENT: _EAT_PATIENT})],
+    frame=ActionDescriptionFrame({AGENT: _EAT_AGENT, PATIENT: _EAT_PATIENT}),
     enduring_conditions=[bigger_than(_EAT_AGENT, _EAT_PATIENT)],
     postconditions=[inside(_EAT_PATIENT, _EAT_AGENT)],
     # TODO: express role of mouth
+    asserted_properties=[
+        (_EAT_AGENT, VOLITIONALLY_INVOLVED),
+        (_EAT_AGENT, CAUSES_CHANGE),
+        (_EAT_PATIENT, UNDERGOES_CHANGE),
+    ],
 )
 
 _GIVE_AGENT = SituationObject(THING, properties=[ANIMATE])
@@ -1017,9 +1097,9 @@ _GIVE_AGENT_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJE
 _GIVE_GOAL_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
 
 _GIVE_ACTION_DESCRIPTION = ActionDescription(
-    frames=[
-        ActionDescriptionFrame({AGENT: _GIVE_AGENT, THEME: _GIVE_THEME, GOAL: _GIVE_GOAL})
-    ],
+    frame=ActionDescriptionFrame(
+        {AGENT: _GIVE_AGENT, THEME: _GIVE_THEME, GOAL: _GIVE_GOAL}
+    ),
     enduring_conditions=[
         bigger_than(_GIVE_AGENT, _GIVE_THEME),
         bigger_than(_GIVE_GOAL, _GIVE_THEME),
@@ -1038,6 +1118,11 @@ _GIVE_ACTION_DESCRIPTION = ActionDescription(
         negate(contacts(_GIVE_AGENT_MANIPULATOR, _GIVE_THEME)),
         contacts(_GIVE_GOAL_MANIPULATOR, _GIVE_THEME),
     ],
+    asserted_properties=[
+        (_GIVE_AGENT, VOLITIONALLY_INVOLVED),
+        (_GIVE_AGENT, CAUSES_CHANGE),
+        (_GIVE_THEME, UNDERGOES_CHANGE),
+    ],
 )
 
 _TURN_AGENT = SituationObject(THING, properties=[ANIMATE])
@@ -1045,7 +1130,7 @@ _TURN_THEME = SituationObject(THING)
 _TURN_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
 
 _TURN_ACTION_DESCRIPTION = ActionDescription(
-    frames=[ActionDescriptionFrame({AGENT: _TURN_AGENT, THEME: _TURN_THEME})],
+    frame=ActionDescriptionFrame({AGENT: _TURN_AGENT, THEME: _TURN_THEME}),
     during=DuringAction(
         objects_to_paths=[
             (
@@ -1059,40 +1144,59 @@ _TURN_ACTION_DESCRIPTION = ActionDescription(
             )
         ]
     ),
+    asserted_properties=[
+        (_TURN_AGENT, VOLITIONALLY_INVOLVED),
+        (_TURN_AGENT, CAUSES_CHANGE),
+        (_TURN_THEME, UNDERGOES_CHANGE),
+    ],
 )
 
 _SIT_AGENT = SituationObject(THING, properties=[ANIMATE])
 _SIT_GOAL = SituationObject(THING)
 
 _SIT_ACTION_DESCRIPTION = ActionDescription(
-    frames=[ActionDescriptionFrame({AGENT: _SIT_AGENT, GOAL: _SIT_GOAL})],
+    frame=ActionDescriptionFrame({AGENT: _SIT_AGENT, GOAL: _SIT_GOAL}),
     preconditions=[negate(contacts(_SIT_AGENT, _SIT_GOAL))],
     postconditions=[contacts(_SIT_AGENT, _SIT_GOAL), above(_SIT_AGENT, _SIT_GOAL)],
+    asserted_properties=[(_SIT_AGENT, VOLITIONALLY_INVOLVED), (_SIT_AGENT, MOVES)],
 )
 
-_DRINK_AGENT = SituationObject(THING, properties=[ANIMATE])
-_DRINK_THEME = SituationObject(THING, properties=[LIQUID])
-_DRINK_CONTAINER = SituationObject(THING, properties=[HOLLOW])
+DRINK_CONTAINER_AUX = SituationObject(THING, properties=[HOLLOW])
 
-_DRINK_ACTION_DESCRIPTION = ActionDescription(
-    frames=[ActionDescriptionFrame({AGENT: _DRINK_AGENT, THEME: _DRINK_THEME})],
-    preconditions=[
-        inside(_DRINK_THEME, _DRINK_CONTAINER),
-        bigger_than(_DRINK_AGENT, _DRINK_CONTAINER),
-    ],
-    postconditions=[inside(_DRINK_THEME, _DRINK_AGENT)],
-)
+
+def _make_drink_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
+    drink_agent = SituationObject(THING, properties=[ANIMATE])
+    drink_theme = SituationObject(THING, properties=[LIQUID])
+
+    yield (
+        DRINK,
+        ActionDescription(
+            frame=ActionDescriptionFrame({AGENT: drink_agent, THEME: drink_theme}),
+            preconditions=[
+                inside(drink_theme, DRINK_CONTAINER_AUX),
+                bigger_than(drink_agent, DRINK_CONTAINER_AUX),
+            ],
+            postconditions=[inside(drink_theme, drink_agent)],
+            asserted_properties=[
+                (drink_agent, VOLITIONALLY_INVOLVED),
+                (drink_agent, CAUSES_CHANGE),
+                (drink_theme, UNDERGOES_CHANGE),
+            ],
+        ),
+    )
+
 
 _FALL_THEME = SituationObject(THING)
 _FALL_GROUND = SituationObject(GROUND)
 
 _FALL_ACTION_DESCRIPTION = ActionDescription(
-    frames=[ActionDescriptionFrame({THEME: _FALL_THEME})],
+    frame=ActionDescriptionFrame({THEME: _FALL_THEME}),
     during=DuringAction(
         objects_to_paths=[
             (_FALL_THEME, SpatialPath(operator=TOWARD, reference_object=_FALL_GROUND))
         ]
     ),
+    asserted_properties=[(_FALL_THEME, MOVES)],
 )
 
 _THROW_AGENT = SituationObject(THING, properties=[ANIMATE])
@@ -1102,11 +1206,9 @@ _THROW_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
 _THROW_GROUND = SituationObject(GROUND)
 
 _THROW_ACTION_DESCRIPTION = ActionDescription(
-    frames=[
-        ActionDescriptionFrame(
-            {AGENT: _THROW_AGENT, THEME: _THROW_THEME, GOAL: _THROW_GOAL}
-        )
-    ],
+    frame=ActionDescriptionFrame(
+        {AGENT: _THROW_AGENT, THEME: _THROW_THEME, GOAL: _THROW_GOAL}
+    ),
     enduring_conditions=[
         bigger_than(_THROW_AGENT, _THROW_THEME),
         partOf(_THROW_MANIPULATOR, _THROW_AGENT),
@@ -1135,6 +1237,11 @@ _THROW_ACTION_DESCRIPTION = ActionDescription(
             )
         ]
     ),
+    asserted_properties=[
+        (_THROW_AGENT, VOLITIONALLY_INVOLVED),
+        (_THROW_AGENT, CAUSES_CHANGE),
+        (_THROW_THEME, UNDERGOES_CHANGE),
+    ],
 )
 
 _MOVE_AGENT = SituationObject(THING, properties=[ANIMATE])
@@ -1144,67 +1251,107 @@ _MOVE_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
 
 # TODO: a proper treatment of move awaits full treatment of multiple sub-categorization frames
 _MOVE_ACTION_DESCRIPTION = ActionDescription(
-    frames=[
-        ActionDescriptionFrame({AGENT: _MOVE_AGENT, THEME: _MOVE_THEME, GOAL: _MOVE_GOAL})
-    ],
+    frame=ActionDescriptionFrame(
+        {AGENT: _MOVE_AGENT, THEME: _MOVE_THEME, GOAL: _MOVE_GOAL}
+    ),
     preconditions=[],
     postconditions=[],
+    asserted_properties=[
+        (_MOVE_AGENT, VOLITIONALLY_INVOLVED),
+        (_MOVE_AGENT, CAUSES_CHANGE),
+        (_MOVE_THEME, UNDERGOES_CHANGE),
+    ],
 )
 
-_JUMP_AGENT = SituationObject(THING, properties=[ANIMATE])
-_JUMP_INITIAL_SUPPORTER = SituationObject(THING)
-_JUMP_GROUND = SituationObject(GROUND)
+JUMP_INITIAL_SUPPORTER_AUX = SituationObject(THING)
 
-_JUMP_ACTION_DESCRIPTION = ActionDescription(
-    frames=[ActionDescriptionFrame({AGENT: _JUMP_AGENT})],
-    preconditions=[
-        Relation(
-            IN_REGION,
-            _JUMP_AGENT,
-            Region(_JUMP_INITIAL_SUPPORTER, distance=EXTERIOR_BUT_IN_CONTACT),
-        )
-    ],
-    during=DuringAction(
-        objects_to_paths=[
-            (_JUMP_AGENT, SpatialPath(AWAY_FROM, _JUMP_INITIAL_SUPPORTER)),
-            (_JUMP_AGENT, SpatialPath(AWAY_FROM, _JUMP_GROUND)),
-        ]
-    ),
+
+def _make_jump_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
+    jump_agent = SituationObject(THING, properties=[ANIMATE])
+    jump_ground = SituationObject(GROUND)
+
+    yield (
+        JUMP,
+        ActionDescription(
+            frame=ActionDescriptionFrame({AGENT: jump_agent}),
+            preconditions=[
+                Relation(
+                    IN_REGION,
+                    jump_agent,
+                    Region(JUMP_INITIAL_SUPPORTER_AUX, distance=EXTERIOR_BUT_IN_CONTACT),
+                )
+            ],
+            during=DuringAction(
+                objects_to_paths=[
+                    (jump_agent, SpatialPath(AWAY_FROM, JUMP_INITIAL_SUPPORTER_AUX)),
+                    (jump_agent, SpatialPath(AWAY_FROM, jump_ground)),
+                ]
+            ),
+            asserted_properties=[
+                (jump_agent, VOLITIONALLY_INVOLVED),
+                (jump_agent, MOVES),
+            ],
+        ),
+    )
+
+
+ROLL_SURFACE_AUXILIARY = SituationObject(
+    INANIMATE_OBJECT, [CAN_HAVE_THINGS_RESTING_ON_THEM], debug_handle="roll-surface-aux"
 )
 
-_ROLL_AGENT = SituationObject(THING, properties=[ANIMATE])
-_ROLL_THEME = SituationObject(INANIMATE_OBJECT, properties=[ROLLABLE])
-_ROLL_GOAL = SituationObject(THING)
-_ROLL_SURFACE = SituationObject(INANIMATE_OBJECT)
 
-_ROLL_ACTION_DESCRIPTION = ActionDescription(
-    frames=[
-        ActionDescriptionFrame({AGENT: _ROLL_AGENT, THEME: _ROLL_THEME, GOAL: _ROLL_GOAL})
-    ],
-    during=DuringAction(
-        continuously=[contacts(_ROLL_THEME, _ROLL_SURFACE)],
-        objects_to_paths=[
-            (
-                _ROLL_THEME,
-                SpatialPath(
-                    operator=None,
-                    reference_object=_ROLL_THEME,
-                    reference_axis=Axis(
-                        reference_object=None, name="direction of motion"
+def _make_roll_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
+    roll_agent = SituationObject(THING, properties=[ANIMATE])
+    roll_theme = SituationObject(INANIMATE_OBJECT, properties=[ROLLABLE])
+
+    def make_during(rollee: SituationObject) -> DuringAction[SituationObject]:
+        return DuringAction(
+            continuously=[contacts(rollee, ROLL_SURFACE_AUXILIARY)],
+            objects_to_paths=[
+                (
+                    rollee,
+                    SpatialPath(
+                        operator=None,
+                        reference_object=rollee,
+                        reference_axis=Axis(
+                            reference_object=None, name="direction of motion"
+                        ),
+                        orientation_changed=True,
                     ),
-                    orientation_changed=True,
-                ),
-            )
-        ],
-    ),
-    postconditions=[Relation(IN_REGION, _ROLL_THEME, _ROLL_GOAL)],
-)
+                )
+            ],
+        )
+
+    # transitive roll
+    yield (
+        ROLL,
+        ActionDescription(
+            frame=ActionDescriptionFrame({AGENT: roll_agent, THEME: roll_theme}),
+            during=make_during(roll_theme),
+            asserted_properties=[
+                (roll_agent, VOLITIONALLY_INVOLVED),
+                (roll_agent, CAUSES_CHANGE),
+                (roll_theme, UNDERGOES_CHANGE),
+            ],
+        ),
+    )
+
+    # intransitive roll
+    yield (
+        ROLL,
+        ActionDescription(
+            frame=ActionDescriptionFrame({AGENT: roll_agent}),
+            during=make_during(roll_agent),
+            asserted_properties=[(roll_agent, MOVES)],
+        ),
+    )
+
 
 _FLY_AGENT = SituationObject(THING, properties=[ANIMATE])
 _FLY_GROUND = SituationObject(GROUND)
 
 _FLY_ACTION_DESCRIPTION = ActionDescription(
-    frames=[ActionDescriptionFrame({AGENT: _FLY_AGENT})],
+    frame=ActionDescriptionFrame({AGENT: _FLY_AGENT}),
     during=DuringAction(
         continuously=[
             Relation(
@@ -1220,56 +1367,57 @@ _FLY_ACTION_DESCRIPTION = ActionDescription(
             )
         ]
     ),
+    asserted_properties=[(_FLY_AGENT, VOLITIONALLY_INVOLVED), (_FLY_AGENT, MOVES)],
 )
 
+_ACTIONS_TO_DESCRIPTIONS = [
+    (PUT, _PUT_ACTION_DESCRIPTION),
+    (PUSH, _PUSH_ACTION_DESCRIPTION),
+    (GO, _GO_ACTION_DESCRIPTION),
+    (COME, _COME_ACTION_DESCRIPTION),
+    (GIVE, _GIVE_ACTION_DESCRIPTION),
+    (TAKE, _TAKE_ACTION_DESCRIPTION),
+    (EAT, _EAT_ACTION_DESCRIPTION),
+    (TURN, _TURN_ACTION_DESCRIPTION),
+    (SIT, _SIT_ACTION_DESCRIPTION),
+    (FALL, _FALL_ACTION_DESCRIPTION),
+    (THROW, _THROW_ACTION_DESCRIPTION),
+    (MOVE, _MOVE_ACTION_DESCRIPTION),
+    (FLY, _FLY_ACTION_DESCRIPTION),
+]
+
+_ACTIONS_TO_DESCRIPTIONS.extend(_make_roll_description())
+_ACTIONS_TO_DESCRIPTIONS.extend(_make_jump_description())
+_ACTIONS_TO_DESCRIPTIONS.extend(_make_drink_description())
+
 GAILA_PHASE_1_ONTOLOGY = Ontology(
+    "gaila-phase-1",
     _ontology_graph,
-    structural_schemata=immutablesetmultidict(
-        [
-            (BALL, _BALL_SCHEMA),
-            (CHAIR, _CHAIR_SCHEMA),
-            (PERSON, _PERSON_SCHEMA),
-            (TABLE, _TABLE_SCHEMA),
-            (DOG, _DOG_SCHEMA),
-            (BIRD, _BIRD_SCHEMA),
-            (BOX, _BOX_SCHEMA),
-            (WATER, _WATER_SCHEMA),
-            (JUICE, _JUICE_SCHEMA),
-            (MILK, _MILK_SCHEMA),
-            (DOOR, _DOOR_SCHEMA),
-            (HAT, _HAT_SCHEMA),
-            (COOKIE, _COOKIE_SCHEMA),
-            (HEAD, _HEAD_SCHEMA),
-            (CUP, _CUP_SCHEMA),
-            (BOX, _BOX_SCHEMA),
-            (BOOK, _BOOK_SCHEMA),
-            (HOUSE, _HOUSE_SCHEMA),
-            (HAND, _HAND_SCHEMA),
-            (CAR, _CAR_SCHEMA),
-            (TRUCK, _TRUCK_SCHEMA),
-            (GROUND, _GROUND_SCHEMA),
-        ]
-    ),
-    action_to_description=immutabledict(
-        [
-            (PUT, _PUT_ACTION_DESCRIPTION),
-            (PUSH, _PUSH_ACTION_DESCRIPTION),
-            (GO, _GO_ACTION_DESCRIPTION),
-            (COME, _COME_ACTION_DESCRIPTION),
-            (GIVE, _GIVE_ACTION_DESCRIPTION),
-            (TAKE, _TAKE_ACTION_DESCRIPTION),
-            (EAT, _EAT_ACTION_DESCRIPTION),
-            (TURN, _TURN_ACTION_DESCRIPTION),
-            (SIT, _SIT_ACTION_DESCRIPTION),
-            (DRINK, _DRINK_ACTION_DESCRIPTION),
-            (FALL, _FALL_ACTION_DESCRIPTION),
-            (THROW, _THROW_ACTION_DESCRIPTION),
-            (MOVE, _MOVE_ACTION_DESCRIPTION),
-            (JUMP, _JUMP_ACTION_DESCRIPTION),
-            (ROLL, _ROLL_ACTION_DESCRIPTION),
-            (FLY, _FLY_ACTION_DESCRIPTION),
-        ]
-    ),
+    structural_schemata=[
+        (BALL, _BALL_SCHEMA),
+        (CHAIR, _CHAIR_SCHEMA),
+        (PERSON, _PERSON_SCHEMA),
+        (TABLE, _TABLE_SCHEMA),
+        (DOG, _DOG_SCHEMA),
+        (BIRD, _BIRD_SCHEMA),
+        (BOX, _BOX_SCHEMA),
+        (WATER, _WATER_SCHEMA),
+        (JUICE, _JUICE_SCHEMA),
+        (MILK, _MILK_SCHEMA),
+        (DOOR, _DOOR_SCHEMA),
+        (HAT, _HAT_SCHEMA),
+        (COOKIE, _COOKIE_SCHEMA),
+        (HEAD, _HEAD_SCHEMA),
+        (CUP, _CUP_SCHEMA),
+        (BOX, _BOX_SCHEMA),
+        (BOOK, _BOOK_SCHEMA),
+        (HOUSE, _HOUSE_SCHEMA),
+        (HAND, _HAND_SCHEMA),
+        (CAR, _CAR_SCHEMA),
+        (TRUCK, _TRUCK_SCHEMA),
+        (GROUND, _GROUND_SCHEMA),
+    ],
+    action_to_description=_ACTIONS_TO_DESCRIPTIONS,
     relations=build_size_relationships(
         (
             (HOUSE,),

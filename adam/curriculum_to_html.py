@@ -134,7 +134,7 @@ class CurriculumToHtmlDumper:
                 "number indicates which object of its type it is - e.g. if there are two babies in a situation, "
                 "the perceived objects will be 'person_0' and 'person_1'. "
                 "Names on Perceptions are handles for debugging; they are not accessible to the "
-                'learner. "GAZED-AT" refers the object of focus of the speaker.</p> '
+                "learner. 'GAZED-AT' refers the object of focus of the speaker.</p> "
             )
             html_out.write(
                 "\n<p>Properties</p>\n<ul>"
@@ -226,7 +226,7 @@ class CurriculumToHtmlDumper:
         Converts a situation description into its sub-parts as a table entry
         """
         output_text = [f"\n\t\t\t\t\t<h4>Objects</h4>\n\t\t\t\t\t<ul>"]
-        for obj in situation.objects:
+        for obj in situation.all_objects:
             property_string: str
             if obj.properties:
                 property_string = (

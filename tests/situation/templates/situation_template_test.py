@@ -1,9 +1,9 @@
 from adam.ontology.phase1_ontology import (
-    INANIMATE_OBJECT,
     ANIMATE,
-    PERSON,
-    INANIMATE,
     GAILA_PHASE_1_ONTOLOGY,
+    INANIMATE,
+    INANIMATE_OBJECT,
+    PERSON,
 )
 from adam.random_utils import FixedIndexChooser
 from adam.situation.templates import (

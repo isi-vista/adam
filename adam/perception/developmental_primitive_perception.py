@@ -7,7 +7,7 @@ from immutablecollections.converter_utils import _to_immutableset
 from vistautils.range import Range
 
 from adam.ontology import OntologyNode
-from adam.perception import PerceptualRepresentationFrame, ObjectPerception
+from adam.perception import ObjectPerception, PerceptualRepresentationFrame
 from adam.relation import Relation, flatten_relations
 
 

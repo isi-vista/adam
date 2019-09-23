@@ -7,7 +7,7 @@ from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, imm
 from more_itertools import only, quantify
 from vistautils.preconditions import check_arg
 
-from adam.ontology import OntologyNode, IN_REGION
+from adam.ontology import IN_REGION, OntologyNode
 from adam.ontology.action_description import ActionDescription
 from adam.ontology.during import DuringAction
 from adam.ontology.ontology import Ontology
@@ -16,16 +16,16 @@ from adam.ontology.phase1_ontology import (
     COLOR,
     COLORS_TO_RGBS,
     GAZED_AT,
-    GAILA_PHASE_1_ONTOLOGY,
     GROUND,
+    HOLLOW,
     IS_SPEAKER,
+    LIQUID,
     PART_OF,
     PERCEIVABLE,
-    LIQUID,
     TWO_DIMENSIONAL,
-    HOLLOW,
+    GAILA_PHASE_1_ONTOLOGY,
 )
-from adam.ontology.phase1_spatial_relations import SpatialPath, Region, INTERIOR
+from adam.ontology.phase1_spatial_relations import INTERIOR, Region, SpatialPath
 from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
 from adam.perception import (
     ObjectPerception,
@@ -175,7 +175,7 @@ class _PerceptionGeneration:
         )
 
         # Handle implicit size relations
-        self._perceive_implicit_size()
+        # self._perceive_implicit_size()
 
         # Other relations implied by actions will be handled during action translation below.
 
@@ -230,7 +230,7 @@ class _PerceptionGeneration:
         if (
             quantify(
                 property_ == IS_SPEAKER
-                for object_ in self._situation.objects
+                for object_ in self._situation.all_objects
                 for property_ in object_.properties
             )
             > 1
@@ -284,9 +284,10 @@ class _PerceptionGeneration:
         # e.g: SituationAction(PUT, ((AGENT, mom),(THEME, ball),(DESTINATION, SituationRelation(
         # IN_REGION, ball, ON(TABLE)))))
         # Get description from PUT (PUT is action_type)
-        action_description: ActionDescription = GAILA_PHASE_1_ONTOLOGY.action_to_description[
-            situation_action.action_type
-        ]
+        action_description: ActionDescription = GAILA_PHASE_1_ONTOLOGY.required_action_description(
+            situation_action.action_type,
+            situation_action.argument_roles_to_fillers.keys(),
+        )
 
         action_objects_variables_to_perceived_objects = self._bind_action_objects_variables_to_perceived_objects(
             situation_action, action_description
@@ -323,11 +324,6 @@ class _PerceptionGeneration:
         situation_action: Action[OntologyNode, SituationObject],
         action_description: ActionDescription,
     ) -> Mapping[SituationObject, Union[Region[ObjectPerception], ObjectPerception]]:
-        if len(action_description.frames) != 1:
-            raise RuntimeError(
-                "Currently we can only handle verbs with exactly one "
-                "subcategorization frame"
-            )
         if any(
             len(fillers) > 1
             for fillers in situation_action.argument_roles_to_fillers.value_groups()
@@ -340,8 +336,8 @@ class _PerceptionGeneration:
 
         # for action description objects which play semantic roles,
         # the SituationAction gives us the binding directly
-        subcategorization_frame = only(action_description.frames)
-        for (role, action_object) in subcategorization_frame.roles_to_entities.items():
+        subcategorization_frame = action_description.frame
+        for (role, action_object) in subcategorization_frame.roles_to_variables.items():
             # Regions can also fill certain semantic roles,
             # but Regions are always relative to objects,
             # so we can translate them after we have translated the action objects
@@ -394,7 +390,7 @@ class _PerceptionGeneration:
         bindings.update(
             {
                 unbound_action_object_variable: self._bind_action_object_variable(
-                    unbound_action_object_variable
+                    situation_action, unbound_action_object_variable
                 )
                 for unbound_action_object_variable in unbound_action_object_variables
             }
@@ -403,13 +399,21 @@ class _PerceptionGeneration:
         return bindings
 
     def _bind_action_object_variable(
-        self, action_object_variable: SituationObject
+        self,
+        situation_action: Action[OntologyNode, SituationObject],
+        action_object_variable: SituationObject,
     ) -> ObjectPerception:
         """
         Binds an action object variable to an object that we have perceived.
 
         Currently this only pays attention to object properties in binding and not relationships.
         """
+        explicit_binding = situation_action.auxiliary_variable_bindings.get(
+            action_object_variable
+        )
+        if explicit_binding:
+            return self._objects_to_perceptions[explicit_binding]
+
         # we continue to use the hand from PUT
         # ( see _bind_action_objects_variables_to_perceived_objects )
         ontology = self._generator.ontology
@@ -429,7 +433,8 @@ class _PerceptionGeneration:
             return only(perceived_objects_matching_constraints)
         elif not perceived_objects_matching_constraints:
             raise RuntimeError(
-                f"Can not find object with properties {action_object_variable}"
+                f"Can not find object with properties {action_object_variable} in order to bind "
+                f"{action_object_variable}"
             )
         else:
             distinct_property_sets_for_matching_object_types = set(
@@ -445,7 +450,7 @@ class _PerceptionGeneration:
             else:
                 raise RuntimeError(
                     f"Found multiple objects with properties {action_object_variable}: "
-                    f"{perceived_objects_matching_constraints}"
+                    f"{perceived_objects_matching_constraints} when binding {action_object_variable}"
                 )
 
     def _perceive_action_relations(
@@ -522,7 +527,7 @@ class _PerceptionGeneration:
             return action_object_variables_to_object_perceptions[slot_filler]
 
     def _perceive_property_assertions(self) -> None:
-        for situation_object in self._situation.objects:
+        for situation_object in self._situation.all_objects:
             # process explicitly and implicitly-specified properties
             all_object_properties: List[OntologyNode] = []
             # Explicit properties are stipulated by the user in the situation description.
@@ -575,6 +580,35 @@ class _PerceptionGeneration:
                     self._objects_to_perceptions[situation_object],
                     property_,
                 )
+
+        # Properties derived from the role of the situation object in the action
+        for action in self._situation.actions:
+            action_description: ActionDescription = GAILA_PHASE_1_ONTOLOGY.required_action_description(
+                action.action_type, action.argument_roles_to_fillers.keys()
+            )
+            for role in action_description.frame.semantic_roles:  # e.g. AGENT
+                variable = action_description.frame.roles_to_variables[
+                    role
+                ]  # e.g. _PUT_AGENT
+                fillers = action.argument_roles_to_fillers[role]  # e.g. {Mom}
+                for property_ in action_description.asserted_properties[variable]:
+                    for situation_or_region in fillers:
+                        if isinstance(situation_or_region, SituationObject):
+                            perception_of_object = self._objects_to_perceptions[
+                                situation_or_region
+                            ]
+                        else:
+                            # We are propagating properties asserted on regions to their
+                            # reference objects.
+                            # TODO: issue #263
+                            perception_of_object = self._objects_to_perceptions[
+                                situation_or_region.reference_object
+                            ]
+                        self._perceive_property(
+                            self._generator.ontology.properties_for_node(property_),
+                            perception_of_object,
+                            property_,
+                        )
 
     def _perceive_property(
         self,
@@ -648,14 +682,14 @@ class _PerceptionGeneration:
     def _perceive_objects(self) -> None:
         if not any(
             situation_object.ontology_node == GROUND
-            for situation_object in self._situation.objects
+            for situation_object in self._situation.all_objects
         ):
             ground_schemata = only(self._generator.ontology.structural_schemata(GROUND))
             ground_observed = self._instantiate_object_schema(
                 ground_schemata, situation_object=SituationObject(GROUND)
             )
             self._object_perceptions_to_ontology_nodes[ground_observed] = GROUND
-        for situation_object in self._situation.objects:
+        for situation_object in self._situation.all_objects:
             if not situation_object.ontology_node:
                 raise RuntimeError(
                     "Don't yet know how to handle situation objects without "
