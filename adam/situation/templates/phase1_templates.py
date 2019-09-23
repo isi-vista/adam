@@ -247,6 +247,18 @@ def sampled(
     )
 
 
+def fixed_assignment(
+    situation_template: Phase1SituationTemplate,
+    assignment: "TemplateVariableAssignment",
+    *,
+    ontology: Ontology,
+    chooser: SequenceChooser,
+) -> Iterable[HighLevelSemanticsSituation]:
+    return _Phase1SituationTemplateGenerator(
+        ontology=ontology, variable_assigner=_FixedVariableAssigner(assignment)
+    ).generate_situations(situation_template, chooser=chooser)
+
+
 @attrs(frozen=True, slots=True)
 class _Phase1SituationTemplateGenerator(
     SituationTemplateProcessor[Phase1SituationTemplate, HighLevelSemanticsSituation]
@@ -325,7 +337,7 @@ class _Phase1SituationTemplateGenerator(
     def _instantiate_objects(
         self,
         template: Phase1SituationTemplate,
-        variable_assignment: "_VariableAssignment",
+        variable_assignment: "TemplateVariableAssignment",
     ):
         object_var_to_instantiations: Mapping[
             TemplateObjectVariable, SituationObject
@@ -350,7 +362,7 @@ class _Phase1SituationTemplateGenerator(
     def _instantiate_situation(
         self,
         template: Phase1SituationTemplate,
-        variable_assignment: "_VariableAssignment",
+        variable_assignment: "TemplateVariableAssignment",
         object_var_to_instantiations,
     ) -> HighLevelSemanticsSituation:
         return HighLevelSemanticsSituation(
@@ -564,7 +576,7 @@ def color_variable(debug_handle: str) -> TemplatePropertyVariable:
 
 
 @attrs(frozen=True, slots=True)
-class _VariableAssignment:
+class TemplateVariableAssignment:
     """
     An assignment of ontology types to object and property variables in a situation.
     """
@@ -590,7 +602,7 @@ class _VariableAssigner(ABC):
         property_variables: AbstractSet["TemplatePropertyVariable"],
         action_variables: AbstractSet["TemplateActionTypeVariable"],
         chooser: SequenceChooser,
-    ) -> Iterable[_VariableAssignment]:
+    ) -> Iterable[TemplateVariableAssignment]:
         r"""
         Produce a (potentially infinite) stream of `_VariableAssignment`\ s of nodes from *ontology*
         to the given object and property variables.
@@ -613,7 +625,7 @@ class _CrossProductVariableAssigner(_VariableAssigner):
         property_variables: AbstractSet["TemplatePropertyVariable"],
         action_variables: AbstractSet["TemplateActionTypeVariable"],
         chooser: SequenceChooser,  # pylint: disable=unused-argument
-    ) -> Iterable[_VariableAssignment]:
+    ) -> Iterable[TemplateVariableAssignment]:
         # TODO: fix hard-coded rng
         # https://github.com/isi-vista/adam/issues/123
         rng = Random()
@@ -628,7 +640,7 @@ class _CrossProductVariableAssigner(_VariableAssigner):
                 for action_combination in self._all_combinations(
                     action_variables, ontology=ontology, rng=rng
                 ):
-                    yield _VariableAssignment(
+                    yield TemplateVariableAssignment(
                         object_variables_to_fillers=object_combination,
                         property_variables_to_fillers=property_combination,
                         action_variables_to_fillers=action_combination,
@@ -676,7 +688,7 @@ class _SamplingVariableAssigner(_VariableAssigner):
         property_variables: AbstractSet["TemplatePropertyVariable"],
         action_variables: AbstractSet["TemplateActionTypeVariable"],
         chooser: SequenceChooser,
-    ) -> Iterable[_VariableAssignment]:
+    ) -> Iterable[TemplateVariableAssignment]:
         # we need to do the zip() below instead of using nested for loops
         # or you will get a bunch of propery combinations for the same object combination.
         object_combinations = self._sample_combinations(
@@ -698,7 +710,7 @@ class _SamplingVariableAssigner(_VariableAssigner):
             property_combination,
             action_combination,
         ) in concatenated_combinations:
-            yield _VariableAssignment(
+            yield TemplateVariableAssignment(
                 object_variables_to_fillers=object_combination,
                 property_variables_to_fillers=property_combination,
                 action_variables_to_fillers=action_combination,
@@ -730,6 +742,47 @@ class _SamplingVariableAssigner(_VariableAssigner):
                 # if there are no variables to assign, the only possible assignment
                 # is the empty assignment
                 yield dict()
+
+
+@attrs(slots=True, frozen=True)
+class _FixedVariableAssigner(_VariableAssigner):
+    """
+    A `_VariableAssigner` which always returns the same variable assignment.
+    """
+
+    assignment: TemplateVariableAssignment = attrib(
+        validator=instance_of(TemplateVariableAssignment)
+    )
+
+    def variable_assignments(
+        self,
+        *,
+        ontology: Ontology,  # pylint:disable=unused-argument
+        object_variables: AbstractSet["TemplateObjectVariable"],
+        property_variables: AbstractSet["TemplatePropertyVariable"],
+        action_variables: AbstractSet["TemplateActionTypeVariable"],
+        chooser: SequenceChooser,  # pylint:disable=unused-argument
+    ) -> Iterable[TemplateVariableAssignment]:
+        check_arg(
+            all(
+                obj_var in self.assignment.object_variables_to_fillers
+                for obj_var in object_variables
+            )
+        )
+        check_arg(
+            all(
+                prop_var in self.assignment.property_variables_to_fillers
+                for prop_var in property_variables
+            )
+        )
+        check_arg(
+            all(
+                action_var in self.assignment.action_variables_to_fillers
+                for action_var in action_variables
+            )
+        )
+
+        return (self.assignment,)
 
 
 _T = TypeVar("_T")

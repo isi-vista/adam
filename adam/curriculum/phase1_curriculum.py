@@ -98,6 +98,7 @@ def _phase1_instances(
     )
 
 
+_GROUND_OBJECT = object_variable("ground", GROUND)
 _ARBITRARY_OBJECT = object_variable("object_0", THING)
 _NOT_A_BODY_PART = object_variable(
     "not-body-part_object_0", THING, banned_properties=[IS_BODY_PART]
@@ -169,12 +170,10 @@ MULTIPLE_OF_THE_SAME_OBJECT_SUB_CURRICULUM = _phase1_instances(
     ),
 )
 
-_GROUND = object_variable("the ground", GROUND)
-
 _OBJECT_ON_GROUND_TEMPLATE = Phase1SituationTemplate(
     "object-on-ground",
-    salient_object_variables=[_GROUND, _NOT_A_BODY_PART],
-    asserted_always_relations=[on(_NOT_A_BODY_PART, _GROUND)],
+    salient_object_variables=[_GROUND_OBJECT, _NOT_A_BODY_PART],
+    asserted_always_relations=[on(_NOT_A_BODY_PART, _GROUND_OBJECT)],
 )
 
 _OBJECT_ON_GROUND_SUB_CURRICULUM = _phase1_instances(
@@ -368,12 +367,11 @@ def _make_fly_curriculum():
     object_with_space_under = object_variable(
         "object_0", THING, required_properties=[HAS_SPACE_UNDER]
     )
-    ground = object_variable("ground", GROUND)
 
     bare_fly = [
         Phase1SituationTemplate(
             "fly",
-            salient_object_variables=[bird, ground],
+            salient_object_variables=[bird, _GROUND_OBJECT],
             actions=[
                 Action(
                     FLY,
@@ -383,7 +381,8 @@ def _make_fly_curriculum():
                             (
                                 bird,
                                 SpatialPath(
-                                    AWAY_FROM if up else TOWARD, reference_object=ground
+                                    AWAY_FROM if up else TOWARD,
+                                    reference_object=_GROUND_OBJECT,
                                 ),
                             )
                         ]
@@ -399,7 +398,7 @@ def _make_fly_curriculum():
     fly_up_down = [
         Phase1SituationTemplate(
             "fly-up-down",
-            salient_object_variables=[bird, ground],
+            salient_object_variables=[bird, _GROUND_OBJECT],
             actions=[
                 Action(
                     FLY,
@@ -409,7 +408,8 @@ def _make_fly_curriculum():
                             (
                                 bird,
                                 SpatialPath(
-                                    AWAY_FROM if up else TOWARD, reference_object=ground
+                                    AWAY_FROM if up else TOWARD,
+                                    reference_object=_GROUND_OBJECT,
                                 ),
                             )
                         ]
@@ -556,39 +556,28 @@ def _make_roll_curriculum():
     )
 
 
-def _make_jump_curriculum():
-    # make an object jump
-    jumper = object_variable("jumper_0", THING, required_properties=[CAN_JUMP])
-    jumped_over = object_variable("jumped_over", THING)
-    ground = object_variable("ground", GROUND)
+JUMPER = object_variable("jumper_0", THING, required_properties=[CAN_JUMP])
+JUMPED_OVER = object_variable("jumped_over", THING)
 
+
+def _make_jump_curriculum():
     # "A person jumps"
     jump_on_ground = Phase1SituationTemplate(
         "jump",
-        salient_object_variables=[jumper],
+        salient_object_variables=[JUMPER],
         actions=[
             Action(
                 JUMP,
-                argument_roles_to_fillers=[(AGENT, jumper)],
-                auxiliary_variable_bindings=[(JUMP_INITIAL_SUPPORTER_AUX, ground)],
+                argument_roles_to_fillers=[(AGENT, JUMPER)],
+                auxiliary_variable_bindings=[
+                    (JUMP_INITIAL_SUPPORTER_AUX, _GROUND_OBJECT)
+                ],
             )
         ],
     )
 
     # "A person jumps over a ball"
-    jump_over_object = Phase1SituationTemplate(
-        "jump-over",
-        salient_object_variables=[jumper, jumped_over],
-        actions=[
-            Action(
-                JUMP,
-                argument_roles_to_fillers=[(AGENT, jumper)],
-                during=DuringAction(at_some_point=[strictly_above(jumper, jumped_over)]),
-                auxiliary_variable_bindings=[(JUMP_INITIAL_SUPPORTER_AUX, ground)],
-            )
-        ],
-        constraining_relations=[Relation(BIGGER_THAN, jumper, jumped_over)],
-    )
+    jump_over_object = make_jump_over_object_template()
 
     return _phase1_instances(
         "jumping",
@@ -605,6 +594,25 @@ def _make_jump_curriculum():
                 ),
             ]
         ),
+    )
+
+
+# public for use in a test
+def make_jump_over_object_template():
+    return Phase1SituationTemplate(
+        "jump-over",
+        salient_object_variables=[JUMPER, JUMPED_OVER],
+        actions=[
+            Action(
+                JUMP,
+                argument_roles_to_fillers=[(AGENT, JUMPER)],
+                during=DuringAction(at_some_point=[strictly_above(JUMPER, JUMPED_OVER)]),
+                auxiliary_variable_bindings=[
+                    (JUMP_INITIAL_SUPPORTER_AUX, _GROUND_OBJECT)
+                ],
+            )
+        ],
+        constraining_relations=[Relation(BIGGER_THAN, JUMPER, JUMPED_OVER)],
     )
 
 

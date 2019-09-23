@@ -1,7 +1,13 @@
 from typing import Tuple
 
-from more_itertools import only
+from more_itertools import only, first
 
+from adam.curriculum.phase1_curriculum import (
+    make_jump_over_object_template,
+    JUMPER,
+    JUMPED_OVER,
+    _GROUND_OBJECT,
+)
 from adam.language_specific.english.english_language_generator import (
     PREFER_DITRANSITIVE,
     SimpleRuleBasedEnglishLanguageGenerator,
@@ -39,6 +45,7 @@ from adam.ontology.phase1_ontology import (
     THROW,
     WATER,
     on,
+    CHAIR,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -51,10 +58,14 @@ from adam.ontology.phase1_spatial_relations import (
     Region,
     SpatialPath,
 )
-from adam.random_utils import FixedIndexChooser
+from adam.random_utils import FixedIndexChooser, RandomChooser
 from adam.relation import Relation
 from adam.situation import Action, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
+from adam.situation.templates.phase1_templates import (
+    fixed_assignment,
+    TemplateVariableAssignment,
+)
 from tests.sample_situations import make_bird_flies_over_a_house
 from tests.situation.situation_test import make_mom_put_ball_on_table
 
@@ -687,6 +698,25 @@ def test_bird_flies_up():
     )
 
     assert generated_tokens(situation) == ("a", "bird", "flies", "up")
+
+
+def test_jumps_over():
+    template = make_jump_over_object_template()
+    situation = first(
+        fixed_assignment(
+            template,
+            TemplateVariableAssignment(
+                object_variables_to_fillers=[
+                    (JUMPER, DAD),
+                    (JUMPED_OVER, CHAIR),
+                    (_GROUND_OBJECT, GROUND),
+                ]
+            ),
+            chooser=RandomChooser.for_seed(0),
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+        )
+    )
+    assert generated_tokens(situation) == ("Dad", "jumps", "over", "a", "chair")
 
 
 def generated_tokens(situation):

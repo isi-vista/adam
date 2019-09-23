@@ -1,6 +1,6 @@
 import collections
 from itertools import chain
-from typing import Iterable, List, Mapping, MutableMapping, Tuple, Union, cast
+from typing import Iterable, List, Mapping, MutableMapping, Tuple, Union, cast, Optional
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
@@ -348,11 +348,13 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     # otherwise, we realize it as the verb "has"
                     self._translate_relation_to_verb(relation)
             elif relation.relation_type == IN_REGION:
-                self.dependency_graph.add_edge(
-                    self.relation_to_prepositional_modifier(relation),
-                    self._noun_for_object(relation.first_slot),
-                    role=NOMINAL_MODIFIER,
-                )
+                prepositional_modifier = self.relation_to_prepositional_modifier(relation)
+                if prepositional_modifier:
+                    self.dependency_graph.add_edge(
+                        prepositional_modifier,
+                        self._noun_for_object(relation.first_slot),
+                        role=NOMINAL_MODIFIER,
+                    )
             else:
                 raise RuntimeError(
                     f"Don't know how to translate relation " f"{relation} to English"
@@ -572,12 +574,13 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                             )
                         )
                         if fills_legal_argument_role:
-                            modifiers.append(
-                                (
-                                    OBLIQUE_NOMINAL,
-                                    self.relation_to_prepositional_modifier(relation),
-                                )
+                            prepositional_modifier = self.relation_to_prepositional_modifier(
+                                relation
                             )
+                            if prepositional_modifier:
+                                modifiers.append(
+                                    (OBLIQUE_NOMINAL, prepositional_modifier)
+                                )
                         else:
                             raise RuntimeError(
                                 f"To translate a spatial relation as a verbal "
@@ -619,7 +622,9 @@ class SimpleRuleBasedEnglishLanguageGenerator(
 
             return modifiers
 
-        def relation_to_prepositional_modifier(self, relation) -> DependencyTreeToken:
+        def relation_to_prepositional_modifier(
+            self, relation
+        ) -> Optional[DependencyTreeToken]:
             region = cast(Region[SituationObject], relation.second_slot)
             if (
                 region.direction
@@ -648,12 +653,18 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     f"axis: {relation}"
                 )
             reference_object_node = self._noun_for_object(region.reference_object)
-            self.dependency_graph.add_edge(
-                DependencyTreeToken(preposition, ADPOSITION),
-                reference_object_node,
-                role=CASE_SPATIAL,
-            )
-            return reference_object_node
+
+            if self.dependency_graph.out_degree[reference_object_node]:
+                # the reference node already has a syntactic connection to the tree,
+                # so don't add another one
+                return None
+            else:
+                self.dependency_graph.add_edge(
+                    DependencyTreeToken(preposition, ADPOSITION),
+                    reference_object_node,
+                    role=CASE_SPATIAL,
+                )
+                return reference_object_node
 
         def _translate_relation_to_verb(
             self, relation: Relation[SituationObject]
