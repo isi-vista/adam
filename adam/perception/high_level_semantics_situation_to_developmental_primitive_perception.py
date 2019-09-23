@@ -15,6 +15,7 @@ from adam.ontology.phase1_ontology import (
     BINARY,
     COLOR,
     COLORS_TO_RGBS,
+    GAILA_PHASE_1_ONTOLOGY,
     GAZED_AT,
     GROUND,
     HOLLOW,
@@ -23,7 +24,6 @@ from adam.ontology.phase1_ontology import (
     PART_OF,
     PERCEIVABLE,
     TWO_DIMENSIONAL,
-    GAILA_PHASE_1_ONTOLOGY,
 )
 from adam.ontology.phase1_spatial_relations import INTERIOR, Region, SpatialPath
 from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject

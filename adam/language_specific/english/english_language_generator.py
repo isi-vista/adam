@@ -1,6 +1,6 @@
 import collections
 from itertools import chain
-from typing import Iterable, List, Mapping, MutableMapping, Tuple, Union, cast, Optional
+from typing import Iterable, List, Mapping, MutableMapping, Optional, Tuple, Union, cast
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of

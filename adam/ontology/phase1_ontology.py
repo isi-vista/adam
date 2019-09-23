@@ -18,6 +18,20 @@ from typing import Iterable, Optional, Sequence, Tuple
 from immutablecollections import ImmutableDict, immutabledict, immutableset
 from more_itertools import flatten
 
+from adam.geon import (
+    CIRCULAR,
+    CONSTANT,
+    Geon,
+    IRREGULAR,
+    LARGE_TO_SMALL,
+    OVALISH,
+    RECTANGULAR,
+    SMALL_TO_LARGE,
+    SMALL_TO_LARGE_TO_SMALL,
+    directed,
+    straight_up,
+    symmetric,
+)
 from adam.ontology import (
     ACTION,
     CAN_FILL_TEMPLATE_SLOT,
@@ -40,26 +54,14 @@ from adam.ontology.phase1_spatial_relations import (
     EXTERIOR_BUT_IN_CONTACT,
     FROM,
     GRAVITATIONAL_AXIS,
+    GRAVITATIONAL_DOWN,
+    GRAVITATIONAL_UP,
     INTERIOR,
     PROXIMAL,
     Region,
     SpatialPath,
     TO,
     TOWARD,
-    GRAVITATIONAL_UP,
-    GRAVITATIONAL_DOWN,
-    Geon,
-    OVALISH,
-    SMALL_TO_LARGE_TO_SMALL,
-    CONSTANT,
-    RECTANGULAR,
-    CIRCULAR,
-    LARGE_TO_SMALL,
-    SMALL_TO_LARGE,
-    IRREGULAR,
-    symmetric,
-    directed,
-    straight_up,
 )
 from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
 from adam.relation import (
@@ -538,10 +540,31 @@ https://github.com/isi-vista/adam/issues/70
 """
 subtype(SMALLER_THAN, SIZE_RELATION)
 
-
 bigger_than = make_opposite_dsl_relation(  # pylint:disable=invalid-name
     BIGGER_THAN, opposite_type=SMALLER_THAN
 )
+
+AXIS_RELATION = OntologyNode("axis-relation")
+subtype(AXIS_RELATION, RELATION)
+
+MUCH_BIGGER_THAN = OntologyNode("muchBiggerThan")
+"""
+A relation indicating one axis of a geon is much bigger than another.
+This should only be used for geon axis, relations, not general object relations.
+"""
+subtype(MUCH_BIGGER_THAN, AXIS_RELATION)
+
+MUCH_SMALLER_THAN = OntologyNode("muchSmallerThan")
+"""
+A relation indicating one axis of a geon is much smaller than another.
+This should only be used for geon axis, relations, not general object relations.
+"""
+subtype(MUCH_SMALLER_THAN, AXIS_RELATION)
+
+much_bigger_than = make_opposite_dsl_relation(  # pylint:disable=invalid-name
+    MUCH_BIGGER_THAN, opposite_type=MUCH_SMALLER_THAN
+)
+
 
 HAS = OntologyNode("has")
 subtype(HAS, RELATION)
@@ -636,47 +659,104 @@ _CUP_SCHEMA = ObjectStructuralSchema(
 _BOOK_SCHEMA = ObjectStructuralSchema(
     ontology_node=BOOK, geon=Geon(cross_section=RECTANGULAR, cross_section_size=CONSTANT)
 )
-_HAND_SCHEMA = ObjectStructuralSchema(
-    ontology_node=HAND,
-    # we do not currently represent fingers
-    geon=Geon(
-        cross_section=RECTANGULAR,
-        cross_section_size=CONSTANT,
-        generating_axis=directed(),
-        orienting_axes=[directed(), symmetric()],
-    ),
-)
-_HEAD_SCHEMA = ObjectStructuralSchema(
-    HEAD,
-    geon=Geon(
-        cross_section=OVALISH,
-        cross_section_size=SMALL_TO_LARGE_TO_SMALL,
-        generating_axis=straight_up(),
-        orienting_axes=[directed(), symmetric()],
-    ),
-)
+
+
+def _make_hand_schema() -> ObjectStructuralSchema:
+    wrist_to_fingertips = directed("wrist-to-fingertips")
+    thumb_to_pinky = directed("thumb-to-pinky")
+    top_to_palm = directed("top-to-palm")
+
+    return ObjectStructuralSchema(
+        ontology_node=HAND,
+        # we do not currently represent fingers
+        geon=Geon(
+            cross_section=RECTANGULAR,
+            cross_section_size=CONSTANT,
+            generating_axis=wrist_to_fingertips,
+            orienting_axes=[thumb_to_pinky, top_to_palm],
+            axis_relations=[
+                bigger_than(wrist_to_fingertips, thumb_to_pinky),
+                much_bigger_than(wrist_to_fingertips, top_to_palm),
+                much_bigger_than(thumb_to_pinky, top_to_palm),
+            ],
+        ),
+    )
+
+
+_HAND_SCHEMA = _make_hand_schema()
+
+
+def _make_head_schema():
+    chin_to_scalp = straight_up("chin-to-scalp")
+    back_to_front = directed("back-to-front")
+    left_to_right = symmetric("left-to-right")
+    return ObjectStructuralSchema(
+        HEAD,
+        geon=Geon(
+            cross_section=OVALISH,
+            cross_section_size=SMALL_TO_LARGE_TO_SMALL,
+            generating_axis=chin_to_scalp,
+            orienting_axes=[back_to_front, left_to_right],
+            axis_relations=[
+                bigger_than(chin_to_scalp, back_to_front),
+                bigger_than(chin_to_scalp, left_to_right),
+            ],
+        ),
+    )
+
+
+_HEAD_SCHEMA = _make_head_schema()
+
+
+def _make_torso_schema():
+    waist_to_shoulders = straight_up("waist-to-shoulders")
+    front_to_back = directed("front-to-back")
+    left_to_right = symmetric("left-to-right")
+
+    return ObjectStructuralSchema(
+        _TORSO,
+        geon=Geon(
+            cross_section=OVALISH,
+            cross_section_size=CONSTANT,
+            generating_axis=waist_to_shoulders,
+            orienting_axes=[front_to_back, left_to_right],
+            axis_relations=[
+                bigger_than(waist_to_shoulders, left_to_right),
+                much_bigger_than(waist_to_shoulders, front_to_back),
+                much_bigger_than(left_to_right, front_to_back),
+            ],
+        ),
+    )
+
 
 # Hierarchical structure of objects
-_TORSO_SCHEMA = ObjectStructuralSchema(
-    _TORSO,
-    geon=Geon(
-        cross_section=OVALISH,
-        cross_section_size=CONSTANT,
-        generating_axis=straight_up(),
-        orienting_axes=[directed(), symmetric()],
-    ),
-)
+_TORSO_SCHEMA = _make_torso_schema()
+
+
+def _make_human_leg_schema():
+    hip_to_foot = directed("hip-to-foot")
+    diameter_0 = symmetric("diameter_0")
+    diameter_1 = symmetric("diameter_1")
+
+    return ObjectStructuralSchema(
+        _LEG,
+        geon=Geon(
+            cross_section=OVALISH,
+            cross_section_size=CONSTANT,
+            generating_axis=hip_to_foot,
+            orienting_axes=[diameter_0, diameter_1],
+            axis_relations=[
+                much_bigger_than(hip_to_foot, diameter_0),
+                much_bigger_than(hip_to_foot, diameter_1),
+            ],
+        ),
+    )
+
+
 # TODO: we shouldn't share a leg schema between humans and tables
 # https://github.com/isi-vista/adam/issues/265
-_LEG_SCHEMA = ObjectStructuralSchema(
-    _LEG,
-    geon=Geon(
-        cross_section=OVALISH,
-        cross_section_size=CONSTANT,
-        generating_axis=directed(),
-        orienting_axes=[symmetric(), symmetric()],
-    ),
-)
+_LEG_SCHEMA = _make_human_leg_schema()
+
 _CHAIRBACK_SCHEMA = ObjectStructuralSchema(
     ontology_node=_CHAIR_BACK,
     geon=Geon(cross_section=IRREGULAR, cross_section_size=CONSTANT),
@@ -722,6 +802,34 @@ _FLATBED_SCHEMA = ObjectStructuralSchema(
 _BODY_SCHEMA = ObjectStructuralSchema(
     ontology_node=_BODY, geon=Geon(cross_section=IRREGULAR, cross_section_size=CONSTANT)
 )
+
+
+def _make_human_arm_segment():
+    upper_to_lower = directed("upper-to-lower")
+    diameter_0 = symmetric("diameter_0")
+    diameter_1 = symmetric("diameter_1")
+
+    return ObjectStructuralSchema(
+        _ARM_SEGMENT,
+        geon=Geon(
+            cross_section=OVALISH,
+            cross_section_size=CONSTANT,
+            generating_axis=upper_to_lower,
+            orienting_axes=[diameter_0, diameter_1],
+            axis_relations=[
+                much_bigger_than(upper_to_lower, diameter_0),
+                much_bigger_than(upper_to_lower, diameter_1),
+            ],
+        ),
+    )
+
+
+_ARM_SEGMENT_SCHEMA = _make_human_arm_segment()
+_ROOF_SCHEMA = ObjectStructuralSchema(_ROOF)
+_WALL_SCHEMA = ObjectStructuralSchema(_WALL)
+_TIRE_SCHEMA = ObjectStructuralSchema(_TIRE)
+_FLATBED_SCHEMA = ObjectStructuralSchema(_FLATBED)
+_BODY_SCHEMA = ObjectStructuralSchema(_BODY)
 
 # schemata describing the sub-object structural nature of a Human Arm
 _ARM_SCHEMA_HAND = SubObject(_HAND_SCHEMA)
