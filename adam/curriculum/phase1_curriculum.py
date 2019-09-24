@@ -641,9 +641,13 @@ def _make_put_curriculum():
         "on_region_object",
         INANIMATE_OBJECT,
         required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM],
+        banned_properties=[IS_BODY_PART],
     )
     in_region_object = object_variable(
-        "in_region_object", INANIMATE_OBJECT, required_properties=[HOLLOW]
+        "in_region_object",
+        INANIMATE_OBJECT,
+        required_properties=[HOLLOW],
+        banned_properties=[IS_BODY_PART],
     )
 
     # X puts Y on Z
