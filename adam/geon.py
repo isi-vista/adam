@@ -1,6 +1,6 @@
 from itertools import chain
 
-from attr import attrs, attrib
+from attr import attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import ImmutableSet, immutableset
 from immutablecollections.converter_utils import _to_immutableset

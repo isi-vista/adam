@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import AbstractSet, Any, Callable, Iterable, List, Tuple, TypeVar, Union
 
-from attr import attrs, attrib
+from attr import attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import (
     ImmutableSet,
@@ -21,7 +21,7 @@ from adam.geon import Geon
 from adam.language.dependency import LinearizedDependencyTree
 from adam.ontology import IN_REGION
 from adam.ontology.during import DuringAction
-from adam.ontology.phase1_ontology import PART_OF, SMALLER_THAN, BIGGER_THAN
+from adam.ontology.phase1_ontology import BIGGER_THAN, PART_OF, SMALLER_THAN
 from adam.ontology.phase1_spatial_relations import Region, SpatialPath
 from adam.perception import ObjectPerception, PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
@@ -399,7 +399,8 @@ class CurriculumToHtmlDumper:
                 if isinstance(prop, HasColor):
                     prop_string = (
                         f'<span style="background-color: {prop.color}; '
-                        f'color: {prop.color}; border: 1px solid black;">Object Color</span>'
+                        f'color: {prop.color.inverse()}; border: 1px solid black;">'
+                        f"{prop.color.hex}</span>"
                     )
                 elif isinstance(prop, HasBinaryProperty):
                     prop_string = str(prop.binary_property)

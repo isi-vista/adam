@@ -79,6 +79,7 @@ from adam.ontology.phase1_ontology import (
     is_recognized_particular,
     on,
     strictly_above,
+    IS_HUMAN,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -175,7 +176,9 @@ EACH_OBJECT_BY_ITSELF_SUB_CURRICULUM = _phase1_instances(
 # Show each object in 20 different colors
 
 _COLOR = color_variable("color")
-_COLOR_OBJECT = object_variable("object", added_properties=[_COLOR])
+_COLOR_OBJECT = object_variable(
+    "object", added_properties=[_COLOR], banned_properties=[IS_HUMAN, IS_BODY_PART]
+)
 _OBJECT_WITH_COLOR_TEMPLATE = Phase1SituationTemplate(
     "object-with-color", salient_object_variables=[_COLOR_OBJECT, _LEARNER_OBJECT]
 )
