@@ -293,25 +293,13 @@ class CurriculumToHtmlDumper:
                 )
                 for mapping in acts.argument_roles_to_fillers.keys():
                     for object_ in acts.argument_roles_to_fillers[mapping]:
-                        if isinstance(object_, Region):
-                            output_text.append(
-                                f"\t\t\t\t\t\t<li>{mapping.handle} is {object_}</li>"
-                            )
-                        else:
-                            output_text.append(
-                                f"\t\t\t\t\t\t<li>{mapping.handle} is {object_.ontology_node.handle}"
-                            )
+                        output_text.append(
+                            f"\t\t\t\t\t\t<li>{mapping.handle} is {self._situation_object_or_region_text(object_)}</li>"
+                        )
                 for mapping in acts.auxiliary_variable_bindings.keys():
-                    if isinstance(
-                        acts.auxiliary_variable_bindings[mapping], SituationObject
-                    ):
-                        output_text.append(
-                            f"\t\t\t\t\t\t<li>{mapping.debug_handle} is {acts.auxiliary_variable_bindings[mapping].ontology_node.handle}</li>"
-                        )
-                    else:
-                        output_text.append(
-                            f"\t\t\t\t\t\t<li>{mapping.debug_handle} is {acts.auxiliary_variable_bindings[mapping]}"
-                        )
+                    output_text.append(
+                        f"\t\t\t\t\t\t<li>{mapping.debug_handle} is {self._situation_object_or_region_text(acts.auxiliary_variable_bindings[mapping])}"
+                    )
             output_text.append("\t\t\t\t\t</ul>")
         if situation.always_relations:
             output_text.append("\t\t\t\t\t<h4>Relations</h4>\n\t\t\t\t\t<ul>")
@@ -329,7 +317,16 @@ class CurriculumToHtmlDumper:
         if isinstance(obj_or_region, SituationObject):
             return obj_or_region.ontology_node.handle
         else:
-            return str(obj_or_region)
+            parts = []
+            parts.append(
+                f"reference_object={obj_or_region.reference_object.ontology_node.handle}"
+            )
+            if obj_or_region.distance:
+                parts.append(f"distance={obj_or_region.distance.name}")
+            if obj_or_region.direction:
+                parts.append(f"direction={obj_or_region.direction}")
+
+            return "Region(" + ", ".join(parts) + ")"
 
     def _perception_text(
         self, perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]

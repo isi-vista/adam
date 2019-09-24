@@ -80,6 +80,7 @@ from adam.ontology.phase1_ontology import (
     BOX,
     IS_SPEAKER,
     IS_ADDRESSEE,
+    COME,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -1428,6 +1429,59 @@ def _make_throw_curriculum():
     )
 
 
+def _make_come_curriculum():
+    movee = _standard_object("movee", required_properties=[SELF_MOVING])
+    learner = object_variable("leaner_0", LEARNER)
+    speaker = object_variable("speaker", PERSON, added_properties=[IS_SPEAKER])
+    object_ = _standard_object("object_0", THING)
+
+    come_to_speaker = Phase1SituationTemplate(
+        "come-to-speaker",
+        salient_object_variables=[movee, speaker],
+        actions=[
+            Action(COME, argument_roles_to_fillers=[(AGENT, movee), (GOAL, speaker)])
+        ],
+    )
+
+    come_to_learner = Phase1SituationTemplate(
+        "come-to-leaner",
+        salient_object_variables=[movee],
+        actions=[
+            Action(COME, argument_roles_to_fillers=[(AGENT, movee), (GOAL, learner)])
+        ],
+    )
+
+    come_to_object = Phase1SituationTemplate(
+        "come-to-object",
+        salient_object_variables=[movee, object_],
+        actions=[
+            Action(COME, argument_roles_to_fillers=[(AGENT, movee), (GOAL, object_)])
+        ],
+    )
+
+    # TODO: "Come on" https://github.com/isi-vista/adam/issues/328
+
+    return _phase1_instances(
+        "come",
+        chain(
+            *[
+                all_possible(
+                    come_to_speaker, ontology=GAILA_PHASE_1_ONTOLOGY, chooser=_CHOOSER
+                ),
+                all_possible(
+                    come_to_learner, ontology=GAILA_PHASE_1_ONTOLOGY, chooser=_CHOOSER
+                ),
+                sampled(
+                    come_to_object,
+                    max_to_sample=25,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                    chooser=_CHOOSER,
+                ),
+            ]
+        ),
+    )
+
+
 GAILA_PHASE_1_CURRICULUM = [
     EACH_OBJECT_BY_ITSELF_SUB_CURRICULUM,
     OBJECTS_WITH_COLORS_SUB_CURRICULUM,
@@ -1456,6 +1510,7 @@ GAILA_PHASE_1_CURRICULUM = [
     _make_push_curriculum(),
     _make_throw_curriculum(),
     _make_put_on_speaker_addressee_body_part_curriculum(),
+    _make_come_curriculum(),
 ]
 """
 One particular instantiation of the curriculum for GAILA Phase 1.

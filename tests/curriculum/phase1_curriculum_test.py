@@ -9,6 +9,7 @@ from adam.curriculum.phase1_curriculum import (
     _make_jump_curriculum,
     _make_move_curriculum,
     _make_push_curriculum,
+    _make_come_curriculum,
     _make_put_curriculum,
     _make_roll_curriculum,
     _make_sit_curriculum,
@@ -105,3 +106,7 @@ def test_under_over_curriculum():
 
 def test_put_on_speaker_addressee_body_part_curriculum():
     _test_curriculum(_make_put_on_speaker_addressee_body_part_curriculum())
+
+
+def test_come():
+    _test_curriculum(_make_come_curriculum())
