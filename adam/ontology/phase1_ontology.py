@@ -1583,11 +1583,15 @@ _COME_ACTION_DESCRIPTION = ActionDescription(
         # AGENT comes to DESTINATION
         {AGENT: _COME_AGENT, GOAL: _COME_GOAL}
     ),
-    preconditions=[Relation(IN_REGION, _COME_AGENT, _COME_GOAL, negated=True)],
+    preconditions=[
+        Relation(
+            IN_REGION, _COME_AGENT, Region(_COME_GOAL, distance=DISTAL), negated=True
+        )
+    ],
     during=DuringAction(objects_to_paths=[(_COME_AGENT, SpatialPath(TO, _COME_GOAL))]),
-    postconditions=[Relation(IN_REGION, _COME_AGENT, _COME_GOAL)],
-    # TODO: encode that the new location is relatively closer to the
-    # learner or speaker than the old location
+    postconditions=[
+        Relation(IN_REGION, _COME_AGENT, Region(_COME_GOAL, distance=PROXIMAL))
+    ],
     asserted_properties=[(_COME_AGENT, VOLITIONALLY_INVOLVED), (_COME_AGENT, MOVES)],
 )
 

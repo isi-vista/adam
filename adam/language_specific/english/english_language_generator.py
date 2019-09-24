@@ -392,6 +392,11 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     action, verb_lexical_entry, argument_role, filler
                 )
                 for (argument_role, filler) in action.argument_roles_to_fillers.items()
+                if not (
+                    isinstance(filler, SituationObject)
+                    and filler.ontology_node == LEARNER
+                )
+                # Explicitly ignore relationships which are LEARNER objects from language generation
             )
 
             # determine the surface form of the verb,
