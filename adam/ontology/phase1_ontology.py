@@ -304,7 +304,8 @@ TABLE = OntologyNode(
 )
 subtype(TABLE, INANIMATE_OBJECT)
 BALL = OntologyNode(
-    "ball", [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, ROLLABLE, BLACK, WHITE]
+    "ball",
+    [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, ROLLABLE, RED, BLUE, GREEN, BLACK, WHITE],
 )
 subtype(BALL, INANIMATE_OBJECT)
 BOOK = OntologyNode(
@@ -319,7 +320,7 @@ BOOK = OntologyNode(
     ],
 )
 subtype(BOOK, INANIMATE_OBJECT)
-HOUSE = OntologyNode("house", [HOLLOW, CAN_FILL_TEMPLATE_SLOT, WHITE])
+HOUSE = OntologyNode("house", [HOLLOW, CAN_FILL_TEMPLATE_SLOT, RED, BLUE, WHITE])
 subtype(HOUSE, INANIMATE_OBJECT)
 CAR = OntologyNode(
     "car",
@@ -346,7 +347,10 @@ JUICE = OntologyNode(
     "juice", [LIQUID], non_inheritable_properties=[RED, CAN_FILL_TEMPLATE_SLOT, EDIBLE]
 )
 subtype(JUICE, INANIMATE_OBJECT)
-CUP = OntologyNode("cup", [HOLLOW, CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, TRANSPARENT])
+CUP = OntologyNode(
+    "cup",
+    [HOLLOW, CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, RED, BLUE, GREEN, TRANSPARENT],
+)
 subtype(CUP, INANIMATE_OBJECT)
 BOX = OntologyNode(
     "box",
