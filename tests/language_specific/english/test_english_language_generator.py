@@ -1,12 +1,12 @@
 from typing import Tuple
 
-from more_itertools import only, first
+from more_itertools import first, only
 
 from adam.curriculum.phase1_curriculum import (
-    make_jump_over_object_template,
-    JUMPER,
     JUMPED_OVER,
+    JUMPER,
     _GROUND_OBJECT,
+    make_jump_over_object_template,
 )
 from adam.language_specific.english.english_language_generator import (
     PREFER_DITRANSITIVE,
@@ -24,8 +24,13 @@ from adam.ontology.phase1_ontology import (
     BALL,
     BIRD,
     BOX,
+    CHAIR,
     COOKIE,
+    CUP,
     DAD,
+    DRINK,
+    DRINK_CONTAINER_AUX,
+    EAT,
     FALL,
     FLY,
     GAILA_PHASE_1_ONTOLOGY,
@@ -36,23 +41,18 @@ from adam.ontology.phase1_ontology import (
     HAS,
     IS_ADDRESSEE,
     IS_SPEAKER,
+    JUICE,
     MOM,
+    PATIENT,
     PUSH,
     PUT,
     ROLL,
+    SIT,
     TABLE,
     THEME,
     THROW,
     WATER,
     on,
-    JUICE,
-    CUP,
-    DRINK,
-    DRINK_CONTAINER_AUX,
-    CHAIR,
-    PATIENT,
-    EAT,
-    SIT,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -70,8 +70,8 @@ from adam.relation import Relation
 from adam.situation import Action, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.situation.templates.phase1_templates import (
-    fixed_assignment,
     TemplateVariableAssignment,
+    fixed_assignment,
 )
 from tests.sample_situations import make_bird_flies_over_a_house
 from tests.situation.situation_test import make_mom_put_ball_on_table

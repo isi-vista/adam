@@ -68,11 +68,11 @@ from adam.ontology.phase1_spatial_relations import (
     DISTAL,
     EXTERIOR_BUT_IN_CONTACT,
     GRAVITATIONAL_AXIS,
+    GRAVITATIONAL_DOWN,
     INTERIOR,
     PROXIMAL,
     Region,
     TOWARD,
-    GRAVITATIONAL_DOWN,
 )
 from adam.random_utils import SequenceChooser
 from adam.relation import Relation

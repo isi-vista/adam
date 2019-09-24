@@ -52,14 +52,16 @@ from adam.ontology.phase1_ontology import (
     RED,
     ROLL,
     SIT,
+    SPIN,
     TABLE,
     TAKE,
     THROW,
     TRANSPARENT,
     TRUCK,
-    SPIN,
     WATER,
     WHITE,
+    LIGHT_BROWN,
+    DARK_BROWN,
 )
 
 MASS_NOUN = LexiconProperty("mass-noun")
@@ -144,5 +146,7 @@ GAILA_PHASE_1_ENGLISH_LEXICON = OntologyLexicon(
         (BLACK, LexiconEntry("black", ADJECTIVE)),
         (WHITE, LexiconEntry("white", ADJECTIVE)),
         (TRANSPARENT, LexiconEntry("transparent", ADJECTIVE)),
+        (LIGHT_BROWN, LexiconEntry("light brown", ADJECTIVE)),
+        (DARK_BROWN, LexiconEntry("dark brown", ADJECTIVE)),
     ),
 )
