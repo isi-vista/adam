@@ -209,12 +209,12 @@ class CurriculumToHtmlDumper:
             relative_filename = f"{instance_group_header}.html"
             files_written.append((instance_group_header, relative_filename))
             with open(output_directory / relative_filename, "w") as html_out:
+                html_out.write(f"<head>\n\t<style>{CSS}\n\t</style>\n</head>")
+                html_out.write(
+                    f"\n<body>\n\t<h1>{title} - Sorted by Utterance Length</h1>"
+                )
+                html_out.write(EXPLANATION_HEADER)
                 for (instance_number, instance_holder) in enumerate(immutableset(chunk)):
-                    html_out.write(f"<head>\n\t<style>{CSS}\n\t</style>\n</head>")
-                    html_out.write(
-                        f"\n<body>\n\t<h1>{title} - Sorted by Utterance Length</h1>"
-                    )
-                    html_out.write(EXPLANATION_HEADER)
                     # By using the immutable set we guaruntee iteration order and remove duplicates
                     html_out.write(
                         f"\n\t<table>\n"
