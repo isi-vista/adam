@@ -395,7 +395,9 @@ def _make_object_in_other_object_curriculum() -> _Phase1InstanceGroup:
         "object_1", required_properties=[HOLLOW], banned_properties=[IS_BODY_PART]
     )
     liquid_containing_object = object_variable(
-        "object_2", required_properties=[HOLLOW, PERSON_CAN_HAVE], banned_properties=[IS_BODY_PART]
+        "object_2",
+        required_properties=[HOLLOW, PERSON_CAN_HAVE],
+        banned_properties=[IS_BODY_PART],
     )
     solid_template = Phase1SituationTemplate(
         "solid-containment",
