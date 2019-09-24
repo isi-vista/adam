@@ -300,6 +300,7 @@ class _Phase1SituationTemplateGenerator(
             RandomChooser.for_seed
         ),  # pylint:disable=unused-argument
     ) -> Iterable[HighLevelSemanticsSituation]:
+        check_arg(isinstance(template, Phase1SituationTemplate))
         try:
             # gather property variables from object variables
             property_variables = immutableset(

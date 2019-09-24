@@ -38,6 +38,7 @@ from adam.ontology.phase1_ontology import (
     HAS,
     HAS_SPACE_UNDER,
     HOLLOW,
+    INANIMATE,
     INANIMATE_OBJECT,
     IS_BODY_PART,
     JUMP,
@@ -62,16 +63,15 @@ from adam.ontology.phase1_ontology import (
     is_recognized_particular,
     on,
     strictly_above,
-    INANIMATE,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
     EXTERIOR_BUT_IN_CONTACT,
     GRAVITATIONAL_UP,
+    INTERIOR,
     Region,
     SpatialPath,
     TOWARD,
-    INTERIOR,
 )
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -243,34 +243,49 @@ _ANY_OBJECT_INTRANSITIVES_SUBCURRICULUM = _phase1_instances(
 )
 
 
-def _make_object_falls_template(
-    use_adverbial_path_modifier: bool
-) -> Phase1SituationTemplate:
-    return Phase1SituationTemplate(
-        "object-falls",
-        salient_object_variables=[_ARBITRARY_OBJECT],
-        actions=[
-            Action(
-                action_type=FALL, argument_roles_to_fillers=[(THEME, _ARBITRARY_OBJECT)]
+def _make_fall_curriculum():
+    arbitary_object = object_variable("object_0", THING)
+    ground = object_variable("ground_0", GROUND)
+
+    def _make_templates() -> Iterable[Phase1SituationTemplate]:
+        # Any Object Falling
+        for use_adverbial_path_modifier in (True, False):
+            yield Phase1SituationTemplate(
+                "object-falls",
+                salient_object_variables=[arbitary_object],
+                actions=[
+                    Action(
+                        action_type=FALL,
+                        argument_roles_to_fillers=[(THEME, arbitary_object)],
+                    )
+                ],
+                syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER]
+                if use_adverbial_path_modifier
+                else [],
             )
-        ],
-        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER] if use_adverbial_path_modifier else [],
+
+        # "ball fell on the ground"
+        yield Phase1SituationTemplate(
+            "falls-to-ground",
+            salient_object_variables=[arbitary_object, ground],
+            actions=[
+                Action(
+                    action_type=FALL,
+                    argument_roles_to_fillers=[(THEME, arbitary_object)],
+                    during=DuringAction(at_some_point=[on(arbitary_object, ground)]),
+                )
+            ],
+        )
+
+    return _phase1_instances(
+        "falling objects",
+        chain(
+            *[
+                all_possible(template, ontology=GAILA_PHASE_1_ONTOLOGY, chooser=_CHOOSER)
+                for template in _make_templates()
+            ]
+        ),
     )
-
-
-_OBJECTS_FALLING_SUBCURRICULUM = _phase1_instances(
-    "any object falling",
-    chain(
-        *[
-            all_possible(
-                _make_object_falls_template(use_adv_mod),
-                ontology=GAILA_PHASE_1_ONTOLOGY,
-                chooser=_CHOOSER,
-            )
-            for use_adv_mod in (True, False)
-        ]
-    ),
-)
 
 
 def _make_transfer_of_possession_curriculum() -> _Phase1InstanceGroup:
@@ -884,7 +899,7 @@ GAILA_PHASE_1_CURRICULUM = [
     _OBJECT_ON_GROUND_SUB_CURRICULUM,
     #    PERSON_HAS_OBJECT_SUB_CURRICULUM,
     _ANY_OBJECT_INTRANSITIVES_SUBCURRICULUM,
-    _OBJECTS_FALLING_SUBCURRICULUM,
+    _make_fall_curriculum(),
     _make_transfer_of_possession_curriculum(),
     _make_object_on_object_curriculum(),
     _make_object_in_other_object_curriculum(),
@@ -894,6 +909,7 @@ GAILA_PHASE_1_CURRICULUM = [
     _make_drink_curriculum(),
     _make_sit_curriculum(),
     _make_put_curriculum(),
+    _make_eat_curriculum(),
 ]
 """
 One particular instantiation of the curriculum for GAILA Phase 1.

@@ -590,44 +590,12 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 for relation in chain(
                     action.during.at_some_point, action.during.continuously
                 ):
-                    if relation.relation_type == IN_REGION:
-                        # the thing the relation is predicated of must be something plausibly
-                        # moving, which for now is either..
-                        fills_legal_argument_role = (
-                            # the theme
-                            relation.first_slot in action.argument_roles_to_fillers[THEME]
-                            # or the agent or patient if there is no theme (e.g. jumps, falls)
-                            or (
-                                (
-                                    relation.first_slot
-                                    in action.argument_roles_to_fillers[AGENT]
-                                    or relation.first_slot
-                                    not in action.argument_roles_to_fillers[THEME]
-                                )
-                                and not action.argument_roles_to_fillers[THEME]
-                            )
-                        )
-                        if fills_legal_argument_role:
-                            prepositional_modifier = self.relation_to_prepositional_modifier(
-                                relation
-                            )
-                            if prepositional_modifier:
-                                modifiers.append(
-                                    (OBLIQUE_NOMINAL, prepositional_modifier)
-                                )
-                        else:
-                            raise RuntimeError(
-                                f"To translate a spatial relation as a verbal "
-                                f"modifier, it must either be the theme or, if "
-                                f"it is another filler, the theme must be absent:"
-                                f" {relation} in {action} "
-                            )
-                    else:
-                        raise RuntimeError(
-                            f"Currently only know how to translate IN_REGION "
-                            f"for relations which hold during an action: "
-                            f"{relation} in {action}"
-                        )
+                    self._translate_relation_to_action_modifier(
+                        action, relation, modifiers
+                    )
+
+            for relation in self.situation.after_action_relations:
+                self._translate_relation_to_action_modifier(action, relation, modifiers)
 
             # up and down modifiers
             if USE_ADVERBIAL_PATH_MODIFIER in self.situation.syntax_hints:
@@ -655,6 +623,43 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     )
 
             return modifiers
+
+        def _translate_relation_to_action_modifier(self, action, relation, modifiers):
+            if relation.relation_type == IN_REGION:
+                # the thing the relation is predicated of must be something plausibly
+                # moving, which for now is either..
+                fills_legal_argument_role = (
+                    # the theme
+                    relation.first_slot in action.argument_roles_to_fillers[THEME]
+                    # or the agent or patient if there is no theme (e.g. jumps, falls)
+                    or (
+                        (
+                            relation.first_slot in action.argument_roles_to_fillers[AGENT]
+                            or relation.first_slot
+                            not in action.argument_roles_to_fillers[THEME]
+                        )
+                        and not action.argument_roles_to_fillers[THEME]
+                    )
+                )
+                if fills_legal_argument_role:
+                    prepositional_modifier = self.relation_to_prepositional_modifier(
+                        relation
+                    )
+                    if prepositional_modifier:
+                        modifiers.append((OBLIQUE_NOMINAL, prepositional_modifier))
+                else:
+                    raise RuntimeError(
+                        f"To translate a spatial relation as a verbal "
+                        f"modifier, it must either be the theme or, if "
+                        f"it is another filler, the theme must be absent:"
+                        f" {relation} in {action} "
+                    )
+            else:
+                raise RuntimeError(
+                    f"Currently only know how to translate IN_REGION "
+                    f"for relations which hold during an action: "
+                    f"{relation} in {action}"
+                )
 
         def relation_to_prepositional_modifier(
             self, relation
