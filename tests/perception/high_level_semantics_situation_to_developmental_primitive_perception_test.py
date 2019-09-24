@@ -118,11 +118,13 @@ def test_person_and_ball():
         person_and_ball_perception.frames[0], "ball_0"
     )
 
-    assert set(person_and_ball_perception.frames[0].property_assertions) == {
-        HasBinaryProperty(person_perception, ANIMATE),
-        HasBinaryProperty(person_perception, SELF_MOVING),
-        HasBinaryProperty(ball_perception, INANIMATE),
-    }
+    assert set(person_and_ball_perception.frames[0].property_assertions).issuperset(
+        {
+            HasBinaryProperty(person_perception, ANIMATE),
+            HasBinaryProperty(person_perception, SELF_MOVING),
+            HasBinaryProperty(ball_perception, INANIMATE),
+        }
+    )
 
 
 def test_person_and_ball_color():
