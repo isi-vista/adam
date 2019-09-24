@@ -10,9 +10,9 @@ from attr.validators import instance_of, optional
 from immutablecollections import ImmutableSet, immutableset
 from immutablecollections.converter_utils import _to_immutableset
 
+from adam.geon import Geon
 from adam.math_3d import Point
 from adam.ontology.during import DuringAction
-from adam.geon import Geon
 from adam.random_utils import SequenceChooser
 from adam.situation import LocatedObjectSituation, Situation
 
