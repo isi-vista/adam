@@ -18,6 +18,7 @@ from adam.curriculum.phase1_curriculum import (
     _make_throw_curriculum,
     _make_object_under_or_over_object_curriculum,
     _make_transfer_of_possession_curriculum,
+    _make_put_on_speaker_addressee_body_part_curriculum,
 )
 
 
@@ -100,3 +101,7 @@ def test_throw():
 
 def test_under_over_curriculum():
     _test_curriculum(_make_object_under_or_over_object_curriculum())
+
+
+def test_put_on_speaker_addressee_body_part_curriculum():
+    _test_curriculum(_make_put_on_speaker_addressee_body_part_curriculum())
