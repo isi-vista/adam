@@ -1164,6 +1164,10 @@ def _make_body_schema() -> ObjectStructuralSchema:
             cross_section_size=CONSTANT,
             generating_axis=bottom_to_top,
             orienting_axes=[front_to_back, side_to_side],
+            axis_relations=[
+                much_bigger_than(bottom_to_top, front_to_back),
+                bigger_than(side_to_side, front_to_back),
+            ]
         ),
     )
 
