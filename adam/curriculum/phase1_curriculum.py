@@ -394,6 +394,9 @@ def _make_object_in_other_object_curriculum() -> _Phase1InstanceGroup:
     containing_object = object_variable(
         "object_1", required_properties=[HOLLOW], banned_properties=[IS_BODY_PART]
     )
+    liquid_containing_object = object_variable(
+        "object_2", required_properties=[HOLLOW, PERSON_CAN_HAVE], banned_properties=[IS_BODY_PART]
+    )
     solid_template = Phase1SituationTemplate(
         "solid-containment",
         salient_object_variables=[object_, containing_object],
@@ -402,8 +405,8 @@ def _make_object_in_other_object_curriculum() -> _Phase1InstanceGroup:
     )
     liquid_template = Phase1SituationTemplate(
         "liquid-containment",
-        salient_object_variables=[liquid, containing_object],
-        asserted_always_relations=[inside(liquid, containing_object)],
+        salient_object_variables=[liquid, liquid_containing_object],
+        asserted_always_relations=[inside(liquid, liquid_containing_object)],
     )
 
     return _phase1_instances(
