@@ -906,7 +906,7 @@ class _PerceptionGeneration:
             if situation_object.ontology_node != GROUND:
                 if self._objects_to_perceptions[situation_object] in objects_to_relations:
                     # TODO: Handle associating contacts ground so long as a pre-existing relation
-                    #  doesn't define this.
+                    #  doesn't define this. https://github.com/isi-vista/adam/issues/309
                     pass
                 else:
                     self._relation_perceptions.append(
