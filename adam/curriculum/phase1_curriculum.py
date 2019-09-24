@@ -22,8 +22,13 @@ from adam.ontology.phase1_ontology import (
     ANIMATE,
     BIGGER_THAN,
     BIRD,
+    CAN_BE_SAT_ON_BY_PEOPLE,
     CAN_HAVE_THINGS_RESTING_ON_THEM,
     CAN_JUMP,
+    DRINK,
+    DRINK_CONTAINER_AUX,
+    EAT,
+    EDIBLE,
     FALL,
     FLY,
     GAILA_PHASE_1_ONTOLOGY,
@@ -32,33 +37,42 @@ from adam.ontology.phase1_ontology import (
     GROUND,
     HAS,
     HAS_SPACE_UNDER,
+    HOLLOW,
+    INANIMATE,
     INANIMATE_OBJECT,
     IS_BODY_PART,
     JUMP,
     JUMP_INITIAL_SUPPORTER_AUX,
     LEARNER,
     LIQUID,
+    PATIENT,
     PERSON,
     PERSON_CAN_HAVE,
     PHASE_1_CURRICULUM_OBJECTS,
-    RECOGNIZED_PARTICULAR_PROPERTY,
+    PUT,
     ROLL,
     ROLLABLE,
     ROLL_SURFACE_AUXILIARY,
+    SIT,
+    SIT_GOAL,
+    SIT_THING_SAT_ON,
     THEME,
     TRANSFER_OF_POSSESSION,
     bigger_than,
     inside,
+    is_recognized_particular,
     on,
     strictly_above,
-    DRINK_CONTAINER_AUX,
-    HOLLOW,
-    DRINK,
-    EDIBLE,
-    EAT,
-    PATIENT,
 )
-from adam.ontology.phase1_spatial_relations import AWAY_FROM, SpatialPath, TOWARD
+from adam.ontology.phase1_spatial_relations import (
+    AWAY_FROM,
+    EXTERIOR_BUT_IN_CONTACT,
+    GRAVITATIONAL_UP,
+    INTERIOR,
+    Region,
+    SpatialPath,
+    TOWARD,
+)
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
@@ -147,13 +161,9 @@ def build_object_multiples_situations(
     ontology: Ontology, *, samples_per_object: int = 3, chooser: RandomChooser
 ) -> Iterable[HighLevelSemanticsSituation]:
     for object_type in PHASE_1_CURRICULUM_OBJECTS:
-        # don't want multiples of named people
-        is_recognized_particular = any(
-            ontology.is_subtype_of(property_, RECOGNIZED_PARTICULAR_PROPERTY)
-            for property_ in ontology.properties_for_node(object_type)
-        )
         is_liquid = ontology.has_all_properties(object_type, [LIQUID])
-        if not is_recognized_particular and not is_liquid:
+        # don't want multiples of named people
+        if not is_recognized_particular(ontology, object_type) and not is_liquid:
             for _ in range(samples_per_object):
                 num_objects = chooser.choice(range(2, 4))
                 yield HighLevelSemanticsSituation(
@@ -641,6 +651,93 @@ def make_jump_over_object_template():
     )
 
 
+def _make_put_curriculum():
+    putter = object_variable("putter_0", required_properties=[ANIMATE])
+    object_put = object_variable(
+        "object_0", required_properties=[INANIMATE], banned_properties=[IS_BODY_PART]
+    )
+
+    on_region_object = object_variable(
+        "on_region_object",
+        INANIMATE_OBJECT,
+        required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM],
+        banned_properties=[IS_BODY_PART],
+    )
+    in_region_object = object_variable(
+        "in_region_object",
+        INANIMATE_OBJECT,
+        required_properties=[HOLLOW],
+        banned_properties=[IS_BODY_PART],
+    )
+
+    # X puts Y on Z
+    put_on_template = Phase1SituationTemplate(
+        "put-on",
+        salient_object_variables=[putter, object_put, on_region_object],
+        actions=[
+            Action(
+                PUT,
+                argument_roles_to_fillers=[
+                    (AGENT, putter),
+                    (THEME, object_put),
+                    (
+                        GOAL,
+                        Region(
+                            on_region_object,
+                            distance=EXTERIOR_BUT_IN_CONTACT,
+                            direction=GRAVITATIONAL_UP,
+                        ),
+                    ),
+                ],
+            )
+        ],
+        constraining_relations=[
+            Relation(BIGGER_THAN, on_region_object, object_put),
+            Relation(BIGGER_THAN, putter, object_put),
+        ],
+    )
+
+    # X puts Y in Z
+    put_in_template = Phase1SituationTemplate(
+        "put-in",
+        salient_object_variables=[putter, object_put, in_region_object],
+        actions=[
+            Action(
+                PUT,
+                argument_roles_to_fillers=[
+                    (AGENT, putter),
+                    (THEME, object_put),
+                    (GOAL, Region(in_region_object, distance=INTERIOR)),
+                ],
+            )
+        ],
+        constraining_relations=[
+            Relation(BIGGER_THAN, in_region_object, object_put),
+            Relation(BIGGER_THAN, putter, object_put),
+        ],
+    )
+
+    return _phase1_instances(
+        "putting",
+        chain(
+            *[
+                sampled(
+                    put_on_template,
+                    max_to_sample=25,
+                    chooser=_CHOOSER,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                ),
+                sampled(
+                    put_in_template,
+                    max_to_sample=25,
+                    chooser=_CHOOSER,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                ),
+            ]
+        ),
+    )
+
+
 def _make_drink_curriculum():
     object_0 = object_variable(
         "object_0", required_properties=[HOLLOW], banned_properties=[IS_BODY_PART]
@@ -710,6 +807,96 @@ def _make_eat_curriculum():
     )
 
 
+def _make_sit_curriculum():
+    sitter = object_variable("sitter_0", THING, required_properties=[ANIMATE])
+    sit_surface = object_variable(
+        "surface", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
+    )
+    seat = object_variable(
+        "sitting-surface", INANIMATE_OBJECT, required_properties=[CAN_BE_SAT_ON_BY_PEOPLE]
+    )
+
+    def _make_templates() -> Iterable[Phase1SituationTemplate]:
+        # we need two groups of templates because in general something can sit on
+        # anything bigger than itself which has a surface,
+        # but people also sit in chairs, etc., which are smaller than them.
+        sittee_to_contraints = (
+            (  # type: ignore
+                "-on-big-thing",
+                sit_surface,
+                [bigger_than(sit_surface, sitter)],
+            ),
+            ("-on-seat", seat, []),
+        )
+
+        syntax_hints_options = (
+            ("default", []),  # type: ignore
+            ("adverbial-mod", [USE_ADVERBIAL_PATH_MODIFIER]),
+        )
+
+        for (name, sittee, constraints) in sittee_to_contraints:
+            for (syntax_name, syntax_hints) in syntax_hints_options:
+                yield Phase1SituationTemplate(
+                    f"sit-intransitive-{name}-{syntax_name}",
+                    salient_object_variables=[sitter],
+                    actions=[
+                        Action(
+                            SIT,
+                            argument_roles_to_fillers=[(AGENT, sitter)],
+                            auxiliary_variable_bindings=[
+                                (
+                                    SIT_GOAL,
+                                    Region(
+                                        sittee,
+                                        direction=GRAVITATIONAL_UP,
+                                        distance=EXTERIOR_BUT_IN_CONTACT,
+                                    ),
+                                ),
+                                (SIT_THING_SAT_ON, sittee),
+                            ],
+                        )
+                    ],
+                    constraining_relations=constraints,
+                    syntax_hints=syntax_hints,
+                )
+
+                yield Phase1SituationTemplate(
+                    f"sit-transitive-{name}-{syntax_name}",
+                    salient_object_variables=[sitter, sittee],
+                    actions=[
+                        Action(
+                            SIT,
+                            argument_roles_to_fillers=[
+                                (AGENT, sitter),
+                                (
+                                    GOAL,
+                                    Region(
+                                        sittee,
+                                        direction=GRAVITATIONAL_UP,
+                                        distance=EXTERIOR_BUT_IN_CONTACT,
+                                    ),
+                                ),
+                            ],
+                            auxiliary_variable_bindings=[(SIT_THING_SAT_ON, sittee)],
+                        )
+                    ],
+                    constraining_relations=constraints,
+                    syntax_hints=syntax_hints,
+                )
+
+    return _phase1_instances(
+        "sitting",
+        chain(
+            *[
+                all_possible(
+                    situation_templates, chooser=_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY
+                )
+                for situation_templates in _make_templates()
+            ]
+        ),
+    )
+
+
 GAILA_PHASE_1_CURRICULUM = [
     EACH_OBJECT_BY_ITSELF_SUB_CURRICULUM,
     OBJECTS_WITH_COLORS_SUB_CURRICULUM,
@@ -725,6 +912,8 @@ GAILA_PHASE_1_CURRICULUM = [
     _make_roll_curriculum(),
     _make_jump_curriculum(),
     _make_drink_curriculum(),
+    _make_sit_curriculum(),
+    _make_put_curriculum(),
 ]
 """
 One particular instantiation of the curriculum for GAILA Phase 1.

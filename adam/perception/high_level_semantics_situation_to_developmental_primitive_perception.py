@@ -15,6 +15,7 @@ from adam.ontology.phase1_ontology import (
     BINARY,
     COLOR,
     COLORS_TO_RGBS,
+    GAILA_PHASE_1_ONTOLOGY,
     GAZED_AT,
     GROUND,
     HOLLOW,
@@ -23,7 +24,7 @@ from adam.ontology.phase1_ontology import (
     PART_OF,
     PERCEIVABLE,
     TWO_DIMENSIONAL,
-    GAILA_PHASE_1_ONTOLOGY,
+    LEARNER,
 )
 from adam.ontology.phase1_spatial_relations import INTERIOR, Region, SpatialPath
 from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
@@ -159,6 +160,14 @@ class _PerceptionGeneration:
     """
 
     def do(self) -> PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]:
+        try:
+            return self._real_do()
+        except Exception as e:
+            raise RuntimeError(
+                f"Error while generating perceptions " f"for situation {self._situation}"
+            ) from e
+
+    def _real_do(self) -> PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]:
         self._sanity_check_situation()
 
         # The first step is to determine what objects are perceived.
@@ -402,7 +411,7 @@ class _PerceptionGeneration:
         self,
         situation_action: Action[OntologyNode, SituationObject],
         action_object_variable: SituationObject,
-    ) -> ObjectPerception:
+    ) -> Union[ObjectPerception, Region[ObjectPerception]]:
         """
         Binds an action object variable to an object that we have perceived.
 
@@ -412,7 +421,12 @@ class _PerceptionGeneration:
             action_object_variable
         )
         if explicit_binding:
-            return self._objects_to_perceptions[explicit_binding]
+            if isinstance(explicit_binding, Region):
+                return explicit_binding.copy_remapping_objects(
+                    self._objects_to_perceptions
+                )
+            else:
+                return self._objects_to_perceptions[explicit_binding]
 
         # we continue to use the hand from PUT
         # ( see _bind_action_objects_variables_to_perceived_objects )
@@ -434,7 +448,7 @@ class _PerceptionGeneration:
         elif not perceived_objects_matching_constraints:
             raise RuntimeError(
                 f"Can not find object with properties {action_object_variable} in order to bind "
-                f"{action_object_variable}"
+                f"{action_object_variable}. All perceived objects are: {self._object_perceptions_to_ontology_nodes}"
             )
         else:
             distinct_property_sets_for_matching_object_types = set(
@@ -689,6 +703,15 @@ class _PerceptionGeneration:
                 ground_schemata, situation_object=SituationObject(GROUND)
             )
             self._object_perceptions_to_ontology_nodes[ground_observed] = GROUND
+        if not any(
+            situation_object.ontology_node == LEARNER
+            for situation_object in self._situation.all_objects
+        ):
+            learner_schemata = only(self._generator.ontology.structural_schemata(LEARNER))
+            learner_observed = self._instantiate_object_schema(
+                learner_schemata, situation_object=SituationObject(LEARNER)
+            )
+            self._object_perceptions_to_ontology_nodes[learner_observed] = LEARNER
         for situation_object in self._situation.all_objects:
             if not situation_object.ontology_node:
                 raise RuntimeError(

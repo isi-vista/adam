@@ -52,6 +52,7 @@ from adam.ontology.phase1_ontology import (
     CHAIR,
     PATIENT,
     EAT,
+    SIT,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -772,6 +773,34 @@ def test_ball_fell_on_ground():
     )
 
     assert generated_tokens(situation) == ("a", "ball", "falls", "on", "the", "ground")
+
+
+def test_mom_sits_on_a_table():
+    mom = SituationObject(MOM)
+    table = SituationObject(TABLE)
+
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom, table],
+        actions=[
+            Action(
+                SIT,
+                argument_roles_to_fillers=[
+                    (AGENT, mom),
+                    (
+                        GOAL,
+                        Region(
+                            table,
+                            direction=GRAVITATIONAL_UP,
+                            distance=EXTERIOR_BUT_IN_CONTACT,
+                        ),
+                    ),
+                ],
+            )
+        ],
+    )
+
+    assert generated_tokens(situation) == ("Mom", "sits", "on", "a", "table")
 
 
 def generated_tokens(situation):
