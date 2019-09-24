@@ -832,16 +832,13 @@ def _make_put_on_speaker_addressee_body_part_curriculum():
     speaker_putter = object_variable(
         "speaker_putter_0", required_properties=[ANIMATE], added_properties=[IS_SPEAKER]
     )
-    speaker_addressee_putter = object_variable(
-        "speaker_addressee_putter_0", required_properties=[ANIMATE]
-    )  # , added_properties=[IS_SPEAKER, IS_ADDRESSEE])
     addressee_putter = object_variable(
-        "addressee_putter_0", required_properties=[ANIMATE]
-    )  # , added_properties=[IS_ADDRESSEE])
-    object_put = _standard_object("object_0", required_properties=[INANIMATE])
+        "addressee_putter_0", required_properties=[ANIMATE],
+    added_properties=[IS_ADDRESSEE])
+    object_put = _standard_object("object_put_0", required_properties=[INANIMATE])
 
-    on_region_object = object_variable(
-        "on_region_object",
+    body_part_of_putter = object_variable(
+        "body_part_of_putter",
         required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM, IS_BODY_PART],
     )
 
@@ -849,7 +846,7 @@ def _make_put_on_speaker_addressee_body_part_curriculum():
     templates = [
         Phase1SituationTemplate(
             "put-on-body-part",
-            salient_object_variables=[putter, object_put, on_region_object],
+            salient_object_variables=[putter, object_put, body_part_of_putter],
             actions=[
                 Action(
                     PUT,
@@ -859,7 +856,7 @@ def _make_put_on_speaker_addressee_body_part_curriculum():
                         (
                             GOAL,
                             Region(
-                                on_region_object,
+                                body_part_of_putter,
                                 distance=EXTERIOR_BUT_IN_CONTACT,
                                 direction=GRAVITATIONAL_UP,
                             ),
@@ -868,11 +865,14 @@ def _make_put_on_speaker_addressee_body_part_curriculum():
                 )
             ],
             constraining_relations=[
-                Relation(BIGGER_THAN, on_region_object, object_put),
+                Relation(BIGGER_THAN, body_part_of_putter, object_put),
                 Relation(BIGGER_THAN, putter, object_put),
             ],
+            asserted_always_relations=[
+                Relation(HAS, putter, body_part_of_putter)
+            ]
         )
-        for putter in [speaker_addressee_putter, speaker_putter, addressee_putter]
+        for putter in [speaker_putter, addressee_putter]
     ]
 
     return _phase1_instances(
