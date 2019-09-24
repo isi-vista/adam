@@ -1608,11 +1608,7 @@ _COME_ACTION_DESCRIPTION = ActionDescription(
         # AGENT comes to DESTINATION
         {AGENT: _COME_AGENT, GOAL: _COME_GOAL}
     ),
-    preconditions=[
-        Relation(
-            IN_REGION, _COME_AGENT, Region(_COME_GOAL, distance=DISTAL)
-        )
-    ],
+    preconditions=[Relation(IN_REGION, _COME_AGENT, Region(_COME_GOAL, distance=DISTAL))],
     during=DuringAction(objects_to_paths=[(_COME_AGENT, SpatialPath(TO, _COME_GOAL))]),
     postconditions=[
         Relation(IN_REGION, _COME_AGENT, Region(_COME_GOAL, distance=PROXIMAL))

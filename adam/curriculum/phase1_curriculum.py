@@ -387,6 +387,42 @@ def _make_object_on_object_curriculum() -> _Phase1InstanceGroup:
     )
 
 
+def _make_object_under_or_over_object_curriculum() -> _Phase1InstanceGroup:
+    object_under = _standard_object("object_0")
+    object_above = _standard_object("object_1", required_properties=[HAS_SPACE_UNDER])
+    bird = object_variable("bird_0", BIRD)
+    object_under_bird = _standard_object("object_under_bird_0")
+
+    templates = [
+        Phase1SituationTemplate(
+            f"object-under-object",
+            salient_object_variables=[object_above],
+            constraining_relations=[Relation(BIGGER_THAN, object_above, object_under)],
+            asserted_always_relations=[strictly_above(object_above, object_under)],
+        ),
+        Phase1SituationTemplate(
+            f"object-over-object",
+            salient_object_variables=[object_under_bird],
+            asserted_always_relations=[strictly_above(bird, object_under_bird)],
+        ),
+    ]
+
+    return _phase1_instances(
+        "objects-under-over-objects",
+        chain(
+            *[
+                sampled(
+                    template,
+                    max_to_sample=100,
+                    chooser=_CHOOSER,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                )
+                for template in templates
+            ]
+        ),
+    )
+
+
 def _make_object_in_other_object_curriculum() -> _Phase1InstanceGroup:
     object_ = object_variable("object_0", banned_properties=[IS_BODY_PART])
     liquid = object_variable(
@@ -1456,6 +1492,8 @@ GAILA_PHASE_1_CURRICULUM = [
     _make_fall_curriculum(),
     _make_transfer_of_possession_curriculum(),
     _make_object_on_object_curriculum(),
+    # _make_object_over_object_curriculum(),
+    _make_object_under_or_over_object_curriculum(),
     _make_object_in_other_object_curriculum(),
     _make_fly_curriculum(),
     _make_roll_curriculum(),
