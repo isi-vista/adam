@@ -1,42 +1,54 @@
 from typing import Tuple
 
-from immutablecollections import immutabledict, ImmutableDict
+from immutablecollections import ImmutableDict, immutabledict
 
 from adam.language.dependency import (
-    HEAD,
-    RoleOrderDependencyTreeLinearizer,
-    PartOfSpeechTag,
     DependencyRole,
+    HEAD,
     MorphosyntacticProperty,
+    PartOfSpeechTag,
+    RoleOrderDependencyTreeLinearizer,
 )
 from adam.language.dependency.universal_dependencies import (
-    VERB,
-    OBLIQUE_NOMINAL,
-    NOMINAL_SUBJECT,
-    INDIRECT_OBJECT,
-    OBJECT,
-    NOUN,
-    CASE_MARKING,
-    DETERMINER_ROLE,
-    NUMERIC_MODIFIER,
     ADJECTIVAL_MODIFIER,
-    NOMINAL_MODIFIER_POSSESSIVE,
-    PROPER_NOUN,
+    ADVERBIAL_MODIFIER,
+    CASE_POSSESSIVE,
+    CASE_SPATIAL,
+    DETERMINER_ROLE,
+    INDIRECT_OBJECT,
     NOMINAL_MODIFIER,
+    NOMINAL_MODIFIER_POSSESSIVE,
+    NOMINAL_SUBJECT,
+    NOUN,
+    NUMERIC_MODIFIER,
+    OBJECT,
+    OBLIQUE_NOMINAL,
+    PROPER_NOUN,
+    VERB,
 )
 
 _ENGLISH_HEAD_TO_ROLE_ORDER: ImmutableDict[
     PartOfSpeechTag, Tuple[DependencyRole, ...]
 ] = immutabledict(
     [
-        (VERB, (NOMINAL_SUBJECT, HEAD, INDIRECT_OBJECT, OBJECT, OBLIQUE_NOMINAL)),
+        (
+            VERB,
+            (
+                NOMINAL_SUBJECT,
+                HEAD,
+                INDIRECT_OBJECT,
+                OBJECT,
+                OBLIQUE_NOMINAL,
+                ADVERBIAL_MODIFIER,
+            ),
+        ),
         # At the moment we put CASE_MARKING first because in our current example
         # it corresponds to a preposition, but we will probably need to do something
         # more sophisticated later.
         (
             NOUN,
             (
-                CASE_MARKING,
+                CASE_SPATIAL,
                 NOMINAL_MODIFIER_POSSESSIVE,
                 DETERMINER_ROLE,
                 NUMERIC_MODIFIER,
@@ -47,9 +59,13 @@ _ENGLISH_HEAD_TO_ROLE_ORDER: ImmutableDict[
                 # sophisticated than this map eventually to handle
                 # distinctions between noun modifier types.
                 NOMINAL_MODIFIER,
+                CASE_POSSESSIVE,
             ),
         ),
-        (PROPER_NOUN, (ADJECTIVAL_MODIFIER, HEAD, CASE_MARKING, NOMINAL_MODIFIER)),
+        (
+            PROPER_NOUN,
+            (CASE_SPATIAL, ADJECTIVAL_MODIFIER, HEAD, NOMINAL_MODIFIER, CASE_POSSESSIVE),
+        ),
     ]
 )
 

@@ -128,4 +128,5 @@ def minimal_ontology_graph():
     for node in REQUIRED_ONTOLOGY_NODES:
         ret.add_node(node)
     ret.add_edge(IN_REGION, RELATION)
+    ret.add_edge(CAN_FILL_TEMPLATE_SLOT, PROPERTY)
     return ret

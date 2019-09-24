@@ -5,7 +5,7 @@ These are provided for convenience when writing `LanguageGenerator`\ s.
 
 See https://universaldependencies.org/
 """
-from adam.language.dependency import PartOfSpeechTag, DependencyRole
+from adam.language.dependency import DependencyRole, PartOfSpeechTag
 
 ADJECTIVE = PartOfSpeechTag("adj")
 ADPOSITION = PartOfSpeechTag("adp")
@@ -33,6 +33,9 @@ ADJECTIVAL_MODIFIER = DependencyRole("amod")
 APPOSITIONAL_MODIFIER = DependencyRole("appos")
 AUXILIARY = DependencyRole("aux")
 CASE_MARKING = DependencyRole("case")
+# hack
+CASE_POSSESSIVE = DependencyRole("case:poss")
+CASE_SPATIAL = DependencyRole("case:sptial")
 COORDINATING_CONJUNCTION_ROLE = DependencyRole("cc")
 CLAUSAL_COMPLEMENT = DependencyRole("ccomp")
 CLASSIFIER = DependencyRole("clf")

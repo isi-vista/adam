@@ -1,8 +1,11 @@
-from attr import attrs, attrib
-from attr.validators import instance_of
+from typing import Optional
+
+from attr import attrib, attrs
+from attr.validators import instance_of, optional
 from immutablecollections import ImmutableSet, immutableset
 from immutablecollections.converter_utils import _to_immutableset
 
+from adam.geon import Geon
 from adam.ontology import OntologyNode
 from adam.relation import Relation
 
@@ -24,7 +27,7 @@ class ObjectStructuralSchema:
      see `Relation`\ s for additional tips on how to make this more compact.
     """
 
-    parent_object: OntologyNode = attrib(validator=instance_of(OntologyNode))
+    ontology_node: OntologyNode = attrib(validator=instance_of(OntologyNode))
     """
     The `OntologyNode` this `ObjectStructuralSchema` represents the structure of.
     """
@@ -43,6 +46,9 @@ class ObjectStructuralSchema:
     r"""
     A set of `Relation`\ s which define how the `SubObject`\ s relate to one another. 
     """
+    geon: Optional[Geon] = attrib(
+        validator=optional(instance_of(Geon)), default=None, kw_only=True
+    )
 
 
 # need cmp=False to keep otherwise identical sub-components distinct

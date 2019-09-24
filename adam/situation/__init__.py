@@ -2,11 +2,12 @@
 Structures for describing situations in the world at an abstracted, human-friendly level.
 """
 from abc import ABC
-from typing import Mapping, Optional, Union, TypeVar, Generic
+from typing import Generic, List, Mapping, Optional, TypeVar, Union
 
 from attr import attrib, attrs
 from attr.validators import instance_of, optional
 from immutablecollections import (
+    ImmutableDict,
     ImmutableSet,
     ImmutableSetMultiDict,
     immutabledict,
@@ -155,6 +156,34 @@ class Action(Generic[_ActionTypeT, _ObjectT]):
     during: Optional[DuringAction[_ObjectT]] = attrib(  # type: ignore
         validator=optional(instance_of(DuringAction)), default=None, kw_only=True
     )
+    auxiliary_variable_bindings: ImmutableDict[SituationObject, _ObjectT] = attrib(
+        converter=_to_immutabledict, default=immutabledict(), kw_only=True
+    )
+    """
+    A mapping of action variables from *action_type*'s `ActionDescription`
+    to the items which should fill them.
+    """
+
+    def accumulate_referenced_objects(self, object_accumulator: List[_ObjectT]) -> None:
+        for (_, filler) in self.argument_roles_to_fillers.items():
+            if isinstance(filler, Region):
+                filler.accumulate_referenced_objects(object_accumulator)
+            else:
+                object_accumulator.append(filler)
+        if self.during:
+            self.during.accumulate_referenced_objects(object_accumulator)
+        for aux_var_binding in self.auxiliary_variable_bindings.values():
+            if isinstance(aux_var_binding, Region):
+                aux_var_binding.accumulate_referenced_objects(object_accumulator)
+            else:
+                object_accumulator.append(aux_var_binding)
 
     def __repr__(self) -> str:
-        return f"{self.action_type}({self.argument_roles_to_fillers})"
+        parts = [str(self.argument_roles_to_fillers)]
+        if self.during:
+            parts.append(f"during={self.during}")
+        if self.auxiliary_variable_bindings:
+            parts.append(
+                f"auxiliary_variable_bindings={self.auxiliary_variable_bindings}"
+            )
+        return f"{self.action_type}({', '.join(parts)})"

@@ -135,6 +135,10 @@ adam.ontology.during
 ---------------------
 .. automodule:: adam.ontology.during
 
+adam.ontology.action_description
+---------------------------------
+.. automodule:: adam.ontology.action_description
+
 ***************************************************
 Supporting Classes: Spatial and Size Representation
 ***************************************************

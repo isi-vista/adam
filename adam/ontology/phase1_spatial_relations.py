@@ -1,4 +1,4 @@
-from typing import Any, Generic, Mapping, Optional, TypeVar, List, Union
+from typing import Any, Generic, List, Mapping, Optional, TypeVar, Union
 
 from attr import attrib, attrs
 from attr.validators import in_, instance_of, optional
@@ -107,6 +107,10 @@ class Direction(Generic[ReferenceObjectT]):
     def __repr__(self) -> str:
         polarity = "+" if self.positive else "-"
         return f"{polarity}{self.relative_to_axis}"
+
+
+GRAVITATIONAL_UP = Direction(positive=True, relative_to_axis=GRAVITATIONAL_AXIS)
+GRAVITATIONAL_DOWN = Direction(positive=False, relative_to_axis=GRAVITATIONAL_AXIS)
 
 
 @attrs(frozen=True, repr=False)

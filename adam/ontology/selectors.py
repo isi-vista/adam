@@ -30,6 +30,7 @@ class OntologyNodeSelector(ABC):
         """
         ret = self._select_nodes(ontology)
         if require_non_empty_result and not ret:
+            self._select_nodes(ontology)
             raise RuntimeError(f"No node in {ontology} satisfied {self}")
         return ret
 
@@ -80,7 +81,7 @@ class ByHierarchyAndProperties(OntologyNodeSelector):
 
     def __repr__(self) -> str:
         required_properties = [f"+{property_}" for property_ in self._required_properties]
-        banned_properties = [f"-{property_}" for property_ in self._required_properties]
+        banned_properties = [f"-{property_}" for property_ in self._banned_properties]
 
         property_string: str
         if required_properties or banned_properties:
@@ -90,7 +91,7 @@ class ByHierarchyAndProperties(OntologyNodeSelector):
         else:
             property_string = ""
 
-        return f"ancestorIs({self._descendents_of}{property_string})"
+        return f"ancestorIs({self._descendents_of.handle}){property_string})"
 
 
 @attrs(frozen=True, slots=True, repr=False)
@@ -132,10 +133,8 @@ class SubcategorizationSelector(OntologyNodeSelector):
         return immutableset(
             action
             for (action, action_description) in ontology.action_to_description.items()
-            if any(
-                frame.roles_to_entities.keys() == self.required_subcategorization_frame
-                for frame in action_description.frames
-            )
+            if action_description.frame.roles_to_variables.keys()
+            == self.required_subcategorization_frame
         )
 
     def __repr__(self) -> str:
