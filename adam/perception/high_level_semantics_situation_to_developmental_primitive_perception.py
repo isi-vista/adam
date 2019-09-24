@@ -32,7 +32,7 @@ from adam.ontology.phase1_ontology import (
     PERCEIVABLE,
     TWO_DIMENSIONAL,
     LEARNER,
-    contacts,
+    on,
 )
 from adam.ontology.phase1_spatial_relations import INTERIOR, Region, SpatialPath
 from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
@@ -907,19 +907,10 @@ class _PerceptionGeneration:
                 if self._objects_to_perceptions[situation_object] in objects_to_relations:
                     # TODO: Handle associating contacts ground so long as a pre-existing relation
                     #  doesn't define this.
-                    for relation in objects_to_relations[
-                        self._objects_to_perceptions[situation_object]
-                    ]:
-                        if not relation.relation_type == IN_REGION:
-                            self._relation_perceptions.append(
-                                contacts(
-                                    self._objects_to_perceptions[situation_object],
-                                    perceived_ground,
-                                )
-                            )
+                    pass
                 else:
                     self._relation_perceptions.append(
-                        contacts(
+                        on(
                             self._objects_to_perceptions[situation_object],
                             perceived_ground,
                         )
