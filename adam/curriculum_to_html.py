@@ -29,6 +29,7 @@ from adam.perception.developmental_primitive_perception import (
     HasColor,
     PropertyPerception,
 )
+from adam.relation import Relation
 from adam.situation import SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 
@@ -502,11 +503,13 @@ class CurriculumToHtmlDumper:
                     }
                     single_size_relation = None
                     if relation.relation_type in opposite_relations:
-                        if any(
-                            r.relation_type == opposite_relations[relation.relation_type]
-                            and r.first_slot == relation.second_slot
-                            and r.second_slot == relation.first_slot
-                            for r in all_relations
+                        if (
+                            Relation(
+                                opposite_relations[relation.relation_type],
+                                relation.second_slot,
+                                relation.first_slot,
+                            )
+                            in all_relations
                         ):
                             if relation.relation_type == SMALLER_THAN:
                                 single_size_relation = (
