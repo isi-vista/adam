@@ -10,11 +10,13 @@ from attr.validators import instance_of, optional
 from immutablecollections import ImmutableSet, immutableset
 from immutablecollections.converter_utils import _to_immutableset
 
-from adam.language.language_generator import SituationT
 from adam.math_3d import Point
 from adam.ontology.during import DuringAction
+from adam.geon import Geon
 from adam.random_utils import SequenceChooser
-from adam.situation import LocatedObjectSituation
+from adam.situation import LocatedObjectSituation, Situation
+
+_SituationT = TypeVar("_SituationT", bound=Situation)
 
 
 @attrs(slots=True, frozen=True, repr=False)
@@ -31,6 +33,7 @@ class ObjectPerception:
 
     It is for debugging use only and should not be accessed by any algorithms.
     """
+    geon: Optional[Geon] = attrib(validator=optional(instance_of(Geon)), default=None)
 
     def __repr__(self) -> str:
         return self.debug_handle
@@ -85,7 +88,7 @@ class PerceptualRepresentation(Generic[PerceptionT]):
         return PerceptualRepresentation((perception_frame,))
 
 
-class PerceptualRepresentationGenerator(Generic[SituationT, PerceptionT], ABC):
+class PerceptualRepresentationGenerator(Generic[_SituationT, PerceptionT], ABC):
     r"""
     A strategy for generating `PerceptualRepresentation`\ s of `Situation` s.
 
@@ -95,7 +98,7 @@ class PerceptualRepresentationGenerator(Generic[SituationT, PerceptionT], ABC):
 
     @abstractmethod
     def generate_perception(
-        self, situation: SituationT, chooser: SequenceChooser
+        self, situation: _SituationT, chooser: SequenceChooser
     ) -> PerceptualRepresentation[PerceptionT]:
         """
         Generate a `PerceptualRepresentation` of a `Situation`.

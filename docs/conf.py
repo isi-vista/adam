@@ -199,6 +199,7 @@ nitpick_ignore = [('py:class', 'typing.Mapping'),
                   ("py:class", "PerceptionT"),
                   ("py:class", "_PerceptionT2"),
                   ("py:class", "SituationT"),
+                  ("py:class", "_SituationT"),
                   ("py:class", "LinguisticDescriptionT"),
                   ("py:class", "T"),
 

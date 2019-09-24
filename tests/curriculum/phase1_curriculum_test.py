@@ -3,6 +3,18 @@ from adam.curriculum.phase1_curriculum import (
     _Phase1InstanceGroup,
     _make_fly_curriculum,
     _make_roll_curriculum,
+    _make_jump_curriculum,
+    _make_drink_curriculum,
+    _make_eat_curriculum,
+    _make_fall_curriculum,
+    _make_transfer_of_possession_curriculum,
+    _make_sit_curriculum,
+    _make_put_curriculum,
+    _make_take_curriculum,
+    _make_move_curriculum,
+    _make_spin_curriculum,
+    _make_go_curriculum,
+    _make_push_curriculum,
 )
 
 
@@ -25,3 +37,51 @@ def test_instantiate_fly_curriculum():
 
 def test_roll_curriculum():
     _test_curriculum(_make_roll_curriculum())
+
+
+def test_jump_curriculum():
+    _test_curriculum(_make_jump_curriculum())
+
+
+def test_drink_curriculum():
+    _test_curriculum(_make_drink_curriculum())
+
+
+def test_eat_curriculum():
+    _test_curriculum(_make_eat_curriculum())
+
+
+def test_fall_curriculum():
+    _test_curriculum(_make_fall_curriculum())
+
+
+def test_transfer_of_possession():
+    _test_curriculum(_make_transfer_of_possession_curriculum())
+
+
+def test_sit():
+    _test_curriculum(_make_sit_curriculum())
+
+
+def test_put():
+    _test_curriculum(_make_put_curriculum())
+
+
+def test_take():
+    _test_curriculum(_make_take_curriculum())
+
+
+def test_move():
+    _test_curriculum(_make_move_curriculum())
+
+
+def test_spin():
+    _test_curriculum(_make_spin_curriculum())
+
+
+def test_go():
+    _test_curriculum(_make_go_curriculum())
+
+
+def test_push():
+    _test_curriculum(_make_push_curriculum())
