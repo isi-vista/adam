@@ -150,32 +150,48 @@ class Ontology:
             )
         )
 
+    def has_property(self, node: "OntologyNode", query_property: "OntologyNode") -> bool:
+        r"""
+        Checks whether an `OntologyNode` has a given property either directly
+        or via inheritance.
+
+        Args:
+            node: the `OntologyNode` being inquired about
+            query_property: the property being inquired about.
+
+        Returns:
+            Whether *node* possesses *query_property*,
+            either directly or via inheritance from a dominating node.
+        """
+        return self.has_all_properties(node, (query_property,))
+
     def has_all_properties(
         self,
         node: "OntologyNode",
-        required_properties: Iterable["OntologyNode"],
+        query_properties: Iterable["OntologyNode"],
         *,
         banned_properties: AbstractSet["OntologyNode"] = immutableset(),
     ) -> bool:
         r"""
-        Checks an `OntologyNode` for a collection of `OntologyNode`\ s.
+        Checks if an `OntologyNode` has the given properties,
+        either directly or by inheritance..
 
         Args:
             node: the `OntologyNode` being inquired about
-            required_properties: the `OntologyNode`\ s being inquired about
+            query_properties: the properties being inquired about
             banned_properties: this function will return false if *node* contains any of these
                                properties. Defaults to the empty set.
 
         Returns:
-            Whether *node* possesses all of *required_properties* and none of *banned_properties*,
+            Whether *node* possesses all of *query_properties* and none of *banned_properties*,
             either directly or via inheritance from a dominating node.
         """
-        if not required_properties and not banned_properties:
+        if not query_properties and not banned_properties:
             return True
 
         node_properties = self.properties_for_node(node)
         return all(
-            property_ in node_properties for property_ in required_properties
+            property_ in node_properties for property_ in query_properties
         ) and not any(property_ in banned_properties for property_ in node_properties)
 
     def properties_for_node(self, node: "OntologyNode") -> ImmutableSet["OntologyNode"]:

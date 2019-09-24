@@ -127,6 +127,50 @@ class CurriculumToHtmlDumper:
         with open(output_destination, "w") as html_out:
             html_out.write(f"<head>\n\t<style>{CSS}\n\t</style>\n</head>")
             html_out.write(f"\n<body>\n\t<h1>{title} - {instance_group.name()}</h1>")
+            html_out.write("\n<h2>How to read</h2>")
+            html_out.write(
+                "\n<p>A Situation is curriculum-designer-facing; it is not accessible to the learner. "
+                "The name of a perceived object is derived from the type of the corresponding SituationObject, and the "
+                "number indicates which object of its type it is - e.g. if there are two babies in a situation, "
+                "the perceived objects will be 'person_0' and 'person_1'. "
+                "Names on Perceptions are handles for debugging; they are not accessible to the "
+                "learner. 'GAZED-AT' refers the object of focus of the speaker.</p> "
+            )
+            html_out.write(
+                "\n<p>Properties</p>\n<ul>"
+                "\n\t<li>These define characteristics of an object that may influence perception and fulfillment of "
+                "semantic roles.</li> "
+                "\n\t<li>Meta-properties provide information about a property, e.g. whether or not a property can "
+                "be perceived by the learner.</li> "
+                "\n\t<li>OBJECT[PROPERTY_0[META_PROPERTY], PROPERTY_1, PROPERTY_2]</li> "
+                "\n</ul>\n<ul>\n<p>Relations</p> "
+                "\n\t<li>These define relations between two objects; e.g. smallerThan(A, B) indicates that object A is "
+                "smaller than object B.</li> "
+                "\n\t<li>IN_REGION is a special relation that holds between a SituationObject and a Region. These "
+                "relations can be nested, and for readability, they do not fall under 'Other Relations'."
+                "\n\t<li>RELATION(OBJECT_0, OBJECT_1)</li>"
+                "\n</ul>\n<ul>\n<p>Arrows</p>"
+                "\n\t<li>A relation preceded by 'Ø --->' is one that begins to exist by the end of the situation.</li>"
+                "\n\t<li>A relation followed by '---> Ø' is one that ceases to exist by the end of the situation.</li>"
+                "\n\t<li>A relation without an arrow holds true through the duration of the situation.</li>"
+                "\n</ul>\n<ul>\n<p>Part-of nesting</p>"
+                "\n\t<li>PART_OF relations indicate that an object is a part of another. Objects that form a "
+                "structural schema can be represented in terms of several part-of relations.</li> "
+                "\n\t<li>e.g. a finger is a part of a hand which is part of an arm which is part of a body</li>"
+                "\n</ul>\n<ul>\n<p>Regions</p> "
+                "\n\t<li>These represent regions of space. They are defined in terms of distance and/or direction with "
+                "respect to a reference object.</li>"
+                "\n\t<li>e.g. the inside of a box may be represented as Region(box, distance=INTERIOR, "
+                "direction=None)</li> "
+                "\n\t<li>Region(REFERENCE_OBJECT, distance=DISTANCE, direction=DIRECTION)</li>"
+                "\n</ul>\n<ul>\n<p>Spatial Paths</p>"
+                "\n\t<li>A SpatialPath specifies the path that some object takes during a situation. These are "
+                "defined in terms of a PathOperator and whether or not the orientation changed, with respect to a "
+                "reference object and an optional reference axis.</li>"
+                "\n\t<li>e.g. the path of a falling object may be represented as SpatialPath(operator=TOWARD, "
+                "reference_object=GROUND, reference_axis=None, orientation_changed=False)</li>"
+                "\n\t<li>SpatialPath(OPERATOR, REFERENCE_OBJECT, REFERENCE_AXIS, ORIENTATION_CHANGED)</li>"
+            )
             for (instance_number, (situation, dependency_tree, perception)) in enumerate(
                 instance_group.instances()
             ):
@@ -197,7 +241,17 @@ class CurriculumToHtmlDumper:
         if situation.actions:
             output_text.append("\t\t\t\t\t<h4>Actions</h4>\n\t\t\t\t\t<ul>")
             for acts in situation.actions:
-                output_text.append(f"\t\t\t\t\t\t<li>{acts.action_type.handle}</li>")
+                output_text.append(
+                    f"\t\t\t\t\t\t<li>{acts.action_type.handle}</li>\n\t\t\t\t\t<ul>"
+                )
+                for mapping in acts.argument_roles_to_fillers.keys():
+                    output_text.append(
+                        f"\t\t\t\t\t\t<li>{mapping.handle} is {acts.argument_roles_to_fillers[mapping]}</li>"
+                    )
+                for mapping in acts.auxiliary_variable_bindings.keys():
+                    output_text.append(
+                        f"\t\t\t\t\t\t<li>{mapping.debug_handle} is {acts.auxiliary_variable_bindings[mapping]}</li>"
+                    )
             output_text.append("\t\t\t\t\t</ul>")
         if situation.always_relations:
             output_text.append("\t\t\t\t\t<h4>Relations</h4>\n\t\t\t\t\t<ul>")
@@ -406,7 +460,7 @@ class CurriculumToHtmlDumper:
             output_text.append("\t\t\t\t\t</ul>")
 
         if perception.during:
-            output_text.append("\t\t\t\t\t<h5>During the action</h5>\n\t\t\t\t\t<ul>")
+            output_text.append("\t\t\t\t\t<h5>During the action</h5>")
             output_text.append(self._render_during(perception.during, indent_depth=5))
 
         return "\n".join(output_text)

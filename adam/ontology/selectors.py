@@ -30,6 +30,7 @@ class OntologyNodeSelector(ABC):
         """
         ret = self._select_nodes(ontology)
         if require_non_empty_result and not ret:
+            self._select_nodes(ontology)
             raise RuntimeError(f"No node in {ontology} satisfied {self}")
         return ret
 

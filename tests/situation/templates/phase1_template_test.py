@@ -5,7 +5,6 @@ from immutablecollections import (
     immutableset,
     immutablesetmultidict,
 )
-from networkx import DiGraph
 
 from adam.ontology import (
     CAN_FILL_TEMPLATE_SLOT,
@@ -13,8 +12,10 @@ from adam.ontology import (
     PROPERTY,
     REQUIRED_ONTOLOGY_NODES,
     THING,
+    minimal_ontology_graph,
 )
 from adam.ontology.ontology import Ontology
+from adam.ontology.phase1_ontology import RECOGNIZED_PARTICULAR_PROPERTY
 from adam.ontology.structural_schema import ObjectStructuralSchema
 from adam.random_utils import RandomChooser
 from adam.situation.templates.phase1_templates import (
@@ -23,7 +24,8 @@ from adam.situation.templates.phase1_templates import (
     object_variable,
 )
 
-_TESTING_ONTOLOGY_GRAPH = DiGraph()
+_TESTING_ONTOLOGY_GRAPH = minimal_ontology_graph()
+_TESTING_ONTOLOGY_GRAPH.add_node(RECOGNIZED_PARTICULAR_PROPERTY)
 
 
 def _subtype(sub: OntologyNode, _super: OntologyNode) -> None:

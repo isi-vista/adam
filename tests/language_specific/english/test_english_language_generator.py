@@ -45,7 +45,14 @@ from adam.ontology.phase1_ontology import (
     THROW,
     WATER,
     on,
+    JUICE,
+    CUP,
+    DRINK,
+    DRINK_CONTAINER_AUX,
     CHAIR,
+    PATIENT,
+    EAT,
+    SIT,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -717,6 +724,83 @@ def test_jumps_over():
         )
     )
     assert generated_tokens(situation) == ("Dad", "jumps", "over", "a", "chair")
+
+
+def test_mom_drinks_juice():
+    mom = SituationObject(MOM)
+    juice = SituationObject(JUICE)
+    cup = SituationObject(CUP)
+
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom, juice],
+        actions=[
+            Action(
+                DRINK,
+                argument_roles_to_fillers=[(AGENT, mom), (THEME, juice)],
+                auxiliary_variable_bindings=[(DRINK_CONTAINER_AUX, cup)],
+            )
+        ],
+    )
+
+    assert generated_tokens(situation) == ("Mom", "drinks", "juice")
+
+
+def test_mom_eats_cookie():
+    mom = SituationObject(MOM)
+    cookie = SituationObject(COOKIE)
+
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom, cookie],
+        actions=[
+            Action(EAT, argument_roles_to_fillers=[(AGENT, mom), (PATIENT, cookie)])
+        ],
+    )
+
+    assert generated_tokens(situation) == ("Mom", "eats", "a", "cookie")
+
+
+def test_ball_fell_on_ground():
+    ball = SituationObject(BALL)
+    ground = SituationObject(GROUND)
+
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[ball, ground],
+        actions=[Action(FALL, argument_roles_to_fillers=[(THEME, ball)])],
+        after_action_relations=[on(ball, ground)],
+    )
+
+    assert generated_tokens(situation) == ("a", "ball", "falls", "on", "the", "ground")
+
+
+def test_mom_sits_on_a_table():
+    mom = SituationObject(MOM)
+    table = SituationObject(TABLE)
+
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom, table],
+        actions=[
+            Action(
+                SIT,
+                argument_roles_to_fillers=[
+                    (AGENT, mom),
+                    (
+                        GOAL,
+                        Region(
+                            table,
+                            direction=GRAVITATIONAL_UP,
+                            distance=EXTERIOR_BUT_IN_CONTACT,
+                        ),
+                    ),
+                ],
+            )
+        ],
+    )
+
+    assert generated_tokens(situation) == ("Mom", "sits", "on", "a", "table")
 
 
 def generated_tokens(situation):

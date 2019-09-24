@@ -4,6 +4,7 @@ Our strategy for `SituationTemplate`\ s in Phase 1 of ADAM.
 import random
 from _random import Random
 from abc import ABC, abstractmethod
+from collections import Counter
 from itertools import chain, product
 from typing import (
     AbstractSet,
@@ -20,13 +21,20 @@ from attr import Factory, attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
 from immutablecollections.converter_utils import _to_immutabledict, _to_immutableset
-from more_itertools import flatten, take
+from more_itertools import take
 from typing_extensions import Protocol
 from vistautils.preconditions import check_arg
 
 from adam.ontology import ACTION, CAN_FILL_TEMPLATE_SLOT, OntologyNode, PROPERTY, THING
 from adam.ontology.ontology import Ontology
-from adam.ontology.phase1_ontology import COLOR, GAILA_PHASE_1_ONTOLOGY, GROUND, LEARNER
+from adam.ontology.phase1_ontology import (
+    COLOR,
+    GAILA_PHASE_1_ONTOLOGY,
+    GROUND,
+    LEARNER,
+    is_recognized_particular,
+)
+from adam.ontology.phase1_spatial_relations import Region
 from adam.ontology.selectors import (
     AndOntologySelector,
     ByHierarchyAndProperties,
@@ -203,15 +211,25 @@ class Phase1SituationTemplate(SituationTemplate):
 
     @all_object_variables.default
     def _init_all_object_variables(self) -> ImmutableSet[TemplateObjectVariable]:
-        object_variables_as_auxiliary_variables_in_actions = flatten(
-            action.auxiliary_variable_bindings.values() for action in self.actions
-        )
-        return immutableset(
-            chain(
-                self.salient_object_variables,
-                object_variables_as_auxiliary_variables_in_actions,
-            )
-        )
+        ret: List[TemplateObjectVariable] = []
+
+        for action in self.actions:
+            action.accumulate_referenced_objects(ret)
+
+        for relation in chain(
+            self.constraining_relations, self.asserted_always_relations
+        ):
+            relation.accumulate_referenced_objects(ret)
+
+        ret.extend(self.salient_object_variables)
+
+        for obj_var in ret:
+            if not isinstance(obj_var, TemplateObjectVariable):
+                raise RuntimeError(
+                    f"Got non-object variable {obj_var} in template {self}"
+                )
+
+        return immutableset(ret)
 
 
 def all_possible(
@@ -282,6 +300,7 @@ class _Phase1SituationTemplateGenerator(
             RandomChooser.for_seed
         ),  # pylint:disable=unused-argument
     ) -> Iterable[HighLevelSemanticsSituation]:
+        check_arg(isinstance(template, Phase1SituationTemplate))
         try:
             # gather property variables from object variables
             property_variables = immutableset(
@@ -310,6 +329,14 @@ class _Phase1SituationTemplateGenerator(
                 object_var_to_instantiations = self._instantiate_objects(
                     template, variable_assignment
                 )
+
+                # Cannot have multiple instantiations of the same recognized particular.
+                # e.g. "Dad gave Dad a box"
+                if self._has_multiple_recognized_particulars(
+                    object_var_to_instantiations
+                ):
+                    continue
+
                 # use them to instantiate the entire situation
                 situation = self._instantiate_situation(
                     template, variable_assignment, object_var_to_instantiations
@@ -366,6 +393,7 @@ class _Phase1SituationTemplateGenerator(
         object_var_to_instantiations,
     ) -> HighLevelSemanticsSituation:
         return HighLevelSemanticsSituation(
+            from_template=template.name,
             ontology=self.ontology,
             salient_objects=[
                 object_var_to_instantiations[obj_var]
@@ -392,6 +420,21 @@ class _Phase1SituationTemplateGenerator(
                 for action in template.actions
             ],
             syntax_hints=template.syntax_hints,
+        )
+
+    def _has_multiple_recognized_particulars(
+        self, variable_binding: Mapping["TemplateObjectVariable", SituationObject]
+    ) -> bool:
+        # First, we check for a universal constraint that a situation
+        # cannot contain multiple recognized particulars.
+        recognized_particular_counts = Counter(
+            object_binding.ontology_node
+            for object_binding in variable_binding.values()
+            if is_recognized_particular(self.ontology, object_binding.ontology_node)
+        )
+        return bool(
+            recognized_particular_counts
+            and max(recognized_particular_counts.values()) > 1
         )
 
     def _satisfies_constraints(
@@ -447,10 +490,23 @@ class _Phase1SituationTemplateGenerator(
             else:
                 return action_variables_to_fillers[action.action_type]
 
+        def map_action_variable_binding(
+            x: Union[TemplateObjectVariable, Region[TemplateObjectVariable]]
+        ) -> Union[SituationObject, Region[SituationObject]]:
+            if isinstance(x, Region):
+                return x.copy_remapping_objects(object_var_to_instantiations)
+            else:
+                return object_var_to_instantiations[x]
+
+        # new_aux_bindings = []
+        # for (auxiliary_variable, auxiliary_variable_binding) in \
+        #         action.auxiliary_variable_bindings.items():
+        #     new_aux_bindings.append((auxiliary_variable, object_var_to_instantiations[auxiliary_variable_binding]))
+
         return Action(
             action_type=map_action_type(),
             argument_roles_to_fillers=[
-                (role, object_var_to_instantiations[arg])
+                (role, map_action_variable_binding(arg))
                 for (role, arg) in action.argument_roles_to_fillers.items()
             ],
             during=action.during.copy_remapping_objects(object_var_to_instantiations)
@@ -459,7 +515,7 @@ class _Phase1SituationTemplateGenerator(
             auxiliary_variable_bindings=[
                 (
                     auxiliary_variable,
-                    object_var_to_instantiations[auxiliary_variable_binding],
+                    map_action_variable_binding(auxiliary_variable_binding),
                 )
                 for (
                     auxiliary_variable,
