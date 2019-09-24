@@ -1,5 +1,15 @@
 from pathlib import Path
-from typing import AbstractSet, Any, Callable, Iterable, List, Tuple, TypeVar, Union
+from typing import (
+    AbstractSet,
+    Any,
+    Callable,
+    Iterable,
+    List,
+    Tuple,
+    TypeVar,
+    Union,
+    Optional,
+)
 
 from attr import attrs, attrib
 from attr.validators import instance_of
@@ -20,7 +30,7 @@ from adam.experiment import InstanceGroup
 from adam.language.dependency import LinearizedDependencyTree
 from adam.ontology import IN_REGION
 from adam.ontology.during import DuringAction
-from adam.ontology.phase1_ontology import PART_OF
+from adam.ontology.phase1_ontology import PART_OF, IS_SPEAKER
 from adam.ontology.phase1_spatial_relations import Region, SpatialPath
 from adam.perception import ObjectPerception, PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
@@ -162,10 +172,11 @@ class CurriculumToHtmlDumper:
                     f"Expected the Perceptual Representation to contain DevelopmentalPrimitivePerceptionFrame got "
                     f"{type(perception.frames)}"
                 )
+            (situation_text, speaker) = self._situation_text(situation)
             rendered_instances.append(
                 InstanceHolder(
-                    situation=self._situation_text(situation),
-                    lingustics=self._linguistic_text(dependency_tree),
+                    situation=situation_text,
+                    lingustics=self._linguistic_text(dependency_tree, speaker),
                     perception=self._perception_text(perception),
                 )
             )
@@ -249,17 +260,21 @@ class CurriculumToHtmlDumper:
                 )
             html_out.write("\n</body>")
 
-    def _situation_text(self, situation: HighLevelSemanticsSituation) -> str:
+    def _situation_text(
+        self, situation: HighLevelSemanticsSituation
+    ) -> Tuple[str, Optional[SituationObject]]:
         """
         Converts a situation description into its sub-parts as a table entry
         """
+        speaker = None
         output_text = [f"\n\t\t\t\t\t<h4>Objects</h4>\n\t\t\t\t\t<ul>"]
         for obj in situation.all_objects:
             property_string: str
             if obj.properties:
-                property_string = (
-                    "[" + ",".join(prop.handle for prop in obj.properties) + "]"
-                )
+                for prop in obj.properties:
+                    property_string = "[" + ",".join(prop.handle) + "]"
+                    if prop == IS_SPEAKER:
+                        speaker = obj
             else:
                 property_string = ""
             output_text.append(
@@ -302,7 +317,7 @@ class CurriculumToHtmlDumper:
                     f"{self._situation_object_or_region_text(rel.second_slot)})</li>"
                 )
             output_text.append("\t\t\t\t\t</ul>")
-        return "\n".join(output_text)
+        return ("\n".join(output_text), speaker)
 
     def _situation_object_or_region_text(
         self, obj_or_region: Union[SituationObject, Region[SituationObject]]
@@ -543,14 +558,23 @@ class CurriculumToHtmlDumper:
         lines.append(f"{indent}\t</li>")
         return "\n".join(lines)
 
-    def _linguistic_text(self, linguistic: LinearizedDependencyTree) -> str:
+    def _linguistic_text(
+        self, linguistic: LinearizedDependencyTree, speaker: Optional[SituationObject]
+    ) -> str:
         """
         Parses the Linguistic Description of a Linearized Dependency Tree into a table entry
 
         Takes a `LinearizedDependencyTree` which is turned into a token sequence and
         phrased as a sentence for display. Returns a List[str]
         """
-        return " ".join(linguistic.as_token_sequence())
+        if speaker:
+            return (
+                f'{speaker.ontology_node.handle} says: "'
+                + " ".join(linguistic.as_token_sequence())
+                + '"'
+            )
+        else:
+            return " ".join(linguistic.as_token_sequence())
 
 
 CSS = """
