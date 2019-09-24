@@ -18,6 +18,21 @@ from typing import Iterable, Optional, Sequence, Tuple
 from immutablecollections import ImmutableDict, immutabledict, immutableset
 from more_itertools import flatten
 
+from adam.geon import (
+    CIRCULAR,
+    CONSTANT,
+    Geon,
+    IRREGULAR,
+    LARGE_TO_SMALL,
+    OVALISH,
+    RECTANGULAR,
+    SMALL_TO_LARGE,
+    SMALL_TO_LARGE_TO_SMALL,
+    directed,
+    straight_up,
+    symmetric,
+    symmetric_verical,
+)
 from adam.ontology import (
     ACTION,
     CAN_FILL_TEMPLATE_SLOT,
@@ -40,6 +55,8 @@ from adam.ontology.phase1_spatial_relations import (
     EXTERIOR_BUT_IN_CONTACT,
     FROM,
     GRAVITATIONAL_AXIS,
+    GRAVITATIONAL_DOWN,
+    GRAVITATIONAL_UP,
     INTERIOR,
     PROXIMAL,
     Region,
@@ -147,6 +164,29 @@ implicity generated in the perception step if not explicit in a situation.
 """
 subtype(GAZED_AT, PERCEIVABLE_PROPERTY)
 
+
+# Dowty's Proto-Roles: Issue 104; Dotwy, 91, page 572.
+# Agent Proto-Roles properties:
+VOLITIONALLY_INVOLVED = OntologyNode("volitionally-involved", [BINARY])
+subtype(VOLITIONALLY_INVOLVED, PERCEIVABLE_PROPERTY)
+SENTIENT_OR_PERCEIVES = OntologyNode("sentient-or-perceives", [BINARY])
+subtype(SENTIENT_OR_PERCEIVES, PERCEIVABLE_PROPERTY)
+CAUSES_CHANGE = OntologyNode("causes-change", [BINARY])
+subtype(CAUSES_CHANGE, PERCEIVABLE_PROPERTY)
+MOVES = OntologyNode("moves", [BINARY])
+subtype(MOVES, PERCEIVABLE_PROPERTY)
+
+# Patient Proto-Roles:
+UNDERGOES_CHANGE = OntologyNode("undergoes-change", [BINARY])
+subtype(UNDERGOES_CHANGE, PERCEIVABLE_PROPERTY)
+INCREMENTAL_THEME = OntologyNode("incremental-theme", [BINARY])
+subtype(INCREMENTAL_THEME, PERCEIVABLE_PROPERTY)
+CAUSALLY_AFFECTED = OntologyNode("causally-affected", [BINARY])
+subtype(CAUSALLY_AFFECTED, PERCEIVABLE_PROPERTY)
+STATIONARY = OntologyNode("stationary", [BINARY])
+subtype(STATIONARY, PERCEIVABLE_PROPERTY)
+
+
 # Properties not perceived by the learner, but useful for situation generation
 
 CAN_MANIPULATE_OBJECTS = OntologyNode("can-manipulate-objects")
@@ -163,10 +203,16 @@ PERSON_CAN_HAVE = OntologyNode("person-can-have")
 subtype(PERSON_CAN_HAVE, PROPERTY)
 TRANSFER_OF_POSSESSION = OntologyNode("transfer-of-possession")
 subtype(TRANSFER_OF_POSSESSION, PROPERTY)
+CAN_JUMP = OntologyNode("can-jump")
+subtype(CAN_JUMP, PROPERTY)
 CAN_FLY = OntologyNode("can-fly")
 subtype(CAN_FLY, PROPERTY)
 HAS_SPACE_UNDER = OntologyNode("has-space-under")
 subtype(HAS_SPACE_UNDER, PROPERTY)
+EDIBLE = OntologyNode("edible")
+subtype(EDIBLE, PROPERTY)
+CAN_BE_SAT_ON_BY_PEOPLE = OntologyNode("can-be-sat-on")
+subtype(CAN_BE_SAT_ON_BY_PEOPLE, PROPERTY)
 
 COLOR = OntologyNode("color")
 subtype(COLOR, PERCEIVABLE_PROPERTY)
@@ -224,12 +270,23 @@ subtype(INANIMATE_OBJECT, THING)
 IS_GROUND = OntologyNode("is-ground")
 subtype(IS_GROUND, RECOGNIZED_PARTICULAR_PROPERTY)
 GROUND = OntologyNode(
-    "ground", non_inheritable_properties=[IS_GROUND, CAN_HAVE_THINGS_RESTING_ON_THEM]
+    "ground",
+    non_inheritable_properties=[
+        IS_GROUND,
+        CAN_HAVE_THINGS_RESTING_ON_THEM,
+        CAN_BE_SAT_ON_BY_PEOPLE,
+    ],
 )
 subtype(GROUND, INANIMATE_OBJECT)
 
 TABLE = OntologyNode(
-    "table", [CAN_FILL_TEMPLATE_SLOT, CAN_HAVE_THINGS_RESTING_ON_THEM, HAS_SPACE_UNDER]
+    "table",
+    [
+        CAN_FILL_TEMPLATE_SLOT,
+        CAN_HAVE_THINGS_RESTING_ON_THEM,
+        HAS_SPACE_UNDER,
+        CAN_BE_SAT_ON_BY_PEOPLE,
+    ],
 )
 subtype(TABLE, INANIMATE_OBJECT)
 BALL = OntologyNode("ball", [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, ROLLABLE])
@@ -252,11 +309,13 @@ CAR = OntologyNode(
 )
 subtype(CAR, INANIMATE_OBJECT)
 WATER = OntologyNode(
-    "water", [LIQUID], non_inheritable_properties=[TRANSPARENT, CAN_FILL_TEMPLATE_SLOT]
+    "water",
+    [LIQUID],
+    non_inheritable_properties=[TRANSPARENT, CAN_FILL_TEMPLATE_SLOT, EDIBLE],
 )
 subtype(WATER, INANIMATE_OBJECT)
 JUICE = OntologyNode(
-    "juice", [LIQUID], non_inheritable_properties=[RED, CAN_FILL_TEMPLATE_SLOT]
+    "juice", [LIQUID], non_inheritable_properties=[RED, CAN_FILL_TEMPLATE_SLOT, EDIBLE]
 )
 subtype(JUICE, INANIMATE_OBJECT)
 CUP = OntologyNode("cup", [HOLLOW, CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE])
@@ -266,7 +325,10 @@ BOX = OntologyNode(
     [HOLLOW, CAN_FILL_TEMPLATE_SLOT, CAN_HAVE_THINGS_RESTING_ON_THEM, PERSON_CAN_HAVE],
 )
 subtype(BOX, INANIMATE_OBJECT)
-CHAIR = OntologyNode("chair", [CAN_FILL_TEMPLATE_SLOT, CAN_HAVE_THINGS_RESTING_ON_THEM])
+CHAIR = OntologyNode(
+    "chair",
+    [CAN_FILL_TEMPLATE_SLOT, CAN_HAVE_THINGS_RESTING_ON_THEM, CAN_BE_SAT_ON_BY_PEOPLE],
+)
 subtype(CHAIR, INANIMATE_OBJECT)
 # should a HEAD be hollow? We are answering yes for now,
 # because food and liquids can enter it,
@@ -277,7 +339,7 @@ HEAD = OntologyNode(
 )
 subtype(HEAD, INANIMATE_OBJECT)
 MILK = OntologyNode(
-    "milk", [LIQUID], non_inheritable_properties=[WHITE, CAN_FILL_TEMPLATE_SLOT]
+    "milk", [LIQUID], non_inheritable_properties=[WHITE, CAN_FILL_TEMPLATE_SLOT, EDIBLE]
 )
 subtype(MILK, INANIMATE_OBJECT)
 HAND = OntologyNode(
@@ -299,10 +361,12 @@ DOOR = OntologyNode("door", [CAN_FILL_TEMPLATE_SLOT])
 subtype(DOOR, INANIMATE_OBJECT)
 HAT = OntologyNode("hat", [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE])
 subtype(HAT, INANIMATE_OBJECT)
-COOKIE = OntologyNode("cookie", [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, ROLLABLE])
+COOKIE = OntologyNode(
+    "cookie", [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, ROLLABLE, EDIBLE]
+)
 subtype(COOKIE, INANIMATE_OBJECT)
 
-PERSON = OntologyNode("person", inheritable_properties=[ANIMATE, SELF_MOVING])
+PERSON = OntologyNode("person", inheritable_properties=[ANIMATE, SELF_MOVING, CAN_JUMP])
 subtype(PERSON, THING)
 IS_MOM = OntologyNode("is-mom")
 subtype(IS_MOM, RECOGNIZED_PARTICULAR_PROPERTY)
@@ -329,7 +393,7 @@ subtype(LEARNER, BABY)
 
 NONHUMAN_ANIMAL = OntologyNode("animal", inheritable_properties=[ANIMATE])
 subtype(NONHUMAN_ANIMAL, THING)
-DOG = OntologyNode("dog", [CAN_FILL_TEMPLATE_SLOT])
+DOG = OntologyNode("dog", [CAN_FILL_TEMPLATE_SLOT, CAN_JUMP])
 subtype(DOG, NONHUMAN_ANIMAL)
 BIRD = OntologyNode("bird", [CAN_FILL_TEMPLATE_SLOT, CAN_FLY])
 subtype(BIRD, NONHUMAN_ANIMAL)
@@ -396,6 +460,10 @@ _FLATBED = OntologyNode("flatbed")
 subtype(_FLATBED, INANIMATE_OBJECT)
 _BODY = OntologyNode("body")
 subtype(_BODY, _BODY_PART)
+_DOG_HEAD = OntologyNode("dog-head", [CAN_MANIPULATE_OBJECTS])
+subtype(_DOG_HEAD, _BODY_PART)
+_BIRD_HEAD = OntologyNode("dog-head", [CAN_MANIPULATE_OBJECTS])
+subtype(_BIRD_HEAD, _BODY_PART)
 
 # Verbs
 
@@ -416,8 +484,8 @@ EAT = OntologyNode("eat")
 subtype(EAT, CONSUME)
 GIVE = OntologyNode("give", [TRANSFER_OF_POSSESSION])
 subtype(GIVE, ACTION)
-TURN = OntologyNode("turn")
-subtype(TURN, ACTION)
+SPIN = OntologyNode("spin")
+subtype(SPIN, ACTION)
 SIT = OntologyNode("sit")
 subtype(SIT, ACTION)
 DRINK = OntologyNode("drink")
@@ -499,10 +567,31 @@ https://github.com/isi-vista/adam/issues/70
 """
 subtype(SMALLER_THAN, SIZE_RELATION)
 
-
 bigger_than = make_opposite_dsl_relation(  # pylint:disable=invalid-name
     BIGGER_THAN, opposite_type=SMALLER_THAN
 )
+
+AXIS_RELATION = OntologyNode("axis-relation")
+subtype(AXIS_RELATION, RELATION)
+
+MUCH_BIGGER_THAN = OntologyNode("muchBiggerThan")
+"""
+A relation indicating one axis of a geon is much bigger than another.
+This should only be used for geon axis, relations, not general object relations.
+"""
+subtype(MUCH_BIGGER_THAN, AXIS_RELATION)
+
+MUCH_SMALLER_THAN = OntologyNode("muchSmallerThan")
+"""
+A relation indicating one axis of a geon is much smaller than another.
+This should only be used for geon axis, relations, not general object relations.
+"""
+subtype(MUCH_SMALLER_THAN, AXIS_RELATION)
+
+much_bigger_than = make_opposite_dsl_relation(  # pylint:disable=invalid-name
+    MUCH_BIGGER_THAN, opposite_type=MUCH_SMALLER_THAN
+)
+
 
 HAS = OntologyNode("has")
 subtype(HAS, RELATION)
@@ -550,38 +639,499 @@ above = make_opposite_dsl_region_relation(  # pylint:disable=invalid-name
 )
 
 
-_GROUND_SCHEMA = ObjectStructuralSchema(GROUND)
+def _strictly_above_region_factory(reference_object: ObjectT) -> Region[ObjectT]:
+    return Region(
+        reference_object=reference_object, distance=DISTAL, direction=GRAVITATIONAL_UP
+    )
+
+
+def _strictly_below_region_factory(reference_object: ObjectT) -> Region[ObjectT]:
+    return Region(
+        reference_object=reference_object, distance=DISTAL, direction=GRAVITATIONAL_DOWN
+    )
+
+
+strictly_above = make_opposite_dsl_region_relation(  # pylint:disable=invalid-name
+    _strictly_above_region_factory, _strictly_below_region_factory
+)
+
+
+_GROUND_SCHEMA = ObjectStructuralSchema(ontology_node=GROUND)
+_LEARNER_SCHEMA = ObjectStructuralSchema(ontology_node=LEARNER)
 
 # Structural Objects without Sub-Parts which are part of our Phase 1 Vocabulary
 # These may need to evolve to reflect the changes for visualization of phase 1
-_DOOR_SCHEMA = ObjectStructuralSchema(DOOR)
-_BALL_SCHEMA = ObjectStructuralSchema(BALL)
-_BOX_SCHEMA = ObjectStructuralSchema(BOX)
+
+
+def _make_door_schema() -> ObjectStructuralSchema:
+    hinges_to_edge = directed("hinges-to-edge")
+    bottom_to_top = directed("bottom-to-top")
+    interior_to_exterior = directed("interior-to-exterior")
+
+    return ObjectStructuralSchema(
+        ontology_node=DOOR,
+        geon=Geon(
+            cross_section=RECTANGULAR,
+            cross_section_size=CONSTANT,
+            generating_axis=interior_to_exterior,
+            orienting_axes=[hinges_to_edge, bottom_to_top],
+            axis_relations=[
+                bigger_than(bottom_to_top, hinges_to_edge),
+                much_bigger_than(bottom_to_top, interior_to_exterior),
+                bigger_than(hinges_to_edge, interior_to_exterior),
+            ],
+        ),
+    )
+
+
+_DOOR_SCHEMA = _make_door_schema()
+
+
+def _make_ball_schema() -> ObjectStructuralSchema:
+    generating_axis = symmetric_verical("ball-generating")
+    orienting_axis = symmetric("ball-orienting")
+
+    return ObjectStructuralSchema(
+        ontology_node=BALL,
+        geon=Geon(
+            cross_section=CIRCULAR,
+            cross_section_size=SMALL_TO_LARGE_TO_SMALL,
+            generating_axis=generating_axis,
+            orienting_axes=[orienting_axis, orienting_axis],
+        ),
+    )
+
+
+_BALL_SCHEMA = _make_ball_schema()
+
+
 _WATER_SCHEMA = ObjectStructuralSchema(WATER)
 _JUICE_SCHEMA = ObjectStructuralSchema(JUICE)
-_BOX_SCHEMA = ObjectStructuralSchema(BOX)
+
+
+def _make_box_schema() -> ObjectStructuralSchema:
+    top_to_bottom = straight_up("top-to-bottom")
+    side_to_side = symmetric("side-to-side")
+
+    return ObjectStructuralSchema(
+        ontology_node=BOX,
+        geon=Geon(
+            cross_section=RECTANGULAR,
+            cross_section_size=CONSTANT,
+            generating_axis=top_to_bottom,
+            orienting_axes=[side_to_side, side_to_side],
+        ),
+    )
+
+
+_BOX_SCHEMA = _make_box_schema()
 _MILK_SCHEMA = ObjectStructuralSchema(MILK)
-_HAT_SCHEMA = ObjectStructuralSchema(HAT)
-_COOKIE_SCHEMA = ObjectStructuralSchema(COOKIE)
-_CUP_SCHEMA = ObjectStructuralSchema(CUP)
-_BOOK_SCHEMA = ObjectStructuralSchema(BOOK)
-_HAND_SCHEMA = ObjectStructuralSchema(HAND)
-_HEAD_SCHEMA = ObjectStructuralSchema(HEAD)
+
+
+def _make_hat_schema() -> ObjectStructuralSchema:
+    brim_to_top = straight_up("brim-to-top")
+    side_to_side = symmetric("side-to-side")
+
+    return ObjectStructuralSchema(
+        ontology_node=HAT,
+        geon=Geon(
+            cross_section=OVALISH,
+            cross_section_size=LARGE_TO_SMALL,
+            generating_axis=brim_to_top,
+            orienting_axes=[side_to_side, side_to_side],
+        ),
+    )
+
+
+_HAT_SCHEMA = _make_hat_schema()
+
+
+def _make_cookie_schema() -> ObjectStructuralSchema:
+    bottom_to_top = straight_up("bottom-to-top")
+    side_to_side = symmetric("side-to-side")
+
+    return ObjectStructuralSchema(
+        ontology_node=COOKIE,
+        geon=Geon(
+            cross_section=CIRCULAR,
+            cross_section_size=CONSTANT,
+            generating_axis=bottom_to_top,
+            orienting_axes=[side_to_side, side_to_side],
+        ),
+    )
+
+
+_COOKIE_SCHEMA = _make_cookie_schema()
+
+
+def _make_cup_schema() -> ObjectStructuralSchema:
+    bottom_to_top = straight_up("bottom-to-top")
+    side_to_side = symmetric("side-to-side")
+
+    return ObjectStructuralSchema(
+        ontology_node=CUP,
+        geon=Geon(
+            cross_section=CIRCULAR,
+            cross_section_size=SMALL_TO_LARGE,
+            generating_axis=bottom_to_top,
+            orienting_axes=[side_to_side, side_to_side],
+        ),
+    )
+
+
+_CUP_SCHEMA = _make_cup_schema()
+
+
+def _make_book_schema() -> ObjectStructuralSchema:
+    back_cover_to_front_cover = directed("back-cover-to-front-cover")
+    spine_to_edges = directed("spine-to-edges")
+    edges_to_edges = straight_up("edges-to-edges")
+
+    return ObjectStructuralSchema(
+        ontology_node=BOOK,
+        geon=Geon(
+            cross_section=RECTANGULAR,
+            cross_section_size=CONSTANT,
+            generating_axis=edges_to_edges,
+            orienting_axes=[back_cover_to_front_cover, spine_to_edges],
+        ),
+    )
+
+
+_BOOK_SCHEMA = _make_book_schema()
+
+
+def _make_hand_schema() -> ObjectStructuralSchema:
+    wrist_to_fingertips = directed("wrist-to-fingertips")
+    thumb_to_pinky = directed("thumb-to-pinky")
+    top_to_palm = directed("top-to-palm")
+
+    return ObjectStructuralSchema(
+        ontology_node=HAND,
+        # we do not currently represent fingers
+        geon=Geon(
+            cross_section=RECTANGULAR,
+            cross_section_size=CONSTANT,
+            generating_axis=wrist_to_fingertips,
+            orienting_axes=[thumb_to_pinky, top_to_palm],
+            axis_relations=[
+                bigger_than(wrist_to_fingertips, thumb_to_pinky),
+                much_bigger_than(wrist_to_fingertips, top_to_palm),
+                much_bigger_than(thumb_to_pinky, top_to_palm),
+            ],
+        ),
+    )
+
+
+_HAND_SCHEMA = _make_hand_schema()
+
+
+def _make_head_schema():
+    chin_to_scalp = straight_up("chin-to-scalp")
+    back_to_front = directed("back-to-front")
+    left_to_right = symmetric("left-to-right")
+    return ObjectStructuralSchema(
+        HEAD,
+        geon=Geon(
+            cross_section=OVALISH,
+            cross_section_size=SMALL_TO_LARGE_TO_SMALL,
+            generating_axis=chin_to_scalp,
+            orienting_axes=[back_to_front, left_to_right],
+            axis_relations=[
+                bigger_than(chin_to_scalp, back_to_front),
+                bigger_than(chin_to_scalp, left_to_right),
+            ],
+        ),
+    )
+
+
+_HEAD_SCHEMA = _make_head_schema()
+
+
+def _make_torso_schema():
+    waist_to_shoulders = straight_up("waist-to-shoulders")
+    front_to_back = directed("front-to-back")
+    left_to_right = symmetric("left-to-right")
+
+    return ObjectStructuralSchema(
+        _TORSO,
+        geon=Geon(
+            cross_section=OVALISH,
+            cross_section_size=CONSTANT,
+            generating_axis=waist_to_shoulders,
+            orienting_axes=[front_to_back, left_to_right],
+            axis_relations=[
+                bigger_than(waist_to_shoulders, left_to_right),
+                much_bigger_than(waist_to_shoulders, front_to_back),
+                much_bigger_than(left_to_right, front_to_back),
+            ],
+        ),
+    )
+
+
+_DOG_HEAD_SCHEMA = ObjectStructuralSchema(_DOG_HEAD)
+_BIRD_HEAD_SCHEMA = ObjectStructuralSchema(_BIRD_HEAD)
 
 # Hierarchical structure of objects
-_TORSO_SCHEMA = ObjectStructuralSchema(_TORSO)
-_LEG_SCHEMA = ObjectStructuralSchema(_LEG)
-_CHAIRBACK_SCHEMA = ObjectStructuralSchema(_CHAIR_BACK)
-_CHAIR_SEAT_SCHEMA = ObjectStructuralSchema(_CHAIR_SEAT)
-_TABLETOP_SCHEMA = ObjectStructuralSchema(_TABLETOP)
-_TAIL_SCHEMA = ObjectStructuralSchema(_TAIL)
-_WING_SCHEMA = ObjectStructuralSchema(_WING)
-_ARM_SEGMENT_SCHEMA = ObjectStructuralSchema(_ARM_SEGMENT)
-_ROOF_SCHEMA = ObjectStructuralSchema(_ROOF)
-_WALL_SCHEMA = ObjectStructuralSchema(_WALL)
-_TIRE_SCHEMA = ObjectStructuralSchema(_TIRE)
-_FLATBED_SCHEMA = ObjectStructuralSchema(_FLATBED)
-_BODY_SCHEMA = ObjectStructuralSchema(_BODY)
+_TORSO_SCHEMA = _make_torso_schema()
+
+
+def _make_human_leg_schema():
+    hip_to_foot = directed("hip-to-foot")
+    diameter_0 = symmetric("diameter_0")
+    diameter_1 = symmetric("diameter_1")
+
+    return ObjectStructuralSchema(
+        _LEG,
+        geon=Geon(
+            cross_section=OVALISH,
+            cross_section_size=CONSTANT,
+            generating_axis=hip_to_foot,
+            orienting_axes=[diameter_0, diameter_1],
+            axis_relations=[
+                much_bigger_than(hip_to_foot, diameter_0),
+                much_bigger_than(hip_to_foot, diameter_1),
+            ],
+        ),
+    )
+
+
+# TODO: we shouldn't share a leg schema between humans and tables
+# https://github.com/isi-vista/adam/issues/265
+_LEG_SCHEMA = _make_human_leg_schema()
+
+
+def _make_chair_back_schema() -> ObjectStructuralSchema:
+    bottom_to_top = straight_up("bottom-to-top")
+    front_to_back = directed("front-to-back")
+    side_to_side = directed("side-to-side")
+
+    return ObjectStructuralSchema(
+        ontology_node=_CHAIR_BACK,
+        geon=Geon(
+            cross_section=IRREGULAR,
+            cross_section_size=CONSTANT,
+            generating_axis=front_to_back,
+            orienting_axes=[bottom_to_top, side_to_side],
+            axis_relations=[
+                bigger_than(bottom_to_top, front_to_back),
+                bigger_than(bottom_to_top, side_to_side),
+            ],
+        ),
+    )
+
+
+_CHAIRBACK_SCHEMA = _make_chair_back_schema()
+
+
+def _make_chair_seat_schema() -> ObjectStructuralSchema:
+    bottom_to_top = straight_up("bottom-to-top")
+    front_edge_to_back_edge = directed("front-to-back")
+    side_to_side = directed("side-to-side")
+
+    return ObjectStructuralSchema(
+        ontology_node=_CHAIR_SEAT,
+        geon=Geon(
+            cross_section=OVALISH,
+            cross_section_size=CONSTANT,
+            generating_axis=bottom_to_top,
+            orienting_axes=[front_edge_to_back_edge, side_to_side],
+        ),
+    )
+
+
+_CHAIR_SEAT_SCHEMA = _make_chair_seat_schema()
+
+
+def _make_table_top_schema() -> ObjectStructuralSchema:
+    bottom_to_top = straight_up("bottom-to-top")
+    side_to_side = directed("side-to-side")
+    front_to_back = directed("front-to-back")
+
+    return ObjectStructuralSchema(
+        ontology_node=_TABLETOP,
+        geon=Geon(
+            cross_section=RECTANGULAR,
+            cross_section_size=CONSTANT,
+            generating_axis=bottom_to_top,
+            orienting_axes=[side_to_side, front_to_back],
+            axis_relations=[
+                bigger_than(side_to_side, bottom_to_top),
+                bigger_than(front_to_back, bottom_to_top),
+            ],
+        ),
+    )
+
+
+_TABLETOP_SCHEMA = _make_table_top_schema()
+
+
+def _make_tail_schema() -> ObjectStructuralSchema:
+    edge_to_tip = directed("edge-to-tip")
+    side_to_side = symmetric("side-to-side")
+
+    return ObjectStructuralSchema(
+        ontology_node=_TAIL,
+        geon=Geon(
+            cross_section=OVALISH,
+            cross_section_size=LARGE_TO_SMALL,
+            generating_axis=edge_to_tip,
+            orienting_axes=[side_to_side, side_to_side],
+            axis_relations=[bigger_than(edge_to_tip, side_to_side)],
+        ),
+    )
+
+
+_TAIL_SCHEMA = _make_tail_schema()
+
+
+def _make_wing_schema() -> ObjectStructuralSchema:
+    edge_to_tip = directed("edge-to-tip")
+    bottom_to_top = straight_up("bottom-to-top")
+    front_to_back = directed("front-to-back")
+
+    return ObjectStructuralSchema(
+        ontology_node=_WING,
+        geon=Geon(
+            cross_section=IRREGULAR,
+            cross_section_size=CONSTANT,
+            generating_axis=edge_to_tip,
+            orienting_axes=[bottom_to_top, front_to_back],
+            axis_relations=[
+                bigger_than(edge_to_tip, bottom_to_top),
+                bigger_than(front_to_back, bottom_to_top),
+            ],
+        ),
+    )
+
+
+_WING_SCHEMA = _make_wing_schema()
+
+
+def _make_roof_schema() -> ObjectStructuralSchema:
+    bottom_to_shingles = straight_up("bottom-to-shingles")
+    front_to_back = directed("front-to-back")
+    side_to_side = directed("side-to-side")
+
+    return ObjectStructuralSchema(
+        ontology_node=_ROOF,
+        geon=Geon(
+            cross_section=RECTANGULAR,
+            cross_section_size=LARGE_TO_SMALL,
+            generating_axis=bottom_to_shingles,
+            orienting_axes=[front_to_back, side_to_side],
+        ),
+    )
+
+
+_ROOF_SCHEMA = _make_roof_schema()
+
+
+def _make_wall_schema() -> ObjectStructuralSchema:
+    bottom_to_top = straight_up("bottom-to-top")
+    edge_to_edge = directed("edge-to-edge")
+    face_to_face = directed("face-to-face")
+
+    return ObjectStructuralSchema(
+        ontology_node=_WALL,
+        geon=Geon(
+            cross_section=RECTANGULAR,
+            cross_section_size=CONSTANT,
+            generating_axis=bottom_to_top,
+            orienting_axes=[edge_to_edge, face_to_face],
+            axis_relations=[
+                bigger_than(edge_to_edge, face_to_face),
+                bigger_than(bottom_to_top, face_to_face),
+            ],
+        ),
+    )
+
+
+_WALL_SCHEMA = _make_wall_schema()
+
+
+def _make_tire_schema() -> ObjectStructuralSchema:
+    front_to_back = directed("front-to-back")
+    tread_to_tread = symmetric("tread-to-tread")
+
+    return ObjectStructuralSchema(
+        ontology_node=_TIRE,
+        geon=Geon(
+            cross_section=CIRCULAR,
+            cross_section_size=CONSTANT,
+            generating_axis=front_to_back,
+            orienting_axes=[tread_to_tread, tread_to_tread],
+        ),
+    )
+
+
+_TIRE_SCHEMA = _make_tire_schema()
+
+
+def _make_flat_bed_schema() -> ObjectStructuralSchema:
+    bottom_to_bed = straight_up("bottom-to-bed")
+    front_to_back = directed("front-to-back")
+    side_to_side = directed("side-to-side")
+
+    return ObjectStructuralSchema(
+        ontology_node=_FLATBED,
+        geon=Geon(
+            cross_section=RECTANGULAR,
+            cross_section_size=CONSTANT,
+            generating_axis=bottom_to_bed,
+            orienting_axes=[front_to_back, side_to_side],
+            axis_relations=[
+                bigger_than(front_to_back, side_to_side),
+                bigger_than(front_to_back, bottom_to_bed),
+                bigger_than(side_to_side, bottom_to_bed),
+            ],
+        ),
+    )
+
+
+_FLATBED_SCHEMA = _make_flat_bed_schema()
+
+
+def _make_body_schema() -> ObjectStructuralSchema:
+    bottom_to_top = straight_up("bottom-to-top")
+    front_to_back = directed("front-to-back")
+    side_to_side = directed("side-to-side")
+
+    return ObjectStructuralSchema(
+        ontology_node=_BODY,
+        geon=Geon(
+            cross_section=IRREGULAR,
+            cross_section_size=CONSTANT,
+            generating_axis=bottom_to_top,
+            orienting_axes=[front_to_back, side_to_side],
+        ),
+    )
+
+
+_BODY_SCHEMA = _make_body_schema()
+
+
+def _make_human_arm_segment():
+    upper_to_lower = directed("upper-to-lower")
+    diameter_0 = symmetric("diameter_0")
+    diameter_1 = symmetric("diameter_1")
+
+    return ObjectStructuralSchema(
+        _ARM_SEGMENT,
+        geon=Geon(
+            cross_section=OVALISH,
+            cross_section_size=CONSTANT,
+            generating_axis=upper_to_lower,
+            orienting_axes=[diameter_0, diameter_1],
+            axis_relations=[
+                much_bigger_than(upper_to_lower, diameter_0),
+                much_bigger_than(upper_to_lower, diameter_1),
+            ],
+        ),
+    )
+
+
+_ARM_SEGMENT_SCHEMA = _make_human_arm_segment()
 
 # schemata describing the sub-object structural nature of a Human Arm
 _ARM_SCHEMA_HAND = SubObject(_HAND_SCHEMA)
@@ -591,7 +1141,7 @@ _ARM_SCHEMA_UPPER = SubObject(
 _ARM_SCHEMA_LOWER = SubObject(_ARM_SEGMENT_SCHEMA)
 
 _ARM_SCHEMA = ObjectStructuralSchema(
-    _ARM,
+    ontology_node=_ARM,
     sub_objects=[_ARM_SCHEMA_HAND, _ARM_SCHEMA_LOWER, _ARM_SCHEMA_UPPER],
     sub_object_relations=flatten_relations(
         [contacts([_ARM_SCHEMA_UPPER, _ARM_SCHEMA_HAND], _ARM_SCHEMA_LOWER)]
@@ -614,7 +1164,7 @@ _PERSON_SCHEMA_APPENDAGES = [
     _PERSON_SCHEMA_HEAD,
 ]
 _PERSON_SCHEMA = ObjectStructuralSchema(
-    PERSON,
+    ontology_node=PERSON,
     sub_objects=[
         _PERSON_SCHEMA_HEAD,
         _PERSON_SCHEMA_TORSO,
@@ -704,7 +1254,7 @@ _DOG_SCHEMA_LEG_2 = SubObject(_LEG_SCHEMA)
 _DOG_SCHEMA_LEG_3 = SubObject(_LEG_SCHEMA)
 _DOG_SCHEMA_LEG_4 = SubObject(_LEG_SCHEMA)
 _DOG_SCHEMA_TORSO = SubObject(_TORSO_SCHEMA)
-_DOG_SCHEMA_HEAD = SubObject(_HEAD_SCHEMA)
+_DOG_SCHEMA_HEAD = SubObject(_DOG_HEAD_SCHEMA)
 _DOG_SCHEMA_TAIL = SubObject(_TAIL_SCHEMA)
 
 _DOG_LEGS = [_DOG_SCHEMA_LEG_1, _DOG_SCHEMA_LEG_2, _DOG_SCHEMA_LEG_3, _DOG_SCHEMA_LEG_4]
@@ -740,7 +1290,7 @@ _DOG_SCHEMA = ObjectStructuralSchema(
 )
 
 # schemata describing the sub-object structural nature of a bird
-_BIRD_SCHEMA_HEAD = SubObject(_HEAD_SCHEMA)
+_BIRD_SCHEMA_HEAD = SubObject(_BIRD_HEAD_SCHEMA)
 _BIRD_SCHEMA_TORSO = SubObject(_TORSO_SCHEMA)
 _BIRD_SCHEMA_LEFT_LEG = SubObject(_LEG_SCHEMA)
 _BIRD_SCHEMA_RIGHT_LEG = SubObject(_LEG_SCHEMA)
@@ -939,43 +1489,91 @@ _PUT_ACTION_DESCRIPTION = ActionDescription(
         Relation(IN_REGION, _PUT_THEME, _CONTACTING_MANIPULATOR, negated=True),
         Relation(IN_REGION, _PUT_THEME, _PUT_GOAL),
     ],
+    asserted_properties=[
+        (_PUT_AGENT, VOLITIONALLY_INVOLVED),
+        (_PUT_AGENT, CAUSES_CHANGE),
+        (_PUT_THEME, UNDERGOES_CHANGE),
+        (_PUT_GOAL, STATIONARY),
+    ],
 )
 
-_PUSH_AGENT = SituationObject(THING, properties=[ANIMATE])
-_PUSH_THEME = SituationObject(INANIMATE_OBJECT)
-_PUSH_GOAL = SituationObject(THING, debug_handle="push_goal")
-_PUSH_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
+_PUSH_AGENT = SituationObject(THING, properties=[ANIMATE], debug_handle="push-agent")
+_PUSH_THEME = SituationObject(INANIMATE_OBJECT, debug_handle="push-theme")
+PUSH_GOAL = SituationObject(THING, debug_handle="push_goal")
+_PUSH_MANIPULATOR = SituationObject(
+    THING, properties=[CAN_MANIPULATE_OBJECTS], debug_handle="push-manipulator"
+)
+PUSH_SURFACE_AUX = SituationObject(
+    THING, properties=[CAN_HAVE_THINGS_RESTING_ON_THEM], debug_handle="push-surface"
+)
 
 
-_PUSH_ACTION_DESCRIPTION = ActionDescription(
-    frame=ActionDescriptionFrame(
-        {AGENT: _PUSH_AGENT, THEME: _PUSH_THEME, GOAL: _PUSH_GOAL}
-    ),
-    during=DuringAction(
-        continuously=flatten_relations([contacts(_PUT_MANIPULATOR, _PUT_THEME)]),
-        objects_to_paths=[(_PUSH_THEME, SpatialPath(TO, _PUT_GOAL))],
-    ),
-    enduring_conditions=[
+def _make_push_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
+    during: DuringAction[SituationObject] = DuringAction(
+        objects_to_paths=[(_PUSH_THEME, SpatialPath(TO, PUSH_GOAL))]
+    )
+    enduring = [
         partOf(_PUSH_MANIPULATOR, _PUSH_AGENT),
         bigger_than(_PUSH_AGENT, _PUSH_THEME),
-    ],
-    preconditions=[
+        bigger_than(PUSH_SURFACE_AUX, _PUSH_THEME),
         contacts(_PUSH_MANIPULATOR, _PUSH_THEME),
-        Relation(IN_REGION, _PUSH_THEME, _PUSH_GOAL, negated=True),
-    ],
-    postconditions=[Relation(IN_REGION, _PUSH_THEME, _PUSH_GOAL)],
-    # TODO: encode that the THEME's vertical position does not significantly change,
-    # unless there is e.g. a ramp
-)
+        on(_PUSH_THEME, PUSH_SURFACE_AUX),
+    ]
+    preconditions = [Relation(IN_REGION, _PUSH_THEME, PUSH_GOAL, negated=True)]
+    postconditions = [Relation(IN_REGION, _PUSH_THEME, PUSH_GOAL)]
+    asserted_properties = [
+        (_PUSH_AGENT, VOLITIONALLY_INVOLVED),
+        (_PUSH_AGENT, CAUSES_CHANGE),
+        (_PUSH_THEME, UNDERGOES_CHANGE),
+    ]
+    # explicit goal
+    yield PUSH, ActionDescription(
+        frame=ActionDescriptionFrame(
+            {AGENT: _PUSH_AGENT, THEME: _PUSH_THEME, GOAL: PUSH_GOAL}
+        ),
+        during=during,
+        enduring_conditions=enduring,
+        preconditions=preconditions,
+        postconditions=postconditions,
+        asserted_properties=asserted_properties,
+    )
+    # implicit goal
+    yield PUSH, ActionDescription(
+        frame=ActionDescriptionFrame({AGENT: _PUSH_AGENT, THEME: _PUSH_THEME}),
+        during=during,
+        enduring_conditions=enduring,
+        preconditions=preconditions,
+        postconditions=postconditions,
+        asserted_properties=asserted_properties,
+    )
+
 
 _GO_AGENT = SituationObject(THING, properties=[SELF_MOVING])
 _GO_GOAL = SituationObject(THING)
 
-_GO_ACTION_DESCRIPTION = ActionDescription(
-    frame=ActionDescriptionFrame({AGENT: _GO_AGENT, GOAL: _GO_GOAL}),
-    during=DuringAction(objects_to_paths=[(_GO_AGENT, SpatialPath(TO, _GO_GOAL))]),
-    postconditions=[Relation(IN_REGION, _GO_AGENT, _GO_GOAL)],
-)
+
+def _make_go_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
+    # bare go
+    postconditions = [Relation(IN_REGION, _GO_AGENT, _GO_GOAL)]
+    during: DuringAction[SituationObject] = DuringAction(
+        objects_to_paths=[(_GO_AGENT, SpatialPath(TO, _GO_GOAL))]
+    )
+    asserted_properties = [(_GO_AGENT, VOLITIONALLY_INVOLVED), (_GO_AGENT, MOVES)]
+    yield GO, ActionDescription(
+        frame=ActionDescriptionFrame({AGENT: _GO_AGENT}),
+        during=during,
+        postconditions=postconditions,
+        asserted_properties=asserted_properties,
+    )
+
+    # goes to goal
+    yield GO, ActionDescription(
+        frame=ActionDescriptionFrame({AGENT: _GO_AGENT, GOAL: _GO_GOAL}),
+        during=during,
+        postconditions=postconditions,
+        asserted_properties=asserted_properties,
+    )
+
 
 _COME_AGENT = SituationObject(THING, properties=[ANIMATE])
 _COME_GOAL = SituationObject(THING)
@@ -990,6 +1588,7 @@ _COME_ACTION_DESCRIPTION = ActionDescription(
     postconditions=[Relation(IN_REGION, _COME_AGENT, _COME_GOAL)],
     # TODO: encode that the new location is relatively closer to the
     # learner or speaker than the old location
+    asserted_properties=[(_COME_AGENT, VOLITIONALLY_INVOLVED), (_COME_AGENT, MOVES)],
 )
 
 _TAKE_AGENT = SituationObject(THING, properties=[ANIMATE])
@@ -1004,7 +1603,19 @@ _TAKE_ACTION_DESCRIPTION = ActionDescription(
         partOf(_TAKE_MANIPULATOR, _TAKE_AGENT),
     ],
     preconditions=[negate(has(_TAKE_AGENT, _TAKE_THEME))],
-    postconditions=[has(_TAKE_AGENT, _TAKE_THEME)],
+    postconditions=[
+        has(_TAKE_AGENT, _TAKE_THEME),
+        Relation(
+            IN_REGION,
+            _TAKE_THEME,
+            Region(_TAKE_MANIPULATOR, distance=EXTERIOR_BUT_IN_CONTACT),
+        ),
+    ],
+    asserted_properties=[
+        (_TAKE_AGENT, VOLITIONALLY_INVOLVED),
+        (_TAKE_AGENT, CAUSES_CHANGE),
+        (_TAKE_THEME, UNDERGOES_CHANGE),
+    ],
 )
 
 _EAT_AGENT = SituationObject(THING, properties=[ANIMATE])
@@ -1015,6 +1626,11 @@ _EAT_ACTION_DESCRIPTION = ActionDescription(
     enduring_conditions=[bigger_than(_EAT_AGENT, _EAT_PATIENT)],
     postconditions=[inside(_EAT_PATIENT, _EAT_AGENT)],
     # TODO: express role of mouth
+    asserted_properties=[
+        (_EAT_AGENT, VOLITIONALLY_INVOLVED),
+        (_EAT_AGENT, CAUSES_CHANGE),
+        (_EAT_PATIENT, UNDERGOES_CHANGE),
+    ],
 )
 
 _GIVE_AGENT = SituationObject(THING, properties=[ANIMATE])
@@ -1045,50 +1661,104 @@ _GIVE_ACTION_DESCRIPTION = ActionDescription(
         negate(contacts(_GIVE_AGENT_MANIPULATOR, _GIVE_THEME)),
         contacts(_GIVE_GOAL_MANIPULATOR, _GIVE_THEME),
     ],
-)
-
-_TURN_AGENT = SituationObject(THING, properties=[ANIMATE])
-_TURN_THEME = SituationObject(THING)
-_TURN_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
-
-_TURN_ACTION_DESCRIPTION = ActionDescription(
-    frame=ActionDescriptionFrame({AGENT: _TURN_AGENT, THEME: _TURN_THEME}),
-    during=DuringAction(
-        objects_to_paths=[
-            (
-                _TURN_THEME,
-                SpatialPath(
-                    operator=None,
-                    reference_object=_TURN_THEME,
-                    reference_axis=Axis.primary_of(_TURN_THEME),
-                    orientation_changed=True,
-                ),
-            )
-        ]
-    ),
-)
-
-_SIT_AGENT = SituationObject(THING, properties=[ANIMATE])
-_SIT_GOAL = SituationObject(THING)
-
-_SIT_ACTION_DESCRIPTION = ActionDescription(
-    frame=ActionDescriptionFrame({AGENT: _SIT_AGENT, GOAL: _SIT_GOAL}),
-    preconditions=[negate(contacts(_SIT_AGENT, _SIT_GOAL))],
-    postconditions=[contacts(_SIT_AGENT, _SIT_GOAL), above(_SIT_AGENT, _SIT_GOAL)],
-)
-
-_DRINK_AGENT = SituationObject(THING, properties=[ANIMATE])
-_DRINK_THEME = SituationObject(THING, properties=[LIQUID])
-_DRINK_CONTAINER = SituationObject(THING, properties=[HOLLOW])
-
-_DRINK_ACTION_DESCRIPTION = ActionDescription(
-    frame=ActionDescriptionFrame({AGENT: _DRINK_AGENT, THEME: _DRINK_THEME}),
-    preconditions=[
-        inside(_DRINK_THEME, _DRINK_CONTAINER),
-        bigger_than(_DRINK_AGENT, _DRINK_CONTAINER),
+    asserted_properties=[
+        (_GIVE_AGENT, VOLITIONALLY_INVOLVED),
+        (_GIVE_AGENT, CAUSES_CHANGE),
+        (_GIVE_THEME, UNDERGOES_CHANGE),
     ],
-    postconditions=[inside(_DRINK_THEME, _DRINK_AGENT)],
 )
+
+_SPIN_AGENT = SituationObject(THING, properties=[ANIMATE])
+_SPIN_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
+
+
+def _make_spin_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
+    spin_theme = SituationObject(THING)
+
+    # intransitive
+    yield SPIN, ActionDescription(
+        frame=ActionDescriptionFrame({AGENT: _SPIN_AGENT}),
+        during=DuringAction(
+            objects_to_paths=[(_SPIN_AGENT, spin_around_primary_axis(_SPIN_AGENT))]
+        ),
+        asserted_properties=[
+            (_SPIN_AGENT, VOLITIONALLY_INVOLVED),
+            (_SPIN_AGENT, CAUSES_CHANGE),
+            (_SPIN_AGENT, UNDERGOES_CHANGE),
+        ],
+    )
+
+    # transitive
+    yield SPIN, ActionDescription(
+        frame=ActionDescriptionFrame({AGENT: _SPIN_AGENT, THEME: spin_theme}),
+        during=DuringAction(
+            objects_to_paths=[(spin_theme, spin_around_primary_axis(spin_theme))]
+        ),
+        asserted_properties=[
+            (_SPIN_AGENT, VOLITIONALLY_INVOLVED),
+            (_SPIN_AGENT, CAUSES_CHANGE),
+            (spin_theme, UNDERGOES_CHANGE),
+        ],
+    )
+
+
+def spin_around_primary_axis(object_):
+    return SpatialPath(
+        operator=None,
+        reference_object=object_,
+        reference_axis=Axis.primary_of(object_),
+        orientation_changed=True,
+    )
+
+
+SIT_THING_SAT_ON = SituationObject(THING, debug_handle="thing-sat-on")
+SIT_GOAL = SituationObject(THING, debug_handle="sit-goal")  # really a region
+
+
+def _make_sit_action_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
+    sit_agent = SituationObject(THING, properties=[ANIMATE], debug_handle="sit-agent")
+
+    post_conditions = [Relation(IN_REGION, sit_agent, SIT_GOAL)]
+
+    yield SIT, ActionDescription(
+        frame=ActionDescriptionFrame({AGENT: sit_agent, GOAL: SIT_GOAL}),
+        preconditions=[negate(contacts(sit_agent, SIT_THING_SAT_ON))],
+        postconditions=post_conditions,
+        asserted_properties=[(sit_agent, VOLITIONALLY_INVOLVED), (sit_agent, MOVES)],
+    )
+
+    yield SIT, ActionDescription(
+        frame=ActionDescriptionFrame({AGENT: sit_agent}),
+        preconditions=[negate(contacts(sit_agent, SIT_THING_SAT_ON))],
+        postconditions=post_conditions,
+        asserted_properties=[(sit_agent, VOLITIONALLY_INVOLVED), (sit_agent, MOVES)],
+    )
+
+
+DRINK_CONTAINER_AUX = SituationObject(THING, properties=[HOLLOW])
+
+
+def _make_drink_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
+    drink_agent = SituationObject(THING, properties=[ANIMATE])
+    drink_theme = SituationObject(THING, properties=[LIQUID])
+
+    yield (
+        DRINK,
+        ActionDescription(
+            frame=ActionDescriptionFrame({AGENT: drink_agent, THEME: drink_theme}),
+            preconditions=[
+                inside(drink_theme, DRINK_CONTAINER_AUX),
+                bigger_than(drink_agent, DRINK_CONTAINER_AUX),
+            ],
+            postconditions=[inside(drink_theme, drink_agent)],
+            asserted_properties=[
+                (drink_agent, VOLITIONALLY_INVOLVED),
+                (drink_agent, CAUSES_CHANGE),
+                (drink_theme, UNDERGOES_CHANGE),
+            ],
+        ),
+    )
+
 
 _FALL_THEME = SituationObject(THING)
 _FALL_GROUND = SituationObject(GROUND)
@@ -1100,6 +1770,7 @@ _FALL_ACTION_DESCRIPTION = ActionDescription(
             (_FALL_THEME, SpatialPath(operator=TOWARD, reference_object=_FALL_GROUND))
         ]
     ),
+    asserted_properties=[(_FALL_THEME, MOVES)],
 )
 
 _THROW_AGENT = SituationObject(THING, properties=[ANIMATE])
@@ -1140,42 +1811,88 @@ _THROW_ACTION_DESCRIPTION = ActionDescription(
             )
         ]
     ),
+    asserted_properties=[
+        (_THROW_AGENT, VOLITIONALLY_INVOLVED),
+        (_THROW_AGENT, CAUSES_CHANGE),
+        (_THROW_THEME, UNDERGOES_CHANGE),
+    ],
 )
 
 _MOVE_AGENT = SituationObject(THING, properties=[ANIMATE])
 _MOVE_THEME = SituationObject(THING)
-_MOVE_GOAL = SituationObject(THING)
+MOVE_GOAL = SituationObject(THING)
 _MOVE_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
 
-# TODO: a proper treatment of move awaits full treatment of multiple sub-categorization frames
-_MOVE_ACTION_DESCRIPTION = ActionDescription(
-    frame=ActionDescriptionFrame(
-        {AGENT: _MOVE_AGENT, THEME: _MOVE_THEME, GOAL: _MOVE_GOAL}
-    ),
-    preconditions=[],
-    postconditions=[],
-)
 
-_JUMP_AGENT = SituationObject(THING, properties=[ANIMATE])
-_JUMP_INITIAL_SUPPORTER = SituationObject(THING)
-_JUMP_GROUND = SituationObject(GROUND)
+def _make_move_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
+    # bare move - "X moves (of its own accord)"
+    yield MOVE, ActionDescription(
+        frame=ActionDescriptionFrame({AGENT: _MOVE_AGENT}),
+        postconditions=[Relation(IN_REGION, _MOVE_AGENT, MOVE_GOAL)],
+        asserted_properties=[
+            (_MOVE_AGENT, VOLITIONALLY_INVOLVED),
+            (_MOVE_AGENT, CAUSES_CHANGE),
+            (_MOVE_AGENT, UNDERGOES_CHANGE),
+        ],
+    )
 
-_JUMP_ACTION_DESCRIPTION = ActionDescription(
-    frame=ActionDescriptionFrame({AGENT: _JUMP_AGENT}),
-    preconditions=[
-        Relation(
-            IN_REGION,
-            _JUMP_AGENT,
-            Region(_JUMP_INITIAL_SUPPORTER, distance=EXTERIOR_BUT_IN_CONTACT),
-        )
-    ],
-    during=DuringAction(
-        objects_to_paths=[
-            (_JUMP_AGENT, SpatialPath(AWAY_FROM, _JUMP_INITIAL_SUPPORTER)),
-            (_JUMP_AGENT, SpatialPath(AWAY_FROM, _JUMP_GROUND)),
-        ]
-    ),
-)
+    # X moves Y
+    yield MOVE, ActionDescription(
+        frame=ActionDescriptionFrame({AGENT: _MOVE_AGENT, THEME: _MOVE_THEME}),
+        postconditions=[Relation(IN_REGION, _MOVE_THEME, MOVE_GOAL)],
+        asserted_properties=[
+            (_MOVE_AGENT, VOLITIONALLY_INVOLVED),
+            (_MOVE_AGENT, CAUSES_CHANGE),
+            (_MOVE_THEME, UNDERGOES_CHANGE),
+        ],
+    )
+
+    # X moves Y to Z
+    # TODO: manipulator
+    yield MOVE, ActionDescription(
+        frame=ActionDescriptionFrame(
+            {AGENT: _MOVE_AGENT, THEME: _MOVE_THEME, GOAL: MOVE_GOAL}
+        ),
+        postconditions=[Relation(IN_REGION, _MOVE_THEME, MOVE_GOAL)],
+        asserted_properties=[
+            (_MOVE_AGENT, VOLITIONALLY_INVOLVED),
+            (_MOVE_AGENT, CAUSES_CHANGE),
+            (_MOVE_THEME, UNDERGOES_CHANGE),
+        ],
+    )
+
+
+JUMP_INITIAL_SUPPORTER_AUX = SituationObject(THING)
+
+
+def _make_jump_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
+    jump_agent = SituationObject(THING, properties=[ANIMATE])
+    jump_ground = SituationObject(GROUND)
+
+    yield (
+        JUMP,
+        ActionDescription(
+            frame=ActionDescriptionFrame({AGENT: jump_agent}),
+            preconditions=[
+                Relation(
+                    IN_REGION,
+                    jump_agent,
+                    Region(JUMP_INITIAL_SUPPORTER_AUX, distance=EXTERIOR_BUT_IN_CONTACT),
+                )
+            ],
+            during=DuringAction(
+                objects_to_paths=[
+                    (jump_agent, SpatialPath(AWAY_FROM, JUMP_INITIAL_SUPPORTER_AUX)),
+                    (jump_agent, SpatialPath(AWAY_FROM, jump_ground)),
+                ]
+            ),
+            asserted_properties=[
+                (jump_agent, VOLITIONALLY_INVOLVED),
+                (jump_agent, MOVES),
+            ],
+        ),
+    )
+
 
 ROLL_SURFACE_AUXILIARY = SituationObject(
     INANIMATE_OBJECT, [CAN_HAVE_THINGS_RESTING_ON_THEM], debug_handle="roll-surface-aux"
@@ -1210,6 +1927,11 @@ def _make_roll_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
         ActionDescription(
             frame=ActionDescriptionFrame({AGENT: roll_agent, THEME: roll_theme}),
             during=make_during(roll_theme),
+            asserted_properties=[
+                (roll_agent, VOLITIONALLY_INVOLVED),
+                (roll_agent, CAUSES_CHANGE),
+                (roll_theme, UNDERGOES_CHANGE),
+            ],
         ),
     )
 
@@ -1219,6 +1941,7 @@ def _make_roll_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
         ActionDescription(
             frame=ActionDescriptionFrame({AGENT: roll_agent}),
             during=make_during(roll_agent),
+            asserted_properties=[(roll_agent, MOVES)],
         ),
     )
 
@@ -1243,27 +1966,28 @@ _FLY_ACTION_DESCRIPTION = ActionDescription(
             )
         ]
     ),
+    asserted_properties=[(_FLY_AGENT, VOLITIONALLY_INVOLVED), (_FLY_AGENT, MOVES)],
 )
 
 _ACTIONS_TO_DESCRIPTIONS = [
     (PUT, _PUT_ACTION_DESCRIPTION),
-    (PUSH, _PUSH_ACTION_DESCRIPTION),
-    (GO, _GO_ACTION_DESCRIPTION),
     (COME, _COME_ACTION_DESCRIPTION),
     (GIVE, _GIVE_ACTION_DESCRIPTION),
     (TAKE, _TAKE_ACTION_DESCRIPTION),
     (EAT, _EAT_ACTION_DESCRIPTION),
-    (TURN, _TURN_ACTION_DESCRIPTION),
-    (SIT, _SIT_ACTION_DESCRIPTION),
-    (DRINK, _DRINK_ACTION_DESCRIPTION),
     (FALL, _FALL_ACTION_DESCRIPTION),
     (THROW, _THROW_ACTION_DESCRIPTION),
-    (MOVE, _MOVE_ACTION_DESCRIPTION),
-    (JUMP, _JUMP_ACTION_DESCRIPTION),
     (FLY, _FLY_ACTION_DESCRIPTION),
 ]
 
 _ACTIONS_TO_DESCRIPTIONS.extend(_make_roll_description())
+_ACTIONS_TO_DESCRIPTIONS.extend(_make_jump_description())
+_ACTIONS_TO_DESCRIPTIONS.extend(_make_drink_description())
+_ACTIONS_TO_DESCRIPTIONS.extend(_make_sit_action_descriptions())
+_ACTIONS_TO_DESCRIPTIONS.extend(_make_move_descriptions())
+_ACTIONS_TO_DESCRIPTIONS.extend(_make_spin_descriptions())
+_ACTIONS_TO_DESCRIPTIONS.extend(_make_go_description())
+_ACTIONS_TO_DESCRIPTIONS.extend(_make_push_descriptions())
 
 GAILA_PHASE_1_ONTOLOGY = Ontology(
     "gaila-phase-1",
@@ -1291,6 +2015,7 @@ GAILA_PHASE_1_ONTOLOGY = Ontology(
         (CAR, _CAR_SCHEMA),
         (TRUCK, _TRUCK_SCHEMA),
         (GROUND, _GROUND_SCHEMA),
+        (LEARNER, _LEARNER_SCHEMA),
     ],
     action_to_description=_ACTIONS_TO_DESCRIPTIONS,
     relations=build_size_relationships(
@@ -1316,3 +2041,10 @@ GAILA_PHASE_1_ONTOLOGY = Ontology(
         opposite_type=SMALLER_THAN,
     ),
 )
+
+
+def is_recognized_particular(ontology: Ontology, node: OntologyNode) -> bool:
+    return any(
+        ontology.is_subtype_of(property_, RECOGNIZED_PARTICULAR_PROPERTY)
+        for property_ in ontology.properties_for_node(node)
+    )

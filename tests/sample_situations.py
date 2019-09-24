@@ -17,7 +17,7 @@ def make_bird_flies_over_a_house():
     house = SituationObject(HOUSE)
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        objects=[bird, house],
+        salient_objects=[bird, house],
         actions=[
             Action(
                 FLY,

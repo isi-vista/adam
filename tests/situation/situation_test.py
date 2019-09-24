@@ -1,3 +1,5 @@
+import pytest
+
 from adam.ontology.phase1_ontology import (
     AGENT,
     BALL,
@@ -7,6 +9,9 @@ from adam.ontology.phase1_ontology import (
     PUT,
     TABLE,
     THEME,
+    DAD,
+    BOX,
+    GIVE,
 )
 from adam.ontology.phase1_spatial_relations import (
     Direction,
@@ -28,7 +33,7 @@ def make_mom_put_ball_on_table():
     table = SituationObject(ontology_node=TABLE)
     return HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        objects=[mom, ball, table],
+        salient_objects=[mom, ball, table],
         actions=[
             Action(
                 PUT,
@@ -49,3 +54,24 @@ def make_mom_put_ball_on_table():
             )
         ],
     )
+
+
+def test_multiple_trecognized_particulars_banned():
+    with pytest.raises(RuntimeError):
+        dad_0 = SituationObject(DAD)
+        dad_1 = SituationObject(DAD)
+        box = SituationObject(BOX)
+        HighLevelSemanticsSituation(
+            salient_objects=[dad_0, dad_1, box],
+            actions=[
+                Action(
+                    GIVE,
+                    argument_roles_to_fillers=[
+                        (AGENT, dad_0),
+                        (THEME, box),
+                        (GOAL, dad_1),
+                    ],
+                )
+            ],
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+        )

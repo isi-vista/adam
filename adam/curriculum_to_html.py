@@ -1,7 +1,8 @@
 from pathlib import Path
 from typing import AbstractSet, Any, Callable, Iterable, List, Tuple, TypeVar, Union
 
-from attr import attrs
+from attr import attrs, attrib
+from attr.validators import instance_of
 from immutablecollections import (
     ImmutableSet,
     ImmutableSetMultiDict,
@@ -47,6 +48,22 @@ def main(params: Parameters) -> None:
         output_directory=phase1_curriculum_dir,
         title="GAILA Phase 1 Curriculum",
     )
+
+
+@attrs(frozen=True, slots=True)
+class InstanceHolder:
+    situation: str = attrib(validator=instance_of(str))
+    """
+    Holds a rendered situation string
+    """
+    lingustics: str = attrib(validator=instance_of(str))
+    """
+    Holds a rendered linguistics string
+    """
+    perception: str = attrib(validator=instance_of(str))
+    """
+    Holds a rendered perception string
+    """
 
 
 @attrs(frozen=True, slots=True)
@@ -124,31 +141,86 @@ class CurriculumToHtmlDumper:
         exists and *overwrite* is set to False an error is raised in execution. Each page turns an
         instance group with each "instance" as an indiviudal section on the page.
         """
+        # PreRender Instances so we can remove duplicates by converting to an immutable set
+        rendered_instances = []
+        for (situation, dependency_tree, perception) in instance_group.instances():
+            if not isinstance(situation, HighLevelSemanticsSituation):
+                raise RuntimeError(
+                    f"Expected the Situation to be HighLevelSemanticsSituation got {type(situation)}"
+                )
+            if not isinstance(dependency_tree, LinearizedDependencyTree):
+                raise RuntimeError(
+                    f"Expected the Lingustics to be LinearizedDependencyTree got {type(dependency_tree)}"
+                )
+            if not (
+                isinstance(perception, PerceptualRepresentation)
+                and isinstance(
+                    perception.frames[0], DevelopmentalPrimitivePerceptionFrame
+                )
+            ):
+                raise RuntimeError(
+                    f"Expected the Perceptual Representation to contain DevelopmentalPrimitivePerceptionFrame got "
+                    f"{type(perception.frames)}"
+                )
+            rendered_instances.append(
+                InstanceHolder(
+                    situation=self._situation_text(situation),
+                    lingustics=self._linguistic_text(dependency_tree),
+                    perception=self._perception_text(perception),
+                )
+            )
+
         with open(output_destination, "w") as html_out:
             html_out.write(f"<head>\n\t<style>{CSS}\n\t</style>\n</head>")
             html_out.write(f"\n<body>\n\t<h1>{title} - {instance_group.name()}</h1>")
-            for (instance_number, (situation, dependency_tree, perception)) in enumerate(
-                instance_group.instances()
+            html_out.write("\n<h2>How to read</h2>")
+            html_out.write(
+                "\n<p>A Situation is curriculum-designer-facing; it is not accessible to the learner. "
+                "The name of a perceived object is derived from the type of the corresponding SituationObject, and the "
+                "number indicates which object of its type it is - e.g. if there are two babies in a situation, "
+                "the perceived objects will be 'person_0' and 'person_1'. "
+                "Names on Perceptions are handles for debugging; they are not accessible to the "
+                "learner. 'GAZED-AT' refers the object of focus of the speaker.</p> "
+            )
+            html_out.write(
+                "\n<p>Properties</p>\n<ul>"
+                "\n\t<li>These define characteristics of an object that may influence perception and fulfillment of "
+                "semantic roles.</li> "
+                "\n\t<li>Meta-properties provide information about a property, e.g. whether or not a property can "
+                "be perceived by the learner.</li> "
+                "\n\t<li>OBJECT[PROPERTY_0[META_PROPERTY], PROPERTY_1, PROPERTY_2]</li> "
+                "\n</ul>\n<ul>\n<p>Relations</p> "
+                "\n\t<li>These define relations between two objects; e.g. smallerThan(A, B) indicates that object A is "
+                "smaller than object B.</li> "
+                "\n\t<li>IN_REGION is a special relation that holds between a SituationObject and a Region. These "
+                "relations can be nested, and for readability, they do not fall under 'Other Relations'."
+                "\n\t<li>RELATION(OBJECT_0, OBJECT_1)</li>"
+                "\n</ul>\n<ul>\n<p>Arrows</p>"
+                "\n\t<li>A relation preceded by 'Ø --->' is one that begins to exist by the end of the situation.</li>"
+                "\n\t<li>A relation followed by '---> Ø' is one that ceases to exist by the end of the situation.</li>"
+                "\n\t<li>A relation without an arrow holds true through the duration of the situation.</li>"
+                "\n</ul>\n<ul>\n<p>Part-of nesting</p>"
+                "\n\t<li>PART_OF relations indicate that an object is a part of another. Objects that form a "
+                "structural schema can be represented in terms of several part-of relations.</li> "
+                "\n\t<li>e.g. a finger is a part of a hand which is part of an arm which is part of a body</li>"
+                "\n</ul>\n<ul>\n<p>Regions</p> "
+                "\n\t<li>These represent regions of space. They are defined in terms of distance and/or direction with "
+                "respect to a reference object.</li>"
+                "\n\t<li>e.g. the inside of a box may be represented as Region(box, distance=INTERIOR, "
+                "direction=None)</li> "
+                "\n\t<li>Region(REFERENCE_OBJECT, distance=DISTANCE, direction=DIRECTION)</li>"
+                "\n</ul>\n<ul>\n<p>Spatial Paths</p>"
+                "\n\t<li>A SpatialPath specifies the path that some object takes during a situation. These are "
+                "defined in terms of a PathOperator and whether or not the orientation changed, with respect to a "
+                "reference object and an optional reference axis.</li>"
+                "\n\t<li>e.g. the path of a falling object may be represented as SpatialPath(operator=TOWARD, "
+                "reference_object=GROUND, reference_axis=None, orientation_changed=False)</li>"
+                "\n\t<li>SpatialPath(OPERATOR, REFERENCE_OBJECT, REFERENCE_AXIS, ORIENTATION_CHANGED)</li>"
+            )
+            # By using the immutable set we guaruntee iteration order and remove duplicates
+            for (instance_number, instance_holder) in enumerate(
+                immutableset(rendered_instances)
             ):
-                if not isinstance(situation, HighLevelSemanticsSituation):
-                    raise RuntimeError(
-                        f"Expected the Situation to be HighLevelSemanticsSituation got {type(situation)}"
-                    )
-                if not isinstance(dependency_tree, LinearizedDependencyTree):
-                    raise RuntimeError(
-                        f"Expected the Lingustics to be LinearizedDependencyTree got {type(dependency_tree)}"
-                    )
-                if not (
-                    isinstance(perception, PerceptualRepresentation)
-                    and isinstance(
-                        perception.frames[0], DevelopmentalPrimitivePerceptionFrame
-                    )
-                ):
-                    raise RuntimeError(
-                        f"Expected the Perceptual Representation to contain DevelopmentalPrimitivePerceptionFrame got "
-                        f"{type(perception.frames)}"
-                    )
-
                 html_out.write(
                     f"\n\t<table>\n"
                     f"\t\t<thead>\n"
@@ -170,9 +242,9 @@ class CurriculumToHtmlDumper:
                     f"\t\t\t\t</td>\n"
                     f"\t\t\t</tr>\n"
                     f"\t\t\t<tr>\n"
-                    f'\t\t\t\t<td valign="top">{self._situation_text(situation)}\n\t\t\t\t</td>\n'
-                    f'\t\t\t\t<td valign="top">{self._linguistic_text(dependency_tree)}</td>\n'
-                    f'\t\t\t\t<td valign="top">{self._perception_text(perception)}\n\t\t\t\t</td>\n'
+                    f'\t\t\t\t<td valign="top">{instance_holder.situation}\n\t\t\t\t</td>\n'
+                    f'\t\t\t\t<td valign="top">{instance_holder.lingustics}</td>\n'
+                    f'\t\t\t\t<td valign="top">{instance_holder.perception}\n\t\t\t\t</td>\n'
                     f"\t\t\t</tr>\n\t\t</tbody>\n\t</table>"
                 )
             html_out.write("\n</body>")
@@ -182,7 +254,7 @@ class CurriculumToHtmlDumper:
         Converts a situation description into its sub-parts as a table entry
         """
         output_text = [f"\n\t\t\t\t\t<h4>Objects</h4>\n\t\t\t\t\t<ul>"]
-        for obj in situation.objects:
+        for obj in situation.all_objects:
             property_string: str
             if obj.properties:
                 property_string = (
@@ -197,7 +269,30 @@ class CurriculumToHtmlDumper:
         if situation.actions:
             output_text.append("\t\t\t\t\t<h4>Actions</h4>\n\t\t\t\t\t<ul>")
             for acts in situation.actions:
-                output_text.append(f"\t\t\t\t\t\t<li>{acts.action_type.handle}</li>")
+                output_text.append(
+                    f"\t\t\t\t\t\t<li>{acts.action_type.handle}</li>\n\t\t\t\t\t<ul>"
+                )
+                for mapping in acts.argument_roles_to_fillers.keys():
+                    for object_ in acts.argument_roles_to_fillers[mapping]:
+                        if isinstance(object_, Region):
+                            output_text.append(
+                                f"\t\t\t\t\t\t<li>{mapping.handle} is {object_}</li>"
+                            )
+                        else:
+                            output_text.append(
+                                f"\t\t\t\t\t\t<li>{mapping.handle} is {object_.ontology_node.handle}"
+                            )
+                for mapping in acts.auxiliary_variable_bindings.keys():
+                    if isinstance(
+                        acts.auxiliary_variable_bindings[mapping], SituationObject
+                    ):
+                        output_text.append(
+                            f"\t\t\t\t\t\t<li>{mapping.debug_handle} is {acts.auxiliary_variable_bindings[mapping].ontology_node.handle}</li>"
+                        )
+                    else:
+                        output_text.append(
+                            f"\t\t\t\t\t\t<li>{mapping.debug_handle} is {acts.auxiliary_variable_bindings[mapping]}"
+                        )
             output_text.append("\t\t\t\t\t</ul>")
         if situation.always_relations:
             output_text.append("\t\t\t\t\t<h4>Relations</h4>\n\t\t\t\t\t<ul>")
@@ -371,6 +466,8 @@ class CurriculumToHtmlDumper:
                 output_text.append(
                     f"\t\t\t\t\t\t<li>{obj_prefix}{render_object(node)}{obj_suffix}<ul>"
                 )
+                if node.geon:
+                    output_text.append((f"\t\t\t\t\t\t<li>Geon: {node.geon}</li>"))
                 # Handle Region Relations
                 for region_relation in region_relations:
                     if region_relation.first_slot == node:
@@ -430,7 +527,7 @@ class CurriculumToHtmlDumper:
             output_text.append("\t\t\t\t\t</ul>")
 
         if perception.during:
-            output_text.append("\t\t\t\t\t<h5>During the action</h5>\n\t\t\t\t\t<ul>")
+            output_text.append("\t\t\t\t\t<h5>During the action</h5>")
             output_text.append(self._render_during(perception.during, indent_depth=5))
 
         return "\n".join(output_text)

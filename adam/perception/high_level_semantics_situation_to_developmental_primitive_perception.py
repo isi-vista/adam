@@ -15,6 +15,7 @@ from adam.ontology.phase1_ontology import (
     BINARY,
     COLOR,
     COLORS_TO_RGBS,
+    GAILA_PHASE_1_ONTOLOGY,
     GAZED_AT,
     GROUND,
     HOLLOW,
@@ -23,7 +24,7 @@ from adam.ontology.phase1_ontology import (
     PART_OF,
     PERCEIVABLE,
     TWO_DIMENSIONAL,
-    GAILA_PHASE_1_ONTOLOGY,
+    LEARNER,
 )
 from adam.ontology.phase1_spatial_relations import INTERIOR, Region, SpatialPath
 from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
@@ -92,7 +93,7 @@ class _ObjectHandleGenerator:
     _object_handles_seen: List[str] = attrib(init=False, default=Factory(list))
 
     def subscripted_handle(self, object_schema: ObjectStructuralSchema) -> str:
-        unsubscripted_handle = object_schema.parent_object.handle
+        unsubscripted_handle = object_schema.ontology_node.handle
         # using count() here makes subscript computation linear time
         # in the number of objects in a situation,
         # but this should be small enough not to matter.
@@ -159,6 +160,14 @@ class _PerceptionGeneration:
     """
 
     def do(self) -> PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]:
+        try:
+            return self._real_do()
+        except Exception as e:
+            raise RuntimeError(
+                f"Error while generating perceptions " f"for situation {self._situation}"
+            ) from e
+
+    def _real_do(self) -> PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]:
         self._sanity_check_situation()
 
         # The first step is to determine what objects are perceived.
@@ -230,7 +239,7 @@ class _PerceptionGeneration:
         if (
             quantify(
                 property_ == IS_SPEAKER
-                for object_ in self._situation.objects
+                for object_ in self._situation.all_objects
                 for property_ in object_.properties
             )
             > 1
@@ -402,7 +411,7 @@ class _PerceptionGeneration:
         self,
         situation_action: Action[OntologyNode, SituationObject],
         action_object_variable: SituationObject,
-    ) -> ObjectPerception:
+    ) -> Union[ObjectPerception, Region[ObjectPerception]]:
         """
         Binds an action object variable to an object that we have perceived.
 
@@ -412,7 +421,12 @@ class _PerceptionGeneration:
             action_object_variable
         )
         if explicit_binding:
-            return self._objects_to_perceptions[explicit_binding]
+            if isinstance(explicit_binding, Region):
+                return explicit_binding.copy_remapping_objects(
+                    self._objects_to_perceptions
+                )
+            else:
+                return self._objects_to_perceptions[explicit_binding]
 
         # we continue to use the hand from PUT
         # ( see _bind_action_objects_variables_to_perceived_objects )
@@ -434,7 +448,7 @@ class _PerceptionGeneration:
         elif not perceived_objects_matching_constraints:
             raise RuntimeError(
                 f"Can not find object with properties {action_object_variable} in order to bind "
-                f"{action_object_variable}"
+                f"{action_object_variable}. All perceived objects are: {self._object_perceptions_to_ontology_nodes}"
             )
         else:
             distinct_property_sets_for_matching_object_types = set(
@@ -527,7 +541,7 @@ class _PerceptionGeneration:
             return action_object_variables_to_object_perceptions[slot_filler]
 
     def _perceive_property_assertions(self) -> None:
-        for situation_object in self._situation.objects:
+        for situation_object in self._situation.all_objects:
             # process explicitly and implicitly-specified properties
             all_object_properties: List[OntologyNode] = []
             # Explicit properties are stipulated by the user in the situation description.
@@ -580,6 +594,35 @@ class _PerceptionGeneration:
                     self._objects_to_perceptions[situation_object],
                     property_,
                 )
+
+        # Properties derived from the role of the situation object in the action
+        for action in self._situation.actions:
+            action_description: ActionDescription = GAILA_PHASE_1_ONTOLOGY.required_action_description(
+                action.action_type, action.argument_roles_to_fillers.keys()
+            )
+            for role in action_description.frame.semantic_roles:  # e.g. AGENT
+                variable = action_description.frame.roles_to_variables[
+                    role
+                ]  # e.g. _PUT_AGENT
+                fillers = action.argument_roles_to_fillers[role]  # e.g. {Mom}
+                for property_ in action_description.asserted_properties[variable]:
+                    for situation_or_region in fillers:
+                        if isinstance(situation_or_region, SituationObject):
+                            perception_of_object = self._objects_to_perceptions[
+                                situation_or_region
+                            ]
+                        else:
+                            # We are propagating properties asserted on regions to their
+                            # reference objects.
+                            # TODO: issue #263
+                            perception_of_object = self._objects_to_perceptions[
+                                situation_or_region.reference_object
+                            ]
+                        self._perceive_property(
+                            self._generator.ontology.properties_for_node(property_),
+                            perception_of_object,
+                            property_,
+                        )
 
     def _perceive_property(
         self,
@@ -653,14 +696,23 @@ class _PerceptionGeneration:
     def _perceive_objects(self) -> None:
         if not any(
             situation_object.ontology_node == GROUND
-            for situation_object in self._situation.objects
+            for situation_object in self._situation.all_objects
         ):
             ground_schemata = only(self._generator.ontology.structural_schemata(GROUND))
             ground_observed = self._instantiate_object_schema(
                 ground_schemata, situation_object=SituationObject(GROUND)
             )
             self._object_perceptions_to_ontology_nodes[ground_observed] = GROUND
-        for situation_object in self._situation.objects:
+        if not any(
+            situation_object.ontology_node == LEARNER
+            for situation_object in self._situation.all_objects
+        ):
+            learner_schemata = only(self._generator.ontology.structural_schemata(LEARNER))
+            learner_observed = self._instantiate_object_schema(
+                learner_schemata, situation_object=SituationObject(LEARNER)
+            )
+            self._object_perceptions_to_ontology_nodes[learner_observed] = LEARNER
+        for situation_object in self._situation.all_objects:
             if not situation_object.ontology_node:
                 raise RuntimeError(
                     "Don't yet know how to handle situation objects without "
@@ -701,7 +753,8 @@ class _PerceptionGeneration:
         situation_object: Optional[SituationObject] = None,
     ) -> ObjectPerception:
         root_object_perception = ObjectPerception(
-            debug_handle=self._object_handle_generator.subscripted_handle(schema)
+            debug_handle=self._object_handle_generator.subscripted_handle(schema),
+            geon=schema.geon,
         )
         self._object_perceptions.append(root_object_perception)
 
@@ -724,7 +777,7 @@ class _PerceptionGeneration:
             self._object_perceptions.append(sub_object_perception)
             self._object_perceptions_to_ontology_nodes[
                 sub_object_perception
-            ] = sub_object.schema.parent_object
+            ] = sub_object.schema.ontology_node
             # every sub-component has an implicit partOf relationship to its parent object.
             self._relation_perceptions.append(
                 Relation(PART_OF, root_object_perception, sub_object_perception)
