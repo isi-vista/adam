@@ -176,18 +176,24 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     if not self._only_translate_if_referenced(object_):
                         self._noun_for_object(object_)
 
-                # We only translate those relations the user specifically calls out,
-                # not the many "background" relations which are also true.
-                for persisting_relation in self.situation.always_relations:
-                    self._translate_relation(persisting_relation)
-
                 if len(self.situation.actions) > 1:
                     raise RuntimeError(
                         "Currently only situations with 0 or 1 actions are supported"
                     )
 
+                action: Optional[Action[OntologyNode, SituationObject]]
                 if self.situation.actions:
-                    self._translate_action_to_verb(only(self.situation.actions))
+                    action = only(self.situation.actions)
+                else:
+                    action = None
+
+                # We only translate those relations the user specifically calls out,
+                # not the many "background" relations which are also true.
+                for persisting_relation in self.situation.always_relations:
+                    self._translate_relation(action, persisting_relation)
+
+                if action:
+                    self._translate_action_to_verb(action)
 
             return immutableset(
                 [
@@ -346,7 +352,11 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     determiner_node, noun_dependency_node, role=determiner_role
                 )
 
-        def _translate_relation(self, relation: Relation[SituationObject]) -> None:
+        def _translate_relation(
+            self,
+            action: Optional[Action[OntologyNode, SituationObject]],
+            relation: Relation[SituationObject],
+        ) -> None:
             if relation.relation_type == HAS:
                 # 'has' is a special case.
                 if self.situation.is_dynamic:
@@ -356,7 +366,9 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     # otherwise, we realize it as the verb "has"
                     self._translate_relation_to_verb(relation)
             elif relation.relation_type == IN_REGION:
-                prepositional_modifier = self.relation_to_prepositional_modifier(relation)
+                prepositional_modifier = self.relation_to_prepositional_modifier(
+                    action, relation
+                )
                 if prepositional_modifier:
                     self.dependency_graph.add_edge(
                         prepositional_modifier,
@@ -624,7 +636,12 @@ class SimpleRuleBasedEnglishLanguageGenerator(
 
             return modifiers
 
-        def _translate_relation_to_action_modifier(self, action, relation, modifiers):
+        def _translate_relation_to_action_modifier(
+            self,
+            action: Action[OntologyNode, SituationObject],
+            relation: Relation[SituationObject],
+            modifiers,
+        ):
             if relation.relation_type == IN_REGION:
                 # the thing the relation is predicated of must be something plausibly
                 # moving, which for now is either..
@@ -643,17 +660,13 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 )
                 if fills_legal_argument_role:
                     prepositional_modifier = self.relation_to_prepositional_modifier(
-                        relation
+                        action, relation
                     )
                     if prepositional_modifier:
                         modifiers.append((OBLIQUE_NOMINAL, prepositional_modifier))
                 else:
-                    raise RuntimeError(
-                        f"To translate a spatial relation as a verbal "
-                        f"modifier, it must either be the theme or, if "
-                        f"it is another filler, the theme must be absent:"
-                        f" {relation} in {action} "
-                    )
+                    # we don't want to translate relations of the agent (yet)
+                    return
             else:
                 raise RuntimeError(
                     f"Currently only know how to translate IN_REGION "
@@ -662,9 +675,32 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 )
 
         def relation_to_prepositional_modifier(
-            self, relation
+            self,
+            action: Optional[Action[OntologyNode, SituationObject]],
+            relation: Relation[SituationObject],
         ) -> Optional[DependencyTreeToken]:
             region = cast(Region[SituationObject], relation.second_slot)
+            # don't talk about relations to non-salient objects
+            if region.reference_object not in self.situation.salient_objects:
+                return None
+
+            if action:
+                # If both arguments of the relation are core argument roles,
+                # we assume the verb takes care of expressing their relationship.
+                core_argument_fillers = immutableset(
+                    chain(
+                        action.argument_roles_to_fillers[AGENT],
+                        action.argument_roles_to_fillers[PATIENT],
+                        action.argument_roles_to_fillers[THEME],
+                    )
+                )
+
+                if (
+                    relation.first_slot in core_argument_fillers
+                    and region.reference_object in core_argument_fillers
+                ):
+                    return None
+
             if (
                 region.direction
                 and region.direction.relative_to_axis == GRAVITATIONAL_AXIS

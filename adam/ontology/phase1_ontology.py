@@ -1288,22 +1288,47 @@ _THROW_ACTION_DESCRIPTION = ActionDescription(
 
 _MOVE_AGENT = SituationObject(THING, properties=[ANIMATE])
 _MOVE_THEME = SituationObject(THING)
-_MOVE_GOAL = SituationObject(THING)
+MOVE_GOAL = SituationObject(THING)
 _MOVE_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
 
-# TODO: a proper treatment of move awaits full treatment of multiple sub-categorization frames
-_MOVE_ACTION_DESCRIPTION = ActionDescription(
-    frame=ActionDescriptionFrame(
-        {AGENT: _MOVE_AGENT, THEME: _MOVE_THEME, GOAL: _MOVE_GOAL}
-    ),
-    preconditions=[],
-    postconditions=[],
-    asserted_properties=[
-        (_MOVE_AGENT, VOLITIONALLY_INVOLVED),
-        (_MOVE_AGENT, CAUSES_CHANGE),
-        (_MOVE_THEME, UNDERGOES_CHANGE),
-    ],
-)
+
+def _make_move_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
+    # bare move - "X moves (of its own accord)"
+    yield MOVE, ActionDescription(
+        frame=ActionDescriptionFrame({AGENT: _MOVE_AGENT}),
+        postconditions=[Relation(IN_REGION, _MOVE_AGENT, MOVE_GOAL)],
+        asserted_properties=[
+            (_MOVE_AGENT, VOLITIONALLY_INVOLVED),
+            (_MOVE_AGENT, CAUSES_CHANGE),
+            (_MOVE_AGENT, UNDERGOES_CHANGE),
+        ],
+    )
+
+    # X moves Y
+    yield MOVE, ActionDescription(
+        frame=ActionDescriptionFrame({AGENT: _MOVE_AGENT, THEME: _MOVE_THEME}),
+        postconditions=[Relation(IN_REGION, _MOVE_THEME, MOVE_GOAL)],
+        asserted_properties=[
+            (_MOVE_AGENT, VOLITIONALLY_INVOLVED),
+            (_MOVE_AGENT, CAUSES_CHANGE),
+            (_MOVE_THEME, UNDERGOES_CHANGE),
+        ],
+    )
+
+    # X moves Y to Z
+    # TODO: manipulator
+    yield MOVE, ActionDescription(
+        frame=ActionDescriptionFrame(
+            {AGENT: _MOVE_AGENT, THEME: _MOVE_THEME, GOAL: MOVE_GOAL}
+        ),
+        postconditions=[Relation(IN_REGION, _MOVE_THEME, MOVE_GOAL)],
+        asserted_properties=[
+            (_MOVE_AGENT, VOLITIONALLY_INVOLVED),
+            (_MOVE_AGENT, CAUSES_CHANGE),
+            (_MOVE_THEME, UNDERGOES_CHANGE),
+        ],
+    )
+
 
 JUMP_INITIAL_SUPPORTER_AUX = SituationObject(THING)
 
@@ -1423,7 +1448,6 @@ _ACTIONS_TO_DESCRIPTIONS = [
     (TURN, _TURN_ACTION_DESCRIPTION),
     (FALL, _FALL_ACTION_DESCRIPTION),
     (THROW, _THROW_ACTION_DESCRIPTION),
-    (MOVE, _MOVE_ACTION_DESCRIPTION),
     (FLY, _FLY_ACTION_DESCRIPTION),
 ]
 
@@ -1431,6 +1455,7 @@ _ACTIONS_TO_DESCRIPTIONS.extend(_make_roll_description())
 _ACTIONS_TO_DESCRIPTIONS.extend(_make_jump_description())
 _ACTIONS_TO_DESCRIPTIONS.extend(_make_drink_description())
 _ACTIONS_TO_DESCRIPTIONS.extend(_make_sit_action_descriptions())
+_ACTIONS_TO_DESCRIPTIONS.extend(_make_move_descriptions())
 
 GAILA_PHASE_1_ONTOLOGY = Ontology(
     "gaila-phase-1",
