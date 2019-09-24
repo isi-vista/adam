@@ -87,7 +87,7 @@ class RgbColorPerception:
     blue: int = attrib(validator=in_(Range.closed(0, 255)))
 
     def inverse(self) -> "RgbColorPerception":
-        return RgbColorPerception(255-self.red, 255-self.green, 255-self.blue)
+        return RgbColorPerception(255 - self.red, 255 - self.green, 255 - self.blue)
 
     @property
     def hex(self) -> str:

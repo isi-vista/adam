@@ -268,7 +268,7 @@ COLORS_TO_RGBS: ImmutableDict[
         (WHITE, _WHITE_HEX),
         (TRANSPARENT, None),
         (LIGHT_BROWN, _LIGHT_BROWN_HEX),
-        (DARK_BROWN, _DARK_BROWN_HEX)
+        (DARK_BROWN, _DARK_BROWN_HEX),
     ]
 )
 
@@ -299,15 +299,22 @@ TABLE = OntologyNode(
         HAS_SPACE_UNDER,
         CAN_BE_SAT_ON_BY_PEOPLE,
         LIGHT_BROWN,
-        DARK_BROWN
+        DARK_BROWN,
     ],
 )
 subtype(TABLE, INANIMATE_OBJECT)
 BALL = OntologyNode("ball", [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, ROLLABLE])
 subtype(BALL, INANIMATE_OBJECT)
 BOOK = OntologyNode(
-    "book", [CAN_FILL_TEMPLATE_SLOT, CAN_HAVE_THINGS_RESTING_ON_THEM, PERSON_CAN_HAVE,
-             RED, BLUE, GREEN]
+    "book",
+    [
+        CAN_FILL_TEMPLATE_SLOT,
+        CAN_HAVE_THINGS_RESTING_ON_THEM,
+        PERSON_CAN_HAVE,
+        RED,
+        BLUE,
+        GREEN,
+    ],
 )
 subtype(BOOK, INANIMATE_OBJECT)
 HOUSE = OntologyNode("house", [HOLLOW, CAN_FILL_TEMPLATE_SLOT])
@@ -382,7 +389,9 @@ COOKIE = OntologyNode(
 )
 subtype(COOKIE, INANIMATE_OBJECT)
 
-PERSON = OntologyNode("person", inheritable_properties=[ANIMATE, SELF_MOVING, CAN_JUMP, IS_HUMAN])
+PERSON = OntologyNode(
+    "person", inheritable_properties=[ANIMATE, SELF_MOVING, CAN_JUMP, IS_HUMAN]
+)
 subtype(PERSON, THING)
 IS_MOM = OntologyNode("is-mom")
 subtype(IS_MOM, RECOGNIZED_PARTICULAR_PROPERTY)
