@@ -241,7 +241,17 @@ class CurriculumToHtmlDumper:
         if situation.actions:
             output_text.append("\t\t\t\t\t<h4>Actions</h4>\n\t\t\t\t\t<ul>")
             for acts in situation.actions:
-                output_text.append(f"\t\t\t\t\t\t<li>{acts.action_type.handle}</li>")
+                output_text.append(
+                    f"\t\t\t\t\t\t<li>{acts.action_type.handle}</li>\n\t\t\t\t\t<ul>"
+                )
+                for mapping in acts.argument_roles_to_fillers.keys():
+                    output_text.append(
+                        f"\t\t\t\t\t\t<li>{mapping.handle} is {acts.argument_roles_to_fillers[mapping]}</li>"
+                    )
+                for mapping in acts.auxiliary_variable_bindings.keys():
+                    output_text.append(
+                        f"\t\t\t\t\t\t<li>{mapping.debug_handle} is {acts.auxiliary_variable_bindings[mapping]}</li>"
+                    )
             output_text.append("\t\t\t\t\t</ul>")
         if situation.always_relations:
             output_text.append("\t\t\t\t\t<h4>Relations</h4>\n\t\t\t\t\t<ul>")
@@ -448,7 +458,7 @@ class CurriculumToHtmlDumper:
             output_text.append("\t\t\t\t\t</ul>")
 
         if perception.during:
-            output_text.append("\t\t\t\t\t<h5>During the action</h5>\n\t\t\t\t\t<ul>")
+            output_text.append("\t\t\t\t\t<h5>During the action</h5>")
             output_text.append(self._render_during(perception.during, indent_depth=5))
 
         return "\n".join(output_text)
