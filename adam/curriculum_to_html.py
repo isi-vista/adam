@@ -17,6 +17,7 @@ from vistautils.preconditions import check_state
 
 from adam.curriculum.phase1_curriculum import GAILA_PHASE_1_CURRICULUM
 from adam.experiment import InstanceGroup
+from adam.geon import Geon
 from adam.language.dependency import LinearizedDependencyTree
 from adam.ontology import IN_REGION
 from adam.ontology.during import DuringAction
@@ -468,7 +469,9 @@ class CurriculumToHtmlDumper:
                     f"\t\t\t\t\t\t<li>{obj_prefix}{render_object(node)}{obj_suffix}<ul>"
                 )
                 if node.geon:
-                    output_text.append((f"\t\t\t\t\t\t<li>Geon: {node.geon}</li>"))
+                    output_text.append(
+                        f"\t\t\t\t\t\t<li>Geon: {self._render_geon(node.geon, indent_dept=7)}</li>"
+                    )
                 # Handle Region Relations
                 for region_relation in region_relations:
                     if region_relation.first_slot == node:
@@ -580,6 +583,45 @@ class CurriculumToHtmlDumper:
         phrased as a sentence for display. Returns a List[str]
         """
         return " ".join(linguistic.as_token_sequence())
+
+    def _render_geon(self, geon: Geon, *, indent_dept: int = 0) -> str:
+        indent = "\t" * indent_dept
+        lines = [f"{indent}<ul>"]
+        lines.append(
+            f"{indent}\t<li>Cross Section: {geon.cross_section} | Cross Section Size: {geon.cross_section_size}</li>"
+        )
+        if geon.generating_axis == geon.primary_axis:
+            lines.append(
+                f"{indent}\t<li><b>Generating Axis: {geon.generating_axis}</b></li>"
+            )
+        else:
+            lines.append(f"{indent}\t<li>Generating Axis: {geon.generating_axis}</li>")
+        if geon.orienting_axes:
+            lines.append(f"{indent}\t<li>Orienting Axes:")
+            lines.append(f"{indent}\t<ul>")
+            for axis in geon.orienting_axes:
+                if axis == geon.primary_axis:
+                    lines.append(f"{indent}\t\t<li><b>{axis}</b></li>")
+                else:
+                    lines.append(f"{indent}\t\t<li>{axis}</li>")
+            lines.append(f"{indent}\t</ul>")
+            lines.append(f"{indent}\t</li>")
+        if geon.axis_relations:
+            lines.append(f"{indent}\t<li>Axes Relations:")
+            lines.append(f"{indent}\t<ul>")
+            for axis_relation in geon.axis_relations:
+                if isinstance(axis_relation.second_slot, Region):
+                    lines.append(
+                        f"{indent}\t\t<li>{axis_relation.relation_type}({axis_relation.first_slot.debug_name},{axis_relation.second_slot})</li>"
+                    )
+                else:
+                    lines.append(
+                        f"{indent}\t\t<li>{axis_relation.relation_type}({axis_relation.first_slot.debug_name},{axis_relation.second_slot.debug_name})</li>"
+                    )
+            lines.append(f"{indent}\t</ul>")
+            lines.append(f"{indent}\t</li>")
+        lines.append(f"{indent}</ul>")
+        return "\n".join(lines)
 
 
 CSS = """
