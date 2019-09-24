@@ -106,6 +106,9 @@ subtype(PERCEIVABLE, META_PROPERTY)
 BINARY = OntologyNode("binary")
 subtype(BINARY, META_PROPERTY)
 
+IS_HUMAN = OntologyNode("is-human", [BINARY])
+subtype(IS_HUMAN, PROPERTY)
+
 # properties of objects which can be perceived by the learner
 PERCEIVABLE_PROPERTY = OntologyNode("perceivable-property", [PERCEIVABLE])
 subtype(PERCEIVABLE_PROPERTY, PROPERTY)
@@ -379,7 +382,7 @@ COOKIE = OntologyNode(
 )
 subtype(COOKIE, INANIMATE_OBJECT)
 
-PERSON = OntologyNode("person", inheritable_properties=[ANIMATE, SELF_MOVING, CAN_JUMP])
+PERSON = OntologyNode("person", inheritable_properties=[ANIMATE, SELF_MOVING, CAN_JUMP, IS_HUMAN])
 subtype(PERSON, THING)
 IS_MOM = OntologyNode("is-mom")
 subtype(IS_MOM, RECOGNIZED_PARTICULAR_PROPERTY)
