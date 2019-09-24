@@ -1,5 +1,16 @@
+import shutil
 from pathlib import Path
-from typing import AbstractSet, Any, Callable, Iterable, List, Tuple, TypeVar, Union
+from typing import (
+    AbstractSet,
+    Any,
+    Callable,
+    Iterable,
+    List,
+    Tuple,
+    TypeVar,
+    Union,
+    Optional,
+)
 
 from attr import attrib, attrs
 from attr.validators import instance_of
@@ -21,7 +32,7 @@ from adam.geon import Geon
 from adam.language.dependency import LinearizedDependencyTree
 from adam.ontology import IN_REGION
 from adam.ontology.during import DuringAction
-from adam.ontology.phase1_ontology import BIGGER_THAN, PART_OF, SMALLER_THAN
+from adam.ontology.phase1_ontology import PART_OF, IS_SPEAKER, SMALLER_THAN, BIGGER_THAN
 from adam.ontology.phase1_spatial_relations import Region, SpatialPath
 from adam.perception import ObjectPerception, PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
@@ -94,6 +105,18 @@ class CurriculumToHtmlDumper:
         along with a *title* for the pages the generator loops through each group
         and calls the internal method to create HTML pages.
         """
+        # first nuke the output directory
+        # we check it only contains HTML files for safety
+        if output_directory.exists():
+            for f in output_directory.iterdir():
+                if f.suffix != ".html":
+                    raise RuntimeError(
+                        r"Output directory does not appear to be a curriculum "
+                        r"dump. It contains the non-html file {f}"
+                    )
+            shutil.rmtree(output_directory)
+        output_directory.mkdir(parents=True, exist_ok=True)
+
         files_written: List[Tuple[str, str]] = []
         # write each instance group to its own file
         for (idx, instance_group) in enumerate(instance_groups):
@@ -164,10 +187,11 @@ class CurriculumToHtmlDumper:
                     f"Expected the Perceptual Representation to contain DevelopmentalPrimitivePerceptionFrame got "
                     f"{type(perception.frames)}"
                 )
+            (situation_text, speaker) = self._situation_text(situation)
             rendered_instances.append(
                 InstanceHolder(
-                    situation=self._situation_text(situation),
-                    lingustics=self._linguistic_text(dependency_tree),
+                    situation=situation_text,
+                    lingustics=self._linguistic_text(dependency_tree, speaker),
                     perception=self._perception_text(perception),
                 )
             )
@@ -251,17 +275,23 @@ class CurriculumToHtmlDumper:
                 )
             html_out.write("\n</body>")
 
-    def _situation_text(self, situation: HighLevelSemanticsSituation) -> str:
+    def _situation_text(
+        self, situation: HighLevelSemanticsSituation
+    ) -> Tuple[str, Optional[SituationObject]]:
         """
         Converts a situation description into its sub-parts as a table entry
         """
+        speaker = None
         output_text = [f"\n\t\t\t\t\t<h4>Objects</h4>\n\t\t\t\t\t<ul>"]
         for obj in situation.all_objects:
             property_string: str
+            prop_strings = []
             if obj.properties:
-                property_string = (
-                    "[" + ",".join(prop.handle for prop in obj.properties) + "]"
-                )
+                for prop in obj.properties:
+                    prop_strings.append(prop.handle)
+                    if prop == IS_SPEAKER:
+                        speaker = obj
+                property_string = "[" + ",".join(prop_strings) + "]"
             else:
                 property_string = ""
             output_text.append(
@@ -292,7 +322,7 @@ class CurriculumToHtmlDumper:
                     f"{self._situation_object_or_region_text(rel.second_slot)})</li>"
                 )
             output_text.append("\t\t\t\t\t</ul>")
-        return "\n".join(output_text)
+        return ("\n".join(output_text), speaker)
 
     def _situation_object_or_region_text(
         self, obj_or_region: Union[SituationObject, Region[SituationObject]]
@@ -444,7 +474,7 @@ class CurriculumToHtmlDumper:
 
         for relation_ in all_relations:
             if relation_.relation_type == PART_OF:
-                graph.add_edge(relation_.first_slot, relation_.second_slot)
+                graph.add_edge(relation_.second_slot, relation_.first_slot)
                 expressed_relations.add(relation_)
 
         # Next, we render objects, together with their properties, using preorder DFS Traversal
@@ -573,14 +603,23 @@ class CurriculumToHtmlDumper:
         lines.append(f"{indent}\t</li>")
         return "\n".join(lines)
 
-    def _linguistic_text(self, linguistic: LinearizedDependencyTree) -> str:
+    def _linguistic_text(
+        self, linguistic: LinearizedDependencyTree, speaker: Optional[SituationObject]
+    ) -> str:
         """
         Parses the Linguistic Description of a Linearized Dependency Tree into a table entry
 
         Takes a `LinearizedDependencyTree` which is turned into a token sequence and
         phrased as a sentence for display. Returns a List[str]
         """
-        return " ".join(linguistic.as_token_sequence())
+        if speaker:
+            return (
+                f'{speaker.ontology_node.handle} says: "'
+                + " ".join(linguistic.as_token_sequence())
+                + '"'
+            )
+        else:
+            return " ".join(linguistic.as_token_sequence())
 
     def _render_geon(self, geon: Geon, *, indent_dept: int = 0) -> str:
         indent = "\t" * indent_dept

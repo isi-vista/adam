@@ -22,7 +22,6 @@ from adam.ontology.phase1_ontology import (
     ANIMATE,
     BIGGER_THAN,
     BIRD,
-    BOX,
     CAN_BE_SAT_ON_BY_PEOPLE,
     CAN_HAVE_THINGS_RESTING_ON_THEM,
     CAN_JUMP,
@@ -42,9 +41,7 @@ from adam.ontology.phase1_ontology import (
     HOLLOW,
     INANIMATE,
     INANIMATE_OBJECT,
-    IS_ADDRESSEE,
     IS_BODY_PART,
-    IS_SPEAKER,
     JUMP,
     JUMP_INITIAL_SUPPORTER_AUX,
     LEARNER,
@@ -55,9 +52,6 @@ from adam.ontology.phase1_ontology import (
     PERSON,
     PERSON_CAN_HAVE,
     PHASE_1_CURRICULUM_OBJECTS,
-    PUSH,
-    PUSH_GOAL,
-    PUSH_SURFACE_AUX,
     PUT,
     ROLL,
     ROLLABLE,
@@ -69,8 +63,6 @@ from adam.ontology.phase1_ontology import (
     SPIN,
     TAKE,
     THEME,
-    THROW,
-    THROW_GOAL,
     TRANSFER_OF_POSSESSION,
     _GO_GOAL,
     bigger_than,
@@ -80,6 +72,14 @@ from adam.ontology.phase1_ontology import (
     on,
     strictly_above,
     IS_HUMAN,
+    PUSH,
+    PUSH_SURFACE_AUX,
+    PUSH_GOAL,
+    THROW,
+    THROW_GOAL,
+    BOX,
+    IS_SPEAKER,
+    IS_ADDRESSEE,
     COME,
 )
 from adam.ontology.phase1_spatial_relations import (
@@ -105,12 +105,12 @@ from adam.situation import Action, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
-    TemplateObjectVariable,
     action_variable,
     all_possible,
     color_variable,
     object_variable,
     sampled,
+    TemplateObjectVariable,
 )
 
 _CHOOSER = RandomChooser.for_seed(0)
@@ -387,6 +387,42 @@ def _make_object_on_object_curriculum() -> _Phase1InstanceGroup:
     )
 
 
+def _make_object_under_or_over_object_curriculum() -> _Phase1InstanceGroup:
+    object_under = _standard_object("object_0")
+    object_above = _standard_object("object_1", required_properties=[HAS_SPACE_UNDER])
+    bird = object_variable("bird_0", BIRD)
+    object_under_bird = _standard_object("object_under_bird_0")
+
+    templates = [
+        Phase1SituationTemplate(
+            f"object-under-object",
+            salient_object_variables=[object_above],
+            constraining_relations=[Relation(BIGGER_THAN, object_above, object_under)],
+            asserted_always_relations=[strictly_above(object_above, object_under)],
+        ),
+        Phase1SituationTemplate(
+            f"object-over-object",
+            salient_object_variables=[object_under_bird],
+            asserted_always_relations=[strictly_above(bird, object_under_bird)],
+        ),
+    ]
+
+    return _phase1_instances(
+        "objects-under-over-objects",
+        chain(
+            *[
+                sampled(
+                    template,
+                    max_to_sample=100,
+                    chooser=_CHOOSER,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                )
+                for template in templates
+            ]
+        ),
+    )
+
+
 def _make_object_in_other_object_curriculum() -> _Phase1InstanceGroup:
     object_ = object_variable("object_0", banned_properties=[IS_BODY_PART])
     liquid = object_variable(
@@ -394,6 +430,11 @@ def _make_object_in_other_object_curriculum() -> _Phase1InstanceGroup:
     )
     containing_object = object_variable(
         "object_1", required_properties=[HOLLOW], banned_properties=[IS_BODY_PART]
+    )
+    liquid_containing_object = object_variable(
+        "object_2",
+        required_properties=[HOLLOW, PERSON_CAN_HAVE],
+        banned_properties=[IS_BODY_PART],
     )
     solid_template = Phase1SituationTemplate(
         "solid-containment",
@@ -403,8 +444,8 @@ def _make_object_in_other_object_curriculum() -> _Phase1InstanceGroup:
     )
     liquid_template = Phase1SituationTemplate(
         "liquid-containment",
-        salient_object_variables=[liquid, containing_object],
-        asserted_always_relations=[inside(liquid, containing_object)],
+        salient_object_variables=[liquid, liquid_containing_object],
+        asserted_always_relations=[inside(liquid, liquid_containing_object)],
     )
 
     return _phase1_instances(
@@ -815,6 +856,69 @@ def _make_put_curriculum():
                     chooser=_CHOOSER,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                 ),
+            ]
+        ),
+    )
+
+
+def _make_put_on_speaker_addressee_body_part_curriculum():
+    speaker_putter = object_variable(
+        "speaker_putter_0", required_properties=[ANIMATE], added_properties=[IS_SPEAKER]
+    )
+    addressee_putter = object_variable(
+        "addressee_putter_0",
+        required_properties=[ANIMATE],
+        added_properties=[IS_ADDRESSEE],
+    )
+    object_put = _standard_object("object_put_0", required_properties=[INANIMATE])
+
+    body_part_of_putter = object_variable(
+        "body_part_of_putter",
+        required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM, IS_BODY_PART],
+    )
+
+    # X puts Y on BodyPart
+    templates = [
+        Phase1SituationTemplate(
+            "put-on-body-part",
+            salient_object_variables=[putter, object_put, body_part_of_putter],
+            actions=[
+                Action(
+                    PUT,
+                    argument_roles_to_fillers=[
+                        (AGENT, putter),
+                        (THEME, object_put),
+                        (
+                            GOAL,
+                            Region(
+                                body_part_of_putter,
+                                distance=EXTERIOR_BUT_IN_CONTACT,
+                                direction=GRAVITATIONAL_UP,
+                            ),
+                        ),
+                    ],
+                )
+            ],
+            constraining_relations=[
+                Relation(BIGGER_THAN, body_part_of_putter, object_put),
+                Relation(BIGGER_THAN, putter, object_put),
+            ],
+            asserted_always_relations=[Relation(HAS, putter, body_part_of_putter)],
+        )
+        for putter in [speaker_putter, addressee_putter]
+    ]
+
+    return _phase1_instances(
+        "putting-on-body-part-addressee-speaker",
+        chain(
+            *[
+                sampled(
+                    template,
+                    max_to_sample=25,
+                    chooser=_CHOOSER,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                )
+                for template in templates
             ]
         ),
     )
@@ -1388,6 +1492,8 @@ GAILA_PHASE_1_CURRICULUM = [
     _make_fall_curriculum(),
     _make_transfer_of_possession_curriculum(),
     _make_object_on_object_curriculum(),
+    # _make_object_over_object_curriculum(),
+    _make_object_under_or_over_object_curriculum(),
     _make_object_in_other_object_curriculum(),
     _make_fly_curriculum(),
     _make_roll_curriculum(),
@@ -1403,6 +1509,7 @@ GAILA_PHASE_1_CURRICULUM = [
     _make_go_curriculum(),
     _make_push_curriculum(),
     _make_throw_curriculum(),
+    _make_put_on_speaker_addressee_body_part_curriculum(),
     _make_come_curriculum(),
 ]
 """
