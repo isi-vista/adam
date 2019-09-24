@@ -611,7 +611,9 @@ class CurriculumToHtmlDumper:
             lines.append(f"{indent}\t<ul>")
             for axis_relation in geon.axis_relations:
                 if isinstance(axis_relation.second_slot, Region):
-                    lines.append(f"{indent}\t\t<li>{axis_relation.relation_type}({axis_relation.first_slot.debug_name},{axis_relation.second_slot})</li>")
+                    lines.append(
+                        f"{indent}\t\t<li>{axis_relation.relation_type}({axis_relation.first_slot.debug_name},{axis_relation.second_slot})</li>"
+                    )
                 else:
                     lines.append(
                         f"{indent}\t\t<li>{axis_relation.relation_type}({axis_relation.first_slot.debug_name},{axis_relation.second_slot.debug_name})</li>"
