@@ -22,7 +22,6 @@ from adam.ontology.phase1_ontology import (
     ANIMATE,
     BIGGER_THAN,
     BIRD,
-    BOX,
     CAN_BE_SAT_ON_BY_PEOPLE,
     CAN_HAVE_THINGS_RESTING_ON_THEM,
     CAN_JUMP,
@@ -42,9 +41,7 @@ from adam.ontology.phase1_ontology import (
     HOLLOW,
     INANIMATE,
     INANIMATE_OBJECT,
-    IS_ADDRESSEE,
     IS_BODY_PART,
-    IS_SPEAKER,
     JUMP,
     JUMP_INITIAL_SUPPORTER_AUX,
     LEARNER,
@@ -55,9 +52,6 @@ from adam.ontology.phase1_ontology import (
     PERSON,
     PERSON_CAN_HAVE,
     PHASE_1_CURRICULUM_OBJECTS,
-    PUSH,
-    PUSH_GOAL,
-    PUSH_SURFACE_AUX,
     PUT,
     ROLL,
     ROLLABLE,
@@ -69,8 +63,6 @@ from adam.ontology.phase1_ontology import (
     SPIN,
     TAKE,
     THEME,
-    THROW,
-    THROW_GOAL,
     TRANSFER_OF_POSSESSION,
     _GO_GOAL,
     bigger_than,
@@ -112,7 +104,6 @@ from adam.situation import Action, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
-    TemplateObjectVariable,
     action_variable,
     all_possible,
     color_variable,
@@ -833,8 +824,10 @@ def _make_put_on_speaker_addressee_body_part_curriculum():
         "speaker_putter_0", required_properties=[ANIMATE], added_properties=[IS_SPEAKER]
     )
     addressee_putter = object_variable(
-        "addressee_putter_0", required_properties=[ANIMATE],
-    added_properties=[IS_ADDRESSEE])
+        "addressee_putter_0",
+        required_properties=[ANIMATE],
+        added_properties=[IS_ADDRESSEE],
+    )
     object_put = _standard_object("object_put_0", required_properties=[INANIMATE])
 
     body_part_of_putter = object_variable(
@@ -868,9 +861,7 @@ def _make_put_on_speaker_addressee_body_part_curriculum():
                 Relation(BIGGER_THAN, body_part_of_putter, object_put),
                 Relation(BIGGER_THAN, putter, object_put),
             ],
-            asserted_always_relations=[
-                Relation(HAS, putter, body_part_of_putter)
-            ]
+            asserted_always_relations=[Relation(HAS, putter, body_part_of_putter)],
         )
         for putter in [speaker_putter, addressee_putter]
     ]
