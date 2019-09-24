@@ -803,7 +803,7 @@ def test_mom_sits_on_a_table():
     assert generated_tokens(situation) == ("Mom", "sits", "on", "a", "table")
 
 
-def you_give_me_a_cookie():
+def test_you_give_me_a_cookie():
     you = SituationObject(DAD, properties=[IS_ADDRESSEE])
     baby = SituationObject(BABY, properties=[IS_SPEAKER])
     cookie = SituationObject(COOKIE)
