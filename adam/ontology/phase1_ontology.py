@@ -445,6 +445,8 @@ _FLATBED = OntologyNode("flatbed")
 subtype(_FLATBED, INANIMATE_OBJECT)
 _BODY = OntologyNode("body")
 subtype(_BODY, _BODY_PART)
+_DOG_HEAD = OntologyNode("dog-head", [CAN_MANIPULATE_OBJECTS])
+subtype(_DOG_HEAD, _BODY_PART)
 
 # Verbs
 
@@ -634,6 +636,8 @@ _CUP_SCHEMA = ObjectStructuralSchema(CUP)
 _BOOK_SCHEMA = ObjectStructuralSchema(BOOK)
 _HAND_SCHEMA = ObjectStructuralSchema(HAND)
 _HEAD_SCHEMA = ObjectStructuralSchema(HEAD)
+_DOG_HEAD_SCHEMA = ObjectStructuralSchema(_DOG_HEAD)
+
 
 # Hierarchical structure of objects
 _TORSO_SCHEMA = ObjectStructuralSchema(_TORSO)
@@ -771,7 +775,7 @@ _DOG_SCHEMA_LEG_2 = SubObject(_LEG_SCHEMA)
 _DOG_SCHEMA_LEG_3 = SubObject(_LEG_SCHEMA)
 _DOG_SCHEMA_LEG_4 = SubObject(_LEG_SCHEMA)
 _DOG_SCHEMA_TORSO = SubObject(_TORSO_SCHEMA)
-_DOG_SCHEMA_HEAD = SubObject(_HEAD_SCHEMA)
+_DOG_SCHEMA_HEAD = SubObject(_DOG_HEAD_SCHEMA)
 _DOG_SCHEMA_TAIL = SubObject(_TAIL_SCHEMA)
 
 _DOG_LEGS = [_DOG_SCHEMA_LEG_1, _DOG_SCHEMA_LEG_2, _DOG_SCHEMA_LEG_3, _DOG_SCHEMA_LEG_4]

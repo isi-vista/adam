@@ -48,6 +48,7 @@ from adam.ontology.phase1_ontology import (
     PERSON,
     PERSON_CAN_HAVE,
     PHASE_1_CURRICULUM_OBJECTS,
+    PUT,
     ROLL,
     ROLLABLE,
     ROLL_SURFACE_AUXILIARY,
@@ -61,6 +62,7 @@ from adam.ontology.phase1_ontology import (
     is_recognized_particular,
     on,
     strictly_above,
+    INANIMATE,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -69,6 +71,7 @@ from adam.ontology.phase1_spatial_relations import (
     Region,
     SpatialPath,
     TOWARD,
+    INTERIOR,
 )
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -628,6 +631,93 @@ def make_jump_over_object_template():
     )
 
 
+def _make_put_curriculum():
+    putter = object_variable("putter_0", required_properties=[ANIMATE])
+    object_put = object_variable(
+        "object_0", required_properties=[INANIMATE], banned_properties=[IS_BODY_PART]
+    )
+
+    on_region_object = object_variable(
+        "on_region_object",
+        INANIMATE_OBJECT,
+        required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM],
+        banned_properties=[IS_BODY_PART],
+    )
+    in_region_object = object_variable(
+        "in_region_object",
+        INANIMATE_OBJECT,
+        required_properties=[HOLLOW],
+        banned_properties=[IS_BODY_PART],
+    )
+
+    # X puts Y on Z
+    put_on_template = Phase1SituationTemplate(
+        "put-on",
+        salient_object_variables=[putter, object_put, on_region_object],
+        actions=[
+            Action(
+                PUT,
+                argument_roles_to_fillers=[
+                    (AGENT, putter),
+                    (THEME, object_put),
+                    (
+                        GOAL,
+                        Region(
+                            on_region_object,
+                            distance=EXTERIOR_BUT_IN_CONTACT,
+                            direction=GRAVITATIONAL_UP,
+                        ),
+                    ),
+                ],
+            )
+        ],
+        constraining_relations=[
+            Relation(BIGGER_THAN, on_region_object, object_put),
+            Relation(BIGGER_THAN, putter, object_put),
+        ],
+    )
+
+    # X puts Y in Z
+    put_in_template = Phase1SituationTemplate(
+        "put-in",
+        salient_object_variables=[putter, object_put, in_region_object],
+        actions=[
+            Action(
+                PUT,
+                argument_roles_to_fillers=[
+                    (AGENT, putter),
+                    (THEME, object_put),
+                    (GOAL, Region(in_region_object, distance=INTERIOR)),
+                ],
+            )
+        ],
+        constraining_relations=[
+            Relation(BIGGER_THAN, in_region_object, object_put),
+            Relation(BIGGER_THAN, putter, object_put),
+        ],
+    )
+
+    return _phase1_instances(
+        "putting",
+        chain(
+            *[
+                sampled(
+                    put_on_template,
+                    max_to_sample=25,
+                    chooser=_CHOOSER,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                ),
+                sampled(
+                    put_in_template,
+                    max_to_sample=25,
+                    chooser=_CHOOSER,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                ),
+            ]
+        ),
+    )
+
+
 def _make_drink_curriculum():
     object_0 = object_variable(
         "object_0", required_properties=[HOLLOW], banned_properties=[IS_BODY_PART]
@@ -803,6 +893,7 @@ GAILA_PHASE_1_CURRICULUM = [
     _make_jump_curriculum(),
     _make_drink_curriculum(),
     _make_sit_curriculum(),
+    _make_put_curriculum(),
 ]
 """
 One particular instantiation of the curriculum for GAILA Phase 1.
