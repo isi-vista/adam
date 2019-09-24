@@ -67,8 +67,8 @@ from adam.random_utils import RandomChooser
 from adam.relation import Relation
 from adam.situation import Action, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
-from adam_test_utils import perception_with_handle
-from sample_situations import make_bird_flies_over_a_house
+from tests.adam_test_utils import perception_with_handle
+from tests.sample_situations import make_bird_flies_over_a_house
 
 _PERCEPTION_GENERATOR = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
     GAILA_PHASE_1_ONTOLOGY
@@ -118,11 +118,13 @@ def test_person_and_ball():
         person_and_ball_perception.frames[0], "ball_0"
     )
 
-    assert set(person_and_ball_perception.frames[0].property_assertions) == {
-        HasBinaryProperty(person_perception, ANIMATE),
-        HasBinaryProperty(person_perception, SELF_MOVING),
-        HasBinaryProperty(ball_perception, INANIMATE),
-    }
+    assert set(person_and_ball_perception.frames[0].property_assertions).issuperset(
+        {
+            HasBinaryProperty(person_perception, ANIMATE),
+            HasBinaryProperty(person_perception, SELF_MOVING),
+            HasBinaryProperty(ball_perception, INANIMATE),
+        }
+    )
 
 
 def test_person_and_ball_color():

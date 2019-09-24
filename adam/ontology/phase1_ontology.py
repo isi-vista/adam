@@ -303,7 +303,9 @@ TABLE = OntologyNode(
     ],
 )
 subtype(TABLE, INANIMATE_OBJECT)
-BALL = OntologyNode("ball", [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, ROLLABLE])
+BALL = OntologyNode(
+    "ball", [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, ROLLABLE, BLACK, WHITE]
+)
 subtype(BALL, INANIMATE_OBJECT)
 BOOK = OntologyNode(
     "book",
@@ -317,7 +319,7 @@ BOOK = OntologyNode(
     ],
 )
 subtype(BOOK, INANIMATE_OBJECT)
-HOUSE = OntologyNode("house", [HOLLOW, CAN_FILL_TEMPLATE_SLOT])
+HOUSE = OntologyNode("house", [HOLLOW, CAN_FILL_TEMPLATE_SLOT, WHITE])
 subtype(HOUSE, INANIMATE_OBJECT)
 CAR = OntologyNode(
     "car",
@@ -327,6 +329,10 @@ CAR = OntologyNode(
         SELF_MOVING,
         CAN_HAVE_THINGS_RESTING_ON_THEM,
         ROLLABLE,
+        RED,
+        BLUE,
+        BLACK,
+        WHITE,
     ],
 )
 subtype(CAR, INANIMATE_OBJECT)
@@ -340,16 +346,28 @@ JUICE = OntologyNode(
     "juice", [LIQUID], non_inheritable_properties=[RED, CAN_FILL_TEMPLATE_SLOT, EDIBLE]
 )
 subtype(JUICE, INANIMATE_OBJECT)
-CUP = OntologyNode("cup", [HOLLOW, CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE])
+CUP = OntologyNode("cup", [HOLLOW, CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, TRANSPARENT])
 subtype(CUP, INANIMATE_OBJECT)
 BOX = OntologyNode(
     "box",
-    [HOLLOW, CAN_FILL_TEMPLATE_SLOT, CAN_HAVE_THINGS_RESTING_ON_THEM, PERSON_CAN_HAVE],
+    [
+        HOLLOW,
+        CAN_FILL_TEMPLATE_SLOT,
+        CAN_HAVE_THINGS_RESTING_ON_THEM,
+        PERSON_CAN_HAVE,
+        LIGHT_BROWN,
+    ],
 )
 subtype(BOX, INANIMATE_OBJECT)
 CHAIR = OntologyNode(
     "chair",
-    [CAN_FILL_TEMPLATE_SLOT, CAN_HAVE_THINGS_RESTING_ON_THEM, CAN_BE_SAT_ON_BY_PEOPLE],
+    [
+        CAN_FILL_TEMPLATE_SLOT,
+        CAN_HAVE_THINGS_RESTING_ON_THEM,
+        CAN_BE_SAT_ON_BY_PEOPLE,
+        LIGHT_BROWN,
+        DARK_BROWN,
+    ],
 )
 subtype(CHAIR, INANIMATE_OBJECT)
 # should a HEAD be hollow? We are answering yes for now,
@@ -380,12 +398,12 @@ TRUCK = OntologyNode(
     ],
 )
 subtype(TRUCK, INANIMATE_OBJECT)
-DOOR = OntologyNode("door", [CAN_FILL_TEMPLATE_SLOT])
+DOOR = OntologyNode("door", [CAN_FILL_TEMPLATE_SLOT, LIGHT_BROWN, DARK_BROWN])
 subtype(DOOR, INANIMATE_OBJECT)
-HAT = OntologyNode("hat", [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE])
+HAT = OntologyNode("hat", [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, BLACK])
 subtype(HAT, INANIMATE_OBJECT)
 COOKIE = OntologyNode(
-    "cookie", [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, ROLLABLE, EDIBLE]
+    "cookie", [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, ROLLABLE, EDIBLE, LIGHT_BROWN]
 )
 subtype(COOKIE, INANIMATE_OBJECT)
 
@@ -418,9 +436,11 @@ subtype(LEARNER, BABY)
 
 NONHUMAN_ANIMAL = OntologyNode("animal", inheritable_properties=[ANIMATE])
 subtype(NONHUMAN_ANIMAL, THING)
-DOG = OntologyNode("dog", [CAN_FILL_TEMPLATE_SLOT, CAN_JUMP])
+DOG = OntologyNode(
+    "dog", [CAN_FILL_TEMPLATE_SLOT, CAN_JUMP, BLACK, WHITE, LIGHT_BROWN, DARK_BROWN]
+)
 subtype(DOG, NONHUMAN_ANIMAL)
-BIRD = OntologyNode("bird", [CAN_FILL_TEMPLATE_SLOT, CAN_FLY])
+BIRD = OntologyNode("bird", [CAN_FILL_TEMPLATE_SLOT, CAN_FLY, RED, BLUE, BLACK, WHITE])
 subtype(BIRD, NONHUMAN_ANIMAL)
 
 PHASE_1_CURRICULUM_OBJECTS = immutableset(
