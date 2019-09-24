@@ -398,7 +398,8 @@ class CurriculumToHtmlDumper:
                 if isinstance(prop, HasColor):
                     prop_string = (
                         f'<span style="background-color: {prop.color}; '
-                        f'color: {prop.color}; border: 1px solid black;">Object Color</span>'
+                        f'color: {prop.color.inverse()}; border: 1px solid black;">'
+                        f'{prop.color.hex}</span>'
                     )
                 elif isinstance(prop, HasBinaryProperty):
                     prop_string = str(prop.binary_property)

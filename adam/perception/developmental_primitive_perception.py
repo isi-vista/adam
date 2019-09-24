@@ -86,13 +86,20 @@ class RgbColorPerception:
     green: int = attrib(validator=in_(Range.closed(0, 255)))
     blue: int = attrib(validator=in_(Range.closed(0, 255)))
 
+    def inverse(self) -> "RgbColorPerception":
+        return RgbColorPerception(255-self.red, 255-self.green, 255-self.blue)
+
+    @property
+    def hex(self) -> str:
+        return f"#{self.red:02x}{self.green:02x}{self.blue:02x}"
+
     def __repr__(self) -> str:
         """
         We represent colors by hex strings because these are easy to visualize using web tools.
         Returns:
 
         """
-        return f"#{self.red:02x}{self.green:02x}{self.blue:02x}"
+        return self.hex
 
 
 @attrs(slots=True, frozen=True, repr=False)
