@@ -80,6 +80,14 @@ from adam.ontology.phase1_ontology import (
     on,
     strictly_above,
     IS_HUMAN,
+    PUSH,
+    PUSH_SURFACE_AUX,
+    PUSH_GOAL,
+    THROW,
+    THROW_GOAL,
+    BOX,
+    IS_SPEAKER,
+    IS_ADDRESSEE,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -110,6 +118,7 @@ from adam.situation.templates.phase1_templates import (
     color_variable,
     object_variable,
     sampled,
+    TemplateObjectVariable,
 )
 
 _CHOOSER = RandomChooser.for_seed(0)
@@ -819,6 +828,69 @@ def _make_put_curriculum():
     )
 
 
+def _make_put_on_speaker_addressee_body_part_curriculum():
+    speaker_putter = object_variable(
+        "speaker_putter_0", required_properties=[ANIMATE], added_properties=[IS_SPEAKER]
+    )
+    speaker_addressee_putter = object_variable(
+        "speaker_addressee_putter_0", required_properties=[ANIMATE]
+    )  # , added_properties=[IS_SPEAKER, IS_ADDRESSEE])
+    addressee_putter = object_variable(
+        "addressee_putter_0", required_properties=[ANIMATE]
+    )  # , added_properties=[IS_ADDRESSEE])
+    object_put = _standard_object("object_0", required_properties=[INANIMATE])
+
+    on_region_object = object_variable(
+        "on_region_object",
+        required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM, IS_BODY_PART],
+    )
+
+    # X puts Y on BodyPart
+    templates = [
+        Phase1SituationTemplate(
+            "put-on-body-part",
+            salient_object_variables=[putter, object_put, on_region_object],
+            actions=[
+                Action(
+                    PUT,
+                    argument_roles_to_fillers=[
+                        (AGENT, putter),
+                        (THEME, object_put),
+                        (
+                            GOAL,
+                            Region(
+                                on_region_object,
+                                distance=EXTERIOR_BUT_IN_CONTACT,
+                                direction=GRAVITATIONAL_UP,
+                            ),
+                        ),
+                    ],
+                )
+            ],
+            constraining_relations=[
+                Relation(BIGGER_THAN, on_region_object, object_put),
+                Relation(BIGGER_THAN, putter, object_put),
+            ],
+        )
+        for putter in [speaker_addressee_putter, speaker_putter, addressee_putter]
+    ]
+
+    return _phase1_instances(
+        "putting-on-body-part-addressee-speaker",
+        chain(
+            *[
+                sampled(
+                    template,
+                    max_to_sample=25,
+                    chooser=_CHOOSER,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                )
+                for template in templates
+            ]
+        ),
+    )
+
+
 def _make_drink_curriculum():
     object_0 = _standard_object("object_0", required_properties=[HOLLOW])
     liquid_0 = object_variable("liquid_0", required_properties=[LIQUID])
@@ -1349,6 +1421,7 @@ GAILA_PHASE_1_CURRICULUM = [
     _make_go_curriculum(),
     _make_push_curriculum(),
     _make_throw_curriculum(),
+    _make_put_on_speaker_addressee_body_part_curriculum(),
 ]
 """
 One particular instantiation of the curriculum for GAILA Phase 1.
