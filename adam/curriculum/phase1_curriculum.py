@@ -14,7 +14,7 @@ from adam.language_specific.english.english_language_generator import (
     PREFER_DITRANSITIVE,
     USE_ADVERBIAL_PATH_MODIFIER,
 )
-from adam.ontology import THING, OntologyNode
+from adam.ontology import OntologyNode, THING
 from adam.ontology.during import DuringAction
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
@@ -22,6 +22,7 @@ from adam.ontology.phase1_ontology import (
     ANIMATE,
     BIGGER_THAN,
     BIRD,
+    BOX,
     CAN_BE_SAT_ON_BY_PEOPLE,
     CAN_HAVE_THINGS_RESTING_ON_THEM,
     CAN_JUMP,
@@ -41,7 +42,9 @@ from adam.ontology.phase1_ontology import (
     HOLLOW,
     INANIMATE,
     INANIMATE_OBJECT,
+    IS_ADDRESSEE,
     IS_BODY_PART,
+    IS_SPEAKER,
     JUMP,
     JUMP_INITIAL_SUPPORTER_AUX,
     LEARNER,
@@ -52,6 +55,9 @@ from adam.ontology.phase1_ontology import (
     PERSON,
     PERSON_CAN_HAVE,
     PHASE_1_CURRICULUM_OBJECTS,
+    PUSH,
+    PUSH_GOAL,
+    PUSH_SURFACE_AUX,
     PUT,
     ROLL,
     ROLLABLE,
@@ -63,6 +69,8 @@ from adam.ontology.phase1_ontology import (
     SPIN,
     TAKE,
     THEME,
+    THROW,
+    THROW_GOAL,
     TRANSFER_OF_POSSESSION,
     _GO_GOAL,
     bigger_than,
@@ -71,11 +79,7 @@ from adam.ontology.phase1_ontology import (
     is_recognized_particular,
     on,
     strictly_above,
-    PUSH,
-    PUSH_SURFACE_AUX,
-    PUSH_GOAL,
-    COME,
-    IS_SPEAKER,
+    IS_HUMAN,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -100,12 +104,12 @@ from adam.situation import Action, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
+    TemplateObjectVariable,
     action_variable,
     all_possible,
     color_variable,
     object_variable,
     sampled,
-    TemplateObjectVariable,
 )
 
 _CHOOSER = RandomChooser.for_seed(0)
@@ -172,7 +176,9 @@ EACH_OBJECT_BY_ITSELF_SUB_CURRICULUM = _phase1_instances(
 # Show each object in 20 different colors
 
 _COLOR = color_variable("color")
-_COLOR_OBJECT = object_variable("object", added_properties=[_COLOR])
+_COLOR_OBJECT = object_variable(
+    "object", added_properties=[_COLOR], banned_properties=[IS_HUMAN, IS_BODY_PART]
+)
 _OBJECT_WITH_COLOR_TEMPLATE = Phase1SituationTemplate(
     "object-with-color", salient_object_variables=[_COLOR_OBJECT, _LEARNER_OBJECT]
 )
@@ -432,7 +438,7 @@ def _make_fly_curriculum():
     bare_fly = [
         Phase1SituationTemplate(
             "fly",
-            salient_object_variables=[bird, _GROUND_OBJECT],
+            salient_object_variables=[bird],
             actions=[
                 Action(
                     FLY,
@@ -459,7 +465,7 @@ def _make_fly_curriculum():
     fly_up_down = [
         Phase1SituationTemplate(
             "fly-up-down",
-            salient_object_variables=[bird, _GROUND_OBJECT],
+            salient_object_variables=[bird],
             actions=[
                 Action(
                     FLY,
@@ -611,6 +617,65 @@ def _make_roll_curriculum():
                     intransitive_roll,
                     transitive_roll,
                     transitive_roll_with_surface,
+                )
+            ]
+        ),
+    )
+
+
+def _make_speaker_addressee_curriculum():
+    speaker = object_variable("speaker_0", PERSON, added_properties=[IS_SPEAKER])
+    addressee = object_variable("addressee_0", PERSON, added_properties=[IS_ADDRESSEE])
+    given_object = object_variable("given_object", INANIMATE_OBJECT)
+
+    def _make_templates() -> Iterable[Phase1SituationTemplate]:
+        for prefer_ditransitive in (True, False):
+            # "you give Mom the cookie"
+            yield Phase1SituationTemplate(
+                "addressee-agent",
+                salient_object_variables=[speaker, addressee, given_object],
+                actions=[
+                    Action(
+                        GIVE,
+                        argument_roles_to_fillers=[
+                            (AGENT, addressee),
+                            (GOAL, speaker),
+                            (THEME, given_object),
+                        ],
+                    )
+                ],
+                syntax_hints=[PREFER_DITRANSITIVE] if prefer_ditransitive else [],
+            )
+
+            # "Mom gives you the cookie"
+            yield Phase1SituationTemplate(
+                "addressee-goal",
+                salient_object_variables=[speaker, addressee, given_object],
+                actions=[
+                    Action(
+                        GIVE,
+                        argument_roles_to_fillers=[
+                            (AGENT, speaker),
+                            (GOAL, addressee),
+                            (THEME, given_object),
+                        ],
+                    )
+                ],
+                syntax_hints=[PREFER_DITRANSITIVE] if prefer_ditransitive else [],
+            )
+
+    return _phase1_instances(
+        "addressee_curriculum",
+        chain(
+            *[
+                flatten(
+                    sampled(
+                        template,
+                        max_to_sample=25,
+                        chooser=_CHOOSER,
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                    )
+                    for template in _make_templates()
                 )
             ]
         ),
@@ -1189,6 +1254,76 @@ def _make_push_curriculum():
     )
 
 
+def _make_throw_curriculum():
+    thrower = object_variable("thrower_0", required_properties=[ANIMATE])
+    object_thrown = object_variable(
+        "object_0",
+        required_properties=[INANIMATE],
+        banned_properties=[IS_BODY_PART, LIQUID],
+    )
+    implicit_goal_reference = object_variable("implicit_throw_goal_object", BOX)
+
+    # Dad throws a cookie on the ground
+    throw_on_ground_template = Phase1SituationTemplate(
+        "throw-on-ground",
+        salient_object_variables=[thrower, object_thrown, _GROUND_OBJECT],
+        actions=[
+            Action(
+                THROW,
+                argument_roles_to_fillers=[
+                    (AGENT, thrower),
+                    (THEME, object_thrown),
+                    (
+                        GOAL,
+                        Region(
+                            _GROUND_OBJECT,
+                            distance=EXTERIOR_BUT_IN_CONTACT,
+                            direction=GRAVITATIONAL_UP,
+                        ),
+                    ),
+                ],
+            )
+        ],
+        constraining_relations=[Relation(BIGGER_THAN, thrower, object_thrown)],
+    )
+
+    # A baby throws a truck
+    throw_template = Phase1SituationTemplate(
+        "throw",
+        salient_object_variables=[thrower, object_thrown],
+        actions=[
+            Action(
+                THROW,
+                argument_roles_to_fillers=[(AGENT, thrower), (THEME, object_thrown)],
+                auxiliary_variable_bindings=[
+                    (THROW_GOAL, Region(implicit_goal_reference, distance=PROXIMAL))
+                ],
+            )
+        ],
+        constraining_relations=[Relation(BIGGER_THAN, thrower, object_thrown)],
+    )
+
+    return _phase1_instances(
+        "throwing",
+        chain(
+            *[
+                sampled(
+                    throw_on_ground_template,
+                    max_to_sample=25,
+                    chooser=_CHOOSER,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                ),
+                sampled(
+                    throw_template,
+                    max_to_sample=25,
+                    chooser=_CHOOSER,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                ),
+            ]
+        ),
+    )
+
+
 def _make_come_curriculum():
     movee = _standard_object("movee", required_properties=[SELF_MOVING])
     learner = object_variable("leaner_0", LEARNER)
@@ -1255,6 +1390,7 @@ GAILA_PHASE_1_CURRICULUM = [
     _make_object_in_other_object_curriculum(),
     _make_fly_curriculum(),
     _make_roll_curriculum(),
+    _make_speaker_addressee_curriculum(),
     _make_jump_curriculum(),
     _make_drink_curriculum(),
     _make_sit_curriculum(),
@@ -1265,6 +1401,7 @@ GAILA_PHASE_1_CURRICULUM = [
     _make_spin_curriculum(),
     _make_go_curriculum(),
     _make_push_curriculum(),
+    _make_throw_curriculum(),
     _make_come_curriculum(),
 ]
 """

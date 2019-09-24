@@ -1,12 +1,12 @@
 from typing import Tuple
 
-from more_itertools import only, first
+from more_itertools import first, only
 
 from adam.curriculum.phase1_curriculum import (
-    make_jump_over_object_template,
-    JUMPER,
     JUMPED_OVER,
+    JUMPER,
     _GROUND_OBJECT,
+    make_jump_over_object_template,
 )
 from adam.language_specific.english.english_language_generator import (
     PREFER_DITRANSITIVE,
@@ -24,8 +24,13 @@ from adam.ontology.phase1_ontology import (
     BALL,
     BIRD,
     BOX,
+    CHAIR,
     COOKIE,
+    CUP,
     DAD,
+    DRINK,
+    DRINK_CONTAINER_AUX,
+    EAT,
     FALL,
     FLY,
     GAILA_PHASE_1_ONTOLOGY,
@@ -36,23 +41,18 @@ from adam.ontology.phase1_ontology import (
     HAS,
     IS_ADDRESSEE,
     IS_SPEAKER,
+    JUICE,
     MOM,
+    PATIENT,
     PUSH,
     PUT,
     ROLL,
+    SIT,
     TABLE,
     THEME,
     THROW,
     WATER,
     on,
-    JUICE,
-    CUP,
-    DRINK,
-    DRINK_CONTAINER_AUX,
-    CHAIR,
-    PATIENT,
-    EAT,
-    SIT,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -70,8 +70,8 @@ from adam.relation import Relation
 from adam.situation import Action, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.situation.templates.phase1_templates import (
-    fixed_assignment,
     TemplateVariableAssignment,
+    fixed_assignment,
 )
 from tests.sample_situations import make_bird_flies_over_a_house
 from tests.situation.situation_test import make_mom_put_ball_on_table
@@ -237,31 +237,6 @@ def test_dad_put_a_cookie_in_a_box():
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         salient_objects=[dad, cookie, box],
-        actions=[
-            Action(
-                PUT,
-                (
-                    (AGENT, dad),
-                    (THEME, cookie),
-                    (GOAL, Region(reference_object=box, distance=INTERIOR)),
-                ),
-            )
-        ],
-    )
-
-    assert only(
-        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
-    ).as_token_sequence() == ("Dad", "puts", "a", "cookie", "in", "a", "box")
-
-
-def test_situation_with_ground():
-    dad = SituationObject(DAD)
-    cookie = SituationObject(COOKIE)
-    box = SituationObject(BOX)
-    ground = SituationObject(GROUND)
-    situation = HighLevelSemanticsSituation(
-        ontology=GAILA_PHASE_1_ONTOLOGY,
-        salient_objects=[dad, cookie, box, ground],
         actions=[
             Action(
                 PUT,
@@ -801,6 +776,45 @@ def test_mom_sits_on_a_table():
     )
 
     assert generated_tokens(situation) == ("Mom", "sits", "on", "a", "table")
+
+
+def test_you_give_me_a_cookie():
+    you = SituationObject(DAD, properties=[IS_ADDRESSEE])
+    baby = SituationObject(BABY, properties=[IS_SPEAKER])
+    cookie = SituationObject(COOKIE)
+
+    situation_to = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[you, baby, cookie],
+        actions=[
+            Action(
+                GIVE,
+                argument_roles_to_fillers=[(AGENT, you), (GOAL, baby), (THEME, cookie)],
+            )
+        ],
+    )
+
+    assert generated_tokens(situation_to) == ("you", "give", "a", "cookie", "to", "me")
+
+    situation_ditransitive = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[you, baby, cookie],
+        actions=[
+            Action(
+                GIVE,
+                argument_roles_to_fillers=[(AGENT, you), (GOAL, baby), (THEME, cookie)],
+            )
+        ],
+        syntax_hints=[PREFER_DITRANSITIVE],
+    )
+
+    assert generated_tokens(situation_ditransitive) == (
+        "you",
+        "give",
+        "me",
+        "a",
+        "cookie",
+    )
 
 
 def generated_tokens(situation):

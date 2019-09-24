@@ -3,15 +3,15 @@ import pytest
 from adam.ontology.phase1_ontology import (
     AGENT,
     BALL,
+    BOX,
+    DAD,
     GAILA_PHASE_1_ONTOLOGY,
+    GIVE,
     GOAL,
     MOM,
     PUT,
     TABLE,
     THEME,
-    DAD,
-    BOX,
-    GIVE,
 )
 from adam.ontology.phase1_spatial_relations import (
     Direction,

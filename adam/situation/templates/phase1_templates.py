@@ -32,13 +32,14 @@ from adam.ontology.phase1_ontology import (
     GAILA_PHASE_1_ONTOLOGY,
     GROUND,
     LEARNER,
+    TRANSPARENT,
     is_recognized_particular,
 )
 from adam.ontology.phase1_spatial_relations import Region
 from adam.ontology.selectors import (
     AndOntologySelector,
     ByHierarchyAndProperties,
-    Is,
+    FilterOut,
     OntologyNodeSelector,
     SubcategorizationSelector,
 )
@@ -564,7 +565,7 @@ def object_variable(
         asserted_properties=[
             property_
             if isinstance(property_, TemplatePropertyVariable)
-            else Is([property_])
+            else property_variable(f"{debug_handle}-prop-{property_.handle}", property_)
             for property_ in added_properties
         ],
     )
@@ -573,7 +574,9 @@ def object_variable(
 def property_variable(
     debug_handle: str,
     root_node: OntologyNode = PROPERTY,
+    *,
     with_meta_properties: Iterable[OntologyNode] = immutableset(),
+    banned_values: Iterable[OntologyNode] = immutableset(),
 ) -> TemplatePropertyVariable:
     r"""
     Create a `TemplatePropertyVariable` with the specified *debug_handle*
@@ -582,14 +585,17 @@ def property_variable(
     and which possesses all properties in *with_properties*.
     """
     real_required_properties = list(with_meta_properties)
-    real_required_properties.append(CAN_FILL_TEMPLATE_SLOT)
+    # real_required_properties.append(CAN_FILL_TEMPLATE_SLOT)
 
-    return TemplatePropertyVariable(
-        debug_handle,
-        ByHierarchyAndProperties(
-            descendents_of=root_node, required_properties=real_required_properties
-        ),
+    hierarchy_selector = ByHierarchyAndProperties(
+        descendents_of=root_node, required_properties=real_required_properties
     )
+    selector: OntologyNodeSelector
+    if banned_values:
+        selector = FilterOut(hierarchy_selector, bad_values=banned_values)
+    else:
+        selector = hierarchy_selector
+    return TemplatePropertyVariable(debug_handle, selector)
 
 
 def action_variable(
@@ -628,7 +634,7 @@ def color_variable(debug_handle: str) -> TemplatePropertyVariable:
     Create a `TemplatePropertyVariable` with the specified *debug_handle*
     which ranges over all colors in the ontology.
     """
-    return property_variable(debug_handle, COLOR)
+    return property_variable(debug_handle, COLOR, banned_values=[COLOR, TRANSPARENT])
 
 
 @attrs(frozen=True, slots=True)

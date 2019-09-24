@@ -6,7 +6,12 @@ from adam.language.dependency.universal_dependencies import (
 )
 from adam.language.lexicon import LexiconEntry, LexiconProperty
 from adam.language.ontology_dictionary import OntologyLexicon
-from adam.language_specific.english.english_syntax import FIRST_PERSON, SECOND_PERSON
+from adam.language_specific.english.english_syntax import (
+    FIRST_PERSON,
+    SECOND_PERSON,
+    NOMINATIVE,
+    ACCUSATIVE,
+)
 from adam.ontology.phase1_ontology import (
     BABY,
     BALL,
@@ -47,21 +52,32 @@ from adam.ontology.phase1_ontology import (
     RED,
     ROLL,
     SIT,
+    SPIN,
     TABLE,
     TAKE,
     THROW,
     TRANSPARENT,
     TRUCK,
-    SPIN,
     WATER,
     WHITE,
+    LIGHT_BROWN,
+    DARK_BROWN,
 )
 
 MASS_NOUN = LexiconProperty("mass-noun")
 ALLOWS_DITRANSITIVE = LexiconProperty("allows-ditransitive")
 
 I = LexiconEntry(  # noqa: E741
-    "I", NOUN, plural_form="we", intrinsic_morphosyntactic_properties=[FIRST_PERSON]
+    "I",
+    NOUN,
+    plural_form="we",
+    intrinsic_morphosyntactic_properties=[FIRST_PERSON, NOMINATIVE],
+)
+ME = LexiconEntry(  # noqa: E741
+    "me",
+    NOUN,
+    plural_form="us",
+    intrinsic_morphosyntactic_properties=[FIRST_PERSON, ACCUSATIVE],
 )
 
 YOU = LexiconEntry(
@@ -130,5 +146,7 @@ GAILA_PHASE_1_ENGLISH_LEXICON = OntologyLexicon(
         (BLACK, LexiconEntry("black", ADJECTIVE)),
         (WHITE, LexiconEntry("white", ADJECTIVE)),
         (TRANSPARENT, LexiconEntry("transparent", ADJECTIVE)),
+        (LIGHT_BROWN, LexiconEntry("light brown", ADJECTIVE)),
+        (DARK_BROWN, LexiconEntry("dark brown", ADJECTIVE)),
     ),
 )

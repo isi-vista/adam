@@ -1,21 +1,23 @@
 from adam.curriculum.phase1_curriculum import (
     GAILA_PHASE_1_CURRICULUM,
     _Phase1InstanceGroup,
-    _make_fly_curriculum,
-    _make_roll_curriculum,
-    _make_jump_curriculum,
     _make_drink_curriculum,
     _make_eat_curriculum,
     _make_fall_curriculum,
-    _make_transfer_of_possession_curriculum,
-    _make_sit_curriculum,
-    _make_put_curriculum,
-    _make_take_curriculum,
-    _make_move_curriculum,
-    _make_spin_curriculum,
+    _make_fly_curriculum,
     _make_go_curriculum,
+    _make_jump_curriculum,
+    _make_move_curriculum,
     _make_push_curriculum,
     _make_come_curriculum,
+    _make_put_curriculum,
+    _make_roll_curriculum,
+    _make_sit_curriculum,
+    _make_spin_curriculum,
+    _make_take_curriculum,
+    _make_speaker_addressee_curriculum,
+    _make_throw_curriculum,
+    _make_transfer_of_possession_curriculum,
 )
 
 
@@ -86,6 +88,14 @@ def test_go():
 
 def test_push():
     _test_curriculum(_make_push_curriculum())
+
+
+def test_speaker_addressee():
+    _test_curriculum(_make_speaker_addressee_curriculum())
+
+
+def test_throw():
+    _test_curriculum(_make_throw_curriculum())
 
 
 def test_come():

@@ -106,6 +106,9 @@ subtype(PERCEIVABLE, META_PROPERTY)
 BINARY = OntologyNode("binary")
 subtype(BINARY, META_PROPERTY)
 
+IS_HUMAN = OntologyNode("is-human", [BINARY])
+subtype(IS_HUMAN, PROPERTY)
+
 # properties of objects which can be perceived by the learner
 PERCEIVABLE_PROPERTY = OntologyNode("perceivable-property", [PERCEIVABLE])
 subtype(PERCEIVABLE_PROPERTY, PROPERTY)
@@ -221,12 +224,16 @@ BLUE = OntologyNode("blue", [CAN_FILL_TEMPLATE_SLOT])
 GREEN = OntologyNode("green", [CAN_FILL_TEMPLATE_SLOT])
 BLACK = OntologyNode("black", [CAN_FILL_TEMPLATE_SLOT])
 WHITE = OntologyNode("white", [CAN_FILL_TEMPLATE_SLOT])
+LIGHT_BROWN = OntologyNode("light-brown", [CAN_FILL_TEMPLATE_SLOT])
+DARK_BROWN = OntologyNode("dark-brown", [CAN_FILL_TEMPLATE_SLOT])
 TRANSPARENT = OntologyNode("transparent", [CAN_FILL_TEMPLATE_SLOT])
 subtype(RED, COLOR)
 subtype(BLUE, COLOR)
 subtype(GREEN, COLOR)
 subtype(BLACK, COLOR)
 subtype(WHITE, COLOR)
+subtype(LIGHT_BROWN, COLOR)
+subtype(DARK_BROWN, COLOR)
 subtype(TRANSPARENT, COLOR)
 _RED_HEX = [
     (255, 0, 0),
@@ -247,6 +254,9 @@ _BLUE_HEX = [
 _GREEN_HEX = [(0, 255, 0), (75, 111, 68), (86, 130, 3), (34, 139, 34)]
 _BLACK_HEX = [(0, 0, 0), (12, 2, 15), (53, 56, 57), (52, 52, 52)]
 _WHITE_HEX = [(255, 255, 255), (248, 248, 255), (245, 245, 245), (254, 254, 250)]
+_LIGHT_BROWN_HEX = [(219, 191, 33), (222, 205, 111), (222, 212, 160)]
+_DARK_BROWN_HEX = [(110, 95, 19), (105, 88, 6), (87, 76, 26)]
+
 COLORS_TO_RGBS: ImmutableDict[
     OntologyNode, Optional[Sequence[Tuple[int, int, int]]]
 ] = immutabledict(
@@ -257,6 +267,8 @@ COLORS_TO_RGBS: ImmutableDict[
         (BLACK, _BLACK_HEX),
         (WHITE, _WHITE_HEX),
         (TRANSPARENT, None),
+        (LIGHT_BROWN, _LIGHT_BROWN_HEX),
+        (DARK_BROWN, _DARK_BROWN_HEX),
     ]
 )
 
@@ -286,13 +298,23 @@ TABLE = OntologyNode(
         CAN_HAVE_THINGS_RESTING_ON_THEM,
         HAS_SPACE_UNDER,
         CAN_BE_SAT_ON_BY_PEOPLE,
+        LIGHT_BROWN,
+        DARK_BROWN,
     ],
 )
 subtype(TABLE, INANIMATE_OBJECT)
 BALL = OntologyNode("ball", [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, ROLLABLE])
 subtype(BALL, INANIMATE_OBJECT)
 BOOK = OntologyNode(
-    "book", [CAN_FILL_TEMPLATE_SLOT, CAN_HAVE_THINGS_RESTING_ON_THEM, PERSON_CAN_HAVE]
+    "book",
+    [
+        CAN_FILL_TEMPLATE_SLOT,
+        CAN_HAVE_THINGS_RESTING_ON_THEM,
+        PERSON_CAN_HAVE,
+        RED,
+        BLUE,
+        GREEN,
+    ],
 )
 subtype(BOOK, INANIMATE_OBJECT)
 HOUSE = OntologyNode("house", [HOLLOW, CAN_FILL_TEMPLATE_SLOT])
@@ -349,11 +371,12 @@ subtype(HAND, INANIMATE_OBJECT)
 TRUCK = OntologyNode(
     "truck",
     [
+        BLUE,
+        RED,
         HOLLOW,
         CAN_FILL_TEMPLATE_SLOT,
         SELF_MOVING,
         CAN_HAVE_THINGS_RESTING_ON_THEM,
-        ROLLABLE,
     ],
 )
 subtype(TRUCK, INANIMATE_OBJECT)
@@ -366,7 +389,9 @@ COOKIE = OntologyNode(
 )
 subtype(COOKIE, INANIMATE_OBJECT)
 
-PERSON = OntologyNode("person", inheritable_properties=[ANIMATE, SELF_MOVING, CAN_JUMP])
+PERSON = OntologyNode(
+    "person", inheritable_properties=[ANIMATE, SELF_MOVING, CAN_JUMP, IS_HUMAN]
+)
 subtype(PERSON, THING)
 IS_MOM = OntologyNode("is-mom")
 subtype(IS_MOM, RECOGNIZED_PARTICULAR_PROPERTY)
@@ -450,7 +475,7 @@ _WALL = OntologyNode("wall")
 subtype(_WALL, INANIMATE_OBJECT)
 _ROOF = OntologyNode("roof")
 subtype(_ROOF, INANIMATE_OBJECT)
-_TIRE = OntologyNode("tire")
+_TIRE = OntologyNode("tire", [BLACK])
 subtype(_TIRE, INANIMATE_OBJECT)
 _TRUCK_CAB = OntologyNode("truckcab")
 subtype(_TRUCK_CAB, INANIMATE_OBJECT)
@@ -1779,27 +1804,14 @@ _FALL_ACTION_DESCRIPTION = ActionDescription(
 
 _THROW_AGENT = SituationObject(THING, properties=[ANIMATE])
 _THROW_THEME = SituationObject(INANIMATE_OBJECT)
-_THROW_GOAL = SituationObject(THING)
+THROW_GOAL = SituationObject(THING)
 _THROW_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
 _THROW_GROUND = SituationObject(GROUND)
 
-_THROW_ACTION_DESCRIPTION = ActionDescription(
-    frame=ActionDescriptionFrame(
-        {AGENT: _THROW_AGENT, THEME: _THROW_THEME, GOAL: _THROW_GOAL}
-    ),
-    enduring_conditions=[
-        bigger_than(_THROW_AGENT, _THROW_THEME),
-        partOf(_THROW_MANIPULATOR, _THROW_AGENT),
-    ],
-    preconditions=[
-        has(_THROW_AGENT, _THROW_THEME),
-        contacts(_THROW_MANIPULATOR, _THROW_THEME),
-    ],
-    postconditions=[
-        Relation(IN_REGION, _THROW_THEME, _THROW_GOAL),
-        negate(contacts(_THROW_MANIPULATOR, _THROW_THEME)),
-    ],
-    during=DuringAction(
+
+def _make_throw_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
+    during: DuringAction[SituationObject] = DuringAction(
+        objects_to_paths=[(_THROW_THEME, SpatialPath(TO, THROW_GOAL))],
         # must be above the ground at some point during the action
         at_some_point=[
             Relation(
@@ -1813,14 +1825,46 @@ _THROW_ACTION_DESCRIPTION = ActionDescription(
                     ),
                 ),
             )
-        ]
-    ),
-    asserted_properties=[
+        ],
+    )
+    enduring = [
+        partOf(_THROW_MANIPULATOR, _THROW_AGENT),
+        bigger_than(_THROW_AGENT, _THROW_THEME),
+    ]
+    preconditions = [
+        has(_THROW_AGENT, _THROW_THEME),
+        contacts(_THROW_MANIPULATOR, _THROW_THEME),
+    ]
+    postconditions = [
+        inside(_THROW_THEME, THROW_GOAL),
+        negate(contacts(_THROW_MANIPULATOR, _THROW_THEME)),
+    ]
+    asserted_properties = [
         (_THROW_AGENT, VOLITIONALLY_INVOLVED),
         (_THROW_AGENT, CAUSES_CHANGE),
         (_THROW_THEME, UNDERGOES_CHANGE),
-    ],
-)
+    ]
+    # explicit goal
+    yield THROW, ActionDescription(
+        frame=ActionDescriptionFrame(
+            {AGENT: _THROW_AGENT, THEME: _THROW_THEME, GOAL: THROW_GOAL}
+        ),
+        during=during,
+        enduring_conditions=enduring,
+        preconditions=preconditions,
+        postconditions=postconditions,
+        asserted_properties=asserted_properties,
+    )
+    # implicit goal
+    yield THROW, ActionDescription(
+        frame=ActionDescriptionFrame({AGENT: _THROW_AGENT, THEME: _THROW_THEME}),
+        during=during,
+        enduring_conditions=enduring,
+        preconditions=preconditions,
+        postconditions=postconditions,
+        asserted_properties=asserted_properties,
+    )
+
 
 _MOVE_AGENT = SituationObject(THING, properties=[ANIMATE])
 _MOVE_THEME = SituationObject(THING)
@@ -1980,7 +2024,6 @@ _ACTIONS_TO_DESCRIPTIONS = [
     (TAKE, _TAKE_ACTION_DESCRIPTION),
     (EAT, _EAT_ACTION_DESCRIPTION),
     (FALL, _FALL_ACTION_DESCRIPTION),
-    (THROW, _THROW_ACTION_DESCRIPTION),
     (FLY, _FLY_ACTION_DESCRIPTION),
 ]
 
@@ -1992,6 +2035,7 @@ _ACTIONS_TO_DESCRIPTIONS.extend(_make_move_descriptions())
 _ACTIONS_TO_DESCRIPTIONS.extend(_make_spin_descriptions())
 _ACTIONS_TO_DESCRIPTIONS.extend(_make_go_description())
 _ACTIONS_TO_DESCRIPTIONS.extend(_make_push_descriptions())
+_ACTIONS_TO_DESCRIPTIONS.extend(_make_throw_descriptions())
 
 GAILA_PHASE_1_ONTOLOGY = Ontology(
     "gaila-phase-1",
