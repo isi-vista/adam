@@ -321,7 +321,7 @@ def _make_transfer_of_possession_curriculum() -> _Phase1InstanceGroup:
     action_variable("transfer-verb", with_properties=[TRANSFER_OF_POSSESSION])
     giver = object_variable("person_0", PERSON)
     recipient = object_variable("person_1", PERSON)
-    given_object = object_variable("give_object_0", INANIMATE_OBJECT)
+    given_object = _standard_object("give_object_0")
 
     return _phase1_instances(
         "transfer-of-possession",
@@ -677,22 +677,12 @@ def make_jump_over_object_template():
 
 def _make_put_curriculum():
     putter = object_variable("putter_0", required_properties=[ANIMATE])
-    object_put = object_variable(
-        "object_0", required_properties=[INANIMATE], banned_properties=[IS_BODY_PART]
-    )
+    object_put = _standard_object("object_0", required_properties=[INANIMATE])
 
-    on_region_object = object_variable(
-        "on_region_object",
-        INANIMATE_OBJECT,
-        required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM],
-        banned_properties=[IS_BODY_PART],
+    on_region_object = _standard_object(
+        "on_region_object", required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
     )
-    in_region_object = object_variable(
-        "in_region_object",
-        INANIMATE_OBJECT,
-        required_properties=[HOLLOW],
-        banned_properties=[IS_BODY_PART],
-    )
+    in_region_object = _standard_object("in_region_object", required_properties=[HOLLOW])
 
     # X puts Y on Z
     put_on_template = Phase1SituationTemplate(
@@ -763,9 +753,7 @@ def _make_put_curriculum():
 
 
 def _make_drink_curriculum():
-    object_0 = object_variable(
-        "object_0", required_properties=[HOLLOW], banned_properties=[IS_BODY_PART]
-    )
+    object_0 = _standard_object("object_0", required_properties=[HOLLOW])
     liquid_0 = object_variable("liquid_0", required_properties=[LIQUID])
     person_0 = object_variable("person_0", PERSON)
 
@@ -794,13 +782,8 @@ def _make_drink_curriculum():
 
 
 def _make_eat_curriculum():
-    object_to_eat = object_variable(
-        "object_0",
-        INANIMATE_OBJECT,
-        required_properties=[EDIBLE],
-        banned_properties=[LIQUID],
-    )
-    eater = object_variable("eater_0", THING, required_properties=[ANIMATE])
+    object_to_eat = _standard_object("object_0", required_properties=[EDIBLE])
+    eater = _standard_object("eater_0", THING, required_properties=[ANIMATE])
 
     # "Mom eats a cookie"
     eat_object = Phase1SituationTemplate(
@@ -923,11 +906,7 @@ def _make_sit_curriculum():
 
 def _make_take_curriculum():
     taker = object_variable("taker_0", required_properties=[ANIMATE])
-    object_taken = object_variable(
-        "object_taken_0",
-        required_properties=[INANIMATE],
-        banned_properties=[IS_BODY_PART],
-    )
+    object_taken = _standard_object("object_taken_0", required_properties=[INANIMATE])
 
     # X puts Y on Z
     take_template = Phase1SituationTemplate(
@@ -962,17 +941,9 @@ def _make_move_curriculum():
     )
 
     other_mover_0 = object_variable("mover_0", THING, required_properties=[ANIMATE])
-    movee_0 = object_variable(
-        "movee_0",
-        THING,
-        required_properties=[INANIMATE],
-        banned_properties=[IS_BODY_PART],
-    )
-    move_goal_reference = object_variable(
-        "move-goal-reference",
-        THING,
-        required_properties=[INANIMATE],
-        banned_properties=[IS_BODY_PART],
+    movee_0 = _standard_object("movee_0", THING, required_properties=[INANIMATE])
+    move_goal_reference = _standard_object(
+        "move-goal-reference", THING, required_properties=[INANIMATE]
     )
 
     # since we lack other prepositions at the moment,
@@ -1028,12 +999,7 @@ def _make_spin_curriculum():
     self_turner = object_variable("self-spinner_0", THING, required_properties=[ANIMATE])
 
     other_spinner = object_variable("spinner_0", THING, required_properties=[ANIMATE])
-    spinee = object_variable(
-        "spinee_0",
-        THING,
-        required_properties=[INANIMATE],
-        banned_properties=[IS_BODY_PART],
-    )
+    spinee = _standard_object("spinee_0", THING, required_properties=[INANIMATE])
 
     bare_spin_template = Phase1SituationTemplate(
         "bare-spin",
@@ -1141,13 +1107,11 @@ def _make_go_curriculum():
 
 def _make_push_curriculum():
     pusher = object_variable("pusher", THING, required_properties=[ANIMATE])
-    pushee = object_variable("pushee", INANIMATE_OBJECT, banned_properties=[IS_BODY_PART])
-    push_surface = object_variable(
+    pushee = _standard_object("pushee", INANIMATE_OBJECT)
+    push_surface = _standard_object(
         "push_surface", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
     )
-    push_goal_reference = object_variable(
-        "push_goal", INANIMATE_OBJECT, banned_properties=[IS_BODY_PART]
-    )
+    push_goal_reference = _standard_object("push_goal", INANIMATE_OBJECT)
 
     # push with implicit goal
     aux_bindings = [
