@@ -7,6 +7,7 @@ from adam.ontology.phase1_ontology import (
     ANIMATE,
     BALL,
     BOX,
+    CAUSES_CHANGE,
     COOKIE,
     DAD,
     EAT,
@@ -29,16 +30,15 @@ from adam.ontology.phase1_ontology import (
     RED,
     SELF_MOVING,
     SMALLER_THAN,
+    STATIONARY,
     TABLE,
     THEME,
     TWO_DIMENSIONAL,
+    UNDERGOES_CHANGE,
+    VOLITIONALLY_INVOLVED,
     far,
     near,
     on,
-    VOLITIONALLY_INVOLVED,
-    CAUSES_CHANGE,
-    STATIONARY,
-    UNDERGOES_CHANGE,
 )
 from adam.ontology.phase1_spatial_relations import (
     DISTAL,
@@ -57,7 +57,6 @@ from adam.perception.developmental_primitive_perception import (
 )
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
-    TooManySpeakersException,
 )
 from adam.random_utils import RandomChooser
 from adam.relation import Relation
@@ -345,7 +344,7 @@ def test_speaker_perceivable():
 
 
 def test_not_two_speakers():
-    with pytest.raises(TooManySpeakersException):
+    with pytest.raises(RuntimeError):
         _PERCEPTION_GENERATOR.generate_perception(
             HighLevelSemanticsSituation(
                 ontology=GAILA_PHASE_1_ONTOLOGY,

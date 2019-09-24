@@ -21,7 +21,7 @@ from attr import Factory, attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
 from immutablecollections.converter_utils import _to_immutabledict, _to_immutableset
-from more_itertools import flatten, take
+from more_itertools import take
 from typing_extensions import Protocol
 from vistautils.preconditions import check_arg
 
@@ -34,6 +34,7 @@ from adam.ontology.phase1_ontology import (
     LEARNER,
     is_recognized_particular,
 )
+from adam.ontology.phase1_spatial_relations import Region
 from adam.ontology.selectors import (
     AndOntologySelector,
     ByHierarchyAndProperties,
@@ -210,15 +211,25 @@ class Phase1SituationTemplate(SituationTemplate):
 
     @all_object_variables.default
     def _init_all_object_variables(self) -> ImmutableSet[TemplateObjectVariable]:
-        object_variables_as_auxiliary_variables_in_actions = flatten(
-            action.auxiliary_variable_bindings.values() for action in self.actions
-        )
-        return immutableset(
-            chain(
-                self.salient_object_variables,
-                object_variables_as_auxiliary_variables_in_actions,
-            )
-        )
+        ret: List[TemplateObjectVariable] = []
+
+        for action in self.actions:
+            action.accumulate_referenced_objects(ret)
+
+        for relation in chain(
+            self.constraining_relations, self.asserted_always_relations
+        ):
+            relation.accumulate_referenced_objects(ret)
+
+        ret.extend(self.salient_object_variables)
+
+        for obj_var in ret:
+            if not isinstance(obj_var, TemplateObjectVariable):
+                raise RuntimeError(
+                    f"Got non-object variable {obj_var} in template {self}"
+                )
+
+        return immutableset(ret)
 
 
 def all_possible(
@@ -381,6 +392,7 @@ class _Phase1SituationTemplateGenerator(
         object_var_to_instantiations,
     ) -> HighLevelSemanticsSituation:
         return HighLevelSemanticsSituation(
+            from_template=template.name,
             ontology=self.ontology,
             salient_objects=[
                 object_var_to_instantiations[obj_var]
@@ -477,10 +489,23 @@ class _Phase1SituationTemplateGenerator(
             else:
                 return action_variables_to_fillers[action.action_type]
 
+        def map_action_variable_binding(
+            x: Union[TemplateObjectVariable, Region[TemplateObjectVariable]]
+        ) -> Union[SituationObject, Region[SituationObject]]:
+            if isinstance(x, Region):
+                return x.copy_remapping_objects(object_var_to_instantiations)
+            else:
+                return object_var_to_instantiations[x]
+
+        # new_aux_bindings = []
+        # for (auxiliary_variable, auxiliary_variable_binding) in \
+        #         action.auxiliary_variable_bindings.items():
+        #     new_aux_bindings.append((auxiliary_variable, object_var_to_instantiations[auxiliary_variable_binding]))
+
         return Action(
             action_type=map_action_type(),
             argument_roles_to_fillers=[
-                (role, object_var_to_instantiations[arg])
+                (role, map_action_variable_binding(arg))
                 for (role, arg) in action.argument_roles_to_fillers.items()
             ],
             during=action.during.copy_remapping_objects(object_var_to_instantiations)
@@ -489,7 +514,7 @@ class _Phase1SituationTemplateGenerator(
             auxiliary_variable_bindings=[
                 (
                     auxiliary_variable,
-                    object_var_to_instantiations[auxiliary_variable_binding],
+                    map_action_variable_binding(auxiliary_variable_binding),
                 )
                 for (
                     auxiliary_variable,

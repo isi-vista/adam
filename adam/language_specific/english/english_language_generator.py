@@ -451,18 +451,20 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 filler_noun = self._noun_for_object(filler)
                 # e.g. Mom gives a cookie *to a baby*
                 if argument_role == GOAL and syntactic_role == OBLIQUE_NOMINAL:
-                    self.dependency_graph.add_edge(
-                        DependencyTreeToken("to", ADPOSITION),
-                        filler_noun,
-                        role=CASE_SPATIAL,
+                    preposition = self._determine_goal_preposition(
+                        action, verb_lexical_entry, argument_role, filler
                     )
+                    if preposition:
+                        self.dependency_graph.add_edge(
+                            preposition, filler_noun, role=CASE_SPATIAL
+                        )
                 return (syntactic_role, filler_noun)
             elif isinstance(filler, Region):
                 if argument_role == GOAL:
-                    if THEME not in action.argument_roles_to_fillers:
+                    if not self._get_moving_thing(action):
                         raise RuntimeError(
                             "Only know how to make English for a GOAL if"
-                            "the verb has a THEME"
+                            "the verb has a THEME or AGENT"
                         )
 
                     reference_object_dependency_node = self._noun_for_object(
@@ -490,6 +492,30 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     f" argument slot {argument_role} of action "
                     f"{action}"
                 )
+
+        def _determine_goal_preposition(
+            self,
+            action: Action[OntologyNode, SituationObject],
+            verb_lexical_entry: LexiconEntry,  # pylint:disable=unused-argument
+            argument_role: OntologyNode,  # pylint:disable=unused-argument
+            filler: Union[
+                SituationObject, Region[SituationObject]
+            ],  # pylint:disable=unused-argument
+        ) -> Optional[DependencyTreeToken]:
+            moving_thing = self._get_moving_thing(action)
+
+            if moving_thing:
+                return DependencyTreeToken("to", ADPOSITION)
+            else:
+                return None
+
+        def _get_moving_thing(self, action) -> Optional[SituationObject]:
+            if THEME in action.argument_roles_to_fillers:
+                return action.argument_roles_to_fillers[THEME]
+            elif AGENT in action.argument_roles_to_fillers:
+                return action.argument_roles_to_fillers[AGENT]
+            else:
+                return None
 
         # noinspection PyMethodMayBeStatic
         def _translate_argument_role(

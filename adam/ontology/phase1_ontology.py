@@ -1167,29 +1167,26 @@ _TURN_ACTION_DESCRIPTION = ActionDescription(
     ],
 )
 
-SIT_THING_SAT_ON = SituationObject(THING)
+SIT_THING_SAT_ON = SituationObject(THING, debug_handle="thing-sat-on")
+SIT_GOAL = SituationObject(THING, debug_handle="sit-goal")  # really a region
 
 
 def _make_sit_action_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
-    sit_agent = SituationObject(THING, properties=[ANIMATE])
+    sit_agent = SituationObject(THING, properties=[ANIMATE], debug_handle="sit-agent")
+
+    post_conditions = [Relation(IN_REGION, sit_agent, SIT_GOAL)]
 
     yield SIT, ActionDescription(
-        frame=ActionDescriptionFrame({AGENT: sit_agent, GOAL: SIT_THING_SAT_ON}),
+        frame=ActionDescriptionFrame({AGENT: sit_agent, GOAL: SIT_GOAL}),
         preconditions=[negate(contacts(sit_agent, SIT_THING_SAT_ON))],
-        postconditions=[
-            contacts(sit_agent, SIT_THING_SAT_ON),
-            above(sit_agent, SIT_THING_SAT_ON),
-        ],
+        postconditions=post_conditions,
         asserted_properties=[(sit_agent, VOLITIONALLY_INVOLVED), (sit_agent, MOVES)],
     )
 
     yield SIT, ActionDescription(
         frame=ActionDescriptionFrame({AGENT: sit_agent}),
         preconditions=[negate(contacts(sit_agent, SIT_THING_SAT_ON))],
-        postconditions=[
-            contacts(sit_agent, SIT_THING_SAT_ON),
-            above(sit_agent, SIT_THING_SAT_ON),
-        ],
+        postconditions=post_conditions,
         asserted_properties=[(sit_agent, VOLITIONALLY_INVOLVED), (sit_agent, MOVES)],
     )
 

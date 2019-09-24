@@ -17,18 +17,59 @@ from adam.language_specific.english.english_language_generator import (
 from adam.ontology import THING
 from adam.ontology.during import DuringAction
 from adam.ontology.ontology import Ontology
-from adam.ontology.phase1_ontology import (AGENT, ANIMATE, BIGGER_THAN, BIRD,
-                                           CAN_BE_SAT_ON_BY_PEOPLE, CAN_HAVE_THINGS_RESTING_ON_THEM,
-                                           CAN_JUMP, DRINK, DRINK_CONTAINER_AUX, EAT, EDIBLE, FALL,
-                                           FLY, GAILA_PHASE_1_ONTOLOGY, GIVE, GOAL, GROUND, HAS,
-                                           HAS_SPACE_UNDER, HOLLOW, INANIMATE_OBJECT, IS_BODY_PART,
-                                           JUMP, JUMP_INITIAL_SUPPORTER_AUX, LEARNER, LIQUID,
-                                           PATIENT, PERSON, PERSON_CAN_HAVE,
-                                           PHASE_1_CURRICULUM_OBJECTS, ROLL, ROLLABLE,
-                                           ROLL_SURFACE_AUXILIARY, SIT, SIT_THING_SAT_ON, THEME,
-                                           TRANSFER_OF_POSSESSION, bigger_than, inside,
-                                           is_recognized_particular, on, strictly_above)
-from adam.ontology.phase1_spatial_relations import AWAY_FROM, SpatialPath, TOWARD
+from adam.ontology.phase1_ontology import (
+    AGENT,
+    ANIMATE,
+    BIGGER_THAN,
+    BIRD,
+    CAN_BE_SAT_ON_BY_PEOPLE,
+    CAN_HAVE_THINGS_RESTING_ON_THEM,
+    CAN_JUMP,
+    DRINK,
+    DRINK_CONTAINER_AUX,
+    EAT,
+    EDIBLE,
+    FALL,
+    FLY,
+    GAILA_PHASE_1_ONTOLOGY,
+    GIVE,
+    GOAL,
+    GROUND,
+    HAS,
+    HAS_SPACE_UNDER,
+    HOLLOW,
+    INANIMATE_OBJECT,
+    IS_BODY_PART,
+    JUMP,
+    JUMP_INITIAL_SUPPORTER_AUX,
+    LEARNER,
+    LIQUID,
+    PATIENT,
+    PERSON,
+    PERSON_CAN_HAVE,
+    PHASE_1_CURRICULUM_OBJECTS,
+    ROLL,
+    ROLLABLE,
+    ROLL_SURFACE_AUXILIARY,
+    SIT,
+    SIT_GOAL,
+    SIT_THING_SAT_ON,
+    THEME,
+    TRANSFER_OF_POSSESSION,
+    bigger_than,
+    inside,
+    is_recognized_particular,
+    on,
+    strictly_above,
+)
+from adam.ontology.phase1_spatial_relations import (
+    AWAY_FROM,
+    EXTERIOR_BUT_IN_CONTACT,
+    GRAVITATIONAL_UP,
+    Region,
+    SpatialPath,
+    TOWARD,
+)
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
@@ -692,7 +733,17 @@ def _make_sit_curriculum():
                         Action(
                             SIT,
                             argument_roles_to_fillers=[(AGENT, sitter)],
-                            auxiliary_variable_bindings=[(SIT_THING_SAT_ON, sittee)],
+                            auxiliary_variable_bindings=[
+                                (
+                                    SIT_GOAL,
+                                    Region(
+                                        sittee,
+                                        direction=GRAVITATIONAL_UP,
+                                        distance=EXTERIOR_BUT_IN_CONTACT,
+                                    ),
+                                ),
+                                (SIT_THING_SAT_ON, sittee),
+                            ],
                         )
                     ],
                     constraining_relations=constraints,
@@ -705,7 +756,18 @@ def _make_sit_curriculum():
                     actions=[
                         Action(
                             SIT,
-                            argument_roles_to_fillers=[(AGENT, sitter), (GOAL, sittee)],
+                            argument_roles_to_fillers=[
+                                (AGENT, sitter),
+                                (
+                                    GOAL,
+                                    Region(
+                                        sittee,
+                                        direction=GRAVITATIONAL_UP,
+                                        distance=EXTERIOR_BUT_IN_CONTACT,
+                                    ),
+                                ),
+                            ],
+                            auxiliary_variable_bindings=[(SIT_THING_SAT_ON, sittee)],
                         )
                     ],
                     constraining_relations=constraints,

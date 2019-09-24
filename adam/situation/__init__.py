@@ -14,6 +14,7 @@ from immutablecollections import (
     immutableset,
     immutablesetmultidict,
 )
+
 # noinspection PyProtectedMember
 from immutablecollections.converter_utils import (
     _to_immutabledict,
@@ -171,6 +172,18 @@ class Action(Generic[_ActionTypeT, _ObjectT]):
                 object_accumulator.append(filler)
         if self.during:
             self.during.accumulate_referenced_objects(object_accumulator)
+        for aux_var_binding in self.auxiliary_variable_bindings.values():
+            if isinstance(aux_var_binding, Region):
+                aux_var_binding.accumulate_referenced_objects(object_accumulator)
+            else:
+                object_accumulator.append(aux_var_binding)
 
     def __repr__(self) -> str:
-        return f"{self.action_type}({self.argument_roles_to_fillers})"
+        parts = [str(self.argument_roles_to_fillers)]
+        if self.during:
+            parts.append(f"during={self.during}")
+        if self.auxiliary_variable_bindings:
+            parts.append(
+                f"auxiliary_variable_bindings={self.auxiliary_variable_bindings}"
+            )
+        return f"{self.action_type}({', '.join(parts)})"

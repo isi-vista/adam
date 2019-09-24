@@ -159,6 +159,14 @@ class _PerceptionGeneration:
     """
 
     def do(self) -> PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]:
+        try:
+            return self._real_do()
+        except Exception as e:
+            raise RuntimeError(
+                f"Error while generating perceptions " f"for situation {self._situation}"
+            ) from e
+
+    def _real_do(self) -> PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]:
         self._sanity_check_situation()
 
         # The first step is to determine what objects are perceived.
@@ -402,7 +410,7 @@ class _PerceptionGeneration:
         self,
         situation_action: Action[OntologyNode, SituationObject],
         action_object_variable: SituationObject,
-    ) -> ObjectPerception:
+    ) -> Union[ObjectPerception, Region[ObjectPerception]]:
         """
         Binds an action object variable to an object that we have perceived.
 
@@ -412,7 +420,12 @@ class _PerceptionGeneration:
             action_object_variable
         )
         if explicit_binding:
-            return self._objects_to_perceptions[explicit_binding]
+            if isinstance(explicit_binding, Region):
+                return explicit_binding.copy_remapping_objects(
+                    self._objects_to_perceptions
+                )
+            else:
+                return self._objects_to_perceptions[explicit_binding]
 
         # we continue to use the hand from PUT
         # ( see _bind_action_objects_variables_to_perceived_objects )
