@@ -1,7 +1,8 @@
 from pathlib import Path
 from typing import AbstractSet, Any, Callable, Iterable, List, Tuple, TypeVar, Union
 
-from attr import attrs
+from attr import attrs, attrib
+from attr.validators import instance_of
 from immutablecollections import (
     ImmutableSet,
     ImmutableSetMultiDict,
@@ -47,6 +48,22 @@ def main(params: Parameters) -> None:
         output_directory=phase1_curriculum_dir,
         title="GAILA Phase 1 Curriculum",
     )
+
+
+@attrs(frozen=True, slots=True)
+class InstanceHolder:
+    situation: str = attrib(validator=instance_of(str))
+    """
+    Holds a rendered situation string
+    """
+    lingustics: str = attrib(validator=instance_of(str))
+    """
+    Holds a rendered linguistics string
+    """
+    perception: str = attrib(validator=instance_of(str))
+    """
+    Holds a rendered perception string
+    """
 
 
 @attrs(frozen=True, slots=True)
@@ -124,6 +141,35 @@ class CurriculumToHtmlDumper:
         exists and *overwrite* is set to False an error is raised in execution. Each page turns an
         instance group with each "instance" as an indiviudal section on the page.
         """
+        # PreRender Instances so we can remove duplicates by converting to an immutable set
+        rendered_instances = []
+        for (situation, dependency_tree, perception) in instance_group.instances():
+            if not isinstance(situation, HighLevelSemanticsSituation):
+                raise RuntimeError(
+                    f"Expected the Situation to be HighLevelSemanticsSituation got {type(situation)}"
+                )
+            if not isinstance(dependency_tree, LinearizedDependencyTree):
+                raise RuntimeError(
+                    f"Expected the Lingustics to be LinearizedDependencyTree got {type(dependency_tree)}"
+                )
+            if not (
+                isinstance(perception, PerceptualRepresentation)
+                and isinstance(
+                    perception.frames[0], DevelopmentalPrimitivePerceptionFrame
+                )
+            ):
+                raise RuntimeError(
+                    f"Expected the Perceptual Representation to contain DevelopmentalPrimitivePerceptionFrame got "
+                    f"{type(perception.frames)}"
+                )
+            rendered_instances.append(
+                InstanceHolder(
+                    situation=self._situation_text(situation),
+                    lingustics=self._linguistic_text(dependency_tree),
+                    perception=self._perception_text(perception),
+                )
+            )
+
         with open(output_destination, "w") as html_out:
             html_out.write(f"<head>\n\t<style>{CSS}\n\t</style>\n</head>")
             html_out.write(f"\n<body>\n\t<h1>{title} - {instance_group.name()}</h1>")
@@ -171,28 +217,10 @@ class CurriculumToHtmlDumper:
                 "reference_object=GROUND, reference_axis=None, orientation_changed=False)</li>"
                 "\n\t<li>SpatialPath(OPERATOR, REFERENCE_OBJECT, REFERENCE_AXIS, ORIENTATION_CHANGED)</li>"
             )
-            for (instance_number, (situation, dependency_tree, perception)) in enumerate(
-                instance_group.instances()
+            # By using the immutable set we guaruntee iteration order and remove duplicates
+            for (instance_number, instance_holder) in enumerate(
+                immutableset(rendered_instances)
             ):
-                if not isinstance(situation, HighLevelSemanticsSituation):
-                    raise RuntimeError(
-                        f"Expected the Situation to be HighLevelSemanticsSituation got {type(situation)}"
-                    )
-                if not isinstance(dependency_tree, LinearizedDependencyTree):
-                    raise RuntimeError(
-                        f"Expected the Lingustics to be LinearizedDependencyTree got {type(dependency_tree)}"
-                    )
-                if not (
-                    isinstance(perception, PerceptualRepresentation)
-                    and isinstance(
-                        perception.frames[0], DevelopmentalPrimitivePerceptionFrame
-                    )
-                ):
-                    raise RuntimeError(
-                        f"Expected the Perceptual Representation to contain DevelopmentalPrimitivePerceptionFrame got "
-                        f"{type(perception.frames)}"
-                    )
-
                 html_out.write(
                     f"\n\t<table>\n"
                     f"\t\t<thead>\n"
@@ -214,9 +242,9 @@ class CurriculumToHtmlDumper:
                     f"\t\t\t\t</td>\n"
                     f"\t\t\t</tr>\n"
                     f"\t\t\t<tr>\n"
-                    f'\t\t\t\t<td valign="top">{self._situation_text(situation)}\n\t\t\t\t</td>\n'
-                    f'\t\t\t\t<td valign="top">{self._linguistic_text(dependency_tree)}</td>\n'
-                    f'\t\t\t\t<td valign="top">{self._perception_text(perception)}\n\t\t\t\t</td>\n'
+                    f'\t\t\t\t<td valign="top">{instance_holder.situation}\n\t\t\t\t</td>\n'
+                    f'\t\t\t\t<td valign="top">{instance_holder.lingustics}</td>\n'
+                    f'\t\t\t\t<td valign="top">{instance_holder.perception}\n\t\t\t\t</td>\n'
                     f"\t\t\t</tr>\n\t\t</tbody>\n\t</table>"
                 )
             html_out.write("\n</body>")
