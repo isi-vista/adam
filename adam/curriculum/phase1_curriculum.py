@@ -17,20 +17,69 @@ from adam.language_specific.english.english_language_generator import (
 from adam.ontology import OntologyNode, THING
 from adam.ontology.during import DuringAction
 from adam.ontology.ontology import Ontology
-from adam.ontology.phase1_ontology import (AGENT, ANIMATE, BIGGER_THAN, BIRD, BOX,
-                                           CAN_BE_SAT_ON_BY_PEOPLE, CAN_HAVE_THINGS_RESTING_ON_THEM,
-                                           CAN_JUMP, DRINK, DRINK_CONTAINER_AUX, EAT, EDIBLE, FALL,
-                                           FLY, GAILA_PHASE_1_ONTOLOGY, GIVE, GO, GOAL, GROUND, HAS,
-                                           HAS_SPACE_UNDER, HOLLOW, INANIMATE, INANIMATE_OBJECT,
-                                           IS_ADDRESSEE, IS_BODY_PART, IS_SPEAKER, JUMP,
-                                           JUMP_INITIAL_SUPPORTER_AUX, LEARNER, LIQUID, MOVE,
-                                           MOVE_GOAL, PATIENT, PERSON, PERSON_CAN_HAVE,
-                                           PHASE_1_CURRICULUM_OBJECTS, PUSH, PUSH_GOAL,
-                                           PUSH_SURFACE_AUX, PUT, ROLL, ROLLABLE,
-                                           ROLL_SURFACE_AUXILIARY, SELF_MOVING, SIT, SIT_GOAL,
-                                           SIT_THING_SAT_ON, SPIN, TAKE, THEME, THROW, THROW_GOAL,
-                                           TRANSFER_OF_POSSESSION, _GO_GOAL, bigger_than, contacts,
-                                           inside, is_recognized_particular, on, strictly_above)
+from adam.ontology.phase1_ontology import (
+    AGENT,
+    ANIMATE,
+    BIGGER_THAN,
+    BIRD,
+    BOX,
+    CAN_BE_SAT_ON_BY_PEOPLE,
+    CAN_HAVE_THINGS_RESTING_ON_THEM,
+    CAN_JUMP,
+    DRINK,
+    DRINK_CONTAINER_AUX,
+    EAT,
+    EDIBLE,
+    FALL,
+    FLY,
+    GAILA_PHASE_1_ONTOLOGY,
+    GIVE,
+    GO,
+    GOAL,
+    GROUND,
+    HAS,
+    HAS_SPACE_UNDER,
+    HOLLOW,
+    INANIMATE,
+    INANIMATE_OBJECT,
+    IS_ADDRESSEE,
+    IS_BODY_PART,
+    IS_SPEAKER,
+    JUMP,
+    JUMP_INITIAL_SUPPORTER_AUX,
+    LEARNER,
+    LIQUID,
+    MOVE,
+    MOVE_GOAL,
+    PATIENT,
+    PERSON,
+    PERSON_CAN_HAVE,
+    PHASE_1_CURRICULUM_OBJECTS,
+    PUSH,
+    PUSH_GOAL,
+    PUSH_SURFACE_AUX,
+    PUT,
+    ROLL,
+    ROLLABLE,
+    ROLL_SURFACE_AUXILIARY,
+    SELF_MOVING,
+    SIT,
+    SIT_GOAL,
+    SIT_THING_SAT_ON,
+    SPIN,
+    TAKE,
+    THEME,
+    THROW,
+    THROW_GOAL,
+    TRANSFER_OF_POSSESSION,
+    _GO_GOAL,
+    bigger_than,
+    contacts,
+    inside,
+    is_recognized_particular,
+    on,
+    strictly_above,
+)
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
     EXTERIOR_BUT_IN_CONTACT,
@@ -334,55 +383,40 @@ def _make_object_on_object_curriculum() -> _Phase1InstanceGroup:
     )
 
 
-def _make_object_under_object_curriculum() -> _Phase1InstanceGroup:
+def _make_object_under_or_over_object_curriculum() -> _Phase1InstanceGroup:
     object_under = _standard_object("object_0")
-    object_above = _standard_object(
-        "object_1",
-        required_properties=[HAS_SPACE_UNDER],
-    )
+    object_above = _standard_object("object_1", required_properties=[HAS_SPACE_UNDER])
+    bird = object_variable("bird_0", BIRD)
+    object_under_bird = _standard_object("object_under_bird_0")
 
-    def _make_templates() -> Iterable[Phase1SituationTemplate]:
-        for (suffix, salient_object) in (("-focus-above", object_above),
-                                         ("-focus-under", object_under)):
-            yield Phase1SituationTemplate(
-                f"object-under-object{suffix}",
-                salient_object_variables=[salient_object],
-                constraining_relations=[Relation(BIGGER_THAN, object_above, object_under)],
-                asserted_always_relations=[strictly_above(object_above, object_under)],
-            )
+    templates = [
+        Phase1SituationTemplate(
+            f"object-under-object",
+            salient_object_variables=[object_above],
+            constraining_relations=[Relation(BIGGER_THAN, object_above, object_under)],
+            asserted_always_relations=[strictly_above(object_above, object_under)],
+        ),
+        Phase1SituationTemplate(
+            f"object-over-object",
+            salient_object_variables=[object_under_bird],
+            asserted_always_relations=[strictly_above(bird, object_under_bird)],
+        ),
+    ]
 
     return _phase1_instances(
         "objects-under-over-objects",
-        chain(*[sampled(
-            template,
-            max_to_sample=100,
-            chooser=_CHOOSER,
-            ontology=GAILA_PHASE_1_ONTOLOGY,
-        ) for template in _make_templates()]),
+        chain(
+            *[
+                sampled(
+                    template,
+                    max_to_sample=100,
+                    chooser=_CHOOSER,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                )
+                for template in templates
+            ]
+        ),
     )
-
-
-# def _make_object_over_object_curriculum() -> _Phase1InstanceGroup:
-#     object_over = object_variable("object_0", BIRD)
-#     object_below = object_variable(
-#         "object_1",
-#         THING,
-#     )
-#     situation_template = Phase1SituationTemplate(
-#         "object-over-object",
-#         salient_object_variables=[object_below, object_over],
-#         asserted_always_relations=[strictly_above(object_over, object_below)],
-#     )
-#
-#     return _phase1_instances(
-#         "objects-over-objects",
-#         sampled(
-#             situation_template,
-#             max_to_sample=100,
-#             chooser=_CHOOSER,
-#             ontology=GAILA_PHASE_1_ONTOLOGY,
-#         ),
-#     )
 
 
 def _make_object_in_other_object_curriculum() -> _Phase1InstanceGroup:
@@ -1333,8 +1367,8 @@ GAILA_PHASE_1_CURRICULUM = [
     _make_fall_curriculum(),
     _make_transfer_of_possession_curriculum(),
     _make_object_on_object_curriculum(),
-    #_make_object_over_object_curriculum(),
-    _make_object_under_object_curriculum(),
+    # _make_object_over_object_curriculum(),
+    _make_object_under_or_over_object_curriculum(),
     _make_object_in_other_object_curriculum(),
     _make_fly_curriculum(),
     _make_roll_curriculum(),
