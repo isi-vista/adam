@@ -137,8 +137,10 @@ class CurriculumToHtmlDumper:
                 "\n\t<li>Situation (column 1), which is used by the curriculum developer to specify key objects and actions,"
                 "\n but is unseen by the learner</li>."
                 "\n\t<li>Language (column 2), the text presented to the learner</li>."
-                "\n\t<li>Learner Perception (column 3), a textual representation of the perceptual features"
-                "\n presented to the learner</li>"
+                "\n\t<li>Learner Perception (column 3), typically a textual representation of the perceptual features"
+                "\n presented to the learner. When the speaker is a part of the scene, this column  includes an attribution"
+                "\n statement (e.g. Mom says). Attribution is not presented to the learner as text (but is instead a part of"
+                "\n the learner's perception).</li>"
             )
             html_out.write(
                 "<p> The perceptual features described in column 3 are presented to the learner in a"
