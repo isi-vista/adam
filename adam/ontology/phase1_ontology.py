@@ -196,6 +196,8 @@ HAS_SPACE_UNDER = OntologyNode("has-space-under")
 subtype(HAS_SPACE_UNDER, PROPERTY)
 EDIBLE = OntologyNode("edible")
 subtype(EDIBLE, PROPERTY)
+CAN_BE_SAT_ON_BY_PEOPLE = OntologyNode("can-be-sat-on")
+subtype(CAN_BE_SAT_ON_BY_PEOPLE, PROPERTY)
 
 COLOR = OntologyNode("color")
 subtype(COLOR, PERCEIVABLE_PROPERTY)
@@ -253,12 +255,23 @@ subtype(INANIMATE_OBJECT, THING)
 IS_GROUND = OntologyNode("is-ground")
 subtype(IS_GROUND, RECOGNIZED_PARTICULAR_PROPERTY)
 GROUND = OntologyNode(
-    "ground", non_inheritable_properties=[IS_GROUND, CAN_HAVE_THINGS_RESTING_ON_THEM]
+    "ground",
+    non_inheritable_properties=[
+        IS_GROUND,
+        CAN_HAVE_THINGS_RESTING_ON_THEM,
+        CAN_BE_SAT_ON_BY_PEOPLE,
+    ],
 )
 subtype(GROUND, INANIMATE_OBJECT)
 
 TABLE = OntologyNode(
-    "table", [CAN_FILL_TEMPLATE_SLOT, CAN_HAVE_THINGS_RESTING_ON_THEM, HAS_SPACE_UNDER]
+    "table",
+    [
+        CAN_FILL_TEMPLATE_SLOT,
+        CAN_HAVE_THINGS_RESTING_ON_THEM,
+        HAS_SPACE_UNDER,
+        CAN_BE_SAT_ON_BY_PEOPLE,
+    ],
 )
 subtype(TABLE, INANIMATE_OBJECT)
 BALL = OntologyNode("ball", [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, ROLLABLE])
@@ -297,7 +310,10 @@ BOX = OntologyNode(
     [HOLLOW, CAN_FILL_TEMPLATE_SLOT, CAN_HAVE_THINGS_RESTING_ON_THEM, PERSON_CAN_HAVE],
 )
 subtype(BOX, INANIMATE_OBJECT)
-CHAIR = OntologyNode("chair", [CAN_FILL_TEMPLATE_SLOT, CAN_HAVE_THINGS_RESTING_ON_THEM])
+CHAIR = OntologyNode(
+    "chair",
+    [CAN_FILL_TEMPLATE_SLOT, CAN_HAVE_THINGS_RESTING_ON_THEM, CAN_BE_SAT_ON_BY_PEOPLE],
+)
 subtype(CHAIR, INANIMATE_OBJECT)
 # should a HEAD be hollow? We are answering yes for now,
 # because food and liquids can enter it,
@@ -1152,15 +1168,29 @@ _TURN_ACTION_DESCRIPTION = ActionDescription(
     ],
 )
 
-_SIT_AGENT = SituationObject(THING, properties=[ANIMATE])
-_SIT_GOAL = SituationObject(THING)
+SIT_THING_SAT_ON = SituationObject(THING, debug_handle="thing-sat-on")
+SIT_GOAL = SituationObject(THING, debug_handle="sit-goal")  # really a region
 
-_SIT_ACTION_DESCRIPTION = ActionDescription(
-    frame=ActionDescriptionFrame({AGENT: _SIT_AGENT, GOAL: _SIT_GOAL}),
-    preconditions=[negate(contacts(_SIT_AGENT, _SIT_GOAL))],
-    postconditions=[contacts(_SIT_AGENT, _SIT_GOAL), above(_SIT_AGENT, _SIT_GOAL)],
-    asserted_properties=[(_SIT_AGENT, VOLITIONALLY_INVOLVED), (_SIT_AGENT, MOVES)],
-)
+
+def _make_sit_action_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
+    sit_agent = SituationObject(THING, properties=[ANIMATE], debug_handle="sit-agent")
+
+    post_conditions = [Relation(IN_REGION, sit_agent, SIT_GOAL)]
+
+    yield SIT, ActionDescription(
+        frame=ActionDescriptionFrame({AGENT: sit_agent, GOAL: SIT_GOAL}),
+        preconditions=[negate(contacts(sit_agent, SIT_THING_SAT_ON))],
+        postconditions=post_conditions,
+        asserted_properties=[(sit_agent, VOLITIONALLY_INVOLVED), (sit_agent, MOVES)],
+    )
+
+    yield SIT, ActionDescription(
+        frame=ActionDescriptionFrame({AGENT: sit_agent}),
+        preconditions=[negate(contacts(sit_agent, SIT_THING_SAT_ON))],
+        postconditions=post_conditions,
+        asserted_properties=[(sit_agent, VOLITIONALLY_INVOLVED), (sit_agent, MOVES)],
+    )
+
 
 DRINK_CONTAINER_AUX = SituationObject(THING, properties=[HOLLOW])
 
@@ -1380,7 +1410,6 @@ _ACTIONS_TO_DESCRIPTIONS = [
     (TAKE, _TAKE_ACTION_DESCRIPTION),
     (EAT, _EAT_ACTION_DESCRIPTION),
     (TURN, _TURN_ACTION_DESCRIPTION),
-    (SIT, _SIT_ACTION_DESCRIPTION),
     (FALL, _FALL_ACTION_DESCRIPTION),
     (THROW, _THROW_ACTION_DESCRIPTION),
     (MOVE, _MOVE_ACTION_DESCRIPTION),
@@ -1390,6 +1419,7 @@ _ACTIONS_TO_DESCRIPTIONS = [
 _ACTIONS_TO_DESCRIPTIONS.extend(_make_roll_description())
 _ACTIONS_TO_DESCRIPTIONS.extend(_make_jump_description())
 _ACTIONS_TO_DESCRIPTIONS.extend(_make_drink_description())
+_ACTIONS_TO_DESCRIPTIONS.extend(_make_sit_action_descriptions())
 
 GAILA_PHASE_1_ONTOLOGY = Ontology(
     "gaila-phase-1",

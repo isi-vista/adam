@@ -1,8 +1,9 @@
 from collections import Counter
 from itertools import chain
+from typing import Optional
 
 from attr import attrib, attrs
-from attr.validators import instance_of
+from attr.validators import instance_of, optional
 from immutablecollections import ImmutableSet, immutableset
 from immutablecollections.converter_utils import _to_immutableset
 from more_itertools import flatten
@@ -110,6 +111,9 @@ class HighLevelSemanticsSituation(Situation):
     
     See https://github.com/isi-vista/adam/issues/222 .
     """
+    from_template: Optional[str] = attrib(
+        validator=optional(instance_of(str)), kw_only=True, default=None
+    )
 
     def relation_always_holds(self, query_relation: Relation[SituationObject]) -> bool:
         # TODO: extend to handle transitive relations
@@ -187,9 +191,28 @@ class HighLevelSemanticsSituation(Situation):
         # level and not delegating to the reprs of the sub-objects.
         # https://github.com/isi-vista/adam/issues/62
         lines = ["{"]
-        lines.extend(f"\t{obj!r}" for obj in self.all_objects)
-        lines.extend(f"\t{relation!r}" for relation in self.always_relations)
-        lines.extend(f"\t{action!r}" for action in self.actions)
+        lines.append("\tsalient objects:")
+        lines.extend(f"\t\t{obj!r}" for obj in self.salient_objects)
+        if self.other_objects:
+            lines.append("\tother objects:")
+            lines.extend(f"\t\t{obj!r}" for obj in self.other_objects)
+        if self.always_relations:
+            lines.append("\talways relations:")
+            lines.extend(f"\t\t{relation!r}" for relation in self.always_relations)
+        if self.before_action_relations:
+            lines.append("\tbefore relations:")
+            lines.extend(f"\t\t{relation!r}" for relation in self.before_action_relations)
+        if self.after_action_relations:
+            lines.append("\tafter relations:")
+            lines.extend(f"\t\t{relation!r}" for relation in self.after_action_relations)
+        if self.syntax_hints:
+            lines.append("\tsyntax hints:")
+            lines.extend(f"\t\t{self.syntax_hints}")
+        if self.actions:
+            lines.append("\tactions:")
+            lines.extend(f"\t\t{action!r}" for action in self.actions)
+        if self.from_template:
+            lines.append(f"\tfrom template: {self.from_template}")
         lines.append("}")
         return "\n".join(lines)
 
