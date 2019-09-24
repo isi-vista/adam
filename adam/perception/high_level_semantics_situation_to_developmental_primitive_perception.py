@@ -833,7 +833,7 @@ class _PerceptionGeneration:
             ] = sub_object.schema.ontology_node
             # every sub-component has an implicit partOf relationship to its parent object.
             self._relation_perceptions.append(
-                Relation(PART_OF, root_object_perception, sub_object_perception)
+                Relation(PART_OF, sub_object_perception, root_object_perception)
             )
             # If the sub-object does not already have a color,
             # use the parent's prototypical color if one exists

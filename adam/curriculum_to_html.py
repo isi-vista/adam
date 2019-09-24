@@ -464,7 +464,7 @@ class CurriculumToHtmlDumper:
 
         for relation_ in all_relations:
             if relation_.relation_type == PART_OF:
-                graph.add_edge(relation_.first_slot, relation_.second_slot)
+                graph.add_edge(relation_.second_slot, relation_.first_slot)
                 expressed_relations.add(relation_)
 
         # Next, we render objects, together with their properties, using preorder DFS Traversal
