@@ -939,7 +939,8 @@ def _make_move_curriculum():
     )
 
     other_mover_0 = object_variable("mover_0", THING, required_properties=[ANIMATE])
-    movee_0 = object_variable("movee_0", THING, required_properties=[INANIMATE])
+    movee_0 = object_variable("movee_0", THING, required_properties=[INANIMATE],
+                              banned_properties=[IS_BODY_PART])
     move_goal_reference = object_variable(
         "move-goal-reference",
         THING,
