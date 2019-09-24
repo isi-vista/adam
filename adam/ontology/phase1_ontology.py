@@ -1610,7 +1610,7 @@ _COME_ACTION_DESCRIPTION = ActionDescription(
     ),
     preconditions=[
         Relation(
-            IN_REGION, _COME_AGENT, Region(_COME_GOAL, distance=DISTAL), negated=True
+            IN_REGION, _COME_AGENT, Region(_COME_GOAL, distance=DISTAL)
         )
     ],
     during=DuringAction(objects_to_paths=[(_COME_AGENT, SpatialPath(TO, _COME_GOAL))]),
