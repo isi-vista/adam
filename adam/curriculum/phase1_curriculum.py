@@ -14,7 +14,7 @@ from adam.language_specific.english.english_language_generator import (
     PREFER_DITRANSITIVE,
     USE_ADVERBIAL_PATH_MODIFIER,
 )
-from adam.ontology import THING
+from adam.ontology import THING, OntologyNode
 from adam.ontology.during import DuringAction
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
@@ -103,6 +103,7 @@ from adam.situation.templates.phase1_templates import (
     color_variable,
     object_variable,
     sampled,
+    TemplateObjectVariable,
 )
 
 _CHOOSER = RandomChooser.for_seed(0)
@@ -112,6 +113,21 @@ _Phase1InstanceGroup = InstanceGroup[  # pylint:disable=invalid-name
     LinearizedDependencyTree,
     DevelopmentalPrimitivePerceptionFrame,
 ]
+
+
+def _standard_object(
+    debug_handle: str,
+    root_node: OntologyNode = INANIMATE_OBJECT,
+    *,
+    required_properties: Iterable[OntologyNode] = tuple(),
+) -> TemplateObjectVariable:
+    banned_properties = [IS_BODY_PART, LIQUID]
+    return object_variable(
+        debug_handle=debug_handle,
+        root_node=root_node,
+        banned_properties=banned_properties,
+        required_properties=required_properties,
+    )
 
 
 def _phase1_instances(
@@ -600,7 +616,7 @@ def _make_roll_curriculum():
 
 
 JUMPER = object_variable("jumper_0", THING, required_properties=[CAN_JUMP])
-JUMPED_OVER = object_variable("jumped_over", THING)
+JUMPED_OVER = _standard_object("jumped_over")
 
 
 def _make_jump_curriculum():
