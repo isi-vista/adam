@@ -16,6 +16,7 @@ from adam.curriculum.phase1_curriculum import (
     _make_go_curriculum,
     _make_push_curriculum,
     _make_speaker_addressee_curriculum,
+    _make_throw_curriculum,
 )
 
 
@@ -90,3 +91,7 @@ def test_push():
 
 def test_speaker_addressee():
     _test_curriculum(_make_speaker_addressee_curriculum())
+
+
+def test_throw():
+    _test_curriculum(_make_throw_curriculum())

@@ -1775,27 +1775,14 @@ _FALL_ACTION_DESCRIPTION = ActionDescription(
 
 _THROW_AGENT = SituationObject(THING, properties=[ANIMATE])
 _THROW_THEME = SituationObject(INANIMATE_OBJECT)
-_THROW_GOAL = SituationObject(THING)
+THROW_GOAL = SituationObject(THING)
 _THROW_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
 _THROW_GROUND = SituationObject(GROUND)
 
-_THROW_ACTION_DESCRIPTION = ActionDescription(
-    frame=ActionDescriptionFrame(
-        {AGENT: _THROW_AGENT, THEME: _THROW_THEME, GOAL: _THROW_GOAL}
-    ),
-    enduring_conditions=[
-        bigger_than(_THROW_AGENT, _THROW_THEME),
-        partOf(_THROW_MANIPULATOR, _THROW_AGENT),
-    ],
-    preconditions=[
-        has(_THROW_AGENT, _THROW_THEME),
-        contacts(_THROW_MANIPULATOR, _THROW_THEME),
-    ],
-    postconditions=[
-        Relation(IN_REGION, _THROW_THEME, _THROW_GOAL),
-        negate(contacts(_THROW_MANIPULATOR, _THROW_THEME)),
-    ],
-    during=DuringAction(
+
+def _make_throw_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
+    during: DuringAction[SituationObject] = DuringAction(
+        objects_to_paths=[(_THROW_THEME, SpatialPath(TO, THROW_GOAL))],
         # must be above the ground at some point during the action
         at_some_point=[
             Relation(
@@ -1809,14 +1796,46 @@ _THROW_ACTION_DESCRIPTION = ActionDescription(
                     ),
                 ),
             )
-        ]
-    ),
-    asserted_properties=[
+        ],
+    )
+    enduring = [
+        partOf(_THROW_MANIPULATOR, _THROW_AGENT),
+        bigger_than(_THROW_AGENT, _THROW_THEME),
+    ]
+    preconditions = [
+        has(_THROW_AGENT, _THROW_THEME),
+        contacts(_THROW_MANIPULATOR, _THROW_THEME),
+    ]
+    postconditions = [
+        inside(_THROW_THEME, THROW_GOAL),
+        negate(contacts(_THROW_MANIPULATOR, _THROW_THEME)),
+    ]
+    asserted_properties = [
         (_THROW_AGENT, VOLITIONALLY_INVOLVED),
         (_THROW_AGENT, CAUSES_CHANGE),
         (_THROW_THEME, UNDERGOES_CHANGE),
-    ],
-)
+    ]
+    # explicit goal
+    yield THROW, ActionDescription(
+        frame=ActionDescriptionFrame(
+            {AGENT: _THROW_AGENT, THEME: _THROW_THEME, GOAL: THROW_GOAL}
+        ),
+        during=during,
+        enduring_conditions=enduring,
+        preconditions=preconditions,
+        postconditions=postconditions,
+        asserted_properties=asserted_properties,
+    )
+    # implicit goal
+    yield THROW, ActionDescription(
+        frame=ActionDescriptionFrame({AGENT: _THROW_AGENT, THEME: _THROW_THEME}),
+        during=during,
+        enduring_conditions=enduring,
+        preconditions=preconditions,
+        postconditions=postconditions,
+        asserted_properties=asserted_properties,
+    )
+
 
 _MOVE_AGENT = SituationObject(THING, properties=[ANIMATE])
 _MOVE_THEME = SituationObject(THING)
@@ -1976,7 +1995,6 @@ _ACTIONS_TO_DESCRIPTIONS = [
     (TAKE, _TAKE_ACTION_DESCRIPTION),
     (EAT, _EAT_ACTION_DESCRIPTION),
     (FALL, _FALL_ACTION_DESCRIPTION),
-    (THROW, _THROW_ACTION_DESCRIPTION),
     (FLY, _FLY_ACTION_DESCRIPTION),
 ]
 
@@ -1988,6 +2006,7 @@ _ACTIONS_TO_DESCRIPTIONS.extend(_make_move_descriptions())
 _ACTIONS_TO_DESCRIPTIONS.extend(_make_spin_descriptions())
 _ACTIONS_TO_DESCRIPTIONS.extend(_make_go_description())
 _ACTIONS_TO_DESCRIPTIONS.extend(_make_push_descriptions())
+_ACTIONS_TO_DESCRIPTIONS.extend(_make_throw_descriptions())
 
 GAILA_PHASE_1_ONTOLOGY = Ontology(
     "gaila-phase-1",

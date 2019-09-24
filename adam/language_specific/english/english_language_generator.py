@@ -43,7 +43,8 @@ from adam.language_specific.english.english_phase_1_lexicon import (
     I,
     MASS_NOUN,
     YOU,
-    ME)
+    ME,
+)
 from adam.language_specific.english.english_syntax import (
     FIRST_PERSON,
     SECOND_PERSON,
@@ -166,15 +167,17 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 object_.ontology_node for object_ in self.situation.salient_objects
             )
 
-            action: Optional[Action]
+            action: Optional[Action[OntologyNode, SituationObject]]
             if self.situation.is_dynamic:
                 # the situation contains an action, which we now translate.
                 action = only(self.situation.actions)
-                self._translate_action_to_verb(action)
+                # mypy isn't smart enough to realized action can't be None here
+                self._translate_action_to_verb(action)  # type: ignore
 
                 # translate any leftover objects we didn't find while translating the action
                 untranslated_objects = self.situation.salient_objects.difference(
-                    self.objects_to_dependency_nodes.keys())
+                    self.objects_to_dependency_nodes.keys()
+                )
                 for untranslated_object in untranslated_objects:
                     self._noun_for_object(untranslated_object)
             else:
@@ -205,9 +208,12 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 ]
             )
 
-        def _noun_for_object(self, _object: SituationObject, *,
-                             syntactic_role_if_known: Optional[DependencyRole]=None) -> \
-                DependencyTreeToken:
+        def _noun_for_object(
+            self,
+            _object: SituationObject,
+            *,
+            syntactic_role_if_known: Optional[DependencyRole] = None,
+        ) -> DependencyTreeToken:
             if _object in self.objects_to_dependency_nodes:
                 return self.objects_to_dependency_nodes[_object]
 
@@ -468,7 +474,9 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 syntactic_role = self._translate_argument_role(
                     action, verb_lexical_entry, argument_role
                 )
-                filler_noun = self._noun_for_object(filler, syntactic_role_if_known=syntactic_role)
+                filler_noun = self._noun_for_object(
+                    filler, syntactic_role_if_known=syntactic_role
+                )
                 # e.g. Mom gives a cookie *to a baby*
                 if argument_role == GOAL and syntactic_role == OBLIQUE_NOMINAL:
                     preposition = self._determine_goal_preposition(

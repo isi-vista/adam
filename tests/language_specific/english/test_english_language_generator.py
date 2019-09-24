@@ -254,8 +254,6 @@ def test_dad_put_a_cookie_in_a_box():
     ).as_token_sequence() == ("Dad", "puts", "a", "cookie", "in", "a", "box")
 
 
-
-
 def test_dad_put_a_cookie_in_a_box_using_i():
     dad = SituationObject(DAD, properties=[IS_SPEAKER])
     cookie = SituationObject(COOKIE)

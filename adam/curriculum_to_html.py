@@ -1,7 +1,8 @@
 from pathlib import Path
 from typing import AbstractSet, Any, Callable, Iterable, List, Tuple, TypeVar, Union
 
-from attr import attrs
+from attr import attrs, attrib
+from attr.validators import instance_of
 from immutablecollections import (
     ImmutableSet,
     ImmutableSetMultiDict,
@@ -16,10 +17,11 @@ from vistautils.preconditions import check_state
 
 from adam.curriculum.phase1_curriculum import GAILA_PHASE_1_CURRICULUM
 from adam.experiment import InstanceGroup
+from adam.geon import Geon
 from adam.language.dependency import LinearizedDependencyTree
 from adam.ontology import IN_REGION
 from adam.ontology.during import DuringAction
-from adam.ontology.phase1_ontology import PART_OF
+from adam.ontology.phase1_ontology import PART_OF, SMALLER_THAN, BIGGER_THAN
 from adam.ontology.phase1_spatial_relations import Region, SpatialPath
 from adam.perception import ObjectPerception, PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
@@ -28,6 +30,7 @@ from adam.perception.developmental_primitive_perception import (
     HasColor,
     PropertyPerception,
 )
+from adam.relation import Relation
 from adam.situation import SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 
@@ -47,6 +50,22 @@ def main(params: Parameters) -> None:
         output_directory=phase1_curriculum_dir,
         title="GAILA Phase 1 Curriculum",
     )
+
+
+@attrs(frozen=True, slots=True)
+class InstanceHolder:
+    situation: str = attrib(validator=instance_of(str))
+    """
+    Holds a rendered situation string
+    """
+    lingustics: str = attrib(validator=instance_of(str))
+    """
+    Holds a rendered linguistics string
+    """
+    perception: str = attrib(validator=instance_of(str))
+    """
+    Holds a rendered perception string
+    """
 
 
 @attrs(frozen=True, slots=True)
@@ -124,6 +143,35 @@ class CurriculumToHtmlDumper:
         exists and *overwrite* is set to False an error is raised in execution. Each page turns an
         instance group with each "instance" as an indiviudal section on the page.
         """
+        # PreRender Instances so we can remove duplicates by converting to an immutable set
+        rendered_instances = []
+        for (situation, dependency_tree, perception) in instance_group.instances():
+            if not isinstance(situation, HighLevelSemanticsSituation):
+                raise RuntimeError(
+                    f"Expected the Situation to be HighLevelSemanticsSituation got {type(situation)}"
+                )
+            if not isinstance(dependency_tree, LinearizedDependencyTree):
+                raise RuntimeError(
+                    f"Expected the Lingustics to be LinearizedDependencyTree got {type(dependency_tree)}"
+                )
+            if not (
+                isinstance(perception, PerceptualRepresentation)
+                and isinstance(
+                    perception.frames[0], DevelopmentalPrimitivePerceptionFrame
+                )
+            ):
+                raise RuntimeError(
+                    f"Expected the Perceptual Representation to contain DevelopmentalPrimitivePerceptionFrame got "
+                    f"{type(perception.frames)}"
+                )
+            rendered_instances.append(
+                InstanceHolder(
+                    situation=self._situation_text(situation),
+                    lingustics=self._linguistic_text(dependency_tree),
+                    perception=self._perception_text(perception),
+                )
+            )
+
         with open(output_destination, "w") as html_out:
             html_out.write(f"<head>\n\t<style>{CSS}\n\t</style>\n</head>")
             html_out.write(f"\n<body>\n\t<h1>{title} - {instance_group.name()}</h1>")
@@ -171,28 +219,10 @@ class CurriculumToHtmlDumper:
                 "reference_object=GROUND, reference_axis=None, orientation_changed=False)</li>"
                 "\n\t<li>SpatialPath(OPERATOR, REFERENCE_OBJECT, REFERENCE_AXIS, ORIENTATION_CHANGED)</li>"
             )
-            for (instance_number, (situation, dependency_tree, perception)) in enumerate(
-                instance_group.instances()
+            # By using the immutable set we guaruntee iteration order and remove duplicates
+            for (instance_number, instance_holder) in enumerate(
+                immutableset(rendered_instances)
             ):
-                if not isinstance(situation, HighLevelSemanticsSituation):
-                    raise RuntimeError(
-                        f"Expected the Situation to be HighLevelSemanticsSituation got {type(situation)}"
-                    )
-                if not isinstance(dependency_tree, LinearizedDependencyTree):
-                    raise RuntimeError(
-                        f"Expected the Lingustics to be LinearizedDependencyTree got {type(dependency_tree)}"
-                    )
-                if not (
-                    isinstance(perception, PerceptualRepresentation)
-                    and isinstance(
-                        perception.frames[0], DevelopmentalPrimitivePerceptionFrame
-                    )
-                ):
-                    raise RuntimeError(
-                        f"Expected the Perceptual Representation to contain DevelopmentalPrimitivePerceptionFrame got "
-                        f"{type(perception.frames)}"
-                    )
-
                 html_out.write(
                     f"\n\t<table>\n"
                     f"\t\t<thead>\n"
@@ -214,9 +244,9 @@ class CurriculumToHtmlDumper:
                     f"\t\t\t\t</td>\n"
                     f"\t\t\t</tr>\n"
                     f"\t\t\t<tr>\n"
-                    f'\t\t\t\t<td valign="top">{self._situation_text(situation)}\n\t\t\t\t</td>\n'
-                    f'\t\t\t\t<td valign="top">{self._linguistic_text(dependency_tree)}</td>\n'
-                    f'\t\t\t\t<td valign="top">{self._perception_text(perception)}\n\t\t\t\t</td>\n'
+                    f'\t\t\t\t<td valign="top">{instance_holder.situation}\n\t\t\t\t</td>\n'
+                    f'\t\t\t\t<td valign="top">{instance_holder.lingustics}</td>\n'
+                    f'\t\t\t\t<td valign="top">{instance_holder.perception}\n\t\t\t\t</td>\n'
                     f"\t\t\t</tr>\n\t\t</tbody>\n\t</table>"
                 )
             html_out.write("\n</body>")
@@ -439,7 +469,9 @@ class CurriculumToHtmlDumper:
                     f"\t\t\t\t\t\t<li>{obj_prefix}{render_object(node)}{obj_suffix}<ul>"
                 )
                 if node.geon:
-                    output_text.append((f"\t\t\t\t\t\t<li>Geon: {node.geon}</li>"))
+                    output_text.append(
+                        f"\t\t\t\t\t\t<li>Geon: {self._render_geon(node.geon, indent_dept=7)}</li>"
+                    )
                 # Handle Region Relations
                 for region_relation in region_relations:
                     if region_relation.first_slot == node:
@@ -467,9 +499,37 @@ class CurriculumToHtmlDumper:
                     (relation_prefix, relation_suffix) = compute_arrow(
                         relation, static_relations, first_frame_relations
                     )
-                    output_text.append(
-                        f"\t\t\t\t\t\t<li>{relation_prefix}{relation}{relation_suffix}</li>"
-                    )
+                    # if matching smallerThan/biggerThan relations exist, give as single relation
+                    opposite_relations = {
+                        SMALLER_THAN: BIGGER_THAN,
+                        BIGGER_THAN: SMALLER_THAN,
+                    }
+                    single_size_relation = None
+                    if relation.relation_type in opposite_relations:
+                        if (
+                            Relation(
+                                opposite_relations[relation.relation_type],
+                                relation.second_slot,
+                                relation.first_slot,
+                            )
+                            in all_relations
+                        ):
+                            if relation.relation_type == SMALLER_THAN:
+                                single_size_relation = (
+                                    f"{relation.second_slot} > {relation.first_slot}"
+                                )
+                            else:
+                                single_size_relation = (
+                                    f"{relation.first_slot} > {relation.second_slot}"
+                                )
+                    if single_size_relation:
+                        size_output = f"\t\t\t\t\t\t<li>{relation_prefix}{single_size_relation}{relation_suffix}</li>"
+                        if size_output not in output_text:
+                            output_text.append(size_output)
+                    else:
+                        output_text.append(
+                            f"\t\t\t\t\t\t<li>{relation_prefix}{relation}{relation_suffix}</li>"
+                        )
             output_text.append("\t\t\t\t\t</ul>")
 
         if perception.during:
@@ -523,6 +583,45 @@ class CurriculumToHtmlDumper:
         phrased as a sentence for display. Returns a List[str]
         """
         return " ".join(linguistic.as_token_sequence())
+
+    def _render_geon(self, geon: Geon, *, indent_dept: int = 0) -> str:
+        indent = "\t" * indent_dept
+        lines = [f"{indent}<ul>"]
+        lines.append(
+            f"{indent}\t<li>Cross Section: {geon.cross_section} | Cross Section Size: {geon.cross_section_size}</li>"
+        )
+        if geon.generating_axis == geon.primary_axis:
+            lines.append(
+                f"{indent}\t<li><b>Generating Axis: {geon.generating_axis}</b></li>"
+            )
+        else:
+            lines.append(f"{indent}\t<li>Generating Axis: {geon.generating_axis}</li>")
+        if geon.orienting_axes:
+            lines.append(f"{indent}\t<li>Orienting Axes:")
+            lines.append(f"{indent}\t<ul>")
+            for axis in geon.orienting_axes:
+                if axis == geon.primary_axis:
+                    lines.append(f"{indent}\t\t<li><b>{axis}</b></li>")
+                else:
+                    lines.append(f"{indent}\t\t<li>{axis}</li>")
+            lines.append(f"{indent}\t</ul>")
+            lines.append(f"{indent}\t</li>")
+        if geon.axis_relations:
+            lines.append(f"{indent}\t<li>Axes Relations:")
+            lines.append(f"{indent}\t<ul>")
+            for axis_relation in geon.axis_relations:
+                if isinstance(axis_relation.second_slot, Region):
+                    lines.append(
+                        f"{indent}\t\t<li>{axis_relation.relation_type}({axis_relation.first_slot.debug_name},{axis_relation.second_slot})</li>"
+                    )
+                else:
+                    lines.append(
+                        f"{indent}\t\t<li>{axis_relation.relation_type}({axis_relation.first_slot.debug_name},{axis_relation.second_slot.debug_name})</li>"
+                    )
+            lines.append(f"{indent}\t</ul>")
+            lines.append(f"{indent}\t</li>")
+        lines.append(f"{indent}</ul>")
+        return "\n".join(lines)
 
 
 CSS = """

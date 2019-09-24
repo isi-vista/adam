@@ -3,7 +3,14 @@ from typing import AbstractSet, Dict, List, Mapping, Optional, Union, cast
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
-from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
+from immutablecollections import (
+    ImmutableDict,
+    ImmutableSet,
+    immutabledict,
+    immutableset,
+    ImmutableSetMultiDict,
+    immutablesetmultidict,
+)
 from more_itertools import only, quantify
 from vistautils.preconditions import check_arg
 
@@ -25,6 +32,7 @@ from adam.ontology.phase1_ontology import (
     PERCEIVABLE,
     TWO_DIMENSIONAL,
     LEARNER,
+    on,
 )
 from adam.ontology.phase1_spatial_relations import INTERIOR, Region, SpatialPath
 from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
@@ -189,6 +197,7 @@ class _PerceptionGeneration:
         # Other relations implied by actions will be handled during action translation below.
 
         if not self._situation.actions:
+            self._perceive_ground_relations()
             return PerceptualRepresentation.single_frame(
                 DevelopmentalPrimitivePerceptionFrame(
                     perceived_objects=self._object_perceptions,
@@ -314,6 +323,8 @@ class _PerceptionGeneration:
             conditions=action_description.postconditions,
             action_object_variables_to_object_perceptions=action_objects_variables_to_perceived_objects,
         )
+
+        self._perceive_ground_relations()
 
         return _PerceptionGeneration._ActionPerception(
             before_relations=immutableset(chain(enduring_relations, before_relations)),
@@ -897,6 +908,34 @@ class _PerceptionGeneration:
                                         }
                                     )
                                 )
+
+    def _perceive_ground_relations(self):
+        objects_to_relations = self._objects_to_relations()
+        perceived_ground: ObjectPerception = None
+        for object_ in self._object_perceptions:
+            if self._object_perceptions_to_ontology_nodes[object_] == GROUND:
+                perceived_ground = object_
+                break
+        for situation_object in self._situation.all_objects:
+            if situation_object.ontology_node != GROUND:
+                if self._objects_to_perceptions[situation_object] in objects_to_relations:
+                    # TODO: Handle associating contacts ground so long as a pre-existing relation
+                    #  doesn't define this. https://github.com/isi-vista/adam/issues/309
+                    pass
+                else:
+                    self._relation_perceptions.append(
+                        on(
+                            self._objects_to_perceptions[situation_object],
+                            perceived_ground,
+                        )
+                    )
+
+    def _objects_to_relations(
+        self
+    ) -> ImmutableSetMultiDict[ObjectPerception, Relation[ObjectPerception]]:
+        return immutablesetmultidict(
+            (relation.first_slot, relation) for relation in self._relation_perceptions
+        )
 
 
 GAILA_PHASE_1_PERCEPTION_GENERATOR = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
