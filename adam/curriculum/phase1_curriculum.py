@@ -71,7 +71,10 @@ from adam.ontology.phase1_ontology import (
     is_recognized_particular,
     on,
     strictly_above,
-    PUSH, PUSH_SURFACE_AUX, PUSH_GOAL)
+    PUSH,
+    PUSH_SURFACE_AUX,
+    PUSH_GOAL,
+)
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
     EXTERIOR_BUT_IN_CONTACT,
@@ -1119,11 +1122,10 @@ def _make_go_curriculum():
         ),
     )
 
+
 def _make_push_curriculum():
     pusher = object_variable("pusher", THING, required_properties=[ANIMATE])
-    pushee = object_variable(
-        "pushee", INANIMATE_OBJECT, banned_properties=[IS_BODY_PART]
-    )
+    pushee = object_variable("pushee", INANIMATE_OBJECT, banned_properties=[IS_BODY_PART])
     push_surface = object_variable(
         "push_surface", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
     )
@@ -1132,8 +1134,15 @@ def _make_push_curriculum():
     )
 
     # push with implicit goal
-    aux_bindings = [(PUSH_SURFACE_AUX, push_surface),
-                    (PUSH_GOAL, Region(push_goal_reference, distance=PROXIMAL))]
+    aux_bindings = [
+        (PUSH_SURFACE_AUX, push_surface),
+        (PUSH_GOAL, Region(push_goal_reference, distance=PROXIMAL)),
+    ]
+
+    # this shouldn't need to be expressed explicitly;
+    # we should be able to derive it from the action description
+    # https://github.com/isi-vista/adam/issues/239
+    during = DuringAction(continuously=[on(pushee, push_surface)])
     push_unexpressed_goal = Phase1SituationTemplate(
         "push-unexpressed-goal",
         salient_object_variables=[pusher, pushee],
@@ -1141,10 +1150,14 @@ def _make_push_curriculum():
             Action(
                 PUSH,
                 argument_roles_to_fillers=[(AGENT, pusher), (THEME, pushee)],
-                auxiliary_variable_bindings=aux_bindings),
+                auxiliary_variable_bindings=aux_bindings,
+                during=during,
+            )
         ],
-        constraining_relations=[bigger_than(push_surface, pusher),
-                                bigger_than(push_surface, push_goal_reference)],
+        constraining_relations=[
+            bigger_than(push_surface, pusher),
+            bigger_than(push_surface, push_goal_reference),
+        ],
     )
 
     # push with implicit goal
@@ -1155,11 +1168,12 @@ def _make_push_curriculum():
             Action(
                 PUSH,
                 argument_roles_to_fillers=[(AGENT, pusher), (THEME, pushee)],
-                auxiliary_variable_bindings=aux_bindings),
+                auxiliary_variable_bindings=aux_bindings,
+                during=during,
+            )
         ],
         constraining_relations=[bigger_than(push_surface, pusher)],
     )
-
 
     # push explicit goal
     # push_explicit_goal = Phase1SituationTemplate(
@@ -1215,7 +1229,7 @@ GAILA_PHASE_1_CURRICULUM = [
     _make_move_curriculum(),
     _make_spin_curriculum(),
     _make_go_curriculum(),
-    _make_push_curriculum()
+    _make_push_curriculum(),
 ]
 """
 One particular instantiation of the curriculum for GAILA Phase 1.

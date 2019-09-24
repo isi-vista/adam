@@ -14,7 +14,8 @@ from adam.curriculum.phase1_curriculum import (
     _make_move_curriculum,
     _make_spin_curriculum,
     _make_go_curriculum,
-    _make_push_curriculum)
+    _make_push_curriculum,
+)
 
 
 def _test_curriculum(curriculum: _Phase1InstanceGroup) -> None:
@@ -80,6 +81,7 @@ def test_spin():
 
 def test_go():
     _test_curriculum(_make_go_curriculum())
+
 
 def test_push():
     _test_curriculum(_make_push_curriculum())

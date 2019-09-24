@@ -1020,27 +1020,29 @@ _PUT_ACTION_DESCRIPTION = ActionDescription(
     ],
 )
 
-_PUSH_AGENT = SituationObject(THING, properties=[ANIMATE],
-                              debug_handle="push-agent")
+_PUSH_AGENT = SituationObject(THING, properties=[ANIMATE], debug_handle="push-agent")
 _PUSH_THEME = SituationObject(INANIMATE_OBJECT, debug_handle="push-theme")
 PUSH_GOAL = SituationObject(THING, debug_handle="push_goal")
-_PUSH_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS],
-                                    debug_handle="push-manipulator")
-PUSH_SURFACE_AUX = SituationObject(THING, properties=[CAN_HAVE_THINGS_RESTING_ON_THEM],
-                                   debug_handle="push-surface")
+_PUSH_MANIPULATOR = SituationObject(
+    THING, properties=[CAN_MANIPULATE_OBJECTS], debug_handle="push-manipulator"
+)
+PUSH_SURFACE_AUX = SituationObject(
+    THING, properties=[CAN_HAVE_THINGS_RESTING_ON_THEM], debug_handle="push-surface"
+)
+
 
 def _make_push_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
-    during = DuringAction(objects_to_paths=[(_PUSH_THEME, SpatialPath(TO, PUSH_GOAL))], )
+    during: DuringAction[SituationObject] = DuringAction(
+        objects_to_paths=[(_PUSH_THEME, SpatialPath(TO, PUSH_GOAL))]
+    )
     enduring = [
         partOf(_PUSH_MANIPULATOR, _PUSH_AGENT),
         bigger_than(_PUSH_AGENT, _PUSH_THEME),
         bigger_than(PUSH_SURFACE_AUX, _PUSH_THEME),
         contacts(_PUSH_MANIPULATOR, _PUSH_THEME),
-        on(_PUSH_THEME, PUSH_SURFACE_AUX)
+        on(_PUSH_THEME, PUSH_SURFACE_AUX),
     ]
-    preconditions = [
-        Relation(IN_REGION, _PUSH_THEME, PUSH_GOAL, negated=True),
-    ]
+    preconditions = [Relation(IN_REGION, _PUSH_THEME, PUSH_GOAL, negated=True)]
     postconditions = [Relation(IN_REGION, _PUSH_THEME, PUSH_GOAL)]
     asserted_properties = [
         (_PUSH_AGENT, VOLITIONALLY_INVOLVED),
@@ -1060,15 +1062,14 @@ def _make_push_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
     )
     # implicit goal
     yield PUSH, ActionDescription(
-        frame=ActionDescriptionFrame(
-            {AGENT: _PUSH_AGENT, THEME: _PUSH_THEME}
-        ),
+        frame=ActionDescriptionFrame({AGENT: _PUSH_AGENT, THEME: _PUSH_THEME}),
         during=during,
         enduring_conditions=enduring,
         preconditions=preconditions,
         postconditions=postconditions,
         asserted_properties=asserted_properties,
     )
+
 
 _GO_AGENT = SituationObject(THING, properties=[SELF_MOVING])
 _GO_GOAL = SituationObject(THING)
