@@ -76,6 +76,7 @@ from adam.ontology.phase1_ontology import (
     PUSH_GOAL,
     THROW,
     THROW_GOAL,
+    BOX,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -1212,8 +1213,11 @@ def _make_push_curriculum():
 def _make_throw_curriculum():
     thrower = object_variable("thrower_0", required_properties=[ANIMATE])
     object_thrown = object_variable(
-        "object_0", required_properties=[INANIMATE], banned_properties=[IS_BODY_PART]
+        "object_0",
+        required_properties=[INANIMATE],
+        banned_properties=[IS_BODY_PART, LIQUID],
     )
+    implicit_goal_reference = object_variable("implicit_throw_goal_object", BOX)
 
     # Dad throws a cookie on the ground
     throw_on_ground_template = Phase1SituationTemplate(
@@ -1248,7 +1252,7 @@ def _make_throw_curriculum():
                 THROW,
                 argument_roles_to_fillers=[(AGENT, thrower), (THEME, object_thrown)],
                 auxiliary_variable_bindings=[
-                    (THROW_GOAL, Region(_GROUND_OBJECT, distance=PROXIMAL))
+                    (THROW_GOAL, Region(implicit_goal_reference, distance=PROXIMAL))
                 ],
             )
         ],
