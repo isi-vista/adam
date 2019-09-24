@@ -251,15 +251,20 @@ class CurriculumToHtmlDumper:
                                 f"\t\t\t\t\t\t<li>{mapping.handle} is {object_}</li>"
                             )
                         else:
-                            output_text.append(f"\t\t\t\t\t\t<li>{mapping.handle} is {object_.ontology_node.handle}")
+                            output_text.append(
+                                f"\t\t\t\t\t\t<li>{mapping.handle} is {object_.ontology_node.handle}"
+                            )
                 for mapping in acts.auxiliary_variable_bindings.keys():
-                    if isinstance(acts.auxiliary_variable_bindings[mapping], SituationObject):
+                    if isinstance(
+                        acts.auxiliary_variable_bindings[mapping], SituationObject
+                    ):
                         output_text.append(
                             f"\t\t\t\t\t\t<li>{mapping.debug_handle} is {acts.auxiliary_variable_bindings[mapping].ontology_node.handle}</li>"
                         )
                     else:
                         output_text.append(
-                            f"\t\t\t\t\t\t<li>{mapping.debug_handle} is {acts.auxiliary_variable_bindings[mapping]}")
+                            f"\t\t\t\t\t\t<li>{mapping.debug_handle} is {acts.auxiliary_variable_bindings[mapping]}"
+                        )
             output_text.append("\t\t\t\t\t</ul>")
         if situation.always_relations:
             output_text.append("\t\t\t\t\t<h4>Relations</h4>\n\t\t\t\t\t<ul>")
@@ -541,9 +546,4 @@ def _index_to_setmultidict(
 
 
 if __name__ == "__main__":
-    # parameters_only_entry_point(main, usage_message=USAGE_MESSAGE)
-    CurriculumToHtmlDumper().dump_to_html(
-        GAILA_PHASE_1_CURRICULUM,
-        output_directory=Path("C:\\Users\\jalic\\Desktop\\ISI"),
-        title="GAILA Phase 1 Curriculum",
-    )
+    parameters_only_entry_point(main, usage_message=USAGE_MESSAGE)
