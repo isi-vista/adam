@@ -16,7 +16,7 @@ from adam.curriculum.phase1_curriculum import (
     _make_go_curriculum,
     _make_push_curriculum,
     _make_throw_curriculum,
-)
+    _make_object_under_object_curriculum, _make_object_over_object_curriculum)
 
 
 def _test_curriculum(curriculum: _Phase1InstanceGroup) -> None:
@@ -90,3 +90,9 @@ def test_push():
 
 def test_throw():
     _test_curriculum(_make_throw_curriculum())
+
+def test_under_curriculum():
+    _test_curriculum(_make_object_under_object_curriculum())
+
+def test_over_curriculum():
+    _test_curriculum(_make_object_over_object_curriculum())
