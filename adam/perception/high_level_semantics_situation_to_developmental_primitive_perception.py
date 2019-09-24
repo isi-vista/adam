@@ -93,7 +93,7 @@ class _ObjectHandleGenerator:
     _object_handles_seen: List[str] = attrib(init=False, default=Factory(list))
 
     def subscripted_handle(self, object_schema: ObjectStructuralSchema) -> str:
-        unsubscripted_handle = object_schema.parent_object.handle
+        unsubscripted_handle = object_schema.ontology_node.handle
         # using count() here makes subscript computation linear time
         # in the number of objects in a situation,
         # but this should be small enough not to matter.
@@ -753,7 +753,8 @@ class _PerceptionGeneration:
         situation_object: Optional[SituationObject] = None,
     ) -> ObjectPerception:
         root_object_perception = ObjectPerception(
-            debug_handle=self._object_handle_generator.subscripted_handle(schema)
+            debug_handle=self._object_handle_generator.subscripted_handle(schema),
+            geon=schema.geon,
         )
         self._object_perceptions.append(root_object_perception)
 
@@ -776,7 +777,7 @@ class _PerceptionGeneration:
             self._object_perceptions.append(sub_object_perception)
             self._object_perceptions_to_ontology_nodes[
                 sub_object_perception
-            ] = sub_object.schema.parent_object
+            ] = sub_object.schema.ontology_node
             # every sub-component has an implicit partOf relationship to its parent object.
             self._relation_perceptions.append(
                 Relation(PART_OF, root_object_perception, sub_object_perception)
