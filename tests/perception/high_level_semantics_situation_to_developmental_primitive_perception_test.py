@@ -622,7 +622,7 @@ def test_colors_across_part_of_relations():
     """
     learner_perception = _PERCEPTION_GENERATOR.generate_perception(
         HighLevelSemanticsSituation(
-            ontology=GAILA_PHASE_1_ONTOLOGY, objects=[SituationObject(TRUCK)]
+            ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[SituationObject(TRUCK)]
         ),
         chooser=RandomChooser.for_seed(0),
     )
