@@ -467,8 +467,8 @@ EAT = OntologyNode("eat")
 subtype(EAT, CONSUME)
 GIVE = OntologyNode("give", [TRANSFER_OF_POSSESSION])
 subtype(GIVE, ACTION)
-TURN = OntologyNode("turn")
-subtype(TURN, ACTION)
+SPIN = OntologyNode("spin")
+subtype(SPIN, ACTION)
 SIT = OntologyNode("sit")
 subtype(SIT, ACTION)
 DRINK = OntologyNode("drink")
@@ -1153,31 +1153,48 @@ _GIVE_ACTION_DESCRIPTION = ActionDescription(
     ],
 )
 
-_TURN_AGENT = SituationObject(THING, properties=[ANIMATE])
-_TURN_THEME = SituationObject(THING)
-_TURN_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
+_SPIN_AGENT = SituationObject(THING, properties=[ANIMATE])
+_SPIN_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
 
-_TURN_ACTION_DESCRIPTION = ActionDescription(
-    frame=ActionDescriptionFrame({AGENT: _TURN_AGENT, THEME: _TURN_THEME}),
-    during=DuringAction(
-        objects_to_paths=[
-            (
-                _TURN_THEME,
-                SpatialPath(
-                    operator=None,
-                    reference_object=_TURN_THEME,
-                    reference_axis=Axis.primary_of(_TURN_THEME),
-                    orientation_changed=True,
-                ),
-            )
-        ]
-    ),
-    asserted_properties=[
-        (_TURN_AGENT, VOLITIONALLY_INVOLVED),
-        (_TURN_AGENT, CAUSES_CHANGE),
-        (_TURN_THEME, UNDERGOES_CHANGE),
-    ],
-)
+
+def _make_spin_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
+    spin_theme = SituationObject(THING)
+
+    # intransitive
+    yield SPIN, ActionDescription(
+        frame=ActionDescriptionFrame({AGENT: _SPIN_AGENT}),
+        during=DuringAction(
+            objects_to_paths=[(_SPIN_AGENT, spin_around_primary_axis(_SPIN_AGENT))]
+        ),
+        asserted_properties=[
+            (_SPIN_AGENT, VOLITIONALLY_INVOLVED),
+            (_SPIN_AGENT, CAUSES_CHANGE),
+            (_SPIN_AGENT, UNDERGOES_CHANGE),
+        ],
+    )
+
+    # transitive
+    yield SPIN, ActionDescription(
+        frame=ActionDescriptionFrame({AGENT: _SPIN_AGENT, THEME: spin_theme}),
+        during=DuringAction(
+            objects_to_paths=[(spin_theme, spin_around_primary_axis(spin_theme))]
+        ),
+        asserted_properties=[
+            (_SPIN_AGENT, VOLITIONALLY_INVOLVED),
+            (_SPIN_AGENT, CAUSES_CHANGE),
+            (spin_theme, UNDERGOES_CHANGE),
+        ],
+    )
+
+
+def spin_around_primary_axis(object_):
+    return SpatialPath(
+        operator=None,
+        reference_object=object_,
+        reference_axis=Axis.primary_of(object_),
+        orientation_changed=True,
+    )
+
 
 SIT_THING_SAT_ON = SituationObject(THING, debug_handle="thing-sat-on")
 SIT_GOAL = SituationObject(THING, debug_handle="sit-goal")  # really a region
@@ -1445,7 +1462,6 @@ _ACTIONS_TO_DESCRIPTIONS = [
     (GIVE, _GIVE_ACTION_DESCRIPTION),
     (TAKE, _TAKE_ACTION_DESCRIPTION),
     (EAT, _EAT_ACTION_DESCRIPTION),
-    (TURN, _TURN_ACTION_DESCRIPTION),
     (FALL, _FALL_ACTION_DESCRIPTION),
     (THROW, _THROW_ACTION_DESCRIPTION),
     (FLY, _FLY_ACTION_DESCRIPTION),
@@ -1456,6 +1472,7 @@ _ACTIONS_TO_DESCRIPTIONS.extend(_make_jump_description())
 _ACTIONS_TO_DESCRIPTIONS.extend(_make_drink_description())
 _ACTIONS_TO_DESCRIPTIONS.extend(_make_sit_action_descriptions())
 _ACTIONS_TO_DESCRIPTIONS.extend(_make_move_descriptions())
+_ACTIONS_TO_DESCRIPTIONS.extend(_make_spin_descriptions())
 
 GAILA_PHASE_1_ONTOLOGY = Ontology(
     "gaila-phase-1",

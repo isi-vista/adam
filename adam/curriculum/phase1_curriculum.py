@@ -68,6 +68,7 @@ from adam.ontology.phase1_ontology import (
     MOVE,
     MOVE_GOAL,
     contacts,
+    SPIN,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -1001,6 +1002,50 @@ def _make_move_curriculum():
     )
 
 
+def _make_spin_curriculum():
+    self_turner = object_variable("self-spinner_0", THING, required_properties=[ANIMATE])
+
+    other_spinner = object_variable("spinner_0", THING, required_properties=[ANIMATE])
+    spinee = object_variable(
+        "spinee_0",
+        THING,
+        required_properties=[INANIMATE],
+        banned_properties=[IS_BODY_PART],
+    )
+
+    bare_spin_template = Phase1SituationTemplate(
+        "bare-spin",
+        salient_object_variables=[self_turner],
+        actions=[Action(SPIN, argument_roles_to_fillers=[(AGENT, self_turner)])],
+    )
+
+    transitive_spin_template = Phase1SituationTemplate(
+        "transitive-spin",
+        salient_object_variables=[other_spinner, spinee],
+        actions=[
+            Action(
+                SPIN, argument_roles_to_fillers=[(AGENT, other_spinner), (THEME, spinee)]
+            )
+        ],
+        constraining_relations=[bigger_than(other_spinner, spinee)],
+    )
+
+    return _phase1_instances(
+        "spin",
+        chain(
+            *[
+                sampled(
+                    situation,
+                    max_to_sample=25,
+                    chooser=_CHOOSER,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                )
+                for situation in (bare_spin_template, transitive_spin_template)
+            ]
+        ),
+    )
+
+
 GAILA_PHASE_1_CURRICULUM = [
     EACH_OBJECT_BY_ITSELF_SUB_CURRICULUM,
     OBJECTS_WITH_COLORS_SUB_CURRICULUM,
@@ -1021,6 +1066,7 @@ GAILA_PHASE_1_CURRICULUM = [
     _make_eat_curriculum(),
     _make_take_curriculum(),
     _make_move_curriculum(),
+    _make_spin_curriculum(),
 ]
 """
 One particular instantiation of the curriculum for GAILA Phase 1.

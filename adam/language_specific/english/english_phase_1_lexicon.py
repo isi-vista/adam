@@ -52,7 +52,7 @@ from adam.ontology.phase1_ontology import (
     THROW,
     TRANSPARENT,
     TRUCK,
-    TURN,
+    SPIN,
     WATER,
     WHITE,
 )
@@ -106,7 +106,7 @@ GAILA_PHASE_1_ENGLISH_LEXICON = OntologyLexicon(
                 "give", VERB, verb_form_3SG_PRS="gives", properties=[ALLOWS_DITRANSITIVE]
             ),
         ),
-        (TURN, LexiconEntry("turn", VERB, verb_form_3SG_PRS="turns")),
+        (SPIN, LexiconEntry("spin", VERB, verb_form_3SG_PRS="spins")),
         (SIT, LexiconEntry("sit", VERB, verb_form_3SG_PRS="sits")),
         (DRINK, LexiconEntry("drink", VERB, verb_form_3SG_PRS="drinks")),
         (FALL, LexiconEntry("fall", VERB, verb_form_3SG_PRS="falls")),
