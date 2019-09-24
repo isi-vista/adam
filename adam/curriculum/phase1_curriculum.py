@@ -64,6 +64,10 @@ from adam.ontology.phase1_ontology import (
     on,
     strictly_above,
     TAKE,
+    SELF_MOVING,
+    MOVE,
+    MOVE_GOAL,
+    contacts,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -73,6 +77,7 @@ from adam.ontology.phase1_spatial_relations import (
     Region,
     SpatialPath,
     TOWARD,
+    PROXIMAL,
 )
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -928,6 +933,69 @@ def _make_take_curriculum():
     )
 
 
+def _make_move_curriculum():
+    self_mover_0 = object_variable(
+        "self-mover_0", THING, required_properties=[SELF_MOVING]
+    )
+
+    other_mover_0 = object_variable("mover_0", THING, required_properties=[ANIMATE])
+    movee_0 = object_variable("movee_0", THING, required_properties=[INANIMATE])
+    move_goal_reference = object_variable(
+        "move-goal-reference",
+        THING,
+        required_properties=[INANIMATE],
+        banned_properties=[IS_BODY_PART],
+    )
+
+    # since we lack other prepositions at the moment,
+    # all movement has the goal of being near an arbitrary inanimate object
+    aux_variable_bindings = [(MOVE_GOAL, Region(move_goal_reference, distance=PROXIMAL))]
+
+    # bare move (e.g. "a box moves") is about half of uses in child speed
+    bare_move_template = Phase1SituationTemplate(
+        "bare-move",
+        salient_object_variables=[self_mover_0],
+        actions=[
+            Action(
+                MOVE,
+                argument_roles_to_fillers=[(AGENT, self_mover_0)],
+                auxiliary_variable_bindings=aux_variable_bindings,
+            )
+        ],
+    )
+
+    transitive_move_template = Phase1SituationTemplate(
+        "transitive-move",
+        salient_object_variables=[other_mover_0, movee_0],
+        actions=[
+            Action(
+                MOVE,
+                argument_roles_to_fillers=[(AGENT, other_mover_0), (THEME, movee_0)],
+                during=DuringAction(continuously=[contacts(other_mover_0, movee_0)]),
+                auxiliary_variable_bindings=aux_variable_bindings,
+            )
+        ],
+        constraining_relations=[bigger_than(other_mover_0, movee_0)],
+    )
+
+    # TODO: version with explicit goal
+
+    return _phase1_instances(
+        "move",
+        chain(
+            *[
+                sampled(
+                    situation,
+                    max_to_sample=25,
+                    chooser=_CHOOSER,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                )
+                for situation in (bare_move_template, transitive_move_template)
+            ]
+        ),
+    )
+
+
 GAILA_PHASE_1_CURRICULUM = [
     EACH_OBJECT_BY_ITSELF_SUB_CURRICULUM,
     OBJECTS_WITH_COLORS_SUB_CURRICULUM,
@@ -947,6 +1015,7 @@ GAILA_PHASE_1_CURRICULUM = [
     _make_put_curriculum(),
     _make_eat_curriculum(),
     _make_take_curriculum(),
+    _make_move_curriculum(),
 ]
 """
 One particular instantiation of the curriculum for GAILA Phase 1.

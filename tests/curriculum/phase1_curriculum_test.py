@@ -11,6 +11,7 @@ from adam.curriculum.phase1_curriculum import (
     _make_sit_curriculum,
     _make_put_curriculum,
     _make_take_curriculum,
+    _make_move_curriculum,
 )
 
 
@@ -65,3 +66,7 @@ def test_put():
 
 def test_take():
     _test_curriculum(_make_take_curriculum())
+
+
+def test_move():
+    _test_curriculum(_make_move_curriculum())
