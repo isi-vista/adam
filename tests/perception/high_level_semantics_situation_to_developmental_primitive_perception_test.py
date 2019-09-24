@@ -272,6 +272,53 @@ def test_person_put_ball_on_table():
     )
 
 
+def test_relations_between_objects_and_ground():
+    # person_put_ball_on_table
+    person = SituationObject(ontology_node=PERSON)
+    ball = SituationObject(ontology_node=BALL)
+    table = SituationObject(ontology_node=TABLE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[person, ball, table],
+        actions=[
+            # What is the best way of representing the destination in the high-level semantics?
+            # Here we represent it as indicating a relation which should be true.
+            Action(
+                PUT,
+                (
+                    (AGENT, person),
+                    (THEME, ball),
+                    (
+                        GOAL,
+                        Region(
+                            reference_object=table,
+                            distance=EXTERIOR_BUT_IN_CONTACT,
+                            direction=Direction(
+                                positive=True, relative_to_axis=GRAVITATIONAL_AXIS
+                            ),
+                        ),
+                    ),
+                ),
+            )
+        ],
+    )
+
+    perception = _PERCEPTION_GENERATOR.generate_perception(
+        situation, chooser=RandomChooser.for_seed(0)
+    )
+    first_frame = perception.frames[0]
+    ball_perception = perception_with_handle(first_frame, "ball_0")
+    ground_perception = perception_with_handle(first_frame, "ground_0")
+
+    first_frame_relations = first_frame.relations
+    second_frame_relations = perception.frames[1].relations
+
+    assert on(ball_perception, ground_perception)[0] in first_frame_relations
+    assert on(ball_perception, ground_perception)[0] in second_frame_relations
+    # Other objects already have existing relations, that will be taken care in #309
+    # TODO: https://github.com/isi-vista/adam/issues/309
+
+
 def test_liquid_in_and_out_of_container():
     juice = SituationObject(ontology_node=JUICE)
     box = SituationObject(ontology_node=BOX)
