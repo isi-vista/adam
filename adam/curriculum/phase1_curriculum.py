@@ -247,47 +247,42 @@ def _make_fall_curriculum():
     arbitary_object = object_variable("object_0", THING)
     ground = object_variable("ground_0", GROUND)
 
-    # Any Object Falling
-    objects_falling = [
-        Phase1SituationTemplate(
-            "object-falls",
-            salient_object_variables=[arbitary_object],
+    def _make_templates() -> Iterable[Phase1SituationTemplate]:
+        # Any Object Falling
+        for use_adverbial_path_modifier in (True, False):
+            yield Phase1SituationTemplate(
+                "object-falls",
+                salient_object_variables=[arbitary_object],
+                actions=[
+                    Action(
+                        action_type=FALL,
+                        argument_roles_to_fillers=[(THEME, arbitary_object)],
+                    )
+                ],
+                syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER]
+                if use_adverbial_path_modifier
+                else [],
+            )
+
+        # "ball fell on the ground"
+        yield Phase1SituationTemplate(
+            "falls-to-ground",
+            salient_object_variables=[arbitary_object, ground],
             actions=[
                 Action(
-                    action_type=FALL, argument_roles_to_fillers=[(THEME, arbitary_object)]
+                    action_type=FALL,
+                    argument_roles_to_fillers=[(THEME, arbitary_object)],
+                    during=DuringAction(at_some_point=[on(arbitary_object, ground)]),
                 )
             ],
-            syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER]
-            if use_adverbial_path_modifier
-            else [],
         )
-        for use_adverbial_path_modifier in (True, False)
-    ]
 
-    # "ball fell on the ground"
-    objects_falling_to_ground = Phase1SituationTemplate(
-        "fell-to-ground",
-        salient_object_variables=[arbitary_object, ground],
-        actions=[
-            Action(
-                action_type=FALL,
-                argument_roles_to_fillers=[(THEME, arbitary_object)],
-                during=DuringAction(at_some_point=[on(arbitary_object, ground)]),
-            )
-        ],
-    )
     return _phase1_instances(
         "falling objects",
         chain(
             *[
-                all_possible(
-                    objects_falling, ontology=GAILA_PHASE_1_ONTOLOGY, chooser=_CHOOSER
-                ),
-                all_possible(
-                    objects_falling_to_ground,
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=_CHOOSER,
-                ),
+                all_possible(template, ontology=GAILA_PHASE_1_ONTOLOGY, chooser=_CHOOSER)
+                for template in _make_templates()
             ]
         ),
     )
