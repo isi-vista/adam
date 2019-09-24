@@ -105,6 +105,7 @@ def main(params: Parameters) -> None:
     )
     if sort_by_utterance_length_flag:
         random_seed = params.optional_float("random_seed")
+        # Using float and converting to integer until optional_integer is implemented in vistautils
         if not random_seed:
             random_seed = 1
         CurriculumToHtmlDumper().dump_to_html_as_sorted_by_utterance_length(
