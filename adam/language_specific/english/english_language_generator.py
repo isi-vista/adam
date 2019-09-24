@@ -43,7 +43,7 @@ from adam.language_specific.english.english_phase_1_lexicon import (
     I,
     MASS_NOUN,
     YOU,
-)
+    ME)
 from adam.language_specific.english.english_syntax import (
     FIRST_PERSON,
     SECOND_PERSON,
@@ -204,7 +204,9 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 ]
             )
 
-        def _noun_for_object(self, _object: SituationObject) -> DependencyTreeToken:
+        def _noun_for_object(self, _object: SituationObject, *,
+                             syntactic_role_if_known: Optional[DependencyRole]=None) -> \
+                DependencyTreeToken:
             if _object in self.objects_to_dependency_nodes:
                 return self.objects_to_dependency_nodes[_object]
 
@@ -224,8 +226,12 @@ class SimpleRuleBasedEnglishLanguageGenerator(
 
             # Check if the situation object is the speaker
             if IS_SPEAKER in _object.properties:
-                noun_lexicon_entry = I
+                if syntactic_role_if_known == NOMINAL_SUBJECT:
+                    noun_lexicon_entry = I
+                else:
+                    noun_lexicon_entry = ME
             elif IS_ADDRESSEE in _object.properties:
+                # you works for both nominative and accusative
                 noun_lexicon_entry = YOU
             else:
                 noun_lexicon_entry = self._unique_lexicon_entry(
@@ -461,7 +467,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 syntactic_role = self._translate_argument_role(
                     action, verb_lexical_entry, argument_role
                 )
-                filler_noun = self._noun_for_object(filler)
+                filler_noun = self._noun_for_object(filler, syntactic_role_if_known=syntactic_role)
                 # e.g. Mom gives a cookie *to a baby*
                 if argument_role == GOAL and syntactic_role == OBLIQUE_NOMINAL:
                     preposition = self._determine_goal_preposition(
