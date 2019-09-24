@@ -909,6 +909,7 @@ GAILA_PHASE_1_CURRICULUM = [
     _make_drink_curriculum(),
     _make_sit_curriculum(),
     _make_put_curriculum(),
+    _make_eat_curriculum()
 ]
 """
 One particular instantiation of the curriculum for GAILA Phase 1.
