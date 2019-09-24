@@ -601,50 +601,46 @@ def _make_roll_curriculum():
     )
 
 
-def _make_speaker_addressess_curriculum():
+def _make_speaker_addressee_curriculum():
     speaker = object_variable("speaker_0", PERSON, added_properties=[IS_SPEAKER])
     addressee = object_variable("addressee_0", PERSON, added_properties=[IS_ADDRESSEE])
     given_object = object_variable("given_object", INANIMATE_OBJECT)
 
-    # "you give Mom the cookie"
-    addressee_as_agent = [
-        Phase1SituationTemplate(
-            "addressee-agent",
-            salient_object_variables=[speaker, addressee, given_object],
-            actions=[
-                Action(
-                    GIVE,
-                    argument_roles_to_fillers=[
-                        (AGENT, addressee),
-                        (GOAL, speaker),
-                        (THEME, given_object),
-                    ],
-                )
-            ],
-            syntax_hints=[PREFER_DITRANSITIVE] if prefer_ditransitive else [],
-        )
-        for prefer_ditransitive in (True, False)
-    ]
+    def _make_templates() -> Iterable[Phase1SituationTemplate]:
+        for prefer_ditransitive in (True, False):
+            # "you give Mom the cookie"
+            yield Phase1SituationTemplate(
+                "addressee-agent",
+                salient_object_variables=[speaker, addressee, given_object],
+                actions=[
+                    Action(
+                        GIVE,
+                        argument_roles_to_fillers=[
+                            (AGENT, addressee),
+                            (GOAL, speaker),
+                            (THEME, given_object),
+                        ],
+                    )
+                ],
+                syntax_hints=[PREFER_DITRANSITIVE] if prefer_ditransitive else [],
+            )
 
-    # "Mom gives you the cookie"
-    addressee_as_goal = [
-        Phase1SituationTemplate(
-            "addressee-goal",
-            salient_object_variables=[speaker, addressee, given_object],
-            actions=[
-                Action(
-                    GIVE,
-                    argument_roles_to_fillers=[
-                        (AGENT, speaker),
-                        (GOAL, addressee),
-                        (THEME, given_object),
-                    ],
-                )
-            ],
-            syntax_hints=[PREFER_DITRANSITIVE] if prefer_ditransitive else [],
-        )
-        for prefer_ditransitive in (True, False)
-    ]
+            # "Mom gives you the cookie"
+            yield Phase1SituationTemplate(
+                "addressee-goal",
+                salient_object_variables=[speaker, addressee, given_object],
+                actions=[
+                    Action(
+                        GIVE,
+                        argument_roles_to_fillers=[
+                            (AGENT, speaker),
+                            (GOAL, addressee),
+                            (THEME, given_object),
+                        ],
+                    )
+                ],
+                syntax_hints=[PREFER_DITRANSITIVE] if prefer_ditransitive else [],
+            )
 
     return _phase1_instances(
         "addressee_curriculum",
@@ -657,7 +653,7 @@ def _make_speaker_addressess_curriculum():
                         chooser=_CHOOSER,
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                     )
-                    for template in (addressee_as_agent, addressee_as_goal)
+                    for template in _make_templates()
                 )
             ]
         ),
@@ -1285,7 +1281,7 @@ GAILA_PHASE_1_CURRICULUM = [
     _make_object_in_other_object_curriculum(),
     _make_fly_curriculum(),
     _make_roll_curriculum(),
-    _make_speaker_addressess_curriculum(),
+    _make_speaker_addressee_curriculum(),
     _make_jump_curriculum(),
     _make_drink_curriculum(),
     _make_sit_curriculum(),
