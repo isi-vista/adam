@@ -1,3 +1,4 @@
+import shutil
 from pathlib import Path
 from typing import (
     AbstractSet,
@@ -104,6 +105,18 @@ class CurriculumToHtmlDumper:
         along with a *title* for the pages the generator loops through each group
         and calls the internal method to create HTML pages.
         """
+        # first nuke the output directory
+        # we check it only contains HTML files for safety
+        if output_directory.exists():
+            for f in output_directory.iterdir():
+                if f.suffix != ".html":
+                    raise RuntimeError(
+                        r"Output directory does not appear to be a curriculum "
+                        r"dump. It contains the non-html file {f}"
+                    )
+            shutil.rmtree(output_directory)
+        output_directory.mkdir(parents=True, exist_ok=True)
+
         files_written: List[Tuple[str, str]] = []
         # write each instance group to its own file
         for (idx, instance_group) in enumerate(instance_groups):
