@@ -55,6 +55,23 @@ class Is(OntologyNodeSelector):
         return self._nodes
 
 
+@attrs(frozen=True, slots=True)
+class FilterOut(OntologyNodeSelector):
+    _inner_selector: OntologyNodeSelector = attrib(
+        validator=instance_of(OntologyNodeSelector)
+    )
+    _bad_values: ImmutableSet[OntologyNode] = attrib(
+        converter=_to_immutableset, kw_only=True
+    )
+
+    def _select_nodes(self, ontology: Ontology) -> AbstractSet[OntologyNode]:
+        return immutableset(
+            x
+            for x in self._inner_selector.select_nodes(ontology)
+            if x not in self._bad_values
+        )
+
+
 @attrs(frozen=True, slots=True, repr=False)
 class ByHierarchyAndProperties(OntologyNodeSelector):
     """
