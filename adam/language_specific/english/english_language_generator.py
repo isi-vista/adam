@@ -165,36 +165,37 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             object_types_in_situation = set(
                 object_.ontology_node for object_ in self.situation.salient_objects
             )
-            if len(object_types_in_situation) == 1 and not self.situation.is_dynamic:
-                # e.g. three boxes
-                # doesn't matter which object we choose; they are all the same
-                first_object = first(self.situation.salient_objects)
-                self._noun_for_object(first_object)
+
+            action: Optional[Action]
+            if self.situation.is_dynamic:
+                # the situation contains an action, which we now translate.
+                action = only(self.situation.actions)
+                self._translate_action_to_verb(action)
+
+                # translate any leftover objects we didn't find while translating the action
+                untranslated_objects = self.situation.salient_objects.difference(
+                    self.objects_to_dependency_nodes.keys())
+                for untranslated_object in untranslated_objects:
+                    self._noun_for_object(untranslated_object)
             else:
-                # the more common case of
-                # multiple objects of different types, or an action...
-                for object_ in self.situation.salient_objects:
-                    if not self._only_translate_if_referenced(object_):
-                        self._noun_for_object(object_)
-
-                if len(self.situation.actions) > 1:
-                    raise RuntimeError(
-                        "Currently only situations with 0 or 1 actions are supported"
-                    )
-
-                action: Optional[Action[OntologyNode, SituationObject]]
-                if self.situation.actions:
-                    action = only(self.situation.actions)
+                # the situation is static (only objects and relations, no actions)
+                action = None
+                if len(object_types_in_situation) == 1:
+                    # only one type of object is present
+                    # e.g. three boxes
+                    # doesn't matter which object we choose; they are all the same
+                    first_object = first(self.situation.salient_objects)
+                    self._noun_for_object(first_object)
                 else:
-                    action = None
+                    # multiple objects of different types
+                    for object_ in self.situation.salient_objects:
+                        if not self._only_translate_if_referenced(object_):
+                            self._noun_for_object(object_)
 
-                # We only translate those relations the user specifically calls out,
-                # not the many "background" relations which are also true.
-                for persisting_relation in self.situation.always_relations:
-                    self._translate_relation(action, persisting_relation)
-
-                if action:
-                    self._translate_action_to_verb(action)
+            # Always translate those relations the user specifically calls out,
+            # not the many "background" relations which are also true.
+            for persisting_relation in self.situation.always_relations:
+                self._translate_relation(action, persisting_relation)
 
             return immutableset(
                 [
@@ -298,7 +299,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 # not "a sand"
                 or MASS_NOUN in noun_lexicon_entry.properties
                 # not "a you"
-                or noun_lexicon_entry in (I, YOU)
+                or noun_lexicon_entry in (I, YOU, ME)
             ):
                 return
 

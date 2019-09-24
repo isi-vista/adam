@@ -416,7 +416,7 @@ def _make_fly_curriculum():
     bare_fly = [
         Phase1SituationTemplate(
             "fly",
-            salient_object_variables=[bird, _GROUND_OBJECT],
+            salient_object_variables=[bird],
             actions=[
                 Action(
                     FLY,
@@ -443,7 +443,7 @@ def _make_fly_curriculum():
     fly_up_down = [
         Phase1SituationTemplate(
             "fly-up-down",
-            salient_object_variables=[bird, _GROUND_OBJECT],
+            salient_object_variables=[bird],
             actions=[
                 Action(
                     FLY,

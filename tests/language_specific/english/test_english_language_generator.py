@@ -254,29 +254,6 @@ def test_dad_put_a_cookie_in_a_box():
     ).as_token_sequence() == ("Dad", "puts", "a", "cookie", "in", "a", "box")
 
 
-def test_situation_with_ground():
-    dad = SituationObject(DAD)
-    cookie = SituationObject(COOKIE)
-    box = SituationObject(BOX)
-    ground = SituationObject(GROUND)
-    situation = HighLevelSemanticsSituation(
-        ontology=GAILA_PHASE_1_ONTOLOGY,
-        salient_objects=[dad, cookie, box, ground],
-        actions=[
-            Action(
-                PUT,
-                (
-                    (AGENT, dad),
-                    (THEME, cookie),
-                    (GOAL, Region(reference_object=box, distance=INTERIOR)),
-                ),
-            )
-        ],
-    )
-
-    assert only(
-        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
-    ).as_token_sequence() == ("Dad", "puts", "a", "cookie", "in", "a", "box")
 
 
 def test_dad_put_a_cookie_in_a_box_using_i():
