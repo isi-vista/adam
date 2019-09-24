@@ -80,6 +80,7 @@ from adam.ontology.phase1_ontology import (
     on,
     strictly_above,
     IS_HUMAN,
+    COME,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -1332,7 +1333,7 @@ def _make_come_curriculum():
 
     come_to_speaker = Phase1SituationTemplate(
         "come-to-speaker",
-        salient_object_variables=[movee],
+        salient_object_variables=[movee, speaker],
         actions=[
             Action(COME, argument_roles_to_fillers=[(AGENT, movee), (GOAL, speaker)])
         ],
