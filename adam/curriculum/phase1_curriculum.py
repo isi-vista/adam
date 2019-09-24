@@ -77,7 +77,7 @@ from adam.ontology.phase1_ontology import (
     THROW,
     THROW_GOAL,
     BOX,
-)
+    above)
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
     EXTERIOR_BUT_IN_CONTACT,
@@ -372,6 +372,53 @@ def _make_object_on_object_curriculum() -> _Phase1InstanceGroup:
 
     return _phase1_instances(
         "objects-on-surfaces",
+        sampled(
+            situation_template,
+            max_to_sample=100,
+            chooser=_CHOOSER,
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+        ),
+    )
+
+
+def _make_object_under_object_curriculum() -> _Phase1InstanceGroup:
+    object_under = object_variable("object_0")
+    object_above = object_variable(
+        "object_1",
+        required_properties=[HAS_SPACE_UNDER],
+    )
+    situation_template = Phase1SituationTemplate(
+        "object-under-object",
+        salient_object_variables=[object_above, object_under],
+        constraining_relations=[Relation(BIGGER_THAN, object_above, object_under)],
+        asserted_always_relations=[strictly_above(object_above, object_under)],
+    )
+
+    return _phase1_instances(
+        "objects-under-objects",
+        sampled(
+            situation_template,
+            max_to_sample=100,
+            chooser=_CHOOSER,
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+        ),
+    )
+
+
+def _make_object_over_object_curriculum() -> _Phase1InstanceGroup:
+    object_over = object_variable("object_0", BIRD)
+    object_below = object_variable(
+        "object_1",
+        THING,
+    )
+    situation_template = Phase1SituationTemplate(
+        "object-over-object",
+        salient_object_variables=[object_below, object_over],
+        asserted_always_relations=[strictly_above(object_over, object_below)],
+    )
+
+    return _phase1_instances(
+        "objects-over-objects",
         sampled(
             situation_template,
             max_to_sample=100,
@@ -1270,6 +1317,8 @@ GAILA_PHASE_1_CURRICULUM = [
     _make_fall_curriculum(),
     _make_transfer_of_possession_curriculum(),
     _make_object_on_object_curriculum(),
+    _make_object_over_object_curriculum(),
+    _make_object_under_object_curriculum(),
     _make_object_in_other_object_curriculum(),
     _make_fly_curriculum(),
     _make_roll_curriculum(),
