@@ -128,20 +128,20 @@ class CurriculumToHtmlDumper:
             html_out.write(f"<head>\n\t<style>{CSS}\n\t</style>\n</head>")
             html_out.write(f"\n<body>\n\t<h1>{title} - {instance_group.name()}</h1>")
             html_out.write("\n<h2>How to read</h2>")
-            html_out.write(f"\n<p>Our curiculum is designed in two levels: The objective, here - {instance_group.name()}")
+            html_out.write(f"\n<p>Our curriculum is designed in two levels: The objective, here - {instance_group.name()}")
             html_out.write(
                 "\n and a set of scenes for each objective. The scenes are in the shaded table below."
-                "\n For each scene, we display: "
+                "\n For each scene, we display: </p>"
                 "\n\t<li>Situation (column 1), which is used by the curriculum developer to specify key objects and actions,"
                 "\n but is unseen by the learner</li>."  
                 "\n\t<li>Language (column 2), the text presented to the learner</li>."  
-                "\n\t<li>Learner Perception (column 3), a textual representaiton of the perceptual features"
+                "\n\t<li>Learner Perception (column 3), a textual representation of the perceptual features"
                 "\n presented to the learner</li>")
             html_out.write(
                 "<p> The perceptual features described in column 3 are presented to the learner in a"
                 "\n machine interpretable fashion (e.g. as attributes, variables, spatial properties). Here "
                 "\n to assist interpretation of the curriculum we serialize them as debugging text strings." 
-                "\n The following are descriptions of some of the perceptual inputs (and their serialization). "
+                "\n The following are descriptions of some of the perceptual inputs (and their serialization).</p>"
             )
 
             html_out.write(
