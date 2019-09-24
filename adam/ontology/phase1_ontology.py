@@ -1053,12 +1053,29 @@ _PUSH_ACTION_DESCRIPTION = ActionDescription(
 _GO_AGENT = SituationObject(THING, properties=[SELF_MOVING])
 _GO_GOAL = SituationObject(THING)
 
-_GO_ACTION_DESCRIPTION = ActionDescription(
-    frame=ActionDescriptionFrame({AGENT: _GO_AGENT, GOAL: _GO_GOAL}),
-    during=DuringAction(objects_to_paths=[(_GO_AGENT, SpatialPath(TO, _GO_GOAL))]),
-    postconditions=[Relation(IN_REGION, _GO_AGENT, _GO_GOAL)],
-    asserted_properties=[(_GO_AGENT, VOLITIONALLY_INVOLVED), (_GO_AGENT, MOVES)],
-)
+
+def _make_go_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
+    # bare go
+    postconditions = [Relation(IN_REGION, _GO_AGENT, _GO_GOAL)]
+    during: DuringAction[SituationObject] = DuringAction(
+        objects_to_paths=[(_GO_AGENT, SpatialPath(TO, _GO_GOAL))]
+    )
+    asserted_properties = [(_GO_AGENT, VOLITIONALLY_INVOLVED), (_GO_AGENT, MOVES)]
+    yield GO, ActionDescription(
+        frame=ActionDescriptionFrame({AGENT: _GO_AGENT}),
+        during=during,
+        postconditions=postconditions,
+        asserted_properties=asserted_properties,
+    )
+
+    # goes to goal
+    yield GO, ActionDescription(
+        frame=ActionDescriptionFrame({AGENT: _GO_AGENT, GOAL: _GO_GOAL}),
+        during=during,
+        postconditions=postconditions,
+        asserted_properties=asserted_properties,
+    )
+
 
 _COME_AGENT = SituationObject(THING, properties=[ANIMATE])
 _COME_GOAL = SituationObject(THING)
@@ -1457,7 +1474,6 @@ _FLY_ACTION_DESCRIPTION = ActionDescription(
 _ACTIONS_TO_DESCRIPTIONS = [
     (PUT, _PUT_ACTION_DESCRIPTION),
     (PUSH, _PUSH_ACTION_DESCRIPTION),
-    (GO, _GO_ACTION_DESCRIPTION),
     (COME, _COME_ACTION_DESCRIPTION),
     (GIVE, _GIVE_ACTION_DESCRIPTION),
     (TAKE, _TAKE_ACTION_DESCRIPTION),
@@ -1473,6 +1489,7 @@ _ACTIONS_TO_DESCRIPTIONS.extend(_make_drink_description())
 _ACTIONS_TO_DESCRIPTIONS.extend(_make_sit_action_descriptions())
 _ACTIONS_TO_DESCRIPTIONS.extend(_make_move_descriptions())
 _ACTIONS_TO_DESCRIPTIONS.extend(_make_spin_descriptions())
+_ACTIONS_TO_DESCRIPTIONS.extend(_make_go_description())
 
 GAILA_PHASE_1_ONTOLOGY = Ontology(
     "gaila-phase-1",
