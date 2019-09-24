@@ -221,12 +221,16 @@ BLUE = OntologyNode("blue", [CAN_FILL_TEMPLATE_SLOT])
 GREEN = OntologyNode("green", [CAN_FILL_TEMPLATE_SLOT])
 BLACK = OntologyNode("black", [CAN_FILL_TEMPLATE_SLOT])
 WHITE = OntologyNode("white", [CAN_FILL_TEMPLATE_SLOT])
+LIGHT_BROWN = OntologyNode("light-brown", [CAN_FILL_TEMPLATE_SLOT])
+DARK_BROWN = OntologyNode("dark-brown", [CAN_FILL_TEMPLATE_SLOT])
 TRANSPARENT = OntologyNode("transparent", [CAN_FILL_TEMPLATE_SLOT])
 subtype(RED, COLOR)
 subtype(BLUE, COLOR)
 subtype(GREEN, COLOR)
 subtype(BLACK, COLOR)
 subtype(WHITE, COLOR)
+subtype(LIGHT_BROWN, COLOR)
+subtype(DARK_BROWN, COLOR)
 subtype(TRANSPARENT, COLOR)
 _RED_HEX = [
     (255, 0, 0),
@@ -247,6 +251,9 @@ _BLUE_HEX = [
 _GREEN_HEX = [(0, 255, 0), (75, 111, 68), (86, 130, 3), (34, 139, 34)]
 _BLACK_HEX = [(0, 0, 0), (12, 2, 15), (53, 56, 57), (52, 52, 52)]
 _WHITE_HEX = [(255, 255, 255), (248, 248, 255), (245, 245, 245), (254, 254, 250)]
+_LIGHT_BROWN_HEX = [(219, 191, 33), (222, 205, 111), (222, 212, 160)]
+_DARK_BROWN_HEX = [(110, 95, 19), (105, 88, 6), (87, 76, 26)]
+
 COLORS_TO_RGBS: ImmutableDict[
     OntologyNode, Optional[Sequence[Tuple[int, int, int]]]
 ] = immutabledict(
@@ -257,6 +264,8 @@ COLORS_TO_RGBS: ImmutableDict[
         (BLACK, _BLACK_HEX),
         (WHITE, _WHITE_HEX),
         (TRANSPARENT, None),
+        (LIGHT_BROWN, _LIGHT_BROWN_HEX),
+        (DARK_BROWN, _DARK_BROWN_HEX)
     ]
 )
 
@@ -286,13 +295,16 @@ TABLE = OntologyNode(
         CAN_HAVE_THINGS_RESTING_ON_THEM,
         HAS_SPACE_UNDER,
         CAN_BE_SAT_ON_BY_PEOPLE,
+        LIGHT_BROWN,
+        DARK_BROWN
     ],
 )
 subtype(TABLE, INANIMATE_OBJECT)
 BALL = OntologyNode("ball", [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, ROLLABLE])
 subtype(BALL, INANIMATE_OBJECT)
 BOOK = OntologyNode(
-    "book", [CAN_FILL_TEMPLATE_SLOT, CAN_HAVE_THINGS_RESTING_ON_THEM, PERSON_CAN_HAVE]
+    "book", [CAN_FILL_TEMPLATE_SLOT, CAN_HAVE_THINGS_RESTING_ON_THEM, PERSON_CAN_HAVE,
+             RED, BLUE, GREEN]
 )
 subtype(BOOK, INANIMATE_OBJECT)
 HOUSE = OntologyNode("house", [HOLLOW, CAN_FILL_TEMPLATE_SLOT])

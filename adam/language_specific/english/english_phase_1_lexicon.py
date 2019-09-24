@@ -55,7 +55,7 @@ from adam.ontology.phase1_ontology import (
     TRUCK,
     WATER,
     WHITE,
-)
+    LIGHT_BROWN, DARK_BROWN)
 
 MASS_NOUN = LexiconProperty("mass-noun")
 ALLOWS_DITRANSITIVE = LexiconProperty("allows-ditransitive")
@@ -130,5 +130,7 @@ GAILA_PHASE_1_ENGLISH_LEXICON = OntologyLexicon(
         (BLACK, LexiconEntry("black", ADJECTIVE)),
         (WHITE, LexiconEntry("white", ADJECTIVE)),
         (TRANSPARENT, LexiconEntry("transparent", ADJECTIVE)),
+        (LIGHT_BROWN, LexiconEntry("light brown", ADJECTIVE)),
+        (DARK_BROWN, LexiconEntry("dark brown", ADJECTIVE))
     ),
 )
