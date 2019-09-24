@@ -806,9 +806,7 @@ def _make_cookie_schema() -> ObjectStructuralSchema:
             cross_section_size=CONSTANT,
             generating_axis=bottom_to_top,
             orienting_axes=[side_to_side, side_to_side],
-            axis_relations=[
-                bigger_than(side_to_side, bottom_to_top),
-            ]
+            axis_relations=[bigger_than(side_to_side, bottom_to_top)],
         ),
     )
 
@@ -827,9 +825,7 @@ def _make_cup_schema() -> ObjectStructuralSchema:
             cross_section_size=SMALL_TO_LARGE,
             generating_axis=bottom_to_top,
             orienting_axes=[side_to_side, side_to_side],
-            axis_relations=[
-                bigger_than(bottom_to_top, side_to_side),
-            ]
+            axis_relations=[bigger_than(bottom_to_top, side_to_side)],
         ),
     )
 
@@ -852,7 +848,7 @@ def _make_book_schema() -> ObjectStructuralSchema:
             axis_relations=[
                 bigger_than(spine_to_edges, back_cover_to_front_cover),
                 bigger_than(edges_to_edges, back_cover_to_front_cover),
-            ]
+            ],
         ),
     )
 
@@ -998,7 +994,7 @@ def _make_chair_seat_schema() -> ObjectStructuralSchema:
             axis_relations=[
                 bigger_than(front_edge_to_back_edge, bottom_to_top),
                 bigger_than(side_to_side, bottom_to_top),
-            ]
+            ],
         ),
     )
 
@@ -1124,9 +1120,7 @@ def _make_tire_schema() -> ObjectStructuralSchema:
             cross_section_size=CONSTANT,
             generating_axis=front_to_back,
             orienting_axes=[tread_to_tread, tread_to_tread],
-            axis_relations=[
-                bigger_than(tread_to_tread, front_to_back),
-            ]
+            axis_relations=[bigger_than(tread_to_tread, front_to_back)],
         ),
     )
 
