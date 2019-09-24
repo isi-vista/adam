@@ -62,6 +62,7 @@ from adam.ontology.phase1_ontology import (
     is_recognized_particular,
     on,
     strictly_above,
+    INANIMATE,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -70,6 +71,7 @@ from adam.ontology.phase1_spatial_relations import (
     Region,
     SpatialPath,
     TOWARD,
+    INTERIOR,
 )
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -631,7 +633,9 @@ def make_jump_over_object_template():
 
 def _make_put_curriculum():
     putter = object_variable("putter_0", required_properties=[ANIMATE])
-    object_put = object_variable("object_0")
+    object_put = object_variable(
+        "object_0", required_properties=[INANIMATE], banned_properties=[IS_BODY_PART]
+    )
 
     on_region_object = object_variable(
         "on_region_object",
@@ -652,7 +656,14 @@ def _make_put_curriculum():
                 argument_roles_to_fillers=[
                     (AGENT, putter),
                     (THEME, object_put),
-                    (GOAL, on_region_object),
+                    (
+                        GOAL,
+                        Region(
+                            on_region_object,
+                            distance=EXTERIOR_BUT_IN_CONTACT,
+                            direction=GRAVITATIONAL_UP,
+                        ),
+                    ),
                 ],
             )
         ],
@@ -672,7 +683,7 @@ def _make_put_curriculum():
                 argument_roles_to_fillers=[
                     (AGENT, putter),
                     (THEME, object_put),
-                    (GOAL, in_region_object),
+                    (GOAL, Region(in_region_object, distance=INTERIOR)),
                 ],
             )
         ],

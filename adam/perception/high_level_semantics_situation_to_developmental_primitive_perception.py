@@ -448,7 +448,7 @@ class _PerceptionGeneration:
         elif not perceived_objects_matching_constraints:
             raise RuntimeError(
                 f"Can not find object with properties {action_object_variable} in order to bind "
-                f"{action_object_variable}"
+                f"{action_object_variable}. All perceived objects are: {self._object_perceptions_to_ontology_nodes}"
             )
         else:
             distinct_property_sets_for_matching_object_types = set(
