@@ -27,10 +27,11 @@ from vistautils.preconditions import check_state
 
 from adam.curriculum.phase1_curriculum import GAILA_PHASE_1_CURRICULUM
 from adam.experiment import InstanceGroup
+from adam.geon import Geon
 from adam.language.dependency import LinearizedDependencyTree
 from adam.ontology import IN_REGION
 from adam.ontology.during import DuringAction
-from adam.ontology.phase1_ontology import PART_OF, IS_SPEAKER
+from adam.ontology.phase1_ontology import PART_OF, IS_SPEAKER, SMALLER_THAN, BIGGER_THAN
 from adam.ontology.phase1_spatial_relations import Region, SpatialPath
 from adam.perception import ObjectPerception, PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
@@ -39,6 +40,7 @@ from adam.perception.developmental_primitive_perception import (
     HasColor,
     PropertyPerception,
 )
+from adam.relation import Relation
 from adam.situation import SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 
@@ -482,7 +484,9 @@ class CurriculumToHtmlDumper:
                     f"\t\t\t\t\t\t<li>{obj_prefix}{render_object(node)}{obj_suffix}<ul>"
                 )
                 if node.geon:
-                    output_text.append((f"\t\t\t\t\t\t<li>Geon: {node.geon}</li>"))
+                    output_text.append(
+                        f"\t\t\t\t\t\t<li>Geon: {self._render_geon(node.geon, indent_dept=7)}</li>"
+                    )
                 # Handle Region Relations
                 for region_relation in region_relations:
                     if region_relation.first_slot == node:
@@ -510,9 +514,37 @@ class CurriculumToHtmlDumper:
                     (relation_prefix, relation_suffix) = compute_arrow(
                         relation, static_relations, first_frame_relations
                     )
-                    output_text.append(
-                        f"\t\t\t\t\t\t<li>{relation_prefix}{relation}{relation_suffix}</li>"
-                    )
+                    # if matching smallerThan/biggerThan relations exist, give as single relation
+                    opposite_relations = {
+                        SMALLER_THAN: BIGGER_THAN,
+                        BIGGER_THAN: SMALLER_THAN,
+                    }
+                    single_size_relation = None
+                    if relation.relation_type in opposite_relations:
+                        if (
+                            Relation(
+                                opposite_relations[relation.relation_type],
+                                relation.second_slot,
+                                relation.first_slot,
+                            )
+                            in all_relations
+                        ):
+                            if relation.relation_type == SMALLER_THAN:
+                                single_size_relation = (
+                                    f"{relation.second_slot} > {relation.first_slot}"
+                                )
+                            else:
+                                single_size_relation = (
+                                    f"{relation.first_slot} > {relation.second_slot}"
+                                )
+                    if single_size_relation:
+                        size_output = f"\t\t\t\t\t\t<li>{relation_prefix}{single_size_relation}{relation_suffix}</li>"
+                        if size_output not in output_text:
+                            output_text.append(size_output)
+                    else:
+                        output_text.append(
+                            f"\t\t\t\t\t\t<li>{relation_prefix}{relation}{relation_suffix}</li>"
+                        )
             output_text.append("\t\t\t\t\t</ul>")
 
         if perception.during:
@@ -575,6 +607,45 @@ class CurriculumToHtmlDumper:
             )
         else:
             return " ".join(linguistic.as_token_sequence())
+
+    def _render_geon(self, geon: Geon, *, indent_dept: int = 0) -> str:
+        indent = "\t" * indent_dept
+        lines = [f"{indent}<ul>"]
+        lines.append(
+            f"{indent}\t<li>Cross Section: {geon.cross_section} | Cross Section Size: {geon.cross_section_size}</li>"
+        )
+        if geon.generating_axis == geon.primary_axis:
+            lines.append(
+                f"{indent}\t<li><b>Generating Axis: {geon.generating_axis}</b></li>"
+            )
+        else:
+            lines.append(f"{indent}\t<li>Generating Axis: {geon.generating_axis}</li>")
+        if geon.orienting_axes:
+            lines.append(f"{indent}\t<li>Orienting Axes:")
+            lines.append(f"{indent}\t<ul>")
+            for axis in geon.orienting_axes:
+                if axis == geon.primary_axis:
+                    lines.append(f"{indent}\t\t<li><b>{axis}</b></li>")
+                else:
+                    lines.append(f"{indent}\t\t<li>{axis}</li>")
+            lines.append(f"{indent}\t</ul>")
+            lines.append(f"{indent}\t</li>")
+        if geon.axis_relations:
+            lines.append(f"{indent}\t<li>Axes Relations:")
+            lines.append(f"{indent}\t<ul>")
+            for axis_relation in geon.axis_relations:
+                if isinstance(axis_relation.second_slot, Region):
+                    lines.append(
+                        f"{indent}\t\t<li>{axis_relation.relation_type}({axis_relation.first_slot.debug_name},{axis_relation.second_slot})</li>"
+                    )
+                else:
+                    lines.append(
+                        f"{indent}\t\t<li>{axis_relation.relation_type}({axis_relation.first_slot.debug_name},{axis_relation.second_slot.debug_name})</li>"
+                    )
+            lines.append(f"{indent}\t</ul>")
+            lines.append(f"{indent}\t</li>")
+        lines.append(f"{indent}</ul>")
+        return "\n".join(lines)
 
 
 CSS = """
