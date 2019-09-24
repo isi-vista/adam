@@ -600,7 +600,7 @@ def _make_roll_curriculum():
 
 
 JUMPER = object_variable("jumper_0", THING, required_properties=[CAN_JUMP])
-JUMPED_OVER = object_variable("jumped_over", THING)
+JUMPED_OVER = object_variable("jumped_over", THING, banned_properties=[IS_BODY_PART])
 
 
 def _make_jump_curriculum():
