@@ -10,6 +10,7 @@ from adam.curriculum.phase1_curriculum import (
     _make_transfer_of_possession_curriculum,
     _make_sit_curriculum,
     _make_put_curriculum,
+    _make_take_curriculum,
 )
 
 
@@ -60,3 +61,7 @@ def test_sit():
 
 def test_put():
     _test_curriculum(_make_put_curriculum())
+
+
+def test_take():
+    _test_curriculum(_make_take_curriculum())

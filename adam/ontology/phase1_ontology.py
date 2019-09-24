@@ -1088,7 +1088,14 @@ _TAKE_ACTION_DESCRIPTION = ActionDescription(
         partOf(_TAKE_MANIPULATOR, _TAKE_AGENT),
     ],
     preconditions=[negate(has(_TAKE_AGENT, _TAKE_THEME))],
-    postconditions=[has(_TAKE_AGENT, _TAKE_THEME)],
+    postconditions=[
+        has(_TAKE_AGENT, _TAKE_THEME),
+        Relation(
+            IN_REGION,
+            _TAKE_THEME,
+            Region(_TAKE_MANIPULATOR, distance=EXTERIOR_BUT_IN_CONTACT),
+        ),
+    ],
     asserted_properties=[
         (_TAKE_AGENT, VOLITIONALLY_INVOLVED),
         (_TAKE_AGENT, CAUSES_CHANGE),

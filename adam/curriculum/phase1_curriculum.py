@@ -63,6 +63,7 @@ from adam.ontology.phase1_ontology import (
     is_recognized_particular,
     on,
     strictly_above,
+    TAKE,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -892,6 +893,41 @@ def _make_sit_curriculum():
     )
 
 
+def _make_take_curriculum():
+    taker = object_variable("taker_0", required_properties=[ANIMATE])
+    object_taken = object_variable(
+        "object_taken_0",
+        required_properties=[INANIMATE],
+        banned_properties=[IS_BODY_PART],
+    )
+
+    # X puts Y on Z
+    take_template = Phase1SituationTemplate(
+        "take",
+        salient_object_variables=[taker, object_taken],
+        actions=[
+            Action(
+                TAKE, argument_roles_to_fillers=[(AGENT, taker), (THEME, object_taken)]
+            )
+        ],
+        constraining_relations=[Relation(BIGGER_THAN, taker, object_taken)],
+    )
+
+    return _phase1_instances(
+        "taking",
+        chain(
+            *[
+                sampled(
+                    take_template,
+                    max_to_sample=25,
+                    chooser=_CHOOSER,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                )
+            ]
+        ),
+    )
+
+
 GAILA_PHASE_1_CURRICULUM = [
     EACH_OBJECT_BY_ITSELF_SUB_CURRICULUM,
     OBJECTS_WITH_COLORS_SUB_CURRICULUM,
@@ -910,6 +946,7 @@ GAILA_PHASE_1_CURRICULUM = [
     _make_sit_curriculum(),
     _make_put_curriculum(),
     _make_eat_curriculum(),
+    _make_take_curriculum(),
 ]
 """
 One particular instantiation of the curriculum for GAILA Phase 1.
