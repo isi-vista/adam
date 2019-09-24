@@ -254,31 +254,6 @@ def test_dad_put_a_cookie_in_a_box():
     ).as_token_sequence() == ("Dad", "puts", "a", "cookie", "in", "a", "box")
 
 
-def test_situation_with_ground():
-    dad = SituationObject(DAD)
-    cookie = SituationObject(COOKIE)
-    box = SituationObject(BOX)
-    ground = SituationObject(GROUND)
-    situation = HighLevelSemanticsSituation(
-        ontology=GAILA_PHASE_1_ONTOLOGY,
-        salient_objects=[dad, cookie, box, ground],
-        actions=[
-            Action(
-                PUT,
-                (
-                    (AGENT, dad),
-                    (THEME, cookie),
-                    (GOAL, Region(reference_object=box, distance=INTERIOR)),
-                ),
-            )
-        ],
-    )
-
-    assert only(
-        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
-    ).as_token_sequence() == ("Dad", "puts", "a", "cookie", "in", "a", "box")
-
-
 def test_dad_put_a_cookie_in_a_box_using_i():
     dad = SituationObject(DAD, properties=[IS_SPEAKER])
     cookie = SituationObject(COOKIE)
@@ -801,6 +776,45 @@ def test_mom_sits_on_a_table():
     )
 
     assert generated_tokens(situation) == ("Mom", "sits", "on", "a", "table")
+
+
+def test_you_give_me_a_cookie():
+    you = SituationObject(DAD, properties=[IS_ADDRESSEE])
+    baby = SituationObject(BABY, properties=[IS_SPEAKER])
+    cookie = SituationObject(COOKIE)
+
+    situation_to = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[you, baby, cookie],
+        actions=[
+            Action(
+                GIVE,
+                argument_roles_to_fillers=[(AGENT, you), (GOAL, baby), (THEME, cookie)],
+            )
+        ],
+    )
+
+    assert generated_tokens(situation_to) == ("you", "give", "a", "cookie", "to", "me")
+
+    situation_ditransitive = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[you, baby, cookie],
+        actions=[
+            Action(
+                GIVE,
+                argument_roles_to_fillers=[(AGENT, you), (GOAL, baby), (THEME, cookie)],
+            )
+        ],
+        syntax_hints=[PREFER_DITRANSITIVE],
+    )
+
+    assert generated_tokens(situation_ditransitive) == (
+        "you",
+        "give",
+        "me",
+        "a",
+        "cookie",
+    )
 
 
 def generated_tokens(situation):
