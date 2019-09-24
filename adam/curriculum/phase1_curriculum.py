@@ -33,6 +33,7 @@ from adam.ontology.phase1_ontology import (
     FLY,
     GAILA_PHASE_1_ONTOLOGY,
     GIVE,
+    GO,
     GOAL,
     GROUND,
     HAS,
@@ -45,6 +46,8 @@ from adam.ontology.phase1_ontology import (
     JUMP_INITIAL_SUPPORTER_AUX,
     LEARNER,
     LIQUID,
+    MOVE,
+    MOVE_GOAL,
     PATIENT,
     PERSON,
     PERSON_CAN_HAVE,
@@ -53,32 +56,32 @@ from adam.ontology.phase1_ontology import (
     ROLL,
     ROLLABLE,
     ROLL_SURFACE_AUXILIARY,
+    SELF_MOVING,
     SIT,
     SIT_GOAL,
     SIT_THING_SAT_ON,
+    SPIN,
+    TAKE,
     THEME,
     TRANSFER_OF_POSSESSION,
+    _GO_GOAL,
     bigger_than,
+    contacts,
     inside,
     is_recognized_particular,
     on,
     strictly_above,
-    TAKE,
-    SELF_MOVING,
-    MOVE,
-    MOVE_GOAL,
-    contacts,
-    SPIN,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
     EXTERIOR_BUT_IN_CONTACT,
+    GRAVITATIONAL_DOWN,
     GRAVITATIONAL_UP,
     INTERIOR,
+    PROXIMAL,
     Region,
     SpatialPath,
     TOWARD,
-    PROXIMAL,
 )
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -1046,6 +1049,77 @@ def _make_spin_curriculum():
     )
 
 
+def _make_go_curriculum():
+    goer = object_variable("goer", THING, required_properties=[ANIMATE])
+    goal_reference = object_variable("go-goal", THING, required_properties=[HOLLOW])
+
+    bare_go = Phase1SituationTemplate(
+        "bare-go",
+        salient_object_variables=[goer],
+        actions=[
+            Action(
+                GO,
+                argument_roles_to_fillers=[(AGENT, goer)],
+                auxiliary_variable_bindings=[
+                    (_GO_GOAL, Region(goal_reference, distance=PROXIMAL))
+                ],
+            )
+        ],
+    )
+
+    go_in = Phase1SituationTemplate(
+        "go-in",
+        salient_object_variables=[goer, goal_reference],
+        actions=[
+            Action(
+                GO,
+                argument_roles_to_fillers=[
+                    (AGENT, goer),
+                    (GOAL, Region(goal_reference, distance=INTERIOR)),
+                ],
+            )
+        ],
+        constraining_relations=[bigger_than(goal_reference, goer)],
+    )
+
+    go_under = Phase1SituationTemplate(
+        "go-under",
+        salient_object_variables=[goer, goal_reference],
+        actions=[
+            Action(
+                GO,
+                argument_roles_to_fillers=[
+                    (AGENT, goer),
+                    (
+                        GOAL,
+                        Region(
+                            goal_reference,
+                            distance=PROXIMAL,
+                            direction=GRAVITATIONAL_DOWN,
+                        ),
+                    ),
+                ],
+            )
+        ],
+        constraining_relations=[bigger_than(goal_reference, goer)],
+    )
+
+    return _phase1_instances(
+        "go",
+        chain(
+            *[
+                sampled(
+                    situation,
+                    max_to_sample=25,
+                    chooser=_CHOOSER,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                )
+                for situation in (bare_go, go_in, go_under)
+            ]
+        ),
+    )
+
+
 GAILA_PHASE_1_CURRICULUM = [
     EACH_OBJECT_BY_ITSELF_SUB_CURRICULUM,
     OBJECTS_WITH_COLORS_SUB_CURRICULUM,
@@ -1067,6 +1141,7 @@ GAILA_PHASE_1_CURRICULUM = [
     _make_take_curriculum(),
     _make_move_curriculum(),
     _make_spin_curriculum(),
+    _make_go_curriculum(),
 ]
 """
 One particular instantiation of the curriculum for GAILA Phase 1.

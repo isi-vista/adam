@@ -71,6 +71,7 @@ from adam.ontology.phase1_spatial_relations import (
     PROXIMAL,
     Region,
     TOWARD,
+    GRAVITATIONAL_DOWN,
 )
 from adam.random_utils import SequenceChooser
 from adam.relation import Relation
@@ -580,6 +581,8 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 # TODO: put constraints on the axis
             ):
                 return "on"
+            elif region.direction == GRAVITATIONAL_DOWN:
+                return "under"
             else:
                 raise RuntimeError(
                     f"Don't know how to translate {region} to a preposition yet"
