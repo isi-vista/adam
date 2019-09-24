@@ -74,6 +74,8 @@ from adam.ontology.phase1_ontology import (
     PUSH,
     PUSH_SURFACE_AUX,
     PUSH_GOAL,
+    THROW,
+    THROW_GOAL,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -1207,6 +1209,73 @@ def _make_push_curriculum():
     )
 
 
+def _make_throw_curriculum():
+    thrower = object_variable("thrower_0", required_properties=[ANIMATE])
+    object_thrown = object_variable(
+        "object_0", required_properties=[INANIMATE], banned_properties=[IS_BODY_PART]
+    )
+
+    # Dad throws a cookie on the ground
+    throw_on_ground_template = Phase1SituationTemplate(
+        "throw-on-ground",
+        salient_object_variables=[thrower, object_thrown, _GROUND_OBJECT],
+        actions=[
+            Action(
+                THROW,
+                argument_roles_to_fillers=[
+                    (AGENT, thrower),
+                    (THEME, object_thrown),
+                    (
+                        GOAL,
+                        Region(
+                            _GROUND_OBJECT,
+                            distance=EXTERIOR_BUT_IN_CONTACT,
+                            direction=GRAVITATIONAL_UP,
+                        ),
+                    ),
+                ],
+            )
+        ],
+        constraining_relations=[Relation(BIGGER_THAN, thrower, object_thrown)],
+    )
+
+    # A baby throws a truck
+    throw_template = Phase1SituationTemplate(
+        "throw",
+        salient_object_variables=[thrower, object_thrown],
+        actions=[
+            Action(
+                THROW,
+                argument_roles_to_fillers=[(AGENT, thrower), (THEME, object_thrown)],
+                auxiliary_variable_bindings=[
+                    (THROW_GOAL, Region(_GROUND_OBJECT, distance=PROXIMAL))
+                ],
+            )
+        ],
+        constraining_relations=[Relation(BIGGER_THAN, thrower, object_thrown)],
+    )
+
+    return _phase1_instances(
+        "throwing",
+        chain(
+            *[
+                sampled(
+                    throw_on_ground_template,
+                    max_to_sample=25,
+                    chooser=_CHOOSER,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                ),
+                sampled(
+                    throw_template,
+                    max_to_sample=25,
+                    chooser=_CHOOSER,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                ),
+            ]
+        ),
+    )
+
+
 GAILA_PHASE_1_CURRICULUM = [
     EACH_OBJECT_BY_ITSELF_SUB_CURRICULUM,
     OBJECTS_WITH_COLORS_SUB_CURRICULUM,
@@ -1230,6 +1299,7 @@ GAILA_PHASE_1_CURRICULUM = [
     _make_spin_curriculum(),
     _make_go_curriculum(),
     _make_push_curriculum(),
+    _make_throw_curriculum(),
 ]
 """
 One particular instantiation of the curriculum for GAILA Phase 1.
