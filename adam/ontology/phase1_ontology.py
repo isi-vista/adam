@@ -447,6 +447,8 @@ _BODY = OntologyNode("body")
 subtype(_BODY, _BODY_PART)
 _DOG_HEAD = OntologyNode("dog-head", [CAN_MANIPULATE_OBJECTS])
 subtype(_DOG_HEAD, _BODY_PART)
+_BIRD_HEAD = OntologyNode("dog-head", [CAN_MANIPULATE_OBJECTS])
+subtype(_BIRD_HEAD, _BODY_PART)
 
 # Verbs
 
@@ -637,7 +639,7 @@ _BOOK_SCHEMA = ObjectStructuralSchema(BOOK)
 _HAND_SCHEMA = ObjectStructuralSchema(HAND)
 _HEAD_SCHEMA = ObjectStructuralSchema(HEAD)
 _DOG_HEAD_SCHEMA = ObjectStructuralSchema(_DOG_HEAD)
-
+_BIRD_HEAD_SCHEMA = ObjectStructuralSchema(_BIRD_HEAD)
 
 # Hierarchical structure of objects
 _TORSO_SCHEMA = ObjectStructuralSchema(_TORSO)
@@ -811,7 +813,7 @@ _DOG_SCHEMA = ObjectStructuralSchema(
 )
 
 # schemata describing the sub-object structural nature of a bird
-_BIRD_SCHEMA_HEAD = SubObject(_HEAD_SCHEMA)
+_BIRD_SCHEMA_HEAD = SubObject(_BIRD_HEAD_SCHEMA)
 _BIRD_SCHEMA_TORSO = SubObject(_TORSO_SCHEMA)
 _BIRD_SCHEMA_LEFT_LEG = SubObject(_LEG_SCHEMA)
 _BIRD_SCHEMA_RIGHT_LEG = SubObject(_LEG_SCHEMA)
@@ -1018,37 +1020,56 @@ _PUT_ACTION_DESCRIPTION = ActionDescription(
     ],
 )
 
-_PUSH_AGENT = SituationObject(THING, properties=[ANIMATE])
-_PUSH_THEME = SituationObject(INANIMATE_OBJECT)
-_PUSH_GOAL = SituationObject(THING, debug_handle="push_goal")
-_PUSH_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
+_PUSH_AGENT = SituationObject(THING, properties=[ANIMATE], debug_handle="push-agent")
+_PUSH_THEME = SituationObject(INANIMATE_OBJECT, debug_handle="push-theme")
+PUSH_GOAL = SituationObject(THING, debug_handle="push_goal")
+_PUSH_MANIPULATOR = SituationObject(
+    THING, properties=[CAN_MANIPULATE_OBJECTS], debug_handle="push-manipulator"
+)
+PUSH_SURFACE_AUX = SituationObject(
+    THING, properties=[CAN_HAVE_THINGS_RESTING_ON_THEM], debug_handle="push-surface"
+)
 
 
-_PUSH_ACTION_DESCRIPTION = ActionDescription(
-    frame=ActionDescriptionFrame(
-        {AGENT: _PUSH_AGENT, THEME: _PUSH_THEME, GOAL: _PUSH_GOAL}
-    ),
-    during=DuringAction(
-        continuously=flatten_relations([contacts(_PUT_MANIPULATOR, _PUT_THEME)]),
-        objects_to_paths=[(_PUSH_THEME, SpatialPath(TO, _PUT_GOAL))],
-    ),
-    enduring_conditions=[
+def _make_push_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
+    during: DuringAction[SituationObject] = DuringAction(
+        objects_to_paths=[(_PUSH_THEME, SpatialPath(TO, PUSH_GOAL))]
+    )
+    enduring = [
         partOf(_PUSH_MANIPULATOR, _PUSH_AGENT),
         bigger_than(_PUSH_AGENT, _PUSH_THEME),
-    ],
-    preconditions=[
+        bigger_than(PUSH_SURFACE_AUX, _PUSH_THEME),
         contacts(_PUSH_MANIPULATOR, _PUSH_THEME),
-        Relation(IN_REGION, _PUSH_THEME, _PUSH_GOAL, negated=True),
-    ],
-    postconditions=[Relation(IN_REGION, _PUSH_THEME, _PUSH_GOAL)],
-    # TODO: encode that the THEME's vertical position does not significantly change,
-    # unless there is e.g. a ramp
-    asserted_properties=[
+        on(_PUSH_THEME, PUSH_SURFACE_AUX),
+    ]
+    preconditions = [Relation(IN_REGION, _PUSH_THEME, PUSH_GOAL, negated=True)]
+    postconditions = [Relation(IN_REGION, _PUSH_THEME, PUSH_GOAL)]
+    asserted_properties = [
         (_PUSH_AGENT, VOLITIONALLY_INVOLVED),
         (_PUSH_AGENT, CAUSES_CHANGE),
         (_PUSH_THEME, UNDERGOES_CHANGE),
-    ],
-)
+    ]
+    # explicit goal
+    yield PUSH, ActionDescription(
+        frame=ActionDescriptionFrame(
+            {AGENT: _PUSH_AGENT, THEME: _PUSH_THEME, GOAL: PUSH_GOAL}
+        ),
+        during=during,
+        enduring_conditions=enduring,
+        preconditions=preconditions,
+        postconditions=postconditions,
+        asserted_properties=asserted_properties,
+    )
+    # implicit goal
+    yield PUSH, ActionDescription(
+        frame=ActionDescriptionFrame({AGENT: _PUSH_AGENT, THEME: _PUSH_THEME}),
+        during=during,
+        enduring_conditions=enduring,
+        preconditions=preconditions,
+        postconditions=postconditions,
+        asserted_properties=asserted_properties,
+    )
+
 
 _GO_AGENT = SituationObject(THING, properties=[SELF_MOVING])
 _GO_GOAL = SituationObject(THING)
@@ -1473,7 +1494,6 @@ _FLY_ACTION_DESCRIPTION = ActionDescription(
 
 _ACTIONS_TO_DESCRIPTIONS = [
     (PUT, _PUT_ACTION_DESCRIPTION),
-    (PUSH, _PUSH_ACTION_DESCRIPTION),
     (COME, _COME_ACTION_DESCRIPTION),
     (GIVE, _GIVE_ACTION_DESCRIPTION),
     (TAKE, _TAKE_ACTION_DESCRIPTION),
@@ -1490,6 +1510,7 @@ _ACTIONS_TO_DESCRIPTIONS.extend(_make_sit_action_descriptions())
 _ACTIONS_TO_DESCRIPTIONS.extend(_make_move_descriptions())
 _ACTIONS_TO_DESCRIPTIONS.extend(_make_spin_descriptions())
 _ACTIONS_TO_DESCRIPTIONS.extend(_make_go_description())
+_ACTIONS_TO_DESCRIPTIONS.extend(_make_push_descriptions())
 
 GAILA_PHASE_1_ONTOLOGY = Ontology(
     "gaila-phase-1",
