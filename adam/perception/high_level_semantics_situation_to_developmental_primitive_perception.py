@@ -42,6 +42,7 @@ from adam.perception import (
     PerceptualRepresentationGenerator,
     GROUND_PERCEPTION,
     LEARNER_PERCEPTION,
+    RegionPerception,
 )
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -52,7 +53,7 @@ from adam.perception.developmental_primitive_perception import (
 )
 from adam.random_utils import SequenceChooser
 from adam.relation import Relation
-from adam.situation import Action, SituationObject
+from adam.situation import Action, SituationObject, SituationRegion
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.geon import WORLD_AXES
 
@@ -150,9 +151,9 @@ class _PerceptionGeneration:
     """
     Used for tracking sub-scripts of objects.
     """
-    _regions_to_perceptions: Dict[
-        Region[SituationObject], Region[ObjectPerception]
-    ] = attrib(init=False, default=Factory(dict))
+    _regions_to_perceptions: Dict[SituationRegion, RegionPerception] = attrib(
+        init=False, default=Factory(dict)
+    )
     """
     Tracks the correspondence between spatial regions in the situation description
     and those in the perceptual representation.
@@ -284,9 +285,7 @@ class _PerceptionGeneration:
             }
         )
 
-    def _perceive_region(
-        self, region: Region[SituationObject]
-    ) -> Region[ObjectPerception]:
+    def _perceive_region(self, region: SituationRegion) -> RegionPerception:
         return region.copy_remapping_objects(self._objects_to_perceptions)
 
     @attrs(frozen=True, slots=True)
@@ -346,16 +345,14 @@ class _PerceptionGeneration:
         self,
         situation_action: Action[OntologyNode, SituationObject],
         action_description: ActionDescription,
-    ) -> Mapping[SituationObject, Union[Region[ObjectPerception], ObjectPerception]]:
+    ) -> Mapping[SituationObject, Union[RegionPerception, ObjectPerception]]:
         if any(
             len(fillers) > 1
             for fillers in situation_action.argument_roles_to_fillers.value_groups()
         ):
             raise RuntimeError("Cannot handle multiple fillers for an argument role yet.")
 
-        bindings: Dict[
-            SituationObject, Union[ObjectPerception, Region[ObjectPerception]]
-        ] = {}
+        bindings: Dict[SituationObject, Union[ObjectPerception, RegionPerception]] = {}
 
         # for action description objects which play semantic roles,
         # the SituationAction gives us the binding directly
@@ -425,7 +422,7 @@ class _PerceptionGeneration:
         self,
         situation_action: Action[OntologyNode, SituationObject],
         action_object_variable: SituationObject,
-    ) -> Union[ObjectPerception, Region[ObjectPerception]]:
+    ) -> Union[ObjectPerception, RegionPerception]:
         """
         Binds an action object variable to an object that we have perceived.
 
@@ -486,7 +483,7 @@ class _PerceptionGeneration:
         conditions: ImmutableSet[Relation[SituationObject]],
         *,
         action_object_variables_to_object_perceptions: Mapping[
-            SituationObject, Union[ObjectPerception, Region[ObjectPerception]]
+            SituationObject, Union[ObjectPerception, RegionPerception]
         ],
     ) -> AbstractSet[Relation[ObjectPerception]]:
         """
@@ -535,12 +532,12 @@ class _PerceptionGeneration:
 
     def _perceive_object_or_region_relation_filler(
         self,
-        slot_filler: Union[SituationObject, Region[SituationObject]],
+        slot_filler: Union[SituationObject, SituationRegion],
         *,
         action_object_variables_to_object_perceptions: Mapping[
-            SituationObject, Union[ObjectPerception, Region[ObjectPerception]]
+            SituationObject, Union[ObjectPerception, RegionPerception]
         ],
-    ) -> Union[ObjectPerception, Region[ObjectPerception]]:
+    ) -> Union[ObjectPerception, RegionPerception]:
         if isinstance(slot_filler, Region):
             object_mapping: Dict[SituationObject, ObjectPerception] = {}
             # regions are not a real possibility for lookup,
@@ -895,7 +892,7 @@ class _PerceptionGeneration:
             arg1_perception = sub_object_to_object_perception[
                 sub_object_relation.first_slot
             ]
-            arg2_perception: Union[ObjectPerception, Region[ObjectPerception]]
+            arg2_perception: Union[ObjectPerception, RegionPerception]
             if isinstance(sub_object_relation.second_slot, SubObject):
                 arg2_perception = sub_object_to_object_perception[
                     sub_object_relation.second_slot

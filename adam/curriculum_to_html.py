@@ -42,7 +42,7 @@ from adam.perception.developmental_primitive_perception import (
     PropertyPerception,
 )
 from adam.relation import Relation
-from adam.situation import SituationObject
+from adam.situation import SituationObject, SituationRegion
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 import random
 
@@ -458,7 +458,7 @@ class CurriculumToHtmlDumper:
         return ("\n".join(output_text), speaker)
 
     def _situation_object_or_region_text(
-        self, obj_or_region: Union[SituationObject, Region[SituationObject]]
+        self, obj_or_region: Union[SituationObject, SituationRegion]
     ) -> str:
         if isinstance(obj_or_region, SituationObject):
             return obj_or_region.ontology_node.handle

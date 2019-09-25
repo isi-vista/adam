@@ -14,6 +14,7 @@ from vistautils.preconditions import check_arg
 from adam.geon import Geon, Axes, WORLD_AXES, LEARNER_AXES, HasAxes
 from adam.math_3d import Point
 from adam.ontology.during import DuringAction
+from adam.ontology.phase1_spatial_relations import Region
 from adam.random_utils import SequenceChooser
 from adam.situation import LocatedObjectSituation, Situation
 
@@ -54,6 +55,8 @@ class ObjectPerception(HasAxes):
     def __repr__(self) -> str:
         return self.debug_handle
 
+
+RegionPerception = Region[ObjectPerception]
 
 GROUND_PERCEPTION = ObjectPerception("the ground", geon=None, axes=WORLD_AXES)
 LEARNER_PERCEPTION = ObjectPerception("learner", geon=None, axes=LEARNER_AXES)

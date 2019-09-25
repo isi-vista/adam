@@ -76,7 +76,7 @@ from adam.ontology.phase1_spatial_relations import (
 )
 from adam.random_utils import SequenceChooser
 from adam.relation import Relation
-from adam.situation import Action, SituationObject
+from adam.situation import Action, SituationObject, SituationRegion
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 
 
@@ -471,7 +471,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             action: Action[OntologyNode, SituationObject],
             verb_lexical_entry: LexiconEntry,
             argument_role: OntologyNode,
-            filler: Union[SituationObject, Region[SituationObject]],
+            filler: Union[SituationObject, SituationRegion],
         ) -> Tuple[DependencyRole, DependencyTreeToken]:
             # TODO: to alternation
             # https://github.com/isi-vista/adam/issues/150
@@ -532,7 +532,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             verb_lexical_entry: LexiconEntry,  # pylint:disable=unused-argument
             argument_role: OntologyNode,  # pylint:disable=unused-argument
             filler: Union[
-                SituationObject, Region[SituationObject]
+                SituationObject, SituationRegion
             ],  # pylint:disable=unused-argument
         ) -> Optional[DependencyTreeToken]:
             moving_thing = self._get_moving_thing(action)
@@ -587,7 +587,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     f"{argument_role} of {action} to a syntactic role."
                 )
 
-        def _preposition_for_region_as_goal(self, region: Region[SituationObject]) -> str:
+        def _preposition_for_region_as_goal(self, region: SituationRegion) -> str:
             """
             When a `Region` appears as the filler of the semantic role `GOAL`,
             determine what preposition to use to express it in English.
@@ -702,7 +702,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             action: Optional[Action[OntologyNode, SituationObject]],
             relation: Relation[SituationObject],
         ) -> Optional[DependencyTreeToken]:
-            region = cast(Region[SituationObject], relation.second_slot)
+            region = cast(SituationRegion, relation.second_slot)
             # don't talk about relations to non-salient objects
             if region.reference_object not in self.situation.salient_objects:
                 return None

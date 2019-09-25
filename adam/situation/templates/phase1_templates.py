@@ -45,7 +45,7 @@ from adam.ontology.selectors import (
 )
 from adam.random_utils import RandomChooser, SequenceChooser
 from adam.relation import Relation, flatten_relations
-from adam.situation import Action, SituationObject
+from adam.situation import Action, SituationObject, SituationRegion
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.situation.templates import (
     SituationTemplate,
@@ -496,7 +496,7 @@ class _Phase1SituationTemplateGenerator(
 
         def map_action_variable_binding(
             x: Union[TemplateObjectVariable, TemplateRegion]
-        ) -> Union[SituationObject, Region[SituationObject]]:
+        ) -> Union[SituationObject, SituationRegion]:
             if isinstance(x, Region):
                 return x.copy_remapping_objects(object_var_to_instantiations)
             else:
