@@ -31,9 +31,9 @@ from adam.experiment import InstanceGroup
 from adam.geon import Geon
 from adam.axes import WORLD_AXES, AxesInfo
 from adam.language.dependency import LinearizedDependencyTree
-from adam.ontology import IN_REGION
+from adam.ontology import IN_REGION, IS_SPEAKER
 from adam.ontology.during import DuringAction
-from adam.ontology.phase1_ontology import PART_OF, IS_SPEAKER, SMALLER_THAN, BIGGER_THAN
+from adam.ontology.phase1_ontology import PART_OF, SMALLER_THAN, BIGGER_THAN
 from adam.ontology.phase1_spatial_relations import Region, SpatialPath
 from adam.perception import ObjectPerception, PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
@@ -622,6 +622,8 @@ class CurriculumToHtmlDumper:
 
         # This loop doesn't quite get the tab spacing right. It could at the cost of increased
         # complexity. Would need to track the "depth" we are currently at.
+        axis_info = perception.frames[0].axis_info
+
         def dfs_walk(node):
             visited.add(node)
             if not node == root:
@@ -641,9 +643,7 @@ class CurriculumToHtmlDumper:
                         (relation_prefix, relation_suffix) = compute_arrow(
                             region_relation, static_relations, first_frame_relations
                         )
-                        relation_str = self._render_relation(
-                            perception.frames[0].axis_info, region_relation
-                        )
+                        relation_str = self._render_relation(axis_info, region_relation)
                         output_text.append(
                             f"\t\t\t\t\t\t<li>{relation_prefix}"
                             f"{relation_str}{relation_suffix}</li>"
@@ -702,6 +702,19 @@ class CurriculumToHtmlDumper:
         if perception.during:
             output_text.append("\t\t\t\t\t<h5>During the action</h5>")
             output_text.append(self._render_during(perception.during, indent_depth=5))
+
+        if axis_info and axis_info.axes_facing:
+            output_text.append(("\t\t\t\t\t<h5>Axis Facings</h5>"))
+            output_text.append(("\t\t\t\t\t<ul>"))
+            for object_ in axis_info.axes_facing:
+                facing_axes_str = ", ".join(
+                    str(axis) for axis in axis_info.axes_facing[object_]
+                )
+                output_text.append(
+                    f"\t\t\t\t\t\t<li>{object_.debug_handle} faced by "
+                    f"{facing_axes_str}</li>"
+                )
+            output_text.append(("\t\t\t\t\t</ul>"))
 
         return "\n".join(output_text)
 

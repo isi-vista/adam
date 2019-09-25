@@ -25,8 +25,15 @@ from more_itertools import take, only
 from typing_extensions import Protocol
 from vistautils.preconditions import check_arg
 
-from adam.axes import AxesInfo
-from adam.ontology import ACTION, CAN_FILL_TEMPLATE_SLOT, OntologyNode, PROPERTY, THING
+from adam.axes import AxesInfo, HorizontalAxisOfObject
+from adam.ontology import (
+    ACTION,
+    CAN_FILL_TEMPLATE_SLOT,
+    OntologyNode,
+    PROPERTY,
+    THING,
+    IS_ADDRESSEE,
+)
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
     COLOR,
@@ -92,9 +99,9 @@ class TemplateObjectVariable(SituationTemplateObject, _TemplateVariable):
     node_selector: OntologyNodeSelector = attrib(
         validator=instance_of(OntologyNodeSelector)
     )
-    asserted_properties: ImmutableSet["TemplatePropertyVariable"] = attrib(
-        converter=_to_immutableset, default=immutableset()
-    )
+    asserted_properties: ImmutableSet[
+        Union[OntologyNode, "TemplatePropertyVariable"]
+    ] = attrib(converter=_to_immutableset, default=immutableset())
 
     def __repr__(self) -> str:
         props: List[str] = []
@@ -157,8 +164,11 @@ class Phase1SituationTemplate(SituationTemplate):
     salient_object_variables: ImmutableSet["TemplateObjectVariable"] = attrib(
         converter=_to_immutableset
     )
+    background_object_variables: ImmutableSet["TemplateObjectVariable"] = attrib(
+        converter=_to_immutableset, default=immutableset(), kw_only=True
+    )
     asserted_always_relations: ImmutableSet[Relation["TemplateObjectVariable"]] = attrib(
-        converter=flatten_relations, default=immutableset()
+        converter=flatten_relations, default=immutableset(), kw_only=True
     )
     """
     This are relations we assert to hold true in the situation.
@@ -166,7 +176,7 @@ class Phase1SituationTemplate(SituationTemplate):
     which cannot be deduced from the types of the objects alone.
     """
     constraining_relations: ImmutableSet[Relation["TemplateObjectVariable"]] = attrib(
-        converter=flatten_relations, default=immutableset()
+        converter=flatten_relations, default=immutableset(), kw_only=True
     )
     """
     These are relations which we required to be true
@@ -176,9 +186,9 @@ class Phase1SituationTemplate(SituationTemplate):
     """
     actions: ImmutableSet[
         Action[_ExplicitOrVariableActionType, "TemplateObjectVariable"]
-    ] = attrib(converter=_to_immutableset, default=immutableset())
+    ] = attrib(converter=_to_immutableset, default=immutableset(), kw_only=True)
     syntax_hints: ImmutableSet[str] = attrib(
-        converter=_to_immutableset, default=immutableset()
+        converter=_to_immutableset, default=immutableset(), kw_only=True
     )
     """
     A temporary hack to allow control of language generation decisions
@@ -228,6 +238,7 @@ class Phase1SituationTemplate(SituationTemplate):
             relation.accumulate_referenced_objects(ret)
 
         ret.extend(self.salient_object_variables)
+        ret.extend(self.background_object_variables)
 
         for obj_var in ret:
             if not isinstance(obj_var, TemplateObjectVariable):
@@ -399,14 +410,12 @@ class _Phase1SituationTemplateGenerator(
             ontology_node=object_type,
             properties=[
                 # instantiate any property variables associated with this object
-                variable_assignment.property_variables_to_fillers[prop_var]
-                for prop_var in object_var.asserted_properties
+                variable_assignment.property_variables_to_fillers[asserted_property]
+                if isinstance(asserted_property, TemplatePropertyVariable)
+                else asserted_property
+                for asserted_property in object_var.asserted_properties
             ],
-            # we make a copy because the axes in the schema represent the axes of such object
-            # in general, but these are the axes of a particular instantiation of the object.
-            # In particular, two instances of the same object type in a scene need distinct axes.
-            # Note that some objects (e.g. liquids) lack schemata and therefore axes.
-            axes=schema.axes.copy() if schema else None,
+            axes=schema.axes if schema else None,
         )
 
     def _instantiate_situation(
@@ -443,7 +452,7 @@ class _Phase1SituationTemplateGenerator(
                 for action in template.actions
             ],
             syntax_hints=template.syntax_hints,
-            axis_info=self._compute_axis_info(),
+            axis_info=self._compute_axis_info(object_var_to_instantiations),
         )
 
     def _has_multiple_recognized_particulars(
@@ -548,8 +557,38 @@ class _Phase1SituationTemplateGenerator(
             ],
         )
 
-    def _compute_axis_info(self) -> AxesInfo[SituationObject]:
-        return AxesInfo()
+    def _compute_axis_info(
+        self,
+        object_var_to_instantiations: Mapping[TemplateObjectVariable, SituationObject],
+    ) -> AxesInfo[SituationObject]:
+        # if there is an addressee, then we determine which axis
+        # of each object faces the addressee
+        addressees = immutableset(
+            obj
+            for obj in object_var_to_instantiations.values()
+            if IS_ADDRESSEE in obj.properties
+        )
+        if addressees:
+            if len(addressees) > 1:
+                raise RuntimeError("Multiple addressees not supported")
+            else:
+                addressee: SituationObject = only(addressees)
+                return AxesInfo(
+                    addressee=addressee,
+                    axes_facing=[
+                        (
+                            addressee,
+                            # TODO: fix this hack
+                            HorizontalAxisOfObject(  # type: ignore
+                                obj, index=1
+                            ).to_concrete_axis(None),
+                        )
+                        for obj in object_var_to_instantiations.values()
+                        if obj.axes
+                    ],
+                )
+        else:
+            return AxesInfo()
 
 
 def object_variable(
@@ -588,12 +627,7 @@ def object_variable(
             required_properties=real_required_properties,
             banned_properties=banned_properties,
         ),
-        asserted_properties=[
-            property_
-            if isinstance(property_, TemplatePropertyVariable)
-            else property_variable(f"{debug_handle}-prop-{property_.handle}", property_)
-            for property_ in added_properties
-        ],
+        asserted_properties=added_properties,
     )
 
 

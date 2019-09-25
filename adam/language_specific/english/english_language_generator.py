@@ -8,6 +8,7 @@ from immutablecollections import ImmutableSet, immutableset, immutablesetmultidi
 from more_itertools import first, only
 from networkx import DiGraph
 
+from adam.axes import FacingAddresseeAxis
 from adam.language.dependency import (
     DependencyRole,
     DependencyTree,
@@ -42,15 +43,15 @@ from adam.language_specific.english.english_phase_1_lexicon import (
     GAILA_PHASE_1_ENGLISH_LEXICON,
     I,
     MASS_NOUN,
-    YOU,
     ME,
+    YOU,
 )
 from adam.language_specific.english.english_syntax import (
     FIRST_PERSON,
     SECOND_PERSON,
     SIMPLE_ENGLISH_DEPENDENCY_TREE_LINEARIZER,
 )
-from adam.ontology import IN_REGION, OntologyNode
+from adam.ontology import IN_REGION, IS_ADDRESSEE, IS_SPEAKER, OntologyNode
 from adam.ontology.phase1_ontology import (
     AGENT,
     COLOR,
@@ -58,14 +59,11 @@ from adam.ontology.phase1_ontology import (
     GOAL,
     GROUND,
     HAS,
-    IS_ADDRESSEE,
-    IS_SPEAKER,
     LEARNER,
     PATIENT,
     THEME,
 )
 from adam.ontology.phase1_spatial_relations import (
-    DISTAL,
     EXTERIOR_BUT_IN_CONTACT,
     GRAVITATIONAL_DOWN,
     INTERIOR,
@@ -724,25 +722,32 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     return None
 
             preposition: Optional[str] = None
-            if region.direction:
+            if region.distance == INTERIOR:
+                preposition = "in"
+            elif region.direction:
                 direction_axis = region.direction.relative_to_axis.to_concrete_axis(
                     self.situation.axis_info
                 )
-                if direction_axis.aligned_to_gravitational:
-                    if region.distance in (PROXIMAL, DISTAL):
+                if region.distance == EXTERIOR_BUT_IN_CONTACT:
+                    if region.direction.positive:
+                        preposition = "on"
+                else:
+                    if direction_axis.aligned_to_gravitational:
                         if region.direction.positive:
                             preposition = "over"
                         else:
                             preposition = "under"
-                    elif (
-                        region.distance == EXTERIOR_BUT_IN_CONTACT
-                        and region.direction.positive
-                    ):
-                        preposition = "on"
-                elif region.distance == PROXIMAL:
-                    preposition = "beside"
-            elif region.distance == INTERIOR:
-                preposition = "in"
+                    else:
+                        # TODO: hack for M3; revisit in cleanup
+                        if isinstance(
+                            region.direction.relative_to_axis, FacingAddresseeAxis
+                        ):
+                            if region.direction.positive:
+                                preposition = "in front of"
+                            else:
+                                preposition = "behind"
+                        elif region.distance == PROXIMAL:
+                            preposition = "beside"
 
             if not preposition:
                 raise RuntimeError(

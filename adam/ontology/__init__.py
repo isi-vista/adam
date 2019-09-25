@@ -114,6 +114,27 @@ This is used to support the Landau and Jackendoff interpretation of prepositions
 
 IS_SUBSTANCE = OntologyNode("substance")
 
+PERCEIVABLE = OntologyNode("perceivable")
+BINARY = OntologyNode("binary")
+
+IS_SPEAKER = OntologyNode("is-speaker", [BINARY, PERCEIVABLE])
+"""
+Indicates that the marked object is the one who is speaking 
+the linguistic description of the situation. 
+This will not be present for all situations.
+It only makes sense to apply this to sub-types of PERSON,
+but this is not currently enforced.
+"""
+
+IS_ADDRESSEE = OntologyNode("is-addressee", [BINARY, PERCEIVABLE])
+"""
+Indicates that the marked object is the one who is addressed.
+This will not be present for all situations.
+It only makes sense to apply this to sub-types of PERSON,
+but this is not currently enforced. E.g. 'You put the ball on the table.'
+"""
+
+
 REQUIRED_ONTOLOGY_NODES = immutableset(
     [
         THING,
@@ -124,6 +145,10 @@ REQUIRED_ONTOLOGY_NODES = immutableset(
         CAN_FILL_TEMPLATE_SLOT,
         IN_REGION,
         IS_SUBSTANCE,
+        PERCEIVABLE,
+        IS_ADDRESSEE,
+        IS_SPEAKER,
+        BINARY,
     ]
 )
 
@@ -143,4 +168,8 @@ def minimal_ontology_graph():
     # TODO: should we move substances out from under THING
     # in the ontology?
     ret.add_edge(IS_SUBSTANCE, PROPERTY)
+    ret.add_edge(PERCEIVABLE, META_PROPERTY)
+    ret.add_edge(IS_SPEAKER, PROPERTY)
+    ret.add_edge(IS_ADDRESSEE, PROPERTY)
+    ret.add_edge(BINARY, META_PROPERTY)
     return ret

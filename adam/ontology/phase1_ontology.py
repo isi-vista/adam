@@ -20,7 +20,7 @@ from more_itertools import flatten
 
 from adam.axes import (
     Axes,
-    FirstHorizontalAxisOfObject,
+    HorizontalAxisOfObject,
     LEARNER_AXES,
     PrimaryAxisOfObject,
     WORLD_AXES,
@@ -42,10 +42,12 @@ from adam.geon import (
 )
 from adam.ontology import (
     ACTION,
+    BINARY,
     CAN_FILL_TEMPLATE_SLOT,
     IN_REGION,
     IS_SUBSTANCE,
     OntologyNode,
+    PERCEIVABLE,
     PROPERTY,
     RELATION,
     THING,
@@ -104,11 +106,6 @@ subtype(GOAL, SEMANTIC_ROLE)
 
 # these are "properties of properties" (e.g. whether a property is perceivable by the learner)
 
-META_PROPERTY = OntologyNode("meta-property")
-PERCEIVABLE = OntologyNode("perceivable")
-subtype(PERCEIVABLE, META_PROPERTY)
-BINARY = OntologyNode("binary")
-subtype(BINARY, META_PROPERTY)
 
 IS_HUMAN = OntologyNode("is-human", [BINARY])
 subtype(IS_HUMAN, PROPERTY)
@@ -147,23 +144,6 @@ The prototypical cases here are *Mom* and *Dad*.
 
 subtype(RECOGNIZED_PARTICULAR_PROPERTY, PERCEIVABLE_PROPERTY)
 
-IS_SPEAKER = OntologyNode("is-speaker", [BINARY])
-"""
-Indicates that the marked object is the one who is speaking 
-the linguistic description of the situation. 
-This will not be present for all situations.
-It only makes sense to apply this to sub-types of PERSON,
-but this is not currently enforced.
-"""
-subtype(IS_SPEAKER, PERCEIVABLE_PROPERTY)
-IS_ADDRESSEE = OntologyNode("is-addressee", [BINARY])
-"""
-Indicates that the marked object is the one who is addressed.
-This will not be present for all situations.
-It only makes sense to apply this to sub-types of PERSON,
-but this is not currently enforced. E.g. 'You put the ball on the table.'
-"""
-subtype(IS_ADDRESSEE, PERCEIVABLE_PROPERTY)
 GAZED_AT = OntologyNode("gazed-at", [BINARY])
 """
 Indicates the object of the focus of the speaker. This is not currently strictly enforced and is
@@ -743,7 +723,8 @@ _DOOR_SCHEMA = _make_door_schema()
 
 def _make_ball_schema() -> ObjectStructuralSchema:
     generating_axis = symmetric_vertical("ball-generating")
-    orienting_axis = symmetric("ball-orienting")
+    orienting_axis_0 = symmetric("ball-orienting-0")
+    orienting_axis_1 = symmetric("ball-orienting-1")
 
     return ObjectStructuralSchema(
         ontology_node=BALL,
@@ -752,7 +733,7 @@ def _make_ball_schema() -> ObjectStructuralSchema:
             cross_section_size=SMALL_TO_LARGE_TO_SMALL,
             axes=Axes(
                 primary_axis=generating_axis,
-                orienting_axes=[orienting_axis, orienting_axis],
+                orienting_axes=[orienting_axis_0, orienting_axis_1],
             ),
         ),
     )
@@ -1171,9 +1152,9 @@ _ROOF_SCHEMA = _make_roof_schema()
 
 
 def _make_wall_schema() -> ObjectStructuralSchema:
-    bottom_to_top = straight_up("bottom-to-top")
-    edge_to_edge = directed("edge-to-edge")
-    face_to_face = directed("face-to-face")
+    bottom_to_top = straight_up("walls-bottom-to-top")
+    edge_to_edge = directed("walls-edge-to-edge")
+    face_to_face = directed("walls-face-to-face")
 
     return ObjectStructuralSchema(
         ontology_node=_WALL,
@@ -2106,7 +2087,7 @@ def _make_roll_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
                         reference_object=rollee,
                         # TODO: not quite right - this should be orthogonal
                         # to the axis of motion
-                        reference_axis=FirstHorizontalAxisOfObject(rollee),
+                        reference_axis=HorizontalAxisOfObject(rollee, index=0),
                         orientation_changed=True,
                     ),
                 )
