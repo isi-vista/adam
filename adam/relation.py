@@ -9,13 +9,13 @@ from vistautils.preconditions import check_arg
 from adam.ontology import IN_REGION, OntologyNode
 from adam.ontology.phase1_spatial_relations import Region
 
-ObjectT = TypeVar("ObjectT")
-ObjectTOut = TypeVar("ObjectTOut", contravariant=True)
+_ObjectT = TypeVar("ObjectT")
+_ObjectTOut = TypeVar("ObjectTOut", contravariant=True)
 _NewObjectT = TypeVar("_NewObjectT")
 
 
 @attrs(frozen=True, repr=False)
-class Relation(Generic[ObjectT]):
+class Relation(Generic[_ObjectT]):
     r"""
     A relationship which holds between two objects
     or between a `SituationObject` and a Region.
@@ -26,18 +26,18 @@ class Relation(Generic[ObjectT]):
     """
 
     relation_type: OntologyNode = attrib(validator=instance_of(OntologyNode))
-    first_slot: ObjectT = attrib()
+    first_slot: _ObjectT = attrib()
     # for type ignore see
     # https://github.com/isi-vista/adam/issues/144
-    second_slot: Union[ObjectT, Region[ObjectT]] = attrib()
+    second_slot: Union[_ObjectT, Region[_ObjectT]] = attrib()
     negated: bool = attrib(validator=instance_of(bool), default=False, kw_only=True)
 
-    def negated_copy(self) -> "Relation[ObjectT]":
+    def negated_copy(self) -> "Relation[_ObjectT]":
         # mypy doesn't know attrs classes provide evolve for copying
         return evolve(self, negated=not self.negated)  # type: ignore
 
     def copy_remapping_objects(
-        self, object_mapping: Mapping[ObjectT, _NewObjectT]
+        self, object_mapping: Mapping[_ObjectT, _NewObjectT]
     ) -> "Relation[_NewObjectT]":
         translated_second_slot: Union[_NewObjectT, Region[_NewObjectT]]
         if isinstance(self.second_slot, Region):
@@ -53,7 +53,7 @@ class Relation(Generic[ObjectT]):
             negated=self.negated,
         )
 
-    def accumulate_referenced_objects(self, object_accumulator: List[ObjectT]) -> None:
+    def accumulate_referenced_objects(self, object_accumulator: List[_ObjectT]) -> None:
         r"""
         Adds all objects referenced by this `Relation`
         or any `Region`\ s it refers to to *object_accumulator*.
@@ -101,7 +101,7 @@ def flatten_relations(
     return immutableset(flatten(_ensure_iterable(x) for x in relation_collections))
 
 
-_OneOrMoreObjects = Union[ObjectT, Iterable[ObjectT]]
+_OneOrMoreObjects = Union[_ObjectT, Iterable[_ObjectT]]
 
 _T = TypeVar("_T")
 
@@ -116,8 +116,8 @@ def _ensure_iterable(x: Union[_T, Iterable[_T]]) -> Iterable[_T]:
 def make_dsl_relation(
     relation_type: OntologyNode
 ) -> Callable[
-    [Union[ObjectT, Iterable[ObjectT]], Union[ObjectT, Iterable[ObjectT]]],
-    Tuple[Relation[ObjectT], ...],
+    [Union[_ObjectT, Iterable[_ObjectT]], Union[_ObjectT, Iterable[_ObjectT]]],
+    Tuple[Relation[_ObjectT], ...],
 ]:
     r"""
     Make a function which, when given either single or groups
@@ -129,8 +129,8 @@ def make_dsl_relation(
     """
 
     def dsl_relation_function(
-        arg1s: Union[ObjectT, Iterable[ObjectT]], arg2s: Union[ObjectT, Iterable[ObjectT]]
-    ) -> Tuple[Relation[ObjectT], ...]:
+        arg1s: Union[_ObjectT, Iterable[_ObjectT]], arg2s: Union[_ObjectT, Iterable[_ObjectT]]
+    ) -> Tuple[Relation[_ObjectT], ...]:
         return tuple(
             Relation(relation_type, arg1, arg2)
             for arg1 in _ensure_iterable(arg1s)
@@ -143,8 +143,8 @@ def make_dsl_relation(
 def make_symetric_dsl_relation(
     relation_type: OntologyNode
 ) -> Callable[
-    [Union[ObjectT, Iterable[ObjectT]], Union[ObjectT, Iterable[ObjectT]]],
-    Tuple[Relation[ObjectT], ...],
+    [Union[_ObjectT, Iterable[_ObjectT]], Union[_ObjectT, Iterable[_ObjectT]]],
+    Tuple[Relation[_ObjectT], ...],
 ]:
     r"""
     Make a function which, when given either single or groups
@@ -156,8 +156,8 @@ def make_symetric_dsl_relation(
     """
 
     def dsl_symetric_function(
-        arg1s: Union[ObjectT, Iterable[ObjectT]], arg2s: Union[ObjectT, Iterable[ObjectT]]
-    ) -> Tuple[Relation[ObjectT], ...]:
+        arg1s: Union[_ObjectT, Iterable[_ObjectT]], arg2s: Union[_ObjectT, Iterable[_ObjectT]]
+    ) -> Tuple[Relation[_ObjectT], ...]:
         arg1s = _ensure_iterable(arg1s)
         arg2s = _ensure_iterable(arg2s)
         return flatten(
@@ -181,8 +181,8 @@ def make_symetric_dsl_relation(
 def make_opposite_dsl_relation(
     relation_type: OntologyNode, *, opposite_type: OntologyNode
 ) -> Callable[
-    [Union[ObjectT, Iterable[ObjectT]], Union[ObjectT, Iterable[ObjectT]]],
-    Tuple[Relation[ObjectT], ...],
+    [Union[_ObjectT, Iterable[_ObjectT]], Union[_ObjectT, Iterable[_ObjectT]]],
+    Tuple[Relation[_ObjectT], ...],
 ]:
     r"""
     Make a function which, when given either single or groups
@@ -195,8 +195,8 @@ def make_opposite_dsl_relation(
     """
 
     def dsl_opposite_function(
-        arg1s: Union[ObjectT, Iterable[ObjectT]], arg2s: Union[ObjectT, Iterable[ObjectT]]
-    ) -> Tuple[Relation[ObjectT], ...]:
+        arg1s: Union[_ObjectT, Iterable[_ObjectT]], arg2s: Union[_ObjectT, Iterable[_ObjectT]]
+    ) -> Tuple[Relation[_ObjectT], ...]:
         arg1s = _ensure_iterable(arg1s)
         arg2s = _ensure_iterable(arg2s)
         return flatten(
@@ -231,8 +231,8 @@ def make_dsl_region_relation(
     [Union[Any, Iterable[Any]], Union[Any, Iterable[Any]]], Tuple[Relation[Any], ...]
 ]:
     def dsl_relation_function(
-        arg1s: Union[ObjectT, Iterable[ObjectT]], arg2s: Union[ObjectT, Iterable[ObjectT]]
-    ) -> Tuple[Relation[ObjectT], ...]:
+        arg1s: Union[_ObjectT, Iterable[_ObjectT]], arg2s: Union[_ObjectT, Iterable[_ObjectT]]
+    ) -> Tuple[Relation[_ObjectT], ...]:
         return tuple(
             Relation(IN_REGION, arg1, region_factory(arg2))
             for arg1 in _ensure_iterable(arg1s)
@@ -251,13 +251,13 @@ def make_dsl_region_relation(
 #     Tuple[Relation[ObjectT], ...],
 # ]:
 def make_symmetric_dsl_region_relation(
-    region_factory: Callable[[ObjectT], Region[ObjectT]]
+    region_factory: Callable[[_ObjectT], Region[_ObjectT]]
 ) -> Callable[
     [Union[Any, Iterable[Any]], Union[Any, Iterable[Any]]], Tuple[Relation[Any], ...]
 ]:
     def dsl_relation_function(
-        arg1s: Union[ObjectT, Iterable[ObjectT]], arg2s: Union[ObjectT, Iterable[ObjectT]]
-    ) -> Tuple[Relation[ObjectT], ...]:
+        arg1s: Union[_ObjectT, Iterable[_ObjectT]], arg2s: Union[_ObjectT, Iterable[_ObjectT]]
+    ) -> Tuple[Relation[_ObjectT], ...]:
         arg1s = _ensure_iterable(arg1s)
         arg2s = _ensure_iterable(arg2s)
         return flatten(
@@ -294,8 +294,8 @@ def make_opposite_dsl_region_relation(
     [Union[Any, Iterable[Any]], Union[Any, Iterable[Any]]], Tuple[Relation[Any], ...]
 ]:
     def dsl_relation_function(
-        arg1s: Union[ObjectT, Iterable[ObjectT]], arg2s: Union[ObjectT, Iterable[ObjectT]]
-    ) -> Tuple[Relation[ObjectT], ...]:
+        arg1s: Union[_ObjectT, Iterable[_ObjectT]], arg2s: Union[_ObjectT, Iterable[_ObjectT]]
+    ) -> Tuple[Relation[_ObjectT], ...]:
         arg1s = _ensure_iterable(arg1s)
         arg2s = _ensure_iterable(arg2s)
         return flatten(
@@ -316,5 +316,5 @@ def make_opposite_dsl_region_relation(
     return dsl_relation_function
 
 
-def negate(relations: Iterable[Relation[ObjectT]]) -> Iterable[Relation[ObjectT]]:
+def negate(relations: Iterable[Relation[_ObjectT]]) -> Iterable[Relation[_ObjectT]]:
     return (relation.negated_copy() for relation in relations)

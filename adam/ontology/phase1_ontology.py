@@ -13,7 +13,7 @@ The following will eventually end up here:
 - Relations, Modifiers, Function Words: basic color terms (red, blue, green, white, black…), one,
   two, I, me, my, you, your, to, in, on, [beside, behind, in front of, over, under], up, down
 """
-from typing import Iterable, Optional, Sequence, Tuple
+from typing import Iterable, Optional, Sequence, Tuple, TypeVar
 
 from immutablecollections import ImmutableDict, immutabledict, immutableset
 from more_itertools import flatten
@@ -44,7 +44,7 @@ from adam.ontology.phase1_spatial_relations import (AWAY_FROM, Axis, DISTAL,
                                                     PROXIMAL, Region, SpatialPath, TO, TOWARD)
 from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
 from adam.relation import (
-    ObjectT,
+    _ObjectT,
     Relation,
     flatten_relations,
     make_dsl_region_relation,
@@ -540,11 +540,12 @@ subtype(FLY, ACTION)
 SPATIAL_RELATION = OntologyNode("spatial-relation")
 subtype(SPATIAL_RELATION, RELATION)
 
+_ObjectT = TypeVar("_ObjectT")
 
 # On is an English-specific bundle of semantics, but that's okay, because this is just for
 # data generation, and it will get decomposed before being presented as perceptions to the
 # learner.
-def _on_region_factory(reference_object: ObjectT) -> Region[ObjectT]:
+def _on_region_factory(reference_object: _ObjectT) -> Region[_ObjectT]:
     return Region(
         reference_object=reference_object,
         distance=EXTERIOR_BUT_IN_CONTACT,
@@ -555,14 +556,14 @@ def _on_region_factory(reference_object: ObjectT) -> Region[ObjectT]:
 on = make_dsl_region_relation(_on_region_factory)  # pylint:disable=invalid-name
 
 
-def _near_region_factory(reference_object: ObjectT) -> Region[ObjectT]:
+def _near_region_factory(reference_object: _ObjectT) -> Region[_ObjectT]:
     return Region(reference_object=reference_object, distance=PROXIMAL)
 
 
 near = make_dsl_region_relation(_near_region_factory)  # pylint:disable=invalid-name
 
 
-def _far_region_factory(reference_object: ObjectT) -> Region[ObjectT]:
+def _far_region_factory(reference_object: _ObjectT) -> Region[_ObjectT]:
     return Region(reference_object=reference_object, distance=DISTAL)
 
 
@@ -628,7 +629,7 @@ subtype(HAS, RELATION)
 has = make_dsl_relation(HAS)  # pylint:disable=invalid-name
 
 
-def _contact_region_factory(reference_object: ObjectT) -> Region[ObjectT]:
+def _contact_region_factory(reference_object: _ObjectT) -> Region[_ObjectT]:
     return Region(reference_object=reference_object, distance=EXTERIOR_BUT_IN_CONTACT)
 
 
@@ -643,18 +644,18 @@ contacts = make_symmetric_dsl_region_relation(  # pylint:disable=invalid-name
 )
 
 
-def _inside_region_factory(reference_object: ObjectT) -> Region[ObjectT]:
+def _inside_region_factory(reference_object: _ObjectT) -> Region[_ObjectT]:
     return Region(reference_object=reference_object, distance=INTERIOR)
 
 
 inside = make_dsl_region_relation(_inside_region_factory)  # pylint:disable=invalid-name
 
 
-def _above_region_factory(reference_object: ObjectT) -> Region[ObjectT]:
+def _above_region_factory(reference_object: _ObjectT) -> Region[_ObjectT]:
     return Region(reference_object=reference_object, direction=GRAVITATIONAL_UP)
 
 
-def _below_region_factory(reference_object: ObjectT) -> Region[ObjectT]:
+def _below_region_factory(reference_object: _ObjectT) -> Region[_ObjectT]:
     return Region(reference_object=reference_object, direction=GRAVITATIONAL_DOWN)
 
 
@@ -663,13 +664,13 @@ above = make_opposite_dsl_region_relation(  # pylint:disable=invalid-name
 )
 
 
-def _strictly_above_region_factory(reference_object: ObjectT) -> Region[ObjectT]:
+def _strictly_above_region_factory(reference_object: _ObjectT) -> Region[_ObjectT]:
     return Region(
         reference_object=reference_object, distance=DISTAL, direction=GRAVITATIONAL_UP
     )
 
 
-def _strictly_below_region_factory(reference_object: ObjectT) -> Region[ObjectT]:
+def _strictly_below_region_factory(reference_object: _ObjectT) -> Region[_ObjectT]:
     return Region(
         reference_object=reference_object, distance=DISTAL, direction=GRAVITATIONAL_DOWN
     )
