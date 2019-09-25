@@ -44,6 +44,7 @@ from adam.perception.developmental_primitive_perception import (
 from adam.relation import Relation
 from adam.situation import SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
+import random
 
 USAGE_MESSAGE = """
     curriculum_to_html.py param_file
@@ -51,16 +52,75 @@ USAGE_MESSAGE = """
      \t\toutput_directory: where to write the HTML output
    """
 
+EXPLANATION_HEADER = (
+    "\n<h2>How to read</h2>"
+    "\n<p>A Situation is curriculum-designer-facing; it is not accessible to the learner. "
+    "The name of a perceived object is derived from the type of the corresponding SituationObject, and the "
+    "number indicates which object of its type it is - e.g. if there are two babies in a situation, "
+    "the perceived objects will be 'person_0' and 'person_1'. "
+    "Names on Perceptions are handles for debugging; they are not accessible to the "
+    "learner. 'GAZED-AT' refers the object of focus of the speaker.</p> "
+    "\n<p>Properties</p>\n<ul>"
+    "\n\t<li>These define characteristics of an object that may influence perception and fulfillment of "
+    "semantic roles.</li> "
+    "\n\t<li>Meta-properties provide information about a property, e.g. whether or not a property can "
+    "be perceived by the learner.</li> "
+    "\n\t<li>OBJECT[PROPERTY_0[META_PROPERTY], PROPERTY_1, PROPERTY_2]</li> "
+    "\n</ul>\n<ul>\n<p>Relations</p> "
+    "\n\t<li>These define relations between two objects; e.g. smallerThan(A, B) indicates that object A is "
+    "smaller than object B.</li> "
+    "\n\t<li>IN_REGION is a special relation that holds between a SituationObject and a Region. These "
+    "relations can be nested, and for readability, they do not fall under 'Other Relations'."
+    "\n\t<li>RELATION(OBJECT_0, OBJECT_1)</li>"
+    "\n</ul>\n<ul>\n<p>Arrows</p>"
+    "\n\t<li>A relation preceded by 'Ø --->' is one that begins to exist by the end of the situation.</li>"
+    "\n\t<li>A relation followed by '---> Ø' is one that ceases to exist by the end of the situation.</li>"
+    "\n\t<li>A relation without an arrow holds true through the duration of the situation.</li>"
+    "\n</ul>\n<ul>\n<p>Part-of nesting</p>"
+    "\n\t<li>PART_OF relations indicate that an object is a part of another. Objects that form a "
+    "structural schema can be represented in terms of several part-of relations.</li> "
+    "\n\t<li>e.g. a finger is a part of a hand which is part of an arm which is part of a body</li>"
+    "\n</ul>\n<ul>\n<p>Regions</p> "
+    "\n\t<li>These represent regions of space. They are defined in terms of distance and/or direction with "
+    "respect to a reference object.</li>"
+    "\n\t<li>e.g. the inside of a box may be represented as Region(box, distance=INTERIOR, "
+    "direction=None)</li> "
+    "\n\t<li>Region(REFERENCE_OBJECT, distance=DISTANCE, direction=DIRECTION)</li>"
+    "\n</ul>\n<ul>\n<p>Spatial Paths</p>"
+    "\n\t<li>A SpatialPath specifies the path that some object takes during a situation. These are "
+    "defined in terms of a PathOperator and whether or not the orientation changed, with respect to a "
+    "reference object and an optional reference axis.</li>"
+    "\n\t<li>e.g. the path of a falling object may be represented as SpatialPath(operator=TOWARD, "
+    "reference_object=GROUND, reference_axis=None, orientation_changed=False)</li>"
+    "\n\t<li>SpatialPath(OPERATOR, REFERENCE_OBJECT, REFERENCE_AXIS, ORIENTATION_CHANGED)</li>"
+)
+
 
 def main(params: Parameters) -> None:
     root_output_directory = params.creatable_directory("output_directory")
     phase1_curriculum_dir = root_output_directory / "gaila-phase-1"
     phase1_curriculum_dir.mkdir(parents=True, exist_ok=True)
-    CurriculumToHtmlDumper().dump_to_html(
-        GAILA_PHASE_1_CURRICULUM,
-        output_directory=phase1_curriculum_dir,
-        title="GAILA Phase 1 Curriculum",
+
+    sort_by_utterance_length_flag = params.optional_boolean_with_default(
+        "sort_by_utterance", default_value=False
     )
+    if sort_by_utterance_length_flag:
+        random_seed = params.optional_float("random_seed")
+        # Using float and converting to integer until optional_integer is implemented in vistautils
+        if not random_seed:
+            random_seed = 1
+        CurriculumToHtmlDumper().dump_to_html_as_sorted_by_utterance_length(
+            GAILA_PHASE_1_CURRICULUM,
+            output_directory=phase1_curriculum_dir,
+            title="GAILA Phase 1 Curriculum Sorted by Utterance Length",
+            random_seed=int(random_seed),
+        )
+    else:
+        CurriculumToHtmlDumper().dump_to_html(
+            GAILA_PHASE_1_CURRICULUM,
+            output_directory=phase1_curriculum_dir,
+            title="GAILA Phase 1 Curriculum",
+        )
 
 
 @attrs(frozen=True, slots=True)
@@ -84,6 +144,122 @@ class CurriculumToHtmlDumper:
     """
     Class to turn an `InstanceGroup` into an html document
     """
+
+    def dump_to_html_as_sorted_by_utterance_length(
+        self,
+        instance_groups: Iterable[
+            InstanceGroup[
+                HighLevelSemanticsSituation,
+                LinearizedDependencyTree,
+                DevelopmentalPrimitivePerceptionFrame,
+            ]
+        ],
+        *,
+        output_directory: Path,
+        title: str,
+        random_seed: int,
+    ):
+        all_instances = []
+        for (_, instance_group) in enumerate(instance_groups):
+            for instance in instance_group.instances():
+                (situation, dependency_tree, perception) = instance
+                if not isinstance(situation, HighLevelSemanticsSituation):
+                    raise RuntimeError(
+                        f"Expected the Situation to be HighLevelSemanticsSituation got {type(situation)}"
+                    )
+                if not isinstance(dependency_tree, LinearizedDependencyTree):
+                    raise RuntimeError(
+                        f"Expected the Lingustics to be LinearizedDependencyTree got {type(dependency_tree)}"
+                    )
+                if not (
+                    isinstance(perception, PerceptualRepresentation)
+                    and isinstance(
+                        perception.frames[0], DevelopmentalPrimitivePerceptionFrame
+                    )
+                ):
+                    raise RuntimeError(
+                        f"Expected the Perceptual Representation to contain DevelopmentalPrimitivePerceptionFrame got "
+                        f"{type(perception.frames)}"
+                    )
+                (_, speaker) = self._situation_text(situation)
+                length = len(self._linguistic_text(dependency_tree, speaker).split())
+                all_instances.append((situation, dependency_tree, perception, length))
+
+        # shuffle
+        random.seed(random_seed)
+        random.shuffle(all_instances)
+        # sort
+        all_instances.sort(key=lambda instance: instance[3])
+
+        rendered_instances = []
+        for (situation, dependency_tree, perception, _) in all_instances:
+            (situation_text, speaker) = self._situation_text(situation)
+            rendered_instances.append(
+                InstanceHolder(
+                    situation=situation_text,
+                    lingustics=self._linguistic_text(dependency_tree, speaker),
+                    perception=self._perception_text(perception),
+                )
+            )
+
+        filename = "curriculum-sorted-by-utterance.html"
+        chunk_size = 50
+        files_written: List[Tuple[str, str]] = []
+        for i in range(0, len(rendered_instances), chunk_size):
+            chunk = rendered_instances[i : i + chunk_size]
+            instance_group_header = f"{int(i/chunk_size):03} - {filename}"
+            relative_filename = f"{instance_group_header}.html"
+            files_written.append((instance_group_header, relative_filename))
+            with open(output_directory / relative_filename, "w") as html_out:
+                html_out.write(f"<head>\n\t<style>{CSS}\n\t</style>\n</head>")
+                html_out.write(
+                    f"\n<body>\n\t<h1>{title} - Sorted by Utterance Length</h1>"
+                )
+                html_out.write(EXPLANATION_HEADER)
+                for (instance_number, instance_holder) in enumerate(immutableset(chunk)):
+                    # By using the immutable set we guaruntee iteration order and remove duplicates
+                    html_out.write(
+                        f"\n\t<table>\n"
+                        f"\t\t<thead>\n"
+                        f"\t\t\t<tr>\n"
+                        f'\t\t\t\t<th colspan="3">\n'
+                        f"\t\t\t\t\t<h2>Scene {instance_number}</h2>\n"
+                        f"\t\t\t\t</th>\n\t\t\t</tr>\n"
+                        f"\t\t</thead>\n"
+                        f"\t\t<tbody>\n"
+                        f"\t\t\t<tr>\n"
+                        f"\t\t\t\t<td>\n"
+                        f'\t\t\t\t\t<h3 id="situation-{instance_number}">Situation</h3>\n'
+                        f"\t\t\t\t</td>\n"
+                        f"\t\t\t\t<td>\n"
+                        f'\t\t\t\t\t<h3 id="linguistic-{instance_number}">Language</h3>\n'
+                        f"\t\t\t\t</td>\n"
+                        f"\t\t\t\t<td>\n"
+                        f'\t\t\t\t\t<h3 id="perception-{instance_number}">Learner Perception</h3>\n'
+                        f"\t\t\t\t</td>\n"
+                        f"\t\t\t</tr>\n"
+                        f"\t\t\t<tr>\n"
+                        f'\t\t\t\t<td valign="top">{instance_holder.situation}\n\t\t\t\t</td>\n'
+                        f'\t\t\t\t<td valign="top">{instance_holder.lingustics}</td>\n'
+                        f'\t\t\t\t<td valign="top">{instance_holder.perception}\n\t\t\t\t</td>\n'
+                        f"\t\t\t</tr>\n\t\t</tbody>\n\t</table>"
+                    )
+                    html_out.write("\n</body>")
+
+        index_file = "index-" + filename
+        with open(output_directory / index_file, "w") as index_out:
+            index_out.write(f"<head><title>{title}</title></head><body>")
+            index_out.write("<ul>")
+            for (
+                instance_group_title,
+                instance_group_dump_file_relative_path,
+            ) in files_written:
+                index_out.write(
+                    f"\t<li><a href='{instance_group_dump_file_relative_path}'>"
+                    f"{instance_group_title}</a></li>"
+                )
+            index_out.write("</ul>")
+            index_out.write("</body>")
 
     def dump_to_html(
         self,
@@ -199,50 +375,7 @@ class CurriculumToHtmlDumper:
         with open(output_destination, "w") as html_out:
             html_out.write(f"<head>\n\t<style>{CSS}\n\t</style>\n</head>")
             html_out.write(f"\n<body>\n\t<h1>{title} - {instance_group.name()}</h1>")
-            html_out.write("\n<h2>How to read</h2>")
-            html_out.write(
-                "\n<p>A Situation is curriculum-designer-facing; it is not accessible to the learner. "
-                "The name of a perceived object is derived from the type of the corresponding SituationObject, and the "
-                "number indicates which object of its type it is - e.g. if there are two babies in a situation, "
-                "the perceived objects will be 'person_0' and 'person_1'. "
-                "Names on Perceptions are handles for debugging; they are not accessible to the "
-                "learner. 'GAZED-AT' refers the object of focus of the speaker.</p> "
-            )
-            html_out.write(
-                "\n<p>Properties</p>\n<ul>"
-                "\n\t<li>These define characteristics of an object that may influence perception and fulfillment of "
-                "semantic roles.</li> "
-                "\n\t<li>Meta-properties provide information about a property, e.g. whether or not a property can "
-                "be perceived by the learner.</li> "
-                "\n\t<li>OBJECT[PROPERTY_0[META_PROPERTY], PROPERTY_1, PROPERTY_2]</li> "
-                "\n</ul>\n<ul>\n<p>Relations</p> "
-                "\n\t<li>These define relations between two objects; e.g. smallerThan(A, B) indicates that object A is "
-                "smaller than object B.</li> "
-                "\n\t<li>IN_REGION is a special relation that holds between a SituationObject and a Region. These "
-                "relations can be nested, and for readability, they do not fall under 'Other Relations'."
-                "\n\t<li>RELATION(OBJECT_0, OBJECT_1)</li>"
-                "\n</ul>\n<ul>\n<p>Arrows</p>"
-                "\n\t<li>A relation preceded by 'Ø --->' is one that begins to exist by the end of the situation.</li>"
-                "\n\t<li>A relation followed by '---> Ø' is one that ceases to exist by the end of the situation.</li>"
-                "\n\t<li>A relation without an arrow holds true through the duration of the situation.</li>"
-                "\n</ul>\n<ul>\n<p>Part-of nesting</p>"
-                "\n\t<li>PART_OF relations indicate that an object is a part of another. Objects that form a "
-                "structural schema can be represented in terms of several part-of relations.</li> "
-                "\n\t<li>e.g. a finger is a part of a hand which is part of an arm which is part of a body</li>"
-                "\n</ul>\n<ul>\n<p>Regions</p> "
-                "\n\t<li>These represent regions of space. They are defined in terms of distance and/or direction with "
-                "respect to a reference object.</li>"
-                "\n\t<li>e.g. the inside of a box may be represented as Region(box, distance=INTERIOR, "
-                "direction=None)</li> "
-                "\n\t<li>Region(REFERENCE_OBJECT, distance=DISTANCE, direction=DIRECTION)</li>"
-                "\n</ul>\n<ul>\n<p>Spatial Paths</p>"
-                "\n\t<li>A SpatialPath specifies the path that some object takes during a situation. These are "
-                "defined in terms of a PathOperator and whether or not the orientation changed, with respect to a "
-                "reference object and an optional reference axis.</li>"
-                "\n\t<li>e.g. the path of a falling object may be represented as SpatialPath(operator=TOWARD, "
-                "reference_object=GROUND, reference_axis=None, orientation_changed=False)</li>"
-                "\n\t<li>SpatialPath(OPERATOR, REFERENCE_OBJECT, REFERENCE_AXIS, ORIENTATION_CHANGED)</li>"
-            )
+            html_out.write(EXPLANATION_HEADER)
             # By using the immutable set we guaruntee iteration order and remove duplicates
             for (instance_number, instance_holder) in enumerate(
                 immutableset(rendered_instances)
