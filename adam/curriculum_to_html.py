@@ -760,26 +760,26 @@ class CurriculumToHtmlDumper:
         lines.append(
             f"{indent}\t<li>Cross Section: {geon.cross_section} | Cross Section Size: {geon.cross_section_size}</li>"
         )
-        if geon.generating_axis == geon.primary_axis:
+        if geon.generating_axis == geon.axes.primary_axis:
             lines.append(
                 f"{indent}\t<li><b>Generating Axis: {geon.generating_axis}</b></li>"
             )
         else:
             lines.append(f"{indent}\t<li>Generating Axis: {geon.generating_axis}</li>")
-        if geon.orienting_axes:
+        if geon.axes.orienting_axes:
             lines.append(f"{indent}\t<li>Orienting Axes:")
             lines.append(f"{indent}\t<ul>")
-            for axis in geon.orienting_axes:
-                if axis == geon.primary_axis:
+            for axis in geon.axes.orienting_axes:
+                if axis == geon.axes.primary_axis:
                     lines.append(f"{indent}\t\t<li><b>{axis}</b></li>")
                 else:
                     lines.append(f"{indent}\t\t<li>{axis}</li>")
             lines.append(f"{indent}\t</ul>")
             lines.append(f"{indent}\t</li>")
-        if geon.axis_relations:
+        if geon.axes.axis_relations:
             lines.append(f"{indent}\t<li>Axes Relations:")
             lines.append(f"{indent}\t<ul>")
-            for axis_relation in geon.axis_relations:
+            for axis_relation in geon.axes.axis_relations:
                 if isinstance(axis_relation.second_slot, Region):
                     lines.append(
                         f"{indent}\t\t<li>{axis_relation.relation_type}({axis_relation.first_slot.debug_name},{axis_relation.second_slot})</li>"
@@ -800,7 +800,7 @@ body {
     font-family: sans-serif;
 }
 
-table td { 
+table td { p
     padding: 1em; 
     background-color: #FAE5D3 ;
 }

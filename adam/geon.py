@@ -69,19 +69,11 @@ def symmetric_verical(debug_name: str) -> GeonAxis:
 
 
 @attrs(slots=True, frozen=True)
-class Geon:
-    cross_section: CrossSection = attrib(
-        validator=instance_of(CrossSection), kw_only=True
-    )
-    cross_section_size: CrossSectionSize = attrib(
-        validator=instance_of(CrossSectionSize), kw_only=True
-    )
-    generating_axis: GeonAxis = attrib(validator=instance_of(GeonAxis), kw_only=True)
-    orienting_axes: ImmutableSet[GeonAxis] = attrib(
-        converter=_to_immutableset, default=immutableset(), kw_only=True
-    )
+class Axes:
     primary_axis: GeonAxis = attrib(validator=instance_of(GeonAxis), kw_only=True)
-
+    orienting_axes: ImmutableSet[GeonAxis] = attrib(
+        converter=_to_immutableset, kw_only=True
+    )
     axis_relations: ImmutableSet[Relation[GeonAxis]] = attrib(
         converter=flatten_relations, default=immutableset(), kw_only=True
     )
@@ -89,16 +81,28 @@ class Geon:
     def __attrs_post_init__(self) -> None:
         num_gravitationally_aligned_axes = quantify(
             x.aligned_to_gravitational
-            for x in chain((self.generating_axis,), self.orienting_axes)
+            for x in chain((self.primary_axis,), self.orienting_axes)
         )
         if num_gravitationally_aligned_axes > 1:
             raise RuntimeError(
                 f"A Geon cannot have multiple gravitationally aligned axes: {self}"
             )
 
-    @primary_axis.default
+
+@attrs(slots=True, frozen=True)
+class Geon:
+    cross_section: CrossSection = attrib(
+        validator=instance_of(CrossSection), kw_only=True
+    )
+    cross_section_size: CrossSectionSize = attrib(
+        validator=instance_of(CrossSectionSize), kw_only=True
+    )
+    axes: Axes = attrib(validator=instance_of(Axes), kw_only=True)
+    generating_axis: GeonAxis = attrib(validator=instance_of(GeonAxis), kw_only=True)
+
+    @generating_axis.default
     def _init_primary_axis(self) -> GeonAxis:
-        return self.generating_axis
+        return self.axes.primary_axis
 
 
 def _sign(prop_val: bool) -> str:

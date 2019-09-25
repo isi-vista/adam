@@ -22,9 +22,11 @@ from adam.ontology.phase1_ontology import (
     ANIMATE,
     BIGGER_THAN,
     BIRD,
+    BOX,
     CAN_BE_SAT_ON_BY_PEOPLE,
     CAN_HAVE_THINGS_RESTING_ON_THEM,
     CAN_JUMP,
+    COME,
     DRINK,
     DRINK_CONTAINER_AUX,
     EAT,
@@ -41,7 +43,10 @@ from adam.ontology.phase1_ontology import (
     HOLLOW,
     INANIMATE,
     INANIMATE_OBJECT,
+    IS_ADDRESSEE,
     IS_BODY_PART,
+    IS_HUMAN,
+    IS_SPEAKER,
     JUMP,
     JUMP_INITIAL_SUPPORTER_AUX,
     LEARNER,
@@ -52,6 +57,9 @@ from adam.ontology.phase1_ontology import (
     PERSON,
     PERSON_CAN_HAVE,
     PHASE_1_CURRICULUM_OBJECTS,
+    PUSH,
+    PUSH_GOAL,
+    PUSH_SURFACE_AUX,
     PUT,
     ROLL,
     ROLLABLE,
@@ -63,6 +71,8 @@ from adam.ontology.phase1_ontology import (
     SPIN,
     TAKE,
     THEME,
+    THROW,
+    THROW_GOAL,
     TRANSFER_OF_POSSESSION,
     _GO_GOAL,
     bigger_than,
@@ -71,16 +81,6 @@ from adam.ontology.phase1_ontology import (
     is_recognized_particular,
     on,
     strictly_above,
-    IS_HUMAN,
-    PUSH,
-    PUSH_SURFACE_AUX,
-    PUSH_GOAL,
-    THROW,
-    THROW_GOAL,
-    BOX,
-    IS_SPEAKER,
-    IS_ADDRESSEE,
-    COME,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -105,12 +105,12 @@ from adam.situation import Action, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
+    TemplateObjectVariable,
     action_variable,
     all_possible,
     color_variable,
     object_variable,
     sampled,
-    TemplateObjectVariable,
 )
 
 _CHOOSER = RandomChooser.for_seed(0)
@@ -385,6 +385,34 @@ def _make_object_on_object_curriculum() -> _Phase1InstanceGroup:
             ontology=GAILA_PHASE_1_ONTOLOGY,
         ),
     )
+
+
+# def _make_object_beside_object_curriculum() -> _Phase1InstanceGroup:
+#     object_ = _standard_object("object")
+#     bigger_object = _standard_object("bigger_object")
+#
+#     situation_template = Phase1SituationTemplate(
+#         "object-beside-object",
+#         salient_object_variables=[object_, bigger_object],
+#         constraining_relations=[Relation(BIGGER_THAN, bigger_object, object_)],
+#         asserted_always_relations=[Relation(IN_REGION,
+#                                             Region(bigger_object,
+#                                                    distance=PROXIMAL,
+#                                                    direction=Direction(
+#                                                        relative_to_axis=None
+#                                                    ))
+#                                             )],
+#     )
+#
+#     return _phase1_instances(
+#         "objects-beside-objects",
+#         sampled(
+#             situation_template,
+#             max_to_sample=50,
+#             chooser=_CHOOSER,
+#             ontology=GAILA_PHASE_1_ONTOLOGY,
+#         ),
+#     )
 
 
 def _make_object_under_or_over_object_curriculum() -> _Phase1InstanceGroup:
@@ -1487,12 +1515,11 @@ GAILA_PHASE_1_CURRICULUM = [
     OBJECTS_WITH_COLORS_SUB_CURRICULUM,
     MULTIPLE_OF_THE_SAME_OBJECT_SUB_CURRICULUM,
     _OBJECT_ON_GROUND_SUB_CURRICULUM,
-    #    PERSON_HAS_OBJECT_SUB_CURRICULUM,
     _ANY_OBJECT_INTRANSITIVES_SUBCURRICULUM,
     _make_fall_curriculum(),
     _make_transfer_of_possession_curriculum(),
     _make_object_on_object_curriculum(),
-    # _make_object_over_object_curriculum(),
+    # _make_object_beside_object_curriculum(),
     _make_object_under_or_over_object_curriculum(),
     _make_object_in_other_object_curriculum(),
     _make_fly_curriculum(),
