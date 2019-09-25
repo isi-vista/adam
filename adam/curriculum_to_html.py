@@ -651,46 +651,45 @@ class CurriculumToHtmlDumper:
         dfs_walk(root)
         output_text.append("\t\t\t\t\t</ul>")
 
-        # Finally we render all relations between objects
-        if all_relations:
+        # Finally we render remaining relations between objects
+        remaining_relations = immutableset(relation for relation in all_relations if relation not in expressed_relations)
+        if remaining_relations:
             output_text.append("\t\t\t\t\t<h5>Other Relations</h5>\n\t\t\t\t\t<ul>")
-
-            for relation in all_relations:
-                if relation not in expressed_relations:
-                    (relation_prefix, relation_suffix) = compute_arrow(
-                        relation, static_relations, first_frame_relations
-                    )
-                    # if matching smallerThan/biggerThan relations exist, give as single relation
-                    opposite_relations = {
-                        SMALLER_THAN: BIGGER_THAN,
-                        BIGGER_THAN: SMALLER_THAN,
-                    }
-                    single_size_relation = None
-                    if relation.relation_type in opposite_relations:
-                        if (
-                            Relation(
-                                opposite_relations[relation.relation_type],
-                                relation.second_slot,
-                                relation.first_slot,
-                            )
-                            in all_relations
-                        ):
-                            if relation.relation_type == SMALLER_THAN:
-                                single_size_relation = (
-                                    f"{relation.second_slot} > {relation.first_slot}"
-                                )
-                            else:
-                                single_size_relation = (
-                                    f"{relation.first_slot} > {relation.second_slot}"
-                                )
-                    if single_size_relation:
-                        size_output = f"\t\t\t\t\t\t<li>{relation_prefix}{single_size_relation}{relation_suffix}</li>"
-                        if size_output not in output_text:
-                            output_text.append(size_output)
-                    else:
-                        output_text.append(
-                            f"\t\t\t\t\t\t<li>{relation_prefix}{relation}{relation_suffix}</li>"
+            for relation in remaining_relations:
+                (relation_prefix, relation_suffix) = compute_arrow(
+                    relation, static_relations, first_frame_relations
+                )
+                # if matching smallerThan/biggerThan relations exist, give as single relation
+                opposite_relations = {
+                    SMALLER_THAN: BIGGER_THAN,
+                    BIGGER_THAN: SMALLER_THAN,
+                }
+                single_size_relation = None
+                if relation.relation_type in opposite_relations:
+                    if (
+                        Relation(
+                            opposite_relations[relation.relation_type],
+                            relation.second_slot,
+                            relation.first_slot,
                         )
+                        in all_relations
+                    ):
+                        if relation.relation_type == SMALLER_THAN:
+                            single_size_relation = (
+                                f"{relation.second_slot} > {relation.first_slot}"
+                            )
+                        else:
+                            single_size_relation = (
+                                f"{relation.first_slot} > {relation.second_slot}"
+                            )
+                if single_size_relation:
+                    size_output = f"\t\t\t\t\t\t<li>{relation_prefix}{single_size_relation}{relation_suffix}</li>"
+                    if size_output not in output_text:
+                        output_text.append(size_output)
+                else:
+                    output_text.append(
+                        f"\t\t\t\t\t\t<li>{relation_prefix}{relation}{relation_suffix}</li>"
+                    )
             output_text.append("\t\t\t\t\t</ul>")
 
         if perception.during:
@@ -817,4 +816,9 @@ def _index_to_setmultidict(
 
 
 if __name__ == "__main__":
-    parameters_only_entry_point(main, usage_message=USAGE_MESSAGE)
+    #parameters_only_entry_point(main, usage_message=USAGE_MESSAGE)
+    CurriculumToHtmlDumper().dump_to_html(
+        GAILA_PHASE_1_CURRICULUM,
+        output_directory=Path("C:\\Users\\jalic\\Desktop\\ISI"),
+        title="GAILA Phase 1 Curriculum",
+    )
