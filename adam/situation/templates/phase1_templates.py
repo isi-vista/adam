@@ -101,6 +101,9 @@ class TemplateObjectVariable(SituationTemplateObject, _TemplateVariable):
         return f"{self.handle}[{' ,'.join(props)}]"
 
 
+TemplateRegion = Region[TemplateObjectVariable]
+
+
 @attrs(frozen=True, slots=True, cmp=False)
 class TemplatePropertyVariable(SituationTemplateObject, _TemplateVariable):
     r"""
@@ -492,7 +495,7 @@ class _Phase1SituationTemplateGenerator(
                 return action_variables_to_fillers[action.action_type]
 
         def map_action_variable_binding(
-            x: Union[TemplateObjectVariable, Region[TemplateObjectVariable]]
+            x: Union[TemplateObjectVariable, TemplateRegion]
         ) -> Union[SituationObject, Region[SituationObject]]:
             if isinstance(x, Region):
                 return x.copy_remapping_objects(object_var_to_instantiations)
