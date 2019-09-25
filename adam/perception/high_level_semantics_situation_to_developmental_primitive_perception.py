@@ -793,7 +793,7 @@ class _PerceptionGeneration:
     ) -> ObjectPerception:
         root_object_perception = ObjectPerception(
             debug_handle=self._object_handle_generator.subscripted_handle(schema),
-            geon=schema.geon,
+            geon=schema.geon.copy() if schema.geon else None,
         )
         self._object_perceptions.append(root_object_perception)
 

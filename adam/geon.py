@@ -1,6 +1,7 @@
 from itertools import chain
+from typing import Mapping, Iterable
 
-from attr import attrib, attrs
+from attr import attrib, attrs, evolve
 from attr.validators import instance_of
 from immutablecollections import ImmutableSet, immutableset
 from immutablecollections.converter_utils import _to_immutableset
@@ -42,6 +43,9 @@ class GeonAxis:
     curved: bool = attrib(validator=instance_of(bool), default=False)
     directed: bool = attrib(validator=instance_of(bool), default=True)
     aligned_to_gravitational = attrib(validator=instance_of(bool), default=False)
+
+    def copy(self) -> "GeonAxis":
+        return evolve(self)
 
     def __repr__(self) -> str:
         return (
@@ -88,6 +92,20 @@ class Axes:
                 f"A Geon cannot have multiple gravitationally aligned axes: {self}"
             )
 
+    @property
+    def all_axes(self) -> Iterable[GeonAxis]:
+        return chain((self.primary_axis,), self.orienting_axes)
+
+    def remap_axes(self, axis_mapping: Mapping[GeonAxis, GeonAxis]) -> "Axes":
+        return Axes(
+            primary_axis=axis_mapping[self.primary_axis],
+            orienting_axes=[axis_mapping[axis] for axis in self.orienting_axes],
+            axis_relations=[
+                relation.copy_remapping_objects(axis_mapping)
+                for relation in self.axis_relations
+            ],
+        )
+
 
 @attrs(slots=True, frozen=True)
 class Geon:
@@ -99,6 +117,15 @@ class Geon:
     )
     axes: Axes = attrib(validator=instance_of(Axes), kw_only=True)
     generating_axis: GeonAxis = attrib(validator=instance_of(GeonAxis), kw_only=True)
+
+    def copy(self) -> "Geon":
+        axis_mapping = {axis: axis.copy() for axis in self.axes.all_axes}
+        return Geon(
+            cross_section=self.cross_section,
+            cross_section_size=self.cross_section_size,
+            axes=self.axes.remap_axes(axis_mapping),
+            generating_axis=axis_mapping[self.generating_axis],
+        )
 
     @generating_axis.default
     def _init_primary_axis(self) -> GeonAxis:
