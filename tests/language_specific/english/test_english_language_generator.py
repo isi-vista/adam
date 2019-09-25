@@ -10,8 +10,12 @@ from adam.curriculum.phase1_curriculum import (
     make_object_beside_object_template,
     SMALLER_BESIDE_OBJECT,
     LARGER_BESIDE_OBJECT,
-    make_behind_in_front_templates, FRONT_BEHIND_FIGURE_OBJECT, FRONT_BEHIND_GROUND_OBJECT,
-    FRONT_BEHIND_SPEAKER, FRONT_BEHIND_ADDRESSEE)
+    make_behind_in_front_templates,
+    FRONT_BEHIND_FIGURE_OBJECT,
+    FRONT_BEHIND_GROUND_OBJECT,
+    FRONT_BEHIND_SPEAKER,
+    FRONT_BEHIND_ADDRESSEE,
+)
 from adam.language_specific.english.english_language_generator import (
     PREFER_DITRANSITIVE,
     SimpleRuleBasedEnglishLanguageGenerator,
@@ -827,14 +831,18 @@ def test_object_beside_object():
     )
     assert generated_tokens(situation) == ("a", "ball", "beside", "a", "table")
 
+
 def test_object_behind_in_front_object():
     (front_template, behind_template) = make_behind_in_front_templates()
 
     variable_bindings = TemplateVariableAssignment(
-        object_variables_to_fillers=[(FRONT_BEHIND_FIGURE_OBJECT, BOX),
-                                     (FRONT_BEHIND_GROUND_OBJECT, TABLE),
-                                     (FRONT_BEHIND_SPEAKER, MOM),
-                                     (FRONT_BEHIND_ADDRESSEE, DAD)])
+        object_variables_to_fillers=[
+            (FRONT_BEHIND_FIGURE_OBJECT, BOX),
+            (FRONT_BEHIND_GROUND_OBJECT, TABLE),
+            (FRONT_BEHIND_SPEAKER, MOM),
+            (FRONT_BEHIND_ADDRESSEE, DAD),
+        ]
+    )
 
     front_situation = first(
         fixed_assignment(
@@ -861,5 +869,3 @@ def generated_tokens(situation):
     return only(
         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
     ).as_token_sequence()
-
-

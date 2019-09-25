@@ -38,20 +38,15 @@ from adam.language.dependency.universal_dependencies import (
 from adam.language.language_generator import LanguageGenerator
 from adam.language.lexicon import LexiconEntry
 from adam.language.ontology_dictionary import OntologyLexicon
-from adam.language_specific.english.english_phase_1_lexicon import (
-    ALLOWS_DITRANSITIVE,
-    GAILA_PHASE_1_ENGLISH_LEXICON,
-    I,
-    MASS_NOUN,
-    YOU,
-    ME,
-)
+from adam.language_specific.english.english_phase_1_lexicon import (ALLOWS_DITRANSITIVE,
+                                                                    GAILA_PHASE_1_ENGLISH_LEXICON,
+                                                                    I, MASS_NOUN, ME, YOU)
 from adam.language_specific.english.english_syntax import (
     FIRST_PERSON,
     SECOND_PERSON,
     SIMPLE_ENGLISH_DEPENDENCY_TREE_LINEARIZER,
 )
-from adam.ontology import IN_REGION, OntologyNode, IS_SPEAKER, IS_ADDRESSEE
+from adam.ontology import IN_REGION, IS_ADDRESSEE, IS_SPEAKER, OntologyNode
 from adam.ontology.phase1_ontology import (
     AGENT,
     COLOR,
@@ -64,7 +59,6 @@ from adam.ontology.phase1_ontology import (
     THEME,
 )
 from adam.ontology.phase1_spatial_relations import (
-    DISTAL,
     EXTERIOR_BUT_IN_CONTACT,
     GRAVITATIONAL_DOWN,
     INTERIOR,
@@ -740,7 +734,9 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                             preposition = "under"
                     else:
                         # TODO: hack for M3; revisit in cleanup
-                        if isinstance(region.direction.relative_to_axis, FacingAddresseeAxis):
+                        if isinstance(
+                            region.direction.relative_to_axis, FacingAddresseeAxis
+                        ):
                             if region.direction.positive:
                                 preposition = "in front of"
                             else:

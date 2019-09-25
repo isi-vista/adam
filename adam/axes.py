@@ -118,6 +118,7 @@ class HorizontalAxisOfObject(Generic[_ObjectT], AxisFunction[_ObjectT]):
     ) -> "HorizontalAxisOfObject[_ObjectToT]":
         return HorizontalAxisOfObject(object_map[self._object], index=self._index)
 
+
 @attrs(frozen=True)
 class FacingAddresseeAxis(Generic[_ObjectT], AxisFunction[_ObjectT]):
     _object: _ObjectT = attrib()
@@ -130,14 +131,19 @@ class FacingAddresseeAxis(Generic[_ObjectT], AxisFunction[_ObjectT]):
                 "Can only instantiate an axis function if the object is of a "
                 "concrete type (e.g. perception or situation object)"
             )
-        addressees = set(obj_ for obj_ in axes_info.axes_facing.keys()
-                        if IS_ADDRESSEE in obj_.properties)
+        addressees = set(
+            obj_
+            for obj_ in axes_info.axes_facing.keys()
+            if IS_ADDRESSEE in obj_.properties
+        )
         if len(addressees) != 1:
-            raise RuntimeError("FacingAddresseeAxis requires exactly one addressee in the "
-                               "situation")
+            raise RuntimeError(
+                "FacingAddresseeAxis requires exactly one addressee in the " "situation"
+            )
         addressee: _ObjectT = only(addressees)
         object_axes_facing_addressee = axes_info.axes_facing[addressee].intersection(
-            immutableset(self._object.axes.all_axes))
+            immutableset(self._object.axes.all_axes)
+        )
 
         if object_axes_facing_addressee:
             if len(object_axes_facing_addressee) == 1:
@@ -145,14 +151,14 @@ class FacingAddresseeAxis(Generic[_ObjectT], AxisFunction[_ObjectT]):
             else:
                 raise RuntimeError("Cannot handle multiple axes facing the addressee.")
         else:
-            raise RuntimeError(f"Could not fine axis of {self._object} facing addressee "
-                               f"{addressee}")
+            raise RuntimeError(
+                f"Could not fine axis of {self._object} facing addressee " f"{addressee}"
+            )
 
     def copy_remapping_objects(
         self, object_map: Mapping[_ObjectT, _ObjectToT]
     ) -> "FacingAddresseeAxis[_ObjectToT]":
         return FacingAddresseeAxis(object_map[self._object])
-
 
 
 _GRAVITATIONAL_DOWN_TO_UP_AXIS = straight_up("gravitational-up")

@@ -135,7 +135,6 @@ but this is not currently enforced. E.g. 'You put the ball on the table.'
 """
 
 
-
 REQUIRED_ONTOLOGY_NODES = immutableset(
     [
         THING,
@@ -149,7 +148,7 @@ REQUIRED_ONTOLOGY_NODES = immutableset(
         PERCEIVABLE,
         IS_ADDRESSEE,
         IS_SPEAKER,
-        BINARY
+        BINARY,
     ]
 )
 
@@ -174,5 +173,3 @@ def minimal_ontology_graph():
     ret.add_edge(IS_ADDRESSEE, PROPERTY)
     ret.add_edge(BINARY, META_PROPERTY)
     return ret
-
-

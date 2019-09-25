@@ -14,7 +14,14 @@ from immutablecollections import (
 from more_itertools import only, quantify
 from vistautils.preconditions import check_arg
 
-from adam.ontology import IN_REGION, OntologyNode, IS_SUBSTANCE, PERCEIVABLE, IS_SPEAKER, BINARY
+from adam.ontology import (
+    IN_REGION,
+    OntologyNode,
+    IS_SUBSTANCE,
+    PERCEIVABLE,
+    IS_SPEAKER,
+    BINARY,
+)
 from adam.ontology.action_description import ActionDescription
 from adam.ontology.during import DuringAction
 from adam.ontology.ontology import Ontology

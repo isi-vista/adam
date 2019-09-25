@@ -26,8 +26,14 @@ from typing_extensions import Protocol
 from vistautils.preconditions import check_arg
 
 from adam.axes import AxesInfo, HorizontalAxisOfObject
-from adam.ontology import ACTION, CAN_FILL_TEMPLATE_SLOT, OntologyNode, PROPERTY, THING, \
-    IS_ADDRESSEE
+from adam.ontology import (
+    ACTION,
+    CAN_FILL_TEMPLATE_SLOT,
+    OntologyNode,
+    PROPERTY,
+    THING,
+    IS_ADDRESSEE,
+)
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
     COLOR,
@@ -93,9 +99,9 @@ class TemplateObjectVariable(SituationTemplateObject, _TemplateVariable):
     node_selector: OntologyNodeSelector = attrib(
         validator=instance_of(OntologyNodeSelector)
     )
-    asserted_properties: ImmutableSet[Union[OntologyNode, "TemplatePropertyVariable"]] = attrib(
-        converter=_to_immutableset, default=immutableset()
-    )
+    asserted_properties: ImmutableSet[
+        Union[OntologyNode, "TemplatePropertyVariable"]
+    ] = attrib(converter=_to_immutableset, default=immutableset())
 
     def __repr__(self) -> str:
         props: List[str] = []

@@ -1527,25 +1527,44 @@ def _make_come_curriculum():
         ),
     )
 
+
 FRONT_BEHIND_GROUND_OBJECT = _standard_object("ground_object")
 FRONT_BEHIND_FIGURE_OBJECT = _standard_object("figure_object")
 FRONT_BEHIND_SPEAKER = object_variable("speaker_0", PERSON, added_properties=[IS_SPEAKER])
-FRONT_BEHIND_ADDRESSEE = object_variable("addressee_0", PERSON, added_properties=[IS_ADDRESSEE])
+FRONT_BEHIND_ADDRESSEE = object_variable(
+    "addressee_0", PERSON, added_properties=[IS_ADDRESSEE]
+)
+
 
 def make_behind_in_front_templates() -> Iterable[Phase1SituationTemplate]:
     for in_front_of in (True, False):
         suffix = "-in-front" if in_front_of else "-behind"
         yield Phase1SituationTemplate(
             f"FRONT_BEHIND_ADDRESSEE-relative-{suffix}",
-            salient_object_variables=[FRONT_BEHIND_FIGURE_OBJECT, FRONT_BEHIND_GROUND_OBJECT],
+            salient_object_variables=[
+                FRONT_BEHIND_FIGURE_OBJECT,
+                FRONT_BEHIND_GROUND_OBJECT,
+            ],
             background_object_variables=[FRONT_BEHIND_SPEAKER, FRONT_BEHIND_ADDRESSEE],
             asserted_always_relations=[
-                Relation(IN_REGION, FRONT_BEHIND_FIGURE_OBJECT,
-                         Region(FRONT_BEHIND_GROUND_OBJECT, distance=PROXIMAL,
-                                direction=Direction(positive=in_front_of,
-                                                    relative_to_axis=FacingAddresseeAxis(FRONT_BEHIND_GROUND_OBJECT))))
+                Relation(
+                    IN_REGION,
+                    FRONT_BEHIND_FIGURE_OBJECT,
+                    Region(
+                        FRONT_BEHIND_GROUND_OBJECT,
+                        distance=PROXIMAL,
+                        direction=Direction(
+                            positive=in_front_of,
+                            relative_to_axis=FacingAddresseeAxis(
+                                FRONT_BEHIND_GROUND_OBJECT
+                            ),
+                        ),
+                    ),
+                )
             ],
-            constraining_relations=[bigger_than(FRONT_BEHIND_GROUND_OBJECT, FRONT_BEHIND_FIGURE_OBJECT)]
+            constraining_relations=[
+                bigger_than(FRONT_BEHIND_GROUND_OBJECT, FRONT_BEHIND_FIGURE_OBJECT)
+            ],
         )
 
 
@@ -1596,7 +1615,7 @@ GAILA_PHASE_1_CURRICULUM = [
     _make_throw_curriculum(),
     _make_put_on_speaker_addressee_body_part_curriculum(),
     _make_come_curriculum(),
-    _make_behind_in_front_curriculum()
+    _make_behind_in_front_curriculum(),
 ]
 """
 One particular instantiation of the curriculum for GAILA Phase 1.
