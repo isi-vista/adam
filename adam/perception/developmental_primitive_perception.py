@@ -6,6 +6,7 @@ from immutablecollections import ImmutableSet, immutableset
 from immutablecollections.converter_utils import _to_immutableset
 from vistautils.range import Range
 
+from adam.axes import AxesInfo
 from adam.ontology import OntologyNode
 from adam.perception import ObjectPerception, PerceptualRepresentationFrame
 from adam.relation import Relation, flatten_relations
@@ -29,21 +30,27 @@ class DevelopmentalPrimitivePerceptionFrame(PerceptualRepresentationFrame):
     This is the default perceptual representation for at least the first phase of the ADAM project.
     """
     perceived_objects: ImmutableSet["ObjectPerception"] = attrib(
-        converter=_to_immutableset, default=immutableset()
+        converter=_to_immutableset
     )
     r"""
     a set of `ObjectPerception`\ s, with one corresponding to each
       object in the scene (e.g. a ball, Mom, Dad, etc.)
     """
+    axis_info: AxesInfo["ObjectPerception"] = attrib(
+        # instance default okay because immutable
+        validator=instance_of(AxesInfo),  # type: ignore
+        kw_only=True,
+        default=AxesInfo(),
+    )
     property_assertions: ImmutableSet["PropertyPerception"] = attrib(
-        converter=_to_immutableset, default=immutableset()
+        converter=_to_immutableset, default=immutableset(), kw_only=True
     )
     r"""
     a set of `PropertyPerception`\ s which associate a `ObjectPerception` with perceived properties
       of various sort (e.g. color, sentience, etc.)
     """
     relations: ImmutableSet[Relation["ObjectPerception"]] = attrib(  # type: ignore
-        converter=flatten_relations, default=immutableset()
+        converter=flatten_relations, default=immutableset(), kw_only=True
     )
     r"""
     a set of `Relation`\ s which describe the learner's perception of how two 

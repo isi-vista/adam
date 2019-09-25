@@ -67,7 +67,6 @@ from adam.ontology.phase1_ontology import (
 from adam.ontology.phase1_spatial_relations import (
     DISTAL,
     EXTERIOR_BUT_IN_CONTACT,
-    GRAVITATIONAL_AXIS,
     GRAVITATIONAL_DOWN,
     INTERIOR,
     PROXIMAL,
@@ -76,7 +75,7 @@ from adam.ontology.phase1_spatial_relations import (
 )
 from adam.random_utils import SequenceChooser
 from adam.relation import Relation
-from adam.situation import Action, SituationObject
+from adam.situation import Action, SituationObject, SituationRegion
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 
 
@@ -471,7 +470,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             action: Action[OntologyNode, SituationObject],
             verb_lexical_entry: LexiconEntry,
             argument_role: OntologyNode,
-            filler: Union[SituationObject, Region[SituationObject]],
+            filler: Union[SituationObject, SituationRegion],
         ) -> Tuple[DependencyRole, DependencyTreeToken]:
             # TODO: to alternation
             # https://github.com/isi-vista/adam/issues/150
@@ -532,7 +531,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             verb_lexical_entry: LexiconEntry,  # pylint:disable=unused-argument
             argument_role: OntologyNode,  # pylint:disable=unused-argument
             filler: Union[
-                SituationObject, Region[SituationObject]
+                SituationObject, SituationRegion
             ],  # pylint:disable=unused-argument
         ) -> Optional[DependencyTreeToken]:
             moving_thing = self._get_moving_thing(action)
@@ -587,7 +586,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     f"{argument_role} of {action} to a syntactic role."
                 )
 
-        def _preposition_for_region_as_goal(self, region: Region[SituationObject]) -> str:
+        def _preposition_for_region_as_goal(self, region: SituationRegion) -> str:
             """
             When a `Region` appears as the filler of the semantic role `GOAL`,
             determine what preposition to use to express it in English.
@@ -702,7 +701,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             action: Optional[Action[OntologyNode, SituationObject]],
             relation: Relation[SituationObject],
         ) -> Optional[DependencyTreeToken]:
-            region = cast(Region[SituationObject], relation.second_slot)
+            region = cast(SituationRegion, relation.second_slot)
             # don't talk about relations to non-salient objects
             if region.reference_object not in self.situation.salient_objects:
                 return None
@@ -724,32 +723,32 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 ):
                     return None
 
-            if (
-                region.direction
-                and region.direction.relative_to_axis == GRAVITATIONAL_AXIS
-            ):
-                if region.distance in (PROXIMAL, DISTAL):
-                    if region.direction.positive:
-                        preposition = "over"
-                    else:
-                        preposition = "under"
-                elif (
-                    region.distance == EXTERIOR_BUT_IN_CONTACT
-                    and region.direction.positive
-                ):
-                    preposition = "on"
-                else:
-                    raise RuntimeError(
-                        f"Don't know how to translate spatial " f"modifier: {relation}"
-                    )
+            preposition: Optional[str] = None
+            if region.direction:
+                direction_axis = region.direction.relative_to_axis.to_concrete_axis(
+                    self.situation.axis_info
+                )
+                if direction_axis.aligned_to_gravitational:
+                    if region.distance in (PROXIMAL, DISTAL):
+                        if region.direction.positive:
+                            preposition = "over"
+                        else:
+                            preposition = "under"
+                    elif (
+                        region.distance == EXTERIOR_BUT_IN_CONTACT
+                        and region.direction.positive
+                    ):
+                        preposition = "on"
+                elif region.distance == PROXIMAL:
+                    preposition = "beside"
             elif region.distance == INTERIOR:
                 preposition = "in"
-            else:
+
+            if not preposition:
                 raise RuntimeError(
-                    f"Don't know how to translate spatial modifiers "
-                    f"which are not relative to the gravitational "
-                    f"axis: {relation}"
+                    f"Don't know how to translate spatial modifier {relation}"
                 )
+
             reference_object_node = self._noun_for_object(region.reference_object)
 
             if self.dependency_graph.out_degree[reference_object_node]:

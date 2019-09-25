@@ -13,11 +13,22 @@ The following will eventually end up here:
 - Relations, Modifiers, Function Words: basic color terms (red, blue, green, white, black…), one,
   two, I, me, my, you, your, to, in, on, [beside, behind, in front of, over, under], up, down
 """
-from typing import Iterable, Optional, Sequence, Tuple
+from typing import Iterable, Optional, Sequence, Tuple, TypeVar
 
 from immutablecollections import ImmutableDict, immutabledict, immutableset
 from more_itertools import flatten
 
+from adam.axes import (
+    Axes,
+    FirstHorizontalAxisOfObject,
+    LEARNER_AXES,
+    PrimaryAxisOfObject,
+    WORLD_AXES,
+    directed,
+    straight_up,
+    symmetric,
+    symmetric_vertical,
+)
 from adam.geon import (
     CIRCULAR,
     CONSTANT,
@@ -28,15 +39,12 @@ from adam.geon import (
     RECTANGULAR,
     SMALL_TO_LARGE,
     SMALL_TO_LARGE_TO_SMALL,
-    directed,
-    straight_up,
-    symmetric,
-    symmetric_verical,
 )
 from adam.ontology import (
     ACTION,
     CAN_FILL_TEMPLATE_SLOT,
     IN_REGION,
+    IS_SUBSTANCE,
     OntologyNode,
     PROPERTY,
     RELATION,
@@ -49,12 +57,9 @@ from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_size_relationships import build_size_relationships
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
-    Axis,
     DISTAL,
-    Direction,
     EXTERIOR_BUT_IN_CONTACT,
     FROM,
-    GRAVITATIONAL_AXIS,
     GRAVITATIONAL_DOWN,
     GRAVITATIONAL_UP,
     INTERIOR,
@@ -66,7 +71,6 @@ from adam.ontology.phase1_spatial_relations import (
 )
 from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
 from adam.relation import (
-    ObjectT,
     Relation,
     flatten_relations,
     make_dsl_region_relation,
@@ -279,6 +283,9 @@ COLORS_TO_RGBS: ImmutableDict[
 INANIMATE_OBJECT = OntologyNode("inanimate-object", inheritable_properties=[INANIMATE])
 subtype(INANIMATE_OBJECT, THING)
 
+SUBSTANCE = OntologyNode("substance", inheritable_properties=[IS_SUBSTANCE])
+subtype(SUBSTANCE, INANIMATE_OBJECT)
+
 IS_GROUND = OntologyNode("is-ground")
 subtype(IS_GROUND, RECOGNIZED_PARTICULAR_PROPERTY)
 GROUND = OntologyNode(
@@ -342,11 +349,11 @@ WATER = OntologyNode(
     [LIQUID],
     non_inheritable_properties=[TRANSPARENT, CAN_FILL_TEMPLATE_SLOT, EDIBLE],
 )
-subtype(WATER, INANIMATE_OBJECT)
+subtype(WATER, SUBSTANCE)
 JUICE = OntologyNode(
     "juice", [LIQUID], non_inheritable_properties=[RED, CAN_FILL_TEMPLATE_SLOT, EDIBLE]
 )
-subtype(JUICE, INANIMATE_OBJECT)
+subtype(JUICE, SUBSTANCE)
 CUP = OntologyNode(
     "cup",
     [HOLLOW, CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, RED, BLUE, GREEN, TRANSPARENT],
@@ -385,7 +392,7 @@ subtype(HEAD, INANIMATE_OBJECT)
 MILK = OntologyNode(
     "milk", [LIQUID], non_inheritable_properties=[WHITE, CAN_FILL_TEMPLATE_SLOT, EDIBLE]
 )
-subtype(MILK, INANIMATE_OBJECT)
+subtype(MILK, SUBSTANCE)
 HAND = OntologyNode(
     "hand", [CAN_MANIPULATE_OBJECTS, CAN_FILL_TEMPLATE_SLOT, IS_BODY_PART]
 )
@@ -511,7 +518,7 @@ _BODY = OntologyNode("body")
 subtype(_BODY, _BODY_PART)
 _DOG_HEAD = OntologyNode("dog-head", [CAN_MANIPULATE_OBJECTS])
 subtype(_DOG_HEAD, _BODY_PART)
-_BIRD_HEAD = OntologyNode("dog-head", [CAN_MANIPULATE_OBJECTS])
+_BIRD_HEAD = OntologyNode("bird-head", [CAN_MANIPULATE_OBJECTS])
 subtype(_BIRD_HEAD, _BODY_PART)
 
 # Verbs
@@ -559,29 +566,31 @@ subtype(FLY, ACTION)
 SPATIAL_RELATION = OntologyNode("spatial-relation")
 subtype(SPATIAL_RELATION, RELATION)
 
+_ObjectT = TypeVar("_ObjectT")
+
 
 # On is an English-specific bundle of semantics, but that's okay, because this is just for
 # data generation, and it will get decomposed before being presented as perceptions to the
 # learner.
-def _on_region_factory(reference_object: ObjectT) -> Region[ObjectT]:
+def _on_region_factory(reference_object: _ObjectT) -> Region[_ObjectT]:
     return Region(
         reference_object=reference_object,
         distance=EXTERIOR_BUT_IN_CONTACT,
-        direction=Direction(positive=True, relative_to_axis=GRAVITATIONAL_AXIS),
+        direction=GRAVITATIONAL_UP,
     )
 
 
 on = make_dsl_region_relation(_on_region_factory)  # pylint:disable=invalid-name
 
 
-def _near_region_factory(reference_object: ObjectT) -> Region[ObjectT]:
+def _near_region_factory(reference_object: _ObjectT) -> Region[_ObjectT]:
     return Region(reference_object=reference_object, distance=PROXIMAL)
 
 
 near = make_dsl_region_relation(_near_region_factory)  # pylint:disable=invalid-name
 
 
-def _far_region_factory(reference_object: ObjectT) -> Region[ObjectT]:
+def _far_region_factory(reference_object: _ObjectT) -> Region[_ObjectT]:
     return Region(reference_object=reference_object, distance=DISTAL)
 
 
@@ -647,7 +656,7 @@ subtype(HAS, RELATION)
 has = make_dsl_relation(HAS)  # pylint:disable=invalid-name
 
 
-def _contact_region_factory(reference_object: ObjectT) -> Region[ObjectT]:
+def _contact_region_factory(reference_object: _ObjectT) -> Region[_ObjectT]:
     return Region(reference_object=reference_object, distance=EXTERIOR_BUT_IN_CONTACT)
 
 
@@ -662,25 +671,19 @@ contacts = make_symmetric_dsl_region_relation(  # pylint:disable=invalid-name
 )
 
 
-def _inside_region_factory(reference_object: ObjectT) -> Region[ObjectT]:
+def _inside_region_factory(reference_object: _ObjectT) -> Region[_ObjectT]:
     return Region(reference_object=reference_object, distance=INTERIOR)
 
 
 inside = make_dsl_region_relation(_inside_region_factory)  # pylint:disable=invalid-name
 
 
-def _above_region_factory(reference_object: ObjectT) -> Region[ObjectT]:
-    return Region(
-        reference_object=reference_object,
-        direction=Direction(positive=True, relative_to_axis=GRAVITATIONAL_AXIS),
-    )
+def _above_region_factory(reference_object: _ObjectT) -> Region[_ObjectT]:
+    return Region(reference_object=reference_object, direction=GRAVITATIONAL_UP)
 
 
-def _below_region_factory(reference_object: ObjectT) -> Region[ObjectT]:
-    return Region(
-        reference_object=reference_object,
-        direction=Direction(positive=False, relative_to_axis=GRAVITATIONAL_AXIS),
-    )
+def _below_region_factory(reference_object: _ObjectT) -> Region[_ObjectT]:
+    return Region(reference_object=reference_object, direction=GRAVITATIONAL_DOWN)
 
 
 above = make_opposite_dsl_region_relation(  # pylint:disable=invalid-name
@@ -688,13 +691,13 @@ above = make_opposite_dsl_region_relation(  # pylint:disable=invalid-name
 )
 
 
-def _strictly_above_region_factory(reference_object: ObjectT) -> Region[ObjectT]:
+def _strictly_above_region_factory(reference_object: _ObjectT) -> Region[_ObjectT]:
     return Region(
         reference_object=reference_object, distance=DISTAL, direction=GRAVITATIONAL_UP
     )
 
 
-def _strictly_below_region_factory(reference_object: ObjectT) -> Region[ObjectT]:
+def _strictly_below_region_factory(reference_object: _ObjectT) -> Region[_ObjectT]:
     return Region(
         reference_object=reference_object, distance=DISTAL, direction=GRAVITATIONAL_DOWN
     )
@@ -704,9 +707,9 @@ strictly_above = make_opposite_dsl_region_relation(  # pylint:disable=invalid-na
     _strictly_above_region_factory, _strictly_below_region_factory
 )
 
+_GROUND_SCHEMA = ObjectStructuralSchema(ontology_node=GROUND, axes=WORLD_AXES)
 
-_GROUND_SCHEMA = ObjectStructuralSchema(ontology_node=GROUND)
-_LEARNER_SCHEMA = ObjectStructuralSchema(ontology_node=LEARNER)
+_LEARNER_SCHEMA = ObjectStructuralSchema(ontology_node=LEARNER, axes=LEARNER_AXES)
 
 # Structural Objects without Sub-Parts which are part of our Phase 1 Vocabulary
 # These may need to evolve to reflect the changes for visualization of phase 1
@@ -722,13 +725,15 @@ def _make_door_schema() -> ObjectStructuralSchema:
         geon=Geon(
             cross_section=RECTANGULAR,
             cross_section_size=CONSTANT,
-            generating_axis=interior_to_exterior,
-            orienting_axes=[hinges_to_edge, bottom_to_top],
-            axis_relations=[
-                bigger_than(bottom_to_top, hinges_to_edge),
-                much_bigger_than(bottom_to_top, interior_to_exterior),
-                bigger_than(hinges_to_edge, interior_to_exterior),
-            ],
+            axes=Axes(
+                primary_axis=interior_to_exterior,
+                orienting_axes=[hinges_to_edge, bottom_to_top],
+                axis_relations=[
+                    bigger_than(bottom_to_top, hinges_to_edge),
+                    much_bigger_than(bottom_to_top, interior_to_exterior),
+                    bigger_than(hinges_to_edge, interior_to_exterior),
+                ],
+            ),
         ),
     )
 
@@ -737,7 +742,7 @@ _DOOR_SCHEMA = _make_door_schema()
 
 
 def _make_ball_schema() -> ObjectStructuralSchema:
-    generating_axis = symmetric_verical("ball-generating")
+    generating_axis = symmetric_vertical("ball-generating")
     orienting_axis = symmetric("ball-orienting")
 
     return ObjectStructuralSchema(
@@ -745,17 +750,15 @@ def _make_ball_schema() -> ObjectStructuralSchema:
         geon=Geon(
             cross_section=CIRCULAR,
             cross_section_size=SMALL_TO_LARGE_TO_SMALL,
-            generating_axis=generating_axis,
-            orienting_axes=[orienting_axis, orienting_axis],
+            axes=Axes(
+                primary_axis=generating_axis,
+                orienting_axes=[orienting_axis, orienting_axis],
+            ),
         ),
     )
 
 
 _BALL_SCHEMA = _make_ball_schema()
-
-
-_WATER_SCHEMA = ObjectStructuralSchema(WATER)
-_JUICE_SCHEMA = ObjectStructuralSchema(JUICE)
 
 
 def _make_box_schema() -> ObjectStructuralSchema:
@@ -768,14 +771,15 @@ def _make_box_schema() -> ObjectStructuralSchema:
         geon=Geon(
             cross_section=RECTANGULAR,
             cross_section_size=CONSTANT,
-            generating_axis=top_to_bottom,
-            orienting_axes=[side_to_side_0, side_to_side_1],
+            axes=Axes(
+                primary_axis=top_to_bottom,
+                orienting_axes=[side_to_side_0, side_to_side_1],
+            ),
         ),
     )
 
 
 _BOX_SCHEMA = _make_box_schema()
-_MILK_SCHEMA = ObjectStructuralSchema(MILK)
 
 
 def _make_hat_schema() -> ObjectStructuralSchema:
@@ -788,8 +792,9 @@ def _make_hat_schema() -> ObjectStructuralSchema:
         geon=Geon(
             cross_section=OVALISH,
             cross_section_size=LARGE_TO_SMALL,
-            generating_axis=brim_to_top,
-            orienting_axes=[side_to_side_0, side_to_side_1],
+            axes=Axes(
+                primary_axis=brim_to_top, orienting_axes=[side_to_side_0, side_to_side_1]
+            ),
         ),
     )
 
@@ -807,12 +812,14 @@ def _make_cookie_schema() -> ObjectStructuralSchema:
         geon=Geon(
             cross_section=CIRCULAR,
             cross_section_size=CONSTANT,
-            generating_axis=bottom_to_top,
-            orienting_axes=[side_to_side_0, side_to_side_1],
-            axis_relations=[
-                much_bigger_than(side_to_side_0, bottom_to_top),
-                much_bigger_than(side_to_side_1, bottom_to_top),
-            ],
+            axes=Axes(
+                primary_axis=bottom_to_top,
+                orienting_axes=[side_to_side_0, side_to_side_1],
+                axis_relations=[
+                    much_bigger_than(side_to_side_0, bottom_to_top),
+                    much_bigger_than(side_to_side_1, bottom_to_top),
+                ],
+            ),
         ),
     )
 
@@ -830,12 +837,14 @@ def _make_cup_schema() -> ObjectStructuralSchema:
         geon=Geon(
             cross_section=CIRCULAR,
             cross_section_size=SMALL_TO_LARGE,
-            generating_axis=bottom_to_top,
-            orienting_axes=[side_to_side_0, side_to_side_1],
-            axis_relations=[
-                bigger_than(bottom_to_top, side_to_side_0),
-                bigger_than(bottom_to_top, side_to_side_0),
-            ],
+            axes=Axes(
+                primary_axis=bottom_to_top,
+                orienting_axes=[side_to_side_0, side_to_side_1],
+                axis_relations=[
+                    bigger_than(bottom_to_top, side_to_side_0),
+                    bigger_than(bottom_to_top, side_to_side_0),
+                ],
+            ),
         ),
     )
 
@@ -853,12 +862,14 @@ def _make_book_schema() -> ObjectStructuralSchema:
         geon=Geon(
             cross_section=RECTANGULAR,
             cross_section_size=CONSTANT,
-            generating_axis=edges_to_edges,
-            orienting_axes=[back_cover_to_front_cover, spine_to_edges],
-            axis_relations=[
-                much_bigger_than(spine_to_edges, back_cover_to_front_cover),
-                much_bigger_than(edges_to_edges, back_cover_to_front_cover),
-            ],
+            axes=Axes(
+                primary_axis=edges_to_edges,
+                orienting_axes=[back_cover_to_front_cover, spine_to_edges],
+                axis_relations=[
+                    much_bigger_than(spine_to_edges, back_cover_to_front_cover),
+                    much_bigger_than(edges_to_edges, back_cover_to_front_cover),
+                ],
+            ),
         ),
     )
 
@@ -877,13 +888,15 @@ def _make_hand_schema() -> ObjectStructuralSchema:
         geon=Geon(
             cross_section=RECTANGULAR,
             cross_section_size=CONSTANT,
-            generating_axis=wrist_to_fingertips,
-            orienting_axes=[thumb_to_pinky, top_to_palm],
-            axis_relations=[
-                bigger_than(wrist_to_fingertips, thumb_to_pinky),
-                much_bigger_than(wrist_to_fingertips, top_to_palm),
-                much_bigger_than(thumb_to_pinky, top_to_palm),
-            ],
+            axes=Axes(
+                primary_axis=wrist_to_fingertips,
+                orienting_axes=[thumb_to_pinky, top_to_palm],
+                axis_relations=[
+                    bigger_than(wrist_to_fingertips, thumb_to_pinky),
+                    much_bigger_than(wrist_to_fingertips, top_to_palm),
+                    much_bigger_than(thumb_to_pinky, top_to_palm),
+                ],
+            ),
         ),
     )
 
@@ -900,12 +913,14 @@ def _make_head_schema():
         geon=Geon(
             cross_section=OVALISH,
             cross_section_size=SMALL_TO_LARGE_TO_SMALL,
-            generating_axis=chin_to_scalp,
-            orienting_axes=[back_to_front, left_to_right],
-            axis_relations=[
-                bigger_than(chin_to_scalp, back_to_front),
-                bigger_than(chin_to_scalp, left_to_right),
-            ],
+            axes=Axes(
+                primary_axis=chin_to_scalp,
+                orienting_axes=[back_to_front, left_to_right],
+                axis_relations=[
+                    bigger_than(chin_to_scalp, back_to_front),
+                    bigger_than(chin_to_scalp, left_to_right),
+                ],
+            ),
         ),
     )
 
@@ -923,19 +938,60 @@ def _make_torso_schema():
         geon=Geon(
             cross_section=OVALISH,
             cross_section_size=CONSTANT,
-            generating_axis=waist_to_shoulders,
-            orienting_axes=[front_to_back, left_to_right],
-            axis_relations=[
-                bigger_than(waist_to_shoulders, left_to_right),
-                much_bigger_than(waist_to_shoulders, front_to_back),
-                much_bigger_than(left_to_right, front_to_back),
-            ],
+            axes=Axes(
+                orienting_axes=[front_to_back, left_to_right],
+                primary_axis=waist_to_shoulders,
+                axis_relations=[
+                    bigger_than(waist_to_shoulders, left_to_right),
+                    much_bigger_than(waist_to_shoulders, front_to_back),
+                    much_bigger_than(left_to_right, front_to_back),
+                ],
+            ),
         ),
     )
 
 
-_DOG_HEAD_SCHEMA = ObjectStructuralSchema(_DOG_HEAD)
-_BIRD_HEAD_SCHEMA = ObjectStructuralSchema(_BIRD_HEAD)
+def _make_dog_head_schema() -> ObjectStructuralSchema:
+    torso_to_nose = directed("dog-head-torso-to-nose")
+    bottom_to_top = directed("dog-head-bottom-to-top")
+    left_to_right = symmetric("dog-head-left-to-right")
+    return ObjectStructuralSchema(
+        _DOG_HEAD,
+        geon=Geon(
+            cross_section=OVALISH,
+            cross_section_size=LARGE_TO_SMALL,
+            axes=Axes(
+                primary_axis=torso_to_nose,
+                orienting_axes=[bottom_to_top, left_to_right],
+                axis_relations=[
+                    bigger_than(torso_to_nose, bottom_to_top),
+                    bigger_than(torso_to_nose, left_to_right),
+                ],
+            ),
+        ),
+    )
+
+
+_DOG_HEAD_SCHEMA = _make_dog_head_schema()
+
+
+def _make_bird_head_schema() -> ObjectStructuralSchema:
+    torso_to_top = directed("bird-head-torso-to-top")
+    bottom_to_top = directed("bird-head-back-to-front")
+    left_to_right = symmetric("bird-head-left-to-right")
+    return ObjectStructuralSchema(
+        _DOG_HEAD,
+        geon=Geon(
+            cross_section=OVALISH,
+            cross_section_size=LARGE_TO_SMALL,
+            axes=Axes(
+                primary_axis=bottom_to_top, orienting_axes=[torso_to_top, left_to_right]
+            ),
+        ),
+    )
+
+
+_BIRD_HEAD_SCHEMA = _make_bird_head_schema()
 
 # Hierarchical structure of objects
 _TORSO_SCHEMA = _make_torso_schema()
@@ -951,12 +1007,14 @@ def _make_human_leg_schema():
         geon=Geon(
             cross_section=OVALISH,
             cross_section_size=CONSTANT,
-            generating_axis=hip_to_foot,
-            orienting_axes=[diameter_0, diameter_1],
-            axis_relations=[
-                much_bigger_than(hip_to_foot, diameter_0),
-                much_bigger_than(hip_to_foot, diameter_1),
-            ],
+            axes=Axes(
+                primary_axis=hip_to_foot,
+                orienting_axes=[diameter_0, diameter_1],
+                axis_relations=[
+                    much_bigger_than(hip_to_foot, diameter_0),
+                    much_bigger_than(hip_to_foot, diameter_1),
+                ],
+            ),
         ),
     )
 
@@ -976,12 +1034,14 @@ def _make_chair_back_schema() -> ObjectStructuralSchema:
         geon=Geon(
             cross_section=IRREGULAR,
             cross_section_size=CONSTANT,
-            generating_axis=front_to_back,
-            orienting_axes=[bottom_to_top, side_to_side],
-            axis_relations=[
-                bigger_than(bottom_to_top, front_to_back),
-                bigger_than(bottom_to_top, side_to_side),
-            ],
+            axes=Axes(
+                primary_axis=front_to_back,
+                orienting_axes=[bottom_to_top, side_to_side],
+                axis_relations=[
+                    bigger_than(bottom_to_top, front_to_back),
+                    bigger_than(bottom_to_top, side_to_side),
+                ],
+            ),
         ),
     )
 
@@ -999,12 +1059,14 @@ def _make_chair_seat_schema() -> ObjectStructuralSchema:
         geon=Geon(
             cross_section=OVALISH,
             cross_section_size=CONSTANT,
-            generating_axis=bottom_to_top,
-            orienting_axes=[front_edge_to_back_edge, side_to_side],
-            axis_relations=[
-                bigger_than(front_edge_to_back_edge, bottom_to_top),
-                bigger_than(side_to_side, bottom_to_top),
-            ],
+            axes=Axes(
+                primary_axis=bottom_to_top,
+                orienting_axes=[front_edge_to_back_edge, side_to_side],
+                axis_relations=[
+                    bigger_than(front_edge_to_back_edge, bottom_to_top),
+                    bigger_than(side_to_side, bottom_to_top),
+                ],
+            ),
         ),
     )
 
@@ -1022,12 +1084,14 @@ def _make_table_top_schema() -> ObjectStructuralSchema:
         geon=Geon(
             cross_section=RECTANGULAR,
             cross_section_size=CONSTANT,
-            generating_axis=bottom_to_top,
-            orienting_axes=[side_to_side, front_to_back],
-            axis_relations=[
-                bigger_than(side_to_side, bottom_to_top),
-                bigger_than(front_to_back, bottom_to_top),
-            ],
+            axes=Axes(
+                primary_axis=bottom_to_top,
+                orienting_axes=[side_to_side, front_to_back],
+                axis_relations=[
+                    bigger_than(side_to_side, bottom_to_top),
+                    bigger_than(front_to_back, bottom_to_top),
+                ],
+            ),
         ),
     )
 
@@ -1045,12 +1109,14 @@ def _make_tail_schema() -> ObjectStructuralSchema:
         geon=Geon(
             cross_section=OVALISH,
             cross_section_size=LARGE_TO_SMALL,
-            generating_axis=edge_to_tip,
-            orienting_axes=[diameter_0, diameter_1],
-            axis_relations=[
-                much_bigger_than(edge_to_tip, diameter_0),
-                much_bigger_than(edge_to_tip, diameter_1),
-            ],
+            axes=Axes(
+                primary_axis=edge_to_tip,
+                orienting_axes=[diameter_0, diameter_1],
+                axis_relations=[
+                    much_bigger_than(edge_to_tip, diameter_0),
+                    much_bigger_than(edge_to_tip, diameter_1),
+                ],
+            ),
         ),
     )
 
@@ -1068,12 +1134,14 @@ def _make_wing_schema() -> ObjectStructuralSchema:
         geon=Geon(
             cross_section=IRREGULAR,
             cross_section_size=CONSTANT,
-            generating_axis=edge_to_tip,
-            orienting_axes=[bottom_to_top, front_to_back],
-            axis_relations=[
-                bigger_than(edge_to_tip, bottom_to_top),
-                bigger_than(front_to_back, bottom_to_top),
-            ],
+            axes=Axes(
+                primary_axis=edge_to_tip,
+                orienting_axes=[bottom_to_top, front_to_back],
+                axis_relations=[
+                    bigger_than(edge_to_tip, bottom_to_top),
+                    bigger_than(front_to_back, bottom_to_top),
+                ],
+            ),
         ),
     )
 
@@ -1091,8 +1159,10 @@ def _make_roof_schema() -> ObjectStructuralSchema:
         geon=Geon(
             cross_section=RECTANGULAR,
             cross_section_size=LARGE_TO_SMALL,
-            generating_axis=bottom_to_shingles,
-            orienting_axes=[front_to_back, side_to_side],
+            axes=Axes(
+                primary_axis=bottom_to_shingles,
+                orienting_axes=[front_to_back, side_to_side],
+            ),
         ),
     )
 
@@ -1110,12 +1180,14 @@ def _make_wall_schema() -> ObjectStructuralSchema:
         geon=Geon(
             cross_section=RECTANGULAR,
             cross_section_size=CONSTANT,
-            generating_axis=bottom_to_top,
-            orienting_axes=[edge_to_edge, face_to_face],
-            axis_relations=[
-                bigger_than(edge_to_edge, face_to_face),
-                bigger_than(bottom_to_top, face_to_face),
-            ],
+            axes=Axes(
+                primary_axis=bottom_to_top,
+                orienting_axes=[edge_to_edge, face_to_face],
+                axis_relations=[
+                    bigger_than(edge_to_edge, face_to_face),
+                    bigger_than(bottom_to_top, face_to_face),
+                ],
+            ),
         ),
     )
 
@@ -1133,12 +1205,14 @@ def _make_tire_schema() -> ObjectStructuralSchema:
         geon=Geon(
             cross_section=CIRCULAR,
             cross_section_size=CONSTANT,
-            generating_axis=across_treads,
-            orienting_axes=[diameter_0, diameter_1],
-            axis_relations=[
-                bigger_than(diameter_0, across_treads),
-                bigger_than(diameter_1, across_treads),
-            ],
+            axes=Axes(
+                primary_axis=across_treads,
+                orienting_axes=[diameter_0, diameter_1],
+                axis_relations=[
+                    bigger_than(diameter_0, across_treads),
+                    bigger_than(diameter_1, across_treads),
+                ],
+            ),
         ),
     )
 
@@ -1156,13 +1230,15 @@ def _make_flat_bed_schema() -> ObjectStructuralSchema:
         geon=Geon(
             cross_section=RECTANGULAR,
             cross_section_size=CONSTANT,
-            generating_axis=bottom_to_bed,
-            orienting_axes=[front_to_back, side_to_side],
-            axis_relations=[
-                bigger_than(front_to_back, side_to_side),
-                bigger_than(front_to_back, bottom_to_bed),
-                bigger_than(side_to_side, bottom_to_bed),
-            ],
+            axes=Axes(
+                primary_axis=bottom_to_bed,
+                orienting_axes=[front_to_back, side_to_side],
+                axis_relations=[
+                    bigger_than(front_to_back, side_to_side),
+                    bigger_than(front_to_back, bottom_to_bed),
+                    bigger_than(side_to_side, bottom_to_bed),
+                ],
+            ),
         ),
     )
 
@@ -1180,12 +1256,14 @@ def _make_body_schema() -> ObjectStructuralSchema:
         geon=Geon(
             cross_section=IRREGULAR,
             cross_section_size=CONSTANT,
-            generating_axis=bottom_to_top,
-            orienting_axes=[front_to_back, side_to_side],
-            axis_relations=[
-                much_bigger_than(bottom_to_top, front_to_back),
-                bigger_than(side_to_side, front_to_back),
-            ],
+            axes=Axes(
+                primary_axis=bottom_to_top,
+                orienting_axes=[front_to_back, side_to_side],
+                axis_relations=[
+                    much_bigger_than(bottom_to_top, front_to_back),
+                    bigger_than(side_to_side, front_to_back),
+                ],
+            ),
         ),
     )
 
@@ -1203,12 +1281,14 @@ def _make_human_arm_segment():
         geon=Geon(
             cross_section=OVALISH,
             cross_section_size=CONSTANT,
-            generating_axis=upper_to_lower,
-            orienting_axes=[diameter_0, diameter_1],
-            axis_relations=[
-                much_bigger_than(upper_to_lower, diameter_0),
-                much_bigger_than(upper_to_lower, diameter_1),
-            ],
+            axes=Axes(
+                primary_axis=upper_to_lower,
+                orienting_axes=[diameter_0, diameter_1],
+                axis_relations=[
+                    much_bigger_than(upper_to_lower, diameter_0),
+                    much_bigger_than(upper_to_lower, diameter_1),
+                ],
+            ),
         ),
     )
 
@@ -1228,6 +1308,7 @@ _ARM_SCHEMA = ObjectStructuralSchema(
     sub_object_relations=flatten_relations(
         [contacts([_ARM_SCHEMA_UPPER, _ARM_SCHEMA_HAND], _ARM_SCHEMA_LOWER)]
     ),
+    axes=_ARM_SCHEMA_UPPER.schema.axes,
 )
 
 # schemata describing the sub-object structural nature of a Person
@@ -1262,6 +1343,7 @@ _PERSON_SCHEMA = ObjectStructuralSchema(
             contacts(_PERSON_SCHEMA_TORSO, _PERSON_SCHEMA_APPENDAGES),
         ]
     ),
+    axes=_PERSON_SCHEMA_HEAD.schema.axes,
 )
 
 
@@ -1297,6 +1379,7 @@ _CHAIR_SCHEMA = ObjectStructuralSchema(
             above(_CHAIR_SCHEMA_BACK, _CHAIR_SCHEMA_SEAT),
         ]
     ),
+    axes=_CHAIR_SCHEMA_BACK.schema.axes,
 )
 
 # schemata describing the sub-object structural nature of a Table
@@ -1328,6 +1411,7 @@ _TABLE_SCHEMA = ObjectStructuralSchema(
             above(_TABLE_SCHEMA_TABLETOP, _TABLE_LEGS),
         ]
     ),
+    axes=_TABLE_SCHEMA_LEG_1.schema.axes,
 )
 
 # schemata describing the sub-object structural nature of a dog
@@ -1369,6 +1453,7 @@ _DOG_SCHEMA = ObjectStructuralSchema(
             bigger_than(_DOG_SCHEMA_TORSO, _DOG_SCHEMA_TAIL),
         ]
     ),
+    axes=_DOG_SCHEMA_TORSO.schema.axes,
 )
 
 # schemata describing the sub-object structural nature of a bird
@@ -1406,6 +1491,7 @@ _BIRD_SCHEMA = ObjectStructuralSchema(
             bigger_than(_BIRD_SCHEMA_TORSO, _BIRD_LEGS),
         ]
     ),
+    axes=_BIRD_SCHEMA_TORSO.schema.axes,
 )
 
 # schemata describing the sub-object structural nature of a house
@@ -1430,6 +1516,7 @@ _HOUSE_SCHEMA = ObjectStructuralSchema(
             above(_HOUSE_SCHEMA_ROOF, _HOUSE_SCHEMA_GROUND_FLOOR),
         ]
     ),
+    axes=_HOUSE_SCHEMA_GROUND_FLOOR.schema.axes,
 )
 
 # schemata describing the sub-object structural nature of a car
@@ -1459,6 +1546,7 @@ _CAR_SCHEMA = ObjectStructuralSchema(
     sub_object_relations=flatten_relations(
         [contacts(_CAR_SCHEMA_TIRES, _CAR_SCHEMA_BODY)]
     ),
+    axes=_CAR_SCHEMA_BODY.schema.axes,
 )
 
 # schemata describing the sub-object structural nature of a truck cab
@@ -1490,6 +1578,7 @@ _TRUCK_CAB_SCHEMA = ObjectStructuralSchema(
             contacts(_TRUCK_CAB_BODY, _TRUCK_CAB_TIRES),
         ]
     ),
+    axes=_TRUCK_CAB_BODY.schema.axes,
 )
 
 # schemata describing the sub-object structural nature of a truck trailer
@@ -1521,6 +1610,7 @@ _TRUCK_TRAILER_SCHEMA = ObjectStructuralSchema(
             bigger_than(_TRUCK_TRAILER_FLATBED, _TRUCK_TRAILER_TIRES),
         ]
     ),
+    axes=_TRUCK_TRAILER_FLATBED.schema.axes,
 )
 
 # Truck in mind is a Semi Trailer with flat bed trailer
@@ -1537,6 +1627,7 @@ _TRUCK_SCHEMA = ObjectStructuralSchema(
             bigger_than(_TRUCK_SCHEMA_TRAILER, _TRUCK_SCHEMA_CAB),
         ]
     ),
+    axes=_TRUCK_SCHEMA_CAB.schema.axes,
 )
 
 _PUT_AGENT = SituationObject(THING, properties=[ANIMATE], debug_handle="put_agent")
@@ -1788,7 +1879,7 @@ def spin_around_primary_axis(object_):
     return SpatialPath(
         operator=None,
         reference_object=object_,
-        reference_axis=Axis.primary_of(object_),
+        reference_axis=PrimaryAxisOfObject(object_),
         orientation_changed=True,
     )
 
@@ -1873,9 +1964,7 @@ def _make_throw_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription
                 Region(
                     reference_object=_THROW_GROUND,
                     distance=DISTAL,
-                    direction=Direction(
-                        positive=True, relative_to_axis=GRAVITATIONAL_AXIS
-                    ),
+                    direction=GRAVITATIONAL_DOWN,
                 ),
             )
         ],
@@ -1996,7 +2085,9 @@ def _make_jump_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
 
 
 ROLL_SURFACE_AUXILIARY = SituationObject(
-    INANIMATE_OBJECT, [CAN_HAVE_THINGS_RESTING_ON_THEM], debug_handle="roll-surface-aux"
+    INANIMATE_OBJECT,
+    properties=[CAN_HAVE_THINGS_RESTING_ON_THEM],
+    debug_handle="roll-surface-aux",
 )
 
 
@@ -2013,9 +2104,9 @@ def _make_roll_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
                     SpatialPath(
                         operator=None,
                         reference_object=rollee,
-                        reference_axis=Axis(
-                            reference_object=None, name="direction of motion"
-                        ),
+                        # TODO: not quite right - this should be orthogonal
+                        # to the axis of motion
+                        reference_axis=FirstHorizontalAxisOfObject(rollee),
                         orientation_changed=True,
                     ),
                 )
@@ -2060,9 +2151,7 @@ _FLY_ACTION_DESCRIPTION = ActionDescription(
                 Region(
                     reference_object=_FLY_GROUND,
                     distance=DISTAL,
-                    direction=Direction(
-                        positive=True, relative_to_axis=GRAVITATIONAL_AXIS
-                    ),
+                    direction=GRAVITATIONAL_UP,
                 ),
             )
         ]
@@ -2101,9 +2190,6 @@ GAILA_PHASE_1_ONTOLOGY = Ontology(
         (DOG, _DOG_SCHEMA),
         (BIRD, _BIRD_SCHEMA),
         (BOX, _BOX_SCHEMA),
-        (WATER, _WATER_SCHEMA),
-        (JUICE, _JUICE_SCHEMA),
-        (MILK, _MILK_SCHEMA),
         (DOOR, _DOOR_SCHEMA),
         (HAT, _HAT_SCHEMA),
         (COOKIE, _COOKIE_SCHEMA),

@@ -112,8 +112,19 @@ Indicates that an object is located in a `Region`.
 This is used to support the Landau and Jackendoff interpretation of prepositions.
 """
 
+IS_SUBSTANCE = OntologyNode("substance")
+
 REQUIRED_ONTOLOGY_NODES = immutableset(
-    [THING, RELATION, ACTION, PROPERTY, META_PROPERTY, CAN_FILL_TEMPLATE_SLOT, IN_REGION]
+    [
+        THING,
+        RELATION,
+        ACTION,
+        PROPERTY,
+        META_PROPERTY,
+        CAN_FILL_TEMPLATE_SLOT,
+        IN_REGION,
+        IS_SUBSTANCE,
+    ]
 )
 
 
@@ -129,4 +140,7 @@ def minimal_ontology_graph():
         ret.add_node(node)
     ret.add_edge(IN_REGION, RELATION)
     ret.add_edge(CAN_FILL_TEMPLATE_SLOT, PROPERTY)
+    # TODO: should we move substances out from under THING
+    # in the ontology?
+    ret.add_edge(IS_SUBSTANCE, PROPERTY)
     return ret

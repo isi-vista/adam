@@ -224,7 +224,7 @@ class SimpleSituationTemplateProcessor(
             ontology_node = chooser.choice(compatible_ontology_types)
             return SituationObject(
                 ontology_node,
-                self._ontology.properties_for_node(ontology_node),
+                properties=self._ontology.properties_for_node(ontology_node),
                 debug_handle=template_object.handle,
             )
         else:

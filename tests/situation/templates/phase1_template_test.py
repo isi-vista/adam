@@ -23,6 +23,7 @@ from adam.situation.templates.phase1_templates import (
     all_possible,
     object_variable,
 )
+from adam.axes import WORLD_AXES
 
 _TESTING_ONTOLOGY_GRAPH = minimal_ontology_graph()
 _TESTING_ONTOLOGY_GRAPH.add_node(RECOGNIZED_PARTICULAR_PROPERTY)
@@ -65,7 +66,9 @@ _subtype(_DAD, _PERSON)
 def _testing_schemata(
     nodes: Iterable[OntologyNode]
 ) -> ImmutableSetMultiDict[OntologyNode, ObjectStructuralSchema]:
-    return immutablesetmultidict((node, ObjectStructuralSchema(node)) for node in nodes)
+    return immutablesetmultidict(
+        (node, ObjectStructuralSchema(node, axes=WORLD_AXES)) for node in nodes
+    )
 
 
 _TESTING_ONTOLOGY = Ontology(

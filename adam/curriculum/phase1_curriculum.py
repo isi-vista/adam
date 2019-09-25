@@ -7,6 +7,7 @@ from typing import Iterable
 
 from more_itertools import flatten
 
+from adam.axes import AxesInfo, FirstHorizontalAxisOfObject
 from adam.curriculum import GeneratedFromSituationsInstanceGroup, InstanceGroup
 from adam.language.dependency import LinearizedDependencyTree
 from adam.language_specific.english.english_language_generator import (
@@ -14,7 +15,7 @@ from adam.language_specific.english.english_language_generator import (
     PREFER_DITRANSITIVE,
     USE_ADVERBIAL_PATH_MODIFIER,
 )
-from adam.ontology import OntologyNode, THING
+from adam.ontology import OntologyNode, THING, IN_REGION
 from adam.ontology.during import DuringAction
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
@@ -22,9 +23,11 @@ from adam.ontology.phase1_ontology import (
     ANIMATE,
     BIGGER_THAN,
     BIRD,
+    BOX,
     CAN_BE_SAT_ON_BY_PEOPLE,
     CAN_HAVE_THINGS_RESTING_ON_THEM,
     CAN_JUMP,
+    COME,
     DRINK,
     DRINK_CONTAINER_AUX,
     EAT,
@@ -41,7 +44,10 @@ from adam.ontology.phase1_ontology import (
     HOLLOW,
     INANIMATE,
     INANIMATE_OBJECT,
+    IS_ADDRESSEE,
     IS_BODY_PART,
+    IS_HUMAN,
+    IS_SPEAKER,
     JUMP,
     JUMP_INITIAL_SUPPORTER_AUX,
     LEARNER,
@@ -52,6 +58,9 @@ from adam.ontology.phase1_ontology import (
     PERSON,
     PERSON_CAN_HAVE,
     PHASE_1_CURRICULUM_OBJECTS,
+    PUSH,
+    PUSH_GOAL,
+    PUSH_SURFACE_AUX,
     PUT,
     ROLL,
     ROLLABLE,
@@ -63,6 +72,8 @@ from adam.ontology.phase1_ontology import (
     SPIN,
     TAKE,
     THEME,
+    THROW,
+    THROW_GOAL,
     TRANSFER_OF_POSSESSION,
     _GO_GOAL,
     bigger_than,
@@ -71,16 +82,6 @@ from adam.ontology.phase1_ontology import (
     is_recognized_particular,
     on,
     strictly_above,
-    IS_HUMAN,
-    PUSH,
-    PUSH_SURFACE_AUX,
-    PUSH_GOAL,
-    THROW,
-    THROW_GOAL,
-    BOX,
-    IS_SPEAKER,
-    IS_ADDRESSEE,
-    COME,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -92,6 +93,7 @@ from adam.ontology.phase1_spatial_relations import (
     Region,
     SpatialPath,
     TOWARD,
+    Direction,
 )
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -105,12 +107,12 @@ from adam.situation import Action, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
+    TemplateObjectVariable,
     action_variable,
     all_possible,
     color_variable,
     object_variable,
     sampled,
-    TemplateObjectVariable,
 )
 
 _CHOOSER = RandomChooser.for_seed(0)
@@ -213,6 +215,7 @@ def build_object_multiples_situations(
                         )
                         for idx in range(num_objects)
                     ],
+                    axis_info=AxesInfo(),
                 )
 
 
@@ -385,6 +388,51 @@ def _make_object_on_object_curriculum() -> _Phase1InstanceGroup:
             ontology=GAILA_PHASE_1_ONTOLOGY,
         ),
     )
+
+
+def _make_object_beside_object_curriculum() -> _Phase1InstanceGroup:
+    situation_template = make_object_beside_object_template()
+
+    return _phase1_instances(
+        "objects-beside-objects",
+        sampled(
+            situation_template,
+            max_to_sample=50,
+            chooser=_CHOOSER,
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+        ),
+    )
+
+
+SMALLER_BESIDE_OBJECT = _standard_object("object")
+LARGER_BESIDE_OBJECT = _standard_object("LARGER_BESIDE_OBJECT")
+
+
+def make_object_beside_object_template():
+    situation_template = Phase1SituationTemplate(
+        "object-beside-object",
+        salient_object_variables=[SMALLER_BESIDE_OBJECT, LARGER_BESIDE_OBJECT],
+        constraining_relations=[
+            Relation(BIGGER_THAN, LARGER_BESIDE_OBJECT, SMALLER_BESIDE_OBJECT)
+        ],
+        asserted_always_relations=[
+            Relation(
+                IN_REGION,
+                SMALLER_BESIDE_OBJECT,
+                Region(
+                    LARGER_BESIDE_OBJECT,
+                    distance=PROXIMAL,
+                    direction=Direction(
+                        positive=True,
+                        relative_to_axis=FirstHorizontalAxisOfObject(
+                            LARGER_BESIDE_OBJECT
+                        ),
+                    ),
+                ),
+            )
+        ],
+    )
+    return situation_template
 
 
 def _make_object_under_or_over_object_curriculum() -> _Phase1InstanceGroup:
@@ -1487,12 +1535,11 @@ GAILA_PHASE_1_CURRICULUM = [
     OBJECTS_WITH_COLORS_SUB_CURRICULUM,
     MULTIPLE_OF_THE_SAME_OBJECT_SUB_CURRICULUM,
     _OBJECT_ON_GROUND_SUB_CURRICULUM,
-    #    PERSON_HAS_OBJECT_SUB_CURRICULUM,
     _ANY_OBJECT_INTRANSITIVES_SUBCURRICULUM,
     _make_fall_curriculum(),
     _make_transfer_of_possession_curriculum(),
     _make_object_on_object_curriculum(),
-    # _make_object_over_object_curriculum(),
+    _make_object_beside_object_curriculum(),
     _make_object_under_or_over_object_curriculum(),
     _make_object_in_other_object_curriculum(),
     _make_fly_curriculum(),

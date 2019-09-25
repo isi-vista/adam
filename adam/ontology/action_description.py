@@ -21,16 +21,20 @@ from adam.ontology.during import DuringAction
 from adam.relation import Relation, flatten_relations
 from adam.situation import SituationObject
 
+# really this should become its own class and not piggy-back
+# on SituationObject
+ActionDescriptionVariable = SituationObject
+
 
 @attrs(frozen=True, slots=True, auto_attribs=True)
 class ActionDescriptionFrame:
     # the keys here should be semantic roles
-    roles_to_variables: ImmutableDict[OntologyNode, SituationObject] = attrib(
+    roles_to_variables: ImmutableDict[OntologyNode, ActionDescriptionVariable] = attrib(
         converter=_to_immutabledict, default=immutabledict()
     )
-    variables_to_roles: ImmutableSetMultiDict[SituationObject, OntologyNode] = attrib(
-        init=False
-    )
+    variables_to_roles: ImmutableSetMultiDict[
+        ActionDescriptionVariable, OntologyNode
+    ] = attrib(init=False)
     semantic_roles: ImmutableSet[OntologyNode] = attrib(init=False)
 
     @variables_to_roles.default
@@ -52,26 +56,28 @@ class ActionDescription:
         validator=instance_of(ActionDescriptionFrame), kw_only=True
     )
     # nested generic in optional seems to be confusing mypy
-    during: Optional[DuringAction[SituationObject]] = attrib(  # type: ignore
+    during: Optional[DuringAction[ActionDescriptionVariable]] = attrib(  # type: ignore
         validator=optional(instance_of(DuringAction)), default=None, kw_only=True
     )
     # conditions which hold both before and after the action
-    enduring_conditions: ImmutableSet[Relation[SituationObject]] = attrib(
+    enduring_conditions: ImmutableSet[Relation[ActionDescriptionVariable]] = attrib(
         converter=flatten_relations, default=immutableset(), kw_only=True
     )
     # Preconditions
-    preconditions: ImmutableSet[Relation[SituationObject]] = attrib(
+    preconditions: ImmutableSet[Relation[ActionDescriptionVariable]] = attrib(
         converter=flatten_relations, default=immutableset(), kw_only=True
     )
     # Postconditions
-    postconditions: ImmutableSet[Relation[SituationObject]] = attrib(
+    postconditions: ImmutableSet[Relation[ActionDescriptionVariable]] = attrib(
         converter=flatten_relations, default=immutableset(), kw_only=True
     )
     # Asserted properties of objects in action
-    asserted_properties: ImmutableSetMultiDict[SituationObject, OntologyNode] = attrib(
+    asserted_properties: ImmutableSetMultiDict[
+        ActionDescriptionVariable, OntologyNode
+    ] = attrib(
         converter=_to_immutablesetmultidict, default=immutablesetmultidict(), kw_only=True
     )
-    auxiliary_variables: ImmutableSet[SituationObject] = attrib(init=False)
+    auxiliary_variables: ImmutableSet[ActionDescriptionVariable] = attrib(init=False)
     """
     These are variables which do not occupy semantic roles 
     but are are still referred to by conditions, paths, etc.
@@ -90,7 +96,7 @@ class ActionDescription:
 
     @auxiliary_variables.default
     def _init_auxiliary_variables(self):
-        auxiliary_variables: List[SituationObject] = []
+        auxiliary_variables: List[ActionDescriptionVariable] = []
         if self.during:
             self.during.accumulate_referenced_objects(auxiliary_variables)
         for relation in chain(

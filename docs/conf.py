@@ -206,9 +206,15 @@ nitpick_ignore = [('py:class', 'typing.Mapping'),
                   # pending https://github.com/isi-vista/immutablecollections/issues/60
                   ("py:class", "immutablecollections._immutableset.ImmutableSet"),
                   ("py:class", "HierarchicalObjectSchema"),
+
+                  # ignore forward reference in type params warning
+                  ("py:class", "Relation"),
+                  ("py:class", "Region"),
+
                   ]
 
 intersphinx_mapping = {
     'python': ('https://python.readthedocs.io/en/latest', None),
     'networkx': ('https://networkx.github.io/documentation/latest', None)
 }
+

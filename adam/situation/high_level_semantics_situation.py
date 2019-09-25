@@ -9,6 +9,7 @@ from immutablecollections.converter_utils import _to_immutableset
 from more_itertools import flatten
 from vistautils.preconditions import check_arg
 
+from adam.axes import AxesInfo
 from adam.ontology import OntologyNode
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import is_recognized_particular
@@ -29,12 +30,18 @@ class HighLevelSemanticsSituation(Situation):
     in this `Situation` will come from.
     """
     salient_objects: ImmutableSet[SituationObject] = attrib(converter=_to_immutableset)
+    axis_info: AxesInfo[SituationObject] = attrib(
+        # instance default is safe because AxesInfo is immutable
+        validator=instance_of(AxesInfo),  # type: ignore
+        kw_only=True,
+        default=AxesInfo(),
+    )
     """
     The salient objects present in a `Situation`.  
     This will usually be the ones expressed in the linguistic form.
     """
     other_objects: ImmutableSet[SituationObject] = attrib(
-        converter=_to_immutableset, default=immutableset()
+        converter=_to_immutableset, default=immutableset(), kw_only=True
     )
     r"""
     These are other objects appearing in the situation which are less important.

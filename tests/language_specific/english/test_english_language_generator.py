@@ -7,6 +7,9 @@ from adam.curriculum.phase1_curriculum import (
     JUMPER,
     _GROUND_OBJECT,
     make_jump_over_object_template,
+    make_object_beside_object_template,
+    SMALLER_BESIDE_OBJECT,
+    LARGER_BESIDE_OBJECT,
 )
 from adam.language_specific.english.english_language_generator import (
     PREFER_DITRANSITIVE,
@@ -57,9 +60,8 @@ from adam.ontology.phase1_ontology import (
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
     DISTAL,
-    Direction,
     EXTERIOR_BUT_IN_CONTACT,
-    GRAVITATIONAL_AXIS,
+    GRAVITATIONAL_DOWN,
     GRAVITATIONAL_UP,
     INTERIOR,
     Region,
@@ -184,9 +186,7 @@ def test_mom_put_a_ball_on_a_table_using_i():
                         Region(
                             reference_object=table,
                             distance=EXTERIOR_BUT_IN_CONTACT,
-                            direction=Direction(
-                                positive=True, relative_to_axis=GRAVITATIONAL_AXIS
-                            ),
+                            direction=GRAVITATIONAL_UP,
                         ),
                     ),
                 ),
@@ -216,9 +216,7 @@ def test_mom_put_a_ball_on_a_table_using_you():
                         Region(
                             reference_object=table,
                             distance=EXTERIOR_BUT_IN_CONTACT,
-                            direction=Direction(
-                                positive=True, relative_to_axis=GRAVITATIONAL_AXIS
-                            ),
+                            direction=GRAVITATIONAL_UP,
                         ),
                     ),
                 ),
@@ -445,7 +443,7 @@ def test_dad_has_a_cookie():
 
 
 def test_green_ball():
-    ball = SituationObject(BALL, [GREEN])
+    ball = SituationObject(BALL, properties=[GREEN])
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[ball]
     )
@@ -479,9 +477,7 @@ def test_path_modifier_under():
                             Region(
                                 reference_object=table,
                                 distance=DISTAL,
-                                direction=Direction(
-                                    positive=False, relative_to_axis=GRAVITATIONAL_AXIS
-                                ),
+                                direction=GRAVITATIONAL_DOWN,
                             ),
                         )
                     ]
@@ -513,9 +509,7 @@ def test_path_modifier_on():
                             Region(
                                 reference_object=table,
                                 distance=EXTERIOR_BUT_IN_CONTACT,
-                                direction=Direction(
-                                    positive=True, relative_to_axis=GRAVITATIONAL_AXIS
-                                ),
+                                direction=GRAVITATIONAL_UP,
                             ),
                         )
                     ]
@@ -815,6 +809,24 @@ def test_you_give_me_a_cookie():
         "a",
         "cookie",
     )
+
+
+def test_object_beside_object():
+    template = make_object_beside_object_template()
+    situation = first(
+        fixed_assignment(
+            template,
+            TemplateVariableAssignment(
+                object_variables_to_fillers=[
+                    (SMALLER_BESIDE_OBJECT, BALL),
+                    (LARGER_BESIDE_OBJECT, TABLE),
+                ]
+            ),
+            chooser=RandomChooser.for_seed(0),
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+        )
+    )
+    assert generated_tokens(situation) == ("a", "ball", "beside", "a", "table")
 
 
 def generated_tokens(situation):

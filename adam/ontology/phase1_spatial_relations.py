@@ -1,8 +1,10 @@
-from typing import Any, Generic, List, Mapping, Optional, TypeVar, Union
+from typing import Generic, List, Mapping, Optional, TypeVar, Union
 
 from attr import attrib, attrs
 from attr.validators import in_, instance_of, optional
 from vistautils.preconditions import check_arg
+
+from adam.axes import AxisFunction, GRAVITATIONAL_AXIS_FUNCTION
 
 
 @attrs(frozen=True, slots=True, repr=False)
@@ -44,42 +46,39 @@ ReferenceObjectT = TypeVar("ReferenceObjectT")
 NewObjectT = TypeVar("NewObjectT")
 
 
-@attrs(frozen=True, repr=False)
-class Axis(Generic[ReferenceObjectT]):
-    name: str = attrib(validator=instance_of(str))
-    reference_object: Optional[ReferenceObjectT] = attrib(kw_only=True)
-
-    @staticmethod
-    def primary_of(reference_object: ReferenceObjectT) -> "Axis[ReferenceObjectT]":
-        return Axis("primary", reference_object=reference_object)
-
-    def copy_remapping_objects(
-        self, object_map: Mapping[ReferenceObjectT, NewObjectT]
-    ) -> "Axis[" "NewObjectT]":
-        return Axis(
-            name=self.name,
-            reference_object=object_map[self.reference_object]
-            if self.reference_object
-            else None,
-        )
-
-    def accumulate_referenced_objects(
-        self, object_accumulator: List[ReferenceObjectT]
-    ) -> None:
-        r"""
-        Adds all objects referenced by this `Axis` to *object_accumulator*.
-        """
-        if self.reference_object:
-            object_accumulator.append(self.reference_object)
-
-    def __repr__(self) -> str:
-        if self.reference_object:
-            return f"{self.name}({self.reference_object})"
-        else:
-            return self.name
-
-
-GRAVITATIONAL_AXIS: Axis[Any] = Axis("gravitational", reference_object=None)
+# @attrs(frozen=True, repr=False)
+# class Axis(Generic[ReferenceObjectT]):
+#     name: str = attrib(validator=instance_of(str))
+#     reference_object: Optional[ReferenceObjectT] = attrib(kw_only=True)
+#
+#     @staticmethod
+#     def primary_of(reference_object: ReferenceObjectT) -> "Axis[ReferenceObjectT]":
+#         return Axis("primary", reference_object=reference_object)
+#
+#     def copy_remapping_objects(
+#         self, object_map: Mapping[ReferenceObjectT, NewObjectT]
+#     ) -> "Axis[" "NewObjectT]":
+#         return Axis(
+#             name=self.name,
+#             reference_object=object_map[self.reference_object]
+#             if self.reference_object
+#             else None,
+#         )
+#
+#     def accumulate_referenced_objects(
+#         self, object_accumulator: List[ReferenceObjectT]
+#     ) -> None:
+#         r"""
+#         Adds all objects referenced by this `Axis` to *object_accumulator*.
+#         """
+#         if self.reference_object:
+#             object_accumulator.append(self.reference_object)
+#
+#     def __repr__(self) -> str:
+#         if self.reference_object:
+#             return f"{self.name}({self.reference_object})"
+#         else:
+#             return self.name
 
 
 @attrs(frozen=True, repr=False)
@@ -94,7 +93,7 @@ class Direction(Generic[ReferenceObjectT]):
     We need to standardize on what "positive" direction means. 
     It is clear for vertical axes but less clear for other things. 
     """
-    relative_to_axis: Axis[ReferenceObjectT] = attrib(validator=instance_of(Axis))
+    relative_to_axis: AxisFunction[ReferenceObjectT] = attrib()
 
     def copy_remapping_objects(
         self, object_map: Mapping[ReferenceObjectT, NewObjectT]
@@ -109,8 +108,15 @@ class Direction(Generic[ReferenceObjectT]):
         return f"{polarity}{self.relative_to_axis}"
 
 
-GRAVITATIONAL_UP = Direction(positive=True, relative_to_axis=GRAVITATIONAL_AXIS)
-GRAVITATIONAL_DOWN = Direction(positive=False, relative_to_axis=GRAVITATIONAL_AXIS)
+GRAVITATIONAL_UP = Direction(positive=True, relative_to_axis=GRAVITATIONAL_AXIS_FUNCTION)
+GRAVITATIONAL_DOWN = Direction(
+    positive=False, relative_to_axis=GRAVITATIONAL_AXIS_FUNCTION
+)
+
+# Region[ActionDescriptionVariable]
+# Region[SituationObject]
+# Region[ObjectPerception]
+# Region[TemplateObjectVariable]
 
 
 @attrs(frozen=True, repr=False)
@@ -155,13 +161,15 @@ class Region(Generic[ReferenceObjectT]):
         Adds all objects referenced by this `Region` to *object_accumulator*.
         """
         object_accumulator.append(self.reference_object)
-        if self.direction and self.direction.relative_to_axis.reference_object:
-            object_accumulator.append(self.direction.relative_to_axis.reference_object)
+        if self.direction:
+            self.direction.relative_to_axis.accumulate_referenced_objects(
+                object_accumulator
+            )
 
     def __attrs_post_init__(self) -> None:
         check_arg(
             self.distance or self.direction,
-            "A region must have either a " "distance or direction specified.",
+            "A region must have either a distance or direction specified.",
         )
 
     def __repr__(self) -> str:
@@ -191,8 +199,8 @@ class SpatialPath(Generic[ReferenceObjectT]):
         validator=optional(instance_of(PathOperator))
     )
     reference_object: Union[ReferenceObjectT, Region[ReferenceObjectT]] = attrib()
-    reference_axis: Optional[Axis[ReferenceObjectT]] = attrib(
-        validator=optional(instance_of(Axis)), default=None, kw_only=True
+    reference_axis: Optional[AxisFunction[ReferenceObjectT]] = attrib(
+        validator=optional(instance_of(AxisFunction)), default=None, kw_only=True
     )
     orientation_changed: bool = attrib(
         validator=instance_of(bool), default=False, kw_only=True
@@ -202,10 +210,16 @@ class SpatialPath(Generic[ReferenceObjectT]):
         # you either need a path operator
         #  or an orientation change around an axis
         #  (e.g. for rotation without translation)
-        check_arg(
-            self.operator
-            or all((self.reference_object, self.reference_axis, self.orientation_changed))
-        )
+        # weird conditional to make mypy happy
+        if (
+            not self.reference_object
+            and not self.reference_axis
+            and not self.orientation_changed
+        ):
+            raise RuntimeError(
+                "A path must have at least one of a reference objects, "
+                "a reference axis, or an orientation change"
+            )
 
     def copy_remapping_objects(
         self, object_mapping: Mapping[ReferenceObjectT, NewObjectT]

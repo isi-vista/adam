@@ -22,6 +22,7 @@ from adam.ontology import (
     OntologyNode,
     REQUIRED_ONTOLOGY_NODES,
     THING,
+    IS_SUBSTANCE,
 )
 
 # convenience method for use in Ontology
@@ -87,7 +88,10 @@ class Ontology:
             if not any(
                 node in self._structural_schemata for node in self.ancestors(thing_node)
             ):
-                if self.has_all_properties(thing_node, [CAN_FILL_TEMPLATE_SLOT]):
+                # e.g. "milk" does not have a structural schema
+                if self.has_all_properties(
+                    thing_node, [CAN_FILL_TEMPLATE_SLOT]
+                ) and not self.has_all_properties(thing_node, [IS_SUBSTANCE]):
                     raise RuntimeError(
                         f"No structural schema is available for {thing_node}"
                     )

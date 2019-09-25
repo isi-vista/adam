@@ -29,6 +29,7 @@ from vistautils.preconditions import check_state
 from adam.curriculum.phase1_curriculum import GAILA_PHASE_1_CURRICULUM
 from adam.experiment import InstanceGroup
 from adam.geon import Geon
+from adam.axes import WORLD_AXES, AxesInfo
 from adam.language.dependency import LinearizedDependencyTree
 from adam.ontology import IN_REGION
 from adam.ontology.during import DuringAction
@@ -42,8 +43,9 @@ from adam.perception.developmental_primitive_perception import (
     PropertyPerception,
 )
 from adam.relation import Relation
-from adam.situation import SituationObject
+from adam.situation import SituationObject, SituationRegion
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
+from adam.utilities import sign
 import random
 
 USAGE_MESSAGE = """
@@ -458,7 +460,7 @@ class CurriculumToHtmlDumper:
         return ("\n".join(output_text), speaker)
 
     def _situation_object_or_region_text(
-        self, obj_or_region: Union[SituationObject, Region[SituationObject]]
+        self, obj_or_region: Union[SituationObject, SituationRegion]
     ) -> str:
         if isinstance(obj_or_region, SituationObject):
             return obj_or_region.ontology_node.handle
@@ -597,7 +599,7 @@ class CurriculumToHtmlDumper:
         # edges between objects. This allows us to do pre-order traversal of the Graph to make a
         # nested <ul></ul> for the objects rather than a flat list.
         graph = DiGraph()
-        root = ObjectPerception("root")
+        root = ObjectPerception("root", axes=WORLD_AXES)
         graph.add_node(root)
         expressed_relations = set()
 
@@ -639,8 +641,12 @@ class CurriculumToHtmlDumper:
                         (relation_prefix, relation_suffix) = compute_arrow(
                             region_relation, static_relations, first_frame_relations
                         )
+                        relation_str = self._render_relation(
+                            perception.frames[0].axis_info, region_relation
+                        )
                         output_text.append(
-                            f"\t\t\t\t\t\t<li>{relation_prefix}{region_relation}{relation_suffix}</li>"
+                            f"\t\t\t\t\t\t<li>{relation_prefix}"
+                            f"{relation_str}{relation_suffix}</li>"
                         )
                         expressed_relations.add(region_relation)
             for succ in graph.successors(node):
@@ -698,6 +704,25 @@ class CurriculumToHtmlDumper:
             output_text.append(self._render_during(perception.during, indent_depth=5))
 
         return "\n".join(output_text)
+
+    def _render_relation(
+        self, axis_info: AxesInfo[ObjectPerception], relation: Relation[ObjectPerception]
+    ) -> str:
+        second_slot_str: str
+        filler2 = relation.second_slot
+        if isinstance(filler2, Region):
+            parts = [str(filler2.reference_object)]
+            if filler2.distance:
+                parts.append(f"distance={filler2.distance}")
+            if filler2.direction:
+                parts.append(
+                    f"direction={sign(filler2.direction.positive)}"
+                    f"{filler2.direction.relative_to_axis.to_concrete_axis(axis_info)}"
+                )
+            second_slot_str = f"Region({','.join(parts)})"
+        else:
+            second_slot_str = str(filler2)
+        return f"{relation.relation_type}({relation.first_slot}, {second_slot_str})"
 
     def _render_during(
         self, during: DuringAction[ObjectPerception], *, indent_depth: int = 0
@@ -760,26 +785,26 @@ class CurriculumToHtmlDumper:
         lines.append(
             f"{indent}\t<li>Cross Section: {geon.cross_section} | Cross Section Size: {geon.cross_section_size}</li>"
         )
-        if geon.generating_axis == geon.primary_axis:
+        if geon.generating_axis == geon.axes.primary_axis:
             lines.append(
                 f"{indent}\t<li><b>Generating Axis: {geon.generating_axis}</b></li>"
             )
         else:
             lines.append(f"{indent}\t<li>Generating Axis: {geon.generating_axis}</li>")
-        if geon.orienting_axes:
+        if geon.axes.orienting_axes:
             lines.append(f"{indent}\t<li>Orienting Axes:")
             lines.append(f"{indent}\t<ul>")
-            for axis in geon.orienting_axes:
-                if axis == geon.primary_axis:
+            for axis in geon.axes.orienting_axes:
+                if axis == geon.axes.primary_axis:
                     lines.append(f"{indent}\t\t<li><b>{axis}</b></li>")
                 else:
                     lines.append(f"{indent}\t\t<li>{axis}</li>")
             lines.append(f"{indent}\t</ul>")
             lines.append(f"{indent}\t</li>")
-        if geon.axis_relations:
+        if geon.axes.axis_relations:
             lines.append(f"{indent}\t<li>Axes Relations:")
             lines.append(f"{indent}\t<ul>")
-            for axis_relation in geon.axis_relations:
+            for axis_relation in geon.axes.axis_relations:
                 if isinstance(axis_relation.second_slot, Region):
                     lines.append(
                         f"{indent}\t\t<li>{axis_relation.relation_type}({axis_relation.first_slot.debug_name},{axis_relation.second_slot})</li>"
@@ -800,7 +825,7 @@ body {
     font-family: sans-serif;
 }
 
-table td { 
+table td { p
     padding: 1em; 
     background-color: #FAE5D3 ;
 }
