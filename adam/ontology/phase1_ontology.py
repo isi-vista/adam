@@ -20,7 +20,7 @@ from more_itertools import flatten
 
 from adam.axes import (
     Axes,
-    FirstHorizontalAxisOfObject,
+    HorizontalAxisOfObject,
     LEARNER_AXES,
     PrimaryAxisOfObject,
     WORLD_AXES,
@@ -743,7 +743,8 @@ _DOOR_SCHEMA = _make_door_schema()
 
 def _make_ball_schema() -> ObjectStructuralSchema:
     generating_axis = symmetric_vertical("ball-generating")
-    orienting_axis = symmetric("ball-orienting")
+    orienting_axis_0 = symmetric("ball-orienting-0")
+    orienting_axis_1 = symmetric("ball-orienting-1")
 
     return ObjectStructuralSchema(
         ontology_node=BALL,
@@ -752,7 +753,7 @@ def _make_ball_schema() -> ObjectStructuralSchema:
             cross_section_size=SMALL_TO_LARGE_TO_SMALL,
             axes=Axes(
                 primary_axis=generating_axis,
-                orienting_axes=[orienting_axis, orienting_axis],
+                orienting_axes=[orienting_axis_0, orienting_axis_1],
             ),
         ),
     )
@@ -2106,7 +2107,7 @@ def _make_roll_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
                         reference_object=rollee,
                         # TODO: not quite right - this should be orthogonal
                         # to the axis of motion
-                        reference_axis=FirstHorizontalAxisOfObject(rollee),
+                        reference_axis=HorizontalAxisOfObject(rollee, index=0),
                         orientation_changed=True,
                     ),
                 )

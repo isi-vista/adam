@@ -7,7 +7,7 @@ from typing import Iterable
 
 from more_itertools import flatten
 
-from adam.axes import AxesInfo, FirstHorizontalAxisOfObject
+from adam.axes import AxesInfo, HorizontalAxisOfObject
 from adam.curriculum import GeneratedFromSituationsInstanceGroup, InstanceGroup
 from adam.language.dependency import LinearizedDependencyTree
 from adam.language_specific.english.english_language_generator import (
@@ -424,8 +424,8 @@ def make_object_beside_object_template():
                     distance=PROXIMAL,
                     direction=Direction(
                         positive=True,
-                        relative_to_axis=FirstHorizontalAxisOfObject(
-                            LARGER_BESIDE_OBJECT
+                        relative_to_axis=HorizontalAxisOfObject(
+                            LARGER_BESIDE_OBJECT, index=0
                         ),
                     ),
                 ),

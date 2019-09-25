@@ -1,20 +1,21 @@
 from itertools import chain
-from typing import Mapping, TypeVar, Generic, Any, Iterable, List
+from typing import Any, Generic, Iterable, List, Mapping, TypeVar
 
-from attr import attrs, attrib
-from attr.validators import instance_of
+from attr import attrib, attrs
+from attr.validators import in_, instance_of
 from immutablecollections import (
-    ImmutableSetMultiDict,
-    immutablesetmultidict,
     ImmutableSet,
+    ImmutableSetMultiDict,
     immutableset,
+    immutablesetmultidict,
 )
 from immutablecollections.converter_utils import (
-    _to_immutablesetmultidict,
     _to_immutableset,
+    _to_immutablesetmultidict,
 )
-from more_itertools import first, quantify
+from more_itertools import quantify
 from typing_extensions import Protocol, runtime
+from vistautils.range import Range
 
 from adam.axis import GeonAxis
 from adam.relation import flatten_relations
@@ -92,8 +93,9 @@ class PrimaryAxisOfObject(Generic[_ObjectT], AxisFunction[_ObjectT]):
 
 
 @attrs(frozen=True)
-class FirstHorizontalAxisOfObject(Generic[_ObjectT], AxisFunction[_ObjectT]):
+class HorizontalAxisOfObject(Generic[_ObjectT], AxisFunction[_ObjectT]):
     _object: _ObjectT = attrib()
+    _index: int = attrib(validator=in_(Range.closed(0, 1)))
 
     def to_concrete_axis(
         self, axes_info: AxesInfo[_ObjectT]  # pylint:disable=unused-argument
@@ -103,16 +105,17 @@ class FirstHorizontalAxisOfObject(Generic[_ObjectT], AxisFunction[_ObjectT]):
                 "Can only instantiate an axis function if the object is of a "
                 "concrete type (e.g. perception or situation object)"
             )
-        return first(
+        horizontal_axes = tuple(
             axis
             for axis in self._object.axes.all_axes
             if not axis.aligned_to_gravitational
         )
+        return horizontal_axes[self._index]  # pylint:disable=invalid-sequence-index
 
     def copy_remapping_objects(
         self, object_map: Mapping[_ObjectT, _ObjectToT]
-    ) -> "FirstHorizontalAxisOfObject[_ObjectToT]":
-        return FirstHorizontalAxisOfObject(object_map[self._object])
+    ) -> "HorizontalAxisOfObject[_ObjectToT]":
+        return HorizontalAxisOfObject(object_map[self._object], index=self._index)
 
 
 _GRAVITATIONAL_DOWN_TO_UP_AXIS = straight_up("gravitational-up")
@@ -151,6 +154,8 @@ class Axes:
     )
 
     def __attrs_post_init__(self) -> None:
+        if quantify(self.all_axes) != 3:
+            raise RuntimeError(f"All objects must have three axes but got {self}")
         num_gravitationally_aligned_axes = quantify(
             x.aligned_to_gravitational
             for x in chain((self.primary_axis,), self.orienting_axes)

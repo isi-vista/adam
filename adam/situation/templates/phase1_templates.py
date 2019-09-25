@@ -25,7 +25,7 @@ from more_itertools import take, only
 from typing_extensions import Protocol
 from vistautils.preconditions import check_arg
 
-from adam.axes import AxesInfo
+from adam.axes import AxesInfo, HorizontalAxisOfObject
 from adam.ontology import ACTION, CAN_FILL_TEMPLATE_SLOT, OntologyNode, PROPERTY, THING
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
@@ -35,6 +35,7 @@ from adam.ontology.phase1_ontology import (
     LEARNER,
     TRANSPARENT,
     is_recognized_particular,
+    IS_ADDRESSEE,
 )
 from adam.ontology.phase1_spatial_relations import Region
 from adam.ontology.selectors import (
@@ -443,7 +444,7 @@ class _Phase1SituationTemplateGenerator(
                 for action in template.actions
             ],
             syntax_hints=template.syntax_hints,
-            axis_info=self._compute_axis_info(),
+            axis_info=self._compute_axis_info(object_var_to_instantiations),
         )
 
     def _has_multiple_recognized_particulars(
@@ -548,8 +549,37 @@ class _Phase1SituationTemplateGenerator(
             ],
         )
 
-    def _compute_axis_info(self) -> AxesInfo[SituationObject]:
-        return AxesInfo()
+    def _compute_axis_info(
+        self,
+        object_var_to_instantiations: Mapping[TemplateObjectVariable, SituationObject],
+    ) -> AxesInfo[SituationObject]:
+        # if there is an addressee, then we determine which axis
+        # of each object faces the addressee
+        addressees = immutableset(
+            obj
+            for obj in object_var_to_instantiations.values()
+            if IS_ADDRESSEE in obj.properties
+        )
+        if addressees:
+            if len(addressees) > 1:
+                raise RuntimeError("Multiple addressees not supported")
+            else:
+                addressee: SituationObject = only(addressees)
+                return AxesInfo(
+                    axes_facing=[
+                        (
+                            addressee,
+                            # TODO: fix this hack
+                            HorizontalAxisOfObject(  # type: ignore
+                                obj, index=1
+                            ).to_concrete_axis(None),
+                        )
+                        for obj in object_var_to_instantiations.values()
+                        if obj.axes
+                    ]
+                )
+        else:
+            return AxesInfo()
 
 
 def object_variable(
