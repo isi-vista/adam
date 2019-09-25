@@ -37,17 +37,20 @@ class DevelopmentalPrimitivePerceptionFrame(PerceptualRepresentationFrame):
       object in the scene (e.g. a ball, Mom, Dad, etc.)
     """
     axis_info: AxesInfo["ObjectPerception"] = attrib(
-        validator=instance_of(AxesInfo), kw_only=True
+        # instance default okay because immutable
+        validator=instance_of(AxesInfo),  # type: ignore
+        kw_only=True,
+        default=AxesInfo(),
     )
     property_assertions: ImmutableSet["PropertyPerception"] = attrib(
-        converter=_to_immutableset, default=immutableset()
+        converter=_to_immutableset, default=immutableset(), kw_only=True
     )
     r"""
     a set of `PropertyPerception`\ s which associate a `ObjectPerception` with perceived properties
       of various sort (e.g. color, sentience, etc.)
     """
     relations: ImmutableSet[Relation["ObjectPerception"]] = attrib(  # type: ignore
-        converter=flatten_relations, default=immutableset()
+        converter=flatten_relations, default=immutableset(), kw_only=True
     )
     r"""
     a set of `Relation`\ s which describe the learner's perception of how two 

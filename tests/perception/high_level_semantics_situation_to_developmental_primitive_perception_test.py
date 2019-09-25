@@ -241,9 +241,7 @@ def test_person_put_ball_on_table():
         IN_REGION,
         ball_perception,
         Region(
-            table_perception,
-            distance=EXTERIOR_BUT_IN_CONTACT,
-            direction=Direction(positive=True, relative_to_axis=GRAVITATIONAL_AXIS),
+            table_perception, distance=EXTERIOR_BUT_IN_CONTACT, direction=GRAVITATIONAL_UP
         ),
     )
     assert ball_on_table_relation in second_frame_relations
@@ -297,9 +295,7 @@ def test_relations_between_objects_and_ground():
                         Region(
                             reference_object=table,
                             distance=EXTERIOR_BUT_IN_CONTACT,
-                            direction=Direction(
-                                positive=True, relative_to_axis=GRAVITATIONAL_AXIS
-                            ),
+                            direction=GRAVITATIONAL_UP,
                         ),
                     ),
                 ),
@@ -473,11 +469,7 @@ def test_perceive_relations_during():
     bird_over_the_house = Relation(
         IN_REGION,
         bird,
-        Region(
-            reference_object=house,
-            distance=DISTAL,
-            direction=Direction(positive=True, relative_to_axis=GRAVITATIONAL_AXIS),
-        ),
+        Region(reference_object=house, distance=DISTAL, direction=GRAVITATIONAL_UP),
     )
 
     assert bird_over_the_house in learner_perception.during.at_some_point
@@ -515,9 +507,7 @@ def test_perceive_explicit_relations():
                         Region(
                             reference_object=table,
                             distance=EXTERIOR_BUT_IN_CONTACT,
-                            direction=Direction(
-                                positive=True, relative_to_axis=GRAVITATIONAL_AXIS
-                            ),
+                            direction=GRAVITATIONAL_UP,
                         ),
                     ),
                 ],

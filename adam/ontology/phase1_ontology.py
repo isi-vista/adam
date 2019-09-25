@@ -18,8 +18,17 @@ from typing import Iterable, Optional, Sequence, Tuple, TypeVar
 from immutablecollections import ImmutableDict, immutabledict, immutableset
 from more_itertools import flatten
 
-from adam.axes import (PrimaryAxisOfObject, directed, straight_up,
-                       symmetric, symmetric_vertical)
+from adam.axes import (
+    Axes,
+    FirstHorizontalAxisOfObject,
+    LEARNER_AXES,
+    PrimaryAxisOfObject,
+    WORLD_AXES,
+    directed,
+    straight_up,
+    symmetric,
+    symmetric_vertical,
+)
 from adam.geon import (
     CIRCULAR,
     CONSTANT,
@@ -31,20 +40,37 @@ from adam.geon import (
     SMALL_TO_LARGE,
     SMALL_TO_LARGE_TO_SMALL,
 )
-from adam.object_axes import Axes, WORLD_AXES, LEARNER_AXES
-from adam.ontology import (ACTION, CAN_FILL_TEMPLATE_SLOT, IN_REGION, IS_SUBSTANCE, OntologyNode,
-                           PROPERTY, RELATION, THING, minimal_ontology_graph)
+from adam.ontology import (
+    ACTION,
+    CAN_FILL_TEMPLATE_SLOT,
+    IN_REGION,
+    IS_SUBSTANCE,
+    OntologyNode,
+    PROPERTY,
+    RELATION,
+    THING,
+    minimal_ontology_graph,
+)
 from adam.ontology.action_description import ActionDescription, ActionDescriptionFrame
 from adam.ontology.during import DuringAction
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_size_relationships import build_size_relationships
-from adam.ontology.phase1_spatial_relations import (AWAY_FROM, Axis, DISTAL,
-                                                    EXTERIOR_BUT_IN_CONTACT, FROM,
-                                                    GRAVITATIONAL_DOWN, GRAVITATIONAL_UP, INTERIOR,
-                                                    PROXIMAL, Region, SpatialPath, TO, TOWARD)
+from adam.ontology.phase1_spatial_relations import (
+    AWAY_FROM,
+    DISTAL,
+    EXTERIOR_BUT_IN_CONTACT,
+    FROM,
+    GRAVITATIONAL_DOWN,
+    GRAVITATIONAL_UP,
+    INTERIOR,
+    PROXIMAL,
+    Region,
+    SpatialPath,
+    TO,
+    TOWARD,
+)
 from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
 from adam.relation import (
-    _ObjectT,
     Relation,
     flatten_relations,
     make_dsl_region_relation,
@@ -541,6 +567,7 @@ SPATIAL_RELATION = OntologyNode("spatial-relation")
 subtype(SPATIAL_RELATION, RELATION)
 
 _ObjectT = TypeVar("_ObjectT")
+
 
 # On is an English-specific bundle of semantics, but that's okay, because this is just for
 # data generation, and it will get decomposed before being presented as perceptions to the
@@ -2075,9 +2102,9 @@ def _make_roll_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
                     SpatialPath(
                         operator=None,
                         reference_object=rollee,
-                        reference_axis=Axis(
-                            reference_object=None, name="direction of motion"
-                        ),
+                        # TODO: not quite right - this should be orthogonal
+                        # to the axis of motion
+                        reference_axis=FirstHorizontalAxisOfObject(rollee),
                         orientation_changed=True,
                     ),
                 )

@@ -1,7 +1,7 @@
 from attr import attrib, attrs
 from attr.validators import instance_of
 
-from adam.object_axes import Axes
+from adam.axes import Axes
 from adam.axis import GeonAxis
 from adam.utilities import _sign
 

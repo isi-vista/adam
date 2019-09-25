@@ -6,7 +6,7 @@ from immutablecollections import ImmutableSet, immutableset
 from immutablecollections.converter_utils import _to_immutableset
 
 from adam.geon import Geon
-from adam.object_axes import Axes
+from adam.axes import Axes
 from adam.ontology import OntologyNode
 from adam.relation import Relation
 

@@ -46,39 +46,39 @@ ReferenceObjectT = TypeVar("ReferenceObjectT")
 NewObjectT = TypeVar("NewObjectT")
 
 
-@attrs(frozen=True, repr=False)
-class Axis(Generic[ReferenceObjectT]):
-    name: str = attrib(validator=instance_of(str))
-    reference_object: Optional[ReferenceObjectT] = attrib(kw_only=True)
-
-    @staticmethod
-    def primary_of(reference_object: ReferenceObjectT) -> "Axis[ReferenceObjectT]":
-        return Axis("primary", reference_object=reference_object)
-
-    def copy_remapping_objects(
-        self, object_map: Mapping[ReferenceObjectT, NewObjectT]
-    ) -> "Axis[" "NewObjectT]":
-        return Axis(
-            name=self.name,
-            reference_object=object_map[self.reference_object]
-            if self.reference_object
-            else None,
-        )
-
-    def accumulate_referenced_objects(
-        self, object_accumulator: List[ReferenceObjectT]
-    ) -> None:
-        r"""
-        Adds all objects referenced by this `Axis` to *object_accumulator*.
-        """
-        if self.reference_object:
-            object_accumulator.append(self.reference_object)
-
-    def __repr__(self) -> str:
-        if self.reference_object:
-            return f"{self.name}({self.reference_object})"
-        else:
-            return self.name
+# @attrs(frozen=True, repr=False)
+# class Axis(Generic[ReferenceObjectT]):
+#     name: str = attrib(validator=instance_of(str))
+#     reference_object: Optional[ReferenceObjectT] = attrib(kw_only=True)
+#
+#     @staticmethod
+#     def primary_of(reference_object: ReferenceObjectT) -> "Axis[ReferenceObjectT]":
+#         return Axis("primary", reference_object=reference_object)
+#
+#     def copy_remapping_objects(
+#         self, object_map: Mapping[ReferenceObjectT, NewObjectT]
+#     ) -> "Axis[" "NewObjectT]":
+#         return Axis(
+#             name=self.name,
+#             reference_object=object_map[self.reference_object]
+#             if self.reference_object
+#             else None,
+#         )
+#
+#     def accumulate_referenced_objects(
+#         self, object_accumulator: List[ReferenceObjectT]
+#     ) -> None:
+#         r"""
+#         Adds all objects referenced by this `Axis` to *object_accumulator*.
+#         """
+#         if self.reference_object:
+#             object_accumulator.append(self.reference_object)
+#
+#     def __repr__(self) -> str:
+#         if self.reference_object:
+#             return f"{self.name}({self.reference_object})"
+#         else:
+#             return self.name
 
 
 @attrs(frozen=True, repr=False)
@@ -199,8 +199,8 @@ class SpatialPath(Generic[ReferenceObjectT]):
         validator=optional(instance_of(PathOperator))
     )
     reference_object: Union[ReferenceObjectT, Region[ReferenceObjectT]] = attrib()
-    reference_axis: Optional[Axis[ReferenceObjectT]] = attrib(
-        validator=optional(instance_of(Axis)), default=None, kw_only=True
+    reference_axis: Optional[AxisFunction[ReferenceObjectT]] = attrib(
+        validator=optional(instance_of(AxisFunction)), default=None, kw_only=True
     )
     orientation_changed: bool = attrib(
         validator=instance_of(bool), default=False, kw_only=True
@@ -210,10 +210,16 @@ class SpatialPath(Generic[ReferenceObjectT]):
         # you either need a path operator
         #  or an orientation change around an axis
         #  (e.g. for rotation without translation)
-        check_arg(
-            self.operator
-            or all((self.reference_object, self.reference_axis, self.orientation_changed))
-        )
+        # weird conditional to make mypy happy
+        if (
+            not self.reference_object
+            and not self.reference_axis
+            and not self.orientation_changed
+        ):
+            raise RuntimeError(
+                "A path must have at least one of a reference objects, "
+                "a reference axis, or an orientation change"
+            )
 
     def copy_remapping_objects(
         self, object_mapping: Mapping[ReferenceObjectT, NewObjectT]

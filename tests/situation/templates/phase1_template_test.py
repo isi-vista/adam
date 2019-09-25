@@ -23,7 +23,7 @@ from adam.situation.templates.phase1_templates import (
     all_possible,
     object_variable,
 )
-from adam.object_axes import WORLD_AXES
+from adam.axes import WORLD_AXES
 
 _TESTING_ONTOLOGY_GRAPH = minimal_ontology_graph()
 _TESTING_ONTOLOGY_GRAPH.add_node(RECOGNIZED_PARTICULAR_PROPERTY)

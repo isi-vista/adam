@@ -12,7 +12,7 @@ from immutablecollections.converter_utils import _to_immutableset
 from vistautils.preconditions import check_arg
 
 from adam.geon import Geon
-from adam.object_axes import Axes, HasAxes, WORLD_AXES, LEARNER_AXES
+from adam.axes import Axes, HasAxes, WORLD_AXES, LEARNER_AXES
 from adam.math_3d import Point
 from adam.ontology.during import DuringAction
 from adam.ontology.phase1_spatial_relations import Region

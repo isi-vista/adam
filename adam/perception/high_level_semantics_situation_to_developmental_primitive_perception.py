@@ -55,8 +55,7 @@ from adam.random_utils import SequenceChooser
 from adam.relation import Relation
 from adam.situation import Action, SituationObject, SituationRegion
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
-from adam.axes import AxesInfo
-from adam.object_axes import WORLD_AXES
+from adam.axes import AxesInfo, WORLD_AXES
 
 
 @attrs(frozen=True, slots=True)

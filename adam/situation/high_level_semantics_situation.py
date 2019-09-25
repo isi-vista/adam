@@ -31,14 +31,17 @@ class HighLevelSemanticsSituation(Situation):
     """
     salient_objects: ImmutableSet[SituationObject] = attrib(converter=_to_immutableset)
     axis_info: AxesInfo[SituationObject] = attrib(
-        validator=instance_of(AxesInfo), kw_only=True
+        # instance default is safe because AxesInfo is immutable
+        validator=instance_of(AxesInfo),  # type: ignore
+        kw_only=True,
+        default=AxesInfo(),
     )
     """
     The salient objects present in a `Situation`.  
     This will usually be the ones expressed in the linguistic form.
     """
     other_objects: ImmutableSet[SituationObject] = attrib(
-        converter=_to_immutableset, default=immutableset()
+        converter=_to_immutableset, default=immutableset(), kw_only=True
     )
     r"""
     These are other objects appearing in the situation which are less important.

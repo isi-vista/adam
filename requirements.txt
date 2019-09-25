@@ -17,5 +17,5 @@ flake8==3.5.0
 mypy==0.620
 towncrier
 sphinx==2.1.2
-sphinx-autodoc-typehints
+sphinx-autodoc-typehints==1.8.0
 sphinx_rtd_theme
