@@ -116,7 +116,7 @@ class SituationObject:
         return f"{self.debug_handle}{handle_string}{additional_properties_string}"
 
 
-SituationRegion = Region[SituationObject]
+SituationRegion = Region[SituationObject]  # pylint:disable=invalid-name
 
 
 @attrs(frozen=True, slots=True)

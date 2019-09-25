@@ -131,7 +131,7 @@ class _GravitationalAxis(AxisFunction[Any]):
         return _GRAVITATIONAL_DOWN_TO_UP_AXIS
 
     def copy_remapping_objects(
-        self, object_map: Mapping[_ObjectT, _ObjectToT]
+        self, object_map: Mapping[_ObjectT, _ObjectToT]  # pylint:disable=unused-argument
     ) -> "_GravitationalAxis":
         return self
 

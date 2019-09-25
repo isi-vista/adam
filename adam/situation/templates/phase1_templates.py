@@ -102,7 +102,7 @@ class TemplateObjectVariable(SituationTemplateObject, _TemplateVariable):
         return f"{self.handle}[{' ,'.join(props)}]"
 
 
-TemplateRegion = Region[TemplateObjectVariable]
+TemplateRegion = Region[TemplateObjectVariable]  # pylint:disable=invalid-name
 
 
 @attrs(frozen=True, slots=True, cmp=False)

@@ -46,12 +46,11 @@ from adam.ontology.phase1_ontology import (
 )
 from adam.ontology.phase1_spatial_relations import (
     DISTAL,
-    Direction,
     EXTERIOR_BUT_IN_CONTACT,
+    GRAVITATIONAL_UP,
     INTERIOR,
     Region,
     TOWARD,
-    GRAVITATIONAL_UP,
 )
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,

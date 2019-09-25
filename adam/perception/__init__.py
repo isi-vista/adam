@@ -57,7 +57,7 @@ class ObjectPerception(HasAxes):
         return self.debug_handle
 
 
-RegionPerception = Region[ObjectPerception]
+RegionPerception = Region[ObjectPerception]  # pylint:disable=invalid-name
 
 GROUND_PERCEPTION = ObjectPerception("the ground", geon=None, axes=WORLD_AXES)
 LEARNER_PERCEPTION = ObjectPerception("learner", geon=None, axes=LEARNER_AXES)

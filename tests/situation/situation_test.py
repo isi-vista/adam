@@ -14,10 +14,9 @@ from adam.ontology.phase1_ontology import (
     THEME,
 )
 from adam.ontology.phase1_spatial_relations import (
-    Direction,
     EXTERIOR_BUT_IN_CONTACT,
-    Region,
     GRAVITATIONAL_UP,
+    Region,
 )
 from adam.situation import Action, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation

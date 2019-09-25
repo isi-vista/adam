@@ -57,13 +57,12 @@ from adam.ontology.phase1_ontology import (
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
     DISTAL,
-    Direction,
     EXTERIOR_BUT_IN_CONTACT,
+    GRAVITATIONAL_DOWN,
     GRAVITATIONAL_UP,
     INTERIOR,
     Region,
     SpatialPath,
-    GRAVITATIONAL_DOWN,
 )
 from adam.random_utils import FixedIndexChooser, RandomChooser
 from adam.relation import Relation
