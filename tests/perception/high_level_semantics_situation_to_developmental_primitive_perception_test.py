@@ -48,10 +48,10 @@ from adam.ontology.phase1_spatial_relations import (
     DISTAL,
     Direction,
     EXTERIOR_BUT_IN_CONTACT,
-    GRAVITATIONAL_AXIS,
     INTERIOR,
     Region,
     TOWARD,
+    GRAVITATIONAL_UP,
 )
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -178,9 +178,7 @@ def test_person_put_ball_on_table():
                         Region(
                             reference_object=table,
                             distance=EXTERIOR_BUT_IN_CONTACT,
-                            direction=Direction(
-                                positive=True, relative_to_axis=GRAVITATIONAL_AXIS
-                            ),
+                            direction=GRAVITATIONAL_UP,
                         ),
                     ),
                 ),

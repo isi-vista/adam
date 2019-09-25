@@ -55,7 +55,8 @@ from adam.random_utils import SequenceChooser
 from adam.relation import Relation
 from adam.situation import Action, SituationObject, SituationRegion
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
-from adam.geon import WORLD_AXES
+from adam.axes import AxesInfo
+from adam.object_axes import WORLD_AXES
 
 
 @attrs(frozen=True, slots=True)
@@ -198,6 +199,10 @@ class _PerceptionGeneration:
         # Handle implicit size relations
         # self._perceive_implicit_size()
 
+        # for now, we assume that actions do not alter the relationship of objects axes
+        # to the speaker, learner, and addressee
+        axis_info = self._perceive_axis_info()
+
         # Other relations implied by actions will be handled during action translation below.
 
         if not self._situation.actions:
@@ -207,6 +212,7 @@ class _PerceptionGeneration:
                     perceived_objects=self._object_perceptions,
                     relations=self._relation_perceptions,
                     property_assertions=self._property_assertion_perceptions,
+                    axis_info=axis_info,
                 )
             )
 
@@ -230,6 +236,7 @@ class _PerceptionGeneration:
                 _action_perception.before_relations,
             ),
             property_assertions=self._property_assertion_perceptions,
+            axis_info=axis_info,
         )
         second_frame = DevelopmentalPrimitivePerceptionFrame(
             perceived_objects=self._object_perceptions,
@@ -239,6 +246,7 @@ class _PerceptionGeneration:
                 _action_perception.after_relations,
             ),
             property_assertions=self._property_assertion_perceptions,
+            axis_info=axis_info,
         )
 
         return PerceptualRepresentation(
@@ -1051,6 +1059,11 @@ class _PerceptionGeneration:
     ) -> ImmutableSetMultiDict[ObjectPerception, Relation[ObjectPerception]]:
         return immutablesetmultidict(
             (relation.first_slot, relation) for relation in self._relation_perceptions
+        )
+
+    def _perceive_axis_info(self) -> AxesInfo[ObjectPerception]:
+        return self._situation.axis_info.copy_remapping_objects(
+            self._objects_to_perceptions
         )
 
 

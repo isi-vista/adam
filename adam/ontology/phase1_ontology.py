@@ -18,6 +18,8 @@ from typing import Iterable, Optional, Sequence, Tuple
 from immutablecollections import ImmutableDict, immutabledict, immutableset
 from more_itertools import flatten
 
+from adam.axes import (PrimaryAxisOfObject, directed, straight_up,
+                       symmetric, symmetric_vertical)
 from adam.geon import (
     CIRCULAR,
     CONSTANT,
@@ -28,46 +30,18 @@ from adam.geon import (
     RECTANGULAR,
     SMALL_TO_LARGE,
     SMALL_TO_LARGE_TO_SMALL,
-    directed,
-    straight_up,
-    symmetric,
-    symmetric_vertical,
-    Axes,
-    WORLD_AXES,
-    LEARNER_AXES,
 )
-from adam.ontology import (
-    ACTION,
-    CAN_FILL_TEMPLATE_SLOT,
-    IN_REGION,
-    OntologyNode,
-    PROPERTY,
-    RELATION,
-    THING,
-    minimal_ontology_graph,
-    IS_SUBSTANCE,
-)
+from adam.object_axes import Axes, WORLD_AXES, LEARNER_AXES
+from adam.ontology import (ACTION, CAN_FILL_TEMPLATE_SLOT, IN_REGION, IS_SUBSTANCE, OntologyNode,
+                           PROPERTY, RELATION, THING, minimal_ontology_graph)
 from adam.ontology.action_description import ActionDescription, ActionDescriptionFrame
 from adam.ontology.during import DuringAction
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_size_relationships import build_size_relationships
-from adam.ontology.phase1_spatial_relations import (
-    AWAY_FROM,
-    Axis,
-    DISTAL,
-    Direction,
-    EXTERIOR_BUT_IN_CONTACT,
-    FROM,
-    GRAVITATIONAL_AXIS,
-    GRAVITATIONAL_DOWN,
-    GRAVITATIONAL_UP,
-    INTERIOR,
-    PROXIMAL,
-    Region,
-    SpatialPath,
-    TO,
-    TOWARD,
-)
+from adam.ontology.phase1_spatial_relations import (AWAY_FROM, Axis, DISTAL,
+                                                    EXTERIOR_BUT_IN_CONTACT, FROM,
+                                                    GRAVITATIONAL_DOWN, GRAVITATIONAL_UP, INTERIOR,
+                                                    PROXIMAL, Region, SpatialPath, TO, TOWARD)
 from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
 from adam.relation import (
     ObjectT,
@@ -574,7 +548,7 @@ def _on_region_factory(reference_object: ObjectT) -> Region[ObjectT]:
     return Region(
         reference_object=reference_object,
         distance=EXTERIOR_BUT_IN_CONTACT,
-        direction=Direction(positive=True, relative_to_axis=GRAVITATIONAL_AXIS),
+        direction=GRAVITATIONAL_UP,
     )
 
 
@@ -677,17 +651,11 @@ inside = make_dsl_region_relation(_inside_region_factory)  # pylint:disable=inva
 
 
 def _above_region_factory(reference_object: ObjectT) -> Region[ObjectT]:
-    return Region(
-        reference_object=reference_object,
-        direction=Direction(positive=True, relative_to_axis=GRAVITATIONAL_AXIS),
-    )
+    return Region(reference_object=reference_object, direction=GRAVITATIONAL_UP)
 
 
 def _below_region_factory(reference_object: ObjectT) -> Region[ObjectT]:
-    return Region(
-        reference_object=reference_object,
-        direction=Direction(positive=False, relative_to_axis=GRAVITATIONAL_AXIS),
-    )
+    return Region(reference_object=reference_object, direction=GRAVITATIONAL_DOWN)
 
 
 above = make_opposite_dsl_region_relation(  # pylint:disable=invalid-name
@@ -1883,7 +1851,7 @@ def spin_around_primary_axis(object_):
     return SpatialPath(
         operator=None,
         reference_object=object_,
-        reference_axis=Axis.primary_of(object_),
+        reference_axis=PrimaryAxisOfObject(object_),
         orientation_changed=True,
     )
 
@@ -1968,9 +1936,7 @@ def _make_throw_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription
                 Region(
                     reference_object=_THROW_GROUND,
                     distance=DISTAL,
-                    direction=Direction(
-                        positive=True, relative_to_axis=GRAVITATIONAL_AXIS
-                    ),
+                    direction=GRAVITATIONAL_DOWN,
                 ),
             )
         ],
@@ -2155,9 +2121,7 @@ _FLY_ACTION_DESCRIPTION = ActionDescription(
                 Region(
                     reference_object=_FLY_GROUND,
                     distance=DISTAL,
-                    direction=Direction(
-                        positive=True, relative_to_axis=GRAVITATIONAL_AXIS
-                    ),
+                    direction=GRAVITATIONAL_UP,
                 ),
             )
         ]

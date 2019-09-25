@@ -5,7 +5,8 @@ from attr.validators import instance_of, optional
 from immutablecollections import ImmutableSet, immutableset
 from immutablecollections.converter_utils import _to_immutableset
 
-from adam.geon import Geon, Axes
+from adam.geon import Geon
+from adam.object_axes import Axes
 from adam.ontology import OntologyNode
 from adam.relation import Relation
 

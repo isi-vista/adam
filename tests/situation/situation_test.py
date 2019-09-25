@@ -16,8 +16,8 @@ from adam.ontology.phase1_ontology import (
 from adam.ontology.phase1_spatial_relations import (
     Direction,
     EXTERIOR_BUT_IN_CONTACT,
-    GRAVITATIONAL_AXIS,
     Region,
+    GRAVITATIONAL_UP,
 )
 from adam.situation import Action, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
@@ -45,9 +45,7 @@ def make_mom_put_ball_on_table():
                         Region(
                             reference_object=table,
                             distance=EXTERIOR_BUT_IN_CONTACT,
-                            direction=Direction(
-                                positive=True, relative_to_axis=GRAVITATIONAL_AXIS
-                            ),
+                            direction=GRAVITATIONAL_UP,
                         ),
                     ),
                 ),

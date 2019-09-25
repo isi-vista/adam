@@ -7,6 +7,7 @@ from typing import Iterable
 
 from more_itertools import flatten
 
+from adam.axes import AxesInfo
 from adam.curriculum import GeneratedFromSituationsInstanceGroup, InstanceGroup
 from adam.language.dependency import LinearizedDependencyTree
 from adam.language_specific.english.english_language_generator import (
@@ -213,6 +214,7 @@ def build_object_multiples_situations(
                         )
                         for idx in range(num_objects)
                     ],
+                    axis_info=AxesInfo(),
                 )
 
 

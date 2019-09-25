@@ -1,8 +1,10 @@
-from typing import Any, Generic, List, Mapping, Optional, TypeVar, Union
+from typing import Generic, List, Mapping, Optional, TypeVar, Union
 
 from attr import attrib, attrs
 from attr.validators import in_, instance_of, optional
 from vistautils.preconditions import check_arg
+
+from adam.axes import AxisFunction, GRAVITATIONAL_AXIS_FUNCTION
 
 
 @attrs(frozen=True, slots=True, repr=False)
@@ -79,9 +81,6 @@ class Axis(Generic[ReferenceObjectT]):
             return self.name
 
 
-GRAVITATIONAL_AXIS: Axis[Any] = Axis("gravitational", reference_object=None)
-
-
 @attrs(frozen=True, repr=False)
 class Direction(Generic[ReferenceObjectT]):
     r"""
@@ -94,7 +93,7 @@ class Direction(Generic[ReferenceObjectT]):
     We need to standardize on what "positive" direction means. 
     It is clear for vertical axes but less clear for other things. 
     """
-    relative_to_axis: Axis[ReferenceObjectT] = attrib(validator=instance_of(Axis))
+    relative_to_axis: AxisFunction[ReferenceObjectT] = attrib()
 
     def copy_remapping_objects(
         self, object_map: Mapping[ReferenceObjectT, NewObjectT]
@@ -109,8 +108,15 @@ class Direction(Generic[ReferenceObjectT]):
         return f"{polarity}{self.relative_to_axis}"
 
 
-GRAVITATIONAL_UP = Direction(positive=True, relative_to_axis=GRAVITATIONAL_AXIS)
-GRAVITATIONAL_DOWN = Direction(positive=False, relative_to_axis=GRAVITATIONAL_AXIS)
+GRAVITATIONAL_UP = Direction(positive=True, relative_to_axis=GRAVITATIONAL_AXIS_FUNCTION)
+GRAVITATIONAL_DOWN = Direction(
+    positive=False, relative_to_axis=GRAVITATIONAL_AXIS_FUNCTION
+)
+
+# Region[ActionDescriptionVariable]
+# Region[SituationObject]
+# Region[ObjectPerception]
+# Region[TemplateObjectVariable]
 
 
 @attrs(frozen=True, repr=False)
@@ -155,13 +161,15 @@ class Region(Generic[ReferenceObjectT]):
         Adds all objects referenced by this `Region` to *object_accumulator*.
         """
         object_accumulator.append(self.reference_object)
-        if self.direction and self.direction.relative_to_axis.reference_object:
-            object_accumulator.append(self.direction.relative_to_axis.reference_object)
+        if self.direction:
+            self.direction.relative_to_axis.accumulate_referenced_objects(
+                object_accumulator
+            )
 
     def __attrs_post_init__(self) -> None:
         check_arg(
             self.distance or self.direction,
-            "A region must have either a " "distance or direction specified.",
+            "A region must have either a distance or direction specified.",
         )
 
     def __repr__(self) -> str:

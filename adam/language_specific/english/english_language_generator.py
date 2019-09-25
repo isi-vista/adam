@@ -67,7 +67,6 @@ from adam.ontology.phase1_ontology import (
 from adam.ontology.phase1_spatial_relations import (
     DISTAL,
     EXTERIOR_BUT_IN_CONTACT,
-    GRAVITATIONAL_AXIS,
     GRAVITATIONAL_DOWN,
     INTERIOR,
     PROXIMAL,
@@ -724,32 +723,30 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 ):
                     return None
 
-            if (
-                region.direction
-                and region.direction.relative_to_axis == GRAVITATIONAL_AXIS
-            ):
-                if region.distance in (PROXIMAL, DISTAL):
-                    if region.direction.positive:
-                        preposition = "over"
-                    else:
-                        preposition = "under"
-                elif (
-                    region.distance == EXTERIOR_BUT_IN_CONTACT
-                    and region.direction.positive
-                ):
-                    preposition = "on"
-                else:
-                    raise RuntimeError(
-                        f"Don't know how to translate spatial " f"modifier: {relation}"
-                    )
+            preposition: Optional[str] = None
+            if region.direction:
+                direction_axis = region.direction.relative_to_axis.to_concrete_axis(
+                    self.situation.axis_info
+                )
+                if direction_axis.aligned_to_gravitational:
+                    if region.distance in (PROXIMAL, DISTAL):
+                        if region.direction.positive:
+                            preposition = "over"
+                        else:
+                            preposition = "under"
+                    elif (
+                        region.distance == EXTERIOR_BUT_IN_CONTACT
+                        and region.direction.positive
+                    ):
+                        preposition = "on"
             elif region.distance == INTERIOR:
                 preposition = "in"
-            else:
+
+            if not preposition:
                 raise RuntimeError(
-                    f"Don't know how to translate spatial modifiers "
-                    f"which are not relative to the gravitational "
-                    f"axis: {relation}"
+                    f"Don't know how to translate spatial modifier {relation}"
                 )
+
             reference_object_node = self._noun_for_object(region.reference_object)
 
             if self.dependency_graph.out_degree[reference_object_node]:

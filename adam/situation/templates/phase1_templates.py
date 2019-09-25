@@ -25,6 +25,7 @@ from more_itertools import take
 from typing_extensions import Protocol
 from vistautils.preconditions import check_arg
 
+from adam.axes import AxesInfo
 from adam.ontology import ACTION, CAN_FILL_TEMPLATE_SLOT, OntologyNode, PROPERTY, THING
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
@@ -424,6 +425,7 @@ class _Phase1SituationTemplateGenerator(
                 for action in template.actions
             ],
             syntax_hints=template.syntax_hints,
+            axis_info=self._compute_axis_info(),
         )
 
     def _has_multiple_recognized_particulars(
@@ -527,6 +529,9 @@ class _Phase1SituationTemplateGenerator(
                 ) in action.auxiliary_variable_bindings.items()
             ],
         )
+
+    def _compute_axis_info(self) -> AxesInfo[SituationObject]:
+        return AxesInfo()
 
 
 def object_variable(

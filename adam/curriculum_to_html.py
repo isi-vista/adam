@@ -28,7 +28,8 @@ from vistautils.preconditions import check_state
 
 from adam.curriculum.phase1_curriculum import GAILA_PHASE_1_CURRICULUM
 from adam.experiment import InstanceGroup
-from adam.geon import Geon, WORLD_AXES
+from adam.geon import Geon
+from adam.object_axes import WORLD_AXES
 from adam.language.dependency import LinearizedDependencyTree
 from adam.ontology import IN_REGION
 from adam.ontology.during import DuringAction
