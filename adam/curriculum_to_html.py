@@ -28,7 +28,7 @@ from vistautils.preconditions import check_state
 
 from adam.curriculum.phase1_curriculum import GAILA_PHASE_1_CURRICULUM
 from adam.experiment import InstanceGroup
-from adam.geon import Geon
+from adam.geon import Geon, WORLD_AXES
 from adam.language.dependency import LinearizedDependencyTree
 from adam.ontology import IN_REGION
 from adam.ontology.during import DuringAction
@@ -597,7 +597,7 @@ class CurriculumToHtmlDumper:
         # edges between objects. This allows us to do pre-order traversal of the Graph to make a
         # nested <ul></ul> for the objects rather than a flat list.
         graph = DiGraph()
-        root = ObjectPerception("root")
+        root = ObjectPerception("root", axes=WORLD_AXES)
         graph.add_node(root)
         expressed_relations = set()
 

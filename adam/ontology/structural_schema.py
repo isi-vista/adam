@@ -5,7 +5,7 @@ from attr.validators import instance_of, optional
 from immutablecollections import ImmutableSet, immutableset
 from immutablecollections.converter_utils import _to_immutableset
 
-from adam.geon import Geon
+from adam.geon import Geon, Axes
 from adam.ontology import OntologyNode
 from adam.relation import Relation
 
@@ -49,6 +49,17 @@ class ObjectStructuralSchema:
     geon: Optional[Geon] = attrib(
         validator=optional(instance_of(Geon)), default=None, kw_only=True
     )
+    axes: Axes = attrib(validator=instance_of(Axes), kw_only=True)
+
+    @axes.default
+    def _init_axes(self) -> Axes:
+        if self.geon:
+            return self.geon.axes
+        else:
+            raise RuntimeError(
+                "If a geon is not give for a structural schema, "
+                "then axes must be explicitly specified"
+            )
 
 
 # need cmp=False to keep otherwise identical sub-components distinct

@@ -9,8 +9,9 @@ from attr import attrib, attrs
 from attr.validators import instance_of, optional
 from immutablecollections import ImmutableSet, immutableset
 from immutablecollections.converter_utils import _to_immutableset
+from vistautils.preconditions import check_arg
 
-from adam.geon import Geon
+from adam.geon import Geon, Axes, WORLD_AXES, LEARNER_AXES, HasAxes
 from adam.math_3d import Point
 from adam.ontology.during import DuringAction
 from adam.random_utils import SequenceChooser
@@ -20,7 +21,7 @@ _SituationT = TypeVar("_SituationT", bound=Situation)
 
 
 @attrs(slots=True, frozen=True, repr=False)
-class ObjectPerception:
+class ObjectPerception(HasAxes):
     r"""
     The learner's perception of a particular object.
 
@@ -34,9 +35,28 @@ class ObjectPerception:
     It is for debugging use only and should not be accessed by any algorithms.
     """
     geon: Optional[Geon] = attrib(validator=optional(instance_of(Geon)), default=None)
+    axes: Axes = attrib(validator=instance_of(Axes))
+
+    def __attrs_post_init__(self) -> None:
+        if self.geon:
+            check_arg(self.geon.axes == self.axes)
+
+    @axes.default
+    def _init_axes(self) -> Axes:
+        if self.geon:
+            return self.geon.axes
+        else:
+            raise RuntimeError(
+                "If a geon is not associated with an object perception, "
+                "its axes must be specified explicitly"
+            )
 
     def __repr__(self) -> str:
         return self.debug_handle
+
+
+GROUND_PERCEPTION = ObjectPerception("the ground", geon=None, axes=WORLD_AXES)
+LEARNER_PERCEPTION = ObjectPerception("learner", geon=None, axes=LEARNER_AXES)
 
 
 class PerceptualRepresentationFrame(ABC):

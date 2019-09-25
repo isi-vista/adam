@@ -31,8 +31,10 @@ from adam.geon import (
     directed,
     straight_up,
     symmetric,
-    symmetric_verical,
+    symmetric_vertical,
     Axes,
+    WORLD_AXES,
+    LEARNER_AXES,
 )
 from adam.ontology import (
     ACTION,
@@ -43,6 +45,7 @@ from adam.ontology import (
     RELATION,
     THING,
     minimal_ontology_graph,
+    IS_SUBSTANCE,
 )
 from adam.ontology.action_description import ActionDescription, ActionDescriptionFrame
 from adam.ontology.during import DuringAction
@@ -280,6 +283,9 @@ COLORS_TO_RGBS: ImmutableDict[
 INANIMATE_OBJECT = OntologyNode("inanimate-object", inheritable_properties=[INANIMATE])
 subtype(INANIMATE_OBJECT, THING)
 
+SUBSTANCE = OntologyNode("substance", inheritable_properties=[IS_SUBSTANCE])
+subtype(SUBSTANCE, INANIMATE_OBJECT)
+
 IS_GROUND = OntologyNode("is-ground")
 subtype(IS_GROUND, RECOGNIZED_PARTICULAR_PROPERTY)
 GROUND = OntologyNode(
@@ -343,11 +349,11 @@ WATER = OntologyNode(
     [LIQUID],
     non_inheritable_properties=[TRANSPARENT, CAN_FILL_TEMPLATE_SLOT, EDIBLE],
 )
-subtype(WATER, INANIMATE_OBJECT)
+subtype(WATER, SUBSTANCE)
 JUICE = OntologyNode(
     "juice", [LIQUID], non_inheritable_properties=[RED, CAN_FILL_TEMPLATE_SLOT, EDIBLE]
 )
-subtype(JUICE, INANIMATE_OBJECT)
+subtype(JUICE, SUBSTANCE)
 CUP = OntologyNode(
     "cup",
     [HOLLOW, CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, RED, BLUE, GREEN, TRANSPARENT],
@@ -386,7 +392,7 @@ subtype(HEAD, INANIMATE_OBJECT)
 MILK = OntologyNode(
     "milk", [LIQUID], non_inheritable_properties=[WHITE, CAN_FILL_TEMPLATE_SLOT, EDIBLE]
 )
-subtype(MILK, INANIMATE_OBJECT)
+subtype(MILK, SUBSTANCE)
 HAND = OntologyNode(
     "hand", [CAN_MANIPULATE_OBJECTS, CAN_FILL_TEMPLATE_SLOT, IS_BODY_PART]
 )
@@ -512,7 +518,7 @@ _BODY = OntologyNode("body")
 subtype(_BODY, _BODY_PART)
 _DOG_HEAD = OntologyNode("dog-head", [CAN_MANIPULATE_OBJECTS])
 subtype(_DOG_HEAD, _BODY_PART)
-_BIRD_HEAD = OntologyNode("dog-head", [CAN_MANIPULATE_OBJECTS])
+_BIRD_HEAD = OntologyNode("bird-head", [CAN_MANIPULATE_OBJECTS])
 subtype(_BIRD_HEAD, _BODY_PART)
 
 # Verbs
@@ -705,9 +711,9 @@ strictly_above = make_opposite_dsl_region_relation(  # pylint:disable=invalid-na
     _strictly_above_region_factory, _strictly_below_region_factory
 )
 
+_GROUND_SCHEMA = ObjectStructuralSchema(ontology_node=GROUND, axes=WORLD_AXES)
 
-_GROUND_SCHEMA = ObjectStructuralSchema(ontology_node=GROUND)
-_LEARNER_SCHEMA = ObjectStructuralSchema(ontology_node=LEARNER)
+_LEARNER_SCHEMA = ObjectStructuralSchema(ontology_node=LEARNER, axes=LEARNER_AXES)
 
 # Structural Objects without Sub-Parts which are part of our Phase 1 Vocabulary
 # These may need to evolve to reflect the changes for visualization of phase 1
@@ -740,7 +746,7 @@ _DOOR_SCHEMA = _make_door_schema()
 
 
 def _make_ball_schema() -> ObjectStructuralSchema:
-    generating_axis = symmetric_verical("ball-generating")
+    generating_axis = symmetric_vertical("ball-generating")
     orienting_axis = symmetric("ball-orienting")
 
     return ObjectStructuralSchema(
@@ -757,10 +763,6 @@ def _make_ball_schema() -> ObjectStructuralSchema:
 
 
 _BALL_SCHEMA = _make_ball_schema()
-
-
-_WATER_SCHEMA = ObjectStructuralSchema(WATER)
-_JUICE_SCHEMA = ObjectStructuralSchema(JUICE)
 
 
 def _make_box_schema() -> ObjectStructuralSchema:
@@ -782,7 +784,6 @@ def _make_box_schema() -> ObjectStructuralSchema:
 
 
 _BOX_SCHEMA = _make_box_schema()
-_MILK_SCHEMA = ObjectStructuralSchema(MILK)
 
 
 def _make_hat_schema() -> ObjectStructuralSchema:
@@ -954,8 +955,47 @@ def _make_torso_schema():
     )
 
 
-_DOG_HEAD_SCHEMA = ObjectStructuralSchema(_DOG_HEAD)
-_BIRD_HEAD_SCHEMA = ObjectStructuralSchema(_BIRD_HEAD)
+def _make_dog_head_schema() -> ObjectStructuralSchema:
+    torso_to_nose = directed("dog-head-torso-to-nose")
+    bottom_to_top = directed("dog-head-bottom-to-top")
+    left_to_right = symmetric("dog-head-left-to-right")
+    return ObjectStructuralSchema(
+        _DOG_HEAD,
+        geon=Geon(
+            cross_section=OVALISH,
+            cross_section_size=LARGE_TO_SMALL,
+            axes=Axes(
+                primary_axis=torso_to_nose,
+                orienting_axes=[bottom_to_top, left_to_right],
+                axis_relations=[
+                    bigger_than(torso_to_nose, bottom_to_top),
+                    bigger_than(torso_to_nose, left_to_right),
+                ],
+            ),
+        ),
+    )
+
+
+_DOG_HEAD_SCHEMA = _make_dog_head_schema()
+
+
+def _make_bird_head_schema() -> ObjectStructuralSchema:
+    torso_to_top = directed("bird-head-torso-to-top")
+    bottom_to_top = directed("bird-head-back-to-front")
+    left_to_right = symmetric("bird-head-left-to-right")
+    return ObjectStructuralSchema(
+        _DOG_HEAD,
+        geon=Geon(
+            cross_section=OVALISH,
+            cross_section_size=LARGE_TO_SMALL,
+            axes=Axes(
+                primary_axis=bottom_to_top, orienting_axes=[torso_to_top, left_to_right]
+            ),
+        ),
+    )
+
+
+_BIRD_HEAD_SCHEMA = _make_bird_head_schema()
 
 # Hierarchical structure of objects
 _TORSO_SCHEMA = _make_torso_schema()
@@ -1272,6 +1312,7 @@ _ARM_SCHEMA = ObjectStructuralSchema(
     sub_object_relations=flatten_relations(
         [contacts([_ARM_SCHEMA_UPPER, _ARM_SCHEMA_HAND], _ARM_SCHEMA_LOWER)]
     ),
+    axes=_ARM_SCHEMA_UPPER.schema.axes,
 )
 
 # schemata describing the sub-object structural nature of a Person
@@ -1306,6 +1347,7 @@ _PERSON_SCHEMA = ObjectStructuralSchema(
             contacts(_PERSON_SCHEMA_TORSO, _PERSON_SCHEMA_APPENDAGES),
         ]
     ),
+    axes=_PERSON_SCHEMA_HEAD.schema.axes,
 )
 
 
@@ -1341,6 +1383,7 @@ _CHAIR_SCHEMA = ObjectStructuralSchema(
             above(_CHAIR_SCHEMA_BACK, _CHAIR_SCHEMA_SEAT),
         ]
     ),
+    axes=_CHAIR_SCHEMA_BACK.schema.axes,
 )
 
 # schemata describing the sub-object structural nature of a Table
@@ -1372,6 +1415,7 @@ _TABLE_SCHEMA = ObjectStructuralSchema(
             above(_TABLE_SCHEMA_TABLETOP, _TABLE_LEGS),
         ]
     ),
+    axes=_TABLE_SCHEMA_LEG_1.schema.axes,
 )
 
 # schemata describing the sub-object structural nature of a dog
@@ -1413,6 +1457,7 @@ _DOG_SCHEMA = ObjectStructuralSchema(
             bigger_than(_DOG_SCHEMA_TORSO, _DOG_SCHEMA_TAIL),
         ]
     ),
+    axes=_DOG_SCHEMA_TORSO.schema.axes,
 )
 
 # schemata describing the sub-object structural nature of a bird
@@ -1450,6 +1495,7 @@ _BIRD_SCHEMA = ObjectStructuralSchema(
             bigger_than(_BIRD_SCHEMA_TORSO, _BIRD_LEGS),
         ]
     ),
+    axes=_BIRD_SCHEMA_TORSO.schema.axes,
 )
 
 # schemata describing the sub-object structural nature of a house
@@ -1474,6 +1520,7 @@ _HOUSE_SCHEMA = ObjectStructuralSchema(
             above(_HOUSE_SCHEMA_ROOF, _HOUSE_SCHEMA_GROUND_FLOOR),
         ]
     ),
+    axes=_HOUSE_SCHEMA_GROUND_FLOOR.schema.axes,
 )
 
 # schemata describing the sub-object structural nature of a car
@@ -1503,6 +1550,7 @@ _CAR_SCHEMA = ObjectStructuralSchema(
     sub_object_relations=flatten_relations(
         [contacts(_CAR_SCHEMA_TIRES, _CAR_SCHEMA_BODY)]
     ),
+    axes=_CAR_SCHEMA_BODY.schema.axes,
 )
 
 # schemata describing the sub-object structural nature of a truck cab
@@ -1534,6 +1582,7 @@ _TRUCK_CAB_SCHEMA = ObjectStructuralSchema(
             contacts(_TRUCK_CAB_BODY, _TRUCK_CAB_TIRES),
         ]
     ),
+    axes=_TRUCK_CAB_BODY.schema.axes,
 )
 
 # schemata describing the sub-object structural nature of a truck trailer
@@ -1565,6 +1614,7 @@ _TRUCK_TRAILER_SCHEMA = ObjectStructuralSchema(
             bigger_than(_TRUCK_TRAILER_FLATBED, _TRUCK_TRAILER_TIRES),
         ]
     ),
+    axes=_TRUCK_TRAILER_FLATBED.schema.axes,
 )
 
 # Truck in mind is a Semi Trailer with flat bed trailer
@@ -1581,6 +1631,7 @@ _TRUCK_SCHEMA = ObjectStructuralSchema(
             bigger_than(_TRUCK_SCHEMA_TRAILER, _TRUCK_SCHEMA_CAB),
         ]
     ),
+    axes=_TRUCK_SCHEMA_CAB.schema.axes,
 )
 
 _PUT_AGENT = SituationObject(THING, properties=[ANIMATE], debug_handle="put_agent")
@@ -2145,9 +2196,6 @@ GAILA_PHASE_1_ONTOLOGY = Ontology(
         (DOG, _DOG_SCHEMA),
         (BIRD, _BIRD_SCHEMA),
         (BOX, _BOX_SCHEMA),
-        (WATER, _WATER_SCHEMA),
-        (JUICE, _JUICE_SCHEMA),
-        (MILK, _MILK_SCHEMA),
         (DOOR, _DOOR_SCHEMA),
         (HAT, _HAT_SCHEMA),
         (COOKIE, _COOKIE_SCHEMA),

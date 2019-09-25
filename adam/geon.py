@@ -1,10 +1,21 @@
+from abc import ABC, abstractmethod
 from itertools import chain
-from typing import Mapping, Iterable
+from typing import Generic, Iterable, Mapping, TypeVar
 
 from attr import attrib, attrs, evolve
 from attr.validators import instance_of
-from immutablecollections import ImmutableSet, immutableset
-from immutablecollections.converter_utils import _to_immutableset
+from immutablecollections import (
+    ImmutableDict,
+    ImmutableSet,
+    ImmutableSetMultiDict,
+    immutableset,
+    immutablesetmultidict,
+)
+from immutablecollections.converter_utils import (
+    _to_immutabledict,
+    _to_immutableset,
+    _to_immutablesetmultidict,
+)
 from more_itertools import quantify
 
 from adam.relation import Relation, flatten_relations
@@ -68,7 +79,7 @@ def symmetric(debug_name: str) -> GeonAxis:
     return GeonAxis(debug_name, directed=False)
 
 
-def symmetric_verical(debug_name: str) -> GeonAxis:
+def symmetric_vertical(debug_name: str) -> GeonAxis:
     return GeonAxis(debug_name, directed=False, aligned_to_gravitational=True)
 
 
@@ -96,6 +107,15 @@ class Axes:
     def all_axes(self) -> Iterable[GeonAxis]:
         return chain((self.primary_axis,), self.orienting_axes)
 
+    def copy(self) -> "Axes":
+        # world and learner axes are singletons
+        if self is WORLD_AXES:
+            return self
+        elif self is LEARNER_AXES:
+            return self
+        else:
+            return self.remap_axes({axis: axis.copy() for axis in self.all_axes})
+
     def remap_axes(self, axis_mapping: Mapping[GeonAxis, GeonAxis]) -> "Axes":
         return Axes(
             primary_axis=axis_mapping[self.primary_axis],
@@ -105,6 +125,13 @@ class Axes:
                 for relation in self.axis_relations
             ],
         )
+
+
+class HasAxes(ABC):
+    @property
+    @abstractmethod
+    def axes(self) -> Axes:
+        pass
 
 
 @attrs(slots=True, frozen=True)
@@ -176,4 +203,48 @@ RECTANGULAR = CrossSection(
 )
 IRREGULAR = CrossSection(
     has_reflective_symmetry=False, has_rotational_symmetry=False, curved=False
+)
+
+_ObjectT = TypeVar("_ObjectT", bound=HasAxes)
+
+
+@attrs(frozen=True)
+class AxesInfo(Generic[_ObjectT]):
+    objects_to_axes: ImmutableDict[_ObjectT, Axes] = attrib(
+        converter=_to_immutabledict, kw_only=True
+    )
+    axes_facing: ImmutableSetMultiDict[_ObjectT, GeonAxis] = attrib(
+        converter=_to_immutablesetmultidict, default=immutablesetmultidict(), kw_only=True
+    )
+
+
+class AxisFunction(ABC, Generic[_ObjectT]):
+    @abstractmethod
+    def select_axis(self, axes_info: AxesInfo[_ObjectT]) -> GeonAxis:
+        pass
+
+
+@attrs(frozen=True)
+class PrimaryAxisOfObject(Generic[_ObjectT], AxisFunction[_ObjectT]):
+    _object: _ObjectT = attrib()
+
+    def select_axis(
+        self, axes_info: AxesInfo[_ObjectT]  # pylint:disable=unused-argument
+    ) -> GeonAxis:
+        return self._object.axes.primary_axis
+
+
+GRAVITATIONAL_DOWN_TO_UP_AXIS = straight_up("gravitational-up")
+SOUTH_TO_NORTH_AXIS = directed("south-to-north")
+WEST_TO_EAST_AXIS = directed("west-to-east")
+WORLD_AXES = Axes(
+    primary_axis=GRAVITATIONAL_DOWN_TO_UP_AXIS,
+    orienting_axes=[SOUTH_TO_NORTH_AXIS, WEST_TO_EAST_AXIS],
+)
+LEARNER_DOWN_TO_UP_AXIS = straight_up("learner-vertical")
+LEARNER_LEFT_RIGHT_AXIS = directed("learner-left-to-right")
+LEARNER_BACK_TO_FRONT_AXIS = directed("learner-back-to-front")
+LEARNER_AXES = Axes(
+    primary_axis=LEARNER_DOWN_TO_UP_AXIS,
+    orienting_axes=[LEARNER_LEFT_RIGHT_AXIS, LEARNER_BACK_TO_FRONT_AXIS],
 )

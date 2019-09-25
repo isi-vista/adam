@@ -14,7 +14,7 @@ from immutablecollections import (
 from more_itertools import only, quantify
 from vistautils.preconditions import check_arg
 
-from adam.ontology import IN_REGION, OntologyNode
+from adam.ontology import IN_REGION, OntologyNode, IS_SUBSTANCE
 from adam.ontology.action_description import ActionDescription
 from adam.ontology.during import DuringAction
 from adam.ontology.ontology import Ontology
@@ -40,6 +40,8 @@ from adam.perception import (
     ObjectPerception,
     PerceptualRepresentation,
     PerceptualRepresentationGenerator,
+    GROUND_PERCEPTION,
+    LEARNER_PERCEPTION,
 )
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -52,6 +54,7 @@ from adam.random_utils import SequenceChooser
 from adam.relation import Relation
 from adam.situation import Action, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
+from adam.geon import WORLD_AXES
 
 
 @attrs(frozen=True, slots=True)
@@ -100,8 +103,8 @@ class _ObjectHandleGenerator:
 
     _object_handles_seen: List[str] = attrib(init=False, default=Factory(list))
 
-    def subscripted_handle(self, object_schema: ObjectStructuralSchema) -> str:
-        unsubscripted_handle = object_schema.ontology_node.handle
+    def subscripted_handle(self, ontology_node: OntologyNode) -> str:
+        unsubscripted_handle = ontology_node.handle
         # using count() here makes subscript computation linear time
         # in the number of objects in a situation,
         # but this should be small enough not to matter.
@@ -714,33 +717,36 @@ class _PerceptionGeneration:
             situation_object.ontology_node == GROUND
             for situation_object in self._situation.all_objects
         ):
-            ground_schemata = only(self._generator.ontology.structural_schemata(GROUND))
-            ground_observed = self._instantiate_object_schema(
-                ground_schemata, situation_object=SituationObject(GROUND)
-            )
-            self._object_perceptions_to_ontology_nodes[ground_observed] = GROUND
+            self._perceive_object(SituationObject(GROUND))
         if not any(
             situation_object.ontology_node == LEARNER
             for situation_object in self._situation.all_objects
         ):
-            learner_schemata = only(self._generator.ontology.structural_schemata(LEARNER))
-            learner_observed = self._instantiate_object_schema(
-                learner_schemata, situation_object=SituationObject(LEARNER)
-            )
-            self._object_perceptions_to_ontology_nodes[learner_observed] = LEARNER
+            self._perceive_object(SituationObject(LEARNER))
         for situation_object in self._situation.all_objects:
-            if not situation_object.ontology_node:
-                raise RuntimeError(
-                    "Don't yet know how to handle situation objects without "
-                    "associated ontology nodes"
-                )
-            # these are the possible internal structures of objects of this type
+            self._perceive_object(situation_object)
+
+    def _perceive_object(self, situation_object: SituationObject) -> None:
+        if not situation_object.ontology_node:
+            raise RuntimeError(
+                "Don't yet know how to handle situation objects without "
+                "associated ontology nodes"
+            )
+        # If possible, determine the object color.
+        color = self._compute_color(situation_object)
+
+        perceived_object: ObjectPerception
+
+        if situation_object.ontology_node == GROUND:
+            perceived_object = GROUND_PERCEPTION
+        elif situation_object.ontology_node == LEARNER:
+            perceived_object = LEARNER_PERCEPTION
+        else:
+            # These are the possible internal structures of objects of this type
             # that the ontology is aware of.
             object_schemata = self._generator.ontology.structural_schemata(
                 situation_object.ontology_node
             )
-            if not object_schemata:
-                raise RuntimeError(f"No structural schema found for {situation_object}")
             if len(object_schemata) > 1:
                 # TODO: add issue for this
                 # https://github.com/isi-vista/adam/issues/87
@@ -748,39 +754,38 @@ class _PerceptionGeneration:
                     f"Support for objects with multiple structural schemata has not "
                     f"yet keep implemented."
                 )
-            # Get the inherited color, if there is one
-            inherited_color: Any = None
-            colors = immutableset(
-                property_
-                for property_ in self._generator.ontology.properties_for_node(
-                    situation_object.ontology_node
+            if object_schemata:
+                # We know the object's structure.
+                # It might have complicated internal structure,
+                # which we will recursively instantiate.
+                perceived_object = self._instantiate_object_schema(
+                    only(object_schemata),
+                    situation_object=situation_object,
+                    inherited_color=color,
                 )
-                if self._generator.ontology.is_subtype_of(property_, COLOR)
-            )
-            color = self._chooser.choice(colors) if colors else None
-            if color:
-                if color in COLORS_TO_RGBS.keys():
-                    color_options = COLORS_TO_RGBS[color]
-                    if color_options:
-                        r, g, b = self._chooser.choice(color_options)
-                        inherited_color = RgbColorPerception(r, g, b)
-                    else:  # Handles the case of TRANSPARENT
-                        inherited_color = color
+            else:
+                if self._generator.ontology.has_property(
+                    situation_object.ontology_node, IS_SUBSTANCE
+                ):
+                    # it is okay for a substance like MILK to lack any internal structure
+                    perceived_object = ObjectPerception(
+                        debug_handle=self._object_handle_generator.subscripted_handle(
+                            situation_object.ontology_node
+                        ),
+                        geon=None,
+                        # we just give substances the
+                        # universal gravitational axes
+                        axes=WORLD_AXES,
+                    )
                 else:
                     raise RuntimeError(
-                        f"Not sure how to generate perception for the unknown property {color} "
-                        f"which is marked as COLOR"
+                        f"No structural schema found for {situation_object}"
                     )
-
-            perceived_object = self._instantiate_object_schema(
-                only(object_schemata),
-                situation_object=situation_object,
-                inherited_color=inherited_color,
-            )
-
-            self._object_perceptions_to_ontology_nodes[
-                perceived_object
-            ] = situation_object.ontology_node
+        self._object_perceptions.append(perceived_object)
+        self._objects_to_perceptions[situation_object] = perceived_object
+        self._object_perceptions_to_ontology_nodes[
+            perceived_object
+        ] = situation_object.ontology_node
 
     def _instantiate_object_schema(
         self,
@@ -791,18 +796,26 @@ class _PerceptionGeneration:
         situation_object: Optional[SituationObject] = None,
         inherited_color: Optional[Any] = None,
     ) -> ObjectPerception:
-        root_object_perception = ObjectPerception(
-            debug_handle=self._object_handle_generator.subscripted_handle(schema),
-            geon=schema.geon.copy() if schema.geon else None,
+
+        debug_handle = self._object_handle_generator.subscripted_handle(
+            schema.ontology_node
         )
-        self._object_perceptions.append(root_object_perception)
+        root_object_perception: ObjectPerception
+        if schema.geon:
+            concrete_geon = schema.geon.copy()
+            root_object_perception = ObjectPerception(
+                debug_handle=debug_handle, geon=concrete_geon, axes=concrete_geon.axes
+            )
+        else:
+            root_object_perception = ObjectPerception(
+                debug_handle=debug_handle, geon=None, axes=schema.axes.copy()
+            )
 
         # for object perceptions which correspond to SituationObjects
         # (that is, typically, for objects which are not components of other objects)
         # we track the correspondence
         # to assist in translating SituationRelations and SituationActions.
         if situation_object:
-            self._objects_to_perceptions[situation_object] = root_object_perception
             if inherited_color:
                 if isinstance(inherited_color, RgbColorPerception):
                     self._property_assertion_perceptions.append(
@@ -898,6 +911,32 @@ class _PerceptionGeneration:
                 )
             )
         return root_object_perception
+
+    def _compute_color(
+        self, situation_object: SituationObject
+    ) -> Union[OntologyNode, Optional[RgbColorPerception]]:
+        colors = immutableset(
+            property_
+            for property_ in self._generator.ontology.properties_for_node(
+                situation_object.ontology_node
+            )
+            if self._generator.ontology.is_subtype_of(property_, COLOR)
+        )
+        color = self._chooser.choice(colors) if colors else None
+        if color:
+            if color in COLORS_TO_RGBS.keys():
+                color_options = COLORS_TO_RGBS[color]
+                if color_options:
+                    r, g, b = self._chooser.choice(color_options)
+                    return RgbColorPerception(r, g, b)
+                else:  # Handles the case of TRANSPARENT
+                    return color
+            else:
+                raise RuntimeError(
+                    f"Not sure how to generate perception for the unknown property {color} "
+                    f"which is marked as COLOR"
+                )
+        return None
 
     def _compute_during(
         self, during_from_action_description: Optional[DuringAction[ObjectPerception]]

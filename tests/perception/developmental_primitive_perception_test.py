@@ -1,5 +1,13 @@
 from adam.ontology import IN_REGION
-from adam.ontology.phase1_ontology import IS_DAD, IS_MOM, SENTIENT, above
+from adam.ontology.phase1_ontology import (
+    IS_DAD,
+    IS_MOM,
+    SENTIENT,
+    above,
+    _PERSON_SCHEMA,
+    _BALL_SCHEMA,
+    _TABLE_SCHEMA,
+)
 from adam.ontology.phase1_spatial_relations import EXTERIOR_BUT_IN_CONTACT, Region
 from adam.perception import ObjectPerception, PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
@@ -14,8 +22,8 @@ from adam.relation import Relation
 
 def test_recognized_particular():
     # create a simple situation consisting of only Mom and Dad
-    mom = ObjectPerception("mom")
-    dad = ObjectPerception("dad")
+    mom = ObjectPerception("mom", axes=_PERSON_SCHEMA.axes.copy())
+    dad = ObjectPerception("dad", axes=_PERSON_SCHEMA.axes.copy())
 
     PerceptualRepresentation.single_frame(
         DevelopmentalPrimitivePerceptionFrame(
@@ -33,7 +41,7 @@ def test_recognized_particular():
 def test_color():
     # create a situation with a red ball
     red = RgbColorPerception(255, 0, 0)
-    ball = ObjectPerception("ball")
+    ball = ObjectPerception("ball", _BALL_SCHEMA.geon.copy())
 
     PerceptualRepresentation.single_frame(
         DevelopmentalPrimitivePerceptionFrame(
@@ -44,8 +52,8 @@ def test_color():
 
 def test_relations():
     # ball on a table
-    ball = ObjectPerception("ball")
-    table = ObjectPerception("table")
+    ball = ObjectPerception("ball", _BALL_SCHEMA.geon.copy())
+    table = ObjectPerception("table", axes=_TABLE_SCHEMA.axes.copy())
 
     PerceptualRepresentation.single_frame(
         DevelopmentalPrimitivePerceptionFrame(
@@ -64,8 +72,8 @@ def test_relations():
 
 
 def test_difference():
-    ball = ObjectPerception("ball")
-    table = ObjectPerception("table")
+    ball = ObjectPerception("ball", _BALL_SCHEMA.geon.copy())
+    table = ObjectPerception("table", axes=_TABLE_SCHEMA.axes.copy())
 
     first_frame = DevelopmentalPrimitivePerceptionFrame(
         perceived_objects=[ball, table],

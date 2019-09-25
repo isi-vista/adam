@@ -105,8 +105,8 @@ def test_person_and_ball():
         "hand_1",
         "leg_0",
         "leg_1",
-        "ground_0",
-        "learner_0",
+        "the ground",
+        "learner",
     }
 
     assert person_and_ball_perception.frames[0].relations
@@ -314,7 +314,7 @@ def test_relations_between_objects_and_ground():
     )
     first_frame = perception.frames[0]
     ball_perception = perception_with_handle(first_frame, "ball_0")
-    ground_perception = perception_with_handle(first_frame, "ground_0")
+    ground_perception = perception_with_handle(first_frame, "the ground")
 
     first_frame_relations = first_frame.relations
     second_frame_relations = perception.frames[1].relations
@@ -445,7 +445,7 @@ def test_implicit_ground():
     object_handles = set(obj.debug_handle for obj in perceived_objects)
 
     # assert that a "ground" object is perceived
-    assert "ground_0" in object_handles
+    assert "the ground" in object_handles
 
 
 def test_explicit_ground():
@@ -460,7 +460,7 @@ def test_explicit_ground():
     object_handles = set(obj.debug_handle for obj in perceived_objects)
 
     # assert that a second "ground" object was not generated
-    assert object_handles == {"ground_0", "learner_0"}
+    assert object_handles == {"the ground", "learner"}
 
 
 def test_perceive_relations_during():
@@ -559,7 +559,7 @@ def test_path_from_action_description():
         situation, chooser=RandomChooser.for_seed(0)
     )
     ball_perception = perception_with_handle(perception.frames[0], "ball_0")
-    ground_perception = perception_with_handle(perception.frames[0], "ground_0")
+    ground_perception = perception_with_handle(perception.frames[0], "the ground")
     assert perception.during
     assert perception.during.objects_to_paths
     assert len(perception.during.objects_to_paths) == 1
