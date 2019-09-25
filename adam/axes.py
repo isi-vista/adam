@@ -136,7 +136,8 @@ class FacingAddresseeAxis(Generic[_ObjectT], AxisFunction[_ObjectT]):
             raise RuntimeError("FacingAddresseeAxis requires exactly one addressee in the "
                                "situation")
         addressee: _ObjectT = only(addressees)
-        object_axes_facing_addressee = axes_info.axes_facing[addressee].intersection(self._object.axes.all_axes)
+        object_axes_facing_addressee = axes_info.axes_facing[addressee].intersection(
+            immutableset(self._object.axes.all_axes))
 
         if object_axes_facing_addressee:
             if len(object_axes_facing_addressee) == 1:

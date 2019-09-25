@@ -93,7 +93,7 @@ class TemplateObjectVariable(SituationTemplateObject, _TemplateVariable):
     node_selector: OntologyNodeSelector = attrib(
         validator=instance_of(OntologyNodeSelector)
     )
-    asserted_properties: ImmutableSet["TemplatePropertyVariable"] = attrib(
+    asserted_properties: ImmutableSet[Union[OntologyNode, "TemplatePropertyVariable"]] = attrib(
         converter=_to_immutableset, default=immutableset()
     )
 
@@ -404,8 +404,10 @@ class _Phase1SituationTemplateGenerator(
             ontology_node=object_type,
             properties=[
                 # instantiate any property variables associated with this object
-                variable_assignment.property_variables_to_fillers[prop_var]
-                for prop_var in object_var.asserted_properties
+                variable_assignment.property_variables_to_fillers[asserted_property]
+                if isinstance(asserted_property, TemplatePropertyVariable)
+                else asserted_property
+                for asserted_property in object_var.asserted_properties
             ],
             # we make a copy because the axes in the schema represent the axes of such object
             # in general, but these are the axes of a particular instantiation of the object.
@@ -622,12 +624,7 @@ def object_variable(
             required_properties=real_required_properties,
             banned_properties=banned_properties,
         ),
-        asserted_properties=[
-            property_
-            if isinstance(property_, TemplatePropertyVariable)
-            else property_variable(f"{debug_handle}-prop-{property_.handle}", property_)
-            for property_ in added_properties
-        ],
+        asserted_properties=added_properties,
     )
 
 

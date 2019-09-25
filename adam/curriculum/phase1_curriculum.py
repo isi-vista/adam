@@ -1537,7 +1537,7 @@ def make_behind_in_front_templates() -> Iterable[Phase1SituationTemplate]:
         suffix = "-in-front" if in_front_of else "-behind"
         yield Phase1SituationTemplate(
             f"FRONT_BEHIND_ADDRESSEE-relative-{suffix}",
-            salient_object_variables=[FRONT_BEHIND_FIGURE_OBJECT],
+            salient_object_variables=[FRONT_BEHIND_FIGURE_OBJECT, FRONT_BEHIND_GROUND_OBJECT],
             background_object_variables=[FRONT_BEHIND_SPEAKER, FRONT_BEHIND_ADDRESSEE],
             asserted_always_relations=[
                 Relation(IN_REGION, FRONT_BEHIND_FIGURE_OBJECT,
