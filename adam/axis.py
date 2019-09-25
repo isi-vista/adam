@@ -1,7 +1,7 @@
 from attr import attrs, attrib, evolve
 from attr.validators import instance_of
 
-from adam.utilities import _sign
+from adam.utilities import sign
 
 
 @attrs(frozen=True, slots=True, repr=False, cmp=False)
@@ -17,7 +17,7 @@ class GeonAxis:
     def __repr__(self) -> str:
         return (
             f"{self.debug_name}"
-            f"[{_sign(self.curved)}curved, "
-            f"{_sign(self.directed)}directed, "
-            f"{_sign(self.curved)}aligned_to_gravity]"
+            f"[{sign(self.curved)}curved, "
+            f"{sign(self.directed)}directed, "
+            f"{sign(self.curved)}aligned_to_gravity]"
         )

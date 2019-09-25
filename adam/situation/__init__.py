@@ -22,6 +22,7 @@ from immutablecollections.converter_utils import (
     _to_immutablesetmultidict,
 )
 
+from adam.axes import Axes
 from adam.math_3d import Point
 from adam.ontology import OntologyNode
 from adam.ontology.during import DuringAction
@@ -78,13 +79,15 @@ class SituationObject:
     The `OntologyNode` specifying the type of thing this object is.
     """
     properties: ImmutableSet[OntologyNode] = attrib(
-        converter=_to_immutableset, default=immutableset()
+        converter=_to_immutableset, default=immutableset(), kw_only=True
     )
     r"""
     The `OntologyNode`\ s representing the properties this object has.
     """
-
-    debug_handle: str = attrib(validator=instance_of(str))
+    debug_handle: str = attrib(validator=instance_of(str), kw_only=True)
+    axes: Optional[Axes] = attrib(
+        validator=optional(instance_of(Axes)), kw_only=True, default=None
+    )
 
     def __attrs_post_init__(self) -> None:
         # disabled warning below is due to a PyCharm bug

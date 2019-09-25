@@ -21,7 +21,7 @@ from attr import Factory, attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
 from immutablecollections.converter_utils import _to_immutabledict, _to_immutableset
-from more_itertools import take
+from more_itertools import take, only
 from typing_extensions import Protocol
 from vistautils.preconditions import check_arg
 
@@ -44,6 +44,7 @@ from adam.ontology.selectors import (
     OntologyNodeSelector,
     SubcategorizationSelector,
 )
+from adam.ontology.structural_schema import ObjectStructuralSchema
 from adam.random_utils import RandomChooser, SequenceChooser
 from adam.relation import Relation, flatten_relations
 from adam.situation import Action, SituationObject, SituationRegion
@@ -374,22 +375,39 @@ class _Phase1SituationTemplateGenerator(
         object_var_to_instantiations: Mapping[
             TemplateObjectVariable, SituationObject
         ] = immutabledict(
-            (
-                obj_var,
-                SituationObject(
-                    ontology_node=variable_assignment.object_variables_to_fillers[
-                        obj_var
-                    ],
-                    properties=[
-                        # instantiate any property variables associated with this object
-                        variable_assignment.property_variables_to_fillers[prop_var]
-                        for prop_var in obj_var.asserted_properties
-                    ],
-                ),
-            )
+            (obj_var, self._instantiate_object(obj_var, variable_assignment))
             for obj_var in template.all_object_variables
         )
         return object_var_to_instantiations
+
+    def _instantiate_object(
+        self,
+        object_var: TemplateObjectVariable,
+        variable_assignment: "TemplateVariableAssignment",
+    ) -> SituationObject:
+        object_type = variable_assignment.object_variables_to_fillers[object_var]
+        schemata = self.ontology.structural_schemata(object_type)
+        if len(schemata) > 1:
+            raise RuntimeError(
+                "Can only handle one structural schema per object right now. "
+                "If we change this, we need to make sure the schema choice gets "
+                "passed along to object perception."
+            )
+        schema: ObjectStructuralSchema = only(schemata)
+
+        return SituationObject(
+            ontology_node=object_type,
+            properties=[
+                # instantiate any property variables associated with this object
+                variable_assignment.property_variables_to_fillers[prop_var]
+                for prop_var in object_var.asserted_properties
+            ],
+            # we make a copy because the axes in the schema represent the axes of such object
+            # in general, but these are the axes of a particular instantiation of the object.
+            # In particular, two instances of the same object type in a scene need distinct axes.
+            # Note that some objects (e.g. liquids) lack schemata and therefore axes.
+            axes=schema.axes.copy() if schema else None,
+        )
 
     def _instantiate_situation(
         self,

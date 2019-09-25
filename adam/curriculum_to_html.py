@@ -29,7 +29,7 @@ from vistautils.preconditions import check_state
 from adam.curriculum.phase1_curriculum import GAILA_PHASE_1_CURRICULUM
 from adam.experiment import InstanceGroup
 from adam.geon import Geon
-from adam.axes import WORLD_AXES
+from adam.axes import WORLD_AXES, AxesInfo
 from adam.language.dependency import LinearizedDependencyTree
 from adam.ontology import IN_REGION
 from adam.ontology.during import DuringAction
@@ -45,6 +45,7 @@ from adam.perception.developmental_primitive_perception import (
 from adam.relation import Relation
 from adam.situation import SituationObject, SituationRegion
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
+from adam.utilities import sign
 import random
 
 USAGE_MESSAGE = """
@@ -640,8 +641,12 @@ class CurriculumToHtmlDumper:
                         (relation_prefix, relation_suffix) = compute_arrow(
                             region_relation, static_relations, first_frame_relations
                         )
+                        relation_str = self._render_relation(
+                            perception.frames[0].axis_info, region_relation
+                        )
                         output_text.append(
-                            f"\t\t\t\t\t\t<li>{relation_prefix}{region_relation}{relation_suffix}</li>"
+                            f"\t\t\t\t\t\t<li>{relation_prefix}"
+                            f"{relation_str}{relation_suffix}</li>"
                         )
                         expressed_relations.add(region_relation)
             for succ in graph.successors(node):
@@ -699,6 +704,25 @@ class CurriculumToHtmlDumper:
             output_text.append(self._render_during(perception.during, indent_depth=5))
 
         return "\n".join(output_text)
+
+    def _render_relation(
+        self, axis_info: AxesInfo[ObjectPerception], relation: Relation[ObjectPerception]
+    ) -> str:
+        second_slot_str: str
+        filler2 = relation.second_slot
+        if isinstance(filler2, Region):
+            parts = [str(filler2.reference_object)]
+            if filler2.distance:
+                parts.append(f"distance={filler2.distance}")
+            if filler2.direction:
+                parts.append(
+                    f"direction={sign(filler2.direction.positive)}"
+                    f"{filler2.direction.relative_to_axis.to_concrete_axis(axis_info)}"
+                )
+            second_slot_str = f"Region({','.join(parts)})"
+        else:
+            second_slot_str = str(filler2)
+        return f"{relation.relation_type}({relation.first_slot}, {second_slot_str})"
 
     def _render_during(
         self, during: DuringAction[ObjectPerception], *, indent_depth: int = 0

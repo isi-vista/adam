@@ -3,7 +3,7 @@ from attr.validators import instance_of
 
 from adam.axes import Axes
 from adam.axis import GeonAxis
-from adam.utilities import _sign
+from adam.utilities import sign
 
 
 @attrs(frozen=True, slots=True, repr=False)
@@ -27,9 +27,9 @@ class CrossSection:
     def __repr__(self) -> str:
 
         return (
-            f"[{_sign(self.has_reflective_symmetry)}reflect-sym, "
-            f"{_sign(self.has_rotational_symmetry)}rotate-sym, "
-            f"{_sign(self.curved)}curved]"
+            f"[{sign(self.has_reflective_symmetry)}reflect-sym, "
+            f"{sign(self.has_rotational_symmetry)}rotate-sym, "
+            f"{sign(self.curved)}curved]"
         )
 
 

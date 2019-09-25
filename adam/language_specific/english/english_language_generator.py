@@ -739,6 +739,8 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                         and region.direction.positive
                     ):
                         preposition = "on"
+                elif region.distance == PROXIMAL:
+                    preposition = "beside"
             elif region.distance == INTERIOR:
                 preposition = "in"
 

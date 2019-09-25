@@ -382,7 +382,7 @@ def test_speaker_perceivable():
     speaker_situation_perception = _PERCEPTION_GENERATOR.generate_perception(
         HighLevelSemanticsSituation(
             ontology=GAILA_PHASE_1_ONTOLOGY,
-            salient_objects=[SituationObject(PERSON, [IS_SPEAKER])],
+            salient_objects=[SituationObject(PERSON, properties=[IS_SPEAKER])],
         ),
         chooser=RandomChooser.for_seed(0),
     )
@@ -397,8 +397,8 @@ def test_not_two_speakers():
             HighLevelSemanticsSituation(
                 ontology=GAILA_PHASE_1_ONTOLOGY,
                 salient_objects=[
-                    SituationObject(PERSON, [IS_SPEAKER]),
-                    SituationObject(PERSON, [IS_SPEAKER]),
+                    SituationObject(PERSON, properties=[IS_SPEAKER]),
+                    SituationObject(PERSON, properties=[IS_SPEAKER]),
                 ],
             ),
             chooser=RandomChooser.for_seed(0),

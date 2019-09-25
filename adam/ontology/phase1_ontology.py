@@ -2085,7 +2085,9 @@ def _make_jump_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
 
 
 ROLL_SURFACE_AUXILIARY = SituationObject(
-    INANIMATE_OBJECT, [CAN_HAVE_THINGS_RESTING_ON_THEM], debug_handle="roll-surface-aux"
+    INANIMATE_OBJECT,
+    properties=[CAN_HAVE_THINGS_RESTING_ON_THEM],
+    debug_handle="roll-surface-aux",
 )
 
 

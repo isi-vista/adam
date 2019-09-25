@@ -7,7 +7,7 @@ from typing import Iterable
 
 from more_itertools import flatten
 
-from adam.axes import AxesInfo
+from adam.axes import AxesInfo, FirstHorizontalAxisOfObject
 from adam.curriculum import GeneratedFromSituationsInstanceGroup, InstanceGroup
 from adam.language.dependency import LinearizedDependencyTree
 from adam.language_specific.english.english_language_generator import (
@@ -15,7 +15,7 @@ from adam.language_specific.english.english_language_generator import (
     PREFER_DITRANSITIVE,
     USE_ADVERBIAL_PATH_MODIFIER,
 )
-from adam.ontology import OntologyNode, THING
+from adam.ontology import OntologyNode, THING, IN_REGION
 from adam.ontology.during import DuringAction
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
@@ -93,6 +93,7 @@ from adam.ontology.phase1_spatial_relations import (
     Region,
     SpatialPath,
     TOWARD,
+    Direction,
 )
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -389,32 +390,49 @@ def _make_object_on_object_curriculum() -> _Phase1InstanceGroup:
     )
 
 
-# def _make_object_beside_object_curriculum() -> _Phase1InstanceGroup:
-#     object_ = _standard_object("object")
-#     bigger_object = _standard_object("bigger_object")
-#
-#     situation_template = Phase1SituationTemplate(
-#         "object-beside-object",
-#         salient_object_variables=[object_, bigger_object],
-#         constraining_relations=[Relation(BIGGER_THAN, bigger_object, object_)],
-#         asserted_always_relations=[Relation(IN_REGION,
-#                                             Region(bigger_object,
-#                                                    distance=PROXIMAL,
-#                                                    direction=Direction(
-#                                                        relative_to_axis=None
-#                                                    ))
-#                                             )],
-#     )
-#
-#     return _phase1_instances(
-#         "objects-beside-objects",
-#         sampled(
-#             situation_template,
-#             max_to_sample=50,
-#             chooser=_CHOOSER,
-#             ontology=GAILA_PHASE_1_ONTOLOGY,
-#         ),
-#     )
+def _make_object_beside_object_curriculum() -> _Phase1InstanceGroup:
+    situation_template = make_object_beside_object_template()
+
+    return _phase1_instances(
+        "objects-beside-objects",
+        sampled(
+            situation_template,
+            max_to_sample=50,
+            chooser=_CHOOSER,
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+        ),
+    )
+
+
+SMALLER_BESIDE_OBJECT = _standard_object("object")
+LARGER_BESIDE_OBJECT = _standard_object("LARGER_BESIDE_OBJECT")
+
+
+def make_object_beside_object_template():
+    situation_template = Phase1SituationTemplate(
+        "object-beside-object",
+        salient_object_variables=[SMALLER_BESIDE_OBJECT, LARGER_BESIDE_OBJECT],
+        constraining_relations=[
+            Relation(BIGGER_THAN, LARGER_BESIDE_OBJECT, SMALLER_BESIDE_OBJECT)
+        ],
+        asserted_always_relations=[
+            Relation(
+                IN_REGION,
+                SMALLER_BESIDE_OBJECT,
+                Region(
+                    LARGER_BESIDE_OBJECT,
+                    distance=PROXIMAL,
+                    direction=Direction(
+                        positive=True,
+                        relative_to_axis=FirstHorizontalAxisOfObject(
+                            LARGER_BESIDE_OBJECT
+                        ),
+                    ),
+                ),
+            )
+        ],
+    )
+    return situation_template
 
 
 def _make_object_under_or_over_object_curriculum() -> _Phase1InstanceGroup:
@@ -1521,7 +1539,7 @@ GAILA_PHASE_1_CURRICULUM = [
     _make_fall_curriculum(),
     _make_transfer_of_possession_curriculum(),
     _make_object_on_object_curriculum(),
-    # _make_object_beside_object_curriculum(),
+    _make_object_beside_object_curriculum(),
     _make_object_under_or_over_object_curriculum(),
     _make_object_in_other_object_curriculum(),
     _make_fly_curriculum(),
