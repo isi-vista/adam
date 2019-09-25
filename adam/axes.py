@@ -1,5 +1,5 @@
 from itertools import chain
-from typing import Any, Generic, Iterable, List, Mapping, TypeVar
+from typing import Any, Generic, Iterable, List, Mapping, Optional, TypeVar
 
 from attr import attrib, attrs
 from attr.validators import in_, instance_of
@@ -13,12 +13,11 @@ from immutablecollections.converter_utils import (
     _to_immutableset,
     _to_immutablesetmultidict,
 )
-from more_itertools import quantify, only
+from more_itertools import only, quantify
 from typing_extensions import Protocol, runtime
 from vistautils.range import Range
 
 from adam.axis import GeonAxis
-from adam.ontology import IS_ADDRESSEE
 from adam.relation import flatten_relations
 from adam.remappable import CanRemapObjects
 
@@ -45,6 +44,7 @@ _ObjectToT = TypeVar("_ObjectToT")
 
 @attrs(frozen=True)
 class AxesInfo(Generic[_ObjectT], CanRemapObjects[_ObjectT]):
+    addressee: Optional[_ObjectT] = attrib(default=None)
     axes_facing: ImmutableSetMultiDict[_ObjectT, GeonAxis] = attrib(
         converter=_to_immutablesetmultidict, default=immutablesetmultidict()
     )
@@ -53,9 +53,10 @@ class AxesInfo(Generic[_ObjectT], CanRemapObjects[_ObjectT]):
         self, object_map: Mapping[_ObjectT, _ObjectToT]
     ) -> "AxesInfo[_ObjectToT]":
         return AxesInfo(
-            immutablesetmultidict(
+            addressee=object_map[self.addressee] if self.addressee else None,
+            axes_facing=immutablesetmultidict(
                 (object_map[key], value) for (key, value) in self.axes_facing.items()
-            )
+            ),
         )
 
 
@@ -131,18 +132,12 @@ class FacingAddresseeAxis(Generic[_ObjectT], AxisFunction[_ObjectT]):
                 "Can only instantiate an axis function if the object is of a "
                 "concrete type (e.g. perception or situation object)"
             )
-        addressees = set(
-            obj_
-            for obj_ in axes_info.axes_facing.keys()
-            if IS_ADDRESSEE in obj_.properties
-        )
-        if len(addressees) != 1:
-            raise RuntimeError(
-                "FacingAddresseeAxis requires exactly one addressee in the " "situation"
-            )
-        addressee: _ObjectT = only(addressees)
+        addressee: Optional[_ObjectT] = axes_info.addressee
+        if not addressee:
+            raise RuntimeError("Addressee must be specified to use FacingAddresseeAxis")
+        object_axes = immutableset(self._object.axes.all_axes)
         object_axes_facing_addressee = axes_info.axes_facing[addressee].intersection(
-            immutableset(self._object.axes.all_axes)
+            object_axes
         )
 
         if object_axes_facing_addressee:
@@ -152,7 +147,8 @@ class FacingAddresseeAxis(Generic[_ObjectT], AxisFunction[_ObjectT]):
                 raise RuntimeError("Cannot handle multiple axes facing the addressee.")
         else:
             raise RuntimeError(
-                f"Could not fine axis of {self._object} facing addressee " f"{addressee}"
+                f"Could not find axis of {self._object} facing addressee {addressee}. Axis info is "
+                f"{axes_info}.  Axes of object is {object_axes}"
             )
 
     def copy_remapping_objects(

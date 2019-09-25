@@ -40,9 +40,19 @@ from adam.geon import (
     SMALL_TO_LARGE,
     SMALL_TO_LARGE_TO_SMALL,
 )
-from adam.ontology import (ACTION, BINARY, CAN_FILL_TEMPLATE_SLOT, IN_REGION, IS_SUBSTANCE,
-                           OntologyNode, PERCEIVABLE, PROPERTY, RELATION, THING,
-                           minimal_ontology_graph)
+from adam.ontology import (
+    ACTION,
+    BINARY,
+    CAN_FILL_TEMPLATE_SLOT,
+    IN_REGION,
+    IS_SUBSTANCE,
+    OntologyNode,
+    PERCEIVABLE,
+    PROPERTY,
+    RELATION,
+    THING,
+    minimal_ontology_graph,
+)
 from adam.ontology.action_description import ActionDescription, ActionDescriptionFrame
 from adam.ontology.during import DuringAction
 from adam.ontology.ontology import Ontology
@@ -1142,9 +1152,9 @@ _ROOF_SCHEMA = _make_roof_schema()
 
 
 def _make_wall_schema() -> ObjectStructuralSchema:
-    bottom_to_top = straight_up("bottom-to-top")
-    edge_to_edge = directed("edge-to-edge")
-    face_to_face = directed("face-to-face")
+    bottom_to_top = straight_up("walls-bottom-to-top")
+    edge_to_edge = directed("walls-edge-to-edge")
+    face_to_face = directed("walls-face-to-face")
 
     return ObjectStructuralSchema(
         ontology_node=_WALL,

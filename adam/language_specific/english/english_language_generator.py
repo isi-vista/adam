@@ -38,9 +38,14 @@ from adam.language.dependency.universal_dependencies import (
 from adam.language.language_generator import LanguageGenerator
 from adam.language.lexicon import LexiconEntry
 from adam.language.ontology_dictionary import OntologyLexicon
-from adam.language_specific.english.english_phase_1_lexicon import (ALLOWS_DITRANSITIVE,
-                                                                    GAILA_PHASE_1_ENGLISH_LEXICON,
-                                                                    I, MASS_NOUN, ME, YOU)
+from adam.language_specific.english.english_phase_1_lexicon import (
+    ALLOWS_DITRANSITIVE,
+    GAILA_PHASE_1_ENGLISH_LEXICON,
+    I,
+    MASS_NOUN,
+    ME,
+    YOU,
+)
 from adam.language_specific.english.english_syntax import (
     FIRST_PERSON,
     SECOND_PERSON,

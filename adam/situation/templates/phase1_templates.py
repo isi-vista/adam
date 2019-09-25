@@ -415,11 +415,7 @@ class _Phase1SituationTemplateGenerator(
                 else asserted_property
                 for asserted_property in object_var.asserted_properties
             ],
-            # we make a copy because the axes in the schema represent the axes of such object
-            # in general, but these are the axes of a particular instantiation of the object.
-            # In particular, two instances of the same object type in a scene need distinct axes.
-            # Note that some objects (e.g. liquids) lack schemata and therefore axes.
-            axes=schema.axes.copy() if schema else None,
+            axes=schema.axes if schema else None,
         )
 
     def _instantiate_situation(
@@ -578,6 +574,7 @@ class _Phase1SituationTemplateGenerator(
             else:
                 addressee: SituationObject = only(addressees)
                 return AxesInfo(
+                    addressee=addressee,
                     axes_facing=[
                         (
                             addressee,
@@ -588,7 +585,7 @@ class _Phase1SituationTemplateGenerator(
                         )
                         for obj in object_var_to_instantiations.values()
                         if obj.axes
-                    ]
+                    ],
                 )
         else:
             return AxesInfo()
