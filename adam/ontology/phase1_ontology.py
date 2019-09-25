@@ -760,7 +760,8 @@ _JUICE_SCHEMA = ObjectStructuralSchema(JUICE)
 
 def _make_box_schema() -> ObjectStructuralSchema:
     top_to_bottom = straight_up("top-to-bottom")
-    side_to_side = symmetric("side-to-side")
+    side_to_side_0 = symmetric("side-to-side-0")
+    side_to_side_1 = symmetric("side-to-side-1")
 
     return ObjectStructuralSchema(
         ontology_node=BOX,
@@ -768,7 +769,7 @@ def _make_box_schema() -> ObjectStructuralSchema:
             cross_section=RECTANGULAR,
             cross_section_size=CONSTANT,
             generating_axis=top_to_bottom,
-            orienting_axes=[side_to_side, side_to_side],
+            orienting_axes=[side_to_side_0, side_to_side_1],
         ),
     )
 
@@ -779,7 +780,8 @@ _MILK_SCHEMA = ObjectStructuralSchema(MILK)
 
 def _make_hat_schema() -> ObjectStructuralSchema:
     brim_to_top = straight_up("brim-to-top")
-    side_to_side = symmetric("side-to-side")
+    side_to_side_0 = symmetric("side-to-side-0")
+    side_to_side_1 = symmetric("side-to-side-1")
 
     return ObjectStructuralSchema(
         ontology_node=HAT,
@@ -787,7 +789,7 @@ def _make_hat_schema() -> ObjectStructuralSchema:
             cross_section=OVALISH,
             cross_section_size=LARGE_TO_SMALL,
             generating_axis=brim_to_top,
-            orienting_axes=[side_to_side, side_to_side],
+            orienting_axes=[side_to_side_0, side_to_side_1],
         ),
     )
 
@@ -797,7 +799,8 @@ _HAT_SCHEMA = _make_hat_schema()
 
 def _make_cookie_schema() -> ObjectStructuralSchema:
     bottom_to_top = straight_up("bottom-to-top")
-    side_to_side = symmetric("side-to-side")
+    side_to_side_0 = symmetric("side-to-side-0")
+    side_to_side_1 = symmetric("side-to-side-1")
 
     return ObjectStructuralSchema(
         ontology_node=COOKIE,
@@ -805,7 +808,11 @@ def _make_cookie_schema() -> ObjectStructuralSchema:
             cross_section=CIRCULAR,
             cross_section_size=CONSTANT,
             generating_axis=bottom_to_top,
-            orienting_axes=[side_to_side, side_to_side],
+            orienting_axes=[side_to_side_0, side_to_side_1],
+            axis_relations=[
+                much_bigger_than(side_to_side_0, bottom_to_top),
+                much_bigger_than(side_to_side_1, bottom_to_top),
+            ],
         ),
     )
 
@@ -815,7 +822,8 @@ _COOKIE_SCHEMA = _make_cookie_schema()
 
 def _make_cup_schema() -> ObjectStructuralSchema:
     bottom_to_top = straight_up("bottom-to-top")
-    side_to_side = symmetric("side-to-side")
+    side_to_side_0 = symmetric("side-to-side-0")
+    side_to_side_1 = symmetric("side-to-side-1")
 
     return ObjectStructuralSchema(
         ontology_node=CUP,
@@ -823,7 +831,11 @@ def _make_cup_schema() -> ObjectStructuralSchema:
             cross_section=CIRCULAR,
             cross_section_size=SMALL_TO_LARGE,
             generating_axis=bottom_to_top,
-            orienting_axes=[side_to_side, side_to_side],
+            orienting_axes=[side_to_side_0, side_to_side_1],
+            axis_relations=[
+                bigger_than(bottom_to_top, side_to_side_0),
+                bigger_than(bottom_to_top, side_to_side_0),
+            ],
         ),
     )
 
@@ -843,6 +855,10 @@ def _make_book_schema() -> ObjectStructuralSchema:
             cross_section_size=CONSTANT,
             generating_axis=edges_to_edges,
             orienting_axes=[back_cover_to_front_cover, spine_to_edges],
+            axis_relations=[
+                much_bigger_than(spine_to_edges, back_cover_to_front_cover),
+                much_bigger_than(edges_to_edges, back_cover_to_front_cover),
+            ],
         ),
     )
 
@@ -985,6 +1001,10 @@ def _make_chair_seat_schema() -> ObjectStructuralSchema:
             cross_section_size=CONSTANT,
             generating_axis=bottom_to_top,
             orienting_axes=[front_edge_to_back_edge, side_to_side],
+            axis_relations=[
+                bigger_than(front_edge_to_back_edge, bottom_to_top),
+                bigger_than(side_to_side, bottom_to_top),
+            ],
         ),
     )
 
@@ -1017,7 +1037,8 @@ _TABLETOP_SCHEMA = _make_table_top_schema()
 
 def _make_tail_schema() -> ObjectStructuralSchema:
     edge_to_tip = directed("edge-to-tip")
-    side_to_side = symmetric("side-to-side")
+    diameter_0 = symmetric("diameter_0")
+    diameter_1 = symmetric("diameter_1")
 
     return ObjectStructuralSchema(
         ontology_node=_TAIL,
@@ -1025,8 +1046,11 @@ def _make_tail_schema() -> ObjectStructuralSchema:
             cross_section=OVALISH,
             cross_section_size=LARGE_TO_SMALL,
             generating_axis=edge_to_tip,
-            orienting_axes=[side_to_side, side_to_side],
-            axis_relations=[bigger_than(edge_to_tip, side_to_side)],
+            orienting_axes=[diameter_0, diameter_1],
+            axis_relations=[
+                much_bigger_than(edge_to_tip, diameter_0),
+                much_bigger_than(edge_to_tip, diameter_1),
+            ],
         ),
     )
 
@@ -1100,16 +1124,21 @@ _WALL_SCHEMA = _make_wall_schema()
 
 
 def _make_tire_schema() -> ObjectStructuralSchema:
-    front_to_back = directed("front-to-back")
-    tread_to_tread = symmetric("tread-to-tread")
+    across_treads = directed("across_treads")
+    diameter_0 = symmetric("diameter_0")
+    diameter_1 = symmetric("diameter_1")
 
     return ObjectStructuralSchema(
         ontology_node=_TIRE,
         geon=Geon(
             cross_section=CIRCULAR,
             cross_section_size=CONSTANT,
-            generating_axis=front_to_back,
-            orienting_axes=[tread_to_tread, tread_to_tread],
+            generating_axis=across_treads,
+            orienting_axes=[diameter_0, diameter_1],
+            axis_relations=[
+                bigger_than(diameter_0, across_treads),
+                bigger_than(diameter_1, across_treads),
+            ],
         ),
     )
 
@@ -1153,6 +1182,10 @@ def _make_body_schema() -> ObjectStructuralSchema:
             cross_section_size=CONSTANT,
             generating_axis=bottom_to_top,
             orienting_axes=[front_to_back, side_to_side],
+            axis_relations=[
+                much_bigger_than(bottom_to_top, front_to_back),
+                bigger_than(side_to_side, front_to_back),
+            ],
         ),
     )
 
