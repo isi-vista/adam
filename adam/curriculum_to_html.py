@@ -31,9 +31,9 @@ from adam.experiment import InstanceGroup
 from adam.geon import Geon
 from adam.axes import WORLD_AXES, AxesInfo
 from adam.language.dependency import LinearizedDependencyTree
-from adam.ontology import IN_REGION
+from adam.ontology import IN_REGION, IS_SPEAKER
 from adam.ontology.during import DuringAction
-from adam.ontology.phase1_ontology import PART_OF, IS_SPEAKER, SMALLER_THAN, BIGGER_THAN
+from adam.ontology.phase1_ontology import PART_OF, SMALLER_THAN, BIGGER_THAN
 from adam.ontology.phase1_spatial_relations import Region, SpatialPath
 from adam.perception import ObjectPerception, PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (

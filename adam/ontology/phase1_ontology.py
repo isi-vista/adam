@@ -50,7 +50,7 @@ from adam.ontology import (
     RELATION,
     THING,
     minimal_ontology_graph,
-)
+    META_PROPERTY, PERCEIVABLE, BINARY)
 from adam.ontology.action_description import ActionDescription, ActionDescriptionFrame
 from adam.ontology.during import DuringAction
 from adam.ontology.ontology import Ontology
@@ -104,11 +104,6 @@ subtype(GOAL, SEMANTIC_ROLE)
 
 # these are "properties of properties" (e.g. whether a property is perceivable by the learner)
 
-META_PROPERTY = OntologyNode("meta-property")
-PERCEIVABLE = OntologyNode("perceivable")
-subtype(PERCEIVABLE, META_PROPERTY)
-BINARY = OntologyNode("binary")
-subtype(BINARY, META_PROPERTY)
 
 IS_HUMAN = OntologyNode("is-human", [BINARY])
 subtype(IS_HUMAN, PROPERTY)
@@ -147,23 +142,6 @@ The prototypical cases here are *Mom* and *Dad*.
 
 subtype(RECOGNIZED_PARTICULAR_PROPERTY, PERCEIVABLE_PROPERTY)
 
-IS_SPEAKER = OntologyNode("is-speaker", [BINARY])
-"""
-Indicates that the marked object is the one who is speaking 
-the linguistic description of the situation. 
-This will not be present for all situations.
-It only makes sense to apply this to sub-types of PERSON,
-but this is not currently enforced.
-"""
-subtype(IS_SPEAKER, PERCEIVABLE_PROPERTY)
-IS_ADDRESSEE = OntologyNode("is-addressee", [BINARY])
-"""
-Indicates that the marked object is the one who is addressed.
-This will not be present for all situations.
-It only makes sense to apply this to sub-types of PERSON,
-but this is not currently enforced. E.g. 'You put the ball on the table.'
-"""
-subtype(IS_ADDRESSEE, PERCEIVABLE_PROPERTY)
 GAZED_AT = OntologyNode("gazed-at", [BINARY])
 """
 Indicates the object of the focus of the speaker. This is not currently strictly enforced and is

@@ -26,7 +26,8 @@ from typing_extensions import Protocol
 from vistautils.preconditions import check_arg
 
 from adam.axes import AxesInfo, HorizontalAxisOfObject
-from adam.ontology import ACTION, CAN_FILL_TEMPLATE_SLOT, OntologyNode, PROPERTY, THING
+from adam.ontology import ACTION, CAN_FILL_TEMPLATE_SLOT, OntologyNode, PROPERTY, THING, \
+    IS_ADDRESSEE
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
     COLOR,
@@ -35,7 +36,6 @@ from adam.ontology.phase1_ontology import (
     LEARNER,
     TRANSPARENT,
     is_recognized_particular,
-    IS_ADDRESSEE,
 )
 from adam.ontology.phase1_spatial_relations import Region
 from adam.ontology.selectors import (
@@ -158,8 +158,11 @@ class Phase1SituationTemplate(SituationTemplate):
     salient_object_variables: ImmutableSet["TemplateObjectVariable"] = attrib(
         converter=_to_immutableset
     )
+    background_object_variables: ImmutableSet["TemplateObjectVariable"] = attrib(
+        converter=_to_immutableset, default=immutableset(), kw_only=True
+    )
     asserted_always_relations: ImmutableSet[Relation["TemplateObjectVariable"]] = attrib(
-        converter=flatten_relations, default=immutableset()
+        converter=flatten_relations, default=immutableset(), kw_only=True
     )
     """
     This are relations we assert to hold true in the situation.
@@ -167,7 +170,7 @@ class Phase1SituationTemplate(SituationTemplate):
     which cannot be deduced from the types of the objects alone.
     """
     constraining_relations: ImmutableSet[Relation["TemplateObjectVariable"]] = attrib(
-        converter=flatten_relations, default=immutableset()
+        converter=flatten_relations, default=immutableset(), kw_only=True
     )
     """
     These are relations which we required to be true
@@ -177,9 +180,9 @@ class Phase1SituationTemplate(SituationTemplate):
     """
     actions: ImmutableSet[
         Action[_ExplicitOrVariableActionType, "TemplateObjectVariable"]
-    ] = attrib(converter=_to_immutableset, default=immutableset())
+    ] = attrib(converter=_to_immutableset, default=immutableset(), kw_only=True)
     syntax_hints: ImmutableSet[str] = attrib(
-        converter=_to_immutableset, default=immutableset()
+        converter=_to_immutableset, default=immutableset(), kw_only=True
     )
     """
     A temporary hack to allow control of language generation decisions
@@ -229,6 +232,7 @@ class Phase1SituationTemplate(SituationTemplate):
             relation.accumulate_referenced_objects(ret)
 
         ret.extend(self.salient_object_variables)
+        ret.extend(self.background_object_variables)
 
         for obj_var in ret:
             if not isinstance(obj_var, TemplateObjectVariable):

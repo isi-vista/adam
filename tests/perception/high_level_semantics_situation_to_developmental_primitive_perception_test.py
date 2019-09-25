@@ -1,7 +1,7 @@
 import pytest
 from more_itertools import only, quantify
 
-from adam.ontology import IN_REGION, OntologyNode
+from adam.ontology import IN_REGION, OntologyNode, IS_SPEAKER
 from adam.ontology.phase1_ontology import (
     AGENT,
     ANIMATE,
@@ -21,7 +21,6 @@ from adam.ontology.phase1_ontology import (
     GROUND,
     INANIMATE,
     IS_LEARNER,
-    IS_SPEAKER,
     JUICE,
     LEARNER,
     LIQUID,

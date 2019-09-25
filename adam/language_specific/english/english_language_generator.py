@@ -50,7 +50,7 @@ from adam.language_specific.english.english_syntax import (
     SECOND_PERSON,
     SIMPLE_ENGLISH_DEPENDENCY_TREE_LINEARIZER,
 )
-from adam.ontology import IN_REGION, OntologyNode
+from adam.ontology import IN_REGION, OntologyNode, IS_SPEAKER, IS_ADDRESSEE
 from adam.ontology.phase1_ontology import (
     AGENT,
     COLOR,
@@ -58,8 +58,6 @@ from adam.ontology.phase1_ontology import (
     GOAL,
     GROUND,
     HAS,
-    IS_ADDRESSEE,
-    IS_SPEAKER,
     LEARNER,
     PATIENT,
     THEME,

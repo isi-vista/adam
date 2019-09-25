@@ -10,7 +10,8 @@ from adam.curriculum.phase1_curriculum import (
     make_object_beside_object_template,
     SMALLER_BESIDE_OBJECT,
     LARGER_BESIDE_OBJECT,
-)
+    make_behind_in_front_templates, FRONT_BEHIND_FIGURE_OBJECT, FRONT_BEHIND_GROUND_OBJECT,
+    FRONT_BEHIND_SPEAKER, FRONT_BEHIND_ADDRESSEE)
 from adam.language_specific.english.english_language_generator import (
     PREFER_DITRANSITIVE,
     SimpleRuleBasedEnglishLanguageGenerator,
@@ -19,7 +20,7 @@ from adam.language_specific.english.english_language_generator import (
 from adam.language_specific.english.english_phase_1_lexicon import (
     GAILA_PHASE_1_ENGLISH_LEXICON,
 )
-from adam.ontology import IN_REGION
+from adam.ontology import IN_REGION, IS_SPEAKER, IS_ADDRESSEE
 from adam.ontology.during import DuringAction
 from adam.ontology.phase1_ontology import (
     AGENT,
@@ -42,8 +43,6 @@ from adam.ontology.phase1_ontology import (
     GREEN,
     GROUND,
     HAS,
-    IS_ADDRESSEE,
-    IS_SPEAKER,
     JUICE,
     MOM,
     PATIENT,
@@ -828,8 +827,39 @@ def test_object_beside_object():
     )
     assert generated_tokens(situation) == ("a", "ball", "beside", "a", "table")
 
+def test_object_behind_in_front_object():
+    (front_template, behind_template) = make_behind_in_front_templates()
+
+    variable_bindings = TemplateVariableAssignment(
+        object_variables_to_fillers=[(FRONT_BEHIND_FIGURE_OBJECT, BOX),
+                                     (FRONT_BEHIND_GROUND_OBJECT, TABLE),
+                                     (FRONT_BEHIND_SPEAKER, MOM),
+                                     (FRONT_BEHIND_ADDRESSEE, DAD)])
+
+    front_situation = first(
+        fixed_assignment(
+            front_template,
+            variable_bindings,
+            chooser=RandomChooser.for_seed(0),
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+        )
+    )
+    assert generated_tokens(front_situation) == ("a", "box", "in front of", "a", "table")
+
+    behind_situation = first(
+        fixed_assignment(
+            behind_template,
+            variable_bindings,
+            chooser=RandomChooser.for_seed(0),
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+        )
+    )
+    assert generated_tokens(behind_situation) == ("a", "box", "behind", "a", "table")
+
 
 def generated_tokens(situation):
     return only(
         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
     ).as_token_sequence()
+
+
