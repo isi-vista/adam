@@ -652,7 +652,9 @@ class CurriculumToHtmlDumper:
         output_text.append("\t\t\t\t\t</ul>")
 
         # Finally we render remaining relations between objects
-        remaining_relations = immutableset(relation for relation in all_relations if relation not in expressed_relations)
+        remaining_relations = immutableset(
+            relation for relation in all_relations if relation not in expressed_relations
+        )
         if remaining_relations:
             output_text.append("\t\t\t\t\t<h5>Other Relations</h5>\n\t\t\t\t\t<ul>")
             for relation in remaining_relations:
@@ -816,9 +818,4 @@ def _index_to_setmultidict(
 
 
 if __name__ == "__main__":
-    #parameters_only_entry_point(main, usage_message=USAGE_MESSAGE)
-    CurriculumToHtmlDumper().dump_to_html(
-        GAILA_PHASE_1_CURRICULUM,
-        output_directory=Path("C:\\Users\\jalic\\Desktop\\ISI"),
-        title="GAILA Phase 1 Curriculum",
-    )
+    parameters_only_entry_point(main, usage_message=USAGE_MESSAGE)
