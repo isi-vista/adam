@@ -33,7 +33,7 @@ class LexiconEntry:
         converter=_to_immutableset, default=immutableset()
     )
     plural_form: Optional[str] = attrib(default=None, kw_only=True)
-    verb_form_3SG_PRS: Optional[str] = attrib(default=None, kw_only=True)
+    verb_form_SG3_PRS: Optional[str] = attrib(default=None, kw_only=True)
 
 
 @attrs(frozen=True, slots=True)
