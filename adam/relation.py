@@ -245,7 +245,7 @@ def make_opposite_dsl_relation(
 def make_dsl_region_relation(
     region_factory: Callable[[Any], "Region[Any]"]
 ) -> Callable[
-    [Union[Any, Iterable[Any]], Union[Any, Iterable[Any]]], Tuple["Relation[Any]", ...]
+    [Union[Any, Iterable[Any]], Union[Any, Iterable[Any]]], Tuple[Relation[Any], ...]
 ]:
     def dsl_relation_function(
         arg1s: Union[_ObjectT, Iterable[_ObjectT]],
@@ -271,7 +271,7 @@ def make_dsl_region_relation(
 def make_symmetric_dsl_region_relation(
     region_factory: Callable[[_ObjectT], "Region[_ObjectT]"]
 ) -> Callable[
-    [Union[Any, Iterable[Any]], Union[Any, Iterable[Any]]], Tuple["Relation[Any]", ...]
+    [Union[Any, Iterable[Any]], Union[Any, Iterable[Any]]], Tuple[Relation[Any], ...]
 ]:
     def dsl_relation_function(
         arg1s: Union[_ObjectT, Iterable[_ObjectT]],
