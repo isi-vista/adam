@@ -421,8 +421,8 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                         or SECOND_PERSON in subject_head.morphosyntactic_properties
                     ):
                         verb_word_form = verb_lexical_entry.base_form
-                    elif verb_lexical_entry.verb_form_SG3_PRS:
-                        verb_word_form = verb_lexical_entry.verb_form_SG3_PRS
+                    elif verb_lexical_entry.verb_form_sg3_prs:
+                        verb_word_form = verb_lexical_entry.verb_form_sg3_prs
                     else:
                         raise RuntimeError(
                             f"Verb has no 3SG present tense form: {verb_lexical_entry.base_form}"
@@ -777,8 +777,8 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 for property_ in [IS_SPEAKER, IS_ADDRESSEE]
             ):
                 word_form = lexicon_entry.base_form
-            elif lexicon_entry.verb_form_SG3_PRS:
-                word_form = lexicon_entry.verb_form_SG3_PRS
+            elif lexicon_entry.verb_form_sg3_prs:
+                word_form = lexicon_entry.verb_form_sg3_prs
             else:
                 raise RuntimeError(
                     f"Verb has no 3SG present tense form: {lexicon_entry.base_form}"
