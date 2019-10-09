@@ -22,4 +22,4 @@ def test_verb_form():
     put_words = GAILA_PHASE_1_ENGLISH_LEXICON.words_for_node(PUT)
     assert put_words[0].base_form == "put"
     assert put_words[0].part_of_speech == VERB
-    assert put_words[0].verb_form_3SG_PRS == "puts"
+    assert put_words[0].verb_form_sg3_prs == "puts"
