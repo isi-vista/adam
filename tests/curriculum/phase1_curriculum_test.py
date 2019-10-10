@@ -22,6 +22,7 @@ from adam.curriculum.phase1_curriculum import (
     _make_put_on_speaker_addressee_body_part_curriculum,
     _make_object_beside_object_curriculum,
     _make_behind_in_front_curriculum,
+    _make_objects_with_colors_curriculum,
 )
 
 
@@ -120,3 +121,7 @@ def test_beside():
 
 def test_behind_in_front():
     _test_curriculum(_make_behind_in_front_curriculum())
+
+
+def test_make_objects_with_colors():
+    _test_curriculum(_make_objects_with_colors_curriculum())
