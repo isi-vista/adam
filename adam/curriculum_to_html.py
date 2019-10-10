@@ -93,7 +93,7 @@ EXPLANATION_HEADER = (
     "\n\t followed by '---> Ø'  </li>"
     "\n\t<li>Size relationships are indicated by the '>' symbol. We only display the bigger than size"
     "\n\t relation but the inverse is also a part of the relationship set. We only represent large differences in size."
-    "\n\t A single '>' denotes the 'bigger than' size relation and '>>' denotes 'much bigger than'.</li>"
+    "\n\t '>>' denotes the 'much bigger than' relation.</li>"
     "<li>Many objects also have associated Geons, which describe their shape "
     "according to Biederman's visual perception theory (see deliverable docs for a citation).</li>"
 )
