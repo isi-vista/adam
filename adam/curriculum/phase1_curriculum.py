@@ -183,7 +183,7 @@ def _make_objects_with_colors_curriculum() -> _Phase1InstanceGroup:
     object_with_color = object_variable(
         "object",
         added_properties=[color],
-        banned_properties=[IS_HUMAN, IS_BODY_PART],
+        banned_properties=[IS_HUMAN, IS_BODY_PART, COLOR],
     )
 
     object_with_color_template = Phase1SituationTemplate(
