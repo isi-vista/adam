@@ -80,6 +80,7 @@ from adam.ontology.phase1_ontology import (
     is_recognized_particular,
     on,
     strictly_above,
+    COLOR,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -176,23 +177,32 @@ EACH_OBJECT_BY_ITSELF_SUB_CURRICULUM = _phase1_instances(
 
 # Show each object in 20 different colors
 
-_COLOR = color_variable("color")
-_COLOR_OBJECT = object_variable(
-    "object", added_properties=[_COLOR], banned_properties=[IS_HUMAN, IS_BODY_PART]
-)
-_OBJECT_WITH_COLOR_TEMPLATE = Phase1SituationTemplate(
-    "object-with-color", salient_object_variables=[_COLOR_OBJECT, _LEARNER_OBJECT]
-)
 
-OBJECTS_WITH_COLORS_SUB_CURRICULUM = _phase1_instances(
-    "objects with colors",
-    situations=sampled(
-        _OBJECT_WITH_COLOR_TEMPLATE,
-        chooser=_CHOOSER,
-        ontology=GAILA_PHASE_1_ONTOLOGY,
-        max_to_sample=20,
-    ),
-)
+def _make_objects_with_colors_curriculum() -> _Phase1InstanceGroup:
+    color = color_variable("color")
+    object_with_color = object_variable(
+        "object",
+        added_properties=[color],
+        banned_properties=[IS_HUMAN, IS_BODY_PART, COLOR],
+    )
+
+    object_with_color_template = Phase1SituationTemplate(
+        "object-with-color", salient_object_variables=[object_with_color]
+    )
+
+    return _phase1_instances(
+        "objects with colors",
+        chain(
+            *[
+                sampled(
+                    object_with_color_template,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                    chooser=_CHOOSER,
+                    max_to_sample=20,
+                )
+            ]
+        ),
+    )
 
 
 def build_object_multiples_situations(
@@ -1589,7 +1599,7 @@ def _make_behind_in_front_curriculum():
 
 GAILA_PHASE_1_CURRICULUM = [
     EACH_OBJECT_BY_ITSELF_SUB_CURRICULUM,
-    OBJECTS_WITH_COLORS_SUB_CURRICULUM,
+    _make_objects_with_colors_curriculum,
     MULTIPLE_OF_THE_SAME_OBJECT_SUB_CURRICULUM,
     _OBJECT_ON_GROUND_SUB_CURRICULUM,
     _ANY_OBJECT_INTRANSITIVES_SUBCURRICULUM,
