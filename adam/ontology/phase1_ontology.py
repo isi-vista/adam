@@ -468,8 +468,10 @@ _ARM = OntologyNode("arm")
 subtype(_ARM, INANIMATE_OBJECT)
 _TORSO = OntologyNode("torso")
 subtype(_TORSO, _BODY_PART)
-_LEG = OntologyNode("leg")
-subtype(_LEG, _BODY_PART)
+_ANIMAL_LEG = OntologyNode("(animal) leg")
+subtype(_ANIMAL_LEG, _BODY_PART)
+_INANIMATE_LEG = OntologyNode("(inanimate) leg")
+subtype(_INANIMATE_LEG, INANIMATE_OBJECT)
 _CHAIR_BACK = OntologyNode("chairback")
 subtype(_CHAIR_BACK, INANIMATE_OBJECT)
 _CHAIR_SEAT = OntologyNode("chairseat")
@@ -500,6 +502,10 @@ _DOG_HEAD = OntologyNode("dog-head", [CAN_MANIPULATE_OBJECTS])
 subtype(_DOG_HEAD, _BODY_PART)
 _BIRD_HEAD = OntologyNode("bird-head", [CAN_MANIPULATE_OBJECTS])
 subtype(_BIRD_HEAD, _BODY_PART)
+_LEG_SEGMENT = OntologyNode("leg-segment")
+subtype(_LEG_SEGMENT, _BODY_PART)
+_FOOT = OntologyNode("foot")
+subtype(_FOOT, _BODY_PART)
 
 # Verbs
 
@@ -978,31 +984,103 @@ _BIRD_HEAD_SCHEMA = _make_bird_head_schema()
 _TORSO_SCHEMA = _make_torso_schema()
 
 
-def _make_human_leg_schema():
-    hip_to_foot = directed("hip-to-foot")
+def _make_upper_leg_segment_schema():
+    hip_to_knee = directed("hip-to-knee")
     diameter_0 = symmetric("diameter_0")
     diameter_1 = symmetric("diameter_1")
 
     return ObjectStructuralSchema(
-        _LEG,
+        _LEG_SEGMENT,
         geon=Geon(
             cross_section=OVALISH,
             cross_section_size=CONSTANT,
             axes=Axes(
-                primary_axis=hip_to_foot,
+                primary_axis=hip_to_knee,
                 orienting_axes=[diameter_0, diameter_1],
                 axis_relations=[
-                    much_bigger_than(hip_to_foot, diameter_0),
-                    much_bigger_than(hip_to_foot, diameter_1),
+                    much_bigger_than(hip_to_knee, diameter_0),
+                    much_bigger_than(hip_to_knee, diameter_1),
                 ],
             ),
         ),
     )
 
 
-# TODO: we shouldn't share a leg schema between humans and tables
-# https://github.com/isi-vista/adam/issues/265
-_LEG_SCHEMA = _make_human_leg_schema()
+_UPPER_LEG_SEGMENT_SCHEMA = _make_upper_leg_segment_schema()
+
+
+def _make_lower_leg_segment_schema():
+    knee_to_foot = directed("knee-to-foot")
+    diameter_0 = symmetric("diameter_0")
+    diameter_1 = symmetric("diameter_1")
+
+    return ObjectStructuralSchema(
+        _LEG_SEGMENT,
+        geon=Geon(
+            cross_section=OVALISH,
+            cross_section_size=CONSTANT,
+            axes=Axes(
+                primary_axis=knee_to_foot,
+                orienting_axes=[diameter_0, diameter_1],
+                axis_relations=[
+                    much_bigger_than(knee_to_foot, diameter_0),
+                    much_bigger_than(knee_to_foot, diameter_1),
+                ],
+            ),
+        ),
+    )
+
+
+_LOWER_LEG_SEGMENT_SCHEMA = _make_lower_leg_segment_schema()
+
+
+def _make_foot_schema():
+    toes_to_ankle = directed("toes-to-ankle")
+    ankle_to_ground = straight_up("ankle-to-ground")
+    arch_to_edge = directed("arch-to-edge")
+
+    return ObjectStructuralSchema(
+        _FOOT,
+        geon=Geon(
+            cross_section=OVALISH,
+            cross_section_size=SMALL_TO_LARGE,
+            axes=Axes(
+                primary_axis=toes_to_ankle,
+                orienting_axes=[ankle_to_ground, arch_to_edge],
+                axis_relations=[
+                    bigger_than(toes_to_ankle, [ankle_to_ground, arch_to_edge])
+                ],
+            ),
+        ),
+    )
+
+
+_FOOT_SCHEMA = _make_foot_schema()
+
+
+def _make_inanimate_leg_schema():
+    top_to_base = directed("top-to-base")
+    diameter_0 = symmetric("diameter_0")
+    diameter_1 = symmetric("diameter_1")
+
+    return ObjectStructuralSchema(
+        _INANIMATE_LEG,
+        geon=Geon(
+            cross_section=OVALISH,
+            cross_section_size=CONSTANT,
+            axes=Axes(
+                primary_axis=top_to_base,
+                orienting_axes=[diameter_0, diameter_1],
+                axis_relations=[
+                    much_bigger_than(top_to_base, diameter_0),
+                    much_bigger_than(top_to_base, diameter_1),
+                ],
+            ),
+        ),
+    )
+
+
+_INANIMATE_LEG_SCHEMA = _make_inanimate_leg_schema()
 
 
 def _make_chair_back_schema() -> ObjectStructuralSchema:
@@ -1292,13 +1370,30 @@ _ARM_SCHEMA = ObjectStructuralSchema(
     axes=_ARM_SCHEMA_UPPER.schema.axes,
 )
 
+# Schemata describing an animal leg
+_LEG_SEGMENT_0 = SubObject(_UPPER_LEG_SEGMENT_SCHEMA)
+_LEG_SEGMENT_1 = SubObject(_LOWER_LEG_SEGMENT_SCHEMA)
+_HUMAN_FOOT = SubObject(_FOOT_SCHEMA)
+_ANIMAL_LEG_SCHEMA = ObjectStructuralSchema(
+    _ANIMAL_LEG,
+    sub_objects=[_HUMAN_FOOT, _LEG_SEGMENT_0, _LEG_SEGMENT_1],
+    sub_object_relations=flatten_relations(
+        [
+            contacts(_HUMAN_FOOT, _LEG_SEGMENT_1),
+            contacts(_LEG_SEGMENT_0, _LEG_SEGMENT_1),
+            bigger_than([_LEG_SEGMENT_0, _LEG_SEGMENT_1], _HUMAN_FOOT),
+        ]
+    ),
+    axes=_LEG_SEGMENT_0.schema.axes,
+)
+
 # schemata describing the sub-object structural nature of a Person
 _PERSON_SCHEMA_HEAD = SubObject(_HEAD_SCHEMA)
 _PERSON_SCHEMA_TORSO = SubObject(_TORSO_SCHEMA)
 _PERSON_SCHEMA_LEFT_ARM = SubObject(_ARM_SCHEMA)
 _PERSON_SCHEMA_RIGHT_ARM = SubObject(_ARM_SCHEMA)
-_PERSON_SCHEMA_LEFT_LEG = SubObject(_LEG_SCHEMA)
-_PERSON_SCHEMA_RIGHT_LEG = SubObject(_LEG_SCHEMA)
+_PERSON_SCHEMA_LEFT_LEG = SubObject(_ANIMAL_LEG_SCHEMA)
+_PERSON_SCHEMA_RIGHT_LEG = SubObject(_ANIMAL_LEG_SCHEMA)
 
 _PERSON_SCHEMA_APPENDAGES = [
     _PERSON_SCHEMA_LEFT_ARM,
@@ -1330,10 +1425,10 @@ _PERSON_SCHEMA = ObjectStructuralSchema(
 
 # schemata describing the sub-object structural nature of a Chair
 _CHAIR_SCHEMA_BACK = SubObject(_CHAIRBACK_SCHEMA)
-_CHAIR_SCHEMA_LEG_1 = SubObject(_LEG_SCHEMA)
-_CHAIR_SCHEMA_LEG_2 = SubObject(_LEG_SCHEMA)
-_CHAIR_SCHEMA_LEG_3 = SubObject(_LEG_SCHEMA)
-_CHAIR_SCHEMA_LEG_4 = SubObject(_LEG_SCHEMA)
+_CHAIR_SCHEMA_LEG_1 = SubObject(_INANIMATE_LEG_SCHEMA)
+_CHAIR_SCHEMA_LEG_2 = SubObject(_INANIMATE_LEG_SCHEMA)
+_CHAIR_SCHEMA_LEG_3 = SubObject(_INANIMATE_LEG_SCHEMA)
+_CHAIR_SCHEMA_LEG_4 = SubObject(_INANIMATE_LEG_SCHEMA)
 _CHAIR_SCHEMA_SEAT = SubObject(_CHAIR_SEAT_SCHEMA)
 _CHAIR_LEGS = [
     _CHAIR_SCHEMA_LEG_1,
@@ -1364,10 +1459,10 @@ _CHAIR_SCHEMA = ObjectStructuralSchema(
 )
 
 # schemata describing the sub-object structural nature of a Table
-_TABLE_SCHEMA_LEG_1 = SubObject(_LEG_SCHEMA)
-_TABLE_SCHEMA_LEG_2 = SubObject(_LEG_SCHEMA)
-_TABLE_SCHEMA_LEG_3 = SubObject(_LEG_SCHEMA)
-_TABLE_SCHEMA_LEG_4 = SubObject(_LEG_SCHEMA)
+_TABLE_SCHEMA_LEG_1 = SubObject(_INANIMATE_LEG_SCHEMA)
+_TABLE_SCHEMA_LEG_2 = SubObject(_INANIMATE_LEG_SCHEMA)
+_TABLE_SCHEMA_LEG_3 = SubObject(_INANIMATE_LEG_SCHEMA)
+_TABLE_SCHEMA_LEG_4 = SubObject(_INANIMATE_LEG_SCHEMA)
 _TABLE_SCHEMA_TABLETOP = SubObject(_TABLETOP_SCHEMA)
 _TABLE_LEGS = [
     _TABLE_SCHEMA_LEG_1,
@@ -1396,10 +1491,10 @@ _TABLE_SCHEMA = ObjectStructuralSchema(
 )
 
 # schemata describing the sub-object structural nature of a dog
-_DOG_SCHEMA_LEG_1 = SubObject(_LEG_SCHEMA)
-_DOG_SCHEMA_LEG_2 = SubObject(_LEG_SCHEMA)
-_DOG_SCHEMA_LEG_3 = SubObject(_LEG_SCHEMA)
-_DOG_SCHEMA_LEG_4 = SubObject(_LEG_SCHEMA)
+_DOG_SCHEMA_LEG_1 = SubObject(_ANIMAL_LEG_SCHEMA)
+_DOG_SCHEMA_LEG_2 = SubObject(_ANIMAL_LEG_SCHEMA)
+_DOG_SCHEMA_LEG_3 = SubObject(_ANIMAL_LEG_SCHEMA)
+_DOG_SCHEMA_LEG_4 = SubObject(_ANIMAL_LEG_SCHEMA)
 _DOG_SCHEMA_TORSO = SubObject(_TORSO_SCHEMA)
 _DOG_SCHEMA_HEAD = SubObject(_DOG_HEAD_SCHEMA)
 _DOG_SCHEMA_TAIL = SubObject(_TAIL_SCHEMA)
@@ -1440,8 +1535,8 @@ _DOG_SCHEMA = ObjectStructuralSchema(
 # schemata describing the sub-object structural nature of a bird
 _BIRD_SCHEMA_HEAD = SubObject(_BIRD_HEAD_SCHEMA)
 _BIRD_SCHEMA_TORSO = SubObject(_TORSO_SCHEMA)
-_BIRD_SCHEMA_LEFT_LEG = SubObject(_LEG_SCHEMA)
-_BIRD_SCHEMA_RIGHT_LEG = SubObject(_LEG_SCHEMA)
+_BIRD_SCHEMA_LEFT_LEG = SubObject(_ANIMAL_LEG_SCHEMA)
+_BIRD_SCHEMA_RIGHT_LEG = SubObject(_ANIMAL_LEG_SCHEMA)
 _BIRD_SCHEMA_TAIL = SubObject(_TAIL_SCHEMA)
 _BIRD_SCHEMA_LEFT_WING = SubObject(_WING_SCHEMA)
 _BIRD_SCHEMA_RIGHT_WING = SubObject(_WING_SCHEMA)
@@ -2200,8 +2295,8 @@ GAILA_PHASE_1_ONTOLOGY = Ontology(
             (BABY,),
             (_BODY,),
             (_TORSO, _CHAIR_BACK, _CHAIR_SEAT),
-            (_ARM, _LEG),
-            (HAND, HEAD, _ARM_SEGMENT),
+            (_ARM, _ANIMAL_LEG, _INANIMATE_LEG),
+            (HAND, HEAD, _ARM_SEGMENT, _LEG_SEGMENT, _FOOT),
             (BALL, BIRD, BOOK, COOKIE, CUP, HAT),
             (_TAIL, _WING),
         ),
