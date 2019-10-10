@@ -3,7 +3,7 @@ Interfaces for language learning code.
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Generic, Mapping
+from typing import Dict, Generic, Mapping, Set
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
@@ -11,6 +11,7 @@ from immutablecollections import immutabledict
 
 from adam.language import LinguisticDescription, LinguisticDescriptionT
 from adam.perception import PerceptionT, PerceptualRepresentation
+from adam.perception.developmental_primitive_perception import PropertyPerception
 
 
 @attrs(frozen=True)
@@ -46,7 +47,7 @@ class LanguageLearner(ABC, Generic[PerceptionT, LinguisticDescriptionT]):
 
     @abstractmethod
     def observe(
-        self, learning_example: LearningExample[PerceptionT, LinguisticDescriptionT]
+            self, learning_example: LearningExample[PerceptionT, LinguisticDescriptionT]
     ) -> None:
         """
         Observe a `LearningExample`, possibly updating internal state.
@@ -54,7 +55,7 @@ class LanguageLearner(ABC, Generic[PerceptionT, LinguisticDescriptionT]):
 
     @abstractmethod
     def describe(
-        self, perception: PerceptualRepresentation[PerceptionT]
+            self, perception: PerceptualRepresentation[PerceptionT]
     ) -> Mapping[LinguisticDescriptionT, float]:
         r"""
         Given a `PerceptualRepresentation` of a situation, produce one or more
@@ -88,17 +89,67 @@ class MemorizingLanguageLearner(
     ] = attrib(init=False, default=Factory(dict))
 
     def observe(
-        self, learning_example: LearningExample[PerceptionT, LinguisticDescriptionT]
+            self, learning_example: LearningExample[PerceptionT, LinguisticDescriptionT]
     ) -> None:
         self._memorized_situations[
             learning_example.perception
         ] = learning_example.linguistic_description
 
     def describe(
-        self, perception: PerceptualRepresentation[PerceptionT]
+            self, perception: PerceptualRepresentation[PerceptionT]
     ) -> Mapping[LinguisticDescriptionT, float]:
         memorized_description = self._memorized_situations.get(perception)
         if memorized_description:
             return immutabledict(((memorized_description, 1.0),))
+        else:
+            return immutabledict()
+
+
+@attrs
+class SubsetLanguageLearner(
+    Generic[PerceptionT, LinguisticDescriptionT],
+    LanguageLearner[PerceptionT, LinguisticDescriptionT],
+):
+    """
+    An implementation of `LanguageLearner` for subset learning based approach for single object detection.
+    """
+
+    _descriptions_to_properties: Dict[
+        LinguisticDescriptionT, Set[PropertyPerception]
+    ] = attrib(init=False, default=Factory(dict))
+
+    def observe(
+            self, learning_example: LearningExample[PerceptionT, LinguisticDescriptionT]
+    ) -> None:
+        frames = learning_example.perception.frames
+        description = learning_example.linguistic_description
+        if len(frames) != 1:
+            raise RuntimeError('Subset learner can only handle single frames for now')
+
+        property_assertions = frames[0].property_assertions
+        # If already observed, reduce the properties for that description to the common subset of
+        # the new observation and the previous observations
+        if description in self._descriptions_to_properties:
+            self._descriptions_to_properties[description] = \
+                self._descriptions_to_properties[description].intersection(property_assertions)
+        else:
+            self._descriptions_to_properties[learning_example.linguistic_description] = property_assertions
+
+    def describe(
+            self, perception: PerceptualRepresentation[PerceptionT]
+    ) -> Mapping[LinguisticDescriptionT, float]:
+        if len(perception.frames) != 1:
+            raise RuntimeError('Subset learner can only handle single frames for now')
+
+        perception_properties = perception.frames[0].property_assertions
+        # get the learned description for which there are the maximum number of matching properties (i.e. most specific)
+        max_matching_properties = 0
+        learned_description = None
+        for description, properties in self._descriptions_to_properties.items():
+            if all(prop in perception.frames[0].property_assertions for prop in properties) \
+                    and (len(properties) > max_matching_properties):
+                learned_description = description
+        if learned_description and max_matching_properties > 0:
+            return immutabledict(((learned_description, 1.0),))
         else:
             return immutabledict()
