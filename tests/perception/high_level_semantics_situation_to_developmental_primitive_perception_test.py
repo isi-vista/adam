@@ -65,8 +65,8 @@ from adam.random_utils import RandomChooser
 from adam.relation import Relation
 from adam.situation import Action, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
-from adam_test_utils import perception_with_handle
-from sample_situations import make_bird_flies_over_a_house
+from tests.adam_test_utils import perception_with_handle
+from tests.sample_situations import make_bird_flies_over_a_house
 
 _PERCEPTION_GENERATOR = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
     GAILA_PHASE_1_ONTOLOGY
@@ -625,7 +625,14 @@ def test_colors_across_part_of_relations():
 
     truck_perception = perception_with_handle(frame, "truck_0")
     flatbed_perception = perception_with_handle(frame, "flatbed_0")
-    tire_perception = perception_with_handle(frame, "tire_0")
+    tire0_perception = perception_with_handle(frame, "tire_0")
+    tire1_perception = perception_with_handle(frame, "tire_1")
+    tire2_perception = perception_with_handle(frame, "tire_2")
+    tire3_perception = perception_with_handle(frame, "tire_3")
+    tire4_perception = perception_with_handle(frame, "tire_4")
+    tire5_perception = perception_with_handle(frame, "tire_5")
+    tire6_perception = perception_with_handle(frame, "tire_6")
+    tire7_perception = perception_with_handle(frame, "tire_7")
     blue_options = COLORS_TO_RGBS[BLUE]
     blue_perceptions = [RgbColorPerception(r, g, b) for r, g, b in blue_options]
     red_options = COLORS_TO_RGBS[RED]
@@ -648,6 +655,16 @@ def test_colors_across_part_of_relations():
         for red_perception in red_perceptions
     )
     assert any(
-        HasColor(tire_perception, black_perception) in property_assertions
+        (
+            HasColor(tire0_perception, black_perception)
+            and HasColor(tire1_perception, black_perception)
+            and HasColor(tire2_perception, black_perception)
+            and HasColor(tire3_perception, black_perception)
+            and HasColor(tire4_perception, black_perception)
+            and HasColor(tire5_perception, black_perception)
+            and HasColor(tire6_perception, black_perception)
+            and HasColor(tire7_perception, black_perception)
+        )
+        in property_assertions
         for black_perception in black_perceptions
     )

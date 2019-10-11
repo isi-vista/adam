@@ -768,6 +768,7 @@ class _PerceptionGeneration:
                 # which we will recursively instantiate.
                 perceived_object = self._instantiate_object_schema(
                     only(object_schemata),
+                    {},
                     situation_object=situation_object,
                     inherited_color=color,
                 )
@@ -798,6 +799,8 @@ class _PerceptionGeneration:
     def _instantiate_object_schema(
         self,
         schema: ObjectStructuralSchema,
+        # This will track what types of objects have which RgbColorPerceptions
+        sub_object_nodes_to_rgb: Dict[OntologyNode, RgbColorPerception],
         *,
         # if the object being instantiated corresponds to an object
         # in the situation description, then this will track that object
@@ -849,7 +852,9 @@ class _PerceptionGeneration:
             (
                 sub_object,
                 self._instantiate_object_schema(
-                    sub_object.schema, inherited_color=inherited_color
+                    sub_object.schema,
+                    sub_object_nodes_to_rgb,
+                    inherited_color=inherited_color,
                 ),
             )
             for sub_object in schema.sub_objects
@@ -866,8 +871,6 @@ class _PerceptionGeneration:
             )
             # If the sub-object does not already have a color,
             # use the parent's prototypical color if one exists
-            # TODO: ensure that each sub-object of the same type gets the same RgbColorPerception
-            # https://github.com/isi-vista/adam/issues/249
             sub_object_colors = immutableset(
                 property_
                 for property_ in self._generator.ontology.properties_for_node(
@@ -876,13 +879,20 @@ class _PerceptionGeneration:
                 if self._generator.ontology.is_subtype_of(property_, COLOR)
             )
 
-            if sub_object_colors:
-                sub_object_color: Any = self._chooser.choice(sub_object_colors)
+            if sub_object.schema.ontology_node in sub_object_nodes_to_rgb:
+                sub_object_color: Any = sub_object_nodes_to_rgb[
+                    sub_object.schema.ontology_node
+                ]
+            elif sub_object_colors:
+                sub_object_color = self._chooser.choice(sub_object_colors)
                 if sub_object_color in COLORS_TO_RGBS.keys():
                     color_options = COLORS_TO_RGBS[sub_object_color]
                     if color_options:
                         r, g, b = self._chooser.choice(color_options)
                         sub_object_color = RgbColorPerception(r, g, b)
+                        sub_object_nodes_to_rgb[
+                            sub_object.schema.ontology_node
+                        ] = sub_object_color
                 else:
                     raise RuntimeError(
                         f"Not sure how to generate perception for the unknown property {sub_object_color} "
