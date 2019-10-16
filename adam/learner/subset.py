@@ -3,7 +3,11 @@ from typing import Dict, Generic, Mapping, Set, Tuple
 from attr import Factory, attrib, attrs
 from immutablecollections import immutabledict
 
-from adam.language import LinguisticDescriptionT, TokenSequenceLinguisticDescription
+from adam.language import (
+    LinguisticDescriptionT,
+    TokenSequenceLinguisticDescription,
+    LinguisticDescription,
+)
 from adam.learner import LanguageLearner, LearningExample
 from adam.perception import PerceptionT, PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
@@ -15,7 +19,7 @@ from adam.perception.developmental_primitive_perception import (
 @attrs
 class SubsetLanguageLearner(
     Generic[PerceptionT, LinguisticDescriptionT],
-    LanguageLearner[PerceptionT, TokenSequenceLinguisticDescription],
+    LanguageLearner[PerceptionT, LinguisticDescription],
 ):
     """
     An implementation of `LanguageLearner` for subset learning based approach for single object detection.
@@ -26,10 +30,7 @@ class SubsetLanguageLearner(
     )
 
     def observe(
-        self,
-        learning_example: LearningExample[
-            PerceptionT, TokenSequenceLinguisticDescription
-        ],
+        self, learning_example: LearningExample[PerceptionT, LinguisticDescription]
     ) -> None:
         perception = learning_example.perception
         perception_frames = perception.frames
@@ -63,7 +64,7 @@ class SubsetLanguageLearner(
 
     def describe(
         self, perception: PerceptualRepresentation[PerceptionT]
-    ) -> Mapping[TokenSequenceLinguisticDescription, float]:
+    ) -> Mapping[LinguisticDescription, float]:
         if len(perception.frames) != 1:
             raise RuntimeError("Subset learner can only handle single frames for now")
         if isinstance(perception.frames[0], DevelopmentalPrimitivePerceptionFrame):

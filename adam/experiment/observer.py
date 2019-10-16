@@ -5,11 +5,7 @@ from typing import Generic, Mapping, Optional, Tuple
 from attr import attrib, attrs
 from attr.validators import instance_of
 
-from adam.language import (
-    LinguisticDescription,
-    LinguisticDescriptionT,
-    TokenSequenceLinguisticDescription,
-)
+from adam.language import LinguisticDescription, LinguisticDescriptionT
 from adam.language.language_generator import SituationT
 from adam.perception import PerceptionT, PerceptualRepresentation
 
@@ -26,9 +22,9 @@ class DescriptionObserver(Generic[SituationT, LinguisticDescriptionT, Perception
     def observe(
         self,
         situation: Optional[SituationT],
-        true_description: TokenSequenceLinguisticDescription,
+        true_description: LinguisticDescription,
         perceptual_representation: PerceptualRepresentation[PerceptionT],
-        predicted_descriptions: Mapping[TokenSequenceLinguisticDescription, float],
+        predicted_descriptions: Mapping[LinguisticDescription, float],
     ) -> None:
         r"""
         Observe a description provided by a `LanguageLearner`.
@@ -69,9 +65,9 @@ class TopChoiceExactMatchObserver(
     def observe(  # pylint:disable=unused-argument
         self,
         situation: Optional[SituationT],
-        true_description: TokenSequenceLinguisticDescription,
+        true_description: LinguisticDescription,
         perceptual_representation: PerceptualRepresentation[PerceptionT],
-        predicted_descriptions: Mapping[TokenSequenceLinguisticDescription, float],
+        predicted_descriptions: Mapping[LinguisticDescription, float],
     ) -> None:
         self._num_observations += 1
 

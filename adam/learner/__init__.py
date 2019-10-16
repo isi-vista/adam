@@ -9,11 +9,7 @@ from attr import Factory, attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import immutabledict
 
-from adam.language import (
-    LinguisticDescription,
-    LinguisticDescriptionT,
-    TokenSequenceLinguisticDescription,
-)
+from adam.language import LinguisticDescription, LinguisticDescriptionT
 from adam.perception import PerceptionT, PerceptualRepresentation
 
 
@@ -50,10 +46,7 @@ class LanguageLearner(ABC, Generic[PerceptionT, LinguisticDescriptionT]):
 
     @abstractmethod
     def observe(
-        self,
-        learning_example: LearningExample[
-            PerceptionT, TokenSequenceLinguisticDescription
-        ],
+        self, learning_example: LearningExample[PerceptionT, LinguisticDescription]
     ) -> None:
         """
         Observe a `LearningExample`, possibly updating internal state.
@@ -62,7 +55,7 @@ class LanguageLearner(ABC, Generic[PerceptionT, LinguisticDescriptionT]):
     @abstractmethod
     def describe(
         self, perception: PerceptualRepresentation[PerceptionT]
-    ) -> Mapping[TokenSequenceLinguisticDescription, float]:
+    ) -> Mapping[LinguisticDescription, float]:
         r"""
         Given a `PerceptualRepresentation` of a situation, produce one or more
         `LinguisticDescription`\ s of it.
@@ -78,7 +71,7 @@ class LanguageLearner(ABC, Generic[PerceptionT, LinguisticDescriptionT]):
 @attrs
 class MemorizingLanguageLearner(
     Generic[PerceptionT, LinguisticDescriptionT],
-    LanguageLearner[PerceptionT, LinguisticDescriptionT],
+    LanguageLearner[PerceptionT, LinguisticDescription],
 ):
     """
     A trivial implementation of `LanguageLearner` which just memorizes situations it has seen before
@@ -91,14 +84,11 @@ class MemorizingLanguageLearner(
     """
 
     _memorized_situations: Dict[
-        PerceptualRepresentation[PerceptionT], TokenSequenceLinguisticDescription
+        PerceptualRepresentation[PerceptionT], LinguisticDescription
     ] = attrib(init=False, default=Factory(dict))
 
     def observe(
-        self,
-        learning_example: LearningExample[
-            PerceptionT, TokenSequenceLinguisticDescription
-        ],
+        self, learning_example: LearningExample[PerceptionT, LinguisticDescription]
     ) -> None:
         self._memorized_situations[
             learning_example.perception
@@ -106,7 +96,7 @@ class MemorizingLanguageLearner(
 
     def describe(
         self, perception: PerceptualRepresentation[PerceptionT]
-    ) -> Mapping[TokenSequenceLinguisticDescription, float]:
+    ) -> Mapping[LinguisticDescription, float]:
         memorized_description = self._memorized_situations.get(perception)
         if memorized_description:
             return immutabledict(((memorized_description, 1.0),))
