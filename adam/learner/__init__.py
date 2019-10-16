@@ -3,7 +3,7 @@ Interfaces for language learning code.
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Generic, Mapping, Set
+from typing import Dict, Generic, Mapping
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
@@ -11,10 +11,6 @@ from immutablecollections import immutabledict
 
 from adam.language import LinguisticDescription, LinguisticDescriptionT
 from adam.perception import PerceptionT, PerceptualRepresentation
-from adam.perception.developmental_primitive_perception import (
-    PropertyPerception,
-    DevelopmentalPrimitivePerceptionFrame,
-)
 
 
 @attrs(frozen=True)
@@ -104,79 +100,5 @@ class MemorizingLanguageLearner(
         memorized_description = self._memorized_situations.get(perception)
         if memorized_description:
             return immutabledict(((memorized_description, 1.0),))
-        else:
-            return immutabledict()
-
-
-@attrs
-class SubsetLanguageLearner(
-    Generic[PerceptionT, LinguisticDescriptionT],
-    LanguageLearner[PerceptionT, LinguisticDescriptionT],
-):
-    """
-    An implementation of `LanguageLearner` for subset learning based approach for single object detection.
-    """
-
-    _descriptions_to_properties: Dict[
-        LinguisticDescriptionT, Set[PropertyPerception]
-    ] = attrib(init=False, default=Factory(dict))
-
-    def observe(
-        self, learning_example: LearningExample[PerceptionT, LinguisticDescriptionT]
-    ) -> None:
-        if len(learning_example.perception.frames) != 1:
-            raise RuntimeError("Subset learner can only handle single frames for now")
-
-        is_new_description = True
-        observed_linguistic_description = learning_example.linguistic_description
-        if isinstance(
-            learning_example.perception.frames[0], DevelopmentalPrimitivePerceptionFrame
-        ):
-            observed_property_assertions = learning_example.perception.frames[
-                0
-            ].property_assertions
-        else:
-            raise RuntimeError("Cannot process perception type.")
-
-        for description in self._descriptions_to_properties.keys():
-            # If already observed, reduce the properties for that description to the common subset of
-            # the new observation and the previous observations
-            if (
-                observed_linguistic_description.as_token_sequence()
-                == description.as_token_sequence()
-            ):
-                self._descriptions_to_properties[
-                    description
-                ] = self._descriptions_to_properties[description].intersection(
-                    observed_property_assertions
-                )
-                is_new_description = False
-        # If it's a new description, learn that as a new observation
-        if is_new_description:
-            self._descriptions_to_properties[observed_linguistic_description] = set(
-                observed_property_assertions
-            )
-
-    def describe(
-        self, perception: PerceptualRepresentation[PerceptionT]
-    ) -> Mapping[LinguisticDescriptionT, float]:
-        if len(perception.frames) != 1:
-            raise RuntimeError("Subset learner can only handle single frames for now")
-        if isinstance(perception.frames[0], DevelopmentalPrimitivePerceptionFrame):
-            observed_property_assertions = perception.frames[0].property_assertions
-        else:
-            raise RuntimeError("Cannot process perception type.")
-
-        # get the learned description for which there are the maximum number of matching properties (i.e. most specific)
-        max_matching_properties = 0
-        learned_description = None
-        for description, properties in self._descriptions_to_properties.items():
-            if all(prop in observed_property_assertions for prop in properties) and (
-                len(properties) > max_matching_properties
-            ):
-                learned_description = description
-                max_matching_properties = len(properties)
-        if learned_description and max_matching_properties > 0:
-            return immutabledict(((learned_description, 1.0),))
         else:
             return immutabledict()

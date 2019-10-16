@@ -192,13 +192,6 @@ def execute_experiment(
             test_instance_perception,
         ) in test_instance_group.instances():
             descriptions_from_learner = learner.describe(test_instance_perception)
-            logging.info(
-                "Test gold description: %s", test_instance_language.as_token_sequence()
-            )
-            logging.info(
-                "Learner's descriptions: %s",
-                [desc.as_token_sequence() for desc in descriptions_from_learner],
-            )
             for test_observer in experiment.test_observers:
                 test_observer.observe(
                     situation,

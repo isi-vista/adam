@@ -1,18 +1,15 @@
 from adam.curriculum.phase1_curriculum import _phase1_instances, _CHOOSER, _LEARNER_OBJECT
-from adam.experiment import Experiment, execute_experiment
-from adam.experiment.observer import TopChoiceExactMatchObserver
 from adam.language_specific.english.english_language_generator import IGNORE_COLORS
-from adam.learner import SubsetLanguageLearner
-from adam.ontology.phase1_ontology import BALL
+from adam.learner import LearningExample
+from adam.learner.subset import SubsetLanguageLearner
+from adam.ontology.phase1_ontology import BALL, TRUCK
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
-from adam.random_utils import RandomChooser
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
     object_variable,
     all_possible,
     color_variable,
 )
-import logging
 
 
 def test_subset_learner_ball():
@@ -32,27 +29,52 @@ def test_subset_learner_ball():
         ),
     )
     test_ball_curriculum = _phase1_instances(
-        "all ball situations",
+        "ball test",
         situations=all_possible(
             ball_template, chooser=_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY
         ),
     )
-
-    experiment = Experiment(
-        name="simple",
-        training_stages=[ball_curriculum],
-        learner_factory=SubsetLanguageLearner,
-        pre_example_training_observers=[TopChoiceExactMatchObserver("pre")],
-        post_example_training_observers=[TopChoiceExactMatchObserver("post")],
-        # warm_up_test_instance_groups=[ball_curriculum],
-        test_instance_groups=[test_ball_curriculum],
-        test_observers=[TopChoiceExactMatchObserver("test")],
-        sequence_chooser=RandomChooser.for_seed(0),
+    colored_truck_object = object_variable(
+        "truck-with-color", TRUCK, added_properties=[color_variable("color")]
+    )
+    truck_template = Phase1SituationTemplate(
+        "colored-truck-object",
+        salient_object_variables=[colored_truck_object, _LEARNER_OBJECT],
+        syntax_hints=[IGNORE_COLORS],
     )
 
-    execute_experiment(experiment)
+    truck_curriculum = _phase1_instances(
+        "all truck situations",
+        situations=all_possible(
+            truck_template, chooser=_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY
+        ),
+    )
+    test_truck_curriculum = _phase1_instances(
+        "truck test",
+        situations=all_possible(
+            truck_template, chooser=_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY
+        ),
+    )
 
+    learner = SubsetLanguageLearner()
+    for training_stage in [ball_curriculum, truck_curriculum]:
+        for (
+            _,
+            linguistic_description,
+            perceptual_representation,
+        ) in training_stage.instances():
+            learner.observe(
+                LearningExample(perceptual_representation, linguistic_description)
+            )
 
-# For debugging purposes to view the log of experiment
-logging.basicConfig(level=logging.DEBUG)
-test_subset_learner_ball()
+    for test_instance_group in [test_ball_curriculum, test_truck_curriculum]:
+        for (
+            _,
+            test_instance_language,
+            test_instance_perception,
+        ) in test_instance_group.instances():
+            descriptions_from_learner = learner.describe(test_instance_perception)
+            gold = test_instance_language.as_token_sequence()
+            assert [desc.as_token_sequence() for desc in descriptions_from_learner][
+                0
+            ] == gold
