@@ -660,7 +660,14 @@ def test_colors_across_part_of_relations():
             and HasColor(tire1_perception, black_perception)
             and HasColor(tire2_perception, black_perception)
             and HasColor(tire3_perception, black_perception)
-            and HasColor(tire4_perception, black_perception)
+        )
+        in property_assertions
+        for black_perception in black_perceptions
+    )
+
+    assert any(
+        (
+            HasColor(tire4_perception, black_perception)
             and HasColor(tire5_perception, black_perception)
             and HasColor(tire6_perception, black_perception)
             and HasColor(tire7_perception, black_perception)
