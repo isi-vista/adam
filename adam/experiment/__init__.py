@@ -16,7 +16,7 @@ from vistautils.preconditions import check_arg
 
 from adam.curriculum import InstanceGroup
 from adam.experiment.observer import DescriptionObserver
-from adam.language import LinguisticDescriptionT
+from adam.language import LinguisticDescriptionT, TokenSequenceLinguisticDescription
 from adam.language.language_generator import SituationT
 from adam.learner import LanguageLearner, LearningExample
 from adam.perception import PerceptionT
@@ -43,7 +43,7 @@ class Experiment(Generic[SituationT, LinguisticDescriptionT, PerceptionT]):
 
     name: str = attrib(validator=instance_of(str))
     """A human-readable description of this experiment."""
-    training_stages: "Sequence[InstanceGroup[SituationT, LinguisticDescriptionT, PerceptionT]]" = attrib(
+    training_stages: "Sequence[InstanceGroup[SituationT, TokenSequenceLinguisticDescription, PerceptionT]]" = attrib(
         converter=_to_tuple, kw_only=True
     )
     """
@@ -84,7 +84,7 @@ class Experiment(Generic[SituationT, LinguisticDescriptionT, PerceptionT]):
     except they receive the learner's description
     after it has updated itself by seeing the correct description.
     """
-    warm_up_test_instance_groups: "Sequence[InstanceGroup[Any, LinguisticDescriptionT, PerceptionT]]" = attrib(
+    warm_up_test_instance_groups: "Sequence[InstanceGroup[Any, TokenSequenceLinguisticDescription, PerceptionT]]" = attrib(
         converter=_to_tuple, default=tuple(), kw_only=True
     )
     """
@@ -92,7 +92,7 @@ class Experiment(Generic[SituationT, LinguisticDescriptionT, PerceptionT]):
     if at test time the `LanguageLearner` needs to be shown some observations before evaluation
     (for example, to introduce some new objects).
     """
-    test_instance_groups: "Sequence[InstanceGroup[Any, LinguisticDescriptionT, PerceptionT]]" = attrib(
+    test_instance_groups: "Sequence[InstanceGroup[Any, TokenSequenceLinguisticDescription, PerceptionT]]" = attrib(
         converter=_to_tuple, default=tuple(), kw_only=True
     )
     r"""
