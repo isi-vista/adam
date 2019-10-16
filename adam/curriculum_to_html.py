@@ -10,6 +10,7 @@ from typing import (
     TypeVar,
     Union,
     Optional,
+    Dict,
 )
 
 from attr import attrib, attrs
@@ -31,9 +32,15 @@ from adam.experiment import InstanceGroup
 from adam.geon import Geon
 from adam.axes import WORLD_AXES, AxesInfo
 from adam.language.dependency import LinearizedDependencyTree
-from adam.ontology import IN_REGION, IS_SPEAKER
+from adam.ontology import IN_REGION, IS_SPEAKER, OntologyNode
 from adam.ontology.during import DuringAction
-from adam.ontology.phase1_ontology import PART_OF, SMALLER_THAN, BIGGER_THAN
+from adam.ontology.phase1_ontology import (
+    PART_OF,
+    SMALLER_THAN,
+    BIGGER_THAN,
+    MUCH_SMALLER_THAN,
+    MUCH_BIGGER_THAN,
+)
 from adam.ontology.phase1_spatial_relations import Region, SpatialPath
 from adam.perception import ObjectPerception, PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
@@ -85,7 +92,8 @@ EXPLANATION_HEADER = (
     "\n\t during the scene are preceded by 'Ø --->'. Those that cease to exist during a scene are"
     "\n\t followed by '---> Ø'  </li>"
     "\n\t<li>Size relationships are indicated by the '>' symbol. We only display the bigger than size"
-    "\n\t relation but the inverse is also a part of the relationship set. We only represent large differences in size.</li>"
+    "\n\t relation but the inverse is also a part of the relationship set. We only represent large differences in size."
+    "\n\t '>>' denotes the 'much bigger than' relation.</li>"
     "<li>Many objects also have associated Geons, which describe their shape "
     "according to Biederman's visual perception theory (see deliverable docs for a citation).</li>"
 )
@@ -469,6 +477,56 @@ class CurriculumToHtmlDumper:
 
             return "Region(" + ", ".join(parts) + ")"
 
+    _opposite_size_relations: Dict[OntologyNode, OntologyNode] = {
+        SMALLER_THAN: BIGGER_THAN,
+        BIGGER_THAN: SMALLER_THAN,
+        MUCH_SMALLER_THAN: MUCH_BIGGER_THAN,
+        MUCH_BIGGER_THAN: MUCH_SMALLER_THAN,
+    }
+
+    # Collapse pairs of size relations (biggerThan/smallerThan) into
+    # a single relation
+    def _get_single_size_relation(
+        self,
+        relation: Relation[ObjectPerception],
+        relation_set: ImmutableSet[Relation[ObjectPerception]],
+    ):
+        single_size_relation: Optional[Tuple[Any, str, Any]] = None
+        if relation.relation_type in self._opposite_size_relations:
+            if (
+                Relation(
+                    self._opposite_size_relations[relation.relation_type],
+                    relation.second_slot,
+                    relation.first_slot,
+                )
+                in relation_set
+            ):
+                if relation.relation_type == SMALLER_THAN:
+                    single_size_relation = (
+                        relation.second_slot,
+                        ">",
+                        relation.first_slot,
+                    )
+                elif relation.relation_type == BIGGER_THAN:
+                    single_size_relation = (
+                        relation.first_slot,
+                        ">",
+                        relation.second_slot,
+                    )
+                elif relation.relation_type == MUCH_SMALLER_THAN:
+                    single_size_relation = (
+                        relation.second_slot,
+                        ">>",
+                        relation.first_slot,
+                    )
+                else:
+                    single_size_relation = (
+                        relation.first_slot,
+                        ">>",
+                        relation.second_slot,
+                    )
+        return single_size_relation
+
     def _perception_text(
         self, perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]
     ) -> str:
@@ -660,31 +718,12 @@ class CurriculumToHtmlDumper:
                 (relation_prefix, relation_suffix) = compute_arrow(
                     relation, static_relations, first_frame_relations
                 )
-                # if matching smallerThan/biggerThan relations exist, give as single relation
-                opposite_relations = {
-                    SMALLER_THAN: BIGGER_THAN,
-                    BIGGER_THAN: SMALLER_THAN,
-                }
-                single_size_relation = None
-                if relation.relation_type in opposite_relations:
-                    if (
-                        Relation(
-                            opposite_relations[relation.relation_type],
-                            relation.second_slot,
-                            relation.first_slot,
-                        )
-                        in all_relations
-                    ):
-                        if relation.relation_type == SMALLER_THAN:
-                            single_size_relation = (
-                                f"{relation.second_slot} > {relation.first_slot}"
-                            )
-                        else:
-                            single_size_relation = (
-                                f"{relation.first_slot} > {relation.second_slot}"
-                            )
+                single_size_relation: Optional[
+                    Tuple[Any, str, Any]
+                ] = self._get_single_size_relation(relation, all_relations)
                 if single_size_relation:
-                    size_output = f"\t\t\t\t\t\t<li>{relation_prefix}{single_size_relation}{relation_suffix}</li>"
+                    relation_text = f"{single_size_relation[0]} {single_size_relation[1]} {single_size_relation[2]}"
+                    size_output = f"\t\t\t\t\t\t<li>{relation_prefix}{relation_text}{relation_suffix}</li>"
                     if size_output not in output_text:
                         output_text.append(size_output)
                 else:
@@ -812,7 +851,16 @@ class CurriculumToHtmlDumper:
             lines.append(f"{indent}\t<li>Axes Relations:")
             lines.append(f"{indent}\t<ul>")
             for axis_relation in geon.axes.axis_relations:
-                if isinstance(axis_relation.second_slot, Region):
+                single_size_relation: Optional[
+                    Tuple[Any, str, Any]
+                ] = self._get_single_size_relation(
+                    axis_relation, geon.axes.axis_relations
+                )
+                if single_size_relation:
+                    size_relation_text = f"{indent}\t\t<li>{single_size_relation[0].debug_name} {single_size_relation[1]} {single_size_relation[2].debug_name}</li>"
+                    if size_relation_text not in lines:
+                        lines.append(size_relation_text)
+                elif isinstance(axis_relation.second_slot, Region):
                     lines.append(
                         f"{indent}\t\t<li>{axis_relation.relation_type}({axis_relation.first_slot.debug_name},{axis_relation.second_slot})</li>"
                     )
