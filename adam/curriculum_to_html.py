@@ -781,7 +781,7 @@ class CurriculumToHtmlDumper:
             for (object_, path) in during.objects_to_paths.items():
                 path_rendering = self._render_path(path, indent_depth=indent_depth + 2)
                 lines.append(f"{indent}\t\t<li>{object_}: {path_rendering}</li>")
-            lines.append(f"{indent}</ul></li>")
+            lines.append(f"{indent}</ul></ul></li>")
         if during.continuously:
             lines.append(f"{indent}\t<li><b>Relations which hold continuously:</b>")
             lines.append(f"{indent}\t<ul>")
