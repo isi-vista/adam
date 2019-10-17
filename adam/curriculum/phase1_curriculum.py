@@ -1599,10 +1599,10 @@ def _make_behind_in_front_curriculum():
 
 GAILA_PHASE_1_CURRICULUM = [
     EACH_OBJECT_BY_ITSELF_SUB_CURRICULUM,
-    _make_objects_with_colors_curriculum(),
     MULTIPLE_OF_THE_SAME_OBJECT_SUB_CURRICULUM,
     _OBJECT_ON_GROUND_SUB_CURRICULUM,
     _ANY_OBJECT_INTRANSITIVES_SUBCURRICULUM,
+    _make_objects_with_colors_curriculum(),
     _make_fall_curriculum(),
     _make_transfer_of_possession_curriculum(),
     _make_object_on_object_curriculum(),
