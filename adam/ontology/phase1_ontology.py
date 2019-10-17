@@ -724,9 +724,6 @@ def _make_door_schema() -> ObjectStructuralSchema:
     )
 
 
-_DOOR_SCHEMA = _make_door_schema()
-
-
 def _make_ball_schema() -> ObjectStructuralSchema:
     generating_axis = symmetric_vertical("ball-generating")
     orienting_axis_0 = symmetric("ball-orienting-0")
@@ -743,9 +740,6 @@ def _make_ball_schema() -> ObjectStructuralSchema:
             ),
         ),
     )
-
-
-_BALL_SCHEMA = _make_ball_schema()
 
 
 def _make_box_schema() -> ObjectStructuralSchema:
@@ -766,13 +760,10 @@ def _make_box_schema() -> ObjectStructuralSchema:
     )
 
 
-_BOX_SCHEMA = _make_box_schema()
-
-
 def _make_hat_schema() -> ObjectStructuralSchema:
     brim_to_top = straight_up("brim-to-top")
-    side_to_side_0 = symmetric("side-to-side-0")
-    side_to_side_1 = symmetric("side-to-side-1")
+    forehead_to_spine = directed("forehead-to-spine")
+    ear_to_ear = directed("ear-to-ear")
 
     return ObjectStructuralSchema(
         ontology_node=HAT,
@@ -780,13 +771,15 @@ def _make_hat_schema() -> ObjectStructuralSchema:
             cross_section=OVALISH,
             cross_section_size=LARGE_TO_SMALL,
             axes=Axes(
-                primary_axis=brim_to_top, orienting_axes=[side_to_side_0, side_to_side_1]
+                primary_axis=brim_to_top,
+                orienting_axes=[forehead_to_spine, ear_to_ear],
+                axis_relations=[
+                    bigger_than(forehead_to_spine, [ear_to_ear, brim_to_top]),
+                    bigger_than(ear_to_ear, brim_to_top),
+                ],
             ),
         ),
     )
-
-
-_HAT_SCHEMA = _make_hat_schema()
 
 
 def _make_cookie_schema() -> ObjectStructuralSchema:
@@ -803,15 +796,11 @@ def _make_cookie_schema() -> ObjectStructuralSchema:
                 primary_axis=bottom_to_top,
                 orienting_axes=[side_to_side_0, side_to_side_1],
                 axis_relations=[
-                    much_bigger_than(side_to_side_0, bottom_to_top),
-                    much_bigger_than(side_to_side_1, bottom_to_top),
+                    much_bigger_than([side_to_side_0, side_to_side_1], bottom_to_top)
                 ],
             ),
         ),
     )
-
-
-_COOKIE_SCHEMA = _make_cookie_schema()
 
 
 def _make_cup_schema() -> ObjectStructuralSchema:
@@ -828,15 +817,11 @@ def _make_cup_schema() -> ObjectStructuralSchema:
                 primary_axis=bottom_to_top,
                 orienting_axes=[side_to_side_0, side_to_side_1],
                 axis_relations=[
-                    bigger_than(bottom_to_top, side_to_side_0),
-                    bigger_than(bottom_to_top, side_to_side_0),
+                    bigger_than(bottom_to_top, [side_to_side_0, side_to_side_1])
                 ],
             ),
         ),
     )
-
-
-_CUP_SCHEMA = _make_cup_schema()
 
 
 def _make_book_schema() -> ObjectStructuralSchema:
@@ -853,15 +838,13 @@ def _make_book_schema() -> ObjectStructuralSchema:
                 primary_axis=edges_to_edges,
                 orienting_axes=[back_cover_to_front_cover, spine_to_edges],
                 axis_relations=[
-                    much_bigger_than(spine_to_edges, back_cover_to_front_cover),
-                    much_bigger_than(edges_to_edges, back_cover_to_front_cover),
+                    much_bigger_than(
+                        [spine_to_edges, edges_to_edges], back_cover_to_front_cover
+                    )
                 ],
             ),
         ),
     )
-
-
-_BOOK_SCHEMA = _make_book_schema()
 
 
 def _make_hand_schema() -> ObjectStructuralSchema:
@@ -880,15 +863,11 @@ def _make_hand_schema() -> ObjectStructuralSchema:
                 orienting_axes=[thumb_to_pinky, top_to_palm],
                 axis_relations=[
                     bigger_than(wrist_to_fingertips, thumb_to_pinky),
-                    much_bigger_than(wrist_to_fingertips, top_to_palm),
-                    much_bigger_than(thumb_to_pinky, top_to_palm),
+                    much_bigger_than([thumb_to_pinky, wrist_to_fingertips], top_to_palm),
                 ],
             ),
         ),
     )
-
-
-_HAND_SCHEMA = _make_hand_schema()
 
 
 def _make_head_schema():
@@ -904,15 +883,11 @@ def _make_head_schema():
                 primary_axis=chin_to_scalp,
                 orienting_axes=[back_to_front, left_to_right],
                 axis_relations=[
-                    bigger_than(chin_to_scalp, back_to_front),
-                    bigger_than(chin_to_scalp, left_to_right),
+                    bigger_than(chin_to_scalp, [back_to_front, left_to_right])
                 ],
             ),
         ),
     )
-
-
-_HEAD_SCHEMA = _make_head_schema()
 
 
 def _make_torso_schema():
@@ -930,8 +905,7 @@ def _make_torso_schema():
                 primary_axis=waist_to_shoulders,
                 axis_relations=[
                     bigger_than(waist_to_shoulders, left_to_right),
-                    much_bigger_than(waist_to_shoulders, front_to_back),
-                    much_bigger_than(left_to_right, front_to_back),
+                    much_bigger_than([waist_to_shoulders, left_to_right], front_to_back),
                 ],
             ),
         ),
@@ -951,15 +925,11 @@ def _make_dog_head_schema() -> ObjectStructuralSchema:
                 primary_axis=torso_to_nose,
                 orienting_axes=[bottom_to_top, left_to_right],
                 axis_relations=[
-                    bigger_than(torso_to_nose, bottom_to_top),
-                    bigger_than(torso_to_nose, left_to_right),
+                    bigger_than(torso_to_nose, [bottom_to_top, left_to_right])
                 ],
             ),
         ),
     )
-
-
-_DOG_HEAD_SCHEMA = _make_dog_head_schema()
 
 
 def _make_bird_head_schema() -> ObjectStructuralSchema:
@@ -967,21 +937,19 @@ def _make_bird_head_schema() -> ObjectStructuralSchema:
     bottom_to_top = directed("bird-head-back-to-front")
     left_to_right = symmetric("bird-head-left-to-right")
     return ObjectStructuralSchema(
-        _DOG_HEAD,
+        _BIRD_HEAD,
         geon=Geon(
             cross_section=OVALISH,
             cross_section_size=LARGE_TO_SMALL,
             axes=Axes(
-                primary_axis=bottom_to_top, orienting_axes=[torso_to_top, left_to_right]
+                primary_axis=bottom_to_top,
+                orienting_axes=[torso_to_top, left_to_right],
+                axis_relations=[
+                    bigger_than(torso_to_top, [left_to_right, bottom_to_top])
+                ],
             ),
         ),
     )
-
-
-_BIRD_HEAD_SCHEMA = _make_bird_head_schema()
-
-# Hierarchical structure of objects
-_TORSO_SCHEMA = _make_torso_schema()
 
 
 def _make_upper_leg_segment_schema():
@@ -997,16 +965,10 @@ def _make_upper_leg_segment_schema():
             axes=Axes(
                 primary_axis=hip_to_knee,
                 orienting_axes=[diameter_0, diameter_1],
-                axis_relations=[
-                    much_bigger_than(hip_to_knee, diameter_0),
-                    much_bigger_than(hip_to_knee, diameter_1),
-                ],
+                axis_relations=[much_bigger_than(hip_to_knee, [diameter_0, diameter_1])],
             ),
         ),
     )
-
-
-_UPPER_LEG_SEGMENT_SCHEMA = _make_upper_leg_segment_schema()
 
 
 def _make_lower_leg_segment_schema():
@@ -1022,16 +984,10 @@ def _make_lower_leg_segment_schema():
             axes=Axes(
                 primary_axis=knee_to_foot,
                 orienting_axes=[diameter_0, diameter_1],
-                axis_relations=[
-                    much_bigger_than(knee_to_foot, diameter_0),
-                    much_bigger_than(knee_to_foot, diameter_1),
-                ],
+                axis_relations=[much_bigger_than(knee_to_foot, [diameter_1, diameter_0])],
             ),
         ),
     )
-
-
-_LOWER_LEG_SEGMENT_SCHEMA = _make_lower_leg_segment_schema()
 
 
 def _make_foot_schema():
@@ -1055,9 +1011,6 @@ def _make_foot_schema():
     )
 
 
-_FOOT_SCHEMA = _make_foot_schema()
-
-
 def _make_inanimate_leg_schema():
     top_to_base = directed("top-to-base")
     diameter_0 = symmetric("diameter_0")
@@ -1071,16 +1024,10 @@ def _make_inanimate_leg_schema():
             axes=Axes(
                 primary_axis=top_to_base,
                 orienting_axes=[diameter_0, diameter_1],
-                axis_relations=[
-                    much_bigger_than(top_to_base, diameter_0),
-                    much_bigger_than(top_to_base, diameter_1),
-                ],
+                axis_relations=[much_bigger_than(top_to_base, [diameter_0, diameter_1])],
             ),
         ),
     )
-
-
-_INANIMATE_LEG_SCHEMA = _make_inanimate_leg_schema()
 
 
 def _make_chair_back_schema() -> ObjectStructuralSchema:
@@ -1097,15 +1044,11 @@ def _make_chair_back_schema() -> ObjectStructuralSchema:
                 primary_axis=front_to_back,
                 orienting_axes=[bottom_to_top, side_to_side],
                 axis_relations=[
-                    bigger_than(bottom_to_top, front_to_back),
-                    bigger_than(bottom_to_top, side_to_side),
+                    bigger_than(bottom_to_top, [front_to_back, side_to_side])
                 ],
             ),
         ),
     )
-
-
-_CHAIRBACK_SCHEMA = _make_chair_back_schema()
 
 
 def _make_chair_seat_schema() -> ObjectStructuralSchema:
@@ -1122,15 +1065,11 @@ def _make_chair_seat_schema() -> ObjectStructuralSchema:
                 primary_axis=bottom_to_top,
                 orienting_axes=[front_edge_to_back_edge, side_to_side],
                 axis_relations=[
-                    bigger_than(front_edge_to_back_edge, bottom_to_top),
-                    bigger_than(side_to_side, bottom_to_top),
+                    bigger_than([side_to_side, front_edge_to_back_edge], bottom_to_top)
                 ],
             ),
         ),
     )
-
-
-_CHAIR_SEAT_SCHEMA = _make_chair_seat_schema()
 
 
 def _make_table_top_schema() -> ObjectStructuralSchema:
@@ -1147,15 +1086,11 @@ def _make_table_top_schema() -> ObjectStructuralSchema:
                 primary_axis=bottom_to_top,
                 orienting_axes=[side_to_side, front_to_back],
                 axis_relations=[
-                    bigger_than(side_to_side, bottom_to_top),
-                    bigger_than(front_to_back, bottom_to_top),
+                    bigger_than([front_to_back, side_to_side], bottom_to_top)
                 ],
             ),
         ),
     )
-
-
-_TABLETOP_SCHEMA = _make_table_top_schema()
 
 
 def _make_tail_schema() -> ObjectStructuralSchema:
@@ -1171,16 +1106,10 @@ def _make_tail_schema() -> ObjectStructuralSchema:
             axes=Axes(
                 primary_axis=edge_to_tip,
                 orienting_axes=[diameter_0, diameter_1],
-                axis_relations=[
-                    much_bigger_than(edge_to_tip, diameter_0),
-                    much_bigger_than(edge_to_tip, diameter_1),
-                ],
+                axis_relations=[much_bigger_than(edge_to_tip, [diameter_1, diameter_0])],
             ),
         ),
     )
-
-
-_TAIL_SCHEMA = _make_tail_schema()
 
 
 def _make_wing_schema() -> ObjectStructuralSchema:
@@ -1196,16 +1125,10 @@ def _make_wing_schema() -> ObjectStructuralSchema:
             axes=Axes(
                 primary_axis=edge_to_tip,
                 orienting_axes=[bottom_to_top, front_to_back],
-                axis_relations=[
-                    bigger_than(edge_to_tip, bottom_to_top),
-                    bigger_than(front_to_back, bottom_to_top),
-                ],
+                axis_relations=[bigger_than([front_to_back, edge_to_tip], bottom_to_top)],
             ),
         ),
     )
-
-
-_WING_SCHEMA = _make_wing_schema()
 
 
 def _make_roof_schema() -> ObjectStructuralSchema:
@@ -1221,12 +1144,12 @@ def _make_roof_schema() -> ObjectStructuralSchema:
             axes=Axes(
                 primary_axis=bottom_to_shingles,
                 orienting_axes=[front_to_back, side_to_side],
+                axis_relations=[
+                    much_bigger_than([front_to_back, side_to_side], bottom_to_shingles)
+                ],
             ),
         ),
     )
-
-
-_ROOF_SCHEMA = _make_roof_schema()
 
 
 def _make_wall_schema() -> ObjectStructuralSchema:
@@ -1242,16 +1165,10 @@ def _make_wall_schema() -> ObjectStructuralSchema:
             axes=Axes(
                 primary_axis=bottom_to_top,
                 orienting_axes=[edge_to_edge, face_to_face],
-                axis_relations=[
-                    bigger_than(edge_to_edge, face_to_face),
-                    bigger_than(bottom_to_top, face_to_face),
-                ],
+                axis_relations=[bigger_than([bottom_to_top, edge_to_edge], face_to_face)],
             ),
         ),
     )
-
-
-_WALL_SCHEMA = _make_wall_schema()
 
 
 def _make_tire_schema() -> ObjectStructuralSchema:
@@ -1267,16 +1184,10 @@ def _make_tire_schema() -> ObjectStructuralSchema:
             axes=Axes(
                 primary_axis=across_treads,
                 orienting_axes=[diameter_0, diameter_1],
-                axis_relations=[
-                    bigger_than(diameter_0, across_treads),
-                    bigger_than(diameter_1, across_treads),
-                ],
+                axis_relations=[bigger_than([diameter_1, diameter_0], across_treads)],
             ),
         ),
     )
-
-
-_TIRE_SCHEMA = _make_tire_schema()
 
 
 def _make_flat_bed_schema() -> ObjectStructuralSchema:
@@ -1293,16 +1204,12 @@ def _make_flat_bed_schema() -> ObjectStructuralSchema:
                 primary_axis=bottom_to_bed,
                 orienting_axes=[front_to_back, side_to_side],
                 axis_relations=[
-                    bigger_than(front_to_back, side_to_side),
-                    bigger_than(front_to_back, bottom_to_bed),
+                    bigger_than(front_to_back, [bottom_to_bed, side_to_side]),
                     bigger_than(side_to_side, bottom_to_bed),
                 ],
             ),
         ),
     )
-
-
-_FLATBED_SCHEMA = _make_flat_bed_schema()
 
 
 def _make_body_schema() -> ObjectStructuralSchema:
@@ -1327,9 +1234,6 @@ def _make_body_schema() -> ObjectStructuralSchema:
     )
 
 
-_BODY_SCHEMA = _make_body_schema()
-
-
 def _make_human_arm_segment():
     upper_to_lower = directed("upper-to-lower")
     diameter_0 = symmetric("diameter_0")
@@ -1344,14 +1248,39 @@ def _make_human_arm_segment():
                 primary_axis=upper_to_lower,
                 orienting_axes=[diameter_0, diameter_1],
                 axis_relations=[
-                    much_bigger_than(upper_to_lower, diameter_0),
-                    much_bigger_than(upper_to_lower, diameter_1),
+                    much_bigger_than(upper_to_lower, [diameter_1, diameter_0])
                 ],
             ),
         ),
     )
 
 
+_DOOR_SCHEMA = _make_door_schema()
+_BALL_SCHEMA = _make_ball_schema()
+_BOX_SCHEMA = _make_box_schema()
+_HAT_SCHEMA = _make_hat_schema()
+_COOKIE_SCHEMA = _make_cookie_schema()
+_CUP_SCHEMA = _make_cup_schema()
+_BOOK_SCHEMA = _make_book_schema()
+_HAND_SCHEMA = _make_hand_schema()
+_HEAD_SCHEMA = _make_head_schema()
+_TORSO_SCHEMA = _make_torso_schema()
+_DOG_HEAD_SCHEMA = _make_dog_head_schema()
+_BIRD_HEAD_SCHEMA = _make_bird_head_schema()
+_UPPER_LEG_SEGMENT_SCHEMA = _make_upper_leg_segment_schema()
+_LOWER_LEG_SEGMENT_SCHEMA = _make_lower_leg_segment_schema()
+_FOOT_SCHEMA = _make_foot_schema()
+_INANIMATE_LEG_SCHEMA = _make_inanimate_leg_schema()
+_CHAIRBACK_SCHEMA = _make_chair_back_schema()
+_CHAIR_SEAT_SCHEMA = _make_chair_seat_schema()
+_TABLETOP_SCHEMA = _make_table_top_schema()
+_TAIL_SCHEMA = _make_tail_schema()
+_WING_SCHEMA = _make_wing_schema()
+_ROOF_SCHEMA = _make_roof_schema()
+_WALL_SCHEMA = _make_wall_schema()
+_TIRE_SCHEMA = _make_tire_schema()
+_FLATBED_SCHEMA = _make_flat_bed_schema()
+_BODY_SCHEMA = _make_body_schema()
 _ARM_SEGMENT_SCHEMA = _make_human_arm_segment()
 
 # schemata describing the sub-object structural nature of a Human Arm
