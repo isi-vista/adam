@@ -261,26 +261,6 @@ _VERB_WITH_ONLY_THEME = action_variable(
     "verb_with_only_theme", with_subcategorization_frame=[THEME]
 )
 
-_ANY_OBJECT_INTRANSITIVES_TEMPLATE = Phase1SituationTemplate(
-    "any-object-intransitive",
-    salient_object_variables=[_ARBITRARY_OBJECT],
-    actions=[
-        Action(
-            action_type=_VERB_WITH_ONLY_THEME,
-            argument_roles_to_fillers=[(THEME, _ARBITRARY_OBJECT)],
-        )
-    ],
-)
-
-_ANY_OBJECT_INTRANSITIVES_SUBCURRICULUM = _phase1_instances(
-    "any object with an intransitive verb",
-    all_possible(
-        _ANY_OBJECT_INTRANSITIVES_TEMPLATE,
-        ontology=GAILA_PHASE_1_ONTOLOGY,
-        chooser=_CHOOSER,
-    ),
-)
-
 
 def _make_fall_curriculum():
     arbitary_object = object_variable("object_0", THING)
@@ -1592,7 +1572,6 @@ GAILA_PHASE_1_CURRICULUM = [
     OBJECTS_WITH_COLORS_SUB_CURRICULUM,
     MULTIPLE_OF_THE_SAME_OBJECT_SUB_CURRICULUM,
     _OBJECT_ON_GROUND_SUB_CURRICULUM,
-    _ANY_OBJECT_INTRANSITIVES_SUBCURRICULUM,
     _make_fall_curriculum(),
     _make_transfer_of_possession_curriculum(),
     _make_object_on_object_curriculum(),
