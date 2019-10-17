@@ -23,7 +23,9 @@ from adam.experiment import InstanceGroup
 from adam.geon import CrossSection
 
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
-from adam.perception.developmental_primitive_perception import DevelopmentalPrimitivePerceptionFrame
+from adam.perception.developmental_primitive_perception import (
+    DevelopmentalPrimitivePerceptionFrame,
+)
 
 USAGE_MESSAGE = """ """
 
@@ -40,31 +42,36 @@ def main() -> None:
             break
 
 
-
 @attrs(frozen=True, slots=True)
 class SceneCreator:
-
     def create_scenes(
         self,
-            instance_groups: Iterable[
-                InstanceGroup[
-                    HighLevelSemanticsSituation,
-                    LinearizedDependencyTree,
-                    DevelopmentalPrimitivePerceptionFrame,
-                ]
-            ],
+        instance_groups: Iterable[
+            InstanceGroup[
+                HighLevelSemanticsSituation,
+                LinearizedDependencyTree,
+                DevelopmentalPrimitivePerceptionFrame,
+            ]
+        ],
     ):
-        for i, instance_group in enumerate(instance_groups): # each InstanceGroup a page related to a curriculum topic
-            for (situation, dependency_tree, perception) in instance_group.instances(): # each instance a scene
+        for i, instance_group in enumerate(
+            instance_groups
+        ):  # each InstanceGroup a page related to a curriculum topic
+            for (
+                situation,
+                dependency_tree,
+                perception,
+            ) in instance_group.instances():  # each instance a scene
                 scene_objects = []
                 # we only care about the perception at the moment
-                for frame in perception.frames: # DevelopmentalPrimitivePerceptionFrame
+                for frame in perception.frames:  # DevelopmentalPrimitivePerceptionFrame
                     for obj_percept in frame.perceived_objects:
                         if obj_percept.geon is None:
                             continue
-                        scene_objects.append(self._cross_section_to_geo(obj_percept.geon.cross_section))
+                        scene_objects.append(
+                            self._cross_section_to_geo(obj_percept.geon.cross_section)
+                        )
                 yield scene_objects
-
 
     def _cross_section_to_geo(self, cs: CrossSection):
         if cs.has_rotational_symmetry and cs.has_reflective_symmetry and cs.curved:
@@ -73,9 +80,17 @@ class SceneCreator:
             return "SQUARE"
         elif not cs.has_rotational_symmetry and cs.has_reflective_symmetry and cs.curved:
             return "OVALISH"
-        elif not cs.has_rotational_symmetry and cs.has_reflective_symmetry and not cs.curved:
+        elif (
+            not cs.has_rotational_symmetry
+            and cs.has_reflective_symmetry
+            and not cs.curved
+        ):
             return "RECTANGULAR"
-        elif not cs.has_rotational_symmetry and not cs.has_reflective_symmetry and not cs.curved:
+        elif (
+            not cs.has_rotational_symmetry
+            and not cs.has_reflective_symmetry
+            and not cs.curved
+        ):
             return "IRREGULAR"
         else:
             raise ValueError("Unknown Geon composition")
