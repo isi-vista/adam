@@ -71,6 +71,7 @@ from adam.situation import Action, SituationObject, SituationRegion
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.axes import AxesInfo, WORLD_AXES
 
+COLOR_PERCEPTION = Union[OntologyNode, Optional[RgbColorPerception]]
 
 @attrs(frozen=True, slots=True)
 class HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
@@ -766,7 +767,6 @@ class _PerceptionGeneration:
                 situation_object.ontology_node
             )
             if len(object_schemata) > 1:
-                # TODO: add issue for this
                 # https://github.com/isi-vista/adam/issues/87
                 raise RuntimeError(
                     f"Support for objects with multiple structural schemata has not "
@@ -957,7 +957,7 @@ class _PerceptionGeneration:
 
     def _compute_color(
         self, situation_object: SituationObject
-    ) -> Union[OntologyNode, Optional[RgbColorPerception]]:
+    ) -> COLOR_PERCEPTION:
         situation_colors = immutableset(
             property_
             for property_ in situation_object.properties
