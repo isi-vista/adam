@@ -1,5 +1,4 @@
 from adam.curriculum.phase1_curriculum import (
-    GAILA_PHASE_1_CURRICULUM,
     _Phase1InstanceGroup,
     _make_drink_curriculum,
     _make_eat_curriculum,
@@ -22,6 +21,13 @@ from adam.curriculum.phase1_curriculum import (
     _make_put_on_speaker_addressee_body_part_curriculum,
     _make_object_beside_object_curriculum,
     _make_behind_in_front_curriculum,
+    _make_objects_with_colors_curriculum,
+    _make_each_object_by_itself_curriculum,
+    _make_multiple_objects_curriculum,
+    _make_object_on_ground_curriculum,
+    _make_person_has_object_curriculum,
+    _make_object_on_object_curriculum,
+    _make_object_in_other_object_curriculum,
 )
 
 
@@ -33,9 +39,48 @@ def _test_curriculum(curriculum: _Phase1InstanceGroup) -> None:
         pass
 
 
-def test_instantiate_curriculum():
-    for subcurriculum in GAILA_PHASE_1_CURRICULUM:
-        _test_curriculum(subcurriculum)
+def test_each_object_by_itself_curriculum():
+    _test_curriculum(_make_each_object_by_itself_curriculum())
+
+
+def test_objects_with_colors_curriculum():
+    _test_curriculum(_make_objects_with_colors_curriculum())
+
+
+def test_multiple_objects_curriculum():
+    _test_curriculum(_make_multiple_objects_curriculum())
+
+
+def test_object_on_ground_curriculum():
+    _test_curriculum(_make_object_on_ground_curriculum())
+
+
+def test_person_has_object_curriculum():
+    _test_curriculum(_make_person_has_object_curriculum())
+
+
+def test_fall_curriculum():
+    _test_curriculum(_make_fall_curriculum())
+
+
+def test_transfer_of_possession_curriculum():
+    _test_curriculum(_make_transfer_of_possession_curriculum())
+
+
+def test_object_on_object_curriculum():
+    _test_curriculum(_make_object_on_object_curriculum())
+
+
+def test_object_beside_object_curriculum():
+    _test_curriculum(_make_object_beside_object_curriculum())
+
+
+def test_object_under_or_over_object_curriculum():
+    _test_curriculum(_make_object_under_or_over_object_curriculum())
+
+
+def test_object_in_other_object_curriculum():
+    _test_curriculum(_make_object_in_other_object_curriculum())
 
 
 def test_instantiate_fly_curriculum():
@@ -46,8 +91,20 @@ def test_roll_curriculum():
     _test_curriculum(_make_roll_curriculum())
 
 
+def test_speaker_addressee():
+    _test_curriculum(_make_speaker_addressee_curriculum())
+
+
 def test_jump_curriculum():
     _test_curriculum(_make_jump_curriculum())
+
+
+def test_put():
+    _test_curriculum(_make_put_curriculum())
+
+
+def test_put_on_speaker_addressee_body_part_curriculum():
+    _test_curriculum(_make_put_on_speaker_addressee_body_part_curriculum())
 
 
 def test_drink_curriculum():
@@ -58,65 +115,37 @@ def test_eat_curriculum():
     _test_curriculum(_make_eat_curriculum())
 
 
-def test_fall_curriculum():
-    _test_curriculum(_make_fall_curriculum())
-
-
-def test_transfer_of_possession():
-    _test_curriculum(_make_transfer_of_possession_curriculum())
-
-
-def test_sit():
+def test_sit_curriculum():
     _test_curriculum(_make_sit_curriculum())
 
 
-def test_put():
-    _test_curriculum(_make_put_curriculum())
-
-
-def test_take():
+def test_take_curriculum():
     _test_curriculum(_make_take_curriculum())
 
 
-def test_move():
+def test_move_curriculum():
     _test_curriculum(_make_move_curriculum())
 
 
-def test_spin():
+def test_spin_curriculum():
     _test_curriculum(_make_spin_curriculum())
 
 
-def test_go():
+def test_go_curriculum():
     _test_curriculum(_make_go_curriculum())
 
 
-def test_push():
+def test_push_curriculum():
     _test_curriculum(_make_push_curriculum())
 
 
-def test_speaker_addressee():
-    _test_curriculum(_make_speaker_addressee_curriculum())
-
-
-def test_throw():
+def test_throw_curriculum():
     _test_curriculum(_make_throw_curriculum())
 
 
-def test_under_over_curriculum():
-    _test_curriculum(_make_object_under_or_over_object_curriculum())
-
-
-def test_put_on_speaker_addressee_body_part_curriculum():
-    _test_curriculum(_make_put_on_speaker_addressee_body_part_curriculum())
-
-
-def test_come():
+def test_come_curriculum():
     _test_curriculum(_make_come_curriculum())
 
 
-def test_beside():
-    _test_curriculum(_make_object_beside_object_curriculum())
-
-
-def test_behind_in_front():
+def test_behind_in_front_curriculum():
     _test_curriculum(_make_behind_in_front_curriculum())
