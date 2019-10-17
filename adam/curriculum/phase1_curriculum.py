@@ -5,9 +5,10 @@ Curricula for DARPA GAILA Phase 1
 from itertools import chain
 from typing import Iterable
 
+from immutablecollections import immutableset
 from more_itertools import flatten
 
-from adam.axes import AxesInfo, HorizontalAxisOfObject, FacingAddresseeAxis
+from adam.axes import HorizontalAxisOfObject, FacingAddresseeAxis, AxesInfo
 from adam.curriculum import GeneratedFromSituationsInstanceGroup, InstanceGroup
 from adam.language.dependency import LinearizedDependencyTree
 from adam.language_specific.english.english_language_generator import (
@@ -15,7 +16,7 @@ from adam.language_specific.english.english_language_generator import (
     PREFER_DITRANSITIVE,
     USE_ADVERBIAL_PATH_MODIFIER,
 )
-from adam.ontology import OntologyNode, THING, IN_REGION, IS_SPEAKER, IS_ADDRESSEE
+from adam.ontology import OntologyNode, THING, IS_SPEAKER, IS_ADDRESSEE, IN_REGION
 from adam.ontology.during import DuringAction
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
@@ -55,7 +56,6 @@ from adam.ontology.phase1_ontology import (
     PATIENT,
     PERSON,
     PERSON_CAN_HAVE,
-    PHASE_1_CURRICULUM_OBJECTS,
     PUSH,
     PUSH_GOAL,
     PUSH_SURFACE_AUX,
@@ -77,9 +77,11 @@ from adam.ontology.phase1_ontology import (
     bigger_than,
     contacts,
     inside,
-    is_recognized_particular,
     on,
     strictly_above,
+    COLOR,
+    PHASE_1_CURRICULUM_OBJECTS,
+    is_recognized_particular,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -121,18 +123,22 @@ _Phase1InstanceGroup = InstanceGroup[  # pylint:disable=invalid-name
     DevelopmentalPrimitivePerceptionFrame,
 ]
 
+_GROUND_OBJECT = object_variable("ground", GROUND)
+
 
 def _standard_object(
     debug_handle: str,
     root_node: OntologyNode = INANIMATE_OBJECT,
     *,
     required_properties: Iterable[OntologyNode] = tuple(),
+    banned_properties: Iterable[OntologyNode] = immutableset(),
 ) -> TemplateObjectVariable:
-    banned_properties = [IS_BODY_PART, LIQUID]
+    banned_properties_final = [IS_BODY_PART, LIQUID]
+    banned_properties_final.extend(banned_properties)
     return object_variable(
         debug_handle=debug_handle,
         root_node=root_node,
-        banned_properties=banned_properties,
+        banned_properties=banned_properties_final,
         required_properties=required_properties,
     )
 
@@ -153,116 +159,148 @@ def _phase1_instances(
     )
 
 
-_GROUND_OBJECT = object_variable("ground", GROUND)
-_ARBITRARY_OBJECT = object_variable("object_0", THING)
-_NOT_A_BODY_PART = object_variable(
-    "not-body-part_object_0", THING, banned_properties=[IS_BODY_PART]
-)
-
 # Show each object once by itself
+def _make_each_object_by_itself_curriculum() -> _Phase1InstanceGroup:
+    single_object_template = Phase1SituationTemplate(
+        "single-object", salient_object_variables=[object_variable("object")]
+    )
 
-_LEARNER_OBJECT = object_variable("learner", LEARNER)
+    return _phase1_instances(
+        "each object by itself",
+        chain(
+            *[
+                all_possible(
+                    single_object_template,
+                    chooser=_CHOOSER,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                )
+            ]
+        ),
+    )
 
-SINGLE_OBJECT_TEMPLATE = Phase1SituationTemplate(
-    "single-object", salient_object_variables=[object_variable("object"), _LEARNER_OBJECT]
-)
-
-EACH_OBJECT_BY_ITSELF_SUB_CURRICULUM = _phase1_instances(
-    "each object by itself",
-    situations=all_possible(
-        SINGLE_OBJECT_TEMPLATE, chooser=_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY
-    ),
-)
 
 # Show each object in 20 different colors
 
-_COLOR = color_variable("color")
-_COLOR_OBJECT = object_variable(
-    "object", added_properties=[_COLOR], banned_properties=[IS_HUMAN, IS_BODY_PART]
-)
-_OBJECT_WITH_COLOR_TEMPLATE = Phase1SituationTemplate(
-    "object-with-color", salient_object_variables=[_COLOR_OBJECT, _LEARNER_OBJECT]
-)
 
-OBJECTS_WITH_COLORS_SUB_CURRICULUM = _phase1_instances(
-    "objects with colors",
-    situations=sampled(
-        _OBJECT_WITH_COLOR_TEMPLATE,
-        chooser=_CHOOSER,
-        ontology=GAILA_PHASE_1_ONTOLOGY,
-        max_to_sample=20,
-    ),
-)
+def _make_objects_with_colors_curriculum() -> _Phase1InstanceGroup:
+    color = color_variable("color")
+    object_with_color = object_variable(
+        "object",
+        added_properties=[color],
+        banned_properties=[IS_HUMAN, IS_BODY_PART, COLOR],
+    )
 
+    object_with_color_template = Phase1SituationTemplate(
+        "object-with-color", salient_object_variables=[object_with_color]
+    )
 
-def build_object_multiples_situations(
-    ontology: Ontology, *, samples_per_object: int = 3, chooser: RandomChooser
-) -> Iterable[HighLevelSemanticsSituation]:
-    for object_type in PHASE_1_CURRICULUM_OBJECTS:
-        is_liquid = ontology.has_all_properties(object_type, [LIQUID])
-        # don't want multiples of named people
-        if not is_recognized_particular(ontology, object_type) and not is_liquid:
-            for _ in range(samples_per_object):
-                num_objects = chooser.choice(range(2, 4))
-                yield HighLevelSemanticsSituation(
+    return _phase1_instances(
+        "objects with colors",
+        chain(
+            *[
+                sampled(
+                    object_with_color_template,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    salient_objects=[
-                        SituationObject(
-                            ontology_node=object_type,
-                            debug_handle=object_type.handle + f"_{idx}",
-                        )
-                        for idx in range(num_objects)
-                    ],
-                    axis_info=AxesInfo(),
+                    chooser=_CHOOSER,
+                    max_to_sample=20,
                 )
+            ]
+        ),
+    )
 
 
-MULTIPLE_OF_THE_SAME_OBJECT_SUB_CURRICULUM = _phase1_instances(
-    "multiples of the same object",
-    build_object_multiples_situations(
-        GAILA_PHASE_1_ONTOLOGY, samples_per_object=3, chooser=_CHOOSER
-    ),
-)
+def _make_multiple_objects_curriculum() -> _Phase1InstanceGroup:
+    def build_object_multiples_situations(
+        ontology: Ontology, *, samples_per_object: int = 3, chooser: RandomChooser
+    ) -> Iterable[HighLevelSemanticsSituation]:
+        for object_type in PHASE_1_CURRICULUM_OBJECTS:
+            is_liquid = ontology.has_all_properties(object_type, [LIQUID])
+            # don't want multiples of named people
+            if not is_recognized_particular(ontology, object_type) and not is_liquid:
+                for _ in range(samples_per_object):
+                    num_objects = chooser.choice(range(2, 4))
+                    yield HighLevelSemanticsSituation(
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        salient_objects=[
+                            SituationObject(
+                                ontology_node=object_type,
+                                debug_handle=object_type.handle + f"_{idx}",
+                            )
+                            for idx in range(num_objects)
+                        ],
+                        axis_info=AxesInfo(),
+                    )
 
-_OBJECT_ON_GROUND_TEMPLATE = Phase1SituationTemplate(
-    "object-on-ground",
-    salient_object_variables=[_GROUND_OBJECT, _NOT_A_BODY_PART],
-    asserted_always_relations=[on(_NOT_A_BODY_PART, _GROUND_OBJECT)],
-)
-
-_OBJECT_ON_GROUND_SUB_CURRICULUM = _phase1_instances(
-    "object on ground",
-    situations=all_possible(
-        _OBJECT_ON_GROUND_TEMPLATE, ontology=GAILA_PHASE_1_ONTOLOGY, chooser=_CHOOSER
-    ),
-)
-
-_PERSON_0 = object_variable("person", PERSON)
-_INANIMATE_OBJECT_0 = object_variable(
-    "inanimate-object", INANIMATE_OBJECT, required_properties=[PERSON_CAN_HAVE]
-)
-PERSON_HAS_OBJECT_TEMPLATE = Phase1SituationTemplate(
-    "person-has-object",
-    salient_object_variables=[_PERSON_0, _INANIMATE_OBJECT_0, _LEARNER_OBJECT],
-    asserted_always_relations=[Relation(HAS, _PERSON_0, _INANIMATE_OBJECT_0)],
-)
-
-PERSON_HAS_OBJECT_SUB_CURRICULUM = _phase1_instances(
-    "person has object",
-    situations=sampled(
-        PERSON_HAS_OBJECT_TEMPLATE,
-        chooser=_CHOOSER,
-        ontology=GAILA_PHASE_1_ONTOLOGY,
-        max_to_sample=100,
-    ),
-)
-
-_VERB_WITH_ONLY_THEME = action_variable(
-    "verb_with_only_theme", with_subcategorization_frame=[THEME]
-)
+    return _phase1_instances(
+        "multiples of the same object",
+        build_object_multiples_situations(
+            ontology=GAILA_PHASE_1_ONTOLOGY, chooser=_CHOOSER
+        ),
+    )
 
 
-def _make_fall_curriculum():
+def _make_object_on_ground_curriculum() -> _Phase1InstanceGroup:
+    object_0 = _standard_object("object_0")
+    liquid_0 = object_variable("liquid_0", THING, required_properties=[LIQUID])
+
+    object_on_ground_template = Phase1SituationTemplate(
+        "object-on-ground",
+        salient_object_variables=[_GROUND_OBJECT, object_0],
+        asserted_always_relations=[on(object_0, _GROUND_OBJECT)],
+    )
+
+    liquid_on_ground_template = Phase1SituationTemplate(
+        "liquid-on-ground",
+        salient_object_variables=[liquid_0, _GROUND_OBJECT],
+        asserted_always_relations=[on(liquid_0, _GROUND_OBJECT)],
+    )
+
+    return _phase1_instances(
+        "object on ground",
+        chain(
+            *[
+                all_possible(
+                    object_on_ground_template,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                    chooser=_CHOOSER,
+                ),
+                all_possible(
+                    liquid_on_ground_template,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                    chooser=_CHOOSER,
+                ),
+            ]
+        ),
+    )
+
+
+def _make_person_has_object_curriculum() -> _Phase1InstanceGroup:
+    person_0 = object_variable("person", PERSON)
+    inanimate_object_0 = _standard_object(
+        "inanimate-object", INANIMATE_OBJECT, required_properties=[PERSON_CAN_HAVE]
+    )
+    person_has_object_template = Phase1SituationTemplate(
+        "person-has-object",
+        salient_object_variables=[person_0, inanimate_object_0],
+        asserted_always_relations=[Relation(HAS, person_0, inanimate_object_0)],
+    )
+
+    return _phase1_instances(
+        "person has object",
+        chain(
+            *[
+                sampled(
+                    person_has_object_template,
+                    chooser=_CHOOSER,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                    max_to_sample=100,
+                )
+            ]
+        ),
+    )
+
+
+def _make_fall_curriculum() -> _Phase1InstanceGroup:
     arbitary_object = object_variable("object_0", THING)
     ground = object_variable("ground_0", GROUND)
 
@@ -369,7 +407,32 @@ def _make_object_on_object_curriculum() -> _Phase1InstanceGroup:
 
 
 def _make_object_beside_object_curriculum() -> _Phase1InstanceGroup:
-    situation_template = make_object_beside_object_template()
+    smaller_beside_object = _standard_object("object")
+    larger_beside_object = _standard_object("larger_beside_object")
+
+    situation_template = Phase1SituationTemplate(
+        "object-beside-object",
+        salient_object_variables=[smaller_beside_object, larger_beside_object],
+        constraining_relations=[
+            Relation(BIGGER_THAN, larger_beside_object, smaller_beside_object)
+        ],
+        asserted_always_relations=[
+            Relation(
+                IN_REGION,
+                smaller_beside_object,
+                Region(
+                    larger_beside_object,
+                    distance=PROXIMAL,
+                    direction=Direction(
+                        positive=True,
+                        relative_to_axis=HorizontalAxisOfObject(
+                            larger_beside_object, index=0
+                        ),
+                    ),
+                ),
+            )
+        ],
+    )
 
     return _phase1_instances(
         "objects-beside-objects",
@@ -380,37 +443,6 @@ def _make_object_beside_object_curriculum() -> _Phase1InstanceGroup:
             ontology=GAILA_PHASE_1_ONTOLOGY,
         ),
     )
-
-
-SMALLER_BESIDE_OBJECT = _standard_object("object")
-LARGER_BESIDE_OBJECT = _standard_object("LARGER_BESIDE_OBJECT")
-
-
-def make_object_beside_object_template():
-    situation_template = Phase1SituationTemplate(
-        "object-beside-object",
-        salient_object_variables=[SMALLER_BESIDE_OBJECT, LARGER_BESIDE_OBJECT],
-        constraining_relations=[
-            Relation(BIGGER_THAN, LARGER_BESIDE_OBJECT, SMALLER_BESIDE_OBJECT)
-        ],
-        asserted_always_relations=[
-            Relation(
-                IN_REGION,
-                SMALLER_BESIDE_OBJECT,
-                Region(
-                    LARGER_BESIDE_OBJECT,
-                    distance=PROXIMAL,
-                    direction=Direction(
-                        positive=True,
-                        relative_to_axis=HorizontalAxisOfObject(
-                            LARGER_BESIDE_OBJECT, index=0
-                        ),
-                    ),
-                ),
-            )
-        ],
-    )
-    return situation_template
 
 
 def _make_object_under_or_over_object_curriculum() -> _Phase1InstanceGroup:
@@ -495,7 +527,7 @@ def _make_object_in_other_object_curriculum() -> _Phase1InstanceGroup:
     )
 
 
-def _make_fly_curriculum():
+def _make_fly_curriculum() -> _Phase1InstanceGroup:
     # fly under something which has an under
     bird = object_variable("bird_0", BIRD)
     object_0 = object_variable("object_0", THING)
@@ -614,7 +646,7 @@ def _make_fly_curriculum():
     )
 
 
-def _make_roll_curriculum():
+def _make_roll_curriculum() -> _Phase1InstanceGroup:
     animate_0 = object_variable("object_0", THING, required_properties=[ANIMATE])
     rollable_0 = object_variable(
         "object_1", INANIMATE_OBJECT, required_properties=[ROLLABLE]
@@ -691,7 +723,7 @@ def _make_roll_curriculum():
     )
 
 
-def _make_speaker_addressee_curriculum():
+def _make_speaker_addressee_curriculum() -> _Phase1InstanceGroup:
     speaker = object_variable("speaker_0", PERSON, added_properties=[IS_SPEAKER])
     addressee = object_variable("addressee_0", PERSON, added_properties=[IS_ADDRESSEE])
     given_object = object_variable("given_object", INANIMATE_OBJECT)
@@ -750,19 +782,18 @@ def _make_speaker_addressee_curriculum():
     )
 
 
-JUMPER = object_variable("jumper_0", THING, required_properties=[CAN_JUMP])
-JUMPED_OVER = _standard_object("jumped_over")
+def _make_jump_curriculum() -> _Phase1InstanceGroup:
+    jumper = object_variable("jumper_0", THING, required_properties=[CAN_JUMP])
+    jumped_over = _standard_object("jumped_over")
 
-
-def _make_jump_curriculum():
     # "A person jumps"
     jump_on_ground = Phase1SituationTemplate(
         "jump",
-        salient_object_variables=[JUMPER],
+        salient_object_variables=[jumper],
         actions=[
             Action(
                 JUMP,
-                argument_roles_to_fillers=[(AGENT, JUMPER)],
+                argument_roles_to_fillers=[(AGENT, jumper)],
                 auxiliary_variable_bindings=[
                     (JUMP_INITIAL_SUPPORTER_AUX, _GROUND_OBJECT)
                 ],
@@ -771,7 +802,21 @@ def _make_jump_curriculum():
     )
 
     # "A person jumps over a ball"
-    jump_over_object = make_jump_over_object_template()
+    jump_over_object = Phase1SituationTemplate(
+        "jump-over",
+        salient_object_variables=[jumper, jumped_over],
+        actions=[
+            Action(
+                JUMP,
+                argument_roles_to_fillers=[(AGENT, jumper)],
+                during=DuringAction(at_some_point=[strictly_above(jumper, jumped_over)]),
+                auxiliary_variable_bindings=[
+                    (JUMP_INITIAL_SUPPORTER_AUX, _GROUND_OBJECT)
+                ],
+            )
+        ],
+        constraining_relations=[Relation(BIGGER_THAN, jumper, jumped_over)],
+    )
 
     return _phase1_instances(
         "jumping",
@@ -791,26 +836,7 @@ def _make_jump_curriculum():
     )
 
 
-# public for use in a test
-def make_jump_over_object_template():
-    return Phase1SituationTemplate(
-        "jump-over",
-        salient_object_variables=[JUMPER, JUMPED_OVER],
-        actions=[
-            Action(
-                JUMP,
-                argument_roles_to_fillers=[(AGENT, JUMPER)],
-                during=DuringAction(at_some_point=[strictly_above(JUMPER, JUMPED_OVER)]),
-                auxiliary_variable_bindings=[
-                    (JUMP_INITIAL_SUPPORTER_AUX, _GROUND_OBJECT)
-                ],
-            )
-        ],
-        constraining_relations=[Relation(BIGGER_THAN, JUMPER, JUMPED_OVER)],
-    )
-
-
-def _make_put_curriculum():
+def _make_put_curriculum() -> _Phase1InstanceGroup:
     putter = object_variable("putter_0", required_properties=[ANIMATE])
     object_put = _standard_object("object_0", required_properties=[INANIMATE])
 
@@ -887,7 +913,7 @@ def _make_put_curriculum():
     )
 
 
-def _make_put_on_speaker_addressee_body_part_curriculum():
+def _make_put_on_speaker_addressee_body_part_curriculum() -> _Phase1InstanceGroup:
     speaker_putter = object_variable(
         "speaker_putter_0", required_properties=[ANIMATE], added_properties=[IS_SPEAKER]
     )
@@ -950,7 +976,7 @@ def _make_put_on_speaker_addressee_body_part_curriculum():
     )
 
 
-def _make_drink_curriculum():
+def _make_drink_curriculum() -> _Phase1InstanceGroup:
     object_0 = _standard_object("object_0", required_properties=[HOLLOW])
     liquid_0 = object_variable("liquid_0", required_properties=[LIQUID])
     person_0 = object_variable("person_0", PERSON)
@@ -979,7 +1005,7 @@ def _make_drink_curriculum():
     )
 
 
-def _make_eat_curriculum():
+def _make_eat_curriculum() -> _Phase1InstanceGroup:
     object_to_eat = _standard_object("object_0", required_properties=[EDIBLE])
     eater = _standard_object("eater_0", THING, required_properties=[ANIMATE])
 
@@ -1012,7 +1038,7 @@ def _make_eat_curriculum():
     )
 
 
-def _make_sit_curriculum():
+def _make_sit_curriculum() -> _Phase1InstanceGroup:
     sitter = object_variable("sitter_0", THING, required_properties=[ANIMATE])
     sit_surface = object_variable(
         "surface", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
@@ -1102,7 +1128,7 @@ def _make_sit_curriculum():
     )
 
 
-def _make_take_curriculum():
+def _make_take_curriculum() -> _Phase1InstanceGroup:
     taker = object_variable("taker_0", required_properties=[ANIMATE])
     object_taken = _standard_object("object_taken_0", required_properties=[INANIMATE])
 
@@ -1133,7 +1159,7 @@ def _make_take_curriculum():
     )
 
 
-def _make_move_curriculum():
+def _make_move_curriculum() -> _Phase1InstanceGroup:
     self_mover_0 = object_variable(
         "self-mover_0", THING, required_properties=[SELF_MOVING]
     )
@@ -1193,7 +1219,7 @@ def _make_move_curriculum():
     )
 
 
-def _make_spin_curriculum():
+def _make_spin_curriculum() -> _Phase1InstanceGroup:
     self_turner = object_variable("self-spinner_0", THING, required_properties=[ANIMATE])
 
     other_spinner = object_variable("spinner_0", THING, required_properties=[ANIMATE])
@@ -1232,7 +1258,7 @@ def _make_spin_curriculum():
     )
 
 
-def _make_go_curriculum():
+def _make_go_curriculum() -> _Phase1InstanceGroup:
     goer = object_variable("goer", THING, required_properties=[ANIMATE])
     goal_reference = object_variable("go-goal", THING, required_properties=[HOLLOW])
 
@@ -1303,7 +1329,7 @@ def _make_go_curriculum():
     )
 
 
-def _make_push_curriculum():
+def _make_push_curriculum() -> _Phase1InstanceGroup:
     pusher = object_variable("pusher", THING, required_properties=[ANIMATE])
     pushee = _standard_object("pushee", INANIMATE_OBJECT)
     push_surface = _standard_object(
@@ -1320,7 +1346,8 @@ def _make_push_curriculum():
     # this shouldn't need to be expressed explicitly;
     # we should be able to derive it from the action description
     # https://github.com/isi-vista/adam/issues/239
-    during = DuringAction(continuously=[on(pushee, push_surface)])
+    # This declaration has mypy confused so we ignore it
+    during = DuringAction(continuously=[on(pushee, push_surface)])  # type: ignore
     push_unexpressed_goal = Phase1SituationTemplate(
         "push-unexpressed-goal",
         salient_object_variables=[pusher, pushee],
@@ -1385,7 +1412,7 @@ def _make_push_curriculum():
     )
 
 
-def _make_throw_curriculum():
+def _make_throw_curriculum() -> _Phase1InstanceGroup:
     thrower = object_variable("thrower_0", required_properties=[ANIMATE])
     object_thrown = object_variable(
         "object_0",
@@ -1455,7 +1482,7 @@ def _make_throw_curriculum():
     )
 
 
-def _make_come_curriculum():
+def _make_come_curriculum() -> _Phase1InstanceGroup:
     movee = _standard_object("movee", required_properties=[SELF_MOVING])
     learner = object_variable("leaner_0", LEARNER)
     speaker = object_variable("speaker", PERSON, added_properties=[IS_SPEAKER])
@@ -1508,47 +1535,50 @@ def _make_come_curriculum():
     )
 
 
-FRONT_BEHIND_GROUND_OBJECT = _standard_object("ground_object")
-FRONT_BEHIND_FIGURE_OBJECT = _standard_object("figure_object")
-FRONT_BEHIND_SPEAKER = object_variable("speaker_0", PERSON, added_properties=[IS_SPEAKER])
-FRONT_BEHIND_ADDRESSEE = object_variable(
-    "addressee_0", PERSON, added_properties=[IS_ADDRESSEE]
-)
+def _make_behind_in_front_curriculum() -> _Phase1InstanceGroup:
+    front_behind_ground_object = _standard_object("ground_object")
+    front_behind_figure_object = _standard_object("figure_object")
+    front_behind_speaker = object_variable(
+        "speaker_0", PERSON, added_properties=[IS_SPEAKER]
+    )
+    front_behind_addressee = object_variable(
+        "addressee_0", PERSON, added_properties=[IS_ADDRESSEE]
+    )
 
-
-def make_behind_in_front_templates() -> Iterable[Phase1SituationTemplate]:
-    for in_front_of in (True, False):
-        suffix = "-in-front" if in_front_of else "-behind"
-        yield Phase1SituationTemplate(
-            f"FRONT_BEHIND_ADDRESSEE-relative-{suffix}",
-            salient_object_variables=[
-                FRONT_BEHIND_FIGURE_OBJECT,
-                FRONT_BEHIND_GROUND_OBJECT,
-            ],
-            background_object_variables=[FRONT_BEHIND_SPEAKER, FRONT_BEHIND_ADDRESSEE],
-            asserted_always_relations=[
-                Relation(
-                    IN_REGION,
-                    FRONT_BEHIND_FIGURE_OBJECT,
-                    Region(
-                        FRONT_BEHIND_GROUND_OBJECT,
-                        distance=PROXIMAL,
-                        direction=Direction(
-                            positive=in_front_of,
-                            relative_to_axis=FacingAddresseeAxis(
-                                FRONT_BEHIND_GROUND_OBJECT
+    def make_behind_in_front_templates() -> Iterable[Phase1SituationTemplate]:
+        for in_front_of in (True, False):
+            suffix = "-in-front" if in_front_of else "-behind"
+            yield Phase1SituationTemplate(
+                f"front_behind_addressee-relative-{suffix}",
+                salient_object_variables=[
+                    front_behind_figure_object,
+                    front_behind_ground_object,
+                ],
+                background_object_variables=[
+                    front_behind_speaker,
+                    front_behind_addressee,
+                ],
+                asserted_always_relations=[
+                    Relation(
+                        IN_REGION,
+                        front_behind_figure_object,
+                        Region(
+                            front_behind_ground_object,
+                            distance=PROXIMAL,
+                            direction=Direction(
+                                positive=in_front_of,
+                                relative_to_axis=FacingAddresseeAxis(
+                                    front_behind_ground_object
+                                ),
                             ),
                         ),
-                    ),
-                )
-            ],
-            constraining_relations=[
-                bigger_than(FRONT_BEHIND_GROUND_OBJECT, FRONT_BEHIND_FIGURE_OBJECT)
-            ],
-        )
+                    )
+                ],
+                constraining_relations=[
+                    bigger_than(front_behind_ground_object, front_behind_figure_object)
+                ],
+            )
 
-
-def _make_behind_in_front_curriculum():
     return _phase1_instances(
         "behind_in_front_curriculum",
         chain(
@@ -1568,10 +1598,11 @@ def _make_behind_in_front_curriculum():
 
 
 GAILA_PHASE_1_CURRICULUM = [
-    EACH_OBJECT_BY_ITSELF_SUB_CURRICULUM,
-    OBJECTS_WITH_COLORS_SUB_CURRICULUM,
-    MULTIPLE_OF_THE_SAME_OBJECT_SUB_CURRICULUM,
-    _OBJECT_ON_GROUND_SUB_CURRICULUM,
+    _make_each_object_by_itself_curriculum(),
+    _make_objects_with_colors_curriculum(),
+    _make_multiple_objects_curriculum(),
+    _make_object_on_ground_curriculum(),
+    _make_person_has_object_curriculum(),
     _make_fall_curriculum(),
     _make_transfer_of_possession_curriculum(),
     _make_object_on_object_curriculum(),
@@ -1582,17 +1613,17 @@ GAILA_PHASE_1_CURRICULUM = [
     _make_roll_curriculum(),
     _make_speaker_addressee_curriculum(),
     _make_jump_curriculum(),
-    _make_drink_curriculum(),
-    _make_sit_curriculum(),
     _make_put_curriculum(),
+    _make_put_on_speaker_addressee_body_part_curriculum(),
+    _make_drink_curriculum(),
     _make_eat_curriculum(),
+    _make_sit_curriculum(),
     _make_take_curriculum(),
     _make_move_curriculum(),
     _make_spin_curriculum(),
     _make_go_curriculum(),
     _make_push_curriculum(),
     _make_throw_curriculum(),
-    _make_put_on_speaker_addressee_body_part_curriculum(),
     _make_come_curriculum(),
     _make_behind_in_front_curriculum(),
 ]
