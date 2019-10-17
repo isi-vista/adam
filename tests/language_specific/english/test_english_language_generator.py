@@ -1,21 +1,8 @@
 from typing import Tuple
 
-from more_itertools import first, only
+from more_itertools import only
 
-from adam.curriculum.phase1_curriculum import (
-    JUMPED_OVER,
-    JUMPER,
-    _GROUND_OBJECT,
-    make_jump_over_object_template,
-    make_object_beside_object_template,
-    SMALLER_BESIDE_OBJECT,
-    LARGER_BESIDE_OBJECT,
-    make_behind_in_front_templates,
-    FRONT_BEHIND_FIGURE_OBJECT,
-    FRONT_BEHIND_GROUND_OBJECT,
-    FRONT_BEHIND_SPEAKER,
-    FRONT_BEHIND_ADDRESSEE,
-)
+from adam.axes import HorizontalAxisOfObject, FacingAddresseeAxis, AxesInfo
 from adam.language_specific.english.english_language_generator import (
     PREFER_DITRANSITIVE,
     SimpleRuleBasedEnglishLanguageGenerator,
@@ -59,6 +46,10 @@ from adam.ontology.phase1_ontology import (
     THROW,
     WATER,
     on,
+    PERSON,
+    strictly_above,
+    JUMP,
+    JUMP_INITIAL_SUPPORTER_AUX,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -69,15 +60,13 @@ from adam.ontology.phase1_spatial_relations import (
     INTERIOR,
     Region,
     SpatialPath,
+    Direction,
+    PROXIMAL,
 )
-from adam.random_utils import FixedIndexChooser, RandomChooser
+from adam.random_utils import FixedIndexChooser
 from adam.relation import Relation
 from adam.situation import Action, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
-from adam.situation.templates.phase1_templates import (
-    TemplateVariableAssignment,
-    fixed_assignment,
-)
 from tests.sample_situations import make_bird_flies_over_a_house
 from tests.situation.situation_test import make_mom_put_ball_on_table
 
@@ -680,20 +669,20 @@ def test_bird_flies_up():
 
 
 def test_jumps_over():
-    template = make_jump_over_object_template()
-    situation = first(
-        fixed_assignment(
-            template,
-            TemplateVariableAssignment(
-                object_variables_to_fillers=[
-                    (JUMPER, DAD),
-                    (JUMPED_OVER, CHAIR),
-                    (_GROUND_OBJECT, GROUND),
-                ]
-            ),
-            chooser=RandomChooser.for_seed(0),
-            ontology=GAILA_PHASE_1_ONTOLOGY,
-        )
+    dad = SituationObject(DAD)
+    chair = SituationObject(CHAIR)
+    ground = SituationObject(GROUND)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[dad, chair],
+        actions=[
+            Action(
+                JUMP,
+                argument_roles_to_fillers=[(AGENT, dad)],
+                during=DuringAction(at_some_point=[strictly_above(dad, chair)]),
+                auxiliary_variable_bindings=[(JUMP_INITIAL_SUPPORTER_AUX, ground)],
+            )
+        ],
     )
     assert generated_tokens(situation) == ("Dad", "jumps", "over", "a", "chair")
 
@@ -815,52 +804,118 @@ def test_you_give_me_a_cookie():
 
 
 def test_object_beside_object():
-    template = make_object_beside_object_template()
-    situation = first(
-        fixed_assignment(
-            template,
-            TemplateVariableAssignment(
-                object_variables_to_fillers=[
-                    (SMALLER_BESIDE_OBJECT, BALL),
-                    (LARGER_BESIDE_OBJECT, TABLE),
-                ]
-            ),
-            chooser=RandomChooser.for_seed(0),
-            ontology=GAILA_PHASE_1_ONTOLOGY,
-        )
+    # HACK FOR AXES - See https://github.com/isi-vista/adam/issues/316
+    ball = SituationObject(
+        BALL, axes=GAILA_PHASE_1_ONTOLOGY.structural_schemata(BALL)[0].axes
+    )
+    table = SituationObject(
+        TABLE, axes=GAILA_PHASE_1_ONTOLOGY.structural_schemata(TABLE)[0].axes
+    )
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[ball, table],
+        always_relations=[
+            Relation(
+                IN_REGION,
+                ball,
+                Region(
+                    table,
+                    distance=PROXIMAL,
+                    direction=Direction(
+                        positive=True,
+                        relative_to_axis=HorizontalAxisOfObject(table, index=0),
+                    ),
+                ),
+            )
+        ],
     )
     assert generated_tokens(situation) == ("a", "ball", "beside", "a", "table")
 
 
 def test_object_behind_in_front_object():
-    (front_template, behind_template) = make_behind_in_front_templates()
-
-    variable_bindings = TemplateVariableAssignment(
-        object_variables_to_fillers=[
-            (FRONT_BEHIND_FIGURE_OBJECT, BOX),
-            (FRONT_BEHIND_GROUND_OBJECT, TABLE),
-            (FRONT_BEHIND_SPEAKER, MOM),
-            (FRONT_BEHIND_ADDRESSEE, DAD),
-        ]
+    # HACK FOR AXES - See https://github.com/isi-vista/adam/issues/316
+    box = SituationObject(
+        BOX, axes=GAILA_PHASE_1_ONTOLOGY.structural_schemata(BOX)[0].axes
+    )
+    table = SituationObject(
+        TABLE, axes=GAILA_PHASE_1_ONTOLOGY.structural_schemata(TABLE)[0].axes
+    )
+    speaker = SituationObject(
+        MOM,
+        properties=[IS_SPEAKER],
+        axes=GAILA_PHASE_1_ONTOLOGY.structural_schemata(PERSON)[0].axes,
+    )
+    addressee = SituationObject(
+        DAD,
+        properties=[IS_ADDRESSEE],
+        axes=GAILA_PHASE_1_ONTOLOGY.structural_schemata(PERSON)[0].axes,
     )
 
-    front_situation = first(
-        fixed_assignment(
-            front_template,
-            variable_bindings,
-            chooser=RandomChooser.for_seed(0),
-            ontology=GAILA_PHASE_1_ONTOLOGY,
-        )
+    front_situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[box, table],
+        other_objects=[speaker, addressee],
+        always_relations=[
+            Relation(
+                IN_REGION,
+                box,
+                Region(
+                    table,
+                    distance=PROXIMAL,
+                    direction=Direction(
+                        positive=True, relative_to_axis=FacingAddresseeAxis(table)
+                    ),
+                ),
+            )
+        ],
+        axis_info=AxesInfo(
+            addressee=addressee,
+            axes_facing=[
+                (
+                    addressee,
+                    # TODO: fix this hack
+                    HorizontalAxisOfObject(obj, index=1).to_concrete_axis(  # type: ignore
+                        None
+                    ),
+                )
+                for obj in [box, table, speaker, addressee]
+                if obj.axes
+            ],
+        ),
     )
     assert generated_tokens(front_situation) == ("a", "box", "in front of", "a", "table")
 
-    behind_situation = first(
-        fixed_assignment(
-            behind_template,
-            variable_bindings,
-            chooser=RandomChooser.for_seed(0),
-            ontology=GAILA_PHASE_1_ONTOLOGY,
-        )
+    behind_situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[box, table],
+        other_objects=[speaker, addressee],
+        always_relations=[
+            Relation(
+                IN_REGION,
+                box,
+                Region(
+                    table,
+                    distance=PROXIMAL,
+                    direction=Direction(
+                        positive=False, relative_to_axis=FacingAddresseeAxis(table)
+                    ),
+                ),
+            )
+        ],
+        axis_info=AxesInfo(
+            addressee=addressee,
+            axes_facing=[
+                (
+                    addressee,
+                    # TODO: fix this hack
+                    HorizontalAxisOfObject(obj, index=1).to_concrete_axis(  # type: ignore
+                        None
+                    ),
+                )
+                for obj in [box, table, speaker, addressee]
+                if obj.axes
+            ],
+        ),
     )
     assert generated_tokens(behind_situation) == ("a", "box", "behind", "a", "table")
 
