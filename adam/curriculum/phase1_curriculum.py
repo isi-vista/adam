@@ -183,7 +183,7 @@ def _make_objects_with_colors_curriculum() -> _Phase1InstanceGroup:
     object_with_color = object_variable(
         "object",
         added_properties=[color],
-        banned_properties=[IS_HUMAN, IS_BODY_PART, COLOR],
+        banned_properties=[IS_HUMAN, IS_BODY_PART],
     )
 
     object_with_color_template = Phase1SituationTemplate(
@@ -1599,7 +1599,7 @@ def _make_behind_in_front_curriculum():
 
 GAILA_PHASE_1_CURRICULUM = [
     EACH_OBJECT_BY_ITSELF_SUB_CURRICULUM,
-    _make_objects_with_colors_curriculum,
+    _make_objects_with_colors_curriculum(),
     MULTIPLE_OF_THE_SAME_OBJECT_SUB_CURRICULUM,
     _OBJECT_ON_GROUND_SUB_CURRICULUM,
     _ANY_OBJECT_INTRANSITIVES_SUBCURRICULUM,

@@ -354,6 +354,11 @@ class _Phase1SituationTemplateGenerator(
                 ):
                     continue
 
+                if self._object_with_non_prototypical_color(
+                    template, object_var_to_instantiations
+                ):
+                    continue
+
                 # use them to instantiate the entire situation
                 situation = self._instantiate_situation(
                     template, variable_assignment, object_var_to_instantiations
@@ -589,6 +594,22 @@ class _Phase1SituationTemplateGenerator(
                 )
         else:
             return AxesInfo()
+
+    def _object_with_non_prototypical_color(self, template: Phase1SituationTemplate,
+                                            object_var_to_instantiations: Mapping[TemplateObjectVariable, SituationObject]) -> bool:
+        for object_ in template.all_object_variables:
+            situation_object = object_var_to_instantiations[object_]
+            prototypical_colors = immutableset(property_ for property_ in situation_object.ontology_node.non_inheritable_properties if self.ontology.is_subtype_of(property_, COLOR))
+            if prototypical_colors:
+                print(f"protyical colors: {prototypical_colors} of {situation_object.debug_handle}")
+                color = None
+                for property_ in situation_object.properties:
+                    if self.ontology.is_subtype_of(property_, COLOR):
+                        color = property_
+                if color and color not in prototypical_colors:
+                    print(f"{color} not in {prototypical_colors} of {situation_object.debug_handle}")
+                    return True
+        return False
 
 
 def object_variable(

@@ -958,14 +958,22 @@ class _PerceptionGeneration:
     def _compute_color(
         self, situation_object: SituationObject
     ) -> Union[OntologyNode, Optional[RgbColorPerception]]:
-        colors = immutableset(
+        situation_colors = immutableset(
             property_
-            for property_ in self._generator.ontology.properties_for_node(
-                situation_object.ontology_node
-            )
+            for property_ in situation_object.properties
             if self._generator.ontology.is_subtype_of(property_, COLOR)
         )
-        color = self._chooser.choice(colors) if colors else None
+        if situation_colors:
+            color = self._chooser.choice(situation_colors)
+        else:
+            colors = immutableset(
+                property_
+                for property_ in self._generator.ontology.properties_for_node(
+                    situation_object.ontology_node
+                )
+                if self._generator.ontology.is_subtype_of(property_, COLOR)
+            )
+            color = self._chooser.choice(colors) if colors else None
         if color:
             if color in COLORS_TO_RGBS.keys():
                 color_options = COLORS_TO_RGBS[color]
