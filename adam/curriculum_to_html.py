@@ -396,7 +396,7 @@ class CurriculumToHtmlDumper:
                 f"\t<a href='{output_directory}/index.html'>" f"Back to Index</a>"
             )
             html_out.write(EXPLANATION_HEADER)
-            # By using the immutable set we guaruntee iteration order and remove duplicates
+            # By using the immutable set we guarantee iteration order and remove duplicates
             for (instance_number, instance_holder) in enumerate(
                 immutableset(rendered_instances)
             ):
@@ -681,6 +681,8 @@ class CurriculumToHtmlDumper:
         for relation_ in all_relations:
             if relation_.relation_type == PART_OF:
                 graph.add_edge(relation_.second_slot, relation_.first_slot)
+                if graph.has_edge(root, relation_.first_slot):
+                    graph.remove_edge(root, relation_.first_slot)
                 expressed_relations.add(relation_)
 
         # Next, we render objects, together with their properties, using preorder DFS Traversal
@@ -695,14 +697,15 @@ class CurriculumToHtmlDumper:
         # complexity. Would need to track the "depth" we are currently at.
         axis_info = perception.frames[0].axis_info
 
-        def dfs_walk(node):
+        def dfs_walk(node, depth=0):
             visited.add(node)
             if not node == root:
                 (obj_prefix, obj_suffix) = compute_arrow(
                     node, static_objects, first_frame_objects
                 )
                 output_text.append(
-                    f"\t\t\t\t\t\t<li>{obj_prefix}{render_object(node)}{obj_suffix}<ul>"
+                    f"\t" * (6 + depth)
+                    + f"<li>{obj_prefix}{render_object(node)}{obj_suffix}<ul>"
                 )
                 if node.geon:
                     output_text.append(
@@ -722,8 +725,10 @@ class CurriculumToHtmlDumper:
                         expressed_relations.add(region_relation)
             for succ in graph.successors(node):
                 if succ not in visited:
-                    dfs_walk(succ)
-            output_text.append("\t\t\t\t\t\t</ul></li>")
+                    depth = depth + 6
+                    dfs_walk(succ, depth)
+                    depth = depth - 6
+            output_text.append("\t" * (6 + depth) + f"</ul></li>")
 
         dfs_walk(root)
         output_text.append("\t\t\t\t\t</ul>")
