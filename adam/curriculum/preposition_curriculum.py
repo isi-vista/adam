@@ -93,20 +93,6 @@ def _beside_template(
     )
 
 
-def _under_template(
-    figure: TemplateObjectVariable,
-    ground: TemplateObjectVariable,
-    background: Iterable[TemplateObjectVariable],
-) -> Phase1SituationTemplate:
-    return Phase1SituationTemplate(
-        f"preposition-training-{figure.handle}-under-{ground.handle}",
-        salient_object_variables=[figure],
-        background_object_variables=background,
-        asserted_always_relations=[strictly_above(ground, figure)],
-        constraining_relations=[bigger_than(ground, figure)],
-    )
-
-
 def _over_template(
     figure: TemplateObjectVariable,
     ground: TemplateObjectVariable,
@@ -114,6 +100,20 @@ def _over_template(
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
         f"preposition-training-{figure.handle}-over-{ground.handle}",
+        salient_object_variables=[figure],
+        background_object_variables=background,
+        asserted_always_relations=[strictly_above(ground, figure)],
+        constraining_relations=[bigger_than(ground, figure)],
+    )
+
+
+def _under_template(
+    figure: TemplateObjectVariable,
+    ground: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        f"preposition-training-{figure.handle}-under-{ground.handle}",
         salient_object_variables=[figure],
         background_object_variables=background,
         asserted_always_relations=[strictly_above(figure, ground)],
@@ -183,7 +183,7 @@ def _in_front_template(
     )
 
 
-def _make_on_training() -> Phase1InstanceGroup:
+def _make_on_training(num_samples: int = 5) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
     ground_0 = standard_object("box", BOX)
@@ -209,7 +209,7 @@ def _make_on_training() -> Phase1InstanceGroup:
                             ),
                             chooser=_CHOOSER,
                             ontology=GAILA_PHASE_1_ONTOLOGY,
-                            max_to_sample=5,
+                            max_to_sample=num_samples,
                         )
                         for figure in figures
                         for ground in grounds
@@ -220,7 +220,7 @@ def _make_on_training() -> Phase1InstanceGroup:
     )
 
 
-def _make_beside_training() -> Phase1InstanceGroup:
+def _make_beside_training(num_samples: int = 5) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
     ground_0 = standard_object("box", BOX)
@@ -247,7 +247,7 @@ def _make_beside_training() -> Phase1InstanceGroup:
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
                             chooser=_CHOOSER,
-                            max_to_sample=5,
+                            max_to_sample=num_samples,
                         )
                         for figure in figures
                         for ground in grounds
@@ -259,7 +259,7 @@ def _make_beside_training() -> Phase1InstanceGroup:
     )
 
 
-def _make_under_training() -> Phase1InstanceGroup:
+def _make_under_training(num_samples: int = 5) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
     ground_0 = standard_object("table", TABLE)
@@ -281,7 +281,7 @@ def _make_under_training() -> Phase1InstanceGroup:
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=_CHOOSER,
-                    max_to_sample=5,
+                    max_to_sample=num_samples,
                 )
                 for figure in figures
                 for ground in grounds
@@ -290,7 +290,7 @@ def _make_under_training() -> Phase1InstanceGroup:
     )
 
 
-def _make_over_training() -> Phase1InstanceGroup:
+def _make_over_training(num_samples: int = 5) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
     ground_0 = standard_object("box", BOX)
@@ -313,7 +313,7 @@ def _make_over_training() -> Phase1InstanceGroup:
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=_CHOOSER,
-                    max_to_sample=5,
+                    max_to_sample=num_samples,
                 )
                 for figure in figures
                 for ground in grounds
@@ -322,7 +322,7 @@ def _make_over_training() -> Phase1InstanceGroup:
     )
 
 
-def _make_in_training() -> Phase1InstanceGroup:
+def _make_in_training(num_samples: int = 5) -> Phase1InstanceGroup:
     figure_0 = object_variable("water", WATER)
     figure_1 = object_variable("juice", JUICE)
     ground_0 = standard_object("box", BOX)
@@ -345,7 +345,7 @@ def _make_in_training() -> Phase1InstanceGroup:
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=_CHOOSER,
-                    max_to_sample=5,
+                    max_to_sample=num_samples,
                 )
                 for figure in figures
                 for ground in grounds
@@ -354,7 +354,7 @@ def _make_in_training() -> Phase1InstanceGroup:
     )
 
 
-def _make_behind_training() -> Phase1InstanceGroup:
+def _make_behind_training(num_samples: int = 5) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
     ground_0 = standard_object("box", BOX)
@@ -384,7 +384,7 @@ def _make_behind_training() -> Phase1InstanceGroup:
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
                             chooser=_CHOOSER,
-                            max_to_sample=5,
+                            max_to_sample=num_samples,
                         )
                         for figure in figures
                         for ground in grounds
@@ -395,7 +395,7 @@ def _make_behind_training() -> Phase1InstanceGroup:
     )
 
 
-def _make_in_front_training() -> Phase1InstanceGroup:
+def _make_in_front_training(num_samples: int = 5) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
     ground_0 = standard_object("box", BOX)
@@ -425,7 +425,7 @@ def _make_in_front_training() -> Phase1InstanceGroup:
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
                             chooser=_CHOOSER,
-                            max_to_sample=5,
+                            max_to_sample=num_samples,
                         )
                         for figure in figures
                         for ground in grounds
@@ -436,7 +436,7 @@ def _make_in_front_training() -> Phase1InstanceGroup:
     )
 
 
-def _make_on_tests() -> Phase1InstanceGroup:
+def _make_on_tests(num_samples: int = 5) -> Phase1InstanceGroup:
     figure_0 = standard_object("figure_0", THING)
     figure_1 = standard_object("figure_1", THING)
     ground_0 = standard_object(
@@ -466,7 +466,7 @@ def _make_on_tests() -> Phase1InstanceGroup:
                             ),
                             chooser=_CHOOSER,
                             ontology=GAILA_PHASE_1_ONTOLOGY,
-                            max_to_sample=5,
+                            max_to_sample=num_samples,
                         )
                         for figure in figures
                         for ground in grounds
@@ -477,7 +477,7 @@ def _make_on_tests() -> Phase1InstanceGroup:
     )
 
 
-def _make_beside_tests() -> Phase1InstanceGroup:
+def _make_beside_tests(num_samples: int = 5) -> Phase1InstanceGroup:
     figure_0 = standard_object("figure_0", THING)
     figure_1 = standard_object("figure_1", THING)
     ground_0 = standard_object("ground_0", THING)
@@ -504,7 +504,7 @@ def _make_beside_tests() -> Phase1InstanceGroup:
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
                             chooser=_CHOOSER,
-                            max_to_sample=5,
+                            max_to_sample=num_samples,
                         )
                         for figure in figures
                         for ground in grounds
@@ -516,7 +516,7 @@ def _make_beside_tests() -> Phase1InstanceGroup:
     )
 
 
-def _make_under_tests() -> Phase1InstanceGroup:
+def _make_under_tests(num_samples: int = 5) -> Phase1InstanceGroup:
     figure_0 = standard_object("figure_0", THING)
     figure_1 = standard_object("figure_1", THING)
     ground_0 = standard_object("ground_0", THING, required_properties=[HAS_SPACE_UNDER])
@@ -538,7 +538,7 @@ def _make_under_tests() -> Phase1InstanceGroup:
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=_CHOOSER,
-                    max_to_sample=5,
+                    max_to_sample=num_samples,
                 )
                 for figure in figures
                 for ground in grounds
@@ -547,7 +547,7 @@ def _make_under_tests() -> Phase1InstanceGroup:
     )
 
 
-def _make_over_tests() -> Phase1InstanceGroup:
+def _make_over_tests(num_samples: int = 5) -> Phase1InstanceGroup:
     figure_0 = standard_object("figure_0", THING)
     figure_1 = standard_object("figure_1", THING)
     ground_0 = standard_object("ground_0", THING)
@@ -570,7 +570,7 @@ def _make_over_tests() -> Phase1InstanceGroup:
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=_CHOOSER,
-                    max_to_sample=5,
+                    max_to_sample=num_samples,
                 )
                 for figure in figures
                 for ground in grounds
@@ -579,7 +579,7 @@ def _make_over_tests() -> Phase1InstanceGroup:
     )
 
 
-def _make_in_tests() -> Phase1InstanceGroup:
+def _make_in_tests(num_samples: int = 5) -> Phase1InstanceGroup:
     figure_0 = object_variable("figure_0", THING, banned_properties=[IS_BODY_PART])
     figure_1 = standard_object("figure_1", THING, banned_properties=[IS_BODY_PART])
     ground_0 = standard_object("ground_0", THING, required_properties=[HOLLOW])
@@ -602,7 +602,7 @@ def _make_in_tests() -> Phase1InstanceGroup:
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=_CHOOSER,
-                    max_to_sample=5,
+                    max_to_sample=num_samples,
                 )
                 for figure in figures
                 for ground in grounds
@@ -611,7 +611,7 @@ def _make_in_tests() -> Phase1InstanceGroup:
     )
 
 
-def _make_behind_tests() -> Phase1InstanceGroup:
+def _make_behind_tests(num_samples: int = 5) -> Phase1InstanceGroup:
     figure_0 = standard_object("figure_0", THING)
     figure_1 = standard_object("figure_1", THING)
     ground_0 = standard_object("ground_0", THING)
@@ -641,7 +641,7 @@ def _make_behind_tests() -> Phase1InstanceGroup:
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
                             chooser=_CHOOSER,
-                            max_to_sample=5,
+                            max_to_sample=num_samples,
                         )
                         for figure in figures
                         for ground in grounds
@@ -652,7 +652,7 @@ def _make_behind_tests() -> Phase1InstanceGroup:
     )
 
 
-def _make_in_front_tests() -> Phase1InstanceGroup:
+def _make_in_front_tests(num_samples: int = 5) -> Phase1InstanceGroup:
     figure_0 = standard_object("figure_0", THING)
     figure_1 = standard_object("figure_1", THING)
     ground_0 = standard_object("ground_0", THING)
@@ -682,7 +682,7 @@ def _make_in_front_tests() -> Phase1InstanceGroup:
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
                             chooser=_CHOOSER,
-                            max_to_sample=5,
+                            max_to_sample=num_samples,
                         )
                         for figure in figures
                         for ground in grounds
@@ -693,26 +693,34 @@ def _make_in_front_tests() -> Phase1InstanceGroup:
     )
 
 
-PREPOSITIONS_CURRICULUM_TRAINING = [
-    _make_on_training(),
-    _make_beside_training(),
-    _make_under_training(),
-    _make_over_training(),
-    _make_in_training(),
-    _make_behind_training(),
-    _make_in_front_training(),
-]
+def make_prepositions_curriculum_training(num_samples: int = 5):
+    return [
+        _make_on_training(num_samples),
+        _make_beside_training(num_samples),
+        _make_under_training(num_samples),
+        _make_over_training(num_samples),
+        _make_in_training(num_samples),
+        _make_behind_training(num_samples),
+        _make_in_front_training(num_samples),
+    ]
 
-PREPOSITIONS_CURRICULUM_TESTING = [
-    _make_on_tests(),
-    _make_beside_tests(),
-    _make_under_tests(),
-    _make_over_tests(),
-    _make_in_tests(),
-    _make_behind_tests(),
-    _make_in_front_tests(),
-]
 
-PREPOSITIONS_CURRICULUM = flatten(
-    [PREPOSITIONS_CURRICULUM_TRAINING, PREPOSITIONS_CURRICULUM_TESTING]
-)
+def make_prepositions_curriculum_testing(num_samples: int = 5):
+    return [
+        _make_on_tests(num_samples),
+        _make_beside_tests(num_samples),
+        _make_under_tests(num_samples),
+        _make_over_tests(num_samples),
+        _make_in_tests(num_samples),
+        _make_behind_tests(num_samples),
+        _make_in_front_tests(num_samples),
+    ]
+
+
+def make_prepositions_curriculum(num_samples: int = 5):
+    return flatten(
+        [
+            make_prepositions_curriculum_training(num_samples),
+            make_prepositions_curriculum_testing(num_samples),
+        ]
+    )
