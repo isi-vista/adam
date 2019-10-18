@@ -10,7 +10,7 @@ from adam.curriculum.phase1_curriculum import (
     standard_object,
     phase1_instances,
 )
-from adam.ontology import IN_REGION, IS_ADDRESSEE, IS_SPEAKER
+from adam.ontology import IN_REGION, IS_ADDRESSEE, IS_SPEAKER, THING
 from adam.ontology.phase1_ontology import (
     BALL,
     BOOK,
@@ -25,6 +25,11 @@ from adam.ontology.phase1_ontology import (
     CUP,
     MOM,
     DAD,
+    CAN_HAVE_THINGS_RESTING_ON_THEM,
+    bigger_than,
+    HAS_SPACE_UNDER,
+    IS_BODY_PART,
+    HOLLOW,
 )
 from adam.ontology.phase1_spatial_relations import Region, PROXIMAL, Direction
 from adam.random_utils import RandomChooser
@@ -46,6 +51,138 @@ def _make_background(
     return immutableset(object_ for object_ in all_objects if object_ not in salient)
 
 
+def _on_templates(
+    figure: TemplateObjectVariable,
+    ground: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        f"preposition-training-{figure.handle}-on-{ground.handle}",
+        salient_object_variables=[figure, ground],
+        background_object_variables=background,
+        asserted_always_relations=[on(figure, ground)],
+    )
+
+
+def _beside_template(
+    figure: TemplateObjectVariable,
+    ground: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+    *,
+    is_right: bool,
+) -> Phase1SituationTemplate:
+    direction_str = "right" if is_right else "left"
+    return Phase1SituationTemplate(
+        f"preposition-training-{figure.handle}-beside-{ground.handle}-{direction_str}",
+        salient_object_variables=[figure, ground],
+        background_object_variables=background,
+        asserted_always_relations=[
+            Relation(
+                IN_REGION,
+                figure,
+                Region(
+                    ground,
+                    distance=PROXIMAL,
+                    direction=Direction(
+                        positive=is_right,
+                        relative_to_axis=HorizontalAxisOfObject(ground, index=0),
+                    ),
+                ),
+            )
+        ],
+    )
+
+
+def _under_template(
+    figure: TemplateObjectVariable,
+    ground: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        f"preposition-training-{figure.handle}-under-{ground.handle}",
+        salient_object_variables=[figure],
+        background_object_variables=background,
+        asserted_always_relations=[strictly_above(ground, figure)],
+        constraining_relations=[bigger_than(ground, figure)],
+    )
+
+
+def _over_template(
+    figure: TemplateObjectVariable,
+    ground: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        f"preposition-training-{figure.handle}-over-{ground.handle}",
+        salient_object_variables=[figure],
+        background_object_variables=background,
+        asserted_always_relations=[strictly_above(figure, ground)],
+    )
+
+
+def _in_template(
+    figure: TemplateObjectVariable,
+    ground: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        f"preposition-training-{figure.handle}-in-{ground.handle}",
+        salient_object_variables=[figure, ground],
+        background_object_variables=background,
+        asserted_always_relations=[inside(figure, ground)],
+    )
+
+
+def _behind_template(
+    figure: TemplateObjectVariable,
+    ground: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        f"preposition-training-{figure.handle}-behind-{ground.handle}",
+        salient_object_variables=[figure, ground],
+        background_object_variables=background,
+        asserted_always_relations=[
+            Relation(
+                IN_REGION,
+                figure,
+                Region(
+                    ground,
+                    distance=PROXIMAL,
+                    direction=Direction(
+                        positive=False, relative_to_axis=FacingAddresseeAxis(ground)
+                    ),
+                ),
+            )
+        ],
+    )
+
+
+def _in_front_template(
+    figure: TemplateObjectVariable,
+    ground: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        f"preposition-training-{figure.handle}-behind-{ground.handle}",
+        salient_object_variables=[figure, ground],
+        background_object_variables=background,
+        asserted_always_relations=[
+            Relation(
+                IN_REGION,
+                figure,
+                Region(
+                    ground,
+                    distance=PROXIMAL,
+                    direction=Direction(
+                        positive=True, relative_to_axis=FacingAddresseeAxis(ground)
+                    ),
+                ),
+            )
+        ],
+    )
+
+
 def _make_on_training() -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
@@ -55,26 +192,14 @@ def _make_on_training() -> Phase1InstanceGroup:
     figures = immutableset([figure_0, figure_1])
     grounds = immutableset([ground_0, ground_1])
 
-    def on_templates(
-        figure: TemplateObjectVariable,
-        ground: TemplateObjectVariable,
-        background: Iterable[TemplateObjectVariable],
-    ) -> Phase1SituationTemplate:
-        return Phase1SituationTemplate(
-            f"preposition-training-{figure.handle}-on-{ground.handle}",
-            salient_object_variables=[figure, ground],
-            background_object_variables=background,
-            asserted_always_relations=[on(figure, ground)],
-        )
-
     return phase1_instances(
-        "Preposition Training ON",
+        "Preposition Training On",
         chain(
             *[
                 flatten(
                     [
                         sampled(
-                            on_templates(
+                            _on_templates(
                                 figure,
                                 ground,
                                 _make_background(
@@ -104,34 +229,6 @@ def _make_beside_training() -> Phase1InstanceGroup:
     figures = immutableset([figure_0, figure_1])
     grounds = immutableset([ground_0, ground_1])
 
-    def beside_template(
-        figure: TemplateObjectVariable,
-        ground: TemplateObjectVariable,
-        background: Iterable[TemplateObjectVariable],
-        *,
-        is_right: bool,
-    ) -> Phase1SituationTemplate:
-        direction_str = "right" if is_right else "left"
-        return Phase1SituationTemplate(
-            f"preposition-training-{figure.handle}-beside-{ground.handle}-{direction_str}",
-            salient_object_variables=[figure, ground],
-            background_object_variables=background,
-            asserted_always_relations=[
-                Relation(
-                    IN_REGION,
-                    figure,
-                    Region(
-                        ground,
-                        distance=PROXIMAL,
-                        direction=Direction(
-                            positive=is_right,
-                            relative_to_axis=HorizontalAxisOfObject(ground, index=0),
-                        ),
-                    ),
-                )
-            ],
-        )
-
     return phase1_instances(
         "Preposition Training Beside",
         chain(
@@ -139,7 +236,7 @@ def _make_beside_training() -> Phase1InstanceGroup:
                 flatten(
                     [
                         sampled(
-                            beside_template(
+                            _beside_template(
                                 figure,
                                 ground,
                                 _make_background(
@@ -170,24 +267,12 @@ def _make_under_training() -> Phase1InstanceGroup:
     figures = immutableset([figure_0, figure_1])
     grounds = immutableset([ground_0])
 
-    def under_template(
-        figure: TemplateObjectVariable,
-        ground: TemplateObjectVariable,
-        background: Iterable[TemplateObjectVariable],
-    ) -> Phase1SituationTemplate:
-        return Phase1SituationTemplate(
-            f"preposition-training-{figure.handle}-under-{ground.handle}",
-            salient_object_variables=[figure],
-            background_object_variables=background,
-            asserted_always_relations=[strictly_above(ground, figure)],
-        )
-
     return phase1_instances(
         "Preposition Training Under",
         chain(
             *[
                 sampled(
-                    under_template(
+                    _under_template(
                         figure,
                         ground,
                         _make_background(
@@ -214,24 +299,12 @@ def _make_over_training() -> Phase1InstanceGroup:
     figures = immutableset([figure_0, figure_1])
     grounds = immutableset([ground_0, ground_1])
 
-    def over_template(
-        figure: TemplateObjectVariable,
-        ground: TemplateObjectVariable,
-        background: Iterable[TemplateObjectVariable],
-    ) -> Phase1SituationTemplate:
-        return Phase1SituationTemplate(
-            f"preposition-training-{figure.handle}-over-{ground.handle}",
-            salient_object_variables=[figure],
-            background_object_variables=background,
-            asserted_always_relations=[strictly_above(figure, ground)],
-        )
-
     return phase1_instances(
         "Preposition Training Over",
         chain(
             *[
                 sampled(
-                    over_template(
+                    _over_template(
                         figure,
                         ground,
                         _make_background(
@@ -258,24 +331,12 @@ def _make_in_training() -> Phase1InstanceGroup:
     figures = immutableset([figure_0, figure_1])
     grounds = immutableset([ground_0, ground_1])
 
-    def in_template(
-        figure: TemplateObjectVariable,
-        ground: TemplateObjectVariable,
-        background: Iterable[TemplateObjectVariable],
-    ) -> Phase1SituationTemplate:
-        return Phase1SituationTemplate(
-            f"preposition-training-{figure.handle}-in-{ground.handle}",
-            salient_object_variables=[figure, ground],
-            background_object_variables=background,
-            asserted_always_relations=[inside(figure, ground)],
-        )
-
     return phase1_instances(
         "Preposition Training In",
         chain(
             *[
                 sampled(
-                    in_template(
+                    _in_template(
                         figure,
                         ground,
                         _make_background(
@@ -304,30 +365,6 @@ def _make_behind_training() -> Phase1InstanceGroup:
     figures = immutableset([figure_0, figure_1])
     grounds = immutableset([ground_0, ground_1])
 
-    def behind_template(
-        figure: TemplateObjectVariable,
-        ground: TemplateObjectVariable,
-        background: Iterable[TemplateObjectVariable],
-    ) -> Phase1SituationTemplate:
-        return Phase1SituationTemplate(
-            f"preposition-training-{figure.handle}-behind-{ground.handle}",
-            salient_object_variables=[figure, ground],
-            background_object_variables=background,
-            asserted_always_relations=[
-                Relation(
-                    IN_REGION,
-                    figure,
-                    Region(
-                        ground,
-                        distance=PROXIMAL,
-                        direction=Direction(
-                            positive=False, relative_to_axis=FacingAddresseeAxis(ground)
-                        ),
-                    ),
-                )
-            ],
-        )
-
     return phase1_instances(
         "Preposition Training Behind",
         chain(
@@ -335,7 +372,7 @@ def _make_behind_training() -> Phase1InstanceGroup:
                 flatten(
                     [
                         sampled(
-                            behind_template(
+                            _behind_template(
                                 figure,
                                 ground,
                                 _make_background(
@@ -369,30 +406,6 @@ def _make_in_front_training() -> Phase1InstanceGroup:
     figures = immutableset([figure_0, figure_1])
     grounds = immutableset([ground_0, ground_1])
 
-    def in_front_template(
-        figure: TemplateObjectVariable,
-        ground: TemplateObjectVariable,
-        background: Iterable[TemplateObjectVariable],
-    ) -> Phase1SituationTemplate:
-        return Phase1SituationTemplate(
-            f"preposition-training-{figure.handle}-behind-{ground.handle}",
-            salient_object_variables=[figure, ground],
-            background_object_variables=background,
-            asserted_always_relations=[
-                Relation(
-                    IN_REGION,
-                    figure,
-                    Region(
-                        ground,
-                        distance=PROXIMAL,
-                        direction=Direction(
-                            positive=True, relative_to_axis=FacingAddresseeAxis(ground)
-                        ),
-                    ),
-                )
-            ],
-        )
-
     return phase1_instances(
         "Preposition Training In Front",
         chain(
@@ -400,7 +413,7 @@ def _make_in_front_training() -> Phase1InstanceGroup:
                 flatten(
                     [
                         sampled(
-                            in_front_template(
+                            _in_front_template(
                                 figure,
                                 ground,
                                 _make_background(
@@ -424,31 +437,260 @@ def _make_in_front_training() -> Phase1InstanceGroup:
 
 
 def _make_on_tests() -> Phase1InstanceGroup:
-    pass
+    figure_0 = standard_object("figure_0", THING)
+    figure_1 = standard_object("figure_1", THING)
+    ground_0 = standard_object(
+        "ground_0", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
+    )
+    ground_1 = standard_object(
+        "ground_1", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
+    )
+
+    figures = immutableset([figure_0, figure_1])
+    grounds = immutableset([ground_0, ground_1])
+
+    return phase1_instances(
+        "Preposition Testing On",
+        chain(
+            *[
+                flatten(
+                    [
+                        sampled(
+                            _on_templates(
+                                figure,
+                                ground,
+                                _make_background(
+                                    [figure, ground],
+                                    all_objects=flatten([figures, grounds]),
+                                ),
+                            ),
+                            chooser=_CHOOSER,
+                            ontology=GAILA_PHASE_1_ONTOLOGY,
+                            max_to_sample=5,
+                        )
+                        for figure in figures
+                        for ground in grounds
+                    ]
+                )
+            ]
+        ),
+    )
 
 
 def _make_beside_tests() -> Phase1InstanceGroup:
-    pass
+    figure_0 = standard_object("figure_0", THING)
+    figure_1 = standard_object("figure_1", THING)
+    ground_0 = standard_object("ground_0", THING)
+    ground_1 = standard_object("ground_1", THING)
+
+    figures = immutableset([figure_0, figure_1])
+    grounds = immutableset([ground_0, ground_1])
+
+    return phase1_instances(
+        "Preposition Testing Beside",
+        chain(
+            *[
+                flatten(
+                    [
+                        sampled(
+                            _beside_template(
+                                figure,
+                                ground,
+                                _make_background(
+                                    [figure, ground],
+                                    all_objects=flatten([figures, grounds]),
+                                ),
+                                is_right=direction,
+                            ),
+                            ontology=GAILA_PHASE_1_ONTOLOGY,
+                            chooser=_CHOOSER,
+                            max_to_sample=5,
+                        )
+                        for figure in figures
+                        for ground in grounds
+                        for direction in immutableset([True, False])
+                    ]
+                )
+            ]
+        ),
+    )
 
 
 def _make_under_tests() -> Phase1InstanceGroup:
-    pass
+    figure_0 = standard_object("figure_0", THING)
+    figure_1 = standard_object("figure_1", THING)
+    ground_0 = standard_object("ground_0", THING, required_properties=[HAS_SPACE_UNDER])
+
+    figures = immutableset([figure_0, figure_1])
+    grounds = immutableset([ground_0])
+
+    return phase1_instances(
+        "Preposition Testing Under",
+        chain(
+            *[
+                sampled(
+                    _under_template(
+                        figure,
+                        ground,
+                        _make_background(
+                            [figure], all_objects=flatten([figures, grounds])
+                        ),
+                    ),
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                    chooser=_CHOOSER,
+                    max_to_sample=5,
+                )
+                for figure in figures
+                for ground in grounds
+            ]
+        ),
+    )
 
 
 def _make_over_tests() -> Phase1InstanceGroup:
-    pass
+    figure_0 = standard_object("figure_0", THING)
+    figure_1 = standard_object("figure_1", THING)
+    ground_0 = standard_object("ground_0", THING)
+    ground_1 = standard_object("ground_1", THING)
+
+    figures = immutableset([figure_0, figure_1])
+    grounds = immutableset([ground_0, ground_1])
+
+    return phase1_instances(
+        "Preposition Testing Over",
+        chain(
+            *[
+                sampled(
+                    _over_template(
+                        figure,
+                        ground,
+                        _make_background(
+                            [figure], all_objects=flatten([figures, grounds])
+                        ),
+                    ),
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                    chooser=_CHOOSER,
+                    max_to_sample=5,
+                )
+                for figure in figures
+                for ground in grounds
+            ]
+        ),
+    )
 
 
 def _make_in_tests() -> Phase1InstanceGroup:
-    pass
+    figure_0 = object_variable("figure_0", THING, banned_properties=[IS_BODY_PART])
+    figure_1 = standard_object("figure_1", THING, banned_properties=[IS_BODY_PART])
+    ground_0 = standard_object("ground_0", THING, required_properties=[HOLLOW])
+    ground_1 = standard_object("ground_1", THING, required_properties=[HOLLOW])
+
+    figures = immutableset([figure_0, figure_1])
+    grounds = immutableset([ground_0, ground_1])
+
+    return phase1_instances(
+        "Preposition Testing In",
+        chain(
+            *[
+                sampled(
+                    _in_template(
+                        figure,
+                        ground,
+                        _make_background(
+                            [figure, ground], all_objects=flatten([figures, grounds])
+                        ),
+                    ),
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                    chooser=_CHOOSER,
+                    max_to_sample=5,
+                )
+                for figure in figures
+                for ground in grounds
+            ]
+        ),
+    )
 
 
 def _make_behind_tests() -> Phase1InstanceGroup:
-    pass
+    figure_0 = standard_object("figure_0", THING)
+    figure_1 = standard_object("figure_1", THING)
+    ground_0 = standard_object("ground_0", THING)
+    ground_1 = standard_object("ground_1", THING)
+    speaker = standard_object("speaker", MOM, added_properties=[IS_SPEAKER])
+    addressee = standard_object("addressee", DAD, added_properties=[IS_ADDRESSEE])
+
+    figures = immutableset([figure_0, figure_1])
+    grounds = immutableset([ground_0, ground_1])
+
+    return phase1_instances(
+        "Preposition Testing Behind",
+        chain(
+            *[
+                flatten(
+                    [
+                        sampled(
+                            _behind_template(
+                                figure,
+                                ground,
+                                _make_background(
+                                    [figure, ground],
+                                    all_objects=flatten(
+                                        [figures, grounds, [speaker, addressee]]
+                                    ),
+                                ),
+                            ),
+                            ontology=GAILA_PHASE_1_ONTOLOGY,
+                            chooser=_CHOOSER,
+                            max_to_sample=5,
+                        )
+                        for figure in figures
+                        for ground in grounds
+                    ]
+                )
+            ]
+        ),
+    )
 
 
 def _make_in_front_tests() -> Phase1InstanceGroup:
-    pass
+    figure_0 = standard_object("figure_0", THING)
+    figure_1 = standard_object("figure_1", THING)
+    ground_0 = standard_object("ground_0", THING)
+    ground_1 = standard_object("ground_1", THING)
+    speaker = standard_object("speaker", MOM, added_properties=[IS_SPEAKER])
+    addressee = standard_object("addressee", DAD, added_properties=[IS_ADDRESSEE])
+
+    figures = immutableset([figure_0, figure_1])
+    grounds = immutableset([ground_0, ground_1])
+
+    return phase1_instances(
+        "Preposition Testing In Front",
+        chain(
+            *[
+                flatten(
+                    [
+                        sampled(
+                            _in_front_template(
+                                figure,
+                                ground,
+                                _make_background(
+                                    [figure, ground],
+                                    all_objects=flatten(
+                                        [figures, grounds, [speaker, addressee]]
+                                    ),
+                                ),
+                            ),
+                            ontology=GAILA_PHASE_1_ONTOLOGY,
+                            chooser=_CHOOSER,
+                            max_to_sample=5,
+                        )
+                        for figure in figures
+                        for ground in grounds
+                    ]
+                )
+            ]
+        ),
+    )
 
 
 PREPOSITIONS_CURRICULUM_TRAINING = [
@@ -471,4 +713,6 @@ PREPOSITIONS_CURRICULUM_TESTING = [
     _make_in_front_tests(),
 ]
 
-PREPOSITIONS_CURRICULUM = flatten([PREPOSITIONS_CURRICULUM_TRAINING])
+PREPOSITIONS_CURRICULUM = flatten(
+    [PREPOSITIONS_CURRICULUM_TRAINING, PREPOSITIONS_CURRICULUM_TESTING]
+)
