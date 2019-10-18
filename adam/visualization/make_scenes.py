@@ -27,6 +27,9 @@ from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
 
+from adam.visualization.panda3d_interface import SituationVisualizer
+from adam.visualization.utils import Shape
+
 USAGE_MESSAGE = """ """
 
 
@@ -34,12 +37,18 @@ def main() -> None:
     # go through curriculum scenes (fed in from where?) and output geometry types
     print("scene generation test")
     sc = SceneCreator()
+    viz = SituationVisualizer()
     for i, scene in enumerate(sc.create_scenes(GAILA_PHASE_1_CURRICULUM)):
         print(f"SCENE {i}")
         for obj in scene:
             print(obj)
+            viz.add_model(obj)
+        viz.run_for_seconds(5.0)
+        viz.clear_scene()
+        viz.run_for_seconds(0.25)
         if i > 10:
             break
+
 
 
 @attrs(frozen=True, slots=True)
@@ -73,25 +82,25 @@ class SceneCreator:
                         )
                 yield scene_objects
 
-    def _cross_section_to_geo(self, cs: CrossSection):
+    def _cross_section_to_geo(self, cs: CrossSection) -> Shape:
         if cs.has_rotational_symmetry and cs.has_reflective_symmetry and cs.curved:
-            return "CIRCULAR"
+            return Shape("CIRCULAR")
         elif cs.has_rotational_symmetry and cs.has_reflective_symmetry and not cs.curved:
-            return "SQUARE"
+            return Shape("SQUARE")
         elif not cs.has_rotational_symmetry and cs.has_reflective_symmetry and cs.curved:
-            return "OVALISH"
+            return Shape("OVALISH")
         elif (
             not cs.has_rotational_symmetry
             and cs.has_reflective_symmetry
             and not cs.curved
         ):
-            return "RECTANGULAR"
+            return Shape("RECTANGULAR")
         elif (
             not cs.has_rotational_symmetry
             and not cs.has_reflective_symmetry
             and not cs.curved
         ):
-            return "IRREGULAR"
+            return Shape("IRREGULAR")
         else:
             raise ValueError("Unknown Geon composition")
 
