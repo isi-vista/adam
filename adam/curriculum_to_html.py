@@ -149,18 +149,18 @@ class CurriculumToHtmlDumper:
     """
 
     def dump_to_html_as_sorted_by_utterance_length(
-        self,
-        instance_groups: Iterable[
-            InstanceGroup[
-                HighLevelSemanticsSituation,
-                LinearizedDependencyTree,
-                DevelopmentalPrimitivePerceptionFrame,
-            ]
-        ],
-        *,
-        output_directory: Path,
-        title: str,
-        random_seed: int,
+            self,
+            instance_groups: Iterable[
+                InstanceGroup[
+                    HighLevelSemanticsSituation,
+                    LinearizedDependencyTree,
+                    DevelopmentalPrimitivePerceptionFrame,
+                ]
+            ],
+            *,
+            output_directory: Path,
+            title: str,
+            random_seed: int,
     ):
         all_instances = []
         for (_, instance_group) in enumerate(instance_groups):
@@ -175,10 +175,10 @@ class CurriculumToHtmlDumper:
                         f"Expected the Lingustics to be LinearizedDependencyTree got {type(dependency_tree)}"
                     )
                 if not (
-                    isinstance(perception, PerceptualRepresentation)
-                    and isinstance(
-                        perception.frames[0], DevelopmentalPrimitivePerceptionFrame
-                    )
+                        isinstance(perception, PerceptualRepresentation)
+                        and isinstance(
+                    perception.frames[0], DevelopmentalPrimitivePerceptionFrame
+                )
                 ):
                     raise RuntimeError(
                         f"Expected the Perceptual Representation to contain DevelopmentalPrimitivePerceptionFrame got "
@@ -206,11 +206,12 @@ class CurriculumToHtmlDumper:
             )
 
         filename = "curriculum-sorted-by-utterance.html"
+        index_file = "index-" + filename
         chunk_size = 50
         files_written: List[Tuple[str, str]] = []
         for i in range(0, len(rendered_instances), chunk_size):
-            chunk = rendered_instances[i : i + chunk_size]
-            instance_group_header = f"{int(i/chunk_size):03} - {filename}"
+            chunk = rendered_instances[i: i + chunk_size]
+            instance_group_header = f"{int(i / chunk_size):03} - {filename}"
             relative_filename = f"{instance_group_header}.html"
             files_written.append((instance_group_header, relative_filename))
             with open(output_directory / relative_filename, "w") as html_out:
@@ -218,6 +219,8 @@ class CurriculumToHtmlDumper:
                 html_out.write(
                     f"\n<body>\n\t<h1>{title} - Sorted by Utterance Length</h1>"
                 )
+                html_out.write(f"\t<a href='{output_directory}/{index_file}'>"
+                               f"Back to Index</a>")
                 html_out.write(EXPLANATION_HEADER)
                 for (instance_number, instance_holder) in enumerate(immutableset(chunk)):
                     # By using the immutable set we guaruntee iteration order and remove duplicates
@@ -248,14 +251,15 @@ class CurriculumToHtmlDumper:
                         f"\t\t\t</tr>\n\t\t</tbody>\n\t</table>"
                     )
                     html_out.write("\n</body>")
+                html_out.write(f"\t<a href='{output_directory}/{index_file}'>"
+                               f"Back to Index</a>")
 
-        index_file = "index-" + filename
         with open(output_directory / index_file, "w") as index_out:
             index_out.write(f"<head><title>{title}</title></head><body>")
             index_out.write("<ul>")
             for (
-                instance_group_title,
-                instance_group_dump_file_relative_path,
+                    instance_group_title,
+                    instance_group_dump_file_relative_path,
             ) in files_written:
                 index_out.write(
                     f"\t<li><a href='{instance_group_dump_file_relative_path}'>"
@@ -265,17 +269,17 @@ class CurriculumToHtmlDumper:
             index_out.write("</body>")
 
     def dump_to_html(
-        self,
-        instance_groups: Iterable[
-            InstanceGroup[
-                HighLevelSemanticsSituation,
-                LinearizedDependencyTree,
-                DevelopmentalPrimitivePerceptionFrame,
-            ]
-        ],
-        *,
-        output_directory: Path,
-        title: str,
+            self,
+            instance_groups: Iterable[
+                InstanceGroup[
+                    HighLevelSemanticsSituation,
+                    LinearizedDependencyTree,
+                    DevelopmentalPrimitivePerceptionFrame,
+                ]
+            ],
+            *,
+            output_directory: Path,
+            title: str,
     ):
         r"""
         Method to take a list of `InstanceGroup`\ s and turns each one into an individual page
@@ -309,6 +313,7 @@ class CurriculumToHtmlDumper:
                 instance_group=instance_group,
                 output_destination=output_directory / relative_filename,
                 title=f"{instance_group_header} - {title}",
+                output_directory=output_directory,
             )
 
         # write an table of contents to index.html
@@ -316,8 +321,8 @@ class CurriculumToHtmlDumper:
             index_out.write(f"<head><title>{title}</title></head><body>")
             index_out.write("<ul>")
             for (
-                instance_group_title,
-                instance_group_dump_file_relative_path,
+                    instance_group_title,
+                    instance_group_dump_file_relative_path,
             ) in files_written:
                 index_out.write(
                     f"\t<li><a href='{instance_group_dump_file_relative_path}'>"
@@ -327,14 +332,15 @@ class CurriculumToHtmlDumper:
             index_out.write("</body>")
 
     def _dump_instance_group(
-        self,
-        instance_group: InstanceGroup[
-            HighLevelSemanticsSituation,
-            LinearizedDependencyTree,
-            DevelopmentalPrimitivePerceptionFrame,
-        ],
-        title: str,
-        output_destination: Path,
+            self,
+            instance_group: InstanceGroup[
+                HighLevelSemanticsSituation,
+                LinearizedDependencyTree,
+                DevelopmentalPrimitivePerceptionFrame,
+            ],
+            title: str,
+            output_destination: Path,
+            output_directory: Path,
     ):
         """
         Internal generation method for individual instance groups into HTML pages
@@ -357,10 +363,10 @@ class CurriculumToHtmlDumper:
                     f"Expected the Lingustics to be LinearizedDependencyTree got {type(dependency_tree)}"
                 )
             if not (
-                isinstance(perception, PerceptualRepresentation)
-                and isinstance(
-                    perception.frames[0], DevelopmentalPrimitivePerceptionFrame
-                )
+                    isinstance(perception, PerceptualRepresentation)
+                    and isinstance(
+                perception.frames[0], DevelopmentalPrimitivePerceptionFrame
+            )
             ):
                 raise RuntimeError(
                     f"Expected the Perceptual Representation to contain DevelopmentalPrimitivePerceptionFrame got "
@@ -378,10 +384,12 @@ class CurriculumToHtmlDumper:
         with open(output_destination, "w") as html_out:
             html_out.write(f"<head>\n\t<style>{CSS}\n\t</style>\n</head>")
             html_out.write(f"\n<body>\n\t<h1>{title} - {instance_group.name()}</h1>")
+            html_out.write(f"\t<a href='{output_directory}/index.html'>"
+                           f"Back to Index</a>")
             html_out.write(EXPLANATION_HEADER)
             # By using the immutable set we guaruntee iteration order and remove duplicates
             for (instance_number, instance_holder) in enumerate(
-                immutableset(rendered_instances)
+                    immutableset(rendered_instances)
             ):
                 html_out.write(
                     f"\n\t<table>\n"
@@ -409,10 +417,12 @@ class CurriculumToHtmlDumper:
                     f'\t\t\t\t<td valign="top">{instance_holder.perception}\n\t\t\t\t</td>\n'
                     f"\t\t\t</tr>\n\t\t</tbody>\n\t</table>"
                 )
+            html_out.write(f"\t<a href='{output_directory}/index.html'>"
+                           f"Back to Index</a>")
             html_out.write("\n</body>")
 
     def _situation_text(
-        self, situation: HighLevelSemanticsSituation
+            self, situation: HighLevelSemanticsSituation
     ) -> Tuple[str, Optional[SituationObject]]:
         """
         Converts a situation description into its sub-parts as a table entry
@@ -461,7 +471,7 @@ class CurriculumToHtmlDumper:
         return ("\n".join(output_text), speaker)
 
     def _situation_object_or_region_text(
-        self, obj_or_region: Union[SituationObject, SituationRegion]
+            self, obj_or_region: Union[SituationObject, SituationRegion]
     ) -> str:
         if isinstance(obj_or_region, SituationObject):
             return obj_or_region.ontology_node.handle
@@ -487,19 +497,19 @@ class CurriculumToHtmlDumper:
     # Collapse pairs of size relations (biggerThan/smallerThan) into
     # a single relation
     def _get_single_size_relation(
-        self,
-        relation: Relation[ObjectPerception],
-        relation_set: ImmutableSet[Relation[ObjectPerception]],
+            self,
+            relation: Relation[ObjectPerception],
+            relation_set: ImmutableSet[Relation[ObjectPerception]],
     ):
         single_size_relation: Optional[Tuple[Any, str, Any]] = None
         if relation.relation_type in self._opposite_size_relations:
             if (
-                Relation(
-                    self._opposite_size_relations[relation.relation_type],
-                    relation.second_slot,
-                    relation.first_slot,
-                )
-                in relation_set
+                    Relation(
+                        self._opposite_size_relations[relation.relation_type],
+                        relation.second_slot,
+                        relation.first_slot,
+                    )
+                    in relation_set
             ):
                 if relation.relation_type == SMALLER_THAN:
                     single_size_relation = (
@@ -528,7 +538,7 @@ class CurriculumToHtmlDumper:
         return single_size_relation
 
     def _perception_text(
-        self, perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]
+            self, perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]
     ) -> str:
         """
         Turns a perception into a list of items in the perceptions frames.
@@ -579,7 +589,7 @@ class CurriculumToHtmlDumper:
         # Since the logic will be the same for all three types,
         # we pull it out into a function.
         def compute_arrow(
-            item: Any, static_items: AbstractSet[Any], first_frame_items: AbstractSet[Any]
+                item: Any, static_items: AbstractSet[Any], first_frame_items: AbstractSet[Any]
         ) -> Tuple[str, str]:
             if item in static_items:
                 # item doesn't change - no arrow
@@ -752,7 +762,7 @@ class CurriculumToHtmlDumper:
         return "\n".join(output_text)
 
     def _render_relation(
-        self, axis_info: AxesInfo[ObjectPerception], relation: Relation[ObjectPerception]
+            self, axis_info: AxesInfo[ObjectPerception], relation: Relation[ObjectPerception]
     ) -> str:
         second_slot_str: str
         filler2 = relation.second_slot
@@ -771,7 +781,7 @@ class CurriculumToHtmlDumper:
         return f"{relation.relation_type}({relation.first_slot}, {second_slot_str})"
 
     def _render_during(
-        self, during: DuringAction[ObjectPerception], *, indent_depth: int = 0
+            self, during: DuringAction[ObjectPerception], *, indent_depth: int = 0
     ) -> str:
         indent = "\t" * indent_depth
         lines = [f"{indent}<ul>"]
@@ -798,7 +808,7 @@ class CurriculumToHtmlDumper:
         return "\n".join(lines)
 
     def _render_path(
-        self, path: SpatialPath[ObjectPerception], *, indent_depth: int = 0
+            self, path: SpatialPath[ObjectPerception], *, indent_depth: int = 0
     ) -> str:
         indent = "\t" * indent_depth
         lines = [f"{indent}<ul>"]
@@ -808,7 +818,7 @@ class CurriculumToHtmlDumper:
         return "\n".join(lines)
 
     def _linguistic_text(
-        self, linguistic: LinearizedDependencyTree, speaker: Optional[SituationObject]
+            self, linguistic: LinearizedDependencyTree, speaker: Optional[SituationObject]
     ) -> str:
         """
         Parses the Linguistic Description of a Linearized Dependency Tree into a table entry
@@ -818,9 +828,9 @@ class CurriculumToHtmlDumper:
         """
         if speaker:
             return (
-                f'{speaker.ontology_node.handle} says: "'
-                + " ".join(linguistic.as_token_sequence())
-                + '"'
+                    f'{speaker.ontology_node.handle} says: "'
+                    + " ".join(linguistic.as_token_sequence())
+                    + '"'
             )
         else:
             return " ".join(linguistic.as_token_sequence())
@@ -891,7 +901,7 @@ _VT = TypeVar("_VT")
 
 
 def _index_to_setmultidict(
-    items: Iterable[_VT], index_func: Callable[[_VT], _KT]
+        items: Iterable[_VT], index_func: Callable[[_VT], _KT]
 ) -> ImmutableSetMultiDict[_KT, _VT]:
     return immutablesetmultidict((index_func(x), x) for x in items)
 
