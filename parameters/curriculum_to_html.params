@@ -1,5 +1,5 @@
 _includes:
     - root.params
 
-output_directory: "%adam_experiment_root%/curriculum_dump"
+output_directory: "%adam_experiment_root%/outputs/"
 sort_by_utterance: False
