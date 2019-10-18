@@ -28,6 +28,7 @@ from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 from vistautils.preconditions import check_state
 
 from adam.curriculum.phase1_curriculum import GAILA_PHASE_1_CURRICULUM
+from adam.curriculum.preposition_curriculum import make_prepositions_curriculum
 from adam.experiment import InstanceGroup
 from adam.geon import Geon
 from adam.axes import WORLD_AXES, AxesInfo
@@ -97,30 +98,35 @@ EXPLANATION_HEADER = (
     "<li>Many objects also have associated Geons, which describe their shape "
     "according to Biederman's visual perception theory (see deliverable docs for a citation).</li>"
 )
+STR_TO_CURRICULUM = {
+    "phase1": GAILA_PHASE_1_CURRICULUM,
+    "prepositions": make_prepositions_curriculum(),
+}
 
 
 def main(params: Parameters) -> None:
     root_output_directory = params.creatable_directory("output_directory")
-    phase1_curriculum_dir = root_output_directory / "gaila-phase-1"
+    curriculum_string = params.optional_string(
+        "curriculum", valid_options=STR_TO_CURRICULUM.keys(), default="phase1"
+    )
+    phase1_curriculum_dir = root_output_directory / curriculum_string
     phase1_curriculum_dir.mkdir(parents=True, exist_ok=True)
+    curriculum_to_render = STR_TO_CURRICULUM[curriculum_string]
 
-    sort_by_utterance_length_flag = params.optional_boolean_with_default(
-        "sort_by_utterance", default_value=False
+    sort_by_utterance_length_flag = params.optional_boolean(
+        "sort_by_utterance", default=False
     )
     if sort_by_utterance_length_flag:
-        random_seed = params.optional_float("random_seed")
-        # Using float and converting to integer until optional_integer is implemented in vistautils
-        if not random_seed:
-            random_seed = 1
+        random_seed = params.optional_integer("random_seed", default=1)
         CurriculumToHtmlDumper().dump_to_html_as_sorted_by_utterance_length(
-            GAILA_PHASE_1_CURRICULUM,
+            curriculum_to_render,
             output_directory=phase1_curriculum_dir,
             title="GAILA Phase 1 Curriculum Sorted by Utterance Length",
-            random_seed=int(random_seed),
+            random_seed=random_seed,
         )
     else:
         CurriculumToHtmlDumper().dump_to_html(
-            GAILA_PHASE_1_CURRICULUM,
+            curriculum_to_render,
             output_directory=phase1_curriculum_dir,
             title="GAILA Phase 1 Curriculum",
         )
