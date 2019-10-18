@@ -5,9 +5,11 @@ from immutablecollections import immutableset
 from more_itertools import flatten
 
 from adam.axes import HorizontalAxisOfObject, FacingAddresseeAxis
-from adam.curriculum.phase1_curriculum import (
-    Phase1InstanceGroup,
+from adam.curriculum.curriculum_utils import (
+    PHASE1_CHOOSER,
+    make_background,
     standard_object,
+    Phase1InstanceGroup,
     phase1_instances,
 )
 from adam.ontology import IN_REGION, IS_ADDRESSEE, IS_SPEAKER, THING
@@ -32,7 +34,6 @@ from adam.ontology.phase1_ontology import (
     HOLLOW,
 )
 from adam.ontology.phase1_spatial_relations import Region, PROXIMAL, Direction
-from adam.random_utils import RandomChooser
 from adam.relation import Relation
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
@@ -41,23 +42,17 @@ from adam.situation.templates.phase1_templates import (
     object_variable,
 )
 
-_CHOOSER = RandomChooser.for_seed(0)
-
-
-def _make_background(
-    salient: Iterable[TemplateObjectVariable],
-    all_objects: Iterable[TemplateObjectVariable],
-) -> Iterable[TemplateObjectVariable]:
-    return immutableset(object_ for object_ in all_objects if object_ not in salient)
-
 
 def _on_templates(
     figure: TemplateObjectVariable,
     ground: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
+    *,
+    is_training: bool,
 ) -> Phase1SituationTemplate:
+    handle = "training" if is_training else "testing"
     return Phase1SituationTemplate(
-        f"preposition-training-{figure.handle}-on-{ground.handle}",
+        f"preposition-{handle}-{figure.handle}-on-{ground.handle}",
         salient_object_variables=[figure, ground],
         background_object_variables=background,
         asserted_always_relations=[on(figure, ground)],
@@ -70,10 +65,12 @@ def _beside_template(
     background: Iterable[TemplateObjectVariable],
     *,
     is_right: bool,
+    is_training: bool,
 ) -> Phase1SituationTemplate:
     direction_str = "right" if is_right else "left"
+    handle = "training" if is_training else "testing"
     return Phase1SituationTemplate(
-        f"preposition-training-{figure.handle}-beside-{ground.handle}-{direction_str}",
+        f"preposition-{handle}-{figure.handle}-beside-{ground.handle}-{direction_str}",
         salient_object_variables=[figure, ground],
         background_object_variables=background,
         asserted_always_relations=[
@@ -93,28 +90,34 @@ def _beside_template(
     )
 
 
-def _over_template(
+def _under_template(
     figure: TemplateObjectVariable,
     ground: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
+    *,
+    is_training: bool,
 ) -> Phase1SituationTemplate:
+    handle = "training" if is_training else "testing"
     return Phase1SituationTemplate(
-        f"preposition-training-{figure.handle}-over-{ground.handle}",
-        salient_object_variables=[figure],
+        f"preposition-{handle}-{figure.handle}-under-{ground.handle}",
+        salient_object_variables=[ground],
         background_object_variables=background,
         asserted_always_relations=[strictly_above(ground, figure)],
         constraining_relations=[bigger_than(ground, figure)],
     )
 
 
-def _under_template(
+def _over_template(
     figure: TemplateObjectVariable,
     ground: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
+    *,
+    is_training: bool,
 ) -> Phase1SituationTemplate:
+    handle = "training" if is_training else "testing"
     return Phase1SituationTemplate(
-        f"preposition-training-{figure.handle}-under-{ground.handle}",
-        salient_object_variables=[figure],
+        f"preposition-{handle}-{figure.handle}-over-{ground.handle}",
+        salient_object_variables=[ground],
         background_object_variables=background,
         asserted_always_relations=[strictly_above(figure, ground)],
     )
@@ -124,9 +127,12 @@ def _in_template(
     figure: TemplateObjectVariable,
     ground: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
+    *,
+    is_training: bool,
 ) -> Phase1SituationTemplate:
+    handle = "training" if is_training else "testing"
     return Phase1SituationTemplate(
-        f"preposition-training-{figure.handle}-in-{ground.handle}",
+        f"preposition-{handle}-{figure.handle}-in-{ground.handle}",
         salient_object_variables=[figure, ground],
         background_object_variables=background,
         asserted_always_relations=[inside(figure, ground)],
@@ -137,9 +143,12 @@ def _behind_template(
     figure: TemplateObjectVariable,
     ground: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
+    *,
+    is_training: bool,
 ) -> Phase1SituationTemplate:
+    handle = "training" if is_training else "testing"
     return Phase1SituationTemplate(
-        f"preposition-training-{figure.handle}-behind-{ground.handle}",
+        f"preposition-{handle}-{figure.handle}-behind-{ground.handle}",
         salient_object_variables=[figure, ground],
         background_object_variables=background,
         asserted_always_relations=[
@@ -162,9 +171,12 @@ def _in_front_template(
     figure: TemplateObjectVariable,
     ground: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
+    *,
+    is_training: bool,
 ) -> Phase1SituationTemplate:
+    handle = "training" if is_training else "testing"
     return Phase1SituationTemplate(
-        f"preposition-training-{figure.handle}-behind-{ground.handle}",
+        f"preposition-{handle}-{figure.handle}-behind-{ground.handle}",
         salient_object_variables=[figure, ground],
         background_object_variables=background,
         asserted_always_relations=[
@@ -202,12 +214,13 @@ def _make_on_training(num_samples: int = 5) -> Phase1InstanceGroup:
                             _on_templates(
                                 figure,
                                 ground,
-                                _make_background(
+                                make_background(
                                     [figure, ground],
                                     all_objects=flatten([figures, grounds]),
                                 ),
+                                is_training=True,
                             ),
-                            chooser=_CHOOSER,
+                            chooser=PHASE1_CHOOSER,
                             ontology=GAILA_PHASE_1_ONTOLOGY,
                             max_to_sample=num_samples,
                         )
@@ -239,14 +252,15 @@ def _make_beside_training(num_samples: int = 5) -> Phase1InstanceGroup:
                             _beside_template(
                                 figure,
                                 ground,
-                                _make_background(
+                                make_background(
                                     [figure, ground],
                                     all_objects=flatten([figures, grounds]),
                                 ),
                                 is_right=direction,
+                                is_training=True,
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
-                            chooser=_CHOOSER,
+                            chooser=PHASE1_CHOOSER,
                             max_to_sample=num_samples,
                         )
                         for figure in figures
@@ -275,12 +289,13 @@ def _make_under_training(num_samples: int = 5) -> Phase1InstanceGroup:
                     _under_template(
                         figure,
                         ground,
-                        _make_background(
+                        make_background(
                             [figure], all_objects=flatten([figures, grounds])
                         ),
+                        is_training=True,
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=_CHOOSER,
+                    chooser=PHASE1_CHOOSER,
                     max_to_sample=num_samples,
                 )
                 for figure in figures
@@ -307,12 +322,13 @@ def _make_over_training(num_samples: int = 5) -> Phase1InstanceGroup:
                     _over_template(
                         figure,
                         ground,
-                        _make_background(
+                        make_background(
                             [figure], all_objects=flatten([figures, grounds])
                         ),
+                        is_training=True,
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=_CHOOSER,
+                    chooser=PHASE1_CHOOSER,
                     max_to_sample=num_samples,
                 )
                 for figure in figures
@@ -339,12 +355,13 @@ def _make_in_training(num_samples: int = 5) -> Phase1InstanceGroup:
                     _in_template(
                         figure,
                         ground,
-                        _make_background(
+                        make_background(
                             [figure, ground], all_objects=flatten([figures, grounds])
                         ),
+                        is_training=True,
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=_CHOOSER,
+                    chooser=PHASE1_CHOOSER,
                     max_to_sample=num_samples,
                 )
                 for figure in figures
@@ -375,15 +392,16 @@ def _make_behind_training(num_samples: int = 5) -> Phase1InstanceGroup:
                             _behind_template(
                                 figure,
                                 ground,
-                                _make_background(
+                                make_background(
                                     [figure, ground],
                                     all_objects=flatten(
                                         [figures, grounds, [speaker, addressee]]
                                     ),
                                 ),
+                                is_training=True,
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
-                            chooser=_CHOOSER,
+                            chooser=PHASE1_CHOOSER,
                             max_to_sample=num_samples,
                         )
                         for figure in figures
@@ -416,15 +434,16 @@ def _make_in_front_training(num_samples: int = 5) -> Phase1InstanceGroup:
                             _in_front_template(
                                 figure,
                                 ground,
-                                _make_background(
+                                make_background(
                                     [figure, ground],
                                     all_objects=flatten(
                                         [figures, grounds, [speaker, addressee]]
                                     ),
                                 ),
+                                is_training=True,
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
-                            chooser=_CHOOSER,
+                            chooser=PHASE1_CHOOSER,
                             max_to_sample=num_samples,
                         )
                         for figure in figures
@@ -459,12 +478,13 @@ def _make_on_tests(num_samples: int = 5) -> Phase1InstanceGroup:
                             _on_templates(
                                 figure,
                                 ground,
-                                _make_background(
+                                make_background(
                                     [figure, ground],
                                     all_objects=flatten([figures, grounds]),
                                 ),
+                                is_training=False,
                             ),
-                            chooser=_CHOOSER,
+                            chooser=PHASE1_CHOOSER,
                             ontology=GAILA_PHASE_1_ONTOLOGY,
                             max_to_sample=num_samples,
                         )
@@ -496,14 +516,15 @@ def _make_beside_tests(num_samples: int = 5) -> Phase1InstanceGroup:
                             _beside_template(
                                 figure,
                                 ground,
-                                _make_background(
+                                make_background(
                                     [figure, ground],
                                     all_objects=flatten([figures, grounds]),
                                 ),
                                 is_right=direction,
+                                is_training=False,
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
-                            chooser=_CHOOSER,
+                            chooser=PHASE1_CHOOSER,
                             max_to_sample=num_samples,
                         )
                         for figure in figures
@@ -532,12 +553,13 @@ def _make_under_tests(num_samples: int = 5) -> Phase1InstanceGroup:
                     _under_template(
                         figure,
                         ground,
-                        _make_background(
+                        make_background(
                             [figure], all_objects=flatten([figures, grounds])
                         ),
+                        is_training=False,
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=_CHOOSER,
+                    chooser=PHASE1_CHOOSER,
                     max_to_sample=num_samples,
                 )
                 for figure in figures
@@ -564,12 +586,13 @@ def _make_over_tests(num_samples: int = 5) -> Phase1InstanceGroup:
                     _over_template(
                         figure,
                         ground,
-                        _make_background(
+                        make_background(
                             [figure], all_objects=flatten([figures, grounds])
                         ),
+                        is_training=False,
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=_CHOOSER,
+                    chooser=PHASE1_CHOOSER,
                     max_to_sample=num_samples,
                 )
                 for figure in figures
@@ -596,12 +619,13 @@ def _make_in_tests(num_samples: int = 5) -> Phase1InstanceGroup:
                     _in_template(
                         figure,
                         ground,
-                        _make_background(
+                        make_background(
                             [figure, ground], all_objects=flatten([figures, grounds])
                         ),
+                        is_training=False,
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=_CHOOSER,
+                    chooser=PHASE1_CHOOSER,
                     max_to_sample=num_samples,
                 )
                 for figure in figures
@@ -632,15 +656,16 @@ def _make_behind_tests(num_samples: int = 5) -> Phase1InstanceGroup:
                             _behind_template(
                                 figure,
                                 ground,
-                                _make_background(
+                                make_background(
                                     [figure, ground],
                                     all_objects=flatten(
                                         [figures, grounds, [speaker, addressee]]
                                     ),
                                 ),
+                                is_training=False,
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
-                            chooser=_CHOOSER,
+                            chooser=PHASE1_CHOOSER,
                             max_to_sample=num_samples,
                         )
                         for figure in figures
@@ -673,15 +698,16 @@ def _make_in_front_tests(num_samples: int = 5) -> Phase1InstanceGroup:
                             _in_front_template(
                                 figure,
                                 ground,
-                                _make_background(
+                                make_background(
                                     [figure, ground],
                                     all_objects=flatten(
                                         [figures, grounds, [speaker, addressee]]
                                     ),
                                 ),
+                                is_training=False,
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
-                            chooser=_CHOOSER,
+                            chooser=PHASE1_CHOOSER,
                             max_to_sample=num_samples,
                         )
                         for figure in figures

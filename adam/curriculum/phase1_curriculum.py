@@ -3,20 +3,22 @@ Curricula for DARPA GAILA Phase 1
 """
 
 from itertools import chain
-from typing import Iterable, Union
-
-from immutablecollections import immutableset
+from typing import Iterable
 from more_itertools import flatten
 
 from adam.axes import HorizontalAxisOfObject, FacingAddresseeAxis, AxesInfo
-from adam.curriculum import GeneratedFromSituationsInstanceGroup, InstanceGroup
-from adam.language.dependency import LinearizedDependencyTree
+from adam.curriculum.curriculum_utils import (
+    phase1_instances,
+    PHASE1_CHOOSER,
+    Phase1InstanceGroup,
+    standard_object,
+    GROUND_OBJECT_TEMPLATE,
+)
 from adam.language_specific.english.english_language_generator import (
-    GAILA_PHASE_1_LANGUAGE_GENERATOR,
     PREFER_DITRANSITIVE,
     USE_ADVERBIAL_PATH_MODIFIER,
 )
-from adam.ontology import OntologyNode, THING, IS_SPEAKER, IS_ADDRESSEE, IN_REGION
+from adam.ontology import THING, IS_SPEAKER, IS_ADDRESSEE, IN_REGION
 from adam.ontology.during import DuringAction
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
@@ -95,74 +97,18 @@ from adam.ontology.phase1_spatial_relations import (
     TOWARD,
     Direction,
 )
-from adam.perception.developmental_primitive_perception import (
-    DevelopmentalPrimitivePerceptionFrame,
-)
-from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
-    GAILA_PHASE_1_PERCEPTION_GENERATOR,
-)
 from adam.random_utils import RandomChooser
 from adam.relation import Relation
 from adam.situation import Action, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
-    TemplateObjectVariable,
     action_variable,
     all_possible,
     color_variable,
     object_variable,
     sampled,
-    TemplatePropertyVariable,
 )
-
-_CHOOSER = RandomChooser.for_seed(0)
-
-_GROUND_OBJECT = object_variable("ground", GROUND)
-
-
-Phase1InstanceGroup = InstanceGroup[  # pylint:disable=invalid-name
-    HighLevelSemanticsSituation,
-    LinearizedDependencyTree,
-    DevelopmentalPrimitivePerceptionFrame,
-]
-
-
-def standard_object(
-    debug_handle: str,
-    root_node: OntologyNode = INANIMATE_OBJECT,
-    *,
-    required_properties: Iterable[OntologyNode] = tuple(),
-    banned_properties: Iterable[OntologyNode] = immutableset(),
-    added_properties: Iterable[
-        Union[OntologyNode, TemplatePropertyVariable]
-    ] = immutableset(),
-) -> TemplateObjectVariable:
-    banned_properties_final = [IS_BODY_PART, LIQUID]
-    banned_properties_final.extend(banned_properties)
-    return object_variable(
-        debug_handle=debug_handle,
-        root_node=root_node,
-        banned_properties=banned_properties_final,
-        required_properties=required_properties,
-        added_properties=added_properties,
-    )
-
-
-def phase1_instances(
-    description: str, situations: Iterable[HighLevelSemanticsSituation]
-) -> Phase1InstanceGroup:
-    """
-    Convenience method for more compactly creating sub-curricula for phase 1.
-    """
-
-    return GeneratedFromSituationsInstanceGroup(
-        description,
-        situations=situations,
-        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
-        perception_generator=GAILA_PHASE_1_PERCEPTION_GENERATOR,
-        chooser=_CHOOSER,
-    )
 
 
 # Show each object once by itself
@@ -177,7 +123,7 @@ def _make_each_object_by_itself_curriculum() -> Phase1InstanceGroup:
             *[
                 all_possible(
                     single_object_template,
-                    chooser=_CHOOSER,
+                    chooser=PHASE1_CHOOSER,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                 )
             ]
@@ -207,7 +153,7 @@ def _make_objects_with_colors_curriculum() -> Phase1InstanceGroup:
                 sampled(
                     object_with_color_template,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=_CHOOSER,
+                    chooser=PHASE1_CHOOSER,
                     max_to_sample=20,
                 )
             ]
@@ -240,7 +186,7 @@ def _make_multiple_objects_curriculum() -> Phase1InstanceGroup:
     return phase1_instances(
         "multiples of the same object",
         build_object_multiples_situations(
-            ontology=GAILA_PHASE_1_ONTOLOGY, chooser=_CHOOSER
+            ontology=GAILA_PHASE_1_ONTOLOGY, chooser=PHASE1_CHOOSER
         ),
     )
 
@@ -251,14 +197,14 @@ def _make_object_on_ground_curriculum() -> Phase1InstanceGroup:
 
     object_on_ground_template = Phase1SituationTemplate(
         "object-on-ground",
-        salient_object_variables=[_GROUND_OBJECT, object_0],
-        asserted_always_relations=[on(object_0, _GROUND_OBJECT)],
+        salient_object_variables=[GROUND_OBJECT_TEMPLATE, object_0],
+        asserted_always_relations=[on(object_0, GROUND_OBJECT_TEMPLATE)],
     )
 
     liquid_on_ground_template = Phase1SituationTemplate(
         "liquid-on-ground",
-        salient_object_variables=[liquid_0, _GROUND_OBJECT],
-        asserted_always_relations=[on(liquid_0, _GROUND_OBJECT)],
+        salient_object_variables=[liquid_0, GROUND_OBJECT_TEMPLATE],
+        asserted_always_relations=[on(liquid_0, GROUND_OBJECT_TEMPLATE)],
     )
 
     return phase1_instances(
@@ -268,12 +214,12 @@ def _make_object_on_ground_curriculum() -> Phase1InstanceGroup:
                 all_possible(
                     object_on_ground_template,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=_CHOOSER,
+                    chooser=PHASE1_CHOOSER,
                 ),
                 all_possible(
                     liquid_on_ground_template,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=_CHOOSER,
+                    chooser=PHASE1_CHOOSER,
                 ),
             ]
         ),
@@ -297,7 +243,7 @@ def _make_person_has_object_curriculum() -> Phase1InstanceGroup:
             *[
                 sampled(
                     person_has_object_template,
-                    chooser=_CHOOSER,
+                    chooser=PHASE1_CHOOSER,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     max_to_sample=100,
                 )
@@ -344,7 +290,9 @@ def _make_fall_curriculum() -> Phase1InstanceGroup:
         "falling objects",
         chain(
             *[
-                all_possible(template, ontology=GAILA_PHASE_1_ONTOLOGY, chooser=_CHOOSER)
+                all_possible(
+                    template, ontology=GAILA_PHASE_1_ONTOLOGY, chooser=PHASE1_CHOOSER
+                )
                 for template in _make_templates()
             ]
         ),
@@ -378,7 +326,7 @@ def _make_transfer_of_possession_curriculum() -> Phase1InstanceGroup:
                         syntax_hints=[PREFER_DITRANSITIVE] if prefer_ditransitive else [],
                     ),
                     max_to_sample=100,
-                    chooser=_CHOOSER,
+                    chooser=PHASE1_CHOOSER,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                 )
                 for prefer_ditransitive in (True, False)
@@ -406,7 +354,7 @@ def _make_object_on_object_curriculum() -> Phase1InstanceGroup:
         sampled(
             situation_template,
             max_to_sample=100,
-            chooser=_CHOOSER,
+            chooser=PHASE1_CHOOSER,
             ontology=GAILA_PHASE_1_ONTOLOGY,
         ),
     )
@@ -445,7 +393,7 @@ def _make_object_beside_object_curriculum() -> Phase1InstanceGroup:
         sampled(
             situation_template,
             max_to_sample=50,
-            chooser=_CHOOSER,
+            chooser=PHASE1_CHOOSER,
             ontology=GAILA_PHASE_1_ONTOLOGY,
         ),
     )
@@ -478,7 +426,7 @@ def _make_object_under_or_over_object_curriculum() -> Phase1InstanceGroup:
                 sampled(
                     template,
                     max_to_sample=100,
-                    chooser=_CHOOSER,
+                    chooser=PHASE1_CHOOSER,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                 )
                 for template in templates
@@ -519,13 +467,13 @@ def _make_object_in_other_object_curriculum() -> Phase1InstanceGroup:
                 sampled(
                     liquid_template,
                     max_to_sample=25,
-                    chooser=_CHOOSER,
+                    chooser=PHASE1_CHOOSER,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                 ),
                 sampled(
                     solid_template,
                     max_to_sample=75,
-                    chooser=_CHOOSER,
+                    chooser=PHASE1_CHOOSER,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                 ),
             ]
@@ -555,7 +503,7 @@ def _make_fly_curriculum() -> Phase1InstanceGroup:
                                 bird,
                                 SpatialPath(
                                     AWAY_FROM if up else TOWARD,
-                                    reference_object=_GROUND_OBJECT,
+                                    reference_object=GROUND_OBJECT_TEMPLATE,
                                 ),
                             )
                         ]
@@ -582,7 +530,7 @@ def _make_fly_curriculum() -> Phase1InstanceGroup:
                                 bird,
                                 SpatialPath(
                                     AWAY_FROM if up else TOWARD,
-                                    reference_object=_GROUND_OBJECT,
+                                    reference_object=GROUND_OBJECT_TEMPLATE,
                                 ),
                             )
                         ]
@@ -628,23 +576,23 @@ def _make_fly_curriculum() -> Phase1InstanceGroup:
             *[
                 flatten(
                     all_possible(
-                        template, ontology=GAILA_PHASE_1_ONTOLOGY, chooser=_CHOOSER
+                        template, ontology=GAILA_PHASE_1_ONTOLOGY, chooser=PHASE1_CHOOSER
                     )
                     for template in bare_fly
                 ),
                 flatten(
                     all_possible(
-                        template, ontology=GAILA_PHASE_1_ONTOLOGY, chooser=_CHOOSER
+                        template, ontology=GAILA_PHASE_1_ONTOLOGY, chooser=PHASE1_CHOOSER
                     )
                     for template in fly_up_down
                 ),
                 all_possible(
-                    fly_under, ontology=GAILA_PHASE_1_ONTOLOGY, chooser=_CHOOSER
+                    fly_under, ontology=GAILA_PHASE_1_ONTOLOGY, chooser=PHASE1_CHOOSER
                 ),
                 sampled(
                     fly_over,
                     max_to_sample=25,
-                    chooser=_CHOOSER,
+                    chooser=PHASE1_CHOOSER,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                 ),
             ]
@@ -716,7 +664,7 @@ def _make_roll_curriculum() -> Phase1InstanceGroup:
                 sampled(
                     situation,
                     max_to_sample=25,
-                    chooser=_CHOOSER,
+                    chooser=PHASE1_CHOOSER,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                 )
                 for situation in (
@@ -778,7 +726,7 @@ def _make_speaker_addressee_curriculum() -> Phase1InstanceGroup:
                     sampled(
                         template,
                         max_to_sample=25,
-                        chooser=_CHOOSER,
+                        chooser=PHASE1_CHOOSER,
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                     )
                     for template in _make_templates()
@@ -801,7 +749,7 @@ def _make_jump_curriculum() -> Phase1InstanceGroup:
                 JUMP,
                 argument_roles_to_fillers=[(AGENT, jumper)],
                 auxiliary_variable_bindings=[
-                    (JUMP_INITIAL_SUPPORTER_AUX, _GROUND_OBJECT)
+                    (JUMP_INITIAL_SUPPORTER_AUX, GROUND_OBJECT_TEMPLATE)
                 ],
             )
         ],
@@ -817,7 +765,7 @@ def _make_jump_curriculum() -> Phase1InstanceGroup:
                 argument_roles_to_fillers=[(AGENT, jumper)],
                 during=DuringAction(at_some_point=[strictly_above(jumper, jumped_over)]),
                 auxiliary_variable_bindings=[
-                    (JUMP_INITIAL_SUPPORTER_AUX, _GROUND_OBJECT)
+                    (JUMP_INITIAL_SUPPORTER_AUX, GROUND_OBJECT_TEMPLATE)
                 ],
             )
         ],
@@ -829,12 +777,14 @@ def _make_jump_curriculum() -> Phase1InstanceGroup:
         chain(
             *[
                 all_possible(
-                    jump_on_ground, ontology=GAILA_PHASE_1_ONTOLOGY, chooser=_CHOOSER
+                    jump_on_ground,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                    chooser=PHASE1_CHOOSER,
                 ),
                 sampled(
                     jump_over_object,
                     max_to_sample=25,
-                    chooser=_CHOOSER,
+                    chooser=PHASE1_CHOOSER,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                 ),
             ]
@@ -905,13 +855,13 @@ def _make_put_curriculum() -> Phase1InstanceGroup:
                 sampled(
                     put_on_template,
                     max_to_sample=25,
-                    chooser=_CHOOSER,
+                    chooser=PHASE1_CHOOSER,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                 ),
                 sampled(
                     put_in_template,
                     max_to_sample=25,
-                    chooser=_CHOOSER,
+                    chooser=PHASE1_CHOOSER,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                 ),
             ]
@@ -973,7 +923,7 @@ def _make_put_on_speaker_addressee_body_part_curriculum() -> Phase1InstanceGroup
                 sampled(
                     template,
                     max_to_sample=25,
-                    chooser=_CHOOSER,
+                    chooser=PHASE1_CHOOSER,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                 )
                 for template in templates
@@ -1004,7 +954,7 @@ def _make_drink_curriculum() -> Phase1InstanceGroup:
         chain(
             *[
                 all_possible(
-                    drink_liquid, ontology=GAILA_PHASE_1_ONTOLOGY, chooser=_CHOOSER
+                    drink_liquid, ontology=GAILA_PHASE_1_ONTOLOGY, chooser=PHASE1_CHOOSER
                 )
             ]
         ),
@@ -1037,7 +987,7 @@ def _make_eat_curriculum() -> Phase1InstanceGroup:
                     eat_object,
                     max_to_sample=25,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=_CHOOSER,
+                    chooser=PHASE1_CHOOSER,
                 )
             ]
         ),
@@ -1126,7 +1076,9 @@ def _make_sit_curriculum() -> Phase1InstanceGroup:
         chain(
             *[
                 all_possible(
-                    situation_templates, chooser=_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY
+                    situation_templates,
+                    chooser=PHASE1_CHOOSER,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
                 )
                 for situation_templates in _make_templates()
             ]
@@ -1157,7 +1109,7 @@ def _make_take_curriculum() -> Phase1InstanceGroup:
                 sampled(
                     take_template,
                     max_to_sample=25,
-                    chooser=_CHOOSER,
+                    chooser=PHASE1_CHOOSER,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                 )
             ]
@@ -1216,7 +1168,7 @@ def _make_move_curriculum() -> Phase1InstanceGroup:
                 sampled(
                     situation,
                     max_to_sample=25,
-                    chooser=_CHOOSER,
+                    chooser=PHASE1_CHOOSER,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                 )
                 for situation in (bare_move_template, transitive_move_template)
@@ -1255,7 +1207,7 @@ def _make_spin_curriculum() -> Phase1InstanceGroup:
                 sampled(
                     situation,
                     max_to_sample=25,
-                    chooser=_CHOOSER,
+                    chooser=PHASE1_CHOOSER,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                 )
                 for situation in (bare_spin_template, transitive_spin_template)
@@ -1326,7 +1278,7 @@ def _make_go_curriculum() -> Phase1InstanceGroup:
                 sampled(
                     situation,
                     max_to_sample=25,
-                    chooser=_CHOOSER,
+                    chooser=PHASE1_CHOOSER,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                 )
                 for situation in (bare_go, go_in, go_under)
@@ -1406,7 +1358,7 @@ def _make_push_curriculum() -> Phase1InstanceGroup:
                 sampled(
                     situation,
                     max_to_sample=25,
-                    chooser=_CHOOSER,
+                    chooser=PHASE1_CHOOSER,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                 )
                 for situation in (
@@ -1430,7 +1382,7 @@ def _make_throw_curriculum() -> Phase1InstanceGroup:
     # Dad throws a cookie on the ground
     throw_on_ground_template = Phase1SituationTemplate(
         "throw-on-ground",
-        salient_object_variables=[thrower, object_thrown, _GROUND_OBJECT],
+        salient_object_variables=[thrower, object_thrown, GROUND_OBJECT_TEMPLATE],
         actions=[
             Action(
                 THROW,
@@ -1440,7 +1392,7 @@ def _make_throw_curriculum() -> Phase1InstanceGroup:
                     (
                         GOAL,
                         Region(
-                            _GROUND_OBJECT,
+                            GROUND_OBJECT_TEMPLATE,
                             distance=EXTERIOR_BUT_IN_CONTACT,
                             direction=GRAVITATIONAL_UP,
                         ),
@@ -1474,13 +1426,13 @@ def _make_throw_curriculum() -> Phase1InstanceGroup:
                 sampled(
                     throw_on_ground_template,
                     max_to_sample=25,
-                    chooser=_CHOOSER,
+                    chooser=PHASE1_CHOOSER,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                 ),
                 sampled(
                     throw_template,
                     max_to_sample=25,
-                    chooser=_CHOOSER,
+                    chooser=PHASE1_CHOOSER,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                 ),
             ]
@@ -1525,16 +1477,20 @@ def _make_come_curriculum() -> Phase1InstanceGroup:
         chain(
             *[
                 all_possible(
-                    come_to_speaker, ontology=GAILA_PHASE_1_ONTOLOGY, chooser=_CHOOSER
+                    come_to_speaker,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                    chooser=PHASE1_CHOOSER,
                 ),
                 all_possible(
-                    come_to_learner, ontology=GAILA_PHASE_1_ONTOLOGY, chooser=_CHOOSER
+                    come_to_learner,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                    chooser=PHASE1_CHOOSER,
                 ),
                 sampled(
                     come_to_object,
                     max_to_sample=25,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=_CHOOSER,
+                    chooser=PHASE1_CHOOSER,
                 ),
             ]
         ),
@@ -1593,7 +1549,7 @@ def _make_behind_in_front_curriculum() -> Phase1InstanceGroup:
                     sampled(
                         template,
                         max_to_sample=25,
-                        chooser=_CHOOSER,
+                        chooser=PHASE1_CHOOSER,
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                     )
                     for template in make_behind_in_front_templates()

@@ -107,7 +107,7 @@ STR_TO_CURRICULUM = {
 def main(params: Parameters) -> None:
     root_output_directory = params.creatable_directory("output_directory")
     curriculum_string = params.optional_string(
-        "curriculum", valid_options=["phase1", "prepositions"], default="phase1"
+        "curriculum", valid_options=STR_TO_CURRICULUM.keys(), default="phase1"
     )
     phase1_curriculum_dir = root_output_directory / curriculum_string
     phase1_curriculum_dir.mkdir(parents=True, exist_ok=True)
