@@ -20,6 +20,7 @@ from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 
 from immutablecollections import ImmutableListMultiDict, immutablelistmultidict
 
+
 from adam.language.dependency import LinearizedDependencyTree
 
 from adam.curriculum.phase1_curriculum import GAILA_PHASE_1_CURRICULUM
@@ -30,7 +31,6 @@ from adam.situation.high_level_semantics_situation import HighLevelSemanticsSitu
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
     RgbColorPerception,
-)
 
 from adam.visualization.panda3d_interface import SituationVisualizer
 from adam.visualization.utils import Shape
