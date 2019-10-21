@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+# This code originated with NetworkX and we don't want to fix all their Pylint problems.
+# pylint: skip-file
 """
 This is derived from the VF2 graph isomorphism implementation in NetworkX.
 That implementation is copyrighted by the NetworkX maintainers
@@ -165,7 +167,7 @@ class GraphMatching:
             return False
 
         try:
-            x = next(self.isomorphisms_iter())
+            next(self.isomorphisms_iter())
             return True
         except StopIteration:
             return False
@@ -302,7 +304,7 @@ class GraphMatching:
     def subgraph_is_isomorphic(self):
         """Returns True if a subgraph of G1 is isomorphic to G2."""
         try:
-            x = next(self.subgraph_isomorphisms_iter())
+            next(self.subgraph_isomorphisms_iter())
             return True
         except StopIteration:
             return False
@@ -310,7 +312,7 @@ class GraphMatching:
     def subgraph_is_monomorphic(self):
         """Returns True if a subgraph of G1 is monomorphic to G2."""
         try:
-            x = next(self.subgraph_monomorphisms_iter())
+            next(self.subgraph_monomorphisms_iter())
             return True
         except StopIteration:
             return False
