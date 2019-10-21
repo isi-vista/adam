@@ -60,8 +60,10 @@ class Geon(HasAxes):
     def _init_primary_axis(self) -> GeonAxis:
         return self.axes.primary_axis
 
+
 class MaybeHasGeon(Protocol):
     geon: Optional[Geon]
+
 
 CONSTANT = CrossSectionSize("constant")
 """

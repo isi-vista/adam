@@ -38,7 +38,7 @@ class GraphMatching:
             sys.setrecursionlimit(int(1.5 * expected_max_recursion_level))
 
         # Declare that we will be searching for a graph-graph isomorphism.
-        self.test = 'graph'
+        self.test = "graph"
 
         # Initialize state
         self.initialize()
@@ -66,8 +66,12 @@ class GraphMatching:
         min_key = self.pattern_node_order.__getitem__
 
         # First we compute the out-terminal sets.
-        T1_out = [node for node in self.out_1 if node not in self.graph_node_to_pattern_node]
-        T2_out = [node for node in self.out_2 if node not in self.pattern_node_to_graph_node]
+        T1_out = [
+            node for node in self.out_1 if node not in self.graph_node_to_pattern_node
+        ]
+        T2_out = [
+            node for node in self.out_2 if node not in self.pattern_node_to_graph_node
+        ]
 
         # If T1_out and T2_out are both nonempty.
         # P(s) = T1_out x {min T2_out}
@@ -80,9 +84,13 @@ class GraphMatching:
         # We compute the in-terminal sets.
 
         # elif not (T1_out or T2_out):   # as suggested by [2], incorrect
-        else:                            # as suggested by [1], correct
-            T1_in = [node for node in self.in_1 if node not in self.graph_node_to_pattern_node]
-            T2_in = [node for node in self.in_2 if node not in self.pattern_node_to_graph_node]
+        else:  # as suggested by [1], correct
+            T1_in = [
+                node for node in self.in_1 if node not in self.graph_node_to_pattern_node
+            ]
+            T2_in = [
+                node for node in self.in_2 if node not in self.pattern_node_to_graph_node
+            ]
 
             # If T1_in and T2_in are both nonempty.
             # P(s) = T1_out x {min T2_out}
@@ -95,8 +103,10 @@ class GraphMatching:
             # P(s) = (N_1 - M_1) x {min (N_2 - M_2)}
 
             # elif not (T1_in or T2_in):   # as suggested by  [2], incorrect
-            else:                          # as inferred from [1], correct
-                node_2 = min(pattern_nodes - set(self.pattern_node_to_graph_node), key=min_key)
+            else:  # as inferred from [1], correct
+                node_2 = min(
+                    pattern_nodes - set(self.pattern_node_to_graph_node), key=min_key
+                )
                 for node_1 in graph_nodes:
                     if node_1 not in self.graph_node_to_pattern_node:
                         yield node_1, node_2
@@ -163,7 +173,7 @@ class GraphMatching:
     def isomorphisms_iter(self):
         """Generator over isomorphisms between G1 and G2."""
         # Declare that we are looking for a graph-graph isomorphism.
-        self.test = 'graph'
+        self.test = "graph"
         self.initialize()
         for mapping in self.match():
             yield mapping
@@ -244,7 +254,9 @@ class GraphMatching:
         # If there is an edge with an unmapped endpoint,
         # it will get tested when that endpoint node is checked for semantic feasibility.
         for pattern_predecessor in self.pattern.pred[pattern_node]:
-            predecessor_mapped_node_in_graph = self.pattern_node_to_graph_node.get(pattern_predecessor)
+            predecessor_mapped_node_in_graph = self.pattern_node_to_graph_node.get(
+                pattern_predecessor
+            )
             if predecessor_mapped_node_in_graph:
                 # We have an edge pattern_predecessor ---> G2_node
                 # which is mapped to the edge predecessor_mapped_node_in_graph ---> G1_node.
@@ -255,7 +267,9 @@ class GraphMatching:
                 for pattern_edge in self.pattern[pattern_predecessor][pattern_node]:
                     pattern_predicate = pattern_edge["predicate"]
                     found_match = False
-                    for graph_edge in self.graph[predecessor_mapped_node_in_graph][graph_node]:
+                    for graph_edge in self.graph[predecessor_mapped_node_in_graph][
+                        graph_node
+                    ]:
                         if pattern_predicate(graph_edge):
                             found_match = True
                             break
@@ -263,7 +277,9 @@ class GraphMatching:
                         return False
 
         for pattern_successor in self.pattern[pattern_node]:
-            successor_mapped_node_in_graph = self.pattern_node_to_graph_node.get(pattern_successor)
+            successor_mapped_node_in_graph = self.pattern_node_to_graph_node.get(
+                pattern_successor
+            )
             if successor_mapped_node_in_graph:
                 # We have an edge G2_node --> pattern_successor
                 # which is mapped to the edge G1_node --> successor_mapped_node_in_graph.
@@ -274,13 +290,14 @@ class GraphMatching:
                 for pattern_edge in self.pattern[pattern_node][pattern_successor]:
                     pattern_predicate = pattern_edge["predicate"]
                     found_match = False
-                    for graph_edge in self.graph[graph_node][successor_mapped_node_in_graph]:
+                    for graph_edge in self.graph[graph_node][
+                        successor_mapped_node_in_graph
+                    ]:
                         if pattern_predicate(graph_edge):
                             found_match = True
                             break
                     if not found_match:
                         return False
-
 
     def subgraph_is_isomorphic(self):
         """Returns True if a subgraph of G1 is isomorphic to G2."""
@@ -298,12 +315,12 @@ class GraphMatching:
         except StopIteration:
             return False
 
-#    subgraph_is_isomorphic.__doc__ += "\n" + subgraph.replace('\n','\n'+indent)
+    #    subgraph_is_isomorphic.__doc__ += "\n" + subgraph.replace('\n','\n'+indent)
 
     def subgraph_isomorphisms_iter(self):
         """Generator over isomorphisms between a subgraph of G1 and G2."""
         # Declare that we are looking for graph-subgraph isomorphism.
-        self.test = 'subgraph'
+        self.test = "subgraph"
         self.initialize()
         for mapping in self.match():
             yield mapping
@@ -311,13 +328,12 @@ class GraphMatching:
     def subgraph_monomorphisms_iter(self):
         """Generator over monomorphisms between a subgraph of G1 and G2."""
         # Declare that we are looking for graph-subgraph monomorphism.
-        self.test = 'mono'
+        self.test = "mono"
         self.initialize()
         for mapping in self.match():
             yield mapping
 
-#    subgraph_isomorphisms_iter.__doc__ += "\n" + subgraph.replace('\n','\n'+indent)
-
+    #    subgraph_isomorphisms_iter.__doc__ += "\n" + subgraph.replace('\n','\n'+indent)
 
     def syntactic_feasibility(self, graph_node, pattern_node):
         """Returns True if adding (G1_node, G2_node) is syntactically feasible.
@@ -353,11 +369,15 @@ class GraphMatching:
         # The number of selfloops for G1_node must equal the number of
         # self-loops for G2_node. Without this check, we would fail on R_pred
         # at the next recursion level. This should prune the tree even further.
-        if self.test == 'mono':
-            if self.graph.number_of_edges(graph_node, graph_node) < self.pattern.number_of_edges(pattern_node, pattern_node):
+        if self.test == "mono":
+            if self.graph.number_of_edges(
+                graph_node, graph_node
+            ) < self.pattern.number_of_edges(pattern_node, pattern_node):
                 return False
         else:
-            if self.graph.number_of_edges(graph_node, graph_node) != self.pattern.number_of_edges(pattern_node, pattern_node):
+            if self.graph.number_of_edges(
+                graph_node, graph_node
+            ) != self.pattern.number_of_edges(pattern_node, pattern_node):
                 return False
 
         # R_pred
@@ -365,23 +385,37 @@ class GraphMatching:
         # For each predecessor n' of n in the partial mapping, the
         # corresponding node m' is a predecessor of m, and vice versa. Also,
         # the number of edges must be equal
-        if self.test != 'mono':
+        if self.test != "mono":
             for predecessor in self.graph.pred[graph_node]:
                 if predecessor in self.graph_node_to_pattern_node:
-                    if not (self.graph_node_to_pattern_node[predecessor] in self.pattern.pred[pattern_node]):
+                    if not (
+                        self.graph_node_to_pattern_node[predecessor]
+                        in self.pattern.pred[pattern_node]
+                    ):
                         return False
-                    elif self.graph.number_of_edges(predecessor, graph_node) != self.pattern.number_of_edges(self.graph_node_to_pattern_node[predecessor], pattern_node):
+                    elif self.graph.number_of_edges(
+                        predecessor, graph_node
+                    ) != self.pattern.number_of_edges(
+                        self.graph_node_to_pattern_node[predecessor], pattern_node
+                    ):
                         return False
 
         for predecessor in self.pattern.pred[pattern_node]:
             if predecessor in self.pattern_node_to_graph_node:
-                if not (self.pattern_node_to_graph_node[predecessor] in self.graph.pred[graph_node]):
+                if not (
+                    self.pattern_node_to_graph_node[predecessor]
+                    in self.graph.pred[graph_node]
+                ):
                     return False
-                elif self.test == 'mono':
-                    if self.graph.number_of_edges(self.pattern_node_to_graph_node[predecessor], graph_node) < self.pattern.number_of_edges(predecessor, pattern_node):
+                elif self.test == "mono":
+                    if self.graph.number_of_edges(
+                        self.pattern_node_to_graph_node[predecessor], graph_node
+                    ) < self.pattern.number_of_edges(predecessor, pattern_node):
                         return False
                 else:
-                    if self.graph.number_of_edges(self.pattern_node_to_graph_node[predecessor], graph_node) != self.pattern.number_of_edges(predecessor, pattern_node):
+                    if self.graph.number_of_edges(
+                        self.pattern_node_to_graph_node[predecessor], graph_node
+                    ) != self.pattern.number_of_edges(predecessor, pattern_node):
                         return False
 
         # R_succ
@@ -389,26 +423,39 @@ class GraphMatching:
         # For each successor n' of n in the partial mapping, the corresponding
         # node m' is a successor of m, and vice versa. Also, the number of
         # edges must be equal.
-        if self.test != 'mono':
+        if self.test != "mono":
             for successor in self.graph[graph_node]:
                 if successor in self.graph_node_to_pattern_node:
-                    if not (self.graph_node_to_pattern_node[successor] in self.pattern[pattern_node]):
+                    if not (
+                        self.graph_node_to_pattern_node[successor]
+                        in self.pattern[pattern_node]
+                    ):
                         return False
-                    elif self.graph.number_of_edges(graph_node, successor) != self.pattern.number_of_edges(pattern_node, self.graph_node_to_pattern_node[successor]):
+                    elif self.graph.number_of_edges(
+                        graph_node, successor
+                    ) != self.pattern.number_of_edges(
+                        pattern_node, self.graph_node_to_pattern_node[successor]
+                    ):
                         return False
 
         for successor in self.pattern[pattern_node]:
             if successor in self.pattern_node_to_graph_node:
-                if not (self.pattern_node_to_graph_node[successor] in self.graph[graph_node]):
+                if not (
+                    self.pattern_node_to_graph_node[successor] in self.graph[graph_node]
+                ):
                     return False
-                elif self.test == 'mono':
-                    if self.graph.number_of_edges(graph_node, self.pattern_node_to_graph_node[successor]) < self.pattern.number_of_edges(pattern_node, successor):
+                elif self.test == "mono":
+                    if self.graph.number_of_edges(
+                        graph_node, self.pattern_node_to_graph_node[successor]
+                    ) < self.pattern.number_of_edges(pattern_node, successor):
                         return False
                 else:
-                    if self.graph.number_of_edges(graph_node, self.pattern_node_to_graph_node[successor]) != self.pattern.number_of_edges(pattern_node, successor):
+                    if self.graph.number_of_edges(
+                        graph_node, self.pattern_node_to_graph_node[successor]
+                    ) != self.pattern.number_of_edges(pattern_node, successor):
                         return False
 
-        if self.test != 'mono':
+        if self.test != "mono":
 
             # Look ahead 1
 
@@ -417,13 +464,17 @@ class GraphMatching:
             # number of predecessors of m that are in T_2^{in}.
             num1 = 0
             for predecessor in self.graph.pred[graph_node]:
-                if (predecessor in self.in_1) and (predecessor not in self.graph_node_to_pattern_node):
+                if (predecessor in self.in_1) and (
+                    predecessor not in self.graph_node_to_pattern_node
+                ):
                     num1 += 1
             num2 = 0
             for predecessor in self.pattern.pred[pattern_node]:
-                if (predecessor in self.in_2) and (predecessor not in self.pattern_node_to_graph_node):
+                if (predecessor in self.in_2) and (
+                    predecessor not in self.pattern_node_to_graph_node
+                ):
                     num2 += 1
-            if self.test == 'graph':
+            if self.test == "graph":
                 if not (num1 == num2):
                     return False
             else:  # self.test == 'subgraph'
@@ -434,13 +485,17 @@ class GraphMatching:
             # number of successors of m that are in T_2^{in}.
             num1 = 0
             for successor in self.graph[graph_node]:
-                if (successor in self.in_1) and (successor not in self.graph_node_to_pattern_node):
+                if (successor in self.in_1) and (
+                    successor not in self.graph_node_to_pattern_node
+                ):
                     num1 += 1
             num2 = 0
             for successor in self.pattern[pattern_node]:
-                if (successor in self.in_2) and (successor not in self.pattern_node_to_graph_node):
+                if (successor in self.in_2) and (
+                    successor not in self.pattern_node_to_graph_node
+                ):
                     num2 += 1
-            if self.test == 'graph':
+            if self.test == "graph":
                 if not (num1 == num2):
                     return False
             else:  # self.test == 'subgraph'
@@ -453,13 +508,17 @@ class GraphMatching:
             # number of predecessors of m that are in T_2^{out}.
             num1 = 0
             for predecessor in self.graph.pred[graph_node]:
-                if (predecessor in self.out_1) and (predecessor not in self.graph_node_to_pattern_node):
+                if (predecessor in self.out_1) and (
+                    predecessor not in self.graph_node_to_pattern_node
+                ):
                     num1 += 1
             num2 = 0
             for predecessor in self.pattern.pred[pattern_node]:
-                if (predecessor in self.out_2) and (predecessor not in self.pattern_node_to_graph_node):
+                if (predecessor in self.out_2) and (
+                    predecessor not in self.pattern_node_to_graph_node
+                ):
                     num2 += 1
-            if self.test == 'graph':
+            if self.test == "graph":
                 if not (num1 == num2):
                     return False
             else:  # self.test == 'subgraph'
@@ -470,13 +529,17 @@ class GraphMatching:
             # number of successors of m that are in T_2^{out}.
             num1 = 0
             for successor in self.graph[graph_node]:
-                if (successor in self.out_1) and (successor not in self.graph_node_to_pattern_node):
+                if (successor in self.out_1) and (
+                    successor not in self.graph_node_to_pattern_node
+                ):
                     num1 += 1
             num2 = 0
             for successor in self.pattern[pattern_node]:
-                if (successor in self.out_2) and (successor not in self.pattern_node_to_graph_node):
+                if (successor in self.out_2) and (
+                    successor not in self.pattern_node_to_graph_node
+                ):
                     num2 += 1
-            if self.test == 'graph':
+            if self.test == "graph":
                 if not (num1 == num2):
                     return False
             else:  # self.test == 'subgraph'
@@ -498,7 +561,7 @@ class GraphMatching:
             for predecessor in self.pattern.pred[pattern_node]:
                 if (predecessor not in self.in_2) and (predecessor not in self.out_2):
                     num2 += 1
-            if self.test == 'graph':
+            if self.test == "graph":
                 if not (num1 == num2):
                     return False
             else:  # self.test == 'subgraph'
@@ -516,7 +579,7 @@ class GraphMatching:
             for successor in self.pattern[pattern_node]:
                 if (successor not in self.in_2) and (successor not in self.out_2):
                     num2 += 1
-            if self.test == 'graph':
+            if self.test == "graph":
                 if not (num1 == num2):
                     return False
             else:  # self.test == 'subgraph'
@@ -587,8 +650,13 @@ class GraphMatchingState(object):
             # Updates for T_1^{in}
             new_nodes = set([])
             for node in GM.graph_node_to_pattern_node:
-                new_nodes.update([predecessor for predecessor in GM.G1.predecessors(node)
-                                  if predecessor not in GM.graph_node_to_pattern_node])
+                new_nodes.update(
+                    [
+                        predecessor
+                        for predecessor in GM.G1.predecessors(node)
+                        if predecessor not in GM.graph_node_to_pattern_node
+                    ]
+                )
             for node in new_nodes:
                 if node not in GM.in_1:
                     GM.in_1[node] = self.depth
@@ -596,8 +664,13 @@ class GraphMatchingState(object):
             # Updates for T_2^{in}
             new_nodes = set([])
             for node in GM.pattern_node_to_graph_node:
-                new_nodes.update([predecessor for predecessor in GM.G2.predecessors(node)
-                                  if predecessor not in GM.pattern_node_to_graph_node])
+                new_nodes.update(
+                    [
+                        predecessor
+                        for predecessor in GM.G2.predecessors(node)
+                        if predecessor not in GM.pattern_node_to_graph_node
+                    ]
+                )
             for node in new_nodes:
                 if node not in GM.in_2:
                     GM.in_2[node] = self.depth
@@ -605,7 +678,13 @@ class GraphMatchingState(object):
             # Updates for T_1^{out}
             new_nodes = set([])
             for node in GM.graph_node_to_pattern_node:
-                new_nodes.update([successor for successor in GM.G1.successors(node) if successor not in GM.graph_node_to_pattern_node])
+                new_nodes.update(
+                    [
+                        successor
+                        for successor in GM.G1.successors(node)
+                        if successor not in GM.graph_node_to_pattern_node
+                    ]
+                )
             for node in new_nodes:
                 if node not in GM.out_1:
                     GM.out_1[node] = self.depth
@@ -613,7 +692,13 @@ class GraphMatchingState(object):
             # Updates for T_2^{out}
             new_nodes = set([])
             for node in GM.pattern_node_to_graph_node:
-                new_nodes.update([successor for successor in GM.G2.successors(node) if successor not in GM.pattern_node_to_graph_node])
+                new_nodes.update(
+                    [
+                        successor
+                        for successor in GM.G2.successors(node)
+                        if successor not in GM.pattern_node_to_graph_node
+                    ]
+                )
             for node in new_nodes:
                 if node not in GM.out_2:
                     GM.out_2[node] = self.depth

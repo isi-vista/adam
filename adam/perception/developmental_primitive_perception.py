@@ -62,8 +62,12 @@ class DevelopmentalPrimitivePerceptionFrame(PerceptualRepresentationFrame):
 
     def __attrs_post_init__(self) -> None:
         for relation in self.relations:
-            check_arg(not relation.negated, "Negated relations cannot appear in perceptual "
-                                            "representations but got %s", (relation,))
+            check_arg(
+                not relation.negated,
+                "Negated relations cannot appear in perceptual "
+                "representations but got %s",
+                (relation,),
+            )
 
 
 @attrs(slots=True, frozen=True, repr=False)
