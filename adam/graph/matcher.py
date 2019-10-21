@@ -23,7 +23,7 @@ class GraphMatching:
     Suitable for Graph and MultiGraph instances.
     """
 
-    def __init__(self, graph: DiGraph, pattern: DiGraph):
+    def __init__(self, graph: DiGraph, pattern: DiGraph) -> None:
         self.graph = graph
         self.pattern = pattern
         self.graph_nodes = set(graph.nodes())
@@ -600,7 +600,7 @@ class GraphMatchingState(object):
 
     """
 
-    def __init__(self, GM: GraphMatching, graph_node=None, pattern_node=None):
+    def __init__(self, GM: GraphMatching, graph_node=None, pattern_node=None) -> None:
         """Initializes DiGMState object.
 
         Pass in the DiGraphMatcher to which this DiGMState belongs and the
@@ -653,7 +653,7 @@ class GraphMatchingState(object):
                 new_nodes.update(
                     [
                         predecessor
-                        for predecessor in GM.G1.predecessors(node)
+                        for predecessor in GM.graph.predecessors(node)
                         if predecessor not in GM.graph_node_to_pattern_node
                     ]
                 )
@@ -667,7 +667,7 @@ class GraphMatchingState(object):
                 new_nodes.update(
                     [
                         predecessor
-                        for predecessor in GM.G2.predecessors(node)
+                        for predecessor in GM.pattern.predecessors(node)
                         if predecessor not in GM.pattern_node_to_graph_node
                     ]
                 )
@@ -681,7 +681,7 @@ class GraphMatchingState(object):
                 new_nodes.update(
                     [
                         successor
-                        for successor in GM.G1.successors(node)
+                        for successor in GM.graph.successors(node)
                         if successor not in GM.graph_node_to_pattern_node
                     ]
                 )
@@ -695,7 +695,7 @@ class GraphMatchingState(object):
                 new_nodes.update(
                     [
                         successor
-                        for successor in GM.G2.successors(node)
+                        for successor in GM.pattern.successors(node)
                         if successor not in GM.pattern_node_to_graph_node
                     ]
                 )
