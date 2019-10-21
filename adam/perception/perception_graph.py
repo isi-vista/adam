@@ -169,7 +169,7 @@ def _translate_axes(
     mapped_primary_axis = map_axis(owner.axes.primary_axis)
     graph.add_node(mapped_primary_axis)
     _add_labelled_edge(
-        graph, owner, mapped_primary_axis, PRIMARY_AXIS_LABEL, map_edge=map_edge
+        graph, mapped_owner, mapped_primary_axis, PRIMARY_AXIS_LABEL, map_edge=map_edge
     )
     graph.add_nodes_from(
         map_axis(orienting_axis) for orienting_axis in owner.axes.orienting_axes
