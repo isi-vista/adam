@@ -62,7 +62,7 @@ class AxesInfo(Generic[_ObjectT], CanRemapObjects[_ObjectT]):
 
 @runtime
 class AxisFunction(Protocol, Generic[_ObjectT]):
-    def to_concrete_axis(self, axes_info: AxesInfo[_ObjectT]) -> GeonAxis:
+    def to_concrete_axis(self, axes_info: Optional[AxesInfo[_ObjectT]]) -> GeonAxis:
         pass
 
     def copy_remapping_objects(
@@ -79,7 +79,7 @@ class PrimaryAxisOfObject(Generic[_ObjectT], AxisFunction[_ObjectT]):
     _object: _ObjectT = attrib()
 
     def to_concrete_axis(
-        self, axes_info: AxesInfo[_ObjectT]  # pylint:disable=unused-argument
+        self, axes_info: Optional[AxesInfo[_ObjectT]]  # pylint:disable=unused-argument
     ) -> GeonAxis:
         if not isinstance(self._object, HasAxes):
             raise RuntimeError(
@@ -100,7 +100,7 @@ class HorizontalAxisOfObject(Generic[_ObjectT], AxisFunction[_ObjectT]):
     _index: int = attrib(validator=in_(Range.closed(0, 1)))
 
     def to_concrete_axis(
-        self, axes_info: AxesInfo[_ObjectT]  # pylint:disable=unused-argument
+        self, axes_info: Optional[AxesInfo[_ObjectT]]  # pylint:disable=unused-argument
     ) -> GeonAxis:
         if not isinstance(self._object, HasAxes):
             raise RuntimeError(
@@ -125,8 +125,12 @@ class FacingAddresseeAxis(Generic[_ObjectT], AxisFunction[_ObjectT]):
     _object: _ObjectT = attrib()
 
     def to_concrete_axis(
-        self, axes_info: AxesInfo[_ObjectT]  # pylint:disable=unused-argument
+        self, axes_info: Optional[AxesInfo[_ObjectT]]  # pylint:disable=unused-argument
     ) -> GeonAxis:
+        if not axes_info:
+            raise RuntimeError(
+                "FacingAddresseeAxis cannot be applied if axis info not available"
+            )
         if not isinstance(self._object, HasAxes):
             raise RuntimeError(
                 "Can only instantiate an axis function if the object is of a "
@@ -168,7 +172,7 @@ _LEARNER_BACK_TO_FRONT_AXIS = directed("learner-back-to-front")
 @attrs(frozen=True)
 class _GravitationalAxis(AxisFunction[Any]):
     def to_concrete_axis(
-        self, axes_info: AxesInfo[Any]  # pylint:disable=unused-argument
+        self, axes_info: Optional[AxesInfo[Any]]  # pylint:disable=unused-argument
     ) -> GeonAxis:
         return _GRAVITATIONAL_DOWN_TO_UP_AXIS
 
