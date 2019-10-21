@@ -259,18 +259,19 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 _object, count, dependency_node, noun_lexicon_entry=noun_lexicon_entry
             )
 
-            # Begin work on translating modifiers of Nouns with Color
-            for property_ in _object.properties:
-                if self.situation.ontology.is_subtype_of(property_, COLOR):
-                    color_lexicon_entry = self._unique_lexicon_entry(property_)
-                    color_node = DependencyTreeToken(
-                        color_lexicon_entry.base_form,
-                        color_lexicon_entry.part_of_speech,
-                        color_lexicon_entry.intrinsic_morphosyntactic_properties,
-                    )
-                    self.dependency_graph.add_edge(
-                        color_node, dependency_node, role=ADJECTIVAL_MODIFIER
-                    )
+            if IGNORE_COLORS not in self.situation.syntax_hints:
+                # Begin work on translating modifiers of Nouns with Color
+                for property_ in _object.properties:
+                    if self.situation.ontology.is_subtype_of(property_, COLOR):
+                        color_lexicon_entry = self._unique_lexicon_entry(property_)
+                        color_node = DependencyTreeToken(
+                            color_lexicon_entry.base_form,
+                            color_lexicon_entry.part_of_speech,
+                            color_lexicon_entry.intrinsic_morphosyntactic_properties,
+                        )
+                        self.dependency_graph.add_edge(
+                            color_node, dependency_node, role=ADJECTIVAL_MODIFIER
+                        )
 
             self.objects_to_dependency_nodes[_object] = dependency_node
             return dependency_node
@@ -857,3 +858,4 @@ GAILA_PHASE_1_LANGUAGE_GENERATOR = SimpleRuleBasedEnglishLanguageGenerator(
 # See https://github.com/isi-vista/adam/issues/222
 USE_ADVERBIAL_PATH_MODIFIER = "USE_ADVERBIAL_PATH_MODIFIER"
 PREFER_DITRANSITIVE = "PREFER_DITRANSITIVE"
+IGNORE_COLORS = "IGNORE_COLORS"

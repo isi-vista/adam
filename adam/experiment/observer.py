@@ -22,9 +22,9 @@ class DescriptionObserver(Generic[SituationT, LinguisticDescriptionT, Perception
     def observe(
         self,
         situation: Optional[SituationT],
-        true_description: LinguisticDescriptionT,
+        true_description: LinguisticDescription,
         perceptual_representation: PerceptualRepresentation[PerceptionT],
-        predicted_descriptions: Mapping[LinguisticDescriptionT, float],
+        predicted_descriptions: Mapping[LinguisticDescription, float],
     ) -> None:
         r"""
         Observe a description provided by a `LanguageLearner`.
@@ -65,9 +65,9 @@ class TopChoiceExactMatchObserver(
     def observe(  # pylint:disable=unused-argument
         self,
         situation: Optional[SituationT],
-        true_description: LinguisticDescriptionT,
+        true_description: LinguisticDescription,
         perceptual_representation: PerceptualRepresentation[PerceptionT],
-        predicted_descriptions: Mapping[LinguisticDescriptionT, float],
+        predicted_descriptions: Mapping[LinguisticDescription, float],
     ) -> None:
         self._num_observations += 1
 
