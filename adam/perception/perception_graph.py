@@ -1,24 +1,20 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Callable, Any, Union, Dict, Tuple, Mapping, Iterable, Optional
-
-from immutablecollections import immutabledict, immutableset
-
-from adam.axes import Axes, HasAxes, AxesInfo
-from adam.axis import GeonAxis
-from adam.ontology.phase1_spatial_relations import Region, Direction, Distance
-from attr import attrib, attrs
-from attr.validators import instance_of, optional
-from immutablecollections.converter_utils import _to_tuple, _to_immutabledict
-from networkx import DiGraph
-from vistautils.preconditions import check_arg
+from typing import Any, Callable, Dict, Iterable, Mapping, Optional, Tuple, Union
 
 import graphviz
+from attr.validators import instance_of, optional
+from immutablecollections import immutableset
+from immutablecollections.converter_utils import _to_immutabledict, _to_tuple
+from networkx import DiGraph
 
-from adam.geon import CrossSection, CrossSectionSize, Geon, MaybeHasGeon
+from adam.axes import AxesInfo, HasAxes
+from adam.axis import GeonAxis
+from adam.geon import Geon, MaybeHasGeon
 from adam.graph.matcher import GraphMatching
-from adam.ontology import OntologyNode, IN_REGION
+from adam.ontology import OntologyNode
 from adam.ontology.phase1_ontology import PART_OF
+from adam.ontology.phase1_spatial_relations import Direction, Distance, Region
 from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
 from adam.perception import ObjectPerception
 from adam.perception.developmental_primitive_perception import (
@@ -27,11 +23,12 @@ from adam.perception.developmental_primitive_perception import (
     HasColor,
     RgbColorPerception,
 )
+from attr import attrib, attrs
 
 
 class Incrementer:
     def __init__(self, initial_value=0) -> None:
-        self._value = 0
+        self._value = initial_value
 
     def value(self) -> int:
         return self._value
@@ -42,8 +39,8 @@ class Incrementer:
 
 HAS_GEON = OntologyNode(handle="has_geon")
 
-PerceptionGraphNode = Union[ObjectPerception, OntologyNode, Region, GeonAxis]
-PerceptionGraphEdgeLabel = Union[OntologyNode, str, Direction]
+PerceptionGraphNode = Union[ObjectPerception, OntologyNode, Region[Any], GeonAxis]
+PerceptionGraphEdgeLabel = Union[OntologyNode, str, Direction[Any]]
 
 
 @attrs(frozen=True, slots=True)
@@ -252,7 +249,7 @@ class PerceptionGraphPattern:
                     raise RuntimeError(f"Don't know how to map node {node}")
             return schema_node_to_pattern_node[node]
 
-        def map_edge(label: Any) -> Mapping[str, NodePredicate]:
+        def map_edge(label: Any) -> Mapping[str, EdgePredicate]:
             if isinstance(label, OntologyNode):
                 return {"predicate": RelationTypeIsPredicate(label)}
             elif isinstance(label, Direction):
@@ -401,21 +398,6 @@ class GeonPredicate(NodePredicate):
 
 
 @attrs(frozen=True, slots=True)
-class DirectionPredicate(NodePredicate):
-    def __call__(self, object_perception: PerceptionGraphNode) -> bool:
-        # TODO: this currently matched any Direction whatsoever!
-        # when this is fixed be sure to also update dot_label and exactly_matching
-        return isinstance(object_perception, Direction)
-
-    def dot_label(self) -> str:
-        return "dir(*)"
-
-    @staticmethod
-    def exactly_matching(direction: Direction) -> "DirectionPredicate":
-        return DirectionPredicate()
-
-
-@attrs(frozen=True, slots=True)
 class RegionPredicate(NodePredicate):
     distance: Optional[Distance] = attrib(validator=optional(instance_of(Distance)))
 
@@ -429,7 +411,7 @@ class RegionPredicate(NodePredicate):
         return f"dist({self.distance})"
 
     @staticmethod
-    def matching_distance(region: Region) -> "RegionPredicate":
+    def matching_distance(region: Region[Any]) -> "RegionPredicate":
         return RegionPredicate(region.distance)
 
 
@@ -462,7 +444,10 @@ class PerceptionGraphPatternMatching:
     )
 
     def matches(self) -> Iterable[PerceptionGraphPatternMatch]:
-        matching = GraphMatching(self.graph_to_match_against._graph, self.pattern._graph)
+        matching = GraphMatching(
+            self.graph_to_match_against._graph,  # pylint:disable=protected-access
+            self.pattern._graph,
+        )
         for mapping in matching.match():
             yield PerceptionGraphPatternMatch(
                 graph_matched_against=self.graph_to_match_against,
@@ -509,9 +494,9 @@ def _translate_region(
     graph: DiGraph,
     region: Region[Any],
     *,
-    map_node: Callable,
+    map_node: Callable[[Any], Any],
     map_edge: _EdgeMapper,
-    axes_info: Optional[AxesInfo] = None,
+    axes_info: Optional[AxesInfo[Any]] = None,
 ) -> None:
     mapped_region = map_node(region)
     mapped_reference_object = map_node(region.reference_object)
@@ -582,14 +567,15 @@ def to_perception_graph(frame: DevelopmentalPrimitivePerceptionFrame) -> Percept
             relation.first_slot, relation.second_slot, label=relation.relation_type
         )
 
-    for property in frame.property_assertions:
-        source_node = property.perceived_object
-        if isinstance(property, HasBinaryProperty):
-            dest_node = property.binary_property
-        elif isinstance(property, HasColor):
-            dest_node = property.color
+    dest_node: Any
+    for property_ in frame.property_assertions:
+        source_node = property_.perceived_object
+        if isinstance(property_, HasBinaryProperty):
+            dest_node = property_.binary_property
+        elif isinstance(property_, HasColor):
+            dest_node = property_.color
         else:
-            raise RuntimeError(f"Don't know how to translate property {property}")
+            raise RuntimeError(f"Don't know how to translate property {property_}")
         graph.add_edge(source_node, dest_node, label="has-property")
 
     return PerceptionGraph(graph)
@@ -698,30 +684,20 @@ class RelationTypeIsPredicate(EdgePredicate):
 
 
 @attrs(frozen=True, slots=True)
-class GraphPattern:
-    # implemented as a NetworkX di-graph where the nodes are NodePredicates
-    # and the edges are EdgePredicates
-    _graph: DiGraph = attrib(validator=instance_of(DiGraph))
+class DirectionPredicate(EdgePredicate):
+    def __call__(
+        self,
+        source_object_perception: PerceptionGraphNode,
+        edge_label: PerceptionGraphEdgeLabel,
+        dest_object_percption: PerceptionGraphNode,
+    ) -> bool:
+        # TODO: this currently matched any Direction whatsoever!
+        # when this is fixed be sure to also update dot_label and exactly_matching
+        return isinstance(edge_label, Direction)
 
+    def dot_label(self) -> str:
+        return "dir(*)"
 
-def any_node(object_perception: ObjectPerception) -> bool:
-    return True
-
-
-def any_edge(
-    source_object_perception: ObjectPerception,
-    edge_label: Any,
-    dest_object_perception: ObjectPerception,
-) -> bool:
-    return True
-
-
-def relation_of_type(relation_type: OntologyNode) -> EdgePredicate:
-    def func(
-        source_object_perception: ObjectPerception,
-        edge_label: Any,
-        dest_object_perception: ObjectPerception,
-    ):
-        return edge_label == relation_type
-
-    return func
+    @staticmethod
+    def exactly_matching(direction: Direction[Any]) -> "DirectionPredicate":
+        return DirectionPredicate()

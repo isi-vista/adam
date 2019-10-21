@@ -91,7 +91,7 @@ def test_match_truck_and_table():
     # The pattern should now fail to match.
     for situation_with_bird in situations_with_bird:
         perception = GAILA_PHASE_1_PERCEPTION_GENERATOR.generate_perception(
-            situation_with_bird
+            situation_with_bird, chooser=RandomChooser.for_seed(0)
         )
         perception_graph = to_perception_graph(perception.frames[0])
         assert not any(truck_pattern.matcher(perception_graph).matches())
