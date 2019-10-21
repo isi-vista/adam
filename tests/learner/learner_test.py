@@ -1,8 +1,8 @@
-from adam.curriculum.phase1_curriculum import _phase1_instances, _CHOOSER, _LEARNER_OBJECT
+from adam.curriculum.phase1_curriculum import phase1_instances, PHASE1_CHOOSER
 from adam.language_specific.english.english_language_generator import IGNORE_COLORS
 from adam.learner import LearningExample
 from adam.learner.subset import SubsetLanguageLearner
-from adam.ontology.phase1_ontology import BALL, TRUCK
+from adam.ontology.phase1_ontology import BALL, TRUCK, LEARNER
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
@@ -13,25 +13,27 @@ from adam.situation.templates.phase1_templates import (
 
 
 def test_subset_learner_ball():
+    learner = object_variable("learner_0", LEARNER)
     colored_ball_object = object_variable(
         "ball-with-color", BALL, added_properties=[color_variable("color")]
     )
+
     ball_template = Phase1SituationTemplate(
         "colored-ball-object",
-        salient_object_variables=[colored_ball_object, _LEARNER_OBJECT],
+        salient_object_variables=[colored_ball_object, learner],
         syntax_hints=[IGNORE_COLORS],
     )
 
-    ball_curriculum = _phase1_instances(
+    ball_curriculum = phase1_instances(
         "all ball situations",
         situations=all_possible(
-            ball_template, chooser=_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY
+            ball_template, chooser=PHASE1_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY
         ),
     )
-    test_ball_curriculum = _phase1_instances(
+    test_ball_curriculum = phase1_instances(
         "ball test",
         situations=all_possible(
-            ball_template, chooser=_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY
+            ball_template, chooser=PHASE1_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY
         ),
     )
     colored_truck_object = object_variable(
@@ -39,20 +41,20 @@ def test_subset_learner_ball():
     )
     truck_template = Phase1SituationTemplate(
         "colored-truck-object",
-        salient_object_variables=[colored_truck_object, _LEARNER_OBJECT],
+        salient_object_variables=[colored_truck_object, learner],
         syntax_hints=[IGNORE_COLORS],
     )
 
-    truck_curriculum = _phase1_instances(
+    truck_curriculum = phase1_instances(
         "all truck situations",
         situations=all_possible(
-            truck_template, chooser=_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY
+            truck_template, chooser=PHASE1_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY
         ),
     )
-    test_truck_curriculum = _phase1_instances(
+    test_truck_curriculum = phase1_instances(
         "truck test",
         situations=all_possible(
-            truck_template, chooser=_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY
+            truck_template, chooser=PHASE1_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY
         ),
     )
 
