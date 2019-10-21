@@ -31,6 +31,7 @@ from adam.situation.high_level_semantics_situation import HighLevelSemanticsSitu
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
     RgbColorPerception,
+)
 
 from adam.visualization.panda3d_interface import SituationVisualizer
 from adam.visualization.utils import Shape
