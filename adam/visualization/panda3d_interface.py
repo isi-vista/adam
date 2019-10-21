@@ -1,3 +1,14 @@
+"""Main interface for Panda3D rendering.
+   Executing this module meant for testing purposes.
+   Defines various default settings (ground plane, lighting, camera
+   position. Provides interfaces for adding objects to the scene
+   as well as for clearing the scene entirely.
+
+   Ideally, this module should have as little contact as possible
+   with the details of Curricula, and instead be focused on
+   the capability to display objects with various properties
+   supplied from elsewhere.
+   """
 from math import pi, sin, cos
 
 from typing import Tuple
@@ -14,41 +25,47 @@ from panda3d.core import DirectionalLight, PointLight, Material
 from direct.gui.OnscreenText import OnscreenText
 from pandac.PandaModules import TextNode
 
-# checking to see that the import functions:
-import adam
-
 from adam.visualization.utils import Shape
 
 from adam.math_3d import Point
-from adam.perception.developmental_primitive_perception import RgbColorPerception as Color
+from adam.perception.developmental_primitive_perception import RgbColorPerception
 
 
 class SituationVisualizer(ShowBase):
-    def __init__(self) -> None:
-        ShowBase.__init__(self)
 
-        # instantiate a light so that materials are visible
+    model_to_file = {
+        Shape.SQUARE: "cube.egg",
+        Shape.CIRCULAR: "sphere.egg",
+        Shape.OVALISH: "ovalish.egg",
+        Shape.RECTANGULAR: "rectangular.egg",
+    }
+
+    def __init__(self) -> None:
+        super().__init__(self)
+
+        # instantiate a light (or more) so that materials are visible
 
         dlight = DirectionalLight("mainLight")
         dlight_node = self.render.attachNewNode(dlight)
         self.render.setLight(dlight_node)
 
         plight = PointLight("pointLight")
-        plight_nodePtr = self.render.attachNewNode(plight)
-        plight_nodePtr.setPos(10, 20, 0)
-        self.render.setLight(plight_nodePtr)
+        plight_node = self.render.attachNewNode(plight)
+        plight_node.setPos(10, 20, 0)
+        self.render.setLight(plight_node)
 
         # self.render is the top node of the default scene graph
 
         self.ground_plane = self._load_model("ground.egg")
         self.ground_plane.reparentTo(self.render)
-        # self.ground_plane.setHpr(0, 180, 0) # heading, pitch, roll
         self.ground_plane.setPos(0, 0, -1)
-        m: Material = Material()
+        m = Material()
         m.setDiffuse((255, 255, 255, 255))
+        # the "1" argument to setMaterial is crucial to have it override
+        # an existing material
         self.ground_plane.setMaterial(m, 1)
 
-        # nodes to be dynamically added / removed
+        # container of nodes to be dynamically added / removed
         self.geo_nodes = []
 
         # set default camera position/orientation:
@@ -78,31 +95,24 @@ class SituationVisualizer(ShowBase):
         self,
         model_type: Shape,
         pos: Tuple[float, float, float],
-        col: Color = Color(50, 50, 50),
+        col: RgbColorPerception = None,
     ) -> None:
         """Adds a piece of primitive geometry to the scene.
         Will need to be expanded to account for orientation, color, position, etc"""
-        if model_type == Shape.SQUARE:
-            new_model = self._load_model("cube.egg")
-        elif model_type == Shape.RECTANGULAR:
-            new_model = self._load_model("rectangular.egg")
-        elif model_type == Shape.OVALISH:
-            new_model = self._load_model("ovalish.egg")
-        elif model_type == Shape.CIRCULAR:
-            new_model = self._load_model("sphere.egg")
-        elif model_type == Shape.IRREGULAR:
-            # TODO: fill this out
-            return
+        if col is None:
+            col = RgbColorPerception(50, 50, 50)
+        try:
+            new_model = self._load_model(SituationVisualizer.model_to_file[model_type])
+        except KeyError:
+            print(f"No geometry found for {model_type}")
+            raise
         self.geo_nodes.append(new_model)
         new_model.reparentTo(self.render)
         new_model.setPos(pos[0], pos[1], pos[2])
         new_model.setColor((col.red / 255, col.green / 255, col.blue / 255, 1.0))
 
     def clear_scene(self) -> None:
-        """Clears out all added objects (other than ground plane, camera, lights"""
-
-        # need to understand how the scene graph works in order to remove all nodes that
-        # have been added to the scene w/ geometry
+        """Clears out all added objects (other than ground plane, camera, lights)"""
         for node in self.geo_nodes:
             node.remove_node()
         self.geo_nodes = []
@@ -116,8 +126,6 @@ class SituationVisualizer(ShowBase):
         self.cube = self._load_model("cube.egg")
         self.cube.reparentTo(self.render)
         self.cube.setPos(0, 0, 5)
-        # the "1" argument to setMaterial is crucial to have it override
-        # an existing material
         self.cube.setColor((1.0, 0.0, 0.0, 1.0))
 
         self.cube2 = self._load_model("cube.egg")
@@ -130,7 +138,8 @@ class SituationVisualizer(ShowBase):
         self.taskMgr.add(self._spinCameraTask, "SpinCameraTask", priority=-100)
 
     def run_for_seconds(self, seconds: float) -> None:
-        """Executes main loop for given seconds"""
+        """Executes main rendering loop for given seconds. This needs to be a
+           healthy fraction of a second to see changes reflected in the scene."""
         start = int(time.time())
         while time.time() - start < seconds:
             self.taskMgr.step()
@@ -153,7 +162,6 @@ class SituationVisualizer(ShowBase):
     def _load_model(self, name: str):
         working_dir = os.path.abspath((sys.path[0]))
         return self.loader.loadModel(working_dir + "/adam/visualization/models/" + name)
-
 
 
 # for testing purposes
