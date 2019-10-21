@@ -1,5 +1,6 @@
 from math import pi, sin, cos
 
+from typing import Tuple
 import sys, os
 
 import time
@@ -8,8 +9,11 @@ from direct.showbase.ShowBase import ShowBase
 from direct.task import Task
 
 from panda3d.core import Filename
-from panda3d.core import DirectionalLight
-from panda3d.core import PointLight
+from panda3d.core import (
+    DirectionalLight,
+    PointLight,
+    Material
+)
 
 from direct.gui.OnscreenText import OnscreenText
 from pandac.PandaModules import TextNode
@@ -17,8 +21,10 @@ from pandac.PandaModules import TextNode
 # checking to see that the import functions:
 import adam
 
-from adam.visualization.simple_material import SimpleMaterial
 from adam.visualization.utils import Shape
+
+from adam.math_3d import Point
+from adam.perception.developmental_primitive_perception import RgbColorPerception as Color
 
 
 class SituationVisualizer(ShowBase):
@@ -42,7 +48,9 @@ class SituationVisualizer(ShowBase):
         self.ground_plane.reparentTo(self.render)
         # self.ground_plane.setHpr(0, 180, 0) # heading, pitch, roll
         self.ground_plane.setPos(0, 0, -1)
-        self.ground_plane.setMaterial(SimpleMaterial(255, 255, 255, name="white").mat, 1)
+        m: Material = Material()
+        m.setDiffuse((255, 255, 255, 255))
+        self.ground_plane.setMaterial(m, 1)
 
         # nodes to be dynamically added / removed
         self.geo_nodes = []
@@ -58,26 +66,24 @@ class SituationVisualizer(ShowBase):
         self.camera_hpr_text = OnscreenText(text="orientation:", pos=(-1.25, -0.8), scale=0.07, mayChange=True, align=TextNode.ALeft)
         self.taskMgr.doMethodLater(0.25, self._cameraLocationTask, "CameraLocationTask")
 
-    def add_model(self, model_type : Shape) -> None:
+    def add_model(self, model_type : Shape, pos: Tuple[float, float, float], col: Color = Color(50, 50, 50)) -> None:
         """Adds a piece of primitive geometry to the scene.
         Will need to be expanded to account for orientation, color, position, etc"""
         if model_type == Shape.SQUARE:
             new_model = self._load_model("cube.egg")
-            self.geo_nodes.append(new_model)
-            new_model.reparentTo(self.render)
-            new_model.setPos(2, 2, 2)
-            new_model.setMaterial(SimpleMaterial(0, 255, 0, 100, name="green").mat, 1)
         elif model_type == Shape.RECTANGULAR:
             new_model = self._load_model("rectangular.egg")
-            self.geo_nodes.append(new_model)
-            new_model.reparentTo(self.render)
-            new_model.setPos(3, 3, 3)
         elif model_type == Shape.OVALISH:
             new_model = self._load_model("ovalish.egg")
-            self.geo_nodes.append(new_model)
-            new_model.reparentTo(self.render)
-            new_model.setPos(1, 1, 1)
-            new_model.setMaterial(SimpleMaterial(255, 0, 0, name="red").mat, 1)
+        elif model_type == Shape.CIRCULAR:
+            new_model = self._load_model("sphere.egg")
+        elif model_type == Shape.IRREGULAR:
+            # TODO: fill this out
+            return
+        self.geo_nodes.append(new_model)
+        new_model.reparentTo(self.render)
+        new_model.setPos(pos[0], pos[1], pos[2])
+        new_model.setColor((col.red / 255, col.green / 255, col.blue / 255, 1.0))
 
     def clear_scene(self) -> None:
         """Clears out all added objects (other than ground plane, camera, lights"""
@@ -99,13 +105,13 @@ class SituationVisualizer(ShowBase):
         self.cube.setPos(0, 0, 5)
         # the "1" argument to setMaterial is crucial to have it override
         # an existing material
-        self.cube.setMaterial(SimpleMaterial(255, 0, 0, name="red").mat, 1)
+        self.cube.setColor((1.0, 0.0, 0.0, 1.0))
 
         self.cube2 = self._load_model("cube.egg")
         self.cube2.reparentTo(self.render)
         self.cube2.setPos(5, 0, 0)
         self.cube2.setScale(1.25, 1.25, 1.25)
-        self.cube2.setMaterial(SimpleMaterial(0, 255, 0, 100, name="green").mat, 1)
+        self.cube2.setColor((0, 1, 0, 0.5))
 
         # Add the spinCameraTask procedure to the task manager.
         self.taskMgr.add(self._spinCameraTask, "SpinCameraTask", priority=-100)
@@ -144,11 +150,11 @@ if __name__ == "__main__":
     app = SituationVisualizer()
     app.test_scene_init()
 
-    app.add_model("SQUARE")
+    app.add_model(Shape.SQUARE, (1, 2, 2))
 
     app.run_for_seconds(3)
 
-    app.add_model("OVALISH")
+
 
     app.run_for_seconds(6)
 
@@ -156,7 +162,11 @@ if __name__ == "__main__":
 
     app.run_for_seconds(3)
 
-    app.add_model("RECTANGULAR")
+    app.add_model(Shape.RECTANGULAR, (-2, 2, 2))
+
+    app.add_model(Shape.CIRCULAR, (0, 0, 8))
+
+    app.add_model(Shape.OVALISH, (4, 5, 2))
 
     app.run_for_seconds(3)
 
