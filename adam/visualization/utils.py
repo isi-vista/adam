@@ -1,5 +1,6 @@
 import enum
 
+
 class Shape(enum.Enum):
     CIRCULAR = "CIRCULAR"
     SQUARE = "SQUARE"
