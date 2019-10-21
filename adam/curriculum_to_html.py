@@ -391,7 +391,7 @@ class CurriculumToHtmlDumper:
 
         with open(output_destination, "w") as html_out:
             html_out.write(f"<head>\n\t<style>{CSS}\n\t</style>\n</head>")
-            html_out.write(f"\n<body>\n\t<h1>{title} - {instance_group.name()}</h1>")
+            html_out.write(f"\n<body>\n\t<h1>{title}</h1>")
             html_out.write(
                 f"\t<a href='{output_directory}/index.html'>" f"Back to Index</a>"
             )
