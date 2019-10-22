@@ -17,22 +17,22 @@ from typing import (
     Union,
 )
 
-from attr import Factory, attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
 from immutablecollections.converter_utils import _to_immutabledict, _to_immutableset
-from more_itertools import take, only
+from more_itertools import only, take
 from typing_extensions import Protocol
 from vistautils.preconditions import check_arg
 
-from adam.axes import AxesInfo, HorizontalAxisOfObject
+from adam.axes import AxesInfo, HorizontalAxisOfObject, WORLD_AXES
 from adam.ontology import (
     ACTION,
     CAN_FILL_TEMPLATE_SLOT,
+    IS_ADDRESSEE,
+    IS_SUBSTANCE,
     OntologyNode,
     PROPERTY,
     THING,
-    IS_ADDRESSEE,
 )
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
@@ -61,6 +61,7 @@ from adam.situation.templates import (
     SituationTemplateObject,
     SituationTemplateProcessor,
 )
+from attr import Factory, attrib, attrs
 
 _ExplicitOrVariableActionType = Union[OntologyNode, "TemplateActionTypeVariable"]
 
@@ -406,6 +407,19 @@ class _Phase1SituationTemplateGenerator(
             )
         schema: ObjectStructuralSchema = only(schemata)
 
+        if not schema:
+            if self.ontology.has_property(object_type, IS_SUBSTANCE):
+                # it isn't clear what the axes of a substance should be,
+                # so for now we just use the world axes
+                axes = WORLD_AXES
+            else:
+                raise RuntimeError(
+                    f"Cannot instantiate object of non-SUBSTANCE type {object_type} "
+                    f"without a schema"
+                )
+        else:
+            axes = schema.axes
+
         return SituationObject(
             ontology_node=object_type,
             properties=[
@@ -415,7 +429,7 @@ class _Phase1SituationTemplateGenerator(
                 else asserted_property
                 for asserted_property in object_var.asserted_properties
             ],
-            axes=schema.axes if schema else None,
+            axes=axes,
         )
 
     def _instantiate_situation(

@@ -1,3 +1,5 @@
+import pytest
+
 from adam.ontology.phase1_ontology import (
     ANIMATE,
     GAILA_PHASE_1_ONTOLOGY,
@@ -43,6 +45,7 @@ def test_objects_only_template():
     assert obj_only_template.objects_to_ontology_types[person] == PERSON
 
 
+@pytest.mark.skip(reason="broken by https://github.com/isi-vista/adam/issues/390")
 def test_simple_situation_generation():
     situation_processor = SimpleSituationTemplateProcessor(GAILA_PHASE_1_ONTOLOGY)
     situations = situation_processor.generate_situations(

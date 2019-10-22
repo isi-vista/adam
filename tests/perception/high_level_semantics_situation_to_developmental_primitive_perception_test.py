@@ -65,7 +65,7 @@ from adam.random_utils import RandomChooser
 from adam.relation import Relation
 from adam.situation import Action, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
-from adam_test_utils import perception_with_handle
+from adam_test_utils import perception_with_handle, situation_object
 from sample_situations import make_bird_flies_over_a_house
 
 _PERCEPTION_GENERATOR = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
@@ -324,7 +324,7 @@ def test_relations_between_objects_and_ground():
 
 
 def test_liquid_in_and_out_of_container():
-    juice = SituationObject(ontology_node=JUICE)
+    juice = situation_object(JUICE)
     box = SituationObject(ontology_node=BOX)
     table = SituationObject(ontology_node=TABLE)
     two_d_situation = HighLevelSemanticsSituation(
@@ -413,7 +413,7 @@ def test_not_two_speakers():
 def test_liquid_perceivable():
     juice_perception = _PERCEPTION_GENERATOR.generate_perception(
         HighLevelSemanticsSituation(
-            ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[SituationObject(JUICE)]
+            ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[situation_object(JUICE)]
         ),
         chooser=RandomChooser.for_seed(0),
     ).frames[0]

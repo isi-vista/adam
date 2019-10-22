@@ -78,6 +78,7 @@ from adam.situation.templates.phase1_templates import (
     TemplateVariableAssignment,
     fixed_assignment,
 )
+from adam_test_utils import situation_object
 from tests.sample_situations import make_bird_flies_over_a_house
 from tests.situation.situation_test import make_mom_put_ball_on_table
 
@@ -97,7 +98,7 @@ def test_common_noun():
 
 def test_mass_noun():
     situation = HighLevelSemanticsSituation(
-        ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[SituationObject(WATER)]
+        ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[situation_object(WATER)]
     )
     assert only(
         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
@@ -700,7 +701,7 @@ def test_jumps_over():
 
 def test_mom_drinks_juice():
     mom = SituationObject(MOM)
-    juice = SituationObject(JUICE)
+    juice = situation_object(JUICE)
     cup = SituationObject(CUP)
 
     situation = HighLevelSemanticsSituation(

@@ -4,7 +4,10 @@ Structures for describing situations in the world at an abstracted, human-friend
 from abc import ABC
 from typing import Generic, List, Mapping, Optional, TypeVar, Union
 
+from more_itertools import first
+
 from adam.ontology.action_description import ActionDescriptionVariable
+from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
 from attr import attrib, attrs
 from attr.validators import instance_of, optional
 from immutablecollections import (
@@ -23,7 +26,7 @@ from immutablecollections.converter_utils import (
     _to_immutablesetmultidict,
 )
 
-from adam.axes import Axes
+from adam.axes import Axes, HasAxes
 from adam.math_3d import Point
 from adam.ontology import OntologyNode
 from adam.ontology.during import DuringAction
@@ -63,7 +66,7 @@ class BagOfFeaturesSituationRepresentation(Situation):
 
 
 @attrs(frozen=True, slots=True, hash=None, cmp=False, repr=False)
-class SituationObject:
+class SituationObject(HasAxes):
     """
     An object present in some situation.
 
@@ -85,10 +88,8 @@ class SituationObject:
     r"""
     The `OntologyNode`\ s representing the properties this object has.
     """
+    axes: Axes = attrib(validator=instance_of(Axes), kw_only=True)
     debug_handle: str = attrib(validator=instance_of(str), kw_only=True)
-    axes: Optional[Axes] = attrib(
-        validator=optional(instance_of(Axes)), kw_only=True, default=None
-    )
 
     def __attrs_post_init__(self) -> None:
         # disabled warning below is due to a PyCharm bug
@@ -118,6 +119,12 @@ class SituationObject:
             handle_string = ""
 
         return f"{self.debug_handle}{handle_string}{additional_properties_string}"
+
+    @axes.default
+    def _default_axes(self) -> Axes:
+        # This is a temporary hack.
+        # Please see https://github.com/isi-vista/adam/issues/390 for details.
+        return first(GAILA_PHASE_1_ONTOLOGY.structural_schemata(self.ontology_node)).axes
 
 
 SituationRegion = Region[SituationObject]  # pylint:disable=invalid-name
