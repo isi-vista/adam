@@ -1,14 +1,12 @@
-from adam.visualization.make_scenes import (
-    SceneCreator,
-)
+from adam.visualization.make_scenes import SceneCreator
 from adam.curriculum.phase1_curriculum import GAILA_PHASE_1_CURRICULUM
 from adam.visualization.utils import Shape
-from adam.perception.developmental_primitive_perception import RgbColorPerception
+from typing import Tuple
 
 
-def test_scenes_creation() -> None:
+def test_scenes_creation() -> Tuple[float, float, float]:
     for i, scene in enumerate(SceneCreator.create_scenes(GAILA_PHASE_1_CURRICULUM)):
-        for obj, properties in scene.items():
+        for obj, _ in scene.items():
             # only interested in rendering geons
             if (
                 obj.geon is None
@@ -16,11 +14,8 @@ def test_scenes_creation() -> None:
                 == Shape.IRREGULAR
             ):
                 continue
-            color = None
-            for prop in properties:
-                if isinstance(prop, RgbColorPerception):
-                    color = prop
-
+            point = SceneCreator.random_position()
         # automated test shouldn't go through every single scene
         if i > 5:
             break
+    return point

@@ -1,6 +1,4 @@
-from adam.visualization.panda3d_interface import (
-    SituationVisualizer
-)
+from adam.visualization.panda3d_interface import SituationVisualizer
 from adam.visualization.utils import Shape
 
 # This should be the only test to actually instantiate panda3d

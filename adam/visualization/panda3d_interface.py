@@ -170,4 +170,3 @@ class SituationVisualizer(ShowBase):
 
 
 # for testing purposes
-
