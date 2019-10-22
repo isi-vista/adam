@@ -50,6 +50,8 @@ class PerceptionGraph:
     def render_to_file(self, graph_name: str, output_file: Path) -> None:
         dot_graph = graphviz.Digraph(graph_name)
         dot_graph.attr(rankdir="LR")
+        # combine parallel edges to cut down on clutter
+        dot_graph.attr(concentrate="true")
 
         next_node_id = Incrementer()
 
