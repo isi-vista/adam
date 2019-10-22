@@ -74,10 +74,17 @@ class PerceptionGraph:
             # so we need to reverse these edges from GraphViz's point-of-view.
             reverse_rank_order = label == PART_OF
 
+            # in-region relationships can run anywhich way
+            # without respect to a good layout hierarchy
+            constraint = edge_label != "in-region"
+            constraint_string = "true" if constraint else "false"
+
             if reverse_rank_order:
-                dot_graph.edge(target_dot_node, source_dot_node, edge_label, dir="back")
+                dot_graph.edge(target_dot_node, source_dot_node, edge_label, dir="back",
+                               constraint=constraint_string)
             else:
-                dot_graph.edge(source_dot_node, target_dot_node, edge_label)
+                dot_graph.edge(source_dot_node, target_dot_node, edge_label,
+                               constraint=constraint_string)
 
         dot_graph.render(str(output_file))
 
