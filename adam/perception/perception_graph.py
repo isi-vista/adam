@@ -476,7 +476,7 @@ def _translate_geon(
         mapped_geon = map_geon(owner.geon)
         graph.add_node(mapped_geon)
         _add_labelled_edge(
-            graph, mapped_owner, mapped_geon, HAS_AXIS_LABEL, map_edge=map_edge
+            graph, mapped_owner, mapped_geon, HAS_GEON_LABEL, map_edge=map_edge
         )
         _translate_axes(graph, owner.geon, mapped_geon, map_axis, map_edge)
         mapped_generating_axis = map_axis(owner.geon.generating_axis)
