@@ -121,7 +121,8 @@ class PerceptionGraph:
 
 class NodePredicate(ABC):
     r"""
-    All `NodePredicate`\ s should compare non-equal to one another.
+    All `NodePredicate`\ s should compare non-equal to one another
+    (if the are *attrs* classes, set *cmp=False*).
     """
 
     @abstractmethod
@@ -212,9 +213,8 @@ class PerceptionGraphPattern:
 
         PerceptionGraphPattern._translate_schema(
             # since the root object does not itself have a `SubObject` object,
-            # we just need some arbitrary object to play the role of the mapping key
-            # for the root object. We just use the schema object.
-            object_=object_schema,
+            # we wrap it in one.
+            object_=SubObject(object_schema),
             object_schema=object_schema,
             graph=graph,
             schema_node_to_pattern_node=object_to_node,
@@ -241,10 +241,9 @@ class PerceptionGraphPattern:
                     schema_node_to_pattern_node[node] = RegionPredicate.matching_distance(
                         node
                     )
-                elif isinstance(node, ObjectStructuralSchema):
-                    schema_node_to_pattern_node[node] = AnyObjectPerception()
                 elif isinstance(node, SubObject):
-                    return map_node(node.schema)
+                    schema_node_to_pattern_node[node] =  AnyObjectPerception(
+                        debug_handle=node.debug_handle)
                 else:
                     raise RuntimeError(f"Don't know how to map node {node}")
             return schema_node_to_pattern_node[node]
@@ -338,7 +337,7 @@ class PerceptionGraphPattern:
         dot_graph.render(output_file)
 
 
-@attrs(frozen=True, slots=True)
+@attrs(frozen=True, slots=True, cmp=False)
 class AxisPredicate(NodePredicate):
     curved: Optional[bool] = attrib(validator=optional(instance_of(bool)))
     directed: Optional[bool] = attrib(validator=optional(instance_of(bool)))
@@ -382,7 +381,7 @@ class AxisPredicate(NodePredicate):
         return f"axis({', '.join(constraints)})"
 
 
-@attrs(frozen=True, slots=True)
+@attrs(frozen=True, slots=True, cmp=False)
 class GeonPredicate(NodePredicate):
     def __call__(self, object_perception: PerceptionGraphNode) -> bool:
         # TODO: this currently matched any Geon whatsoever!
@@ -397,7 +396,7 @@ class GeonPredicate(NodePredicate):
         return GeonPredicate()
 
 
-@attrs(frozen=True, slots=True)
+@attrs(frozen=True, slots=True, cmp=False)
 class RegionPredicate(NodePredicate):
     distance: Optional[Distance] = attrib(validator=optional(instance_of(Distance)))
 
@@ -415,7 +414,7 @@ class RegionPredicate(NodePredicate):
         return RegionPredicate(region.distance)
 
 
-@attrs(frozen=True, slots=True)
+@attrs(frozen=True, slots=True, cmp=False)
 class PerceptionGraphPatternMatch:
     matched_pattern: PerceptionGraphPattern = attrib(
         validator=instance_of(PerceptionGraphPattern), kw_only=True
@@ -434,7 +433,7 @@ class PerceptionGraphPatternMatch:
 # TODO: oops, this only does node-induced isomorphism but I think we really want edge-induced?
 
 
-@attrs(frozen=True, slots=True)
+@attrs(frozen=True, slots=True, cmp=False)
 class PerceptionGraphPatternMatching:
     pattern: PerceptionGraphPattern = attrib(
         validator=instance_of(PerceptionGraphPattern)
