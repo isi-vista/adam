@@ -78,8 +78,8 @@ class SceneCreator:
             instance_group
         ) in instance_groups:  # each InstanceGroup a page related to a curriculum topic
             for (
-                situation,
-                dependency_tree,
+                _,  # situation
+                _,  # dependency_tree
                 perception,
             ) in instance_group.instances():  # each instance a scene
                 # scene_objects = []
