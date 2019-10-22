@@ -104,7 +104,7 @@ class PerceptionGraph:
         elif isinstance(perception_node, OntologyNode):
             label = perception_node.handle
         elif isinstance(perception_node, Geon):
-            return str(perception_node.cross_section) + str(
+            label = str(perception_node.cross_section) + str(
                 perception_node.cross_section_size
             )
         else:
