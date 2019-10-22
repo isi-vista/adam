@@ -154,3 +154,7 @@ def test_behind_in_front_curriculum():
 
 def test_simple_pursuit_curriculum():
     curriculum_test(_make_simple_pursuit_curriculum())
+
+
+def test_simple_pursuit_curriculum_with_noise():
+    curriculum_test(_make_simple_pursuit_curriculum(n_noise=2))

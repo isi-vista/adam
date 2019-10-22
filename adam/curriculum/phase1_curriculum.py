@@ -1577,25 +1577,22 @@ def _make_simple_pursuit_curriculum(
         object_variable(target.handle + "-target", target) for target in target_objects
     ]
     other_objects = [
-        object_variable("obj-" + str(idx)) for idx in range(n_objects_in_scene - 1)
-    ]
-    noise_objects = [
-        object_variable("obj-" + str(idx)) for idx in range(n_objects_in_scene)
+        standard_object("obj-" + str(idx)) for idx in range(n_objects_in_scene)
     ]
 
     simple_pursuit_templates = [
         Phase1SituationTemplate(
             "simple_pursuit",
             salient_object_variables=[target_object_variable],
-            background_object_variables=other_objects,
+            background_object_variables=other_objects[:-1],
         )
         for target_object_variable in target_object_variables
     ]
 
     noise_template = Phase1SituationTemplate(
         "simple_pursuit",
-        salient_object_variables=[noise_objects[0]],
-        background_object_variables=noise_objects[1:],
+        salient_object_variables=[other_objects[0]],
+        background_object_variables=other_objects[1:],
     )
 
     all_instances = []
