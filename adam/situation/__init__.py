@@ -100,7 +100,7 @@ class SituationObject:
 
     @debug_handle.default
     def _default_debug_handle(self) -> str:
-        return f"{self.ontology_node.handle}_{id(self)}"
+        return f"{self.ontology_node.handle}"
 
     def __repr__(self) -> str:
         if self.properties:
