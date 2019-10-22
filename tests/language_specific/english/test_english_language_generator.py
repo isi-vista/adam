@@ -137,7 +137,7 @@ def test_two_objects_with_dad():
     dad = SituationObject(
         DAD,
         debug_handle="dad",
-        axes=GAILA_PHASE_1_ONTOLOGY.structural_schemata(DAD)[0].axes,
+        axes=GAILA_PHASE_1_ONTOLOGY.structural_schemata(PERSON)[0].axes,
     )
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
