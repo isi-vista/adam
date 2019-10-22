@@ -11,7 +11,7 @@ from adam.ontology import OntologyNode
 from adam.relation import Relation
 
 
-@attrs(frozen=True, slots=True, repr=False)
+@attrs(frozen=True, slots=True, repr=False, cmp=False)
 class ObjectStructuralSchema(HasAxes, MaybeHasGeon):
     r"""
     A hierarchical representation of the internal structure of some type of object.
@@ -73,10 +73,17 @@ class SubObject:
     This is for use only in constructing `ObjectStructuralSchema`\ ta.
     """
 
-    schema: ObjectStructuralSchema = attrib()
+    schema: ObjectStructuralSchema = attrib(validator=instance_of(ObjectStructuralSchema))
     """
     The `ObjectStructuralSchema` describing the internal structure of this sub-component.
     
     For example, an ARM is a sub-component of a PERSON, but ARM itself has a complex structure
     (e.g. it includes a hand)
+    """
+
+    debug_handle: Optional[str] = attrib(validator=optional(instance_of(str)),
+                                         default=None,
+                                         kw_only=True)
+    """
+    A human-readable string which should be accessed for debugging purposes only.
     """

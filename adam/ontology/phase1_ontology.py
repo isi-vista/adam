@@ -1626,11 +1626,11 @@ _CAR_SCHEMA = ObjectStructuralSchema(
 )
 
 # schemata describing the sub-object structural nature of a truck cab
-_TRUCK_CAB_TIRE_1 = SubObject(_TIRE_SCHEMA)
-_TRUCK_CAB_TIRE_2 = SubObject(_TIRE_SCHEMA)
-_TRUCK_CAB_TIRE_3 = SubObject(_TIRE_SCHEMA)
-_TRUCK_CAB_TIRE_4 = SubObject(_TIRE_SCHEMA)
-_TRUCK_CAB_BODY = SubObject(_BODY_SCHEMA)
+_TRUCK_CAB_TIRE_1 = SubObject(_TIRE_SCHEMA, debug_handle="cab-tire-1")
+_TRUCK_CAB_TIRE_2 = SubObject(_TIRE_SCHEMA, debug_handle="cab-tire-2")
+_TRUCK_CAB_TIRE_3 = SubObject(_TIRE_SCHEMA, debug_handle="cab-tire-3")
+_TRUCK_CAB_TIRE_4 = SubObject(_TIRE_SCHEMA, debug_handle="cab-tire-4")
+_TRUCK_CAB_BODY = SubObject(_BODY_SCHEMA, debug_handle="cab-body")
 
 _TRUCK_CAB_TIRES = [
     _TRUCK_CAB_TIRE_1,
@@ -1658,11 +1658,11 @@ _TRUCK_CAB_SCHEMA = ObjectStructuralSchema(
 )
 
 # schemata describing the sub-object structural nature of a truck trailer
-_TRUCK_TRAILER_TIRE_1 = SubObject(_TIRE_SCHEMA)
-_TRUCK_TRAILER_TIRE_2 = SubObject(_TIRE_SCHEMA)
-_TRUCK_TRAILER_TIRE_3 = SubObject(_TIRE_SCHEMA)
-_TRUCK_TRAILER_TIRE_4 = SubObject(_TIRE_SCHEMA)
-_TRUCK_TRAILER_FLATBED = SubObject(_FLATBED_SCHEMA)
+_TRUCK_TRAILER_TIRE_1 = SubObject(_TIRE_SCHEMA, debug_handle="trailer-tire-1")
+_TRUCK_TRAILER_TIRE_2 = SubObject(_TIRE_SCHEMA, debug_handle="trailer-tire-1")
+_TRUCK_TRAILER_TIRE_3 = SubObject(_TIRE_SCHEMA, debug_handle="trailer-tire-1")
+_TRUCK_TRAILER_TIRE_4 = SubObject(_TIRE_SCHEMA, debug_handle="trailer-tire-1")
+_TRUCK_TRAILER_FLATBED = SubObject(_FLATBED_SCHEMA, debug_handle="trailer-flatbed")
 _TRUCK_TRAILER_TIRES = [
     _TRUCK_TRAILER_TIRE_1,
     _TRUCK_TRAILER_TIRE_2,
@@ -1691,8 +1691,8 @@ _TRUCK_TRAILER_SCHEMA = ObjectStructuralSchema(
 
 # Truck in mind is a Semi Trailer with flat bed trailer
 # Schemata describing the sub-object structural nature of a truck
-_TRUCK_SCHEMA_CAB = SubObject(_TRUCK_CAB_SCHEMA)
-_TRUCK_SCHEMA_TRAILER = SubObject(_TRUCK_TRAILER_SCHEMA)
+_TRUCK_SCHEMA_CAB = SubObject(_TRUCK_CAB_SCHEMA, debug_handle="truck-cab")
+_TRUCK_SCHEMA_TRAILER = SubObject(_TRUCK_TRAILER_SCHEMA, debug_handle="truck-trailer")
 
 _TRUCK_SCHEMA = ObjectStructuralSchema(
     TRUCK,
