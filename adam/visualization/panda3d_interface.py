@@ -73,8 +73,12 @@ class SituationVisualizer(ShowBase):
         # set default camera position/orientation:
         # default mouse controls have to be disabled to set a position manually
         self.disableMouse()
-        self.camera.setPos(0, -45, 9)
-        self.camera.setHpr(0, -10, 0)
+
+        # check for camera's existence due to possibility of invoking
+        # without window in test suite:
+        if self.camera is not None:
+            self.camera.setPos(0, -45, 9)
+            self.camera.setHpr(0, -10, 0)
 
         # set GUI text re: camera position and periodic task
         self.camera_pos_text = OnscreenText(
