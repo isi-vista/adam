@@ -11,7 +11,7 @@
    """
 from math import pi, sin, cos
 
-from typing import Tuple
+from typing import Tuple, List
 import sys, os
 
 import time
@@ -19,8 +19,9 @@ import time
 from direct.showbase.ShowBase import ShowBase
 from direct.task import Task
 
+import panda3d
 from panda3d.core import Filename
-from panda3d.core import DirectionalLight, PointLight, Material
+from panda3d.core import DirectionalLight, PointLight, Material, NodePath
 
 from direct.gui.OnscreenText import OnscreenText
 from pandac.PandaModules import TextNode
@@ -66,7 +67,7 @@ class SituationVisualizer(ShowBase):
         self.ground_plane.setMaterial(m, 1)
 
         # container of nodes to be dynamically added / removed
-        self.geo_nodes = []
+        self.geo_nodes: List[panda3d.core.NodePath] = []
 
         # set default camera position/orientation:
         # default mouse controls have to be disabled to set a position manually

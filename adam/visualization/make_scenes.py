@@ -13,6 +13,7 @@ from typing import (
     TypeVar,
     Union,
     Optional,
+    DefaultDict,
 )
 
 import random
@@ -36,7 +37,12 @@ from adam.situation.high_level_semantics_situation import HighLevelSemanticsSitu
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
     RgbColorPerception,
+    HasColor,
+    HasBinaryProperty,
+    PropertyPerception,
+    ObjectPerception,
 )
+from adam.ontology import OntologyNode
 
 from adam.visualization.panda3d_interface import SituationVisualizer
 from adam.visualization.utils import Shape
@@ -96,14 +102,18 @@ class SceneCreator:
                 perception,
             ) in instance_group.instances():  # each instance a scene
                 # scene_objects = []
-                property_map = defaultdict(list)
+                property_map: DefaultDict[
+                    ObjectPerception, List[Union[RgbColorPerception, OntologyNode]]
+                ] = defaultdict(list)
                 # we only care about the perception at the moment
 
                 for frame in perception.frames:  # DevelopmentalPrimitivePerceptionFrame
                     for prop in frame.property_assertions:
-                        if hasattr(prop, "color"):
+                        if isinstance(prop, HasColor):
+                            # append RgbColorPerception
                             property_map[prop.perceived_object].append(prop.color)
-                        else:
+                        elif isinstance(prop, HasBinaryProperty):
+                            # append OntologyNode
                             property_map[prop.perceived_object].append(
                                 prop.binary_property
                             )
