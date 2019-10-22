@@ -242,7 +242,11 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     _object.ontology_node  # pylint:disable=protected-access
                 )
 
-            if count > 1 and noun_lexicon_entry.plural_form:
+            if (
+                count > 1
+                and noun_lexicon_entry.plural_form
+                and len(self.object_counts) == 1
+            ):
                 word_form = noun_lexicon_entry.plural_form
             else:
                 word_form = noun_lexicon_entry.base_form
@@ -349,16 +353,19 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     self.dependency_graph.add_edge(
                         case_node, determiner_node, role=case_role
                     )
+                # only add one of the following quantifiers in situations with
+                # multiples of the same object
+                elif len(self.object_counts) == 1 and count > 1:
+                    if count == 2:
+                        determiner_node = DependencyTreeToken("two", NUMERAL)
+                        determiner_role = NUMERIC_MODIFIER
+                    # Currently, any number of objects greater than two is considered "many"
+                    else:
+                        determiner_node = DependencyTreeToken("many", DETERMINER)
+                        determiner_role = DETERMINER_ROLE
                 # otherwise do the normal determiner behavior
-                elif count == 1:
-                    determiner_node = DependencyTreeToken("a", DETERMINER)
-                    determiner_role = DETERMINER_ROLE
-                elif count == 2:
-                    determiner_node = DependencyTreeToken("two", NUMERAL)
-                    determiner_role = NUMERIC_MODIFIER
-                # Currently, any number of objects greater than two is considered "many"
                 else:
-                    determiner_node = DependencyTreeToken("many", DETERMINER)
+                    determiner_node = DependencyTreeToken("a", DETERMINER)
                     determiner_role = DETERMINER_ROLE
                 self.dependency_graph.add_edge(
                     determiner_node, noun_dependency_node, role=determiner_role
