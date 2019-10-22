@@ -3,29 +3,11 @@
    operating and when other code (gathering and processing scene information)
    is executing in a serial manner.
    """
-from typing import (
-    AbstractSet,
-    Any,
-    Callable,
-    Iterable,
-    List,
-    Tuple,
-    TypeVar,
-    Union,
-    Optional,
-    DefaultDict,
-)
+from typing import Iterable, List, Tuple, Union, DefaultDict
 
 import random
 from collections import defaultdict
-from attr import attrib, attrs
-from attr.validators import instance_of
-
-from vistautils.parameters import Parameters
-from vistautils.parameters_only_entrypoint import parameters_only_entry_point
-
-from immutablecollections import ImmutableListMultiDict, immutablelistmultidict
-
+from attr import attrs
 
 from adam.language.dependency import LinearizedDependencyTree
 
@@ -39,7 +21,6 @@ from adam.perception.developmental_primitive_perception import (
     RgbColorPerception,
     HasColor,
     HasBinaryProperty,
-    PropertyPerception,
     ObjectPerception,
 )
 from adam.ontology import OntologyNode
@@ -93,9 +74,9 @@ class SceneCreator:
             ]
         ],
     ):
-        for i, instance_group in enumerate(
-            instance_groups
-        ):  # each InstanceGroup a page related to a curriculum topic
+        for (
+            instance_group
+        ) in instance_groups:  # each InstanceGroup a page related to a curriculum topic
             for (
                 situation,
                 dependency_tree,

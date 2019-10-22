@@ -12,23 +12,24 @@
 from math import pi, sin, cos
 
 from typing import Tuple, List
-import sys, os
+import sys
+import os
 
 import time
+# TODO: see why these imports aren't getting found by pylint
+from direct.showbase.ShowBase import ShowBase  # pylint: disable=no-name-in-module
+from direct.task import Task  # pylint: disable=no-name-in-module
 
-from direct.showbase.ShowBase import ShowBase
-from direct.task import Task
+from panda3d.core import DirectionalLight  # pylint: disable=no-name-in-module
+from panda3d.core import PointLight  # pylint: disable=no-name-in-module
+from panda3d.core import Material  # pylint: disable=no-name-in-module
+from panda3d.core import NodePath  # pylint: disable=no-name-in-module
+from panda3d.core import TextNode  # pylint: disable=no-name-in-module
 
-import panda3d
-from panda3d.core import Filename
-from panda3d.core import DirectionalLight, PointLight, Material, NodePath
-
-from direct.gui.OnscreenText import OnscreenText
-from pandac.PandaModules import TextNode
+from direct.gui.OnscreenText import OnscreenText  # pylint: disable=no-name-in-module
 
 from adam.visualization.utils import Shape
 
-from adam.math_3d import Point
 from adam.perception.developmental_primitive_perception import RgbColorPerception
 
 
@@ -43,7 +44,6 @@ class SituationVisualizer(ShowBase):
 
     def __init__(self) -> None:
         super().__init__(self)
-
         # instantiate a light (or more) so that materials are visible
 
         dlight = DirectionalLight("mainLight")
@@ -67,7 +67,7 @@ class SituationVisualizer(ShowBase):
         self.ground_plane.setMaterial(m, 1)
 
         # container of nodes to be dynamically added / removed
-        self.geo_nodes: List[panda3d.core.NodePath] = []
+        self.geo_nodes: List[NodePath] = []
 
         # set default camera position/orientation:
         # default mouse controls have to be disabled to set a position manually
@@ -90,7 +90,7 @@ class SituationVisualizer(ShowBase):
             mayChange=True,
             align=TextNode.ALeft,
         )
-        self.taskMgr.doMethodLater(0.25, self._cameraLocationTask, "CameraLocationTask")
+        self.taskMgr.doMethodLater(0.25, self._camera_location_task, "CameraLocationTask")
 
     def add_model(
         self,
@@ -120,23 +120,26 @@ class SituationVisualizer(ShowBase):
 
     def test_scene_init(self) -> None:
         """Initialize a test scene with sample geometry, including a camera rotate task"""
-        self.cylinder = self._load_model("cylinder.egg")
+        cylinder = self._load_model("cylinder.egg")
+        self.geo_nodes.append(cylinder)
         # Reparent the model to render.
-        self.cylinder.reparentTo(self.render)
+        cylinder.reparentTo(self.render)
 
-        self.cube = self._load_model("cube.egg")
-        self.cube.reparentTo(self.render)
-        self.cube.setPos(0, 0, 5)
-        self.cube.setColor((1.0, 0.0, 0.0, 1.0))
+        cube = self._load_model("cube.egg")
+        self.geo_nodes.append(cube)
+        cube.reparentTo(self.render)
+        cube.setPos(0, 0, 5)
+        cube.setColor((1.0, 0.0, 0.0, 1.0))
 
-        self.cube2 = self._load_model("cube.egg")
-        self.cube2.reparentTo(self.render)
-        self.cube2.setPos(5, 0, 0)
-        self.cube2.setScale(1.25, 1.25, 1.25)
-        self.cube2.setColor((0, 1, 0, 0.5))
+        cube2 = self._load_model("cube.egg")
+        self.geo_nodes.append(cube2)
+        cube2.reparentTo(self.render)
+        cube2.setPos(5, 0, 0)
+        cube2.setScale(1.25, 1.25, 1.25)
+        cube2.setColor((0, 1, 0, 0.5))
 
         # Add the spinCameraTask procedure to the task manager.
-        self.taskMgr.add(self._spinCameraTask, "SpinCameraTask", priority=-100)
+        self.taskMgr.add(self._spin_camera_task, "SpinCameraTask", priority=-100)
 
     def run_for_seconds(self, seconds: float) -> None:
         """Executes main rendering loop for given seconds. This needs to be a
@@ -146,14 +149,14 @@ class SituationVisualizer(ShowBase):
             self.taskMgr.step()
 
     # Define a procedure to move the camera.
-    def _spinCameraTask(self, task):
-        angleDegrees = task.time * 6.0
-        angleRadians = angleDegrees * (pi / 180.0)
-        self.camera.setPos(25 * sin(angleRadians), -25.0 * cos(angleRadians), 4)
-        self.camera.setHpr(angleDegrees, 0, 0)
+    def _spin_camera_task(self, task):
+        angle_degrees = task.time * 6.0
+        angle_radians = angle_degrees * (pi / 180.0)
+        self.camera.setPos(25 * sin(angle_radians), -25.0 * cos(angle_radians), 4)
+        self.camera.setHpr(angle_degrees, 0, 0)
         return Task.cont
 
-    def _cameraLocationTask(self, task):
+    def _camera_location_task(self, task):  # pylint: disable=unused-argument
         pos = self.camera.getPos()
         hpr = self.camera.getHpr()
         self.camera_pos_text.setText(f"position: {pos}")
@@ -168,26 +171,26 @@ class SituationVisualizer(ShowBase):
 # for testing purposes
 if __name__ == "__main__":
 
-    app = SituationVisualizer()
-    app.test_scene_init()
+    APP = SituationVisualizer()
+    APP.test_scene_init()
 
-    app.add_model(Shape.SQUARE, (1, 2, 2))
+    APP.add_model(Shape.SQUARE, (1, 2, 2))
 
-    app.run_for_seconds(3)
+    APP.run_for_seconds(3)
 
-    app.run_for_seconds(6)
+    APP.run_for_seconds(6)
 
-    app.clear_scene()
+    APP.clear_scene()
 
-    app.run_for_seconds(3)
+    APP.run_for_seconds(3)
 
-    app.add_model(Shape.RECTANGULAR, (-2, 2, 2))
+    APP.add_model(Shape.RECTANGULAR, (-2, 2, 2))
 
-    app.add_model(Shape.CIRCULAR, (0, 0, 8))
+    APP.add_model(Shape.CIRCULAR, (0, 0, 8))
 
-    app.add_model(Shape.OVALISH, (4, 5, 2))
+    APP.add_model(Shape.OVALISH, (4, 5, 2))
 
-    app.run_for_seconds(3)
+    APP.run_for_seconds(3)
 
     # input("Press ENTER to continue")
-    app.taskMgr.run()
+    APP.taskMgr.run()
