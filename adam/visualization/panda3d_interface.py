@@ -170,28 +170,4 @@ class SituationVisualizer(ShowBase):
 
 
 # for testing purposes
-if __name__ == "__main__":
 
-    APP = SituationVisualizer()
-    APP.test_scene_init()
-
-    APP.add_model(Shape.SQUARE, (1, 2, 2))
-
-    APP.run_for_seconds(3)
-
-    APP.run_for_seconds(6)
-
-    APP.clear_scene()
-
-    APP.run_for_seconds(3)
-
-    APP.add_model(Shape.RECTANGULAR, (-2, 2, 2))
-
-    APP.add_model(Shape.CIRCULAR, (0, 0, 8))
-
-    APP.add_model(Shape.OVALISH, (4, 5, 2))
-
-    APP.run_for_seconds(3)
-
-    # input("Press ENTER to continue")
-    APP.taskMgr.run()
