@@ -590,11 +590,17 @@ class AnyNodePredicate(NodePredicate):
 
 @attrs(frozen=True, slots=True, cmp=False)
 class AnyObjectPerception(NodePredicate):
+    debug_handle: Optional[str] = attrib(validator=optional(instance_of(str)))
+
     def __call__(self, object_perception: PerceptionGraphNode) -> bool:
         return isinstance(object_perception, ObjectPerception)
 
     def dot_label(self) -> str:
-        return "*obj"
+        if self.debug_handle is not None:
+            debug_handle_str = f"[{self.debug_handle}]"
+        else:
+            debug_handle_str = ""
+        return f"*obj{debug_handle_str}"
 
 
 @attrs(frozen=True, slots=True, cmp=False)
