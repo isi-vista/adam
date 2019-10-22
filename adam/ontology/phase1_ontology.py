@@ -53,7 +53,11 @@ from adam.ontology import (
     THING,
     minimal_ontology_graph,
 )
-from adam.ontology.action_description import ActionDescription, ActionDescriptionFrame
+from adam.ontology.action_description import (
+    ActionDescription,
+    ActionDescriptionFrame,
+    ActionDescriptionVariable,
+)
 from adam.ontology.during import DuringAction
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_size_relationships import build_size_relationships
@@ -82,7 +86,6 @@ from adam.relation import (
     make_symmetric_dsl_region_relation,
     negate,
 )
-from adam.situation import SituationObject
 
 _ontology_graph = minimal_ontology_graph()  # pylint:disable=invalid-name
 
@@ -1706,10 +1709,12 @@ _TRUCK_SCHEMA = ObjectStructuralSchema(
     axes=_TRUCK_SCHEMA_CAB.schema.axes,
 )
 
-_PUT_AGENT = SituationObject(THING, properties=[ANIMATE], debug_handle="put_agent")
-_PUT_THEME = SituationObject(THING, debug_handle="put_theme")
-_PUT_GOAL = SituationObject(THING, debug_handle="put_goal")
-_PUT_MANIPULATOR = SituationObject(
+_PUT_AGENT = ActionDescriptionVariable(
+    THING, properties=[ANIMATE], debug_handle="put_agent"
+)
+_PUT_THEME = ActionDescriptionVariable(THING, debug_handle="put_theme")
+_PUT_GOAL = ActionDescriptionVariable(THING, debug_handle="put_goal")
+_PUT_MANIPULATOR = ActionDescriptionVariable(
     THING, properties=[CAN_MANIPULATE_OBJECTS], debug_handle="put_manipulator"
 )
 
@@ -1746,19 +1751,21 @@ _PUT_ACTION_DESCRIPTION = ActionDescription(
     ],
 )
 
-_PUSH_AGENT = SituationObject(THING, properties=[ANIMATE], debug_handle="push-agent")
-_PUSH_THEME = SituationObject(INANIMATE_OBJECT, debug_handle="push-theme")
-PUSH_GOAL = SituationObject(THING, debug_handle="push_goal")
-_PUSH_MANIPULATOR = SituationObject(
+_PUSH_AGENT = ActionDescriptionVariable(
+    THING, properties=[ANIMATE], debug_handle="push-agent"
+)
+_PUSH_THEME = ActionDescriptionVariable(INANIMATE_OBJECT, debug_handle="push-theme")
+PUSH_GOAL = ActionDescriptionVariable(THING, debug_handle="push_goal")
+_PUSH_MANIPULATOR = ActionDescriptionVariable(
     THING, properties=[CAN_MANIPULATE_OBJECTS], debug_handle="push-manipulator"
 )
-PUSH_SURFACE_AUX = SituationObject(
+PUSH_SURFACE_AUX = ActionDescriptionVariable(
     THING, properties=[CAN_HAVE_THINGS_RESTING_ON_THEM], debug_handle="push-surface"
 )
 
 
 def _make_push_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
-    during: DuringAction[SituationObject] = DuringAction(
+    during: DuringAction[ActionDescriptionVariable] = DuringAction(
         objects_to_paths=[(_PUSH_THEME, SpatialPath(TO, PUSH_GOAL))]
     )
     enduring = [
@@ -1797,14 +1804,14 @@ def _make_push_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
     )
 
 
-_GO_AGENT = SituationObject(THING, properties=[SELF_MOVING])
-_GO_GOAL = SituationObject(THING)
+_GO_AGENT = ActionDescriptionVariable(THING, properties=[SELF_MOVING])
+_GO_GOAL = ActionDescriptionVariable(THING)
 
 
 def _make_go_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
     # bare go
     postconditions = [Relation(IN_REGION, _GO_AGENT, _GO_GOAL)]
-    during: DuringAction[SituationObject] = DuringAction(
+    during: DuringAction[ActionDescriptionVariable] = DuringAction(
         objects_to_paths=[(_GO_AGENT, SpatialPath(TO, _GO_GOAL))]
     )
     asserted_properties = [(_GO_AGENT, VOLITIONALLY_INVOLVED), (_GO_AGENT, MOVES)]
@@ -1824,8 +1831,8 @@ def _make_go_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
     )
 
 
-_COME_AGENT = SituationObject(THING, properties=[ANIMATE])
-_COME_GOAL = SituationObject(THING)
+_COME_AGENT = ActionDescriptionVariable(THING, properties=[ANIMATE])
+_COME_GOAL = ActionDescriptionVariable(THING)
 
 _COME_ACTION_DESCRIPTION = ActionDescription(
     frame=ActionDescriptionFrame(
@@ -1840,10 +1847,10 @@ _COME_ACTION_DESCRIPTION = ActionDescription(
     asserted_properties=[(_COME_AGENT, VOLITIONALLY_INVOLVED), (_COME_AGENT, MOVES)],
 )
 
-_TAKE_AGENT = SituationObject(THING, properties=[ANIMATE])
-_TAKE_THEME = SituationObject(THING)
-_TAKE_GOAL = SituationObject(THING)
-_TAKE_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
+_TAKE_AGENT = ActionDescriptionVariable(THING, properties=[ANIMATE])
+_TAKE_THEME = ActionDescriptionVariable(THING)
+_TAKE_GOAL = ActionDescriptionVariable(THING)
+_TAKE_MANIPULATOR = ActionDescriptionVariable(THING, properties=[CAN_MANIPULATE_OBJECTS])
 
 _TAKE_ACTION_DESCRIPTION = ActionDescription(
     frame=ActionDescriptionFrame({AGENT: _TAKE_AGENT, THEME: _TAKE_THEME}),
@@ -1867,8 +1874,8 @@ _TAKE_ACTION_DESCRIPTION = ActionDescription(
     ],
 )
 
-_EAT_AGENT = SituationObject(THING, properties=[ANIMATE])
-_EAT_PATIENT = SituationObject(INANIMATE_OBJECT, properties=[EDIBLE])
+_EAT_AGENT = ActionDescriptionVariable(THING, properties=[ANIMATE])
+_EAT_PATIENT = ActionDescriptionVariable(INANIMATE_OBJECT, properties=[EDIBLE])
 
 _EAT_ACTION_DESCRIPTION = ActionDescription(
     frame=ActionDescriptionFrame({AGENT: _EAT_AGENT, PATIENT: _EAT_PATIENT}),
@@ -1882,11 +1889,15 @@ _EAT_ACTION_DESCRIPTION = ActionDescription(
     ],
 )
 
-_GIVE_AGENT = SituationObject(THING, properties=[ANIMATE])
-_GIVE_THEME = SituationObject(INANIMATE_OBJECT)
-_GIVE_GOAL = SituationObject(THING, properties=[ANIMATE])
-_GIVE_AGENT_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
-_GIVE_GOAL_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
+_GIVE_AGENT = ActionDescriptionVariable(THING, properties=[ANIMATE])
+_GIVE_THEME = ActionDescriptionVariable(INANIMATE_OBJECT)
+_GIVE_GOAL = ActionDescriptionVariable(THING, properties=[ANIMATE])
+_GIVE_AGENT_MANIPULATOR = ActionDescriptionVariable(
+    THING, properties=[CAN_MANIPULATE_OBJECTS]
+)
+_GIVE_GOAL_MANIPULATOR = ActionDescriptionVariable(
+    THING, properties=[CAN_MANIPULATE_OBJECTS]
+)
 
 _GIVE_ACTION_DESCRIPTION = ActionDescription(
     frame=ActionDescriptionFrame(
@@ -1917,12 +1928,12 @@ _GIVE_ACTION_DESCRIPTION = ActionDescription(
     ],
 )
 
-_SPIN_AGENT = SituationObject(THING, properties=[ANIMATE])
-_SPIN_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
+_SPIN_AGENT = ActionDescriptionVariable(THING, properties=[ANIMATE])
+_SPIN_MANIPULATOR = ActionDescriptionVariable(THING, properties=[CAN_MANIPULATE_OBJECTS])
 
 
 def _make_spin_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
-    spin_theme = SituationObject(THING)
+    spin_theme = ActionDescriptionVariable(THING)
 
     # intransitive
     yield SPIN, ActionDescription(
@@ -1960,12 +1971,14 @@ def spin_around_primary_axis(object_):
     )
 
 
-SIT_THING_SAT_ON = SituationObject(THING, debug_handle="thing-sat-on")
-SIT_GOAL = SituationObject(THING, debug_handle="sit-goal")  # really a region
+SIT_THING_SAT_ON = ActionDescriptionVariable(THING, debug_handle="thing-sat-on")
+SIT_GOAL = ActionDescriptionVariable(THING, debug_handle="sit-goal")  # really a region
 
 
 def _make_sit_action_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
-    sit_agent = SituationObject(THING, properties=[ANIMATE], debug_handle="sit-agent")
+    sit_agent = ActionDescriptionVariable(
+        THING, properties=[ANIMATE], debug_handle="sit-agent"
+    )
 
     post_conditions = [Relation(IN_REGION, sit_agent, SIT_GOAL)]
 
@@ -1984,12 +1997,12 @@ def _make_sit_action_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescri
     )
 
 
-DRINK_CONTAINER_AUX = SituationObject(THING, properties=[HOLLOW])
+DRINK_CONTAINER_AUX = ActionDescriptionVariable(THING, properties=[HOLLOW])
 
 
 def _make_drink_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
-    drink_agent = SituationObject(THING, properties=[ANIMATE])
-    drink_theme = SituationObject(THING, properties=[LIQUID])
+    drink_agent = ActionDescriptionVariable(THING, properties=[ANIMATE])
+    drink_theme = ActionDescriptionVariable(THING, properties=[LIQUID])
 
     yield (
         DRINK,
@@ -2009,8 +2022,8 @@ def _make_drink_description() -> Iterable[Tuple[OntologyNode, ActionDescription]
     )
 
 
-_FALL_THEME = SituationObject(THING)
-_FALL_GROUND = SituationObject(GROUND)
+_FALL_THEME = ActionDescriptionVariable(THING)
+_FALL_GROUND = ActionDescriptionVariable(GROUND)
 
 _FALL_ACTION_DESCRIPTION = ActionDescription(
     frame=ActionDescriptionFrame({THEME: _FALL_THEME}),
@@ -2022,15 +2035,15 @@ _FALL_ACTION_DESCRIPTION = ActionDescription(
     asserted_properties=[(_FALL_THEME, MOVES)],
 )
 
-_THROW_AGENT = SituationObject(THING, properties=[ANIMATE])
-_THROW_THEME = SituationObject(INANIMATE_OBJECT)
-THROW_GOAL = SituationObject(THING)
-_THROW_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
-_THROW_GROUND = SituationObject(GROUND)
+_THROW_AGENT = ActionDescriptionVariable(THING, properties=[ANIMATE])
+_THROW_THEME = ActionDescriptionVariable(INANIMATE_OBJECT)
+THROW_GOAL = ActionDescriptionVariable(THING)
+_THROW_MANIPULATOR = ActionDescriptionVariable(THING, properties=[CAN_MANIPULATE_OBJECTS])
+_THROW_GROUND = ActionDescriptionVariable(GROUND)
 
 
 def _make_throw_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
-    during: DuringAction[SituationObject] = DuringAction(
+    during: DuringAction[ActionDescriptionVariable] = DuringAction(
         objects_to_paths=[(_THROW_THEME, SpatialPath(TO, THROW_GOAL))],
         # must be above the ground at some point during the action
         at_some_point=[
@@ -2084,10 +2097,10 @@ def _make_throw_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription
     )
 
 
-_MOVE_AGENT = SituationObject(THING, properties=[ANIMATE])
-_MOVE_THEME = SituationObject(THING)
-MOVE_GOAL = SituationObject(THING)
-_MOVE_MANIPULATOR = SituationObject(THING, properties=[CAN_MANIPULATE_OBJECTS])
+_MOVE_AGENT = ActionDescriptionVariable(THING, properties=[ANIMATE])
+_MOVE_THEME = ActionDescriptionVariable(THING)
+MOVE_GOAL = ActionDescriptionVariable(THING)
+_MOVE_MANIPULATOR = ActionDescriptionVariable(THING, properties=[CAN_MANIPULATE_OBJECTS])
 
 
 def _make_move_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
@@ -2128,12 +2141,12 @@ def _make_move_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
     )
 
 
-JUMP_INITIAL_SUPPORTER_AUX = SituationObject(THING)
+JUMP_INITIAL_SUPPORTER_AUX = ActionDescriptionVariable(THING)
 
 
 def _make_jump_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
-    jump_agent = SituationObject(THING, properties=[ANIMATE])
-    jump_ground = SituationObject(GROUND)
+    jump_agent = ActionDescriptionVariable(THING, properties=[ANIMATE])
+    jump_ground = ActionDescriptionVariable(GROUND)
 
     yield (
         JUMP,
@@ -2160,7 +2173,7 @@ def _make_jump_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
     )
 
 
-ROLL_SURFACE_AUXILIARY = SituationObject(
+ROLL_SURFACE_AUXILIARY = ActionDescriptionVariable(
     INANIMATE_OBJECT,
     properties=[CAN_HAVE_THINGS_RESTING_ON_THEM],
     debug_handle="roll-surface-aux",
@@ -2168,10 +2181,12 @@ ROLL_SURFACE_AUXILIARY = SituationObject(
 
 
 def _make_roll_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
-    roll_agent = SituationObject(THING, properties=[ANIMATE])
-    roll_theme = SituationObject(INANIMATE_OBJECT, properties=[ROLLABLE])
+    roll_agent = ActionDescriptionVariable(THING, properties=[ANIMATE])
+    roll_theme = ActionDescriptionVariable(INANIMATE_OBJECT, properties=[ROLLABLE])
 
-    def make_during(rollee: SituationObject) -> DuringAction[SituationObject]:
+    def make_during(
+        rollee: ActionDescriptionVariable
+    ) -> DuringAction[ActionDescriptionVariable]:
         return DuringAction(
             continuously=[contacts(rollee, ROLL_SURFACE_AUXILIARY)],
             objects_to_paths=[
@@ -2214,8 +2229,8 @@ def _make_roll_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
     )
 
 
-_FLY_AGENT = SituationObject(THING, properties=[ANIMATE])
-_FLY_GROUND = SituationObject(GROUND)
+_FLY_AGENT = ActionDescriptionVariable(THING, properties=[ANIMATE])
+_FLY_GROUND = ActionDescriptionVariable(GROUND)
 
 _FLY_ACTION_DESCRIPTION = ActionDescription(
     frame=ActionDescriptionFrame({AGENT: _FLY_AGENT}),

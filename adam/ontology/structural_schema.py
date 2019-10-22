@@ -81,9 +81,9 @@ class SubObject:
     (e.g. it includes a hand)
     """
 
-    debug_handle: Optional[str] = attrib(validator=optional(instance_of(str)),
-                                         default=None,
-                                         kw_only=True)
+    debug_handle: Optional[str] = attrib(
+        validator=optional(instance_of(str)), default=None, kw_only=True
+    )
     """
     A human-readable string which should be accessed for debugging purposes only.
     """

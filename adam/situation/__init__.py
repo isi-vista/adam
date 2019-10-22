@@ -4,6 +4,7 @@ Structures for describing situations in the world at an abstracted, human-friend
 from abc import ABC
 from typing import Generic, List, Mapping, Optional, TypeVar, Union
 
+from adam.ontology.action_description import ActionDescriptionVariable
 from attr import attrib, attrs
 from attr.validators import instance_of, optional
 from immutablecollections import (
@@ -162,9 +163,9 @@ class Action(Generic[_ActionTypeT, _ObjectT]):
     during: Optional[DuringAction[_ObjectT]] = attrib(  # type: ignore
         validator=optional(instance_of(DuringAction)), default=None, kw_only=True
     )
-    auxiliary_variable_bindings: ImmutableDict[SituationObject, _ObjectT] = attrib(
-        converter=_to_immutabledict, default=immutabledict(), kw_only=True
-    )
+    auxiliary_variable_bindings: ImmutableDict[
+        ActionDescriptionVariable, _ObjectT
+    ] = attrib(converter=_to_immutabledict, default=immutabledict(), kw_only=True)
     """
     A mapping of action variables from *action_type*'s `ActionDescription`
     to the items which should fill them.

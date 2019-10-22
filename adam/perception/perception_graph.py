@@ -242,8 +242,9 @@ class PerceptionGraphPattern:
                         node
                     )
                 elif isinstance(node, SubObject):
-                    schema_node_to_pattern_node[node] =  AnyObjectPerception(
-                        debug_handle=node.debug_handle)
+                    schema_node_to_pattern_node[node] = AnyObjectPerception(
+                        debug_handle=node.debug_handle
+                    )
                 else:
                     raise RuntimeError(f"Don't know how to map node {node}")
             return schema_node_to_pattern_node[node]
