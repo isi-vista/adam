@@ -24,12 +24,11 @@ from more_itertools import only, take
 from typing_extensions import Protocol
 from vistautils.preconditions import check_arg
 
-from adam.axes import AxesInfo, HorizontalAxisOfObject, WORLD_AXES
+from adam.axes import AxesInfo, HorizontalAxisOfObject
 from adam.ontology import (
     ACTION,
     CAN_FILL_TEMPLATE_SLOT,
     IS_ADDRESSEE,
-    IS_SUBSTANCE,
     OntologyNode,
     PROPERTY,
     THING,
@@ -51,7 +50,6 @@ from adam.ontology.selectors import (
     OntologyNodeSelector,
     SubcategorizationSelector,
 )
-from adam.ontology.structural_schema import ObjectStructuralSchema
 from adam.random_utils import RandomChooser, SequenceChooser
 from adam.relation import Relation, flatten_relations
 from adam.situation import Action, SituationObject, SituationRegion
@@ -398,29 +396,8 @@ class _Phase1SituationTemplateGenerator(
         variable_assignment: "TemplateVariableAssignment",
     ) -> SituationObject:
         object_type = variable_assignment.object_variables_to_fillers[object_var]
-        schemata = self.ontology.structural_schemata(object_type)
-        if len(schemata) > 1:
-            raise RuntimeError(
-                "Can only handle one structural schema per object right now. "
-                "If we change this, we need to make sure the schema choice gets "
-                "passed along to object perception."
-            )
-        schema: ObjectStructuralSchema = only(schemata)
 
-        if not schema:
-            if self.ontology.has_property(object_type, IS_SUBSTANCE):
-                # it isn't clear what the axes of a substance should be,
-                # so for now we just use the world axes
-                axes = WORLD_AXES
-            else:
-                raise RuntimeError(
-                    f"Cannot instantiate object of non-SUBSTANCE type {object_type} "
-                    f"without a schema"
-                )
-        else:
-            axes = schema.axes
-
-        return SituationObject(
+        return SituationObject.instantiate_ontology_node(
             ontology_node=object_type,
             properties=[
                 # instantiate any property variables associated with this object
@@ -429,7 +406,7 @@ class _Phase1SituationTemplateGenerator(
                 else asserted_property
                 for asserted_property in object_var.asserted_properties
             ],
-            axes=axes,
+            ontology=self.ontology,
         )
 
     def _instantiate_situation(

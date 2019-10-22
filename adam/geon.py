@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Mapping
 
 from typing_extensions import Protocol
 
@@ -47,8 +47,11 @@ class Geon(HasAxes):
     axes: Axes = attrib(validator=instance_of(Axes), kw_only=True)
     generating_axis: GeonAxis = attrib(validator=instance_of(GeonAxis), kw_only=True)
 
-    def copy(self) -> "Geon":
-        axis_mapping = {axis: axis.copy() for axis in self.axes.all_axes}
+    def copy(
+        self, *, axis_mapping: Optional[Mapping[GeonAxis, GeonAxis]] = None
+    ) -> "Geon":
+        if axis_mapping is None:
+            axis_mapping = {axis: axis.copy() for axis in self.axes.all_axes}
         return Geon(
             cross_section=self.cross_section,
             cross_section_size=self.cross_section_size,

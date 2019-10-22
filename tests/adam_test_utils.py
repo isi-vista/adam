@@ -1,9 +1,6 @@
-from typing import Iterable
+from typing import Iterable, Optional
 
-from more_itertools import first
-
-from adam.axes import WORLD_AXES
-from adam.ontology import OntologyNode, IS_SUBSTANCE
+from adam.ontology import OntologyNode
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
 from adam.perception import ObjectPerception
 from adam.perception.developmental_primitive_perception import (
@@ -40,19 +37,15 @@ def all_possible_test(
     )
 
 
-def situation_object(object_type: OntologyNode) -> SituationObject:
-    if GAILA_PHASE_1_ONTOLOGY.has_property(object_type, IS_SUBSTANCE):
-        # it's not clear what the axes should be for substances,
-        # so we just use the world axes for now
-        return SituationObject(object_type, axes=WORLD_AXES)
-    else:
-        structural_schemata = GAILA_PHASE_1_ONTOLOGY.structural_schemata(object_type)
-        if not structural_schemata:
-            raise RuntimeError(f"No structural schema found for {object_type}")
-        if len(structural_schemata) > 1:
-            raise RuntimeError(
-                f"Multiple structural schemata available for {object_type}, "
-                f"please construct the SituationObject manually: "
-                f"{structural_schemata}"
-            )
-        return first(structural_schemata).axes
+def situation_object(
+    ontology_node: OntologyNode,
+    *,
+    debug_handle: Optional[str] = None,
+    properties: Iterable[OntologyNode] = tuple(),
+) -> SituationObject:
+    return SituationObject.instantiate_ontology_node(
+        ontology_node=ontology_node,
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        debug_handle=debug_handle,
+        properties=properties,
+    )

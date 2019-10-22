@@ -5,13 +5,12 @@ from typing import (
     Dict,
     List,
     Mapping,
+    MutableMapping,
     Optional,
     Union,
     cast,
-    MutableMapping,
 )
 
-from attr import Factory, attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import (
     ImmutableDict,
@@ -24,13 +23,15 @@ from immutablecollections import (
 from more_itertools import only, quantify
 from vistautils.preconditions import check_arg
 
+from adam.axes import AxesInfo
+from adam.geon import Geon
 from adam.ontology import (
-    IN_REGION,
-    OntologyNode,
-    IS_SUBSTANCE,
-    PERCEIVABLE,
-    IS_SPEAKER,
     BINARY,
+    IN_REGION,
+    IS_SPEAKER,
+    IS_SUBSTANCE,
+    OntologyNode,
+    PERCEIVABLE,
 )
 from adam.ontology.action_description import ActionDescription, ActionDescriptionVariable
 from adam.ontology.during import DuringAction
@@ -51,11 +52,11 @@ from adam.ontology.phase1_ontology import (
 from adam.ontology.phase1_spatial_relations import INTERIOR, Region, SpatialPath
 from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
 from adam.perception import (
+    GROUND_PERCEPTION,
+    LEARNER_PERCEPTION,
     ObjectPerception,
     PerceptualRepresentation,
     PerceptualRepresentationGenerator,
-    GROUND_PERCEPTION,
-    LEARNER_PERCEPTION,
     RegionPerception,
 )
 from adam.perception.developmental_primitive_perception import (
@@ -69,7 +70,7 @@ from adam.random_utils import SequenceChooser
 from adam.relation import Relation
 from adam.situation import Action, SituationObject, SituationRegion
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
-from adam.axes import AxesInfo, WORLD_AXES
+from attr import Factory, attrib, attrs
 
 
 @attrs(frozen=True, slots=True)
@@ -741,12 +742,20 @@ class _PerceptionGeneration:
             situation_object.ontology_node == GROUND
             for situation_object in self._situation.all_objects
         ):
-            self._perceive_object(SituationObject(GROUND))
+            self._perceive_object(
+                SituationObject.instantiate_ontology_node(
+                    GROUND, ontology=self._generator.ontology
+                )
+            )
         if not any(
             situation_object.ontology_node == LEARNER
             for situation_object in self._situation.all_objects
         ):
-            self._perceive_object(SituationObject(LEARNER))
+            self._perceive_object(
+                SituationObject.instantiate_ontology_node(
+                    LEARNER, ontology=self._generator.ontology
+                )
+            )
         for situation_object in self._situation.all_objects:
             self._perceive_object(situation_object)
 
@@ -776,7 +785,7 @@ class _PerceptionGeneration:
                 # https://github.com/isi-vista/adam/issues/87
                 raise RuntimeError(
                     f"Support for objects with multiple structural schemata has not "
-                    f"yet keep implemented."
+                    f"yet been implemented."
                 )
             if object_schemata:
                 # We know the object's structure.
@@ -797,9 +806,7 @@ class _PerceptionGeneration:
                             situation_object.ontology_node
                         ),
                         geon=None,
-                        # we just give substances the
-                        # universal gravitational axes
-                        axes=WORLD_AXES,
+                        axes=situation_object.axes,
                     )
                 else:
                     raise RuntimeError(
@@ -851,24 +858,23 @@ class _PerceptionGeneration:
         debug_handle = self._object_handle_generator.subscripted_handle(
             schema.ontology_node
         )
-        root_object_perception: ObjectPerception
+        concrete_geon: Optional[Geon]
         if schema.geon:
-            concrete_geon = schema.geon
-            root_object_perception = ObjectPerception(
-                debug_handle=debug_handle,
-                geon=concrete_geon,
-                axes=situation_object.axes
-                if situation_object and situation_object.axes
-                else concrete_geon.axes,
-            )
+            # if there is a situation object, we need to keep its axes in sync with its geon's axes
+            if situation_object:
+                concrete_geon = schema.geon.copy(
+                    axis_mapping=situation_object.schema_axis_to_object_axis
+                )
+            else:
+                concrete_geon = schema.geon.copy()
+            axes = concrete_geon.axes
         else:
-            root_object_perception = ObjectPerception(
-                debug_handle=debug_handle,
-                geon=None,
-                axes=situation_object.axes
-                if situation_object and situation_object.axes
-                else schema.axes,
-            )
+            concrete_geon = None
+            axes = schema.axes.copy()
+
+        root_object_perception = ObjectPerception(
+            debug_handle=debug_handle, geon=concrete_geon, axes=axes
+        )
 
         # for object perceptions which correspond to SituationObjects
         # (that is, typically, for objects which are not components of other objects)

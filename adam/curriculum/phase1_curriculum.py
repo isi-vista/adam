@@ -3,7 +3,7 @@ Curricula for DARPA GAILA Phase 1
 """
 
 from itertools import chain
-from typing import Iterable
+from typing import Iterable, Sequence
 
 from more_itertools import flatten
 
@@ -207,9 +207,10 @@ def build_object_multiples_situations(
                 yield HighLevelSemanticsSituation(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     salient_objects=[
-                        SituationObject(
-                            ontology_node=object_type,
+                        SituationObject.instantiate_ontology_node(
+                            object_type,
                             debug_handle=object_type.handle + f"_{idx}",
+                            ontology=GAILA_PHASE_1_ONTOLOGY,
                         )
                         for idx in range(num_objects)
                     ],
@@ -1587,36 +1588,37 @@ def _make_behind_in_front_curriculum():
     )
 
 
-GAILA_PHASE_1_CURRICULUM = [
-    EACH_OBJECT_BY_ITSELF_SUB_CURRICULUM,
-    OBJECTS_WITH_COLORS_SUB_CURRICULUM,
-    MULTIPLE_OF_THE_SAME_OBJECT_SUB_CURRICULUM,
-    _OBJECT_ON_GROUND_SUB_CURRICULUM,
-    _ANY_OBJECT_INTRANSITIVES_SUBCURRICULUM,
-    _make_fall_curriculum(),
-    _make_transfer_of_possession_curriculum(),
-    _make_object_on_object_curriculum(),
-    _make_object_beside_object_curriculum(),
-    _make_object_under_or_over_object_curriculum(),
-    _make_object_in_other_object_curriculum(),
-    _make_fly_curriculum(),
-    _make_roll_curriculum(),
-    _make_speaker_addressee_curriculum(),
-    _make_jump_curriculum(),
-    _make_drink_curriculum(),
-    _make_sit_curriculum(),
-    _make_put_curriculum(),
-    _make_eat_curriculum(),
-    _make_take_curriculum(),
-    _make_move_curriculum(),
-    _make_spin_curriculum(),
-    _make_go_curriculum(),
-    _make_push_curriculum(),
-    _make_throw_curriculum(),
-    _make_put_on_speaker_addressee_body_part_curriculum(),
-    _make_come_curriculum(),
-    _make_behind_in_front_curriculum(),
-]
-"""
-One particular instantiation of the curriculum for GAILA Phase 1.
-"""
+def build_gaila_phase_1_curriculum() -> Sequence[_Phase1InstanceGroup]:
+    """
+    One particular instantiation of the curriculum for GAILA Phase 1.
+    """
+    return [
+        EACH_OBJECT_BY_ITSELF_SUB_CURRICULUM,
+        OBJECTS_WITH_COLORS_SUB_CURRICULUM,
+        MULTIPLE_OF_THE_SAME_OBJECT_SUB_CURRICULUM,
+        _OBJECT_ON_GROUND_SUB_CURRICULUM,
+        _ANY_OBJECT_INTRANSITIVES_SUBCURRICULUM,
+        _make_fall_curriculum(),
+        _make_transfer_of_possession_curriculum(),
+        _make_object_on_object_curriculum(),
+        _make_object_beside_object_curriculum(),
+        _make_object_under_or_over_object_curriculum(),
+        _make_object_in_other_object_curriculum(),
+        _make_fly_curriculum(),
+        _make_roll_curriculum(),
+        _make_speaker_addressee_curriculum(),
+        _make_jump_curriculum(),
+        _make_drink_curriculum(),
+        _make_sit_curriculum(),
+        _make_put_curriculum(),
+        _make_eat_curriculum(),
+        _make_take_curriculum(),
+        _make_move_curriculum(),
+        _make_spin_curriculum(),
+        _make_go_curriculum(),
+        _make_push_curriculum(),
+        _make_throw_curriculum(),
+        _make_put_on_speaker_addressee_body_part_curriculum(),
+        _make_come_curriculum(),
+        _make_behind_in_front_curriculum(),
+    ]

@@ -213,6 +213,14 @@ class Axes:
         return chain((self.primary_axis,), self.orienting_axes)
 
     def copy(self) -> "Axes":
+        """
+        Returns a deep copy of this set of axes.
+
+        A copy is made of each contained axis.
+        The correspondence of the copies to the previous axes can be tracked
+        because the order of axes is maintained
+        (so the first axis in the copy is a copy of the first axis in the original, etc.)
+        """
         # world and learner axes are singletons
         if self is WORLD_AXES:
             return self

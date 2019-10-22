@@ -2,14 +2,18 @@
 Structures for describing situations in the world at an abstracted, human-friendly level.
 """
 from abc import ABC
-from typing import Generic, List, Mapping, Optional, TypeVar, Union
+from typing import Generic, List, Mapping, Optional, TypeVar, Union, Iterable, Dict
 
-from more_itertools import first
+from more_itertools import first, only
+from vistautils.preconditions import check_arg
 
+from adam.axis import GeonAxis
 from adam.ontology.action_description import ActionDescriptionVariable
+from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
+from adam.ontology.structural_schema import ObjectStructuralSchema
 from attr import attrib, attrs
-from attr.validators import instance_of, optional
+from attr.validators import instance_of, optional, deep_mapping
 from immutablecollections import (
     ImmutableDict,
     ImmutableSet,
@@ -26,9 +30,9 @@ from immutablecollections.converter_utils import (
     _to_immutablesetmultidict,
 )
 
-from adam.axes import Axes, HasAxes
+from adam.axes import Axes, HasAxes, WORLD_AXES
 from adam.math_3d import Point
-from adam.ontology import OntologyNode
+from adam.ontology import OntologyNode, IS_SUBSTANCE
 from adam.ontology.during import DuringAction
 from adam.ontology.phase1_spatial_relations import Region
 
@@ -67,20 +71,45 @@ class BagOfFeaturesSituationRepresentation(Situation):
 
 @attrs(frozen=True, slots=True, hash=None, cmp=False, repr=False)
 class SituationObject(HasAxes):
-    """
+    r"""
     An object present in some situation.
 
     Every object must refer to an `OntologyNode` linking it to a type in an ontology.
 
     Unlike most of our classes, `SituationObject` has *id*-based hashing and equality.  This is
     because two objects with identical properties are nonetheless distinct.
+
+    `SituationObject`\ should not be directly instantiated.
+    Instead use `instantiate_ontology_node`.
     """
 
     ontology_node: OntologyNode = attrib(
-        validator=instance_of(OntologyNode), default=None
+        validator=instance_of(OntologyNode)  # , default=None
     )
     """
     The `OntologyNode` specifying the type of thing this object is.
+    """
+    # note to readers: the two axis-related fields have to be placed first to make PyCharm happy,
+    # but you should read the other fields first.
+    axes: Axes = attrib(validator=instance_of(Axes), kw_only=True)
+    schema_axis_to_object_axis: Mapping[GeonAxis, GeonAxis] = attrib(
+        validator=deep_mapping(instance_of(GeonAxis), instance_of(GeonAxis)),
+        kw_only=True,
+        converter=_to_immutabledict,
+    )
+    """
+    Provides a mapping between the axes of an `ObjectStructuralSchema` 
+    (which are abstract and generic - i.e. the axes of "tire"s in general)
+    and the concrete instantiations of those axes which are stored in the *axes* field
+    of this object.
+    We need to track this information to keep the object axes in sync with the `Geon` axes
+    during perceptual generation.
+
+    Note that this mapping may be empty if this situation object was not derived from 
+    an `ObjectStructuralSchema`.
+
+    Rather than setting this field by hand, we recommend using the static factory method
+    `from_structural_schema`.
     """
     properties: ImmutableSet[OntologyNode] = attrib(
         converter=_to_immutableset, default=immutableset(), kw_only=True
@@ -88,7 +117,6 @@ class SituationObject(HasAxes):
     r"""
     The `OntologyNode`\ s representing the properties this object has.
     """
-    axes: Axes = attrib(validator=instance_of(Axes), kw_only=True)
     debug_handle: str = attrib(validator=instance_of(str), kw_only=True)
 
     def __attrs_post_init__(self) -> None:
@@ -99,6 +127,8 @@ class SituationObject(HasAxes):
                 raise ValueError(
                     f"Situation object property {property_} is not an " f"OntologyNode"
                 )
+        for concrete_axis in self.schema_axis_to_object_axis.values():
+            check_arg(concrete_axis in self.axes.all_axes)
 
     @debug_handle.default
     def _default_debug_handle(self) -> str:
@@ -120,11 +150,43 @@ class SituationObject(HasAxes):
 
         return f"{self.debug_handle}{handle_string}{additional_properties_string}"
 
-    @axes.default
-    def _default_axes(self) -> Axes:
-        # This is a temporary hack.
-        # Please see https://github.com/isi-vista/adam/issues/390 for details.
-        return first(GAILA_PHASE_1_ONTOLOGY.structural_schemata(self.ontology_node)).axes
+    @staticmethod
+    def instantiate_ontology_node(
+        ontology_node: OntologyNode,
+        *,
+        properties: Iterable[OntologyNode] = immutableset(),
+        debug_handle: Optional[str] = None,
+        ontology: Ontology,
+    ) -> "SituationObject":
+        schema_axis_to_object_axis: Mapping[GeonAxis, GeonAxis]
+        if ontology.has_property(ontology_node, IS_SUBSTANCE):
+            # it's not clear what the object_concrete_axes should be for substances,
+            # so we just use the world object_concrete_axes for now
+            schema_axis_to_object_axis = immutabledict()
+            object_concrete_axes = WORLD_AXES
+        else:
+            structural_schemata = ontology.structural_schemata(ontology_node)
+            if not structural_schemata:
+                raise RuntimeError(f"No structural schema found for {ontology_node}")
+            if len(structural_schemata) > 1:
+                raise RuntimeError(
+                    f"Multiple structural schemata available for {ontology_node}, "
+                    f"please construct the SituationObject manually: "
+                    f"{structural_schemata}"
+                )
+            schema_abstract_axes = only(structural_schemata).axes
+            object_concrete_axes = schema_abstract_axes.copy()
+            schema_axis_to_object_axis = immutabledict(
+                zip(schema_abstract_axes.all_axes, object_concrete_axes.all_axes)
+            )
+
+        return SituationObject(
+            ontology_node=ontology_node,
+            properties=properties,
+            debug_handle=debug_handle if debug_handle else ontology_node.handle,
+            axes=object_concrete_axes,
+            schema_axis_to_object_axis=schema_axis_to_object_axis,
+        )
 
 
 SituationRegion = Region[SituationObject]  # pylint:disable=invalid-name
