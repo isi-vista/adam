@@ -326,8 +326,7 @@ class PerceptionGraphPattern:
             source_dot_node = pattern_nodes_to_dot_node_ids[source_node]
             target_dot_node = pattern_nodes_to_dot_node_ids[target_node]
 
-            # if not predicate.reverse_in_dot_graph():
-            if False:
+            if not predicate.reverse_in_dot_graph():
                 dot_graph.edge(source_dot_node, target_dot_node, predicate.dot_label())
             else:
                 dot_graph.edge(
