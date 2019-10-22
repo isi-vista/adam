@@ -460,7 +460,7 @@ REFERENCE_OBJECT_LABEL = OntologyNode("reference-object")
 PRIMARY_AXIS_LABEL = OntologyNode("primary-axis")
 HAS_AXIS_LABEL = OntologyNode("has-axis")
 GENERATING_AXIS_LABEL = OntologyNode("generating-axis")
-HAS_GEON_LABEL = "geon"
+HAS_GEON_LABEL = OntologyNode("geon")
 
 
 def _translate_geon(
