@@ -38,6 +38,12 @@ The docs will be under `docs/_build/html`
 
 Run `adam.curriculum_to_html parameters/curriculum_to_html.params`
 
+
+# Visualization
+## To step through visual representations of the curriculum
+
+Run `adam.visualization.make_scenes`
+
 # Contributing
 
 Run `make precommit` before commiting. 
