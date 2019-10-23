@@ -273,7 +273,6 @@ def sampled(
     """
     Gets *max_to_sample* instantiations of *situation_template* with *ontology*
     """
-    check_arg(max_to_sample > 0)
     return take(
         max_to_sample,
         _Phase1SituationTemplateGenerator(

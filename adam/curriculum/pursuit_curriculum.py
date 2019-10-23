@@ -90,23 +90,23 @@ def make_simple_pursuit_curriculum(
             ).instances()
         )
         all_instances.extend(non_noise_instances)
+
         # Create instances for noise
-        if num_noise_instances > 0:
-            noise_instances = phase1_instances(
-                "simple_pursuit_curriculum",
-                sampled(
-                    noise_template,
-                    max_to_sample=num_noise_instances,
-                    chooser=PHASE1_CHOOSER,
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                ),
-            ).instances()
-            for (situation, _, perception) in noise_instances:
-                # For each instance to be replaced by a noisy instance, we keep the correct utterance, but
-                # replace the situation and perception. We do this to test the model's tolerance to varying degrees of
-                # noise that reflects noisy instances in the real-world.
-                linguistic_description = PHASE1_CHOOSER.choice(non_noise_instances)[1]
-                all_instances.append((situation, linguistic_description, perception))
+        noise_instances = phase1_instances(
+            "simple_pursuit_curriculum",
+            sampled(
+                noise_template,
+                max_to_sample=num_noise_instances,
+                chooser=PHASE1_CHOOSER,
+                ontology=GAILA_PHASE_1_ONTOLOGY,
+            ),
+        ).instances()
+        for (situation, _, perception) in noise_instances:
+            # For each instance to be replaced by a noisy instance, we keep the correct utterance, but
+            # replace the situation and perception. We do this to test the model's tolerance to varying degrees of
+            # noise that reflects noisy instances in the real-world.
+            linguistic_description = PHASE1_CHOOSER.choice(non_noise_instances)[1]
+            all_instances.append((situation, linguistic_description, perception))
 
     description = f"simple_pursuit_curriculum_examples-{num_instances}_objects-{num_objects_in_instance}_noise-{num_noise_instances}"
     rng = random.Random()
