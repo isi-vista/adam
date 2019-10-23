@@ -702,8 +702,8 @@ class GraphMatchingState(object):
         # First we remove the node that was added from the core vectors.
         # Watch out! G1_node == 0 should evaluate to True.
         if self.graph_node is not None and self.pattern_node is not None:
-            del self.GM.core_1[self.graph_node]
-            del self.GM.core_2[self.pattern_node]
+            del self.GM.graph_node_to_pattern_node[self.graph_node]
+            del self.GM.pattern_node_to_graph_node[self.pattern_node]
 
         # Now we revert the other four vectors.
         # Thus, we delete all entries which have this depth level.
