@@ -8,7 +8,6 @@ from typing import Iterable
 from more_itertools import flatten
 
 from adam.axes import HorizontalAxisOfObject, FacingAddresseeAxis, AxesInfo
-from adam.curriculum import ExplicitWithSituationInstanceGroup
 from adam.curriculum.curriculum_utils import (
     phase1_instances,
     PHASE1_CHOOSER,
@@ -16,6 +15,7 @@ from adam.curriculum.curriculum_utils import (
     standard_object,
     GROUND_OBJECT_TEMPLATE,
 )
+from adam.curriculum.pursuit_curriculum import _make_simple_pursuit_curriculum
 from adam.language_specific.english.english_language_generator import (
     PREFER_DITRANSITIVE,
     USE_ADVERBIAL_PATH_MODIFIER,
@@ -86,10 +86,6 @@ from adam.ontology.phase1_ontology import (
     COLOR,
     PHASE_1_CURRICULUM_OBJECTS,
     is_recognized_particular,
-    BALL,
-    CHAIR,
-    TABLE,
-    DOG,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -1565,107 +1561,37 @@ def _make_behind_in_front_curriculum() -> Phase1InstanceGroup:
     )
 
 
-# Simple Pursuit curriculum
-def _make_simple_pursuit_curriculum(
-    n_exemplar: int = 10, n_noise: int = 0, n_objects_in_scene: int = 3
-) -> Phase1InstanceGroup:
-    if n_noise > n_exemplar:
-        raise RuntimeError("Cannot have more noise than regular exemplars")
-
-    target_objects = [BALL, CHAIR, PERSON, TABLE, DOG, BIRD, BOX]
-    target_object_variables = [
-        object_variable(target.handle + "-target", target) for target in target_objects
-    ]
-    other_objects = [
-        standard_object("obj-" + str(idx)) for idx in range(n_objects_in_scene)
-    ]
-
-    simple_pursuit_templates = [
-        Phase1SituationTemplate(
-            "simple_pursuit",
-            salient_object_variables=[target_object_variable],
-            background_object_variables=other_objects[:-1],
-        )
-        for target_object_variable in target_object_variables
-    ]
-
-    noise_template = Phase1SituationTemplate(
-        "simple_pursuit",
-        salient_object_variables=[other_objects[0]],
-        background_object_variables=other_objects[1:],
-    )
-
-    all_instances = []
-    # Generate phase_1 instance groups for each template (i.e each target word)
-    for template in simple_pursuit_templates:
-        new_instances = list(
-            phase1_instances(
-                "simple_pursuit_curriculum",
-                sampled(
-                    template,
-                    max_to_sample=n_exemplar - n_noise,
-                    chooser=PHASE1_CHOOSER,
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                ),
-            ).instances()
-        )
-        all_instances.extend(new_instances)
-        # Create instances for noise
-        if n_noise > 0:
-            noise_instances = phase1_instances(
-                "simple_pursuit_curriculum",
-                sampled(
-                    noise_template,
-                    max_to_sample=n_noise,
-                    chooser=PHASE1_CHOOSER,
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                ),
-            ).instances()
-            for noise_instance in noise_instances:
-                # Get the correct language dependency tree
-                dependency_tree = PHASE1_CHOOSER.choice(new_instances)[1]
-                all_instances.append(
-                    (noise_instance[0], dependency_tree, noise_instance[2])
-                )
-
-    description = f"simple_pursuit_curriculum_examples-{n_exemplar}_objects-{n_objects_in_scene}_noise-{n_noise}"
-    final_instance_group: Phase1InstanceGroup = ExplicitWithSituationInstanceGroup(
-        description, all_instances
-    )
-    return final_instance_group
-
-
 GAILA_PHASE_1_CURRICULUM = [
-    # _make_each_object_by_itself_curriculum(),
-    # _make_objects_with_colors_curriculum(),
-    # _make_multiple_objects_curriculum(),
-    # _make_object_on_ground_curriculum(),
-    # _make_person_has_object_curriculum(),
-    # _make_fall_curriculum(),
-    # _make_transfer_of_possession_curriculum(),
-    # _make_object_on_object_curriculum(),
-    # _make_object_beside_object_curriculum(),
-    # _make_object_under_or_over_object_curriculum(),
-    # _make_object_in_other_object_curriculum(),
-    # _make_fly_curriculum(),
-    # _make_roll_curriculum(),
-    # _make_speaker_addressee_curriculum(),
-    # _make_jump_curriculum(),
-    # _make_put_curriculum(),
-    # _make_put_on_speaker_addressee_body_part_curriculum(),
-    # _make_drink_curriculum(),
-    # _make_eat_curriculum(),
-    # _make_sit_curriculum(),
-    # _make_take_curriculum(),
-    # _make_move_curriculum(),
-    # _make_spin_curriculum(),
-    # _make_go_curriculum(),
-    # _make_push_curriculum(),
-    # _make_throw_curriculum(),
-    # _make_come_curriculum(),
-    # _make_behind_in_front_curriculum(),
+    _make_each_object_by_itself_curriculum(),
+    _make_objects_with_colors_curriculum(),
+    _make_multiple_objects_curriculum(),
+    _make_object_on_ground_curriculum(),
+    _make_person_has_object_curriculum(),
+    _make_fall_curriculum(),
+    _make_transfer_of_possession_curriculum(),
+    _make_object_on_object_curriculum(),
+    _make_object_beside_object_curriculum(),
+    _make_object_under_or_over_object_curriculum(),
+    _make_object_in_other_object_curriculum(),
+    _make_fly_curriculum(),
+    _make_roll_curriculum(),
+    _make_speaker_addressee_curriculum(),
+    _make_jump_curriculum(),
+    _make_put_curriculum(),
+    _make_put_on_speaker_addressee_body_part_curriculum(),
+    _make_drink_curriculum(),
+    _make_eat_curriculum(),
+    _make_sit_curriculum(),
+    _make_take_curriculum(),
+    _make_move_curriculum(),
+    _make_spin_curriculum(),
+    _make_go_curriculum(),
+    _make_push_curriculum(),
+    _make_throw_curriculum(),
+    _make_come_curriculum(),
+    _make_behind_in_front_curriculum(),
     _make_simple_pursuit_curriculum(),
-    _make_simple_pursuit_curriculum(n_noise=2),
+    _make_simple_pursuit_curriculum(num_noise_instances=2),
 ]
 """
 One particular instantiation of the curriculum for GAILA Phase 1.

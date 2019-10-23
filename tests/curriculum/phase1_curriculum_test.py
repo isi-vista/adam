@@ -28,7 +28,6 @@ from adam.curriculum.phase1_curriculum import (
     _make_person_has_object_curriculum,
     _make_object_on_object_curriculum,
     _make_object_in_other_object_curriculum,
-    _make_simple_pursuit_curriculum,
 )
 
 
@@ -150,11 +149,3 @@ def test_come_curriculum():
 
 def test_behind_in_front_curriculum():
     curriculum_test(_make_behind_in_front_curriculum())
-
-
-def test_simple_pursuit_curriculum():
-    curriculum_test(_make_simple_pursuit_curriculum())
-
-
-def test_simple_pursuit_curriculum_with_noise():
-    curriculum_test(_make_simple_pursuit_curriculum(n_noise=2))
