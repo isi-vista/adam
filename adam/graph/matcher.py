@@ -269,8 +269,10 @@ class GraphMatching:
                 # TODO: the current implementation does not handle multi-graphs
                 pattern_edge = self.pattern.edges[pattern_predecessor, pattern_node]
                 pattern_predicate = pattern_edge["predicate"]
-                graph_edge = self.graph.edges[predecessor_mapped_node_in_graph, graph_node]
-                if not pattern_predicate(predecessor_mapped_node_in_graph, graph_edge["label"], graph_node):
+                graph_edge = self.graph.get_edge_data(predecessor_mapped_node_in_graph, graph_node)
+                if not (graph_edge and pattern_predicate(predecessor_mapped_node_in_graph,
+                graph_edge["label"],
+                                          graph_node)):
                     return False
 
         for pattern_successor in self.pattern[pattern_node]:
@@ -287,8 +289,9 @@ class GraphMatching:
                 # TODO: the current implementation does not handle multi-graphs
                 pattern_edge = self.pattern.edges[pattern_node, pattern_successor]
                 pattern_predicate = pattern_edge["predicate"]
-                graph_edge = self.graph.edges[graph_node, successor_mapped_node_in_graph]
-                if not pattern_predicate(graph_node, graph_edge["label"], successor_mapped_node_in_graph):
+                graph_edge = self.graph.get_edge_data(graph_node, successor_mapped_node_in_graph)
+                if not (graph_edge and pattern_predicate(graph_node, graph_edge["label"],
+                                          successor_mapped_node_in_graph)):
                     return False
         return True
 
