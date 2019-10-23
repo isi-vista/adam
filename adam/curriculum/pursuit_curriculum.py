@@ -1,5 +1,8 @@
 """
 Curricula for Pursuit Learning Algorithm
+In Pursuit, given a set of scenes and labels, the learner hypothesizes a meaning for the label and uses confidence
+metrics to pursue the strongest hypothesis as long as it is supported by the following scenes.
+Paper: The Pursuit of Word Meanings (Stevens et al., 2017)
 """
 
 from adam.curriculum import ExplicitWithSituationInstanceGroup
@@ -24,9 +27,12 @@ from adam.situation.templates.phase1_templates import (
     object_variable,
     sampled,
 )
+import random
+
+random.seed(0)
 
 
-def _make_simple_pursuit_curriculum(
+def make_simple_pursuit_curriculum(
     *,
     num_instances: int = 10,
     num_noise_instances: int = 0,
@@ -36,7 +42,8 @@ def _make_simple_pursuit_curriculum(
     Creates a Pursuit-learning curriculum with for a set of standard objects.
     Args:
         num_instances: total number of learning instances for each object to learn
-        num_noise_instances: number of noisy learning instances for each object to learn
+        num_noise_instances: number of noisy learning instances in each set of learning instances. A noisy instance in
+        a scene where the utterance doesn't match the situation and perception (e.g. hearing "ball" while seeing a cup).
         num_objects_in_instance: number of objects in each instance
     """
     if num_noise_instances > num_instances:
@@ -50,8 +57,10 @@ def _make_simple_pursuit_curriculum(
         standard_object("obj-" + str(idx)) for idx in range(num_objects_in_instance)
     ]
 
-    # A list of templates with specific a target object in each to create learning instances
-    simple_pursuit_templates = [
+    # A list of templates with specific a target object in each to create learning instances. Specifically,
+    # there is one object (e.g. Ball) across all instances while the other objects vary. Hence, the target object is
+    # a salient object (used for generating a dependency tree) while the remaining objects are background objects.
+    object_is_present_templates = [
         Phase1SituationTemplate(
             "simple_pursuit",
             salient_object_variables=[target_object_variable],
@@ -69,12 +78,12 @@ def _make_simple_pursuit_curriculum(
 
     all_instances = []
     # Generate phase_1 instance groups for each template (i.e each target word)
-    for template in simple_pursuit_templates:
+    for object_is_present_template in object_is_present_templates:
         new_instances = list(
             phase1_instances(
                 "simple_pursuit_curriculum",
                 sampled(
-                    template,
+                    object_is_present_template,
                     max_to_sample=num_instances - num_noise_instances,
                     chooser=PHASE1_CHOOSER,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -94,13 +103,15 @@ def _make_simple_pursuit_curriculum(
                 ),
             ).instances()
             for noise_instance in noise_instances:
-                # Get the correct language dependency tree
+                # For each instance to be replaced by a noisy instance, we keep the correct utterance, but
+                # replace the situation and perception.
                 dependency_tree = PHASE1_CHOOSER.choice(new_instances)[1]
                 all_instances.append(
                     (noise_instance[0], dependency_tree, noise_instance[2])
                 )
 
     description = f"simple_pursuit_curriculum_examples-{num_instances}_objects-{num_objects_in_instance}_noise-{num_noise_instances}"
+    random.shuffle(all_instances)
     final_instance_group: Phase1InstanceGroup = ExplicitWithSituationInstanceGroup(
         description, all_instances
     )

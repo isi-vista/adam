@@ -15,7 +15,6 @@ from adam.curriculum.curriculum_utils import (
     standard_object,
     GROUND_OBJECT_TEMPLATE,
 )
-from adam.curriculum.pursuit_curriculum import _make_simple_pursuit_curriculum
 from adam.language_specific.english.english_language_generator import (
     PREFER_DITRANSITIVE,
     USE_ADVERBIAL_PATH_MODIFIER,
@@ -1590,8 +1589,6 @@ GAILA_PHASE_1_CURRICULUM = [
     _make_throw_curriculum(),
     _make_come_curriculum(),
     _make_behind_in_front_curriculum(),
-    _make_simple_pursuit_curriculum(),
-    _make_simple_pursuit_curriculum(num_noise_instances=2),
 ]
 """
 One particular instantiation of the curriculum for GAILA Phase 1.
