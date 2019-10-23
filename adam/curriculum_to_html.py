@@ -29,6 +29,7 @@ from vistautils.preconditions import check_state
 
 from adam.curriculum.phase1_curriculum import GAILA_PHASE_1_CURRICULUM
 from adam.curriculum.preposition_curriculum import make_prepositions_curriculum
+from adam.curriculum.pursuit_curriculum import make_simple_pursuit_curriculum
 from adam.experiment import InstanceGroup
 from adam.geon import Geon
 from adam.axes import WORLD_AXES, AxesInfo
@@ -101,6 +102,7 @@ EXPLANATION_HEADER = (
 STR_TO_CURRICULUM = {
     "phase1": GAILA_PHASE_1_CURRICULUM,
     "prepositions": make_prepositions_curriculum(),
+    "pursuit": [make_simple_pursuit_curriculum()],
 }
 
 
@@ -212,7 +214,6 @@ class CurriculumToHtmlDumper:
             )
 
         filename = "curriculum-sorted-by-utterance.html"
-        index_file = "index-" + filename
         chunk_size = 50
         files_written: List[Tuple[str, str]] = []
         for i in range(0, len(rendered_instances), chunk_size):
@@ -225,9 +226,7 @@ class CurriculumToHtmlDumper:
                 html_out.write(
                     f"\n<body>\n\t<h1>{title} - Sorted by Utterance Length</h1>"
                 )
-                html_out.write(
-                    f"\t<a href='{output_directory}/{index_file}'>" f"Back to Index</a>"
-                )
+                html_out.write(f"\t<a href='index.html'>" f"Back to Index</a>")
                 html_out.write(EXPLANATION_HEADER)
                 for (instance_number, instance_holder) in enumerate(immutableset(chunk)):
                     # By using the immutable set we guaruntee iteration order and remove duplicates
@@ -258,11 +257,9 @@ class CurriculumToHtmlDumper:
                         f"\t\t\t</tr>\n\t\t</tbody>\n\t</table>"
                     )
                     html_out.write("\n</body>")
-                html_out.write(
-                    f"\t<a href='{output_directory}/{index_file}'>" f"Back to Index</a>"
-                )
+                html_out.write(f"\t<a href='index.html'>" f"Back to Index</a>")
 
-        with open(output_directory / index_file, "w") as index_out:
+        with open(str(output_directory / "index.html"), "w") as index_out:
             index_out.write(f"<head><title>{title}</title></head><body>")
             index_out.write("<ul>")
             for (
@@ -321,7 +318,6 @@ class CurriculumToHtmlDumper:
                 instance_group=instance_group,
                 output_destination=output_directory / relative_filename,
                 title=f"{instance_group_header} - {title}",
-                output_directory=output_directory,
             )
 
         # write an table of contents to index.html
@@ -348,7 +344,6 @@ class CurriculumToHtmlDumper:
         ],
         title: str,
         output_destination: Path,
-        output_directory: Path,
     ):
         """
         Internal generation method for individual instance groups into HTML pages
@@ -392,9 +387,7 @@ class CurriculumToHtmlDumper:
         with open(output_destination, "w") as html_out:
             html_out.write(f"<head>\n\t<style>{CSS}\n\t</style>\n</head>")
             html_out.write(f"\n<body>\n\t<h1>{title}</h1>")
-            html_out.write(
-                f"\t<a href='{output_directory}/index.html'>" f"Back to Index</a>"
-            )
+            html_out.write(f"\t<a href='index.html'>" f"Back to Index</a>")
             html_out.write(EXPLANATION_HEADER)
             # By using the immutable set we guarantee iteration order and remove duplicates
             for (instance_number, instance_holder) in enumerate(
@@ -426,9 +419,7 @@ class CurriculumToHtmlDumper:
                     f'\t\t\t\t<td valign="top">{instance_holder.perception}\n\t\t\t\t</td>\n'
                     f"\t\t\t</tr>\n\t\t</tbody>\n\t</table>"
                 )
-            html_out.write(
-                f"\t<a href='{output_directory}/index.html'>" f"Back to Index</a>"
-            )
+            html_out.write(f"\t<a href='index.html'>" f"Back to Index</a>")
             html_out.write("\n</body>")
 
     def _situation_text(
