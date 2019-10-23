@@ -4,8 +4,6 @@ In Pursuit, given a set of scenes and labels, the learner hypothesizes a meaning
 metrics to pursue the strongest hypothesis as long as it is supported by the following scenes.
 Paper: The Pursuit of Word Meanings (Stevens et al., 2017)
 """
-from more_itertools import flatten
-
 from adam.curriculum import ExplicitWithSituationInstanceGroup
 from adam.curriculum.curriculum_utils import (
     phase1_instances,
@@ -138,12 +136,8 @@ def make_simple_pursuit_curriculum(
 
 
 def make_pursuit_curriculum():
-    return flatten(
-        [
-            make_simple_pursuit_curriculum(),
-            make_simple_pursuit_curriculum(num_noise_instances=2),
-            make_simple_pursuit_curriculum(
-                num_objects_in_instance=4, num_noise_instances=2
-            ),
-        ]
-    )
+    return [
+        make_simple_pursuit_curriculum(),
+        make_simple_pursuit_curriculum(num_noise_instances=2),
+        make_simple_pursuit_curriculum(num_objects_in_instance=4, num_noise_instances=2),
+    ]
