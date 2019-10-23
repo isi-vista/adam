@@ -74,7 +74,7 @@ class PerceptionGraph:
             # we want bigger things on the left, smaller things on the right,
             # but graphviz wants to put edge sources on the left,
             # so we need to reverse these edges from GraphViz's point-of-view.
-            reverse_rank_order = label == PART_OF
+            reverse_rank_order = label == PART_OF or edge_label == "reference-object"
 
             # in-region relationships can run anywhich way
             # without respect to a good layout hierarchy
