@@ -123,6 +123,46 @@ def test_two_objects():
     ).as_token_sequence() == ("two", "boxes")
 
 
+def test_two_objects_with_dad():
+    table_1 = SituationObject(
+        TABLE,
+        debug_handle="table_0",
+        axes=GAILA_PHASE_1_ONTOLOGY.structural_schemata(TABLE)[0].axes,
+    )
+    table_2 = SituationObject(
+        TABLE,
+        debug_handle="table_1",
+        axes=GAILA_PHASE_1_ONTOLOGY.structural_schemata(TABLE)[0].axes,
+    )
+    dad = SituationObject(
+        DAD,
+        debug_handle="dad",
+        axes=GAILA_PHASE_1_ONTOLOGY.structural_schemata(PERSON)[0].axes,
+    )
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[table_1, dad],
+        other_objects=[table_2],
+        always_relations=[
+            Relation(
+                IN_REGION,
+                dad,
+                Region(
+                    table_1,
+                    distance=PROXIMAL,
+                    direction=Direction(
+                        positive=True,
+                        relative_to_axis=HorizontalAxisOfObject(table_1, index=0),
+                    ),
+                ),
+            )
+        ],
+    )
+    assert only(
+        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
+    ).as_token_sequence() == ("Dad", "beside", "a", "table")
+
+
 def test_many_objects():
     ball_1 = SituationObject(BALL, debug_handle="ball_0")
     ball_2 = SituationObject(BALL, debug_handle="ball_1")
