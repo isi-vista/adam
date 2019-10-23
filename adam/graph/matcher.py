@@ -266,17 +266,12 @@ class GraphMatching:
                 # Note that can be multiple relations(=edges) between nodes, so we need to ensure
                 # that each relation in the pattern has *at least one* matching relation
                 # in the graph
-                for pattern_edge in self.pattern[pattern_predecessor][pattern_node]:
-                    pattern_predicate = pattern_edge["predicate"]
-                    found_match = False
-                    for graph_edge in self.graph[predecessor_mapped_node_in_graph][
-                        graph_node
-                    ]:
-                        if pattern_predicate(graph_edge):
-                            found_match = True
-                            break
-                    if not found_match:
-                        return False
+                # TODO: the current implementation does not handle multi-graphs
+                pattern_edge = self.pattern.edges[pattern_predecessor, pattern_node]
+                pattern_predicate = pattern_edge["predicate"]
+                graph_edge = self.graph.edges[predecessor_mapped_node_in_graph, graph_node]
+                if not pattern_predicate(predecessor_mapped_node_in_graph, graph_edge["label"], graph_node):
+                    return False
 
         for pattern_successor in self.pattern[pattern_node]:
             successor_mapped_node_in_graph = self.pattern_node_to_graph_node.get(
@@ -289,17 +284,13 @@ class GraphMatching:
                 # Note that can be multiple relations(=edges) between nodes, so we need to ensure
                 # that each relation in the pattern has *at least one* matching relation
                 # in the graph
-                for pattern_edge in self.pattern[pattern_node][pattern_successor]:
-                    pattern_predicate = pattern_edge["predicate"]
-                    found_match = False
-                    for graph_edge in self.graph[graph_node][
-                        successor_mapped_node_in_graph
-                    ]:
-                        if pattern_predicate(graph_edge):
-                            found_match = True
-                            break
-                    if not found_match:
-                        return False
+                # TODO: the current implementation does not handle multi-graphs
+                pattern_edge = self.pattern.edges[pattern_node, pattern_successor]
+                pattern_predicate = pattern_edge["predicate"]
+                graph_edge = self.graph.edges[graph_node, successor_mapped_node_in_graph]
+                if not pattern_predicate(graph_node, graph_edge["label"], successor_mapped_node_in_graph):
+                    return False
+        return True
 
     def subgraph_is_isomorphic(self):
         """Returns True if a subgraph of G1 is isomorphic to G2."""
