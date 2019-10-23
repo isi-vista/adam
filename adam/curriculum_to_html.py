@@ -29,7 +29,7 @@ from vistautils.preconditions import check_state
 
 from adam.curriculum.phase1_curriculum import GAILA_PHASE_1_CURRICULUM
 from adam.curriculum.preposition_curriculum import make_prepositions_curriculum
-from adam.curriculum.pursuit_curriculum import make_simple_pursuit_curriculum
+from adam.curriculum.pursuit_curriculum import make_pursuit_curriculum
 from adam.experiment import InstanceGroup
 from adam.geon import Geon
 from adam.axes import WORLD_AXES, AxesInfo
@@ -102,7 +102,7 @@ EXPLANATION_HEADER = (
 STR_TO_CURRICULUM = {
     "phase1": GAILA_PHASE_1_CURRICULUM,
     "prepositions": make_prepositions_curriculum(),
-    "pursuit": [make_simple_pursuit_curriculum()],
+    "pursuit": make_pursuit_curriculum(),
 }
 
 
