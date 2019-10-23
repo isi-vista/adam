@@ -832,7 +832,7 @@ def _make_cup_schema() -> ObjectStructuralSchema:
                 orienting_axes=[side_to_side_0, side_to_side_1],
                 axis_relations=[
                     bigger_than(bottom_to_top, side_to_side_0),
-                    bigger_than(bottom_to_top, side_to_side_0),
+                    bigger_than(bottom_to_top, side_to_side_1),
                 ],
             ),
         ),
