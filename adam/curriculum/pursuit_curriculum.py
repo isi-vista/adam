@@ -43,11 +43,6 @@ def make_simple_pursuit_curriculum(
     An instance is noisy if none of the objects correspond to the word.
     For each type of object of interest, we will generate *num_instances_per_object_type* instances,
     of which *num_noise_instances_per_object_type* will be noisy.
-    Args:
-        num_instances: total number of learning instances for each object to learn
-        num_noise_instances: number of noisy learning instances in each set of learning instances. A noisy instance in
-        a scene where the utterance doesn't match the situation and perception (e.g. hearing "ball" while seeing a cup).
-        num_objects_in_instance: number of objects in each instance
     """
     if num_noise_instances > num_instances:
         raise RuntimeError("Cannot have more noise than regular exemplars")
@@ -89,7 +84,15 @@ def make_simple_pursuit_curriculum(
                 ),
             ).instances()
         )
-        all_instances.extend(non_noise_instances)
+
+        # Filter out instances in which the target is present more than once, to ensure "a ball" instead of "the balls"
+        for instance in non_noise_instances:
+            # If the target appears exactly once (does not appear in background objects) keep using this instance
+            situation = instance[0]
+            if situation and not any(
+                [obj.ontology_node == target_object for obj in situation.other_objects]
+            ):
+                all_instances.append(instance)
 
         # Create instances for noise
         noise_instances = phase1_instances(
@@ -101,14 +104,29 @@ def make_simple_pursuit_curriculum(
                 ontology=GAILA_PHASE_1_ONTOLOGY,
             ),
         ).instances()
+        # [1] is the index of the linguistic description in an instance
+        # It doesn't matter which non-noise instance is chosen
+        # because they all have the object type name as their linguistic description.
+        target_object_linguistic_description = all_instances[-1][1]
         for (situation, _, perception) in noise_instances:
-            # For each instance to be replaced by a noisy instance, we keep the correct utterance, but
-            # replace the situation and perception. We do this to test the model's tolerance to varying degrees of
-            # noise that reflects noisy instances in the real-world.
-            linguistic_description = PHASE1_CHOOSER.choice(non_noise_instances)[1]
-            all_instances.append((situation, linguistic_description, perception))
+            # A noise instance needs to have the word for our target object
+            # while not actually having our target object be present.
+            # However, our language generator can't generate irrelevant language for a situation.
+            # Therefore, we generate the instance as normal above,
+            # but here we replace its linguistic description with the word for the target object.
 
-    description = f"simple_pursuit_curriculum_examples-{num_instances}_objects-{num_objects_in_instance}_noise-{num_noise_instances}"
+            # Skip the noise instance if the target object appears in the noise data
+            if situation and not any(
+                [obj.ontology_node == target_object for obj in situation.all_objects]
+            ):
+                all_instances.append(
+                    (situation, target_object_linguistic_description, perception)
+                )
+
+    description = (
+        f"simple_pursuit_curriculum_examples-{num_instances}_objects-{num_objects_in_instance}_noise-"
+        f"{num_noise_instances} "
+    )
     rng = random.Random()
     rng.seed(0)
     random.shuffle(all_instances, rng.random)
