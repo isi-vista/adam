@@ -4,6 +4,7 @@ Curricula for DARPA GAILA Phase 1
 
 from itertools import chain
 from typing import Iterable
+
 from more_itertools import flatten
 
 from adam.axes import HorizontalAxisOfObject, FacingAddresseeAxis, AxesInfo
