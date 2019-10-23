@@ -1370,7 +1370,7 @@ _ARM_SCHEMA = ObjectStructuralSchema(
     sub_object_relations=flatten_relations(
         [contacts([_ARM_SCHEMA_UPPER, _ARM_SCHEMA_HAND], _ARM_SCHEMA_LOWER)]
     ),
-    axes=_ARM_SCHEMA_UPPER.schema.axes,
+    axes=_ARM_SCHEMA_UPPER.schema.axes.copy(),
 )
 
 # Schemata describing an animal leg
@@ -1387,7 +1387,7 @@ _ANIMAL_LEG_SCHEMA = ObjectStructuralSchema(
             bigger_than([_LEG_SEGMENT_0, _LEG_SEGMENT_1], _HUMAN_FOOT),
         ]
     ),
-    axes=_LEG_SEGMENT_0.schema.axes,
+    axes=_LEG_SEGMENT_0.schema.axes.copy(),
 )
 
 # schemata describing the sub-object structural nature of a Person
@@ -1422,7 +1422,7 @@ _PERSON_SCHEMA = ObjectStructuralSchema(
             contacts(_PERSON_SCHEMA_TORSO, _PERSON_SCHEMA_APPENDAGES),
         ]
     ),
-    axes=_PERSON_SCHEMA_HEAD.schema.axes,
+    axes=_PERSON_SCHEMA_HEAD.schema.axes.copy(),
 )
 
 
@@ -1458,7 +1458,7 @@ _CHAIR_SCHEMA = ObjectStructuralSchema(
             above(_CHAIR_SCHEMA_BACK, _CHAIR_SCHEMA_SEAT),
         ]
     ),
-    axes=_CHAIR_SCHEMA_BACK.schema.axes,
+    axes=_CHAIR_SCHEMA_BACK.schema.axes.copy(),
 )
 
 # schemata describing the sub-object structural nature of a Table
@@ -1490,7 +1490,7 @@ _TABLE_SCHEMA = ObjectStructuralSchema(
             above(_TABLE_SCHEMA_TABLETOP, _TABLE_LEGS),
         ]
     ),
-    axes=_TABLE_SCHEMA_LEG_1.schema.axes,
+    axes=_TABLE_SCHEMA_LEG_1.schema.axes.copy(),
 )
 
 # schemata describing the sub-object structural nature of a dog
@@ -1532,7 +1532,7 @@ _DOG_SCHEMA = ObjectStructuralSchema(
             bigger_than(_DOG_SCHEMA_TORSO, _DOG_SCHEMA_TAIL),
         ]
     ),
-    axes=_DOG_SCHEMA_TORSO.schema.axes,
+    axes=_DOG_SCHEMA_TORSO.schema.axes.copy(),
 )
 
 # schemata describing the sub-object structural nature of a bird
@@ -1570,7 +1570,7 @@ _BIRD_SCHEMA = ObjectStructuralSchema(
             bigger_than(_BIRD_SCHEMA_TORSO, _BIRD_LEGS),
         ]
     ),
-    axes=_BIRD_SCHEMA_TORSO.schema.axes,
+    axes=_BIRD_SCHEMA_TORSO.schema.axes.copy(),
 )
 
 # schemata describing the sub-object structural nature of a house
@@ -1595,7 +1595,7 @@ _HOUSE_SCHEMA = ObjectStructuralSchema(
             above(_HOUSE_SCHEMA_ROOF, _HOUSE_SCHEMA_GROUND_FLOOR),
         ]
     ),
-    axes=_HOUSE_SCHEMA_GROUND_FLOOR.schema.axes,
+    axes=_HOUSE_SCHEMA_GROUND_FLOOR.schema.axes.copy(),
 )
 
 # schemata describing the sub-object structural nature of a car
@@ -1625,7 +1625,7 @@ _CAR_SCHEMA = ObjectStructuralSchema(
     sub_object_relations=flatten_relations(
         [contacts(_CAR_SCHEMA_TIRES, _CAR_SCHEMA_BODY)]
     ),
-    axes=_CAR_SCHEMA_BODY.schema.axes,
+    axes=_CAR_SCHEMA_BODY.schema.axes.copy(),
 )
 
 # schemata describing the sub-object structural nature of a truck cab
@@ -1657,7 +1657,7 @@ _TRUCK_CAB_SCHEMA = ObjectStructuralSchema(
             contacts(_TRUCK_CAB_BODY, _TRUCK_CAB_TIRES),
         ]
     ),
-    axes=_TRUCK_CAB_BODY.schema.axes,
+    axes=_TRUCK_CAB_BODY.schema.axes.copy(),
 )
 
 # schemata describing the sub-object structural nature of a truck trailer
@@ -1689,7 +1689,7 @@ _TRUCK_TRAILER_SCHEMA = ObjectStructuralSchema(
             bigger_than(_TRUCK_TRAILER_FLATBED, _TRUCK_TRAILER_TIRES),
         ]
     ),
-    axes=_TRUCK_TRAILER_FLATBED.schema.axes,
+    axes=_TRUCK_TRAILER_FLATBED.schema.axes.copy(),
 )
 
 # Truck in mind is a Semi Trailer with flat bed trailer
@@ -1706,7 +1706,7 @@ _TRUCK_SCHEMA = ObjectStructuralSchema(
             bigger_than(_TRUCK_SCHEMA_TRAILER, _TRUCK_SCHEMA_CAB),
         ]
     ),
-    axes=_TRUCK_SCHEMA_CAB.schema.axes,
+    axes=_TRUCK_SCHEMA_TRAILER.schema.axes.copy(),
 )
 
 _PUT_AGENT = ActionDescriptionVariable(
