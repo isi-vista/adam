@@ -1,0 +1,6 @@
+_includes:
+    - ../root.params
+
+sort_by_utterance: True
+random_seed: 1
+curriculum: "phase1"

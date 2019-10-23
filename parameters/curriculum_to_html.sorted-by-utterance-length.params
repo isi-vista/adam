@@ -1,6 +1,0 @@
-_includes:
-    - root.params
-
-output_directory: "%adam_experiment_root%/outputs/curriculum_dump_sorted_by_length"
-sort_by_utterance: True
-random_seed: 1
