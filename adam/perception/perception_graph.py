@@ -456,11 +456,11 @@ class PerceptionGraphPatternMatching:
             self.graph_to_match_against._graph,  # pylint:disable=protected-access
             self.pattern._graph,
         )
-        for mapping in matching.match():
+        for mapping in matching.subgraph_isomorphisms_iter():
             yield PerceptionGraphPatternMatch(
                 graph_matched_against=self.graph_to_match_against,
                 matched_pattern=self.pattern,
-                matched_sub_graph=matching.graph.subgraph(mapping.values()).copy(),
+                matched_sub_graph=PerceptionGraph(matching.graph.subgraph(mapping.values()).copy()),
                 alignment=mapping,
             )
 
