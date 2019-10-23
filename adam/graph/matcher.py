@@ -15,7 +15,7 @@ where matches most frequently fail in order to assist with hypothesis refinement
 """
 
 import sys
-import networkx as nx
+
 from networkx import DiGraph
 
 
