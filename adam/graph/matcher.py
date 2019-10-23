@@ -196,8 +196,8 @@ class GraphMatching:
             yield self.mapping
         else:
             for graph_node, pattern_node in self.candidate_pairs_iter():
-                if self.syntactic_feasibility(graph_node, pattern_node):
-                    if self.semantic_feasibility(graph_node, pattern_node):
+                if self.semantic_feasibility(graph_node, pattern_node):
+                    if self.syntactic_feasibility(graph_node, pattern_node):
                         # Recursive call, adding the feasible state.
                         newstate = self.state.__class__(self, graph_node, pattern_node)
                         for mapping in self.match():
