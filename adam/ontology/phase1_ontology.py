@@ -1655,6 +1655,7 @@ _TRUCK_CAB_SCHEMA = ObjectStructuralSchema(
         [
             above(_TRUCK_CAB_BODY, _TRUCK_CAB_TIRES),
             contacts(_TRUCK_CAB_BODY, _TRUCK_CAB_TIRES),
+            bigger_than(_TRUCK_CAB_BODY, _TRUCK_CAB_TIRES),
         ]
     ),
     axes=_TRUCK_CAB_BODY.schema.axes.copy(),
