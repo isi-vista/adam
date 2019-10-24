@@ -449,11 +449,13 @@ class PerceptionGraphPatternMatching:
         validator=instance_of(PerceptionGraph)
     )
 
-    def matches(self, *, debug_mapping_sink: Optional[Dict[Any, Any]]=None) -> Iterable[
+    def matches(self, *, debug_mapping_sink: Optional[Dict[Any, Any]]=None,
+                use_lookahead_pruning: bool = True) -> Iterable[
         PerceptionGraphPatternMatch]:
         matching = GraphMatching(
             self.graph_to_match_against._graph,  # pylint:disable=protected-access
             self.pattern._graph,
+            use_lookahead_pruning=use_lookahead_pruning
         )
         got_a_match = False
         for mapping in matching.subgraph_isomorphisms_iter(debug=debug_mapping_sink is not None):
@@ -470,6 +472,16 @@ class PerceptionGraphPatternMatching:
             # for debugging purposes.
             debug_mapping_sink.clear()
             debug_mapping_sink.update(matching.debug_largest_match)
+
+    def debug_matching(self, *, use_lookahead_pruning: bool=True) -> GraphMatching:
+        matching = GraphMatching(
+            self.graph_to_match_against._graph,  # pylint:disable=protected-access
+            self.pattern._graph,
+            use_lookahead_pruning=use_lookahead_pruning
+        )
+        for _ in matching.subgraph_isomorphisms_iter(debug=True):
+            pass
+        return matching
 
 
 REFERENCE_OBJECT_LABEL = OntologyNode("reference-object")

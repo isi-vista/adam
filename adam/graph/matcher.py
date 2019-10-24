@@ -15,7 +15,10 @@ where matches most frequently fail in order to assist with hypothesis refinement
 """
 
 import sys
+from collections import defaultdict
+from typing import Mapping, Any
 
+from immutablecollections import immutableset
 from networkx import DiGraph
 
 
@@ -25,7 +28,8 @@ class GraphMatching:
     Suitable for Graph and MultiGraph instances.
     """
 
-    def __init__(self, graph: DiGraph, pattern: DiGraph) -> None:
+    def __init__(self, graph: DiGraph, pattern: DiGraph,
+                 use_lookahead_pruning: bool = True) -> None:
         self.graph = graph
         self.pattern = pattern
         self.graph_nodes = set(graph.nodes())
@@ -45,6 +49,9 @@ class GraphMatching:
         # in debug mode, we keep track of the largest (by # of nodes) incomplete match
         # we can find
         self.debug_largest_match = {}
+        self.use_lookahead_pruning = use_lookahead_pruning
+
+        self._reset_debugging_maps()
 
         # Initialize state
         self.initialize()
@@ -148,6 +155,40 @@ class GraphMatching:
         # Provide a convenient way to access the isomorphism mapping.
         self.mapping = self.graph_node_to_pattern_node.copy()
 
+    def debug_diagnostics(self) -> Mapping[Any, Any]:
+        # for nodes, we want to partition them into three groups
+        pattern_nodes_which_were_compared_and_matched_at_least_once = immutableset(
+            pattern_node for (pattern_node, attempts) in
+            self.pattern_node_to_num_predicate_attempts.items()
+            if self.pattern_node_to_num_predicate_failures[pattern_node] < attempts
+        )
+        pattern_nodes_which_were_compared_but_never_found_a_match = immutableset(
+            pattern_node for (pattern_node, attempts) in
+            self.pattern_node_to_num_predicate_attempts.items()
+            if self.pattern_node_to_num_predicate_failures[pattern_node] == attempts
+        )
+
+        failed_edges = immutableset(
+            pattern_edge for (pattern_edge, attempts) in
+            self.pattern_edge_to_num_match_attempts
+            if self.pattern_edge_to_num_predicate_failures[pattern_edge] +
+            self.pattern_edge_to_num_presence_failures[pattern_edge] == attempts
+        )
+
+        syntax_node_failures = immutableset(
+            pattern_node for (pattern_node, attempts) in
+            self.node_to_syntax_attempts.items()
+            if self.node_to_syntax_failures[pattern_node] == attempts
+        )
+
+        return {
+            'nodes-matched-at-least-once' :
+                pattern_nodes_which_were_compared_and_matched_at_least_once,
+            'nodes-never-matched' : pattern_nodes_which_were_compared_but_never_found_a_match,
+            'failed_edges' : failed_edges,
+            'syntax_failures' : syntax_node_failures
+        }
+
     def is_isomorphic(self):
         """Returns True if G1 and G2 are isomorphic graphs."""
 
@@ -198,7 +239,9 @@ class GraphMatching:
             yield self.mapping
         else:
             for graph_node, pattern_node in self.candidate_pairs_iter():
-                if self.semantic_feasibility(graph_node, pattern_node):
+                if self.semantic_feasibility(graph_node, pattern_node, debug=debug):
+                    if debug:
+                        self.node_to_syntax_attempts[pattern_node] += 1
                     if self.syntactic_feasibility(graph_node, pattern_node):
                         # Recursive call, adding the feasible state.
                         newstate = self.state.__class__(self, graph_node, pattern_node)
@@ -207,8 +250,11 @@ class GraphMatching:
 
                         # restore data structures
                         newstate.restore()
+                    else:
+                        if debug:
+                            self.node_to_syntax_failures[pattern_node] += 1
 
-    def semantic_feasibility(self, graph_node, pattern_node):
+    def semantic_feasibility(self, graph_node, pattern_node, debug=False):
         """Returns True if adding (G1_node, G2_node) is symantically feasible.
 
         The semantic feasibility function should return True if it is
@@ -247,9 +293,14 @@ class GraphMatching:
         should consider multigraphs.
         """
 
+        if debug:
+            self.pattern_node_to_num_predicate_attempts[pattern_node] += 1
+
         # We assume the nodes of G2 are node predicates which must hold true for the
         # corresponding G1 graph node for there to be a match.
         if not pattern_node(graph_node):
+            if debug:
+                self.pattern_node_to_num_predicate_failures[pattern_node] += 1
             return False
 
         # Now comes the trickier bit of testing edge predicates.
@@ -272,9 +323,21 @@ class GraphMatching:
                 pattern_edge = self.pattern.edges[pattern_predecessor, pattern_node]
                 pattern_predicate = pattern_edge["predicate"]
                 graph_edge = self.graph.get_edge_data(predecessor_mapped_node_in_graph, graph_node)
-                if not (graph_edge and pattern_predicate(predecessor_mapped_node_in_graph,
-                graph_edge["label"],
-                                          graph_node)):
+
+                if debug:
+                    self.pattern_edge_to_num_match_attempts[(pattern_predecessor, pattern_node)] +=1
+
+                if not graph_edge:
+                    if debug:
+                        self.pattern_edge_to_num_presence_failures[(pattern_predecessor,
+                                                                    pattern_node)] += 1
+                    return False
+                if not pattern_predicate(predecessor_mapped_node_in_graph,
+                    graph_edge["label"],
+                                          graph_node):
+                    if debug:
+                        self.pattern_edge_to_num_predicate_failures[(pattern_predecessor,
+                                                                     pattern_node)] += 1
                     return False
 
         for pattern_successor in self.pattern[pattern_node]:
@@ -292,8 +355,21 @@ class GraphMatching:
                 pattern_edge = self.pattern.edges[pattern_node, pattern_successor]
                 pattern_predicate = pattern_edge["predicate"]
                 graph_edge = self.graph.get_edge_data(graph_node, successor_mapped_node_in_graph)
-                if not (graph_edge and pattern_predicate(graph_node, graph_edge["label"],
-                                          successor_mapped_node_in_graph)):
+
+                if debug:
+                    self.pattern_edge_to_num_match_attempts[(pattern_node, pattern_successor)] +=1
+
+                if not graph_edge:
+                    if debug:
+                        self.pattern_edge_to_num_presence_failures[(pattern_node,
+                                                                    pattern_successor)] += 1
+                    return False
+
+                if not pattern_predicate(graph_node, graph_edge["label"],
+                                          successor_mapped_node_in_graph):
+                    if debug:
+                        self.pattern_edge_to_num_predicate_failures[(pattern_node,
+                                                                     pattern_successor)] += 1
                     return False
         return True
 
@@ -321,6 +397,7 @@ class GraphMatching:
         self.test = "subgraph"
         self.initialize()
         self.debug_largest_match = {}
+        self._reset_debugging_maps()
         for mapping in self.match(debug=debug):
             yield mapping
 
@@ -454,139 +531,154 @@ class GraphMatching:
                     ) != self.pattern.number_of_edges(pattern_node, successor):
                         return False
 
-        if self.test != "mono":
+        if self.use_lookahead_pruning:
+            if self.test != "mono":
 
-            # Look ahead 1
+                # Look ahead 1
 
-            # R_termin
-            # The number of predecessors of n that are in T_1^{in} is equal to the
-            # number of predecessors of m that are in T_2^{in}.
-            num1 = 0
-            for predecessor in self.graph.pred[graph_node]:
-                if (predecessor in self.graph_nodes_in_or_preceding_match) and (
-                    predecessor not in self.graph_node_to_pattern_node
-                ):
-                    num1 += 1
-            num2 = 0
-            for predecessor in self.pattern.pred[pattern_node]:
-                if (predecessor in self.pattern_nodes_in_or_preceding_match) and (
-                    predecessor not in self.pattern_node_to_graph_node
-                ):
-                    num2 += 1
-            if self.test == "graph":
-                if not (num1 == num2):
-                    return False
-            else:  # self.test == 'subgraph'
-                if not (num1 >= num2):
-                    return False
+                # R_termin
+                # The number of predecessors of n that are in T_1^{in} is equal to the
+                # number of predecessors of m that are in T_2^{in}.
+                num1 = 0
+                for predecessor in self.graph.pred[graph_node]:
+                    if (predecessor in self.graph_nodes_in_or_preceding_match) and (
+                        predecessor not in self.graph_node_to_pattern_node
+                    ):
+                        num1 += 1
+                num2 = 0
+                for predecessor in self.pattern.pred[pattern_node]:
+                    if (predecessor in self.pattern_nodes_in_or_preceding_match) and (
+                        predecessor not in self.pattern_node_to_graph_node
+                    ):
+                        num2 += 1
+                if self.test == "graph":
+                    if not (num1 == num2):
+                        return False
+                else:  # self.test == 'subgraph'
+                    if not (num1 >= num2):
+                        return False
 
-            # The number of successors of n that are in T_1^{in} is equal to the
-            # number of successors of m that are in T_2^{in}.
-            num1 = 0
-            for successor in self.graph[graph_node]:
-                if (successor in self.graph_nodes_in_or_preceding_match) and (
-                    successor not in self.graph_node_to_pattern_node
-                ):
-                    num1 += 1
-            num2 = 0
-            for successor in self.pattern[pattern_node]:
-                if (successor in self.pattern_nodes_in_or_preceding_match) and (
-                    successor not in self.pattern_node_to_graph_node
-                ):
-                    num2 += 1
-            if self.test == "graph":
-                if not (num1 == num2):
-                    return False
-            else:  # self.test == 'subgraph'
-                if not (num1 >= num2):
-                    return False
+                # The number of successors of n that are in T_1^{in} is equal to the
+                # number of successors of m that are in T_2^{in}.
+                num1 = 0
+                for successor in self.graph[graph_node]:
+                    if (successor in self.graph_nodes_in_or_preceding_match) and (
+                        successor not in self.graph_node_to_pattern_node
+                    ):
+                        num1 += 1
+                num2 = 0
+                for successor in self.pattern[pattern_node]:
+                    if (successor in self.pattern_nodes_in_or_preceding_match) and (
+                        successor not in self.pattern_node_to_graph_node
+                    ):
+                        num2 += 1
+                if self.test == "graph":
+                    if not (num1 == num2):
+                        return False
+                else:  # self.test == 'subgraph'
+                    if not (num1 >= num2):
+                        return False
 
-            # R_termout
+                # R_termout
 
-            # The number of predecessors of n that are in T_1^{out} is equal to the
-            # number of predecessors of m that are in T_2^{out}.
-            num1 = 0
-            for predecessor in self.graph.pred[graph_node]:
-                if (predecessor in self.graph_nodes_in_or_succeeding_match) and (
-                    predecessor not in self.graph_node_to_pattern_node
-                ):
-                    num1 += 1
-            num2 = 0
-            for predecessor in self.pattern.pred[pattern_node]:
-                if (predecessor in self.pattern_nodes_in_or_succeeding_match) and (
-                    predecessor not in self.pattern_node_to_graph_node
-                ):
-                    num2 += 1
-            if self.test == "graph":
-                if not (num1 == num2):
-                    return False
-            else:  # self.test == 'subgraph'
-                if not (num1 >= num2):
-                    return False
+                # The number of predecessors of n that are in T_1^{out} is equal to the
+                # number of predecessors of m that are in T_2^{out}.
+                num1 = 0
+                for predecessor in self.graph.pred[graph_node]:
+                    if (predecessor in self.graph_nodes_in_or_succeeding_match) and (
+                        predecessor not in self.graph_node_to_pattern_node
+                    ):
+                        num1 += 1
+                num2 = 0
+                for predecessor in self.pattern.pred[pattern_node]:
+                    if (predecessor in self.pattern_nodes_in_or_succeeding_match) and (
+                        predecessor not in self.pattern_node_to_graph_node
+                    ):
+                        num2 += 1
+                if self.test == "graph":
+                    if not (num1 == num2):
+                        return False
+                else:  # self.test == 'subgraph'
+                    if not (num1 >= num2):
+                        return False
 
-            # The number of successors of n that are in T_1^{out} is equal to the
-            # number of successors of m that are in T_2^{out}.
-            num1 = 0
-            for successor in self.graph[graph_node]:
-                if (successor in self.graph_nodes_in_or_succeeding_match) and (
-                    successor not in self.graph_node_to_pattern_node
-                ):
-                    num1 += 1
-            num2 = 0
-            for successor in self.pattern[pattern_node]:
-                if (successor in self.pattern_nodes_in_or_succeeding_match) and (
-                    successor not in self.pattern_node_to_graph_node
-                ):
-                    num2 += 1
-            if self.test == "graph":
-                if not (num1 == num2):
-                    return False
-            else:  # self.test == 'subgraph'
-                if not (num1 >= num2):
-                    return False
+                # The number of successors of n that are in T_1^{out} is equal to the
+                # number of successors of m that are in T_2^{out}.
+                num1 = 0
+                for successor in self.graph[graph_node]:
+                    if (successor in self.graph_nodes_in_or_succeeding_match) and (
+                        successor not in self.graph_node_to_pattern_node
+                    ):
+                        num1 += 1
+                num2 = 0
+                for successor in self.pattern[pattern_node]:
+                    if (successor in self.pattern_nodes_in_or_succeeding_match) and (
+                        successor not in self.pattern_node_to_graph_node
+                    ):
+                        num2 += 1
+                if self.test == "graph":
+                    if not (num1 == num2):
+                        return False
+                else:  # self.test == 'subgraph'
+                    if not (num1 >= num2):
+                        return False
 
-            # Look ahead 2
+                # Look ahead 2
 
-            # R_new
+                # R_new
 
-            # The number of predecessors of n that are neither in the core_1 nor
-            # T_1^{in} nor T_1^{out} is equal to the number of predecessors of m
-            # that are neither in core_2 nor T_2^{in} nor T_2^{out}.
-            num1 = 0
-            for predecessor in self.graph.pred[graph_node]:
-                if (predecessor not in self.graph_nodes_in_or_preceding_match) and (predecessor not in self.graph_nodes_in_or_succeeding_match):
-                    num1 += 1
-            num2 = 0
-            for predecessor in self.pattern.pred[pattern_node]:
-                if (predecessor not in self.pattern_nodes_in_or_preceding_match) and (predecessor not in self.pattern_nodes_in_or_succeeding_match):
-                    num2 += 1
-            if self.test == "graph":
-                if not (num1 == num2):
-                    return False
-            else:  # self.test == 'subgraph'
-                if not (num1 >= num2):
-                    return False
+                # The number of predecessors of n that are neither in the core_1 nor
+                # T_1^{in} nor T_1^{out} is equal to the number of predecessors of m
+                # that are neither in core_2 nor T_2^{in} nor T_2^{out}.
+                num1 = 0
+                for predecessor in self.graph.pred[graph_node]:
+                    if (predecessor not in self.graph_nodes_in_or_preceding_match) and (predecessor not in self.graph_nodes_in_or_succeeding_match):
+                        num1 += 1
+                num2 = 0
+                for predecessor in self.pattern.pred[pattern_node]:
+                    if (predecessor not in self.pattern_nodes_in_or_preceding_match) and (predecessor not in self.pattern_nodes_in_or_succeeding_match):
+                        num2 += 1
+                if self.test == "graph":
+                    if not (num1 == num2):
+                        return False
+                else:  # self.test == 'subgraph'
+                    if not (num1 >= num2):
+                        return False
 
-            # The number of successors of n that are neither in the core_1 nor
-            # T_1^{in} nor T_1^{out} is equal to the number of successors of m
-            # that are neither in core_2 nor T_2^{in} nor T_2^{out}.
-            num1 = 0
-            for successor in self.graph[graph_node]:
-                if (successor not in self.graph_nodes_in_or_preceding_match) and (successor not in self.graph_nodes_in_or_succeeding_match):
-                    num1 += 1
-            num2 = 0
-            for successor in self.pattern[pattern_node]:
-                if (successor not in self.pattern_nodes_in_or_preceding_match) and (successor not in self.pattern_nodes_in_or_succeeding_match):
-                    num2 += 1
-            if self.test == "graph":
-                if not (num1 == num2):
-                    return False
-            else:  # self.test == 'subgraph'
-                if not (num1 >= num2):
-                    return False
+                # The number of successors of n that are neither in the core_1 nor
+                # T_1^{in} nor T_1^{out} is equal to the number of successors of m
+                # that are neither in core_2 nor T_2^{in} nor T_2^{out}.
+                num1 = 0
+                for successor in self.graph[graph_node]:
+                    if (successor not in self.graph_nodes_in_or_preceding_match) and (successor not in self.graph_nodes_in_or_succeeding_match):
+                        num1 += 1
+                num2 = 0
+                for successor in self.pattern[pattern_node]:
+                    if (successor not in self.pattern_nodes_in_or_preceding_match) and (successor not in self.pattern_nodes_in_or_succeeding_match):
+                        num2 += 1
+                if self.test == "graph":
+                    if not (num1 == num2):
+                        return False
+                else:  # self.test == 'subgraph'
+                    if not (num1 >= num2):
+                        return False
 
         # Otherwise, this node pair is syntactically feasible!
         return True
+
+    def _reset_debugging_maps(self) -> None:
+        # how often does each node fail to match due to predicates?
+        self.pattern_node_to_num_predicate_failures = defaultdict(int)
+        self.pattern_node_to_num_predicate_attempts = defaultdict(int)
+
+        # how often does each edge fail to match due to the edge predicate returning false?
+        self.pattern_edge_to_num_predicate_failures = defaultdict(int)
+        # and how often because no corresponding edge exists to apply the predicate to?
+        self.pattern_edge_to_num_presence_failures = defaultdict(int)
+        self.pattern_edge_to_num_match_attempts = defaultdict(int)
+
+        self.node_to_syntax_failures = defaultdict(int)
+        self.node_to_syntax_attempts = defaultdict(int)
 
 
 class GraphMatchingState(object):
