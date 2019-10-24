@@ -11,19 +11,27 @@ def test_basic_3d_scene() -> None:
     app.test_scene_init()
 
     app.add_model(Shape.SQUARE, (1, 2, 2))
+    app.add_model(Shape.RECTANGULAR, (2, 2, 2))
+    try:
+        app.add_model(Shape.IRREGULAR, (4, 4, 4))
+    except KeyError:
+        pass
+    oval = app.add_model(Shape.OVALISH, (5, 5, 5))
+    app.add_model(Shape.CIRCULAR, (7, 7, 7), col=None, parent=oval)
 
-    # app.run_for_seconds(0.25)
+    app.print_scene_graph()
 
-    # app.run_for_seconds(0.25)
+    dummy_node = app.add_dummy_node("dummy")
+    other_dummy_node = app.add_dummy_node("second_dummy", dummy_node)
+
+    print(other_dummy_node)
+
+    app.test_scene_init()
 
     app.clear_scene()
-
-    # app.run_for_seconds(0.25)
 
     app.add_model(Shape.RECTANGULAR, (-2, 2, 2))
 
     app.add_model(Shape.CIRCULAR, (0, 0, 8))
 
     app.add_model(Shape.OVALISH, (4, 5, 2))
-
-    # app.run_for_seconds(0.25)
