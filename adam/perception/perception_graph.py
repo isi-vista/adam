@@ -820,19 +820,22 @@ class RelationTypeIsPredicate(EdgePredicate):
 
 @attrs(frozen=True, slots=True)
 class DirectionPredicate(EdgePredicate):
+    reference_direction: Direction[Any] = attrib(validator=instance_of(Direction))
+
     def __call__(
         self,
         source_object_perception: PerceptionGraphNode,
         edge_label: PerceptionGraphEdgeLabel,
         dest_object_percption: PerceptionGraphNode,
     ) -> bool:
-        # TODO: this currently matched any Direction whatsoever!
-        # when this is fixed be sure to also update dot_label and exactly_matching
-        return isinstance(edge_label, Direction)
+        return (
+            isinstance(edge_label, Direction)
+            and edge_label.positive == self.reference_direction.positive
+        )
 
     def dot_label(self) -> str:
-        return "dir(*)"
+        return f"dir(positive={self.reference_direction.positive})"
 
     @staticmethod
     def exactly_matching(direction: Direction[Any]) -> "DirectionPredicate":
-        return DirectionPredicate()
+        return DirectionPredicate(direction)
