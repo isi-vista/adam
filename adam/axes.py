@@ -62,7 +62,24 @@ class AxesInfo(Generic[_ObjectT], CanRemapObjects[_ObjectT]):
 
 @runtime
 class AxisFunction(Protocol, Generic[_ObjectT]):
+    r"""
+    A procedure for selecting a particular `GeonAxis`.
+
+    This is used in defining the semantics of prepositions and verbs
+    and for defining the spatial relations between parts of an object in
+    `ObjectStructuralSchema`\ ta.
+    """
     def to_concrete_axis(self, axes_info: Optional[AxesInfo[_ObjectT]]) -> GeonAxis:
+        """
+        Select a particular concrete axis.
+
+        This function will be provided with an `AxesInfo` object in concrete situations
+        which can be used to determing the relationship of object axes to the speaker
+        and the learner.
+        However, this information is not available in more abstract contexts,
+        like `ObjectStructuralSchema`,
+        and the `AxisFunction` should throw an exception if called in such a way.
+        """
         pass
 
     def copy_remapping_objects(
