@@ -579,8 +579,8 @@ class _PerceptionGeneration:
                 )
             )
 
-            # Colors require special processing, so we strip them all out and
-            # handle them later.
+            # Colors require special processing, so we ignore them for now
+            # and handle them in `_perceive_colors`.
             properties_to_perceive = [
                 property_
                 for property_ in all_object_properties
@@ -667,7 +667,6 @@ class _PerceptionGeneration:
                     f"Not sure how to generate perception for property {property_} "
                     f"which is marked as perceivable"
                 )
-            # self._property_assertion_perceptions.append(perceived_property)
 
     def _perceive_objects(self) -> None:
         if not any(
@@ -689,8 +688,6 @@ class _PerceptionGeneration:
                 "Don't yet know how to handle situation objects without "
                 "associated ontology nodes"
             )
-        # If possible, determine the object color.
-        # color = self._compute_color(situation_object)
 
         perceived_object: ObjectPerception
 
@@ -782,12 +779,7 @@ class _PerceptionGeneration:
         sub_object_to_object_perception: ImmutableDict[
             SubObject, ObjectPerception
         ] = immutabledict(
-            (
-                sub_object,
-                self._instantiate_object_schema(
-                    sub_object.schema  # inherited_color=inherited_color
-                ),
-            )
+            (sub_object, self._instantiate_object_schema(sub_object.schema))
             for sub_object in schema.sub_objects
         )
 
@@ -856,7 +848,7 @@ class _PerceptionGeneration:
             object_perception, color: Union[RgbColorPerception, OntologyNode]
         ):
             """
-            Append a color property to the set of property assertions
+            Append a color property to the list of property assertion perceptions
             """
             if isinstance(color, RgbColorPerception):
                 self._property_assertion_perceptions.append(
@@ -954,9 +946,7 @@ class _PerceptionGeneration:
                 # If we cannot determine an object's color,
                 # we don't assign one
             elif not object_graph.successors(node):
-                RuntimeError(
-                    f"Error while perceiving colors - {node} is not a tree"
-                )
+                RuntimeError(f"Error while perceiving colors - {node} is not a tree")
             for successor in object_graph.successors(node):
                 if successor not in visited:
                     dfs_walk(successor, inherited_color)
