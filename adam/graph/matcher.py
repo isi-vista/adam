@@ -73,10 +73,10 @@ class GraphMatching:
 
         # First we compute the out-terminal sets.
         T1_out = [
-            node for node in self.out_1 if node not in self.graph_node_to_pattern_node
+            node for node in self.graph_nodes_in_or_succeeding_match if node not in self.graph_node_to_pattern_node
         ]
         T2_out = [
-            node for node in self.out_2 if node not in self.pattern_node_to_graph_node
+            node for node in self.pattern_nodes_in_or_succeeding_match if node not in self.pattern_node_to_graph_node
         ]
 
         # If T1_out and T2_out are both nonempty.
@@ -92,10 +92,10 @@ class GraphMatching:
         # elif not (T1_out or T2_out):   # as suggested by [2], incorrect
         else:  # as suggested by [1], correct
             T1_in = [
-                node for node in self.in_1 if node not in self.graph_node_to_pattern_node
+                node for node in self.graph_nodes_in_or_preceding_match if node not in self.graph_node_to_pattern_node
             ]
             T2_in = [
-                node for node in self.in_2 if node not in self.pattern_node_to_graph_node
+                node for node in self.pattern_nodes_in_or_preceding_match if node not in self.pattern_node_to_graph_node
             ]
 
             # If T1_in and T2_in are both nonempty.
@@ -126,27 +126,22 @@ class GraphMatching:
         If only subclassing GraphMatcher, a redefinition is not necessary.
         """
 
-        # core_1[n] contains the index of the node paired with n, which is m,
-        #           provided n is in the mapping.
-        # core_2[m] contains the index of the node paired with m, which is n,
-        #           provided m is in the mapping.
+        # the alignment of nodes between pattern and graph for the match so far
         self.graph_node_to_pattern_node = {}
         self.pattern_node_to_graph_node = {}
 
         # See the paper for definitions of M_x and T_x^{y}
 
-        # in_1[n]  is non-zero if n is in M_1 or in T_1^{in}
-        # out_1[n] is non-zero if n is in M_1 or in T_1^{out}
-        #
-        # in_2[m]  is non-zero if m is in M_2 or in T_2^{in}
-        # out_2[m] is non-zero if m is in M_2 or in T_2^{out}
-        #
-        # The value stored is the depth of the search tree when the node became
-        # part of the corresponding set.
-        self.in_1 = {}
-        self.in_2 = {}
-        self.out_1 = {}
-        self.out_2 = {}
+        # the maps below track which nodes are on the "frontier" of the matched region
+        # of the pattern and graph matches, etc. - that is, which nodes precede or succeed them.
+        # We match nodes themselves are included in both sets for algorithmic convenience.
+        # For efficiency during search, these are dicts mapping each node
+        # to the depth of the search tree when the node was first encountered
+        # as a neighbor to the match.
+        self.graph_nodes_in_or_preceding_match = {}
+        self.pattern_nodes_in_or_preceding_match = {}
+        self.graph_nodes_in_or_succeeding_match = {}
+        self.pattern_nodes_in_or_succeeding_match = {}
 
         self.state = GraphMatchingState(self)
 
@@ -468,13 +463,13 @@ class GraphMatching:
             # number of predecessors of m that are in T_2^{in}.
             num1 = 0
             for predecessor in self.graph.pred[graph_node]:
-                if (predecessor in self.in_1) and (
+                if (predecessor in self.graph_nodes_in_or_preceding_match) and (
                     predecessor not in self.graph_node_to_pattern_node
                 ):
                     num1 += 1
             num2 = 0
             for predecessor in self.pattern.pred[pattern_node]:
-                if (predecessor in self.in_2) and (
+                if (predecessor in self.pattern_nodes_in_or_preceding_match) and (
                     predecessor not in self.pattern_node_to_graph_node
                 ):
                     num2 += 1
@@ -489,13 +484,13 @@ class GraphMatching:
             # number of successors of m that are in T_2^{in}.
             num1 = 0
             for successor in self.graph[graph_node]:
-                if (successor in self.in_1) and (
+                if (successor in self.graph_nodes_in_or_preceding_match) and (
                     successor not in self.graph_node_to_pattern_node
                 ):
                     num1 += 1
             num2 = 0
             for successor in self.pattern[pattern_node]:
-                if (successor in self.in_2) and (
+                if (successor in self.pattern_nodes_in_or_preceding_match) and (
                     successor not in self.pattern_node_to_graph_node
                 ):
                     num2 += 1
@@ -512,13 +507,13 @@ class GraphMatching:
             # number of predecessors of m that are in T_2^{out}.
             num1 = 0
             for predecessor in self.graph.pred[graph_node]:
-                if (predecessor in self.out_1) and (
+                if (predecessor in self.graph_nodes_in_or_succeeding_match) and (
                     predecessor not in self.graph_node_to_pattern_node
                 ):
                     num1 += 1
             num2 = 0
             for predecessor in self.pattern.pred[pattern_node]:
-                if (predecessor in self.out_2) and (
+                if (predecessor in self.pattern_nodes_in_or_succeeding_match) and (
                     predecessor not in self.pattern_node_to_graph_node
                 ):
                     num2 += 1
@@ -533,13 +528,13 @@ class GraphMatching:
             # number of successors of m that are in T_2^{out}.
             num1 = 0
             for successor in self.graph[graph_node]:
-                if (successor in self.out_1) and (
+                if (successor in self.graph_nodes_in_or_succeeding_match) and (
                     successor not in self.graph_node_to_pattern_node
                 ):
                     num1 += 1
             num2 = 0
             for successor in self.pattern[pattern_node]:
-                if (successor in self.out_2) and (
+                if (successor in self.pattern_nodes_in_or_succeeding_match) and (
                     successor not in self.pattern_node_to_graph_node
                 ):
                     num2 += 1
@@ -559,11 +554,11 @@ class GraphMatching:
             # that are neither in core_2 nor T_2^{in} nor T_2^{out}.
             num1 = 0
             for predecessor in self.graph.pred[graph_node]:
-                if (predecessor not in self.in_1) and (predecessor not in self.out_1):
+                if (predecessor not in self.graph_nodes_in_or_preceding_match) and (predecessor not in self.graph_nodes_in_or_succeeding_match):
                     num1 += 1
             num2 = 0
             for predecessor in self.pattern.pred[pattern_node]:
-                if (predecessor not in self.in_2) and (predecessor not in self.out_2):
+                if (predecessor not in self.pattern_nodes_in_or_preceding_match) and (predecessor not in self.pattern_nodes_in_or_succeeding_match):
                     num2 += 1
             if self.test == "graph":
                 if not (num1 == num2):
@@ -577,11 +572,11 @@ class GraphMatching:
             # that are neither in core_2 nor T_2^{in} nor T_2^{out}.
             num1 = 0
             for successor in self.graph[graph_node]:
-                if (successor not in self.in_1) and (successor not in self.out_1):
+                if (successor not in self.graph_nodes_in_or_preceding_match) and (successor not in self.graph_nodes_in_or_succeeding_match):
                     num1 += 1
             num2 = 0
             for successor in self.pattern[pattern_node]:
-                if (successor not in self.in_2) and (successor not in self.out_2):
+                if (successor not in self.pattern_nodes_in_or_preceding_match) and (successor not in self.pattern_nodes_in_or_succeeding_match):
                     num2 += 1
             if self.test == "graph":
                 if not (num1 == num2):
@@ -622,10 +617,10 @@ class GraphMatchingState(object):
             # Then we reset the class variables
             GM.graph_node_to_pattern_node = {}
             GM.pattern_node_to_graph_node = {}
-            GM.in_1 = {}
-            GM.in_2 = {}
-            GM.out_1 = {}
-            GM.out_2 = {}
+            GM.graph_nodes_in_or_preceding_match = {}
+            GM.pattern_nodes_in_or_preceding_match = {}
+            GM.graph_nodes_in_or_succeeding_match = {}
+            GM.pattern_nodes_in_or_succeeding_match = {}
 
         # Watch out! G1_node == 0 should evaluate to True.
         if graph_node is not None and pattern_node is not None:
@@ -642,10 +637,10 @@ class GraphMatchingState(object):
             self.depth = len(GM.graph_node_to_pattern_node)
 
             # First we add the new nodes...
-            for vector in (GM.in_1, GM.out_1):
+            for vector in (GM.graph_nodes_in_or_preceding_match, GM.graph_nodes_in_or_succeeding_match):
                 if graph_node not in vector:
                     vector[graph_node] = self.depth
-            for vector in (GM.in_2, GM.out_2):
+            for vector in (GM.pattern_nodes_in_or_preceding_match, GM.pattern_nodes_in_or_succeeding_match):
                 if pattern_node not in vector:
                     vector[pattern_node] = self.depth
 
@@ -662,8 +657,8 @@ class GraphMatchingState(object):
                     ]
                 )
             for node in new_nodes:
-                if node not in GM.in_1:
-                    GM.in_1[node] = self.depth
+                if node not in GM.graph_nodes_in_or_preceding_match:
+                    GM.graph_nodes_in_or_preceding_match[node] = self.depth
 
             # Updates for T_2^{in}
             new_nodes = set([])
@@ -676,8 +671,8 @@ class GraphMatchingState(object):
                     ]
                 )
             for node in new_nodes:
-                if node not in GM.in_2:
-                    GM.in_2[node] = self.depth
+                if node not in GM.pattern_nodes_in_or_preceding_match:
+                    GM.pattern_nodes_in_or_preceding_match[node] = self.depth
 
             # Updates for T_1^{out}
             new_nodes = set([])
@@ -690,8 +685,8 @@ class GraphMatchingState(object):
                     ]
                 )
             for node in new_nodes:
-                if node not in GM.out_1:
-                    GM.out_1[node] = self.depth
+                if node not in GM.graph_nodes_in_or_succeeding_match:
+                    GM.graph_nodes_in_or_succeeding_match[node] = self.depth
 
             # Updates for T_2^{out}
             new_nodes = set([])
@@ -704,8 +699,8 @@ class GraphMatchingState(object):
                     ]
                 )
             for node in new_nodes:
-                if node not in GM.out_2:
-                    GM.out_2[node] = self.depth
+                if node not in GM.pattern_nodes_in_or_succeeding_match:
+                    GM.pattern_nodes_in_or_succeeding_match[node] = self.depth
 
     def restore(self):
         """Deletes the DiGMState object and restores the class variables."""
@@ -718,7 +713,7 @@ class GraphMatchingState(object):
 
         # Now we revert the other four vectors.
         # Thus, we delete all entries which have this depth level.
-        for vector in (self.GM.in_1, self.GM.in_2, self.GM.out_1, self.GM.out_2):
+        for vector in (self.GM.graph_nodes_in_or_preceding_match, self.GM.pattern_nodes_in_or_preceding_match, self.GM.graph_nodes_in_or_succeeding_match, self.GM.pattern_nodes_in_or_succeeding_match):
             for node in list(vector.keys()):
                 if vector[node] == self.depth:
                     del vector[node]
