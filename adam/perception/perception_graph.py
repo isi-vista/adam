@@ -258,25 +258,33 @@ class PerceptionGraphPattern:
         schema_node_to_pattern_node: Dict[Any, NodePredicate],
     ) -> None:
         def map_node(node: Any) -> NodePredicate:
-            if node not in schema_node_to_pattern_node:
+            # we need to do this because multiple sub-objects with the same schemata
+            # (e.g. multiple tires of a truck) will share the same Geon, Region, and Axis objects.
+            # We therefore need to "scope" those objects to within e.g. a single tire.
+            if isinstance(node, SubObject):
+                key = node
+            else:
+                key = (object_, node)
+
+            if key not in schema_node_to_pattern_node:
                 if isinstance(node, GeonAxis):
-                    schema_node_to_pattern_node[node] = AxisPredicate.from_axis(node)
+                    schema_node_to_pattern_node[key] = AxisPredicate.from_axis(node)
                 elif isinstance(node, Geon):
-                    schema_node_to_pattern_node[node] = GeonPredicate.exactly_matching(
+                    schema_node_to_pattern_node[key] = GeonPredicate.exactly_matching(
                         node
                     )
                 elif isinstance(node, Region):
                     # TODO: double-check other aspects of region are handled by edges
-                    schema_node_to_pattern_node[node] = RegionPredicate.matching_distance(
+                    schema_node_to_pattern_node[key] = RegionPredicate.matching_distance(
                         node
                     )
                 elif isinstance(node, SubObject):
-                    schema_node_to_pattern_node[node] = AnyObjectPerception(
+                    schema_node_to_pattern_node[key] = AnyObjectPerception(
                         debug_handle=node.debug_handle
                     )
                 else:
                     raise RuntimeError(f"Don't know how to map node {node}")
-            return schema_node_to_pattern_node[node]
+            return schema_node_to_pattern_node[key]
 
         def map_edge(label: Any) -> Mapping[str, EdgePredicate]:
             if isinstance(label, OntologyNode):
