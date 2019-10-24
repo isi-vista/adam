@@ -216,7 +216,6 @@ class PerceptionGraphPattern:
 
     @staticmethod
     def from_schema(object_schema: ObjectStructuralSchema) -> "PerceptionGraphPattern":
-        # TODO geons
         graph = DiGraph()
         object_to_node: Dict[Any, NodePredicate] = {}
 
@@ -316,7 +315,6 @@ class PerceptionGraphPattern:
             )
 
     def render_to_file(self, title: str, output_file: Path) -> None:
-        # TODO: do axes play a role here?
         dot_graph = graphviz.Digraph(title)
         dot_graph.attr(rankdir="LR")
 
@@ -451,18 +449,27 @@ class PerceptionGraphPatternMatching:
         validator=instance_of(PerceptionGraph)
     )
 
-    def matches(self) -> Iterable[PerceptionGraphPatternMatch]:
+    def matches(self, *, debug_mapping_sink: Optional[Dict[Any, Any]]=None) -> Iterable[
+        PerceptionGraphPatternMatch]:
         matching = GraphMatching(
             self.graph_to_match_against._graph,  # pylint:disable=protected-access
             self.pattern._graph,
         )
-        for mapping in matching.subgraph_isomorphisms_iter():
+        got_a_match = False
+        for mapping in matching.subgraph_isomorphisms_iter(debug=debug_mapping_sink is not None):
+            got_a_match = True
             yield PerceptionGraphPatternMatch(
                 graph_matched_against=self.graph_to_match_against,
                 matched_pattern=self.pattern,
                 matched_sub_graph=PerceptionGraph(matching.graph.subgraph(mapping.values()).copy()),
                 alignment=mapping,
             )
+        if not got_a_match:
+            # we failed to match the pattern.
+            # If the user requested it, we provide the largest matching we could find
+            # for debugging purposes.
+            debug_mapping_sink.clear()
+            debug_mapping_sink.update(matching.debug_largest_match)
 
 
 REFERENCE_OBJECT_LABEL = OntologyNode("reference-object")

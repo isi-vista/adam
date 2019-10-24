@@ -42,6 +42,10 @@ class GraphMatching:
         # Declare that we will be searching for a graph-graph isomorphism.
         self.test = "graph"
 
+        # in debug mode, we keep track of the largest (by # of nodes) incomplete match
+        # we can find
+        self.debug_largest_match = {}
+
         # Initialize state
         self.initialize()
 
@@ -180,7 +184,7 @@ class GraphMatching:
         for mapping in self.match():
             yield mapping
 
-    def match(self):
+    def match(self, *, debug:bool =False):
         """Extends the isomorphism mapping.
 
         This function is called recursively to determine if a complete
@@ -189,6 +193,9 @@ class GraphMatching:
         we yield the mapping.
 
         """
+        if debug and len(self.pattern_node_to_graph_node) >= len(self.debug_largest_match):
+            self.debug_largest_match = self.pattern_node_to_graph_node.copy()
+
         if len(self.graph_node_to_pattern_node) == len(self.pattern):
             # Save the final mapping, otherwise garbage collection deletes it.
             self.mapping = self.graph_node_to_pattern_node.copy()
@@ -200,7 +207,7 @@ class GraphMatching:
                     if self.syntactic_feasibility(graph_node, pattern_node):
                         # Recursive call, adding the feasible state.
                         newstate = self.state.__class__(self, graph_node, pattern_node)
-                        for mapping in self.match():
+                        for mapping in self.match(debug=debug):
                             yield mapping
 
                         # restore data structures
@@ -313,12 +320,13 @@ class GraphMatching:
 
     #    subgraph_is_isomorphic.__doc__ += "\n" + subgraph.replace('\n','\n'+indent)
 
-    def subgraph_isomorphisms_iter(self):
+    def subgraph_isomorphisms_iter(self, *, debug: bool = False):
         """Generator over isomorphisms between a subgraph of G1 and G2."""
         # Declare that we are looking for graph-subgraph isomorphism.
         self.test = "subgraph"
         self.initialize()
-        for mapping in self.match():
+        self.debug_largest_match = {}
+        for mapping in self.match(debug=debug):
             yield mapping
 
     def subgraph_monomorphisms_iter(self):
