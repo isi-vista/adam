@@ -436,17 +436,19 @@ class AxisPredicate(NodePredicate):
 
 @attrs(frozen=True, slots=True, cmp=False)
 class GeonPredicate(NodePredicate):
+    template_geon: Geon = attrib(validator=instance_of(Geon))
+
     def __call__(self, object_perception: PerceptionGraphNode) -> bool:
-        # TODO: this currently matched any Geon whatsoever!
-        # when this is fixed be sure to also update dot_label and exactly_matching
-        return isinstance(object_perception, Geon)
+        if isinstance(object_perception, Geon):
+            return self.template_geon.cross_section == object_perception.cross_section and \
+                   self.template_geon.cross_section_size == object_perception.cross_section_size
 
     def dot_label(self) -> str:
-        return "geon(*)"
+        return f"geon({self.template_geon})"
 
     @staticmethod
     def exactly_matching(geon: Geon) -> "GeonPredicate":
-        return GeonPredicate()
+        return GeonPredicate(geon)
 
 
 @attrs(frozen=True, slots=True, cmp=False)
