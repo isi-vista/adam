@@ -65,8 +65,10 @@ class ObjectStructuralSchema(HasAxes, MaybeHasGeon):
     def __attrs_post_init__(self) -> None:
         for sub_object in self.sub_objects:
             if sub_object.schema.axes == self.axes:
-                raise RuntimeError("Don't share axes between schemata.  If the axes should be "
-                                   "similar, consider using .copy()")
+                raise RuntimeError(
+                    "Don't share axes between schemata.  If the axes should be "
+                    "similar, consider using .copy()"
+                )
 
 
 # need cmp=False to keep otherwise identical sub-components distinct

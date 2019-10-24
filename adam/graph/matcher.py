@@ -16,7 +16,7 @@ where matches most frequently fail in order to assist with hypothesis refinement
 
 import sys
 from collections import defaultdict
-from typing import Mapping, Any
+from typing import Mapping, Any, Dict
 
 from immutablecollections import immutableset
 from networkx import DiGraph
@@ -28,8 +28,9 @@ class GraphMatching:
     Suitable for Graph and MultiGraph instances.
     """
 
-    def __init__(self, graph: DiGraph, pattern: DiGraph,
-                 use_lookahead_pruning: bool = True) -> None:
+    def __init__(
+        self, graph: DiGraph, pattern: DiGraph, use_lookahead_pruning: bool = True
+    ) -> None:
         self.graph = graph
         self.pattern = pattern
         self.graph_nodes = set(graph.nodes())
@@ -48,7 +49,7 @@ class GraphMatching:
 
         # in debug mode, we keep track of the largest (by # of nodes) incomplete match
         # we can find
-        self.debug_largest_match = {}
+        self.debug_largest_match: Mapping[Any, Any] = {}
         self.use_lookahead_pruning = use_lookahead_pruning
 
         self._reset_debugging_maps()
@@ -80,10 +81,14 @@ class GraphMatching:
 
         # First we compute the out-terminal sets.
         T1_out = [
-            node for node in self.graph_nodes_in_or_succeeding_match if node not in self.graph_node_to_pattern_node
+            node
+            for node in self.graph_nodes_in_or_succeeding_match
+            if node not in self.graph_node_to_pattern_node
         ]
         T2_out = [
-            node for node in self.pattern_nodes_in_or_succeeding_match if node not in self.pattern_node_to_graph_node
+            node
+            for node in self.pattern_nodes_in_or_succeeding_match
+            if node not in self.pattern_node_to_graph_node
         ]
 
         # If T1_out and T2_out are both nonempty.
@@ -99,10 +104,14 @@ class GraphMatching:
         # elif not (T1_out or T2_out):   # as suggested by [2], incorrect
         else:  # as suggested by [1], correct
             T1_in = [
-                node for node in self.graph_nodes_in_or_preceding_match if node not in self.graph_node_to_pattern_node
+                node
+                for node in self.graph_nodes_in_or_preceding_match
+                if node not in self.graph_node_to_pattern_node
             ]
             T2_in = [
-                node for node in self.pattern_nodes_in_or_preceding_match if node not in self.pattern_node_to_graph_node
+                node
+                for node in self.pattern_nodes_in_or_preceding_match
+                if node not in self.pattern_node_to_graph_node
             ]
 
             # If T1_in and T2_in are both nonempty.
@@ -158,35 +167,41 @@ class GraphMatching:
     def debug_diagnostics(self) -> Mapping[Any, Any]:
         # for nodes, we want to partition them into three groups
         pattern_nodes_which_were_compared_and_matched_at_least_once = immutableset(
-            pattern_node for (pattern_node, attempts) in
-            self.pattern_node_to_num_predicate_attempts.items()
+            pattern_node
+            for (
+                pattern_node,
+                attempts,
+            ) in self.pattern_node_to_num_predicate_attempts.items()
             if self.pattern_node_to_num_predicate_failures[pattern_node] < attempts
         )
         pattern_nodes_which_were_compared_but_never_found_a_match = immutableset(
-            pattern_node for (pattern_node, attempts) in
-            self.pattern_node_to_num_predicate_attempts.items()
+            pattern_node
+            for (
+                pattern_node,
+                attempts,
+            ) in self.pattern_node_to_num_predicate_attempts.items()
             if self.pattern_node_to_num_predicate_failures[pattern_node] == attempts
         )
 
         failed_edges = immutableset(
-            pattern_edge for (pattern_edge, attempts) in
-            self.pattern_edge_to_num_match_attempts
-            if self.pattern_edge_to_num_predicate_failures[pattern_edge] +
-            self.pattern_edge_to_num_presence_failures[pattern_edge] == attempts
+            pattern_edge
+            for (pattern_edge, attempts) in self.pattern_edge_to_num_match_attempts
+            if self.pattern_edge_to_num_predicate_failures[pattern_edge]
+            + self.pattern_edge_to_num_presence_failures[pattern_edge]
+            == attempts
         )
 
         syntax_node_failures = immutableset(
-            pattern_node for (pattern_node, attempts) in
-            self.node_to_syntax_attempts.items()
+            pattern_node
+            for (pattern_node, attempts) in self.node_to_syntax_attempts.items()
             if self.node_to_syntax_failures[pattern_node] == attempts
         )
 
         return {
-            'nodes-matched-at-least-once' :
-                pattern_nodes_which_were_compared_and_matched_at_least_once,
-            'nodes-never-matched' : pattern_nodes_which_were_compared_but_never_found_a_match,
-            'failed_edges' : failed_edges,
-            'syntax_failures' : syntax_node_failures
+            "nodes-matched-at-least-once": pattern_nodes_which_were_compared_and_matched_at_least_once,
+            "nodes-never-matched": pattern_nodes_which_were_compared_but_never_found_a_match,
+            "failed_edges": failed_edges,
+            "syntax_failures": syntax_node_failures,
         }
 
     def is_isomorphic(self):
@@ -220,7 +235,7 @@ class GraphMatching:
         for mapping in self.match():
             yield mapping
 
-    def match(self, *, debug:bool =False):
+    def match(self, *, debug: bool = False):
         """Extends the isomorphism mapping.
 
         This function is called recursively to determine if a complete
@@ -229,7 +244,9 @@ class GraphMatching:
         we yield the mapping.
 
         """
-        if debug and len(self.pattern_node_to_graph_node) >= len(self.debug_largest_match):
+        if debug and len(self.pattern_node_to_graph_node) >= len(
+            self.debug_largest_match
+        ):
             self.debug_largest_match = self.pattern_node_to_graph_node.copy()
 
         if len(self.graph_node_to_pattern_node) == len(self.pattern):
@@ -322,22 +339,28 @@ class GraphMatching:
                 # TODO: the current implementation does not handle multi-graphs
                 pattern_edge = self.pattern.edges[pattern_predecessor, pattern_node]
                 pattern_predicate = pattern_edge["predicate"]
-                graph_edge = self.graph.get_edge_data(predecessor_mapped_node_in_graph, graph_node)
+                graph_edge = self.graph.get_edge_data(
+                    predecessor_mapped_node_in_graph, graph_node
+                )
 
                 if debug:
-                    self.pattern_edge_to_num_match_attempts[(pattern_predecessor, pattern_node)] +=1
+                    self.pattern_edge_to_num_match_attempts[
+                        (pattern_predecessor, pattern_node)
+                    ] += 1
 
                 if not graph_edge:
                     if debug:
-                        self.pattern_edge_to_num_presence_failures[(pattern_predecessor,
-                                                                    pattern_node)] += 1
+                        self.pattern_edge_to_num_presence_failures[
+                            (pattern_predecessor, pattern_node)
+                        ] += 1
                     return False
-                if not pattern_predicate(predecessor_mapped_node_in_graph,
-                    graph_edge["label"],
-                                          graph_node):
+                if not pattern_predicate(
+                    predecessor_mapped_node_in_graph, graph_edge["label"], graph_node
+                ):
                     if debug:
-                        self.pattern_edge_to_num_predicate_failures[(pattern_predecessor,
-                                                                     pattern_node)] += 1
+                        self.pattern_edge_to_num_predicate_failures[
+                            (pattern_predecessor, pattern_node)
+                        ] += 1
                     return False
 
         for pattern_successor in self.pattern[pattern_node]:
@@ -354,22 +377,29 @@ class GraphMatching:
                 # TODO: the current implementation does not handle multi-graphs
                 pattern_edge = self.pattern.edges[pattern_node, pattern_successor]
                 pattern_predicate = pattern_edge["predicate"]
-                graph_edge = self.graph.get_edge_data(graph_node, successor_mapped_node_in_graph)
+                graph_edge = self.graph.get_edge_data(
+                    graph_node, successor_mapped_node_in_graph
+                )
 
                 if debug:
-                    self.pattern_edge_to_num_match_attempts[(pattern_node, pattern_successor)] +=1
+                    self.pattern_edge_to_num_match_attempts[
+                        (pattern_node, pattern_successor)
+                    ] += 1
 
                 if not graph_edge:
                     if debug:
-                        self.pattern_edge_to_num_presence_failures[(pattern_node,
-                                                                    pattern_successor)] += 1
+                        self.pattern_edge_to_num_presence_failures[
+                            (pattern_node, pattern_successor)
+                        ] += 1
                     return False
 
-                if not pattern_predicate(graph_node, graph_edge["label"],
-                                          successor_mapped_node_in_graph):
+                if not pattern_predicate(
+                    graph_node, graph_edge["label"], successor_mapped_node_in_graph
+                ):
                     if debug:
-                        self.pattern_edge_to_num_predicate_failures[(pattern_node,
-                                                                     pattern_successor)] += 1
+                        self.pattern_edge_to_num_predicate_failures[
+                            (pattern_node, pattern_successor)
+                        ] += 1
                     return False
         return True
 
@@ -632,11 +662,15 @@ class GraphMatching:
                 # that are neither in core_2 nor T_2^{in} nor T_2^{out}.
                 num1 = 0
                 for predecessor in self.graph.pred[graph_node]:
-                    if (predecessor not in self.graph_nodes_in_or_preceding_match) and (predecessor not in self.graph_nodes_in_or_succeeding_match):
+                    if (predecessor not in self.graph_nodes_in_or_preceding_match) and (
+                        predecessor not in self.graph_nodes_in_or_succeeding_match
+                    ):
                         num1 += 1
                 num2 = 0
                 for predecessor in self.pattern.pred[pattern_node]:
-                    if (predecessor not in self.pattern_nodes_in_or_preceding_match) and (predecessor not in self.pattern_nodes_in_or_succeeding_match):
+                    if (predecessor not in self.pattern_nodes_in_or_preceding_match) and (
+                        predecessor not in self.pattern_nodes_in_or_succeeding_match
+                    ):
                         num2 += 1
                 if self.test == "graph":
                     if not (num1 == num2):
@@ -650,11 +684,15 @@ class GraphMatching:
                 # that are neither in core_2 nor T_2^{in} nor T_2^{out}.
                 num1 = 0
                 for successor in self.graph[graph_node]:
-                    if (successor not in self.graph_nodes_in_or_preceding_match) and (successor not in self.graph_nodes_in_or_succeeding_match):
+                    if (successor not in self.graph_nodes_in_or_preceding_match) and (
+                        successor not in self.graph_nodes_in_or_succeeding_match
+                    ):
                         num1 += 1
                 num2 = 0
                 for successor in self.pattern[pattern_node]:
-                    if (successor not in self.pattern_nodes_in_or_preceding_match) and (successor not in self.pattern_nodes_in_or_succeeding_match):
+                    if (successor not in self.pattern_nodes_in_or_preceding_match) and (
+                        successor not in self.pattern_nodes_in_or_succeeding_match
+                    ):
                         num2 += 1
                 if self.test == "graph":
                     if not (num1 == num2):
@@ -668,17 +706,17 @@ class GraphMatching:
 
     def _reset_debugging_maps(self) -> None:
         # how often does each node fail to match due to predicates?
-        self.pattern_node_to_num_predicate_failures = defaultdict(int)
-        self.pattern_node_to_num_predicate_attempts = defaultdict(int)
+        self.pattern_node_to_num_predicate_failures: Dict[Any, int] = defaultdict(int)
+        self.pattern_node_to_num_predicate_attempts: Dict[Any, int] = defaultdict(int)
 
         # how often does each edge fail to match due to the edge predicate returning false?
-        self.pattern_edge_to_num_predicate_failures = defaultdict(int)
+        self.pattern_edge_to_num_predicate_failures: Dict[Any, int] = defaultdict(int)
         # and how often because no corresponding edge exists to apply the predicate to?
-        self.pattern_edge_to_num_presence_failures = defaultdict(int)
-        self.pattern_edge_to_num_match_attempts = defaultdict(int)
+        self.pattern_edge_to_num_presence_failures: Dict[Any, int] = defaultdict(int)
+        self.pattern_edge_to_num_match_attempts: Dict[Any, int] = defaultdict(int)
 
-        self.node_to_syntax_failures = defaultdict(int)
-        self.node_to_syntax_attempts = defaultdict(int)
+        self.node_to_syntax_failures: Dict[Any, int] = defaultdict(int)
+        self.node_to_syntax_attempts: Dict[Any, int] = defaultdict(int)
 
 
 class GraphMatchingState(object):
@@ -729,10 +767,16 @@ class GraphMatchingState(object):
             self.depth = len(GM.graph_node_to_pattern_node)
 
             # First we add the new nodes...
-            for vector in (GM.graph_nodes_in_or_preceding_match, GM.graph_nodes_in_or_succeeding_match):
+            for vector in (
+                GM.graph_nodes_in_or_preceding_match,
+                GM.graph_nodes_in_or_succeeding_match,
+            ):
                 if graph_node not in vector:
                     vector[graph_node] = self.depth
-            for vector in (GM.pattern_nodes_in_or_preceding_match, GM.pattern_nodes_in_or_succeeding_match):
+            for vector in (
+                GM.pattern_nodes_in_or_preceding_match,
+                GM.pattern_nodes_in_or_succeeding_match,
+            ):
                 if pattern_node not in vector:
                     vector[pattern_node] = self.depth
 
@@ -805,7 +849,12 @@ class GraphMatchingState(object):
 
         # Now we revert the other four vectors.
         # Thus, we delete all entries which have this depth level.
-        for vector in (self.GM.graph_nodes_in_or_preceding_match, self.GM.pattern_nodes_in_or_preceding_match, self.GM.graph_nodes_in_or_succeeding_match, self.GM.pattern_nodes_in_or_succeeding_match):
+        for vector in (
+            self.GM.graph_nodes_in_or_preceding_match,
+            self.GM.pattern_nodes_in_or_preceding_match,
+            self.GM.graph_nodes_in_or_succeeding_match,
+            self.GM.pattern_nodes_in_or_succeeding_match,
+        ):
             for node in list(vector.keys()):
                 if vector[node] == self.depth:
                     del vector[node]

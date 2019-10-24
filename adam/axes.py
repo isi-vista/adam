@@ -69,6 +69,7 @@ class AxisFunction(Protocol, Generic[_ObjectT]):
     and for defining the spatial relations between parts of an object in
     `ObjectStructuralSchema`\ ta.
     """
+
     def to_concrete_axis(self, axes_info: Optional[AxesInfo[_ObjectT]]) -> GeonAxis:
         """
         Select a particular concrete axis.
@@ -80,7 +81,6 @@ class AxisFunction(Protocol, Generic[_ObjectT]):
         like `ObjectStructuralSchema`,
         and the `AxisFunction` should throw an exception if called in such a way.
         """
-        pass
 
     def copy_remapping_objects(
         self, object_map: Mapping[_ObjectT, _ObjectToT]

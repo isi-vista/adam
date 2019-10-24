@@ -1,11 +1,10 @@
-import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, Mapping, Optional, Tuple, Union
 
 import graphviz
 from attr.validators import instance_of, optional
-from immutablecollections import immutableset, immutabledict
+from immutablecollections import immutabledict, immutableset
 from immutablecollections.converter_utils import _to_immutabledict, _to_tuple
 from networkx import DiGraph
 
@@ -48,9 +47,13 @@ PerceptionGraphEdgeLabel = Union[OntologyNode, str, Direction[Any]]
 class PerceptionGraph:
     _graph: DiGraph = attrib(validator=instance_of(DiGraph))
 
-    def render_to_file(self, graph_name: str, output_file: Path,
-                       *,
-                       match_correspondence_ids: Mapping[Any, str]=immutabledict()) -> None:
+    def render_to_file(
+        self,
+        graph_name: str,
+        output_file: Path,
+        *,
+        match_correspondence_ids: Mapping[Any, str] = immutabledict(),
+    ) -> None:
         dot_graph = graphviz.Digraph(graph_name)
         dot_graph.attr(rankdir="LR")
         # combine parallel edges to cut down on clutter
@@ -60,8 +63,9 @@ class PerceptionGraph:
 
         # add all nodes to the graph
         perception_nodes_to_dot_node_ids = {
-            perception_node: self._to_dot_node(dot_graph, perception_node, next_node_id,
-                                               match_correspondence_ids)
+            perception_node: self._to_dot_node(
+                dot_graph, perception_node, next_node_id, match_correspondence_ids
+            )
             for perception_node in self._graph.nodes
         }
 
@@ -86,11 +90,20 @@ class PerceptionGraph:
             constraint_string = "true" if constraint else "false"
 
             if reverse_rank_order:
-                dot_graph.edge(target_dot_node, source_dot_node, edge_label, dir="back",
-                               constraint=constraint_string)
+                dot_graph.edge(
+                    target_dot_node,
+                    source_dot_node,
+                    edge_label,
+                    dir="back",
+                    constraint=constraint_string,
+                )
             else:
-                dot_graph.edge(source_dot_node, target_dot_node, edge_label,
-                               constraint=constraint_string)
+                dot_graph.edge(
+                    source_dot_node,
+                    target_dot_node,
+                    edge_label,
+                    constraint=constraint_string,
+                )
 
         dot_graph.render(str(output_file))
 
@@ -99,7 +112,7 @@ class PerceptionGraph:
         dot_graph: graphviz.Digraph,
         perception_node: PerceptionGraphNode,
         next_node_id: Incrementer,
-        match_correspondence_ids: Mapping[Any, str]
+        match_correspondence_ids: Mapping[Any, str],
     ) -> str:
         # object perceptions have no content, so they are blank nodes
         if isinstance(perception_node, ObjectPerception):
@@ -133,13 +146,12 @@ class PerceptionGraph:
         mapping_id = match_correspondence_ids.get(perception_node)
         if mapping_id is not None:
             attributes = {
-            'label' : f"{label} [{mapping_id}]",
-            'style':"filled",
-            'fillcolor' : "gray"}
+                "label": f"{label} [{mapping_id}]",
+                "style": "filled",
+                "fillcolor": "gray",
+            }
         else:
-            attributes = {
-                'label' : label,
-                'style' : "solid" }
+            attributes = {"label": label, "style": "solid"}
 
         node_id = f"node-{next_node_id.value()}"
         next_node_id.increment()
@@ -261,6 +273,7 @@ class PerceptionGraphPattern:
             # we need to do this because multiple sub-objects with the same schemata
             # (e.g. multiple tires of a truck) will share the same Geon, Region, and Axis objects.
             # We therefore need to "scope" those objects to within e.g. a single tire.
+            key: Any
             if isinstance(node, SubObject):
                 key = node
             else:
@@ -343,8 +356,13 @@ class PerceptionGraphPattern:
                 predicate=RelationTypeIsPredicate(sub_object_relation.relation_type),
             )
 
-    def render_to_file(self, title: str, output_file: Path,
-                       *, match_correspondence_ids: Mapping[Any, str]=immutabledict()) -> None:
+    def render_to_file(
+        self,
+        title: str,
+        output_file: Path,
+        *,
+        match_correspondence_ids: Mapping[Any, str] = immutabledict(),
+    ) -> None:
         dot_graph = graphviz.Digraph(title)
         dot_graph.attr(rankdir="LR")
 
@@ -361,13 +379,12 @@ class PerceptionGraphPattern:
             correspondence_id = match_correspondence_ids.get(pattern_node)
             if correspondence_id is not None:
                 attributes = {
-                'label' : f"{base_label} [{correspondence_id}]",
-                'style' : "filled",
-                'fillcolor' : "gray"}
+                    "label": f"{base_label} [{correspondence_id}]",
+                    "style": "filled",
+                    "fillcolor": "gray",
+                }
             else:
-                attributes = {
-                'label' : base_label,
-                'style' : "solid" }
+                attributes = {"label": base_label, "style": "solid"}
 
             dot_graph.node(node_id, **attributes)
             return node_id
@@ -440,8 +457,13 @@ class GeonPredicate(NodePredicate):
 
     def __call__(self, object_perception: PerceptionGraphNode) -> bool:
         if isinstance(object_perception, Geon):
-            return self.template_geon.cross_section == object_perception.cross_section and \
-                   self.template_geon.cross_section_size == object_perception.cross_section_size
+            return (
+                self.template_geon.cross_section == object_perception.cross_section
+                and self.template_geon.cross_section_size
+                == object_perception.cross_section_size
+            )
+        else:
+            return False
 
     def dot_label(self) -> str:
         return f"geon({self.template_geon})"
@@ -497,21 +519,28 @@ class PerceptionGraphPatternMatching:
         validator=instance_of(PerceptionGraph)
     )
 
-    def matches(self, *, debug_mapping_sink: Optional[Dict[Any, Any]]=None,
-                use_lookahead_pruning: bool = True) -> Iterable[
-        PerceptionGraphPatternMatch]:
+    def matches(
+        self,
+        *,
+        debug_mapping_sink: Optional[Dict[Any, Any]] = None,
+        use_lookahead_pruning: bool = True,
+    ) -> Iterable[PerceptionGraphPatternMatch]:
         matching = GraphMatching(
             self.graph_to_match_against._graph,  # pylint:disable=protected-access
-            self.pattern._graph,
-            use_lookahead_pruning=use_lookahead_pruning
+            self.pattern._graph,  # pylint:disable=protected-access
+            use_lookahead_pruning=use_lookahead_pruning,
         )
         got_a_match = False
-        for mapping in matching.subgraph_isomorphisms_iter(debug=debug_mapping_sink is not None):
+        for mapping in matching.subgraph_isomorphisms_iter(
+            debug=debug_mapping_sink is not None
+        ):
             got_a_match = True
             yield PerceptionGraphPatternMatch(
                 graph_matched_against=self.graph_to_match_against,
                 matched_pattern=self.pattern,
-                matched_sub_graph=PerceptionGraph(matching.graph.subgraph(mapping.values()).copy()),
+                matched_sub_graph=PerceptionGraph(
+                    matching.graph.subgraph(mapping.values()).copy()
+                ),
                 alignment=mapping,
             )
         if debug_mapping_sink and not got_a_match:
@@ -521,12 +550,16 @@ class PerceptionGraphPatternMatching:
             debug_mapping_sink.clear()
             debug_mapping_sink.update(matching.debug_largest_match)
 
-    def debug_matching(self, *, use_lookahead_pruning: bool=True,
-                       render_match_to: Optional[Path] = None) -> GraphMatching:
+    def debug_matching(
+        self,
+        *,
+        use_lookahead_pruning: bool = True,
+        render_match_to: Optional[Path] = None,
+    ) -> GraphMatching:
         matching = GraphMatching(
             self.graph_to_match_against._graph,  # pylint:disable=protected-access
-            self.pattern._graph,
-            use_lookahead_pruning=use_lookahead_pruning
+            self.pattern._graph,  # pylint:disable=protected-access
+            use_lookahead_pruning=use_lookahead_pruning,
         )
         for _ in matching.subgraph_isomorphisms_iter(debug=True):
             pass
@@ -534,16 +567,21 @@ class PerceptionGraphPatternMatching:
             pattern_node_to_correspondence_index = {}
             graph_node_to_correspondence_index = {}
             for (idx, (pattern_node, graph_node)) in enumerate(
-                    matching.debug_largest_match.items()):
-                pattern_node_to_correspondence_index[pattern_node] = idx
-                graph_node_to_correspondence_index[graph_node] = idx
+                matching.debug_largest_match.items()
+            ):
+                pattern_node_to_correspondence_index[pattern_node] = str(idx)
+                graph_node_to_correspondence_index[graph_node] = str(idx)
 
-            self.pattern.render_to_file("pattern",
-                                        render_match_to / "pattern",
-                                        match_correspondence_ids=pattern_node_to_correspondence_index)
-            self.graph_to_match_against.render_to_file("graph",
-                                        render_match_to / "graph",
-                                        match_correspondence_ids=graph_node_to_correspondence_index)
+            self.pattern.render_to_file(
+                "pattern",
+                render_match_to / "pattern",
+                match_correspondence_ids=pattern_node_to_correspondence_index,
+            )
+            self.graph_to_match_against.render_to_file(
+                "graph",
+                render_match_to / "graph",
+                match_correspondence_ids=graph_node_to_correspondence_index,
+            )
 
         return matching
 
