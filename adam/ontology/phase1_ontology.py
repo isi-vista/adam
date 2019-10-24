@@ -1662,9 +1662,9 @@ _TRUCK_CAB_SCHEMA = ObjectStructuralSchema(
 
 # schemata describing the sub-object structural nature of a truck trailer
 _TRUCK_TRAILER_TIRE_1 = SubObject(_TIRE_SCHEMA, debug_handle="trailer-tire-1")
-_TRUCK_TRAILER_TIRE_2 = SubObject(_TIRE_SCHEMA, debug_handle="trailer-tire-1")
-_TRUCK_TRAILER_TIRE_3 = SubObject(_TIRE_SCHEMA, debug_handle="trailer-tire-1")
-_TRUCK_TRAILER_TIRE_4 = SubObject(_TIRE_SCHEMA, debug_handle="trailer-tire-1")
+_TRUCK_TRAILER_TIRE_2 = SubObject(_TIRE_SCHEMA, debug_handle="trailer-tire-2")
+_TRUCK_TRAILER_TIRE_3 = SubObject(_TIRE_SCHEMA, debug_handle="trailer-tire-3")
+_TRUCK_TRAILER_TIRE_4 = SubObject(_TIRE_SCHEMA, debug_handle="trailer-tire-4")
 _TRUCK_TRAILER_FLATBED = SubObject(_FLATBED_SCHEMA, debug_handle="trailer-flatbed")
 _TRUCK_TRAILER_TIRES = [
     _TRUCK_TRAILER_TIRE_1,
