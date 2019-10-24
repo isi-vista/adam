@@ -1,6 +1,8 @@
 from itertools import chain
 from pathlib import Path
 
+from more_itertools import first
+
 from adam.curriculum.phase1_curriculum import _standard_object
 from adam.ontology import OntologyNode
 from adam.ontology.phase1_ontology import (
@@ -11,7 +13,8 @@ from adam.ontology.phase1_ontology import (
     above,
     bigger_than,
     on,
-    BOX, _BOX_SCHEMA)
+    BOX, _BOX_SCHEMA, GAILA_PHASE_1_ONTOLOGY, INANIMATE, INANIMATE_OBJECT, LIQUID, IS_BODY_PART,
+    GROUND)
 from adam.ontology.structural_schema import ObjectStructuralSchema
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     GAILA_PHASE_1_PERCEPTION_GENERATOR,
@@ -108,7 +111,15 @@ def test_match_truck_and_table():
         assert not any(truck_pattern.matcher(perception_graph).matches())
 
 def test_box_on_table():
-    test_object_on_table(BOX, _BOX_SCHEMA, BIRD)
+    for object_ in GAILA_PHASE_1_ONTOLOGY.nodes_with_properties(INANIMATE_OBJECT,
+        banned_properties=[LIQUID, IS_BODY_PART]
+    ):
+        if object_ != BIRD and object_ != TABLE:
+            schemata = GAILA_PHASE_1_ONTOLOGY.structural_schemata(object_)
+            if len(schemata) == 1 and object_ != GROUND:
+                print(f"Matching {object_}")
+                test_object_on_table(object_, first(schemata), BIRD)
+
 
 def test_object_on_table(object_ontology_node: OntologyNode,
                          object_schema: ObjectStructuralSchema,
