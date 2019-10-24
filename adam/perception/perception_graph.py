@@ -514,7 +514,7 @@ class PerceptionGraphPatternMatching:
                 matched_sub_graph=PerceptionGraph(matching.graph.subgraph(mapping.values()).copy()),
                 alignment=mapping,
             )
-        if not got_a_match:
+        if debug_mapping_sink and not got_a_match:
             # we failed to match the pattern.
             # If the user requested it, we provide the largest matching we could find
             # for debugging purposes.
