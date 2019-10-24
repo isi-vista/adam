@@ -119,7 +119,7 @@ GRAVITATIONAL_DOWN = Direction(
 # Region[TemplateObjectVariable]
 
 
-@attrs(frozen=True, repr=False)
+@attrs(frozen=True, repr=False, cmp=False)
 class Region(Generic[ReferenceObjectT]):
     """
     A region of space perceived by the learner.
