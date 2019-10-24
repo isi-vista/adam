@@ -3,7 +3,7 @@
    operating and when other code (gathering and processing scene information)
    is executing in a serial manner.
    """
-from typing import Iterable, List, Tuple, Union, DefaultDict, Optional, Callable
+from typing import Iterable, List, Tuple, Union, DefaultDict, Optional, Callable, Any
 from functools import partial
 
 import random
@@ -13,6 +13,9 @@ from adam.curriculum.phase1_curriculum import build_gaila_phase_1_curriculum
 import attr
 from attr import attrs
 from immutablecollections import ImmutableSet
+
+# consider refactoring away this dependency
+from panda3d.core import NodePath  # pylint: disable=no-name-in-module
 
 from adam.language.dependency import LinearizedDependencyTree
 
@@ -38,6 +41,7 @@ from adam.visualization.utils import Shape
 class SceneNode:
     elt: ObjectPerception = attr.ib()
     children: List["SceneNode"] = attr.ib(factory=list)
+    parent: "SceneNode" = attr.ib(default=None)
 
 
 def main() -> None:
@@ -50,13 +54,20 @@ def main() -> None:
         SceneCreator.create_scenes(build_gaila_phase_1_curriculum())
     ):
         print(f"SCENE {i}")
+        # for debugging purposes:
+        SceneCreator.graph_for_each(obj_graph, obj_names)
+
         # bind visualizer and properties to render function:
         bound_render_obj = partial(
             render_obj, viz, property_map
         )  # bind renderer to function
+        bound_render_nested_obj = partial(render_obj_nested, viz, property_map)
         # render each object in graph
-        SceneCreator.graph_for_each(obj_graph, bound_render_obj)
+        SceneCreator.graph_for_each_top_level(
+            obj_graph, bound_render_obj, bound_render_nested_obj
+        )
         viz.run_for_seconds(2.25)
+        viz.print_scene_graph()
         input("Press ENTER to continue")
         viz.clear_scene()
         viz.run_for_seconds(0.25)
@@ -68,9 +79,21 @@ def render_obj(
         ObjectPerception, List[Optional[Union[RgbColorPerception, OntologyNode]]]
     ],
     obj: ObjectPerception,
-) -> None:
+) -> NodePath:
+    return render_obj_nested(renderer, properties, obj, None)
+
+
+def render_obj_nested(
+    renderer: SituationVisualizer,
+    properties: DefaultDict[
+        ObjectPerception, List[Optional[Union[RgbColorPerception, OntologyNode]]]
+    ],
+    obj: ObjectPerception,
+    parent: NodePath,
+) -> NodePath:
+
     if obj.geon is None:
-        return
+        return renderer.add_dummy_node(obj.debug_handle, parent)
     shape = SceneCreator.cross_section_to_geo(obj.geon.cross_section)
     # TODO***: allow for Irregular geons to be rendered
     if shape == Shape.IRREGULAR:
@@ -79,7 +102,14 @@ def render_obj(
     for prop in properties[obj]:
         if isinstance(prop, RgbColorPerception):
             color = prop
-    renderer.add_model(shape, SceneCreator.random_position(), color)
+    return renderer.add_model(shape, SceneCreator.random_position(), color, parent)
+
+
+def obj_names(obj: ObjectPerception) -> None:
+    if obj.geon is not None:
+        print(obj.debug_handle + " (has geon)")
+    else:
+        print(obj.debug_handle)
 
 
 @attrs(frozen=True, slots=True)
@@ -206,7 +236,7 @@ class SceneCreator:
                 scene_graph.append(search_node)
             # find node with key
             for nested in d[key]:
-                search_node.children.append(SceneNode(nested))
+                search_node.children.append(SceneNode(nested, parent=search_node))
 
         return scene_graph
 
@@ -214,8 +244,8 @@ class SceneCreator:
     def graph_for_each(
         graph: List[SceneNode], fn: Callable[["ObjectPerception"], None]
     ) -> None:
-        """Apply some function to each node of the scene graph"""
-        nodes = graph
+        """Apply some function to each leaf node of the scene graph"""
+        nodes = [node for node in graph]
         while nodes:
             recurse: List[SceneNode] = []
             for node in nodes:
@@ -224,6 +254,35 @@ class SceneCreator:
                 else:
                     recurse += node.children
             nodes = recurse
+
+    @staticmethod
+    def graph_for_each_top_level(
+        graph: List[SceneNode],
+        top_fn: Callable[[ObjectPerception], Any],
+        recurse_fn: Callable[[ObjectPerception, Any], Any],
+    ) -> None:
+        """Apply some function only to root elements of graph.
+           Use return value from top level function as argument in
+           recursively applied function. """
+        for top_level in graph:
+            print(f"\n\n\ncalling top_fn on {top_level.elt}")
+            top_return = top_fn(top_level.elt)
+            nodes = [(node, top_return) for node in top_level.children]
+            while nodes:
+                recurse: List[Tuple[SceneNode, Any]] = []
+
+                for node, ret in nodes:
+                    print(f"\nNODE: {node.elt}")
+                    if not node.children and ret is not None:
+                        print("No children")
+                        print(f"calling recurse fn on {node.elt} with {ret}")
+                        recurse_fn(node.elt, ret)
+                    else:
+                        new_return = recurse_fn(node.elt, ret)
+                        for child in node.children:
+                            print(f"recurse by way of {child.elt} with {new_return}")
+                        recurse += [(child, new_return) for child in node.children]
+                nodes = recurse
 
     @staticmethod
     def random_position() -> Tuple[float, float, float]:

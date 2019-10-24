@@ -11,7 +11,7 @@
    """
 from math import pi, sin, cos
 
-from typing import Tuple, List
+from typing import Tuple, List, Optional
 import sys
 import os
 
@@ -102,9 +102,11 @@ class SituationVisualizer(ShowBase):
         model_type: Shape,
         pos: Tuple[float, float, float],
         col: RgbColorPerception = None,
-    ) -> None:
+        parent: Optional[NodePath] = None,
+    ) -> NodePath:
         """Adds a piece of primitive geometry to the scene.
         Will need to be expanded to account for orientation, color, position, etc"""
+        print(f"adding: {model_type}")
         if col is None:
             col = RgbColorPerception(50, 50, 50)
         try:
@@ -112,10 +114,26 @@ class SituationVisualizer(ShowBase):
         except KeyError:
             print(f"No geometry found for {model_type}")
             raise
+        # top level:
         self.geo_nodes.append(new_model)
-        new_model.reparentTo(self.render)
+        if parent is None:
+            new_model.reparentTo(self.render)
+        # nested
+        else:
+            new_model.reparentTo(parent)
         new_model.setPos(pos[0], pos[1], pos[2])
         new_model.setColor((col.red / 255, col.green / 255, col.blue / 255, 1.0))
+        return new_model
+
+    def add_dummy_node(self, name: str, parent: Optional[NodePath] = None) -> NodePath:
+        print(f"\nAdding Dummy node: {name}")
+        new_node = NodePath(name)
+        if parent is None:
+            new_node.reparentTo(self.render)
+        else:
+            new_node.reparentTo(parent)
+        self.geo_nodes.append(new_node)
+        return new_node
 
     def clear_scene(self) -> None:
         """Clears out all added objects (other than ground plane, camera, lights)"""
@@ -152,6 +170,9 @@ class SituationVisualizer(ShowBase):
         start = int(time.time())
         while time.time() - start < seconds:
             self.taskMgr.step()
+
+    def print_scene_graph(self) -> None:
+        print(self.render.ls())
 
     # Define a procedure to move the camera.
     def _spin_camera_task(self, task):
