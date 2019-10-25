@@ -39,7 +39,9 @@ class Incrementer:
 
 HAS_GEON = OntologyNode(handle="has_geon")
 
-PerceptionGraphNode = Union[ObjectPerception, OntologyNode, Region[Any], GeonAxis]
+PerceptionGraphNode = Union[
+    ObjectPerception, OntologyNode, Tuple[Region[Any], int], Tuple[Geon, int], GeonAxis
+]
 PerceptionGraphEdgeLabel = Union[OntologyNode, str, Direction[Any]]
 
 
@@ -114,6 +116,9 @@ class PerceptionGraph:
         next_node_id: Incrementer,
         match_correspondence_ids: Mapping[Any, str],
     ) -> str:
+        if isinstance(perception_node, tuple):
+            perception_node = perception_node[0]
+
         # object perceptions have no content, so they are blank nodes
         if isinstance(perception_node, ObjectPerception):
             label = perception_node.debug_handle
@@ -273,6 +278,8 @@ class PerceptionGraphPattern:
             # we need to do this because multiple sub-objects with the same schemata
             # (e.g. multiple tires of a truck) will share the same Geon, Region, and Axis objects.
             # We therefore need to "scope" those objects to within e.g. a single tire.
+            # If any new types of predicates are added below,
+            # be sure to check the predicate implementation is aware of the tuple-wrapping.
             key: Any
             if isinstance(node, SubObject):
                 key = node
@@ -416,6 +423,11 @@ class AxisPredicate(NodePredicate):
     )
 
     def __call__(self, object_perception: PerceptionGraphNode) -> bool:
+        # axes might be wrapped in tuples with their id()
+        # in order to simulate comparison by object ID.
+        if isinstance(object_perception, tuple):
+            object_perception = object_perception[0]
+
         if isinstance(object_perception, GeonAxis):
             if self.curved is not None and self.curved != object_perception.curved:
                 return False
@@ -456,6 +468,11 @@ class GeonPredicate(NodePredicate):
     template_geon: Geon = attrib(validator=instance_of(Geon))
 
     def __call__(self, object_perception: PerceptionGraphNode) -> bool:
+        # geons might be wrapped in tuples with their id()
+        # in order to simulate comparison by object ID.
+        if isinstance(object_perception, tuple):
+            object_perception = object_perception[0]
+
         if isinstance(object_perception, Geon):
             return (
                 self.template_geon.cross_section == object_perception.cross_section
@@ -478,6 +495,10 @@ class RegionPredicate(NodePredicate):
     distance: Optional[Distance] = attrib(validator=optional(instance_of(Distance)))
 
     def __call__(self, object_perception: PerceptionGraphNode) -> bool:
+        # regions might be wrapped in tuples with their id()
+        # in order to simulate comparison by object ID.
+        if isinstance(object_perception, tuple):
+            object_perception = object_perception[0]
         return (
             isinstance(object_perception, Region)
             and self.distance == object_perception.distance
@@ -649,7 +670,25 @@ def _translate_region(
 
 
 def to_perception_graph(frame: DevelopmentalPrimitivePerceptionFrame) -> PerceptionGraph:
+    object_to_node: Dict[Any, Any] = {}
+
+    return _to_perception_graph(frame, object_to_node)
+
+
+def _to_perception_graph(
+    frame: DevelopmentalPrimitivePerceptionFrame, object_to_node: Dict[Any, Any]
+) -> PerceptionGraph:
     graph = DiGraph()
+
+    def map_node(obj: Any):
+        # Regions and Geons are normally treated as value objects,
+        # but we want to maintain their distinctness in the perceptual graph
+        # for the purpose of matching patterns, so we make their corresponding
+        # graph nods compare by identity.
+        if isinstance(obj, (Region, Geon)):
+            return (obj, id(obj))
+        else:
+            return obj
 
     def map_edge(label: Any):
         return {"label": label}
@@ -659,18 +698,14 @@ def to_perception_graph(frame: DevelopmentalPrimitivePerceptionFrame) -> Percept
         graph.add_node(perceived_object)
         # And so are each of its axes.
         _translate_axes(
-            graph,
-            perceived_object,
-            perceived_object,
-            lambda axis: axis,
-            map_edge=map_edge,
+            graph, perceived_object, perceived_object, map_node, map_edge=map_edge
         )
         _translate_geon(
             graph,
             perceived_object,
             mapped_owner=perceived_object,
-            map_geon=lambda geon: geon,
-            map_axis=lambda axis: axis,
+            map_geon=map_node,
+            map_axis=map_node,
             map_edge=map_edge,
         )
 
@@ -682,27 +717,25 @@ def to_perception_graph(frame: DevelopmentalPrimitivePerceptionFrame) -> Percept
 
     for region in regions:
         _translate_region(
-            graph,
-            region,
-            map_node=lambda x: x,
-            map_edge=map_edge,
-            axes_info=frame.axis_info,
+            graph, region, map_node=map_node, map_edge=map_edge, axes_info=frame.axis_info
         )
 
     # Every relation is handled as a directed graph edge
     # from the first argument to the second
     for relation in frame.relations:
         graph.add_edge(
-            relation.first_slot, relation.second_slot, label=relation.relation_type
+            map_node(relation.first_slot),
+            map_node(relation.second_slot),
+            label=relation.relation_type,
         )
 
     dest_node: Any
     for property_ in frame.property_assertions:
-        source_node = property_.perceived_object
+        source_node = map_node(property_.perceived_object)
         if isinstance(property_, HasBinaryProperty):
-            dest_node = property_.binary_property
+            dest_node = map_node(property_.binary_property)
         elif isinstance(property_, HasColor):
-            dest_node = property_.color
+            dest_node = map_node(property_.color)
         else:
             raise RuntimeError(f"Don't know how to translate property {property_}")
         graph.add_edge(source_node, dest_node, label="has-property")

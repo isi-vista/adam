@@ -17,7 +17,9 @@ from adam.ontology.phase1_ontology import (
     above,
     bigger_than,
     on,
-    CAR, _CAR_SCHEMA)
+    CAR,
+    _CAR_SCHEMA,
+)
 from adam.ontology.structural_schema import ObjectStructuralSchema
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     GAILA_PHASE_1_PERCEPTION_GENERATOR,
@@ -31,10 +33,12 @@ from adam.situation.templates.phase1_templates import (
 )
 from adam_test_utils import all_possible_test
 
+
 def test_car_on_table():
     do_object_on_table_test(CAR, _CAR_SCHEMA, BIRD)
 
-@pytest.mark.skip(msg="Slow graph matching test disabled.")
+
+# @pytest.mark.skip(msg="Slow graph matching test disabled.")
 def test_inanimate_objects():
     """
     This test is slow, so it is disabled by default.
@@ -66,21 +70,28 @@ def do_object_on_table_test(
     # a object_to_match above or under a table with color red or blue
     color = color_variable("color")
     object_to_match = object_variable(
-        debug_handle=object_type_to_match.handle, root_node=object_type_to_match, \
-                                                               added_properties=[color]
+        debug_handle=object_type_to_match.handle,
+        root_node=object_type_to_match,
+        added_properties=[color],
     )
     table = _standard_object("table_0", TABLE)
 
     object_on_table_template = Phase1SituationTemplate(
         "object_to_match-on-table",
         salient_object_variables=[object_to_match, table],
-        asserted_always_relations=[bigger_than(table, object_to_match), on(object_to_match, table)],
+        asserted_always_relations=[
+            bigger_than(table, object_to_match),
+            on(object_to_match, table),
+        ],
     )
 
     object_under_table_template = Phase1SituationTemplate(
         "object_to_match-under-table",
         salient_object_variables=[object_to_match, table],
-        asserted_always_relations=[bigger_than(table, object_to_match), above(table, object_to_match)],
+        asserted_always_relations=[
+            bigger_than(table, object_to_match),
+            above(table, object_to_match),
+        ],
     )
 
     # We test that a perceptual pattern for "object_to_match" matches in all four cases.
@@ -98,9 +109,9 @@ def do_object_on_table_test(
             situation_with_object, chooser=RandomChooser.for_seed(0)
         )
         perception_graph = to_perception_graph(perception.frames[0])
-        #perception_graph.render_to_file(f"object_to_match {idx}", out_dir / f"object_to_match
+        # perception_graph.render_to_file(f"object_to_match {idx}", out_dir / f"object_to_match
         # -{idx}.pdf")
-        #object_to_match_pattern.render_to_file(f"object_to_match pattern", out_dir /
+        # object_to_match_pattern.render_to_file(f"object_to_match pattern", out_dir /
         # "object_to_match_pattern.pdf")
         matcher = object_to_match_pattern.matcher(perception_graph)
         # debug_matching = matcher.debug_matching(
@@ -119,13 +130,19 @@ def do_object_on_table_test(
     negative_object_on_table_template = Phase1SituationTemplate(
         "negative_object-on-table",
         salient_object_variables=[negative_object, table],
-        asserted_always_relations=[bigger_than(table, negative_object), on(negative_object, table)],
+        asserted_always_relations=[
+            bigger_than(table, negative_object),
+            on(negative_object, table),
+        ],
     )
 
     negative_object_under_table_template = Phase1SituationTemplate(
         "negative_object-under-table",
         salient_object_variables=[negative_object, table],
-        asserted_always_relations=[bigger_than(table, negative_object), above(table, negative_object)],
+        asserted_always_relations=[
+            bigger_than(table, negative_object),
+            above(table, negative_object),
+        ],
     )
 
     situations_with_negative_object = chain(

@@ -36,7 +36,7 @@ class CrossSection:
         )
 
 
-@attrs(slots=True, frozen=True, cmp=False)
+@attrs(slots=True, frozen=True)
 class Geon(HasAxes):
     cross_section: CrossSection = attrib(
         validator=instance_of(CrossSection), kw_only=True
