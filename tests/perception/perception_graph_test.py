@@ -1,5 +1,4 @@
 from itertools import chain
-from pathlib import Path
 
 import pytest
 from more_itertools import first
@@ -8,17 +7,17 @@ from adam.curriculum.phase1_curriculum import _standard_object
 from adam.ontology import OntologyNode
 from adam.ontology.phase1_ontology import (
     BIRD,
+    CAR,
     GAILA_PHASE_1_ONTOLOGY,
     GROUND,
     INANIMATE_OBJECT,
     IS_BODY_PART,
     LIQUID,
     TABLE,
+    _CAR_SCHEMA,
     above,
     bigger_than,
     on,
-    CAR,
-    _CAR_SCHEMA,
 )
 from adam.ontology.structural_schema import ObjectStructuralSchema
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
@@ -104,9 +103,7 @@ def do_object_on_table_test(
         all_possible_test(object_under_table_template),
     )
 
-    out_dir = Path("/Users/gabbard/tmp")
-
-    for (idx, situation_with_object) in enumerate(situations_with_object_to_match):
+    for (_, situation_with_object) in enumerate(situations_with_object_to_match):
         perception = GAILA_PHASE_1_PERCEPTION_GENERATOR.generate_perception(
             situation_with_object, chooser=RandomChooser.for_seed(0)
         )

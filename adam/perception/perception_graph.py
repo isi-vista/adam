@@ -670,14 +670,6 @@ def _translate_region(
 
 
 def to_perception_graph(frame: DevelopmentalPrimitivePerceptionFrame) -> PerceptionGraph:
-    object_to_node: Dict[Any, Any] = {}
-
-    return _to_perception_graph(frame, object_to_node)
-
-
-def _to_perception_graph(
-    frame: DevelopmentalPrimitivePerceptionFrame, object_to_node: Dict[Any, Any]
-) -> PerceptionGraph:
     graph = DiGraph()
 
     def map_node(obj: Any):
