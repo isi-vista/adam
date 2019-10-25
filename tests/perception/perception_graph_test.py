@@ -38,12 +38,14 @@ def test_car_on_table():
     do_object_on_table_test(CAR, _CAR_SCHEMA, BIRD)
 
 
-# @pytest.mark.skip(msg="Slow graph matching test disabled.")
+@pytest.mark.skip(msg="Slow graph matching test disabled.")
 def test_inanimate_objects():
     """
-    This test is slow, so it is disabled by default.
-    Returns:
+    Tests whether several inanimate objects can be matched.
 
+    This test is slow, so it is disabled by default.
+
+    Trucks, cars, and chairs are known failures: https://github.com/isi-vista/adam/issues/399
     """
     for object_ in GAILA_PHASE_1_ONTOLOGY.nodes_with_properties(
         INANIMATE_OBJECT, banned_properties=[LIQUID, IS_BODY_PART]
