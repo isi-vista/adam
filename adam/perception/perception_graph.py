@@ -1,3 +1,9 @@
+r"""
+Code for representing `DevelopmentalPrimitivePerceptionFrame`\ s as directed graphs
+and for matching patterns against such graph.
+Such patterns could be used to implement object recognition,
+among other things.
+"""
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, Mapping, Optional, Tuple, Union
