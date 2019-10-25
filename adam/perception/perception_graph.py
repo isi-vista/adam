@@ -546,6 +546,11 @@ class PerceptionGraphPatternMatching:
         debug_mapping_sink: Optional[Dict[Any, Any]] = None,
         use_lookahead_pruning: bool = True,
     ) -> Iterable[PerceptionGraphPatternMatch]:
+        """
+
+        Currently matching with look-ahead pruning seems to give false negatives,
+        so we recommend disabling it: https://github.com/isi-vista/adam/issues/401
+        """
         matching = GraphMatching(
             self.graph_to_match_against._graph,  # pylint:disable=protected-access
             self.pattern._graph,  # pylint:disable=protected-access
