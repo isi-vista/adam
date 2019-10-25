@@ -23,11 +23,7 @@ from adam.ontology.structural_schema import ObjectStructuralSchema
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     GAILA_PHASE_1_PERCEPTION_GENERATOR,
 )
-from adam.perception.perception_graph import (
-    PerceptionGraphPattern,
-    to_perception_graph,
-    PerceptionGraph,
-)
+from adam.perception.perception_graph import PerceptionGraphPattern, PerceptionGraph
 from adam.random_utils import RandomChooser
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
