@@ -523,6 +523,10 @@ class RegionPredicate(NodePredicate):
 
 @attrs(frozen=True, slots=True, cmp=False)
 class PerceptionGraphPatternMatch:
+    """
+    Holds a complete pattern match between the given pattern and graph with the information of where the pattern was
+    found in the graph
+    """
     matched_pattern: PerceptionGraphPattern = attrib(
         validator=instance_of(PerceptionGraphPattern), kw_only=True
     )
