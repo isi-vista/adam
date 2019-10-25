@@ -691,6 +691,12 @@ def _translate_region(
 
 
 def to_perception_graph(frame: DevelopmentalPrimitivePerceptionFrame) -> PerceptionGraph:
+    """
+    This function takes a `DevelopmentalPrimitivePerceptionFrame` and converts it into a `PerceptionGraph`.
+
+    This conversion allows for future mapping between recall and new scenes so that the leaner is able to identify
+    objects and concepts by being able to filter out the noise properties of a perception.
+    """
     graph = DiGraph()
 
     def map_node(obj: Any):
