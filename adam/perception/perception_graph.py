@@ -468,6 +468,9 @@ class AxisPredicate(NodePredicate):
 
 @attrs(frozen=True, slots=True, cmp=False)
 class GeonPredicate(NodePredicate):
+    """
+    Holds a geon representation for perception graph matching
+    """
     template_geon: Geon = attrib(validator=instance_of(Geon))
 
     def __call__(self, object_perception: PerceptionGraphNode) -> bool:
