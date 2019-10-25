@@ -23,7 +23,11 @@ from adam.ontology.structural_schema import ObjectStructuralSchema
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     GAILA_PHASE_1_PERCEPTION_GENERATOR,
 )
-from adam.perception.perception_graph import PerceptionGraphPattern, to_perception_graph
+from adam.perception.perception_graph import (
+    PerceptionGraphPattern,
+    to_perception_graph,
+    PerceptionGraph,
+)
 from adam.random_utils import RandomChooser
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
@@ -107,7 +111,7 @@ def do_object_on_table_test(
         perception = GAILA_PHASE_1_PERCEPTION_GENERATOR.generate_perception(
             situation_with_object, chooser=RandomChooser.for_seed(0)
         )
-        perception_graph = to_perception_graph(perception.frames[0])
+        perception_graph = PerceptionGraph.from_frame(perception.frames[0])
         # perception_graph.render_to_file(f"object_to_match {idx}", out_dir / f"object_to_match
         # -{idx}.pdf")
         # object_to_match_pattern.render_to_file(f"object_to_match pattern", out_dir /
@@ -154,7 +158,7 @@ def do_object_on_table_test(
         perception = GAILA_PHASE_1_PERCEPTION_GENERATOR.generate_perception(
             situation_with_negative_object, chooser=RandomChooser.for_seed(0)
         )
-        perception_graph = to_perception_graph(perception.frames[0])
+        perception_graph = PerceptionGraph.from_frame(perception.frames[0])
         if any(object_to_match_pattern.matcher(perception_graph).matches()):
             return False
     return True
