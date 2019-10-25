@@ -416,6 +416,9 @@ class PerceptionGraphPattern:
 
 @attrs(frozen=True, slots=True, cmp=False)
 class AxisPredicate(NodePredicate):
+    """
+    Holds an axis representation for perceptual graph
+    """
     curved: Optional[bool] = attrib(validator=optional(instance_of(bool)))
     directed: Optional[bool] = attrib(validator=optional(instance_of(bool)))
     aligned_to_gravitational: Optional[bool] = attrib(
