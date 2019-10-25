@@ -7,14 +7,14 @@ from adam.curriculum.phase1_curriculum import _standard_object
 from adam.ontology import OntologyNode
 from adam.ontology.phase1_ontology import (
     BIRD,
-    CAR,
     GAILA_PHASE_1_ONTOLOGY,
     GROUND,
+    HOUSE,
     INANIMATE_OBJECT,
     IS_BODY_PART,
     LIQUID,
     TABLE,
-    _CAR_SCHEMA,
+    _HOUSE_SCHEMA,
     above,
     bigger_than,
     on,
@@ -23,7 +23,7 @@ from adam.ontology.structural_schema import ObjectStructuralSchema
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     GAILA_PHASE_1_PERCEPTION_GENERATOR,
 )
-from adam.perception.perception_graph import PerceptionGraphPattern, PerceptionGraph
+from adam.perception.perception_graph import PerceptionGraph, PerceptionGraphPattern
 from adam.random_utils import RandomChooser
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
@@ -33,8 +33,8 @@ from adam.situation.templates.phase1_templates import (
 from adam_test_utils import all_possible_test
 
 
-def test_car_on_table():
-    do_object_on_table_test(CAR, _CAR_SCHEMA, BIRD)
+def test_house_on_table():
+    assert do_object_on_table_test(HOUSE, _HOUSE_SCHEMA, BIRD)
 
 
 @pytest.mark.skip(msg="Slow graph matching test disabled.")
