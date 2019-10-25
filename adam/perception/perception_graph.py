@@ -294,7 +294,6 @@ class PerceptionGraphPattern:
                         node
                     )
                 elif isinstance(node, Region):
-                    # TODO: double-check other aspects of region are handled by edges
                     schema_node_to_pattern_node[key] = RegionPredicate.matching_distance(
                         node
                     )
@@ -310,8 +309,6 @@ class PerceptionGraphPattern:
             if isinstance(label, OntologyNode):
                 return {"predicate": RelationTypeIsPredicate(label)}
             elif isinstance(label, Direction):
-                # TODO: when direction predicate starts matching for real,
-                # we will need to look up any axis it is relative to in schema_node_to_pattern_node
                 return {"predicate": DirectionPredicate.exactly_matching(label)}
             else:
                 raise RuntimeError(f"Cannot map edge {label}")
@@ -528,11 +525,14 @@ class PerceptionGraphPatternMatch:
     )
 
 
-# TODO: oops, this only does node-induced isomorphism but I think we really want edge-induced?
-
-
 @attrs(frozen=True, slots=True, cmp=False)
 class PerceptionGraphPatternMatching:
+    """
+
+    Currently we only handled node-induced sub-graph isomorphisms,
+    but we might really want edge-induced: https://github.com/isi-vista/adam/issues/400
+    """
+
     pattern: PerceptionGraphPattern = attrib(
         validator=instance_of(PerceptionGraphPattern)
     )
