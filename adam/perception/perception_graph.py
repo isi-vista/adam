@@ -49,7 +49,7 @@ PerceptionGraphEdgeLabel = Union[OntologyNode, str, Direction[Any]]
 class PerceptionGraph:
     _graph: DiGraph = attrib(validator=instance_of(DiGraph))
 
-    def render_to_file(
+    def render_to_file( # pragma: no cover
         self,
         graph_name: str,
         output_file: Path,
@@ -243,6 +243,9 @@ def _translate_axes(
 
 @attrs(frozen=True, slots=True)
 class PerceptionGraphPattern:
+    """
+    A perception graph pattern is a representation of a perceived scene as a graph for memory and recall.
+    """
     _graph: DiGraph = attrib(validator=instance_of(DiGraph))
 
     def matcher(
@@ -360,7 +363,7 @@ class PerceptionGraphPattern:
                 predicate=RelationTypeIsPredicate(sub_object_relation.relation_type),
             )
 
-    def render_to_file(
+    def render_to_file(  # pragma: no cover
         self,
         title: str,
         output_file: Path,
