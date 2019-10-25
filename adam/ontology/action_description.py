@@ -25,11 +25,12 @@ from attr import attrib, attrs
 @attrs(frozen=True, slots=True, hash=None, cmp=False, repr=False)
 class ActionDescriptionVariable:
     """
-    An variable in an action description ranging over objects in Situations.
+    A variable in an action description ranging over objects in Situations.
 
-    Unlike most of our classes, `ActionDescriptionVariable` has *id*-based hashing and equality.
-    This is
-    because two objects with identical properties are nonetheless distinct.
+    Unlike most of our classes, `ActionDescriptionVariable`
+    has *id*-based hashing and equality.
+    This is because two objects with identical properties
+    are nonetheless distinct.
     """
 
     ontology_node: OntologyNode = attrib(

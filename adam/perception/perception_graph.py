@@ -11,12 +11,12 @@ from networkx import DiGraph
 from adam.axes import AxesInfo, HasAxes
 from adam.axis import GeonAxis
 from adam.geon import Geon, MaybeHasGeon
-from adam.graph.matcher import GraphMatching
 from adam.ontology import OntologyNode
 from adam.ontology.phase1_ontology import PART_OF
 from adam.ontology.phase1_spatial_relations import Direction, Distance, Region
 from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
 from adam.perception import ObjectPerception
+from adam.perception._matcher import GraphMatching
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
     HasBinaryProperty,

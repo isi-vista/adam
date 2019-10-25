@@ -158,6 +158,11 @@ class SituationObject(HasAxes):
         debug_handle: Optional[str] = None,
         ontology: Ontology,
     ) -> "SituationObject":
+        """
+        Make a `SituationObject` from the object type *ontology_node*
+        with properties *properties*.
+        The *properties* and ontology node must all come from *ontology*.
+        """
         schema_axis_to_object_axis: Mapping[GeonAxis, GeonAxis]
         if ontology.has_property(ontology_node, IS_SUBSTANCE):
             # it's not clear what the object_concrete_axes should be for substances,
@@ -175,6 +180,8 @@ class SituationObject(HasAxes):
                     f"{structural_schemata}"
                 )
             schema_abstract_axes = only(structural_schemata).axes
+            # The copy is needed or e.g. all tires of a truck
+            # would share the same axis objects.
             object_concrete_axes = schema_abstract_axes.copy()
             schema_axis_to_object_axis = immutabledict(
                 zip(schema_abstract_axes.all_axes, object_concrete_axes.all_axes)
