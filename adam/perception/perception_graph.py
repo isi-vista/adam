@@ -43,8 +43,6 @@ class Incrementer:
         self._value += amount
 
 
-HAS_GEON = OntologyNode(handle="has_geon")
-
 PerceptionGraphNode = Union[
     ObjectPerception, OntologyNode, Tuple[Region[Any], int], Tuple[Geon, int], GeonAxis
 ]
