@@ -3,6 +3,9 @@ Code for representing `DevelopmentalPrimitivePerceptionFrame`\ s as directed gra
 and for matching patterns against such graph.
 Such patterns could be used to implement object recognition,
 among other things.
+
+This file first defines `PerceptionGraph`\ s,
+then defines `PerceptionGraphPattern`\ s to match them.
 """
 from abc import ABC, abstractmethod
 from pathlib import Path
@@ -51,6 +54,13 @@ PerceptionGraphEdgeLabel = Union[OntologyNode, str, Direction[Any]]
 
 @attrs(frozen=True, slots=True)
 class PerceptionGraph:
+    r"""
+    Represents a `DevelopmentalPrimitivePerceptionFrame` as a directed graph.
+
+    `ObjectPerception`\ s, properties, `Geon`\ s, `GeonAxis`\ s, and `Region`\ s are nodes.
+
+    These can be matched against by `PerceptionGraphPattern`\ s.
+    """
     _graph: DiGraph = attrib(validator=instance_of(DiGraph))
 
     def render_to_file(  # pragma: no cover
@@ -60,6 +70,15 @@ class PerceptionGraph:
         *,
         match_correspondence_ids: Mapping[Any, str] = immutabledict(),
     ) -> None:
+        """
+        Debugging tool to render the graph to PDF using *dot*.
+
+        If this graph has been matched against a pattern,
+        the matched nodes can be highlighted and given labels which show
+        what the correspond to in a pattern by supplying
+        *match_correspondence_ids* which maps graph nodes to
+        the desired correspondence labels.
+        """
         dot_graph = graphviz.Digraph(graph_name)
         dot_graph.attr(rankdir="LR")
         # combine parallel edges to cut down on clutter
