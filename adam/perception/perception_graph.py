@@ -49,7 +49,7 @@ PerceptionGraphEdgeLabel = Union[OntologyNode, str, Direction[Any]]
 class PerceptionGraph:
     _graph: DiGraph = attrib(validator=instance_of(DiGraph))
 
-    def render_to_file( # pragma: no cover
+    def render_to_file(  # pragma: no cover
         self,
         graph_name: str,
         output_file: Path,
@@ -246,6 +246,7 @@ class PerceptionGraphPattern:
     """
     A perception graph pattern is a representation of a perceived scene as a graph for memory and recall.
     """
+
     _graph: DiGraph = attrib(validator=instance_of(DiGraph))
 
     def matcher(
@@ -419,6 +420,7 @@ class AxisPredicate(NodePredicate):
     """
     Holds an axis representation for perceptual graph
     """
+
     curved: Optional[bool] = attrib(validator=optional(instance_of(bool)))
     directed: Optional[bool] = attrib(validator=optional(instance_of(bool)))
     aligned_to_gravitational: Optional[bool] = attrib(
@@ -471,6 +473,7 @@ class GeonPredicate(NodePredicate):
     """
     Holds a geon representation for perception graph matching
     """
+
     template_geon: Geon = attrib(validator=instance_of(Geon))
 
     def __call__(self, object_perception: PerceptionGraphNode) -> bool:
@@ -501,6 +504,7 @@ class RegionPredicate(NodePredicate):
     """
     Holds a region representation for perception graph matching
     """
+
     distance: Optional[Distance] = attrib(validator=optional(instance_of(Distance)))
 
     def __call__(self, object_perception: PerceptionGraphNode) -> bool:
@@ -527,6 +531,7 @@ class PerceptionGraphPatternMatch:
     Holds a complete pattern match between the given pattern and graph with the information of where the pattern was
     found in the graph
     """
+
     matched_pattern: PerceptionGraphPattern = attrib(
         validator=instance_of(PerceptionGraphPattern), kw_only=True
     )
