@@ -311,7 +311,6 @@ class GraphMatching:
         the above form to keep the match() method functional. Implementations
         should consider multigraphs.
         """
-
         if debug:
             self.pattern_node_to_num_predicate_attempts[pattern_node] += 1
 

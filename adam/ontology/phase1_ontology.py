@@ -1574,8 +1574,8 @@ _BIRD_SCHEMA = ObjectStructuralSchema(
 )
 
 # schemata describing the sub-object structural nature of a house
-_HOUSE_SCHEMA_ROOF = SubObject(_ROOF_SCHEMA)
-_HOUSE_SCHEMA_GROUND_FLOOR = SubObject(_WALL_SCHEMA)
+_HOUSE_SCHEMA_ROOF = SubObject(_ROOF_SCHEMA, debug_handle="roof")
+_HOUSE_SCHEMA_GROUND_FLOOR = SubObject(_WALL_SCHEMA, debug_handle="ground-floor")
 
 # House modeled after a simple 1 story home as commonly seen in child's books
 # Stick example below -- ASCII art perhaps isn't the best demonstration form
