@@ -498,6 +498,9 @@ class GeonPredicate(NodePredicate):
 
 @attrs(frozen=True, slots=True, cmp=False)
 class RegionPredicate(NodePredicate):
+    """
+    Holds a region representation for perception graph matching
+    """
     distance: Optional[Distance] = attrib(validator=optional(instance_of(Distance)))
 
     def __call__(self, object_perception: PerceptionGraphNode) -> bool:
