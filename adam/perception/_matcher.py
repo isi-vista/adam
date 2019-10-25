@@ -5,13 +5,15 @@
 This is derived from the VF2 graph isomorphism implementation in NetworkX.
 That implementation is copyrighted by the NetworkX maintainers
 and licensed under the 3-clause BSD license.
-That implenentation was originally coded by Christopher Ellison
+That implementation was originally coded by Christopher Ellison
 as part of the Computational Mechanics Python (CMPy) project.
 James P. Crutchfield, principal investigator.
 Complexity Sciences Center and Physics Department, UC Davis.
 
 We have made our own version because we want to track things such as
 where matches most frequently fail in order to assist with hypothesis refinement.
+
+This code should not be used by anything except the perception_graph module.
 """
 
 import sys
