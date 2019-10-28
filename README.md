@@ -36,7 +36,7 @@ The docs will be under `docs/_build/html`
 
 # To generate an HTML dump of the curriculum
 
-Run `adam.curriculum_to_html parameters/curriculum_to_html.params`
+Run `adam.curriculum_to_html parameters/html/curriculum_to_html.phase1.params`
 
 
 # Visualization
@@ -56,6 +56,7 @@ If you are using PyCharm, please set your docstring format to "Google" and your 
 * Deniz Beser
 * Marjorie Freedman
 * Ryan Gabbard
+* Chris Jenkins
 * Elizabeth Lee
 * Jacob Lichtefeld
 * Mitch Marcus
