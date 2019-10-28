@@ -18,8 +18,9 @@ from adam.ontology.phase1_spatial_relations import (
     GRAVITATIONAL_UP,
     Region,
 )
-from adam.situation import Action, SituationObject
+from adam.situation import Action
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
+from adam_test_utils import situation_object
 
 
 def test_mom_put_ball_on_the_table():
@@ -27,9 +28,9 @@ def test_mom_put_ball_on_the_table():
 
 
 def make_mom_put_ball_on_table():
-    mom = SituationObject(ontology_node=MOM)
-    ball = SituationObject(ontology_node=BALL)
-    table = SituationObject(ontology_node=TABLE)
+    mom = situation_object(ontology_node=MOM)
+    ball = situation_object(ontology_node=BALL)
+    table = situation_object(ontology_node=TABLE)
     return HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         salient_objects=[mom, ball, table],
@@ -55,9 +56,9 @@ def make_mom_put_ball_on_table():
 
 def test_multiple_trecognized_particulars_banned():
     with pytest.raises(RuntimeError):
-        dad_0 = SituationObject(DAD)
-        dad_1 = SituationObject(DAD)
-        box = SituationObject(BOX)
+        dad_0 = situation_object(DAD)
+        dad_1 = situation_object(DAD)
+        box = situation_object(BOX)
         HighLevelSemanticsSituation(
             salient_objects=[dad_0, dad_1, box],
             actions=[

@@ -9,6 +9,7 @@ import sys
 from abc import ABC, abstractmethod
 from typing import Generic, Iterable, List, Sequence, Tuple, TypeVar
 
+from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import (
@@ -222,10 +223,11 @@ class SimpleSituationTemplateProcessor(
 
         if compatible_ontology_types:
             ontology_node = chooser.choice(compatible_ontology_types)
-            return SituationObject(
+            return SituationObject.instantiate_ontology_node(
                 ontology_node,
                 properties=self._ontology.properties_for_node(ontology_node),
                 debug_handle=template_object.handle,
+                ontology=GAILA_PHASE_1_ONTOLOGY,
             )
         else:
             raise RuntimeError(

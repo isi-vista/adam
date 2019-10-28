@@ -1,7 +1,11 @@
+from typing import Optional, Mapping
+
+from typing_extensions import Protocol
+
 from attr import attrib, attrs
 from attr.validators import instance_of
 
-from adam.axes import Axes
+from adam.axes import Axes, HasAxes
 from adam.axis import GeonAxis
 from adam.utilities import sign
 
@@ -25,7 +29,6 @@ class CrossSection:
     curved: bool = attrib(validator=instance_of(bool), default=False, kw_only=True)
 
     def __repr__(self) -> str:
-
         return (
             f"[{sign(self.has_reflective_symmetry)}reflect-sym, "
             f"{sign(self.has_rotational_symmetry)}rotate-sym, "
@@ -34,7 +37,7 @@ class CrossSection:
 
 
 @attrs(slots=True, frozen=True)
-class Geon:
+class Geon(HasAxes):
     cross_section: CrossSection = attrib(
         validator=instance_of(CrossSection), kw_only=True
     )
@@ -44,8 +47,11 @@ class Geon:
     axes: Axes = attrib(validator=instance_of(Axes), kw_only=True)
     generating_axis: GeonAxis = attrib(validator=instance_of(GeonAxis), kw_only=True)
 
-    def copy(self) -> "Geon":
-        axis_mapping = {axis: axis.copy() for axis in self.axes.all_axes}
+    def copy(
+        self, *, axis_mapping: Optional[Mapping[GeonAxis, GeonAxis]] = None
+    ) -> "Geon":
+        if axis_mapping is None:
+            axis_mapping = {axis: axis.copy() for axis in self.axes.all_axes}
         return Geon(
             cross_section=self.cross_section,
             cross_section_size=self.cross_section_size,
@@ -56,6 +62,10 @@ class Geon:
     @generating_axis.default
     def _init_primary_axis(self) -> GeonAxis:
         return self.axes.primary_axis
+
+
+class MaybeHasGeon(Protocol):
+    geon: Optional[Geon]
 
 
 CONSTANT = CrossSectionSize("constant")

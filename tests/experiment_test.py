@@ -7,7 +7,7 @@ from adam.language_specific.english.english_phase_1_lexicon import (
 )
 from adam.learner import MemorizingLanguageLearner
 from adam.math_3d import Point
-from adam.ontology.phase1_ontology import BALL
+from adam.ontology.phase1_ontology import BALL, GAILA_PHASE_1_ONTOLOGY
 from adam.perception import DummyVisualPerceptionGenerator
 from adam.random_utils import RandomChooser
 from adam.situation import LocatedObjectSituation, SituationObject
@@ -20,7 +20,16 @@ def test_simple_experiment():
     only_show_truck = GeneratedFromSituationsInstanceGroup(
         name="only-ball",
         situations=[
-            LocatedObjectSituation([(SituationObject(BALL), Point(0.0, 0.0, 0.0))])
+            LocatedObjectSituation(
+                [
+                    (
+                        SituationObject.instantiate_ontology_node(
+                            BALL, ontology=GAILA_PHASE_1_ONTOLOGY
+                        ),
+                        Point(0.0, 0.0, 0.0),
+                    )
+                ]
+            )
         ],
         language_generator=language_generator,
         perception_generator=perception_generator,

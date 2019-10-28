@@ -13,14 +13,15 @@ from adam.language_specific.english.english_phase_1_lexicon import (
 from adam.math_3d import Point
 from adam.ontology.phase1_ontology import BALL
 from adam.random_utils import FixedIndexChooser, RandomChooser, SequenceChooser
-from adam.situation import LocatedObjectSituation, Situation, SituationObject
+from adam.situation import LocatedObjectSituation, Situation
+from adam_test_utils import situation_object
 
 
 def test_single_object_generator():
     # warning due to PyCharm bug
     # noinspection PyTypeChecker
     situation = LocatedObjectSituation(
-        objects_to_locations=((SituationObject(BALL), Point(0, 0, 0)),)
+        objects_to_locations=((situation_object(BALL), Point(0, 0, 0)),)
     )
 
     single_obj_generator = SingleObjectLanguageGenerator(GAILA_PHASE_1_ENGLISH_LEXICON)
@@ -50,7 +51,7 @@ def test_choose_first():
     generator = ChooseFirstLanguageGenerator(DummyLanguageGenerator())
     # pycharm fails to recognize converter
     # noinspection PyTypeChecker
-    situation = LocatedObjectSituation([(SituationObject(BALL), Point(0, 0, 0))])
+    situation = LocatedObjectSituation([(situation_object(BALL), Point(0, 0, 0))])
 
     generated_descriptions = generator.generate_language(
         situation, RandomChooser.for_seed(0)
@@ -65,7 +66,7 @@ def test_choose_random():
     )
     # pycharm fails to recognize converter
     # noinspection PyTypeChecker
-    situation = LocatedObjectSituation([(SituationObject(BALL), Point(0, 0, 0))])
+    situation = LocatedObjectSituation([(situation_object(BALL), Point(0, 0, 0))])
 
     generated_descriptions = generator.generate_language(
         situation, RandomChooser.for_seed(0)

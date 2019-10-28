@@ -4,13 +4,14 @@ from adam.ontology.during import DuringAction
 from adam.ontology.phase1_ontology import AGENT, BIRD, FLY, GAILA_PHASE_1_ONTOLOGY, HOUSE
 from adam.ontology.phase1_spatial_relations import DISTAL, Direction, Region
 from adam.relation import Relation
-from adam.situation import Action, SituationObject
+from adam.situation import Action
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
+from adam_test_utils import situation_object
 
 
 def make_bird_flies_over_a_house():
-    bird = SituationObject(BIRD)
-    house = SituationObject(HOUSE)
+    bird = situation_object(BIRD)
+    house = situation_object(HOUSE)
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         salient_objects=[bird, house],

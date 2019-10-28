@@ -113,11 +113,6 @@ GRAVITATIONAL_DOWN = Direction(
     positive=False, relative_to_axis=GRAVITATIONAL_AXIS_FUNCTION
 )
 
-# Region[ActionDescriptionVariable]
-# Region[SituationObject]
-# Region[ObjectPerception]
-# Region[TemplateObjectVariable]
-
 
 @attrs(frozen=True, repr=False)
 class Region(Generic[ReferenceObjectT]):

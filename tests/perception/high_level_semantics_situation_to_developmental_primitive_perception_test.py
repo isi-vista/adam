@@ -63,9 +63,9 @@ from adam.perception.high_level_semantics_situation_to_developmental_primitive_p
 )
 from adam.random_utils import RandomChooser
 from adam.relation import Relation
-from adam.situation import Action, SituationObject
+from adam.situation import Action
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
-from adam_test_utils import perception_with_handle
+from adam_test_utils import perception_with_handle, situation_object
 from sample_situations import make_bird_flies_over_a_house
 
 _PERCEPTION_GENERATOR = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
@@ -74,8 +74,8 @@ _PERCEPTION_GENERATOR = HighLevelSemanticsSituationToDevelopmentalPrimitivePerce
 
 
 def test_person_and_ball():
-    person = SituationObject(PERSON)
-    ball = SituationObject(BALL)
+    person = situation_object(PERSON)
+    ball = situation_object(BALL)
 
     person_and_ball_situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[person, ball]
@@ -132,8 +132,8 @@ def test_person_and_ball():
 
 
 def test_person_and_ball_color():
-    person = SituationObject(PERSON)
-    ball = SituationObject(BALL, properties=[RED])
+    person = situation_object(PERSON)
+    ball = situation_object(BALL, properties=[RED])
 
     person_and_ball_situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[person, ball]
@@ -163,9 +163,9 @@ def test_person_and_ball_color():
 
 
 def test_person_put_ball_on_table():
-    person = SituationObject(ontology_node=PERSON)
-    ball = SituationObject(ontology_node=BALL)
-    table = SituationObject(ontology_node=TABLE)
+    person = situation_object(ontology_node=PERSON)
+    ball = situation_object(ontology_node=BALL)
+    table = situation_object(ontology_node=TABLE)
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         salient_objects=[person, ball, table],
@@ -280,9 +280,9 @@ def test_person_put_ball_on_table():
 
 def test_relations_between_objects_and_ground():
     # person_put_ball_on_table
-    person = SituationObject(ontology_node=PERSON)
-    ball = SituationObject(ontology_node=BALL)
-    table = SituationObject(ontology_node=TABLE)
+    person = situation_object(ontology_node=PERSON)
+    ball = situation_object(ontology_node=BALL)
+    table = situation_object(ontology_node=TABLE)
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         salient_objects=[person, ball, table],
@@ -324,9 +324,9 @@ def test_relations_between_objects_and_ground():
 
 
 def test_liquid_in_and_out_of_container():
-    juice = SituationObject(ontology_node=JUICE)
-    box = SituationObject(ontology_node=BOX)
-    table = SituationObject(ontology_node=TABLE)
+    juice = situation_object(JUICE)
+    box = situation_object(ontology_node=BOX)
+    table = situation_object(ontology_node=TABLE)
     two_d_situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         salient_objects=[juice, table],
@@ -387,7 +387,7 @@ def test_speaker_perceivable():
     speaker_situation_perception = _PERCEPTION_GENERATOR.generate_perception(
         HighLevelSemanticsSituation(
             ontology=GAILA_PHASE_1_ONTOLOGY,
-            salient_objects=[SituationObject(PERSON, properties=[IS_SPEAKER])],
+            salient_objects=[situation_object(PERSON, properties=[IS_SPEAKER])],
         ),
         chooser=RandomChooser.for_seed(0),
     )
@@ -402,8 +402,8 @@ def test_not_two_speakers():
             HighLevelSemanticsSituation(
                 ontology=GAILA_PHASE_1_ONTOLOGY,
                 salient_objects=[
-                    SituationObject(PERSON, properties=[IS_SPEAKER]),
-                    SituationObject(PERSON, properties=[IS_SPEAKER]),
+                    situation_object(PERSON, properties=[IS_SPEAKER]),
+                    situation_object(PERSON, properties=[IS_SPEAKER]),
                 ],
             ),
             chooser=RandomChooser.for_seed(0),
@@ -413,7 +413,7 @@ def test_not_two_speakers():
 def test_liquid_perceivable():
     juice_perception = _PERCEPTION_GENERATOR.generate_perception(
         HighLevelSemanticsSituation(
-            ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[SituationObject(JUICE)]
+            ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[situation_object(JUICE)]
         ),
         chooser=RandomChooser.for_seed(0),
     ).frames[0]
@@ -423,7 +423,7 @@ def test_liquid_perceivable():
 def test_learner_perceivable():
     learner_perception = _PERCEPTION_GENERATOR.generate_perception(
         HighLevelSemanticsSituation(
-            ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[SituationObject(LEARNER)]
+            ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[situation_object(LEARNER)]
         ),
         chooser=RandomChooser.for_seed(0),
     ).frames[0]
@@ -434,7 +434,7 @@ def test_learner_perceivable():
 def test_implicit_ground():
     table_perception = _PERCEPTION_GENERATOR.generate_perception(
         HighLevelSemanticsSituation(
-            ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[SituationObject(TABLE)]
+            ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[situation_object(TABLE)]
         ),
         chooser=RandomChooser.for_seed(0),
     )
@@ -449,7 +449,7 @@ def test_implicit_ground():
 def test_explicit_ground():
     ground_perception = _PERCEPTION_GENERATOR.generate_perception(
         HighLevelSemanticsSituation(
-            ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[SituationObject(GROUND)]
+            ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[situation_object(GROUND)]
         ),
         chooser=RandomChooser.for_seed(0),
     )
@@ -490,10 +490,10 @@ def test_perceive_explicit_relations():
     # (b) before the action the ball is far from a box,
     # (c) but after the action the ball is near the box,
     # (d) throughout the action the box is on the table.
-    mom = SituationObject(MOM)
-    ball = SituationObject(BALL)
-    box = SituationObject(BOX)
-    table = SituationObject(TABLE)
+    mom = situation_object(MOM)
+    ball = situation_object(BALL)
+    box = situation_object(BOX)
+    table = situation_object(TABLE)
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         salient_objects=[mom, box, ball, table],
@@ -541,7 +541,7 @@ def test_perceive_explicit_relations():
 
 
 def test_path_from_action_description():
-    ball = SituationObject(BALL)
+    ball = situation_object(BALL)
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         salient_objects=[ball],
@@ -561,9 +561,9 @@ def test_path_from_action_description():
 
 
 def test_gaze_default():
-    cookie = SituationObject(COOKIE)
-    table = SituationObject(TABLE)
-    dad = SituationObject(DAD)
+    cookie = situation_object(COOKIE)
+    table = situation_object(TABLE)
+    dad = situation_object(DAD)
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         salient_objects=[cookie, table, dad],
@@ -585,9 +585,9 @@ def test_gaze_default():
 
 
 def test_gaze_specified():
-    cookie = SituationObject(COOKIE)
-    table = SituationObject(TABLE)
-    dad = SituationObject(DAD)
+    cookie = situation_object(COOKIE)
+    table = situation_object(TABLE)
+    dad = situation_object(DAD)
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         salient_objects=[cookie, table, dad],
@@ -616,7 +616,7 @@ def test_colors_across_part_of_relations():
     """
     learner_perception = _PERCEPTION_GENERATOR.generate_perception(
         HighLevelSemanticsSituation(
-            ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[SituationObject(TRUCK)]
+            ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[situation_object(TRUCK)]
         ),
         chooser=RandomChooser.for_seed(0),
     )
