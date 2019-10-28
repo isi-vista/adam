@@ -27,9 +27,9 @@ from vistautils.parameters import Parameters
 from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 from vistautils.preconditions import check_state
 
-from adam.curriculum.phase1_curriculum import GAILA_PHASE_1_CURRICULUM
 from adam.curriculum.preposition_curriculum import make_prepositions_curriculum
 from adam.curriculum.pursuit_curriculum import make_pursuit_curriculum
+from adam.curriculum.phase1_curriculum import build_gaila_phase_1_curriculum
 from adam.experiment import InstanceGroup
 from adam.geon import Geon
 from adam.axes import WORLD_AXES, AxesInfo
@@ -100,10 +100,12 @@ EXPLANATION_HEADER = (
     "according to Biederman's visual perception theory (see deliverable docs for a citation).</li>"
 )
 STR_TO_CURRICULUM = {
-    "phase1": GAILA_PHASE_1_CURRICULUM,
+    "phase1": build_gaila_phase_1_curriculum(),
     "prepositions": make_prepositions_curriculum(),
     "pursuit": make_pursuit_curriculum(),
 }
+
+GAILA_PHASE_1_CURRICULUM = build_gaila_phase_1_curriculum()
 
 
 def main(params: Parameters) -> None:

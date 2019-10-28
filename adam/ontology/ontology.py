@@ -119,7 +119,7 @@ class Ontology:
     def nodes_with_properties(
         self,
         root_node: "OntologyNode",
-        required_properties: Iterable["OntologyNode"],
+        required_properties: Iterable["OntologyNode"] = immutableset(),
         *,
         banned_properties: AbstractSet["OntologyNode"] = immutableset(),
     ) -> ImmutableSet["OntologyNode"]:

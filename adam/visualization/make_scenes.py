@@ -7,11 +7,12 @@ from typing import Iterable, List, Tuple, Union, DefaultDict
 
 import random
 from collections import defaultdict
+
+from adam.curriculum.phase1_curriculum import build_gaila_phase_1_curriculum
 from attr import attrs
 
 from adam.language.dependency import LinearizedDependencyTree
 
-from adam.curriculum.phase1_curriculum import GAILA_PHASE_1_CURRICULUM
 from adam.experiment import InstanceGroup
 from adam.geon import CrossSection
 
@@ -35,7 +36,9 @@ def main() -> None:
     # go through curriculum scenes (fed in from where?) and output geometry types
     print("scene generation test")
     viz = SituationVisualizer()
-    for i, scene in enumerate(SceneCreator.create_scenes(GAILA_PHASE_1_CURRICULUM)):
+    for i, scene in enumerate(
+        SceneCreator.create_scenes(build_gaila_phase_1_curriculum())
+    ):
         print(f"SCENE {i}")
         for obj, properties in scene.items():
             print(f"Object: {obj}")

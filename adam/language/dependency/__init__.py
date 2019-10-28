@@ -18,7 +18,7 @@ from networkx import DiGraph
 from adam.language import LinguisticDescription
 
 
-@attrs(frozen=True, slots=True, cmp=False)
+@attrs(frozen=True, slots=True, eq=False)
 class DependencyTree:
     r"""
     A syntactic dependency tree.
@@ -150,9 +150,9 @@ class MorphosyntacticProperty:
         return self.name
 
 
-# cmp=False is needed because otherwise the same word
+# eq=False is needed because otherwise the same word
 # with the same POS could not occur twice in a tree.
-@attrs(frozen=True, slots=True, repr=False, cmp=False)
+@attrs(frozen=True, slots=True, repr=False, eq=False)
 class DependencyTreeToken:
     """
     A single word in a `DependencyTree`

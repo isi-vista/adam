@@ -46,7 +46,6 @@ from adam.ontology.phase1_ontology import (
     THROW,
     WATER,
     on,
-    PERSON,
     strictly_above,
     JUMP,
     JUMP_INITIAL_SUPPORTER_AUX,
@@ -65,8 +64,9 @@ from adam.ontology.phase1_spatial_relations import (
 )
 from adam.random_utils import FixedIndexChooser
 from adam.relation import Relation
-from adam.situation import Action, SituationObject
+from adam.situation import Action
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
+from adam_test_utils import situation_object
 from tests.sample_situations import make_bird_flies_over_a_house
 from tests.situation.situation_test import make_mom_put_ball_on_table
 
@@ -77,7 +77,7 @@ _SIMPLE_GENERATOR = SimpleRuleBasedEnglishLanguageGenerator(
 
 def test_common_noun():
     situation = HighLevelSemanticsSituation(
-        ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[SituationObject(BALL)]
+        ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[situation_object(BALL)]
     )
     assert only(
         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
@@ -86,7 +86,7 @@ def test_common_noun():
 
 def test_mass_noun():
     situation = HighLevelSemanticsSituation(
-        ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[SituationObject(WATER)]
+        ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[situation_object(WATER)]
     )
     assert only(
         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
@@ -95,7 +95,7 @@ def test_mass_noun():
 
 def test_proper_noun():
     situation = HighLevelSemanticsSituation(
-        ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[SituationObject(MOM)]
+        ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[situation_object(MOM)]
     )
     assert only(
         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
@@ -103,7 +103,7 @@ def test_proper_noun():
 
 
 def test_one_object():
-    box = SituationObject(BOX)
+    box = situation_object(BOX)
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[box]
     )
@@ -113,8 +113,8 @@ def test_one_object():
 
 
 def test_two_objects():
-    box_1 = SituationObject(BOX, debug_handle="box_0")
-    box_2 = SituationObject(BOX, debug_handle="box_1")
+    box_1 = situation_object(BOX, debug_handle="box_0")
+    box_2 = situation_object(BOX, debug_handle="box_1")
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[box_1, box_2]
     )
@@ -124,21 +124,9 @@ def test_two_objects():
 
 
 def test_two_objects_with_dad():
-    table_1 = SituationObject(
-        TABLE,
-        debug_handle="table_0",
-        axes=GAILA_PHASE_1_ONTOLOGY.structural_schemata(TABLE)[0].axes,
-    )
-    table_2 = SituationObject(
-        TABLE,
-        debug_handle="table_1",
-        axes=GAILA_PHASE_1_ONTOLOGY.structural_schemata(TABLE)[0].axes,
-    )
-    dad = SituationObject(
-        DAD,
-        debug_handle="dad",
-        axes=GAILA_PHASE_1_ONTOLOGY.structural_schemata(PERSON)[0].axes,
-    )
+    table_1 = situation_object(TABLE, debug_handle="table_0")
+    table_2 = situation_object(TABLE, debug_handle="table_1")
+    dad = situation_object(DAD, debug_handle="dad")
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         salient_objects=[table_1, dad],
@@ -164,9 +152,9 @@ def test_two_objects_with_dad():
 
 
 def test_many_objects():
-    ball_1 = SituationObject(BALL, debug_handle="ball_0")
-    ball_2 = SituationObject(BALL, debug_handle="ball_1")
-    ball_3 = SituationObject(BALL, debug_handle="ball_2")
+    ball_1 = situation_object(BALL, debug_handle="ball_0")
+    ball_2 = situation_object(BALL, debug_handle="ball_1")
+    ball_3 = situation_object(BALL, debug_handle="ball_2")
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[ball_1, ball_2, ball_3]
     )
@@ -176,8 +164,8 @@ def test_many_objects():
 
 
 def test_simple_verb():
-    mom = SituationObject(MOM)
-    table = SituationObject(TABLE)
+    mom = situation_object(MOM)
+    table = situation_object(TABLE)
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         salient_objects=[mom, table],
@@ -201,9 +189,9 @@ def test_mom_put_a_ball_on_a_table():
 
 
 def test_mom_put_a_ball_on_a_table_using_i():
-    mom = SituationObject(ontology_node=MOM, properties=[IS_SPEAKER])
-    ball = SituationObject(ontology_node=BALL)
-    table = SituationObject(ontology_node=TABLE)
+    mom = situation_object(ontology_node=MOM, properties=[IS_SPEAKER])
+    ball = situation_object(ontology_node=BALL)
+    table = situation_object(ontology_node=TABLE)
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         salient_objects=[mom, ball, table],
@@ -231,9 +219,9 @@ def test_mom_put_a_ball_on_a_table_using_i():
 
 
 def test_mom_put_a_ball_on_a_table_using_you():
-    mom = SituationObject(ontology_node=MOM, properties=[IS_ADDRESSEE])
-    ball = SituationObject(ontology_node=BALL)
-    table = SituationObject(ontology_node=TABLE)
+    mom = situation_object(ontology_node=MOM, properties=[IS_ADDRESSEE])
+    ball = situation_object(ontology_node=BALL)
+    table = situation_object(ontology_node=TABLE)
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         salient_objects=[mom, ball, table],
@@ -261,9 +249,9 @@ def test_mom_put_a_ball_on_a_table_using_you():
 
 
 def test_dad_put_a_cookie_in_a_box():
-    dad = SituationObject(DAD)
-    cookie = SituationObject(COOKIE)
-    box = SituationObject(BOX)
+    dad = situation_object(DAD)
+    cookie = situation_object(COOKIE)
+    box = situation_object(BOX)
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         salient_objects=[dad, cookie, box],
@@ -285,9 +273,9 @@ def test_dad_put_a_cookie_in_a_box():
 
 
 def test_dad_put_a_cookie_in_a_box_using_i():
-    dad = SituationObject(DAD, properties=[IS_SPEAKER])
-    cookie = SituationObject(COOKIE)
-    box = SituationObject(BOX)
+    dad = situation_object(DAD, properties=[IS_SPEAKER])
+    cookie = situation_object(COOKIE)
+    box = situation_object(BOX)
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         salient_objects=[dad, cookie, box],
@@ -309,9 +297,9 @@ def test_dad_put_a_cookie_in_a_box_using_i():
 
 
 def test_dad_put_a_cookie_in_a_box_using_you():
-    dad = SituationObject(DAD, properties=[IS_ADDRESSEE])
-    cookie = SituationObject(COOKIE)
-    box = SituationObject(BOX)
+    dad = situation_object(DAD, properties=[IS_ADDRESSEE])
+    cookie = situation_object(COOKIE)
+    box = situation_object(BOX)
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         salient_objects=[dad, cookie, box],
@@ -333,9 +321,9 @@ def test_dad_put_a_cookie_in_a_box_using_you():
 
 
 def test_dad_put_a_cookie_in_a_box_using_my_as_dad_speaker():
-    dad = SituationObject(DAD, properties=[IS_SPEAKER])
-    cookie = SituationObject(COOKIE)
-    box = SituationObject(BOX)
+    dad = situation_object(DAD, properties=[IS_SPEAKER])
+    cookie = situation_object(COOKIE)
+    box = situation_object(BOX)
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         salient_objects=[dad, cookie, box],
@@ -358,9 +346,9 @@ def test_dad_put_a_cookie_in_a_box_using_my_as_dad_speaker():
 
 
 def test_dad_put_a_cookie_in_a_box_using_possession():
-    dad = SituationObject(DAD)
-    cookie = SituationObject(COOKIE)
-    box = SituationObject(BOX)
+    dad = situation_object(DAD)
+    cookie = situation_object(COOKIE)
+    box = situation_object(BOX)
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         salient_objects=[dad, cookie, box],
@@ -383,9 +371,9 @@ def test_dad_put_a_cookie_in_a_box_using_possession():
 
 
 def test_dad_put_a_cookie_in_a_box_using_you_your():
-    dad = SituationObject(DAD, properties=[IS_ADDRESSEE])
-    cookie = SituationObject(COOKIE)
-    box = SituationObject(BOX)
+    dad = situation_object(DAD, properties=[IS_ADDRESSEE])
+    cookie = situation_object(COOKIE)
+    box = situation_object(BOX)
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         salient_objects=[dad, cookie, box],
@@ -408,10 +396,10 @@ def test_dad_put_a_cookie_in_a_box_using_you_your():
 
 
 def test_dad_put_a_cookie_in_a_box_using_my_as_mom_speaker():
-    dad = SituationObject(DAD)
-    cookie = SituationObject(COOKIE)
-    mom = SituationObject(MOM, properties=[IS_SPEAKER])
-    box = SituationObject(BOX)
+    dad = situation_object(DAD)
+    cookie = situation_object(COOKIE)
+    mom = situation_object(MOM, properties=[IS_SPEAKER])
+    box = situation_object(BOX)
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         salient_objects=[dad, cookie, box],
@@ -434,10 +422,10 @@ def test_dad_put_a_cookie_in_a_box_using_my_as_mom_speaker():
 
 
 def test_i_put_a_cookie_in_dads_box_using_my_as_mom_speaker():
-    dad = SituationObject(DAD)
-    cookie = SituationObject(COOKIE)
-    mom = SituationObject(MOM, properties=[IS_SPEAKER])
-    box = SituationObject(BOX)
+    dad = situation_object(DAD)
+    cookie = situation_object(COOKIE)
+    mom = situation_object(MOM, properties=[IS_SPEAKER])
+    box = situation_object(BOX)
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         salient_objects=[mom, cookie, box, dad],
@@ -460,8 +448,8 @@ def test_i_put_a_cookie_in_dads_box_using_my_as_mom_speaker():
 
 
 def test_dad_has_a_cookie():
-    dad = SituationObject(DAD)
-    cookie = SituationObject(COOKIE)
+    dad = situation_object(DAD)
+    cookie = situation_object(COOKIE)
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         salient_objects=[dad, cookie],
@@ -475,7 +463,7 @@ def test_dad_has_a_cookie():
 
 
 def test_green_ball():
-    ball = SituationObject(BALL, properties=[GREEN])
+    ball = situation_object(BALL, properties=[GREEN])
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[ball]
     )
@@ -492,8 +480,8 @@ def test_path_modifier():
 
 
 def test_path_modifier_under():
-    bird = SituationObject(BIRD)
-    table = SituationObject(TABLE)
+    bird = situation_object(BIRD)
+    table = situation_object(TABLE)
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         salient_objects=[bird, table],
@@ -523,9 +511,9 @@ def test_path_modifier_under():
 
 
 def test_path_modifier_on():
-    mom = SituationObject(MOM)
-    ball = SituationObject(BALL)
-    table = SituationObject(TABLE)
+    mom = situation_object(MOM)
+    ball = situation_object(BALL)
+    table = situation_object(TABLE)
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         salient_objects=[mom, ball, table],
@@ -555,8 +543,8 @@ def test_path_modifier_on():
 
 
 def test_noun_with_modifier():
-    table = SituationObject(TABLE)
-    ground = SituationObject(GROUND)
+    table = situation_object(TABLE)
+    ground = situation_object(GROUND)
 
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -569,7 +557,7 @@ def test_noun_with_modifier():
 
 
 def test_fall_down_syntax_hint():
-    ball = SituationObject(BALL)
+    ball = situation_object(BALL)
 
     situation_without_modifier = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -589,9 +577,9 @@ def test_fall_down_syntax_hint():
 
 
 def test_transfer_of_possession():
-    mom = SituationObject(MOM)
-    baby = SituationObject(BABY)
-    cookie = SituationObject(COOKIE)
+    mom = situation_object(MOM)
+    baby = situation_object(BABY)
+    cookie = situation_object(COOKIE)
 
     for (action, verb) in ((GIVE, "gives"), (THROW, "throws")):
         for prefer_ditransitive in (True, False):
@@ -622,9 +610,9 @@ def test_transfer_of_possession():
 
 
 def test_arguments_same_ontology_type():
-    baby_0 = SituationObject(BABY)
-    baby_1 = SituationObject(BABY)
-    cookie = SituationObject(COOKIE)
+    baby_0 = situation_object(BABY)
+    baby_1 = situation_object(BABY)
+    cookie = situation_object(COOKIE)
 
     for prefer_ditransitive in (True, False):
         syntax_hints = [PREFER_DITRANSITIVE] if prefer_ditransitive else []
@@ -654,8 +642,8 @@ def test_arguments_same_ontology_type():
 
 
 def test_bird_flies_over_dad():
-    bird = SituationObject(BIRD)
-    dad = SituationObject(DAD)
+    bird = situation_object(BIRD)
+    dad = situation_object(DAD)
 
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -685,8 +673,8 @@ def test_bird_flies_over_dad():
 
 
 def test_bird_flies_up():
-    bird = SituationObject(BIRD)
-    ground = SituationObject(GROUND)
+    bird = situation_object(BIRD)
+    ground = situation_object(GROUND)
 
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -709,9 +697,9 @@ def test_bird_flies_up():
 
 
 def test_jumps_over():
-    dad = SituationObject(DAD)
-    chair = SituationObject(CHAIR)
-    ground = SituationObject(GROUND)
+    dad = situation_object(DAD)
+    chair = situation_object(CHAIR)
+    ground = situation_object(GROUND)
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         salient_objects=[dad, chair],
@@ -728,9 +716,9 @@ def test_jumps_over():
 
 
 def test_mom_drinks_juice():
-    mom = SituationObject(MOM)
-    juice = SituationObject(JUICE)
-    cup = SituationObject(CUP)
+    mom = situation_object(MOM)
+    juice = situation_object(JUICE)
+    cup = situation_object(CUP)
 
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -748,8 +736,8 @@ def test_mom_drinks_juice():
 
 
 def test_mom_eats_cookie():
-    mom = SituationObject(MOM)
-    cookie = SituationObject(COOKIE)
+    mom = situation_object(MOM)
+    cookie = situation_object(COOKIE)
 
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -763,8 +751,8 @@ def test_mom_eats_cookie():
 
 
 def test_ball_fell_on_ground():
-    ball = SituationObject(BALL)
-    ground = SituationObject(GROUND)
+    ball = situation_object(BALL)
+    ground = situation_object(GROUND)
 
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -777,8 +765,8 @@ def test_ball_fell_on_ground():
 
 
 def test_mom_sits_on_a_table():
-    mom = SituationObject(MOM)
-    table = SituationObject(TABLE)
+    mom = situation_object(MOM)
+    table = situation_object(TABLE)
 
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -805,9 +793,9 @@ def test_mom_sits_on_a_table():
 
 
 def test_you_give_me_a_cookie():
-    you = SituationObject(DAD, properties=[IS_ADDRESSEE])
-    baby = SituationObject(BABY, properties=[IS_SPEAKER])
-    cookie = SituationObject(COOKIE)
+    you = situation_object(DAD, properties=[IS_ADDRESSEE])
+    baby = situation_object(BABY, properties=[IS_SPEAKER])
+    cookie = situation_object(COOKIE)
 
     situation_to = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -845,12 +833,8 @@ def test_you_give_me_a_cookie():
 
 def test_object_beside_object():
     # HACK FOR AXES - See https://github.com/isi-vista/adam/issues/316
-    ball = SituationObject(
-        BALL, axes=GAILA_PHASE_1_ONTOLOGY.structural_schemata(BALL)[0].axes
-    )
-    table = SituationObject(
-        TABLE, axes=GAILA_PHASE_1_ONTOLOGY.structural_schemata(TABLE)[0].axes
-    )
+    ball = situation_object(BALL)
+    table = situation_object(TABLE)
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         salient_objects=[ball, table],
@@ -874,22 +858,10 @@ def test_object_beside_object():
 
 def test_object_behind_in_front_object():
     # HACK FOR AXES - See https://github.com/isi-vista/adam/issues/316
-    box = SituationObject(
-        BOX, axes=GAILA_PHASE_1_ONTOLOGY.structural_schemata(BOX)[0].axes
-    )
-    table = SituationObject(
-        TABLE, axes=GAILA_PHASE_1_ONTOLOGY.structural_schemata(TABLE)[0].axes
-    )
-    speaker = SituationObject(
-        MOM,
-        properties=[IS_SPEAKER],
-        axes=GAILA_PHASE_1_ONTOLOGY.structural_schemata(PERSON)[0].axes,
-    )
-    addressee = SituationObject(
-        DAD,
-        properties=[IS_ADDRESSEE],
-        axes=GAILA_PHASE_1_ONTOLOGY.structural_schemata(PERSON)[0].axes,
-    )
+    box = situation_object(BOX)
+    table = situation_object(TABLE)
+    speaker = situation_object(MOM, properties=[IS_SPEAKER])
+    addressee = situation_object(DAD, properties=[IS_ADDRESSEE])
 
     front_situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,

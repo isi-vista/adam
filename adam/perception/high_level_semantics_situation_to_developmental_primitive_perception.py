@@ -1,7 +1,6 @@
 from itertools import chain
 from typing import AbstractSet, Dict, List, Mapping, Optional, Union, cast, MutableMapping
 
-from attr import Factory, attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import (
     ImmutableDict,
@@ -15,15 +14,17 @@ from more_itertools import only, quantify
 from networkx import DiGraph
 from vistautils.preconditions import check_arg
 
+from adam.axes import AxesInfo, WORLD_AXES
+from adam.geon import Geon
 from adam.ontology import (
-    IN_REGION,
-    OntologyNode,
-    IS_SUBSTANCE,
-    PERCEIVABLE,
-    IS_SPEAKER,
     BINARY,
+    IN_REGION,
+    IS_SPEAKER,
+    IS_SUBSTANCE,
+    OntologyNode,
+    PERCEIVABLE,
 )
-from adam.ontology.action_description import ActionDescription
+from adam.ontology.action_description import ActionDescription, ActionDescriptionVariable
 from adam.ontology.during import DuringAction
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
@@ -42,11 +43,11 @@ from adam.ontology.phase1_ontology import (
 from adam.ontology.phase1_spatial_relations import INTERIOR, Region, SpatialPath
 from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
 from adam.perception import (
+    GROUND_PERCEPTION,
+    LEARNER_PERCEPTION,
     ObjectPerception,
     PerceptualRepresentation,
     PerceptualRepresentationGenerator,
-    GROUND_PERCEPTION,
-    LEARNER_PERCEPTION,
     RegionPerception,
 )
 from adam.perception.developmental_primitive_perception import (
@@ -60,7 +61,7 @@ from adam.random_utils import SequenceChooser
 from adam.relation import Relation
 from adam.situation import Action, SituationObject, SituationRegion
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
-from adam.axes import AxesInfo, WORLD_AXES
+from attr import Factory, attrib, attrs
 
 
 @attrs(frozen=True, slots=True)
@@ -347,7 +348,7 @@ class _PerceptionGeneration:
             after_relations=immutableset(chain(enduring_relations, after_relations)),
             during_action=action_description.during.copy_remapping_objects(
                 cast(
-                    Mapping[SituationObject, ObjectPerception],
+                    Mapping[ActionDescriptionVariable, ObjectPerception],
                     action_objects_variables_to_perceived_objects,
                 )
             )
@@ -359,14 +360,16 @@ class _PerceptionGeneration:
         self,
         situation_action: Action[OntologyNode, SituationObject],
         action_description: ActionDescription,
-    ) -> Mapping[SituationObject, Union[RegionPerception, ObjectPerception]]:
+    ) -> Mapping[ActionDescriptionVariable, Union[RegionPerception, ObjectPerception]]:
         if any(
             len(fillers) > 1
             for fillers in situation_action.argument_roles_to_fillers.value_groups()
         ):
             raise RuntimeError("Cannot handle multiple fillers for an argument role yet.")
 
-        bindings: Dict[SituationObject, Union[ObjectPerception, RegionPerception]] = {}
+        bindings: Dict[
+            ActionDescriptionVariable, Union[ObjectPerception, RegionPerception]
+        ] = {}
 
         # for action description objects which play semantic roles,
         # the SituationAction gives us the binding directly
@@ -398,7 +401,7 @@ class _PerceptionGeneration:
         # We will use as a running example the object
         # corresponding to a person's hand used to move an object
         # for the action PUT.
-        action_variables_from_non_frames: List[SituationObject] = []
+        action_variables_from_non_frames: List[ActionDescriptionVariable] = []
         for condition_set in (
             action_description.enduring_conditions,
             action_description.preconditions,
@@ -418,7 +421,7 @@ class _PerceptionGeneration:
             for action_variable in action_variables_from_non_frames
             # not already mapped by a semantic role
             if action_variable not in bindings
-            and isinstance(action_variable, SituationObject)
+            and isinstance(action_variable, ActionDescriptionVariable)
         )
 
         bindings.update(
@@ -435,7 +438,7 @@ class _PerceptionGeneration:
     def _bind_action_object_variable(
         self,
         situation_action: Action[OntologyNode, SituationObject],
-        action_object_variable: SituationObject,
+        action_object_variable: ActionDescriptionVariable,
     ) -> Union[ObjectPerception, RegionPerception]:
         """
         Binds an action object variable to an object that we have perceived.
@@ -494,10 +497,10 @@ class _PerceptionGeneration:
 
     def _perceive_action_relations(
         self,
-        conditions: ImmutableSet[Relation[SituationObject]],
+        conditions: ImmutableSet[Relation[ActionDescriptionVariable]],
         *,
         action_object_variables_to_object_perceptions: Mapping[
-            SituationObject, Union[ObjectPerception, RegionPerception]
+            ActionDescriptionVariable, Union[ObjectPerception, RegionPerception]
         ],
     ) -> AbstractSet[Relation[ObjectPerception]]:
         """
@@ -546,14 +549,16 @@ class _PerceptionGeneration:
 
     def _perceive_object_or_region_relation_filler(
         self,
-        slot_filler: Union[SituationObject, SituationRegion],
+        slot_filler: Union[ActionDescriptionVariable, Region[ActionDescriptionVariable]],
         *,
         action_object_variables_to_object_perceptions: Mapping[
-            SituationObject, Union[ObjectPerception, RegionPerception]
+            ActionDescriptionVariable, Union[ObjectPerception, RegionPerception]
         ],
     ) -> Union[ObjectPerception, RegionPerception]:
         if isinstance(slot_filler, Region):
-            object_mapping: Dict[SituationObject, ObjectPerception] = {}
+            object_mapping: Dict[
+                Union[SituationObject, ActionDescriptionVariable], ObjectPerception
+            ] = {}
             # regions are not a real possibility for lookup,
             # so mypy's complaints here are irrelevant
             object_mapping.update(self._objects_to_perceptions)  # type: ignore
@@ -561,7 +566,9 @@ class _PerceptionGeneration:
                 action_object_variables_to_object_perceptions
             )
 
-            return slot_filler.copy_remapping_objects(object_mapping)
+            return slot_filler.copy_remapping_objects(
+                cast(Mapping[ActionDescriptionVariable, ObjectPerception], object_mapping)
+            )
         else:
             return action_object_variables_to_object_perceptions[slot_filler]
 
@@ -673,12 +680,20 @@ class _PerceptionGeneration:
             situation_object.ontology_node == GROUND
             for situation_object in self._situation.all_objects
         ):
-            self._perceive_object(SituationObject(GROUND))
+            self._perceive_object(
+                SituationObject.instantiate_ontology_node(
+                    GROUND, ontology=self._generator.ontology
+                )
+            )
         if not any(
             situation_object.ontology_node == LEARNER
             for situation_object in self._situation.all_objects
         ):
-            self._perceive_object(SituationObject(LEARNER))
+            self._perceive_object(
+                SituationObject.instantiate_ontology_node(
+                    LEARNER, ontology=self._generator.ontology
+                )
+            )
         for situation_object in self._situation.all_objects:
             self._perceive_object(situation_object)
 
@@ -706,7 +721,7 @@ class _PerceptionGeneration:
                 # https://github.com/isi-vista/adam/issues/87
                 raise RuntimeError(
                     f"Support for objects with multiple structural schemata has not "
-                    f"yet keep implemented."
+                    f"yet been implemented."
                 )
             if object_schemata:
                 # We know the object's structure.
@@ -725,9 +740,7 @@ class _PerceptionGeneration:
                             situation_object.ontology_node
                         ),
                         geon=None,
-                        # we just give substances the
-                        # universal gravitational axes
-                        axes=WORLD_AXES,
+                        axes=situation_object.axes,
                     )
                 else:
                     raise RuntimeError(
@@ -751,24 +764,23 @@ class _PerceptionGeneration:
         debug_handle = self._object_handle_generator.subscripted_handle(
             schema.ontology_node
         )
-        root_object_perception: ObjectPerception
+        concrete_geon: Optional[Geon]
         if schema.geon:
-            concrete_geon = schema.geon
-            root_object_perception = ObjectPerception(
-                debug_handle=debug_handle,
-                geon=concrete_geon,
-                axes=situation_object.axes
-                if situation_object and situation_object.axes
-                else concrete_geon.axes,
-            )
+            # if there is a situation object, we need to keep its axes in sync with its geon's axes
+            if situation_object:
+                concrete_geon = schema.geon.copy(
+                    axis_mapping=situation_object.schema_axis_to_object_axis
+                )
+            else:
+                concrete_geon = schema.geon.copy()
+            axes = concrete_geon.axes
         else:
-            root_object_perception = ObjectPerception(
-                debug_handle=debug_handle,
-                geon=None,
-                axes=situation_object.axes
-                if situation_object and situation_object.axes
-                else schema.axes,
-            )
+            concrete_geon = None
+            axes = schema.axes.copy()
+
+        root_object_perception = ObjectPerception(
+            debug_handle=debug_handle, geon=concrete_geon, axes=axes
+        )
 
         # for object perceptions which correspond to SituationObjects
         # (that is, typically, for objects which are not components of other objects)
