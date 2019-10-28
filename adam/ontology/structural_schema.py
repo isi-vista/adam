@@ -11,7 +11,7 @@ from adam.ontology import OntologyNode
 from adam.relation import Relation
 
 
-@attrs(frozen=True, slots=True, repr=False, cmp=False)
+@attrs(frozen=True, slots=True, repr=False, eq=False)
 class ObjectStructuralSchema(HasAxes, MaybeHasGeon):
     r"""
     A hierarchical representation of the internal structure of some type of object.
@@ -71,9 +71,9 @@ class ObjectStructuralSchema(HasAxes, MaybeHasGeon):
                 )
 
 
-# need cmp=False to keep otherwise identical sub-components distinct
+# need eq=False to keep otherwise identical sub-components distinct
 # (e.g. left arm, right arm)
-@attrs(frozen=True, slots=True, repr=False, cmp=False)
+@attrs(frozen=True, slots=True, repr=False, eq=False)
 class SubObject:
     r"""
     A sub-component of a generic type of object.

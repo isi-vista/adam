@@ -72,7 +72,7 @@ class _TemplateVariable(Protocol):
     node_selector: OntologyNodeSelector
 
 
-@attrs(frozen=True, slots=True, cmp=False, repr=False)
+@attrs(frozen=True, slots=True, eq=False, repr=False)
 class TemplateObjectVariable(SituationTemplateObject, _TemplateVariable):
     r"""
     A variable in a `Phase1SituationTemplate`
@@ -112,7 +112,7 @@ class TemplateObjectVariable(SituationTemplateObject, _TemplateVariable):
 TemplateRegion = Region[TemplateObjectVariable]  # pylint:disable=invalid-name
 
 
-@attrs(frozen=True, slots=True, cmp=False)
+@attrs(frozen=True, slots=True, eq=False)
 class TemplatePropertyVariable(SituationTemplateObject, _TemplateVariable):
     r"""
     A variable in a `Phase1SituationTemplate`
@@ -130,7 +130,7 @@ class TemplatePropertyVariable(SituationTemplateObject, _TemplateVariable):
     )
 
 
-@attrs(frozen=True, slots=True, cmp=False)
+@attrs(frozen=True, slots=True, eq=False)
 class TemplateActionTypeVariable(SituationTemplateObject, _TemplateVariable):
     r"""
     A variable in a `Phase1SituationTemplate`

@@ -480,7 +480,7 @@ class PerceptionGraphPattern:
         dot_graph.render(output_file)
 
 
-@attrs(frozen=True, slots=True, cmp=False)
+@attrs(frozen=True, slots=True, eq=False)
 class PerceptionGraphPatternMatching:
     """
     An attempt to align a `PerceptionGraphPattern` to nodes in a `PerceptionGraph`.
@@ -583,7 +583,7 @@ class PerceptionGraphPatternMatching:
         return matching
 
 
-@attrs(frozen=True, slots=True, cmp=False)
+@attrs(frozen=True, slots=True, eq=False)
 class PerceptionGraphPatternMatch:
     """
     Represents a match of a `PerceptionPatternGraph` against a `PerceptionGraph`.
@@ -617,7 +617,7 @@ class NodePredicate(ABC):
     Super-class for pattern graph nodes.
 
     All `NodePredicate`\ s should compare non-equal to one another
-    (if the are *attrs* classes, set *cmp=False*).
+    (if the are *attrs* classes, set *eq=False*).
     """
 
     @abstractmethod
@@ -633,7 +633,7 @@ class NodePredicate(ABC):
         """
 
 
-@attrs(frozen=True, slots=True, cmp=False)
+@attrs(frozen=True, slots=True, eq=False)
 class AnyNodePredicate(NodePredicate):
     """
     Matches any node whatsoever.
@@ -646,7 +646,7 @@ class AnyNodePredicate(NodePredicate):
         return "*"
 
 
-@attrs(frozen=True, slots=True, cmp=False)
+@attrs(frozen=True, slots=True, eq=False)
 class AnyObjectPerception(NodePredicate):
     """
     Matches any `ObjectPerception` node.
@@ -665,7 +665,7 @@ class AnyObjectPerception(NodePredicate):
         return f"*obj{debug_handle_str}"
 
 
-@attrs(frozen=True, slots=True, cmp=False)
+@attrs(frozen=True, slots=True, eq=False)
 class AxisPredicate(NodePredicate):
     """
     Represents constraints on an axis given in a `PerceptionGraphPattern`
@@ -717,7 +717,7 @@ class AxisPredicate(NodePredicate):
         return f"axis({', '.join(constraints)})"
 
 
-@attrs(frozen=True, slots=True, cmp=False)
+@attrs(frozen=True, slots=True, eq=False)
 class GeonPredicate(NodePredicate):
     """
     Represents constraints on a `Geon` given in a `PerceptionGraphPattern`
@@ -747,7 +747,7 @@ class GeonPredicate(NodePredicate):
         return GeonPredicate(geon)
 
 
-@attrs(frozen=True, slots=True, cmp=False)
+@attrs(frozen=True, slots=True, eq=False)
 class RegionPredicate(NodePredicate):
     """
     Represents constraints on a `Region` given in a `PerceptionGraphPattern`.
@@ -770,7 +770,7 @@ class RegionPredicate(NodePredicate):
         return RegionPredicate(region.distance)
 
 
-@attrs(frozen=True, slots=True, cmp=False)
+@attrs(frozen=True, slots=True, eq=False)
 class IsPropertyNodePredicate(NodePredicate):
     property_value: OntologyNode = attrib(validator=instance_of(OntologyNode))
 
@@ -781,7 +781,7 @@ class IsPropertyNodePredicate(NodePredicate):
         return f"prop({self.property_value.handle})"
 
 
-@attrs(frozen=True, slots=True, cmp=False)
+@attrs(frozen=True, slots=True, eq=False)
 class AndNodePredicate(NodePredicate):
     """
     `NodePredicate` which matches if all its *sub_predicates* match.

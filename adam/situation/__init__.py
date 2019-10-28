@@ -69,7 +69,7 @@ class BagOfFeaturesSituationRepresentation(Situation):
     """
 
 
-@attrs(frozen=True, slots=True, hash=None, cmp=False, repr=False)
+@attrs(frozen=True, slots=True, hash=None, eq=False, repr=False)
 class SituationObject(HasAxes):
     r"""
     An object present in some situation.

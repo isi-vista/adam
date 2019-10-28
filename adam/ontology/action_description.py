@@ -22,7 +22,7 @@ from adam.relation import Relation, flatten_relations
 from attr import attrib, attrs
 
 
-@attrs(frozen=True, slots=True, hash=None, cmp=False, repr=False)
+@attrs(frozen=True, slots=True, hash=None, eq=False, repr=False)
 class ActionDescriptionVariable:
     """
     A variable in an action description ranging over objects in Situations.
