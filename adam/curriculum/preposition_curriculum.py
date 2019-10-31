@@ -195,7 +195,7 @@ def _in_front_template(
     )
 
 
-def _make_on_training(num_samples: int = 5) -> Phase1InstanceGroup:
+def _make_on_training(num_samples: int = 5, *, noise_objects: bool = True) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
     ground_0 = standard_object("box", BOX)
@@ -217,7 +217,7 @@ def _make_on_training(num_samples: int = 5) -> Phase1InstanceGroup:
                                 make_background(
                                     [figure, ground],
                                     all_objects=flatten([figures, grounds]),
-                                ),
+                                ) if noise_objects else immutableset(),
                                 is_training=True,
                             ),
                             chooser=PHASE1_CHOOSER,
@@ -233,7 +233,7 @@ def _make_on_training(num_samples: int = 5) -> Phase1InstanceGroup:
     )
 
 
-def _make_beside_training(num_samples: int = 5) -> Phase1InstanceGroup:
+def _make_beside_training(num_samples: int = 5, *, noise_objects: bool = True) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
     ground_0 = standard_object("box", BOX)
@@ -255,7 +255,7 @@ def _make_beside_training(num_samples: int = 5) -> Phase1InstanceGroup:
                                 make_background(
                                     [figure, ground],
                                     all_objects=flatten([figures, grounds]),
-                                ),
+                                ) if noise_objects else immutableset(),
                                 is_right=direction,
                                 is_training=True,
                             ),
@@ -273,7 +273,7 @@ def _make_beside_training(num_samples: int = 5) -> Phase1InstanceGroup:
     )
 
 
-def _make_under_training(num_samples: int = 5) -> Phase1InstanceGroup:
+def _make_under_training(num_samples: int = 5, *, noise_objects: bool = True) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
     ground_0 = standard_object("table", TABLE)
@@ -293,7 +293,7 @@ def _make_under_training(num_samples: int = 5) -> Phase1InstanceGroup:
                             [figure], all_objects=flatten([figures, grounds])
                         ),
                         is_training=True,
-                    ),
+                    ) if noise_objects else immutableset(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER,
                     max_to_sample=num_samples,
@@ -305,7 +305,7 @@ def _make_under_training(num_samples: int = 5) -> Phase1InstanceGroup:
     )
 
 
-def _make_over_training(num_samples: int = 5) -> Phase1InstanceGroup:
+def _make_over_training(num_samples: int = 5, *, noise_objects: bool = True) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
     ground_0 = standard_object("box", BOX)
@@ -326,7 +326,7 @@ def _make_over_training(num_samples: int = 5) -> Phase1InstanceGroup:
                             [figure], all_objects=flatten([figures, grounds])
                         ),
                         is_training=True,
-                    ),
+                    ) if noise_objects else immutableset(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER,
                     max_to_sample=num_samples,
@@ -338,7 +338,7 @@ def _make_over_training(num_samples: int = 5) -> Phase1InstanceGroup:
     )
 
 
-def _make_in_training(num_samples: int = 5) -> Phase1InstanceGroup:
+def _make_in_training(num_samples: int = 5, *, noise_objects: bool = True) -> Phase1InstanceGroup:
     figure_0 = object_variable("water", WATER)
     figure_1 = object_variable("juice", JUICE)
     ground_0 = standard_object("box", BOX)
@@ -357,7 +357,7 @@ def _make_in_training(num_samples: int = 5) -> Phase1InstanceGroup:
                         ground,
                         make_background(
                             [figure, ground], all_objects=flatten([figures, grounds])
-                        ),
+                        ) if noise_objects else immutableset(),
                         is_training=True,
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -371,7 +371,7 @@ def _make_in_training(num_samples: int = 5) -> Phase1InstanceGroup:
     )
 
 
-def _make_behind_training(num_samples: int = 5) -> Phase1InstanceGroup:
+def _make_behind_training(num_samples: int = 5, *, noise_objects: bool = True) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
     ground_0 = standard_object("box", BOX)
@@ -397,7 +397,7 @@ def _make_behind_training(num_samples: int = 5) -> Phase1InstanceGroup:
                                     all_objects=flatten(
                                         [figures, grounds, [speaker, addressee]]
                                     ),
-                                ),
+                                ) if noise_objects else immutableset([speaker, addressee]),
                                 is_training=True,
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -413,7 +413,7 @@ def _make_behind_training(num_samples: int = 5) -> Phase1InstanceGroup:
     )
 
 
-def _make_in_front_training(num_samples: int = 5) -> Phase1InstanceGroup:
+def _make_in_front_training(num_samples: int = 5, *, noise_objects: bool = True) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
     ground_0 = standard_object("box", BOX)
@@ -439,7 +439,7 @@ def _make_in_front_training(num_samples: int = 5) -> Phase1InstanceGroup:
                                     all_objects=flatten(
                                         [figures, grounds, [speaker, addressee]]
                                     ),
-                                ),
+                                ) if noise_objects else immutableset([speaker, addressee]),
                                 is_training=True,
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -455,7 +455,7 @@ def _make_in_front_training(num_samples: int = 5) -> Phase1InstanceGroup:
     )
 
 
-def _make_on_tests(num_samples: int = 5) -> Phase1InstanceGroup:
+def _make_on_tests(num_samples: int = 5, *, noise_objects: bool = True) -> Phase1InstanceGroup:
     figure_0 = standard_object("figure_0", THING)
     figure_1 = standard_object("figure_1", THING)
     ground_0 = standard_object(
@@ -481,7 +481,7 @@ def _make_on_tests(num_samples: int = 5) -> Phase1InstanceGroup:
                                 make_background(
                                     [figure, ground],
                                     all_objects=flatten([figures, grounds]),
-                                ),
+                                ) if noise_objects else immutableset(),
                                 is_training=False,
                             ),
                             chooser=PHASE1_CHOOSER,
@@ -497,7 +497,7 @@ def _make_on_tests(num_samples: int = 5) -> Phase1InstanceGroup:
     )
 
 
-def _make_beside_tests(num_samples: int = 5) -> Phase1InstanceGroup:
+def _make_beside_tests(num_samples: int = 5, *, noise_objects: bool = True) -> Phase1InstanceGroup:
     figure_0 = standard_object("figure_0", THING)
     figure_1 = standard_object("figure_1", THING)
     ground_0 = standard_object("ground_0", THING)
@@ -522,7 +522,7 @@ def _make_beside_tests(num_samples: int = 5) -> Phase1InstanceGroup:
                                 ),
                                 is_right=direction,
                                 is_training=False,
-                            ),
+                            ) if noise_objects else immutableset(),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
                             chooser=PHASE1_CHOOSER,
                             max_to_sample=num_samples,
@@ -537,7 +537,7 @@ def _make_beside_tests(num_samples: int = 5) -> Phase1InstanceGroup:
     )
 
 
-def _make_under_tests(num_samples: int = 5) -> Phase1InstanceGroup:
+def _make_under_tests(num_samples: int = 5, *, noise_objects: bool = True) -> Phase1InstanceGroup:
     figure_0 = standard_object("figure_0", THING)
     figure_1 = standard_object("figure_1", THING)
     ground_0 = standard_object("ground_0", THING, required_properties=[HAS_SPACE_UNDER])
@@ -557,7 +557,7 @@ def _make_under_tests(num_samples: int = 5) -> Phase1InstanceGroup:
                             [figure], all_objects=flatten([figures, grounds])
                         ),
                         is_training=False,
-                    ),
+                    ) if noise_objects else immutableset(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER,
                     max_to_sample=num_samples,
@@ -569,7 +569,7 @@ def _make_under_tests(num_samples: int = 5) -> Phase1InstanceGroup:
     )
 
 
-def _make_over_tests(num_samples: int = 5) -> Phase1InstanceGroup:
+def _make_over_tests(num_samples: int = 5, *, noise_objects: bool = True) -> Phase1InstanceGroup:
     figure_0 = standard_object("figure_0", THING)
     figure_1 = standard_object("figure_1", THING)
     ground_0 = standard_object("ground_0", THING)
@@ -590,7 +590,7 @@ def _make_over_tests(num_samples: int = 5) -> Phase1InstanceGroup:
                             [figure], all_objects=flatten([figures, grounds])
                         ),
                         is_training=False,
-                    ),
+                    ) if noise_objects else immutableset(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER,
                     max_to_sample=num_samples,
@@ -602,7 +602,7 @@ def _make_over_tests(num_samples: int = 5) -> Phase1InstanceGroup:
     )
 
 
-def _make_in_tests(num_samples: int = 5) -> Phase1InstanceGroup:
+def _make_in_tests(num_samples: int = 5, *, noise_objects: bool = True) -> Phase1InstanceGroup:
     figure_0 = object_variable("figure_0", THING, banned_properties=[IS_BODY_PART])
     figure_1 = standard_object("figure_1", THING, banned_properties=[IS_BODY_PART])
     ground_0 = standard_object("ground_0", THING, required_properties=[HOLLOW])
@@ -623,7 +623,7 @@ def _make_in_tests(num_samples: int = 5) -> Phase1InstanceGroup:
                             [figure, ground], all_objects=flatten([figures, grounds])
                         ),
                         is_training=False,
-                    ),
+                    ) if noise_objects else immutableset(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER,
                     max_to_sample=num_samples,
@@ -635,7 +635,7 @@ def _make_in_tests(num_samples: int = 5) -> Phase1InstanceGroup:
     )
 
 
-def _make_behind_tests(num_samples: int = 5) -> Phase1InstanceGroup:
+def _make_behind_tests(num_samples: int = 5, *, noise_objects: bool = True) -> Phase1InstanceGroup:
     figure_0 = standard_object("figure_0", THING)
     figure_1 = standard_object("figure_1", THING)
     ground_0 = standard_object("ground_0", THING)
@@ -663,7 +663,7 @@ def _make_behind_tests(num_samples: int = 5) -> Phase1InstanceGroup:
                                     ),
                                 ),
                                 is_training=False,
-                            ),
+                            ) if noise_objects else immutableset([speaker, addressee]),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
                             chooser=PHASE1_CHOOSER,
                             max_to_sample=num_samples,
@@ -677,7 +677,7 @@ def _make_behind_tests(num_samples: int = 5) -> Phase1InstanceGroup:
     )
 
 
-def _make_in_front_tests(num_samples: int = 5) -> Phase1InstanceGroup:
+def _make_in_front_tests(num_samples: int = 5, *, noise_objects: bool = True) -> Phase1InstanceGroup:
     figure_0 = standard_object("figure_0", THING)
     figure_1 = standard_object("figure_1", THING)
     ground_0 = standard_object("ground_0", THING)
@@ -703,7 +703,7 @@ def _make_in_front_tests(num_samples: int = 5) -> Phase1InstanceGroup:
                                     all_objects=flatten(
                                         [figures, grounds, [speaker, addressee]]
                                     ),
-                                ),
+                                ) if noise_objects else immutableset([speaker, addressee]),
                                 is_training=False,
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -719,34 +719,34 @@ def _make_in_front_tests(num_samples: int = 5) -> Phase1InstanceGroup:
     )
 
 
-def make_prepositions_curriculum_training(num_samples: int = 5):
+def make_prepositions_curriculum_training(num_samples: int = 5, *, noise_objects: bool = True):
     return [
-        _make_on_training(num_samples),
-        _make_beside_training(num_samples),
-        _make_under_training(num_samples),
-        _make_over_training(num_samples),
-        _make_in_training(num_samples),
-        _make_behind_training(num_samples),
-        _make_in_front_training(num_samples),
+        _make_on_training(num_samples, noise_objects=noise_objects),
+        _make_beside_training(num_samples, noise_objects=noise_objects),
+        _make_under_training(num_samples, noise_objects=noise_objects),
+        _make_over_training(num_samples, noise_objects=noise_objects),
+        _make_in_training(num_samples, noise_objects=noise_objects),
+        _make_behind_training(num_samples, noise_objects=noise_objects),
+        _make_in_front_training(num_samples, noise_objects=noise_objects),
     ]
 
 
-def make_prepositions_curriculum_testing(num_samples: int = 5):
+def make_prepositions_curriculum_testing(num_samples: int = 5, *, noise_objects: bool = True):
     return [
-        _make_on_tests(num_samples),
-        _make_beside_tests(num_samples),
-        _make_under_tests(num_samples),
-        _make_over_tests(num_samples),
-        _make_in_tests(num_samples),
-        _make_behind_tests(num_samples),
-        _make_in_front_tests(num_samples),
+        _make_on_tests(num_samples, noise_objects=noise_objects),
+        _make_beside_tests(num_samples, noise_objects=noise_objects),
+        _make_under_tests(num_samples, noise_objects=noise_objects),
+        _make_over_tests(num_samples, noise_objects=noise_objects),
+        _make_in_tests(num_samples, noise_objects=noise_objects),
+        _make_behind_tests(num_samples, noise_objects=noise_objects),
+        _make_in_front_tests(num_samples, noise_objects=noise_objects),
     ]
 
 
-def make_prepositions_curriculum(num_samples: int = 5):
+def make_prepositions_curriculum(num_samples: int = 5, *, noise_objects: bool = True):
     return flatten(
         [
-            make_prepositions_curriculum_training(num_samples),
-            make_prepositions_curriculum_testing(num_samples),
+            make_prepositions_curriculum_training(num_samples, noise_objects=noise_objects),
+            make_prepositions_curriculum_testing(num_samples, noise_objects=noise_objects),
         ]
     )
