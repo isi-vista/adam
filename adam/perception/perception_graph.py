@@ -349,7 +349,8 @@ class PerceptionGraphPattern:
         ).copy_as_digraph()
 
         # We remove certain information that is added by situation generation, but is not in schema
-        # Removed in order: colors, ontology nodes (properties), regions related to ground, ground, learner, islands
+        # Removed in order: colors, ontology nodes (properties), regions related to ground, ground, learner and
+        # finally any leftover islands that dont belong to the schema's graph component
         nodes_to_remove = [
             node
             for node in perception_graph.nodes
@@ -374,6 +375,8 @@ class PerceptionGraphPattern:
             )
         ]
         perception_graph.remove_nodes_from(nodes_to_remove)
+        # After removing ground and learner, we are still left with some nodes that belonged to their components.
+        # We remove these islands, effectively keeping the connected component containing the root object perception.
         islands = list(isolates(perception_graph))
         perception_graph.remove_nodes_from(islands)
 
