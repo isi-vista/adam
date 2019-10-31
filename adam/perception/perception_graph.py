@@ -18,7 +18,7 @@ from attr.validators import instance_of, optional
 from immutablecollections import immutabledict, immutableset
 from immutablecollections.converter_utils import _to_immutabledict, _to_tuple
 from more_itertools import first
-from networkx import DiGraph, isolates
+from networkx import DiGraph
 
 from adam.axes import AxesInfo, HasAxes
 from adam.axis import GeonAxis
@@ -27,7 +27,7 @@ from adam.ontology import OntologyNode
 from adam.ontology.phase1_ontology import PART_OF, GAILA_PHASE_1_ONTOLOGY
 from adam.ontology.phase1_spatial_relations import Direction, Distance, Region
 from adam.ontology.structural_schema import ObjectStructuralSchema
-from adam.perception import ObjectPerception, GROUND_PERCEPTION, LEARNER_PERCEPTION
+from adam.perception import ObjectPerception
 from adam.perception._matcher import GraphMatching
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -37,6 +37,8 @@ from adam.perception.developmental_primitive_perception import (
 )
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
+    EXCLUDE_LEARNER,
+    EXCLUDE_GROUND,
 )
 from adam.random_utils import RandomChooser
 from adam.situation import SituationObject
@@ -341,44 +343,23 @@ class PerceptionGraphPattern:
         perception_generator = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
             GAILA_PHASE_1_ONTOLOGY
         )
+        # We explicitly exclude ground and learner in perception generation, which were not specified in the schema
         perception = perception_generator.generate_perception(
-            situation, chooser=RandomChooser.for_seed(0)
+            situation,
+            chooser=RandomChooser.for_seed(0),
+            flags=[EXCLUDE_GROUND, EXCLUDE_LEARNER],
         )
         perception_graph = PerceptionGraph.from_frame(
             first(perception.frames)
         ).copy_as_digraph()
 
-        # We remove certain information that is added by situation generation, but is not in schema
-        # Removed in order: colors, ontology nodes (properties), regions related to ground, ground, learner and
-        # finally any leftover islands that dont belong to the schema's graph component
+        # We remove color and properties that is added by situation generation, but is not in schema
         nodes_to_remove = [
             node
-            for node in perception_graph.nodes
-            if isinstance(node, RgbColorPerception)
-            or (isinstance(node, OntologyNode))
-            or (
-                isinstance(node, tuple)
-                and isinstance(node[0], Region)
-                and any(
-                    isinstance(n, ObjectPerception)
-                    and n.debug_handle == GROUND_PERCEPTION.debug_handle
-                    for n in perception_graph.neighbors(node)
-                )
-            )
-            or (
-                isinstance(node, ObjectPerception)
-                and node.debug_handle == GROUND_PERCEPTION.debug_handle
-            )
-            or (
-                isinstance(node, ObjectPerception)
-                and node.debug_handle == LEARNER_PERCEPTION.debug_handle
-            )
+            for node in perception_graph
+            if isinstance(node, RgbColorPerception) or isinstance(node, OntologyNode)
         ]
         perception_graph.remove_nodes_from(nodes_to_remove)
-        # After removing ground and learner, we are still left with some nodes that belonged to their components.
-        # We remove these islands, effectively keeping the connected component containing the root object perception.
-        islands = list(isolates(perception_graph))
-        perception_graph.remove_nodes_from(islands)
 
         # Finally, we convert the PerceptionGraph DiGraph representation to a PerceptionGraphPattern
         return PerceptionGraphPattern.from_graph(perception_graph=perception_graph)

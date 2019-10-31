@@ -73,6 +73,10 @@ from adam.situation.high_level_semantics_situation import HighLevelSemanticsSitu
 from attr import Factory, attrib, attrs
 
 
+EXCLUDE_GROUND = "exclude_ground_flag"
+EXCLUDE_LEARNER = "exclude_learner_flag"
+
+
 @attrs(frozen=True, slots=True)
 class HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
     PerceptualRepresentationGenerator[
@@ -93,8 +97,10 @@ class HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
     """
 
     def generate_perception(
-        self, situation: HighLevelSemanticsSituation, chooser: SequenceChooser
+        self, situation: HighLevelSemanticsSituation, chooser: SequenceChooser, flags=None
     ) -> PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]:
+        if flags is None:
+            flags = list()
         check_arg(
             situation.ontology == self.ontology,
             "Cannot generate perceptions "
@@ -102,7 +108,7 @@ class HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
             "ontology.",
         )
         # all the work is done in a stateful _PerceptionGeneration object
-        return _PerceptionGeneration(self, situation, chooser).do()
+        return _PerceptionGeneration(self, situation, chooser, flags).do()
 
 
 @attrs(frozen=True, slots=True)
@@ -145,6 +151,7 @@ class _PerceptionGeneration:
         validator=instance_of(HighLevelSemanticsSituation)
     )
     _chooser: SequenceChooser = attrib(validator=instance_of(SequenceChooser))
+    _flags: List[str] = attrib(validator=instance_of(List))
     _objects_to_perceptions: Dict[SituationObject, ObjectPerception] = attrib(
         init=False, default=Factory(dict)
     )
@@ -220,7 +227,8 @@ class _PerceptionGeneration:
         # Other relations implied by actions will be handled during action translation below.
 
         if not self._situation.actions:
-            self._perceive_ground_relations()
+            if EXCLUDE_GROUND not in self._flags:
+                self._perceive_ground_relations()
             return PerceptualRepresentation.single_frame(
                 DevelopmentalPrimitivePerceptionFrame(
                     perceived_objects=self._object_perceptions,
@@ -348,7 +356,8 @@ class _PerceptionGeneration:
             action_object_variables_to_object_perceptions=action_objects_variables_to_perceived_objects,
         )
 
-        self._perceive_ground_relations()
+        if EXCLUDE_GROUND not in self._flags:
+            self._perceive_ground_relations()
 
         return _PerceptionGeneration._ActionPerception(
             before_relations=immutableset(chain(enduring_relations, before_relations)),
@@ -738,18 +747,24 @@ class _PerceptionGeneration:
             return None
 
     def _perceive_objects(self) -> None:
-        if not any(
-            situation_object.ontology_node == GROUND
-            for situation_object in self._situation.all_objects
+        if (
+            not any(
+                situation_object.ontology_node == GROUND
+                for situation_object in self._situation.all_objects
+            )
+            and EXCLUDE_GROUND not in self._flags
         ):
             self._perceive_object(
                 SituationObject.instantiate_ontology_node(
                     GROUND, ontology=self._generator.ontology
                 )
             )
-        if not any(
-            situation_object.ontology_node == LEARNER
-            for situation_object in self._situation.all_objects
+        if (
+            not any(
+                situation_object.ontology_node == LEARNER
+                for situation_object in self._situation.all_objects
+            )
+            and EXCLUDE_LEARNER not in self._flags
         ):
             self._perceive_object(
                 SituationObject.instantiate_ontology_node(
