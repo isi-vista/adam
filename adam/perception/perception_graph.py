@@ -8,22 +8,25 @@ This file first defines `PerceptionGraph`\ s,
 then defines `PerceptionGraphPattern`\ s to match them.
 """
 from abc import ABC, abstractmethod
+from copy import copy
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, Mapping, Optional, Tuple, Union
 
 import graphviz
+from attr import attrib, attrs
 from attr.validators import instance_of, optional
 from immutablecollections import immutabledict, immutableset
 from immutablecollections.converter_utils import _to_immutabledict, _to_tuple
+from more_itertools import first
 from networkx import DiGraph
 
 from adam.axes import AxesInfo, HasAxes
 from adam.axis import GeonAxis
 from adam.geon import Geon, MaybeHasGeon
 from adam.ontology import OntologyNode
-from adam.ontology.phase1_ontology import PART_OF
+from adam.ontology.phase1_ontology import PART_OF, GAILA_PHASE_1_ONTOLOGY
 from adam.ontology.phase1_spatial_relations import Direction, Distance, Region
-from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
+from adam.ontology.structural_schema import ObjectStructuralSchema
 from adam.perception import ObjectPerception
 from adam.perception._matcher import GraphMatching
 from adam.perception.developmental_primitive_perception import (
@@ -32,7 +35,12 @@ from adam.perception.developmental_primitive_perception import (
     HasColor,
     RgbColorPerception,
 )
-from attr import attrib, attrs
+from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
+    HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
+)
+from adam.random_utils import RandomChooser
+from adam.situation import SituationObject
+from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 
 
 class Incrementer:
@@ -74,6 +82,10 @@ HAS_GEON_LABEL = OntologyNode("geon")
 """
 Edge label in a `PerceptionGraph` linking an `ObjectPerception` to its associated `Geon`.
 """
+HAS_PROPERTY_LABEL = OntologyNode("has-property")
+"""
+Edge label in a `PerceptionGraph` linking an `ObjectPerception` to its associated `Property`.
+"""
 
 
 @attrs(frozen=True, slots=True)
@@ -86,6 +98,9 @@ class PerceptionGraph:
     These can be matched against by `PerceptionGraphPattern`\ s.
     """
     _graph: DiGraph = attrib(validator=instance_of(DiGraph))
+
+    def copy_as_digraph(self):
+        return copy(self._graph)
 
     @staticmethod
     def from_frame(frame: DevelopmentalPrimitivePerceptionFrame) -> "PerceptionGraph":
@@ -156,7 +171,7 @@ class PerceptionGraph:
                 dest_node = map_node(property_.color)
             else:
                 raise RuntimeError(f"Don't know how to translate property {property_}")
-            graph.add_edge(source_node, dest_node, label="has-property")
+            graph.add_edge(source_node, dest_node, label=HAS_PROPERTY_LABEL)
 
         return PerceptionGraph(graph)
 
@@ -313,58 +328,87 @@ class PerceptionGraphPattern:
         """
         Creates a pattern for recognizing an object based on its *object_schema*.
         """
-        graph = DiGraph()
-        object_to_node: Dict[Any, NodePredicate] = {}
 
-        PerceptionGraphPattern._translate_schema(
-            # since the root object does not itself have a `SubObject` object,
-            # we wrap it in one.
-            object_=SubObject(object_schema),
-            object_schema=object_schema,
-            graph=graph,
-            schema_node_to_pattern_node=object_to_node,
+        # First, we generate a PerceptionGraph corresponding to this schema
+        # by instantiating a situation which contains a single object
+        # of the desired type.
+        schema_situation_object = SituationObject.instantiate_ontology_node(
+            ontology_node=object_schema.ontology_node, ontology=GAILA_PHASE_1_ONTOLOGY
         )
-        return PerceptionGraphPattern(graph)
+        situation = HighLevelSemanticsSituation(
+            ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[schema_situation_object]
+        )
+        perception_generator = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
+            GAILA_PHASE_1_ONTOLOGY
+        )
+        # We explicitly exclude ground and learner in perception generation, which were not specified in the schema
+        perception = perception_generator.generate_perception(
+            situation,
+            chooser=RandomChooser.for_seed(0),
+            include_ground=False,
+            include_learner=False,
+        )
+        perception_graph = PerceptionGraph.from_frame(
+            first(perception.frames)
+        ).copy_as_digraph()
+
+        # We remove color and properties that is added by situation generation, but is not in schema
+        nodes_to_remove = [
+            node
+            for node in perception_graph
+            if isinstance(node, RgbColorPerception) or isinstance(node, OntologyNode)
+        ]
+        perception_graph.remove_nodes_from(nodes_to_remove)
+
+        # Finally, we convert the PerceptionGraph DiGraph representation to a PerceptionGraphPattern
+        return PerceptionGraphPattern.from_graph(perception_graph=perception_graph)
 
     @staticmethod
-    def _translate_schema(
-        object_: Any,
-        object_schema: ObjectStructuralSchema,
-        graph: DiGraph,
-        schema_node_to_pattern_node: Dict[Any, "NodePredicate"],
-    ) -> None:
-        def map_node(node: Any) -> NodePredicate:
-            # we need to do this because multiple sub-objects with the same schemata
-            # (e.g. multiple tires of a truck) will share the same Geon, Region, and Axis objects.
-            # We therefore need to "scope" those objects to within e.g. a single tire.
-            # If any new types of predicates are added below,
-            # be sure to check the predicate implementation is aware of the tuple-wrapping.
-            key: Any
-            if isinstance(node, SubObject):
-                key = node
-            else:
-                key = (object_, node)
+    def from_graph(perception_graph: DiGraph) -> "PerceptionGraphPattern":
+        """
+        Creates a pattern for recognizing an object based on its *perception_graph*.
+        """
+        pattern_graph = DiGraph()
+        PerceptionGraphPattern._translate_graph(
+            perception_graph=perception_graph, pattern_graph=pattern_graph
+        )
+        return PerceptionGraphPattern(pattern_graph)
 
-            if key not in schema_node_to_pattern_node:
-                if isinstance(node, GeonAxis):
-                    schema_node_to_pattern_node[key] = AxisPredicate.from_axis(node)
-                elif isinstance(node, Geon):
-                    schema_node_to_pattern_node[key] = GeonPredicate.exactly_matching(
-                        node
-                    )
-                elif isinstance(node, Region):
-                    schema_node_to_pattern_node[key] = RegionPredicate.matching_distance(
-                        node
-                    )
-                elif isinstance(node, SubObject):
-                    schema_node_to_pattern_node[key] = AnyObjectPerception(
+    @staticmethod
+    def _translate_graph(perception_graph: DiGraph, pattern_graph: DiGraph) -> None:
+        perception_node_to_pattern_node: Dict[Any, "NodePredicate"] = {}
+
+        # Two mapping methods that map nodes and edges from the source PerceptionGraph onto the corresponding
+        # node and edge representations on the PerceptionGraphPattern.
+        def map_node(node: Any) -> "NodePredicate":
+
+            key = node
+            if key not in perception_node_to_pattern_node:
+                if isinstance(node, tuple):
+                    node = node[0]
+                    if isinstance(node, Geon):
+                        perception_node_to_pattern_node[
+                            key
+                        ] = GeonPredicate.exactly_matching(node)
+                    elif isinstance(node, Region):
+                        perception_node_to_pattern_node[
+                            key
+                        ] = RegionPredicate.matching_distance(node)
+                    else:
+                        raise RuntimeError(f"Don't know how to map tuple node {node}")
+                elif isinstance(node, GeonAxis):
+                    perception_node_to_pattern_node[key] = AxisPredicate.from_axis(node)
+                elif isinstance(node, ObjectPerception):
+                    perception_node_to_pattern_node[key] = AnyObjectPerception(
                         debug_handle=node.debug_handle
                     )
+                elif isinstance(node, OntologyNode):
+                    perception_node_to_pattern_node[key] = IsOntologyNodePredicate(node)
                 else:
                     raise RuntimeError(f"Don't know how to map node {node}")
-            return schema_node_to_pattern_node[key]
+            return perception_node_to_pattern_node[key]
 
-        def map_edge(label: Any) -> Mapping[str, EdgePredicate]:
+        def map_edge(label: Any) -> Mapping[str, "EdgePredicate"]:
             if isinstance(label, OntologyNode):
                 return {"predicate": RelationTypeIsPredicate(label)}
             elif isinstance(label, Direction):
@@ -372,52 +416,24 @@ class PerceptionGraphPattern:
             else:
                 raise RuntimeError(f"Cannot map edge {label}")
 
-        # add a node for this sub-object to the graph
-        object_graph_node = map_node(object_)
-        graph.add_node(object_graph_node)
+        # We add every node in the source graph, after translating their type with map_node
+        for original_node in perception_graph.nodes:
+            # Add each node
+            pattern_node = map_node(original_node)
+            pattern_graph.add_node(pattern_node)
 
-        _translate_axes(graph, object_schema, object_graph_node, map_node, map_edge)
-        _translate_geon(
-            graph,
-            object_schema,
-            mapped_owner=object_graph_node,
-            map_geon=map_node,
-            map_axis=map_node,
-            map_edge=map_edge,
-        )
-
-        regions = immutableset(
-            relation.second_slot
-            for relation in object_schema.sub_object_relations
-            if isinstance(relation.second_slot, Region)
-        )
-
-        for region in regions:
-            _translate_region(graph, region, map_node=map_node, map_edge=map_edge)
-
-        # add all sub-objects to the graph
-        # and part-of edges between this object and them.
-        for sub_object in object_schema.sub_objects:
-            PerceptionGraphPattern._translate_schema(
-                sub_object, sub_object.schema, graph, schema_node_to_pattern_node
-            )
-            graph.add_edge(
-                map_node(sub_object),
-                object_graph_node,
-                predicate=RelationTypeIsPredicate(PART_OF),
-            )
-
-        # there may be additional sub-object relationships which need to be translated to edges
-        for sub_object_relation in object_schema.sub_object_relations:
-            if sub_object_relation.negated:
-                raise RuntimeError(
-                    "Did not expect a negated relation in a sub-object schema"
+        # Once all nodes are translated, we add all edges from the source graph by iterating over each node and
+        # extracting its edges.
+        for original_node in perception_graph.nodes:
+            edges_from_node = perception_graph.edges(original_node, data=True)
+            for (_, original_dest_node, original_edge_data) in edges_from_node:
+                pattern_from_node = perception_node_to_pattern_node[original_node]
+                pattern_to_node = perception_node_to_pattern_node[original_dest_node]
+                pattern_graph.add_edge(pattern_from_node, pattern_to_node)
+                mapped_edge = map_edge(original_edge_data["label"])
+                pattern_graph.edges[pattern_from_node, pattern_to_node].update(
+                    mapped_edge
                 )
-            graph.add_edge(
-                map_node(sub_object_relation.first_slot),
-                map_node(sub_object_relation.second_slot),
-                predicate=RelationTypeIsPredicate(sub_object_relation.relation_type),
-            )
 
     def render_to_file(  # pragma: no cover
         self,
@@ -441,7 +457,7 @@ class PerceptionGraphPattern:
 
         next_node_id = Incrementer()
 
-        def to_dot_node(pattern_node: NodePredicate) -> str:
+        def to_dot_node(pattern_node: "NodePredicate") -> str:
             node_id = f"node-{next_node_id.value()}"
             next_node_id.increment()
             base_label = pattern_node.dot_label()
@@ -771,7 +787,7 @@ class RegionPredicate(NodePredicate):
 
 
 @attrs(frozen=True, slots=True, eq=False)
-class IsPropertyNodePredicate(NodePredicate):
+class IsOntologyNodePredicate(NodePredicate):
     property_value: OntologyNode = attrib(validator=instance_of(OntologyNode))
 
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
