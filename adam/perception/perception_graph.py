@@ -8,6 +8,7 @@ This file first defines `PerceptionGraph`\ s,
 then defines `PerceptionGraphPattern`\ s to match them.
 """
 from abc import ABC, abstractmethod
+from copy import copy
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, Mapping, Optional, Tuple, Union
 
@@ -97,6 +98,9 @@ class PerceptionGraph:
     These can be matched against by `PerceptionGraphPattern`\ s.
     """
     _graph: DiGraph = attrib(validator=instance_of(DiGraph))
+
+    def copy_as_digraph(self):
+        return copy(self._graph)
 
     @staticmethod
     def from_frame(frame: DevelopmentalPrimitivePerceptionFrame) -> "PerceptionGraph":
@@ -296,10 +300,6 @@ class PerceptionGraph:
 
         return node_id
 
-    @property
-    def graph(self):
-        return self._graph
-
 
 @attrs(frozen=True, slots=True)
 class PerceptionGraphPattern:
@@ -329,7 +329,9 @@ class PerceptionGraphPattern:
         Creates a pattern for recognizing an object based on its *object_schema*.
         """
 
-        # Create a PerceptionGraph from schema
+        # First, we generate a PerceptionGraph corresponding to this schema
+        # by instantiating a situation which contains a single object
+        # of the desired type.
         schema_situation_object = SituationObject.instantiate_ontology_node(
             ontology_node=object_schema.ontology_node, ontology=GAILA_PHASE_1_ONTOLOGY
         )
@@ -342,14 +344,26 @@ class PerceptionGraphPattern:
         perception = perception_generator.generate_perception(
             situation, chooser=RandomChooser.for_seed(0)
         )
-        perception_graph = PerceptionGraph.from_frame(first(perception.frames))
+        perception_graph = PerceptionGraph.from_frame(
+            first(perception.frames)
+        ).copy_as_digraph()
 
-        # We are removing certain information that is added by situation but is not in schema
-        # We remove: colors, ground, learner, regions, properties
+        # We remove certain information that is added by situation generation, but is not in schema
+        # Removed in order: colors, ontology nodes (properties), regions related to ground, ground, learner, islands
         nodes_to_remove = [
             node
-            for node in perception_graph.graph.nodes
+            for node in perception_graph.nodes
             if isinstance(node, RgbColorPerception)
+            or (isinstance(node, OntologyNode))
+            or (
+                isinstance(node, tuple)
+                and isinstance(node[0], Region)
+                and any(
+                    isinstance(n, ObjectPerception)
+                    and n.debug_handle == GROUND_PERCEPTION.debug_handle
+                    for n in perception_graph.neighbors(node)
+                )
+            )
             or (
                 isinstance(node, ObjectPerception)
                 and node.debug_handle == GROUND_PERCEPTION.debug_handle
@@ -358,33 +372,31 @@ class PerceptionGraphPattern:
                 isinstance(node, ObjectPerception)
                 and node.debug_handle == LEARNER_PERCEPTION.debug_handle
             )
-            or (isinstance(node, tuple) and isinstance(node[0], Region))
-            or (isinstance(node, OntologyNode))
         ]
+        perception_graph.remove_nodes_from(nodes_to_remove)
+        islands = list(isolates(perception_graph))
+        perception_graph.remove_nodes_from(islands)
 
-        perception_graph.graph.remove_nodes_from(nodes_to_remove)
-        islands = list(isolates(perception_graph.graph))
-        perception_graph.graph.remove_nodes_from(islands)
-
-        # Use from_graph code to translate Graph to Pattern
+        # Finally, we convert the PerceptionGraph DiGraph representation to a PerceptionGraphPattern
         return PerceptionGraphPattern.from_graph(perception_graph=perception_graph)
 
     @staticmethod
-    def from_graph(perception_graph: PerceptionGraph) -> "PerceptionGraphPattern":
+    def from_graph(perception_graph: DiGraph) -> "PerceptionGraphPattern":
         """
         Creates a pattern for recognizing an object based on its *perception_graph*.
         """
         pattern_graph = DiGraph()
         PerceptionGraphPattern._translate_graph(
-            perception_graph=perception_graph.graph, pattern_graph=pattern_graph
+            perception_graph=perception_graph, pattern_graph=pattern_graph
         )
         return PerceptionGraphPattern(pattern_graph)
 
     @staticmethod
     def _translate_graph(perception_graph: DiGraph, pattern_graph: DiGraph) -> None:
         perception_node_to_pattern_node: Dict[Any, "NodePredicate"] = {}
-        # perception graph -> perception graph pattern
 
+        # Two mapping methods that map nodes and edges from the source PerceptionGraph onto the corresponding
+        # node and edge representations on the PerceptionGraphPattern.
         def map_node(node: Any) -> "NodePredicate":
 
             key = node
@@ -399,6 +411,8 @@ class PerceptionGraphPattern:
                         perception_node_to_pattern_node[
                             key
                         ] = RegionPredicate.matching_distance(node)
+                    else:
+                        raise RuntimeError(f"Don't know how to map tuple node {node}")
                 elif isinstance(node, GeonAxis):
                     perception_node_to_pattern_node[key] = AxisPredicate.from_axis(node)
                 elif isinstance(node, ObjectPerception):
@@ -406,9 +420,9 @@ class PerceptionGraphPattern:
                         debug_handle=node.debug_handle
                     )
                 elif isinstance(node, OntologyNode):
-                    perception_node_to_pattern_node[key] = IsPropertyNodePredicate(node)
+                    perception_node_to_pattern_node[key] = IsOntologyNodePredicate(node)
                 else:
-                    raise RuntimeError(f"Don't know how to map node {node}, {type(node)}")
+                    raise RuntimeError(f"Don't know how to map node {node}")
             return perception_node_to_pattern_node[key]
 
         def map_edge(label: Any) -> Mapping[str, "EdgePredicate"]:
@@ -419,19 +433,21 @@ class PerceptionGraphPattern:
             else:
                 raise RuntimeError(f"Cannot map edge {label}")
 
+        # We add every node in the source graph, after translating their type with map_node
         for original_node in perception_graph.nodes:
             # Add each node
             pattern_node = map_node(original_node)
             pattern_graph.add_node(pattern_node)
 
-        # Once all nodes are translated, add all edges from each node
+        # Once all nodes are translated, we add all edges from the source graph by iterating over each node and
+        # extracting its edges.
         for original_node in perception_graph.nodes:
             edges_from_node = perception_graph.edges(original_node, data=True)
-            for original_edge in edges_from_node:
+            for (_, original_dest_node, original_edge_data) in edges_from_node:
                 pattern_from_node = perception_node_to_pattern_node[original_node]
-                pattern_to_node = perception_node_to_pattern_node[original_edge[1]]
+                pattern_to_node = perception_node_to_pattern_node[original_dest_node]
                 pattern_graph.add_edge(pattern_from_node, pattern_to_node)
-                mapped_edge = map_edge(original_edge[2]["label"])
+                mapped_edge = map_edge(original_edge_data["label"])
                 pattern_graph.edges[pattern_from_node, pattern_to_node].update(
                     mapped_edge
                 )
@@ -788,7 +804,7 @@ class RegionPredicate(NodePredicate):
 
 
 @attrs(frozen=True, slots=True, eq=False)
-class IsPropertyNodePredicate(NodePredicate):
+class IsOntologyNodePredicate(NodePredicate):
     property_value: OntologyNode = attrib(validator=instance_of(OntologyNode))
 
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
