@@ -37,8 +37,6 @@ from adam.perception.developmental_primitive_perception import (
 )
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
-    EXCLUDE_LEARNER,
-    EXCLUDE_GROUND,
 )
 from adam.random_utils import RandomChooser
 from adam.situation import SituationObject
@@ -347,7 +345,8 @@ class PerceptionGraphPattern:
         perception = perception_generator.generate_perception(
             situation,
             chooser=RandomChooser.for_seed(0),
-            flags=[EXCLUDE_GROUND, EXCLUDE_LEARNER],
+            include_ground=False,
+            include_learner=False,
         )
         perception_graph = PerceptionGraph.from_frame(
             first(perception.frames)
