@@ -897,6 +897,19 @@ class AndNodePredicate(NodePredicate):
         return " & ".join(sub_pred.dot_label() for sub_pred in self.sub_predicates)
 
 
+@attrs(frozen=True, slots=True, eq=False)
+class MatchedObjectPerceptionPredicate(NodePredicate):
+    """
+    `NodePredicate` which matches if the node is of this type
+    """
+
+    def __call__(self, graph_node: PerceptionGraphNode) -> bool:
+        return isinstance(graph_node, MatchedObjectPerceptionPredicate)
+
+    def dot_label(self) -> str:
+        return "matched-object-perception"
+
+
 class EdgePredicate(ABC):
     r"""
     Super-class for pattern graph edges.
