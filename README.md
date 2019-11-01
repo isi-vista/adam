@@ -51,7 +51,25 @@ Run `make precommit` before commiting.
 If you are using PyCharm, please set your docstring format to "Google" and your unit test runner to "PyTest" in
 `Preferences | Tools | Python Integrated Tools`.
 
+# Contributors
+
+* Deniz Beser
+* Marjorie Freedman
+* Ryan Gabbard
+* Chris Jenkins
+* Elizabeth Lee
+* Jacob Lichtefeld
+* Mitch Marcus
+* Ralph Weischedel
+* Charles Yang
+
+# Contact
+
+Ryan Gabbard (`gabbard@isi.edu`)
+
 # Suggested Reading
+
+The following papers have informed our design decisions and may be referenced in issues.
 
 * Biederman, I., 1987. [Recognition-by-components: a theory of human image understanding](https://s3.amazonaws.com/academia.edu.documents/30745513/Recognition_by_Components.pdf?response-content-disposition=inline%3B%20filename%3DRecognition-by-components_a_theory_of_hu.pdf&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAIWOWYYGZ2Y53UL3A%2F20191101%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20191101T152508Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=a96e731888ff6e33bce40edf1f7acaf243f3b09556bd72aa77134657913602f1).
   Psychological review, 94(2), p.115-147.
@@ -81,19 +99,3 @@ when it is more computationally efficient to do so](https://www.ling.upenn.edu/~
 * Yang, C., 2005. On productivity. Linguistic variation yearbook, 5(1), pp.265-302.
 * Yang, C., 2013. [Ontogeny and Phylogeny of Language](https://www.ling.upenn.edu/~ycharles/PNAS-2013-final.pdf). 
   Proceedings of the National Academy of Sciences, 110(16), pp.6324-6327.
-
-# Contributors
-
-* Deniz Beser
-* Marjorie Freedman
-* Ryan Gabbard
-* Chris Jenkins
-* Elizabeth Lee
-* Jacob Lichtefeld
-* Mitch Marcus
-* Ralph Weischedel
-* Charles Yang
-
-# Contact
-
-Ryan Gabbard (`gabbard@isi.edu`)
