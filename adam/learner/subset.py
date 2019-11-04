@@ -1,4 +1,4 @@
-from typing import Dict, Generic, Mapping, Tuple, Any, Optional
+from typing import Dict, Generic, Mapping, Tuple, Any, Optional, Set, List
 
 from attr import Factory, attrib, attrs
 from immutablecollections import immutabledict
@@ -21,6 +21,23 @@ from adam.perception.perception_graph import (
     PerceptionGraphPattern,
     DebugCallableType,
 )
+from adam.perception_matcher._matcher import GraphMatching
+
+def graph_without_learner(graph: DiGraph):
+    # Get the learner node
+    learner_node_candidates = [
+        node
+        for node in graph.nodes()
+        if isinstance(node, ObjectPerception) and node.debug_handle == LEARNER.handle
+    ]
+    if learner_node_candidates:
+        learner_node = first(learner_node_candidates)
+        # Remove learner
+        graph.remove_node(learner_node)
+        # remove remaining islands
+        islands = list(isolates(graph))
+        graph.remove_nodes_from(islands)
+    return graph
 
 
 @attrs

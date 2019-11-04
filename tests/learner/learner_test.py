@@ -1,4 +1,5 @@
 from typing import Optional
+import pytest
 
 from adam.curriculum.phase1_curriculum import phase1_instances, PHASE1_CHOOSER
 from adam.language_specific.english.english_language_generator import IGNORE_COLORS
