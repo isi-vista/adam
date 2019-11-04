@@ -92,6 +92,14 @@ HAS_PROPERTY_LABEL = OntologyNode("has-property")
 """
 Edge label in a `PerceptionGraph` linking an `ObjectPerception` to its associated `Property`.
 """
+GOVERNED = OntologyNode("governed")
+"""
+An object match governed in a preposition relationship
+"""
+MODIFIED = OntologyNode("modified")
+"""
+An object match modified in a preposition relationship
+"""
 
 
 @attrs(frozen=True, slots=True)
@@ -1162,3 +1170,9 @@ def _graph_node_order(node_node_data_tuple) -> int:
         node = node[0]
 
     return _GRAPH_NODE_ORDER.index(node.__class__)
+
+
+@attrs(frozen=True, slots=True, eq=False)
+class PrepositionPattern:
+    graph_pattern: PerceptionGraphPattern = attrib(validator=instance_of(PerceptionGraphPattern))
+    object_map: Mapping[OntologyNode, MatchedObjectPerceptionPredicate] = attrib(validator=instance_of(immutabledict()), converter=_to_immutabledict, )
