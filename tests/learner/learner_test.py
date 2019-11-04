@@ -1,10 +1,8 @@
-import pytest
-
 from adam.curriculum.phase1_curriculum import phase1_instances, PHASE1_CHOOSER
 from adam.language_specific.english.english_language_generator import IGNORE_COLORS
 from adam.learner import LearningExample
 from adam.learner.subset import SubsetLanguageLearner
-from adam.ontology.phase1_ontology import BALL, TRUCK, LEARNER
+from adam.ontology.phase1_ontology import BALL, LEARNER, DOG
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
@@ -14,7 +12,6 @@ from adam.situation.templates.phase1_templates import (
 )
 
 
-@pytest.mark.skip(msg="Subset test temporarily disabled.")
 def test_subset_learner_ball():
     learner = object_variable("learner_0", LEARNER)
     colored_ball_object = object_variable(
@@ -39,30 +36,9 @@ def test_subset_learner_ball():
             ball_template, chooser=PHASE1_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY
         ),
     )
-    colored_truck_object = object_variable(
-        "truck-with-color", TRUCK, added_properties=[color_variable("color")]
-    )
-    truck_template = Phase1SituationTemplate(
-        "colored-truck-object",
-        salient_object_variables=[colored_truck_object, learner],
-        syntax_hints=[IGNORE_COLORS],
-    )
-
-    truck_curriculum = phase1_instances(
-        "all truck situations",
-        situations=all_possible(
-            truck_template, chooser=PHASE1_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY
-        ),
-    )
-    test_truck_curriculum = phase1_instances(
-        "truck test",
-        situations=all_possible(
-            truck_template, chooser=PHASE1_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY
-        ),
-    )
 
     learner = SubsetLanguageLearner()
-    for training_stage in [ball_curriculum, truck_curriculum]:
+    for training_stage in [ball_curriculum]:
         for (
             _,
             linguistic_description,
@@ -72,7 +48,55 @@ def test_subset_learner_ball():
                 LearningExample(perceptual_representation, linguistic_description)
             )
 
-    for test_instance_group in [test_ball_curriculum, test_truck_curriculum]:
+    for test_instance_group in [test_ball_curriculum]:
+        for (
+            _,
+            test_instance_language,
+            test_instance_perception,
+        ) in test_instance_group.instances():
+            descriptions_from_learner = learner.describe(test_instance_perception)
+            gold = test_instance_language.as_token_sequence()
+            assert [desc.as_token_sequence() for desc in descriptions_from_learner][
+                0
+            ] == gold
+
+
+def test_subset_learner_dog_infinite_loop():
+    learner = object_variable("learner_0", LEARNER)
+    colored_dog_object = object_variable(
+        "dog-with-color", DOG, added_properties=[color_variable("color")]
+    )
+    dog_template = Phase1SituationTemplate(
+        "colored-dog-object",
+        salient_object_variables=[colored_dog_object, learner],
+        syntax_hints=[IGNORE_COLORS],
+    )
+
+    dog_curriculum = phase1_instances(
+        "all dog situations",
+        situations=all_possible(
+            dog_template, chooser=PHASE1_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY
+        ),
+    )
+    test_dog_curriculum = phase1_instances(
+        "dog test",
+        situations=all_possible(
+            dog_template, chooser=PHASE1_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY
+        ),
+    )
+
+    learner = SubsetLanguageLearner()
+    for training_stage in [dog_curriculum]:
+        for (
+            _,
+            linguistic_description,
+            perceptual_representation,
+        ) in training_stage.instances():
+            learner.observe(
+                LearningExample(perceptual_representation, linguistic_description)
+            )
+
+    for test_instance_group in [test_dog_curriculum]:
         for (
             _,
             test_instance_language,
