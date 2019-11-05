@@ -23,6 +23,8 @@ from typing import Mapping, Any, Dict, Callable, Optional
 from immutablecollections import immutableset
 from networkx import DiGraph
 
+from adam.perception.perception_graph import NodePredicate
+
 
 class GraphMatching:
     """Implementation of VF2 algorithm for matching undirected graphs.
@@ -327,10 +329,16 @@ class GraphMatching:
 
         # We assume the nodes of G2 are node predicates which must hold true for the
         # corresponding G1 graph node for there to be a match.
-        if not pattern_node(graph_node):
-            if debug:
-                self.pattern_node_to_num_predicate_failures[pattern_node] += 1
-            return False
+        if isinstance(graph_node, NodePredicate):
+            if not pattern_node.matches_predicate(graph_node):
+                if debug:
+                    self.pattern_node_to_num_predicate_failures[pattern_node] += 1
+                return False
+        else:
+            if not pattern_node(graph_node):
+                if debug:
+                    self.pattern_node_to_num_predicate_failures[pattern_node] += 1
+                return False
 
         # Now comes the trickier bit of testing edge predicates.
         # First observe that we only need to test edge predicates against edges

@@ -11,6 +11,8 @@ from adam.language import (
     LinguisticDescription,
 )
 from adam.learner import LanguageLearner, LearningExample
+from adam.learner.object_recognizer import ObjectRecognizer
+from adam.perception import PerceptionT, PerceptualRepresentation
 from adam.ontology.phase1_ontology import LEARNER
 from adam.perception import PerceptionT, PerceptualRepresentation, ObjectPerception
 from adam.perception.developmental_primitive_perception import (
@@ -53,6 +55,12 @@ class SubsetLanguageLearner(
         Tuple[str, ...], PerceptionGraphPattern
     ] = attrib(init=False, default=Factory(dict))
     _debug_callback: Optional[DebugCallableType] = attrib(default=None)
+
+    _descriptions_to_prepositions: Dict[Tuple[str, ...], PrepositionPattern] = attrib(
+        init=False, default=Factory(dict)
+    )
+    _object_recognizer: ObjectRecognizer = attrib(init=False, default=ObjectRecognizer())
+
 
     def observe(
         self, learning_example: LearningExample[PerceptionT, LinguisticDescription]
@@ -138,6 +146,76 @@ class SubsetLanguageLearner(
             )
         else:
             return immutabledict()
+
+    def _observe_static_prepositions(
+        self,
+        perception_graph: PerceptionGraph,
+        linguistic_description: LinguisticDescription,
+        perceived_objects: Mapping[str, PerceptionGraphPattern],
+    ) -> None:
+        observed_linguistic_description = linguistic_description.as_token_sequence()
+        perception_graph_object_perception, name_to_pattern_node = self._object_recognizer.match_objects(
+            perception_graph
+        )
+        nodes_for_relation = []
+        bounds_for_description = []
+
+        for (idx, token) in enumerate(observed_linguistic_description):
+            if token in name_to_pattern_node.keys():
+                bounds_for_description.append(idx)
+                nodes_for_relation.append(name_to_pattern_node[token])
+
+        if len(nodes_for_relation) != 2:
+            raise RuntimeError(
+                f"Learning a preposition with more than two recognized objects is not currently supported. Found {len(nodes_for_relation)} from {name_to_pattern_node.keys()} and {observed_linguistic_description}."
+            )
+
+        # If we have to reorder the bounds so that the smallest number is first we want the nodes to match ordering
+        if bounds_for_description[0] > bounds_for_description[1]:
+            temp_num = bounds_for_description[0]
+            temp_node = nodes_for_relation[0]
+            bounds_for_description[0] = bounds_for_description[1]
+            nodes_for_relation[0] = nodes_for_relation[1]
+            bounds_for_description[1] = temp_num
+            nodes_for_relation[1] = temp_node
+
+        # This is the lingustics description we learned
+        description_list = [
+            observed_linguistic_description[num]
+            for num in range(bounds_for_description[0], bounds_for_description[1] + 1)
+        ]
+        description_list[0] = _MODIFIED
+        description_list[len(description_list) - 1] = _GROUNDED
+
+        # We want an immutable tuple for the final description
+        description = tuple(description_list)
+        # This is the mapping of sentence locations to pattern nodes
+        mapping_to_graph = immutabledict(
+            [(_MODIFIED, nodes_for_relation[0]), (_GROUNDED, nodes_for_relation[1])]
+        )
+
+        # Up next is pattern processing
+
+        # Now we turn the information into a preposition patter
+        preposition_pattern = PrepositionPattern(
+            graph_pattern=pattern, object_map=mapping
+        )
+
+        # Then we check if a description is already generated
+        # If so we take the intersection of the two patterns
+        # Else we add a new description and matching pattern
+        if description in self._descriptions_to_prepositions:
+            self._descriptions_to_prepositions[
+                description
+            ] = self._descriptions_to_prepositions[description].intersection(
+                preposition_pattern
+            )
+        else:
+            self._descriptions_to_prepositions[description] = preposition_pattern
+
+    # TODO: Write the Describe Preposition function
+    def _describe_preposition(self):
+        pass
 
 
 def get_largest_matching_pattern(
