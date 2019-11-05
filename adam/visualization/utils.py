@@ -62,8 +62,27 @@ class BoundingBox:
             rot,
         )
 
+    @classmethod
+    def from_scaled_corners(cls, left_back_bottom_corner, right_forward_top_corner, rot):
+        return cls(left_back_bottom_corner, right_forward_top_corner, rot)
+
+    def translate(self, offset: ndarray) -> "BoundingBox":
+        "Return a new BB translated by offset"
+        return BoundingBox.from_scaled_corners(
+            self.left_back_bottom + offset, self.right_forward_top + offset, self.rotation
+        )
+
+    def rotate(self, rot: Rotation):
+        return BoundingBox.from_scaled_corners(
+            self.left_back_bottom, self.right_forward_top, self.rotation * rot
+        )
+
     def normal(self, face):
         pass
+
+    def center(self) -> ndarray:
+        """return center point of the BB"""
+        return (self.right_forward_top + self.left_back_bottom) / 2
 
     def all_corners(self) -> List[ndarray]:
         """return List of all corners of this BB"""
@@ -176,19 +195,26 @@ class BoundingBox:
             )
         )
 
+    def zero_corner(self):
+        return self.rotation.apply(self.left_back_bottom)
+
+    def one_corner(self):
+        return self.rotation.apply(self.right_forward_top)
+
     def right(self):
-        diff = self.right_corner() - self.left_back_bottom
+        diff = self.right_corner() - self.zero_corner()
         norm = numpy.linalg.norm(diff)
         return diff / norm
 
     def forward(self):
-        diff = self.forward_corner() - self.left_back_bottom
+        diff = self.forward_corner() - self.zero_corner()
         norm = numpy.linalg.norm(diff)
         return diff / norm
 
     def up(self):
-        diff = self.up_corner() - self.left_back_bottom
+        diff = self.up_corner() - self.zero_corner()
         norm = numpy.linalg.norm(diff)
+        print(f"UP: {diff / norm}")
         return diff / norm
 
     def all_face_normals(self) -> List[ndarray]:
@@ -206,12 +232,13 @@ class BoundingBox:
                 minimum = prod
             elif prod > maximum:
                 maximum = prod
-        # print(f"\nProjected {self} onto {axis}\nMin:{minimum}, Max:{maximum}")
+        print(f"\nProjected {self} onto {axis}\nMin:{minimum}, Max:{maximum}")
         return minimum, maximum
 
     def colliding(self, other: "BoundingBox") -> bool:
         face_norms = self.all_face_normals()
         for face_norm in face_norms:
+            print("face norm")
             self_min, self_max = self.min_max_projection(face_norm)
             other_min, other_max = other.min_max_projection(face_norm)
             if other_max < self_min or self_max < other_min:
