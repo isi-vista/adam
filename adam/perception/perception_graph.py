@@ -10,14 +10,14 @@ then defines `PerceptionGraphPattern`\ s to match them.
 from abc import ABC, abstractmethod
 from copy import copy
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, Mapping, Optional, Tuple, Union
+from typing import Any, Callable, Dict, Iterable, Mapping, Optional, Tuple, Union, List
 
 import graphviz
 
 from adam.utils.networkx_utils import digraph_with_nodes_sorted_by
 from attr import attrib, attrs
 from attr.validators import instance_of, optional
-from immutablecollections import immutabledict, immutableset
+from immutablecollections import immutabledict, immutableset, ImmutableDict
 from immutablecollections.converter_utils import _to_immutabledict, _to_tuple
 from more_itertools import first
 from networkx import DiGraph
@@ -514,6 +514,11 @@ class PerceptionGraphPattern:
 
         dot_graph.render(output_file)
 
+    def intersection(
+        self, graph_pattern: "PerceptionGraphPattern"
+    ) -> "PerceptionGraphPattern":
+        pass
+
 
 class DumpPartialMatchCallback:
     """
@@ -724,6 +729,12 @@ class NodePredicate(ABC):
         Node label to use when rendering patterns as graphs using *dot*.
         """
 
+    @abstractmethod
+    def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
+        """
+        Determines whether a NodePredicate matches another Node Predicate
+        """
+
 
 @attrs(frozen=True, slots=True, eq=False)
 class AnyNodePredicate(NodePredicate):
@@ -736,6 +747,9 @@ class AnyNodePredicate(NodePredicate):
 
     def dot_label(self) -> str:
         return "*"
+
+    def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
+        return True
 
 
 @attrs(frozen=True, slots=True, eq=False)
@@ -755,6 +769,9 @@ class AnyObjectPerception(NodePredicate):
         else:
             debug_handle_str = ""
         return f"*obj{debug_handle_str}"
+
+    def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
+        return isinstance(predicate_node, AnyObjectPerception)
 
 
 @attrs(frozen=True, slots=True, eq=False)
@@ -808,6 +825,23 @@ class AxisPredicate(NodePredicate):
 
         return f"axis({', '.join(constraints)})"
 
+    def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
+        if isinstance(predicate_node, AxisPredicate):
+            if self.curved is not None and self.curved != predicate_node.curved:
+                return False
+            if self.directed is not None and self.directed != predicate_node.directed:
+                return False
+            if (
+                self.aligned_to_gravitational is not None
+                and self.aligned_to_gravitational
+                != predicate_node.aligned_to_gravitational
+            ):
+                return False
+            else:
+                return True
+        else:
+            return False
+
 
 @attrs(frozen=True, slots=True, eq=False)
 class GeonPredicate(NodePredicate):
@@ -838,6 +872,17 @@ class GeonPredicate(NodePredicate):
     def exactly_matching(geon: Geon) -> "GeonPredicate":
         return GeonPredicate(geon)
 
+    def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
+        if isinstance(predicate_node, GeonPredicate):
+            return (
+                self.template_geon.cross_section
+                == predicate_node.template_geon.cross_section
+                and self.template_geon.cross_section_size
+                == predicate_node.template_geon.cross_section_size
+            )
+        else:
+            return False
+
 
 @attrs(frozen=True, slots=True, eq=False)
 class RegionPredicate(NodePredicate):
@@ -861,6 +906,12 @@ class RegionPredicate(NodePredicate):
     def matching_distance(region: Region[Any]) -> "RegionPredicate":
         return RegionPredicate(region.distance)
 
+    def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
+        if isinstance(predicate_node, RegionPredicate):
+            return predicate_node.distance == self.distance
+        else:
+            return False
+
 
 @attrs(frozen=True, slots=True, eq=False)
 class IsOntologyNodePredicate(NodePredicate):
@@ -871,6 +922,12 @@ class IsOntologyNodePredicate(NodePredicate):
 
     def dot_label(self) -> str:
         return f"prop({self.property_value.handle})"
+
+    def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
+        if isinstance(predicate_node, IsOntologyNodePredicate):
+            return predicate_node.property_value == self.property_value
+        else:
+            return False
 
 
 @attrs(frozen=True, slots=True, eq=False)
@@ -904,6 +961,12 @@ class AndNodePredicate(NodePredicate):
     def dot_label(self) -> str:
         return " & ".join(sub_pred.dot_label() for sub_pred in self.sub_predicates)
 
+    def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
+        return all(
+            sub_predicate.matches_predicate(predicate_node)
+            for sub_predicate in self.sub_predicates
+        )
+
 
 @attrs(frozen=True, slots=True, eq=False)
 class MatchedObjectPerceptionPredicate(NodePredicate):
@@ -916,6 +979,9 @@ class MatchedObjectPerceptionPredicate(NodePredicate):
 
     def dot_label(self) -> str:
         return "matched-object-perception"
+
+    def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
+        return isinstance(predicate_node, MatchedObjectPerceptionPredicate)
 
 
 class EdgePredicate(ABC):
@@ -948,6 +1014,17 @@ class EdgePredicate(ABC):
         """
         return False
 
+    @abstractmethod
+    def matches_predicate(
+        self,
+        source_predicate_node: NodePredicate,
+        edge_label: "EdgePredicate",
+        dest_predicate_node: NodePredicate,
+    ) -> bool:
+        """
+        Returns wheether this predicate matches the edge from *source_predicate_node* to *dest_predicate_node* with label *edge_label*
+        """
+
 
 @attrs(frozen=True, slots=True)
 class AnyEdgePredicate(EdgePredicate):
@@ -965,6 +1042,14 @@ class AnyEdgePredicate(EdgePredicate):
 
     def dot_label(self) -> str:
         return "*"
+
+    def matches_predicate(
+        self,
+        source_predicate_node: NodePredicate,
+        edge_label: "EdgePredicate",
+        dest_predicate_node: NodePredicate,
+    ) -> bool:
+        return True
 
 
 @attrs(frozen=True, slots=True)
@@ -988,6 +1073,14 @@ class RelationTypeIsPredicate(EdgePredicate):
 
     def reverse_in_dot_graph(self) -> bool:
         return self.relation_type == PART_OF
+
+    def matches_predicate(
+        self,
+        source_predicate_node: NodePredicate,
+        edge_label: "EdgePredicate",
+        dest_predicate_node: NodePredicate,
+    ) -> bool:
+        return edge_label == self.relation_type
 
 
 @attrs(frozen=True, slots=True)
@@ -1016,6 +1109,20 @@ class DirectionPredicate(EdgePredicate):
     @staticmethod
     def exactly_matching(direction: Direction[Any]) -> "DirectionPredicate":
         return DirectionPredicate(direction)
+
+    def matches_predicate(
+        self,
+        source_predicate_node: NodePredicate,
+        edge_label: "EdgePredicate",
+        dest_predicate_node: NodePredicate,
+    ) -> bool:
+        if isinstance(edge_label, DirectionPredicate):
+            return (
+                edge_label.reference_direction.positive
+                == self.reference_direction.positive
+            )
+        else:
+            return False
 
 
 # Graph translation code shared between perception graph construction
@@ -1174,5 +1281,21 @@ def _graph_node_order(node_node_data_tuple) -> int:
 
 @attrs(frozen=True, slots=True, eq=False)
 class PrepositionPattern:
-    graph_pattern: PerceptionGraphPattern = attrib(validator=instance_of(PerceptionGraphPattern))
-    object_map: Mapping[OntologyNode, MatchedObjectPerceptionPredicate] = attrib(validator=instance_of(immutabledict()), converter=_to_immutabledict, )
+    graph_pattern: PerceptionGraphPattern = attrib(
+        validator=instance_of(PerceptionGraphPattern), kw_only=True
+    )
+    object_map: Mapping[str, MatchedObjectPerceptionPredicate] = attrib(
+        converter=_to_immutabledict, kw_only=True
+    )
+
+    def intersection(self, pattern: "PrepositionPattern") -> "PrepositionPattern":
+        graph_pattern = self.graph_pattern.intersection(pattern.graph_pattern)
+        mapping_builder = []
+        items_to_iterate: List[Tuple[str, MatchedObjectPerceptionPredicate]] = []
+        items_to_iterate.extend(self.object_map.items())
+        items_to_iterate.extend(pattern.object_map.items())
+        for name, pattern_node in immutableset(items_to_iterate):
+            if pattern in graph_pattern._graph.nodes:
+                mapping_builder.append((name, pattern_node))
+
+        return PrepositionPattern(graph_pattern=graph_pattern, object_map=mapping_builder)
