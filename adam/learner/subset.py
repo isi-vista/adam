@@ -1,7 +1,7 @@
 from typing import Dict, Generic, Mapping, Tuple, Any, Optional, Set, List
 
 from attr import Factory, attrib, attrs
-from immutablecollections import immutabledict
+from immutablecollections import immutabledict, ImmutableDict, immutableset
 from more_itertools import first
 from networkx import DiGraph, isolates
 
@@ -190,15 +190,27 @@ class SubsetLanguageLearner(
         # We want an immutable tuple for the final description
         description = tuple(description_list)
         # This is the mapping of sentence locations to pattern nodes
-        mapping_to_graph = immutabledict(
+        mapping: ImmutableDict[str, Any] = immutabledict(
             [(_MODIFIED, nodes_for_relation[0]), (_GROUNDED, nodes_for_relation[1])]
         )
 
         # Up next is pattern processing
+        # We gather the nodes of our two objects and their adjacent nodes to form a subgraph
+        nodes_for_pattern = nodes_for_relation
+        nodes_for_pattern.extend(
+            perception_graph_object_perception._graph.adj(nodes_for_relation[0])
+        )
+        nodes_for_pattern.extend(
+            perception_graph_object_perception._graph.adj(nodes_for_relation[1])
+        )
+        preposition_pattern_graph = perception_graph_object_perception._graph.subgraph(
+            nodes=immutableset(nodes_for_pattern)
+        )
 
-        # Now we turn the information into a preposition patter
+        # Now we turn the information into a preposition pattern
         preposition_pattern = PrepositionPattern(
-            graph_pattern=pattern, object_map=mapping
+            graph_pattern=PerceptionGraphPattern(graph=preposition_pattern_graph),
+            object_map=mapping,
         )
 
         # Then we check if a description is already generated

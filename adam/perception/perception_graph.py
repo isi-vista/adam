@@ -10,7 +10,19 @@ then defines `PerceptionGraphPattern`\ s to match them.
 from abc import ABC, abstractmethod
 from copy import copy
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, Mapping, Optional, Tuple, Union, List
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    Mapping,
+    Optional,
+    Tuple,
+    Union,
+    List,
+    TypeVar,
+    Generic,
+)
 
 import graphviz
 
@@ -64,6 +76,8 @@ PerceptionGraphNode = Union[
     ObjectPerception, OntologyNode, Tuple[Region[Any], int], Tuple[Geon, int], GeonAxis
 ]
 PerceptionGraphEdgeLabel = Union[OntologyNode, str, Direction[Any]]
+
+TargetGraphT = TypeVar("TargetGraphT")
 
 # certain constant edges used by PerceptionGraphs
 REFERENCE_OBJECT_LABEL = OntologyNode("reference-object")
@@ -329,14 +343,12 @@ class PerceptionGraphPattern:
     def copy_as_digraph(self):
         return copy(self._graph)
 
-    def matcher(
-        self, graph_to_match_against: PerceptionGraph
-    ) -> "PerceptionGraphPatternMatching":
+    def matcher(self, graph_to_match_against: PerceptionGraph) -> "PatternMatching":
         """
         Creates an object representing an attempt to match this pattern
         against *graph_to_match_against*.
         """
-        return PerceptionGraphPatternMatching(
+        return PatternMatching[PerceptionGraph](
             pattern=self, graph_to_match_against=graph_to_match_against
         )
 
@@ -517,7 +529,16 @@ class PerceptionGraphPattern:
     def intersection(
         self, graph_pattern: "PerceptionGraphPattern"
     ) -> "PerceptionGraphPattern":
-        pass
+        debug_mapping: Dict[Any, Any] = dict()
+        matcher = PatternMatching(pattern=graph_pattern, graph_to_match_against=self)
+        matches = immutableset(matcher.matches(debug_mapping_sink=debug_mapping))
+        if len(matches) > 0:
+            # We found a match! This means our two patterns are the same and we should just keep the original
+            return self
+        else:
+            # No match found so we use the biggest match provided by the debug sink. This provides an 'intersection'
+            # between the two patterns
+            return PerceptionGraphPattern(graph=self._graph.subgraph(nodes=debug_mapping))
 
 
 class DumpPartialMatchCallback:
@@ -559,8 +580,8 @@ class DumpPartialMatchCallback:
             )
 
 
-@attrs(slots=True, eq=False)
-class PerceptionGraphPatternMatching:
+@attrs(frozen=True, slots=True, eq=False)
+class PatternMatching(Generic[TargetGraphT]):
     """
     An attempt to align a `PerceptionGraphPattern` to nodes in a `PerceptionGraph`.
 
@@ -573,9 +594,7 @@ class PerceptionGraphPatternMatching:
     pattern: PerceptionGraphPattern = attrib(
         validator=instance_of(PerceptionGraphPattern)
     )
-    graph_to_match_against: PerceptionGraph = attrib(
-        validator=instance_of(PerceptionGraph)
-    )
+    graph_to_match_against: TargetGraphT = attrib(validator=instance_of(TargetGraphT))
 
     # Callable object for debugging purposes. We use this to track the number of calls to match and render the graphs.
     debug_callback: Optional[DebugCallableType] = attrib(default=None, init=False)

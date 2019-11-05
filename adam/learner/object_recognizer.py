@@ -22,7 +22,7 @@ _LIST_OF_PERCEIVED_PATTERNS = immutableset(
     (
         node.handle,
         PerceptionGraphPattern.from_schema(
-            GAILA_PHASE_1_ONTOLOGY.structural_schemata(node)[0]
+            immutableset(GAILA_PHASE_1_ONTOLOGY.structural_schemata(node))[0]
         ),
     )
     for node in PHASE_1_CURRICULUM_OBJECTS
@@ -32,7 +32,7 @@ _LIST_OF_PERCEIVED_PATTERNS = immutableset(
 MATCHED_OBJECT_PATTERN_LABEL = OntologyNode("has-matched-object-pattern")
 
 
-@attrs
+@attrs(frozen=True)
 class ObjectRecognizer:
     """
     The ObjectRecognizer finds object matches in the scene pattern and adds a `MatchedObjectPerceptionPredicate`
