@@ -25,13 +25,20 @@ def test_bounding_boxes() -> None:
     bb_3 = BoundingBox.from_center_point(numpy.array([0.0, 0.0, 0.0]))
     bb_collide_2 = BoundingBox.from_center_point_scaled_rotated(
         numpy.array([3.0, 1.0, 0.0]),
-        numpy.array([2.0, 1.0, 1.0]),
+        numpy.array([3.0, 1.0, 1.0]),
         Rotation.from_euler("z", 45, degrees=True),
     )
 
     print(
         f"\n\n{bb_3} colliding with BB_COLLIDE_2: \n{bb_collide_2}: \n\n{bb_3.colliding(bb_collide_2)}"
     )
+
+    print("bb_3 corners")
+    for corner in bb_3.all_corners():
+        print(corner)
+    print("bb_collide_2_corners")
+    for corner in bb_collide_2.all_corners():
+        print(corner)
 
     assert bb_3.colliding(bb_collide_2)
 

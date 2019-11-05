@@ -38,7 +38,8 @@ class BoundingBox:
     """
 
     left_back_bottom: ndarray = attrib()
-    right_forward_top: ndarray = attrib()
+
+    scale: ndarray = attrib()
 
     rotation: Rotation = attrib()
 
@@ -57,9 +58,7 @@ class BoundingBox:
         cls, center: ndarray, scale_factor: ndarray, rot: Rotation
     ):
         return cls(
-            (center + numpy.array([-1.0, -1.0, -1.0]) * scale_factor),
-            (center + numpy.array([1.0, 1.0, 1.0]) * scale_factor),
-            rot,
+            (center + numpy.array([-1.0, -1.0, -1.0]) * scale_factor), scale_factor, rot
         )
 
     @classmethod
@@ -69,12 +68,12 @@ class BoundingBox:
     def translate(self, offset: ndarray) -> "BoundingBox":
         "Return a new BB translated by offset"
         return BoundingBox.from_scaled_corners(
-            self.left_back_bottom + offset, self.right_forward_top + offset, self.rotation
+            self.left_back_bottom + offset, self.scale, self.rotation
         )
 
     def rotate(self, rot: Rotation):
         return BoundingBox.from_scaled_corners(
-            self.left_back_bottom, self.right_forward_top, self.rotation * rot
+            self.left_back_bottom, self.scale, self.rotation * rot
         )
 
     def normal(self, face):
@@ -82,7 +81,7 @@ class BoundingBox:
 
     def center(self) -> ndarray:
         """return center point of the BB"""
-        return (self.right_forward_top + self.left_back_bottom) / 2
+        return self.scale + self.left_back_bottom
 
     def all_corners(self) -> List[ndarray]:
         """return List of all corners of this BB"""
@@ -100,7 +99,7 @@ class BoundingBox:
             self.rotation.apply(
                 numpy.array(
                     [
-                        self.right_forward_top.item(0),
+                        self.left_back_bottom.item(0) + self.scale.item(0),
                         self.left_back_bottom.item(1),
                         self.left_back_bottom.item(2),
                     ]
@@ -110,7 +109,7 @@ class BoundingBox:
                 numpy.array(
                     [
                         self.left_back_bottom.item(0),
-                        self.right_forward_top.item(1),
+                        self.left_back_bottom.item(1) + self.scale.item(1),
                         self.left_back_bottom.item(2),
                     ]
                 )
@@ -118,8 +117,8 @@ class BoundingBox:
             self.rotation.apply(
                 numpy.array(
                     [
-                        self.right_forward_top.item(0),
-                        self.right_forward_top.item(1),
+                        self.left_back_bottom.item(0) + self.scale.item(0),
+                        self.left_back_bottom.item(1) + self.scale.item(1),
                         self.left_back_bottom.item(2),
                     ]
                 )
@@ -129,16 +128,16 @@ class BoundingBox:
                     [
                         self.left_back_bottom.item(0),
                         self.left_back_bottom.item(1),
-                        self.right_forward_top.item(2),
+                        self.left_back_bottom.item(2) + self.scale.item(2),
                     ]
                 )
             ),
             self.rotation.apply(
                 numpy.array(
                     [
-                        self.right_forward_top.item(0),
+                        self.left_back_bottom.item(0) + self.scale.item(0),
                         self.left_back_bottom.item(1),
-                        self.right_forward_top.item(2),
+                        self.left_back_bottom.item(2) + self.scale.item(2),
                     ]
                 )
             ),
@@ -146,17 +145,17 @@ class BoundingBox:
                 numpy.array(
                     [
                         self.left_back_bottom.item(0),
-                        self.right_forward_top.item(1),
-                        self.right_forward_top.item(2),
+                        self.left_back_bottom.item(1) + self.scale.item(1),
+                        self.left_back_bottom.item(2) + self.scale.item(2),
                     ]
                 )
             ),
             self.rotation.apply(
                 numpy.array(
                     [
-                        self.right_forward_top.item(0),
-                        self.right_forward_top.item(1),
-                        self.right_forward_top.item(2),
+                        self.left_back_bottom.item(0) + self.scale.item(0),
+                        self.left_back_bottom.item(1) + self.scale.item(1),
+                        self.left_back_bottom.item(2) + self.scale.item(2),
                     ]
                 )
             ),
@@ -166,7 +165,7 @@ class BoundingBox:
         return self.rotation.apply(
             numpy.array(
                 [
-                    self.right_forward_top.item(0),
+                    self.left_back_bottom.item(0) + self.scale.item(0),
                     self.left_back_bottom.item(1),
                     self.left_back_bottom.item(2),
                 ]
@@ -178,7 +177,7 @@ class BoundingBox:
             numpy.array(
                 [
                     self.left_back_bottom.item(0),
-                    self.right_forward_top.item(1),
+                    self.left_back_bottom.item(1) + self.scale.item(1),
                     self.left_back_bottom.item(2),
                 ]
             )
@@ -190,7 +189,7 @@ class BoundingBox:
                 [
                     self.left_back_bottom.item(0),
                     self.left_back_bottom.item(1),
-                    self.right_forward_top.item(2),
+                    self.left_back_bottom.item(2) + self.scale.item(2),
                 ]
             )
         )
@@ -199,7 +198,7 @@ class BoundingBox:
         return self.rotation.apply(self.left_back_bottom)
 
     def one_corner(self):
-        return self.rotation.apply(self.right_forward_top)
+        return self.rotation.apply(self.left_back_bottom + self.scale * 2)
 
     def right(self):
         diff = self.right_corner() - self.zero_corner()
@@ -214,7 +213,6 @@ class BoundingBox:
     def up(self):
         diff = self.up_corner() - self.zero_corner()
         norm = numpy.linalg.norm(diff)
-        print(f"UP: {diff / norm}")
         return diff / norm
 
     def all_face_normals(self) -> List[ndarray]:
@@ -232,13 +230,12 @@ class BoundingBox:
                 minimum = prod
             elif prod > maximum:
                 maximum = prod
-        print(f"\nProjected {self} onto {axis}\nMin:{minimum}, Max:{maximum}")
+        # print(f"\nProjected {self} onto {axis}\nMin:{minimum}, Max:{maximum}")
         return minimum, maximum
 
     def colliding(self, other: "BoundingBox") -> bool:
         face_norms = self.all_face_normals()
         for face_norm in face_norms:
-            print("face norm")
             self_min, self_max = self.min_max_projection(face_norm)
             other_min, other_max = other.min_max_projection(face_norm)
             if other_max < self_min or self_max < other_min:
