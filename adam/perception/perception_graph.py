@@ -10,26 +10,14 @@ then defines `PerceptionGraphPattern`\ s to match them.
 from abc import ABC, abstractmethod
 from copy import copy
 from pathlib import Path
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    Mapping,
-    Optional,
-    Tuple,
-    Union,
-    List,
-    TypeVar,
-    Generic,
-)
+from typing import Any, Callable, Dict, Iterable, Mapping, Optional, Tuple, Union, List
 
 import graphviz
 
 from adam.utils.networkx_utils import digraph_with_nodes_sorted_by
 from attr import attrib, attrs
 from attr.validators import instance_of, optional
-from immutablecollections import immutabledict, immutableset, ImmutableDict
+from immutablecollections import immutabledict, immutableset
 from immutablecollections.converter_utils import _to_immutabledict, _to_tuple
 from more_itertools import first
 from networkx import DiGraph
@@ -77,8 +65,6 @@ PerceptionGraphNode = Union[
 ]
 PerceptionGraphEdgeLabel = Union[OntologyNode, str, Direction[Any]]
 
-TargetGraphT = TypeVar("TargetGraphT")
-
 # certain constant edges used by PerceptionGraphs
 REFERENCE_OBJECT_LABEL = OntologyNode("reference-object")
 """
@@ -116,8 +102,24 @@ An object match modified in a preposition relationship
 """
 
 
+class PerceptionGraphSuper(ABC):
+    _graph: DiGraph = attrib(validator=instance_of(DiGraph))
+
+    @abstractmethod
+    def render_to_file(
+        self,
+        graph_name: str,
+        output_file: Path,
+        *,
+        match_correspondence_ids: Mapping[Any, str] = immutabledict(),
+    ) -> None:
+        """
+        Debugging tool to render the graph to PDF using *dot*.
+        """
+
+
 @attrs(frozen=True, slots=True)
-class PerceptionGraph:
+class PerceptionGraph(PerceptionGraphSuper):
     r"""
     Represents a `DevelopmentalPrimitivePerceptionFrame` as a directed graph.
 
@@ -125,7 +127,6 @@ class PerceptionGraph:
 
     These can be matched against by `PerceptionGraphPattern`\ s.
     """
-    _graph: DiGraph = attrib(validator=instance_of(DiGraph))
 
     def copy_as_digraph(self):
         return copy(self._graph)
@@ -330,7 +331,7 @@ class PerceptionGraph:
 
 
 @attrs(frozen=True, slots=True)
-class PerceptionGraphPattern:
+class PerceptionGraphPattern(PerceptionGraphSuper):
     r"""
     A pattern which can match `PerceptionGraph`\ s.
 
@@ -338,17 +339,15 @@ class PerceptionGraphPattern:
     knowledge of an object for object recognition.
     """
 
-    _graph: DiGraph = attrib(validator=instance_of(DiGraph))
-
     def copy_as_digraph(self):
         return copy(self._graph)
 
-    def matcher(self, graph_to_match_against: PerceptionGraph) -> "PatternMatching":
+    def matcher(self, graph_to_match_against: PerceptionGraphSuper) -> "PatternMatching":
         """
         Creates an object representing an attempt to match this pattern
         against *graph_to_match_against*.
         """
-        return PatternMatching[PerceptionGraph](
+        return PatternMatching(
             pattern=self, graph_to_match_against=graph_to_match_against
         )
 
@@ -468,7 +467,7 @@ class PerceptionGraphPattern:
 
     def render_to_file(  # pragma: no cover
         self,
-        title: str,
+        graph_name: str,
         output_file: Path,
         *,
         match_correspondence_ids: Mapping[Any, str] = immutabledict(),
@@ -483,7 +482,7 @@ class PerceptionGraphPattern:
         the desired correspondence labels.
         """
 
-        dot_graph = graphviz.Digraph(title)
+        dot_graph = graphviz.Digraph(graph_name)
         dot_graph.attr(rankdir="LR")
 
         next_node_id = Incrementer()
@@ -532,7 +531,7 @@ class PerceptionGraphPattern:
         debug_mapping: Dict[Any, Any] = dict()
         matcher = PatternMatching(pattern=graph_pattern, graph_to_match_against=self)
         matches = immutableset(matcher.matches(debug_mapping_sink=debug_mapping))
-        if len(matches) > 0:
+        if not matches.empty():
             # We found a match! This means our two patterns are the same and we should just keep the original
             return self
         else:
@@ -581,7 +580,7 @@ class DumpPartialMatchCallback:
 
 
 @attrs(frozen=True, slots=True, eq=False)
-class PatternMatching(Generic[TargetGraphT]):
+class PatternMatching:
     """
     An attempt to align a `PerceptionGraphPattern` to nodes in a `PerceptionGraph`.
 
@@ -594,7 +593,9 @@ class PatternMatching(Generic[TargetGraphT]):
     pattern: PerceptionGraphPattern = attrib(
         validator=instance_of(PerceptionGraphPattern)
     )
-    graph_to_match_against: TargetGraphT = attrib(validator=instance_of(TargetGraphT))
+    graph_to_match_against: PerceptionGraphSuper = attrib(
+        validator=instance_of(PerceptionGraphSuper)
+    )
 
     # Callable object for debugging purposes. We use this to track the number of calls to match and render the graphs.
     debug_callback: Optional[DebugCallableType] = attrib(default=None, init=False)
@@ -708,8 +709,8 @@ class PerceptionGraphPatternMatch:
     matched_pattern: PerceptionGraphPattern = attrib(
         validator=instance_of(PerceptionGraphPattern), kw_only=True
     )
-    graph_matched_against: PerceptionGraph = attrib(
-        validator=instance_of(PerceptionGraph), kw_only=True
+    graph_matched_against: PerceptionGraphSuper = attrib(
+        validator=instance_of(PerceptionGraphSuper), kw_only=True
     )
     matched_sub_graph: PerceptionGraph = attrib(
         validator=instance_of(PerceptionGraph), kw_only=True
@@ -1314,7 +1315,7 @@ class PrepositionPattern:
         items_to_iterate.extend(self.object_map.items())
         items_to_iterate.extend(pattern.object_map.items())
         for name, pattern_node in immutableset(items_to_iterate):
-            if pattern in graph_pattern._graph.nodes:
+            if pattern in graph_pattern._graph.nodes:  # pylint:disable=protected-access
                 mapping_builder.append((name, pattern_node))
 
         return PrepositionPattern(graph_pattern=graph_pattern, object_map=mapping_builder)
