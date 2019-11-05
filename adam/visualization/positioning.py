@@ -2,9 +2,9 @@ from cvxopt import matrix
 from cvxopt import solvers
 from cvxopt.modeling import variable, op
 import numpy as np
+from numpy import ndarray
 
 from typing import List
-from adam.visualization.utils import Vector3
 
 
 def main() -> None:
@@ -44,7 +44,7 @@ class PositionSolver:
 
     CLOSE_DISTANCE = 0.25
 
-    def __init__(self, main_point: Vector3, points: List[Vector3]) -> None:
+    def __init__(self, main_point: ndarray, points: List[ndarray]) -> None:
         self.main_position = main_point
         self.positions = points
 
