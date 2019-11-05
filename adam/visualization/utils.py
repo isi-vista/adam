@@ -5,8 +5,6 @@ import numpy
 from numpy import ndarray
 from scipy.spatial.transform import Rotation
 
-from cvxopt.modeling import variable
-
 from typing import List, Tuple
 
 
