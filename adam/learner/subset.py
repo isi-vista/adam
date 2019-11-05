@@ -21,7 +21,11 @@ from adam.perception.developmental_primitive_perception import (
 from adam.perception.perception_graph import (
     PerceptionGraph,
     PerceptionGraphPattern,
-    DebugCallableType,
+    PrepositionPattern,
+    MatchedObjectPerceptionPredicate,
+    PerceptionGraphNode,
+    NodePredicate,
+    DebugCallableType
 )
 from adam.perception_matcher._matcher import GraphMatching
 
@@ -41,6 +45,9 @@ def graph_without_learner(graph: DiGraph):
         graph.remove_nodes_from(islands)
     return graph
 
+# Constants used to map locations in a prepositional phrase for mapping
+_MODIFIED = "MODIFIED"
+_GROUNDED = "GROUNDED"
 
 @attrs
 class SubsetLanguageLearner(
@@ -147,7 +154,10 @@ class SubsetLanguageLearner(
         else:
             return immutabledict()
 
-    def _observe_static_prepositions(
+    # TODO: Remap the object recognizer to use perceived objects rather than the complete list
+    # Eventually the perceived_objects map in the singature will get passed to the object recognizer rather than letting
+    # the recognize use the complete default list.
+    def _observe_static_prepositions(  # pylint:disable=unused-argument
         self,
         perception_graph: PerceptionGraph,
         linguistic_description: LinguisticDescription,
@@ -167,7 +177,9 @@ class SubsetLanguageLearner(
 
         if len(nodes_for_relation) != 2:
             raise RuntimeError(
-                f"Learning a preposition with more than two recognized objects is not currently supported. Found {len(nodes_for_relation)} from {name_to_pattern_node.keys()} and {observed_linguistic_description}."
+                f"Learning a preposition with more than two recognized objects is not currently supported. "
+                f"Found {len(nodes_for_relation)} from {name_to_pattern_node.keys()} and "
+                f"{observed_linguistic_description}."
             )
 
         # If we have to reorder the bounds so that the smallest number is first we want the nodes to match ordering
@@ -198,24 +210,24 @@ class SubsetLanguageLearner(
         # We gather the nodes of our two objects and their adjacent nodes to form a subgraph
         nodes_for_pattern = nodes_for_relation
         nodes_for_pattern.extend(
-            perception_graph_object_perception._graph.adj(nodes_for_relation[0])
+            perception_graph_object_perception._graph.adj(  # pylint:disable=protected-access
+                nodes_for_relation[0]
+            )
         )
         nodes_for_pattern.extend(
-            perception_graph_object_perception._graph.adj(nodes_for_relation[1])
+            perception_graph_object_perception._graph.adj(  # pylint:disable=protected-access
+                nodes_for_relation[1]
+            )
         )
-        preposition_pattern_graph = perception_graph_object_perception._graph.subgraph(
+        preposition_pattern_graph = perception_graph_object_perception._graph.subgraph(  # pylint:disable=protected-access
             nodes=immutableset(nodes_for_pattern)
         )
 
-        # Now we turn the information into a preposition pattern
         preposition_pattern = PrepositionPattern(
             graph_pattern=PerceptionGraphPattern(graph=preposition_pattern_graph),
             object_map=mapping,
         )
 
-        # Then we check if a description is already generated
-        # If so we take the intersection of the two patterns
-        # Else we add a new description and matching pattern
         if description in self._descriptions_to_prepositions:
             self._descriptions_to_prepositions[
                 description
@@ -225,9 +237,47 @@ class SubsetLanguageLearner(
         else:
             self._descriptions_to_prepositions[description] = preposition_pattern
 
-    # TODO: Write the Describe Preposition function
-    def _describe_preposition(self):
-        pass
+    def _describe_preposition(  # pylint:disable=unused-argument
+        self,
+        perception_graph: PerceptionGraph,
+        perceived_objects: Mapping[str, PerceptionGraphPattern],
+    ) -> Mapping[LinguisticDescription, float]:
+        observed_perception_graph, description_to_node = self._object_recognizer.match_objects(  # pylint:disable=unused-variable
+            perception_graph
+        )
+        node_to_descrpiton: Mapping[PerceptionGraphNode, Tuple[str, ...]] = immutabledict(
+            (node, description) for description, node in description_to_node.items()
+        )
+        description_score: List[Tuple[TokenSequenceLinguisticDescription, float]] = []
+
+        def replace_object_names(
+            description: Tuple[str, ...],
+            object_map: Mapping[str, MatchedObjectPerceptionPredicate],
+            alignment: Mapping[NodePredicate, PerceptionGraphNode],
+        ) -> Tuple[str, ...]:
+            rtnr: List[str] = []
+            for token in description:
+                if token in object_map.keys():
+                    rtnr.extend(node_to_descrpiton[alignment[object_map[token]]])
+                else:
+                    rtnr.append(token)
+            return tuple(rtnr)
+
+        for description, pattern in self._descriptions_to_prepositions.items():
+            matcher = pattern.graph_pattern.matcher(perception_graph)
+            for match in matcher.matches():
+                description_score.append(
+                    (
+                        TokenSequenceLinguisticDescription(
+                            replace_object_names(
+                                description, pattern.object_map, match.alignment
+                            )
+                        ),
+                        1.0,
+                    )
+                )
+
+        return immutabledict(description_score)
 
 
 def get_largest_matching_pattern(

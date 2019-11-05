@@ -2,6 +2,7 @@ from typing import Iterable, List, Tuple
 
 from attr import attrs
 from immutablecollections import immutableset, immutabledict, ImmutableDict
+from more_itertools import first
 from networkx import DiGraph
 
 from adam.ontology import OntologyNode
@@ -22,11 +23,14 @@ _LIST_OF_PERCEIVED_PATTERNS = immutableset(
     (
         node.handle,
         PerceptionGraphPattern.from_schema(
-            immutableset(GAILA_PHASE_1_ONTOLOGY.structural_schemata(node))[0]
+            first(GAILA_PHASE_1_ONTOLOGY.structural_schemata(node))
         ),
     )
     for node in PHASE_1_CURRICULUM_OBJECTS
-    if node not in [TRUCK, TABLE]  # Currently can't be matched
+    if node
+    in GAILA_PHASE_1_ONTOLOGY._structural_schemata.keys()  # pylint:disable=protected-access
+    and node not in [TRUCK, TABLE]
+    # Currently can't be matched is what the list at the end is for
 )
 
 MATCHED_OBJECT_PATTERN_LABEL = OntologyNode("has-matched-object-pattern")
@@ -77,7 +81,11 @@ class ObjectRecognizer:
         matched_object_nodes.append((description, node))
         networkx_graph_to_modify_in_place.add_node(node)
 
-        for graph_node in pattern_match.matched_sub_graph._graph.nodes:
+        for (
+            graph_node
+        ) in (
+            pattern_match.matched_sub_graph._graph.nodes  # pylint:disable=protected-access
+        ):
             for neighbor_node in networkx_graph_to_modify_in_place.neighbors(graph_node):
                 if networkx_graph_to_modify_in_place.has_edge(graph_node, neighbor_node):
                     edge_data = networkx_graph_to_modify_in_place.get_edge_data(

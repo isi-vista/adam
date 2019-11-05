@@ -21,6 +21,7 @@ from immutablecollections import immutabledict, immutableset
 from immutablecollections.converter_utils import _to_immutabledict, _to_tuple
 from more_itertools import first
 from networkx import DiGraph
+from typing_extensions import Protocol
 
 from adam.axes import AxesInfo, HasAxes
 from adam.axis import GeonAxis
@@ -61,7 +62,12 @@ class Incrementer:
 DebugCallableType = Callable[[DiGraph, Dict[Any, Any]], None]
 
 PerceptionGraphNode = Union[
-    ObjectPerception, OntologyNode, Tuple[Region[Any], int], Tuple[Geon, int], GeonAxis
+    ObjectPerception,
+    OntologyNode,
+    Tuple[Region[Any], int],
+    Tuple[Geon, int],
+    GeonAxis,
+    "MatchedObjectPerceptionPredicate",
 ]
 PerceptionGraphEdgeLabel = Union[OntologyNode, str, Direction[Any]]
 
@@ -102,10 +108,9 @@ An object match modified in a preposition relationship
 """
 
 
-class PerceptionGraphSuper(ABC):
+class PerceptionGraphProtocol(Protocol):
     _graph: DiGraph = attrib(validator=instance_of(DiGraph))
 
-    @abstractmethod
     def render_to_file(
         self,
         graph_name: str,
@@ -118,8 +123,8 @@ class PerceptionGraphSuper(ABC):
         """
 
 
-@attrs(frozen=True, slots=True)
-class PerceptionGraph(PerceptionGraphSuper):
+@attrs(frozen=True)
+class PerceptionGraph(PerceptionGraphProtocol):
     r"""
     Represents a `DevelopmentalPrimitivePerceptionFrame` as a directed graph.
 
@@ -127,6 +132,7 @@ class PerceptionGraph(PerceptionGraphSuper):
 
     These can be matched against by `PerceptionGraphPattern`\ s.
     """
+    _graph: DiGraph = attrib(validator=instance_of(DiGraph))
 
     def copy_as_digraph(self):
         return copy(self._graph)
@@ -331,7 +337,7 @@ class PerceptionGraph(PerceptionGraphSuper):
 
 
 @attrs(frozen=True, slots=True)
-class PerceptionGraphPattern(PerceptionGraphSuper):
+class PerceptionGraphPattern(PerceptionGraphProtocol):
     r"""
     A pattern which can match `PerceptionGraph`\ s.
 
@@ -339,10 +345,14 @@ class PerceptionGraphPattern(PerceptionGraphSuper):
     knowledge of an object for object recognition.
     """
 
+    _graph: DiGraph = attrib(validator=instance_of(DiGraph))
+
     def copy_as_digraph(self):
         return copy(self._graph)
 
-    def matcher(self, graph_to_match_against: PerceptionGraphSuper) -> "PatternMatching":
+    def matcher(
+        self, graph_to_match_against: PerceptionGraphProtocol
+    ) -> "PatternMatching":
         """
         Creates an object representing an attempt to match this pattern
         against *graph_to_match_against*.
@@ -593,8 +603,8 @@ class PatternMatching:
     pattern: PerceptionGraphPattern = attrib(
         validator=instance_of(PerceptionGraphPattern)
     )
-    graph_to_match_against: PerceptionGraphSuper = attrib(
-        validator=instance_of(PerceptionGraphSuper)
+    graph_to_match_against: PerceptionGraphProtocol = attrib(
+        validator=instance_of(PerceptionGraphProtocol)
     )
 
     # Callable object for debugging purposes. We use this to track the number of calls to match and render the graphs.
@@ -709,8 +719,8 @@ class PerceptionGraphPatternMatch:
     matched_pattern: PerceptionGraphPattern = attrib(
         validator=instance_of(PerceptionGraphPattern), kw_only=True
     )
-    graph_matched_against: PerceptionGraphSuper = attrib(
-        validator=instance_of(PerceptionGraphSuper), kw_only=True
+    graph_matched_against: PerceptionGraphProtocol = attrib(
+        validator=instance_of(PerceptionGraphProtocol), kw_only=True
     )
     matched_sub_graph: PerceptionGraph = attrib(
         validator=instance_of(PerceptionGraph), kw_only=True

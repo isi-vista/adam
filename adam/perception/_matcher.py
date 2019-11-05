@@ -23,8 +23,6 @@ from typing import Mapping, Any, Dict, Callable, Optional
 from immutablecollections import immutableset
 from networkx import DiGraph
 
-from adam.perception.perception_graph import NodePredicate
-
 
 class GraphMatching:
     """Implementation of VF2 algorithm for matching undirected graphs.
@@ -245,7 +243,8 @@ class GraphMatching:
         self,
         *,
         debug: bool = False,
-        debug_callback: Optional[Callable[[Any, Any], None]] = None
+        debug_callback: Optional[Callable[[Any, Any], None]] = None,
+        matching_pattern: bool = False
     ):
         """Extends the isomorphism mapping.
 
@@ -269,7 +268,12 @@ class GraphMatching:
             yield self.mapping
         else:
             for graph_node, pattern_node in self.candidate_pairs_iter():
-                if self.semantic_feasibility(graph_node, pattern_node, debug=debug):
+                if self.semantic_feasibility(
+                    graph_node,
+                    pattern_node,
+                    debug=debug,
+                    matching_pattern=matching_pattern,
+                ):
                     if debug:
                         self.node_to_syntax_attempts[pattern_node] += 1
                     if self.syntactic_feasibility(graph_node, pattern_node):
@@ -286,7 +290,9 @@ class GraphMatching:
                         if debug:
                             self.node_to_syntax_failures[pattern_node] += 1
 
-    def semantic_feasibility(self, graph_node, pattern_node, debug=False):
+    def semantic_feasibility(
+        self, graph_node, pattern_node, debug=False, matching_pattern=False
+    ):
         """Returns True if adding (G1_node, G2_node) is symantically feasible.
 
         The semantic feasibility function should return True if it is
@@ -329,7 +335,7 @@ class GraphMatching:
 
         # We assume the nodes of G2 are node predicates which must hold true for the
         # corresponding G1 graph node for there to be a match.
-        if isinstance(graph_node, NodePredicate):
+        if matching_pattern:
             if not pattern_node.matches_predicate(graph_node):
                 if debug:
                     self.pattern_node_to_num_predicate_failures[pattern_node] += 1
