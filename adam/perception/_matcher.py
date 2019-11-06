@@ -79,61 +79,63 @@ class GraphMatching:
 
         graph_nodes = self.graph_nodes
         pattern_nodes = self.pattern_nodes
+        # by default, this respects the order of the nodes in the DiGraph,
+        # which appears to be by insertion order (at least on recent Pythons)
         min_key = self.pattern_node_order.__getitem__
 
-        # First we compute the out-terminal sets.
-        T1_out = [
+        # First we compute the "forward frontier" sets.
+        # These are the nodes which are reachable in one hop from the currently matched nodes
+        # by following edges in the forwards direction.
+        graph_match_forward_frontier = [
             node
             for node in self.graph_nodes_in_or_succeeding_match
             if node not in self.graph_node_to_pattern_node
         ]
-        T2_out = [
+        pattern_match_forward_frontier = [
             node
             for node in self.pattern_nodes_in_or_succeeding_match
             if node not in self.pattern_node_to_graph_node
         ]
 
-        # If T1_out and T2_out are both nonempty.
-        # P(s) = T1_out x {min T2_out}
-        if T1_out and T2_out:
-            node_2 = min(T2_out, key=min_key)
-            for node_1 in T1_out:
-                yield node_1, node_2
-
-        # If T1_out and T2_out were both empty....
-        # We compute the in-terminal sets.
-
-        # elif not (T1_out or T2_out):   # as suggested by [2], incorrect
-        else:  # as suggested by [1], correct
-            T1_in = [
+        # if there are candidate node alignments moving forwards along the edges we attempt
+        # those first
+        # RMG: why doesn't this fail when the pattern has a forward frontier but the graph does not?
+        # Shouldn't that indicate a failed match?
+        if graph_match_forward_frontier and pattern_match_forward_frontier:
+            pattern_node = min(pattern_match_forward_frontier, key=min_key)
+            for graph_node in graph_match_forward_frontier:
+                yield graph_node, pattern_node
+        else:
+            # Compute the "backward frontier" sets.
+            # These are the nodes which are reachable in one hop from the currently matched nodes
+            # by following edges in the *backwards* direction direction.
+            graph_match_backwards_frontier = [
                 node
                 for node in self.graph_nodes_in_or_preceding_match
                 if node not in self.graph_node_to_pattern_node
             ]
-            T2_in = [
+            pattern_match_backwards_frontier = [
                 node
                 for node in self.pattern_nodes_in_or_preceding_match
                 if node not in self.pattern_node_to_graph_node
             ]
 
-            # If T1_in and T2_in are both nonempty.
-            # P(s) = T1_out x {min T2_out}
-            if T1_in and T2_in:
-                node_2 = min(T2_in, key=min_key)
-                for node_1 in T1_in:
-                    yield node_1, node_2
-
-            # If all terminal sets are empty...
-            # P(s) = (N_1 - M_1) x {min (N_2 - M_2)}
-
-            # elif not (T1_in or T2_in):   # as suggested by  [2], incorrect
-            else:  # as inferred from [1], correct
-                node_2 = min(
+            # if there are candidate node alignments moving backwards along the edges we attempt
+            # those next.
+            # RMG: why doesn't this fail when the pattern has a backward frontier
+            # but the graph does not? Shouldn't that indicate a failed match?
+            if graph_match_backwards_frontier and pattern_match_backwards_frontier:
+                pattern_node = min(pattern_match_backwards_frontier, key=min_key)
+                for graph_node in graph_match_backwards_frontier:
+                    yield graph_node, pattern_node
+            else:
+                # otherwise we just take the first unmatched pattern node
+                pattern_node = min(
                     pattern_nodes - set(self.pattern_node_to_graph_node), key=min_key
                 )
-                for node_1 in graph_nodes:
-                    if node_1 not in self.graph_node_to_pattern_node:
-                        yield node_1, node_2
+                for graph_node in graph_nodes:
+                    if graph_node not in self.graph_node_to_pattern_node:
+                        yield graph_node, pattern_node
 
         # For all other cases, we don't have any candidate pairs.
 
