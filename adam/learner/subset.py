@@ -69,7 +69,7 @@ class SubsetLanguageLearner(
     ] = attrib(init=False, default=Factory(dict))
 
     def observe(
-            self, learning_example: LearningExample[PerceptionT, LinguisticDescription]
+        self, learning_example: LearningExample[PerceptionT, LinguisticDescription]
     ) -> None:
         perception = learning_example.perception
         if len(perception.frames) != 1:
@@ -117,7 +117,7 @@ class SubsetLanguageLearner(
             ] = observed_pattern_graph
 
     def describe(
-            self, perception: PerceptualRepresentation[PerceptionT]
+        self, perception: PerceptualRepresentation[PerceptionT]
     ) -> Mapping[LinguisticDescription, float]:
         if len(perception.frames) != 1:
             raise RuntimeError("Subset learner can only handle single frames for now")
