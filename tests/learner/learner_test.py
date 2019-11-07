@@ -2,13 +2,14 @@ from typing import Optional
 import pytest
 
 from adam.curriculum.phase1_curriculum import phase1_instances, PHASE1_CHOOSER
+from adam.curriculum.preposition_curriculum import _make_on_training, _make_on_tests
 from adam.language_specific.english.english_language_generator import IGNORE_COLORS
 from adam.learner import LearningExample
 from adam.learner.subset import SubsetLanguageLearner
 from adam.ontology import OntologyNode
 from adam.ontology.phase1_ontology import BALL, LEARNER, DOG
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
-from adam.perception.perception_graph import DumpPartialMatchCallback, DebugCallableType
+from adam.perception.perception_graph import DumpPartialMatchCallback, DebugCallableType, PerceptionGraph
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
     object_variable,
@@ -76,3 +77,30 @@ def test_subset_learner_dog():
     debug_callback = DumpPartialMatchCallback(render_path="../renders/")
     # We pass this callback into the learner; it is executed if the learning takes too long, i.e after 60 seconds.
     run_subset_learner_for_object(DOG, debug_callback)
+
+
+def test_subset_preposition_on_learner():
+    learner = SubsetLanguageLearner()
+    on_train_curriculum = _make_on_training(num_samples=1, noise_objects=False)
+    on_test_curriculum = _make_on_tests(num_samples=1, noise_objects=False)
+
+    for (
+        _,
+        linguistic_description,
+        perceptual_representation,
+    ) in on_train_curriculum.instances():
+        learner._observe_static_prepositions(  # pylint:disable=protected-access
+            PerceptionGraph.from_frame(perceptual_representation.frames[0]),
+            linguistic_description,
+        )
+
+    for (
+        _,
+        test_lingustics_description,
+        test_perceptual_representation,
+    ) in on_test_curriculum.instances():
+        descriptions_from_learner = learner._describe_preposition(  # pylint:disable=protected-access
+            PerceptionGraph.from_frame(test_perceptual_representation.frames[0])
+        )
+        gold = test_lingustics_description.as_token_sequence()
+        assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold

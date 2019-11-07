@@ -1325,7 +1325,10 @@ class PrepositionPattern:
         items_to_iterate.extend(self.object_map.items())
         items_to_iterate.extend(pattern.object_map.items())
         for name, pattern_node in immutableset(items_to_iterate):
-            if pattern in graph_pattern._graph.nodes:  # pylint:disable=protected-access
+            if (
+                pattern_node
+                in graph_pattern._graph.nodes  # pylint:disable=protected-access
+            ):
                 mapping_builder.append((name, pattern_node))
 
         return PrepositionPattern(graph_pattern=graph_pattern, object_map=mapping_builder)

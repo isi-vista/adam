@@ -10,7 +10,6 @@ from adam.ontology.phase1_ontology import (
     GAILA_PHASE_1_ONTOLOGY,
     TRUCK,
     PHASE_1_CURRICULUM_OBJECTS,
-    TABLE,
 )
 from adam.perception.perception_graph import (
     PerceptionGraph,
@@ -29,7 +28,7 @@ _LIST_OF_PERCEIVED_PATTERNS = immutableset(
     for node in PHASE_1_CURRICULUM_OBJECTS
     if node
     in GAILA_PHASE_1_ONTOLOGY._structural_schemata.keys()  # pylint:disable=protected-access
-    and node not in [TRUCK, TABLE]
+    and node not in [TRUCK]
     # Currently can't be matched is what the list at the end is for
 )
 
