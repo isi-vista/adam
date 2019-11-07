@@ -10,14 +10,14 @@ then defines `PerceptionGraphPattern`\ s to match them.
 from abc import ABC, abstractmethod
 from copy import copy
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, Mapping, Optional, Tuple, Union, List
+from typing import Any, Callable, Dict, Iterable, Mapping, Optional, Tuple, Union, TypeVar
 
 import graphviz
 
 from adam.utils.networkx_utils import digraph_with_nodes_sorted_by
 from attr import attrib, attrs
 from attr.validators import instance_of, optional
-from immutablecollections import immutabledict, immutableset
+from immutablecollections import immutabledict, immutableset, ImmutableDict
 from immutablecollections.converter_utils import _to_immutabledict, _to_tuple
 from more_itertools import first
 from networkx import DiGraph
@@ -540,7 +540,9 @@ class PerceptionGraphPattern(PerceptionGraphProtocol):
     ) -> "PerceptionGraphPattern":
         debug_mapping: Dict[Any, Any] = dict()
         matcher = PatternMatching(pattern=graph_pattern, graph_to_match_against=self)
-        matches = immutableset(matcher.matches(debug_mapping_sink=debug_mapping))
+        matches = immutableset(
+            matcher.matches(debug_mapping_sink=debug_mapping, matching_pattern=True)
+        )
         if not matches.empty():
             # We found a match! This means our two patterns are the same and we should just keep the original
             return self
@@ -616,6 +618,7 @@ class PatternMatching:
         debug_mapping_sink: Optional[Dict[Any, Any]] = None,
         use_lookahead_pruning: bool = False,
         debug_callback: Optional[DebugCallableType] = None,
+        matching_pattern: bool = False,
     ) -> Iterable["PerceptionGraphPatternMatch"]:
         """
         Attempt the matching and returns a generator over the set of possible matches.
@@ -656,9 +659,13 @@ class PatternMatching:
                 graph_matched_against=self.graph_to_match_against,
                 matched_pattern=self.pattern,
                 matched_sub_graph=PerceptionGraph(
-                    matching.graph.subgraph(mapping.values()).copy()
+                    matching.graph.subgraph(
+                        graph_node_to_matching_pattern_node.keys()
+                    ).copy()
                 ),
-                alignment=mapping,
+                pattern_node_to_matched_graph_node=_invert_to_immutabledict(
+                    graph_node_to_matching_pattern_node
+                ),
             )
         if debug_mapping_sink is not None and not got_a_match:
             # we failed to match the pattern.
@@ -725,9 +732,9 @@ class PerceptionGraphPatternMatch:
     matched_sub_graph: PerceptionGraph = attrib(
         validator=instance_of(PerceptionGraph), kw_only=True
     )
-    alignment: Mapping["NodePredicate", PerceptionGraphNode] = attrib(
-        converter=_to_immutabledict, kw_only=True
-    )
+    pattern_node_to_matched_graph_node: Mapping[
+        "NodePredicate", PerceptionGraphNode
+    ] = attrib(converter=_to_immutabledict, kw_only=True)
     """
     A mapping of pattern nodes from `matched_pattern` to the nodes
     in `matched_sub_graph` they were aligned to.
@@ -1332,3 +1339,10 @@ class PrepositionPattern:
                 mapping_builder.append((name, pattern_node))
 
         return PrepositionPattern(graph_pattern=graph_pattern, object_map=mapping_builder)
+
+
+_KT = TypeVar("_KT")
+_VT = TypeVar("_VT")
+
+def _invert_to_immutabledict(mapping: Mapping[_KT, _VT]) -> ImmutableDict[_VT, _KT]:
+    return immutabledict((v, k) for (k, v) in mapping.items())

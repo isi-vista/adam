@@ -80,7 +80,7 @@ def test_subset_learner_dog():
 
 
 def test_subset_preposition_on_learner():
-    learner = SubsetLanguageLearner()
+    learner = PrepositionSubsetLanguageLearner()
     on_train_curriculum = _make_on_training(num_samples=1, noise_objects=False)
     on_test_curriculum = _make_on_tests(num_samples=1, noise_objects=False)
 

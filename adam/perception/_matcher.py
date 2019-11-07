@@ -451,7 +451,8 @@ class GraphMatching:
         self,
         *,
         debug: bool = False,
-        debug_callback: Optional[Callable[[Any, Any], None]] = None
+        debug_callback: Optional[Callable[[Any, Any], None]] = None,
+        matching_pattern: bool = False
     ):
         """Generator over isomorphisms between a subgraph of G1 and G2."""
         # Declare that we are looking for graph-subgraph isomorphism.
@@ -459,7 +460,7 @@ class GraphMatching:
         self.initialize()
         self.debug_largest_match = {}
         self._reset_debugging_maps()
-        for mapping in self.match(debug=debug, debug_callback=debug_callback):
+        for mapping in self.match(debug=debug, debug_callback=debug_callback, matching_pattern=matching_pattern):
             yield mapping
 
     def subgraph_monomorphisms_iter(self):
