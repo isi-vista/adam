@@ -222,16 +222,7 @@ class BoundingBox:
         return [self.right(), self.forward(), self.up()]
 
     def min_max_projection(self, axis: ndarray) -> Tuple[float, float]:
-        minimum = float("inf")
-        maximum = float("-inf")
-        for c in self.all_corners():
-            prod = numpy.dot(c, axis)
-            if prod < minimum:
-                minimum = prod
-            elif prod > maximum:
-                maximum = prod
-        # print(f"\nProjected {self} onto {axis}\nMin:{minimum}, Max:{maximum}")
-        return minimum, maximum
+        return min_max_projection(self.all_corners(), axis)
 
     def colliding(self, other: "BoundingBox") -> bool:
         face_norms = self.all_face_normals()
@@ -241,3 +232,16 @@ class BoundingBox:
             if other_max < self_min or self_max < other_min:
                 return False
         return True
+
+
+def min_max_projection(corners: List[ndarray], axis: ndarray) -> Tuple[float, float]:
+    minimum = float("inf")
+    maximum = float("-inf")
+    for c in corners:
+        prod = numpy.dot(c, axis)
+        if prod < minimum:
+            minimum = prod
+        elif prod > maximum:
+            maximum = prod
+    # print(f"\nProjected {self} onto {axis}\nMin:{minimum}, Max:{maximum}")
+    return minimum, maximum

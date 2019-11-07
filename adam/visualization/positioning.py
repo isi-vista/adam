@@ -1,14 +1,18 @@
 from cvxopt import matrix
 from cvxopt import solvers
+import cvxopt.modeling
 from cvxopt.modeling import variable, op
 import numpy as np
 from numpy import ndarray
 
 from typing import List
 
+from adam.visualization.utils import BoundingBox, min_max_projection
+
 
 def main() -> None:
-    midpoint_minimization()
+    bb = BoundingBox.from_center_point(np.array([0, 0, 0]))
+    midpoint_minimization(bb)
 
     assert False
 
@@ -53,36 +57,95 @@ class RelativePositionSolver:
     pass
 
 
-def midpoint_minimization():
+def midpoint_minimization(relative_bb: BoundingBox):
     # objective function:
 
     # quadratic components: none
     # P = matrix(np.diag(np.array([0, 0, 0])), tc="d")
     # linear coefficients: all ones
     # q = matrix(np.array([1, 1, 1]), tc="d")
-    # these are absolute value stand-ins u, v, w
 
-    # u = variable(1, 'u')
-    # v = variable(1, 'v')
-    # w = variable(1, 'w')
+    relative_bb_faces = relative_bb.all_face_normals()
 
-    x = variable(1, "x")
-    y = variable(1, "y")
-    z = variable(1, "z")
+    relative_bb_corners = relative_bb.all_corners()
 
-    f = abs(x) + abs(y) + abs(z)
+    relative_bb_min_max_projections = [
+        min_max_projection(relative_bb_corners, face) for face in relative_bb_faces
+    ]
 
-    print(f)
+    print(relative_bb_min_max_projections)
+
+    corner_matrix = np.array(
+        [
+            (-1, -1, -1),
+            (1, -1, -1),
+            (-1, 1, -1),
+            (1, 1, -1),
+            (-1, -1, 1),
+            (1, -1, 1),
+            (-1, 1, 1),
+            (1, 1, 1),
+        ]
+    )
+
+    print("np test situation")
+    print(corner_matrix + np.array([1.0, 1.0, 1.0]))
+
+    box_a_center = variable(3, "center_a")
+    # box_a_scale = np.array([1.0, 1.0, 1.0])
+    # box_a_rot = variable(4, "rot_a")
+
+    box_a_center.value = matrix([0.0, 0.0, 0.0])  # just to start with
+    print(box_a_center.value)
+
+    print(f"\n\n{type(box_a_center)}\n\n")
+
+    f = abs(box_a_center[0]) + abs(box_a_center[1]) + abs(box_a_center[2])
 
     # constraints:
-    c_x_1 = x <= 10.0
-    c_x_2 = x >= -10.0
-    c_y_1 = y <= 5.0
-    c_y_2 = y >= -5.0
-    c_z_1 = z <= 2.0
-    c_z_2 = z >= 0.0
+    c_x_1 = box_a_center[0] <= 10.0
 
-    prob = op(f, [c_x_1, c_x_2, c_y_1, c_y_2, c_z_1, c_z_2], "test_prob")
+    c_x_2 = box_a_center[0] >= -10.0
+    c_y_1 = box_a_center[1] <= 5.0
+    c_y_2 = box_a_center[1] >= -5.0
+    c_z_1 = box_a_center[2] <= 2.0
+    c_z_2 = box_a_center[2] >= 0.0
+
+    # intersection constraints:
+    print(corner_matrix.size)
+
+    center_shaped = matrix(np.ones((8, 3)), tc="d") * box_a_center
+
+    print(f"center_shaped type: {type(center_shaped)}")
+
+    # corner0 = corner_shaped + corner_matrix[0]
+    corners = center_shaped + corner_matrix
+    print(f"type of corners: {type(corners)}")
+    print(f"type of a corners element: {type(corners[0])}")
+
+    print(corners[0].size)
+    print(relative_bb_faces[0].size)
+    print(f"corner shape: {corners[0].shape}")
+    print(f"relative_bb_face shape: {relative_bb_faces[0].shape}")
+    projections = [
+        np.dot(corners[j], relative_bb_faces[i]) for i in range(3) for j in range(8)
+    ]
+
+    print(len(projections))
+    print(f"{projections[0].shape}")
+    print(f"{projections[0].size}")
+
+    collide_constraint = (
+        cvxopt.modeling.min(projections[0], relative_bb_min_max_projections[0][1])
+        - cvxopt.modeling.max(projections[1], relative_bb_min_max_projections[0][0])
+        <= 0
+    )
+
+    print(type(collide_constraint))
+
+    prob = op(
+        f, [c_x_1, c_x_2, c_y_1, c_y_2, c_z_1, c_z_2, collide_constraint], "test_prob"
+    )
     prob.solve()
     print(prob.status)
 
