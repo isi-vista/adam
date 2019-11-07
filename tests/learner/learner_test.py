@@ -2,10 +2,26 @@ from typing import Optional
 import pytest
 
 from adam.curriculum.phase1_curriculum import phase1_instances, PHASE1_CHOOSER
-from adam.curriculum.preposition_curriculum import _make_on_training, _make_on_tests
+from adam.curriculum.preposition_curriculum import (
+    _make_on_training,
+    _make_on_tests,
+    _make_beside_training,
+    _make_beside_tests,
+    _make_under_training,
+    _make_under_tests,
+    _make_over_training,
+    _make_over_tests,
+    _make_in_training,
+    _make_in_tests,
+    _make_behind_training,
+    _make_behind_tests,
+    _make_in_front_training,
+    _make_in_front_tests,
+)
 from adam.language_specific.english.english_language_generator import IGNORE_COLORS
 from adam.learner import LearningExample
 from adam.learner.subset import SubsetLanguageLearner
+from adam.ontology.phase1_ontology import BALL, LEARNER
 from adam.ontology import OntologyNode
 from adam.ontology.phase1_ontology import BALL, LEARNER, DOG
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
@@ -80,7 +96,7 @@ def test_subset_learner_dog():
 
 
 def test_subset_preposition_on_learner():
-    learner = PrepositionSubsetLanguageLearner()
+    learner = SubsetLanguageLearner()
     on_train_curriculum = _make_on_training(num_samples=1, noise_objects=False)
     on_test_curriculum = _make_on_tests(num_samples=1, noise_objects=False)
 
@@ -89,7 +105,7 @@ def test_subset_preposition_on_learner():
         linguistic_description,
         perceptual_representation,
     ) in on_train_curriculum.instances():
-        learner._observe_static_prepositions(  # pylint:disable=protected-access
+        learner.observe_static_prepositions(  # pylint:disable=protected-access
             PerceptionGraph.from_frame(perceptual_representation.frames[0]),
             linguistic_description,
         )
@@ -99,8 +115,174 @@ def test_subset_preposition_on_learner():
         test_lingustics_description,
         test_perceptual_representation,
     ) in on_test_curriculum.instances():
-        descriptions_from_learner = learner._describe_preposition(  # pylint:disable=protected-access
+        descriptions_from_learner = learner.describe_preposition(  # pylint:disable=protected-access
             PerceptionGraph.from_frame(test_perceptual_representation.frames[0])
         )
         gold = test_lingustics_description.as_token_sequence()
+        assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
+
+
+def test_subset_preposition_beside_learner():
+    learner = SubsetLanguageLearner()
+    beside_train_curriculum = _make_beside_training(num_samples=1, noise_objects=False)
+    beside_test_curriculum = _make_beside_tests(num_samples=1, noise_objects=False)
+
+    for (
+        _,
+        linguistic_description,
+        perceptual_representation,
+    ) in beside_train_curriculum.instances():
+        learner.observe_static_prepositions(
+            PerceptionGraph.from_frame(perceptual_representation.frames[0]),
+            linguistic_description,
+        )
+
+    for (
+        _,
+        test_linguistic_description,
+        test_perceptual_representation,
+    ) in beside_test_curriculum.instances():
+        descriptions_from_learner = learner.describe_preposition(
+            PerceptionGraph.from_frame(test_perceptual_representation.frames[0])
+        )
+        gold = test_linguistic_description.as_token_sequence()
+        assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
+
+
+def test_subset_preposition_under_learner():
+    learner = SubsetLanguageLearner()
+    under_train_curriculum = _make_under_training(num_samples=1, noise_objects=False)
+    under_test_curriculum = _make_under_tests(num_samples=1, noise_objects=False)
+
+    for (
+        _,
+        linguistic_description,
+        perceptual_representation,
+    ) in under_train_curriculum.instances():
+        learner.observe_static_prepositions(
+            PerceptionGraph.from_frame(perceptual_representation.frames[0]),
+            linguistic_description,
+        )
+
+    for (
+        _,
+        test_linguistic_description,
+        test_perceptual_representation,
+    ) in under_test_curriculum.instances():
+        descriptions_from_learner = learner.describe_preposition(
+            PerceptionGraph.from_frame(test_perceptual_representation.frames[0])
+        )
+        gold = test_linguistic_description.as_token_sequence()
+        assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
+
+
+def test_subset_preposition_over_learner():
+    learner = SubsetLanguageLearner()
+    over_train_curriculum = _make_over_training(num_samples=1, noise_objects=False)
+    over_test_curriculum = _make_over_tests(num_samples=1, noise_objects=False)
+
+    for (
+        _,
+        linguistic_description,
+        perceptual_representation,
+    ) in over_train_curriculum.instances():
+        learner.observe_static_prepositions(
+            PerceptionGraph.from_frame(perceptual_representation.frames[0]),
+            linguistic_description,
+        )
+
+    for (
+        _,
+        test_linguistic_description,
+        test_perceptual_representation,
+    ) in over_test_curriculum.instances():
+        descriptions_from_learner = learner.describe_preposition(
+            PerceptionGraph.from_frame(test_perceptual_representation.frames[0])
+        )
+        gold = test_linguistic_description.as_token_sequence()
+        assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
+
+
+# See https://github.com/isi-vista/adam/issues/422
+@pytest.mark.skip(msg="In Preposition Test Temporarily Disabled")
+def test_subset_preposition_in_learner():
+    learner = SubsetLanguageLearner()
+    in_train_curriculum = _make_in_training(num_samples=1, noise_objects=False)
+    in_test_curriculum = _make_in_tests(num_samples=1, noise_objects=False)
+
+    for (
+        _,
+        linguistic_description,
+        perceptual_representation,
+    ) in in_train_curriculum.instances():
+        learner.observe_static_prepositions(
+            PerceptionGraph.from_frame(perceptual_representation.frames[0]),
+            linguistic_description,
+        )
+
+    for (
+        _,
+        test_linguistic_description,
+        test_perceptual_representation,
+    ) in in_test_curriculum.instances():
+        descriptions_from_learner = learner.describe_preposition(
+            PerceptionGraph.from_frame(test_perceptual_representation.frames[0])
+        )
+        gold = test_linguistic_description.as_token_sequence()
+        assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
+
+
+def test_subset_preposition_behind_learner():
+    learner = SubsetLanguageLearner()
+    behind_train_curriculum = _make_behind_training(num_samples=1, noise_objects=False)
+    behind_test_curriculum = _make_behind_tests(num_samples=1, noise_objects=False)
+
+    for (
+        _,
+        linguistic_description,
+        perceptual_representation,
+    ) in behind_train_curriculum.instances():
+        learner.observe_static_prepositions(
+            PerceptionGraph.from_frame(perceptual_representation.frames[0]),
+            linguistic_description,
+        )
+
+    for (
+        _,
+        test_linguistic_description,
+        test_perceptual_representation,
+    ) in behind_test_curriculum.instances():
+        descriptions_from_learner = learner.describe_preposition(
+            PerceptionGraph.from_frame(test_perceptual_representation.frames[0])
+        )
+        gold = test_linguistic_description.as_token_sequence()
+        assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
+
+
+def test_subset_preposition_in_front_learner():
+    learner = SubsetLanguageLearner()
+    in_front_train_curriculum = _make_in_front_training(
+        num_samples=1, noise_objects=False
+    )
+    in_front_test_curriculum = _make_in_front_tests(num_samples=1, noise_objects=False)
+
+    for (
+        _,
+        linguistic_description,
+        perceptual_representation,
+    ) in in_front_train_curriculum.instances():
+        learner.observe_static_prepositions(
+            PerceptionGraph.from_frame(perceptual_representation.frames[0]),
+            linguistic_description,
+        )
+
+    for (
+        _,
+        test_linguistic_description,
+        test_perceptual_representation,
+    ) in in_front_test_curriculum.instances():
+        descriptions_from_learner = learner.describe_preposition(
+            PerceptionGraph.from_frame(test_perceptual_representation.frames[0])
+        )
+        gold = test_linguistic_description.as_token_sequence()
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold

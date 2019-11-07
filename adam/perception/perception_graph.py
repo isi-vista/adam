@@ -444,6 +444,10 @@ class PerceptionGraphPattern(PerceptionGraphProtocol):
                     perception_node_to_pattern_node[key] = IsOntologyNodePredicate(node)
                 elif isinstance(node, RgbColorPerception):
                     perception_node_to_pattern_node[key] = IsColorNodePredicate(node)
+                elif isinstance(node, MatchedObjectPerceptionPredicate):
+                    perception_node_to_pattern_node[
+                        key
+                    ] = MatchedObjectPerceptionPredicate()
                 else:
                     raise RuntimeError(f"Don't know how to map node {node}")
             return perception_node_to_pattern_node[key]
@@ -651,8 +655,10 @@ class PatternMatching:
         if debug_callback:
             # If there is a given rendering path, we initialize the debug callback function.
             self.debug_callback = debug_callback
-        for mapping in matching.subgraph_isomorphisms_iter(
-            debug=(debug_mapping_sink is not None), debug_callback=self.debug_callback
+        for graph_node_to_matching_pattern_node in matching.subgraph_isomorphisms_iter(
+            debug=(debug_mapping_sink is not None),
+            matching_pattern=(matching_pattern is not None),
+            debug_callback=self.debug_callback
         ):
             got_a_match = True
             yield PerceptionGraphPatternMatch(
@@ -979,6 +985,16 @@ class IsColorNodePredicate(NodePredicate):
                 and (graph_node.green == self.color.green)
             )
         return False
+
+    def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
+        if isinstance(predicate_node, IsColorNodePredicate):
+            return (
+                (predicate_node.color.red == self.color.red)
+                and (predicate_node.color.blue == self.color.blue)
+                and (predicate_node.color.green == self.color.green)
+            )
+        else:
+            return False
 
     def dot_label(self) -> str:
         return f"prop({self.color.hex})"
