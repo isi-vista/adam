@@ -543,7 +543,7 @@ class PerceptionGraphPatternMatching:
         )
         got_a_match = False
         for mapping in matching.subgraph_isomorphisms_iter(
-            debug=(debug_mapping_sink is not None) is not None
+            debug=(debug_mapping_sink is not None)
         ):
             got_a_match = True
             yield PerceptionGraphPatternMatch(
