@@ -105,8 +105,6 @@ STR_TO_CURRICULUM = {
     "pursuit": make_pursuit_curriculum,
 }
 
-GAILA_PHASE_1_CURRICULUM = build_gaila_phase_1_curriculum()
-
 
 def main(params: Parameters) -> None:
     root_output_directory = params.creatable_directory("output_directory")
