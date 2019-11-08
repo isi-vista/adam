@@ -11,8 +11,10 @@ from typing import (
     Union,
     Optional,
     Dict,
+    Mapping,
 )
 
+from adam.curriculum.curriculum_utils import Phase1InstanceGroup
 from attr import attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import (
@@ -99,13 +101,11 @@ EXPLANATION_HEADER = (
     "<li>Many objects also have associated Geons, which describe their shape "
     "according to Biederman's visual perception theory (see deliverable docs for a citation).</li>"
 )
-STR_TO_CURRICULUM = {
-    "phase1": build_gaila_phase_1_curriculum(),
-    "prepositions": make_prepositions_curriculum(),
-    "pursuit": make_pursuit_curriculum(),
+STR_TO_CURRICULUM: Mapping[str, Callable[[], Iterable[Phase1InstanceGroup]]] = {
+    "phase1": build_gaila_phase_1_curriculum,
+    "prepositions": make_prepositions_curriculum,
+    "pursuit": make_pursuit_curriculum,
 }
-
-GAILA_PHASE_1_CURRICULUM = build_gaila_phase_1_curriculum()
 
 
 def main(params: Parameters) -> None:
@@ -115,7 +115,9 @@ def main(params: Parameters) -> None:
     )
     phase1_curriculum_dir = root_output_directory / curriculum_string
     phase1_curriculum_dir.mkdir(parents=True, exist_ok=True)
-    curriculum_to_render = STR_TO_CURRICULUM[curriculum_string]
+    # We lazily instantiate the curriculum so we don't need to worry
+    # about any of them we don't actually use.
+    curriculum_to_render = STR_TO_CURRICULUM[curriculum_string]()
 
     sort_by_utterance_length_flag = params.optional_boolean(
         "sort_by_utterance", default=False
