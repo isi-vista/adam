@@ -312,6 +312,9 @@ class PerceptionGraphPattern:
 
     _graph: DiGraph = attrib(validator=instance_of(DiGraph))
 
+    def copy_as_digraph(self):
+        return copy(self._graph)
+
     def matcher(
         self, graph_to_match_against: PerceptionGraph
     ) -> "PerceptionGraphPatternMatching":
@@ -404,6 +407,8 @@ class PerceptionGraphPattern:
                     )
                 elif isinstance(node, OntologyNode):
                     perception_node_to_pattern_node[key] = IsOntologyNodePredicate(node)
+                elif isinstance(node, RgbColorPerception):
+                    perception_node_to_pattern_node[key] = IsColorNodePredicate(node)
                 else:
                     raise RuntimeError(f"Don't know how to map node {node}")
             return perception_node_to_pattern_node[key]
@@ -538,7 +543,7 @@ class PerceptionGraphPatternMatching:
         )
         got_a_match = False
         for mapping in matching.subgraph_isomorphisms_iter(
-            debug=debug_mapping_sink is not None
+            debug=(debug_mapping_sink is not None)
         ):
             got_a_match = True
             yield PerceptionGraphPatternMatch(
@@ -549,7 +554,7 @@ class PerceptionGraphPatternMatching:
                 ),
                 alignment=mapping,
             )
-        if debug_mapping_sink and not got_a_match:
+        if debug_mapping_sink is not None and not got_a_match:
             # we failed to match the pattern.
             # If the user requested it, we provide the largest matching we could find
             # for debugging purposes.
@@ -795,6 +800,23 @@ class IsOntologyNodePredicate(NodePredicate):
 
     def dot_label(self) -> str:
         return f"prop({self.property_value.handle})"
+
+
+@attrs(frozen=True, slots=True, eq=False)
+class IsColorNodePredicate(NodePredicate):
+    color: RgbColorPerception = attrib(validator=instance_of(RgbColorPerception))
+
+    def __call__(self, graph_node: PerceptionGraphNode) -> bool:
+        if isinstance(graph_node, RgbColorPerception):
+            return (
+                (graph_node.red == self.color.red)
+                and (graph_node.blue == self.color.blue)
+                and (graph_node.green == self.color.green)
+            )
+        return False
+
+    def dot_label(self) -> str:
+        return f"prop({self.color.hex})"
 
 
 @attrs(frozen=True, slots=True, eq=False)
