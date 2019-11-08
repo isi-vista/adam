@@ -128,6 +128,7 @@ def main(params: Parameters) -> None:
             curriculum_to_render,
             output_directory=phase1_curriculum_dir,
             title="GAILA Phase 1 Curriculum Sorted by Utterance Length",
+            curriculum_string=curriculum_string,
             random_seed=random_seed,
         )
     else:
@@ -172,6 +173,7 @@ class CurriculumToHtmlDumper:
         *,
         output_directory: Path,
         title: str,
+        curriculum_string: str,
         random_seed: int,
     ):
         all_instances = []
@@ -217,19 +219,18 @@ class CurriculumToHtmlDumper:
                 )
             )
 
-        filename = "curriculum-sorted-by-utterance.html"
+        filename = f"{curriculum_string}-curriculum-sorted-by-utterance.html"
         chunk_size = 50
         files_written: List[Tuple[str, str]] = []
         for i in range(0, len(rendered_instances), chunk_size):
             chunk = rendered_instances[i : i + chunk_size]
             instance_group_header = f"{int(i / chunk_size):03} - {filename}"
-            relative_filename = f"{instance_group_header}.html"
+            relative_filename = f"{instance_group_header}"
+            print(relative_filename)
             files_written.append((instance_group_header, relative_filename))
             with open(output_directory / relative_filename, "w") as html_out:
                 html_out.write(f"<head>\n\t<style>{CSS}\n\t</style>\n</head>")
-                html_out.write(
-                    f"\n<body>\n\t<h1>{title} - Sorted by Utterance Length</h1>"
-                )
+                html_out.write(f"\n<body>\n\t<h1>{title} - {curriculum_string}</h1>")
                 html_out.write(f"\t<a href='index.html'>" f"Back to Index</a>")
                 html_out.write(EXPLANATION_HEADER)
                 for (instance_number, instance_holder) in enumerate(immutableset(chunk)):
