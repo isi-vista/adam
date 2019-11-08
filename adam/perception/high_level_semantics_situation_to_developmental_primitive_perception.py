@@ -781,6 +781,8 @@ class _PerceptionGeneration:
         debug_handle = self._object_handle_generator.subscripted_handle(
             schema.ontology_node
         )
+
+        # find a geon for the object, if possible
         concrete_geon: Optional[Geon]
         if schema.geon:
             # if there is a situation object, we need to keep its axes in sync with its geon's axes
@@ -790,10 +792,25 @@ class _PerceptionGeneration:
                 )
             else:
                 concrete_geon = schema.geon.copy()
-            axes = concrete_geon.axes
         else:
             concrete_geon = None
-            axes = schema.axes.copy()
+
+        # find axes for the object
+        if situation_object:
+            # This is a top-level object which has already been assigned axes
+            # by the situation. We should not change or copy them
+            # or else references to them by the situation
+            # (e.g. which axes face which objects)
+            # will be out-of-sync.
+            # See https://github.com/isi-vista/adam/issues/420
+            axes = situation_object.axes
+        else:
+            if concrete_geon:
+                # when the geon was copied, its axes were already copied,
+                # which is why we don't do it again on this branch
+                axes = concrete_geon.axes
+            else:
+                axes = schema.axes.copy()
 
         root_object_perception = ObjectPerception(
             debug_handle=debug_handle, geon=concrete_geon, axes=axes
