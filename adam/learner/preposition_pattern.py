@@ -12,9 +12,9 @@ from attr.validators import instance_of, deep_mapping
 
 # Constants used to map locations in a prepositional phrase for mapping
 _MODIFIED = "MODIFIED"
-_GROUNDED = "GROUND"
+_GROUND = "GROUND"
 
-_EXPECTED_OBJECT_VARIABLES = {_MODIFIED, _GROUNDED}
+_EXPECTED_OBJECT_VARIABLES = {_MODIFIED, _GROUND}
 
 
 @attrs(frozen=True, slots=True, eq=False)
@@ -33,6 +33,19 @@ class PrepositionPattern:
     )
 
     def __attrs_post_init__(self) -> None:
+        actual_object_nodes = set(self.object_variable_name_to_pattern_node.values())
+
+        for object_node in actual_object_nodes:
+            if (
+                object_node
+                not in self.graph_pattern._graph.nodes  # pylint:disable=protected-access
+            ):
+                raise RuntimeError(
+                    f"Expected mapping which contained graph nodes"
+                    f" but got {object_node} with id {id(object_node)}"
+                    f" which doesn't exist in {self.graph_pattern}"
+                )
+
         actual_object_variable_names = set(
             self.object_variable_name_to_pattern_node.keys()
         )

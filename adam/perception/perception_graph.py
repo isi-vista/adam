@@ -111,6 +111,9 @@ An object match modified in a preposition relationship
 class PerceptionGraphProtocol(Protocol):
     _graph: DiGraph = attrib(validator=instance_of(DiGraph))
 
+    def copy_as_digraph(self) -> DiGraph:
+        return copy(self._graph)
+
     def render_to_file(
         self,
         graph_name: str,
@@ -134,7 +137,7 @@ class PerceptionGraph(PerceptionGraphProtocol):
     """
     _graph: DiGraph = attrib(validator=instance_of(DiGraph))
 
-    def copy_as_digraph(self):
+    def copy_as_digraph(self) -> DiGraph:
         return copy(self._graph)
 
     @staticmethod
@@ -347,7 +350,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol):
 
     _graph: DiGraph = attrib(validator=instance_of(DiGraph))
 
-    def copy_as_digraph(self):
+    def copy_as_digraph(self) -> DiGraph:
         return copy(self._graph)
 
     def matcher(
@@ -445,9 +448,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol):
                 elif isinstance(node, RgbColorPerception):
                     perception_node_to_pattern_node[key] = IsColorNodePredicate(node)
                 elif isinstance(node, MatchedObjectPerceptionPredicate):
-                    perception_node_to_pattern_node[
-                        key
-                    ] = MatchedObjectPerceptionPredicate()
+                    perception_node_to_pattern_node[key] = node
                 else:
                     raise RuntimeError(f"Don't know how to map node {node}")
             return perception_node_to_pattern_node[key]
@@ -657,7 +658,7 @@ class PatternMatching:
             self.debug_callback = debug_callback
         for graph_node_to_matching_pattern_node in matching.subgraph_isomorphisms_iter(
             debug=(debug_mapping_sink is not None),
-            matching_pattern=(matching_pattern is not None),
+            matching_pattern=matching_pattern,
             debug_callback=self.debug_callback
         ):
             got_a_match = True
@@ -666,7 +667,7 @@ class PatternMatching:
                 matched_pattern=self.pattern,
                 matched_sub_graph=PerceptionGraph(
                     matching.graph.subgraph(
-                        graph_node_to_matching_pattern_node.keys()
+                        graph_node_to_matching_pattern_node.values()
                     ).copy()
                 ),
                 pattern_node_to_matched_graph_node=_invert_to_immutabledict(
