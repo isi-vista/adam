@@ -1,8 +1,11 @@
+import pytest
+
 from adam.curriculum.phase1_curriculum import phase1_instances, PHASE1_CHOOSER
 from adam.language_specific.english.english_language_generator import IGNORE_COLORS
 from adam.learner import LearningExample
 from adam.learner.subset import SubsetLanguageLearner
-from adam.ontology.phase1_ontology import BALL, LEARNER
+from adam.ontology import OntologyNode
+from adam.ontology.phase1_ontology import BALL, LEARNER, DOG
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
@@ -12,33 +15,33 @@ from adam.situation.templates.phase1_templates import (
 )
 
 
-def test_subset_learner_ball():
-    learner = object_variable("learner_0", LEARNER)
-    colored_ball_object = object_variable(
-        "ball-with-color", BALL, added_properties=[color_variable("color")]
+def run_subset_learner_for_object(obj: OntologyNode, debug_render: bool = False):
+    learner_obj = object_variable("learner_0", LEARNER)
+    colored_obj_object = object_variable(
+        "obj-with-color", obj, added_properties=[color_variable("color")]
     )
 
-    ball_template = Phase1SituationTemplate(
-        "colored-ball-object",
-        salient_object_variables=[colored_ball_object, learner],
+    obj_template = Phase1SituationTemplate(
+        "colored-obj-object",
+        salient_object_variables=[colored_obj_object, learner_obj],
         syntax_hints=[IGNORE_COLORS],
     )
 
-    ball_curriculum = phase1_instances(
-        "all ball situations",
+    obj_curriculum = phase1_instances(
+        "all obj situations",
         situations=all_possible(
-            ball_template, chooser=PHASE1_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY
+            obj_template, chooser=PHASE1_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY
         ),
     )
-    test_ball_curriculum = phase1_instances(
-        "ball test",
+    test_obj_curriculum = phase1_instances(
+        "obj test",
         situations=all_possible(
-            ball_template, chooser=PHASE1_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY
+            obj_template, chooser=PHASE1_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY
         ),
     )
 
-    learner = SubsetLanguageLearner()
-    for training_stage in [ball_curriculum]:
+    learner = SubsetLanguageLearner(render_for_debug=debug_render)  # type: ignore
+    for training_stage in [obj_curriculum]:
         for (
             _,
             linguistic_description,
@@ -48,7 +51,7 @@ def test_subset_learner_ball():
                 LearningExample(perceptual_representation, linguistic_description)
             )
 
-    for test_instance_group in [test_ball_curriculum]:
+    for test_instance_group in [test_obj_curriculum]:
         for (
             _,
             test_instance_language,
@@ -59,3 +62,12 @@ def test_subset_learner_ball():
             assert [desc.as_token_sequence() for desc in descriptions_from_learner][
                 0
             ] == gold
+
+
+def test_subset_learner_ball():
+    run_subset_learner_for_object(BALL)
+
+
+@pytest.mark.skip(msg="Slow graph matching and rendering test disabled.")
+def test_subset_learner_dog():
+    run_subset_learner_for_object(DOG, debug_render=True)

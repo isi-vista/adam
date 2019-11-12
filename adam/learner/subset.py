@@ -31,6 +31,7 @@ class SubsetLanguageLearner(
     _descriptions_to_pattern_hypothesis: Dict[
         Tuple[str, ...], PerceptionGraphPattern
     ] = attrib(init=False, default=Factory(dict))
+    _render_for_debug = attrib(default=False, init=True)
 
     def observe(
         self, learning_example: LearningExample[PerceptionT, LinguisticDescription]
@@ -61,7 +62,9 @@ class SubsetLanguageLearner(
 
             # Get largest subgraph match using the pattern and the graph
             hypothesis_pattern_common_subgraph = get_largest_matching_pattern(
-                previous_pattern_hypothesis, observed_perception_graph
+                previous_pattern_hypothesis,
+                observed_perception_graph,
+                render_for_debug=self._render_for_debug,
             )
             # Update the leading hypothesis
             self._descriptions_to_pattern_hypothesis[
@@ -100,7 +103,9 @@ class SubsetLanguageLearner(
         ) in self._descriptions_to_pattern_hypothesis.items():
             # get the largest common match
             common_pattern = get_largest_matching_pattern(
-                pattern_hypothesis, observed_perception_graph
+                pattern_hypothesis,
+                observed_perception_graph,
+                render_for_debug=self._render_for_debug,
             )
             common_pattern_size = len(common_pattern.copy_as_digraph().nodes)
             if common_pattern_size > max_matching_subgraph_size:
@@ -115,13 +120,17 @@ class SubsetLanguageLearner(
 
 
 def get_largest_matching_pattern(
-    pattern: PerceptionGraphPattern, graph: PerceptionGraph
+    pattern: PerceptionGraphPattern,
+    graph: PerceptionGraph,
+    render_for_debug: bool = False,
 ) -> PerceptionGraphPattern:
     """ Helper function to return the largest matching pattern for learner from a perception pattern and graph pair."""
     # Initialize matcher in debug version to keep largest subgraph
     matching = pattern.matcher(graph)
     debug_sink: Dict[Any, Any] = {}
-    match_mapping = list(matching.matches(debug_mapping_sink=debug_sink))
+    match_mapping = list(
+        matching.matches(debug_mapping_sink=debug_sink, render_for_debug=render_for_debug)
+    )
 
     if match_mapping:
         # if matched, get the match

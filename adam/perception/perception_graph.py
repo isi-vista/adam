@@ -501,7 +501,7 @@ class PerceptionGraphPattern:
         dot_graph.render(output_file)
 
 
-@attrs(frozen=True, slots=True, eq=False)
+@attrs(slots=True, eq=False)
 class PerceptionGraphPatternMatching:
     """
     An attempt to align a `PerceptionGraphPattern` to nodes in a `PerceptionGraph`.
@@ -518,12 +518,15 @@ class PerceptionGraphPatternMatching:
     graph_to_match_against: PerceptionGraph = attrib(
         validator=instance_of(PerceptionGraph)
     )
+    # Counter for debugging purposes. We use this to track the number of calls to match.
+    calls_to_match_counter: int = attrib(default=0, init=False)
 
     def matches(
         self,
         *,
         debug_mapping_sink: Optional[Dict[Any, Any]] = None,
         use_lookahead_pruning: bool = False,
+        render_for_debug: bool = False,
     ) -> Iterable["PerceptionGraphPatternMatch"]:
         """
         Attempt the matching and returns a generator over the set of possible matches.
@@ -542,8 +545,11 @@ class PerceptionGraphPatternMatching:
             use_lookahead_pruning=use_lookahead_pruning,
         )
         got_a_match = False
+        debug_function: Optional[Callable[[Any, Any], None]] = None
+        if render_for_debug:
+            debug_function = self.rendering_debug_function
         for mapping in matching.subgraph_isomorphisms_iter(
-            debug=(debug_mapping_sink is not None)
+            debug=(debug_mapping_sink is not None), debug_function=debug_function
         ):
             got_a_match = True
             yield PerceptionGraphPatternMatch(
@@ -560,6 +566,27 @@ class PerceptionGraphPatternMatching:
             # for debugging purposes.
             debug_mapping_sink.clear()
             debug_mapping_sink.update(matching.debug_largest_match)
+
+    def rendering_debug_function(
+        self, graph: DiGraph, graph_node_to_pattern_node: Dict[Any, Any]
+    ):
+        """Debugging helper function to render graph every hundred calls to match. The outputs can be found in
+        test/renders folder. This function is called within GraphMatching.match"""
+        self.calls_to_match_counter += 1
+        if self.calls_to_match_counter % 100 == 0:
+            perception_graph = PerceptionGraph(graph)
+            title = (
+                "graph_"
+                + str(id(self.graph_to_match_against))
+                + "_call_"
+                + str(self.calls_to_match_counter)
+            )
+            mapping = {k: "match" for k, v in graph_node_to_pattern_node.items()}
+            perception_graph.render_to_file(
+                graph_name=title,
+                output_file=Path("../renders/" + title),
+                match_correspondence_ids=mapping,
+            )
 
     def debug_matching(
         self,

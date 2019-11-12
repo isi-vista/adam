@@ -18,7 +18,7 @@ This code should not be used by anything except the perception_graph module.
 
 import sys
 from collections import defaultdict
-from typing import Mapping, Any, Dict
+from typing import Mapping, Any, Dict, Callable
 
 from immutablecollections import immutableset
 from networkx import DiGraph
@@ -239,7 +239,9 @@ class GraphMatching:
         for mapping in self.match():
             yield mapping
 
-    def match(self, *, debug: bool = False):
+    def match(
+        self, *, debug: bool = False, debug_function: Callable[[Any, Any], None] = None
+    ):
         """Extends the isomorphism mapping.
 
         This function is called recursively to determine if a complete
@@ -248,6 +250,10 @@ class GraphMatching:
         we yield the mapping.
 
         """
+        # Check rendering debug flag to see if we should render the graph
+        if debug_function is not None:
+            pass
+            debug_function(self.graph, self.graph_node_to_pattern_node)
         if debug and len(self.pattern_node_to_graph_node) >= len(
             self.debug_largest_match
         ):
@@ -266,7 +272,9 @@ class GraphMatching:
                     if self.syntactic_feasibility(graph_node, pattern_node):
                         # Recursive call, adding the feasible state.
                         newstate = self.state.__class__(self, graph_node, pattern_node)
-                        for mapping in self.match(debug=debug):
+                        for mapping in self.match(
+                            debug=debug, debug_function=debug_function
+                        ):
                             yield mapping
 
                         # restore data structures
@@ -424,14 +432,16 @@ class GraphMatching:
 
     #    subgraph_is_isomorphic.__doc__ += "\n" + subgraph.replace('\n','\n'+indent)
 
-    def subgraph_isomorphisms_iter(self, *, debug: bool = False):
+    def subgraph_isomorphisms_iter(
+        self, *, debug: bool = False, debug_function: Callable[[Any, Any], None] = None
+    ):
         """Generator over isomorphisms between a subgraph of G1 and G2."""
         # Declare that we are looking for graph-subgraph isomorphism.
         self.test = "subgraph"
         self.initialize()
         self.debug_largest_match = {}
         self._reset_debugging_maps()
-        for mapping in self.match(debug=debug):
+        for mapping in self.match(debug=debug, debug_function=debug_function):
             yield mapping
 
     def subgraph_monomorphisms_iter(self):
