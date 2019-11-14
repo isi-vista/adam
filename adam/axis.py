@@ -19,5 +19,5 @@ class GeonAxis:
             f"{self.debug_name}"
             f"[{sign(self.curved)}curved, "
             f"{sign(self.directed)}directed, "
-            f"{sign(self.curved)}aligned_to_gravity]"
+            f"{sign(self.aligned_to_gravitational)}aligned_to_gravity]"
         )
