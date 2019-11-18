@@ -520,6 +520,7 @@ class PerceptionGraphPatternMatching:
     graph_to_match_against: PerceptionGraph = attrib(
         validator=instance_of(PerceptionGraph)
     )
+
     # Counter for debugging purposes. We use this to track the number of calls to match.
     calls_to_match_counter: int = attrib(default=0, init=False)
     t1_start = process_time()
