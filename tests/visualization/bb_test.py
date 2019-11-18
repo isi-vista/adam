@@ -76,3 +76,29 @@ def test_bounding_boxes() -> None:
         print(face)
 
     assert not bb_2_rotated.colliding(bb4_rotated)
+
+    # tests related to checking minimum separation of BBs or penetration distance of BBs
+
+    diff = bb_1.minkowski_diff_distance(bb_2)
+    print(f"minkowski diff distance between bb1 and bb2: {diff}")
+    # should be 1
+    assert diff < 0
+
+    print(f"bb_1 ones corner: {bb_1.one_corner()}")
+    print(f"bb_1 up corner: {bb_1.up_corner()}")
+    print(f"bb_1 right corner: {bb_1.right_corner()}")
+    print(f"bb_1 forward corner: {bb_1.forward_corner()}")
+    diff = bb_1.minkowski_diff_distance(bb_1)
+    assert diff == 0
+
+    diff = bb_3.minkowski_diff_distance(bb_collide_2)
+    print(f"minkowski diff distance between bb_3 and bb_collide_2: {diff}")
+    assert diff > 0
+
+    diff = bb_1.minkowski_diff_distance(bb_collide)
+    print(f"minkowski diff distance between bb_1 and bb_collide: {diff}")
+    assert diff > 0
+
+    diff = bb_2_rotated.minkowski_diff_distance(bb4_rotated)
+    print(f"minkowski diff distance between bb_2_rotated and bb_4_rotated: {diff}")
+    assert diff < 0
