@@ -3,7 +3,9 @@ from typing import Any, Callable
 from networkx import DiGraph
 
 
-def digraph_with_nodes_sorted_by(graph: DiGraph, sort_key: Callable[[Any], Any]) -> DiGraph:
+def digraph_with_nodes_sorted_by(
+    graph: DiGraph, sort_key: Callable[[Any], Any]
+) -> DiGraph:
     """
     Get a `DiGraph` identical to `graph` except that the iteration order of its nodes
     is according to *sort_key*.

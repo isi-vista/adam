@@ -44,9 +44,7 @@ def test_objects_individually():
     for object_ in GAILA_PHASE_1_ONTOLOGY.nodes_with_properties(
         INANIMATE_OBJECT, banned_properties=[LIQUID, IS_BODY_PART]
     ):
-        # Trucks, cars, and chairs are known failures; and we use bird and table for testing
-        # Issue: https://github.com/isi-vista/adam/issues/399
-        if object_ not in [BIRD, TABLE, CHAIR, TRUCK, CAR, GROUND]:
+        if object_ not in [BIRD, TABLE, GROUND]:
             schemata = GAILA_PHASE_1_ONTOLOGY.structural_schemata(object_)
             if len(schemata) == 1:
                 print(f"Matching {object_}")

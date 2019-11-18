@@ -13,6 +13,8 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, Mapping, Optional, Tuple, Union
 
 import graphviz
+
+from adam.utils.networkx_utils import digraph_with_nodes_sorted_by
 from attr import attrib, attrs
 from attr.validators import instance_of, optional
 from immutablecollections import immutabledict, immutableset
@@ -543,9 +545,20 @@ class PerceptionGraphPatternMatching:
         If *debug_mapping_sink* is provided, the best partial matching found
         will be written to it in case of a failed match.
         """
+
+        # Controlling the iteration order of the graphs
+        # controls the order in which nodes are matched.
+        # This has a significant, benchmark-confirmed impact on performance.
+        sorted_graph_to_match_against = digraph_with_nodes_sorted_by(
+            self.graph_to_match_against._graph, _graph_node_order
+        )
+        sorted_pattern = digraph_with_nodes_sorted_by(
+            self.pattern._graph, _pattern_matching_node_order
+        )
+
         matching = GraphMatching(
-            self.graph_to_match_against._graph,  # pylint:disable=protected-access
-            self.pattern._graph,  # pylint:disable=protected-access
+            sorted_graph_to_match_against,
+            sorted_pattern,
             use_lookahead_pruning=use_lookahead_pruning,
         )
         got_a_match = False
@@ -1073,3 +1086,47 @@ def _translate_region(
             region.direction,
             map_edge=map_edge,
         )
+
+# This is used to control the order in which pattern nodes are matched,
+# which can have a significant impact on match speed.
+# We try to match the most restrictive nodes first.
+_PATTERN_PREDICATE_NODE_ORDER = [
+    # properties and colors tend to be highlight restrictive, so let's match them first
+    IsOntologyNodePredicate,
+    IsColorNodePredicate,
+    AnyObjectPerception,
+    GeonPredicate,
+    RegionPredicate,
+    # the matcher tends to get bogged down when dealing with axes,
+    # so we search those last one the other nodes have established the skeleton of a match.
+    AxisPredicate,
+]
+
+
+def _pattern_matching_node_order(node_node_data_tuple) -> int:
+    (node, _) = node_node_data_tuple
+    return _PATTERN_PREDICATE_NODE_ORDER.index(node.__class__)
+
+
+# This is used to control the order in which pattern nodes are matched,
+# which can have a significant impact on match speed.
+# This should match _PATTERN_PREDICATE_NODE_ORDER above.
+_GRAPH_NODE_ORDER = [
+    OntologyNode,
+    RgbColorPerception,
+    ObjectPerception,
+    Geon,
+    Region,
+    GeonAxis,
+]
+
+
+def _graph_node_order(node_node_data_tuple) -> int:
+    (node, _) = node_node_data_tuple
+    if isinstance(node, tuple):
+        # some node types are wrapped in tuples with unique ids to keep them distinct
+        # (e.g. otherwise identical Geon objects).
+        # We need to unwrap these before comparing types.
+        node = node[0]
+
+    return _GRAPH_NODE_ORDER.index(node.__class__)
