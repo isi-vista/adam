@@ -240,7 +240,7 @@ class GraphMatching:
             yield mapping
 
     def match(
-        self, *, debug: bool = False, debug_function: Callable[[Any, Any], None] = None
+        self, *, debug: bool = False, debug_function: Callable[[Any, Any, Any], None] = None
     ):
         """Extends the isomorphism mapping.
 
@@ -252,8 +252,7 @@ class GraphMatching:
         """
         # Check rendering debug flag to see if we should render the graph
         if debug_function is not None:
-            pass
-            debug_function(self.graph, self.graph_node_to_pattern_node)
+            debug_function(self.graph, self.pattern, self.graph_node_to_pattern_node)
         if debug and len(self.pattern_node_to_graph_node) >= len(
             self.debug_largest_match
         ):

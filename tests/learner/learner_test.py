@@ -68,6 +68,6 @@ def test_subset_learner_ball():
     run_subset_learner_for_object(BALL)
 
 
-@pytest.mark.skip(msg="Slow graph matching and rendering test disabled.")
+# @pytest.mark.skip(msg="Slow graph matching and rendering test disabled.")
 def test_subset_learner_dog():
     run_subset_learner_for_object(DOG, debug_render=True)

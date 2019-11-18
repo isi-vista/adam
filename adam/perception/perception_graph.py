@@ -42,6 +42,8 @@ from adam.random_utils import RandomChooser
 from adam.situation import SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 
+from time import process_time
+
 
 class Incrementer:
     def __init__(self, initial_value=0) -> None:
@@ -520,6 +522,7 @@ class PerceptionGraphPatternMatching:
     )
     # Counter for debugging purposes. We use this to track the number of calls to match.
     calls_to_match_counter: int = attrib(default=0, init=False)
+    t1_start = process_time()
 
     def matches(
         self,
@@ -573,13 +576,14 @@ class PerceptionGraphPatternMatching:
         """Debugging helper function to render graph every hundred calls to match. The outputs can be found in
         test/renders folder. This function is called within GraphMatching.match"""
         self.calls_to_match_counter += 1
-        if self.calls_to_match_counter % 100 == 0:
+        current_time = process_time()
+        if self.calls_to_match_counter % 100 == 0 and (current_time - self.t1_start) > 60:
             perception_graph = PerceptionGraph(graph)
             title = (
-                "graph_"
-                + str(id(self.graph_to_match_against))
-                + "_call_"
-                + str(self.calls_to_match_counter)
+                    "graph_"
+                    + str(id(self.graph_to_match_against))
+                    + "_call_"
+                    + str(self.calls_to_match_counter)
             )
             mapping = {k: "match" for k, v in graph_node_to_pattern_node.items()}
             perception_graph.render_to_file(
