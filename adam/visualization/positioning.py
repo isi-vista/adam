@@ -1,7 +1,3 @@
-from cvxopt import matrix
-from cvxopt import solvers
-import cvxopt.modeling
-from cvxopt.modeling import variable, op
 import numpy as np
 from numpy import ndarray
 
@@ -23,18 +19,8 @@ def main() -> None:
     #  " " "    : Ax = b
 
     # objective function:
-    # quadratic coefficients (square matrix of all vars to be minimized)
-    p = matrix(np.diag(np.array([1, 0])), tc="d")
-    # linear coefficients
-    q = matrix(np.array([3, 4]), tc="d")
-    # constraints:
-    # left hand side of inequality (coefficients of x and y terms)
-    g = matrix(np.array([[-1, 0], [0, -1], [-1, -3], [2, 5], [3, 4]]), tc="d")
-    # right hand side of inequality (scalars)
-    h = matrix(np.array([0, 0, -15, 100, 80]), tc="d")
 
-    sol = solvers.qp(p, q, g, h)
-    print(sol["x"])
+    # constraints:
 
 
 class PositionSolver:
@@ -91,30 +77,26 @@ def midpoint_minimization(relative_bb: BoundingBox):
     print("np test situation")
     print(corner_matrix + np.array([1.0, 1.0, 1.0]))
 
-    box_a_center = variable(3, "center_a")
-    # box_a_scale = np.array([1.0, 1.0, 1.0])
-    # box_a_rot = variable(4, "rot_a")
+    # should have a variable representing center of box
+    box_a_center = np.array((3,))
 
-    box_a_center.value = matrix([0.0, 0.0, 0.0])  # just to start with
-    print(box_a_center.value)
-
-    print(f"\n\n{type(box_a_center)}\n\n")
-
-    f = abs(box_a_center[0]) + abs(box_a_center[1]) + abs(box_a_center[2])
+    # idea of an objective function: minimizing distance from origin
+    # keep in mind though... for abs() to be differentiable it has to be broken up into parts
+    # f = abs(box_a_center[0]) + abs(box_a_center[1]) + abs(box_a_center[2])
 
     # constraints:
-    c_x_1 = box_a_center[0] <= 10.0
-
-    c_x_2 = box_a_center[0] >= -10.0
-    c_y_1 = box_a_center[1] <= 5.0
-    c_y_2 = box_a_center[1] >= -5.0
-    c_z_1 = box_a_center[2] <= 2.0
-    c_z_2 = box_a_center[2] >= 0.0
+    # c_x_1 = box_a_center[0] <= 10.0
+    #
+    # c_x_2 = box_a_center[0] >= -10.0
+    # c_y_1 = box_a_center[1] <= 5.0
+    # c_y_2 = box_a_center[1] >= -5.0
+    # c_z_1 = box_a_center[2] <= 2.0
+    # c_z_2 = box_a_center[2] >= 0.0
 
     # intersection constraints:
     print(corner_matrix.size)
 
-    center_shaped = matrix(np.ones((8, 3)), tc="d") * box_a_center
+    center_shaped = np.ones((8, 3)) * box_a_center
 
     print(f"center_shaped type: {type(center_shaped)}")
 
@@ -135,19 +117,17 @@ def midpoint_minimization(relative_bb: BoundingBox):
     print(f"{projections[0].shape}")
     print(f"{projections[0].size}")
 
-    collide_constraint = (
-        cvxopt.modeling.min(projections[0], relative_bb_min_max_projections[0][1])
-        - cvxopt.modeling.max(projections[1], relative_bb_min_max_projections[0][0])
-        <= 0
-    )
+    # collide_constraint = (
+    #     cvxopt.modeling.min(projections[0], relative_bb_min_max_projections[0][1])
+    #     - cvxopt.modeling.max(projections[1], relative_bb_min_max_projections[0][0])
+    #     <= 0
+    # )
 
-    print(type(collide_constraint))
-
-    prob = op(
-        f, [c_x_1, c_x_2, c_y_1, c_y_2, c_z_1, c_z_2, collide_constraint], "test_prob"
-    )
-    prob.solve()
-    print(prob.status)
+    # prob = op(
+    #     f, [c_x_1, c_x_2, c_y_1, c_y_2, c_z_1, c_z_2, collide_constraint], "test_prob"
+    # )
+    # prob.solve()
+    # print(prob.status)
 
     # G =
 

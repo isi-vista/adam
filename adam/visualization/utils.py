@@ -83,6 +83,61 @@ class BoundingBox:
         """return center point of the BB"""
         return self.scale + self.left_back_bottom
 
+    def minkowski_diff_distance(self, other: "BoundingBox") -> float:
+        """
+        Calculates Minkowski difference of two BBs, returns a single value to indicate their intersection or separation
+        Args:
+            other: another BoundingBox
+
+        Returns: 0 for exact overlap, positive for penetration distance of collision,
+                 negative for separation distance
+
+        """
+        # could return positive for amount of overlap, negative for amount of non-overlap
+        # return zero for occupying exactly the same boundaries.
+        face_norms = self.all_face_normals()
+        overlap_amounts: List[float] = []
+        for face_norm in face_norms:
+            self_min, self_max = self.min_max_projection(face_norm)
+            other_min, other_max = other.min_max_projection(face_norm)
+            # calculate degree of overlap.
+            if other_min > self_max or self_min > other_max:
+                # non overlap, calculate distance between intervals, express as negative
+                if self_max < other_min:
+                    overlap_amounts.append(-(other_min - self_max))
+                else:
+                    overlap_amounts.append(-(self_min - other_max))
+            else:
+                # overlap: calculate length of overlapping interval
+
+                if self_min == other_min and self_max == other_max:
+                    overlap_amounts.append(0.0)
+                    continue
+                overlap_min = max(self_min, other_min)
+                overlap_max = min(self_max, other_max)
+                overlap_amounts.append(overlap_max - overlap_min)
+
+        # return the smallest non-zero magnitude, with sign attached,
+        # or zero if all dimensions are zero
+        min_distance = float("inf")
+        # if any does not overlap, then there is no collision
+        non_overlapping: bool = any(
+            [overlap for overlap in overlap_amounts if overlap <= 0]
+        )
+        for overlap_amount in overlap_amounts:
+            if overlap_amount == 0:
+                continue
+            # if the two are not colliding, we are only interested dimensions of separation
+            if non_overlapping:
+                if overlap_amount < 0 and abs(overlap_amount) < abs(min_distance):
+                    min_distance = overlap_amount
+            else:
+                if overlap_amount > 0 and abs(overlap_amount) < abs(min_distance):
+                    min_distance = overlap_amount
+        if min_distance == float("inf"):
+            return 0
+        return min_distance
+
     def all_corners(self) -> List[ndarray]:
         """return List of all corners of this BB"""
         # TODO: just return a 2d array of the corners
@@ -99,7 +154,7 @@ class BoundingBox:
             self.rotation.apply(
                 numpy.array(
                     [
-                        self.left_back_bottom.item(0) + self.scale.item(0),
+                        self.left_back_bottom.item(0) + self.scale.item(0) * 2,
                         self.left_back_bottom.item(1),
                         self.left_back_bottom.item(2),
                     ]
@@ -109,7 +164,7 @@ class BoundingBox:
                 numpy.array(
                     [
                         self.left_back_bottom.item(0),
-                        self.left_back_bottom.item(1) + self.scale.item(1),
+                        self.left_back_bottom.item(1) + self.scale.item(1) * 2,
                         self.left_back_bottom.item(2),
                     ]
                 )
@@ -117,8 +172,8 @@ class BoundingBox:
             self.rotation.apply(
                 numpy.array(
                     [
-                        self.left_back_bottom.item(0) + self.scale.item(0),
-                        self.left_back_bottom.item(1) + self.scale.item(1),
+                        self.left_back_bottom.item(0) + self.scale.item(0) * 2,
+                        self.left_back_bottom.item(1) + self.scale.item(1) * 2,
                         self.left_back_bottom.item(2),
                     ]
                 )
@@ -128,16 +183,16 @@ class BoundingBox:
                     [
                         self.left_back_bottom.item(0),
                         self.left_back_bottom.item(1),
-                        self.left_back_bottom.item(2) + self.scale.item(2),
+                        self.left_back_bottom.item(2) + self.scale.item(2) * 2,
                     ]
                 )
             ),
             self.rotation.apply(
                 numpy.array(
                     [
-                        self.left_back_bottom.item(0) + self.scale.item(0),
+                        self.left_back_bottom.item(0) + self.scale.item(0) * 2,
                         self.left_back_bottom.item(1),
-                        self.left_back_bottom.item(2) + self.scale.item(2),
+                        self.left_back_bottom.item(2) + self.scale.item(2) * 2,
                     ]
                 )
             ),
@@ -145,17 +200,17 @@ class BoundingBox:
                 numpy.array(
                     [
                         self.left_back_bottom.item(0),
-                        self.left_back_bottom.item(1) + self.scale.item(1),
-                        self.left_back_bottom.item(2) + self.scale.item(2),
+                        self.left_back_bottom.item(1) + self.scale.item(1) * 2,
+                        self.left_back_bottom.item(2) + self.scale.item(2) * 2,
                     ]
                 )
             ),
             self.rotation.apply(
                 numpy.array(
                     [
-                        self.left_back_bottom.item(0) + self.scale.item(0),
-                        self.left_back_bottom.item(1) + self.scale.item(1),
-                        self.left_back_bottom.item(2) + self.scale.item(2),
+                        self.left_back_bottom.item(0) + self.scale.item(0) * 2,
+                        self.left_back_bottom.item(1) + self.scale.item(1) * 2,
+                        self.left_back_bottom.item(2) + self.scale.item(2) * 2,
                     ]
                 )
             ),
@@ -165,7 +220,7 @@ class BoundingBox:
         return self.rotation.apply(
             numpy.array(
                 [
-                    self.left_back_bottom.item(0) + self.scale.item(0),
+                    self.left_back_bottom.item(0) + self.scale.item(0) * 2,
                     self.left_back_bottom.item(1),
                     self.left_back_bottom.item(2),
                 ]
@@ -177,7 +232,7 @@ class BoundingBox:
             numpy.array(
                 [
                     self.left_back_bottom.item(0),
-                    self.left_back_bottom.item(1) + self.scale.item(1),
+                    self.left_back_bottom.item(1) + self.scale.item(1) * 2,
                     self.left_back_bottom.item(2),
                 ]
             )
@@ -189,7 +244,7 @@ class BoundingBox:
                 [
                     self.left_back_bottom.item(0),
                     self.left_back_bottom.item(1),
-                    self.left_back_bottom.item(2) + self.scale.item(2),
+                    self.left_back_bottom.item(2) + self.scale.item(2) * 2,
                 ]
             )
         )
@@ -243,5 +298,4 @@ def min_max_projection(corners: List[ndarray], axis: ndarray) -> Tuple[float, fl
             minimum = prod
         elif prod > maximum:
             maximum = prod
-    # print(f"\nProjected {self} onto {axis}\nMin:{minimum}, Max:{maximum}")
     return minimum, maximum
