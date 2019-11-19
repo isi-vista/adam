@@ -31,7 +31,7 @@ class SubsetLanguageLearner(
     _descriptions_to_pattern_hypothesis: Dict[
         Tuple[str, ...], PerceptionGraphPattern
     ] = attrib(init=False, default=Factory(dict))
-    _render_for_debug = attrib(default=False, init=True)
+    _render_for_debug: bool = attrib(default=False, init=True)
 
     def observe(
         self, learning_example: LearningExample[PerceptionT, LinguisticDescription]
@@ -122,6 +122,7 @@ class SubsetLanguageLearner(
 def get_largest_matching_pattern(
     pattern: PerceptionGraphPattern,
     graph: PerceptionGraph,
+    *,
     render_for_debug: bool = False,
 ) -> PerceptionGraphPattern:
     """ Helper function to return the largest matching pattern for learner from a perception pattern and graph pair."""

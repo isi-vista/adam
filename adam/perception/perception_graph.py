@@ -505,6 +505,43 @@ class PerceptionGraphPattern:
         dot_graph.render(output_file)
 
 
+class DebugRenderingObject:
+    """
+        Helper callable class for debugging purposes. We render graph every hundred calls to match. The outputs can be
+        found in test/renders folder. This callable is called within GraphMatching.match
+    """
+
+    def __init__(self, graph_to_match_against: PerceptionGraph) -> None:
+        self.graph_to_match_against: PerceptionGraph = graph_to_match_against
+        self.calls_to_match_counter: int = 0
+        self.start_time = process_time()
+        self.time_window = 0
+        self.mod = 1
+
+    def __call__(
+        self, graph: DiGraph, graph_node_to_pattern_node: Dict[Any, Any]
+    ) -> None:
+        self.calls_to_match_counter += 1
+        current_time = process_time()
+        if (
+            self.calls_to_match_counter % self.mod == 0
+            and (current_time - self.start_time) > self.time_window
+        ):
+            perception_graph = PerceptionGraph(graph)
+            title = (
+                "graph_"
+                + str(id(self.graph_to_match_against))
+                + "_call_"
+                + str(self.calls_to_match_counter)
+            )
+            mapping = {k: "match" for k, v in graph_node_to_pattern_node.items()}
+            perception_graph.render_to_file(
+                graph_name=title,
+                output_file=Path("../renders/" + title),
+                match_correspondence_ids=mapping,
+            )
+
+
 @attrs(slots=True, eq=False)
 class PerceptionGraphPatternMatching:
     """
@@ -523,9 +560,10 @@ class PerceptionGraphPatternMatching:
         validator=instance_of(PerceptionGraph)
     )
 
-    # Counter for debugging purposes. We use this to track the number of calls to match.
-    calls_to_match_counter: int = attrib(default=0, init=False)
-    t1_start = process_time()
+    # Callable object for debugging purposes. We use this to track the number of calls to match and render the graphs.
+    rendering_debug_function: "DebugRenderingObject" = attrib(
+        default=DebugRenderingObject(graph_to_match_against), init=False
+    )
 
     def matches(
         self,
@@ -550,10 +588,10 @@ class PerceptionGraphPatternMatching:
         # controls the order in which nodes are matched.
         # This has a significant, benchmark-confirmed impact on performance.
         sorted_graph_to_match_against = digraph_with_nodes_sorted_by(
-            self.graph_to_match_against._graph, _graph_node_order
+            self.graph_to_match_against._graph, _graph_node_order  # pylint: disable=W0212
         )
         sorted_pattern = digraph_with_nodes_sorted_by(
-            self.pattern._graph, _pattern_matching_node_order
+            self.pattern._graph, _pattern_matching_node_order  # pylint: disable=W0212
         )
 
         matching = GraphMatching(
@@ -583,28 +621,6 @@ class PerceptionGraphPatternMatching:
             # for debugging purposes.
             debug_mapping_sink.clear()
             debug_mapping_sink.update(matching.debug_largest_match)
-
-    def rendering_debug_function(
-        self, graph: DiGraph, graph_node_to_pattern_node: Dict[Any, Any]
-    ):
-        """Debugging helper function to render graph every hundred calls to match. The outputs can be found in
-        test/renders folder. This function is called within GraphMatching.match"""
-        self.calls_to_match_counter += 1
-        current_time = process_time()
-        if self.calls_to_match_counter % 100 == 0 and (current_time - self.t1_start) > 60:
-            perception_graph = PerceptionGraph(graph)
-            title = (
-                    "graph_"
-                    + str(id(self.graph_to_match_against))
-                    + "_call_"
-                    + str(self.calls_to_match_counter)
-            )
-            mapping = {k: "match" for k, v in graph_node_to_pattern_node.items()}
-            perception_graph.render_to_file(
-                graph_name=title,
-                output_file=Path("../renders/" + title),
-                match_correspondence_ids=mapping,
-            )
 
     def debug_matching(
         self,
@@ -1086,6 +1102,7 @@ def _translate_region(
             region.direction,
             map_edge=map_edge,
         )
+
 
 # This is used to control the order in which pattern nodes are matched,
 # which can have a significant impact on match speed.

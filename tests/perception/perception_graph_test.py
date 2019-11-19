@@ -1,6 +1,6 @@
 from itertools import chain
 
-import pytest
+from adam_test_utils import all_possible_test
 from more_itertools import first
 
 from adam.curriculum.curriculum_utils import standard_object
@@ -18,9 +18,6 @@ from adam.ontology.phase1_ontology import (
     above,
     bigger_than,
     on,
-    CAR,
-    TRUCK,
-    CHAIR,
 )
 from adam.ontology.structural_schema import ObjectStructuralSchema
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
@@ -33,7 +30,6 @@ from adam.situation.templates.phase1_templates import (
     color_variable,
     object_variable,
 )
-from adam_test_utils import all_possible_test
 
 
 def test_house_on_table():
@@ -51,14 +47,9 @@ def test_objects_individually():
                 assert do_object_on_table_test(object_, first(schemata), BIRD)
 
 
-@pytest.mark.skip(msg="Slow graph matching test disabled.")
 def test_inanimate_objects():
     """
     Tests whether several inanimate objects can be matched.
-
-    This test is slow, so it is disabled by default.
-
-    Trucks, cars, and chairs are known failures: https://github.com/isi-vista/adam/issues/399
     """
     for object_ in GAILA_PHASE_1_ONTOLOGY.nodes_with_properties(
         INANIMATE_OBJECT, banned_properties=[LIQUID, IS_BODY_PART]

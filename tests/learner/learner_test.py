@@ -1,5 +1,3 @@
-import pytest
-
 from adam.curriculum.phase1_curriculum import phase1_instances, PHASE1_CHOOSER
 from adam.language_specific.english.english_language_generator import IGNORE_COLORS
 from adam.learner import LearningExample
@@ -68,6 +66,5 @@ def test_subset_learner_ball():
     run_subset_learner_for_object(BALL)
 
 
-# @pytest.mark.skip(msg="Slow graph matching and rendering test disabled.")
 def test_subset_learner_dog():
-    run_subset_learner_for_object(DOG, debug_render=True)
+    run_subset_learner_for_object(DOG)
