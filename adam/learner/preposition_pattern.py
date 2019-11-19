@@ -1,14 +1,16 @@
-from typing import Mapping, List, Tuple
+from typing import Any, Iterable, List, Mapping, Tuple
 
+from attr.validators import deep_mapping, instance_of
 from immutablecollections import immutableset
 from immutablecollections.converter_utils import _to_immutabledict
+from networkx import DiGraph
 
 from adam.perception.perception_graph import (
-    PerceptionGraphPattern,
+    MatchedObjectNode,
     MatchedObjectPerceptionPredicate,
+    PerceptionGraphPattern,
 )
-from attr import attrs, attrib
-from attr.validators import instance_of, deep_mapping
+from attr import attrib, attrs
 
 # Constants used to map locations in a prepositional phrase for mapping
 _MODIFIED = "MODIFIED"
@@ -31,6 +33,42 @@ class PrepositionPattern:
             instance_of(str), instance_of(MatchedObjectPerceptionPredicate)
         ),
     )
+
+    @staticmethod
+    def from_graph(
+        perception_graph: DiGraph,
+        description_to_match_object_node: Iterable[Tuple[str, MatchedObjectNode]],
+    ) -> "PrepositionPattern":
+        """
+        This function returns a `PrepositionPattern` from a *perception_graph* and a *description_to_match_object_node*
+        mapping where GROUND is the first item in the list and MODIFIED is the second.
+        """
+        description_to_node_immutable = immutableset(description_to_match_object_node)
+        if len(description_to_node_immutable) != 2:
+            raise RuntimeError(
+                f"Expected only two prepositions in a preposition graph. Found "
+                f"{len(description_to_node_immutable)} in {description_to_node_immutable}"
+            )
+        pattern_from_graph = PerceptionGraphPattern.from_graph(perception_graph)
+        pattern_graph = pattern_from_graph.perception_graph_pattern
+        matched_object_to_matched_predicate = (
+            pattern_from_graph.perception_graph_node_to_pattern_node
+        )
+
+        object_variable_name_to_pattern_node: List[Any] = []
+
+        for description, object_node in description_to_node_immutable:
+            if object_node in matched_object_to_matched_predicate:
+                object_variable_name_to_pattern_node.append(
+                    (description, matched_object_to_matched_predicate[object_node])
+                )
+
+        return PrepositionPattern(
+            graph_pattern=pattern_graph,
+            object_variable_name_to_pattern_node=_to_immutabledict(
+                object_variable_name_to_pattern_node
+            ),
+        )
 
     def __attrs_post_init__(self) -> None:
         actual_object_nodes = set(self.object_variable_name_to_pattern_node.values())

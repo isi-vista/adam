@@ -1,27 +1,27 @@
-from typing import Generic, Dict, Any, Tuple, List, Mapping
+from typing import Any, Dict, Generic, List, Mapping, Tuple
 
-from attr import attrs, attrib, Factory
-from immutablecollections import immutabledict, ImmutableDict, immutableset, ImmutableSet
+from immutablecollections import ImmutableSet, immutabledict, immutableset
 
 from adam.language import (
-    LinguisticDescriptionT,
     LinguisticDescription,
+    LinguisticDescriptionT,
     TokenSequenceLinguisticDescription,
 )
 from adam.learner import LanguageLearner, LearningExample
 from adam.learner.object_recognizer import ObjectRecognizer
-from adam.learner.preposition_pattern import PrepositionPattern, _MODIFIED, _GROUND
+from adam.learner.preposition_pattern import PrepositionPattern, _GROUND, _MODIFIED
 from adam.learner.subset import graph_without_learner
 from adam.perception import PerceptionT, PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
 from adam.perception.perception_graph import (
-    PerceptionGraph,
-    PerceptionGraphNode,
     MatchedObjectPerceptionPredicate,
     NodePredicate,
+    PerceptionGraph,
+    PerceptionGraphNode,
 )
+from attr import Factory, attrib, attrs
 
 PrepositionSurfaceTemplate = Tuple[str, ...]
 """
@@ -111,6 +111,9 @@ class PrepositionSubsetLanguageLearner(
         preposition_surface_template_mutable = list(prepositional_phrase_tokens)
         preposition_surface_template_mutable[0] = _MODIFIED
         preposition_surface_template_mutable[-1] = _GROUND
+        # TODO: Remove this hard coded insert of an article
+        # see: https://github.com/isi-vista/adam/issues/434
+        preposition_surface_template_mutable.insert(0, "a")
         # we need these to be immutable after creation because we use them as dictionary keys.
         preposition_surface_template = tuple(preposition_surface_template_mutable)
 
@@ -186,7 +189,7 @@ class PrepositionSubsetLanguageLearner(
         )
         # TODO: check if immutabledict has a method for inversion
         object_match_node_to_object_handle: Mapping[
-            PerceptionGraphNode, Tuple[str, ...]
+            PerceptionGraphNode, str
         ] = immutabledict(
             (node, description)
             for description, node in handle_to_object_match_node.items()
@@ -229,7 +232,7 @@ class PrepositionSubsetLanguageLearner(
                     ]
                     # and for each of these object matches, we were provided with a name,
                     # which is what we use in the linguistic description.
-                    rtnr.extend(object_match_node_to_object_handle[object_match_node])
+                    rtnr.append(object_match_node_to_object_handle[object_match_node])
                 else:
                     # tokens are just copied directly to the description
                     token = token_or_surface_template_variable

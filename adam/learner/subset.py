@@ -114,7 +114,7 @@ class SubsetLanguageLearner(
             # perception graph.
             observed_pattern_graph = PerceptionGraphPattern.from_graph(
                 observed_perception_graph.copy_as_digraph()
-            )
+            ).perception_graph_pattern
             self._descriptions_to_pattern_hypothesis[
                 observed_linguistic_description
             ] = observed_pattern_graph

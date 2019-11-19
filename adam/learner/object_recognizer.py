@@ -1,22 +1,22 @@
 from typing import Iterable, List, Tuple
 
-from attr import attrs
-from immutablecollections import immutableset, immutabledict, ImmutableDict
+from immutablecollections import ImmutableDict, immutabledict, immutableset
 from more_itertools import first
 from networkx import DiGraph
 
 from adam.ontology import OntologyNode
 from adam.ontology.phase1_ontology import (
     GAILA_PHASE_1_ONTOLOGY,
-    TRUCK,
     PHASE_1_CURRICULUM_OBJECTS,
+    TRUCK,
 )
 from adam.perception.perception_graph import (
+    MatchedObjectNode,
     PerceptionGraph,
-    PerceptionGraphPatternMatch,
     PerceptionGraphPattern,
-    MatchedObjectPerceptionPredicate,
+    PerceptionGraphPatternMatch,
 )
+from attr import attrs
 
 _LIST_OF_PERCEIVED_PATTERNS = immutableset(
     (
@@ -48,16 +48,16 @@ class ObjectRecognizer:
         possible_perceived_objects: Iterable[
             Tuple[str, PerceptionGraphPattern]
         ] = _LIST_OF_PERCEIVED_PATTERNS,
-    ) -> Tuple[PerceptionGraph, ImmutableDict[str, MatchedObjectPerceptionPredicate]]:
+    ) -> Tuple[PerceptionGraph, ImmutableDict[str, MatchedObjectNode]]:
         """
         Match object patterns to objects in the scenes, then add a node for the matched object and copy relationships
         to it. These new patterns can be used to determine static prepositional relationships.
         """
-        matched_object_nodes: List[Tuple[str, MatchedObjectPerceptionPredicate]] = []
+        matched_object_nodes: List[Tuple[str, MatchedObjectNode]] = []
         graph_to_modify = perception_graph.copy_as_digraph()
         for (description, pattern) in possible_perceived_objects:
             matcher = pattern.matcher(perception_graph)
-            pattern_matches = matcher.matches(use_lookahead_pruning=False)
+            pattern_matches = list(matcher.matches(use_lookahead_pruning=False))
             for pattern_match in pattern_matches:
                 self._replace_match_with_object_graph_node(
                     graph_to_modify, pattern_match, matched_object_nodes, description
@@ -68,14 +68,14 @@ class ObjectRecognizer:
         self,
         networkx_graph_to_modify_in_place: DiGraph,
         pattern_match: PerceptionGraphPatternMatch,
-        matched_object_nodes: List[Tuple[str, MatchedObjectPerceptionPredicate]],
+        matched_object_nodes: List[Tuple[str, MatchedObjectNode]],
         description: str,
     ):
         """
         Internal function to copy existing relationships from the matched object pattern onto a
         `MatchedObjectPerceptionPredicate`
         """
-        node = MatchedObjectPerceptionPredicate()
+        node = MatchedObjectNode(name=(description,))
 
         matched_object_nodes.append((description, node))
         networkx_graph_to_modify_in_place.add_node(node)
