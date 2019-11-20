@@ -13,6 +13,8 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, Mapping, Optional, Tuple, Union
 
 import graphviz
+
+from adam.utils.networkx_utils import digraph_with_nodes_sorted_by
 from attr import attrib, attrs
 from attr.validators import instance_of, optional
 from immutablecollections import immutabledict, immutableset
@@ -42,6 +44,8 @@ from adam.random_utils import RandomChooser
 from adam.situation import SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 
+from time import process_time
+
 
 class Incrementer:
     def __init__(self, initial_value=0) -> None:
@@ -53,6 +57,8 @@ class Incrementer:
     def increment(self, amount=1) -> None:
         self._value += amount
 
+
+DebugCallableType = Callable[[DiGraph, Dict[Any, Any]], None]
 
 PerceptionGraphNode = Union[
     ObjectPerception, OntologyNode, Tuple[Region[Any], int], Tuple[Geon, int], GeonAxis
@@ -501,7 +507,46 @@ class PerceptionGraphPattern:
         dot_graph.render(output_file)
 
 
-@attrs(frozen=True, slots=True, eq=False)
+class DumpPartialMatchCallback:
+    """
+        Helper callable class for debugging purposes. An instance of this object can be provided as the `debug_callback` argument of `GraphMatching.match` to render
+        the match search process at every 100 time steps. We start rendering after the first 60 seconds.
+    """
+
+    def __init__(self, render_path) -> None:
+        self.render_path = render_path
+        self.calls_to_match_counter = 0
+        self.start_time = process_time()
+        self.seconds_to_wait_before_rendering = 60
+        self.mod = 100
+
+    def __call__(
+        self, graph: DiGraph, graph_node_to_pattern_node: Dict[Any, Any]
+    ) -> None:
+        self.calls_to_match_counter += 1
+        current_time = process_time()
+        if (
+            self.calls_to_match_counter % self.mod == 0
+            and (current_time - self.start_time) > self.seconds_to_wait_before_rendering
+        ):
+            perception_graph = PerceptionGraph(graph)
+            title = (
+                "id_"
+                + str(id(self))
+                + "_graph_"
+                + str(id(graph))
+                + "_call_"
+                + str(self.calls_to_match_counter).zfill(4)
+            )
+            mapping = {k: "match" for k, v in graph_node_to_pattern_node.items()}
+            perception_graph.render_to_file(
+                graph_name=title,
+                output_file=Path(self.render_path + title),
+                match_correspondence_ids=mapping,
+            )
+
+
+@attrs(slots=True, eq=False)
 class PerceptionGraphPatternMatching:
     """
     An attempt to align a `PerceptionGraphPattern` to nodes in a `PerceptionGraph`.
@@ -519,11 +564,15 @@ class PerceptionGraphPatternMatching:
         validator=instance_of(PerceptionGraph)
     )
 
+    # Callable object for debugging purposes. We use this to track the number of calls to match and render the graphs.
+    debug_callback: Optional[DebugCallableType] = attrib(default=None, init=False)
+
     def matches(
         self,
         *,
         debug_mapping_sink: Optional[Dict[Any, Any]] = None,
         use_lookahead_pruning: bool = False,
+        debug_callback: Optional[DebugCallableType] = None,
     ) -> Iterable["PerceptionGraphPatternMatch"]:
         """
         Attempt the matching and returns a generator over the set of possible matches.
@@ -536,14 +585,28 @@ class PerceptionGraphPatternMatching:
         If *debug_mapping_sink* is provided, the best partial matching found
         will be written to it in case of a failed match.
         """
+
+        # Controlling the iteration order of the graphs
+        # controls the order in which nodes are matched.
+        # This has a significant, benchmark-confirmed impact on performance.
+        sorted_graph_to_match_against = digraph_with_nodes_sorted_by(
+            self.graph_to_match_against._graph, _graph_node_order  # pylint: disable=W0212
+        )
+        sorted_pattern = digraph_with_nodes_sorted_by(
+            self.pattern._graph, _pattern_matching_node_order  # pylint: disable=W0212
+        )
+
         matching = GraphMatching(
-            self.graph_to_match_against._graph,  # pylint:disable=protected-access
-            self.pattern._graph,  # pylint:disable=protected-access
+            sorted_graph_to_match_against,
+            sorted_pattern,
             use_lookahead_pruning=use_lookahead_pruning,
         )
         got_a_match = False
+        if debug_callback:
+            # If there is a given rendering path, we initialize the debug callback function.
+            self.debug_callback = debug_callback
         for mapping in matching.subgraph_isomorphisms_iter(
-            debug=(debug_mapping_sink is not None)
+            debug=(debug_mapping_sink is not None), debug_callback=self.debug_callback
         ):
             got_a_match = True
             yield PerceptionGraphPatternMatch(
@@ -1041,3 +1104,48 @@ def _translate_region(
             region.direction,
             map_edge=map_edge,
         )
+
+
+# This is used to control the order in which pattern nodes are matched,
+# which can have a significant impact on match speed.
+# We try to match the most restrictive nodes first.
+_PATTERN_PREDICATE_NODE_ORDER = [
+    # properties and colors tend to be highlight restrictive, so let's match them first
+    IsOntologyNodePredicate,
+    IsColorNodePredicate,
+    AnyObjectPerception,
+    GeonPredicate,
+    RegionPredicate,
+    # the matcher tends to get bogged down when dealing with axes,
+    # so we search those last one the other nodes have established the skeleton of a match.
+    AxisPredicate,
+]
+
+
+def _pattern_matching_node_order(node_node_data_tuple) -> int:
+    (node, _) = node_node_data_tuple
+    return _PATTERN_PREDICATE_NODE_ORDER.index(node.__class__)
+
+
+# This is used to control the order in which pattern nodes are matched,
+# which can have a significant impact on match speed.
+# This should match _PATTERN_PREDICATE_NODE_ORDER above.
+_GRAPH_NODE_ORDER = [
+    OntologyNode,
+    RgbColorPerception,
+    ObjectPerception,
+    Geon,
+    Region,
+    GeonAxis,
+]
+
+
+def _graph_node_order(node_node_data_tuple) -> int:
+    (node, _) = node_node_data_tuple
+    if isinstance(node, tuple):
+        # some node types are wrapped in tuples with unique ids to keep them distinct
+        # (e.g. otherwise identical Geon objects).
+        # We need to unwrap these before comparing types.
+        node = node[0]
+
+    return _GRAPH_NODE_ORDER.index(node.__class__)
