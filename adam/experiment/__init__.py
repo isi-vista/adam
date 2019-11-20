@@ -125,7 +125,7 @@ def execute_experiment(
     logging.info("Instantiated learner %s", learner)
 
     for training_stage in experiment.training_stages:
-        logging.info("Beginning training stage %s", training_stage.name)
+        logging.info("Beginning training stage %s", training_stage.name())
         for (
             situation,
             linguistic_description,
