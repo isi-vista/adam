@@ -1,3 +1,5 @@
+from typing import Optional
+
 from adam.curriculum.phase1_curriculum import phase1_instances, PHASE1_CHOOSER
 from adam.language_specific.english.english_language_generator import IGNORE_COLORS
 from adam.learner import LearningExample
@@ -5,6 +7,7 @@ from adam.learner.subset import SubsetLanguageLearner
 from adam.ontology import OntologyNode
 from adam.ontology.phase1_ontology import BALL, LEARNER, DOG
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
+from adam.perception.perception_graph import DumpPartialMatchCallback, DebugCallableType
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
     object_variable,
@@ -13,7 +16,9 @@ from adam.situation.templates.phase1_templates import (
 )
 
 
-def run_subset_learner_for_object(obj: OntologyNode, debug_render: bool = False):
+def run_subset_learner_for_object(
+    obj: OntologyNode, debug_callback: Optional[DebugCallableType] = None
+):
     learner_obj = object_variable("learner_0", LEARNER)
     colored_obj_object = object_variable(
         "obj-with-color", obj, added_properties=[color_variable("color")]
@@ -38,7 +43,7 @@ def run_subset_learner_for_object(obj: OntologyNode, debug_render: bool = False)
         ),
     )
 
-    learner = SubsetLanguageLearner(render_for_debug=debug_render)  # type: ignore
+    learner = SubsetLanguageLearner(debug_callback)  # type: ignore
     for training_stage in [obj_curriculum]:
         for (
             _,
@@ -67,4 +72,6 @@ def test_subset_learner_ball():
 
 
 def test_subset_learner_dog():
-    run_subset_learner_for_object(DOG)
+    debug_callback = DumpPartialMatchCallback(render_path="../renders/")
+    # We pass this callback into the learner; it is executed if the learning takes too long, i.e after 60 seconds.
+    run_subset_learner_for_object(DOG, debug_callback)

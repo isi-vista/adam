@@ -58,6 +58,8 @@ class Incrementer:
         self._value += amount
 
 
+DebugCallableType = Callable[[DiGraph, Dict[Any, Any]], None]
+
 PerceptionGraphNode = Union[
     ObjectPerception, OntologyNode, Tuple[Region[Any], int], Tuple[Geon, int], GeonAxis
 ]
@@ -505,18 +507,18 @@ class PerceptionGraphPattern:
         dot_graph.render(output_file)
 
 
-class DebugRenderingObject:
+class DumpPartialMatchCallback:
     """
-        Helper callable class for debugging purposes. We render graph every hundred calls to match. The outputs can be
-        found in test/renders folder. This callable is called within GraphMatching.match
+        Helper callable class for debugging purposes. An instance of this object can be provided as the `debug_callback` argument of `GraphMatching.match` to render
+        the match search process at every 100 time steps. We start rendering after the first 60 seconds.
     """
 
-    def __init__(self, graph_to_match_against: PerceptionGraph) -> None:
-        self.graph_to_match_against: PerceptionGraph = graph_to_match_against
-        self.calls_to_match_counter: int = 0
+    def __init__(self, render_path) -> None:
+        self.render_path = render_path
+        self.calls_to_match_counter = 0
         self.start_time = process_time()
-        self.time_window = 0
-        self.mod = 1
+        self.seconds_to_wait_before_rendering = 60
+        self.mod = 100
 
     def __call__(
         self, graph: DiGraph, graph_node_to_pattern_node: Dict[Any, Any]
@@ -525,19 +527,21 @@ class DebugRenderingObject:
         current_time = process_time()
         if (
             self.calls_to_match_counter % self.mod == 0
-            and (current_time - self.start_time) > self.time_window
+            and (current_time - self.start_time) > self.seconds_to_wait_before_rendering
         ):
             perception_graph = PerceptionGraph(graph)
             title = (
-                "graph_"
-                + str(id(self.graph_to_match_against))
+                "id_"
+                + str(id(self))
+                + "_graph_"
+                + str(id(graph))
                 + "_call_"
-                + str(self.calls_to_match_counter)
+                + str(self.calls_to_match_counter).zfill(4)
             )
             mapping = {k: "match" for k, v in graph_node_to_pattern_node.items()}
             perception_graph.render_to_file(
                 graph_name=title,
-                output_file=Path("../renders/" + title),
+                output_file=Path(self.render_path + title),
                 match_correspondence_ids=mapping,
             )
 
@@ -561,16 +565,14 @@ class PerceptionGraphPatternMatching:
     )
 
     # Callable object for debugging purposes. We use this to track the number of calls to match and render the graphs.
-    rendering_debug_function: "DebugRenderingObject" = attrib(
-        default=DebugRenderingObject(graph_to_match_against), init=False
-    )
+    debug_callback: Optional[DebugCallableType] = attrib(default=None, init=False)
 
     def matches(
         self,
         *,
         debug_mapping_sink: Optional[Dict[Any, Any]] = None,
         use_lookahead_pruning: bool = False,
-        render_for_debug: bool = False,
+        debug_callback: Optional[DebugCallableType] = None,
     ) -> Iterable["PerceptionGraphPatternMatch"]:
         """
         Attempt the matching and returns a generator over the set of possible matches.
@@ -600,11 +602,11 @@ class PerceptionGraphPatternMatching:
             use_lookahead_pruning=use_lookahead_pruning,
         )
         got_a_match = False
-        debug_function: Optional[Callable[[Any, Any], None]] = None
-        if render_for_debug:
-            debug_function = self.rendering_debug_function
+        if debug_callback:
+            # If there is a given rendering path, we initialize the debug callback function.
+            self.debug_callback = debug_callback
         for mapping in matching.subgraph_isomorphisms_iter(
-            debug=(debug_mapping_sink is not None), debug_function=debug_function
+            debug=(debug_mapping_sink is not None), debug_callback=self.debug_callback
         ):
             got_a_match = True
             yield PerceptionGraphPatternMatch(

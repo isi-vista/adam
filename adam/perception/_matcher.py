@@ -18,7 +18,7 @@ This code should not be used by anything except the perception_graph module.
 
 import sys
 from collections import defaultdict
-from typing import Mapping, Any, Dict, Callable
+from typing import Mapping, Any, Dict, Callable, Optional
 
 from immutablecollections import immutableset
 from networkx import DiGraph
@@ -240,7 +240,10 @@ class GraphMatching:
             yield mapping
 
     def match(
-        self, *, debug: bool = False, debug_function: Callable[[Any, Any], None] = None
+        self,
+        *,
+        debug: bool = False,
+        debug_callback: Optional[Callable[[Any, Any], None]] = None
     ):
         """Extends the isomorphism mapping.
 
@@ -255,8 +258,8 @@ class GraphMatching:
         ):
             self.debug_largest_match = self.pattern_node_to_graph_node.copy()
             # Check rendering debug flag to see if we should render the graph
-            if debug_function is not None:
-                debug_function(self.graph, self.graph_node_to_pattern_node)
+            if debug_callback:
+                debug_callback(self.graph, self.graph_node_to_pattern_node)
         if len(self.graph_node_to_pattern_node) == len(self.pattern):
             # Save the final mapping, otherwise garbage collection deletes it.
             self.mapping = self.graph_node_to_pattern_node.copy()
@@ -271,7 +274,7 @@ class GraphMatching:
                         # Recursive call, adding the feasible state.
                         newstate = self.state.__class__(self, graph_node, pattern_node)
                         for mapping in self.match(
-                            debug=debug, debug_function=debug_function
+                            debug=debug, debug_callback=debug_callback
                         ):
                             yield mapping
 
@@ -431,7 +434,10 @@ class GraphMatching:
     #    subgraph_is_isomorphic.__doc__ += "\n" + subgraph.replace('\n','\n'+indent)
 
     def subgraph_isomorphisms_iter(
-        self, *, debug: bool = False, debug_function: Callable[[Any, Any], None] = None
+        self,
+        *,
+        debug: bool = False,
+        debug_callback: Optional[Callable[[Any, Any], None]] = None
     ):
         """Generator over isomorphisms between a subgraph of G1 and G2."""
         # Declare that we are looking for graph-subgraph isomorphism.
@@ -439,7 +445,7 @@ class GraphMatching:
         self.initialize()
         self.debug_largest_match = {}
         self._reset_debugging_maps()
-        for mapping in self.match(debug=debug, debug_function=debug_function):
+        for mapping in self.match(debug=debug, debug_callback=debug_callback):
             yield mapping
 
     def subgraph_monomorphisms_iter(self):

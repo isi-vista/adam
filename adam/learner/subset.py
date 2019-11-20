@@ -1,4 +1,4 @@
-from typing import Dict, Generic, Mapping, Tuple, Any
+from typing import Dict, Generic, Mapping, Tuple, Any, Optional
 
 from attr import Factory, attrib, attrs
 from immutablecollections import immutabledict
@@ -16,7 +16,11 @@ from adam.perception import PerceptionT, PerceptualRepresentation, ObjectPercept
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
-from adam.perception.perception_graph import PerceptionGraph, PerceptionGraphPattern
+from adam.perception.perception_graph import (
+    PerceptionGraph,
+    PerceptionGraphPattern,
+    DebugCallableType,
+)
 
 
 @attrs
@@ -31,7 +35,7 @@ class SubsetLanguageLearner(
     _descriptions_to_pattern_hypothesis: Dict[
         Tuple[str, ...], PerceptionGraphPattern
     ] = attrib(init=False, default=Factory(dict))
-    _render_for_debug: bool = attrib(default=False, init=True)
+    _debug_callback: Optional[DebugCallableType] = attrib(default=None)
 
     def observe(
         self, learning_example: LearningExample[PerceptionT, LinguisticDescription]
@@ -64,7 +68,7 @@ class SubsetLanguageLearner(
             hypothesis_pattern_common_subgraph = get_largest_matching_pattern(
                 previous_pattern_hypothesis,
                 observed_perception_graph,
-                render_for_debug=self._render_for_debug,
+                debug_callback=self._debug_callback,
             )
             # Update the leading hypothesis
             self._descriptions_to_pattern_hypothesis[
@@ -105,7 +109,7 @@ class SubsetLanguageLearner(
             common_pattern = get_largest_matching_pattern(
                 pattern_hypothesis,
                 observed_perception_graph,
-                render_for_debug=self._render_for_debug,
+                debug_callback=self._debug_callback,
             )
             common_pattern_size = len(common_pattern.copy_as_digraph().nodes)
             if common_pattern_size > max_matching_subgraph_size:
@@ -123,14 +127,14 @@ def get_largest_matching_pattern(
     pattern: PerceptionGraphPattern,
     graph: PerceptionGraph,
     *,
-    render_for_debug: bool = False,
+    debug_callback: Optional[DebugCallableType] = None,
 ) -> PerceptionGraphPattern:
     """ Helper function to return the largest matching pattern for learner from a perception pattern and graph pair."""
     # Initialize matcher in debug version to keep largest subgraph
     matching = pattern.matcher(graph)
     debug_sink: Dict[Any, Any] = {}
     match_mapping = list(
-        matching.matches(debug_mapping_sink=debug_sink, render_for_debug=render_for_debug)
+        matching.matches(debug_mapping_sink=debug_sink, debug_callback=debug_callback)
     )
 
     if match_mapping:
