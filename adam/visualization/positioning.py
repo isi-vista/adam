@@ -1,29 +1,23 @@
 import numpy as np
 from numpy import ndarray
 
-from typing import List
+from typing import List, Any
 
-from adam.visualization.utils import BoundingBox, min_max_projection
+from adam.visualization.utils import BoundingBox
+
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.autograd import Function
 
 
 def main() -> None:
     bb = BoundingBox.from_center_point(np.array([0, 0, 0]))
     midpoint_minimization(bb)
 
-    assert False
-
-    # standard form:
-    # minimize: x    (1/2) x^(T) Px + q^(T)x
-
-    # subject to: Gx element-wise< h
-    #  " " "    : Ax = b
-
-    # objective function:
-
-    # constraints:
-
 
 class PositionSolver:
+    # constants to eventually use
     POSITION_CONSTRAINTS = {
         "X_RANGE": (-10.0, 10.0),
         "Y_RANGE": (-10.0, 5.0),
@@ -39,97 +33,86 @@ class PositionSolver:
         self.positions = points
 
 
-class RelativePositionSolver:
-    pass
+class NonIntersection(Function):
+    @staticmethod
+    def forward(ctx: Any, *args, **kwargs) -> Any:
+        center = args[0]
+        reference_bb = args[1]
+        # context can be used to store tensors that can be accessed during backward step
+        ctx.save_for_backward(center)
+
+        bb = BoundingBox.from_center_point(center.data.numpy())
+
+        dist = bb.minkowski_diff_distance(reference_bb)
+
+        # TODO: INCLUDE distance from regular-space origin as well in objective
+        print(f"Minkowski diff distance\n{dist}\n")
+
+        # not colliding or right next to one another
+        if dist <= 0:
+            return torch.tensor([0.0])
+        else:
+            # colliding
+            return torch.tensor([dist])
+
+        # needs to return the badness of the positioning
+
+        # need to use `mark_non_differentiable()` to tell the engine if an output is non-differentiable
+
+        # need to use `save_for_backward()` to save any input for later use by `backward()`
+
+    @staticmethod
+    def backward(ctx: Any, *grad_outputs: Any) -> Any:
+        grad_output = grad_outputs[0]
+        # formula for differentiating the operation. takes as many outputs as the forward step returned,
+        # returns as many tensors as there were inputs to forward()
+        center, = ctx.saved_tensors
+        grad_center = None
+        print(f"gradient output: {grad_output[0]}")
+
+        if ctx.needs_input_grad[0]:
+            print(center * (grad_output ** 2))
+            grad_center = center * (grad_output ** 2)
+
+        return grad_center, None
+
+        # each argument is the gradient w/r/t the given output, each return val should b
 
 
 def midpoint_minimization(relative_bb: BoundingBox):
-    # objective function:
 
-    # quadratic components: none
-    # P = matrix(np.diag(np.array([0, 0, 0])), tc="d")
-    # linear coefficients: all ones
-    # q = matrix(np.array([1, 1, 1]), tc="d")
-
-    relative_bb_faces = relative_bb.all_face_normals()
-
-    relative_bb_corners = relative_bb.all_corners()
-
-    relative_bb_min_max_projections = [
-        min_max_projection(relative_bb_corners, face) for face in relative_bb_faces
-    ]
-
-    print(relative_bb_min_max_projections)
-
-    corner_matrix = np.array(
-        [
-            (-1, -1, -1),
-            (1, -1, -1),
-            (-1, 1, -1),
-            (1, 1, -1),
-            (-1, -1, 1),
-            (1, -1, 1),
-            (-1, 1, 1),
-            (1, 1, 1),
-        ]
-    )
-
-    print("np test situation")
-    print(corner_matrix + np.array([1.0, 1.0, 1.0]))
-
-    # should have a variable representing center of box
-    box_a_center = np.array((3,))
-
-    # idea of an objective function: minimizing distance from origin
-    # keep in mind though... for abs() to be differentiable it has to be broken up into parts
-    # f = abs(box_a_center[0]) + abs(box_a_center[1]) + abs(box_a_center[2])
-
-    # constraints:
-    # c_x_1 = box_a_center[0] <= 10.0
+    # relative_bb_faces = relative_bb.all_face_normals()
     #
-    # c_x_2 = box_a_center[0] >= -10.0
-    # c_y_1 = box_a_center[1] <= 5.0
-    # c_y_2 = box_a_center[1] >= -5.0
-    # c_z_1 = box_a_center[2] <= 2.0
-    # c_z_2 = box_a_center[2] >= 0.0
+    # relative_bb_corners = relative_bb.all_corners()
+    #
+    # relative_bb_min_max_projections = [
+    #     min_max_projection(relative_bb_corners, face) for face in relative_bb_faces
+    # ]
 
-    # intersection constraints:
-    print(corner_matrix.size)
+    device = torch.device("cpu")
+    dtype = torch.float
 
-    center_shaped = np.ones((8, 3)) * box_a_center
+    # box variable, initialized to a 3d position w/ normal distribution around 0,0,0 stdev (3, 1, 1)
+    center = torch.normal(
+        torch.tensor([0, 0, 0], device=device, dtype=dtype),
+        torch.tensor([3, 1, 1], device=device, dtype=dtype),
+    )
+    center.requires_grad_(True)
 
-    print(f"center_shaped type: {type(center_shaped)}")
+    optimizer = optim.SGD([center], lr=0.01, momentum=0.5)
 
-    # corner0 = corner_shaped + corner_matrix[0]
-    corners = center_shaped + corner_matrix
-    print(f"type of corners: {type(corners)}")
-    print(f"type of a corners element: {type(corners[0])}")
+    # training:
+    iterations = 10
+    for _ in range(iterations):
+        optimizer.zero_grad()
+        predictions = NonIntersection.apply(center, relative_bb)
 
-    print(corners[0].size)
-    print(relative_bb_faces[0].size)
-    print(f"corner shape: {corners[0].shape}")
-    print(f"relative_bb_face shape: {relative_bb_faces[0].shape}")
-    projections = [
-        np.dot(corners[j], relative_bb_faces[i]) for i in range(3) for j in range(8)
-    ]
+        # automagically gets something passed to it?
+        predictions.backward()
+        optimizer.step()
 
-    print(len(projections))
-    print(f"{projections[0].shape}")
-    print(f"{projections[0].size}")
-
-    # collide_constraint = (
-    #     cvxopt.modeling.min(projections[0], relative_bb_min_max_projections[0][1])
-    #     - cvxopt.modeling.max(projections[1], relative_bb_min_max_projections[0][0])
-    #     <= 0
-    # )
-
-    # prob = op(
-    #     f, [c_x_1, c_x_2, c_y_1, c_y_2, c_z_1, c_z_2, collide_constraint], "test_prob"
-    # )
-    # prob.solve()
-    # print(prob.status)
-
-    # G =
+        print(f"error: {predictions.data[0]}")
+        print(f"center_var: {center}")
 
 
 if __name__ == "__main__":

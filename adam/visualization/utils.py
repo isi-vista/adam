@@ -117,7 +117,8 @@ class BoundingBox:
                 overlap_max = min(self_max, other_max)
                 overlap_amounts.append(overlap_max - overlap_min)
 
-        # return the smallest non-zero magnitude, with sign attached,
+        # return the smallest (magnitude) of colliding dimensions if there is a collision,
+        # the smallest (magnitude) non-colliding dimension if there is no collision,
         # or zero if all dimensions are zero
         min_distance = float("inf")
         # if any does not overlap, then there is no collision
