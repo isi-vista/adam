@@ -1,4 +1,5 @@
 import numpy as np
+from attr import attrs, attrib
 from numpy import ndarray
 
 from typing import List, Any
@@ -14,6 +15,14 @@ from torch.autograd import Function
 def main() -> None:
     bb = BoundingBox.from_center_point(np.array([0, 0, 0]))
     midpoint_minimization(bb)
+
+
+@attrs(frozen=True, slots=True)
+class AxisAlignedBoundingBox:
+    center: torch.Tensor = attrib()
+
+    def center_distance_from_point(self, point: torch.Tensor) -> torch.Tensor:
+        return torch.dist(self.center, point, 2)
 
 
 class PositionSolver:
@@ -33,7 +42,7 @@ class PositionSolver:
         self.positions = points
 
 
-class PositioningModel(nn.Module):
+class CollisionPenalty(nn.Module):
     def __init__(self, static_bb):
         super().__init__()
         device = torch.device("cpu")
@@ -153,9 +162,21 @@ class PositioningModel(nn.Module):
         #     return torch.tensor([dist], requires_grad=True)
 
 
+ORIGIN = torch.tensor([0.0, 0.0, 0.0])
+
+
+class DistanceFromOriginPenalty(nn.Module):
+    def __init__(self, bounding_box: AxisAlignedBoundingBox) -> None:
+        super().__init__()
+        self.bounding_box = bounding_box
+
+    def forward(self, *input: Any, **kwargs: Any) -> torch.Tensor:
+        return self.bounding_box.center_distance_from_point(ORIGIN)
+
+
 def midpoint_minimization(relative_bb: BoundingBox):
 
-    model = PositioningModel(relative_bb).to("cpu")
+    model = CollisionPenalty(relative_bb).to("cpu")
 
     optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.5)
 
