@@ -3,7 +3,7 @@ from numpy import ndarray
 
 from typing import List, Any
 
-from adam.visualization.utils import BoundingBox
+from adam.visualization.utils import BoundingBox, min_max_projection
 
 import torch
 import torch.nn as nn
@@ -33,86 +33,156 @@ class PositionSolver:
         self.positions = points
 
 
-class NonIntersection(Function):
-    @staticmethod
-    def forward(ctx: Any, *args, **kwargs) -> Any:
-        center = args[0]
-        reference_bb = args[1]
-        # context can be used to store tensors that can be accessed during backward step
-        ctx.save_for_backward(center)
+class PositioningModel(nn.Module):
+    def __init__(self, static_bb):
+        super().__init__()
+        device = torch.device("cpu")
+        dtype = torch.float
+        torch.random.manual_seed(2014)
 
-        bb = BoundingBox.from_center_point(center.data.numpy())
+        self.static_bb = static_bb
+        self.static_bb_faces = torch.tensor(
+            self.static_bb.all_face_normals(), dtype=dtype
+        )
+        print(f"static bb faces: {self.static_bb_faces}")
 
-        dist = bb.minkowski_diff_distance(reference_bb)
+        static_bb_corners = torch.tensor(self.static_bb.all_corners(), dtype=dtype)
+        print(f"static bb corners: {static_bb_corners}")
 
-        # TODO: INCLUDE distance from regular-space origin as well in objective
-        print(f"Minkowski diff distance\n{dist}\n")
+        self.static_bb_min_max_projections = torch.tensor(
+            [
+                min_max_projection(static_bb_corners, face)
+                for face in self.static_bb_faces
+            ],
+            dtype=dtype,
+        )
 
-        # not colliding or right next to one another
-        if dist <= 0:
-            return torch.tensor([0.0])
-        else:
-            # colliding
-            return torch.tensor([dist])
+        print(f"static_bb min/max projections: {self.static_bb_min_max_projections}")
 
-        # needs to return the badness of the positioning
+        # box variable, initialized to a 3d position w/ normal distribution around 0,0,0 stdev (3, 1, 1)
+        self.center = torch.normal(
+            torch.tensor([0, 0, 0], device=device, dtype=dtype),
+            torch.tensor([3, 1, 1], device=device, dtype=dtype),
+        )
+        # self.center = torch.zeros(3, dtype=dtype, device=device)
+        self.center.requires_grad_(True)
+        self.center = nn.Parameter(self.center)
+        print(self.center)
 
-        # need to use `mark_non_differentiable()` to tell the engine if an output is non-differentiable
+        self.corner_matrix = torch.tensor(
+            [
+                [-1, -1, -1],
+                [1, -1, -1],
+                [-1, 1, -1],
+                [1, 1, -1],
+                [-1, -1, 1],
+                [1, -1, 1],
+                [-1, 1, 1],
+                [1, 1, 1],
+            ],
+            dtype=dtype,
+        )
+        self.minkowski()
 
-        # need to use `save_for_backward()` to save any input for later use by `backward()`
+    def minkowski(self):
+        # TODO: see if requires_grad=True is needed for each of these intermediate tensors
+        print(f"center: {self.center}")
+        # get all corners for current center
+        corners = torch.ones((8, 3)) * self.center + self.corner_matrix
+        print(f"corners.shape: {corners.shape}")
+        # project corners onto faces from static bb (output shape (3, 8, 1) )
 
-    @staticmethod
-    def backward(ctx: Any, *grad_outputs: Any) -> Any:
-        grad_output = grad_outputs[0]
-        # formula for differentiating the operation. takes as many outputs as the forward step returned,
-        # returns as many tensors as there were inputs to forward()
-        center, = ctx.saved_tensors
-        grad_center = None
-        print(f"gradient output: {grad_output[0]}")
+        projections = torch.tensor(
+            [corners[j].dot(self.static_bb_faces[i]) for i in range(3) for j in range(8)],
+            dtype=torch.float,
+        ).reshape((3, 8, 1))
+        print(f"corner projections shape: {projections.shape}")
+        print(f"corner projections: {projections}")
 
-        if ctx.needs_input_grad[0]:
-            print(center * (grad_output ** 2))
-            grad_center = center * (grad_output ** 2)
+        face_min_max = torch.tensor(
+            [[torch.min(projections[i]), torch.max(projections[i])] for i in range(3)],
+            dtype=torch.float,
+        )
+        print(f"face min-maxes shape: {face_min_max.shape}")  # (3, 2)
+        print(f"face min-maxes: {face_min_max}")
 
-        return grad_center, None
+        # compute overlap between the parameter's min/maxes and the static ones
 
-        # each argument is the gradient w/r/t the given output, each return val should b
+        overlap_ranges = torch.tensor(
+            [
+                [
+                    torch.max(
+                        face_min_max[i][0], self.static_bb_min_max_projections[i][0]
+                    ),
+                    torch.min(
+                        face_min_max[i][1], self.static_bb_min_max_projections[i][1]
+                    ),
+                ]
+                for i in range(3)
+            ],
+            dtype=torch.float,
+        )
+
+        print(f"shape of overlap ranges: {overlap_ranges.shape}")
+        print(f" overlap ranges: {overlap_ranges}")
+
+        # condense this down in to a scalar for each of the 3 (x, y, z) dimensions:
+        # to represent the degree of overlap / separation
+
+        overlap_distance = torch.tensor(
+            [overlap_ranges[i][0] - overlap_ranges[i][1] for i in range(3)],
+            dtype=torch.float,
+        )
+
+        print(f"shape of overlap distance: {overlap_distance.shape}")  # should be (3, 1)
+        print(f"overlap distance: {overlap_distance}")
+
+        # if ANY element in overlap_distance is positive, the minimum positive value
+        # is the separation distance
+
+        # otherwise the penetration distance is the maximum negative value
+        # (the smallest translation that would disentangle the two
+
+    def forward(self, *input: Any, **kwargs: Any) -> Any:
+        return self.center.dist(torch.tensor([0, 0, 0], dtype=torch.float, device="cpu"))
+        # bb = BoundingBox.from_center_point(self.center.data.numpy())
+        # dist = bb.minkowski_diff_distance(self.static_bb)
+        # if dist <= 0:
+        #     return torch.tensor([0.0], requires_grad=True)
+        # else:
+        #     return torch.tensor([dist], requires_grad=True)
 
 
 def midpoint_minimization(relative_bb: BoundingBox):
 
-    # relative_bb_faces = relative_bb.all_face_normals()
-    #
-    # relative_bb_corners = relative_bb.all_corners()
-    #
-    # relative_bb_min_max_projections = [
-    #     min_max_projection(relative_bb_corners, face) for face in relative_bb_faces
-    # ]
+    model = PositioningModel(relative_bb).to("cpu")
 
-    device = torch.device("cpu")
-    dtype = torch.float
+    optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.5)
 
-    # box variable, initialized to a 3d position w/ normal distribution around 0,0,0 stdev (3, 1, 1)
-    center = torch.normal(
-        torch.tensor([0, 0, 0], device=device, dtype=dtype),
-        torch.tensor([3, 1, 1], device=device, dtype=dtype),
-    )
-    center.requires_grad_(True)
+    loss_fn = nn.MSELoss()
 
-    optimizer = optim.SGD([center], lr=0.01, momentum=0.5)
+    y = torch.tensor([0.0])  # no collision
 
     # training:
+    print("\n\nTraining\n")
+
     iterations = 10
     for _ in range(iterations):
-        optimizer.zero_grad()
-        predictions = NonIntersection.apply(center, relative_bb)
+        model.train()  # set model to train mode
+        # error = NonIntersection.apply(center, relative_bb)
+        print(f"params: {model.state_dict()}")
+        y_hat = model()
+        print(f"error: {y_hat}")
+        print(type(y_hat))
+        # loss = loss_fn(y, y_hat)
+        loss = y_hat ** 2
 
         # automagically gets something passed to it?
-        predictions.backward()
+        loss.backward()
         optimizer.step()
+        optimizer.zero_grad()
 
-        print(f"error: {predictions.data[0]}")
-        print(f"center_var: {center}")
+        print(loss.item())
 
 
 if __name__ == "__main__":
