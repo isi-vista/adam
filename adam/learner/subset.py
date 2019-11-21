@@ -10,7 +10,7 @@ from adam.language import (
     TokenSequenceLinguisticDescription,
     LinguisticDescription,
 )
-from adam.learner import LanguageLearner, LearningExample
+from adam.learner import LanguageLearner, LearningExample, graph_without_learner, get_largest_matching_pattern
 from adam.ontology.phase1_ontology import LEARNER
 from adam.perception import PerceptionT, PerceptualRepresentation, ObjectPerception
 from adam.perception.developmental_primitive_perception import (
@@ -122,45 +122,3 @@ class SubsetLanguageLearner(
         else:
             return immutabledict()
 
-
-def get_largest_matching_pattern(
-    pattern: PerceptionGraphPattern,
-    graph: PerceptionGraph,
-    *,
-    debug_callback: Optional[DebugCallableType] = None,
-) -> PerceptionGraphPattern:
-    """ Helper function to return the largest matching pattern for learner from a perception pattern and graph pair."""
-    # Initialize matcher in debug version to keep largest subgraph
-    matching = pattern.matcher(graph)
-    debug_sink: Dict[Any, Any] = {}
-    match_mapping = list(
-        matching.matches(debug_mapping_sink=debug_sink, debug_callback=debug_callback)
-    )
-
-    if match_mapping:
-        # if matched, get the match
-        return match_mapping[0].matched_pattern
-    else:
-        # otherwise get the largest subgraph and initialze new PatternGraph from it
-        matched_pattern_nodes = debug_sink.keys()
-        matching_sub_digraph = pattern.copy_as_digraph().subgraph(matched_pattern_nodes)
-        return PerceptionGraphPattern(matching_sub_digraph)
-
-
-def graph_without_learner(graph: DiGraph) -> PerceptionGraph:
-    # Get the learner node
-    learner_node_candidates = [
-        node
-        for node in graph.nodes()
-        if isinstance(node, ObjectPerception) and node.debug_handle == LEARNER.handle
-    ]
-    if len(learner_node_candidates) > 1:
-        raise RuntimeError("More than one learners in perception.")
-    elif len(learner_node_candidates) == 1:
-        learner_node = first(learner_node_candidates)
-        # Remove learner
-        graph.remove_node(learner_node)
-        # remove remaining islands
-        islands = list(isolates(graph))
-        graph.remove_nodes_from(islands)
-    return PerceptionGraph(graph)
