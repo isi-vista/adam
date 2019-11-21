@@ -26,7 +26,7 @@ from adam.ontology.phase1_ontology import (
     JUICE,
     CUP,
     MOM,
-    DAD,
+    LEARNER,
     CAN_HAVE_THINGS_RESTING_ON_THEM,
     bigger_than,
     HAS_SPACE_UNDER,
@@ -377,7 +377,7 @@ def _make_behind_training(num_samples: int = 5) -> Phase1InstanceGroup:
     ground_0 = standard_object("box", BOX)
     ground_1 = standard_object("table", TABLE)
     speaker = standard_object("speaker", MOM, added_properties=[IS_SPEAKER])
-    addressee = standard_object("addressee", DAD, added_properties=[IS_ADDRESSEE])
+    addressee = standard_object("addressee", LEARNER, added_properties=[IS_ADDRESSEE])
 
     figures = immutableset([figure_0, figure_1])
     grounds = immutableset([ground_0, ground_1])
@@ -419,7 +419,7 @@ def _make_in_front_training(num_samples: int = 5) -> Phase1InstanceGroup:
     ground_0 = standard_object("box", BOX)
     ground_1 = standard_object("table", TABLE)
     speaker = standard_object("speaker", MOM, added_properties=[IS_SPEAKER])
-    addressee = standard_object("addressee", DAD, added_properties=[IS_ADDRESSEE])
+    addressee = standard_object("addressee", LEARNER, added_properties=[IS_ADDRESSEE])
 
     figures = immutableset([figure_0, figure_1])
     grounds = immutableset([ground_0, ground_1])
@@ -641,7 +641,7 @@ def _make_behind_tests(num_samples: int = 5) -> Phase1InstanceGroup:
     ground_0 = standard_object("ground_0", THING)
     ground_1 = standard_object("ground_1", THING)
     speaker = standard_object("speaker", MOM, added_properties=[IS_SPEAKER])
-    addressee = standard_object("addressee", DAD, added_properties=[IS_ADDRESSEE])
+    addressee = standard_object("addressee", LEARNER, added_properties=[IS_ADDRESSEE])
 
     figures = immutableset([figure_0, figure_1])
     grounds = immutableset([ground_0, ground_1])
@@ -683,7 +683,7 @@ def _make_in_front_tests(num_samples: int = 5) -> Phase1InstanceGroup:
     ground_0 = standard_object("ground_0", THING)
     ground_1 = standard_object("ground_1", THING)
     speaker = standard_object("speaker", MOM, added_properties=[IS_SPEAKER])
-    addressee = standard_object("addressee", DAD, added_properties=[IS_ADDRESSEE])
+    addressee = standard_object("addressee", LEARNER, added_properties=[IS_ADDRESSEE])
 
     figures = immutableset([figure_0, figure_1])
     grounds = immutableset([ground_0, ground_1])
