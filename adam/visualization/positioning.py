@@ -1,3 +1,5 @@
+from itertools import combinations
+
 import numpy as np
 from immutablecollections import immutabledict, immutableset
 from torch.nn import Parameter
@@ -231,9 +233,7 @@ class AdamObjectPositioningModel(torch.nn.Module):
         )
         collision_penalty = sum(
             self.collision_penalty(box1, box2)
-            for box1 in self.object_bounding_boxes
-            for box2 in self.object_bounding_boxes
-            if box1 is not box2
+            for (box1, box2) in combinations(self.object_bounding_boxes, 2)
         )
         return distance_penalty + collision_penalty
 
