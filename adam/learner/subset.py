@@ -1,7 +1,7 @@
-from typing import Dict, Generic, Mapping, Tuple, Optional, List, Any, Set
+from typing import Dict, Generic, Mapping, Tuple, Optional, Any
 
 from attr import Factory, attrib, attrs
-from immutablecollections import immutabledict, ImmutableDict, immutableset
+from immutablecollections import immutabledict
 from more_itertools import first
 from networkx import DiGraph, isolates
 
@@ -19,14 +19,8 @@ from adam.perception.developmental_primitive_perception import (
 from adam.perception.perception_graph import (
     PerceptionGraph,
     PerceptionGraphPattern,
-    PerceptionGraphNode,
-    NodePredicate,
-    MatchedObjectPerceptionPredicate,
-    DebugCallableType
+    DebugCallableType,
 )
-from adam.learner.preposition_pattern import PrepositionPattern, _MODIFIED, _GROUNDED
-from adam.perception_matcher._matcher import GraphMatching
-from adam.learner.object_recognizer import ObjectRecognizer
 
 
 def graph_without_learner(graph: DiGraph):
@@ -44,17 +38,6 @@ def graph_without_learner(graph: DiGraph):
         islands = list(isolates(graph))
         graph.remove_nodes_from(islands)
     return graph
-
-# Constants used to map locations in a prepositional phrase for mapping
-_MODIFIED = "MODIFIED"
-_GROUNDED = "GROUNDED"
-
-PrepositionSurfaceTemplate = Tuple[str, ...]
-"""
-This is a surface string pattern for a preposition. 
-It should contain the strings MODIFIED and GROUND as stand-ins for the particular words
-a preposition may be used with. For example, "MODIFIED on a GROUND". 
-"""
 
 
 @attrs
@@ -179,22 +162,3 @@ def get_largest_matching_pattern(
         matched_pattern_nodes = debug_sink.keys()
         matching_sub_digraph = pattern.copy_as_digraph().subgraph(matched_pattern_nodes)
         return PerceptionGraphPattern(matching_sub_digraph)
-
-
-def graph_without_learner(graph: DiGraph) -> PerceptionGraph:
-    # Get the learner node
-    learner_node_candidates = [
-        node
-        for node in graph.nodes()
-        if isinstance(node, ObjectPerception) and node.debug_handle == LEARNER.handle
-    ]
-    if len(learner_node_candidates) > 1:
-        raise RuntimeError("More than one learners in perception.")
-    elif len(learner_node_candidates) == 1:
-        learner_node = first(learner_node_candidates)
-        # Remove learner
-        graph.remove_node(learner_node)
-        # remove remaining islands
-        islands = list(isolates(graph))
-        graph.remove_nodes_from(islands)
-    return PerceptionGraph(graph)

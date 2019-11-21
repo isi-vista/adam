@@ -21,6 +21,7 @@ from typing import (
     TypeVar,
     Union,
     Set,
+    List,
 )
 
 import graphviz
@@ -69,7 +70,9 @@ class Incrementer:
     def increment(self, amount=1) -> None:
         self._value += amount
 
+
 DebugCallableType = Callable[[DiGraph, Dict[Any, Any]], None]
+
 
 @attrs(frozen=True, eq=False, slots=True)
 class MatchedObjectNode:
@@ -714,10 +717,12 @@ class PatternMatching:
         for graph_node_to_matching_pattern_node in matching.subgraph_isomorphisms_iter(
             debug=(debug_mapping_sink is not None),
             matching_pattern=matching_pattern,
-            debug_callback=self.debug_callback
+            debug_callback=self.debug_callback,
         ):
             got_a_match = True
-            matched_graph_nodes = immutableset(graph_node_to_matching_pattern_node)
+            matched_graph_nodes: ImmutableSet[PerceptionGraphNode] = immutableset(
+                graph_node_to_matching_pattern_node
+            )
             if (
                 matched_graph_nodes not in sets_of_nodes_matched
                 or not suppress_multiple_alignments_to_same_nodes
@@ -1421,6 +1426,7 @@ class PrepositionPattern:
 
 _KT = TypeVar("_KT")
 _VT = TypeVar("_VT")
+
 
 def _invert_to_immutabledict(mapping: Mapping[_KT, _VT]) -> ImmutableDict[_VT, _KT]:
     return immutabledict((v, k) for (k, v) in mapping.items())

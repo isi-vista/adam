@@ -22,11 +22,10 @@ from adam.language_specific.english.english_language_generator import IGNORE_COL
 from adam.learner import LearningExample
 from adam.learner.preposition_subset import PrepositionSubsetLanguageLearner
 from adam.learner.subset import SubsetLanguageLearner
-from adam.ontology.phase1_ontology import BALL, LEARNER
 from adam.ontology import OntologyNode
 from adam.ontology.phase1_ontology import BALL, LEARNER, DOG
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
-from adam.perception.perception_graph import DumpPartialMatchCallback, DebugCallableType, PerceptionGraph
+from adam.perception.perception_graph import DumpPartialMatchCallback, DebugCallableType
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
     object_variable,
