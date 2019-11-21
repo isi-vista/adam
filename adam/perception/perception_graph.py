@@ -22,6 +22,7 @@ from typing import (
     Union,
     Set,
     List,
+    Type,
 )
 
 import graphviz
@@ -706,7 +707,10 @@ class PatternMatching:
         # controls the order in which nodes are matched.
         # This has a significant, benchmark-confirmed impact on performance.
         sorted_graph_to_match_against = digraph_with_nodes_sorted_by(
-            self.graph_to_match_against._graph, _graph_node_order  # pylint: disable=W0212
+            self.graph_to_match_against._graph,
+            _graph_node_order
+            if not matching_pattern
+            else _pattern_matching_node_order,  # pylint: disable=W0212
         )
         sorted_pattern = digraph_with_nodes_sorted_by(
             self.pattern._graph, _pattern_matching_node_order  # pylint: disable=W0212
@@ -1365,6 +1369,8 @@ def _translate_region(
 # which can have a significant impact on match speed.
 # We try to match the most restrictive nodes first.
 _PATTERN_PREDICATE_NODE_ORDER = [
+    # If we have matchedObjects in the pattern we want to try and find these first.
+    MatchedObjectPerceptionPredicate,
     # properties and colors tend to be highlight restrictive, so let's match them first
     IsOntologyNodePredicate,
     IsColorNodePredicate,
@@ -1385,7 +1391,20 @@ def _pattern_matching_node_order(node_node_data_tuple) -> int:
 # This is used to control the order in which pattern nodes are matched,
 # which can have a significant impact on match speed.
 # This should match _PATTERN_PREDICATE_NODE_ORDER above.
-_GRAPH_NODE_ORDER = [
+_GRAPH_NODE_ORDER: List[
+    Type[
+        Union[
+            MatchedObjectNode,
+            OntologyNode,
+            RgbColorPerception,
+            ObjectPerception,
+            Geon,
+            Region,
+            GeonAxis,
+        ]
+    ]
+] = [
+    MatchedObjectNode,
     OntologyNode,
     RgbColorPerception,
     ObjectPerception,
