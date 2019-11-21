@@ -1,20 +1,21 @@
 import numpy as np
+from immutablecollections import immutabledict, immutableset
+from torch.nn import Parameter
+from torch.optim.lr_scheduler import ReduceLROnPlateau
+from vistautils.preconditions import check_arg
+
 from attr import attrs, attrib
 from numpy import ndarray
 
-from typing import List, Any
+from typing import List, Any, Set, Mapping
 
 from adam.visualization.utils import BoundingBox, min_max_projection
 
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.autograd import Function
-
-
-def main() -> None:
-    bb = BoundingBox.from_center_point(np.array([0, 0, 0]))
-    midpoint_minimization(bb)
 
 
 @attrs(frozen=True, slots=True)
@@ -23,6 +24,25 @@ class AxisAlignedBoundingBox:
 
     def center_distance_from_point(self, point: torch.Tensor) -> torch.Tensor:
         return torch.dist(self.center, point, 2)
+
+    @staticmethod
+    def create_at_random_position(
+        *, min_distance_from_origin: float, max_distance_from_origin: float
+    ):
+        check_arg(min_distance_from_origin > 0.0)
+        check_arg(min_distance_from_origin < max_distance_from_origin)
+        # we first generate a random point on the unit sphere by
+        # generating a random vector in cube...
+        center = np.random.randn(3, 1).squeeze()
+        # and then normalizing.
+        center /= np.linalg.norm(center)
+
+        # then we scale according to the distances above
+        scale_factor = np.random.uniform(
+            min_distance_from_origin, max_distance_from_origin
+        )
+        center *= scale_factor
+        return AxisAlignedBoundingBox(Parameter(torch.tensor(center), requires_grad=True))
 
 
 class PositionSolver:
@@ -162,48 +182,94 @@ class CollisionPenalty(nn.Module):
         #     return torch.tensor([dist], requires_grad=True)
 
 
-ORIGIN = torch.tensor([0.0, 0.0, 0.0])
+ORIGIN = torch.tensor([0.0, 0.0, 0.0], dtype=torch.float64)
+
+
+@attrs(frozen=True, auto_attribs=True)
+class AdamObject:
+    name: str
 
 
 class DistanceFromOriginPenalty(nn.Module):
-    def __init__(self, bounding_box: AxisAlignedBoundingBox) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self.bounding_box = bounding_box
 
-    def forward(self, *input: Any, **kwargs: Any) -> torch.Tensor:
-        return self.bounding_box.center_distance_from_point(ORIGIN)
+    def forward(self, bounding_box: AxisAlignedBoundingBox) -> torch.Tensor:
+        return bounding_box.center_distance_from_point(ORIGIN)
 
 
-def midpoint_minimization(relative_bb: BoundingBox):
+class AdamObjectPositioningModel(torch.nn.Module):
+    def __init__(
+        self, adam_object_to_bounding_box: Mapping[AdamObject, AxisAlignedBoundingBox]
+    ) -> None:
+        super().__init__()
+        self.adam_object_to_bounding_box = adam_object_to_bounding_box
+        self.object_bounding_boxes = adam_object_to_bounding_box.values()
 
-    model = CollisionPenalty(relative_bb).to("cpu")
+        for (adam_object, bounding_box) in self.adam_object_to_bounding_box.items():
+            self.register_parameter(adam_object.name, bounding_box.center)
 
-    optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.5)
+        self.distance_to_origin_penalty = DistanceFromOriginPenalty()
+        self.collision_penalty = lambda x, y: torch.tensor(0)
 
-    loss_fn = nn.MSELoss()
+    @staticmethod
+    def for_objects(adam_objects: Set[AdamObject]) -> "AdamObjectPositioningModel":
+        objects_to_bounding_boxes = immutabledict(
+            (
+                adam_object,
+                AxisAlignedBoundingBox.create_at_random_position(
+                    min_distance_from_origin=5, max_distance_from_origin=10
+                ),
+            )
+            for adam_object in adam_objects
+        )
+        return AdamObjectPositioningModel(objects_to_bounding_boxes)
 
-    y = torch.tensor([0.0])  # no collision
+    def forward(self) -> torch.Tensor:
+        distance_penalty = sum(
+            self.distance_to_origin_penalty(box) for box in self.object_bounding_boxes
+        )
+        collision_penalty = sum(
+            self.collision_penalty(box1, box2)
+            for box1 in self.object_bounding_boxes
+            for box2 in self.object_bounding_boxes
+            if box1 is not box2
+        )
+        return distance_penalty + collision_penalty
 
-    # training:
-    print("\n\nTraining\n")
+    def dump_object_positions(self) -> None:
+        for (adam_object, bounding_box) in self.adam_object_to_bounding_box.items():
+            print(f"{adam_object.name} = {bounding_box.center.data}")
 
-    iterations = 10
+
+def main() -> None:
+    ball = AdamObject(name="ball")
+    box = AdamObject(name="box")
+
+    positioning_model = AdamObjectPositioningModel.for_objects(immutableset([ball, box]))
+    # we will start with an aggressive learning rate
+    optimizer = optim.SGD(positioning_model.parameters(), lr=1.0)
+    # but will decrease it whenever the loss plateaus
+    learning_rate_schedule = ReduceLROnPlateau(
+        optimizer,
+        "min",
+        # decrease the rate if the loss hasn't improved in
+        # 3 epochs
+        patience=3,
+    )
+
+    iterations = 40
     for _ in range(iterations):
-        model.train()  # set model to train mode
-        # error = NonIntersection.apply(center, relative_bb)
-        print(f"params: {model.state_dict()}")
-        y_hat = model()
-        print(f"error: {y_hat}")
-        print(type(y_hat))
-        # loss = loss_fn(y, y_hat)
-        loss = y_hat ** 2
-
-        # automagically gets something passed to it?
+        loss = positioning_model()
+        print(f"Loss: {loss.item()}")
         loss.backward()
+
         optimizer.step()
         optimizer.zero_grad()
 
-        print(loss.item())
+        learning_rate_schedule.step(loss)
+
+        positioning_model.dump_object_positions()
 
 
 if __name__ == "__main__":
