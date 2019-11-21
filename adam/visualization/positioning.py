@@ -65,59 +65,11 @@ class PositionSolver:
 
 
 class CollisionPenalty(nn.Module):
-    def __init__(self, static_bb):
+    def __init__(self):
         super().__init__()
-        device = torch.device("cpu")
-        dtype = torch.float
-        torch.random.manual_seed(2014)
 
-        self.static_bb = static_bb
-        self.static_bb_faces = torch.tensor(
-            self.static_bb.all_face_normals(), dtype=dtype
-        )
-        print(f"static bb faces: {self.static_bb_faces}")
-
-        static_bb_corners = torch.tensor(self.static_bb.all_corners(), dtype=dtype)
-        print(f"static bb corners: {static_bb_corners}")
-
-        self.static_bb_min_max_projections = torch.tensor(
-            [
-                min_max_projection(static_bb_corners, face)
-                for face in self.static_bb_faces
-            ],
-            dtype=dtype,
-        )
-
-        print(f"static_bb min/max projections: {self.static_bb_min_max_projections}")
-
-        # box variable, initialized to a 3d position w/ normal distribution around 0,0,0 stdev (3, 1, 1)
-        self.center = torch.normal(
-            torch.tensor([0, 0, 0], device=device, dtype=dtype),
-            torch.tensor([3, 1, 1], device=device, dtype=dtype),
-        )
-        # self.center = torch.zeros(3, dtype=dtype, device=device)
-        self.center.requires_grad_(True)
-        self.center = nn.Parameter(self.center)
-        print(self.center)
-
-        self.corner_matrix = torch.tensor(
-            [
-                [-1, -1, -1],
-                [1, -1, -1],
-                [-1, 1, -1],
-                [1, 1, -1],
-                [-1, -1, 1],
-                [1, -1, 1],
-                [-1, 1, 1],
-                [1, 1, 1],
-            ],
-            dtype=dtype,
-        )
-        self.minkowski()
-
-    def minkowski(self):
-        # TODO: see if requires_grad=True is needed for each of these intermediate tensors
-        print(f"center: {self.center}")
+    def forward(self, bounding_box_1: AxisAlignedBoundingBox,
+                bounding_box_2: AxisAlignedBoundingBox) -> torch.Tensor:
         # get all corners for current center
         corners = torch.ones((8, 3)) * self.center + self.corner_matrix
         print(f"corners.shape: {corners.shape}")
@@ -212,7 +164,7 @@ class AdamObjectPositioningModel(torch.nn.Module):
             self.register_parameter(adam_object.name, bounding_box.center)
 
         self.distance_to_origin_penalty = DistanceFromOriginPenalty()
-        self.collision_penalty = lambda x, y: torch.tensor(0)
+        self.collision_penalty = CollisionPenalty()
 
     @staticmethod
     def for_objects(adam_objects: Set[AdamObject]) -> "AdamObjectPositioningModel":
