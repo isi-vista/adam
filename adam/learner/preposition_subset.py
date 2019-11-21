@@ -184,7 +184,6 @@ class PrepositionSubsetLanguageLearner(
 
         # TODO: this might be clearer if the return were package in an object
         perception_graph_with_object_matches, handle_to_object_match_node = self._object_recognizer.match_objects(
-            # pylint:disable=unused-variable
             observed_perception_graph
         )
         # TODO: check if immutabledict has a method for inversion

@@ -57,7 +57,7 @@ class ObjectRecognizer:
         graph_to_modify = perception_graph.copy_as_digraph()
         for (description, pattern) in possible_perceived_objects:
             matcher = pattern.matcher(perception_graph)
-            pattern_matches = list(matcher.matches(use_lookahead_pruning=False))
+            pattern_matches = list(matcher.matches(use_lookahead_pruning=True))
             for pattern_match in pattern_matches:
                 self._replace_match_with_object_graph_node(
                     graph_to_modify, pattern_match, matched_object_nodes, description

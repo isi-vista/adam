@@ -61,7 +61,7 @@ def run_subset_learner_for_object(
         ),
     )
 
-    learner = SubsetLanguageLearner(debug_callback)  # type: ignore
+    learner = SubsetLanguageLearner(debug_callback=debug_callback)  # type: ignore
     for training_stage in [obj_curriculum]:
         for (
             _,

@@ -26,7 +26,6 @@ from typing import (
 
 import graphviz
 from adam.utils.networkx_utils import digraph_with_nodes_sorted_by
-from attr import attrib, attrs
 from attr.validators import instance_of, optional
 from immutablecollections import ImmutableDict, immutabledict, immutableset, ImmutableSet
 from immutablecollections.converter_utils import _to_immutabledict, _to_tuple
@@ -377,14 +376,19 @@ class PerceptionGraphPattern(PerceptionGraphProtocol):
         return copy(self._graph)
 
     def matcher(
-        self, graph_to_match_against: PerceptionGraphProtocol
+        self,
+        graph_to_match_against: PerceptionGraphProtocol,
+        *,
+        debug_callback: Optional[DebugCallableType] = None,
     ) -> "PatternMatching":
         """
         Creates an object representing an attempt to match this pattern
         against *graph_to_match_against*.
         """
         return PatternMatching(
-            pattern=self, graph_to_match_against=graph_to_match_against
+            pattern=self,
+            graph_to_match_against=graph_to_match_against,
+            debug_callback=debug_callback,
         )
 
     @staticmethod
@@ -577,10 +581,17 @@ class PerceptionGraphPattern(PerceptionGraphProtocol):
         dot_graph.render(output_file)
 
     def intersection(
-        self, graph_pattern: "PerceptionGraphPattern"
+        self,
+        graph_pattern: "PerceptionGraphPattern",
+        *,
+        debug_callback: Optional[DebugCallableType] = None,
     ) -> "PerceptionGraphPattern":
         debug_mapping: Dict[Any, Any] = dict()
-        matcher = PatternMatching(pattern=graph_pattern, graph_to_match_against=self)
+        matcher = PatternMatching(
+            pattern=graph_pattern,
+            graph_to_match_against=self,
+            debug_callback=debug_callback,
+        )
         matches = immutableset(
             matcher.matches(debug_mapping_sink=debug_mapping, matching_pattern=True)
         )
@@ -663,14 +674,13 @@ class PatternMatching:
     )
 
     # Callable object for debugging purposes. We use this to track the number of calls to match and render the graphs.
-    debug_callback: Optional[DebugCallableType] = attrib(default=None, init=False)
+    debug_callback: Optional[DebugCallableType] = attrib(default=None, kw_only=True)
 
     def matches(
         self,
         *,
         debug_mapping_sink: Optional[Dict[Any, Any]] = None,
         use_lookahead_pruning: bool = False,
-        debug_callback: Optional[DebugCallableType] = None,
         matching_pattern: bool = False,
         suppress_multiple_alignments_to_same_nodes: bool = True,
     ) -> Iterable["PerceptionGraphPatternMatch"]:
@@ -711,9 +721,6 @@ class PatternMatching:
         sets_of_nodes_matched: Set[ImmutableSet[PerceptionGraphNode]] = set()
 
         got_a_match = False
-        if debug_callback:
-            # If there is a given rendering path, we initialize the debug callback function.
-            self.debug_callback = debug_callback
         for graph_node_to_matching_pattern_node in matching.subgraph_isomorphisms_iter(
             debug=(debug_mapping_sink is not None),
             matching_pattern=matching_pattern,
