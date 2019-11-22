@@ -75,27 +75,50 @@ class ObjectRecognizer:
         Internal function to copy existing relationships from the matched object pattern onto a
         `MatchedObjectPerceptionPredicate`
         """
-        node = MatchedObjectNode(name=(description,))
+        matched_object_node = MatchedObjectNode(name=(description,))
 
-        matched_object_nodes.append((description, node))
-        networkx_graph_to_modify_in_place.add_node(node)
+        matched_object_nodes.append((description, matched_object_node))
+        networkx_graph_to_modify_in_place.add_node(matched_object_node)
 
-        for (
-            graph_node
-        ) in (
-            pattern_match.matched_sub_graph._graph.nodes  # pylint:disable=protected-access
-        ):
-            successors = immutableset(
-                networkx_graph_to_modify_in_place.successors(graph_node)
-            )
-            for successor in successors:
-                if networkx_graph_to_modify_in_place.has_edge(graph_node, successor):
+        matched_subgraph_nodes = immutableset(
+            pattern_match.matched_sub_graph._graph.nodes, disable_order_check=True
+        )  # pylint:disable=protected-access
+
+        for matched_subgraph_node in matched_subgraph_nodes:
+            # If there is an edge from the matched sub-graph to a node outside it,
+            # also add an edge from the object match node to that node.
+            for (
+                matched_subgraph_node_successor
+            ) in networkx_graph_to_modify_in_place.successors(matched_subgraph_node):
+                # don't want to add edges which are internal to the matched sub-graph
+                if matched_subgraph_node_successor not in matched_subgraph_nodes:
                     edge_data = networkx_graph_to_modify_in_place.get_edge_data(
-                        graph_node, successor
+                        matched_subgraph_node, matched_subgraph_node_successor
                     )
                     networkx_graph_to_modify_in_place.add_edge(
-                        node, graph_node, **edge_data
+                        matched_object_node, matched_subgraph_node_successor, **edge_data
                     )
+
+            # If there is an edge to the matched sub-graph from a node outside it,
+            # also add an edge to the object match node from that node.
+            for (
+                matched_subgraph_node_predecessor
+            ) in networkx_graph_to_modify_in_place.predecessors(matched_subgraph_node):
+                # don't want to add edges which are internal to the matched sub-graph
+                if matched_subgraph_node_predecessor not in matched_subgraph_nodes:
+                    edge_data = networkx_graph_to_modify_in_place.get_edge_data(
+                        matched_subgraph_node_predecessor, matched_subgraph_node
+                    )
+                    networkx_graph_to_modify_in_place.add_edge(
+                        matched_subgraph_node_predecessor,
+                        matched_object_node,
+                        **edge_data
+                    )
+
+            # we also link every node in the matched sub-graph to the newly introduced node
+            # representing the object match.
             networkx_graph_to_modify_in_place.add_edge(
-                graph_node, node, label=MATCHED_OBJECT_PATTERN_LABEL
+                matched_subgraph_node,
+                matched_object_node,
+                label=MATCHED_OBJECT_PATTERN_LABEL,
             )
