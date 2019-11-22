@@ -2,6 +2,8 @@ from pathlib import Path
 from typing import Any, Dict, Generic, List, Mapping, Tuple
 
 from immutablecollections import ImmutableSet, immutabledict, immutableset
+from more_itertools import flatten
+from networkx import all_shortest_paths
 
 from adam.language import (
     LinguisticDescription,
@@ -21,6 +23,7 @@ from adam.perception.perception_graph import (
     NodePredicate,
     PerceptionGraph,
     PerceptionGraphNode,
+    MatchedObjectNode,
 )
 from attr import Factory, attrib, attrs
 
@@ -56,26 +59,23 @@ class PrepositionSubsetLanguageLearner(
         else:
             raise RuntimeError("Cannot process perception type.")
 
-        # DEBUG CODE
-        # original_perception_graph.render_to_file("original", Path(f"/nas/home/jacobl/adam-root/outputs/original.pdf"))
-
         # Remove learner from the perception
         observed_perception_graph = graph_without_learner(original_perception_graph)
         # DEBUG CODE
-        # observed_perception_graph.render_to_file(
-        #    "observed", Path(f"/nas/home/jacobl/adam-root/outputs/observed.pdf")
-        # )
+        observed_perception_graph.render_to_file(
+            "observed", Path(f"/Users/gabbard/tmp/observed.pdf")
+        )
         observed_linguistic_description = (
             learning_example.linguistic_description.as_token_sequence()
         )
 
-        perception_graph_object_perception, object_handle_to_object_match_node = self._object_recognizer.match_objects(
+        perception_graph_post_object_recognition, object_handle_to_object_match_node = self._object_recognizer.match_objects(
             observed_perception_graph
         )
         # DEBUG
-        # perception_graph_object_perception.render_to_file(
-        #    "with_objects", Path(f"/nas/home/jacobl/adam-root/outputs/with_objects.pdf")
-        # )
+        perception_graph_post_object_recognition.render_to_file(
+            "with_objects", Path(f"/Users/gabbard/tmp/with_objects.pdf")
+        )
         object_match_nodes = []
         token_indices_of_matched_object_words = []
 
@@ -139,28 +139,11 @@ class PrepositionSubsetLanguageLearner(
             ]
         )
 
-        # The next step is to create a perception graph pattern to represent
-        # the prepositional phrase semantics.
-        # We take the potentially relevant parts of the perception to be
-        # the object match nodes...
-        nodes_for_preposition_pattern = list(object_match_nodes)
-        #  and their adjacent nodes.
-        nodes_for_preposition_pattern.extend(
-            perception_graph_object_perception.copy_as_digraph().successors(
-                object_match_node_for_modified
-            )
-        )
-        nodes_for_preposition_pattern.extend(
-            perception_graph_object_perception.copy_as_digraph().successors(
-                object_match_node_for_ground
-            )
-        )
-        preposition_pattern_graph = perception_graph_object_perception.copy_as_digraph().subgraph(
-            nodes=immutableset(nodes_for_preposition_pattern)
-        )
-
-        preposition_pattern = PrepositionPattern.from_graph(
-            preposition_pattern_graph, template_variables_to_object_match_nodes
+        preposition_pattern = self._make_preposition_hypothesis(
+            object_match_node_for_ground,
+            object_match_node_for_modified,
+            perception_graph_post_object_recognition,
+            template_variables_to_object_match_nodes,
         )
 
         if preposition_surface_template in self._surface_template_to_preposition_pattern:
@@ -183,11 +166,55 @@ class PrepositionSubsetLanguageLearner(
 
         # DEBUG CODE TO BE REMOVED
         graph_name = "_".join(preposition_surface_template)
-        # self._surface_template_to_preposition_pattern[
-        #    preposition_surface_template
-        # ].graph_pattern.render_to_file(
-        #    graph_name, Path(f"/nas/home/jacobl/adam-root/outputs/preposition.pdf")
-        # )
+        self._surface_template_to_preposition_pattern[
+            preposition_surface_template
+        ].graph_pattern.render_to_file(
+            graph_name, Path(f"/Users/gabbard/tmp/preposition.pdf")
+        )
+
+    def _make_preposition_hypothesis(
+        self,
+        object_match_node_for_ground: MatchedObjectNode,
+        object_match_node_for_modified: MatchedObjectNode,
+        perception_graph_post_object_recognition: PerceptionGraph,
+        template_variables_to_object_match_nodes: Mapping[str, MatchedObjectNode],
+    ) -> PrepositionPattern:
+        """
+        Create a hypothesis for the semantics of a preposition based on the observed scene.
+        
+        Our current implementation is to just include the content 
+        on the path between the recognized object nodes.
+        """
+        nodes_in_hypothesis = []
+
+        # The directions of edges in the perception graph are not necessarily meaningful
+        # from the point-of-view of hypothesis generation, so we need an undirected copy
+        # of the graph.
+        perception_graph_as_undirected = perception_graph_post_object_recognition.copy_as_digraph().to_undirected(
+            as_view=True
+        )
+
+        # The core of our hypothesis for the semantics of a preposition is all nodes
+        # along the shortest path between the two objects involved in the perception graph.
+        hypothesis_spine_nodes = immutableset(
+            flatten(
+                # if there are multiple paths between the object match nodes,
+                # we aren't sure which are relevant, so we include them all in our hypothesis
+                # and figure we can trim out irrelevant stuff as we make more observations.
+                all_shortest_paths(
+                    perception_graph_as_undirected,
+                    object_match_node_for_ground,
+                    object_match_node_for_modified,
+                )
+            )
+        )
+
+        preposition_pattern_graph = perception_graph_post_object_recognition.copy_as_digraph().subgraph(
+            nodes=hypothesis_spine_nodes
+        )
+        return PrepositionPattern.from_graph(
+            preposition_pattern_graph, template_variables_to_object_match_nodes
+        )
 
     def describe(
         self, perception: PerceptualRepresentation[PerceptionT]
