@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Any, Dict, Generic, List, Mapping, Tuple
 
 from immutablecollections import ImmutableSet, immutabledict, immutableset
@@ -55,14 +56,25 @@ class PrepositionSubsetLanguageLearner(
         else:
             raise RuntimeError("Cannot process perception type.")
 
+        # DEBUG CODE
+        # original_perception_graph.render_to_file("original", Path(f"/nas/home/jacobl/adam-root/outputs/original.pdf"))
+
         # Remove learner from the perception
         observed_perception_graph = graph_without_learner(original_perception_graph)
+        # DEBUG CODE
+        observed_perception_graph.render_to_file(
+            "observed", Path(f"/nas/home/jacobl/adam-root/outputs/observed.pdf")
+        )
         observed_linguistic_description = (
             learning_example.linguistic_description.as_token_sequence()
         )
 
         perception_graph_object_perception, object_handle_to_object_match_node = self._object_recognizer.match_objects(
             observed_perception_graph
+        )
+        # DEBUG
+        perception_graph_object_perception.render_to_file(
+            "with_objects", Path(f"/nas/home/jacobl/adam-root/outputs/with_objects.pdf")
         )
         object_match_nodes = []
         token_indices_of_matched_object_words = []
@@ -168,6 +180,14 @@ class PrepositionSubsetLanguageLearner(
             self._surface_template_to_preposition_pattern[
                 preposition_surface_template
             ] = preposition_pattern
+
+        # DEBUG CODE TO BE REMOVED
+        graph_name = "_".join(preposition_surface_template)
+        self._surface_template_to_preposition_pattern[
+            preposition_surface_template
+        ].graph_pattern.render_to_file(
+            graph_name, Path(f"/nas/home/jacobl/adam-root/outputs/preposition.pdf")
+        )
 
     def describe(
         self, perception: PerceptualRepresentation[PerceptionT]

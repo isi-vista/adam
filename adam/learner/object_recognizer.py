@@ -85,13 +85,16 @@ class ObjectRecognizer:
         ) in (
             pattern_match.matched_sub_graph._graph.nodes  # pylint:disable=protected-access
         ):
-            for neighbor_node in networkx_graph_to_modify_in_place.neighbors(graph_node):
-                if networkx_graph_to_modify_in_place.has_edge(graph_node, neighbor_node):
+            successors = immutableset(
+                networkx_graph_to_modify_in_place.successors(graph_node)
+            )
+            for successor in successors:
+                if networkx_graph_to_modify_in_place.has_edge(graph_node, successor):
                     edge_data = networkx_graph_to_modify_in_place.get_edge_data(
-                        graph_node, neighbor_node
+                        graph_node, successor
                     )
                     networkx_graph_to_modify_in_place.add_edge(
-                        node, neighbor_node, **edge_data
+                        node, graph_node, **edge_data
                     )
             networkx_graph_to_modify_in_place.add_edge(
                 graph_node, node, label=MATCHED_OBJECT_PATTERN_LABEL

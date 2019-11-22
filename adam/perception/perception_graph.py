@@ -335,6 +335,8 @@ class PerceptionGraph(PerceptionGraphProtocol):
             label = str(perception_node.cross_section) + str(
                 perception_node.cross_section_size
             )
+        elif isinstance(perception_node, MatchedObjectNode):
+            label = " ".join(perception_node.name)
         else:
             raise RuntimeError(
                 f"Do not know how to perception node render node "
@@ -707,10 +709,8 @@ class PatternMatching:
         # controls the order in which nodes are matched.
         # This has a significant, benchmark-confirmed impact on performance.
         sorted_graph_to_match_against = digraph_with_nodes_sorted_by(
-            self.graph_to_match_against._graph,
-            _graph_node_order
-            if not matching_pattern
-            else _pattern_matching_node_order,  # pylint: disable=W0212
+            self.graph_to_match_against._graph,  # pylint: disable=W0212
+            _graph_node_order if not matching_pattern else _pattern_matching_node_order,
         )
         sorted_pattern = digraph_with_nodes_sorted_by(
             self.pattern._graph, _pattern_matching_node_order  # pylint: disable=W0212
@@ -743,7 +743,7 @@ class PatternMatching:
                     matched_pattern=self.pattern,
                     matched_sub_graph=PerceptionGraph(
                         matching.graph.subgraph(
-                            graph_node_to_matching_pattern_node.values()
+                            graph_node_to_matching_pattern_node.keys()
                         ).copy()
                     ),
                     pattern_node_to_matched_graph_node=_invert_to_immutabledict(
