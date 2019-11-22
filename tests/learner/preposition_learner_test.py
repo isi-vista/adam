@@ -162,6 +162,7 @@ def test_subset_preposition_behind_learner():
     ) in behind_test_curriculum.instances():
         descriptions_from_learner = learner.describe(test_perceptual_representation)
         gold = test_linguistic_description.as_token_sequence()
+        assert descriptions_from_learner
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
 
 
