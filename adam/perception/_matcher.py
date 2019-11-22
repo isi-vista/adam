@@ -18,9 +18,11 @@ This code should not be used by anything except the perception_graph module.
 
 import sys
 from collections import defaultdict
+from itertools import chain
 from typing import Mapping, Any, Dict, Callable, Optional
 
 from immutablecollections import immutableset
+from more_itertools import flatten
 from networkx import DiGraph
 
 
@@ -35,8 +37,10 @@ class GraphMatching:
     ) -> None:
         self.graph = graph
         self.pattern = pattern
-        self.graph_nodes = set(graph.nodes())
-        self.pattern_nodes = set(pattern.nodes())
+        # we specify disable_order_check here because we know the DiGraph provides
+        # the nodes in a deterministic order, but immutableset() can't tell.
+        self.graph_nodes = immutableset(graph.nodes(), disable_order_check=True)
+        self.pattern_nodes = immutableset(pattern.nodes(), disable_order_check=True)
         self.pattern_node_order = {n: i for i, n in enumerate(pattern)}
 
         # Set recursion limit.
@@ -817,57 +821,64 @@ class GraphMatchingState(object):
             # Now we add every other node...
 
             # Updates for T_1^{in}
-            new_nodes = set([])
-            for node in GM.graph_node_to_pattern_node:
-                new_nodes.update(
+            # we use immutableset to guarantee deterministic iteration
+            new_nodes = immutableset(
+                flatten(
                     [
                         predecessor
                         for predecessor in GM.graph.predecessors(node)
                         if predecessor not in GM.graph_node_to_pattern_node
                     ]
+                    for node in GM.graph_node_to_pattern_node
                 )
+            )
             for node in new_nodes:
                 if node not in GM.graph_nodes_in_or_preceding_match:
                     GM.graph_nodes_in_or_preceding_match[node] = self.depth
 
             # Updates for T_2^{in}
-            new_nodes = set([])
-            for node in GM.pattern_node_to_graph_node:
-                new_nodes.update(
+            new_nodes = immutableset(
+                flatten(
                     [
                         predecessor
                         for predecessor in GM.pattern.predecessors(node)
                         if predecessor not in GM.pattern_node_to_graph_node
                     ]
+                    for node in GM.pattern_node_to_graph_node
                 )
+            )
             for node in new_nodes:
                 if node not in GM.pattern_nodes_in_or_preceding_match:
                     GM.pattern_nodes_in_or_preceding_match[node] = self.depth
 
             # Updates for T_1^{out}
-            new_nodes = set([])
-            for node in GM.graph_node_to_pattern_node:
-                new_nodes.update(
+            new_nodes = immutableset(
+                flatten(
                     [
                         successor
                         for successor in GM.graph.successors(node)
                         if successor not in GM.graph_node_to_pattern_node
                     ]
+                    for node in GM.graph_node_to_pattern_node
                 )
+            )
+
             for node in new_nodes:
                 if node not in GM.graph_nodes_in_or_succeeding_match:
                     GM.graph_nodes_in_or_succeeding_match[node] = self.depth
 
             # Updates for T_2^{out}
-            new_nodes = set([])
-            for node in GM.pattern_node_to_graph_node:
-                new_nodes.update(
+            new_nodes = immutableset(
+                flatten(
                     [
                         successor
                         for successor in GM.pattern.successors(node)
                         if successor not in GM.pattern_node_to_graph_node
                     ]
+                    for node in GM.pattern_node_to_graph_node
                 )
+            )
+
             for node in new_nodes:
                 if node not in GM.pattern_nodes_in_or_succeeding_match:
                     GM.pattern_nodes_in_or_succeeding_match[node] = self.depth
