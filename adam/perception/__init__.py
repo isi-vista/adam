@@ -22,7 +22,7 @@ from adam.situation import LocatedObjectSituation, Situation
 _SituationT = TypeVar("_SituationT", bound=Situation)
 
 
-@attrs(slots=True, frozen=True, repr=False)
+@attrs(slots=True, frozen=True, repr=False, cache_hash=True)
 class ObjectPerception(HasAxes, MaybeHasGeon):
     r"""
     The learner's perception of a particular object.

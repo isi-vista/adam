@@ -42,7 +42,7 @@ _ObjectT = TypeVar("_ObjectT")
 _ObjectToT = TypeVar("_ObjectToT")
 
 
-@attrs(frozen=True)
+@attrs(frozen=True, cache_hash=True)
 class AxesInfo(Generic[_ObjectT], CanRemapObjects[_ObjectT]):
     addressee: Optional[_ObjectT] = attrib(default=None)
     axes_facing: ImmutableSetMultiDict[_ObjectT, GeonAxis] = attrib(

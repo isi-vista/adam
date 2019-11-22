@@ -18,7 +18,7 @@ class CrossSectionSize:
         return self.name
 
 
-@attrs(frozen=True, slots=True, repr=False)
+@attrs(frozen=True, slots=True, repr=False, cache_hash=True)
 class CrossSection:
     has_rotational_symmetry: bool = attrib(
         validator=instance_of(bool), default=False, kw_only=True
@@ -36,7 +36,7 @@ class CrossSection:
         )
 
 
-@attrs(slots=True, frozen=True)
+@attrs(slots=True, frozen=True, cache_hash=True)
 class Geon(HasAxes):
     cross_section: CrossSection = attrib(
         validator=instance_of(CrossSection), kw_only=True
