@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Dict, Generic, List, Mapping, Tuple
+from typing import Any, Dict, Generic, List, Mapping, Tuple, Iterable
 
 from immutablecollections import ImmutableSet, immutabledict, immutableset
 from more_itertools import flatten
@@ -14,7 +14,7 @@ from adam.learner import LanguageLearner, LearningExample
 from adam.learner.object_recognizer import ObjectRecognizer
 from adam.learner.preposition_pattern import PrepositionPattern, _GROUND, _MODIFIED
 from adam.learner.subset import graph_without_learner
-from adam.perception import PerceptionT, PerceptualRepresentation
+from adam.perception import PerceptionT, PerceptualRepresentation, ObjectPerception
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
@@ -63,7 +63,7 @@ class PrepositionSubsetLanguageLearner(
         observed_perception_graph = graph_without_learner(original_perception_graph)
         # DEBUG CODE
         observed_perception_graph.render_to_file(
-            "observed", Path(f"/Users/gabbard/tmp/observed.pdf")
+            "observed", Path(f"/nas/home/jacobl/adam-root/outputs/observed.pdf")
         )
         observed_linguistic_description = (
             learning_example.linguistic_description.as_token_sequence()
@@ -74,7 +74,7 @@ class PrepositionSubsetLanguageLearner(
         )
         # DEBUG
         perception_graph_post_object_recognition.render_to_file(
-            "with_objects", Path(f"/Users/gabbard/tmp/with_objects.pdf")
+            "with_objects", Path(f"/nas/home/jacobl/adam-root/outputs/with_objects.pdf")
         )
         object_match_nodes = []
         token_indices_of_matched_object_words = []
@@ -169,7 +169,7 @@ class PrepositionSubsetLanguageLearner(
         self._surface_template_to_preposition_pattern[
             preposition_surface_template
         ].graph_pattern.render_to_file(
-            graph_name, Path(f"/Users/gabbard/tmp/preposition.pdf")
+            graph_name, Path(f"/nas/home/jacobl/adam-root/outputs/preposition.pdf")
         )
 
     def _make_preposition_hypothesis(
@@ -177,7 +177,7 @@ class PrepositionSubsetLanguageLearner(
         object_match_node_for_ground: MatchedObjectNode,
         object_match_node_for_modified: MatchedObjectNode,
         perception_graph_post_object_recognition: PerceptionGraph,
-        template_variables_to_object_match_nodes: Mapping[str, MatchedObjectNode],
+        template_variables_to_object_match_nodes: Iterable[Tuple[str, MatchedObjectNode]],
     ) -> PrepositionPattern:
         """
         Create a hypothesis for the semantics of a preposition based on the observed scene.
@@ -185,11 +185,10 @@ class PrepositionSubsetLanguageLearner(
         Our current implementation is to just include the content 
         on the path between the recognized object nodes.
         """
-        nodes_in_hypothesis = []
-
         # The directions of edges in the perception graph are not necessarily meaningful
         # from the point-of-view of hypothesis generation, so we need an undirected copy
         # of the graph.
+        perception_graph = perception_graph_post_object_recognition.copy_as_digraph()
         perception_graph_as_undirected = perception_graph_post_object_recognition.copy_as_digraph().to_undirected(
             as_view=True
         )
@@ -209,8 +208,27 @@ class PrepositionSubsetLanguageLearner(
             )
         )
 
+        # Along the core of our hypothesis we also want to collect the predecessors and successors
+        hypothesis_nodes_mutable = []
+        for node in hypothesis_spine_nodes:
+            if node not in [object_match_node_for_ground, object_match_node_for_modified]:
+                for successor in perception_graph.successors(node):
+                    if not isinstance(successor, ObjectPerception):
+                        hypothesis_nodes_mutable.append(successor)
+                for predecessor in perception_graph.predecessors(node):
+                    if not isinstance(predecessor, ObjectPerception):
+                        hypothesis_nodes_mutable.append(predecessor)
+
+        hypothesis_nodes_mutable.extend(hypothesis_spine_nodes)
+
+        # We wrap the nodes in an immutable set to remove duplicates
+        hypothesis_nodes = immutableset(hypothesis_nodes_mutable)
+
         preposition_pattern_graph = perception_graph_post_object_recognition.copy_as_digraph().subgraph(
-            nodes=hypothesis_spine_nodes
+            nodes=hypothesis_nodes
+        )
+        PerceptionGraph(graph=preposition_pattern_graph).render_to_file(
+            "pattern", Path("/nas/home/jacobl/adam-root/outputs/pattern.pdf")
         )
         return PrepositionPattern.from_graph(
             preposition_pattern_graph, template_variables_to_object_match_nodes
@@ -239,6 +257,11 @@ class PrepositionSubsetLanguageLearner(
         ] = immutabledict(
             (node, description)
             for description, node in handle_to_object_match_node.items()
+        )
+
+        # DEBUG CODE TO REMOVE
+        perception_graph_with_object_matches.render_to_file(
+            "to_match", Path("/nas/home/jacobl/adam-root/outputs/to_match.pdf")
         )
 
         # this will be our output
