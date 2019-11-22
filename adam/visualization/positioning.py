@@ -31,6 +31,8 @@ class AxisAlignedBoundingBox:
     def create_at_random_position(
         *, min_distance_from_origin: float, max_distance_from_origin: float
     ):
+        # np.random.seed(3030)
+
         check_arg(min_distance_from_origin > 0.0)
         check_arg(min_distance_from_origin < max_distance_from_origin)
         # we first generate a random point on the unit sphere by
@@ -44,7 +46,152 @@ class AxisAlignedBoundingBox:
             min_distance_from_origin, max_distance_from_origin
         )
         center *= scale_factor
-        return AxisAlignedBoundingBox(Parameter(torch.tensor(center), requires_grad=True))
+        return AxisAlignedBoundingBox(Parameter(torch.tensor(center, dtype=torch.float), requires_grad=True))
+
+    def get_corners(self) -> torch.Tensor:
+        return torch.ones((8, 3)) * self.center + torch.tensor([
+            [-1, -1, -1],
+            [1, -1, -1],
+            [-1, 1, -1],
+            [1, 1, -1],
+            [-1, -1, 1],
+            [1, -1, 1],
+            [-1, 1, 1],
+            [1, 1, 1],
+        ], dtype=torch.float)
+
+    def right_corner(self):
+        return self.center + torch.tensor([
+            1, -1, -1
+        ])
+
+    def forward_corner(self):
+        return self.center + torch.tensor([
+            -1, 1, -1
+        ])
+
+    def up_corner(self):
+        return self.center + torch.tensor([
+            -1, -1, 1
+        ])
+
+    def zero_corner(self):
+        return self.center + torch.tensor([
+            -1, -1, -1
+        ])
+
+    def right_face(self):
+        diff = self.right_corner() - self.zero_corner()
+        return diff / torch.norm(diff)
+
+    def forward_face(self):
+        diff = self.forward_corner() - self.zero_corner()
+        return diff / torch.norm(diff)
+
+    def up_face(self):
+        diff = self.up_corner() - self.zero_corner()
+        return diff / torch.norm(diff)
+
+    def get_face_norms(self) -> torch.Tensor:
+        # in axis-aligned case these are always the same
+        return torch.stack([
+            self.right_face(),
+            self.forward_face(),
+            self.up_face()
+        ])
+
+    @staticmethod
+    def get_min_max_projections(projections: torch.Tensor):
+        """
+
+        Args:
+            projections: (3, 8) tensor -> corner projections onto each of three dimensions
+
+        Returns:
+            (3, 2) tensor -> (min, max) values for each of three dimensions
+
+        """
+        return torch.tensor([
+            [torch.min(projections[i]), torch.max(projections[i])] for i in range(3)
+        ], dtype=torch.float)
+
+    def get_projections(self, axes: torch.Tensor):
+        """
+
+        Args:
+            axes: (3,3) tensor -> the three axes we are projecting points onto
+
+        Returns:
+            (3, 8) tensor -> each point projected onto each of three dimensions
+
+        """
+        check_arg(axes.shape == (3,3))
+        corners = self.get_corners()
+        return torch.tensor([
+            corners[j].dot(axes[i]) for i in range(3) for j in range(8)
+        ], dtype=torch.float).reshape(3, 8)
+
+    @staticmethod
+    def min_max_overlaps(min_max_proj_0: torch.Tensor, min_max_proj_1: torch.Tensor) -> torch.Tensor:
+        """
+
+        Args:
+            min_max_proj_0: min_max_projections for box 0
+            min_max_proj_1: min_max projections for box 1
+                (each is a (3, 2) tensor)
+
+        Returns:
+            (3, 2) tensor -> ranges (start, end) of overlap in each of three dimensions
+        """
+        return torch.tensor(
+            [
+                [
+                    torch.max(
+                        min_max_proj_0[i][0], min_max_proj_1[i][0]
+                    ),
+                    torch.min(
+                        min_max_proj_0[i][1], min_max_proj_1[i][1]
+                    ),
+                ]
+                for i in range(3)
+            ], dtype=torch.float
+        )
+
+    @staticmethod
+    def overlap_penalty(min_max_overlaps: torch.Tensor) -> torch.Tensor:
+        """
+
+        Args:
+            min_max_overlaps: (3, 2) tensor -> intervals of how much the boxes overlap in each dimension
+
+        Returns: Tensor with a scalar of the collision penalty size
+
+        """
+        # print(f"overlap penalty: min_max_overlaps shape: {min_max_overlaps.shape}")
+
+        overlap_distance = torch.tensor(
+            [min_max_overlaps[i][0] - min_max_overlaps[i][1] for i in range(3)],
+            dtype=torch.float
+        )
+        # print(overlap_distance.shape)
+
+        # if ANY element in overlap_distance is positive, the minimum positive value
+        # then the two are not colliding
+
+        # otherwise the penetration distance is the maximum negative value
+        # (the smallest translation that would disentangle the two
+
+        # if not colliding
+        for dim in range(3):
+            if overlap_distance[dim] >= 0:
+                return overlap_distance[dim] * 0
+
+        smallest_colliding_dim = 0
+        for dim in range(3):
+            if 0 > overlap_distance[dim] >= overlap_distance[smallest_colliding_dim]:
+                smallest_colliding_dim = dim
+
+        return overlap_distance[smallest_colliding_dim] * -1
 
 
 class PositionSolver:
@@ -70,73 +217,24 @@ class CollisionPenalty(nn.Module):
 
     def forward(self, bounding_box_1: AxisAlignedBoundingBox,
                 bounding_box_2: AxisAlignedBoundingBox) -> torch.Tensor:
-        # get all corners for current center
-        corners = torch.ones((8, 3)) * self.center + self.corner_matrix
-        print(f"corners.shape: {corners.shape}")
-        # project corners onto faces from static bb (output shape (3, 8, 1) )
 
-        projections = torch.tensor(
-            [corners[j].dot(self.static_bb_faces[i]) for i in range(3) for j in range(8)],
-            dtype=torch.float,
-        ).reshape((3, 8, 1))
-        print(f"corner projections shape: {projections.shape}")
-        print(f"corner projections: {projections}")
+        # get face norms from one of the boxes:
+        face_norms = bounding_box_2.get_face_norms()
 
-        face_min_max = torch.tensor(
-            [[torch.min(projections[i]), torch.max(projections[i])] for i in range(3)],
-            dtype=torch.float,
-        )
-        print(f"face min-maxes shape: {face_min_max.shape}")  # (3, 2)
-        print(f"face min-maxes: {face_min_max}")
-
-        # compute overlap between the parameter's min/maxes and the static ones
-
-        overlap_ranges = torch.tensor(
-            [
-                [
-                    torch.max(
-                        face_min_max[i][0], self.static_bb_min_max_projections[i][0]
-                    ),
-                    torch.min(
-                        face_min_max[i][1], self.static_bb_min_max_projections[i][1]
-                    ),
-                ]
-                for i in range(3)
-            ],
-            dtype=torch.float,
+        return AxisAlignedBoundingBox.overlap_penalty(
+            AxisAlignedBoundingBox.min_max_overlaps(
+                AxisAlignedBoundingBox.get_min_max_projections(
+                    bounding_box_1.get_projections(face_norms)
+                ),
+                AxisAlignedBoundingBox.get_min_max_projections(
+                    bounding_box_2.get_projections(face_norms)
+                )
+            )
         )
 
-        print(f"shape of overlap ranges: {overlap_ranges.shape}")
-        print(f" overlap ranges: {overlap_ranges}")
-
-        # condense this down in to a scalar for each of the 3 (x, y, z) dimensions:
-        # to represent the degree of overlap / separation
-
-        overlap_distance = torch.tensor(
-            [overlap_ranges[i][0] - overlap_ranges[i][1] for i in range(3)],
-            dtype=torch.float,
-        )
-
-        print(f"shape of overlap distance: {overlap_distance.shape}")  # should be (3, 1)
-        print(f"overlap distance: {overlap_distance}")
-
-        # if ANY element in overlap_distance is positive, the minimum positive value
-        # is the separation distance
-
-        # otherwise the penetration distance is the maximum negative value
-        # (the smallest translation that would disentangle the two
-
-    def forward(self, *input: Any, **kwargs: Any) -> Any:
-        return self.center.dist(torch.tensor([0, 0, 0], dtype=torch.float, device="cpu"))
-        # bb = BoundingBox.from_center_point(self.center.data.numpy())
-        # dist = bb.minkowski_diff_distance(self.static_bb)
-        # if dist <= 0:
-        #     return torch.tensor([0.0], requires_grad=True)
-        # else:
-        #     return torch.tensor([dist], requires_grad=True)
 
 
-ORIGIN = torch.tensor([0.0, 0.0, 0.0], dtype=torch.float64)
+ORIGIN = torch.tensor([0.0, 0.0, 0.0], dtype=torch.float)
 
 
 @attrs(frozen=True, auto_attribs=True)
@@ -187,7 +285,8 @@ class AdamObjectPositioningModel(torch.nn.Module):
             self.collision_penalty(box1, box2)
             for (box1, box2) in combinations(self.object_bounding_boxes, 2)
         )
-        return distance_penalty + collision_penalty
+        print(f"distance penalty: {distance_penalty}\ncollision penalty: {collision_penalty}")
+        return collision_penalty
 
     def dump_object_positions(self) -> None:
         for (adam_object, bounding_box) in self.adam_object_to_bounding_box.items():
@@ -210,7 +309,7 @@ def main() -> None:
         patience=3,
     )
 
-    iterations = 40
+    iterations = 25
     for _ in range(iterations):
         loss = positioning_model()
         print(f"Loss: {loss.item()}")
