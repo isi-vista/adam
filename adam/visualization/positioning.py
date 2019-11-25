@@ -1,7 +1,7 @@
 from itertools import combinations
 
 import numpy as np
-from immutablecollections import immutabledict, immutableset
+from immutablecollections import immutabledict, immutableset, ImmutableDict
 from torch.nn import Parameter
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from vistautils.preconditions import check_arg
@@ -9,7 +9,7 @@ from vistautils.preconditions import check_arg
 from attr import attrs, attrib
 from numpy import ndarray
 
-from typing import List, Any, Set, Mapping
+from typing import List, Any, Set, Mapping, AbstractSet, Dict
 
 from adam.visualization.utils import BoundingBox, min_max_projection
 
@@ -17,7 +17,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.autograd import Function
 
 
 @attrs(frozen=True, slots=True)
@@ -31,8 +30,6 @@ class AxisAlignedBoundingBox:
     def create_at_random_position(
         *, min_distance_from_origin: float, max_distance_from_origin: float
     ):
-        # np.random.seed(3030)
-
         check_arg(min_distance_from_origin > 0.0)
         check_arg(min_distance_from_origin < max_distance_from_origin)
         # we first generate a random point on the unit sphere by
@@ -46,39 +43,36 @@ class AxisAlignedBoundingBox:
             min_distance_from_origin, max_distance_from_origin
         )
         center *= scale_factor
-        return AxisAlignedBoundingBox(Parameter(torch.tensor(center, dtype=torch.float), requires_grad=True))
+        return AxisAlignedBoundingBox(
+            Parameter(torch.tensor(center, dtype=torch.float), requires_grad=True)
+        )
 
     def get_corners(self) -> torch.Tensor:
-        return torch.ones((8, 3)) * self.center + torch.tensor([
-            [-1, -1, -1],
-            [1, -1, -1],
-            [-1, 1, -1],
-            [1, 1, -1],
-            [-1, -1, 1],
-            [1, -1, 1],
-            [-1, 1, 1],
-            [1, 1, 1],
-        ], dtype=torch.float)
+        return self.center.expand(8, 3) + torch.tensor(
+            [
+                [-1, -1, -1],
+                [1, -1, -1],
+                [-1, 1, -1],
+                [1, 1, -1],
+                [-1, -1, 1],
+                [1, -1, 1],
+                [-1, 1, 1],
+                [1, 1, 1],
+            ],
+            dtype=torch.float,
+        )
 
     def right_corner(self):
-        return self.center + torch.tensor([
-            1, -1, -1
-        ])
+        return self.center + torch.tensor([1, -1, -1])
 
     def forward_corner(self):
-        return self.center + torch.tensor([
-            -1, 1, -1
-        ])
+        return self.center + torch.tensor([-1, 1, -1])
 
     def up_corner(self):
-        return self.center + torch.tensor([
-            -1, -1, 1
-        ])
+        return self.center + torch.tensor([-1, -1, 1])
 
     def zero_corner(self):
-        return self.center + torch.tensor([
-            -1, -1, -1
-        ])
+        return self.center + torch.tensor([-1, -1, -1])
 
     def right_face(self):
         diff = self.right_corner() - self.zero_corner()
@@ -94,26 +88,31 @@ class AxisAlignedBoundingBox:
 
     def get_face_norms(self) -> torch.Tensor:
         # in axis-aligned case these are always the same
-        return torch.stack([
-            self.right_face(),
-            self.forward_face(),
-            self.up_face()
-        ])
+        return torch.stack([self.right_face(), self.forward_face(), self.up_face()])
 
     @staticmethod
     def get_min_max_projections(projections: torch.Tensor):
         """
 
         Args:
-            projections: (3, 8) tensor -> corner projections onto each of three dimensions
+            projections: Tensor(3, 8) -> corner projections onto each of three dimensions
 
         Returns:
-            (3, 2) tensor -> (min, max) values for each of three dimensions
+            Tensor(3, 2) -> (min, max) values for each of three dimensions
 
         """
-        return torch.tensor([
-            [torch.min(projections[i]), torch.max(projections[i])] for i in range(3)
-        ], dtype=torch.float)
+
+        min_indices = torch.min(projections, 1)
+        max_indices = torch.max(projections, 1)
+        # these are tuples of (values, indices), both of which are tensors
+
+        # helper variable for representing dimension numbers
+        dims = torch.tensor([0, 1, 2], dtype=torch.int)
+        # select the indexed items (from a 24 element tensor)
+        minima = torch.take(projections, min_indices[1] + (dims * 8))
+        maxima = torch.take(projections, max_indices[1] + (dims * 8))
+        # stack the minim
+        return torch.stack((minima, maxima), 1)
 
     def get_projections(self, axes: torch.Tensor):
         """
@@ -125,14 +124,14 @@ class AxisAlignedBoundingBox:
             (3, 8) tensor -> each point projected onto each of three dimensions
 
         """
-        check_arg(axes.shape == (3,3))
+        check_arg(axes.shape == (3, 3))
         corners = self.get_corners()
-        return torch.tensor([
-            corners[j].dot(axes[i]) for i in range(3) for j in range(8)
-        ], dtype=torch.float).reshape(3, 8)
+        return axes.matmul(corners.transpose(0, 1))
 
     @staticmethod
-    def min_max_overlaps(min_max_proj_0: torch.Tensor, min_max_proj_1: torch.Tensor) -> torch.Tensor:
+    def min_max_overlaps(
+        min_max_proj_0: torch.Tensor, min_max_proj_1: torch.Tensor
+    ) -> torch.Tensor:
         """
 
         Args:
@@ -143,19 +142,32 @@ class AxisAlignedBoundingBox:
         Returns:
             (3, 2) tensor -> ranges (start, end) of overlap in each of three dimensions
         """
-        return torch.tensor(
-            [
-                [
-                    torch.max(
-                        min_max_proj_0[i][0], min_max_proj_1[i][0]
-                    ),
-                    torch.min(
-                        min_max_proj_0[i][1], min_max_proj_1[i][1]
-                    ),
-                ]
-                for i in range(3)
-            ], dtype=torch.float
-        )
+
+        dims = torch.tensor([0, 1, 2], dtype=torch.int)
+
+        mins_0 = min_max_proj_0.gather(1, torch.tensor([[0], [0], [0]]))
+        mins_1 = min_max_proj_1.gather(1, torch.tensor([[0], [0], [0]]))
+
+        combined_mins = torch.stack((mins_0, mins_1), 1).squeeze()
+        max_indices = torch.max(combined_mins, 1)
+        maximum_mins = torch.take(combined_mins, max_indices[1] + (dims * 2))
+
+        # should stick together the minimum parts and the maximum parts
+        # with columns like:
+        # [ min0x   min1x
+        #   min0y   min1y
+        #   min0z   min1z
+        #                ]
+        # then find the maximum element from each row
+
+        # repeat the process for the min of the max projections
+        maxs_0 = min_max_proj_0.gather(1, torch.tensor([[1], [1], [1]]))
+        maxs_1 = min_max_proj_1.gather(1, torch.tensor([[1], [1], [1]]))
+        combined_maxes = torch.stack((maxs_0, maxs_1), 1).squeeze()
+        min_indices = torch.min(combined_maxes, 1)
+        minimum_maxes = torch.take(combined_maxes, min_indices[1] + (dims * 2))
+
+        return torch.stack((maximum_mins, minimum_maxes), 1)
 
     @staticmethod
     def overlap_penalty(min_max_overlaps: torch.Tensor) -> torch.Tensor:
@@ -167,13 +179,8 @@ class AxisAlignedBoundingBox:
         Returns: Tensor with a scalar of the collision penalty size
 
         """
-        # print(f"overlap penalty: min_max_overlaps shape: {min_max_overlaps.shape}")
-
-        overlap_distance = torch.tensor(
-            [min_max_overlaps[i][0] - min_max_overlaps[i][1] for i in range(3)],
-            dtype=torch.float
-        )
-        # print(overlap_distance.shape)
+        # subtract each minimum max from each maximum min:
+        overlap_distance = min_max_overlaps[:, 0] - min_max_overlaps[:, 1]
 
         # if ANY element in overlap_distance is positive, the minimum positive value
         # then the two are not colliding
@@ -184,6 +191,7 @@ class AxisAlignedBoundingBox:
         # if not colliding
         for dim in range(3):
             if overlap_distance[dim] >= 0:
+                # multiplication by zero in order to still return a Tensor
                 return overlap_distance[dim] * 0
 
         smallest_colliding_dim = 0
@@ -191,7 +199,7 @@ class AxisAlignedBoundingBox:
             if 0 > overlap_distance[dim] >= overlap_distance[smallest_colliding_dim]:
                 smallest_colliding_dim = dim
 
-        return overlap_distance[smallest_colliding_dim] * -1
+        return overlap_distance[smallest_colliding_dim] * -10 + 1
 
 
 class PositionSolver:
@@ -215,8 +223,11 @@ class CollisionPenalty(nn.Module):
     def __init__(self):
         super().__init__()
 
-    def forward(self, bounding_box_1: AxisAlignedBoundingBox,
-                bounding_box_2: AxisAlignedBoundingBox) -> torch.Tensor:
+    def forward(
+        self,
+        bounding_box_1: AxisAlignedBoundingBox,
+        bounding_box_2: AxisAlignedBoundingBox,
+    ) -> torch.Tensor:
 
         # get face norms from one of the boxes:
         face_norms = bounding_box_2.get_face_norms()
@@ -228,10 +239,9 @@ class CollisionPenalty(nn.Module):
                 ),
                 AxisAlignedBoundingBox.get_min_max_projections(
                     bounding_box_2.get_projections(face_norms)
-                )
+                ),
             )
         )
-
 
 
 ORIGIN = torch.tensor([0.0, 0.0, 0.0], dtype=torch.float)
@@ -265,8 +275,12 @@ class AdamObjectPositioningModel(torch.nn.Module):
         self.collision_penalty = CollisionPenalty()
 
     @staticmethod
-    def for_objects(adam_objects: Set[AdamObject]) -> "AdamObjectPositioningModel":
-        objects_to_bounding_boxes = immutabledict(
+    def for_objects(
+        adam_objects: AbstractSet[AdamObject]
+    ) -> "AdamObjectPositioningModel":
+        objects_to_bounding_boxes: ImmutableDict[
+            AdamObject, AxisAlignedBoundingBox
+        ] = immutabledict(
             (
                 adam_object,
                 AxisAlignedBoundingBox.create_at_random_position(
@@ -277,7 +291,7 @@ class AdamObjectPositioningModel(torch.nn.Module):
         )
         return AdamObjectPositioningModel(objects_to_bounding_boxes)
 
-    def forward(self) -> torch.Tensor:
+    def forward(self) -> int:
         distance_penalty = sum(
             self.distance_to_origin_penalty(box) for box in self.object_bounding_boxes
         )
@@ -285,8 +299,10 @@ class AdamObjectPositioningModel(torch.nn.Module):
             self.collision_penalty(box1, box2)
             for (box1, box2) in combinations(self.object_bounding_boxes, 2)
         )
-        print(f"distance penalty: {distance_penalty}\ncollision penalty: {collision_penalty}")
-        return collision_penalty
+        print(
+            f"distance penalty: {distance_penalty}\ncollision penalty: {collision_penalty}"
+        )
+        return distance_penalty + collision_penalty
 
     def dump_object_positions(self) -> None:
         for (adam_object, bounding_box) in self.adam_object_to_bounding_box.items():
@@ -297,7 +313,13 @@ def main() -> None:
     ball = AdamObject(name="ball")
     box = AdamObject(name="box")
 
-    positioning_model = AdamObjectPositioningModel.for_objects(immutableset([ball, box]))
+    cardboard_box = AdamObject(name="cardboardBox")
+    aardvark = AdamObject(name="aardvark")
+    flamingo = AdamObject(name="flamingo")
+
+    positioning_model = AdamObjectPositioningModel.for_objects(
+        immutableset([ball, box, cardboard_box, aardvark, flamingo])
+    )
     # we will start with an aggressive learning rate
     optimizer = optim.SGD(positioning_model.parameters(), lr=1.0)
     # but will decrease it whenever the loss plateaus
