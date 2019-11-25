@@ -1,6 +1,6 @@
 from typing import Iterable, List, Tuple
 
-from immutablecollections import ImmutableDict, immutabledict, immutableset
+from immutablecollections import ImmutableDict, immutabledict, immutableset, ImmutableSet
 from more_itertools import first
 from networkx import DiGraph
 
@@ -15,6 +15,7 @@ from adam.perception.perception_graph import (
     PerceptionGraph,
     PerceptionGraphPattern,
     PerceptionGraphPatternMatch,
+    PerceptionGraphNode,
 )
 from attr import attrs
 
@@ -80,9 +81,10 @@ class ObjectRecognizer:
         matched_object_nodes.append((description, matched_object_node))
         networkx_graph_to_modify_in_place.add_node(matched_object_node)
 
-        matched_subgraph_nodes = immutableset(
-            pattern_match.matched_sub_graph._graph.nodes, disable_order_check=True
-        )  # pylint:disable=protected-access
+        matched_subgraph_nodes: ImmutableSet[PerceptionGraphNode] = immutableset(
+            pattern_match.matched_sub_graph._graph.nodes,  # pylint:disable=protected-access
+            disable_order_check=True,
+        )
 
         for matched_subgraph_node in matched_subgraph_nodes:
             # If there is an edge from the matched sub-graph to a node outside it,

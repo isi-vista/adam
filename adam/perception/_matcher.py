@@ -21,7 +21,7 @@ from collections import defaultdict
 from itertools import chain
 from typing import Mapping, Any, Dict, Callable, Optional
 
-from immutablecollections import immutableset
+from immutablecollections import immutableset, ImmutableSet
 from more_itertools import flatten
 from networkx import DiGraph
 
@@ -39,8 +39,12 @@ class GraphMatching:
         self.pattern = pattern
         # we specify disable_order_check here because we know the DiGraph provides
         # the nodes in a deterministic order, but immutableset() can't tell.
-        self.graph_nodes = immutableset(graph.nodes(), disable_order_check=True)
-        self.pattern_nodes = immutableset(pattern.nodes(), disable_order_check=True)
+        self.graph_nodes: ImmutableSet[Any] = immutableset(
+            graph.nodes(), disable_order_check=True
+        )
+        self.pattern_nodes: ImmutableSet[Any] = immutableset(
+            pattern.nodes(), disable_order_check=True
+        )
         self.pattern_node_order = {n: i for i, n in enumerate(pattern)}
 
         # Set recursion limit.
@@ -822,7 +826,7 @@ class GraphMatchingState(object):
 
             # Updates for T_1^{in}
             # we use immutableset to guarantee deterministic iteration
-            new_nodes = immutableset(
+            new_nodes_0: ImmutableSet[Any] = immutableset(
                 flatten(
                     [
                         predecessor
@@ -832,12 +836,12 @@ class GraphMatchingState(object):
                     for node in GM.graph_node_to_pattern_node
                 )
             )
-            for node in new_nodes:
+            for node in new_nodes_0:
                 if node not in GM.graph_nodes_in_or_preceding_match:
                     GM.graph_nodes_in_or_preceding_match[node] = self.depth
 
             # Updates for T_2^{in}
-            new_nodes = immutableset(
+            new_nodes_1: ImmutableSet[Any] = immutableset(
                 flatten(
                     [
                         predecessor
@@ -847,12 +851,12 @@ class GraphMatchingState(object):
                     for node in GM.pattern_node_to_graph_node
                 )
             )
-            for node in new_nodes:
+            for node in new_nodes_1:
                 if node not in GM.pattern_nodes_in_or_preceding_match:
                     GM.pattern_nodes_in_or_preceding_match[node] = self.depth
 
             # Updates for T_1^{out}
-            new_nodes = immutableset(
+            new_nodes_2: ImmutableSet[Any] = immutableset(
                 flatten(
                     [
                         successor
@@ -863,12 +867,12 @@ class GraphMatchingState(object):
                 )
             )
 
-            for node in new_nodes:
+            for node in new_nodes_2:
                 if node not in GM.graph_nodes_in_or_succeeding_match:
                     GM.graph_nodes_in_or_succeeding_match[node] = self.depth
 
             # Updates for T_2^{out}
-            new_nodes = immutableset(
+            new_nodes_3: ImmutableSet[Any] = immutableset(
                 flatten(
                     [
                         successor
@@ -879,7 +883,7 @@ class GraphMatchingState(object):
                 )
             )
 
-            for node in new_nodes:
+            for node in new_nodes_3:
                 if node not in GM.pattern_nodes_in_or_succeeding_match:
                     GM.pattern_nodes_in_or_succeeding_match[node] = self.depth
 

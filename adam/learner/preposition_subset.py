@@ -195,7 +195,7 @@ class PrepositionSubsetLanguageLearner(
 
         # The core of our hypothesis for the semantics of a preposition is all nodes
         # along the shortest path between the two objects involved in the perception graph.
-        hypothesis_spine_nodes = immutableset(
+        hypothesis_spine_nodes: ImmutableSet[PerceptionGraphNode] = immutableset(
             flatten(
                 # if there are multiple paths between the object match nodes,
                 # we aren't sure which are relevant, so we include them all in our hypothesis

@@ -1391,7 +1391,7 @@ def _pattern_matching_node_order(node_node_data_tuple) -> int:
 # This is used to control the order in which pattern nodes are matched,
 # which can have a significant impact on match speed.
 # This should match _PATTERN_PREDICATE_NODE_ORDER above.
-_GRAPH_NODE_ORDER: List[
+_GRAPH_NODE_ORDER: List[  # type: ignore
     Type[
         Union[
             MatchedObjectNode,
