@@ -43,7 +43,7 @@ from adam.situation.templates.phase1_templates import (
 )
 
 
-def _on_templates(
+def _on_template(
     figure: TemplateObjectVariable,
     ground: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
@@ -213,7 +213,7 @@ def _make_on_training(
                 flatten(
                     [
                         sampled(
-                            _on_templates(
+                            _on_template(
                                 figure,
                                 ground,
                                 make_background(
@@ -501,7 +501,7 @@ def _make_on_tests(
                 flatten(
                     [
                         sampled(
-                            _on_templates(
+                            _on_template(
                                 figure,
                                 ground,
                                 make_background(
