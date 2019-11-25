@@ -1,4 +1,3 @@
-from pathlib import Path
 from typing import Any, Dict, Generic, List, Mapping, Tuple, Iterable
 
 from immutablecollections import ImmutableSet, immutabledict, immutableset
@@ -61,20 +60,12 @@ class PrepositionSubsetLanguageLearner(
 
         # Remove learner from the perception
         observed_perception_graph = graph_without_learner(original_perception_graph)
-        # DEBUG CODE
-        observed_perception_graph.render_to_file(
-            "observed", Path(f"/nas/home/jacobl/adam-root/outputs/observed.pdf")
-        )
         observed_linguistic_description = (
             learning_example.linguistic_description.as_token_sequence()
         )
 
         perception_graph_post_object_recognition, object_handle_to_object_match_node = self._object_recognizer.match_objects(
             observed_perception_graph
-        )
-        # DEBUG
-        perception_graph_post_object_recognition.render_to_file(
-            "with_objects", Path(f"/nas/home/jacobl/adam-root/outputs/with_objects.pdf")
         )
         object_match_nodes = []
         token_indices_of_matched_object_words = []
@@ -164,14 +155,6 @@ class PrepositionSubsetLanguageLearner(
                 preposition_surface_template
             ] = preposition_pattern
 
-        # DEBUG CODE TO BE REMOVED
-        graph_name = "_".join(preposition_surface_template)
-        self._surface_template_to_preposition_pattern[
-            preposition_surface_template
-        ].graph_pattern.render_to_file(
-            graph_name, Path(f"/nas/home/jacobl/adam-root/outputs/preposition.pdf")
-        )
-
     def _make_preposition_hypothesis(
         self,
         object_match_node_for_ground: MatchedObjectNode,
@@ -227,9 +210,6 @@ class PrepositionSubsetLanguageLearner(
         preposition_pattern_graph = perception_graph_post_object_recognition.copy_as_digraph().subgraph(
             nodes=hypothesis_nodes
         )
-        PerceptionGraph(graph=preposition_pattern_graph).render_to_file(
-            "pattern", Path("/nas/home/jacobl/adam-root/outputs/pattern.pdf")
-        )
         return PrepositionPattern.from_graph(
             preposition_pattern_graph, template_variables_to_object_match_nodes
         )
@@ -257,11 +237,6 @@ class PrepositionSubsetLanguageLearner(
         ] = immutabledict(
             (node, description)
             for description, node in handle_to_object_match_node.items()
-        )
-
-        # DEBUG CODE TO REMOVE
-        perception_graph_with_object_matches.render_to_file(
-            "to_match", Path("/nas/home/jacobl/adam-root/outputs/to_match.pdf")
         )
 
         # this will be our output
