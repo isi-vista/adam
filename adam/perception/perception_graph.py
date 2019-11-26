@@ -182,11 +182,11 @@ class PerceptionGraph:
         return PerceptionGraph(graph)
 
     def render_to_file(  # pragma: no cover
-        self,
-        graph_name: str,
-        output_file: Path,
-        *,
-        match_correspondence_ids: Mapping[Any, str] = immutabledict(),
+            self,
+            graph_name: str,
+            output_file: Path,
+            *,
+            match_correspondence_ids: Mapping[Any, str] = immutabledict(),
     ) -> None:
         """
         Debugging tool to render the graph to PDF using *dot*.
@@ -251,11 +251,11 @@ class PerceptionGraph:
         dot_graph.render(str(output_file))
 
     def _to_dot_node(
-        self,
-        dot_graph: graphviz.Digraph,
-        perception_node: PerceptionGraphNode,
-        next_node_id: Incrementer,
-        match_correspondence_ids: Mapping[Any, str],
+            self,
+            dot_graph: graphviz.Digraph,
+            perception_node: PerceptionGraphNode,
+            next_node_id: Incrementer,
+            match_correspondence_ids: Mapping[Any, str],
     ) -> str:
         if isinstance(perception_node, tuple):
             perception_node = perception_node[0]
@@ -322,7 +322,7 @@ class PerceptionGraphPattern:
         return copy(self._graph)
 
     def matcher(
-        self, graph_to_match_against: PerceptionGraph
+            self, graph_to_match_against: PerceptionGraph
     ) -> "PerceptionGraphPatternMatching":
         """
         Creates an object representing an attempt to match this pattern
@@ -447,11 +447,11 @@ class PerceptionGraphPattern:
                 )
 
     def render_to_file(  # pragma: no cover
-        self,
-        title: str,
-        output_file: Path,
-        *,
-        match_correspondence_ids: Mapping[Any, str] = immutabledict(),
+            self,
+            title: str,
+            output_file: Path,
+            *,
+            match_correspondence_ids: Mapping[Any, str] = immutabledict(),
     ) -> None:
         """
         Debugging tool to render the pattern to PDF using *dot*.
@@ -513,30 +513,30 @@ class DumpPartialMatchCallback:
         the match search process at every 100 time steps. We start rendering after the first 60 seconds.
     """
 
-    def __init__(self, render_path) -> None:
+    def __init__(self, render_path, seconds_to_wait_before_rendering: int = 60, dump_every_x_calls: int = 100) -> None:
         self.render_path = render_path
         self.calls_to_match_counter = 0
         self.start_time = process_time()
-        self.seconds_to_wait_before_rendering = 60
-        self.mod = 100
+        self.seconds_to_wait_before_rendering = seconds_to_wait_before_rendering
+        self.dump_every_x_calls = dump_every_x_calls
 
     def __call__(
-        self, graph: DiGraph, graph_node_to_pattern_node: Dict[Any, Any]
+            self, graph: DiGraph, graph_node_to_pattern_node: Dict[Any, Any]
     ) -> None:
         self.calls_to_match_counter += 1
         current_time = process_time()
         if (
-            self.calls_to_match_counter % self.mod == 0
-            and (current_time - self.start_time) > self.seconds_to_wait_before_rendering
+                self.calls_to_match_counter % self.dump_every_x_calls == 0
+                and (current_time - self.start_time) > self.seconds_to_wait_before_rendering
         ):
             perception_graph = PerceptionGraph(graph)
             title = (
-                "id_"
-                + str(id(self))
-                + "_graph_"
-                + str(id(graph))
-                + "_call_"
-                + str(self.calls_to_match_counter).zfill(4)
+                    "id_"
+                    + str(id(self))
+                    + "_graph_"
+                    + str(id(graph))
+                    + "_call_"
+                    + str(self.calls_to_match_counter).zfill(4)
             )
             mapping = {k: "match" for k, v in graph_node_to_pattern_node.items()}
             perception_graph.render_to_file(
@@ -568,11 +568,11 @@ class PerceptionGraphPatternMatching:
     debug_callback: Optional[DebugCallableType] = attrib(default=None, init=False)
 
     def matches(
-        self,
-        *,
-        debug_mapping_sink: Optional[Dict[Any, Any]] = None,
-        use_lookahead_pruning: bool = False,
-        debug_callback: Optional[DebugCallableType] = None,
+            self,
+            *,
+            debug_mapping_sink: Optional[Dict[Any, Any]] = None,
+            use_lookahead_pruning: bool = False,
+            debug_callback: Optional[DebugCallableType] = None,
     ) -> Iterable["PerceptionGraphPatternMatch"]:
         """
         Attempt the matching and returns a generator over the set of possible matches.
@@ -606,7 +606,7 @@ class PerceptionGraphPatternMatching:
             # If there is a given rendering path, we initialize the debug callback function.
             self.debug_callback = debug_callback
         for mapping in matching.subgraph_isomorphisms_iter(
-            debug=(debug_mapping_sink is not None), debug_callback=self.debug_callback
+                debug=(debug_mapping_sink is not None), debug_callback=self.debug_callback
         ):
             got_a_match = True
             yield PerceptionGraphPatternMatch(
@@ -625,10 +625,10 @@ class PerceptionGraphPatternMatching:
             debug_mapping_sink.update(matching.debug_largest_match)
 
     def debug_matching(
-        self,
-        *,
-        use_lookahead_pruning: bool = True,
-        render_match_to: Optional[Path] = None,
+            self,
+            *,
+            use_lookahead_pruning: bool = True,
+            render_match_to: Optional[Path] = None,
     ) -> GraphMatching:
         """
         Similar to `matches`, but returns the internal `GraphMatching` object
@@ -648,7 +648,7 @@ class PerceptionGraphPatternMatching:
             pattern_node_to_correspondence_index = {}
             graph_node_to_correspondence_index = {}
             for (idx, (pattern_node, graph_node)) in enumerate(
-                matching.debug_largest_match.items()
+                    matching.debug_largest_match.items()
             ):
                 pattern_node_to_correspondence_index[pattern_node] = str(idx)
                 graph_node_to_correspondence_index[graph_node] = str(idx)
@@ -773,8 +773,8 @@ class AxisPredicate(NodePredicate):
             if self.directed is not None and self.directed != graph_node.directed:
                 return False
             if (
-                self.aligned_to_gravitational is not None
-                and self.aligned_to_gravitational != graph_node.aligned_to_gravitational
+                    self.aligned_to_gravitational is not None
+                    and self.aligned_to_gravitational != graph_node.aligned_to_gravitational
             ):
                 return False
             return True
@@ -817,8 +817,8 @@ class GeonPredicate(NodePredicate):
 
         if isinstance(graph_node, Geon):
             return (
-                self.template_geon.cross_section == graph_node.cross_section
-                and self.template_geon.cross_section_size == graph_node.cross_section_size
+                    self.template_geon.cross_section == graph_node.cross_section
+                    and self.template_geon.cross_section_size == graph_node.cross_section_size
             )
         else:
             return False
@@ -872,9 +872,9 @@ class IsColorNodePredicate(NodePredicate):
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
         if isinstance(graph_node, RgbColorPerception):
             return (
-                (graph_node.red == self.color.red)
-                and (graph_node.blue == self.color.blue)
-                and (graph_node.green == self.color.green)
+                    (graph_node.red == self.color.red)
+                    and (graph_node.blue == self.color.blue)
+                    and (graph_node.green == self.color.green)
             )
         return False
 
@@ -904,10 +904,10 @@ class EdgePredicate(ABC):
 
     @abstractmethod
     def __call__(
-        self,
-        source_object_perception: PerceptionGraphNode,
-        edge_label: PerceptionGraphEdgeLabel,
-        dest_object_percption: PerceptionGraphNode,
+            self,
+            source_object_perception: PerceptionGraphNode,
+            edge_label: PerceptionGraphEdgeLabel,
+            dest_object_percption: PerceptionGraphNode,
     ) -> bool:
         """
         Returns whether this predicate matches the edge
@@ -935,10 +935,10 @@ class AnyEdgePredicate(EdgePredicate):
     """
 
     def __call__(
-        self,
-        source_object_perception: PerceptionGraphNode,
-        edge_label: PerceptionGraphEdgeLabel,
-        dest_object_percption: PerceptionGraphNode,
+            self,
+            source_object_perception: PerceptionGraphNode,
+            edge_label: PerceptionGraphEdgeLabel,
+            dest_object_percption: PerceptionGraphNode,
     ) -> bool:
         return True
 
@@ -955,10 +955,10 @@ class RelationTypeIsPredicate(EdgePredicate):
     relation_type: OntologyNode = attrib(validator=instance_of(OntologyNode))
 
     def __call__(
-        self,
-        source_object_perception: PerceptionGraphNode,
-        edge_label: PerceptionGraphEdgeLabel,
-        dest_object_percption: PerceptionGraphNode,
+            self,
+            source_object_perception: PerceptionGraphNode,
+            edge_label: PerceptionGraphEdgeLabel,
+            dest_object_percption: PerceptionGraphNode,
     ) -> bool:
         return edge_label == self.relation_type
 
@@ -979,14 +979,14 @@ class DirectionPredicate(EdgePredicate):
     reference_direction: Direction[Any] = attrib(validator=instance_of(Direction))
 
     def __call__(
-        self,
-        source_object_perception: PerceptionGraphNode,
-        edge_label: PerceptionGraphEdgeLabel,
-        dest_object_percption: PerceptionGraphNode,
+            self,
+            source_object_perception: PerceptionGraphNode,
+            edge_label: PerceptionGraphEdgeLabel,
+            dest_object_percption: PerceptionGraphNode,
     ) -> bool:
         return (
-            isinstance(edge_label, Direction)
-            and edge_label.positive == self.reference_direction.positive
+                isinstance(edge_label, Direction)
+                and edge_label.positive == self.reference_direction.positive
         )
 
     def dot_label(self) -> str:
@@ -1005,12 +1005,12 @@ _EdgeMapper = Callable[[Any], Mapping[str, Any]]
 
 
 def _add_labelled_edge(
-    graph: DiGraph,
-    source: Any,
-    target: Any,
-    unmapped_label: Any,
-    *,
-    map_edge: _EdgeMapper,
+        graph: DiGraph,
+        source: Any,
+        target: Any,
+        unmapped_label: Any,
+        *,
+        map_edge: _EdgeMapper,
 ):
     graph.add_edge(source, target)
     mapped_edge = map_edge(unmapped_label)
@@ -1018,11 +1018,11 @@ def _add_labelled_edge(
 
 
 def _translate_axes(
-    graph: DiGraph,
-    owner: HasAxes,
-    mapped_owner: Any,
-    map_axis: _AxisMapper,
-    map_edge: _EdgeMapper,
+        graph: DiGraph,
+        owner: HasAxes,
+        mapped_owner: Any,
+        map_axis: _AxisMapper,
+        map_edge: _EdgeMapper,
 ) -> None:
     mapped_primary_axis = map_axis(owner.axes.primary_axis)
     graph.add_node(mapped_primary_axis)
@@ -1052,13 +1052,13 @@ def _translate_axes(
 
 
 def _translate_geon(
-    graph: DiGraph,
-    owner: MaybeHasGeon,
-    *,
-    mapped_owner: Any,
-    map_geon: Callable[[Geon], Any],
-    map_axis: _AxisMapper,
-    map_edge: _EdgeMapper,
+        graph: DiGraph,
+        owner: MaybeHasGeon,
+        *,
+        mapped_owner: Any,
+        map_geon: Callable[[Geon], Any],
+        map_axis: _AxisMapper,
+        map_edge: _EdgeMapper,
 ) -> None:
     if owner.geon:
         mapped_geon = map_geon(owner.geon)
@@ -1078,12 +1078,12 @@ def _translate_geon(
 
 
 def _translate_region(
-    graph: DiGraph,
-    region: Region[Any],
-    *,
-    map_node: Callable[[Any], Any],
-    map_edge: _EdgeMapper,
-    axes_info: Optional[AxesInfo[Any]] = None,
+        graph: DiGraph,
+        region: Region[Any],
+        *,
+        map_node: Callable[[Any], Any],
+        map_edge: _EdgeMapper,
+        axes_info: Optional[AxesInfo[Any]] = None,
 ) -> None:
     mapped_region = map_node(region)
     mapped_reference_object = map_node(region.reference_object)

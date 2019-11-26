@@ -31,6 +31,7 @@ import random
 
 def make_simple_pursuit_curriculum(
     *,
+    target_objects=[BALL, CHAIR, PERSON, TABLE, DOG, BIRD, BOX],
     num_instances: int = 10,
     num_noise_instances: int = 0,
     num_objects_in_instance: int = 3,
@@ -46,7 +47,6 @@ def make_simple_pursuit_curriculum(
     if num_noise_instances > num_instances:
         raise RuntimeError("Cannot have more noise than regular exemplars")
 
-    target_objects = [BALL, CHAIR, PERSON, TABLE, DOG, BIRD, BOX]
     noise_object_variables = [
         standard_object("obj-" + str(idx)) for idx in range(num_objects_in_instance)
     ]

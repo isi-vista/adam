@@ -1,6 +1,7 @@
 import random as r
 from typing import Dict, Generic, Mapping, Tuple, Optional, List
 
+import networkx
 from attr import Factory, attrib, attrs
 from immutablecollections import immutabledict
 from more_itertools import first
@@ -11,7 +12,7 @@ from adam.language import (
     LinguisticDescription,
 )
 from adam.learner import LanguageLearner, LearningExample, graph_without_learner, get_largest_matching_pattern
-from adam.perception import PerceptionT, PerceptualRepresentation
+from adam.perception import PerceptionT, PerceptualRepresentation, ObjectPerception
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
@@ -22,6 +23,7 @@ from adam.perception.perception_graph import (
 )
 
 r.seed(0)
+
 
 @attrs
 class PursuitLanguageLearner(
@@ -74,14 +76,16 @@ class PursuitLanguageLearner(
         for word in observed_linguistic_description:
             # If don't already know the meaning of the word, go through learning steps:
             if word not in self._lexicon:
+                print('Learning', word)
                 if word not in self._words_to_hypotheses_and_scores:
-                # a) Initialization step, if the word is a novel word
+                    # a) Initialization step, if the word is a novel word
                     self.initialization_step(word, observed_perception_graph)
                 else:
-                # b) If we already have a hypothesis, run the learning reinforcement step
-                    self.learning_step(word, observed_perception_graph)
-                # c) Lexicon step
-                self.lexicon_step(word)
+                    # b) If we already have a hypothesis, run the learning reinforcement step
+                    is_hypothesis_confirmed = self.learning_step(word, observed_perception_graph)
+                    # Try lexicon step if we confirmed a meaning
+                    if is_hypothesis_confirmed:
+                        self.lexicon_step(word)
 
     def initialization_step(self, word: str, observed_perception_graph: PerceptionGraph):
         # If it's a novel word, learn a new hypothesis/pattern, generated as a pattern graph from the perception.
@@ -91,7 +95,8 @@ class PursuitLanguageLearner(
         min_score = float('inf')
         for meaning in meanings:
             # Get the maximum assocaition score for that meaning
-            max_association_score = max(s for w, h_to_s in self._words_to_hypotheses_and_scores for h, s in h_to_s)
+            max_association_score = max([s for w, h_to_s in self._words_to_hypotheses_and_scores.items()
+                                         for h, s in h_to_s.items()] + [0])
             if max_association_score < min_score:
                 pattern_hypothesis = meaning
 
@@ -99,7 +104,7 @@ class PursuitLanguageLearner(
             word
         ] = {pattern_hypothesis: self._learning_factor}
 
-    def learning_step(self, word: str, observed_perception_graph: PerceptionGraph) -> None:
+    def learning_step(self, word: str, observed_perception_graph: PerceptionGraph) -> bool:
         # Select the most probable meaning h for w
         # I.e., if we already have hypotheses, get the leading hypothesis and compare it with the observed perception
         previous_hypotheses_and_scores = self._words_to_hypotheses_and_scores[
@@ -109,6 +114,8 @@ class PursuitLanguageLearner(
                                          key=lambda key: previous_hypotheses_and_scores[key])
         # If the leading hypothesis sufficiently matches the observation, reinforce it
         # To do, we check how much of the leading pattern hypothesis matches the perception
+        # TODO: It's worth double checking whether get_largest_matching_pattern works as intended - should we be getting
+        #  at least 1 node match every time because there is guaranteed to be object-perception nodes?
         hypothesis_pattern_common_subgraph = get_largest_matching_pattern(
             leading_hypothesis_pattern,
             observed_perception_graph,
@@ -117,14 +124,18 @@ class PursuitLanguageLearner(
         current_hypothesis_score = self._words_to_hypotheses_and_scores[
             word
         ][leading_hypothesis_pattern]
+        print('Match:', len(hypothesis_pattern_common_subgraph.copy_as_digraph().nodes), '/',
+              len(leading_hypothesis_pattern.copy_as_digraph().nodes))
         match_ratio = len(hypothesis_pattern_common_subgraph.copy_as_digraph().nodes) / \
                       len(leading_hypothesis_pattern.copy_as_digraph().nodes)
 
         # b.i) If the hypothesis is confirmed, we reinforce it.
-        if match_ratio >= self._graph_match_confirmation_threshold:
+        is_hypothesis_confirmed = match_ratio >= self._graph_match_confirmation_threshold
+        if is_hypothesis_confirmed:
             # Reinforce A(w,h)
             new_hypothesis_score = current_hypothesis_score + self._learning_factor * (
                     1 - current_hypothesis_score)
+            print('Reinforcing ', word, match_ratio, new_hypothesis_score, leading_hypothesis_pattern.copy_as_digraph().nodes)
         # b.ii) If the hypothesis is disconfirmed, so we weaken the previous score
         else:
             # Penalize A(w,h)
@@ -141,6 +152,7 @@ class PursuitLanguageLearner(
         self._words_to_hypotheses_and_scores[
             word
         ][random_new_hypothesis] = self._learning_factor
+        return is_hypothesis_confirmed
 
     def lexicon_step(self, word: str) -> None:
         # If any conditional probability P(h^|w) exceeds a certain threshold value (h), then file (w, h^) into the
@@ -157,19 +169,41 @@ class PursuitLanguageLearner(
 
         probability_of_meaning_given_word = (leading_hypothesis_score + self._learning_factor) / \
                                             (sum_of_all_scores + number_of_meanings * self._learning_factor)
+        # TODO: We sometimes prematurely lexicalize words, because the denominator is low in first rounds of training
         # file (w, h^) into the lexicon
+        print('Lexicon prob:', probability_of_meaning_given_word, leading_hypothesis_pattern.copy_as_digraph().nodes)
         if probability_of_meaning_given_word > self._lexicon_entry_threshold:
             self._lexicon[word] = leading_hypothesis_pattern
             # Remove the word from hypotheses
             self._words_to_hypotheses_and_scores.pop(word)
+            print('Lexicalized', word)
 
     @staticmethod
     def get_meanings_from_perception(observed_perception_graph: PerceptionGraph) -> List[PerceptionGraphPattern]:
-        # TODO: Return all possible meanings
-        entire_graph_as_pattern = PerceptionGraphPattern.from_graph(
-            observed_perception_graph.copy_as_digraph()
-        )
-        return [entire_graph_as_pattern]
+        # TODO: Return all possible meanings. We currently remove ground, and return 2nd degree neigbor subgraphs of
+        #  object perception nodes
+        perception_as_digraph = observed_perception_graph.copy_as_digraph()
+        perception_as_graph = perception_as_digraph.to_undirected()
+
+        meanings = []
+        for random_obj_perc_node in [node for node in perception_as_graph.nodes
+                                     if isinstance(node, ObjectPerception) and node.debug_handle != 'the ground']:
+            # print(perception_as_digraph.edges.data())
+            if any([u == random_obj_perc_node and data['label'] == 'partOf'
+                    for u,v, data in perception_as_digraph.edges.data()]):
+                continue
+            first_neigbors = list(perception_as_graph.neighbors(random_obj_perc_node))
+            second_neighbors = []
+            for node in first_neigbors:
+                second_neighbors.extend(list(perception_as_graph.neighbors(node)))
+            neighbors = [node for node in first_neigbors+second_neighbors if not isinstance(node, ObjectPerception)]
+            subgraph = networkx.DiGraph(perception_as_digraph.subgraph([random_obj_perc_node]+neighbors))
+            subgraph.remove_nodes_from(list(networkx.isolates(subgraph)))
+            meaning = PerceptionGraphPattern.from_graph(
+                subgraph
+            )
+            meanings.append(meaning)
+        return meanings
 
     def describe(
             self, perception: PerceptualRepresentation[PerceptionT]
@@ -184,9 +218,9 @@ class PursuitLanguageLearner(
             raise RuntimeError("Cannot process perception type.")
         observed_perception_graph = graph_without_learner(original_perception_graph)
 
-        # TODO: Discuss how to generate a description.
-        #  Currently we just use the items in lexicon, and use those words if they match sufficeintly.
-        learned_description = []
+        # TODO: Discuss how to generate a description. Currently we pick the highest match, works with single objects
+        learned_description = None
+        largest_match_ratio = 0
         for word, meaning_pattern in self._lexicon.items():
             # get the largest common match
             common_pattern = get_largest_matching_pattern(
@@ -194,12 +228,16 @@ class PursuitLanguageLearner(
                 observed_perception_graph,
                 debug_callback=self._debug_callback,
             )
-            match_ratio = len(common_pattern.copy_as_digraph().nodes)/len(meaning_pattern.copy_as_digraph().nodes)
-            if match_ratio > self._describe_from_lexicon_threshold:
-                learned_description.append(word)
+            match_ratio = len(common_pattern.copy_as_digraph().nodes) / \
+                          len(meaning_pattern.copy_as_digraph().nodes)
+            print(word, match_ratio, meaning_pattern.copy_as_digraph().nodes)
+            if match_ratio > largest_match_ratio:
+                learned_description = ('a', word)
+                print(learned_description)
+                largest_match_ratio = match_ratio
         if learned_description:
             return immutabledict(
-                ((TokenSequenceLinguisticDescription(tuple(learned_description)), 1.0),)
+                ((TokenSequenceLinguisticDescription(learned_description), 1.0),)
             )
         else:
             return immutabledict()
