@@ -1,6 +1,7 @@
 from typing import Iterable, List, Tuple
 
 from immutablecollections import ImmutableDict, immutabledict, immutableset, ImmutableSet
+from immutablecollections.converter_utils import _to_immutabledict
 from more_itertools import first
 from networkx import DiGraph
 
@@ -17,7 +18,7 @@ from adam.perception.perception_graph import (
     PerceptionGraphPatternMatch,
     PerceptionGraphNode,
 )
-from attr import attrs
+from attr import attrs, attrib
 
 _LIST_OF_PERCEIVED_PATTERNS = immutableset(
     (
@@ -36,6 +37,18 @@ _LIST_OF_PERCEIVED_PATTERNS = immutableset(
 MATCHED_OBJECT_PATTERN_LABEL = OntologyNode("has-matched-object-pattern")
 
 
+@attrs(frozen=True, slots=True, auto_attribs=True)
+class PerceptionGraphFromObjectRecognizer:
+    """
+    See `ObjectRecognizer.match_objects`
+    """
+
+    perception_graph: PerceptionGraph
+    description_to_matched_object_node: ImmutableDict[str, MatchedObjectNode] = attrib(
+        converter=_to_immutabledict
+    )
+
+
 @attrs(frozen=True)
 class ObjectRecognizer:
     """
@@ -49,7 +62,7 @@ class ObjectRecognizer:
         possible_perceived_objects: Iterable[
             Tuple[str, PerceptionGraphPattern]
         ] = _LIST_OF_PERCEIVED_PATTERNS,
-    ) -> Tuple[PerceptionGraph, ImmutableDict[str, MatchedObjectNode]]:
+    ) -> PerceptionGraphFromObjectRecognizer:
         """
         Match object patterns to objects in the scenes, then add a node for the matched object and copy relationships
         to it. These new patterns can be used to determine static prepositional relationships.
@@ -63,7 +76,10 @@ class ObjectRecognizer:
                 self._replace_match_with_object_graph_node(
                     graph_to_modify, pattern_match, matched_object_nodes, description
                 )
-        return PerceptionGraph(graph=graph_to_modify), immutabledict(matched_object_nodes)
+        return PerceptionGraphFromObjectRecognizer(
+            perception_graph=PerceptionGraph(graph=graph_to_modify),
+            description_to_matched_object_node=immutabledict(matched_object_nodes),
+        )
 
     def _replace_match_with_object_graph_node(
         self,

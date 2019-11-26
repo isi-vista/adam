@@ -12,7 +12,6 @@ from adam.language import (
 from adam.learner import LanguageLearner, LearningExample
 from adam.learner.object_recognizer import ObjectRecognizer
 from adam.learner.preposition_pattern import PrepositionPattern, _GROUND, _MODIFIED
-from adam.learner.subset import graph_without_learner
 from adam.perception import PerceptionT, PerceptualRepresentation, ObjectPerception
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -52,33 +51,34 @@ class PrepositionSubsetLanguageLearner(
         if len(perception.frames) != 1:
             raise RuntimeError("Subset learner can only handle single frames for now")
         if isinstance(perception.frames[0], DevelopmentalPrimitivePerceptionFrame):
-            original_perception_graph = PerceptionGraph.from_frame(
-                perception.frames[0]
-            ).copy_as_digraph()
+            original_perception = PerceptionGraph.from_frame(perception.frames[0])
         else:
             raise RuntimeError("Cannot process perception type.")
 
-        # Remove learner from the perception
-        observed_perception_graph = graph_without_learner(original_perception_graph)
         observed_linguistic_description = (
             learning_example.linguistic_description.as_token_sequence()
         )
 
-        perception_graph_post_object_recognition, object_handle_to_object_match_node = self._object_recognizer.match_objects(
-            observed_perception_graph
+        recognized_object_perception = self._object_recognizer.match_objects(
+            original_perception
         )
         object_match_nodes = []
         token_indices_of_matched_object_words = []
 
         for (idx, token) in enumerate(observed_linguistic_description):
-            if token in object_handle_to_object_match_node.keys():
+            if (
+                token
+                in recognized_object_perception.description_to_matched_object_node.keys()
+            ):
                 token_indices_of_matched_object_words.append(idx)
-                object_match_nodes.append(object_handle_to_object_match_node[token])
+                object_match_nodes.append(
+                    recognized_object_perception.description_to_matched_object_node[token]
+                )
 
         if len(object_match_nodes) != 2:
             raise RuntimeError(
                 f"Learning a preposition with more than two recognized objects is not currently supported. "
-                f"Found {len(object_match_nodes)} from {object_handle_to_object_match_node.keys()} and "
+                f"Found {len(object_match_nodes)} from {recognized_object_perception.description_to_matched_object_node.keys()} and "
                 f"{observed_linguistic_description}."
             )
 
@@ -133,7 +133,7 @@ class PrepositionSubsetLanguageLearner(
         preposition_pattern = self._make_preposition_hypothesis(
             object_match_node_for_ground,
             object_match_node_for_modified,
-            perception_graph_post_object_recognition,
+            recognized_object_perception.perception_graph,
             template_variables_to_object_match_nodes,
         )
 
@@ -220,23 +220,19 @@ class PrepositionSubsetLanguageLearner(
         if len(perception.frames) != 1:
             raise RuntimeError("Subset learner can only handle single frames for now")
         if isinstance(perception.frames[0], DevelopmentalPrimitivePerceptionFrame):
-            original_perception_graph = PerceptionGraph.from_frame(
-                perception.frames[0]
-            ).copy_as_digraph()
+            original_perception = PerceptionGraph.from_frame(perception.frames[0])
         else:
             raise RuntimeError("Cannot process perception type.")
-        observed_perception_graph = graph_without_learner(original_perception_graph)
 
-        # TODO: this might be clearer if the return were package in an object
-        perception_graph_with_object_matches, handle_to_object_match_node = self._object_recognizer.match_objects(
-            observed_perception_graph
+        recognized_object_perception = self._object_recognizer.match_objects(
+            original_perception
         )
-        # TODO: check if immutabledict has a method for inversion
+
         object_match_node_to_object_handle: Mapping[
             PerceptionGraphNode, str
         ] = immutabledict(
             (node, description)
-            for description, node in handle_to_object_match_node.items()
+            for description, node in recognized_object_perception.description_to_matched_object_node.items()
         )
 
         # this will be our output
@@ -290,7 +286,7 @@ class PrepositionSubsetLanguageLearner(
         ) in self._surface_template_to_preposition_pattern.items():
             # try to see if (our model of) its semantics is present in the situation.
             matcher = preposition_pattern.graph_pattern.matcher(
-                perception_graph_with_object_matches
+                recognized_object_perception.perception_graph
             )
             for match in matcher.matches():
                 # if it is, use that preposition to describe the situation.
