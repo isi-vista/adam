@@ -1,6 +1,5 @@
 from itertools import combinations
 
-import numpy as np
 from immutablecollections import immutabledict, immutableset, ImmutableDict
 from torch.nn import Parameter
 from torch.optim.lr_scheduler import ReduceLROnPlateau
@@ -9,9 +8,8 @@ from vistautils.preconditions import check_arg
 from attr import attrs, attrib
 from numpy import ndarray
 
-from typing import List, Any, Set, Mapping, AbstractSet, Dict
+from typing import List, Mapping, AbstractSet
 
-from adam.visualization.utils import BoundingBox, min_max_projection
 
 import numpy as np
 import torch
@@ -22,6 +20,8 @@ import torch.optim as optim
 @attrs(frozen=True, slots=True)
 class AxisAlignedBoundingBox:
     center: torch.Tensor = attrib()
+    scale: torch.Tensor = attrib()
+    # rotation: torch.Tensor = attrib()
 
     def center_distance_from_point(self, point: torch.Tensor) -> torch.Tensor:
         return torch.dist(self.center, point, 2)
@@ -29,6 +29,26 @@ class AxisAlignedBoundingBox:
     @staticmethod
     def create_at_random_position(
         *, min_distance_from_origin: float, max_distance_from_origin: float
+    ):
+        return AxisAlignedBoundingBox.create_at_random_position_scaled(
+            min_distance_from_origin=min_distance_from_origin,
+            max_distance_from_origin=max_distance_from_origin,
+            object_scale=torch.ones(3)
+        )
+
+    @staticmethod
+    def create_at_center_point(
+            *, center: ndarray
+    ):
+        return AxisAlignedBoundingBox(
+            Parameter(torch.tensor(center, dtype=torch.float), requires_grad=True),
+            torch.diag(torch.ones(3))
+        )
+
+    @staticmethod
+    def create_at_random_position_scaled(
+            *, min_distance_from_origin: float, max_distance_from_origin: float,
+            object_scale: torch.Tensor
     ):
         check_arg(min_distance_from_origin > 0.0)
         check_arg(min_distance_from_origin < max_distance_from_origin)
@@ -44,7 +64,8 @@ class AxisAlignedBoundingBox:
         )
         center *= scale_factor
         return AxisAlignedBoundingBox(
-            Parameter(torch.tensor(center, dtype=torch.float), requires_grad=True)
+            Parameter(torch.tensor(center, dtype=torch.float), requires_grad=True),
+            torch.diag(object_scale)
         )
 
     def get_corners(self) -> torch.Tensor:
@@ -60,19 +81,19 @@ class AxisAlignedBoundingBox:
                 [1, 1, 1],
             ],
             dtype=torch.float,
-        )
+        ).matmul(self.scale)
 
     def right_corner(self):
-        return self.center + torch.tensor([1, -1, -1])
+        return self.center + torch.tensor([1, -1, -1], dtype=torch.float).matmul(self.scale)
 
     def forward_corner(self):
-        return self.center + torch.tensor([-1, 1, -1])
+        return self.center + torch.tensor([-1, 1, -1], dtype=torch.float).matmul(self.scale)
 
     def up_corner(self):
-        return self.center + torch.tensor([-1, -1, 1])
+        return self.center + torch.tensor([-1, -1, 1], dtype=torch.float).matmul(self.scale)
 
     def zero_corner(self):
-        return self.center + torch.tensor([-1, -1, -1])
+        return self.center + torch.tensor([-1, -1, -1], dtype=torch.float).matmul(self.scale)
 
     def right_face(self):
         diff = self.right_corner() - self.zero_corner()
@@ -101,6 +122,7 @@ class AxisAlignedBoundingBox:
             Tensor(3, 2) -> (min, max) values for each of three dimensions
 
         """
+        check_arg(projections.shape == (3, 8))
 
         min_indices = torch.min(projections, 1)
         max_indices = torch.max(projections, 1)
@@ -284,7 +306,7 @@ class AdamObjectPositioningModel(torch.nn.Module):
             (
                 adam_object,
                 AxisAlignedBoundingBox.create_at_random_position(
-                    min_distance_from_origin=5, max_distance_from_origin=10
+                    min_distance_from_origin=5, max_distance_from_origin=10,
                 ),
             )
             for adam_object in adam_objects
