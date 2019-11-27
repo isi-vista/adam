@@ -1,3 +1,8 @@
+"""
+This module defines a bounding box type and implements a constraint solver
+that can position multiple bounding boxes s/t they do not overlap
+(in addition to other constraints).
+"""
 from itertools import combinations
 from typing import Mapping, AbstractSet
 from attr import attrs, attrib
@@ -14,12 +19,14 @@ from immutablecollections import immutabledict, immutableset, ImmutableDict
 from vistautils.preconditions import check_arg
 
 # see https://github.com/pytorch/pytorch/issues/24807 re: pylint issue
-ORIGIN = torch.tensor([0.0, 0.0, 0.0], dtype=torch.float)  # pylint: disable=not-callable
+ORIGIN = torch.zeros(3, dtype=torch.float)  # pylint: disable=not-callable
 COLLISION_PENALTY = 10
 
 
 @attrs(frozen=True, auto_attribs=True)
 class AdamObject:
+    """Used for testing purposes, to attach a name to a bounding box"""
+
     name: str
 
 
@@ -62,9 +69,14 @@ def main() -> None:
 @attrs(frozen=True, slots=True)
 class AxisAlignedBoundingBox:
     """
-    Defines a 3D Box that is oriented to world axes given a center point (3,)
-    and a scale (which defines the distance from the center to each corner of the box).
-    e.g. a box centered at (0, 0, 0) and with a scale of (1, 1, 1) would have opposite
+    Defines a 3D Box that is oriented to world axes.
+
+    This box is defined by a center point of shape (3,),
+    and a scale (also of shape (3,)) which defines how a unit cube
+    with the given center will be scaled in each dimension to create
+    this box.
+
+    For example: a box centered at (0, 0, 0) and with a scale of (1, 1, 1) would have opposite
     corners at (-1, -1, -1) and (1, 1, 1), giving the box a volume of 2(^3)
     """
 
@@ -139,41 +151,7 @@ class AxisAlignedBoundingBox:
         ).matmul(self.scale)
         # see https://github.com/pytorch/pytorch/issues/24807 re: pylint issue
 
-    # helper functions giving names to a few corners used in calculations:
-    def right_corner(self) -> torch.Tensor:
-        """
-        Corner in the direction of the positive x axis from center (negative direction from other axes).
-        (Assuming box is oriented to world axes)
-        Returns: Tensor (3,)
-        """
-        return self.center + torch.tensor(  # pylint: disable=not-callable
-            [1, -1, -1], dtype=torch.float
-        ).matmul(self.scale)
-        # see https://github.com/pytorch/pytorch/issues/24807 re: pylint issue
-
-    def forward_corner(self) -> torch.Tensor:
-        """
-        Corner in the direction of the positive y axis from center (negative direction from other axes).
-        (Assuming box is oriented to world axes)
-        Returns: Tensor (3,)
-
-        """
-        return self.center + torch.tensor(  # pylint: disable=not-callable
-            [-1, 1, -1], dtype=torch.float
-        ).matmul(self.scale)
-
-    def up_corner(self) -> torch.Tensor:
-        """
-        Corner in the direction of the positive z axis from center (negative direction from other axes).
-        (Assuming box is oriented to world axes)
-        Returns: Tensor (3,)
-
-        """
-        return self.center + torch.tensor(  # pylint: disable=not-callable
-            [-1, -1, 1], dtype=torch.float
-        ).matmul(self.scale)
-
-    def minus_ones_corner(self) -> torch.Tensor:
+    def _minus_ones_corner(self) -> torch.Tensor:
         """
         Corner in the direction of the negative x, y, z axes from center
         Returns: Tensor (3,)
@@ -184,40 +162,64 @@ class AxisAlignedBoundingBox:
         ).matmul(self.scale)
 
     # functions returning normal vectors from three perpendicular faces of the box
-    def right_face(self) -> torch.Tensor:
+    def right_face_normal_vector(self) -> torch.Tensor:
         """
         Normal vector for the right face of the box (toward positive x axis when aligned to world axes)
         Returns: Tensor (3,)
         """
-        diff = self.right_corner() - self.minus_ones_corner()
+        diff = (
+            self.center
+            + torch.tensor(  # pylint: disable=not-callable
+                [1, -1, -1], dtype=torch.float
+            ).matmul(self.scale)
+            - self._minus_ones_corner()
+        )
         return diff / torch.norm(diff)
 
-    def forward_face(self) -> torch.Tensor:
+    def forward_face_normal_vector(self) -> torch.Tensor:
         """
         Normal vector for the forward face of the box (toward positive y axis when aligned to world axes)
         Returns: Tensor (3,)
         """
-        diff = self.forward_corner() - self.minus_ones_corner()
+        diff = (
+            self.center
+            + torch.tensor(  # pylint: disable=not-callable
+                [-1, 1, -1], dtype=torch.float
+            ).matmul(self.scale)
+            - self._minus_ones_corner()
+        )
         return diff / torch.norm(diff)
 
-    def up_face(self) -> torch.Tensor:
+    def up_face_normal_vector(self) -> torch.Tensor:
         """
         Normal vector for the up face of the box (toward positive z axis when aligned to world axes)
         Returns: Tensor (3,)
         """
-        diff = self.up_corner() - self.minus_ones_corner()
+        diff = (
+            self.center
+            + torch.tensor(  # pylint: disable=not-callable
+                [-1, -1, 1], dtype=torch.float
+            ).matmul(self.scale)
+            - self._minus_ones_corner()
+        )
         return diff / torch.norm(diff)
 
-    def get_face_norms(self) -> torch.Tensor:
+    def face_normal_vectors(self) -> torch.Tensor:
         """
         Stacks the face norms from the right, forward, and up faces of the box
         Returns: Tensor (3,3)
 
         """
         # in axis-aligned case these are always the same
-        return torch.stack([self.right_face(), self.forward_face(), self.up_face()])
+        return torch.stack(
+            [
+                self.right_face_normal_vector(),
+                self.forward_face_normal_vector(),
+                self.up_face_normal_vector(),
+            ]
+        )
 
-    def corner_onto_axes_projections(self, axes: torch.Tensor) -> torch.Tensor:
+    def corners_onto_axes_projections(self, axes: torch.Tensor) -> torch.Tensor:
         """
         Projects each of 8 corners onto each of three axes.
         Args:
@@ -233,6 +235,10 @@ class AxisAlignedBoundingBox:
 
 
 class AdamObjectPositioningModel(torch.nn.Module):
+    """
+    Model that combines multiple constraints on AxisAlignedBoundingBoxes.
+    """
+
     def __init__(
         self, adam_object_to_bounding_box: Mapping[AdamObject, AxisAlignedBoundingBox]
     ) -> None:
@@ -282,6 +288,10 @@ class AdamObjectPositioningModel(torch.nn.Module):
 
 
 class DistanceFromOriginPenalty(nn.Module):
+    """
+    Model that penalizes boxes that are distant from the origin.
+    """
+
     def __init__(self) -> None:  # pylint: disable=useless-super-delegation
         super().__init__()
 
@@ -292,6 +302,10 @@ class DistanceFromOriginPenalty(nn.Module):
 
 
 class CollisionPenalty(nn.Module):
+    """
+    Model that penalizes boxes that are colliding with other boxes.
+    """
+
     def __init__(self):  # pylint: disable=useless-super-delegation
         super().__init__()
 
@@ -302,15 +316,15 @@ class CollisionPenalty(nn.Module):
     ) -> torch.Tensor:
 
         # get face norms from one of the boxes:
-        face_norms = bounding_box_2.get_face_norms()
+        face_norms = bounding_box_2.face_normal_vectors()
 
         return CollisionPenalty.overlap_penalty(
             CollisionPenalty.get_min_max_overlaps(
                 CollisionPenalty.get_min_max_corner_projections(
-                    bounding_box_1.corner_onto_axes_projections(face_norms)
+                    bounding_box_1.corners_onto_axes_projections(face_norms)
                 ),
                 CollisionPenalty.get_min_max_corner_projections(
-                    bounding_box_2.corner_onto_axes_projections(face_norms)
+                    bounding_box_2.corners_onto_axes_projections(face_norms)
                 ),
             )
         )
@@ -354,7 +368,9 @@ class CollisionPenalty(nn.Module):
             min_max_proj_1: Tensor(3,2) min_max projections for box 1
 
         Returns:
-            (3, 2) tensor -> ranges (start, end) of overlap in each of three dimensions
+            (3, 2) tensor -> ranges (start, end) of overlap OR separation in each of three dimensions.
+            If (start - end) is positive, this indicates that the boxes do not overlap along this dimension,
+            otherwise, a negative value indicates an overlap along that dimension.
         """
         check_arg(min_max_proj_0.shape == (3, 2))
         check_arg(min_max_proj_1.shape == (3, 2))
@@ -362,12 +378,8 @@ class CollisionPenalty(nn.Module):
         # see https://github.com/pytorch/pytorch/issues/24807 re: pylint issue
         dims = torch.tensor([0, 1, 2], dtype=torch.int)  # pylint: disable=not-callable
 
-        mins_0 = min_max_proj_0.gather(
-            1, torch.tensor([[0], [0], [0]])  # pylint: disable=not-callable
-        )
-        mins_1 = min_max_proj_1.gather(
-            1, torch.tensor([[0], [0], [0]])  # pylint: disable=not-callable
-        )
+        mins_0 = min_max_proj_0.gather(1, torch.zeros((3, 1), dtype=torch.long))
+        mins_1 = min_max_proj_1.gather(1, torch.zeros((3, 1), dtype=torch.long))
 
         combined_mins = torch.stack((mins_0, mins_1), 1).squeeze()
         max_indices = torch.max(combined_mins, 1)
@@ -382,12 +394,8 @@ class CollisionPenalty(nn.Module):
         # then find the maximum element from each row
 
         # repeat the process for the min of the max projections
-        maxs_0 = min_max_proj_0.gather(
-            1, torch.tensor([[1], [1], [1]])  # pylint: disable=not-callable
-        )
-        maxs_1 = min_max_proj_1.gather(
-            1, torch.tensor([[1], [1], [1]])  # pylint: disable=not-callable
-        )
+        maxs_0 = min_max_proj_0.gather(1, torch.ones((3, 1), dtype=torch.long))
+        maxs_1 = min_max_proj_1.gather(1, torch.ones((3, 1), dtype=torch.long))
         combined_maxes = torch.stack((maxs_0, maxs_1), 1).squeeze()
         min_indices = torch.min(combined_maxes, 1)
         minimum_maxes = torch.take(combined_maxes, min_indices[1] + (dims * 2))
@@ -408,9 +416,8 @@ class CollisionPenalty(nn.Module):
         # subtract each minimum max from each maximum min:
         overlap_distance = min_max_overlaps[:, 0] - min_max_overlaps[:, 1]
 
-        # if ANY element in overlap_distance is positive, the minimum positive value
-        # then the two are not colliding
-
+        # as long as at least one dimension's overlap distance is positive (not overlapping),
+        # then the boxes are not colliding
         for dim in range(3):
             if overlap_distance[dim] >= 0:
                 return torch.zeros(1, dtype=torch.float)
