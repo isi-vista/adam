@@ -344,6 +344,8 @@ class CollisionPenalty(nn.Module):
         Returns:
             (3, 2) tensor -> ranges (start, end) of overlap in each of three dimensions
         """
+        check_arg(min_max_proj_0.shape == (3, 2))
+        check_arg(min_max_proj_1.shape == (3, 2))
 
         dims = torch.tensor([0, 1, 2], dtype=torch.int)
 
@@ -381,6 +383,7 @@ class CollisionPenalty(nn.Module):
         Returns: Tensor with a positive scalar of the collision penalty, or tensor with zero scalar
         for no collision.
         """
+        check_arg(min_max_overlaps.shape == (3, 2))
         # subtract each minimum max from each maximum min:
         overlap_distance = min_max_overlaps[:, 0] - min_max_overlaps[:, 1]
 
