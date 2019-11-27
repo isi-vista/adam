@@ -234,7 +234,7 @@ class AxisAlignedBoundingBox:
         return axes.matmul(corners.transpose(0, 1))
 
 
-class AdamObjectPositioningModel(torch.nn.Module):
+class AdamObjectPositioningModel(torch.nn.Module):  # type: ignore
     """
     Model that combines multiple constraints on AxisAlignedBoundingBoxes.
     """
@@ -247,7 +247,9 @@ class AdamObjectPositioningModel(torch.nn.Module):
         self.object_bounding_boxes = adam_object_to_bounding_box.values()
 
         for (adam_object, bounding_box) in self.adam_object_to_bounding_box.items():
-            self.register_parameter(adam_object.name, bounding_box.center)
+            self.register_parameter(
+                adam_object.name, Parameter(bounding_box.center, requires_grad=True)
+            )
 
         self.distance_to_origin_penalty = DistanceFromOriginPenalty()
         self.collision_penalty = CollisionPenalty()
@@ -269,7 +271,7 @@ class AdamObjectPositioningModel(torch.nn.Module):
         )
         return AdamObjectPositioningModel(objects_to_bounding_boxes)
 
-    def forward(self) -> int:  # pylint: disable=arguments-differ
+    def forward(self, *inputs):  # pylint: disable=arguments-differ
         distance_penalty = sum(
             self.distance_to_origin_penalty(box) for box in self.object_bounding_boxes
         )
@@ -287,7 +289,7 @@ class AdamObjectPositioningModel(torch.nn.Module):
             print(f"{adam_object.name} = {bounding_box.center.data}")
 
 
-class DistanceFromOriginPenalty(nn.Module):
+class DistanceFromOriginPenalty(nn.Module):  # type: ignore
     """
     Model that penalizes boxes that are distant from the origin.
     """
@@ -295,13 +297,12 @@ class DistanceFromOriginPenalty(nn.Module):
     def __init__(self) -> None:  # pylint: disable=useless-super-delegation
         super().__init__()
 
-    def forward(  # pylint: disable=arguments-differ
-        self, bounding_box: AxisAlignedBoundingBox
-    ) -> torch.Tensor:
+    def forward(self, *inputs):  # pylint: disable=arguments-differ
+        bounding_box: AxisAlignedBoundingBox = inputs[0]
         return bounding_box.center_distance_from_point(ORIGIN)
 
 
-class CollisionPenalty(nn.Module):
+class CollisionPenalty(nn.Module):  # type: ignore
     """
     Model that penalizes boxes that are colliding with other boxes.
     """
@@ -309,11 +310,9 @@ class CollisionPenalty(nn.Module):
     def __init__(self):  # pylint: disable=useless-super-delegation
         super().__init__()
 
-    def forward(  # pylint: disable=arguments-differ
-        self,
-        bounding_box_1: AxisAlignedBoundingBox,
-        bounding_box_2: AxisAlignedBoundingBox,
-    ) -> torch.Tensor:
+    def forward(self, *inputs):  # pylint: disable=arguments-differ
+        bounding_box_1: AxisAlignedBoundingBox = inputs[0]
+        bounding_box_2: AxisAlignedBoundingBox = inputs[1]
 
         # get face norms from one of the boxes:
         face_norms = bounding_box_2.face_normal_vectors()
