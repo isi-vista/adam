@@ -1,3 +1,4 @@
+import logging
 import random as r
 from typing import Dict, Generic, Mapping, Tuple, Optional, List
 
@@ -71,12 +72,13 @@ class PursuitLanguageLearner(
 
     def learn_with_pursuit(self, observed_perception_graph: PerceptionGraph,
                            observed_linguistic_description: Tuple[str, ...]) -> None:
+        logging.info(f"Pursuit learner observing {observed_linguistic_description}")
         # The learner’s words are W, meanings are M, their associations are A, and the new utterance is U = (W_U, M_U).
         # For every w in W_U
         for word in observed_linguistic_description:
             # If don't already know the meaning of the word, go through learning steps:
             if word not in self._lexicon:
-                print('Learning', word)
+                logging.info(f"Considering '{word}'")
                 if word not in self._words_to_hypotheses_and_scores:
                     # a) Initialization step, if the word is a novel word
                     self.initialization_step(word, observed_perception_graph)
@@ -88,13 +90,17 @@ class PursuitLanguageLearner(
                         self.lexicon_step(word)
 
     def initialization_step(self, word: str, observed_perception_graph: PerceptionGraph):
-        # If it's a novel word, learn a new hypothesis/pattern, generated as a pattern graph from the perception.
+        # If it's a novel word, learn a new hypothesis/pattern,
+        # generated as a pattern graph from the perception.
         # We want h_0 = arg_min_(m in M_U) max(A_m); i.e. h_0 is pattern_hypothesis
         meanings = self.get_meanings_from_perception(observed_perception_graph)
         pattern_hypothesis = first(meanings)
         min_score = float('inf')
+        # TODO @Deniz: The association score makes no reference to meaning that I see
+        # So won’t the hypothesis always just be either the first or last thing in meanings,
+        # depending on the (unchanging) value  of max_association_score?
         for meaning in meanings:
-            # Get the maximum assocaition score for that meaning
+            # Get the maximum association score for that meaning
             max_association_score = max([s for w, h_to_s in self._words_to_hypotheses_and_scores.items()
                                          for h, s in h_to_s.items()] + [0])
             if max_association_score < min_score:
@@ -180,29 +186,31 @@ class PursuitLanguageLearner(
 
     @staticmethod
     def get_meanings_from_perception(observed_perception_graph: PerceptionGraph) -> List[PerceptionGraphPattern]:
-        # TODO: Return all possible meanings. We currently remove ground, and return 2nd degree neigbor subgraphs of
-        #  object perception nodes
+        # TODO: Return all possible meanings. We currently remove ground,
+        #  and return 2nd degree neighbor subgraphs of object perception nodes
         perception_as_digraph = observed_perception_graph.copy_as_digraph()
         perception_as_graph = perception_as_digraph.to_undirected()
 
         meanings = []
-        for random_obj_perc_node in [node for node in perception_as_graph.nodes
+        for object_perception_root_node in [node for node in perception_as_graph.nodes
                                      if isinstance(node, ObjectPerception) and node.debug_handle != 'the ground']:
-            # print(perception_as_digraph.edges.data())
-            if any([u == random_obj_perc_node and data['label'] == 'partOf'
+            # TODO: RMG - need different meaning generation strategy
+            # we want whole sub-trees rooted at object perceptions
+            if any([u == object_perception_root_node and data['label'] == 'partOf'
                     for u,v, data in perception_as_digraph.edges.data()]):
                 continue
-            first_neigbors = list(perception_as_graph.neighbors(random_obj_perc_node))
+            first_neigbors = list(perception_as_graph.neighbors(object_perception_root_node))
             second_neighbors = []
             for node in first_neigbors:
                 second_neighbors.extend(list(perception_as_graph.neighbors(node)))
             neighbors = [node for node in first_neigbors+second_neighbors if not isinstance(node, ObjectPerception)]
-            subgraph = networkx.DiGraph(perception_as_digraph.subgraph([random_obj_perc_node]+neighbors))
+            subgraph = networkx.DiGraph(perception_as_digraph.subgraph([object_perception_root_node]+neighbors))
             subgraph.remove_nodes_from(list(networkx.isolates(subgraph)))
             meaning = PerceptionGraphPattern.from_graph(
                 subgraph
             )
             meanings.append(meaning)
+        logging.info(f"Got {len(meanings)} candidate meanings")
         return meanings
 
     def describe(
