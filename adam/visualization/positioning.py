@@ -89,8 +89,9 @@ class AxisAlignedBoundingBox:
     def create_at_center_point(*, center: ndarray):
         return AxisAlignedBoundingBox(
             Parameter(
-                torch.tensor(center, dtype=torch.float), requires_grad=True
-            ),  # pylint: disable=not-callable
+                torch.tensor(center, dtype=torch.float),  # pylint: disable=not-callable
+                requires_grad=True,
+            ),
             torch.diag(torch.ones(3)),
         )
 
@@ -116,8 +117,9 @@ class AxisAlignedBoundingBox:
         center *= scale_factor
         return AxisAlignedBoundingBox(
             Parameter(
-                torch.tensor(center, dtype=torch.float), requires_grad=True
-            ),  # pylint: disable=not-callable
+                torch.tensor(center, dtype=torch.float),  # pylint: disable=not-callable
+                requires_grad=True,
+            ),
             torch.diag(object_scale),
         )
 
@@ -144,11 +146,9 @@ class AxisAlignedBoundingBox:
         (Assuming box is oriented to world axes)
         Returns: Tensor (3,)
         """
-        return self.center + torch.tensor(
+        return self.center + torch.tensor(  # pylint: disable=not-callable
             [1, -1, -1], dtype=torch.float
-        ).matmul(  # pylint: disable=not-callable
-            self.scale
-        )
+        ).matmul(self.scale)
         # see https://github.com/pytorch/pytorch/issues/24807 re: pylint issue
 
     def forward_corner(self) -> torch.Tensor:
@@ -158,11 +158,9 @@ class AxisAlignedBoundingBox:
         Returns: Tensor (3,)
 
         """
-        return self.center + torch.tensor(
+        return self.center + torch.tensor(  # pylint: disable=not-callable
             [-1, 1, -1], dtype=torch.float
-        ).matmul(  # pylint: disable=not-callable
-            self.scale
-        )
+        ).matmul(self.scale)
 
     def up_corner(self) -> torch.Tensor:
         """
@@ -171,11 +169,9 @@ class AxisAlignedBoundingBox:
         Returns: Tensor (3,)
 
         """
-        return self.center + torch.tensor(
+        return self.center + torch.tensor(  # pylint: disable=not-callable
             [-1, -1, 1], dtype=torch.float
-        ).matmul(  # pylint: disable=not-callable
-            self.scale
-        )
+        ).matmul(self.scale)
 
     def minus_ones_corner(self) -> torch.Tensor:
         """
@@ -183,11 +179,9 @@ class AxisAlignedBoundingBox:
         Returns: Tensor (3,)
 
         """
-        return self.center + torch.tensor(
+        return self.center + torch.tensor(  # pylint: disable=not-callable
             [-1, -1, -1], dtype=torch.float
-        ).matmul(  # pylint: disable=not-callable
-            self.scale
-        )
+        ).matmul(self.scale)
 
     # functions returning normal vectors from three perpendicular faces of the box
     def right_face(self) -> torch.Tensor:
@@ -291,9 +285,9 @@ class DistanceFromOriginPenalty(nn.Module):
     def __init__(self) -> None:  # pylint: disable=useless-super-delegation
         super().__init__()
 
-    def forward(
+    def forward(  # pylint: disable=arguments-differ
         self, bounding_box: AxisAlignedBoundingBox
-    ) -> torch.Tensor:  # pylint: disable=arguments-differ
+    ) -> torch.Tensor:
         return bounding_box.center_distance_from_point(ORIGIN)
 
 
@@ -368,8 +362,12 @@ class CollisionPenalty(nn.Module):
         # see https://github.com/pytorch/pytorch/issues/24807 re: pylint issue
         dims = torch.tensor([0, 1, 2], dtype=torch.int)  # pylint: disable=not-callable
 
-        mins_0 = min_max_proj_0.gather(1, torch.zeros(3))
-        mins_1 = min_max_proj_1.gather(1, torch.zeros(3))
+        mins_0 = min_max_proj_0.gather(
+            1, torch.tensor([[0], [0], [0]])  # pylint: disable=not-callable
+        )
+        mins_1 = min_max_proj_1.gather(
+            1, torch.tensor([[0], [0], [0]])  # pylint: disable=not-callable
+        )
 
         combined_mins = torch.stack((mins_0, mins_1), 1).squeeze()
         max_indices = torch.max(combined_mins, 1)
@@ -384,8 +382,12 @@ class CollisionPenalty(nn.Module):
         # then find the maximum element from each row
 
         # repeat the process for the min of the max projections
-        maxs_0 = min_max_proj_0.gather(1, torch.ones(3))
-        maxs_1 = min_max_proj_1.gather(1, torch.ones(3))
+        maxs_0 = min_max_proj_0.gather(
+            1, torch.tensor([[1], [1], [1]])  # pylint: disable=not-callable
+        )
+        maxs_1 = min_max_proj_1.gather(
+            1, torch.tensor([[1], [1], [1]])  # pylint: disable=not-callable
+        )
         combined_maxes = torch.stack((maxs_0, maxs_1), 1).squeeze()
         min_indices = torch.min(combined_maxes, 1)
         minimum_maxes = torch.take(combined_maxes, min_indices[1] + (dims * 2))
@@ -411,7 +413,7 @@ class CollisionPenalty(nn.Module):
 
         for dim in range(3):
             if overlap_distance[dim] >= 0:
-                return torch.zeros(1)
+                return torch.zeros(1, dtype=torch.float)
 
         # otherwise the penetration distance is the maximum negative value
         # (the smallest translation that would disentangle the two
