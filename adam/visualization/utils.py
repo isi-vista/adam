@@ -7,6 +7,3 @@ class Shape(enum.Enum):
     OVALISH = "OVALISH"
     RECTANGULAR = "RECTANGULAR"
     IRREGULAR = "IRREGULAR"
-
-
-
