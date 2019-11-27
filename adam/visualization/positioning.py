@@ -271,7 +271,7 @@ class AdamObjectPositioningModel(torch.nn.Module):  # type: ignore
         )
         return AdamObjectPositioningModel(objects_to_bounding_boxes)
 
-    def forward(self, *inputs):  # pylint: disable=arguments-differ
+    def forward(self):  # pylint: disable=arguments-differ
         distance_penalty = sum(
             self.distance_to_origin_penalty(box) for box in self.object_bounding_boxes
         )
