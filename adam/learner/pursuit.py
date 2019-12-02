@@ -138,6 +138,10 @@ class PursuitLanguageLearner(
         # b.i) If the hypothesis is confirmed, we reinforce it.
         is_hypothesis_confirmed = match_ratio >= self._graph_match_confirmation_threshold
         if is_hypothesis_confirmed:
+            # TODO RMG: this is where we can handle hypothesis pruning
+            # because if we have a partial match which still passes the threshold,
+            # we can either replace the current hypothesis with it
+            # or else add it as a new hypothesis
             # Reinforce A(w,h)
             new_hypothesis_score = current_hypothesis_score + self._learning_factor * (
                     1 - current_hypothesis_score)
@@ -151,10 +155,12 @@ class PursuitLanguageLearner(
             word
         ][leading_hypothesis_pattern] = new_hypothesis_score
 
+        # TODO RMG: only do new hypothesis when current hypothesis is not confirmed
         # Reward A(w, h’) for a randomly selected h’ in M_U
         # TODO: Can we replace this with the initialization step?
         meanings = self.get_meanings_from_perception(observed_perception_graph)
         random_new_hypothesis = r.choice(meanings)
+        # TODO RMG: should this increase the score somehow if the hypothesis is already known?
         self._words_to_hypotheses_and_scores[
             word
         ][random_new_hypothesis] = self._learning_factor
