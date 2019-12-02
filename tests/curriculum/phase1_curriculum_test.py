@@ -1,33 +1,33 @@
 from adam.curriculum.phase1_curriculum import (
     Phase1InstanceGroup,
+    _make_behind_in_front_curriculum,
+    _make_come_curriculum,
     _make_drink_curriculum,
+    _make_each_object_by_itself_curriculum,
     _make_eat_curriculum,
     _make_fall_curriculum,
     _make_fly_curriculum,
     _make_go_curriculum,
     _make_jump_curriculum,
     _make_move_curriculum,
+    _make_multiple_objects_curriculum,
+    _make_object_beside_object_curriculum,
+    _make_object_in_other_object_curriculum,
+    _make_object_on_ground_curriculum,
+    _make_object_on_object_curriculum,
+    _make_object_under_or_over_object_curriculum,
+    _make_objects_with_colors_curriculum,
+    _make_person_has_object_curriculum,
     _make_push_curriculum,
-    _make_come_curriculum,
     _make_put_curriculum,
+    _make_put_on_speaker_addressee_body_part_curriculum,
     _make_roll_curriculum,
     _make_sit_curriculum,
+    _make_speaker_addressee_curriculum,
     _make_spin_curriculum,
     _make_take_curriculum,
-    _make_speaker_addressee_curriculum,
     _make_throw_curriculum,
-    _make_object_under_or_over_object_curriculum,
     _make_transfer_of_possession_curriculum,
-    _make_put_on_speaker_addressee_body_part_curriculum,
-    _make_object_beside_object_curriculum,
-    _make_behind_in_front_curriculum,
-    _make_objects_with_colors_curriculum,
-    _make_each_object_by_itself_curriculum,
-    _make_multiple_objects_curriculum,
-    _make_object_on_ground_curriculum,
-    _make_person_has_object_curriculum,
-    _make_object_on_object_curriculum,
-    _make_object_in_other_object_curriculum,
 )
 
 
@@ -45,6 +45,10 @@ def test_each_object_by_itself_curriculum():
 
 def test_objects_with_colors_curriculum():
     curriculum_test(_make_objects_with_colors_curriculum())
+
+
+def test_instantiate_fly_curriculum():
+    curriculum_test(_make_fly_curriculum())
 
 
 def test_multiple_objects_curriculum():
@@ -81,10 +85,6 @@ def test_object_under_or_over_object_curriculum():
 
 def test_object_in_other_object_curriculum():
     curriculum_test(_make_object_in_other_object_curriculum())
-
-
-def test_instantiate_fly_curriculum():
-    curriculum_test(_make_fly_curriculum())
 
 
 def test_roll_curriculum():

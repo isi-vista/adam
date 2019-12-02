@@ -7,9 +7,9 @@ PYTHON=python3
 SHELL=bash
 SOURCE_DIR_NAME=adam
 
-PYLINT:=pylint $(SOURCE_DIR_NAME) tests 
+PYLINT:=pylint $(SOURCE_DIR_NAME) tests benchmarks
 
-MYPY:=mypy $(MYPY_ARGS) $(SOURCE_DIR_NAME) tests 
+MYPY:=mypy $(MYPY_ARGS) $(SOURCE_DIR_NAME) tests benchmarks
 
 # Suppressed warnings:
 # Too many arguments, Unexpected keyword arguments: can't do static analysis on attrs __init__
@@ -35,6 +35,9 @@ test:
 coverage:
 	pytest --cov=adam tests
 
+benchmark:
+	pytest benchmarks
+
 lint:
 	$(PYLINT)
 
@@ -45,10 +48,10 @@ flake8:
 	$(FLAKE8_CMD)
 
 black-fix:
-	black $(SOURCE_DIR_NAME) tests 
+	black $(SOURCE_DIR_NAME) tests benchmarks
 
 black-check:
-	black --check $(SOURCE_DIR_NAME) tests 
+	black --check $(SOURCE_DIR_NAME) tests benchmarks
 
 doc-lint:
 	sphinx-build -nT -b dummy docs docs/_build/html

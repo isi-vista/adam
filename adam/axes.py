@@ -42,7 +42,7 @@ _ObjectT = TypeVar("_ObjectT")
 _ObjectToT = TypeVar("_ObjectToT")
 
 
-@attrs(frozen=True)
+@attrs(frozen=True, cache_hash=True)
 class AxesInfo(Generic[_ObjectT], CanRemapObjects[_ObjectT]):
     addressee: Optional[_ObjectT] = attrib(default=None)
     axes_facing: ImmutableSetMultiDict[_ObjectT, GeonAxis] = attrib(
@@ -62,8 +62,25 @@ class AxesInfo(Generic[_ObjectT], CanRemapObjects[_ObjectT]):
 
 @runtime
 class AxisFunction(Protocol, Generic[_ObjectT]):
-    def to_concrete_axis(self, axes_info: AxesInfo[_ObjectT]) -> GeonAxis:
-        pass
+    r"""
+    A procedure for selecting a particular `GeonAxis`.
+
+    This is used in defining the semantics of prepositions and verbs
+    and for defining the spatial relations between parts of an object in
+    `ObjectStructuralSchema`\ ta.
+    """
+
+    def to_concrete_axis(self, axes_info: Optional[AxesInfo[_ObjectT]]) -> GeonAxis:
+        """
+        Select a particular concrete axis.
+
+        This function will be provided with an `AxesInfo` object in concrete situations
+        which can be used to determing the relationship of object axes to the speaker
+        and the learner.
+        However, this information is not available in more abstract contexts,
+        like `ObjectStructuralSchema`,
+        and the `AxisFunction` should throw an exception if called in such a way.
+        """
 
     def copy_remapping_objects(
         self, object_map: Mapping[_ObjectT, _ObjectToT]
@@ -79,7 +96,7 @@ class PrimaryAxisOfObject(Generic[_ObjectT], AxisFunction[_ObjectT]):
     _object: _ObjectT = attrib()
 
     def to_concrete_axis(
-        self, axes_info: AxesInfo[_ObjectT]  # pylint:disable=unused-argument
+        self, axes_info: Optional[AxesInfo[_ObjectT]]  # pylint:disable=unused-argument
     ) -> GeonAxis:
         if not isinstance(self._object, HasAxes):
             raise RuntimeError(
@@ -100,7 +117,7 @@ class HorizontalAxisOfObject(Generic[_ObjectT], AxisFunction[_ObjectT]):
     _index: int = attrib(validator=in_(Range.closed(0, 1)))
 
     def to_concrete_axis(
-        self, axes_info: AxesInfo[_ObjectT]  # pylint:disable=unused-argument
+        self, axes_info: Optional[AxesInfo[_ObjectT]]  # pylint:disable=unused-argument
     ) -> GeonAxis:
         if not isinstance(self._object, HasAxes):
             raise RuntimeError(
@@ -125,8 +142,12 @@ class FacingAddresseeAxis(Generic[_ObjectT], AxisFunction[_ObjectT]):
     _object: _ObjectT = attrib()
 
     def to_concrete_axis(
-        self, axes_info: AxesInfo[_ObjectT]  # pylint:disable=unused-argument
+        self, axes_info: Optional[AxesInfo[_ObjectT]]  # pylint:disable=unused-argument
     ) -> GeonAxis:
+        if not axes_info:
+            raise RuntimeError(
+                "FacingAddresseeAxis cannot be applied if axis info not available"
+            )
         if not isinstance(self._object, HasAxes):
             raise RuntimeError(
                 "Can only instantiate an axis function if the object is of a "
@@ -168,7 +189,7 @@ _LEARNER_BACK_TO_FRONT_AXIS = directed("learner-back-to-front")
 @attrs(frozen=True)
 class _GravitationalAxis(AxisFunction[Any]):
     def to_concrete_axis(
-        self, axes_info: AxesInfo[Any]  # pylint:disable=unused-argument
+        self, axes_info: Optional[AxesInfo[Any]]  # pylint:disable=unused-argument
     ) -> GeonAxis:
         return _GRAVITATIONAL_DOWN_TO_UP_AXIS
 
@@ -209,6 +230,14 @@ class Axes:
         return chain((self.primary_axis,), self.orienting_axes)
 
     def copy(self) -> "Axes":
+        """
+        Returns a deep copy of this set of axes.
+
+        A copy is made of each contained axis.
+        The correspondence of the copies to the previous axes can be tracked
+        because the order of axes is maintained
+        (so the first axis in the copy is a copy of the first axis in the original, etc.)
+        """
         # world and learner axes are singletons
         if self is WORLD_AXES:
             return self

@@ -1,7 +1,6 @@
 from itertools import chain
 from typing import List, Optional
 
-from attr import attrib, attrs
 from attr.validators import instance_of, optional
 from immutablecollections import (
     ImmutableDict,
@@ -13,17 +12,69 @@ from immutablecollections import (
 )
 from immutablecollections.converter_utils import (
     _to_immutabledict,
+    _to_immutableset,
     _to_immutablesetmultidict,
 )
 
 from adam.ontology import OntologyNode
 from adam.ontology.during import DuringAction
 from adam.relation import Relation, flatten_relations
-from adam.situation import SituationObject
+from attr import attrib, attrs
 
-# really this should become its own class and not piggy-back
-# on SituationObject
-ActionDescriptionVariable = SituationObject
+
+@attrs(frozen=True, slots=True, hash=None, eq=False, repr=False)
+class ActionDescriptionVariable:
+    """
+    A variable in an action description ranging over objects in Situations.
+
+    Unlike most of our classes, `ActionDescriptionVariable`
+    has *id*-based hashing and equality.
+    This is because two objects with identical properties
+    are nonetheless distinct.
+    """
+
+    ontology_node: OntologyNode = attrib(
+        validator=instance_of(OntologyNode), default=None
+    )
+    """
+    The `OntologyNode` specifying the type of thing this object is.
+    """
+    properties: ImmutableSet[OntologyNode] = attrib(
+        converter=_to_immutableset, default=immutableset(), kw_only=True
+    )
+    r"""
+    The `OntologyNode`\ s representing the properties this object has.
+    """
+    debug_handle: str = attrib(validator=instance_of(str), kw_only=True)
+
+    def __attrs_post_init__(self) -> None:
+        # disabled warning below is due to a PyCharm bug
+        # noinspection PyTypeChecker
+        for property_ in self.properties:
+            if not isinstance(property_, OntologyNode):
+                raise ValueError(
+                    f"Situation object property {property_} is not an " f"OntologyNode"
+                )
+
+    @debug_handle.default
+    def _default_debug_handle(self) -> str:
+        return f"{self.ontology_node.handle}_{id(self)}"
+
+    def __repr__(self) -> str:
+        if self.properties:
+            additional_properties = ", ".join(repr(prop) for prop in self.properties)
+            additional_properties_string = f"[{additional_properties}]"
+        else:
+            additional_properties_string = ""
+
+        if self.ontology_node and not self.debug_handle.startswith(
+            self.ontology_node.handle
+        ):
+            handle_string = f"[{self.ontology_node.handle}]"
+        else:
+            handle_string = ""
+
+        return f"{self.debug_handle}{handle_string}{additional_properties_string}"
 
 
 @attrs(frozen=True, slots=True, auto_attribs=True)
@@ -40,7 +91,7 @@ class ActionDescriptionFrame:
     @variables_to_roles.default
     def _init_entities_to_roles(
         self
-    ) -> ImmutableSetMultiDict[SituationObject, OntologyNode]:
+    ) -> ImmutableSetMultiDict[ActionDescriptionVariable, OntologyNode]:
         return immutablesetmultidict(
             (entity, role) for role, entity in self.roles_to_variables.items()
         )

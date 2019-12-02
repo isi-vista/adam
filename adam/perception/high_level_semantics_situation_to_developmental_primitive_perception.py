@@ -1,17 +1,6 @@
 from itertools import chain
-from typing import (
-    AbstractSet,
-    Any,
-    Dict,
-    List,
-    Mapping,
-    Optional,
-    Union,
-    cast,
-    MutableMapping,
-)
+from typing import AbstractSet, Dict, List, Mapping, Optional, Union, cast, MutableMapping
 
-from attr import Factory, attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import (
     ImmutableDict,
@@ -22,17 +11,20 @@ from immutablecollections import (
     immutablesetmultidict,
 )
 from more_itertools import only, quantify
+from networkx import DiGraph
 from vistautils.preconditions import check_arg
 
+from adam.axes import AxesInfo, WORLD_AXES
+from adam.geon import Geon
 from adam.ontology import (
-    IN_REGION,
-    OntologyNode,
-    IS_SUBSTANCE,
-    PERCEIVABLE,
-    IS_SPEAKER,
     BINARY,
+    IN_REGION,
+    IS_SPEAKER,
+    IS_SUBSTANCE,
+    OntologyNode,
+    PERCEIVABLE,
 )
-from adam.ontology.action_description import ActionDescription
+from adam.ontology.action_description import ActionDescription, ActionDescriptionVariable
 from adam.ontology.during import DuringAction
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
@@ -51,11 +43,11 @@ from adam.ontology.phase1_ontology import (
 from adam.ontology.phase1_spatial_relations import INTERIOR, Region, SpatialPath
 from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
 from adam.perception import (
+    GROUND_PERCEPTION,
+    LEARNER_PERCEPTION,
     ObjectPerception,
     PerceptualRepresentation,
     PerceptualRepresentationGenerator,
-    GROUND_PERCEPTION,
-    LEARNER_PERCEPTION,
     RegionPerception,
 )
 from adam.perception.developmental_primitive_perception import (
@@ -69,7 +61,7 @@ from adam.random_utils import SequenceChooser
 from adam.relation import Relation
 from adam.situation import Action, SituationObject, SituationRegion
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
-from adam.axes import AxesInfo, WORLD_AXES
+from attr import Factory, attrib, attrs
 
 
 @attrs(frozen=True, slots=True)
@@ -92,7 +84,12 @@ class HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
     """
 
     def generate_perception(
-        self, situation: HighLevelSemanticsSituation, chooser: SequenceChooser
+        self,
+        situation: HighLevelSemanticsSituation,
+        chooser: SequenceChooser,
+        *,
+        include_ground=True,
+        include_learner=True,
     ) -> PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]:
         check_arg(
             situation.ontology == self.ontology,
@@ -101,7 +98,9 @@ class HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
             "ontology.",
         )
         # all the work is done in a stateful _PerceptionGeneration object
-        return _PerceptionGeneration(self, situation, chooser).do()
+        return _PerceptionGeneration(
+            self, situation, chooser, include_ground, include_learner
+        ).do()
 
 
 @attrs(frozen=True, slots=True)
@@ -144,6 +143,8 @@ class _PerceptionGeneration:
         validator=instance_of(HighLevelSemanticsSituation)
     )
     _chooser: SequenceChooser = attrib(validator=instance_of(SequenceChooser))
+    _include_ground = attrib(validator=instance_of(bool))
+    _include_learner = attrib(validator=instance_of(bool))
     _objects_to_perceptions: Dict[SituationObject, ObjectPerception] = attrib(
         init=False, default=Factory(dict)
     )
@@ -208,6 +209,8 @@ class _PerceptionGeneration:
             self._perceive_relation(relation)
             for relation in self._situation.always_relations
         )
+        # Once all the objects and relations are perceived, determine their colors.
+        self._perceive_colors()
 
         # Handle implicit size relations
         # self._perceive_implicit_size()
@@ -219,7 +222,8 @@ class _PerceptionGeneration:
         # Other relations implied by actions will be handled during action translation below.
 
         if not self._situation.actions:
-            self._perceive_ground_relations()
+            if self._include_ground:
+                self._perceive_ground_relations()
             return PerceptualRepresentation.single_frame(
                 DevelopmentalPrimitivePerceptionFrame(
                     perceived_objects=self._object_perceptions,
@@ -347,14 +351,15 @@ class _PerceptionGeneration:
             action_object_variables_to_object_perceptions=action_objects_variables_to_perceived_objects,
         )
 
-        self._perceive_ground_relations()
+        if self._include_ground:
+            self._perceive_ground_relations()
 
         return _PerceptionGeneration._ActionPerception(
             before_relations=immutableset(chain(enduring_relations, before_relations)),
             after_relations=immutableset(chain(enduring_relations, after_relations)),
             during_action=action_description.during.copy_remapping_objects(
                 cast(
-                    Mapping[SituationObject, ObjectPerception],
+                    Mapping[ActionDescriptionVariable, ObjectPerception],
                     action_objects_variables_to_perceived_objects,
                 )
             )
@@ -366,14 +371,16 @@ class _PerceptionGeneration:
         self,
         situation_action: Action[OntologyNode, SituationObject],
         action_description: ActionDescription,
-    ) -> Mapping[SituationObject, Union[RegionPerception, ObjectPerception]]:
+    ) -> Mapping[ActionDescriptionVariable, Union[RegionPerception, ObjectPerception]]:
         if any(
             len(fillers) > 1
             for fillers in situation_action.argument_roles_to_fillers.value_groups()
         ):
             raise RuntimeError("Cannot handle multiple fillers for an argument role yet.")
 
-        bindings: Dict[SituationObject, Union[ObjectPerception, RegionPerception]] = {}
+        bindings: Dict[
+            ActionDescriptionVariable, Union[ObjectPerception, RegionPerception]
+        ] = {}
 
         # for action description objects which play semantic roles,
         # the SituationAction gives us the binding directly
@@ -405,7 +412,7 @@ class _PerceptionGeneration:
         # We will use as a running example the object
         # corresponding to a person's hand used to move an object
         # for the action PUT.
-        action_variables_from_non_frames: List[SituationObject] = []
+        action_variables_from_non_frames: List[ActionDescriptionVariable] = []
         for condition_set in (
             action_description.enduring_conditions,
             action_description.preconditions,
@@ -425,7 +432,7 @@ class _PerceptionGeneration:
             for action_variable in action_variables_from_non_frames
             # not already mapped by a semantic role
             if action_variable not in bindings
-            and isinstance(action_variable, SituationObject)
+            and isinstance(action_variable, ActionDescriptionVariable)
         )
 
         bindings.update(
@@ -442,7 +449,7 @@ class _PerceptionGeneration:
     def _bind_action_object_variable(
         self,
         situation_action: Action[OntologyNode, SituationObject],
-        action_object_variable: SituationObject,
+        action_object_variable: ActionDescriptionVariable,
     ) -> Union[ObjectPerception, RegionPerception]:
         """
         Binds an action object variable to an object that we have perceived.
@@ -501,10 +508,10 @@ class _PerceptionGeneration:
 
     def _perceive_action_relations(
         self,
-        conditions: ImmutableSet[Relation[SituationObject]],
+        conditions: ImmutableSet[Relation[ActionDescriptionVariable]],
         *,
         action_object_variables_to_object_perceptions: Mapping[
-            SituationObject, Union[ObjectPerception, RegionPerception]
+            ActionDescriptionVariable, Union[ObjectPerception, RegionPerception]
         ],
     ) -> AbstractSet[Relation[ObjectPerception]]:
         """
@@ -553,14 +560,16 @@ class _PerceptionGeneration:
 
     def _perceive_object_or_region_relation_filler(
         self,
-        slot_filler: Union[SituationObject, SituationRegion],
+        slot_filler: Union[ActionDescriptionVariable, Region[ActionDescriptionVariable]],
         *,
         action_object_variables_to_object_perceptions: Mapping[
-            SituationObject, Union[ObjectPerception, RegionPerception]
+            ActionDescriptionVariable, Union[ObjectPerception, RegionPerception]
         ],
     ) -> Union[ObjectPerception, RegionPerception]:
         if isinstance(slot_filler, Region):
-            object_mapping: Dict[SituationObject, ObjectPerception] = {}
+            object_mapping: Dict[
+                Union[SituationObject, ActionDescriptionVariable], ObjectPerception
+            ] = {}
             # regions are not a real possibility for lookup,
             # so mypy's complaints here are irrelevant
             object_mapping.update(self._objects_to_perceptions)  # type: ignore
@@ -568,7 +577,9 @@ class _PerceptionGeneration:
                 action_object_variables_to_object_perceptions
             )
 
-            return slot_filler.copy_remapping_objects(object_mapping)
+            return slot_filler.copy_remapping_objects(
+                cast(Mapping[ActionDescriptionVariable, ObjectPerception], object_mapping)
+            )
         else:
             return action_object_variables_to_object_perceptions[slot_filler]
 
@@ -586,16 +597,13 @@ class _PerceptionGeneration:
                 )
             )
 
-            # Colors require special processing, so we strip them all out and then
-            # add back only the (at most) single color we determined an object has.
+            # Colors require special processing, so we ignore them for now
+            # and handle them in `_perceive_colors`.
             properties_to_perceive = [
                 property_
                 for property_ in all_object_properties
                 if not self._generator.ontology.is_subtype_of(property_, COLOR)
             ]
-            color = self._determine_color(situation_object)
-            if color:
-                properties_to_perceive.append(color)
 
             # If it is a liquid not inside a container, add two-dimensional property
             if LIQUID in GAILA_PHASE_1_ONTOLOGY.properties_for_node(
@@ -669,78 +677,40 @@ class _PerceptionGeneration:
                 perceived_property: PropertyPerception = HasBinaryProperty(
                     perceived_object, property_
                 )
+                self._property_assertion_perceptions.append(perceived_property)
             elif self._generator.ontology.is_subtype_of(property_, COLOR):
-                # Sample an RGB value for the color property and generate perception for it
-                if property_ in COLORS_TO_RGBS.keys():
-                    color_options = COLORS_TO_RGBS[property_]
-                    if color_options:
-                        r, g, b = self._chooser.choice(color_options)
-                        perceived_property = HasColor(
-                            perceived_object, RgbColorPerception(r, g, b)
-                        )
-                    else:  # Handles the case of TRANSPARENT
-                        perceived_property = HasBinaryProperty(
-                            perceived_object, property_
-                        )
-                else:
-                    raise RuntimeError(
-                        f"Not sure how to generate perception for the unknown property {property_} "
-                        f"which is marked as COLOR"
-                    )
+                pass
             else:
                 raise RuntimeError(
                     f"Not sure how to generate perception for property {property_} "
                     f"which is marked as perceivable"
                 )
-            self._property_assertion_perceptions.append(perceived_property)
-
-    def _determine_color(
-        self, situation_object: SituationObject
-    ) -> Optional[OntologyNode]:
-        explicitly_specified_colors = immutableset(
-            property_
-            for property_ in situation_object.properties
-            if self._generator.ontology.is_subtype_of(property_, COLOR)
-        )
-
-        # prototypical_colors_for_object_type = immutableset(
-        #     property_
-        #     for property_ in self._generator.ontology.properties_for_node(
-        #         situation_object.ontology_node
-        #     )
-        #     if self._generator.ontology.is_subtype_of(property_, COLOR)
-        # )
-
-        if explicitly_specified_colors:
-            # If any color is specified explicitly, then ignore any which are just prototypical
-            # for the object type.
-            if len(explicitly_specified_colors) == 1:
-                return only(explicitly_specified_colors)
-            else:
-                raise RuntimeError("Cannot have multiple explicit colors on an object.")
-        # elif prototypical_colors_for_object_type:
-        #     # if an "inherited color" has already been set, skip
-        #     # to avoid re-assigning a random color
-        #     object_perception = self._objects_to_perceptions[situation_object].debug_handle
-        #     if r"HasColor\(%s #\d+\)" % object_perception in self._property_assertion_perceptions:
-        #         return None
-        #     return self._chooser.choice(prototypical_colors_for_object_type)
-        else:
-            # We have no idea what color this is, so we currently don't perceive any color.
-            # https://github.com/isi-vista/adam/issues/113
-            return None
 
     def _perceive_objects(self) -> None:
-        if not any(
-            situation_object.ontology_node == GROUND
-            for situation_object in self._situation.all_objects
+        if (
+            not any(
+                situation_object.ontology_node == GROUND
+                for situation_object in self._situation.all_objects
+            )
+            and self._include_ground
         ):
-            self._perceive_object(SituationObject(GROUND))
-        if not any(
-            situation_object.ontology_node == LEARNER
-            for situation_object in self._situation.all_objects
+            self._perceive_object(
+                SituationObject.instantiate_ontology_node(
+                    GROUND, ontology=self._generator.ontology
+                )
+            )
+        if (
+            not any(
+                situation_object.ontology_node == LEARNER
+                for situation_object in self._situation.all_objects
+            )
+            and self._include_learner
         ):
-            self._perceive_object(SituationObject(LEARNER))
+            self._perceive_object(
+                SituationObject.instantiate_ontology_node(
+                    LEARNER, ontology=self._generator.ontology
+                )
+            )
         for situation_object in self._situation.all_objects:
             self._perceive_object(situation_object)
 
@@ -750,8 +720,6 @@ class _PerceptionGeneration:
                 "Don't yet know how to handle situation objects without "
                 "associated ontology nodes"
             )
-        # If possible, determine the object color.
-        color = self._compute_color(situation_object)
 
         perceived_object: ObjectPerception
 
@@ -770,16 +738,14 @@ class _PerceptionGeneration:
                 # https://github.com/isi-vista/adam/issues/87
                 raise RuntimeError(
                     f"Support for objects with multiple structural schemata has not "
-                    f"yet keep implemented."
+                    f"yet been implemented."
                 )
             if object_schemata:
                 # We know the object's structure.
                 # It might have complicated internal structure,
                 # which we will recursively instantiate.
                 perceived_object = self._instantiate_object_schema(
-                    only(object_schemata),
-                    situation_object=situation_object,
-                    inherited_color=color,
+                    only(object_schemata), situation_object=situation_object
                 )
             else:
                 if self._generator.ontology.has_property(
@@ -791,9 +757,7 @@ class _PerceptionGeneration:
                             situation_object.ontology_node
                         ),
                         geon=None,
-                        # we just give substances the
-                        # universal gravitational axes
-                        axes=WORLD_AXES,
+                        axes=situation_object.axes,
                     )
                 else:
                     raise RuntimeError(
@@ -812,97 +776,58 @@ class _PerceptionGeneration:
         # if the object being instantiated corresponds to an object
         # in the situation description, then this will track that object
         situation_object: Optional[SituationObject] = None,
-        inherited_color: Optional[Any] = None,
     ) -> ObjectPerception:
-        def get_sub_object_color(sub_object: SubObject) -> Any:
-            sub_object_colors = immutableset(
-                property_
-                for property_ in self._generator.ontology.properties_for_node(
-                    sub_object.schema.ontology_node
-                )
-                if self._generator.ontology.is_subtype_of(property_, COLOR)
-            )
-
-            if sub_object_colors:
-                sub_object_color: Any = self._chooser.choice(sub_object_colors)
-                if sub_object_color in COLORS_TO_RGBS.keys():
-                    color_options = COLORS_TO_RGBS[sub_object_color]
-                    if color_options:
-                        r, g, b = self._chooser.choice(color_options)
-                        sub_object_color = RgbColorPerception(r, g, b)
-                else:
-                    raise RuntimeError(
-                        f"Not sure how to generate perception for the unknown property {sub_object_color} "
-                        f"which is marked as COLOR"
-                    )
-            elif inherited_color:
-                sub_object_color = inherited_color
-            else:
-                sub_object_color = None
-
-            return sub_object_color
 
         debug_handle = self._object_handle_generator.subscripted_handle(
             schema.ontology_node
         )
-        root_object_perception: ObjectPerception
+
+        # find a geon for the object, if possible
+        concrete_geon: Optional[Geon]
         if schema.geon:
-            concrete_geon = schema.geon
-            root_object_perception = ObjectPerception(
-                debug_handle=debug_handle,
-                geon=concrete_geon,
-                axes=situation_object.axes
-                if situation_object and situation_object.axes
-                else concrete_geon.axes,
-            )
+            # if there is a situation object, we need to keep its axes in sync with its geon's axes
+            if situation_object:
+                concrete_geon = schema.geon.copy(
+                    axis_mapping=situation_object.schema_axis_to_object_axis
+                )
+            else:
+                concrete_geon = schema.geon.copy()
         else:
-            root_object_perception = ObjectPerception(
-                debug_handle=debug_handle,
-                geon=None,
-                axes=situation_object.axes
-                if situation_object and situation_object.axes
-                else schema.axes,
-            )
+            concrete_geon = None
+
+        # find axes for the object
+        if situation_object:
+            # This is a top-level object which has already been assigned axes
+            # by the situation. We should not change or copy them
+            # or else references to them by the situation
+            # (e.g. which axes face which objects)
+            # will be out-of-sync.
+            # See https://github.com/isi-vista/adam/issues/420
+            axes = situation_object.axes
+        else:
+            if concrete_geon:
+                # when the geon was copied, its axes were already copied,
+                # which is why we don't do it again on this branch
+                axes = concrete_geon.axes
+            else:
+                axes = schema.axes.copy()
+
+        root_object_perception = ObjectPerception(
+            debug_handle=debug_handle, geon=concrete_geon, axes=axes
+        )
 
         # for object perceptions which correspond to SituationObjects
         # (that is, typically, for objects which are not components of other objects)
         # we track the correspondence
         # to assist in translating SituationRelations and SituationActions.
-        if situation_object:
-            if inherited_color:
-                if isinstance(inherited_color, RgbColorPerception):
-                    self._property_assertion_perceptions.append(
-                        HasColor(root_object_perception, inherited_color)
-                    )
-                else:
-                    self._property_assertion_perceptions.append(
-                        HasBinaryProperty(root_object_perception, inherited_color)
-                    )
 
         # recursively instantiate sub-components of this object
         sub_object_to_object_perception: ImmutableDict[
             SubObject, ObjectPerception
         ] = immutabledict(
-            (
-                sub_object,
-                self._instantiate_object_schema(
-                    sub_object.schema, inherited_color=inherited_color
-                ),
-            )
+            (sub_object, self._instantiate_object_schema(sub_object.schema))
             for sub_object in schema.sub_objects
         )
-
-        # This will record what types of objects have which colors/RgbColorPerceptions
-        # so that each sub-object of the same type will be assigned identical colors
-        sub_object_nodes_to_colors: MutableMapping[OntologyNode, Any] = {}
-        for sub_object in schema.sub_objects:
-            if (
-                sub_object.schema.ontology_node not in sub_object_nodes_to_colors
-                or sub_object_nodes_to_colors[sub_object.schema.ontology_node] is None
-            ):
-                sub_object_nodes_to_colors[
-                    sub_object.schema.ontology_node
-                ] = get_sub_object_color(sub_object)
 
         for sub_object in schema.sub_objects:
             sub_object_perception = sub_object_to_object_perception[sub_object]
@@ -914,21 +839,6 @@ class _PerceptionGeneration:
             self._relation_perceptions.append(
                 Relation(PART_OF, sub_object_perception, root_object_perception)
             )
-
-            if sub_object.schema.ontology_node in sub_object_nodes_to_colors:
-                color: Any = sub_object_nodes_to_colors[sub_object.schema.ontology_node]
-            else:
-                color = None
-
-            if color:
-                if isinstance(color, RgbColorPerception):
-                    self._property_assertion_perceptions.append(
-                        HasColor(sub_object_perception, color)
-                    )
-                else:  # Handles the case of TRANSPARENT
-                    self._property_assertion_perceptions.append(
-                        HasBinaryProperty(sub_object_perception, color)
-                    )
 
         # translate sub-object relations specified by the object's structural schema
         for sub_object_relation in schema.sub_object_relations:
@@ -955,31 +865,139 @@ class _PerceptionGeneration:
             )
         return root_object_perception
 
-    def _compute_color(
-        self, situation_object: SituationObject
-    ) -> Union[OntologyNode, Optional[RgbColorPerception]]:
-        colors = immutableset(
-            property_
-            for property_ in self._generator.ontology.properties_for_node(
-                situation_object.ontology_node
-            )
-            if self._generator.ontology.is_subtype_of(property_, COLOR)
-        )
-        color = self._chooser.choice(colors) if colors else None
-        if color:
-            if color in COLORS_TO_RGBS.keys():
-                color_options = COLORS_TO_RGBS[color]
+    def _perceive_colors(self) -> None:
+        # Create a graph representing each object and their sub-objects
+        object_graph = DiGraph()
+        root = ObjectPerception("root", axes=WORLD_AXES)
+        object_graph.add_node(root)
+        perceptions_to_situation_objects: Mapping[ObjectPerception, SituationObject] = {
+            self._objects_to_perceptions[situation_object]: situation_object
+            for situation_object in self._situation.all_objects
+        }
+        ontology_nodes_to_colors: MutableMapping[
+            OntologyNode, Union[RgbColorPerception, OntologyNode]
+        ] = {}
+        visited = set()
+
+        for situation_object in self._situation.all_objects:
+            object_perception = self._objects_to_perceptions[situation_object]
+            object_graph.add_node(object_perception)
+            object_graph.add_edge(root, object_perception)
+
+        for object_relation in self._relation_perceptions:
+            if object_relation.relation_type == PART_OF:
+                object_graph.add_edge(
+                    object_relation.second_slot, object_relation.first_slot
+                )
+
+        def assert_color(
+            object_perception, color: Union[RgbColorPerception, OntologyNode]
+        ):
+            """
+            Append a color property to the list of property assertion perceptions
+            """
+            if isinstance(color, RgbColorPerception):
+                self._property_assertion_perceptions.append(
+                    HasColor(object_perception, color)
+                )
+            else:
+                self._property_assertion_perceptions.append(
+                    HasBinaryProperty(object_perception, color)
+                )
+
+        def handle_color_property(
+            object_perception, color_node: OntologyNode
+        ) -> Union[RgbColorPerception, OntologyNode]:
+            """
+            Convert a color property to an RgbColorPerception if needed
+            before calling `assert_color`
+            """
+            if color_node in COLORS_TO_RGBS.keys():
+                color_options = COLORS_TO_RGBS[color_node]
                 if color_options:
                     r, g, b = self._chooser.choice(color_options)
-                    return RgbColorPerception(r, g, b)
+                    rgb_color = RgbColorPerception(r, g, b)
+                    assert_color(object_perception, rgb_color)
+                    return rgb_color
                 else:  # Handles the case of TRANSPARENT
-                    return color
+                    assert_color(object_perception, color_node)
+                    return color_node
             else:
                 raise RuntimeError(
-                    f"Not sure how to generate perception for the unknown property {color} "
+                    f"Not sure how to generate perception for the unknown property {color_node} "
                     f"which is marked as COLOR"
                 )
-        return None
+
+        def dfs_walk(node: ObjectPerception, inherited_color=None):
+            visited.add(node)
+            if not node == root:
+                # Begin new component
+                if object_graph.has_edge(root, node):
+                    ontology_nodes_to_colors.clear()
+                    inherited_color = None
+
+                if node in perceptions_to_situation_objects:
+                    node_situation_object = perceptions_to_situation_objects[node]
+                    ontology_node = node_situation_object.ontology_node
+                    explicitly_specified_colors: Optional[
+                        ImmutableSet[OntologyNode]
+                    ] = immutableset(
+                        property_
+                        for property_ in node_situation_object.properties
+                        if self._generator.ontology.is_subtype_of(property_, COLOR)
+                    )
+                    prototypical_colors = immutableset(
+                        property_
+                        for property_ in self._generator.ontology.properties_for_node(
+                            ontology_node
+                        )
+                        if self._generator.ontology.is_subtype_of(property_, COLOR)
+                    )
+                else:
+                    ontology_node = self._object_perceptions_to_ontology_nodes[node]
+                    # colors of sub-objects cannot be explicitly specified
+                    explicitly_specified_colors = None
+                    prototypical_colors = immutableset(
+                        property_
+                        for property_ in self._generator.ontology.properties_for_node(
+                            ontology_node
+                        )
+                        if self._generator.ontology.is_subtype_of(property_, COLOR)
+                    )
+
+                # If a color is explicitly defined, use that color
+                if explicitly_specified_colors:
+                    if len(explicitly_specified_colors) == 1:
+                        inherited_color = handle_color_property(
+                            node, only(explicitly_specified_colors)
+                        )
+                    else:
+                        raise RuntimeError(
+                            "Cannot have multiple explicit colors on an object."
+                        )
+                # If an object's type already has a color associated with it,
+                # assign that color to the object
+                elif ontology_node in ontology_nodes_to_colors:
+                    assert_color(node, ontology_nodes_to_colors[ontology_node])
+                # If the object has a set of prototypical colors,
+                # assign a random one to the object
+                elif prototypical_colors:
+                    color_choice = self._chooser.choice(prototypical_colors)
+                    object_color = handle_color_property(node, color_choice)
+                    ontology_nodes_to_colors[ontology_node] = object_color
+                    inherited_color = object_color
+                # Otherwise if an inherited color is defined, assign it to the sub-object
+                elif inherited_color:
+                    assert_color(node, inherited_color)
+                # If we cannot determine an object's color,
+                # we don't assign one
+            elif not object_graph.successors(node):
+                RuntimeError(f"Error while perceiving colors - {node} is not a tree")
+            for successor in object_graph.successors(node):
+                if successor not in visited:
+                    dfs_walk(successor, inherited_color)
+
+        dfs_walk(root)
 
     def _compute_during(
         self, during_from_action_description: Optional[DuringAction[ObjectPerception]]

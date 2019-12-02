@@ -1,9 +1,13 @@
+from typing import Optional
+
 from adam.curriculum.phase1_curriculum import phase1_instances, PHASE1_CHOOSER
 from adam.language_specific.english.english_language_generator import IGNORE_COLORS
 from adam.learner import LearningExample
 from adam.learner.subset import SubsetLanguageLearner
-from adam.ontology.phase1_ontology import BALL, TRUCK, LEARNER
+from adam.ontology import OntologyNode
+from adam.ontology.phase1_ontology import BALL, LEARNER, DOG
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
+from adam.perception.perception_graph import DumpPartialMatchCallback, DebugCallableType
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
     object_variable,
@@ -12,54 +16,35 @@ from adam.situation.templates.phase1_templates import (
 )
 
 
-def test_subset_learner_ball():
-    learner = object_variable("learner_0", LEARNER)
-    colored_ball_object = object_variable(
-        "ball-with-color", BALL, added_properties=[color_variable("color")]
+def run_subset_learner_for_object(
+    obj: OntologyNode, debug_callback: Optional[DebugCallableType] = None
+):
+    learner_obj = object_variable("learner_0", LEARNER)
+    colored_obj_object = object_variable(
+        "obj-with-color", obj, added_properties=[color_variable("color")]
     )
 
-    ball_template = Phase1SituationTemplate(
-        "colored-ball-object",
-        salient_object_variables=[colored_ball_object, learner],
+    obj_template = Phase1SituationTemplate(
+        "colored-obj-object",
+        salient_object_variables=[colored_obj_object, learner_obj],
         syntax_hints=[IGNORE_COLORS],
     )
 
-    ball_curriculum = phase1_instances(
-        "all ball situations",
+    obj_curriculum = phase1_instances(
+        "all obj situations",
         situations=all_possible(
-            ball_template, chooser=PHASE1_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY
+            obj_template, chooser=PHASE1_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY
         ),
     )
-    test_ball_curriculum = phase1_instances(
-        "ball test",
+    test_obj_curriculum = phase1_instances(
+        "obj test",
         situations=all_possible(
-            ball_template, chooser=PHASE1_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY
-        ),
-    )
-    colored_truck_object = object_variable(
-        "truck-with-color", TRUCK, added_properties=[color_variable("color")]
-    )
-    truck_template = Phase1SituationTemplate(
-        "colored-truck-object",
-        salient_object_variables=[colored_truck_object, learner],
-        syntax_hints=[IGNORE_COLORS],
-    )
-
-    truck_curriculum = phase1_instances(
-        "all truck situations",
-        situations=all_possible(
-            truck_template, chooser=PHASE1_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY
-        ),
-    )
-    test_truck_curriculum = phase1_instances(
-        "truck test",
-        situations=all_possible(
-            truck_template, chooser=PHASE1_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY
+            obj_template, chooser=PHASE1_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY
         ),
     )
 
-    learner = SubsetLanguageLearner()
-    for training_stage in [ball_curriculum, truck_curriculum]:
+    learner = SubsetLanguageLearner(debug_callback)  # type: ignore
+    for training_stage in [obj_curriculum]:
         for (
             _,
             linguistic_description,
@@ -69,7 +54,7 @@ def test_subset_learner_ball():
                 LearningExample(perceptual_representation, linguistic_description)
             )
 
-    for test_instance_group in [test_ball_curriculum, test_truck_curriculum]:
+    for test_instance_group in [test_obj_curriculum]:
         for (
             _,
             test_instance_language,
@@ -80,3 +65,13 @@ def test_subset_learner_ball():
             assert [desc.as_token_sequence() for desc in descriptions_from_learner][
                 0
             ] == gold
+
+
+def test_subset_learner_ball():
+    run_subset_learner_for_object(BALL)
+
+
+def test_subset_learner_dog():
+    debug_callback = DumpPartialMatchCallback(render_path="../renders/")
+    # We pass this callback into the learner; it is executed if the learning takes too long, i.e after 60 seconds.
+    run_subset_learner_for_object(DOG, debug_callback)

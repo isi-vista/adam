@@ -4,6 +4,7 @@ from attr import attrib, attrs
 from attr.validators import in_, instance_of
 from immutablecollections import ImmutableSet, immutableset
 from immutablecollections.converter_utils import _to_immutableset
+from vistautils.preconditions import check_arg
 from vistautils.range import Range
 
 from adam.axes import AxesInfo
@@ -58,6 +59,15 @@ class DevelopmentalPrimitivePerceptionFrame(PerceptualRepresentationFrame):
       
     Symmetric relations should be included as two separate relations, one in each direction.            
     """
+
+    def __attrs_post_init__(self) -> None:
+        for relation in self.relations:
+            check_arg(
+                not relation.negated,
+                "Negated relations cannot appear in perceptual "
+                "representations but got %s",
+                (relation,),
+            )
 
 
 @attrs(slots=True, frozen=True, repr=False)

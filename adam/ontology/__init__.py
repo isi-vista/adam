@@ -11,7 +11,7 @@ from immutablecollections.converter_utils import _to_immutableset
 from networkx import DiGraph
 
 
-@attrs(frozen=True, slots=True, repr=False)
+@attrs(frozen=True, slots=True, repr=False, cache_hash=True)
 class OntologyNode:
     r"""
     A node in an ontology representing some type of object, action, or relation, such as

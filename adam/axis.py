@@ -4,7 +4,7 @@ from attr.validators import instance_of
 from adam.utilities import sign
 
 
-@attrs(frozen=True, slots=True, repr=False, cmp=False)
+@attrs(frozen=True, slots=True, repr=False, eq=False)
 class GeonAxis:
     debug_name: str = attrib(validator=instance_of(str))
     curved: bool = attrib(validator=instance_of(bool), default=False)
@@ -19,5 +19,5 @@ class GeonAxis:
             f"{self.debug_name}"
             f"[{sign(self.curved)}curved, "
             f"{sign(self.directed)}directed, "
-            f"{sign(self.curved)}aligned_to_gravity]"
+            f"{sign(self.aligned_to_gravitational)}aligned_to_gravity]"
         )

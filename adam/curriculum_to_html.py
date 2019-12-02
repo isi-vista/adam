@@ -11,8 +11,10 @@ from typing import (
     Union,
     Optional,
     Dict,
+    Mapping,
 )
 
+from adam.curriculum.curriculum_utils import Phase1InstanceGroup
 from attr import attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import (
@@ -27,8 +29,9 @@ from vistautils.parameters import Parameters
 from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 from vistautils.preconditions import check_state
 
-from adam.curriculum.phase1_curriculum import GAILA_PHASE_1_CURRICULUM
 from adam.curriculum.preposition_curriculum import make_prepositions_curriculum
+from adam.curriculum.pursuit_curriculum import make_pursuit_curriculum
+from adam.curriculum.phase1_curriculum import build_gaila_phase_1_curriculum
 from adam.experiment import InstanceGroup
 from adam.geon import Geon
 from adam.axes import WORLD_AXES, AxesInfo
@@ -98,9 +101,10 @@ EXPLANATION_HEADER = (
     "<li>Many objects also have associated Geons, which describe their shape "
     "according to Biederman's visual perception theory (see deliverable docs for a citation).</li>"
 )
-STR_TO_CURRICULUM = {
-    "phase1": GAILA_PHASE_1_CURRICULUM,
-    "prepositions": make_prepositions_curriculum(),
+STR_TO_CURRICULUM: Mapping[str, Callable[[], Iterable[Phase1InstanceGroup]]] = {
+    "phase1": build_gaila_phase_1_curriculum,
+    "prepositions": make_prepositions_curriculum,
+    "pursuit": make_pursuit_curriculum,
 }
 
 
@@ -111,7 +115,9 @@ def main(params: Parameters) -> None:
     )
     phase1_curriculum_dir = root_output_directory / curriculum_string
     phase1_curriculum_dir.mkdir(parents=True, exist_ok=True)
-    curriculum_to_render = STR_TO_CURRICULUM[curriculum_string]
+    # We lazily instantiate the curriculum so we don't need to worry
+    # about any of them we don't actually use.
+    curriculum_to_render = STR_TO_CURRICULUM[curriculum_string]()
 
     sort_by_utterance_length_flag = params.optional_boolean(
         "sort_by_utterance", default=False
@@ -122,6 +128,7 @@ def main(params: Parameters) -> None:
             curriculum_to_render,
             output_directory=phase1_curriculum_dir,
             title="GAILA Phase 1 Curriculum Sorted by Utterance Length",
+            curriculum_string=curriculum_string,
             random_seed=random_seed,
         )
     else:
@@ -166,6 +173,7 @@ class CurriculumToHtmlDumper:
         *,
         output_directory: Path,
         title: str,
+        curriculum_string: str,
         random_seed: int,
     ):
         all_instances = []
@@ -211,23 +219,19 @@ class CurriculumToHtmlDumper:
                 )
             )
 
-        filename = "curriculum-sorted-by-utterance.html"
-        index_file = "index-" + filename
+        filename = f"{curriculum_string}-curriculum-sorted-by-utterance.html"
         chunk_size = 50
         files_written: List[Tuple[str, str]] = []
         for i in range(0, len(rendered_instances), chunk_size):
             chunk = rendered_instances[i : i + chunk_size]
             instance_group_header = f"{int(i / chunk_size):03} - {filename}"
-            relative_filename = f"{instance_group_header}.html"
+            relative_filename = f"{instance_group_header}"
+            print(relative_filename)
             files_written.append((instance_group_header, relative_filename))
             with open(output_directory / relative_filename, "w") as html_out:
                 html_out.write(f"<head>\n\t<style>{CSS}\n\t</style>\n</head>")
-                html_out.write(
-                    f"\n<body>\n\t<h1>{title} - Sorted by Utterance Length</h1>"
-                )
-                html_out.write(
-                    f"\t<a href='{output_directory}/{index_file}'>" f"Back to Index</a>"
-                )
+                html_out.write(f"\n<body>\n\t<h1>{title} - {curriculum_string}</h1>")
+                html_out.write(f"\t<a href='index.html'>" f"Back to Index</a>")
                 html_out.write(EXPLANATION_HEADER)
                 for (instance_number, instance_holder) in enumerate(immutableset(chunk)):
                     # By using the immutable set we guaruntee iteration order and remove duplicates
@@ -258,11 +262,9 @@ class CurriculumToHtmlDumper:
                         f"\t\t\t</tr>\n\t\t</tbody>\n\t</table>"
                     )
                     html_out.write("\n</body>")
-                html_out.write(
-                    f"\t<a href='{output_directory}/{index_file}'>" f"Back to Index</a>"
-                )
+                html_out.write(f"\t<a href='index.html'>" f"Back to Index</a>")
 
-        with open(output_directory / index_file, "w") as index_out:
+        with open(str(output_directory / "index.html"), "w") as index_out:
             index_out.write(f"<head><title>{title}</title></head><body>")
             index_out.write("<ul>")
             for (
@@ -321,7 +323,6 @@ class CurriculumToHtmlDumper:
                 instance_group=instance_group,
                 output_destination=output_directory / relative_filename,
                 title=f"{instance_group_header} - {title}",
-                output_directory=output_directory,
             )
 
         # write an table of contents to index.html
@@ -348,7 +349,6 @@ class CurriculumToHtmlDumper:
         ],
         title: str,
         output_destination: Path,
-        output_directory: Path,
     ):
         """
         Internal generation method for individual instance groups into HTML pages
@@ -392,9 +392,7 @@ class CurriculumToHtmlDumper:
         with open(output_destination, "w") as html_out:
             html_out.write(f"<head>\n\t<style>{CSS}\n\t</style>\n</head>")
             html_out.write(f"\n<body>\n\t<h1>{title}</h1>")
-            html_out.write(
-                f"\t<a href='{output_directory}/index.html'>" f"Back to Index</a>"
-            )
+            html_out.write(f"\t<a href='index.html'>" f"Back to Index</a>")
             html_out.write(EXPLANATION_HEADER)
             # By using the immutable set we guarantee iteration order and remove duplicates
             for (instance_number, instance_holder) in enumerate(
@@ -426,9 +424,7 @@ class CurriculumToHtmlDumper:
                     f'\t\t\t\t<td valign="top">{instance_holder.perception}\n\t\t\t\t</td>\n'
                     f"\t\t\t</tr>\n\t\t</tbody>\n\t</table>"
                 )
-            html_out.write(
-                f"\t<a href='{output_directory}/index.html'>" f"Back to Index</a>"
-            )
+            html_out.write(f"\t<a href='index.html'>" f"Back to Index</a>")
             html_out.write("\n</body>")
 
     def _situation_text(
