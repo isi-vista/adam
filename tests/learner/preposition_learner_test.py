@@ -30,6 +30,8 @@ from adam.ontology.phase1_ontology import (
 )
 from adam.situation.templates.phase1_templates import sampled, object_variable
 
+_DEBUG_FILE_PATH = "/nas/home/jacobl/adam-root/outputs/log2.txt"
+
 
 def test_subset_preposition_on_learner():
     learner = PrepositionSubsetLanguageLearner()
@@ -253,7 +255,7 @@ def test_subset_preposition_in_learner():
 
 
 def test_subset_preposition_behind_learner():
-    learner = PrepositionSubsetLanguageLearner()
+    learner = PrepositionSubsetLanguageLearner(debug_file=_DEBUG_FILE_PATH)
     ball = standard_object("ball", BALL)
     table = standard_object("chair", TABLE)
     learner_object = standard_object("learner", LEARNER, added_properties=[IS_ADDRESSEE])
@@ -302,7 +304,7 @@ def test_subset_preposition_behind_learner():
 
 
 def test_subset_preposition_in_front_learner():
-    learner = PrepositionSubsetLanguageLearner()
+    learner = PrepositionSubsetLanguageLearner(debug_file=_DEBUG_FILE_PATH)
     ball = standard_object("ball", BALL)
     table = standard_object("chair", TABLE)
     learner_object = standard_object("learner", LEARNER, added_properties=[IS_ADDRESSEE])

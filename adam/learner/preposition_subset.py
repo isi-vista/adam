@@ -1,8 +1,8 @@
-from typing import Any, Dict, Generic, List, Mapping, Tuple, Iterable
+from typing import Any, Dict, Generic, List, Mapping, Tuple, Iterable, Optional
 
 from immutablecollections import ImmutableSet, immutabledict, immutableset
 from more_itertools import flatten
-from networkx import all_shortest_paths
+from networkx import all_shortest_paths, DiGraph
 
 from adam.language import (
     LinguisticDescription,
@@ -22,8 +22,11 @@ from adam.perception.perception_graph import (
     PerceptionGraph,
     PerceptionGraphNode,
     MatchedObjectNode,
+    _graph_node_order,
 )
 from attr import Factory, attrib, attrs
+
+from adam.utils.networkx_utils import digraph_with_nodes_sorted_by
 
 PrepositionSurfaceTemplate = Tuple[str, ...]
 """
@@ -43,6 +46,14 @@ class PrepositionSubsetLanguageLearner(
     ] = attrib(init=False, default=Factory(dict))
 
     _object_recognizer: ObjectRecognizer = attrib(init=False, default=ObjectRecognizer())
+    _debug_file: Optional[str] = attrib(kw_only=True, default=None)
+
+    def _print(self, graph: DiGraph, name: str) -> None:
+        if self._debug_file:
+            with open(self._debug_file, "a") as doc:
+                doc.write(name + "\n")
+                for node in graph:
+                    doc.write(str(node) + "\n")
 
     def observe(
         self, learning_example: LearningExample[PerceptionT, LinguisticDescription]
@@ -59,11 +70,23 @@ class PrepositionSubsetLanguageLearner(
             learning_example.linguistic_description.as_token_sequence()
         )
 
+        # DEBUG
+        self._print(
+            original_perception.copy_as_digraph(),
+            " ".join(observed_linguistic_description),
+        )
+
         recognized_object_perception = self._object_recognizer.match_objects(
             original_perception
         )
         object_match_nodes = []
         token_indices_of_matched_object_words = []
+
+        # DEBUG
+        self._print(
+            recognized_object_perception.perception_graph.copy_as_digraph(),
+            "Recoginzed Perception",
+        )
 
         for (idx, token) in enumerate(observed_linguistic_description):
             if (
@@ -137,6 +160,12 @@ class PrepositionSubsetLanguageLearner(
             template_variables_to_object_match_nodes,
         )
 
+        # DEBUG
+        self._print(
+            preposition_pattern.graph_pattern.copy_as_digraph(),
+            "New: " + " ".join(preposition_surface_template),
+        )
+
         if preposition_surface_template in self._surface_template_to_preposition_pattern:
             # We have seen this preposition situation before.
             # Our learning strategy is to assume the true semantics of the preposition
@@ -154,6 +183,14 @@ class PrepositionSubsetLanguageLearner(
             self._surface_template_to_preposition_pattern[
                 preposition_surface_template
             ] = preposition_pattern
+
+        # DEBUG
+        self._print(
+            self._surface_template_to_preposition_pattern[
+                preposition_surface_template
+            ].graph_pattern.copy_as_digraph(),
+            "Saved: " + " ".join(preposition_surface_template),
+        )
 
     def _make_preposition_hypothesis(
         self,
@@ -207,8 +244,11 @@ class PrepositionSubsetLanguageLearner(
         # We wrap the nodes in an immutable set to remove duplicates
         hypothesis_nodes = immutableset(hypothesis_nodes_mutable)
 
-        preposition_pattern_graph = perception_graph_post_object_recognition.copy_as_digraph().subgraph(
-            nodes=hypothesis_nodes
+        preposition_pattern_graph = digraph_with_nodes_sorted_by(
+            perception_graph_post_object_recognition.copy_as_digraph().subgraph(
+                nodes=hypothesis_nodes
+            ),
+            _graph_node_order,
         )
         return PrepositionPattern.from_graph(
             preposition_pattern_graph, template_variables_to_object_match_nodes
@@ -224,8 +264,17 @@ class PrepositionSubsetLanguageLearner(
         else:
             raise RuntimeError("Cannot process perception type.")
 
+        # DEBGU
+        self._print(original_perception.copy_as_digraph(), "Describe Original")
+
         recognized_object_perception = self._object_recognizer.match_objects(
             original_perception
+        )
+
+        # DEBGU
+        self._print(
+            recognized_object_perception.perception_graph.copy_as_digraph(),
+            "Describe Recoginzed Objects",
         )
 
         object_match_node_to_object_handle: Mapping[
@@ -288,7 +337,10 @@ class PrepositionSubsetLanguageLearner(
             matcher = preposition_pattern.graph_pattern.matcher(
                 recognized_object_perception.perception_graph
             )
-            for match in matcher.matches():
+            debug_mapping: Dict[Any, Any] = dict()
+            for match in matcher.matches(
+                debug_mapping_sink=debug_mapping if self._debug_file else None
+            ):
                 # if it is, use that preposition to describe the situation.
                 description_to_score.append(
                     (
@@ -306,5 +358,12 @@ class PrepositionSubsetLanguageLearner(
                         1.0,
                     )
                 )
+                if len(debug_mapping):
+                    self._print(
+                        preposition_pattern.graph_pattern.copy_as_digraph().subgraph(
+                            nodes=debug_mapping
+                        ),
+                        "Largest Partial Match",
+                    )
 
         return immutabledict(description_to_score)
