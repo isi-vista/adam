@@ -1,4 +1,3 @@
-import shutil
 from pathlib import Path
 
 from immutablecollections import immutableset
@@ -33,9 +32,9 @@ from adam.ontology.phase1_ontology import (
 )
 from adam.situation.templates.phase1_templates import sampled, object_variable
 
-_DEBUG_FILE_PATH = "/Users/gabbard/tmp/adam"
+# _DEBUG_FILE_PATH = "/Users/gabbard/tmp/adam"
 
-#_DEBUG_FILE_PATH = "/nas/home/jacobl/adam-root/outputs/log2.txt"
+_DEBUG_FILE_PATH = "/nas/home/jacobl/adam-root/outputs/log.txt"
 
 
 def test_subset_preposition_on_learner():
