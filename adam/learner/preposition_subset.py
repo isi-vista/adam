@@ -51,9 +51,11 @@ class PrepositionSubsetLanguageLearner(
     def _print(self, graph: DiGraph, name: str) -> None:
         if self._debug_file:
             with open(self._debug_file, "a") as doc:
-                doc.write(name + "\n")
+                doc.write("=== " + name + "===\n")
                 for node in graph:
-                    doc.write(str(node) + "\n")
+                    doc.write("\t" + str(node) + "\n")
+                for edge in graph.edges:
+                    doc.write("\t" + str(edge) + "\n")
 
     def observe(
         self, learning_example: LearningExample[PerceptionT, LinguisticDescription]
@@ -170,6 +172,12 @@ class PrepositionSubsetLanguageLearner(
             # We have seen this preposition situation before.
             # Our learning strategy is to assume the true semantics of the preposition
             # is what is in common between what we saw this time and what we saw last time.
+            self._print( self._surface_template_to_preposition_pattern[
+                preposition_surface_template
+            ].graph_pattern.copy_as_digraph(),
+                "pre-intersection current: ")
+            self._print(preposition_pattern.graph_pattern.copy_as_digraph(),
+                        "pre-intersection intersecting")
             self._surface_template_to_preposition_pattern[
                 preposition_surface_template
             ] = self._surface_template_to_preposition_pattern[
@@ -177,6 +185,10 @@ class PrepositionSubsetLanguageLearner(
             ].intersection(
                 preposition_pattern
             )
+            self._print(self._surface_template_to_preposition_pattern[
+                            preposition_surface_template
+                        ].graph_pattern.copy_as_digraph(),
+                        "post-intersection: ")
         else:
             # This is the first time we've seen a preposition situation like this one.
             # Remember our hypothesis about the semantics of the preposition.
@@ -209,9 +221,25 @@ class PrepositionSubsetLanguageLearner(
         # from the point-of-view of hypothesis generation, so we need an undirected copy
         # of the graph.
         perception_graph = perception_graph_post_object_recognition.copy_as_digraph()
+        self._print(perception_graph,
+                    "pre-Undirected perception graph")
+
+
+        # as_view=True loses determinism
         perception_graph_as_undirected = perception_graph_post_object_recognition.copy_as_digraph().to_undirected(
-            as_view=True
+            as_view=False
         )
+
+        self._print(perception_graph_as_undirected,
+                    "Undirected perception graph")
+
+        for path in all_shortest_paths(
+                    perception_graph_as_undirected,
+                    object_match_node_for_ground,
+                    object_match_node_for_modified,
+                ):
+            self._print(perception_graph_as_undirected.subgraph(path),
+                        "Got a path!")
 
         # The core of our hypothesis for the semantics of a preposition is all nodes
         # along the shortest path between the two objects involved in the perception graph.
@@ -227,6 +255,9 @@ class PrepositionSubsetLanguageLearner(
                 )
             )
         )
+
+        self._print(perception_graph_as_undirected.subgraph(hypothesis_spine_nodes),
+                    "Spine nodes")
 
         # Along the core of our hypothesis we also want to collect the predecessors and successors
         hypothesis_nodes_mutable = []
