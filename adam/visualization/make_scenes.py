@@ -48,6 +48,13 @@ class SceneNode:
     parent: "SceneNode" = attr.ib(default=None)
 
 
+@attrs(slots=True)
+class SceneNode:
+    elt: ObjectPerception = attr.ib()
+    children: List["SceneNode"] = attr.ib(factory=list)
+    parent: "SceneNode" = attr.ib(default=None)
+
+
 def main() -> None:
     random.seed(2015)
 
