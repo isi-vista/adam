@@ -31,7 +31,7 @@ def test_scenes_creation() -> Tuple[float, float, float]:
             if obj.elt.geon:
                 test_cs_to_shape(obj.elt.geon.cross_section)
 
-        point = SceneCreator.random_position()
+        point = SceneCreator.random_leaf_position()
 
         # automated test shouldn't go through every single scene
         if i > 5:

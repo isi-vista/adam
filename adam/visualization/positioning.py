@@ -4,7 +4,7 @@ that can position multiple bounding boxes s/t they do not overlap
 (in addition to other constraints).
 """
 from itertools import combinations
-from typing import Mapping, AbstractSet
+from typing import Mapping, AbstractSet, Tuple, Optional, List
 from attr import attrs, attrib
 
 import numpy as np
@@ -22,23 +22,28 @@ from vistautils.preconditions import check_arg
 ORIGIN = torch.zeros(3, dtype=torch.float)  # pylint: disable=not-callable
 COLLISION_PENALTY = 10
 
+SCENE_BOUNDARIES = torch.tensor(
+    [[-10.0, 10.0], [-7.0, 7.0], [0.0, 5.0]], dtype=torch.float
+)
+
 
 @attrs(frozen=True, auto_attribs=True)
 class AdamObject:
     """Used for testing purposes, to attach a name to a bounding box"""
 
     name: str
+    initial_position: Optional[Tuple[float, float, float]]
 
 
 def main() -> None:
-    ball = AdamObject(name="ball")
-    box = AdamObject(name="box")
+    ball = AdamObject(name="ball", initial_position=None)
+    box = AdamObject(name="box", initial_position=None)
 
-    cardboard_box = AdamObject(name="cardboardBox")
-    aardvark = AdamObject(name="aardvark")
-    flamingo = AdamObject(name="flamingo")
+    cardboard_box = AdamObject(name="cardboardBox", initial_position=None)
+    aardvark = AdamObject(name="aardvark", initial_position=None)
+    flamingo = AdamObject(name="flamingo", initial_position=None)
 
-    positioning_model = AdamObjectPositioningModel.for_objects(
+    positioning_model = AdamObjectPositioningModel.for_objects_random_positions(
         immutableset([ball, box, cardboard_box, aardvark, flamingo])
     )
     # we will start with an aggressive learning rate
@@ -66,6 +71,44 @@ def main() -> None:
         positioning_model.dump_object_positions()
 
 
+def run_model(objs: List[AdamObject]) -> List[torch.Tensor]:
+    """
+    Construct a positioning model given a list of objects to position, return their final position values
+    Args:
+        objs: list of AdamObjects requested to be positioned
+
+    Returns: List of (3,) tensors corresponding to the positions of the objs list
+
+    """
+    positioning_model = AdamObjectPositioningModel.for_objects(immutableset(objs))
+
+    # we will start with an aggressive learning rate
+    optimizer = optim.SGD(positioning_model.parameters(), lr=1.0)
+    # but will decrease it whenever the loss plateaus
+    learning_rate_schedule = ReduceLROnPlateau(
+        optimizer,
+        "min",
+        # decrease the rate if the loss hasn't improved in
+        # 3 epochs
+        patience=3,
+    )
+
+    iterations = 25
+    for _ in range(iterations):
+        loss = positioning_model()
+        print(f"Loss: {loss.item()}")
+        loss.backward()
+
+        optimizer.step()
+        optimizer.zero_grad()
+
+        learning_rate_schedule.step(loss)
+
+        positioning_model.dump_object_positions()
+
+    return [positioning_model.get_object_position(obj).data for obj in objs]
+
+
 @attrs(frozen=True, slots=True)
 class AxisAlignedBoundingBox:
     """
@@ -86,6 +129,14 @@ class AxisAlignedBoundingBox:
 
     def center_distance_from_point(self, point: torch.Tensor) -> torch.Tensor:
         return torch.dist(self.center, point, 2)
+
+    def center_out_of_bounds(self) -> torch.Tensor:
+        """
+        Returns the distance the box is out of bounds (summed across dimensions), or 0 if within bounds.
+        Returns: (1) Tensor
+
+        """
+        pass
 
     @staticmethod
     def create_at_random_position(
@@ -263,8 +314,25 @@ class AdamObjectPositioningModel(torch.nn.Module):  # type: ignore
         ] = immutabledict(
             (
                 adam_object,
+                AxisAlignedBoundingBox.create_at_center_point(
+                    center=np.array([adam_object.initial_position])
+                ),
+            )
+            for adam_object in adam_objects
+        )
+        return AdamObjectPositioningModel(objects_to_bounding_boxes)
+
+    @staticmethod
+    def for_objects_random_positions(
+        adam_objects: AbstractSet[AdamObject]
+    ) -> "AdamObjectPositioningModel":
+        objects_to_bounding_boxes: ImmutableDict[
+            AdamObject, AxisAlignedBoundingBox
+        ] = immutabledict(
+            (
+                adam_object,
                 AxisAlignedBoundingBox.create_at_random_position(
-                    min_distance_from_origin=5, max_distance_from_origin=10
+                    min_distance_from_origin=5.0, max_distance_from_origin=10.0
                 ),
             )
             for adam_object in adam_objects
@@ -288,6 +356,18 @@ class AdamObjectPositioningModel(torch.nn.Module):  # type: ignore
         for (adam_object, bounding_box) in self.adam_object_to_bounding_box.items():
             print(f"{adam_object.name} = {bounding_box.center.data}")
 
+    def get_object_position(self, obj: AdamObject) -> torch.Tensor:
+        """
+        Retrieves the (center) position of an AdamObject contained in this model.
+        Args:
+            obj: AdamObject whose position is requested
+
+        Returns: (3,) tensor of the requested object's position.
+
+        Raises KeyError if an AdamObject not contained in this model is queried.
+        """
+        return self.adam_object_to_bounding_box[obj].center.data
+
 
 class DistanceFromOriginPenalty(nn.Module):  # type: ignore
     """
@@ -300,6 +380,19 @@ class DistanceFromOriginPenalty(nn.Module):  # type: ignore
     def forward(self, *inputs):  # pylint: disable=arguments-differ
         bounding_box: AxisAlignedBoundingBox = inputs[0]
         return bounding_box.center_distance_from_point(ORIGIN)
+
+
+class OutsideOfSceneBoundariesPenalty(nn.Module):  # type: ignore
+    """
+    Model that penalizes boxes lying outside of the scene (i.e. below the ground plane) or off-camera)
+    """
+
+    def __init(self) -> None:  # pylint: disable=useless-super-delegation
+        super().__init__()
+
+    def forward(self, *inputs):  # pylint: disable=arguments-differ
+        bounding_box: AxisAlignedBoundingBox = inputs[0]
+        return bounding_box.center_out_of_bounds()
 
 
 class CollisionPenalty(nn.Module):  # type: ignore

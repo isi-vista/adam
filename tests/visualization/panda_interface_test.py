@@ -21,7 +21,7 @@ def test_basic_3d_scene() -> None:
 
     app.print_scene_graph()
 
-    dummy_node = app.add_dummy_node("dummy")
+    dummy_node = app.add_dummy_node("dummy", (0, 0, 0))
     other_dummy_node = app.add_dummy_node("second_dummy", dummy_node)
 
     print(other_dummy_node)

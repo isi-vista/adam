@@ -9,7 +9,9 @@ from functools import partial
 import random
 from collections import defaultdict
 
-from adam.curriculum.phase1_curriculum import build_gaila_phase_1_curriculum
+import torch
+
+from adam.curriculum.phase1_curriculum import _make_multiple_objects_curriculum
 import attr
 from attr import attrs
 from immutablecollections import ImmutableSet
@@ -36,6 +38,8 @@ from adam.ontology import OntologyNode
 from adam.visualization.panda3d_interface import SituationVisualizer
 from adam.visualization.utils import Shape
 
+from adam.visualization.positioning import run_model, AdamObject
+
 
 @attrs(slots=True)
 class SceneNode:
@@ -51,11 +55,11 @@ def main() -> None:
     print("scene generation test")
     viz = SituationVisualizer()
     for i, (property_map, obj_graph) in enumerate(
-        SceneCreator.create_scenes(build_gaila_phase_1_curriculum())
+        SceneCreator.create_scenes([_make_multiple_objects_curriculum()])
     ):
         print(f"SCENE {i}")
         # for debugging purposes:
-        SceneCreator.graph_for_each(obj_graph, obj_names)
+        SceneCreator.graph_for_each(obj_graph, print_obj_names)
 
         # bind visualizer and properties to render function:
         bound_render_obj = partial(
@@ -66,9 +70,23 @@ def main() -> None:
         SceneCreator.graph_for_each_top_level(
             obj_graph, bound_render_obj, bound_render_nested_obj
         )
+
+        # for debugging purposes to view the results of positioning:
+        viz.run_for_seconds(0.25)
+        input("Press RETURN to continue")
+
+        # now that every object has been instantiated into the scene,
+        # they need to be re-positioned.
+        top_level_positions = viz.top_level_positions()
+        print(f"top level positions:\n{top_level_positions}")
+        repositioned = _solve_top_level_positions(top_level_positions)
+        assert len(top_level_positions) == len(repositioned)
+        print(f"repositioned values: {repositioned}")
+        viz.set_positions(repositioned)
+
         viz.run_for_seconds(2.25)
         viz.print_scene_graph()
-        input("Press ENTER to continue")
+        input("Press RETURN to continue")
         viz.clear_scene()
         viz.run_for_seconds(0.25)
 
@@ -93,7 +111,11 @@ def render_obj_nested(
 ) -> NodePath:
 
     if obj.geon is None:
-        return renderer.add_dummy_node(obj.debug_handle, parent)
+        if parent is None:
+            pos = SceneCreator.random_root_position()
+        else:
+            pos = SceneCreator.random_leaf_position()
+        return renderer.add_dummy_node(obj.debug_handle, pos, parent)
     shape = SceneCreator.cross_section_to_geo(obj.geon.cross_section)
     # TODO***: allow for Irregular geons to be rendered
     if shape == Shape.IRREGULAR:
@@ -102,10 +124,10 @@ def render_obj_nested(
     for prop in properties[obj]:
         if isinstance(prop, RgbColorPerception):
             color = prop
-    return renderer.add_model(shape, SceneCreator.random_position(), color, parent)
+    return renderer.add_model(shape, SceneCreator.random_leaf_position(), color, parent)
 
 
-def obj_names(obj: ObjectPerception) -> None:
+def print_obj_names(obj: ObjectPerception) -> None:
     if obj.geon is not None:
         print(obj.debug_handle + " (has geon)")
     else:
@@ -265,6 +287,12 @@ class SceneCreator:
            Use return value from top level function as argument in
            recursively applied function. """
         for top_level in graph:
+            # special cases not rendered here:
+            if (
+                top_level.elt.debug_handle == "the ground"
+                or top_level.elt.debug_handle == "learner"
+            ):
+                continue
             print(f"\n\n\ncalling top_fn on {top_level.elt}")
             top_return = top_fn(top_level.elt)
             nodes = [(node, top_return) for node in top_level.children]
@@ -285,13 +313,41 @@ class SceneCreator:
                 nodes = recurse
 
     @staticmethod
-    def random_position() -> Tuple[float, float, float]:
+    def random_root_position() -> Tuple[float, float, float]:
         """Placeholder implementation for turning the relative position
         of a crossSection into a 3D coordinate. (z is up)"""
         x: float = random.uniform(-7.0, 7.0)
         y: float = random.uniform(-5.0, 5.0)
         z: float = random.uniform(0.0, 4.0)
         return x, y, z
+
+    @staticmethod
+    def random_leaf_position() -> Tuple[float, float, float]:
+        """Placeholder starting position for leaf objects (whose position value
+        is relative to their parent)."""
+        x: float = random.uniform(-1.0, 1.0)
+        y: float = random.uniform(-1.0, 1.0)
+        z: float = random.uniform(-1.0, 1.0)
+        return x, y, z
+
+
+def _solve_top_level_positions(
+    parent_positions: List[Tuple[float, float, float]]
+) -> List[torch.Tensor]:
+    """
+
+    Args:
+        parent_positions:
+
+    Returns: None, modifies the list of positions it is passed instead
+
+    """
+    objs = [
+        AdamObject(name=str(i), initial_position=parent_position)
+        for i, parent_position in enumerate(parent_positions)
+    ]
+
+    return run_model(objs)
 
 
 if __name__ == "__main__":

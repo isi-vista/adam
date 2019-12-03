@@ -16,8 +16,7 @@ import sys
 import os
 
 import time
-
-# TODO: see why these imports aren't getting found by pylint
+import torch
 from direct.showbase.ShowBase import ShowBase  # pylint: disable=no-name-in-module
 from direct.task import Task  # pylint: disable=no-name-in-module
 
@@ -115,8 +114,8 @@ class SituationVisualizer(ShowBase):
             print(f"No geometry found for {model_type}")
             raise
         # top level:
-        self.geo_nodes.append(new_model)
         if parent is None:
+            self.geo_nodes.append(new_model)
             new_model.reparentTo(self.render)
         # nested
         else:
@@ -125,13 +124,19 @@ class SituationVisualizer(ShowBase):
         new_model.setColor((col.red / 255, col.green / 255, col.blue / 255, 1.0))
         return new_model
 
-    def add_dummy_node(self, name: str, parent: Optional[NodePath] = None) -> NodePath:
+    def add_dummy_node(
+        self,
+        name: str,
+        pos: Tuple[float, float, float],
+        parent: Optional[NodePath] = None,
+    ) -> NodePath:
         print(f"\nAdding Dummy node: {name}")
         new_node = NodePath(name)
         if parent is None:
             new_node.reparentTo(self.render)
         else:
             new_node.reparentTo(parent)
+        new_node.setPos(*pos)
         self.geo_nodes.append(new_node)
         return new_node
 
@@ -140,6 +145,21 @@ class SituationVisualizer(ShowBase):
         for node in self.geo_nodes:
             node.remove_node()
         self.geo_nodes = []
+
+    def top_level_positions(self) -> List[Tuple[float, float, float]]:
+        """Returns a list of all positions of top level nodes of geometry objects
+           (so not cameras and lights). """
+        # TODO: need to ensure this is deterministic
+        return [node.getPos() for node in self.geo_nodes]
+
+    def set_positions(self, new_positions: List[torch.Tensor]):
+        """Modify the position of all top level geometry nodes in the scene.
+           The scene should not be modified in any way between retrieving node
+           positions and giving them new values, or this will produce incorrect
+           results. """
+        assert len(new_positions) == len(self.geo_nodes)
+        for node, pos in zip(self.geo_nodes, new_positions):
+            node.setPos(*pos)
 
     def test_scene_init(self) -> None:
         """Initialize a test scene with sample geometry, including a camera rotate task"""
