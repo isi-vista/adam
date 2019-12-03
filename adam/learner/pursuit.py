@@ -13,6 +13,7 @@ from adam.language import (
     LinguisticDescription,
 )
 from adam.learner import LanguageLearner, LearningExample, graph_without_learner, get_largest_matching_pattern
+from adam.ontology.phase1_ontology import partOf
 from adam.perception import PerceptionT, PerceptualRepresentation, ObjectPerception
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -102,9 +103,10 @@ class PursuitLanguageLearner(
         for meaning in meanings:
             # Get the maximum association score for that meaning
             max_association_score = max([s for w, h_to_s in self._words_to_hypotheses_and_scores.items()
-                                         for h, s in h_to_s.items()] + [0])
+                                         for h, s in h_to_s.items() if h.check_isomorphism(meaning)] + [0])
             if max_association_score < min_score:
                 pattern_hypothesis = meaning
+                min_score = max_association_score
 
         self._words_to_hypotheses_and_scores[
             word
@@ -146,24 +148,31 @@ class PursuitLanguageLearner(
             new_hypothesis_score = current_hypothesis_score + self._learning_factor * (
                     1 - current_hypothesis_score)
             print('Reinforcing ', word, match_ratio, new_hypothesis_score, leading_hypothesis_pattern.copy_as_digraph().nodes)
+            # Register the updated hypothesis score of A(w,h)
+            self._words_to_hypotheses_and_scores[
+                word
+            ][leading_hypothesis_pattern] = new_hypothesis_score
+
         # b.ii) If the hypothesis is disconfirmed, so we weaken the previous score
         else:
             # Penalize A(w,h)
             new_hypothesis_score = current_hypothesis_score * (1 - self._learning_factor)
-        # Register the updated hypothesis score of A(w,h)
-        self._words_to_hypotheses_and_scores[
-            word
-        ][leading_hypothesis_pattern] = new_hypothesis_score
+            # Register the updated hypothesis score of A(w,h)
+            self._words_to_hypotheses_and_scores[
+                word
+            ][leading_hypothesis_pattern] = new_hypothesis_score
 
-        # TODO RMG: only do new hypothesis when current hypothesis is not confirmed
-        # Reward A(w, h’) for a randomly selected h’ in M_U
-        # TODO: Can we replace this with the initialization step?
-        meanings = self.get_meanings_from_perception(observed_perception_graph)
-        random_new_hypothesis = r.choice(meanings)
-        # TODO RMG: should this increase the score somehow if the hypothesis is already known?
-        self._words_to_hypotheses_and_scores[
-            word
-        ][random_new_hypothesis] = self._learning_factor
+            # Reward A(w, h’) for a randomly selected h’ in M_U
+            meanings = self.get_meanings_from_perception(observed_perception_graph)
+            random_new_hypothesis: PerceptionGraphPattern = r.choice(meanings)
+            # TODO RMG: should this increase the score somehow if the hypothesis is already known?
+            # If we don't have this random hypothesis is new, put it in the dictionary
+            if not any(random_new_hypothesis.check_isomorphism(old_hypo)
+                       for old_hypo in self._words_to_hypotheses_and_scores[word]):
+                self._words_to_hypotheses_and_scores[
+                    word
+                ][random_new_hypothesis] = self._learning_factor
+
         return is_hypothesis_confirmed
 
     def lexicon_step(self, word: str) -> None:
@@ -198,19 +207,46 @@ class PursuitLanguageLearner(
         perception_as_graph = perception_as_digraph.to_undirected()
 
         meanings = []
-        for object_perception_root_node in [node for node in perception_as_graph.nodes
-                                     if isinstance(node, ObjectPerception) and node.debug_handle != 'the ground']:
-            # TODO: RMG - need different meaning generation strategy
-            # we want whole sub-trees rooted at object perceptions
-            if any([u == object_perception_root_node and data['label'] == 'partOf'
-                    for u,v, data in perception_as_digraph.edges.data()]):
-                continue
-            first_neigbors = list(perception_as_graph.neighbors(object_perception_root_node))
-            second_neighbors = []
-            for node in first_neigbors:
-                second_neighbors.extend(list(perception_as_graph.neighbors(node)))
-            neighbors = [node for node in first_neigbors+second_neighbors if not isinstance(node, ObjectPerception)]
-            subgraph = networkx.DiGraph(perception_as_digraph.subgraph([object_perception_root_node]+neighbors))
+
+        # 1) Take all of the obj perc that dont have part of relationships with anything else
+        root_object_percetion_nodes = []
+        for node in perception_as_graph.nodes:
+            if isinstance(node, ObjectPerception) and node.debug_handle != 'the ground':
+                if not any([u == node and str(data['label']) == 'partOf'
+                            for u, v, data in perception_as_digraph.edges.data()]):
+                    root_object_percetion_nodes.append(node)
+
+        # 2) for each of these, walk along the part of relationships backwards,
+        # i.e find all of the subparts of the root object
+        for root_object_percetion_node in root_object_percetion_nodes:
+            # Iteratively get all other object perceptions that connect to a root with a part of relation
+            all_object_perception_nodes = [root_object_percetion_node]
+            frontier = [root_object_percetion_node]
+            updated = True
+            while updated:
+                updated = False
+                new_frontier = []
+                for frontier_node in frontier:
+                    for node in perception_as_graph.neighbors(frontier_node):
+                        edge_data = perception_as_digraph.get_edge_data(node, frontier_node,default=-1)
+                        if edge_data != -1 and str(edge_data['label']) == 'partOf':
+                            new_frontier.append(node)
+
+                if new_frontier:
+                    all_object_perception_nodes.extend(new_frontier)
+                    updated = True
+                    frontier = new_frontier
+
+            # Now we have a list of all perceptions that are connected
+            # 3) For each of these objects including root object, get axes, properties,
+            # and relations and regions which are between these internal object perceptions
+            other_nodes = []
+            for node in all_object_perception_nodes:
+                for neighbor in perception_as_graph.neighbors(node):
+                    if not isinstance(neighbor, ObjectPerception):
+                        other_nodes.append(neighbor)
+
+            subgraph = networkx.DiGraph(perception_as_digraph.subgraph(all_object_perception_nodes+other_nodes))
             subgraph.remove_nodes_from(list(networkx.isolates(subgraph)))
             meaning = PerceptionGraphPattern.from_graph(
                 subgraph
@@ -244,7 +280,8 @@ class PursuitLanguageLearner(
             )
             match_ratio = len(common_pattern.copy_as_digraph().nodes) / \
                           len(meaning_pattern.copy_as_digraph().nodes)
-            print(word, match_ratio, meaning_pattern.copy_as_digraph().nodes)
+            print(observed_perception_graph.copy_as_digraph().nodes)
+            print(word, len(common_pattern.copy_as_digraph().nodes), match_ratio, meaning_pattern.copy_as_digraph().nodes)
             if match_ratio > largest_match_ratio:
                 learned_description = ('a', word)
                 print(learned_description)

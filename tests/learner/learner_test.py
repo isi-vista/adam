@@ -84,7 +84,8 @@ def test_subset_learner_dog():
 
 
 def test_pursuit_learner():
-    target_objects = [BALL,
+    target_objects = [
+                        BALL,
                       # PERSON,
                       # CHAIR,
                       # TABLE,
@@ -92,13 +93,6 @@ def test_pursuit_learner():
                       BIRD,
                       BOX
                       ]
-
-    # We can use this to generate the actual pursuit curriculum
-    # train_curriculum = make_simple_pursuit_curriculum(target_objects=target_objects,
-    #                                                   num_instances=15,
-    #                                                   num_objects_in_instance=3,
-    #                                                   num_noise_instances=0
-    #                                                   )
 
     target_train_templates = []
     target_test_templates = []
@@ -133,6 +127,14 @@ def test_pursuit_learner():
         "all obj situations",
         situations=target_train_templates,
     )
+
+    # We can use this to generate the actual pursuit curriculum
+    # train_curriculum = make_simple_pursuit_curriculum(target_objects=target_objects,
+    #                                                   num_instances=15,
+    #                                                   num_objects_in_instance=3,
+    #                                                   num_noise_instances=0
+    #                                                   )
+
     test_obj_curriculum = phase1_instances(
         "obj test",
         situations=target_test_templates,
@@ -146,7 +148,7 @@ def test_pursuit_learner():
     # lexicalize items sufficiently because of diminishing lexicon probability through training
     learner = PursuitLanguageLearner(learning_factor=0.5,
                                      graph_match_confirmation_threshold=0.9,
-                                     lexicon_entry_threshold=0.3
+                                     lexicon_entry_threshold=0.7
                                      )  # type: ignore
     for training_stage in [train_curriculum]:
         for (

@@ -20,7 +20,7 @@ from attr.validators import instance_of, optional
 from immutablecollections import immutabledict, immutableset
 from immutablecollections.converter_utils import _to_immutabledict, _to_tuple
 from more_itertools import first
-from networkx import DiGraph
+from networkx import DiGraph, is_isomorphic, set_node_attributes
 
 from adam.axes import AxesInfo, HasAxes
 from adam.axis import GeonAxis
@@ -321,6 +321,19 @@ class PerceptionGraphPattern:
     def copy_as_digraph(self):
         return copy(self._graph)
 
+    def _node_match(self, node1, node2) -> bool:
+        return node1['type'] == node2['type']
+
+    def _edge_match(self, edge1: Dict[str, "NodePredicate"], edge2: Dict[str, "NodePredicate"]) -> bool:
+        return edge1['predicate'].dot_label() == edge2['predicate'].dot_label()
+
+    def check_isomorphism(self, other_graph: "PerceptionGraphPattern") -> bool:
+        """
+        Compares two pattern graphs and returns true if they are isomorphic, including edges and node attributes.
+        """
+        return is_isomorphic(self._graph, other_graph.copy_as_digraph(),
+                             node_match=self._node_match, edge_match=self._edge_match)
+
     def matcher(
             self, graph_to_match_against: PerceptionGraph
     ) -> "PerceptionGraphPatternMatching":
@@ -432,6 +445,7 @@ class PerceptionGraphPattern:
             # Add each node
             pattern_node = map_node(original_node)
             pattern_graph.add_node(pattern_node)
+            set_node_attributes(pattern_graph, {pattern_node: {'type': type(pattern_node)}})
 
         # Once all nodes are translated, we add all edges from the source graph by iterating over each node and
         # extracting its edges.
