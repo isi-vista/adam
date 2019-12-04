@@ -1,8 +1,10 @@
 from typing import Optional
 
+
 from adam.curriculum.phase1_curriculum import phase1_instances, PHASE1_CHOOSER
 from adam.language_specific.english.english_language_generator import IGNORE_COLORS
 from adam.learner import LearningExample
+
 from adam.learner.subset import SubsetLanguageLearner
 from adam.ontology import OntologyNode
 from adam.ontology.phase1_ontology import BALL, LEARNER, DOG
@@ -43,7 +45,7 @@ def run_subset_learner_for_object(
         ),
     )
 
-    learner = SubsetLanguageLearner(debug_callback)  # type: ignore
+    learner = SubsetLanguageLearner(debug_callback=debug_callback)  # type: ignore
     for training_stage in [obj_curriculum]:
         for (
             _,

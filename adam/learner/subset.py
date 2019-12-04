@@ -1,4 +1,4 @@
-from typing import Dict, Generic, Mapping, Tuple, Any, Optional
+from typing import Dict, Generic, Mapping, Tuple, Optional, Any
 
 from attr import Factory, attrib, attrs
 from immutablecollections import immutabledict
@@ -21,9 +21,10 @@ from adam.perception.perception_graph import (
     PerceptionGraphPattern,
     DebugCallableType,
 )
+from adam.utils.networkx_utils import subgraph
 
 
-@attrs
+@attrs(slots=True)
 class SubsetLanguageLearner(
     Generic[PerceptionT, LinguisticDescriptionT],
     LanguageLearner[PerceptionT, LinguisticDescription],
@@ -35,7 +36,7 @@ class SubsetLanguageLearner(
     _descriptions_to_pattern_hypothesis: Dict[
         Tuple[str, ...], PerceptionGraphPattern
     ] = attrib(init=False, default=Factory(dict))
-    _debug_callback: Optional[DebugCallableType] = attrib(default=None)
+    _debug_callback: Optional[DebugCallableType] = attrib(default=None, kw_only=True)
 
     def observe(
         self, learning_example: LearningExample[PerceptionT, LinguisticDescription]
@@ -80,7 +81,7 @@ class SubsetLanguageLearner(
             # perception graph.
             observed_pattern_graph = PerceptionGraphPattern.from_graph(
                 observed_perception_graph.copy_as_digraph()
-            )
+            ).perception_graph_pattern
             self._descriptions_to_pattern_hypothesis[
                 observed_linguistic_description
             ] = observed_pattern_graph
@@ -131,11 +132,9 @@ def get_largest_matching_pattern(
 ) -> PerceptionGraphPattern:
     """ Helper function to return the largest matching pattern for learner from a perception pattern and graph pair."""
     # Initialize matcher in debug version to keep largest subgraph
-    matching = pattern.matcher(graph)
+    matching = pattern.matcher(graph, debug_callback=debug_callback)
     debug_sink: Dict[Any, Any] = {}
-    match_mapping = list(
-        matching.matches(debug_mapping_sink=debug_sink, debug_callback=debug_callback)
-    )
+    match_mapping = list(matching.matches(debug_mapping_sink=debug_sink))
 
     if match_mapping:
         # if matched, get the match
@@ -143,7 +142,7 @@ def get_largest_matching_pattern(
     else:
         # otherwise get the largest subgraph and initialze new PatternGraph from it
         matched_pattern_nodes = debug_sink.keys()
-        matching_sub_digraph = pattern.copy_as_digraph().subgraph(matched_pattern_nodes)
+        matching_sub_digraph = subgraph(pattern.copy_as_digraph(), matched_pattern_nodes)
         return PerceptionGraphPattern(matching_sub_digraph)
 
 

@@ -18,9 +18,11 @@ This code should not be used by anything except the perception_graph module.
 
 import sys
 from collections import defaultdict
+from itertools import chain
 from typing import Mapping, Any, Dict, Callable, Optional
 
-from immutablecollections import immutableset
+from immutablecollections import immutableset, ImmutableSet
+from more_itertools import flatten
 from networkx import DiGraph
 
 
@@ -35,8 +37,14 @@ class GraphMatching:
     ) -> None:
         self.graph = graph
         self.pattern = pattern
-        self.graph_nodes = set(graph.nodes())
-        self.pattern_nodes = set(pattern.nodes())
+        # we specify disable_order_check here because we know the DiGraph provides
+        # the nodes in a deterministic order, but immutableset() can't tell.
+        self.graph_nodes: ImmutableSet[Any] = immutableset(
+            graph.nodes(), disable_order_check=True
+        )
+        self.pattern_nodes: ImmutableSet[Any] = immutableset(
+            pattern.nodes(), disable_order_check=True
+        )
         self.pattern_node_order = {n: i for i, n in enumerate(pattern)}
 
         # Set recursion limit.
@@ -243,7 +251,8 @@ class GraphMatching:
         self,
         *,
         debug: bool = False,
-        debug_callback: Optional[Callable[[Any, Any], None]] = None
+        debug_callback: Optional[Callable[[Any, Any], None]] = None,
+        matching_pattern: bool = False
     ):
         """Extends the isomorphism mapping.
 
@@ -251,6 +260,9 @@ class GraphMatching:
         isomorphism can be found between G1 and G2.  It cleans up the class
         variables after each recursive call. If an isomorphism is found,
         we yield the mapping.
+
+        *matching_pattern* should be indicated as true if the two graphs
+        which are being matched are both made up of `NodePredicate` objects.
 
         """
         if debug and len(self.pattern_node_to_graph_node) >= len(
@@ -267,7 +279,12 @@ class GraphMatching:
             yield self.mapping
         else:
             for graph_node, pattern_node in self.candidate_pairs_iter():
-                if self.semantic_feasibility(graph_node, pattern_node, debug=debug):
+                if self.semantic_feasibility(
+                    graph_node,
+                    pattern_node,
+                    debug=debug,
+                    matching_pattern=matching_pattern,
+                ):
                     if debug:
                         self.node_to_syntax_attempts[pattern_node] += 1
                     if self.syntactic_feasibility(graph_node, pattern_node):
@@ -284,7 +301,9 @@ class GraphMatching:
                         if debug:
                             self.node_to_syntax_failures[pattern_node] += 1
 
-    def semantic_feasibility(self, graph_node, pattern_node, debug=False):
+    def semantic_feasibility(
+        self, graph_node, pattern_node, debug=False, matching_pattern=False
+    ):
         """Returns True if adding (G1_node, G2_node) is symantically feasible.
 
         The semantic feasibility function should return True if it is
@@ -327,10 +346,20 @@ class GraphMatching:
 
         # We assume the nodes of G2 are node predicates which must hold true for the
         # corresponding G1 graph node for there to be a match.
-        if not pattern_node(graph_node):
-            if debug:
-                self.pattern_node_to_num_predicate_failures[pattern_node] += 1
-            return False
+        # IF we are matching two pattern nodes together we can't just use the
+        # __call__ function on the Predicates, we need to call the .matches_predicate
+        # instead. We use a boolean rather than checking at runtime to speed up this
+        # process
+        if matching_pattern:
+            if not pattern_node.matches_predicate(graph_node):
+                if debug:
+                    self.pattern_node_to_num_predicate_failures[pattern_node] += 1
+                return False
+        else:
+            if not pattern_node(graph_node):
+                if debug:
+                    self.pattern_node_to_num_predicate_failures[pattern_node] += 1
+                return False
 
         # Now comes the trickier bit of testing edge predicates.
         # First observe that we only need to test edge predicates against edges
@@ -437,7 +466,8 @@ class GraphMatching:
         self,
         *,
         debug: bool = False,
-        debug_callback: Optional[Callable[[Any, Any], None]] = None
+        debug_callback: Optional[Callable[[Any, Any], None]] = None,
+        matching_pattern: bool = False
     ):
         """Generator over isomorphisms between a subgraph of G1 and G2."""
         # Declare that we are looking for graph-subgraph isomorphism.
@@ -445,7 +475,9 @@ class GraphMatching:
         self.initialize()
         self.debug_largest_match = {}
         self._reset_debugging_maps()
-        for mapping in self.match(debug=debug, debug_callback=debug_callback):
+        for mapping in self.match(
+            debug=debug, debug_callback=debug_callback, matching_pattern=matching_pattern
+        ):
             yield mapping
 
     def subgraph_monomorphisms_iter(self):
@@ -800,58 +832,65 @@ class GraphMatchingState(object):
             # Now we add every other node...
 
             # Updates for T_1^{in}
-            new_nodes = set([])
-            for node in GM.graph_node_to_pattern_node:
-                new_nodes.update(
+            # we use immutableset to guarantee deterministic iteration
+            new_nodes_0: ImmutableSet[Any] = immutableset(
+                flatten(
                     [
                         predecessor
                         for predecessor in GM.graph.predecessors(node)
                         if predecessor not in GM.graph_node_to_pattern_node
                     ]
+                    for node in GM.graph_node_to_pattern_node
                 )
-            for node in new_nodes:
+            )
+            for node in new_nodes_0:
                 if node not in GM.graph_nodes_in_or_preceding_match:
                     GM.graph_nodes_in_or_preceding_match[node] = self.depth
 
             # Updates for T_2^{in}
-            new_nodes = set([])
-            for node in GM.pattern_node_to_graph_node:
-                new_nodes.update(
+            new_nodes_1: ImmutableSet[Any] = immutableset(
+                flatten(
                     [
                         predecessor
                         for predecessor in GM.pattern.predecessors(node)
                         if predecessor not in GM.pattern_node_to_graph_node
                     ]
+                    for node in GM.pattern_node_to_graph_node
                 )
-            for node in new_nodes:
+            )
+            for node in new_nodes_1:
                 if node not in GM.pattern_nodes_in_or_preceding_match:
                     GM.pattern_nodes_in_or_preceding_match[node] = self.depth
 
             # Updates for T_1^{out}
-            new_nodes = set([])
-            for node in GM.graph_node_to_pattern_node:
-                new_nodes.update(
+            new_nodes_2: ImmutableSet[Any] = immutableset(
+                flatten(
                     [
                         successor
                         for successor in GM.graph.successors(node)
                         if successor not in GM.graph_node_to_pattern_node
                     ]
+                    for node in GM.graph_node_to_pattern_node
                 )
-            for node in new_nodes:
+            )
+
+            for node in new_nodes_2:
                 if node not in GM.graph_nodes_in_or_succeeding_match:
                     GM.graph_nodes_in_or_succeeding_match[node] = self.depth
 
             # Updates for T_2^{out}
-            new_nodes = set([])
-            for node in GM.pattern_node_to_graph_node:
-                new_nodes.update(
+            new_nodes_3: ImmutableSet[Any] = immutableset(
+                flatten(
                     [
                         successor
                         for successor in GM.pattern.successors(node)
                         if successor not in GM.pattern_node_to_graph_node
                     ]
+                    for node in GM.pattern_node_to_graph_node
                 )
-            for node in new_nodes:
+            )
+
+            for node in new_nodes_3:
                 if node not in GM.pattern_nodes_in_or_succeeding_match:
                     GM.pattern_nodes_in_or_succeeding_match[node] = self.depth
 

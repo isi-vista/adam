@@ -45,7 +45,7 @@ from adam.situation.templates.phase1_templates import (
 )
 
 
-def _on_templates(
+def _on_template(
     figure: TemplateObjectVariable,
     ground: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
@@ -215,7 +215,7 @@ def _make_on_training(
                 flatten(
                     [
                         sampled(
-                            _on_templates(
+                            _on_template(
                                 figure,
                                 ground,
                                 make_background(
@@ -509,7 +509,7 @@ def _make_on_tests(
                 flatten(
                     [
                         sampled(
-                            _on_templates(
+                            _on_template(
                                 figure,
                                 ground,
                                 make_background(
@@ -695,6 +695,7 @@ def _make_behind_tests(
     figure_1 = standard_object("figure_1", THING, banned_properties=[HOLLOW])
     ground_0 = standard_object("ground_0", THING, banned_properties=[HOLLOW])
     ground_1 = standard_object("ground_1", THING, banned_properties=[HOLLOW])
+
     speaker = standard_object("speaker", MOM, added_properties=[IS_SPEAKER])
     addressee = standard_object("addressee", LEARNER, added_properties=[IS_ADDRESSEE])
 
@@ -741,6 +742,7 @@ def _make_in_front_tests(
     figure_1 = standard_object("figure_1", THING, banned_properties=[HOLLOW])
     ground_0 = standard_object("ground_0", THING, banned_properties=[HOLLOW])
     ground_1 = standard_object("ground_1", THING, banned_properties=[HOLLOW])
+
     speaker = standard_object("speaker", MOM, added_properties=[IS_SPEAKER])
     addressee = standard_object("addressee", LEARNER, added_properties=[IS_ADDRESSEE])
 
@@ -780,34 +782,42 @@ def _make_in_front_tests(
     )
 
 
-def make_prepositions_curriculum_training(num_samples: int = 5):
+def make_prepositions_curriculum_training(
+    num_samples: int = 5, *, noise_objects: bool = True
+):
     return [
-        _make_on_training(num_samples),
-        _make_beside_training(num_samples),
-        _make_under_training(num_samples),
-        _make_over_training(num_samples),
-        _make_in_training(num_samples),
-        _make_behind_training(num_samples),
-        _make_in_front_training(num_samples),
+        _make_on_training(num_samples, noise_objects=noise_objects),
+        _make_beside_training(num_samples, noise_objects=noise_objects),
+        _make_under_training(num_samples, noise_objects=noise_objects),
+        _make_over_training(num_samples, noise_objects=noise_objects),
+        _make_in_training(num_samples, noise_objects=noise_objects),
+        _make_behind_training(num_samples, noise_objects=noise_objects),
+        _make_in_front_training(num_samples, noise_objects=noise_objects),
     ]
 
 
-def make_prepositions_curriculum_testing(num_samples: int = 5):
+def make_prepositions_curriculum_testing(
+    num_samples: int = 5, *, noise_objects: bool = True
+):
     return [
-        _make_on_tests(num_samples),
-        _make_beside_tests(num_samples),
-        _make_under_tests(num_samples),
-        _make_over_tests(num_samples),
-        _make_in_tests(num_samples),
-        _make_behind_tests(num_samples),
-        _make_in_front_tests(num_samples),
+        _make_on_tests(num_samples, noise_objects=noise_objects),
+        _make_beside_tests(num_samples, noise_objects=noise_objects),
+        _make_under_tests(num_samples, noise_objects=noise_objects),
+        _make_over_tests(num_samples, noise_objects=noise_objects),
+        _make_in_tests(num_samples, noise_objects=noise_objects),
+        _make_behind_tests(num_samples, noise_objects=noise_objects),
+        _make_in_front_tests(num_samples, noise_objects=noise_objects),
     ]
 
 
-def make_prepositions_curriculum(num_samples: int = 5):
+def make_prepositions_curriculum(num_samples: int = 5, *, noise_objects: bool = True):
     return flatten(
         [
-            make_prepositions_curriculum_training(num_samples),
-            make_prepositions_curriculum_testing(num_samples),
+            make_prepositions_curriculum_training(
+                num_samples, noise_objects=noise_objects
+            ),
+            make_prepositions_curriculum_testing(
+                num_samples, noise_objects=noise_objects
+            ),
         ]
     )

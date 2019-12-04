@@ -6,27 +6,44 @@ among other things.
 
 This file first defines `PerceptionGraph`\ s,
 then defines `PerceptionGraphPattern`\ s to match them.
+
+The MatchedObjectNode is defined at the top of this module as it is needed prior
+to defining the type of Nodes in our `PerceptionGraph`\ s readers should start with
+`PerceptionGraphProtocol`, `PerceptionGraph`, and `PerceptionGraphPattern` before
+reading other parts of this module.
 """
 from abc import ABC, abstractmethod
 from copy import copy
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, Mapping, Optional, Tuple, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    Mapping,
+    Optional,
+    Tuple,
+    TypeVar,
+    Union,
+    Set,
+    List,
+    Type,
+)
 
 import graphviz
-
 from adam.utils.networkx_utils import digraph_with_nodes_sorted_by
-from attr import attrib, attrs
 from attr.validators import instance_of, optional
-from immutablecollections import immutabledict, immutableset
+from immutablecollections import ImmutableDict, immutabledict, immutableset, ImmutableSet
 from immutablecollections.converter_utils import _to_immutabledict, _to_tuple
 from more_itertools import first
 from networkx import DiGraph
+from typing_extensions import Protocol
 
 from adam.axes import AxesInfo, HasAxes
 from adam.axis import GeonAxis
 from adam.geon import Geon, MaybeHasGeon
 from adam.ontology import OntologyNode
-from adam.ontology.phase1_ontology import PART_OF, GAILA_PHASE_1_ONTOLOGY
+from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY, PART_OF
 from adam.ontology.phase1_spatial_relations import Direction, Distance, Region
 from adam.ontology.structural_schema import ObjectStructuralSchema
 from adam.perception import ObjectPerception
@@ -43,6 +60,8 @@ from adam.perception.high_level_semantics_situation_to_developmental_primitive_p
 from adam.random_utils import RandomChooser
 from adam.situation import SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
+from adam.utils.networkx_utils import subgraph
+from attr import attrib, attrs
 
 from time import process_time
 
@@ -60,8 +79,24 @@ class Incrementer:
 
 DebugCallableType = Callable[[DiGraph, Dict[Any, Any]], None]
 
+
+@attrs(frozen=True, eq=False, slots=True)
+class MatchedObjectNode:
+    """
+    A `MatchedObjectNode` is the PerceptionGraph node to indicate an object which
+    has been identified in the graph
+    """
+
+    name: Tuple[str] = attrib()
+
+
 PerceptionGraphNode = Union[
-    ObjectPerception, OntologyNode, Tuple[Region[Any], int], Tuple[Geon, int], GeonAxis
+    ObjectPerception,
+    OntologyNode,
+    Tuple[Region[Any], int],
+    Tuple[Geon, int],
+    GeonAxis,
+    MatchedObjectNode,
 ]
 PerceptionGraphEdgeLabel = Union[OntologyNode, str, Direction[Any]]
 
@@ -94,8 +129,26 @@ Edge label in a `PerceptionGraph` linking an `ObjectPerception` to its associate
 """
 
 
-@attrs(frozen=True, slots=True)
-class PerceptionGraph:
+class PerceptionGraphProtocol(Protocol):
+    _graph: DiGraph = attrib(validator=instance_of(DiGraph))
+
+    def copy_as_digraph(self) -> DiGraph:
+        return copy(self._graph)
+
+    def render_to_file(
+        self,
+        graph_name: str,
+        output_file: Path,
+        *,
+        match_correspondence_ids: Mapping[Any, str] = immutabledict(),
+    ) -> None:
+        """
+        Debugging tool to render the graph to PDF using *dot*.
+        """
+
+
+@attrs(frozen=True)
+class PerceptionGraph(PerceptionGraphProtocol):
     r"""
     Represents a `DevelopmentalPrimitivePerceptionFrame` as a directed graph.
 
@@ -104,9 +157,6 @@ class PerceptionGraph:
     These can be matched against by `PerceptionGraphPattern`\ s.
     """
     _graph: DiGraph = attrib(validator=instance_of(DiGraph))
-
-    def copy_as_digraph(self):
-        return copy(self._graph)
 
     @staticmethod
     def from_frame(frame: DevelopmentalPrimitivePerceptionFrame) -> "PerceptionGraph":
@@ -280,6 +330,8 @@ class PerceptionGraph:
             label = str(perception_node.cross_section) + str(
                 perception_node.cross_section_size
             )
+        elif isinstance(perception_node, MatchedObjectNode):
+            label = " ".join(perception_node.name)
         else:
             raise RuntimeError(
                 f"Do not know how to perception node render node "
@@ -306,9 +358,12 @@ class PerceptionGraph:
 
         return node_id
 
+    def copy_as_digraph(self) -> DiGraph:
+        return copy(self._graph)
+
 
 @attrs(frozen=True, slots=True)
-class PerceptionGraphPattern:
+class PerceptionGraphPattern(PerceptionGraphProtocol):
     r"""
     A pattern which can match `PerceptionGraph`\ s.
 
@@ -318,18 +373,20 @@ class PerceptionGraphPattern:
 
     _graph: DiGraph = attrib(validator=instance_of(DiGraph))
 
-    def copy_as_digraph(self):
-        return copy(self._graph)
-
     def matcher(
-        self, graph_to_match_against: PerceptionGraph
-    ) -> "PerceptionGraphPatternMatching":
+        self,
+        graph_to_match_against: PerceptionGraphProtocol,
+        *,
+        debug_callback: Optional[DebugCallableType] = None,
+    ) -> "PatternMatching":
         """
         Creates an object representing an attempt to match this pattern
         against *graph_to_match_against*.
         """
-        return PerceptionGraphPatternMatching(
-            pattern=self, graph_to_match_against=graph_to_match_against
+        return PatternMatching(
+            pattern=self,
+            graph_to_match_against=graph_to_match_against,
+            debug_callback=debug_callback,
         )
 
     @staticmethod
@@ -370,23 +427,34 @@ class PerceptionGraphPattern:
         perception_graph.remove_nodes_from(nodes_to_remove)
 
         # Finally, we convert the PerceptionGraph DiGraph representation to a PerceptionGraphPattern
-        return PerceptionGraphPattern.from_graph(perception_graph=perception_graph)
+        return PerceptionGraphPattern.from_graph(
+            perception_graph=perception_graph
+        ).perception_graph_pattern
 
     @staticmethod
-    def from_graph(perception_graph: DiGraph) -> "PerceptionGraphPattern":
+    def from_graph(perception_graph: DiGraph) -> "PerceptionGraphPatternFromGraph":
         """
         Creates a pattern for recognizing an object based on its *perception_graph*.
         """
         pattern_graph = DiGraph()
+        perception_node_to_pattern_node: Dict[PerceptionGraphNode, NodePredicate] = {}
         PerceptionGraphPattern._translate_graph(
-            perception_graph=perception_graph, pattern_graph=pattern_graph
+            perception_graph=perception_graph,
+            pattern_graph=pattern_graph,
+            perception_node_to_pattern_node=perception_node_to_pattern_node,
         )
-        return PerceptionGraphPattern(pattern_graph)
+        return PerceptionGraphPatternFromGraph(
+            perception_graph_pattern=PerceptionGraphPattern(pattern_graph),
+            perception_graph_node_to_pattern_node=perception_node_to_pattern_node,
+        )
 
     @staticmethod
-    def _translate_graph(perception_graph: DiGraph, pattern_graph: DiGraph) -> None:
-        perception_node_to_pattern_node: Dict[Any, "NodePredicate"] = {}
-
+    def _translate_graph(
+        perception_graph: DiGraph,
+        pattern_graph: DiGraph,
+        *,
+        perception_node_to_pattern_node: Dict[Any, "NodePredicate"],
+    ) -> None:
         # Two mapping methods that map nodes and edges from the source PerceptionGraph onto the corresponding
         # node and edge representations on the PerceptionGraphPattern.
         def map_node(node: Any) -> "NodePredicate":
@@ -415,6 +483,10 @@ class PerceptionGraphPattern:
                     perception_node_to_pattern_node[key] = IsOntologyNodePredicate(node)
                 elif isinstance(node, RgbColorPerception):
                     perception_node_to_pattern_node[key] = IsColorNodePredicate(node)
+                elif isinstance(node, MatchedObjectNode):
+                    perception_node_to_pattern_node[
+                        key
+                    ] = MatchedObjectPerceptionPredicate()
                 else:
                     raise RuntimeError(f"Don't know how to map node {node}")
             return perception_node_to_pattern_node[key]
@@ -448,7 +520,7 @@ class PerceptionGraphPattern:
 
     def render_to_file(  # pragma: no cover
         self,
-        title: str,
+        graph_name: str,
         output_file: Path,
         *,
         match_correspondence_ids: Mapping[Any, str] = immutabledict(),
@@ -463,7 +535,7 @@ class PerceptionGraphPattern:
         the desired correspondence labels.
         """
 
-        dot_graph = graphviz.Digraph(title)
+        dot_graph = graphviz.Digraph(graph_name)
         dot_graph.attr(rankdir="LR")
 
         next_node_id = Incrementer()
@@ -506,6 +578,41 @@ class PerceptionGraphPattern:
 
         dot_graph.render(output_file)
 
+    def intersection(
+        self,
+        graph_pattern: "PerceptionGraphPattern",
+        *,
+        debug_callback: Optional[DebugCallableType] = None,
+    ) -> "PerceptionGraphPattern":
+        """
+        Determine the largest partial match between two `PerceptionGraphPattern`s
+
+        Using the debug return of our pattern matching, find the largest partial
+        match between *self* and *graph_pattern*. If we find multiple such matches
+        the returned option is deterministic but undefined.
+        """
+        debug_mapping: Dict[Any, Any] = dict()
+        matcher = PatternMatching(
+            pattern=graph_pattern,
+            graph_to_match_against=self,
+            debug_callback=debug_callback,
+        )
+        matches = immutableset(
+            matcher.matches(debug_mapping_sink=debug_mapping, matching_pattern=True)
+        )
+        if not matches.empty():
+            # We found a match! This means our two patterns are the same and we should just keep the original
+            return self
+        else:
+            # No match found so we use the biggest match provided by the debug sink. This provides an 'intersection'
+            # between the two patterns
+            return PerceptionGraphPattern(
+                graph=subgraph(self._graph, nodes=debug_mapping)
+            )
+
+    def copy_as_digraph(self) -> DiGraph:
+        return copy(self._graph)
+
 
 class DumpPartialMatchCallback:
     """
@@ -546,8 +653,20 @@ class DumpPartialMatchCallback:
             )
 
 
-@attrs(slots=True, eq=False)
-class PerceptionGraphPatternMatching:
+@attrs(frozen=True, slots=True, auto_attribs=True)
+class PerceptionGraphPatternFromGraph:
+    """
+    See `PerceptionGraphPattern.from_graph`
+    """
+
+    perception_graph_pattern: PerceptionGraphPattern
+    perception_graph_node_to_pattern_node: ImmutableDict[
+        PerceptionGraphNode, "NodePredicate"
+    ] = attrib(converter=_to_immutabledict)
+
+
+@attrs(frozen=True, slots=True, eq=False)
+class PatternMatching:
     """
     An attempt to align a `PerceptionGraphPattern` to nodes in a `PerceptionGraph`.
 
@@ -560,19 +679,20 @@ class PerceptionGraphPatternMatching:
     pattern: PerceptionGraphPattern = attrib(
         validator=instance_of(PerceptionGraphPattern)
     )
-    graph_to_match_against: PerceptionGraph = attrib(
-        validator=instance_of(PerceptionGraph)
+    graph_to_match_against: PerceptionGraphProtocol = attrib(
+        validator=instance_of(PerceptionGraphProtocol)
     )
 
     # Callable object for debugging purposes. We use this to track the number of calls to match and render the graphs.
-    debug_callback: Optional[DebugCallableType] = attrib(default=None, init=False)
+    debug_callback: Optional[DebugCallableType] = attrib(default=None, kw_only=True)
 
     def matches(
         self,
         *,
         debug_mapping_sink: Optional[Dict[Any, Any]] = None,
         use_lookahead_pruning: bool = False,
-        debug_callback: Optional[DebugCallableType] = None,
+        matching_pattern: bool = False,
+        suppress_multiple_alignments_to_same_nodes: bool = True,
     ) -> Iterable["PerceptionGraphPatternMatch"]:
         """
         Attempt the matching and returns a generator over the set of possible matches.
@@ -584,13 +704,20 @@ class PerceptionGraphPatternMatching:
 
         If *debug_mapping_sink* is provided, the best partial matching found
         will be written to it in case of a failed match.
+
+        If *suppress_multiple_alignments_to_same_nodes* is *True* (default *True*),
+        then only the first alignment encountered for a given set of nodes will be returned.
+        This prevents you from e.g. getting multiple matches for different ways
+        of aligning axes for symmetric objects.
+        The cost is that we need to keep around a memory of previous node matches.
         """
 
         # Controlling the iteration order of the graphs
         # controls the order in which nodes are matched.
         # This has a significant, benchmark-confirmed impact on performance.
         sorted_graph_to_match_against = digraph_with_nodes_sorted_by(
-            self.graph_to_match_against._graph, _graph_node_order  # pylint: disable=W0212
+            self.graph_to_match_against._graph,  # pylint: disable=W0212
+            _graph_node_order if not matching_pattern else _pattern_matching_node_order,
         )
         sorted_pattern = digraph_with_nodes_sorted_by(
             self.pattern._graph, _pattern_matching_node_order  # pylint: disable=W0212
@@ -601,22 +728,36 @@ class PerceptionGraphPatternMatching:
             sorted_pattern,
             use_lookahead_pruning=use_lookahead_pruning,
         )
+
+        sets_of_nodes_matched: Set[ImmutableSet[PerceptionGraphNode]] = set()
+
         got_a_match = False
-        if debug_callback:
-            # If there is a given rendering path, we initialize the debug callback function.
-            self.debug_callback = debug_callback
-        for mapping in matching.subgraph_isomorphisms_iter(
-            debug=(debug_mapping_sink is not None), debug_callback=self.debug_callback
+        for graph_node_to_matching_pattern_node in matching.subgraph_isomorphisms_iter(
+            debug=(debug_mapping_sink is not None),
+            matching_pattern=matching_pattern,
+            debug_callback=self.debug_callback,
         ):
             got_a_match = True
-            yield PerceptionGraphPatternMatch(
-                graph_matched_against=self.graph_to_match_against,
-                matched_pattern=self.pattern,
-                matched_sub_graph=PerceptionGraph(
-                    matching.graph.subgraph(mapping.values()).copy()
-                ),
-                alignment=mapping,
+            matched_graph_nodes: ImmutableSet[PerceptionGraphNode] = immutableset(
+                graph_node_to_matching_pattern_node
             )
+            if (
+                matched_graph_nodes not in sets_of_nodes_matched
+                or not suppress_multiple_alignments_to_same_nodes
+            ):
+                yield PerceptionGraphPatternMatch(
+                    graph_matched_against=self.graph_to_match_against,
+                    matched_pattern=self.pattern,
+                    matched_sub_graph=PerceptionGraph(
+                        subgraph(
+                            matching.graph, graph_node_to_matching_pattern_node.keys()
+                        ).copy()
+                    ),
+                    pattern_node_to_matched_graph_node=_invert_to_immutabledict(
+                        graph_node_to_matching_pattern_node
+                    ),
+                )
+            sets_of_nodes_matched.add(matched_graph_nodes)
         if debug_mapping_sink is not None and not got_a_match:
             # we failed to match the pattern.
             # If the user requested it, we provide the largest matching we could find
@@ -676,15 +817,15 @@ class PerceptionGraphPatternMatch:
     matched_pattern: PerceptionGraphPattern = attrib(
         validator=instance_of(PerceptionGraphPattern), kw_only=True
     )
-    graph_matched_against: PerceptionGraph = attrib(
-        validator=instance_of(PerceptionGraph), kw_only=True
+    graph_matched_against: PerceptionGraphProtocol = attrib(
+        validator=instance_of(PerceptionGraphProtocol), kw_only=True
     )
     matched_sub_graph: PerceptionGraph = attrib(
         validator=instance_of(PerceptionGraph), kw_only=True
     )
-    alignment: Mapping["NodePredicate", PerceptionGraphNode] = attrib(
-        converter=_to_immutabledict, kw_only=True
-    )
+    pattern_node_to_matched_graph_node: Mapping[
+        "NodePredicate", PerceptionGraphNode
+    ] = attrib(converter=_to_immutabledict, kw_only=True)
     """
     A mapping of pattern nodes from `matched_pattern` to the nodes
     in `matched_sub_graph` they were aligned to.
@@ -716,6 +857,12 @@ class NodePredicate(ABC):
         Node label to use when rendering patterns as graphs using *dot*.
         """
 
+    @abstractmethod
+    def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
+        """
+        Determines whether a NodePredicate matches another Node Predicate
+        """
+
 
 @attrs(frozen=True, slots=True, eq=False)
 class AnyNodePredicate(NodePredicate):
@@ -728,6 +875,9 @@ class AnyNodePredicate(NodePredicate):
 
     def dot_label(self) -> str:
         return "*"
+
+    def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
+        return isinstance(predicate_node, AnyNodePredicate)
 
 
 @attrs(frozen=True, slots=True, eq=False)
@@ -747,6 +897,9 @@ class AnyObjectPerception(NodePredicate):
         else:
             debug_handle_str = ""
         return f"*obj{debug_handle_str}"
+
+    def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
+        return isinstance(predicate_node, AnyObjectPerception)
 
 
 @attrs(frozen=True, slots=True, eq=False)
@@ -800,6 +953,19 @@ class AxisPredicate(NodePredicate):
 
         return f"axis({', '.join(constraints)})"
 
+    def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
+        if isinstance(predicate_node, AxisPredicate):
+            if self.curved != predicate_node.curved:
+                return False
+            if self.directed != predicate_node.directed:
+                return False
+            if self.aligned_to_gravitational != predicate_node.aligned_to_gravitational:
+                return False
+            else:
+                return True
+        else:
+            return False
+
 
 @attrs(frozen=True, slots=True, eq=False)
 class GeonPredicate(NodePredicate):
@@ -830,6 +996,17 @@ class GeonPredicate(NodePredicate):
     def exactly_matching(geon: Geon) -> "GeonPredicate":
         return GeonPredicate(geon)
 
+    def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
+        if isinstance(predicate_node, GeonPredicate):
+            return (
+                self.template_geon.cross_section
+                == predicate_node.template_geon.cross_section
+                and self.template_geon.cross_section_size
+                == predicate_node.template_geon.cross_section_size
+            )
+        else:
+            return False
+
 
 @attrs(frozen=True, slots=True, eq=False)
 class RegionPredicate(NodePredicate):
@@ -853,6 +1030,12 @@ class RegionPredicate(NodePredicate):
     def matching_distance(region: Region[Any]) -> "RegionPredicate":
         return RegionPredicate(region.distance)
 
+    def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
+        if isinstance(predicate_node, RegionPredicate):
+            return predicate_node.distance == self.distance
+        else:
+            return False
+
 
 @attrs(frozen=True, slots=True, eq=False)
 class IsOntologyNodePredicate(NodePredicate):
@@ -863,6 +1046,12 @@ class IsOntologyNodePredicate(NodePredicate):
 
     def dot_label(self) -> str:
         return f"prop({self.property_value.handle})"
+
+    def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
+        if isinstance(predicate_node, IsOntologyNodePredicate):
+            return predicate_node.property_value == self.property_value
+        else:
+            return False
 
 
 @attrs(frozen=True, slots=True, eq=False)
@@ -877,6 +1066,16 @@ class IsColorNodePredicate(NodePredicate):
                 and (graph_node.green == self.color.green)
             )
         return False
+
+    def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
+        if isinstance(predicate_node, IsColorNodePredicate):
+            return (
+                (predicate_node.color.red == self.color.red)
+                and (predicate_node.color.blue == self.color.blue)
+                and (predicate_node.color.green == self.color.green)
+            )
+        else:
+            return False
 
     def dot_label(self) -> str:
         return f"prop({self.color.hex})"
@@ -895,6 +1094,27 @@ class AndNodePredicate(NodePredicate):
 
     def dot_label(self) -> str:
         return " & ".join(sub_pred.dot_label() for sub_pred in self.sub_predicates)
+
+    def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
+        raise NotImplementedError(
+            f"Matches Predicate between AndNodePredicate " f"is not yet implemented"
+        )
+
+
+@attrs(frozen=True, slots=True, eq=False)
+class MatchedObjectPerceptionPredicate(NodePredicate):
+    """
+    `NodePredicate` which matches if the node is of this type
+    """
+
+    def __call__(self, graph_node: PerceptionGraphNode) -> bool:
+        return isinstance(graph_node, MatchedObjectNode)
+
+    def dot_label(self) -> str:
+        return "matched-object-perception"
+
+    def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
+        return isinstance(predicate_node, MatchedObjectPerceptionPredicate)
 
 
 class EdgePredicate(ABC):
@@ -927,6 +1147,12 @@ class EdgePredicate(ABC):
         """
         return False
 
+    @abstractmethod
+    def matches_predicate(self, edge_label: "EdgePredicate") -> bool:
+        """
+        Returns whether *edge_label* matches *self*
+        """
+
 
 @attrs(frozen=True, slots=True)
 class AnyEdgePredicate(EdgePredicate):
@@ -944,6 +1170,9 @@ class AnyEdgePredicate(EdgePredicate):
 
     def dot_label(self) -> str:
         return "*"
+
+    def matches_predicate(self, edge_label: "EdgePredicate") -> bool:
+        return isinstance(edge_label, AnyEdgePredicate)
 
 
 @attrs(frozen=True, slots=True)
@@ -967,6 +1196,12 @@ class RelationTypeIsPredicate(EdgePredicate):
 
     def reverse_in_dot_graph(self) -> bool:
         return self.relation_type == PART_OF
+
+    def matches_predicate(self, edge_label: "EdgePredicate") -> bool:
+        return (
+            isinstance(edge_label, RelationTypeIsPredicate)
+            and edge_label.relation_type == self.relation_type
+        )
 
 
 @attrs(frozen=True, slots=True)
@@ -995,6 +1230,11 @@ class DirectionPredicate(EdgePredicate):
     @staticmethod
     def exactly_matching(direction: Direction[Any]) -> "DirectionPredicate":
         return DirectionPredicate(direction)
+
+    def matches_predicate(self, edge_label: "EdgePredicate") -> bool:
+        return isinstance(edge_label, DirectionPredicate) and (
+            edge_label.reference_direction.positive == self.reference_direction.positive
+        )
 
 
 # Graph translation code shared between perception graph construction
@@ -1110,6 +1350,8 @@ def _translate_region(
 # which can have a significant impact on match speed.
 # We try to match the most restrictive nodes first.
 _PATTERN_PREDICATE_NODE_ORDER = [
+    # If we have matchedObjects in the pattern we want to try and find these first.
+    MatchedObjectPerceptionPredicate,
     # properties and colors tend to be highlight restrictive, so let's match them first
     IsOntologyNodePredicate,
     IsColorNodePredicate,
@@ -1130,7 +1372,20 @@ def _pattern_matching_node_order(node_node_data_tuple) -> int:
 # This is used to control the order in which pattern nodes are matched,
 # which can have a significant impact on match speed.
 # This should match _PATTERN_PREDICATE_NODE_ORDER above.
-_GRAPH_NODE_ORDER = [
+_GRAPH_NODE_ORDER: List[  # type: ignore
+    Type[
+        Union[
+            MatchedObjectNode,
+            OntologyNode,
+            RgbColorPerception,
+            ObjectPerception,
+            Geon,
+            Region,
+            GeonAxis,
+        ]
+    ]
+] = [
+    MatchedObjectNode,
     OntologyNode,
     RgbColorPerception,
     ObjectPerception,
@@ -1149,3 +1404,46 @@ def _graph_node_order(node_node_data_tuple) -> int:
         node = node[0]
 
     return _GRAPH_NODE_ORDER.index(node.__class__)
+
+
+GOVERNED = OntologyNode("governed")
+"""
+An object match governed in a preposition relationship
+"""
+MODIFIED = OntologyNode("modified")
+"""
+An object match modified in a preposition relationship
+"""
+
+
+@attrs(frozen=True, slots=True, eq=False)
+class PrepositionPattern:
+    graph_pattern: PerceptionGraphPattern = attrib(
+        validator=instance_of(PerceptionGraphPattern), kw_only=True
+    )
+    object_map: Mapping[str, MatchedObjectPerceptionPredicate] = attrib(
+        converter=_to_immutabledict, kw_only=True
+    )
+
+    def intersection(self, pattern: "PrepositionPattern") -> "PrepositionPattern":
+        graph_pattern = self.graph_pattern.intersection(pattern.graph_pattern)
+        mapping_builder = []
+        items_to_iterate: List[Tuple[str, MatchedObjectPerceptionPredicate]] = []
+        items_to_iterate.extend(self.object_map.items())
+        items_to_iterate.extend(pattern.object_map.items())
+        for name, pattern_node in immutableset(items_to_iterate):
+            if (
+                pattern_node
+                in graph_pattern._graph.nodes  # pylint:disable=protected-access
+            ):
+                mapping_builder.append((name, pattern_node))
+
+        return PrepositionPattern(graph_pattern=graph_pattern, object_map=mapping_builder)
+
+
+_KT = TypeVar("_KT")
+_VT = TypeVar("_VT")
+
+
+def _invert_to_immutabledict(mapping: Mapping[_KT, _VT]) -> ImmutableDict[_VT, _KT]:
+    return immutabledict((v, k) for (k, v) in mapping.items())
