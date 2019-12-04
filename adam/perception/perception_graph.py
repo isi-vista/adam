@@ -55,6 +55,7 @@ from adam.perception.high_level_semantics_situation_to_developmental_primitive_p
 from adam.random_utils import RandomChooser
 from adam.situation import SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
+from adam.utils.networkx_utils import subgraph
 from attr import attrib, attrs
 
 from time import process_time
@@ -604,7 +605,9 @@ class PerceptionGraphPattern(PerceptionGraphProtocol):
         else:
             # No match found so we use the biggest match provided by the debug sink. This provides an 'intersection'
             # between the two patterns
-            return PerceptionGraphPattern(graph=self._graph.subgraph(nodes=debug_mapping))
+            return PerceptionGraphPattern(
+                graph=subgraph(self._graph, nodes=debug_mapping)
+            )
 
 
 class DumpPartialMatchCallback:
@@ -742,8 +745,8 @@ class PatternMatching:
                     graph_matched_against=self.graph_to_match_against,
                     matched_pattern=self.pattern,
                     matched_sub_graph=PerceptionGraph(
-                        matching.graph.subgraph(
-                            graph_node_to_matching_pattern_node.keys()
+                        subgraph(
+                            matching.graph, graph_node_to_matching_pattern_node.keys()
                         ).copy()
                     ),
                     pattern_node_to_matched_graph_node=_invert_to_immutabledict(

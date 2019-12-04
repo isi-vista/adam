@@ -21,6 +21,7 @@ from adam.perception.perception_graph import (
     PerceptionGraphPattern,
     DebugCallableType,
 )
+from adam.utils.networkx_utils import subgraph
 
 
 @attrs(slots=True)
@@ -141,7 +142,7 @@ def get_largest_matching_pattern(
     else:
         # otherwise get the largest subgraph and initialze new PatternGraph from it
         matched_pattern_nodes = debug_sink.keys()
-        matching_sub_digraph = pattern.copy_as_digraph().subgraph(matched_pattern_nodes)
+        matching_sub_digraph = subgraph(pattern.copy_as_digraph(), matched_pattern_nodes)
         return PerceptionGraphPattern(matching_sub_digraph)
 
 
