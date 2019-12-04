@@ -6,6 +6,11 @@ among other things.
 
 This file first defines `PerceptionGraph`\ s,
 then defines `PerceptionGraphPattern`\ s to match them.
+
+The MatchedObjectNode is defined at the top of this module as it is needed prior
+to defining the type of Nodes in our `PerceptionGraph`\ s readers should start with
+`PerceptionGraphProtocol`, `PerceptionGraph`, and `PerceptionGraphPattern` before
+reading other parts of this module.
 """
 from abc import ABC, abstractmethod
 from copy import copy
@@ -79,7 +84,7 @@ DebugCallableType = Callable[[DiGraph, Dict[Any, Any]], None]
 class MatchedObjectNode:
     """
     A `MatchedObjectNode` is the PerceptionGraph node to indicate an object which
-    have been identified in the graph
+    has been identified in the graph
     """
 
     name: Tuple[str] = attrib()
@@ -122,14 +127,6 @@ HAS_PROPERTY_LABEL = OntologyNode("has-property")
 """
 Edge label in a `PerceptionGraph` linking an `ObjectPerception` to its associated `Property`.
 """
-GOVERNED = OntologyNode("governed")
-"""
-An object match governed in a preposition relationship
-"""
-MODIFIED = OntologyNode("modified")
-"""
-An object match modified in a preposition relationship
-"""
 
 
 class PerceptionGraphProtocol(Protocol):
@@ -160,9 +157,6 @@ class PerceptionGraph(PerceptionGraphProtocol):
     These can be matched against by `PerceptionGraphPattern`\ s.
     """
     _graph: DiGraph = attrib(validator=instance_of(DiGraph))
-
-    def copy_as_digraph(self) -> DiGraph:
-        return copy(self._graph)
 
     @staticmethod
     def from_frame(frame: DevelopmentalPrimitivePerceptionFrame) -> "PerceptionGraph":
@@ -364,6 +358,9 @@ class PerceptionGraph(PerceptionGraphProtocol):
 
         return node_id
 
+    def copy_as_digraph(self) -> DiGraph:
+        return copy(self._graph)
+
 
 @attrs(frozen=True, slots=True)
 class PerceptionGraphPattern(PerceptionGraphProtocol):
@@ -375,9 +372,6 @@ class PerceptionGraphPattern(PerceptionGraphProtocol):
     """
 
     _graph: DiGraph = attrib(validator=instance_of(DiGraph))
-
-    def copy_as_digraph(self) -> DiGraph:
-        return copy(self._graph)
 
     def matcher(
         self,
@@ -590,6 +584,13 @@ class PerceptionGraphPattern(PerceptionGraphProtocol):
         *,
         debug_callback: Optional[DebugCallableType] = None,
     ) -> "PerceptionGraphPattern":
+        """
+        Determine the largest partial match between two `PerceptionGraphPattern`s
+
+        Using the debug return of our pattern matching, find the largest partial
+        match between *self* and *graph_pattern*. If we find multiple such matches
+        the returned option is deterministic but undefined.
+        """
         debug_mapping: Dict[Any, Any] = dict()
         matcher = PatternMatching(
             pattern=graph_pattern,
@@ -608,6 +609,9 @@ class PerceptionGraphPattern(PerceptionGraphProtocol):
             return PerceptionGraphPattern(
                 graph=subgraph(self._graph, nodes=debug_mapping)
             )
+
+    def copy_as_digraph(self) -> DiGraph:
+        return copy(self._graph)
 
 
 class DumpPartialMatchCallback:
@@ -873,7 +877,7 @@ class AnyNodePredicate(NodePredicate):
         return "*"
 
     def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
-        return True
+        return isinstance(predicate_node, AnyNodePredicate)
 
 
 @attrs(frozen=True, slots=True, eq=False)
@@ -951,15 +955,11 @@ class AxisPredicate(NodePredicate):
 
     def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
         if isinstance(predicate_node, AxisPredicate):
-            if self.curved is not None and self.curved != predicate_node.curved:
+            if self.curved != predicate_node.curved:
                 return False
-            if self.directed is not None and self.directed != predicate_node.directed:
+            if self.directed != predicate_node.directed:
                 return False
-            if (
-                self.aligned_to_gravitational is not None
-                and self.aligned_to_gravitational
-                != predicate_node.aligned_to_gravitational
-            ):
+            if self.aligned_to_gravitational != predicate_node.aligned_to_gravitational:
                 return False
             else:
                 return True
@@ -1096,9 +1096,8 @@ class AndNodePredicate(NodePredicate):
         return " & ".join(sub_pred.dot_label() for sub_pred in self.sub_predicates)
 
     def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
-        return all(
-            sub_predicate.matches_predicate(predicate_node)
-            for sub_predicate in self.sub_predicates
+        raise NotImplementedError(
+            f"Matches Predicate between AndNodePredicate " f"is not yet implemented"
         )
 
 
@@ -1149,14 +1148,9 @@ class EdgePredicate(ABC):
         return False
 
     @abstractmethod
-    def matches_predicate(
-        self,
-        source_predicate_node: NodePredicate,
-        edge_label: "EdgePredicate",
-        dest_predicate_node: NodePredicate,
-    ) -> bool:
+    def matches_predicate(self, edge_label: "EdgePredicate") -> bool:
         """
-        Returns wheether this predicate matches the edge from *source_predicate_node* to *dest_predicate_node* with label *edge_label*
+        Returns whether *edge_label* matches *self*
         """
 
 
@@ -1177,13 +1171,8 @@ class AnyEdgePredicate(EdgePredicate):
     def dot_label(self) -> str:
         return "*"
 
-    def matches_predicate(
-        self,
-        source_predicate_node: NodePredicate,
-        edge_label: "EdgePredicate",
-        dest_predicate_node: NodePredicate,
-    ) -> bool:
-        return True
+    def matches_predicate(self, edge_label: "EdgePredicate") -> bool:
+        return isinstance(edge_label, AnyEdgePredicate)
 
 
 @attrs(frozen=True, slots=True)
@@ -1208,13 +1197,11 @@ class RelationTypeIsPredicate(EdgePredicate):
     def reverse_in_dot_graph(self) -> bool:
         return self.relation_type == PART_OF
 
-    def matches_predicate(
-        self,
-        source_predicate_node: NodePredicate,
-        edge_label: "EdgePredicate",
-        dest_predicate_node: NodePredicate,
-    ) -> bool:
-        return edge_label == self.relation_type
+    def matches_predicate(self, edge_label: "EdgePredicate") -> bool:
+        return (
+            isinstance(edge_label, RelationTypeIsPredicate)
+            and edge_label.relation_type == self.relation_type
+        )
 
 
 @attrs(frozen=True, slots=True)
@@ -1244,19 +1231,10 @@ class DirectionPredicate(EdgePredicate):
     def exactly_matching(direction: Direction[Any]) -> "DirectionPredicate":
         return DirectionPredicate(direction)
 
-    def matches_predicate(
-        self,
-        source_predicate_node: NodePredicate,
-        edge_label: "EdgePredicate",
-        dest_predicate_node: NodePredicate,
-    ) -> bool:
-        if isinstance(edge_label, DirectionPredicate):
-            return (
-                edge_label.reference_direction.positive
-                == self.reference_direction.positive
-            )
-        else:
-            return False
+    def matches_predicate(self, edge_label: "EdgePredicate") -> bool:
+        return isinstance(edge_label, DirectionPredicate) and (
+            edge_label.reference_direction.positive == self.reference_direction.positive
+        )
 
 
 # Graph translation code shared between perception graph construction
@@ -1426,6 +1404,16 @@ def _graph_node_order(node_node_data_tuple) -> int:
         node = node[0]
 
     return _GRAPH_NODE_ORDER.index(node.__class__)
+
+
+GOVERNED = OntologyNode("governed")
+"""
+An object match governed in a preposition relationship
+"""
+MODIFIED = OntologyNode("modified")
+"""
+An object match modified in a preposition relationship
+"""
 
 
 @attrs(frozen=True, slots=True, eq=False)

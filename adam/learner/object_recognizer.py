@@ -20,6 +20,8 @@ from adam.perception.perception_graph import (
 )
 from attr import attrs, attrib
 
+OBJECTS_WHICH_FAIL_TO_MATCH_DUE_TO_KNOWN_BUG = [TRUCK]
+
 _LIST_OF_PERCEIVED_PATTERNS = immutableset(
     (
         node.handle,
@@ -30,8 +32,7 @@ _LIST_OF_PERCEIVED_PATTERNS = immutableset(
     for node in PHASE_1_CURRICULUM_OBJECTS
     if node
     in GAILA_PHASE_1_ONTOLOGY._structural_schemata.keys()  # pylint:disable=protected-access
-    and node not in [TRUCK]
-    # Currently can't be matched is what the list at the end is for
+    and node not in OBJECTS_WHICH_FAIL_TO_MATCH_DUE_TO_KNOWN_BUG
 )
 
 MATCHED_OBJECT_PATTERN_LABEL = OntologyNode("has-matched-object-pattern")

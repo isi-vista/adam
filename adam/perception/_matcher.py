@@ -261,6 +261,9 @@ class GraphMatching:
         variables after each recursive call. If an isomorphism is found,
         we yield the mapping.
 
+        *matching_pattern* should be indicated as true if the two graphs
+        which are being matched are both made up of `NodePredicate` objects.
+
         """
         if debug and len(self.pattern_node_to_graph_node) >= len(
             self.debug_largest_match
@@ -343,6 +346,10 @@ class GraphMatching:
 
         # We assume the nodes of G2 are node predicates which must hold true for the
         # corresponding G1 graph node for there to be a match.
+        # IF we are matching two pattern nodes together we can't just use the
+        # __call__ function on the Predicates, we need to call the .matches_predicate
+        # instead. We use a boolean rather than checking at runtime to speed up this
+        # process
         if matching_pattern:
             if not pattern_node.matches_predicate(graph_node):
                 if debug:
