@@ -14,6 +14,7 @@ from adam.language import (
 )
 from adam.learner import LanguageLearner, LearningExample, graph_without_learner, get_largest_matching_pattern
 from adam.ontology.phase1_ontology import partOf
+from adam.ontology.phase1_spatial_relations import Region
 from adam.perception import PerceptionT, PerceptualRepresentation, ObjectPerception
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -22,7 +23,7 @@ from adam.perception.perception_graph import (
     PerceptionGraph,
     PerceptionGraphPattern,
     DebugCallableType,
-)
+    PerceptionGraphPatternMatch)
 
 r.seed(0)
 
@@ -50,6 +51,7 @@ class PursuitLanguageLearner(
     _describe_from_lexicon_threshold: float = attrib(default=0.9, kw_only=True)
     # Threshold value for adding word to lexicon
     _lexicon_entry_threshold: float = attrib(default=0.8, kw_only=True)
+    debug_counter = 0
 
     def observe(
             self, learning_example: LearningExample[PerceptionT, LinguisticDescription]
@@ -97,11 +99,9 @@ class PursuitLanguageLearner(
         meanings = self.get_meanings_from_perception(observed_perception_graph)
         pattern_hypothesis = first(meanings)
         min_score = float('inf')
-        # TODO @Deniz: The association score makes no reference to meaning that I see
-        # So won’t the hypothesis always just be either the first or last thing in meanings,
-        # depending on the (unchanging) value  of max_association_score?
         for meaning in meanings:
             # Get the maximum association score for that meaning
+            # TODO Try to make this more effcient
             max_association_score = max([s for w, h_to_s in self._words_to_hypotheses_and_scores.items()
                                          for h, s in h_to_s.items() if h.check_isomorphism(meaning)] + [0])
             if max_association_score < min_score:
@@ -132,8 +132,14 @@ class PursuitLanguageLearner(
         current_hypothesis_score = self._words_to_hypotheses_and_scores[
             word
         ][leading_hypothesis_pattern]
-        print('Match:', len(hypothesis_pattern_common_subgraph.copy_as_digraph().nodes), '/',
+        self.debug_counter+=1
+        print('Match:', self.debug_counter, word, len(hypothesis_pattern_common_subgraph.copy_as_digraph().nodes), '/',
               len(leading_hypothesis_pattern.copy_as_digraph().nodes))
+
+        # observed_perception_graph.render_to_file(str(self.debug_counter)+'perception', output_file='renders/'+str(self.debug_counter)+'perception')
+        # leading_hypothesis_pattern.render_to_file(str(self.debug_counter)+'leading', output_file='renders/'+str(self.debug_counter)+'leading')
+        # hypothesis_pattern_common_subgraph.render_to_file(str(self.debug_counter)+'common', output_file='renders/'+str(self.debug_counter)+'common')
+
         match_ratio = len(hypothesis_pattern_common_subgraph.copy_as_digraph().nodes) / \
                       len(leading_hypothesis_pattern.copy_as_digraph().nodes)
 
@@ -243,6 +249,10 @@ class PursuitLanguageLearner(
             other_nodes = []
             for node in all_object_perception_nodes:
                 for neighbor in perception_as_graph.neighbors(node):
+                    # Filter out regions that don't have a reference in all object perception nodes
+                    if isinstance(neighbor, Region) and neighbor.reference_object not in all_object_perception_nodes:
+                        continue
+                    # Append all other none-object nodes to be kept in the subgraph
                     if not isinstance(neighbor, ObjectPerception):
                         other_nodes.append(neighbor)
 
@@ -270,22 +280,27 @@ class PursuitLanguageLearner(
 
         # TODO: Discuss how to generate a description. Currently we pick the highest match, works with single objects
         learned_description = None
-        largest_match_ratio = 0
         for word, meaning_pattern in self._lexicon.items():
-            # get the largest common match
-            common_pattern = get_largest_matching_pattern(
-                meaning_pattern,
-                observed_perception_graph,
-                debug_callback=self._debug_callback,
-            )
-            match_ratio = len(common_pattern.copy_as_digraph().nodes) / \
-                          len(meaning_pattern.copy_as_digraph().nodes)
-            print(observed_perception_graph.copy_as_digraph().nodes)
-            print(word, len(common_pattern.copy_as_digraph().nodes), match_ratio, meaning_pattern.copy_as_digraph().nodes)
-            if match_ratio > largest_match_ratio:
+            # Use PerceptionGraphPattern.matcher and matcher.matches() for a complete match
+            matcher = meaning_pattern.matcher(observed_perception_graph)
+            matches = matcher.matches()
+            first_match = first(matches, default=None)
+            if first_match is not None:
                 learned_description = ('a', word)
-                print(learned_description)
-                largest_match_ratio = match_ratio
+                continue
+            # get the largest common match
+            # common_pattern = get_largest_matching_pattern(
+            #     meaning_pattern,
+            #     observed_perception_graph,
+            #     debug_callback=self._debug_callback,
+            # )
+            # match_ratio = len(common_pattern.copy_as_digraph().nodes) / \
+            #               len(meaning_pattern.copy_as_digraph().nodes)
+            # print(word, len(common_pattern.copy_as_digraph().nodes), match_ratio, meaning_pattern.copy_as_digraph().nodes)
+            # if match_ratio > largest_match_ratio:
+            #     learned_description = ('a', word)
+            #     print(learned_description)
+            #     largest_match_ratio = match_ratio
         if learned_description:
             return immutabledict(
                 ((TokenSequenceLinguisticDescription(learned_description), 1.0),)

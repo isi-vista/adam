@@ -321,10 +321,11 @@ class PerceptionGraphPattern:
     def copy_as_digraph(self):
         return copy(self._graph)
 
-    def _node_match(self, node1, node2) -> bool:
-        return node1['type'] == node2['type']
+    def _node_match(self, node1: Dict[str, "NodePredicate"], node2: Dict[str, "NodePredicate"]) -> bool:
+        return node1['node'].is_equivalent(node2['node'])
+        # TODO: Compare node predicates with isEquivalent
 
-    def _edge_match(self, edge1: Dict[str, "NodePredicate"], edge2: Dict[str, "NodePredicate"]) -> bool:
+    def _edge_match(self, edge1: Dict[str, "EdgePredicate"], edge2: Dict[str, "EdgePredicate"]) -> bool:
         return edge1['predicate'].dot_label() == edge2['predicate'].dot_label()
 
     def check_isomorphism(self, other_graph: "PerceptionGraphPattern") -> bool:
@@ -445,7 +446,7 @@ class PerceptionGraphPattern:
             # Add each node
             pattern_node = map_node(original_node)
             pattern_graph.add_node(pattern_node)
-            set_node_attributes(pattern_graph, {pattern_node: {'type': type(pattern_node)}})
+            set_node_attributes(pattern_graph, {pattern_node: {'node': pattern_node}})
 
         # Once all nodes are translated, we add all edges from the source graph by iterating over each node and
         # extracting its edges.
@@ -730,6 +731,12 @@ class NodePredicate(ABC):
         Node label to use when rendering patterns as graphs using *dot*.
         """
 
+    @abstractmethod
+    def is_equivalent(self, other_node_predicate: "NodePredicate") -> bool:
+        """
+        Compares two predicates and return true if they are equivalent
+        """
+
 
 @attrs(frozen=True, slots=True, eq=False)
 class AnyNodePredicate(NodePredicate):
@@ -742,6 +749,9 @@ class AnyNodePredicate(NodePredicate):
 
     def dot_label(self) -> str:
         return "*"
+
+    def is_equivalent(self, other) -> bool:
+        return isinstance(other, AndNodePredicate)
 
 
 @attrs(frozen=True, slots=True, eq=False)
@@ -762,6 +772,8 @@ class AnyObjectPerception(NodePredicate):
             debug_handle_str = ""
         return f"*obj{debug_handle_str}"
 
+    def is_equivalent(self, other) -> bool:
+        return isinstance(other, AnyObjectPerception)
 
 @attrs(frozen=True, slots=True, eq=False)
 class AxisPredicate(NodePredicate):
@@ -814,6 +826,11 @@ class AxisPredicate(NodePredicate):
 
         return f"axis({', '.join(constraints)})"
 
+    def is_equivalent(self, other) -> bool:
+        if isinstance(other, AxisPredicate):
+            return self.aligned_to_gravitational == other.aligned_to_gravitational and \
+                   self.curved == other.curved and \
+                   self.directed == other.directed
 
 @attrs(frozen=True, slots=True, eq=False)
 class GeonPredicate(NodePredicate):
@@ -844,6 +861,18 @@ class GeonPredicate(NodePredicate):
     def exactly_matching(geon: Geon) -> "GeonPredicate":
         return GeonPredicate(geon)
 
+    def is_equivalent(self, other) -> bool:
+        if isinstance(other, GeonPredicate):
+            return self.template_geon.axes.axis_relations == other.template_geon.axes.axis_relations and \
+                   self.template_geon.axes.orienting_axes == other.template_geon.axes.orienting_axes and \
+                   self.template_geon.axes.primary_axis == other.template_geon.axes.primary_axis and \
+                   self.template_geon.cross_section.curved == other.template_geon.cross_section.curved and \
+                   self.template_geon.cross_section.has_reflective_symmetry == other.template_geon.cross_section.has_reflective_symmetry and \
+                   self.template_geon.cross_section.has_rotational_symmetry == other.template_geon.cross_section.has_rotational_symmetry and \
+                   self.template_geon.cross_section_size.name == other.template_geon.cross_section_size.name and \
+                   self.template_geon.generating_axis.curved == other.template_geon.generating_axis.curved and \
+                   self.template_geon.generating_axis.directed == other.template_geon.generating_axis.directed and \
+                   self.template_geon.generating_axis.aligned_to_gravitational == other.template_geon.generating_axis.aligned_to_gravitational
 
 @attrs(frozen=True, slots=True, eq=False)
 class RegionPredicate(NodePredicate):
@@ -867,6 +896,14 @@ class RegionPredicate(NodePredicate):
     def matching_distance(region: Region[Any]) -> "RegionPredicate":
         return RegionPredicate(region.distance)
 
+    def is_equivalent(self, other) -> bool:
+        if isinstance(other, RegionPredicate):
+            if self.distance is None and other.distance is None:
+                return True
+            elif self.distance is not None and other.distance is not None:
+                return self.distance.name == other.distance.name
+            else:
+                return False
 
 @attrs(frozen=True, slots=True, eq=False)
 class IsOntologyNodePredicate(NodePredicate):
@@ -878,6 +915,9 @@ class IsOntologyNodePredicate(NodePredicate):
     def dot_label(self) -> str:
         return f"prop({self.property_value.handle})"
 
+    def is_equivalent(self, other) -> bool:
+        if isinstance(other, IsOntologyNodePredicate):
+            return self.property_value == other.property_value
 
 @attrs(frozen=True, slots=True, eq=False)
 class IsColorNodePredicate(NodePredicate):
@@ -895,6 +935,10 @@ class IsColorNodePredicate(NodePredicate):
     def dot_label(self) -> str:
         return f"prop({self.color.hex})"
 
+    def is_equivalent(self, other) -> bool:
+        if isinstance(other, IsColorNodePredicate):
+            return self.color.hex == other.color.hex
+
 
 @attrs(frozen=True, slots=True, eq=False)
 class AndNodePredicate(NodePredicate):
@@ -909,6 +953,11 @@ class AndNodePredicate(NodePredicate):
 
     def dot_label(self) -> str:
         return " & ".join(sub_pred.dot_label() for sub_pred in self.sub_predicates)
+
+    def is_equivalent(self, other) -> bool:
+        if isinstance(other, AndNodePredicate) and len(self.sub_predicates) == len(other.sub_predicates):
+            return all(any(pred1.is_equivalent(pred2)) for pred1 in self.sub_predicates
+                       for pred2 in other.subpredicates)
 
 
 class EdgePredicate(ABC):
