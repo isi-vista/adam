@@ -396,7 +396,7 @@ class PrepositionSubsetLanguageLearner(
                         1.0,
                     )
                 )
-                if len(debug_mapping):
+                if debug_mapping:
                     self._print(
                         subgraph(
                             preposition_pattern.graph_pattern.copy_as_digraph(),

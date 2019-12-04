@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from immutablecollections import immutableset
 
 from adam.curriculum.curriculum_utils import (
@@ -31,10 +29,6 @@ from adam.ontology.phase1_ontology import (
     MOM,
 )
 from adam.situation.templates.phase1_templates import sampled, object_variable
-
-# _DEBUG_FILE_PATH = "/Users/gabbard/tmp/adam"
-
-_DEBUG_FILE_PATH = "/nas/home/jacobl/adam-root/outputs/log.txt"
 
 
 def test_subset_preposition_on_learner():
@@ -259,7 +253,7 @@ def test_subset_preposition_in_learner():
 
 
 def test_subset_preposition_behind_learner():
-    learner = PrepositionSubsetLanguageLearner(debug_file=_DEBUG_FILE_PATH)
+    learner = PrepositionSubsetLanguageLearner()
     ball = standard_object("ball", BALL)
     table = standard_object("chair", TABLE)
     learner_object = standard_object("learner", LEARNER, added_properties=[IS_ADDRESSEE])
@@ -308,8 +302,7 @@ def test_subset_preposition_behind_learner():
 
 
 def test_subset_preposition_in_front_learner():
-    Path(_DEBUG_FILE_PATH).unlink()
-    learner = PrepositionSubsetLanguageLearner(debug_file=_DEBUG_FILE_PATH)
+    learner = PrepositionSubsetLanguageLearner()
     ball = standard_object("ball", BALL)
     table = standard_object("chair", TABLE)
     learner_object = standard_object("learner", LEARNER, added_properties=[IS_ADDRESSEE])
