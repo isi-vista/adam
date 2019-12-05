@@ -103,6 +103,14 @@ class Direction(Generic[ReferenceObjectT]):
             relative_to_axis=self.relative_to_axis.copy_remapping_objects(object_map),
         )
 
+    def reverse_direction(self) -> "Direction[ReferenceObjectT]":
+        """
+        Returns a direction which is aligned to the same axis but on the opposite direction.
+        """
+        return Direction(
+            positive=not self.positive, relative_to_axis=self.relative_to_axis
+        )
+
     def __repr__(self) -> str:
         polarity = "+" if self.positive else "-"
         return f"{polarity}{self.relative_to_axis}"

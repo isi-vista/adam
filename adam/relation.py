@@ -277,19 +277,29 @@ def make_symmetric_dsl_region_relation(
     def dsl_relation_function(
         arg1s: Union[_ObjectT, Iterable[_ObjectT]],
         arg2s: Union[_ObjectT, Iterable[_ObjectT]],
-        **kw_args,
+        *,
+        direction: Any = None,
     ) -> Tuple["Relation[_ObjectT]", ...]:
         arg1s = _ensure_iterable(arg1s)
         arg2s = _ensure_iterable(arg2s)
         return flatten(
             [
                 tuple(
-                    Relation(IN_REGION, arg1, region_factory(arg2, **kw_args))
+                    Relation(IN_REGION, arg1, region_factory(arg2, direction=direction))
                     for arg1 in arg1s
                     for arg2 in arg2s
                 ),
                 tuple(
-                    Relation(IN_REGION, arg2, region_factory(arg1, **kw_args))
+                    Relation(
+                        IN_REGION,
+                        arg2,
+                        region_factory(
+                            arg1,
+                            direction=direction.reverse_direction()
+                            if direction is not None
+                            else None,
+                        ),
+                    )
                     for arg1 in arg1s
                     for arg2 in arg2s
                 ),

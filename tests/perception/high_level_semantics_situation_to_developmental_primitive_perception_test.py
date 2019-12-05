@@ -529,15 +529,15 @@ def test_perceive_explicit_relations():
     assert only(on(ball_perception, table_perception)) in perception.frames[0].relations
     assert only(on(ball_perception, table_perception)) in perception.frames[0].relations
 
-    assert only(far(ball_perception, box_perception)) in perception.frames[0].relations
-    assert (
-        only(far(ball_perception, box_perception)) not in perception.frames[1].relations
-    )
+    for relation in far(ball_perception, box_perception):
+        assert relation in perception.frames[0].relations
+    for relation in far(ball_perception, box_perception):
+        assert relation not in perception.frames[1].relations
 
-    assert (
-        only(near(ball_perception, box_perception)) not in perception.frames[0].relations
-    )
-    assert only(near(ball_perception, box_perception)) in perception.frames[1].relations
+    for relation in near(ball_perception, box_perception):
+        assert relation not in perception.frames[0].relations
+    for relation in near(ball_perception, box_perception):
+        assert relation in perception.frames[1].relations
 
 
 def test_path_from_action_description():

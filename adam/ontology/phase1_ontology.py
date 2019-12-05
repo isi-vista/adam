@@ -575,23 +575,27 @@ on = make_dsl_region_relation(_on_region_factory)  # pylint:disable=invalid-name
 
 
 def _near_region_factory(
-    reference_object: _ObjectT, *, direction: Direction[_ObjectT] = None
+    reference_object: _ObjectT, direction: Direction[_ObjectT] = None
 ) -> Region[_ObjectT]:
     return Region(
         reference_object=reference_object, distance=PROXIMAL, direction=direction
     )
 
 
-near = make_dsl_region_relation(_near_region_factory)  # pylint:disable=invalid-name
+near = make_symmetric_dsl_region_relation(  # pylint:disable=invalid-name
+    _near_region_factory
+)
 
 
 def _far_region_factory(
-    reference_object: _ObjectT, *, direction: Direction[_ObjectT] = None
+    reference_object: _ObjectT, direction: Direction[_ObjectT] = None
 ) -> Region[_ObjectT]:
     return Region(reference_object=reference_object, distance=DISTAL, direction=direction)
 
 
-far = make_dsl_region_relation(_far_region_factory)  # pylint:disable=invalid-name
+far = make_symmetric_dsl_region_relation(  # pylint:disable=invalid-name
+    _far_region_factory
+)
 
 
 PART_OF = OntologyNode("partOf")
@@ -653,8 +657,14 @@ subtype(HAS, RELATION)
 has = make_dsl_relation(HAS)  # pylint:disable=invalid-name
 
 
-def _contact_region_factory(reference_object: _ObjectT) -> Region[_ObjectT]:
-    return Region(reference_object=reference_object, distance=EXTERIOR_BUT_IN_CONTACT)
+def _contact_region_factory(
+    reference_object: _ObjectT, direction: Direction[_ObjectT] = None
+) -> Region[_ObjectT]:
+    return Region(
+        reference_object=reference_object,
+        direction=direction,
+        distance=EXTERIOR_BUT_IN_CONTACT,
+    )
 
 
 # mypy's reveal_type says the type of "contacts" is
