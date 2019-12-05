@@ -21,10 +21,23 @@ from vistautils.preconditions import check_arg
 # see https://github.com/pytorch/pytorch/issues/24807 re: pylint issue
 ORIGIN = torch.zeros(3, dtype=torch.float)  # pylint: disable=not-callable
 COLLISION_PENALTY = 10
+OUT_OF_BOUNDS_PENALTY = 2
 
-SCENE_BOUNDARIES = torch.tensor(
-    [[-10.0, 10.0], [-7.0, 7.0], [0.0, 5.0]], dtype=torch.float
+# one corner of a cube defining the scene area
+SCENE_BOUNDARY_A = torch.tensor(
+    [10, 7, 0.5], dtype=torch.float
 )
+# another corner of the cube, adjacent to A
+SCENE_BOUNDARY_B = torch.tensor(
+    [-10, -7, 2], dtype=torch.float
+)
+# a third corner of the cube, adjacent to A and opposite B
+SCENE_BOUNDARY_D = torch.tensor(
+    [10, 7, 2], dtype=torch.float
+)
+SCENE_BOUNDARY_AB = SCENE_BOUNDARY_B - SCENE_BOUNDARY_A
+SCENE_BOUNDARY_AD = SCENE_BOUNDARY_D - SCENE_BOUNDARY_A
+
 
 
 @attrs(frozen=True, auto_attribs=True)
@@ -96,7 +109,6 @@ def run_model(objs: List[AdamObject]) -> List[torch.Tensor]:
     iterations = 25
     for _ in range(iterations):
         loss = positioning_model()
-        print(f"Loss: {loss.item()}")
         loss.backward()
 
         optimizer.step()
@@ -136,7 +148,12 @@ class AxisAlignedBoundingBox:
         Returns: (1) Tensor
 
         """
-        pass
+        if (0 <= torch.dot(self.center - SCENE_BOUNDARY_A, SCENE_BOUNDARY_AB) <=
+            torch.dot(SCENE_BOUNDARY_AB, SCENE_BOUNDARY_AB)) and \
+            (0 <= torch.dot(self.center - SCENE_BOUNDARY_A, SCENE_BOUNDARY_AD) <=
+                torch.dot(SCENE_BOUNDARY_AD, SCENE_BOUNDARY_AD)):
+            return torch.zeros(1, dtype=torch.float)
+        return self.center_distance_from_point(ORIGIN) * OUT_OF_BOUNDS_PENALTY
 
     @staticmethod
     def create_at_random_position(
@@ -299,11 +316,12 @@ class AdamObjectPositioningModel(torch.nn.Module):  # type: ignore
 
         for (adam_object, bounding_box) in self.adam_object_to_bounding_box.items():
             self.register_parameter(
-                adam_object.name, Parameter(bounding_box.center, requires_grad=True)
+                adam_object.name, bounding_box.center
             )
 
         self.distance_to_origin_penalty = DistanceFromOriginPenalty()
         self.collision_penalty = CollisionPenalty()
+        self.out_of_bounds_penalty = OutsideOfSceneBoundariesPenalty()
 
     @staticmethod
     def for_objects(
@@ -315,7 +333,7 @@ class AdamObjectPositioningModel(torch.nn.Module):  # type: ignore
             (
                 adam_object,
                 AxisAlignedBoundingBox.create_at_center_point(
-                    center=np.array([adam_object.initial_position])
+                    center=np.array(adam_object.initial_position)
                 ),
             )
             for adam_object in adam_objects
@@ -332,7 +350,7 @@ class AdamObjectPositioningModel(torch.nn.Module):  # type: ignore
             (
                 adam_object,
                 AxisAlignedBoundingBox.create_at_random_position(
-                    min_distance_from_origin=5.0, max_distance_from_origin=10.0
+                    min_distance_from_origin=5, max_distance_from_origin=10
                 ),
             )
             for adam_object in adam_objects
@@ -347,10 +365,14 @@ class AdamObjectPositioningModel(torch.nn.Module):  # type: ignore
             self.collision_penalty(box1, box2)
             for (box1, box2) in combinations(self.object_bounding_boxes, 2)
         )
+        out_of_bounds_penalty = sum(
+            self.out_of_bounds_penalty(box) for box in self.object_bounding_boxes
+        )
         print(
             f"distance penalty: {distance_penalty}\ncollision penalty: {collision_penalty}"
+            f"\nout of bounds penalty: {out_of_bounds_penalty}"
         )
-        return distance_penalty + collision_penalty
+        return distance_penalty + collision_penalty + out_of_bounds_penalty
 
     def dump_object_positions(self) -> None:
         for (adam_object, bounding_box) in self.adam_object_to_bounding_box.items():
