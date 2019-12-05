@@ -128,7 +128,9 @@ def test_subset_preposition_under_learner():
     under_train_curriculum = phase1_instances(
         "Preposition Under Unit Train",
         situations=sampled(
-            _under_template(ball, table, immutableset(), is_training=True),
+            _under_template(
+                ball, table, immutableset(), is_training=True, is_distal=True
+            ),
             chooser=PHASE1_CHOOSER,
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=2,
@@ -137,7 +139,9 @@ def test_subset_preposition_under_learner():
     under_test_curriculum = phase1_instances(
         "Preposition Under Unit Test",
         situations=sampled(
-            _under_template(ball, table, immutableset(), is_training=False),
+            _under_template(
+                ball, table, immutableset(), is_training=False, is_distal=True
+            ),
             chooser=PHASE1_CHOOSER,
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
@@ -171,7 +175,7 @@ def test_subset_preposition_over_learner():
     over_train_curriculum = phase1_instances(
         "Preposition Over Unit Train",
         situations=sampled(
-            _over_template(ball, table, immutableset(), is_training=True),
+            _over_template(ball, table, immutableset(), is_training=True, is_distal=True),
             chooser=PHASE1_CHOOSER,
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=2,
@@ -180,7 +184,9 @@ def test_subset_preposition_over_learner():
     over_test_curriculum = phase1_instances(
         "Preposition Over Unit Test",
         situations=sampled(
-            _over_template(ball, table, immutableset(), is_training=False),
+            _over_template(
+                ball, table, immutableset(), is_training=False, is_distal=True
+            ),
             chooser=PHASE1_CHOOSER,
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
@@ -262,7 +268,11 @@ def test_subset_preposition_behind_learner():
         "Preposition Behind Unit Train",
         situations=sampled(
             _behind_template(
-                ball, table, immutableset([learner_object, mom]), is_training=True
+                ball,
+                table,
+                immutableset([learner_object, mom]),
+                is_training=True,
+                is_near=True,
             ),
             chooser=PHASE1_CHOOSER,
             ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -273,7 +283,11 @@ def test_subset_preposition_behind_learner():
         "Preposition Behind Unit Test",
         situations=sampled(
             _behind_template(
-                ball, table, immutableset([learner_object, mom]), is_training=False
+                ball,
+                table,
+                immutableset([learner_object, mom]),
+                is_training=False,
+                is_near=True,
             ),
             chooser=PHASE1_CHOOSER,
             ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -311,7 +325,11 @@ def test_subset_preposition_in_front_learner():
         "Preposition In Front Unit Train",
         situations=sampled(
             _in_front_template(
-                ball, table, immutableset([learner_object, mom]), is_training=True
+                ball,
+                table,
+                immutableset([learner_object, mom]),
+                is_training=True,
+                is_near=True,
             ),
             chooser=PHASE1_CHOOSER,
             ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -322,7 +340,11 @@ def test_subset_preposition_in_front_learner():
         "Preposition In Front Unit Test",
         situations=sampled(
             _in_front_template(
-                ball, table, immutableset([learner_object, mom]), is_training=False
+                ball,
+                table,
+                immutableset([learner_object, mom]),
+                is_training=False,
+                is_near=True,
             ),
             chooser=PHASE1_CHOOSER,
             ontology=GAILA_PHASE_1_ONTOLOGY,
