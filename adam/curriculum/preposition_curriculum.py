@@ -12,7 +12,7 @@ from adam.curriculum.curriculum_utils import (
     Phase1InstanceGroup,
     phase1_instances,
 )
-from adam.ontology import IN_REGION, IS_ADDRESSEE, IS_SPEAKER, THING
+from adam.ontology import IS_ADDRESSEE, IS_SPEAKER, THING
 from adam.ontology.phase1_ontology import (
     BALL,
     BOOK,
@@ -34,15 +34,18 @@ from adam.ontology.phase1_ontology import (
     HAS_SPACE_UNDER,
     IS_BODY_PART,
     HOLLOW,
+    near,
+    far,
 )
-from adam.ontology.phase1_spatial_relations import Region, PROXIMAL, Direction
-from adam.relation import Relation
+from adam.ontology.phase1_spatial_relations import PROXIMAL, Direction, DISTAL
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
     sampled,
     TemplateObjectVariable,
     object_variable,
 )
+
+BOOL_SET = immutableset([True, False])
 
 
 def _on_template(
@@ -77,16 +80,12 @@ def _beside_template(
         salient_object_variables=[figure, ground],
         background_object_variables=background,
         asserted_always_relations=[
-            Relation(
-                IN_REGION,
+            near(
                 figure,
-                Region(
-                    ground,
-                    distance=PROXIMAL,
-                    direction=Direction(
-                        positive=is_right,
-                        relative_to_axis=HorizontalAxisOfObject(ground, index=0),
-                    ),
+                ground,
+                direction=Direction(
+                    positive=is_right,
+                    relative_to_axis=HorizontalAxisOfObject(ground, index=0),
                 ),
             )
         ],
@@ -100,13 +99,16 @@ def _under_template(
     background: Iterable[TemplateObjectVariable],
     *,
     is_training: bool,
+    is_distal: bool,
 ) -> Phase1SituationTemplate:
     handle = "training" if is_training else "testing"
     return Phase1SituationTemplate(
         f"preposition-{handle}-{figure.handle}-under-{ground.handle}",
         salient_object_variables=[ground],
         background_object_variables=background,
-        asserted_always_relations=[strictly_above(ground, figure)],
+        asserted_always_relations=[
+            strictly_above(ground, figure, dist=DISTAL if is_distal else PROXIMAL)
+        ],
         constraining_relations=[bigger_than(ground, figure)],
         gazed_objects=[figure],
     )
@@ -118,13 +120,16 @@ def _over_template(
     background: Iterable[TemplateObjectVariable],
     *,
     is_training: bool,
+    is_distal: bool,
 ) -> Phase1SituationTemplate:
     handle = "training" if is_training else "testing"
     return Phase1SituationTemplate(
         f"preposition-{handle}-{figure.handle}-over-{ground.handle}",
         salient_object_variables=[ground],
         background_object_variables=background,
-        asserted_always_relations=[strictly_above(figure, ground)],
+        asserted_always_relations=[
+            strictly_above(figure, ground, dist=DISTAL if is_distal else PROXIMAL)
+        ],
         gazed_objects=[figure],
     )
 
@@ -152,6 +157,7 @@ def _behind_template(
     background: Iterable[TemplateObjectVariable],
     *,
     is_training: bool,
+    is_near: bool,
 ) -> Phase1SituationTemplate:
     handle = "training" if is_training else "testing"
     return Phase1SituationTemplate(
@@ -159,15 +165,19 @@ def _behind_template(
         salient_object_variables=[figure, ground],
         background_object_variables=background,
         asserted_always_relations=[
-            Relation(
-                IN_REGION,
+            near(
                 figure,
-                Region(
-                    ground,
-                    distance=PROXIMAL,
-                    direction=Direction(
-                        positive=False, relative_to_axis=FacingAddresseeAxis(ground)
-                    ),
+                ground,
+                direction=Direction(
+                    positive=False, relative_to_axis=FacingAddresseeAxis(ground)
+                ),
+            )
+            if is_near
+            else far(
+                figure,
+                ground,
+                direction=Direction(
+                    positive=False, relative_to_axis=FacingAddresseeAxis(ground)
                 ),
             )
         ],
@@ -181,6 +191,7 @@ def _in_front_template(
     background: Iterable[TemplateObjectVariable],
     *,
     is_training: bool,
+    is_near: bool,
 ) -> Phase1SituationTemplate:
     handle = "training" if is_training else "testing"
     return Phase1SituationTemplate(
@@ -188,15 +199,19 @@ def _in_front_template(
         salient_object_variables=[figure, ground],
         background_object_variables=background,
         asserted_always_relations=[
-            Relation(
-                IN_REGION,
+            near(
                 figure,
-                Region(
-                    ground,
-                    distance=PROXIMAL,
-                    direction=Direction(
-                        positive=True, relative_to_axis=FacingAddresseeAxis(ground)
-                    ),
+                ground,
+                direction=Direction(
+                    positive=True, relative_to_axis=FacingAddresseeAxis(ground)
+                ),
+            )
+            if is_near
+            else far(
+                figure,
+                ground,
+                direction=Direction(
+                    positive=True, relative_to_axis=FacingAddresseeAxis(ground)
                 ),
             )
         ],
@@ -282,7 +297,7 @@ def _make_beside_training(
                         )
                         for figure in figures
                         for ground in grounds
-                        for direction in immutableset([True, False])
+                        for direction in BOOL_SET
                     ]
                 )
             ]
@@ -312,6 +327,7 @@ def _make_under_training(
                         if noise_objects
                         else immutableset(),
                         is_training=True,
+                        is_distal=distance,
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER,
@@ -319,6 +335,7 @@ def _make_under_training(
                 )
                 for figure in figures
                 for ground in grounds
+                for distance in BOOL_SET
             ]
         ),
     )
@@ -347,6 +364,7 @@ def _make_over_training(
                         if noise_objects
                         else immutableset(),
                         is_training=True,
+                        is_distal=distance,
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER,
@@ -354,6 +372,7 @@ def _make_over_training(
                 )
                 for figure in figures
                 for ground in grounds
+                for distance in BOOL_SET
             ]
         ),
     )
@@ -428,6 +447,7 @@ def _make_behind_training(
                                 if noise_objects
                                 else immutableset([speaker, addressee]),
                                 is_training=True,
+                                is_near=close,
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
                             chooser=PHASE1_CHOOSER,
@@ -435,6 +455,7 @@ def _make_behind_training(
                         )
                         for figure in figures
                         for ground in grounds
+                        for close in BOOL_SET
                     ]
                 )
             ]
@@ -474,6 +495,7 @@ def _make_in_front_training(
                                 if noise_objects
                                 else immutableset([speaker, addressee]),
                                 is_training=True,
+                                is_near=close,
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
                             chooser=PHASE1_CHOOSER,
@@ -481,6 +503,7 @@ def _make_in_front_training(
                         )
                         for figure in figures
                         for ground in grounds
+                        for close in BOOL_SET
                     ]
                 )
             ]
@@ -576,7 +599,7 @@ def _make_beside_tests(
                         )
                         for figure in figures
                         for ground in grounds
-                        for direction in immutableset([True, False])
+                        for direction in BOOL_SET
                     ]
                 )
             ]
@@ -611,6 +634,7 @@ def _make_under_tests(
                         if noise_objects
                         else immutableset(),
                         is_training=False,
+                        is_distal=distance,
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER,
@@ -618,6 +642,7 @@ def _make_under_tests(
                 )
                 for figure in figures
                 for ground in grounds
+                for distance in BOOL_SET
             ]
         ),
     )
@@ -646,6 +671,7 @@ def _make_over_tests(
                         if noise_objects
                         else immutableset(),
                         is_training=False,
+                        is_distal=distance,
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER,
@@ -653,6 +679,7 @@ def _make_over_tests(
                 )
                 for figure in figures
                 for ground in grounds
+                for distance in BOOL_SET
             ]
         ),
     )
@@ -728,6 +755,7 @@ def _make_behind_tests(
                                 if noise_objects
                                 else immutableset([speaker, addressee]),
                                 is_training=False,
+                                is_near=close,
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
                             chooser=PHASE1_CHOOSER,
@@ -735,6 +763,7 @@ def _make_behind_tests(
                         )
                         for figure in figures
                         for ground in grounds
+                        for close in BOOL_SET
                     ]
                 )
             ]
@@ -775,6 +804,7 @@ def _make_in_front_tests(
                                 if noise_objects
                                 else immutableset([speaker, addressee]),
                                 is_training=False,
+                                is_near=close,
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
                             chooser=PHASE1_CHOOSER,
@@ -782,6 +812,7 @@ def _make_in_front_tests(
                         )
                         for figure in figures
                         for ground in grounds
+                        for close in BOOL_SET
                     ]
                 )
             ]
