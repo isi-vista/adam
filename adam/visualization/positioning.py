@@ -21,22 +21,8 @@ from vistautils.preconditions import check_arg
 # see https://github.com/pytorch/pytorch/issues/24807 re: pylint issue
 ORIGIN = torch.zeros(3, dtype=torch.float)  # pylint: disable=not-callable
 COLLISION_PENALTY = 10
-OUT_OF_BOUNDS_PENALTY = 2
+GRAVITY_PENALTY = 1
 
-# one corner of a cube defining the scene area
-SCENE_BOUNDARY_A = torch.tensor(
-    [10, 7, 0.5], dtype=torch.float
-)
-# another corner of the cube, adjacent to A
-SCENE_BOUNDARY_B = torch.tensor(
-    [-10, -7, 2], dtype=torch.float
-)
-# a third corner of the cube, adjacent to A and opposite B
-SCENE_BOUNDARY_D = torch.tensor(
-    [10, 7, 2], dtype=torch.float
-)
-SCENE_BOUNDARY_AB = SCENE_BOUNDARY_B - SCENE_BOUNDARY_A
-SCENE_BOUNDARY_AD = SCENE_BOUNDARY_D - SCENE_BOUNDARY_A
 
 
 
@@ -106,9 +92,10 @@ def run_model(objs: List[AdamObject]) -> List[torch.Tensor]:
         patience=3,
     )
 
-    iterations = 25
+    iterations = 200
     for _ in range(iterations):
         loss = positioning_model()
+        print(f"Loss: {loss.item()}")
         loss.backward()
 
         optimizer.step()
@@ -142,18 +129,35 @@ class AxisAlignedBoundingBox:
     def center_distance_from_point(self, point: torch.Tensor) -> torch.Tensor:
         return torch.dist(self.center, point, 2)
 
-    def center_out_of_bounds(self) -> torch.Tensor:
+    def corner_below_ground(self) -> torch.Tensor:
         """
-        Returns the distance the box is out of bounds (summed across dimensions), or 0 if within bounds.
-        Returns: (1) Tensor
+        Returns the z value of the most negative (w/r/t Z coordinate) corner of the box.
+        Returns 0 if all corners' Z values are positive.
+        """
+        corners = self.get_corners()
+        min_corner_z = torch.min(
+            torch.gather(corners, 1, torch.repeat_interleave(
+                torch.tensor([[2]]), torch.tensor([8]), dim=0)
+            )
+        )
+        if min_corner_z.data < 0:
+            # penalties need to be positive!
+            return min_corner_z * -1
+        return torch.zeros(1, dtype=torch.float)
+
+    def corner_above_ground(self) -> torch.Tensor:
+        """
+        Returns distance of z value of minimum (w/r/t Z coordinate) corner of the box from origin's Z value.
+        Returns: (1,) tensor
 
         """
-        if (0 <= torch.dot(self.center - SCENE_BOUNDARY_A, SCENE_BOUNDARY_AB) <=
-            torch.dot(SCENE_BOUNDARY_AB, SCENE_BOUNDARY_AB)) and \
-            (0 <= torch.dot(self.center - SCENE_BOUNDARY_A, SCENE_BOUNDARY_AD) <=
-                torch.dot(SCENE_BOUNDARY_AD, SCENE_BOUNDARY_AD)):
-            return torch.zeros(1, dtype=torch.float)
-        return self.center_distance_from_point(ORIGIN) * OUT_OF_BOUNDS_PENALTY
+        corners = self.get_corners()
+        min_corner_z = torch.min(
+            torch.gather(corners, 1, torch.repeat_interleave(
+                torch.tensor([[2]]), torch.tensor([8]), dim=0)
+                         )
+        )
+        return torch.dist(min_corner_z, ORIGIN[2])
 
     @staticmethod
     def create_at_random_position(
@@ -321,7 +325,8 @@ class AdamObjectPositioningModel(torch.nn.Module):  # type: ignore
 
         self.distance_to_origin_penalty = DistanceFromOriginPenalty()
         self.collision_penalty = CollisionPenalty()
-        self.out_of_bounds_penalty = OutsideOfSceneBoundariesPenalty()
+        self.below_ground_penalty = BelowGroundPenalty()
+        self.weak_gravity_penalty = WeakGravityPenalty()
 
     @staticmethod
     def for_objects(
@@ -365,14 +370,18 @@ class AdamObjectPositioningModel(torch.nn.Module):  # type: ignore
             self.collision_penalty(box1, box2)
             for (box1, box2) in combinations(self.object_bounding_boxes, 2)
         )
-        out_of_bounds_penalty = sum(
-            self.out_of_bounds_penalty(box) for box in self.object_bounding_boxes
+        below_ground_penalty = sum(
+            self.below_ground_penalty(box) for box in self.object_bounding_boxes
+        )
+        weak_gravity_penalty = sum(
+            self.weak_gravity_penalty(box) for box in self.object_bounding_boxes
         )
         print(
             f"distance penalty: {distance_penalty}\ncollision penalty: {collision_penalty}"
-            f"\nout of bounds penalty: {out_of_bounds_penalty}"
+            f"\nout of bounds penalty: {below_ground_penalty}"
+            f"\ngravity penalty: {weak_gravity_penalty}"
         )
-        return distance_penalty + collision_penalty + out_of_bounds_penalty
+        return distance_penalty + collision_penalty + below_ground_penalty + weak_gravity_penalty
 
     def dump_object_positions(self) -> None:
         for (adam_object, bounding_box) in self.adam_object_to_bounding_box.items():
@@ -404,7 +413,7 @@ class DistanceFromOriginPenalty(nn.Module):  # type: ignore
         return bounding_box.center_distance_from_point(ORIGIN)
 
 
-class OutsideOfSceneBoundariesPenalty(nn.Module):  # type: ignore
+class BelowGroundPenalty(nn.Module):  # type: ignore
     """
     Model that penalizes boxes lying outside of the scene (i.e. below the ground plane) or off-camera)
     """
@@ -414,8 +423,21 @@ class OutsideOfSceneBoundariesPenalty(nn.Module):  # type: ignore
 
     def forward(self, *inputs):  # pylint: disable=arguments-differ
         bounding_box: AxisAlignedBoundingBox = inputs[0]
-        return bounding_box.center_out_of_bounds()
+        return bounding_box.corner_below_ground()
 
+class WeakGravityPenalty(nn.Module): # type: ignore
+    """
+    Model that penalizes boxes that are not resting on the ground.
+    """
+    # TODO: exempt birds from this constraint
+    # TODO: exempt things resting on top of other objects from this constraint
+
+    def __init__(self) -> None: # pylint: disable=useless-super-delegation
+        super().__init__()
+
+    def forward(self, *inputs): # pylint: disable=arguments-differ
+        bounding_box: AxisAlignedBoundingBox = inputs[0]
+        return bounding_box.corner_above_ground() * GRAVITY_PENALTY
 
 class CollisionPenalty(nn.Module):  # type: ignore
     """

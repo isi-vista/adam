@@ -43,17 +43,14 @@ from adam.visualization.positioning import run_model, AdamObject
 
 @attrs(slots=True)
 class SceneNode:
-    elt: ObjectPerception = attr.ib()
+    """
+    Node type used for creating graph structure from a Perception of a scene.
+    This kind of hierarchical grouping of objects within the scene is helpful for adjusting
+    the positions of the objects within the rendering engine.
+    """
+    perceived_obj: ObjectPerception = attr.ib()
     children: List["SceneNode"] = attr.ib(factory=list)
     parent: "SceneNode" = attr.ib(default=None)
-
-
-@attrs(slots=True)
-class SceneNode:
-    elt: ObjectPerception = attr.ib()
-    children: List["SceneNode"] = attr.ib(factory=list)
-    parent: "SceneNode" = attr.ib(default=None)
-
 
 def main() -> None:
     random.seed(2015)
@@ -79,7 +76,7 @@ def main() -> None:
         )
 
         # for debugging purposes to view the results of positioning:
-        viz.run_for_seconds(0.25)
+        viz.run_for_seconds(0.5)
         input("Press RETURN to continue")
 
         # now that every object has been instantiated into the scene,
@@ -114,7 +111,7 @@ def render_obj_nested(
         ObjectPerception, List[Optional[Union[RgbColorPerception, OntologyNode]]]
     ],
     obj: ObjectPerception,
-    parent: NodePath,
+    parent: Optional[NodePath],
 ) -> NodePath:
 
     if obj.geon is None:
@@ -126,12 +123,16 @@ def render_obj_nested(
     shape = SceneCreator.cross_section_to_geo(obj.geon.cross_section)
     # TODO***: allow for Irregular geons to be rendered
     if shape == Shape.IRREGULAR:
-        return
+        raise RuntimeError("Irregular shapes (i.e. liquids) are not currently supported by the rendering system")
     color = None
     for prop in properties[obj]:
         if isinstance(prop, RgbColorPerception):
             color = prop
-    return renderer.add_model(shape, SceneCreator.random_leaf_position(), color, parent)
+    if parent is None:
+        pos = SceneCreator.random_root_position()
+    else:
+        pos = SceneCreator.random_leaf_position()
+    return renderer.add_model(shape, pos, color, parent)
 
 
 def print_obj_names(obj: ObjectPerception) -> None:
@@ -160,7 +161,7 @@ class SceneCreator:
                 _,  # situation
                 _,  # dependency_tree
                 perception,
-            ) in instance_group.instances():  # each instance a scene
+            ) in instance_group.instances():  # each instance is a scene
                 # scene_objects = []
                 property_map: DefaultDict[
                     ObjectPerception,
@@ -233,6 +234,7 @@ class SceneCreator:
             ):  # should be a better way to check
                 d[relation.second_slot].append(relation.first_slot)
 
+
         # add all additional objects not covered with partOf relations
         for obj in perceived_objects:
             if obj not in d:
@@ -246,6 +248,7 @@ class SceneCreator:
         most_to_least = sorted((k for k in d), key=lambda k: len(d[k]), reverse=True)
         # scene graph is a nested structure where multiple items can be at the top level
         scene_graph: List[SceneNode] = []
+        # create a structure that can be nested arbitrarily deeply:
         for key in most_to_least:
             search_node = None
             search_candidates = [node for node in scene_graph]
@@ -253,7 +256,7 @@ class SceneCreator:
                 new_prospects = []
                 for candidate in search_candidates:
                     for child in candidate.children:
-                        if child.elt == key:
+                        if child.perceived_obj == key:
                             search_node = child
                             break
                         else:
@@ -279,7 +282,7 @@ class SceneCreator:
             recurse: List[SceneNode] = []
             for node in nodes:
                 if not node.children:
-                    fn(node.elt)
+                    fn(node.perceived_obj)
                 else:
                     recurse += node.children
             nodes = recurse
@@ -296,26 +299,26 @@ class SceneCreator:
         for top_level in graph:
             # special cases not rendered here:
             if (
-                top_level.elt.debug_handle == "the ground"
-                or top_level.elt.debug_handle == "learner"
+                top_level.perceived_obj.debug_handle == "the ground"
+                or top_level.perceived_obj.debug_handle == "learner"
             ):
                 continue
-            print(f"\n\n\ncalling top_fn on {top_level.elt}")
-            top_return = top_fn(top_level.elt)
+            print(f"\n\n\ncalling top_fn on {top_level.perceived_obj}")
+            top_return = top_fn(top_level.perceived_obj)
             nodes = [(node, top_return) for node in top_level.children]
             while nodes:
                 recurse: List[Tuple[SceneNode, Any]] = []
 
                 for node, ret in nodes:
-                    print(f"\nNODE: {node.elt}")
+                    print(f"\nNODE: {node.perceived_obj}")
                     if not node.children and ret is not None:
                         print("No children")
-                        print(f"calling recurse fn on {node.elt} with {ret}")
-                        recurse_fn(node.elt, ret)
+                        print(f"calling recurse fn on {node.perceived_obj} with {ret}")
+                        recurse_fn(node.perceived_obj, ret)
                     else:
-                        new_return = recurse_fn(node.elt, ret)
+                        new_return = recurse_fn(node.perceived_obj, ret)
                         for child in node.children:
-                            print(f"recurse by way of {child.elt} with {new_return}")
+                            print(f"recurse by way of {child.perceived_obj} with {new_return}")
                         recurse += [(child, new_return) for child in node.children]
                 nodes = recurse
 
@@ -323,9 +326,9 @@ class SceneCreator:
     def random_root_position() -> Tuple[float, float, float]:
         """Placeholder implementation for turning the relative position
         of a crossSection into a 3D coordinate. (z is up)"""
-        x: float = random.uniform(-7.0, 7.0)
-        y: float = random.uniform(-5.0, 5.0)
-        z: float = random.uniform(0.0, 4.0)
+        x: float = random.uniform(-10, 10)
+        y: float = random.uniform(-7.0, 4.0)
+        z: float = random.uniform(0.0, 5.0)
         return x, y, z
 
     @staticmethod
@@ -338,6 +341,7 @@ class SceneCreator:
         return x, y, z
 
 
+# TODO: scale of top-level bounding boxes is weird because it needs to encompass all sub-objects
 def _solve_top_level_positions(
     parent_positions: List[Tuple[float, float, float]]
 ) -> List[torch.Tensor]:

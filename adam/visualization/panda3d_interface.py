@@ -59,7 +59,7 @@ class SituationVisualizer(ShowBase):
 
         self.ground_plane = self._load_model("ground.egg")
         self.ground_plane.reparentTo(self.render)
-        self.ground_plane.setPos(0, 0, -1)
+        self.ground_plane.setPos(0, 0, -2)
         m = Material()
         m.setDiffuse((255, 255, 255, 255))
         # the "1" argument to setMaterial is crucial to have it override
@@ -134,10 +134,10 @@ class SituationVisualizer(ShowBase):
         new_node = NodePath(name)
         if parent is None:
             new_node.reparentTo(self.render)
+            self.geo_nodes.append(new_node)
         else:
             new_node.reparentTo(parent)
         new_node.setPos(*pos)
-        self.geo_nodes.append(new_node)
         return new_node
 
     def clear_scene(self) -> None:
