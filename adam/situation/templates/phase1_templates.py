@@ -200,6 +200,13 @@ class Phase1SituationTemplate(SituationTemplate):
     All `TemplateObjectVariable`\ s in the situation, 
     both salient and auxiliary to actions.
     """
+    gazed_objects: ImmutableSet[
+        Union[TemplateObjectVariable, Region[TemplateObjectVariable]]
+    ] = attrib(converter=_to_immutableset, kw_only=True)
+    """
+    A set of `TemplateObjectVariables` s which are the focus of the speaker. 
+    Defaults to all semantic role fillers of situation actions.
+    """
 
     def __attrs_post_init__(self) -> None:
         check_arg(
@@ -246,6 +253,14 @@ class Phase1SituationTemplate(SituationTemplate):
                 )
 
         return immutableset(ret)
+
+    @gazed_objects.default
+    def _determine_gazed_objects(self):
+        return immutableset(
+            object_
+            for action in self.actions
+            for (_, object_) in action.argument_roles_to_fillers.items()
+        )
 
 
 def all_possible(
@@ -444,6 +459,12 @@ class _Phase1SituationTemplateGenerator(
             ],
             syntax_hints=template.syntax_hints,
             axis_info=self._compute_axis_info(object_var_to_instantiations),
+            gazed_objects=immutableset(
+                object_.copy_remapping_objects(object_var_to_instantiations)
+                if isinstance(object_, Region)
+                else object_var_to_instantiations[object_]
+                for object_ in template.gazed_objects
+            ),
         )
 
     def _has_multiple_recognized_particulars(

@@ -58,6 +58,7 @@ def _on_template(
         salient_object_variables=[figure, ground],
         background_object_variables=background,
         asserted_always_relations=[on(figure, ground)],
+        gazed_objects=[figure],
     )
 
 
@@ -89,6 +90,7 @@ def _beside_template(
                 ),
             )
         ],
+        gazed_objects=[figure],
     )
 
 
@@ -106,6 +108,7 @@ def _under_template(
         background_object_variables=background,
         asserted_always_relations=[strictly_above(ground, figure)],
         constraining_relations=[bigger_than(ground, figure)],
+        gazed_objects=[figure],
     )
 
 
@@ -122,6 +125,7 @@ def _over_template(
         salient_object_variables=[ground],
         background_object_variables=background,
         asserted_always_relations=[strictly_above(figure, ground)],
+        gazed_objects=[figure],
     )
 
 
@@ -138,6 +142,7 @@ def _in_template(
         salient_object_variables=[figure, ground],
         background_object_variables=background,
         asserted_always_relations=[inside(figure, ground)],
+        gazed_objects=[figure],
     )
 
 
@@ -166,6 +171,7 @@ def _behind_template(
                 ),
             )
         ],
+        gazed_objects=[figure],
     )
 
 
@@ -194,6 +200,7 @@ def _in_front_template(
                 ),
             )
         ],
+        gazed_objects=[figure],
     )
 
 
