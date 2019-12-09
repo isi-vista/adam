@@ -160,26 +160,15 @@ def _behind_template(
     is_near: bool,
 ) -> Phase1SituationTemplate:
     handle = "training" if is_training else "testing"
+    direction = Direction(positive=False, relative_to_axis=FacingAddresseeAxis(ground))
     return Phase1SituationTemplate(
         f"preposition-{handle}-{figure.handle}-behind-{ground.handle}",
         salient_object_variables=[figure, ground],
         background_object_variables=background,
         asserted_always_relations=[
-            near(
-                figure,
-                ground,
-                direction=Direction(
-                    positive=False, relative_to_axis=FacingAddresseeAxis(ground)
-                ),
-            )
+            near(figure, ground, direction=direction)
             if is_near
-            else far(
-                figure,
-                ground,
-                direction=Direction(
-                    positive=False, relative_to_axis=FacingAddresseeAxis(ground)
-                ),
-            )
+            else far(figure, ground, direction=direction)
         ],
         gazed_objects=[figure],
     )
@@ -194,26 +183,15 @@ def _in_front_template(
     is_near: bool,
 ) -> Phase1SituationTemplate:
     handle = "training" if is_training else "testing"
+    direction = Direction(positive=True, relative_to_axis=FacingAddresseeAxis(ground))
     return Phase1SituationTemplate(
         f"preposition-{handle}-{figure.handle}-behind-{ground.handle}",
         salient_object_variables=[figure, ground],
         background_object_variables=background,
         asserted_always_relations=[
-            near(
-                figure,
-                ground,
-                direction=Direction(
-                    positive=True, relative_to_axis=FacingAddresseeAxis(ground)
-                ),
-            )
+            near(figure, ground, direction=direction)
             if is_near
-            else far(
-                figure,
-                ground,
-                direction=Direction(
-                    positive=True, relative_to_axis=FacingAddresseeAxis(ground)
-                ),
-            )
+            else far(figure, ground, direction=direction)
         ],
         gazed_objects=[figure],
     )
