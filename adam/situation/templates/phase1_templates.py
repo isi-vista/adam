@@ -200,9 +200,9 @@ class Phase1SituationTemplate(SituationTemplate):
     All `TemplateObjectVariable`\ s in the situation, 
     both salient and auxiliary to actions.
     """
-    gazed_objects: ImmutableSet[
-        Union[TemplateObjectVariable, Region[TemplateObjectVariable]]
-    ] = attrib(converter=_to_immutableset, kw_only=True)
+    gazed_objects: ImmutableSet[TemplateObjectVariable] = attrib(
+        converter=_to_immutableset, kw_only=True
+    )
     """
     A set of `TemplateObjectVariables` s which are the focus of the speaker. 
     Defaults to all semantic role fillers of situation actions.
@@ -260,6 +260,7 @@ class Phase1SituationTemplate(SituationTemplate):
             object_
             for action in self.actions
             for (_, object_) in action.argument_roles_to_fillers.items()
+            if not isinstance(object_, Region)
         )
 
 
@@ -460,9 +461,7 @@ class _Phase1SituationTemplateGenerator(
             syntax_hints=template.syntax_hints,
             axis_info=self._compute_axis_info(object_var_to_instantiations),
             gazed_objects=immutableset(
-                object_.copy_remapping_objects(object_var_to_instantiations)
-                if isinstance(object_, Region)
-                else object_var_to_instantiations[object_]
+                object_var_to_instantiations[object_]
                 for object_ in template.gazed_objects
             ),
         )
