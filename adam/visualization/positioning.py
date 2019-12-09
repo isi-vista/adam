@@ -21,9 +21,8 @@ from vistautils.preconditions import check_arg
 # see https://github.com/pytorch/pytorch/issues/24807 re: pylint issue
 ORIGIN = torch.zeros(3, dtype=torch.float)  # pylint: disable=not-callable
 COLLISION_PENALTY = 10
-GRAVITY_PENALTY = 1
-
-
+GRAVITY_PENALTY = 0.5
+GRAVITY_EPSILON = 0.2
 
 
 @attrs(frozen=True, auto_attribs=True)
@@ -70,11 +69,15 @@ def main() -> None:
         positioning_model.dump_object_positions()
 
 
-def run_model(objs: List[AdamObject]) -> List[torch.Tensor]:
+def run_model(
+    objs: List[AdamObject], num_iterations: int = 200, yield_steps: Optional[int] = None
+) -> List[torch.Tensor]:
     """
     Construct a positioning model given a list of objects to position, return their final position values
     Args:
         objs: list of AdamObjects requested to be positioned
+        num_iterations: total number of SGD iterations.
+        yield_steps: If provided, the current positions of all objects will be returned after this many steps
 
     Returns: List of (3,) tensors corresponding to the positions of the objs list
 
@@ -92,8 +95,8 @@ def run_model(objs: List[AdamObject]) -> List[torch.Tensor]:
         patience=3,
     )
 
-    iterations = 200
-    for _ in range(iterations):
+    iterations = num_iterations
+    for i in range(iterations):
         loss = positioning_model()
         print(f"Loss: {loss.item()}")
         loss.backward()
@@ -104,6 +107,8 @@ def run_model(objs: List[AdamObject]) -> List[torch.Tensor]:
         learning_rate_schedule.step(loss)
 
         positioning_model.dump_object_positions()
+        if yield_steps and i % yield_steps == 0:
+            yield [positioning_model.get_object_position(obj).data for obj in objs]
 
     return [positioning_model.get_object_position(obj).data for obj in objs]
 
@@ -136,8 +141,10 @@ class AxisAlignedBoundingBox:
         """
         corners = self.get_corners()
         min_corner_z = torch.min(
-            torch.gather(corners, 1, torch.repeat_interleave(
-                torch.tensor([[2]]), torch.tensor([8]), dim=0)
+            torch.gather(
+                corners,
+                1,
+                torch.repeat_interleave(torch.tensor([[2]]), torch.tensor([8]), dim=0),
             )
         )
         if min_corner_z.data < 0:
@@ -153,11 +160,13 @@ class AxisAlignedBoundingBox:
         """
         corners = self.get_corners()
         min_corner_z = torch.min(
-            torch.gather(corners, 1, torch.repeat_interleave(
-                torch.tensor([[2]]), torch.tensor([8]), dim=0)
-                         )
+            torch.gather(
+                corners,
+                1,
+                torch.repeat_interleave(torch.tensor([[2]]), torch.tensor([8]), dim=0),
+            )
         )
-        return torch.dist(min_corner_z, ORIGIN[2])
+        return min_corner_z - ORIGIN[2]
 
     @staticmethod
     def create_at_random_position(
@@ -319,9 +328,7 @@ class AdamObjectPositioningModel(torch.nn.Module):  # type: ignore
         self.object_bounding_boxes = adam_object_to_bounding_box.values()
 
         for (adam_object, bounding_box) in self.adam_object_to_bounding_box.items():
-            self.register_parameter(
-                adam_object.name, bounding_box.center
-            )
+            self.register_parameter(adam_object.name, bounding_box.center)
 
         self.distance_to_origin_penalty = DistanceFromOriginPenalty()
         self.collision_penalty = CollisionPenalty()
@@ -381,7 +388,12 @@ class AdamObjectPositioningModel(torch.nn.Module):  # type: ignore
             f"\nout of bounds penalty: {below_ground_penalty}"
             f"\ngravity penalty: {weak_gravity_penalty}"
         )
-        return distance_penalty + collision_penalty + below_ground_penalty + weak_gravity_penalty
+        return (
+            distance_penalty
+            + collision_penalty
+            + below_ground_penalty
+            + weak_gravity_penalty
+        )
 
     def dump_object_positions(self) -> None:
         for (adam_object, bounding_box) in self.adam_object_to_bounding_box.items():
@@ -425,19 +437,27 @@ class BelowGroundPenalty(nn.Module):  # type: ignore
         bounding_box: AxisAlignedBoundingBox = inputs[0]
         return bounding_box.corner_below_ground()
 
-class WeakGravityPenalty(nn.Module): # type: ignore
+
+class WeakGravityPenalty(nn.Module):  # type: ignore
     """
     Model that penalizes boxes that are not resting on the ground.
     """
+
     # TODO: exempt birds from this constraint
     # TODO: exempt things resting on top of other objects from this constraint
 
-    def __init__(self) -> None: # pylint: disable=useless-super-delegation
+    def __init__(self) -> None:  # pylint: disable=useless-super-delegation
         super().__init__()
 
-    def forward(self, *inputs): # pylint: disable=arguments-differ
+    def forward(self, *inputs):  # pylint: disable=arguments-differ
         bounding_box: AxisAlignedBoundingBox = inputs[0]
+        dist = bounding_box.corner_above_ground()
+        if dist < 0:
+            return 0
+        elif 0 < dist < GRAVITY_EPSILON:
+            return GRAVITY_PENALTY * (dist / GRAVITY_EPSILON)
         return bounding_box.corner_above_ground() * GRAVITY_PENALTY
+
 
 class CollisionPenalty(nn.Module):  # type: ignore
     """

@@ -16,6 +16,8 @@ import attr
 from attr import attrs
 from immutablecollections import ImmutableSet
 
+from argparse import ArgumentParser
+
 # consider refactoring away this dependency
 from panda3d.core import NodePath  # pylint: disable=no-name-in-module
 
@@ -48,11 +50,28 @@ class SceneNode:
     This kind of hierarchical grouping of objects within the scene is helpful for adjusting
     the positions of the objects within the rendering engine.
     """
+
     perceived_obj: ObjectPerception = attr.ib()
     children: List["SceneNode"] = attr.ib(factory=list)
     parent: "SceneNode" = attr.ib(default=None)
 
+
 def main() -> None:
+    parser = ArgumentParser()
+    parser.add_argument(
+        "--iterations",
+        type=int,
+        default=50,
+        help="number of iterations to run positioning model over",
+    )
+    parser.add_argument(
+        "--steps_before_vis",
+        type=int,
+        default=1,
+        help="number of iterations of positioning model before scene is re-rendered",
+    )
+    args = parser.parse_args()
+
     random.seed(2015)
 
     # go through curriculum scenes and output geometry types
@@ -61,6 +80,9 @@ def main() -> None:
     for i, (property_map, obj_graph) in enumerate(
         SceneCreator.create_scenes([_make_multiple_objects_curriculum()])
     ):
+        # debug: skip the first few scenes with people in them
+        if i < 3:
+            continue
         print(f"SCENE {i}")
         # for debugging purposes:
         SceneCreator.graph_for_each(obj_graph, print_obj_names)
@@ -75,22 +97,31 @@ def main() -> None:
             obj_graph, bound_render_obj, bound_render_nested_obj
         )
 
-        # for debugging purposes to view the results of positioning:
+        # for debugging purposes to view the results before positioning:
         viz.run_for_seconds(0.5)
-        input("Press RETURN to continue")
+        input("Press ENTER to run the positioning system")
 
         # now that every object has been instantiated into the scene,
         # they need to be re-positioned.
         top_level_positions = viz.top_level_positions()
         print(f"top level positions:\n{top_level_positions}")
-        repositioned = _solve_top_level_positions(top_level_positions)
-        assert len(top_level_positions) == len(repositioned)
-        print(f"repositioned values: {repositioned}")
-        viz.set_positions(repositioned)
 
-        viz.run_for_seconds(2.25)
-        viz.print_scene_graph()
-        input("Press RETURN to continue")
+        # NOTE: you can adjust the number of iterations from here, as well as the number of iterations
+        # before the visual representation will be updated
+
+        for repositioned in _solve_top_level_positions(
+            top_level_positions,
+            iterations=args.iterations,
+            yield_steps=args.steps_before_vis,
+        ):
+            # assert len(top_level_positions) == len(repositioned)
+            print(f"repositioned values: {repositioned}")
+            viz.set_positions(repositioned)
+
+            viz.run_for_seconds(1)
+            # viz.print_scene_graph()
+
+        input("Press ENTER to continue to the next scene")
         viz.clear_scene()
         viz.run_for_seconds(0.25)
 
@@ -123,7 +154,9 @@ def render_obj_nested(
     shape = SceneCreator.cross_section_to_geo(obj.geon.cross_section)
     # TODO***: allow for Irregular geons to be rendered
     if shape == Shape.IRREGULAR:
-        raise RuntimeError("Irregular shapes (i.e. liquids) are not currently supported by the rendering system")
+        raise RuntimeError(
+            "Irregular shapes (i.e. liquids) are not currently supported by the rendering system"
+        )
     color = None
     for prop in properties[obj]:
         if isinstance(prop, RgbColorPerception):
@@ -234,7 +267,6 @@ class SceneCreator:
             ):  # should be a better way to check
                 d[relation.second_slot].append(relation.first_slot)
 
-
         # add all additional objects not covered with partOf relations
         for obj in perceived_objects:
             if obj not in d:
@@ -303,22 +335,16 @@ class SceneCreator:
                 or top_level.perceived_obj.debug_handle == "learner"
             ):
                 continue
-            print(f"\n\n\ncalling top_fn on {top_level.perceived_obj}")
             top_return = top_fn(top_level.perceived_obj)
             nodes = [(node, top_return) for node in top_level.children]
             while nodes:
                 recurse: List[Tuple[SceneNode, Any]] = []
 
                 for node, ret in nodes:
-                    print(f"\nNODE: {node.perceived_obj}")
                     if not node.children and ret is not None:
-                        print("No children")
-                        print(f"calling recurse fn on {node.perceived_obj} with {ret}")
                         recurse_fn(node.perceived_obj, ret)
                     else:
                         new_return = recurse_fn(node.perceived_obj, ret)
-                        for child in node.children:
-                            print(f"recurse by way of {child.perceived_obj} with {new_return}")
                         recurse += [(child, new_return) for child in node.children]
                 nodes = recurse
 
@@ -343,7 +369,9 @@ class SceneCreator:
 
 # TODO: scale of top-level bounding boxes is weird because it needs to encompass all sub-objects
 def _solve_top_level_positions(
-    parent_positions: List[Tuple[float, float, float]]
+    parent_positions: List[Tuple[float, float, float]],
+    iterations: int = 200,
+    yield_steps: Optional[int] = None,
 ) -> List[torch.Tensor]:
     """
 
@@ -358,7 +386,7 @@ def _solve_top_level_positions(
         for i, parent_position in enumerate(parent_positions)
     ]
 
-    return run_model(objs)
+    return run_model(objs, num_iterations=iterations, yield_steps=yield_steps)
 
 
 if __name__ == "__main__":
