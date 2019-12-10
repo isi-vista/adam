@@ -3,7 +3,17 @@
    operating and when other code (gathering and processing scene information)
    is executing in a serial manner.
    """
-from typing import Iterable, List, Tuple, Union, DefaultDict, Optional, Callable, Any
+from typing import (
+    Iterable,
+    List,
+    Tuple,
+    Union,
+    DefaultDict,
+    Optional,
+    Callable,
+    Any,
+    Generator,
+)
 from functools import partial
 
 import random
@@ -11,6 +21,7 @@ from collections import defaultdict
 
 import torch
 
+# currently useful for positioning multiple objects:
 from adam.curriculum.phase1_curriculum import _make_multiple_objects_curriculum
 import attr
 from attr import attrs
@@ -62,7 +73,7 @@ def main() -> None:
         "--iterations",
         type=int,
         default=50,
-        help="number of iterations to run positioning model over",
+        help="total number of iterations to run positioning model over",
     )
     parser.add_argument(
         "--steps_before_vis",
@@ -87,10 +98,10 @@ def main() -> None:
         # for debugging purposes:
         SceneCreator.graph_for_each(obj_graph, print_obj_names)
 
-        # bind visualizer and properties to render function:
+        # bind visualizer and properties to top level rendering function:
         bound_render_obj = partial(
             render_obj, viz, property_map
-        )  # bind renderer to function
+        )  # bind visualizer and properties to nested obj rendering function
         bound_render_nested_obj = partial(render_obj_nested, viz, property_map)
         # render each object in graph
         SceneCreator.graph_for_each_top_level(
@@ -106,18 +117,16 @@ def main() -> None:
         top_level_positions = viz.top_level_positions()
         print(f"top level positions:\n{top_level_positions}")
 
-        # NOTE: you can adjust the number of iterations from here, as well as the number of iterations
-        # before the visual representation will be updated
-
         for repositioned in _solve_top_level_positions(
             top_level_positions,
             iterations=args.iterations,
             yield_steps=args.steps_before_vis,
         ):
-            # assert len(top_level_positions) == len(repositioned)
+            assert len(top_level_positions) == len(repositioned)
             print(f"repositioned values: {repositioned}")
             viz.set_positions(repositioned)
 
+            # the visualizer seems to need about a second to render an update
             viz.run_for_seconds(1)
             # viz.print_scene_graph()
 
@@ -133,6 +142,18 @@ def render_obj(
     ],
     obj: ObjectPerception,
 ) -> NodePath:
+    """
+    Used to render a top-level object (has no parent)
+    Even if the object has no geon, it can be 'rendered' as a dummy node to structure other objects
+    Args:
+        renderer: rendering engine to render this object with
+        properties: set of properties (colors, etc) associated with obj
+        obj: the object to be rendered
+
+    Returns: a Panda3d NodePath: the path within the rendering engine's scene graph to the object/node
+             rendered by calling this function.
+
+    """
     return render_obj_nested(renderer, properties, obj, None)
 
 
@@ -144,7 +165,19 @@ def render_obj_nested(
     obj: ObjectPerception,
     parent: Optional[NodePath],
 ) -> NodePath:
+    """
+    Used to render a nested object (has a parent)
+    Even if the object has no geon, it can be 'rendered' as a dummy node to structure other objects
+    Args:
+        renderer: rendering engine to render this object with
+        properties: set of properties (colors, etc) associated with obj
+        obj: the object to be rendered
+        parent: the parent of the object to be rendered
 
+    Returns: a Panda3d NodePath: the path within the rendering engine's scene graph to the object/node
+             rendered by calling this function.
+
+    """
     if obj.geon is None:
         if parent is None:
             pos = SceneCreator.random_root_position()
@@ -169,6 +202,9 @@ def render_obj_nested(
 
 
 def print_obj_names(obj: ObjectPerception) -> None:
+    """
+    Debug function to print the name of an ObjectPerception (called while walking a scene graph)
+    """
     if obj.geon is not None:
         print(obj.debug_handle + " (has geon)")
     else:
@@ -177,6 +213,11 @@ def print_obj_names(obj: ObjectPerception) -> None:
 
 @attrs(frozen=True, slots=True)
 class SceneCreator:
+    """
+    Static class for creating a graph structure out of ObjectPerceptions.
+    Nests sub-objects (e.g. Person[arm_0[arm_segment_0, arm_segment_1, hand_0]], arm_1[...], ...]
+    """
+
     @staticmethod
     def create_scenes(
         instance_groups: Iterable[
@@ -228,6 +269,14 @@ class SceneCreator:
 
     @staticmethod
     def cross_section_to_geo(cs: CrossSection) -> Shape:
+        """
+        Converts a cross section into a geon type, based on the properties of the cross section
+        Args:
+            cs: CrossSection to be mapped to a Geon type
+
+        Returns: Shape: a convenience enum mapping to a file name for the to-be-rendered geometry
+
+        """
         if cs.has_rotational_symmetry and cs.has_reflective_symmetry and cs.curved:
             return Shape("CIRCULAR")
         elif cs.has_rotational_symmetry and cs.has_reflective_symmetry and not cs.curved:
@@ -372,14 +421,16 @@ def _solve_top_level_positions(
     parent_positions: List[Tuple[float, float, float]],
     iterations: int = 200,
     yield_steps: Optional[int] = None,
-) -> List[torch.Tensor]:
+) -> Generator[List[torch.Tensor], None, List[torch.Tensor]]:
     """
-
+        Solves for positions of top-level objects.
     Args:
-        parent_positions:
+        parent_positions: list of top level objects to be positioned by model
+        iterations: number of iterations to run model for
+        yield_steps: number of iterations that must pass before a new set of positions is yielded/returned
 
-    Returns: None, modifies the list of positions it is passed instead
-
+    Returns: List of (3,) tensors, describing the updated positions of the top level objects, corresponding
+             in terms of indices with parent_positions
     """
     objs = [
         AdamObject(name=str(i), initial_position=parent_position)

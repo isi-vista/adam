@@ -4,7 +4,7 @@ that can position multiple bounding boxes s/t they do not overlap
 (in addition to other constraints).
 """
 from itertools import combinations
-from typing import Mapping, AbstractSet, Tuple, Optional, List
+from typing import Mapping, AbstractSet, Tuple, Optional, List, Generator
 from attr import attrs, attrib
 
 import numpy as np
@@ -75,9 +75,9 @@ def main() -> None:
 
 def run_model(
     objs: List[AdamObject], num_iterations: int = 200, yield_steps: Optional[int] = None
-) -> List[torch.Tensor]:
+) -> Generator[List[torch.Tensor], None, List[torch.Tensor]]:
     """
-    Construct a positioning model given a list of objects to position, return their final position values
+    Construct a positioning model given a list of objects to position, return their position values.
     Args:
         objs: list of AdamObjects requested to be positioned
         num_iterations: total number of SGD iterations.
@@ -132,7 +132,7 @@ class AxisAlignedBoundingBox:
     corners at (-1, -1, -1) and (1, 1, 1), giving the box a volume of 2(^3)
     """
 
-    center: torch.Tensor = attrib()  # tensor shape: (3,)
+    center: Parameter = attrib()  # tensor shape: (3,)
     scale: torch.Tensor = attrib()  # tensor shape: (3, 3) - diagonal matrix
     # rotation: torch.Tensor = attrib()
 
@@ -150,7 +150,11 @@ class AxisAlignedBoundingBox:
             torch.gather(
                 corners,
                 1,
-                torch.repeat_interleave(torch.tensor([[2]]), torch.tensor([8]), dim=0),
+                torch.repeat_interleave(
+                    torch.tensor([[2]]),  # pylint: disable=not-callable
+                    torch.tensor([8]),  # pylint: disable=not-callable
+                    dim=0,
+                ),
             )
         )
         return min_corner_z - ORIGIN[2]

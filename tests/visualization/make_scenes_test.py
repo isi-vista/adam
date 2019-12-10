@@ -28,8 +28,8 @@ def test_scenes_creation() -> Tuple[float, float, float]:
             obj_graph, test_for_each, test_for_each_nested_really_nested
         )
         for obj in obj_graph:
-            if obj.elt.geon:
-                test_cs_to_shape(obj.elt.geon.cross_section)
+            if obj.perceived_obj.geon:
+                test_cs_to_shape(obj.perceived_obj.geon.cross_section)
 
         point = SceneCreator.random_leaf_position()
 

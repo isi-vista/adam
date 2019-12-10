@@ -3,6 +3,7 @@ from pandac.PandaModules import ConfigVariableString  # pylint: disable=no-name-
 from adam.visualization.panda3d_interface import SituationVisualizer
 from adam.visualization.utils import Shape
 
+# sets the rendering engine to not run, as it can't be handled by CI system
 ConfigVariableString("window-type", "none").setValue("none")
 
 # This should be the only test to actually instantiate panda3d
