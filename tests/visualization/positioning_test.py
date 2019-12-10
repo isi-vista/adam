@@ -4,16 +4,20 @@ from adam.visualization.positioning import (
     AxisAlignedBoundingBox,
     CollisionPenalty,
     WeakGravityPenalty,
+    AdamObject,
+    run_model,
 )
 
-# re-use in-module test:
-from adam.visualization.positioning import main as optimization_test
 
+def test_running_model() -> None:
+    # for code coverage purposes
+    ball = AdamObject(name="ball", initial_position=(0, 0, 10))
+    box = AdamObject(name="box", initial_position=(0, 0, 1))
 
-def test_optimization() -> None:
-    # Check that the position optimization system runs without crashing
-    np.random.seed(127)
-    optimization_test()
+    aardvark = AdamObject(name="aardvark", initial_position=(1, 2, 1))
+    flamingo = AdamObject(name="flamingo", initial_position=(-1, 1, 2))
+    objs = [ball, box, aardvark, flamingo]
+    run_model(objs, num_iterations=10, yield_steps=10)
 
 
 def test_collision_constraint() -> None:

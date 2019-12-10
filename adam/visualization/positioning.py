@@ -33,46 +33,6 @@ class AdamObject:
     initial_position: Optional[Tuple[float, float, float]]
 
 
-def main() -> None:
-    ball = AdamObject(name="ball", initial_position=None)
-    box = AdamObject(name="box", initial_position=None)
-
-    cardboard_box = AdamObject(name="cardboardBox", initial_position=None)
-    aardvark = AdamObject(name="aardvark", initial_position=None)
-    flamingo = AdamObject(name="flamingo", initial_position=None)
-
-    positioning_model = AdamObjectPositioningModel.for_objects_random_positions(
-        immutableset([ball, box, cardboard_box, aardvark, flamingo])
-    )
-    # we will start with an aggressive learning rate
-    optimizer = optim.SGD(positioning_model.parameters(), lr=1.0)
-    # but will decrease it whenever the loss plateaus
-    learning_rate_schedule = ReduceLROnPlateau(
-        optimizer,
-        "min",
-        # decrease the rate if the loss hasn't improved in
-        # 3 epochs
-        patience=3,
-    )
-
-    iterations = 100
-    for iteration in range(iterations):
-        print(f"====== Iteration {iteration} ======")
-        positioning_model.dump_object_positions(prefix="\t")
-
-        loss = positioning_model()
-        print(f"\tLoss: {loss.item()}")
-        loss.backward()
-
-        optimizer.step()
-        optimizer.zero_grad()
-
-        learning_rate_schedule.step(loss)
-
-    print("========= Final Positions ========")
-    positioning_model.dump_object_positions(prefix="\t")
-
-
 def run_model(
     objs: List[AdamObject], num_iterations: int = 200, yield_steps: Optional[int] = None
 ) -> Generator[List[torch.Tensor], None, List[torch.Tensor]]:
@@ -556,7 +516,3 @@ class CollisionPenalty(nn.Module):  # type: ignore
 
         # overlap is represented by a negative value, which we return as a positive penalty
         return overlap_distance.max() * -1 * COLLISION_PENALTY
-
-
-if __name__ == "__main__":
-    main()

@@ -33,6 +33,8 @@ def test_scenes_creation() -> Tuple[float, float, float]:
 
         point = SceneCreator.random_leaf_position()
 
+        root_point = SceneCreator.random_root_position()
+
         # automated test shouldn't go through every single scene
         if i > 5:
             break
