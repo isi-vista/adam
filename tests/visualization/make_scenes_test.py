@@ -8,7 +8,9 @@ from adam.perception.high_level_semantics_situation_to_developmental_primitive_p
 from typing import Tuple
 
 
-def test_scenes_creation() -> Tuple[float, float, float]:
+def test_scenes_creation() -> Tuple[
+    Tuple[float, float, float], Tuple[float, float, float]
+]:
     for i, (_, obj_graph) in enumerate(
         SceneCreator.create_scenes(build_gaila_phase_1_curriculum())
     ):
@@ -38,4 +40,4 @@ def test_scenes_creation() -> Tuple[float, float, float]:
         # automated test shouldn't go through every single scene
         if i > 5:
             break
-    return root_point, point
+    return point, root_point
