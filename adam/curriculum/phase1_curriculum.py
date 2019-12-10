@@ -19,13 +19,12 @@ from adam.language_specific.english.english_language_generator import (
     PREFER_DITRANSITIVE,
     USE_ADVERBIAL_PATH_MODIFIER,
 )
-from adam.ontology import THING, IS_SPEAKER, IS_ADDRESSEE, IN_REGION
+from adam.ontology import THING, IS_SPEAKER, IS_ADDRESSEE
 from adam.ontology.during import DuringAction
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
     AGENT,
     ANIMATE,
-    BIGGER_THAN,
     BIRD,
     BOX,
     CAN_BE_SAT_ON_BY_PEOPLE,
@@ -43,13 +42,11 @@ from adam.ontology.phase1_ontology import (
     GO,
     GOAL,
     GROUND,
-    HAS,
     HAS_SPACE_UNDER,
     HOLLOW,
     INANIMATE,
     INANIMATE_OBJECT,
     IS_BODY_PART,
-    IS_HUMAN,
     JUMP,
     JUMP_INITIAL_SUPPORTER_AUX,
     LEARNER,
@@ -82,9 +79,11 @@ from adam.ontology.phase1_ontology import (
     inside,
     on,
     strictly_above,
-    COLOR,
     PHASE_1_CURRICULUM_OBJECTS,
     is_recognized_particular,
+    near,
+    far,
+    has,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -99,7 +98,6 @@ from adam.ontology.phase1_spatial_relations import (
     Direction,
 )
 from adam.random_utils import RandomChooser
-from adam.relation import Relation
 from adam.situation import Action, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.situation.templates.phase1_templates import (
@@ -137,11 +135,7 @@ def _make_each_object_by_itself_curriculum() -> Phase1InstanceGroup:
 
 def _make_objects_with_colors_curriculum() -> Phase1InstanceGroup:
     color = color_variable("color")
-    object_with_color = object_variable(
-        "object",
-        added_properties=[color],
-        banned_properties=[IS_HUMAN, IS_BODY_PART, COLOR],
-    )
+    object_with_color = standard_object("object", added_properties=[color])
 
     object_with_color_template = Phase1SituationTemplate(
         "object-with-color", salient_object_variables=[object_with_color]
@@ -236,7 +230,7 @@ def _make_person_has_object_curriculum() -> Phase1InstanceGroup:
     person_has_object_template = Phase1SituationTemplate(
         "person-has-object",
         salient_object_variables=[person_0, inanimate_object_0],
-        asserted_always_relations=[Relation(HAS, person_0, inanimate_object_0)],
+        asserted_always_relations=[has(person_0, inanimate_object_0)],
     )
 
     return phase1_instances(
@@ -347,7 +341,7 @@ def _make_object_on_object_curriculum() -> Phase1InstanceGroup:
     situation_template = Phase1SituationTemplate(
         "object-on-surface",
         salient_object_variables=[object_, object_with_surface],
-        constraining_relations=[Relation(BIGGER_THAN, object_with_surface, object_)],
+        constraining_relations=[bigger_than(object_with_surface, object_)],
         asserted_always_relations=[on(object_, object_with_surface)],
     )
 
@@ -369,21 +363,15 @@ def _make_object_beside_object_curriculum() -> Phase1InstanceGroup:
     situation_template = Phase1SituationTemplate(
         "object-beside-object",
         salient_object_variables=[smaller_beside_object, larger_beside_object],
-        constraining_relations=[
-            Relation(BIGGER_THAN, larger_beside_object, smaller_beside_object)
-        ],
+        constraining_relations=[bigger_than(larger_beside_object, smaller_beside_object)],
         asserted_always_relations=[
-            Relation(
-                IN_REGION,
+            near(
                 smaller_beside_object,
-                Region(
-                    larger_beside_object,
-                    distance=PROXIMAL,
-                    direction=Direction(
-                        positive=True,
-                        relative_to_axis=HorizontalAxisOfObject(
-                            larger_beside_object, index=0
-                        ),
+                larger_beside_object,
+                direction=Direction(
+                    positive=True,
+                    relative_to_axis=HorizontalAxisOfObject(
+                        larger_beside_object, index=0
                     ),
                 ),
             )
@@ -411,7 +399,7 @@ def _make_object_under_or_over_object_curriculum() -> Phase1InstanceGroup:
         Phase1SituationTemplate(
             f"object-under-object",
             salient_object_variables=[object_above],
-            constraining_relations=[Relation(BIGGER_THAN, object_above, object_under)],
+            constraining_relations=[bigger_than(object_above, object_under)],
             asserted_always_relations=[strictly_above(object_above, object_under)],
         ),
         Phase1SituationTemplate(
@@ -438,22 +426,18 @@ def _make_object_under_or_over_object_curriculum() -> Phase1InstanceGroup:
 
 
 def _make_object_in_other_object_curriculum() -> Phase1InstanceGroup:
-    object_ = object_variable("object_0", banned_properties=[IS_BODY_PART])
+    object_ = standard_object("object_0")
     liquid = object_variable(
         "liquid_0", required_properties=[LIQUID], banned_properties=[IS_BODY_PART]
     )
-    containing_object = object_variable(
-        "object_1", required_properties=[HOLLOW], banned_properties=[IS_BODY_PART]
-    )
-    liquid_containing_object = object_variable(
-        "object_2",
-        required_properties=[HOLLOW, PERSON_CAN_HAVE],
-        banned_properties=[IS_BODY_PART],
+    containing_object = standard_object("object_1", required_properties=[HOLLOW])
+    liquid_containing_object = standard_object(
+        "object_2", required_properties=[HOLLOW, PERSON_CAN_HAVE]
     )
     solid_template = Phase1SituationTemplate(
         "solid-containment",
         salient_object_variables=[object_, containing_object],
-        constraining_relations=[Relation(BIGGER_THAN, containing_object, object_)],
+        constraining_relations=[bigger_than(containing_object, object_)],
         asserted_always_relations=[inside(object_, containing_object)],
     )
     liquid_template = Phase1SituationTemplate(
@@ -485,9 +469,9 @@ def _make_object_in_other_object_curriculum() -> Phase1InstanceGroup:
 
 def _make_fly_curriculum() -> Phase1InstanceGroup:
     # fly under something which has an under
-    bird = object_variable("bird_0", BIRD)
-    object_0 = object_variable("object_0", THING)
-    object_with_space_under = object_variable(
+    bird = standard_object("bird_0", BIRD)
+    object_0 = standard_object("object_0", THING)
+    object_with_space_under = standard_object(
         "object_0", THING, required_properties=[HAS_SPACE_UNDER]
     )
 
@@ -603,11 +587,11 @@ def _make_fly_curriculum() -> Phase1InstanceGroup:
 
 
 def _make_roll_curriculum() -> Phase1InstanceGroup:
-    animate_0 = object_variable("object_0", THING, required_properties=[ANIMATE])
-    rollable_0 = object_variable(
+    animate_0 = standard_object("object_0", THING, required_properties=[ANIMATE])
+    rollable_0 = standard_object(
         "object_1", INANIMATE_OBJECT, required_properties=[ROLLABLE]
     )
-    rolling_surface = object_variable(
+    rolling_surface = standard_object(
         "surface", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
     )
 
@@ -680,9 +664,9 @@ def _make_roll_curriculum() -> Phase1InstanceGroup:
 
 
 def _make_speaker_addressee_curriculum() -> Phase1InstanceGroup:
-    speaker = object_variable("speaker_0", PERSON, added_properties=[IS_SPEAKER])
-    addressee = object_variable("addressee_0", PERSON, added_properties=[IS_ADDRESSEE])
-    given_object = object_variable("given_object", INANIMATE_OBJECT)
+    speaker = standard_object("speaker_0", PERSON, added_properties=[IS_SPEAKER])
+    addressee = standard_object("addressee_0", PERSON, added_properties=[IS_ADDRESSEE])
+    given_object = standard_object("given_object", INANIMATE_OBJECT)
 
     def _make_templates() -> Iterable[Phase1SituationTemplate]:
         for prefer_ditransitive in (True, False):
@@ -739,7 +723,7 @@ def _make_speaker_addressee_curriculum() -> Phase1InstanceGroup:
 
 
 def _make_jump_curriculum() -> Phase1InstanceGroup:
-    jumper = object_variable("jumper_0", THING, required_properties=[CAN_JUMP])
+    jumper = standard_object("jumper_0", THING, required_properties=[CAN_JUMP])
     jumped_over = standard_object("jumped_over")
 
     # "A person jumps"
@@ -771,7 +755,7 @@ def _make_jump_curriculum() -> Phase1InstanceGroup:
                 ],
             )
         ],
-        constraining_relations=[Relation(BIGGER_THAN, jumper, jumped_over)],
+        constraining_relations=[bigger_than(jumper, jumped_over)],
     )
 
     return phase1_instances(
@@ -795,7 +779,7 @@ def _make_jump_curriculum() -> Phase1InstanceGroup:
 
 
 def _make_put_curriculum() -> Phase1InstanceGroup:
-    putter = object_variable("putter_0", required_properties=[ANIMATE])
+    putter = standard_object("putter_0", THING, required_properties=[ANIMATE])
     object_put = standard_object("object_0", required_properties=[INANIMATE])
 
     on_region_object = standard_object(
@@ -825,8 +809,8 @@ def _make_put_curriculum() -> Phase1InstanceGroup:
             )
         ],
         constraining_relations=[
-            Relation(BIGGER_THAN, on_region_object, object_put),
-            Relation(BIGGER_THAN, putter, object_put),
+            bigger_than(on_region_object, object_put),
+            bigger_than(putter, object_put),
         ],
     )
 
@@ -845,8 +829,8 @@ def _make_put_curriculum() -> Phase1InstanceGroup:
             )
         ],
         constraining_relations=[
-            Relation(BIGGER_THAN, in_region_object, object_put),
-            Relation(BIGGER_THAN, putter, object_put),
+            bigger_than(in_region_object, object_put),
+            bigger_than(putter, object_put),
         ],
     )
 
@@ -872,11 +856,15 @@ def _make_put_curriculum() -> Phase1InstanceGroup:
 
 
 def _make_put_on_speaker_addressee_body_part_curriculum() -> Phase1InstanceGroup:
-    speaker_putter = object_variable(
-        "speaker_putter_0", required_properties=[ANIMATE], added_properties=[IS_SPEAKER]
+    speaker_putter = standard_object(
+        "speaker_putter_0",
+        THING,
+        required_properties=[ANIMATE],
+        added_properties=[IS_SPEAKER],
     )
-    addressee_putter = object_variable(
+    addressee_putter = standard_object(
         "addressee_putter_0",
+        THING,
         required_properties=[ANIMATE],
         added_properties=[IS_ADDRESSEE],
     )
@@ -910,10 +898,10 @@ def _make_put_on_speaker_addressee_body_part_curriculum() -> Phase1InstanceGroup
                 )
             ],
             constraining_relations=[
-                Relation(BIGGER_THAN, body_part_of_putter, object_put),
-                Relation(BIGGER_THAN, putter, object_put),
+                bigger_than(body_part_of_putter, object_put),
+                bigger_than(putter, object_put),
             ],
-            asserted_always_relations=[Relation(HAS, putter, body_part_of_putter)],
+            asserted_always_relations=[has(putter, body_part_of_putter)],
         )
         for putter in [speaker_putter, addressee_putter]
     ]
@@ -937,7 +925,7 @@ def _make_put_on_speaker_addressee_body_part_curriculum() -> Phase1InstanceGroup
 def _make_drink_curriculum() -> Phase1InstanceGroup:
     object_0 = standard_object("object_0", required_properties=[HOLLOW])
     liquid_0 = object_variable("liquid_0", required_properties=[LIQUID])
-    person_0 = object_variable("person_0", PERSON)
+    person_0 = standard_object("person_0", PERSON)
 
     drink_liquid = Phase1SituationTemplate(
         "drink",
@@ -997,11 +985,11 @@ def _make_eat_curriculum() -> Phase1InstanceGroup:
 
 
 def _make_sit_curriculum() -> Phase1InstanceGroup:
-    sitter = object_variable("sitter_0", THING, required_properties=[ANIMATE])
-    sit_surface = object_variable(
+    sitter = standard_object("sitter_0", THING, required_properties=[ANIMATE])
+    sit_surface = standard_object(
         "surface", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
     )
-    seat = object_variable(
+    seat = standard_object(
         "sitting-surface", INANIMATE_OBJECT, required_properties=[CAN_BE_SAT_ON_BY_PEOPLE]
     )
 
@@ -1089,7 +1077,7 @@ def _make_sit_curriculum() -> Phase1InstanceGroup:
 
 
 def _make_take_curriculum() -> Phase1InstanceGroup:
-    taker = object_variable("taker_0", required_properties=[ANIMATE])
+    taker = standard_object("taker_0", THING, required_properties=[ANIMATE])
     object_taken = standard_object("object_taken_0", required_properties=[INANIMATE])
 
     # X puts Y on Z
@@ -1101,7 +1089,7 @@ def _make_take_curriculum() -> Phase1InstanceGroup:
                 TAKE, argument_roles_to_fillers=[(AGENT, taker), (THEME, object_taken)]
             )
         ],
-        constraining_relations=[Relation(BIGGER_THAN, taker, object_taken)],
+        constraining_relations=[bigger_than(taker, object_taken)],
     )
 
     return phase1_instances(
@@ -1120,11 +1108,11 @@ def _make_take_curriculum() -> Phase1InstanceGroup:
 
 
 def _make_move_curriculum() -> Phase1InstanceGroup:
-    self_mover_0 = object_variable(
+    self_mover_0 = standard_object(
         "self-mover_0", THING, required_properties=[SELF_MOVING]
     )
 
-    other_mover_0 = object_variable("mover_0", THING, required_properties=[ANIMATE])
+    other_mover_0 = standard_object("mover_0", THING, required_properties=[ANIMATE])
     movee_0 = standard_object("movee_0", THING, required_properties=[INANIMATE])
     move_goal_reference = standard_object(
         "move-goal-reference", THING, required_properties=[INANIMATE]
@@ -1180,9 +1168,9 @@ def _make_move_curriculum() -> Phase1InstanceGroup:
 
 
 def _make_spin_curriculum() -> Phase1InstanceGroup:
-    self_turner = object_variable("self-spinner_0", THING, required_properties=[ANIMATE])
+    self_turner = standard_object("self-spinner_0", THING, required_properties=[ANIMATE])
 
-    other_spinner = object_variable("spinner_0", THING, required_properties=[ANIMATE])
+    other_spinner = standard_object("spinner_0", THING, required_properties=[ANIMATE])
     spinee = standard_object("spinee_0", THING, required_properties=[INANIMATE])
 
     bare_spin_template = Phase1SituationTemplate(
@@ -1219,8 +1207,8 @@ def _make_spin_curriculum() -> Phase1InstanceGroup:
 
 
 def _make_go_curriculum() -> Phase1InstanceGroup:
-    goer = object_variable("goer", THING, required_properties=[ANIMATE])
-    goal_reference = object_variable("go-goal", THING, required_properties=[HOLLOW])
+    goer = standard_object("goer", THING, required_properties=[ANIMATE])
+    goal_reference = standard_object("go-goal", THING, required_properties=[HOLLOW])
 
     bare_go = Phase1SituationTemplate(
         "bare-go",
@@ -1290,7 +1278,7 @@ def _make_go_curriculum() -> Phase1InstanceGroup:
 
 
 def _make_push_curriculum() -> Phase1InstanceGroup:
-    pusher = object_variable("pusher", THING, required_properties=[ANIMATE])
+    pusher = standard_object("pusher", THING, required_properties=[ANIMATE])
     pushee = standard_object("pushee", INANIMATE_OBJECT)
     push_surface = standard_object(
         "push_surface", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
@@ -1373,13 +1361,9 @@ def _make_push_curriculum() -> Phase1InstanceGroup:
 
 
 def _make_throw_curriculum() -> Phase1InstanceGroup:
-    thrower = object_variable("thrower_0", required_properties=[ANIMATE])
-    object_thrown = object_variable(
-        "object_0",
-        required_properties=[INANIMATE],
-        banned_properties=[IS_BODY_PART, LIQUID],
-    )
-    implicit_goal_reference = object_variable("implicit_throw_goal_object", BOX)
+    thrower = standard_object("thrower_0", THING, required_properties=[ANIMATE])
+    object_thrown = standard_object("object_0", required_properties=[INANIMATE])
+    implicit_goal_reference = standard_object("implicit_throw_goal_object", BOX)
 
     # Dad throws a cookie on the ground
     throw_on_ground_template = Phase1SituationTemplate(
@@ -1402,7 +1386,7 @@ def _make_throw_curriculum() -> Phase1InstanceGroup:
                 ],
             )
         ],
-        constraining_relations=[Relation(BIGGER_THAN, thrower, object_thrown)],
+        constraining_relations=[bigger_than(thrower, object_thrown)],
     )
 
     # A baby throws a truck
@@ -1418,7 +1402,7 @@ def _make_throw_curriculum() -> Phase1InstanceGroup:
                 ],
             )
         ],
-        constraining_relations=[Relation(BIGGER_THAN, thrower, object_thrown)],
+        constraining_relations=[bigger_than(thrower, object_thrown)],
     )
 
     return phase1_instances(
@@ -1444,8 +1428,8 @@ def _make_throw_curriculum() -> Phase1InstanceGroup:
 
 def _make_come_curriculum() -> Phase1InstanceGroup:
     movee = standard_object("movee", required_properties=[SELF_MOVING])
-    learner = object_variable("leaner_0", LEARNER)
-    speaker = object_variable("speaker", PERSON, added_properties=[IS_SPEAKER])
+    learner = standard_object("leaner_0", LEARNER)
+    speaker = standard_object("speaker", PERSON, added_properties=[IS_SPEAKER])
     object_ = standard_object("object_0", THING)
 
     come_to_speaker = Phase1SituationTemplate(
@@ -1502,46 +1486,50 @@ def _make_come_curriculum() -> Phase1InstanceGroup:
 def _make_behind_in_front_curriculum() -> Phase1InstanceGroup:
     front_behind_ground_object = standard_object("ground_object")
     front_behind_figure_object = standard_object("figure_object")
-    front_behind_speaker = object_variable(
+    front_behind_speaker = standard_object(
         "speaker_0", PERSON, added_properties=[IS_SPEAKER]
     )
-    front_behind_addressee = object_variable(
+    front_behind_addressee = standard_object(
         "addressee_0", PERSON, added_properties=[IS_ADDRESSEE]
     )
 
     def make_behind_in_front_templates() -> Iterable[Phase1SituationTemplate]:
         for in_front_of in (True, False):
-            suffix = "-in-front" if in_front_of else "-behind"
-            yield Phase1SituationTemplate(
-                f"front_behind_addressee-relative-{suffix}",
-                salient_object_variables=[
-                    front_behind_figure_object,
-                    front_behind_ground_object,
-                ],
-                background_object_variables=[
-                    front_behind_speaker,
-                    front_behind_addressee,
-                ],
-                asserted_always_relations=[
-                    Relation(
-                        IN_REGION,
+            for distal in (True, False):
+                suffix = "-in-front" if in_front_of else "-behind"
+                direction = Direction(
+                    positive=in_front_of,
+                    relative_to_axis=FacingAddresseeAxis(front_behind_ground_object),
+                )
+                yield Phase1SituationTemplate(
+                    f"front_behind_addressee-relative-{suffix}",
+                    salient_object_variables=[
                         front_behind_figure_object,
-                        Region(
+                        front_behind_ground_object,
+                    ],
+                    background_object_variables=[
+                        front_behind_speaker,
+                        front_behind_addressee,
+                    ],
+                    asserted_always_relations=[
+                        near(
+                            front_behind_figure_object,
                             front_behind_ground_object,
-                            distance=PROXIMAL,
-                            direction=Direction(
-                                positive=in_front_of,
-                                relative_to_axis=FacingAddresseeAxis(
-                                    front_behind_ground_object
-                                ),
-                            ),
-                        ),
-                    )
-                ],
-                constraining_relations=[
-                    bigger_than(front_behind_ground_object, front_behind_figure_object)
-                ],
-            )
+                            direction=direction,
+                        )
+                        if distal
+                        else far(
+                            front_behind_figure_object,
+                            front_behind_ground_object,
+                            direction=direction,
+                        )
+                    ],
+                    constraining_relations=[
+                        bigger_than(
+                            front_behind_ground_object, front_behind_figure_object
+                        )
+                    ],
+                )
 
     return phase1_instances(
         "behind_in_front_curriculum",
