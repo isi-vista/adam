@@ -127,6 +127,10 @@ HAS_PROPERTY_LABEL = OntologyNode("has-property")
 """
 Edge label in a `PerceptionGraph` linking an `ObjectPerception` to its associated `Property`.
 """
+FACING_OBJECT_LABEL = OntologyNode("facing-axis")
+"""
+Edge label in a `PerceptionGraph` linking an `Axis` to a `ObjectPerception` it is facing
+"""
 
 
 class PerceptionGraphProtocol(Protocol):
@@ -228,6 +232,10 @@ class PerceptionGraph(PerceptionGraphProtocol):
             else:
                 raise RuntimeError(f"Don't know how to translate property {property_}")
             graph.add_edge(source_node, dest_node, label=HAS_PROPERTY_LABEL)
+
+        if frame.axis_info:
+            for (object_, axis) in frame.axis_info.axes_facing.items():
+                graph.add_edge(axis, object_, label=FACING_OBJECT_LABEL)
 
         return PerceptionGraph(graph)
 
