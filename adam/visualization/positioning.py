@@ -20,8 +20,8 @@ from vistautils.preconditions import check_arg
 
 # see https://github.com/pytorch/pytorch/issues/24807 re: pylint issue
 ORIGIN = torch.zeros(3, dtype=torch.float)  # pylint: disable=not-callable
-COLLISION_PENALTY = 10
-GRAVITY_PENALTY = 0.5
+COLLISION_PENALTY = 5
+GRAVITY_PENALTY = torch.tensor([1], dtype=torch.float) # pylint: disable=not-callable
 GRAVITY_EPSILON = 0.2
 
 
@@ -91,8 +91,8 @@ def run_model(
         optimizer,
         "min",
         # decrease the rate if the loss hasn't improved in
-        # 3 epochs
-        patience=3,
+        # 5 epochs
+        patience=5,
     )
 
     iterations = num_iterations
@@ -134,25 +134,8 @@ class AxisAlignedBoundingBox:
     def center_distance_from_point(self, point: torch.Tensor) -> torch.Tensor:
         return torch.dist(self.center, point, 2)
 
-    def corner_below_ground(self) -> torch.Tensor:
-        """
-        Returns the z value of the most negative (w/r/t Z coordinate) corner of the box.
-        Returns 0 if all corners' Z values are positive.
-        """
-        corners = self.get_corners()
-        min_corner_z = torch.min(
-            torch.gather(
-                corners,
-                1,
-                torch.repeat_interleave(torch.tensor([[2]]), torch.tensor([8]), dim=0),
-            )
-        )
-        if min_corner_z.data < 0:
-            # penalties need to be positive!
-            return min_corner_z * -1
-        return torch.zeros(1, dtype=torch.float)
 
-    def corner_above_ground(self) -> torch.Tensor:
+    def corner_to_ground(self) -> torch.Tensor:
         """
         Returns distance of z value of minimum (w/r/t Z coordinate) corner of the box from origin's Z value.
         Returns: (1,) tensor
@@ -330,7 +313,6 @@ class AdamObjectPositioningModel(torch.nn.Module):  # type: ignore
         for (adam_object, bounding_box) in self.adam_object_to_bounding_box.items():
             self.register_parameter(adam_object.name, bounding_box.center)
 
-        self.distance_to_origin_penalty = DistanceFromOriginPenalty()
         self.collision_penalty = CollisionPenalty()
         self.below_ground_penalty = BelowGroundPenalty()
         self.weak_gravity_penalty = WeakGravityPenalty()
@@ -370,9 +352,6 @@ class AdamObjectPositioningModel(torch.nn.Module):  # type: ignore
         return AdamObjectPositioningModel(objects_to_bounding_boxes)
 
     def forward(self):  # pylint: disable=arguments-differ
-        distance_penalty = sum(
-            self.distance_to_origin_penalty(box) for box in self.object_bounding_boxes
-        )
         collision_penalty = sum(
             self.collision_penalty(box1, box2)
             for (box1, box2) in combinations(self.object_bounding_boxes, 2)
@@ -384,13 +363,12 @@ class AdamObjectPositioningModel(torch.nn.Module):  # type: ignore
             self.weak_gravity_penalty(box) for box in self.object_bounding_boxes
         )
         print(
-            f"distance penalty: {distance_penalty}\ncollision penalty: {collision_penalty}"
+            f"collision penalty: {collision_penalty}"
             f"\nout of bounds penalty: {below_ground_penalty}"
             f"\ngravity penalty: {weak_gravity_penalty}"
         )
         return (
-            distance_penalty
-            + collision_penalty
+            collision_penalty
             + below_ground_penalty
             + weak_gravity_penalty
         )
@@ -412,18 +390,6 @@ class AdamObjectPositioningModel(torch.nn.Module):  # type: ignore
         return self.adam_object_to_bounding_box[obj].center.data
 
 
-class DistanceFromOriginPenalty(nn.Module):  # type: ignore
-    """
-    Model that penalizes boxes that are distant from the origin.
-    """
-
-    def __init__(self) -> None:  # pylint: disable=useless-super-delegation
-        super().__init__()
-
-    def forward(self, *inputs):  # pylint: disable=arguments-differ
-        bounding_box: AxisAlignedBoundingBox = inputs[0]
-        return bounding_box.center_distance_from_point(ORIGIN)
-
 
 class BelowGroundPenalty(nn.Module):  # type: ignore
     """
@@ -435,7 +401,12 @@ class BelowGroundPenalty(nn.Module):  # type: ignore
 
     def forward(self, *inputs):  # pylint: disable=arguments-differ
         bounding_box: AxisAlignedBoundingBox = inputs[0]
-        return bounding_box.corner_below_ground()
+        dist = bounding_box.corner_to_ground()
+        if dist >= 0:
+            return 0
+        elif 0 > dist > GRAVITY_EPSILON:
+            return (dist / GRAVITY_EPSILON) * -1
+        return dist * -1
 
 
 class WeakGravityPenalty(nn.Module):  # type: ignore
@@ -451,12 +422,14 @@ class WeakGravityPenalty(nn.Module):  # type: ignore
 
     def forward(self, *inputs):  # pylint: disable=arguments-differ
         bounding_box: AxisAlignedBoundingBox = inputs[0]
-        dist = bounding_box.corner_above_ground()
-        if dist < 0:
-            return 0
+        dist = bounding_box.corner_to_ground()
+        if dist <= 0:
+            return torch.zeros(1, dtype=torch.float)
         elif 0 < dist < GRAVITY_EPSILON:
             return GRAVITY_PENALTY * (dist / GRAVITY_EPSILON)
-        return bounding_box.corner_above_ground() * GRAVITY_PENALTY
+        # while I appreciate that gravity is a constant,
+        # it needs to be related back to the box's position
+        return GRAVITY_PENALTY
 
 
 class CollisionPenalty(nn.Module):  # type: ignore

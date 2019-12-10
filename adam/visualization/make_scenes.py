@@ -72,7 +72,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    random.seed(2015)
+    random.seed(468)
 
     # go through curriculum scenes and output geometry types
     print("scene generation test")

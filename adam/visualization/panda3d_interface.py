@@ -214,4 +214,4 @@ class SituationVisualizer(ShowBase):
         return self.loader.loadModel(working_dir + "/adam/visualization/models/" + name)
 
 
-# for testing purposes
+
