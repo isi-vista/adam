@@ -38,4 +38,4 @@ def test_scenes_creation() -> Tuple[float, float, float]:
         # automated test shouldn't go through every single scene
         if i > 5:
             break
-    return point
+    return root_point, point
