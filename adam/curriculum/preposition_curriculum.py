@@ -29,6 +29,8 @@ from adam.ontology.phase1_ontology import (
     COOKIE,
     CHAIR,
     LEARNER,
+    DAD,
+    PERSON,
     CAN_HAVE_THINGS_RESTING_ON_THEM,
     bigger_than,
     HAS_SPACE_UNDER,
@@ -202,10 +204,11 @@ def _make_on_training(
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
+    figure_2 = standard_object("mom", MOM)
     ground_0 = standard_object("chair", CHAIR)
     ground_1 = standard_object("table", TABLE)
 
-    figures = immutableset([figure_0, figure_1])
+    figures = immutableset([figure_0, figure_1, figure_2])
     grounds = immutableset([ground_0, ground_1])
 
     return phase1_instances(
@@ -244,11 +247,13 @@ def _make_beside_training(
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
+    figure_2 = standard_object("mom", MOM)
     ground_0 = standard_object("cookie", COOKIE)
     ground_1 = standard_object("table", TABLE)
+    ground_2 = standard_object("dad", DAD)
 
-    figures = immutableset([figure_0, figure_1])
-    grounds = immutableset([ground_0, ground_1])
+    figures = immutableset([figure_0, figure_1, figure_2])
+    grounds = immutableset([ground_0, ground_1, ground_2])
 
     return phase1_instances(
         "Preposition Training Beside",
@@ -288,9 +293,10 @@ def _make_under_training(
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
+    figure_2 = standard_object("mom", MOM)
     ground_0 = standard_object("table", TABLE)
 
-    figures = immutableset([figure_0, figure_1])
+    figures = immutableset([figure_0, figure_1, figure_2])
     grounds = immutableset([ground_0])
 
     return phase1_instances(
@@ -324,10 +330,11 @@ def _make_over_training(
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
+    figure_2 = standard_object("mom", MOM)
     ground_0 = standard_object("cookie", COOKIE)
     ground_1 = standard_object("table", TABLE)
 
-    figures = immutableset([figure_0, figure_1])
+    figures = immutableset([figure_0, figure_1, figure_2])
     grounds = immutableset([ground_0, ground_1])
 
     return phase1_instances(
@@ -398,13 +405,15 @@ def _make_behind_training(
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
+    figure_2 = standard_object("dad", DAD)
     ground_0 = standard_object("cookie", COOKIE)
     ground_1 = standard_object("table", TABLE)
+    ground_2 = standard_object("person", PERSON)
     speaker = standard_object("speaker", MOM, added_properties=[IS_SPEAKER])
     addressee = standard_object("addressee", LEARNER, added_properties=[IS_ADDRESSEE])
 
-    figures = immutableset([figure_0, figure_1])
-    grounds = immutableset([ground_0, ground_1])
+    figures = immutableset([figure_0, figure_1, figure_2])
+    grounds = immutableset([ground_0, ground_1, ground_2])
 
     return phase1_instances(
         "Preposition Training Behind",
@@ -446,13 +455,15 @@ def _make_in_front_training(
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
+    figure_2 = standard_object("dad", DAD)
     ground_0 = standard_object("cookie", COOKIE)
     ground_1 = standard_object("table", TABLE)
+    ground_2 = standard_object("person", PERSON)
     speaker = standard_object("speaker", MOM, added_properties=[IS_SPEAKER])
     addressee = standard_object("addressee", LEARNER, added_properties=[IS_ADDRESSEE])
 
-    figures = immutableset([figure_0, figure_1])
-    grounds = immutableset([ground_0, ground_1])
+    figures = immutableset([figure_0, figure_1, figure_2])
+    grounds = immutableset([ground_0, ground_1, ground_2])
 
     return phase1_instances(
         "Preposition Training In Front",
