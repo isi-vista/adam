@@ -212,6 +212,3 @@ class SituationVisualizer(ShowBase):
     def _load_model(self, name: str):
         working_dir = os.path.abspath((sys.path[0]))
         return self.loader.loadModel(working_dir + "/adam/visualization/models/" + name)
-
-
-

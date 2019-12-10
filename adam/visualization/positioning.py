@@ -20,9 +20,9 @@ from vistautils.preconditions import check_arg
 
 # see https://github.com/pytorch/pytorch/issues/24807 re: pylint issue
 ORIGIN = torch.zeros(3, dtype=torch.float)  # pylint: disable=not-callable
-COLLISION_PENALTY = 5
-GRAVITY_PENALTY = torch.tensor([1], dtype=torch.float) # pylint: disable=not-callable
-GRAVITY_EPSILON = 0.2
+GRAVITY_PENALTY = torch.tensor([1], dtype=torch.float)  # pylint: disable=not-callable
+BELOW_GROUND_PENALTY = 2 * GRAVITY_PENALTY
+COLLISION_PENALTY = 5 * GRAVITY_PENALTY
 
 
 @attrs(frozen=True, auto_attribs=True)
@@ -55,10 +55,13 @@ def main() -> None:
         patience=3,
     )
 
-    iterations = 25
-    for _ in range(iterations):
+    iterations = 100
+    for iteration in range(iterations):
+        print(f"====== Iteration {iteration} ======")
+        positioning_model.dump_object_positions(prefix="\t")
+
         loss = positioning_model()
-        print(f"Loss: {loss.item()}")
+        print(f"\tLoss: {loss.item()}")
         loss.backward()
 
         optimizer.step()
@@ -66,7 +69,8 @@ def main() -> None:
 
         learning_rate_schedule.step(loss)
 
-        positioning_model.dump_object_positions()
+    print("========= Final Positions ========")
+    positioning_model.dump_object_positions(prefix="\t")
 
 
 def run_model(
@@ -97,8 +101,9 @@ def run_model(
 
     iterations = num_iterations
     for i in range(iterations):
+        print(f"====== Iteration {i} =======")
         loss = positioning_model()
-        print(f"Loss: {loss.item()}")
+        print(f"\tLoss: {loss.item()}")
         loss.backward()
 
         optimizer.step()
@@ -106,7 +111,7 @@ def run_model(
 
         learning_rate_schedule.step(loss)
 
-        positioning_model.dump_object_positions()
+        positioning_model.dump_object_positions(prefix="\t")
         if yield_steps and i % yield_steps == 0:
             yield [positioning_model.get_object_position(obj).data for obj in objs]
 
@@ -134,8 +139,7 @@ class AxisAlignedBoundingBox:
     def center_distance_from_point(self, point: torch.Tensor) -> torch.Tensor:
         return torch.dist(self.center, point, 2)
 
-
-    def corner_to_ground(self) -> torch.Tensor:
+    def distance_from_lowest_corner_to_ground(self) -> torch.Tensor:
         """
         Returns distance of z value of minimum (w/r/t Z coordinate) corner of the box from origin's Z value.
         Returns: (1,) tensor
@@ -367,15 +371,11 @@ class AdamObjectPositioningModel(torch.nn.Module):  # type: ignore
             f"\nout of bounds penalty: {below_ground_penalty}"
             f"\ngravity penalty: {weak_gravity_penalty}"
         )
-        return (
-            collision_penalty
-            + below_ground_penalty
-            + weak_gravity_penalty
-        )
+        return collision_penalty + below_ground_penalty + weak_gravity_penalty
 
-    def dump_object_positions(self) -> None:
+    def dump_object_positions(self, *, prefix: str = "") -> None:
         for (adam_object, bounding_box) in self.adam_object_to_bounding_box.items():
-            print(f"{adam_object.name} = {bounding_box.center.data}")
+            print(f"{prefix}{adam_object.name} = {bounding_box.center.data}")
 
     def get_object_position(self, obj: AdamObject) -> torch.Tensor:
         """
@@ -390,7 +390,6 @@ class AdamObjectPositioningModel(torch.nn.Module):  # type: ignore
         return self.adam_object_to_bounding_box[obj].center.data
 
 
-
 class BelowGroundPenalty(nn.Module):  # type: ignore
     """
     Model that penalizes boxes lying outside of the scene (i.e. below the ground plane) or off-camera)
@@ -401,12 +400,11 @@ class BelowGroundPenalty(nn.Module):  # type: ignore
 
     def forward(self, *inputs):  # pylint: disable=arguments-differ
         bounding_box: AxisAlignedBoundingBox = inputs[0]
-        dist = bounding_box.corner_to_ground()
-        if dist >= 0:
+        distance_above_ground = bounding_box.distance_from_lowest_corner_to_ground()
+        if distance_above_ground >= 0:
             return 0
-        elif 0 > dist > GRAVITY_EPSILON:
-            return (dist / GRAVITY_EPSILON) * -1
-        return dist * -1
+        else:
+            return -distance_above_ground
 
 
 class WeakGravityPenalty(nn.Module):  # type: ignore
@@ -422,14 +420,12 @@ class WeakGravityPenalty(nn.Module):  # type: ignore
 
     def forward(self, *inputs):  # pylint: disable=arguments-differ
         bounding_box: AxisAlignedBoundingBox = inputs[0]
-        dist = bounding_box.corner_to_ground()
-        if dist <= 0:
-            return torch.zeros(1, dtype=torch.float)
-        elif 0 < dist < GRAVITY_EPSILON:
-            return GRAVITY_PENALTY * (dist / GRAVITY_EPSILON)
-        # while I appreciate that gravity is a constant,
-        # it needs to be related back to the box's position
-        return GRAVITY_PENALTY
+        distance_above_ground = bounding_box.distance_from_lowest_corner_to_ground()
+        if distance_above_ground <= 0:
+            return 0.0
+        else:
+            # a linear penalty leads to a constant gradient, just like real gravity
+            return GRAVITY_PENALTY * distance_above_ground
 
 
 class CollisionPenalty(nn.Module):  # type: ignore
