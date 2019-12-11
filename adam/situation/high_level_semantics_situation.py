@@ -191,6 +191,13 @@ class HighLevelSemanticsSituation(Situation):
                     f" in {self}"
                 )
 
+        for object_ in self.gazed_objects:
+            if isinstance(object_, Region):
+                raise RuntimeError(
+                    f"Cannot have a Region as a gazed object in a situation, got"
+                    f"{object_} which is a region."
+                )
+
     def __repr__(self) -> str:
         # TODO: the way we currently repr situations doesn't handle multiple nodes
         # of the same ontology type well.  We'd like to use subscripts (_0, _1)
@@ -229,6 +236,7 @@ class HighLevelSemanticsSituation(Situation):
             object_
             for action in self.actions
             for (_, object_) in action.argument_roles_to_fillers.items()
+            if not isinstance(object_, Region)
         )
 
     @all_objects.default
