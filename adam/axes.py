@@ -91,7 +91,7 @@ class AxisFunction(Protocol, Generic[_ObjectT]):
         pass
 
 
-@attrs(frozen=True)
+@attrs(frozen=True, repr=False)
 class PrimaryAxisOfObject(Generic[_ObjectT], AxisFunction[_ObjectT]):
     _object: _ObjectT = attrib()
 
@@ -110,8 +110,12 @@ class PrimaryAxisOfObject(Generic[_ObjectT], AxisFunction[_ObjectT]):
     ) -> "PrimaryAxisOfObject[_ObjectToT]":
         return PrimaryAxisOfObject(object_map[self._object])
 
+    def __repr__(self, object_map: Optional[Mapping[_ObjectT, str]] = None) -> str:
+        handle = object_map[self._object] if object_map else self._object
+        return f"PrimaryAxisOfObject(_object={handle})"
 
-@attrs(frozen=True)
+
+@attrs(frozen=True, repr=False)
 class HorizontalAxisOfObject(Generic[_ObjectT], AxisFunction[_ObjectT]):
     _object: _ObjectT = attrib()
     _index: int = attrib(validator=in_(Range.closed(0, 1)))
@@ -136,8 +140,12 @@ class HorizontalAxisOfObject(Generic[_ObjectT], AxisFunction[_ObjectT]):
     ) -> "HorizontalAxisOfObject[_ObjectToT]":
         return HorizontalAxisOfObject(object_map[self._object], index=self._index)
 
+    def __repr__(self, object_map: Optional[Mapping[_ObjectT, str]] = None) -> str:
+        handle = object_map[self._object] if object_map else self._object
+        return f"HorizontalAxisOfObject(_object={handle}, _index={str(self._index)})"
 
-@attrs(frozen=True)
+
+@attrs(frozen=True, repr=False)
 class FacingAddresseeAxis(Generic[_ObjectT], AxisFunction[_ObjectT]):
     _object: _ObjectT = attrib()
 
@@ -176,6 +184,10 @@ class FacingAddresseeAxis(Generic[_ObjectT], AxisFunction[_ObjectT]):
         self, object_map: Mapping[_ObjectT, _ObjectToT]
     ) -> "FacingAddresseeAxis[_ObjectToT]":
         return FacingAddresseeAxis(object_map[self._object])
+
+    def __repr__(self, object_map: Optional[Mapping[_ObjectT, str]] = None) -> str:
+        handle = object_map[self._object] if object_map else self._object
+        return f"FacingAddresseeAxis(_object={handle})"
 
 
 _GRAVITATIONAL_DOWN_TO_UP_AXIS = straight_up("gravitational-up")
