@@ -100,6 +100,8 @@ EXPLANATION_HEADER = (
     "\n\t '>>' denotes the 'much bigger than' relation.</li>"
     "<li>Many objects also have associated Geons, which describe their shape "
     "according to Biederman's visual perception theory (see deliverable docs for a citation).</li>"
+    "<li>The colors provided in the background of a phrase reading 'color=#XXXXXX' is the color indicated by the hex code</li>"
+    "</ul>"
 )
 STR_TO_CURRICULUM: Mapping[str, Callable[[], Iterable[Phase1InstanceGroup]]] = {
     "phase1": build_gaila_phase_1_curriculum,
@@ -629,7 +631,7 @@ class CurriculumToHtmlDumper:
                     prop_string = (
                         f'<span style="background-color: {prop.color}; '
                         f'color: {prop.color.inverse()}; border: 1px solid black;">'
-                        f"{prop.color.hex}</span>"
+                        f"color={prop.color.hex}</span>"
                     )
                 elif isinstance(prop, HasBinaryProperty):
                     prop_string = str(prop.binary_property)
