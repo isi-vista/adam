@@ -14,7 +14,12 @@ from networkx import DiGraph, isolates
 from adam.language import LinguisticDescription, LinguisticDescriptionT
 from adam.ontology.phase1_ontology import LEARNER
 from adam.perception import PerceptionT, PerceptualRepresentation, ObjectPerception
-from adam.perception.perception_graph import PerceptionGraph, PerceptionGraphPattern, DebugCallableType
+from adam.perception.perception_graph import (
+    PerceptionGraph,
+    PerceptionGraphPattern,
+    DebugCallableType,
+)
+from adam.utils.networkx_utils import subgraph
 
 
 @attrs(frozen=True)
@@ -114,13 +119,12 @@ def get_largest_matching_pattern(
     *,
     debug_callback: Optional[DebugCallableType] = None,
 ) -> PerceptionGraphPattern:
-    """ Helper function to return the largest matching pattern for learner from a perception pattern and graph pair."""
+    """ Helper function to return the largest matching `PerceptionGraphPattern`
+    for learner from a perception pattern and graph pair."""
     # Initialize matcher in debug version to keep largest subgraph
-    matching = pattern.matcher(graph)
+    matching = pattern.matcher(graph, debug_callback=debug_callback)
     debug_sink: Dict[Any, Any] = {}
-    match_mapping = list(
-        matching.matches(debug_mapping_sink=debug_sink, debug_callback=debug_callback)
-    )
+    match_mapping = list(matching.matches(debug_mapping_sink=debug_sink))
 
     if match_mapping:
         # if matched, get the match
@@ -128,11 +132,13 @@ def get_largest_matching_pattern(
     else:
         # otherwise get the largest subgraph and initialze new PatternGraph from it
         matched_pattern_nodes = debug_sink.keys()
-        matching_sub_digraph = pattern.copy_as_digraph().subgraph(matched_pattern_nodes)
+        matching_sub_digraph = subgraph(pattern.copy_as_digraph(), matched_pattern_nodes)
         return PerceptionGraphPattern(matching_sub_digraph)
 
 
 def graph_without_learner(graph: DiGraph) -> PerceptionGraph:
+    """ Helper function to return a `PerceptionGraph`
+    without a ground object and its related nodes."""
     # Get the learner node
     learner_node_candidates = [
         node

@@ -1,18 +1,20 @@
-from typing import Dict, Generic, Mapping, Tuple, Any, Optional
+from typing import Dict, Generic, Mapping, Tuple, Optional
 
 from attr import Factory, attrib, attrs
 from immutablecollections import immutabledict
-from more_itertools import first
-from networkx import DiGraph, isolates
 
 from adam.language import (
     LinguisticDescriptionT,
     TokenSequenceLinguisticDescription,
     LinguisticDescription,
 )
-from adam.learner import LanguageLearner, LearningExample, graph_without_learner, get_largest_matching_pattern
-from adam.ontology.phase1_ontology import LEARNER
-from adam.perception import PerceptionT, PerceptualRepresentation, ObjectPerception
+from adam.learner import (
+    LanguageLearner,
+    LearningExample,
+    graph_without_learner,
+    get_largest_matching_pattern,
+)
+from adam.perception import PerceptionT, PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
@@ -23,7 +25,7 @@ from adam.perception.perception_graph import (
 )
 
 
-@attrs
+@attrs(slots=True)
 class SubsetLanguageLearner(
     Generic[PerceptionT, LinguisticDescriptionT],
     LanguageLearner[PerceptionT, LinguisticDescription],
@@ -35,7 +37,7 @@ class SubsetLanguageLearner(
     _descriptions_to_pattern_hypothesis: Dict[
         Tuple[str, ...], PerceptionGraphPattern
     ] = attrib(init=False, default=Factory(dict))
-    _debug_callback: Optional[DebugCallableType] = attrib(default=None)
+    _debug_callback: Optional[DebugCallableType] = attrib(default=None, kw_only=True)
 
     def observe(
         self, learning_example: LearningExample[PerceptionT, LinguisticDescription]
@@ -80,7 +82,7 @@ class SubsetLanguageLearner(
             # perception graph.
             observed_pattern_graph = PerceptionGraphPattern.from_graph(
                 observed_perception_graph.copy_as_digraph()
-            )
+            ).perception_graph_pattern
             self._descriptions_to_pattern_hypothesis[
                 observed_linguistic_description
             ] = observed_pattern_graph
@@ -121,4 +123,3 @@ class SubsetLanguageLearner(
             )
         else:
             return immutabledict()
-
