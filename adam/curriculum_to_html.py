@@ -14,6 +14,7 @@ from typing import (
     Mapping,
 )
 
+from adam.axis import GeonAxis
 from adam.curriculum.curriculum_utils import Phase1InstanceGroup
 from attr import attrib, attrs
 from attr.validators import instance_of
@@ -101,6 +102,8 @@ EXPLANATION_HEADER = (
     "<li>Many objects also have associated Geons, which describe their shape "
     "according to Biederman's visual perception theory (see deliverable docs for a citation).</li>"
     "<li>The colors provided in the background of a phrase reading 'color=#XXXXXX' is the color indicated by the hex code</li>"
+    "<li>The Axis Facing section, if included, lists which axes of the objects in the scene face a given object. "
+    "In most cases, this information is only provided for the addressee in a scene.</li>"
     "</ul>"
 )
 STR_TO_CURRICULUM: Mapping[str, Callable[[], Iterable[Phase1InstanceGroup]]] = {
@@ -671,10 +674,13 @@ class CurriculumToHtmlDumper:
         root = ObjectPerception("root", axes=WORLD_AXES)
         graph.add_node(root)
         expressed_relations = set()
+        axis_to_object: Dict[GeonAxis, ObjectPerception] = {}
 
         for object_ in all_objects:
             graph.add_node(object_)
             graph.add_edge(root, object_)
+            for axis in object_.axes.all_axes:
+                axis_to_object[axis] = object_
 
         for relation_ in all_relations:
             if relation_.relation_type == PART_OF:
@@ -763,14 +769,15 @@ class CurriculumToHtmlDumper:
             output_text.append(("\t\t\t\t\t<h5>Axis Facings</h5>"))
             output_text.append(("\t\t\t\t\t<ul>"))
             for object_ in axis_info.axes_facing:
-                facing_axes_str = ", ".join(
-                    str(axis) for axis in axis_info.axes_facing[object_]
-                )
                 output_text.append(
-                    f"\t\t\t\t\t\t<li>{object_.debug_handle} faced by "
-                    f"{facing_axes_str}</li>"
+                    f"\t\t\t\t\t\t<li>{object_.debug_handle} faced by:\n\t\t\t\t\t\t<ul>"
                 )
-            output_text.append(("\t\t\t\t\t</ul>"))
+                for axis in axis_info.axes_facing[object_]:
+                    output_text.append(
+                        f"\t\t\t\t\t\t\t<li>{axis} possessed by {axis_to_object[axis]}</li>"
+                    )
+                output_text.append("\t\t\t\t\t\t</ul>")
+            output_text.append("\t\t\t\t\t</ul>")
 
         return "\n".join(output_text)
 
