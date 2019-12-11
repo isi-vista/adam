@@ -634,7 +634,7 @@ class CurriculumToHtmlDumper:
                         f"color={prop.color.hex}</span>"
                     )
                 elif isinstance(prop, HasBinaryProperty):
-                    prop_string = str(prop.binary_property)
+                    prop_string = prop.binary_property.handle
                 else:
                     raise RuntimeError(f"Cannot render property: {prop}")
 
