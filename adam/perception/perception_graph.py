@@ -619,7 +619,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol):
             # between the two patterns
             return PerceptionGraphPattern(
                 graph=subgraph(
-                    self._graph,
+                    graph_pattern.copy_as_digraph(),
                     nodes=attempted_match.pattern_node_to_graph_node_for_largest_match.keys(),
                 )
             )

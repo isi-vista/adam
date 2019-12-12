@@ -13,6 +13,8 @@ from adam.perception.perception_graph import (
 from attr import attrib, attrs
 
 # Constants used to map locations in a prepositional phrase for mapping
+from adam.utils.networkx_utils import print_graph_as_text
+
 _MODIFIED = "MODIFIED"
 _GROUND = "GROUND"
 
@@ -95,7 +97,11 @@ class PrepositionPattern:
             )
 
     def intersection(self, pattern: "PrepositionPattern") -> "PrepositionPattern":
+        # debug_file = "/nas/home/jacobl/adam-root/outputs/intersection"
+        # print_graph_as_text(self.graph_pattern.copy_as_digraph(), "Pattern 1", debug_file, append_to_file=False)
+        # print_graph_as_text(pattern.graph_pattern.copy_as_digraph(), "Pattern 2", debug_file)
         graph_pattern = self.graph_pattern.intersection(pattern.graph_pattern)
+        # print_graph_as_text(graph_pattern.copy_as_digraph(), "Intersection Pattern", debug_file)
         mapping_builder = []
         items_to_iterate: List[Tuple[str, MatchedObjectPerceptionPredicate]] = []
         items_to_iterate.extend(self.object_variable_name_to_pattern_node.items())

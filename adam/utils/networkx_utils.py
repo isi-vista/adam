@@ -3,7 +3,7 @@ from typing import Any, Callable, Iterable
 from attr import attrs, attrib
 from immutablecollections import immutableset, ImmutableSet
 from immutablecollections.converter_utils import _to_immutableset
-from networkx import DiGraph, nx
+from networkx import DiGraph, nx, Graph
 
 
 def digraph_with_nodes_sorted_by(
@@ -32,7 +32,7 @@ def digraph_with_nodes_sorted_by(
     return new_graph
 
 
-def subgraph(graph: DiGraph, nodes: Iterable[Any]) -> DiGraph:
+def subgraph(graph: Graph, nodes: Iterable[Any]) -> DiGraph:
     """
     Get a Subgraph view of a a Digraph with node iteration order in a deterministic fashion
 
@@ -64,3 +64,24 @@ class ShowNodes:
 
     def __call__(self, node):
         return node in self.nodes
+
+
+def print_graph_as_text(
+    graph: Graph, graph_name: str, file_location: str, *, append_to_file: bool = True
+) -> None:
+    """
+    Debug function to print a DiGraph as plain text to a given file location
+
+    *graph* is the DiGraph to be printed, *graph_name* is a contextual name of the graph,
+    *file_location* is the output file location and *append_to_file* indicates if the given file
+    should be appended to or overwritten
+    """
+    open_params = "a" if append_to_file else "w"
+    with open(file_location, open_params) as doc:
+        doc.write("=== " + graph_name + "===\n")
+        doc.write("== " + graph_name + ": Nodes ==\n")
+        for node in graph:
+            doc.write("\t" + str(node) + "\n")
+        doc.write("== " + graph_name + ": Edges ==\n")
+        for edge in graph.edges:
+            doc.write("\t" + str(edge) + "\n")

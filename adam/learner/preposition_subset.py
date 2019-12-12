@@ -26,7 +26,11 @@ from adam.perception.perception_graph import (
 )
 from attr import Factory, attrib, attrs
 
-from adam.utils.networkx_utils import digraph_with_nodes_sorted_by, subgraph
+from adam.utils.networkx_utils import (
+    digraph_with_nodes_sorted_by,
+    subgraph,
+    print_graph_as_text,
+)
 
 PrepositionSurfaceTemplate = Tuple[str, ...]
 """
@@ -48,15 +52,6 @@ class PrepositionSubsetLanguageLearner(
     _object_recognizer: ObjectRecognizer = attrib(init=False, default=ObjectRecognizer())
     _debug_file: Optional[str] = attrib(kw_only=True, default=None)
 
-    def _print(self, graph: DiGraph, name: str) -> None:
-        if self._debug_file:
-            with open(self._debug_file, "a") as doc:
-                doc.write("=== " + name + "===\n")
-                for node in graph:
-                    doc.write("\t" + str(node) + "\n")
-                for edge in graph.edges:
-                    doc.write("\t" + str(edge) + "\n")
-
     def observe(
         self, learning_example: LearningExample[PerceptionT, LinguisticDescription]
     ) -> None:
@@ -73,10 +68,12 @@ class PrepositionSubsetLanguageLearner(
         )
 
         # DEBUG
-        self._print(
-            original_perception.copy_as_digraph(),
-            " ".join(observed_linguistic_description),
-        )
+        if self._debug_file:
+            print_graph_as_text(
+                original_perception.copy_as_digraph(),
+                " ".join(observed_linguistic_description),
+                self._debug_file,
+            )
 
         recognized_object_perception = self._object_recognizer.match_objects(
             original_perception
@@ -85,10 +82,12 @@ class PrepositionSubsetLanguageLearner(
         token_indices_of_matched_object_words = []
 
         # DEBUG
-        self._print(
-            recognized_object_perception.perception_graph.copy_as_digraph(),
-            "Recoginzed Perception",
-        )
+        if self._debug_file:
+            print_graph_as_text(
+                recognized_object_perception.perception_graph.copy_as_digraph(),
+                "Recoginzed Perception",
+                self._debug_file,
+            )
 
         for (idx, token) in enumerate(observed_linguistic_description):
             if (
@@ -163,25 +162,31 @@ class PrepositionSubsetLanguageLearner(
         )
 
         # DEBUG
-        self._print(
-            preposition_pattern.graph_pattern.copy_as_digraph(),
-            "New: " + " ".join(preposition_surface_template),
-        )
+        if self._debug_file:
+            print_graph_as_text(
+                preposition_pattern.graph_pattern.copy_as_digraph(),
+                "New: " + " ".join(preposition_surface_template),
+                self._debug_file,
+            )
 
         if preposition_surface_template in self._surface_template_to_preposition_pattern:
             # We have seen this preposition situation before.
             # Our learning strategy is to assume the true semantics of the preposition
             # is what is in common between what we saw this time and what we saw last time.
-            self._print(
-                self._surface_template_to_preposition_pattern[
-                    preposition_surface_template
-                ].graph_pattern.copy_as_digraph(),
-                "pre-intersection current: ",
-            )
-            self._print(
-                preposition_pattern.graph_pattern.copy_as_digraph(),
-                "pre-intersection intersecting",
-            )
+            if self._debug_file:
+                print_graph_as_text(
+                    self._surface_template_to_preposition_pattern[
+                        preposition_surface_template
+                    ].graph_pattern.copy_as_digraph(),
+                    "pre-intersection current: ",
+                    self._debug_file,
+                )
+            if self._debug_file:
+                print_graph_as_text(
+                    preposition_pattern.graph_pattern.copy_as_digraph(),
+                    "pre-intersection intersecting",
+                    self._debug_file,
+                )
             self._surface_template_to_preposition_pattern[
                 preposition_surface_template
             ] = self._surface_template_to_preposition_pattern[
@@ -189,12 +194,14 @@ class PrepositionSubsetLanguageLearner(
             ].intersection(
                 preposition_pattern
             )
-            self._print(
-                self._surface_template_to_preposition_pattern[
-                    preposition_surface_template
-                ].graph_pattern.copy_as_digraph(),
-                "post-intersection: ",
-            )
+            if self._debug_file:
+                print_graph_as_text(
+                    self._surface_template_to_preposition_pattern[
+                        preposition_surface_template
+                    ].graph_pattern.copy_as_digraph(),
+                    "post-intersection: ",
+                    self._debug_file,
+                )
         else:
             # This is the first time we've seen a preposition situation like this one.
             # Remember our hypothesis about the semantics of the preposition.
@@ -203,12 +210,14 @@ class PrepositionSubsetLanguageLearner(
             ] = preposition_pattern
 
         # DEBUG
-        self._print(
-            self._surface_template_to_preposition_pattern[
-                preposition_surface_template
-            ].graph_pattern.copy_as_digraph(),
-            "Saved: " + " ".join(preposition_surface_template),
-        )
+        if self._debug_file:
+            print_graph_as_text(
+                self._surface_template_to_preposition_pattern[
+                    preposition_surface_template
+                ].graph_pattern.copy_as_digraph(),
+                "Saved: " + " ".join(preposition_surface_template),
+                self._debug_file,
+            )
 
     def _make_preposition_hypothesis(
         self,
@@ -227,23 +236,33 @@ class PrepositionSubsetLanguageLearner(
         # from the point-of-view of hypothesis generation, so we need an undirected copy
         # of the graph.
         perception_graph = perception_graph_post_object_recognition.copy_as_digraph()
-        self._print(perception_graph, "pre-Undirected perception graph")
+        if self._debug_file:
+            print_graph_as_text(
+                perception_graph, "pre-Undirected perception graph", self._debug_file
+            )
 
         # as_view=True loses determinism
         perception_graph_as_undirected = perception_graph_post_object_recognition.copy_as_digraph().to_undirected(
             as_view=False
         )
 
-        self._print(perception_graph_as_undirected, "Undirected perception graph")
-
-        for path in all_shortest_paths(
-            perception_graph_as_undirected,
-            object_match_node_for_ground,
-            object_match_node_for_modified,
-        ):
-            self._print(
-                subgraph(perception_graph_as_undirected, nodes=path), "Got a path!"
+        if self._debug_file:
+            print_graph_as_text(
+                perception_graph_as_undirected,
+                "Undirected perception graph",
+                self._debug_file,
             )
+
+            for path in all_shortest_paths(
+                perception_graph_as_undirected,
+                object_match_node_for_ground,
+                object_match_node_for_modified,
+            ):
+                print_graph_as_text(
+                    subgraph(perception_graph_as_undirected, nodes=path),
+                    "Got a path!",
+                    self._debug_file,
+                )
 
         # The core of our hypothesis for the semantics of a preposition is all nodes
         # along the shortest path between the two objects involved in the perception graph.
@@ -260,10 +279,12 @@ class PrepositionSubsetLanguageLearner(
             )
         )
 
-        self._print(
-            subgraph(perception_graph_as_undirected, nodes=hypothesis_spine_nodes),
-            "Spine nodes",
-        )
+        if self._debug_file:
+            print_graph_as_text(
+                subgraph(perception_graph_as_undirected, nodes=hypothesis_spine_nodes),
+                "Spine nodes",
+                self._debug_file,
+            )
 
         # Along the core of our hypothesis we also want to collect the predecessors and successors
         hypothesis_nodes_mutable = []
@@ -303,17 +324,24 @@ class PrepositionSubsetLanguageLearner(
             raise RuntimeError("Cannot process perception type.")
 
         # DEBGU
-        self._print(original_perception.copy_as_digraph(), "Describe Original")
+        if self._debug_file:
+            print_graph_as_text(
+                original_perception.copy_as_digraph(),
+                "Describe Original",
+                self._debug_file,
+            )
 
         recognized_object_perception = self._object_recognizer.match_objects(
             original_perception
         )
 
-        # DEBGU
-        self._print(
-            recognized_object_perception.perception_graph.copy_as_digraph(),
-            "Describe Recoginzed Objects",
-        )
+        # DEBUG
+        if self._debug_file:
+            print_graph_as_text(
+                recognized_object_perception.perception_graph.copy_as_digraph(),
+                "Describe Recoginzed Objects",
+                self._debug_file,
+            )
 
         object_match_node_to_object_handle: Mapping[
             PerceptionGraphNode, str
