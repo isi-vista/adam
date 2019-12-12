@@ -384,11 +384,15 @@ class GraphMatching:
         # instead. We use a boolean rather than checking at runtime to speed up this
         # process
         if self.matching_pattern_against_pattern:
+            # This is the key used to look up edge labels on the graph being matched against.
+            edge_label_key = "predicate"
             if not pattern_node.matches_predicate(graph_node):
                 if collect_debug_statistics:
                     self.pattern_node_to_num_predicate_failures[pattern_node] += 1
                 return False
         else:
+            # This is the key used to look up edge labels on the graph being matched against.
+            edge_label_key = "label"
             if not pattern_node(graph_node):
                 if collect_debug_statistics:
                     self.pattern_node_to_num_predicate_failures[pattern_node] += 1
@@ -429,7 +433,9 @@ class GraphMatching:
                         ] += 1
                     return False
                 if not pattern_predicate(
-                    predecessor_mapped_node_in_graph, graph_edge["label"], graph_node
+                    predecessor_mapped_node_in_graph,
+                    graph_edge[edge_label_key],
+                    graph_node,
                 ):
                     if collect_debug_statistics:
                         self.pattern_edge_to_num_predicate_failures[
@@ -468,7 +474,7 @@ class GraphMatching:
                     return False
 
                 if not pattern_predicate(
-                    graph_node, graph_edge["label"], successor_mapped_node_in_graph
+                    graph_node, graph_edge[edge_label_key], successor_mapped_node_in_graph
                 ):
                     if collect_debug_statistics:
                         self.pattern_edge_to_num_predicate_failures[
