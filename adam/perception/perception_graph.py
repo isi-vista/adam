@@ -734,8 +734,7 @@ class PatternMatching:
         @largest_match_pattern_subgraph.default  # noqa: F821
         def _matched_pattern_subgraph_default(self) -> DiGraph:
             return PerceptionGraphPattern(
-                self.pattern._graph.subgraph(  #
-                    # pylint:disable=protected-access
+                self.pattern._graph.subgraph(  # pylint:disable=protected-access
                     self.pattern_node_to_graph_node_for_largest_match.keys()
                 )
             )
@@ -752,6 +751,7 @@ class PatternMatching:
         use_lookahead_pruning: bool = False,
         matching_pattern_against_pattern: bool = False,
         suppress_multiple_alignments_to_same_nodes: bool = True,
+        initial_partial_match: Mapping[Any, Any] = immutabledict(),
     ) -> Iterable["PerceptionGraphPatternMatch"]:
         """
         Attempt the matching and returns a generator over the set of possible matches.
@@ -772,6 +772,7 @@ class PatternMatching:
             matching_pattern_against_pattern=matching_pattern_against_pattern,
             use_lookahead_pruning=use_lookahead_pruning,
             suppress_multiple_alignments_to_same_nodes=suppress_multiple_alignments_to_same_nodes,
+            initial_partial_match=initial_partial_match,
         ):
             # we want to ignore the failure objects returned for the use of
             # first_match_or_failure_info
@@ -779,7 +780,10 @@ class PatternMatching:
                 yield match
 
     def first_match_or_failure_info(
-        self, *, matching_pattern_against_pattern: bool = False
+        self,
+        *,
+        matching_pattern_against_pattern: bool = False,
+        initial_partial_match: Mapping[Any, Any] = immutabledict(),
     ) -> Union["PerceptionGraphPatternMatch", "PatternMatching.MatchFailure"]:
         """
         Gets the first match encountered of the pattern against the graph
@@ -794,6 +798,7 @@ class PatternMatching:
                 # cause of failures appear "earlier" in the pattern than they really are.
                 use_lookahead_pruning=False,
                 suppress_multiple_alignments_to_same_nodes=True,
+                initial_partial_match=initial_partial_match,
             )
         )
 
@@ -804,6 +809,7 @@ class PatternMatching:
         matching_pattern_against_pattern: bool = False,
         suppress_multiple_alignments_to_same_nodes: bool = True,
         collect_debug_statistics: bool = False,
+        initial_partial_match: Mapping[Any, Any] = immutabledict(),
     ) -> Iterable[Union["PerceptionGraphPatternMatch", "PatternMatching.MatchFailure"]]:
         # Controlling the iteration order of the graphs
         # controls the order in which nodes are matched.
@@ -822,6 +828,7 @@ class PatternMatching:
             sorted_graph_to_match_against,
             sorted_pattern,
             use_lookahead_pruning=use_lookahead_pruning,
+            matching_pattern_against_pattern=matching_pattern_against_pattern,
         )
 
         sets_of_nodes_matched: Set[ImmutableSet[PerceptionGraphNode]] = set()
@@ -829,8 +836,8 @@ class PatternMatching:
         got_a_match = False
         for graph_node_to_matching_pattern_node in matching.subgraph_isomorphisms_iter(
             collect_debug_statistics=collect_debug_statistics,
-            matching_pattern=matching_pattern_against_pattern,
             debug_callback=self.debug_callback,
+            initial_partial_match=initial_partial_match,
         ):
             matched_graph_nodes: ImmutableSet[PerceptionGraphNode] = immutableset(
                 graph_node_to_matching_pattern_node
@@ -854,7 +861,9 @@ class PatternMatching:
                 )
             sets_of_nodes_matched.add(matched_graph_nodes)
         if not got_a_match:
-            yield PatternMatching.MatchFailure(
+            # mypy doesn't like the assignment to the pattern_node_to_graph_node_for_largest_match
+            # argument for reasons which are unclear to me. It works fine, though.
+            yield PatternMatching.MatchFailure(  # type: ignore
                 pattern=self.pattern,
                 graph=self.graph_to_match_against,
                 pattern_node_to_graph_node_for_largest_match=immutabledict(
@@ -864,48 +873,6 @@ class PatternMatching:
                     NodePredicate, matching.failing_pattern_node_for_deepest_match
                 ),
             )
-
-    def debug_matching(
-        self,
-        *,
-        use_lookahead_pruning: bool = True,
-        render_match_to: Optional[Path] = None,
-    ) -> GraphMatching:
-        """
-        Similar to `matches`, but returns the internal `GraphMatching` object
-        at the end of the matching process for analysis.
-
-        It also writes PDFs showing the best partial match to *render_match_to*,
-        if specified.
-        """
-        matching = GraphMatching(
-            self.graph_to_match_against._graph,  # pylint:disable=protected-access
-            self.pattern._graph,  # pylint:disable=protected-access
-            use_lookahead_pruning=use_lookahead_pruning,
-        )
-        for _ in matching.subgraph_isomorphisms_iter(collect_debug_statistics=True):
-            pass
-        if render_match_to:
-            pattern_node_to_correspondence_index = {}
-            graph_node_to_correspondence_index = {}
-            for (idx, (pattern_node, graph_node)) in enumerate(
-                matching.debug_largest_match.items()
-            ):
-                pattern_node_to_correspondence_index[pattern_node] = str(idx)
-                graph_node_to_correspondence_index[graph_node] = str(idx)
-
-            self.pattern.render_to_file(
-                "pattern",
-                render_match_to / "pattern",
-                match_correspondence_ids=pattern_node_to_correspondence_index,
-            )
-            self.graph_to_match_against.render_to_file(
-                "graph",
-                render_match_to / "graph",
-                match_correspondence_ids=graph_node_to_correspondence_index,
-            )
-
-        return matching
 
 
 @attrs(frozen=True, slots=True, eq=False)
