@@ -11,19 +11,23 @@ def test_basic_3d_scene() -> None:
     app = SituationVisualizer()
     app.test_scene_init()
 
-    app.add_model(Shape.SQUARE, (1, 2, 2))
-    app.add_model(Shape.RECTANGULAR, (2, 2, 2))
+    app.add_model(Shape.SQUARE, name="Square0", position=(1, 2, 2))
+    app.add_model(Shape.RECTANGULAR, name="rect0", position=(2, 2, 2))
     try:
-        app.add_model(Shape.IRREGULAR, (4, 4, 4))
+        app.add_model(Shape.IRREGULAR, name="irreg0", position=(4, 4, 4))
     except KeyError:
         pass
-    oval = app.add_model(Shape.OVALISH, (5, 5, 5))
-    app.add_model(Shape.CIRCULAR, (7, 7, 7), col=None, parent=oval)
+    oval = app.add_model(Shape.OVALISH, name="oval0", position=(5, 5, 5))
+    app.add_model(
+        Shape.CIRCULAR, name="sphere0", position=(7, 7, 7), color=None, parent=oval
+    )
 
     app.print_scene_graph()
 
     dummy_node = app.add_dummy_node("dummy", (0, 0, 0))
-    other_dummy_node = app.add_dummy_node("second_dummy", (0, 0, 0), dummy_node)
+    other_dummy_node = app.add_dummy_node(
+        "second_dummy", position=(0, 0, 0), parent=dummy_node
+    )
 
     print(other_dummy_node)
 
@@ -31,8 +35,8 @@ def test_basic_3d_scene() -> None:
 
     app.clear_scene()
 
-    app.add_model(Shape.RECTANGULAR, (-2, 2, 2))
+    app.add_model(Shape.RECTANGULAR, name="rect", position=(-2, 2, 2))
 
-    app.add_model(Shape.CIRCULAR, (0, 0, 8))
+    app.add_model(Shape.CIRCULAR, name="sphere", position=(0, 0, 8))
 
-    app.add_model(Shape.OVALISH, (4, 5, 2))
+    app.add_model(Shape.OVALISH, name="oval", position=(4, 5, 2))

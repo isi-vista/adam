@@ -13,13 +13,12 @@ from typing import (
     Callable,
     Any,
     Generator,
+    Dict,
 )
 from functools import partial
 
 import random
 from collections import defaultdict
-
-import torch
 
 # currently useful for positioning multiple objects:
 from adam.curriculum.phase1_curriculum import _make_multiple_objects_curriculum
@@ -28,8 +27,6 @@ from attr import attrs
 from vistautils.parameters import Parameters
 from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 from immutablecollections import ImmutableSet
-
-from argparse import ArgumentParser
 
 # consider refactoring away this dependency
 from panda3d.core import NodePath  # pylint: disable=no-name-in-module
@@ -70,6 +67,7 @@ class SceneNode:
     the positions of the objects within the rendering engine.
     """
 
+    name: str = attr.ib()
     perceived_obj: ObjectPerception = attr.ib()
     children: List["SceneNode"] = attr.ib(factory=list)
     parent: "SceneNode" = attr.ib(default=None)
@@ -110,16 +108,13 @@ def main(params: Parameters) -> None:
 
         # now that every object has been instantiated into the scene,
         # they need to be re-positioned.
-        top_level_positions = viz.top_level_positions()
-        print(f"top level positions:\n{top_level_positions}")
 
         for repositioned_map in _solve_top_level_positions(
-            top_level_positions,
+            viz.top_level_positions(),
             iterations=num_iterations,
             yield_steps=steps_before_vis,
         ):
-            assert len(top_level_positions) == len(repositioned_map)
-            print(f"repositioned values: {repositioned_map.map}")
+            print(f"repositioned values: {repositioned_map}")
             viz.set_positions(repositioned_map)
 
             # the visualizer seems to need about a second to render an update
@@ -194,7 +189,9 @@ def render_obj_nested(
         pos = SceneCreator.random_root_position()
     else:
         pos = SceneCreator.random_leaf_position()
-    return renderer.add_model(shape, pos, color, parent)
+    return renderer.add_model(
+        shape, name=obj.debug_handle, position=pos, color=color, parent=parent
+    )
 
 
 def print_obj_names(obj: ObjectPerception) -> None:
@@ -341,11 +338,13 @@ class SceneCreator:
                 search_candidates = new_prospects
 
             if search_node is None:
-                search_node = SceneNode(key)
+                search_node = SceneNode(key.debug_handle, key)
                 scene_graph.append(search_node)
             # find node with key
             for nested in d[key]:
-                search_node.children.append(SceneNode(nested, parent=search_node))
+                search_node.children.append(
+                    SceneNode(nested.debug_handle, nested, parent=search_node)
+                )
 
         return scene_graph
 
@@ -414,7 +413,7 @@ class SceneCreator:
 
 # TODO: scale of top-level bounding boxes is weird because it needs to encompass all sub-objects
 def _solve_top_level_positions(
-    parent_positions: List[Tuple[float, float, float]],
+    parent_positions: Dict[str, Tuple[float, float, float]],
     iterations: int = 200,
     yield_steps: Optional[int] = None,
 ) -> Generator[PositionsMap, None, PositionsMap]:
@@ -429,8 +428,8 @@ def _solve_top_level_positions(
              in terms of indices with parent_positions
     """
     objs = [
-        AdamObject(name=str(i), initial_position=parent_position)
-        for i, parent_position in enumerate(parent_positions)
+        AdamObject(name=name, initial_position=parent_position)
+        for name, parent_position in parent_positions.items()
     ]
 
     return run_model(objs, num_iterations=iterations, yield_steps=yield_steps)

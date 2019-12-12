@@ -24,6 +24,8 @@ GRAVITY_PENALTY = torch.tensor([1], dtype=torch.float)  # pylint: disable=not-ca
 BELOW_GROUND_PENALTY = 2 * GRAVITY_PENALTY
 COLLISION_PENALTY = 5 * GRAVITY_PENALTY
 
+LOSS_EPSILON = 1.0e-04
+
 
 @attrs(frozen=True, auto_attribs=True)
 class AdamObject:
@@ -32,19 +34,27 @@ class AdamObject:
     name: str
     initial_position: Optional[Tuple[float, float, float]]
 
+
 @attrs(frozen=True, auto_attribs=True)
-class PositionsList:
+class PositionsMap:
     """Convenience type: list of positions corresponding to objects in a scene."""
-    positions: List[torch.Tensor]
+
+    name_to_position: Mapping[str, torch.Tensor]
 
     def __len__(self) -> int:
-        return len(self.positions)
+        return len(self.name_to_position)
+
 
 def run_model(
-    objs: List[AdamObject], *, num_iterations: int = 200, yield_steps: Optional[int] = None
-) -> Generator[PositionsList, None, PositionsList]:
+    objs: List[AdamObject],
+    *,
+    num_iterations: int = 200,
+    yield_steps: Optional[int] = None,
+) -> Generator[PositionsMap, None, PositionsMap]:
     r"""
     Construct a positioning model given a list of objects to position, return their position values.
+    The model will return final positions either after the given number of iterations, or if the model
+    converges in a position where it is unable to find a gradient to continue.
     Args:
         objs: list of `AdamObject`\ s requested to be positioned
         *num_iterations*: total number of SGD iterations.
@@ -62,14 +72,17 @@ def run_model(
         optimizer,
         "min",
         # decrease the rate if the loss hasn't improved in
-        # 5 epochs
-        patience=5,
+        # 10 epochs
+        patience=10,
     )
 
     iterations = num_iterations
     for i in range(iterations):
         print(f"====== Iteration {i} =======")
         loss = positioning_model()
+        # if we lose any substantial gradient, stop the search
+        if loss < LOSS_EPSILON:
+            break
         print(f"\tLoss: {loss.item()}")
         loss.backward()
 
@@ -99,24 +112,32 @@ class AxisAlignedBoundingBox:
     corners at (-1, -1, -1) and (1, 1, 1), giving the box a volume of 2(^3)
     """
 
-    center: Parameter = attrib()  # tensor shape: (3,)
+    center: torch.Tensor = attrib()  # tensor shape: (3,)
     scale: torch.Tensor = attrib()  # tensor shape: (3, 3) - diagonal matrix
     # rotation: torch.Tensor = attrib()
 
     def center_distance_from_point(self, point: torch.Tensor) -> torch.Tensor:
         return torch.dist(self.center, point, 2)
 
-    def distance_from_lowest_corner_to_ground(self) -> torch.Tensor:
+    def z_coordinate_of_lowest_corner(self) -> torch.Tensor:
         """
-        Returns distance of z value of minimum (w/r/t Z coordinate) corner of the box from origin's Z value.
+        Get the position of the lowest corner of the box.
+
+        The third coordinate is interpreted as the height relative to the ground at z=0.
         Returns: (1,) tensor
 
         """
+        # all corners are considered (in case of a rotated box)
         corners = self.get_corners()
+        # find the minimum z value
         min_corner_z = torch.min(
+            # gather just the z coordinate from the tensor of all corners
+            # turning (8,3) into (8,1)
             torch.gather(
                 corners,
                 1,
+                # create a (8, 1) tensor filled with elements corresponding to the index of the Z coordinate
+                # these indices are used by torch.gather() to retrieve the correct elements from the corners tensor
                 torch.repeat_interleave(
                     torch.tensor([[2]]),  # pylint: disable=not-callable
                     torch.tensor([8]),  # pylint: disable=not-callable
@@ -286,7 +307,8 @@ class AdamObjectPositioningModel(torch.nn.Module):  # type: ignore
         self.object_bounding_boxes = adam_object_to_bounding_box.values()
 
         for (adam_object, bounding_box) in self.adam_object_to_bounding_box.items():
-            self.register_parameter(adam_object.name, bounding_box.center)
+            # suppress mypy error about supplying a Tensor where it expects a Parameter
+            self.register_parameter(adam_object.name, bounding_box.center)  # type: ignore
 
         self.collision_penalty = CollisionPenalty()
         self.below_ground_penalty = BelowGroundPenalty()
@@ -360,13 +382,18 @@ class AdamObjectPositioningModel(torch.nn.Module):  # type: ignore
         """
         return self.adam_object_to_bounding_box[obj].center.data
 
-    def get_objects_positions(self) -> PositionsList:
+    def get_objects_positions(self) -> PositionsMap:
         """
         Retrieves positions of all AdamObjects contained in this model.
         Returns: PositionsList
 
         """
-        return PositionsList([val.center.data for val in self.adam_object_to_bounding_box.values()])
+        return PositionsMap(
+            immutabledict(
+                (adam_obj.name, bounding_box.center.data)
+                for adam_obj, bounding_box in self.adam_object_to_bounding_box.items()
+            )
+        )
 
 
 class BelowGroundPenalty(nn.Module):  # type: ignore
@@ -379,7 +406,7 @@ class BelowGroundPenalty(nn.Module):  # type: ignore
 
     def forward(self, *inputs):  # pylint: disable=arguments-differ
         bounding_box: AxisAlignedBoundingBox = inputs[0]
-        distance_above_ground = bounding_box.distance_from_lowest_corner_to_ground()
+        distance_above_ground = bounding_box.z_coordinate_of_lowest_corner()
         if distance_above_ground >= 0:
             return 0
         else:
@@ -391,15 +418,14 @@ class WeakGravityPenalty(nn.Module):  # type: ignore
     Model that penalizes boxes that are not resting on the ground.
     """
 
-    # TODO: exempt birds from this constraint
-    # TODO: exempt things resting on top of other objects from this constraint
+    # TODO: exempt birds from this constraint https://github.com/isi-vista/adam/issues/485
 
     def __init__(self) -> None:  # pylint: disable=useless-super-delegation
         super().__init__()
 
     def forward(self, *inputs):  # pylint: disable=arguments-differ
         bounding_box: AxisAlignedBoundingBox = inputs[0]
-        distance_above_ground = bounding_box.distance_from_lowest_corner_to_ground()
+        distance_above_ground = bounding_box.z_coordinate_of_lowest_corner()
         if distance_above_ground <= 0:
             return 0.0
         else:
