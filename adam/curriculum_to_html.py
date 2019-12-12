@@ -29,6 +29,7 @@ from vistautils.parameters import Parameters
 from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 from vistautils.preconditions import check_state
 
+from adam.curriculum.m6_curriculum import make_m6_curriculum
 from adam.curriculum.preposition_curriculum import make_prepositions_curriculum
 from adam.curriculum.pursuit_curriculum import make_pursuit_curriculum
 from adam.curriculum.phase1_curriculum import build_gaila_phase_1_curriculum
@@ -105,6 +106,7 @@ STR_TO_CURRICULUM: Mapping[str, Callable[[], Iterable[Phase1InstanceGroup]]] = {
     "phase1": build_gaila_phase_1_curriculum,
     "prepositions": make_prepositions_curriculum,
     "pursuit": make_pursuit_curriculum,
+    "m6-curriculum": make_m6_curriculum,
 }
 
 
