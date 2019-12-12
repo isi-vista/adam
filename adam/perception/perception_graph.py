@@ -723,18 +723,21 @@ class PatternMatching:
         graph: PerceptionGraphProtocol
         pattern_node_to_graph_node_for_largest_match: Dict[Any, Any]
         last_failed_pattern_node: "NodePredicate"
-        largest_match_pattern_subgraph: PerceptionGraphPattern
+        largest_match_pattern_subgraph: PerceptionGraphPattern = attrib()
         # TODO: the below is just a DiGraph because these is currently overloaded
         # to return match failures for both pattern-perception graph
         # and pattern-pattern matches.
         # It can be made a PerceptionGraph or PerceptionGraphPattern pending
         # https://github.com/isi-vista/adam/issues/489
-        largest_match_graph_subgraph: DiGraph
+        largest_match_graph_subgraph: DiGraph = attrib()
 
         @largest_match_pattern_subgraph.default  # noqa: F821
         def _matched_pattern_subgraph_default(self) -> DiGraph:
-            return self.pattern._graph.subgraph(  # pylint:disable=protected-access
-                self.pattern_node_to_graph_node_for_largest_match.keys()
+            return PerceptionGraphPattern(
+                self.pattern._graph.subgraph(  #
+                    # pylint:disable=protected-access
+                    self.pattern_node_to_graph_node_for_largest_match.keys()
+                )
             )
 
         @largest_match_graph_subgraph.default  # noqa: F821
@@ -829,7 +832,6 @@ class PatternMatching:
             matching_pattern=matching_pattern_against_pattern,
             debug_callback=self.debug_callback,
         ):
-            got_a_match = True
             matched_graph_nodes: ImmutableSet[PerceptionGraphNode] = immutableset(
                 graph_node_to_matching_pattern_node
             )
@@ -837,6 +839,7 @@ class PatternMatching:
                 matched_graph_nodes not in sets_of_nodes_matched
                 or not suppress_multiple_alignments_to_same_nodes
             ):
+                got_a_match = True
                 yield PerceptionGraphPatternMatch(
                     graph_matched_against=self.graph_to_match_against,
                     matched_pattern=self.pattern,
@@ -851,10 +854,12 @@ class PatternMatching:
                 )
             sets_of_nodes_matched.add(matched_graph_nodes)
         if not got_a_match:
-            return PatternMatching.MatchFailure(
+            yield PatternMatching.MatchFailure(
                 pattern=self.pattern,
                 graph=self.graph_to_match_against,
-                node_mapping=immutabledict(matching.debug_largest_match),
+                pattern_node_to_graph_node_for_largest_match=immutabledict(
+                    matching.debug_largest_match
+                ),
                 last_failed_pattern_node=cast(
                     NodePredicate, matching.failing_pattern_node_for_deepest_match
                 ),
