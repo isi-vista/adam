@@ -291,6 +291,11 @@ class GraphMatching:
                 next_pattern_node_to_match,
                 graph_nodes_to_match_against,
             ) = self.next_match_candidates()
+            if at_largest_match_so_far:
+                # We failed to extend our largest match so far.
+                # We record what pattern node we were trying to match when this extension failed.
+                # This can be useful for debugging and for pattern pruning and refinement.
+                self.failing_pattern_node_for_deepest_match = next_pattern_node_to_match
             for graph_node in graph_nodes_to_match_against:
                 if self.semantic_feasibility(
                     graph_node,
@@ -316,12 +321,6 @@ class GraphMatching:
                     else:
                         if collect_debug_statistics:
                             self.node_to_syntax_failures[next_pattern_node_to_match] += 1
-
-            if at_largest_match_so_far:
-                # We failed to extend our largest match so far.
-                # We record what pattern node we were trying to match when this extension failed.
-                # This can be useful for debugging and for pattern pruning and refinement.
-                self.failing_pattern_node_for_deepest_match = next_pattern_node_to_match
 
     def semantic_feasibility(
         self,

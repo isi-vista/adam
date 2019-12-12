@@ -33,7 +33,6 @@ from adam.perception.high_level_semantics_situation_to_developmental_primitive_p
 from adam.perception.perception_graph import (
     PerceptionGraph,
     PerceptionGraphPattern,
-    PerceptionGraphProtocol,
     PatternMatching,
     IsColorNodePredicate,
 )
@@ -245,9 +244,6 @@ def test_last_failed_pattern_node():
         matcher = whole_perception_pattern.matcher(
             PerceptionGraph(copy_of_perception_digraph)
         )
-        matches = matcher.matches()
-        assert len(matches) > 0
-        for match in matcher.matches():
-            assert isinstance(match, PatternMatching.MatchFailure) and isinstance(
-                match.last_failed_pattern_node, IsColorNodePredicate
-            )
+        match_or_failure = matcher.first_match_or_failure_info()
+        assert isinstance(match_or_failure, PatternMatching.MatchFailure)
+        assert isinstance(match_or_failure.last_failed_pattern_node, IsColorNodePredicate)
