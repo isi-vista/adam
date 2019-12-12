@@ -25,6 +25,8 @@ import torch
 from adam.curriculum.phase1_curriculum import _make_multiple_objects_curriculum
 import attr
 from attr import attrs
+from vistautils.parameters import Parameters
+from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 from immutablecollections import ImmutableSet
 
 from argparse import ArgumentParser
@@ -51,7 +53,13 @@ from adam.ontology import OntologyNode
 from adam.visualization.panda3d_interface import SituationVisualizer
 from adam.visualization.utils import Shape
 
-from adam.visualization.positioning import run_model, AdamObject
+from adam.visualization.positioning import run_model, AdamObject, PositionsMap
+
+USAGE_MESSAGE = """make_scenes.py param_file
+                \twhere param_file has the following parameters:
+                \t\titerations: int: total number of iterations to run positioning model over
+                \t\tsteps_before_vis: int: number of iterations of positioning model before scene is re-rendered
+                """
 
 
 @attrs(slots=True)
@@ -67,21 +75,9 @@ class SceneNode:
     parent: "SceneNode" = attr.ib(default=None)
 
 
-def main() -> None:
-    parser = ArgumentParser()
-    parser.add_argument(
-        "--iterations",
-        type=int,
-        default=50,
-        help="total number of iterations to run positioning model over",
-    )
-    parser.add_argument(
-        "--steps_before_vis",
-        type=int,
-        default=1,
-        help="number of iterations of positioning model before scene is re-rendered",
-    )
-    args = parser.parse_args()
+def main(params: Parameters) -> None:
+    num_iterations = params.integer("iterations")
+    steps_before_vis = params.integer("steps_before_vis")
 
     random.seed(468)
 
@@ -117,14 +113,14 @@ def main() -> None:
         top_level_positions = viz.top_level_positions()
         print(f"top level positions:\n{top_level_positions}")
 
-        for repositioned in _solve_top_level_positions(
+        for repositioned_map in _solve_top_level_positions(
             top_level_positions,
-            iterations=args.iterations,
-            yield_steps=args.steps_before_vis,
+            iterations=num_iterations,
+            yield_steps=steps_before_vis,
         ):
-            assert len(top_level_positions) == len(repositioned)
-            print(f"repositioned values: {repositioned}")
-            viz.set_positions(repositioned)
+            assert len(top_level_positions) == len(repositioned_map)
+            print(f"repositioned values: {repositioned_map.map}")
+            viz.set_positions(repositioned_map)
 
             # the visualizer seems to need about a second to render an update
             viz.run_for_seconds(1)
@@ -403,7 +399,7 @@ class SceneCreator:
         of a crossSection into a 3D coordinate. (z is up)"""
         x: float = random.uniform(-10, 10)
         y: float = random.uniform(-7.0, 4.0)
-        z: float = random.uniform(0.0, 5.0)
+        z: float = random.uniform(1.0, 5.0)
         return x, y, z
 
     @staticmethod
@@ -421,7 +417,7 @@ def _solve_top_level_positions(
     parent_positions: List[Tuple[float, float, float]],
     iterations: int = 200,
     yield_steps: Optional[int] = None,
-) -> Generator[List[torch.Tensor], None, List[torch.Tensor]]:
+) -> Generator[PositionsMap, None, PositionsMap]:
     """
         Solves for positions of top-level objects.
     Args:
@@ -441,4 +437,4 @@ def _solve_top_level_positions(
 
 
 if __name__ == "__main__":
-    main()
+    parameters_only_entry_point(main, usage_message=USAGE_MESSAGE)

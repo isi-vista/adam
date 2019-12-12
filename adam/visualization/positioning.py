@@ -32,16 +32,23 @@ class AdamObject:
     name: str
     initial_position: Optional[Tuple[float, float, float]]
 
+@attrs(frozen=True, auto_attribs=True)
+class PositionsList:
+    """Convenience type: list of positions corresponding to objects in a scene."""
+    positions: List[torch.Tensor]
+
+    def __len__(self) -> int:
+        return len(self.positions)
 
 def run_model(
-    objs: List[AdamObject], num_iterations: int = 200, yield_steps: Optional[int] = None
-) -> Generator[List[torch.Tensor], None, List[torch.Tensor]]:
-    """
+    objs: List[AdamObject], *, num_iterations: int = 200, yield_steps: Optional[int] = None
+) -> Generator[PositionsList, None, PositionsList]:
+    r"""
     Construct a positioning model given a list of objects to position, return their position values.
     Args:
-        objs: list of AdamObjects requested to be positioned
-        num_iterations: total number of SGD iterations.
-        yield_steps: If provided, the current positions of all objects will be returned after this many steps
+        objs: list of `AdamObject`\ s requested to be positioned
+        *num_iterations*: total number of SGD iterations.
+        *yield_steps*: If provided, the current positions of all objects will be returned after this many steps
 
     Returns: List of (3,) tensors corresponding to the positions of the objs list
 
@@ -73,9 +80,9 @@ def run_model(
 
         positioning_model.dump_object_positions(prefix="\t")
         if yield_steps and i % yield_steps == 0:
-            yield [positioning_model.get_object_position(obj).data for obj in objs]
+            yield positioning_model.get_objects_positions()
 
-    return [positioning_model.get_object_position(obj).data for obj in objs]
+    return positioning_model.get_objects_positions()
 
 
 @attrs(frozen=True, slots=True)
@@ -352,6 +359,14 @@ class AdamObjectPositioningModel(torch.nn.Module):  # type: ignore
         Raises KeyError if an AdamObject not contained in this model is queried.
         """
         return self.adam_object_to_bounding_box[obj].center.data
+
+    def get_objects_positions(self) -> PositionsList:
+        """
+        Retrieves positions of all AdamObjects contained in this model.
+        Returns: PositionsList
+
+        """
+        return PositionsList([val.center.data for val in self.adam_object_to_bounding_box.values()])
 
 
 class BelowGroundPenalty(nn.Module):  # type: ignore

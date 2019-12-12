@@ -27,7 +27,7 @@ from panda3d.core import NodePath  # pylint: disable=no-name-in-module
 from panda3d.core import TextNode  # pylint: disable=no-name-in-module
 
 from direct.gui.OnscreenText import OnscreenText  # pylint: disable=no-name-in-module
-
+from adam.visualization.positioning import PositionsList
 from adam.visualization.utils import Shape
 
 from adam.perception.developmental_primitive_perception import RgbColorPerception
@@ -52,14 +52,14 @@ class SituationVisualizer(ShowBase):
 
         plight = PointLight("pointLight")
         plight_node = self.render.attachNewNode(plight)
-        plight_node.setPos(10, 20, 0)
+        plight_node.setPos(10, 20, 1)
         self.render.setLight(plight_node)
 
         # self.render is the top node of the default scene graph
 
         self.ground_plane = self._load_model("ground.egg")
         self.ground_plane.reparentTo(self.render)
-        self.ground_plane.setPos(0, 0, -2)
+        self.ground_plane.setPos(0, 0, 0)
         m = Material()
         m.setDiffuse((255, 255, 255, 255))
         # the "1" argument to setMaterial is crucial to have it override
@@ -99,15 +99,28 @@ class SituationVisualizer(ShowBase):
     def add_model(
         self,
         model_type: Shape,
-        pos: Tuple[float, float, float],
-        col: RgbColorPerception = None,
+        position: Tuple[float, float, float],
+        color: RgbColorPerception = None,
         parent: Optional[NodePath] = None,
     ) -> NodePath:
-        """Adds a piece of primitive geometry to the scene.
-        Will need to be expanded to account for orientation, color, position, etc"""
+        """
+        Adds a piece of primitive geometry to the scene.
+        Args:
+            model_type: The shape used to represent the model
+            position: The position (x, y, z), (z is up) to place the new model
+            color: RBG color for this model
+            parent: Reference to a previously placed model (the type returned from this function). If supplied,
+                    the new model will be *nested* under this parent model, making its position, orientation, scale
+                    relative to the parent model.
+
+        Returns: NodePath: a Panda3D type specifying the exact path to the object in the renderer's scene graph
+
+        """
+        """
+        Will need to be expanded to account for orientation"""
         print(f"adding: {model_type}")
-        if col is None:
-            col = RgbColorPerception(50, 50, 50)
+        if color is None:
+            color = RgbColorPerception(50, 50, 50)
         try:
             new_model = self._load_model(SituationVisualizer.model_to_file[model_type])
         except KeyError:
@@ -120,8 +133,8 @@ class SituationVisualizer(ShowBase):
         # nested
         else:
             new_model.reparentTo(parent)
-        new_model.setPos(pos[0], pos[1], pos[2])
-        new_model.setColor((col.red / 255, col.green / 255, col.blue / 255, 1.0))
+        new_model.setPos(position[0], position[1], position[2])
+        new_model.setColor((color.red / 255, color.green / 255, color.blue / 255, 1.0))
         return new_model
 
     def add_dummy_node(
@@ -149,16 +162,15 @@ class SituationVisualizer(ShowBase):
     def top_level_positions(self) -> List[Tuple[float, float, float]]:
         """Returns a list of all positions of top level nodes of geometry objects
            (so not cameras and lights). """
-        # TODO: need to ensure this is deterministic
         return [node.getPos() for node in self.geo_nodes]
 
-    def set_positions(self, new_positions: List[torch.Tensor]):
+    def set_positions(self, new_positions: PositionsList):
         """Modify the position of all top level geometry nodes in the scene.
            The scene should not be modified in any way between retrieving node
            positions and giving them new values, or this will produce incorrect
            results. """
         assert len(new_positions) == len(self.geo_nodes)
-        for node, pos in zip(self.geo_nodes, new_positions):
+        for node, pos in zip(self.geo_nodes, new_positions.positions):
             node.setPos(*pos)
 
     def test_scene_init(self) -> None:
@@ -177,7 +189,7 @@ class SituationVisualizer(ShowBase):
         cube2 = self._load_model("cube.egg")
         self.geo_nodes.append(cube2)
         cube2.reparentTo(self.render)
-        cube2.setPos(5, 0, 0)
+        cube2.setPos(5, 0, 1)
         cube2.setScale(1.25, 1.25, 1.25)
         cube2.setColor((0, 1, 0, 0.5))
 
