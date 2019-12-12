@@ -12,7 +12,6 @@ from typing import (
     Optional,
     Callable,
     Any,
-    Generator,
     Dict,
 )
 from functools import partial
@@ -75,8 +74,8 @@ class SceneNode:
 
 
 def main(params: Parameters) -> None:
-    num_iterations = params.integer("iterations")
-    steps_before_vis = params.integer("steps_before_vis")
+    num_iterations = params.positive_integer("iterations")
+    steps_before_vis = params.positive_integer("steps_before_vis")
 
     random.seed(params.integer("seed"))
 
@@ -417,7 +416,7 @@ def _solve_top_level_positions(
     parent_positions: Dict[str, Tuple[float, float, float]],
     iterations: int = 200,
     yield_steps: Optional[int] = None,
-) -> Generator[PositionsMap, None, PositionsMap]:
+) -> Iterable[PositionsMap]:
     """
         Solves for positions of top-level objects.
     Args:

@@ -2,9 +2,12 @@
 This module defines a bounding box type and implements a constraint solver
 that can position multiple bounding boxes s/t they do not overlap
 (in addition to other constraints).
+
+main() function used for testing purposes. Primary function made available to outside callers
+is run_model()
 """
 from itertools import combinations
-from typing import Mapping, AbstractSet, Tuple, Optional, List, Generator
+from typing import Mapping, AbstractSet, Tuple, Optional, List, Iterable
 from attr import attrs, attrib
 
 import numpy as np
@@ -35,6 +38,46 @@ class AdamObject:
     initial_position: Optional[Tuple[float, float, float]]
 
 
+def main() -> None:
+    ball = AdamObject(name="ball", initial_position=None)
+    box = AdamObject(name="box", initial_position=None)
+
+    cardboard_box = AdamObject(name="cardboardBox", initial_position=None)
+    aardvark = AdamObject(name="aardvark", initial_position=None)
+    flamingo = AdamObject(name="flamingo", initial_position=None)
+
+    positioning_model = AdamObjectPositioningModel.for_objects_random_positions(
+        immutableset([ball, box, cardboard_box, aardvark, flamingo])
+    )
+    # we will start with an aggressive learning rate
+    optimizer = optim.SGD(positioning_model.parameters(), lr=1.0)
+    # but will decrease it whenever the loss plateaus
+    learning_rate_schedule = ReduceLROnPlateau(
+        optimizer,
+        "min",
+        # decrease the rate if the loss hasn't improved in
+        # 3 epochs
+        patience=3,
+    )
+
+    iterations = 100
+    for iteration in range(iterations):
+        print(f"====== Iteration {iteration} ======")
+        positioning_model.dump_object_positions(prefix="\t")
+
+        loss = positioning_model()
+        print(f"\tLoss: {loss.item()}")
+        loss.backward()
+
+        optimizer.step()
+        optimizer.zero_grad()
+
+        learning_rate_schedule.step(loss)
+
+    print("========= Final Positions ========")
+    positioning_model.dump_object_positions(prefix="\t")
+
+
 @attrs(frozen=True, auto_attribs=True)
 class PositionsMap:
     """Convenience type: list of positions corresponding to objects in a scene."""
@@ -50,7 +93,7 @@ def run_model(
     *,
     num_iterations: int = 200,
     yield_steps: Optional[int] = None,
-) -> Generator[PositionsMap, None, PositionsMap]:
+) -> Iterable[PositionsMap]:
     r"""
     Construct a positioning model given a list of objects to position, return their position values.
     The model will return final positions either after the given number of iterations, or if the model
@@ -60,7 +103,7 @@ def run_model(
         *num_iterations*: total number of SGD iterations.
         *yield_steps*: If provided, the current positions of all objects will be returned after this many steps
 
-    Returns: List of (3,) tensors corresponding to the positions of the objs list
+    Returns: PositionsMap: Map of object name -> Tensor (3,) of its position
 
     """
     positioning_model = AdamObjectPositioningModel.for_objects(immutableset(objs))
@@ -557,3 +600,7 @@ class CollisionPenalty(nn.Module):  # type: ignore
 
         # overlap is represented by a negative value, which we return as a positive penalty
         return overlap_distance.max() * -1 * COLLISION_PENALTY
+
+
+if __name__ == "__main__":
+    main()

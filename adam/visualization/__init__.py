@@ -4,7 +4,9 @@
         make_scenes.py:
             Converts perceptual representations of scenes into 3d rendered scenes.
 
-            Requires a parameters file to be run.
+            Currently this visualizes only a hardcoded set of scenes
+
+            Requires a parameters file to be run. See parameters/make_scenes.params for an example
 
     Other modules:
         panda3d_interface.py:

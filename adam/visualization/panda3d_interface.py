@@ -129,7 +129,9 @@ class SituationVisualizer(ShowBase):
         # top level:
         if parent is None:
             if name in self.geo_nodes:
-                raise RuntimeError("Model names need to be unique")
+                raise RuntimeError(
+                    f"Error using name {name}: Model names need to be unique"
+                )
             self.geo_nodes[new_model.name] = new_model
             new_model.reparentTo(self.render)
         # nested
@@ -150,7 +152,9 @@ class SituationVisualizer(ShowBase):
         if parent is None:
             new_node.reparentTo(self.render)
             if name in self.geo_nodes:
-                raise RuntimeError("Model names need to be unique")
+                raise RuntimeError(
+                    f"Error using name {name}: Model names need to be unique"
+                )
             self.geo_nodes[new_node.name] = new_node
         else:
             new_node.reparentTo(parent)
