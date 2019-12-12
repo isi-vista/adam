@@ -56,6 +56,7 @@ USAGE_MESSAGE = """make_scenes.py param_file
                 \twhere param_file has the following parameters:
                 \t\titerations: int: total number of iterations to run positioning model over
                 \t\tsteps_before_vis: int: number of iterations of positioning model before scene is re-rendered
+                \t\tseed: int: random seed for picking initial object positions
                 """
 
 
@@ -77,7 +78,7 @@ def main(params: Parameters) -> None:
     num_iterations = params.integer("iterations")
     steps_before_vis = params.integer("steps_before_vis")
 
-    random.seed(468)
+    random.seed(params.integer("seed"))
 
     # go through curriculum scenes and output geometry types
     print("scene generation test")
