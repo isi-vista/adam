@@ -9,7 +9,6 @@ ConfigVariableString("window-type", "none").setValue("none")
 # This should be the only test to actually instantiate panda3d
 def test_basic_3d_scene() -> None:
     app = SituationVisualizer()
-    app.test_scene_init()
 
     app.add_model(Shape.SQUARE, name="Square0", position=(1, 2, 2))
     app.add_model(Shape.RECTANGULAR, name="rect0", position=(2, 2, 2))
@@ -30,8 +29,6 @@ def test_basic_3d_scene() -> None:
     )
 
     print(other_dummy_node)
-
-    app.test_scene_init()
 
     app.clear_scene()
 
