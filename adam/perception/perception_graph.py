@@ -608,9 +608,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol):
             graph_to_match_against=self,
             debug_callback=debug_callback,
         )
-        attempted_match = matcher.first_match_or_failure_info(
-            matching_pattern_against_pattern=True
-        )
+        attempted_match = matcher.first_match_or_failure_info()
         if isinstance(attempted_match, PerceptionGraphPatternMatch):
             # We found a match! This means our two patterns are the same and we should just keep the original
             return self
@@ -696,6 +694,7 @@ class PatternMatching:
     graph_to_match_against: PerceptionGraphProtocol = attrib(
         validator=instance_of(PerceptionGraphProtocol)
     )
+    matching_pattern_against_pattern: bool = attrib()
 
     # Callable object for debugging purposes. We use this to track the number of calls to match and render the graphs.
     debug_callback: Optional[DebugCallableType] = attrib(default=None, kw_only=True)
@@ -749,7 +748,6 @@ class PatternMatching:
         self,
         *,
         use_lookahead_pruning: bool = False,
-        matching_pattern_against_pattern: bool = False,
         suppress_multiple_alignments_to_same_nodes: bool = True,
         initial_partial_match: Mapping[Any, Any] = immutabledict(),
     ) -> Iterable["PerceptionGraphPatternMatch"]:
@@ -769,7 +767,6 @@ class PatternMatching:
         https://github.com/isi-vista/adam/issues/487
         """
         for match in self._internal_matches(
-            matching_pattern_against_pattern=matching_pattern_against_pattern,
             use_lookahead_pruning=use_lookahead_pruning,
             suppress_multiple_alignments_to_same_nodes=suppress_multiple_alignments_to_same_nodes,
             initial_partial_match=initial_partial_match,
@@ -780,10 +777,7 @@ class PatternMatching:
                 yield match
 
     def first_match_or_failure_info(
-        self,
-        *,
-        matching_pattern_against_pattern: bool = False,
-        initial_partial_match: Mapping[Any, Any] = immutabledict(),
+        self, *, initial_partial_match: Mapping[Any, Any] = immutabledict()
     ) -> Union["PerceptionGraphPatternMatch", "PatternMatching.MatchFailure"]:
         """
         Gets the first match encountered of the pattern against the graph
@@ -793,7 +787,6 @@ class PatternMatching:
         """
         return first(
             self._internal_matches(
-                matching_pattern_against_pattern=matching_pattern_against_pattern,
                 # lookahead pruning messes up the debug information by making the
                 # cause of failures appear "earlier" in the pattern than they really are.
                 use_lookahead_pruning=False,
@@ -806,7 +799,6 @@ class PatternMatching:
         self,
         *,
         use_lookahead_pruning: bool = False,
-        matching_pattern_against_pattern: bool = False,
         suppress_multiple_alignments_to_same_nodes: bool = True,
         collect_debug_statistics: bool = False,
         initial_partial_match: Mapping[Any, Any] = immutabledict(),
@@ -817,7 +809,7 @@ class PatternMatching:
         sorted_graph_to_match_against = digraph_with_nodes_sorted_by(
             self.graph_to_match_against._graph,  # pylint: disable=W0212
             _graph_node_order
-            if not matching_pattern_against_pattern
+            if not self.matching_pattern_against_pattern
             else _pattern_matching_node_order,
         )
         sorted_pattern = digraph_with_nodes_sorted_by(
@@ -828,7 +820,7 @@ class PatternMatching:
             sorted_graph_to_match_against,
             sorted_pattern,
             use_lookahead_pruning=use_lookahead_pruning,
-            matching_pattern_against_pattern=matching_pattern_against_pattern,
+            matching_pattern_against_pattern=self.matching_pattern_against_pattern,
         )
 
         sets_of_nodes_matched: Set[ImmutableSet[PerceptionGraphNode]] = set()
@@ -872,6 +864,17 @@ class PatternMatching:
                 last_failed_pattern_node=cast(
                     NodePredicate, matching.failing_pattern_node_for_deepest_match
                 ),
+            )
+
+    @matching_pattern_against_pattern.default
+    def _matching_pattern_against_pattern_default(self) -> bool:
+        if isinstance(self.graph_to_match_against, PerceptionGraphPattern):
+            return True
+        elif isinstance(self.graph_to_match_against, PerceptionGraph):
+            return False
+        else:
+            raise RuntimeError(
+                f"Don't know how to match against: {self.graph_to_match_against}"
             )
 
 
