@@ -21,6 +21,11 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 from immutablecollections import immutabledict, immutableset, ImmutableDict
 from vistautils.preconditions import check_arg
 
+from adam.axes import Axes, HorizontalAxisOfObject, straight_up, directed, symmetric, symmetric_vertical
+from adam.axis import GeonAxis
+from adam.ontology.phase1_spatial_relations import Distance, PROXIMAL, DISTAL, EXTERIOR_BUT_IN_CONTACT
+from adam.ontology.phase1_spatial_relations import Direction, GRAVITATIONAL_UP, GRAVITATIONAL_DOWN
+
 # see https://github.com/pytorch/pytorch/issues/24807 re: pylint issue
 ORIGIN = torch.zeros(3, dtype=torch.float)  # pylint: disable=not-callable
 GRAVITY_PENALTY = torch.tensor([1], dtype=torch.float)  # pylint: disable=not-callable
@@ -31,20 +36,57 @@ LOSS_EPSILON = 1.0e-04
 
 
 @attrs(frozen=True, auto_attribs=True)
+class InRegionDirectives:
+    """Used to group distance and directions together to avoid packaging them in a Tuple"""
+    distance: Distance
+    direction: Direction
+
+@attrs(frozen=True, auto_attribs=True)
 class AdamObject:
     """Used for testing purposes, to attach a name to a bounding box"""
 
     name: str
     initial_position: Optional[Tuple[float, float, float]]
+    axes: Optional[Axes]
+    relative_positions: Optional[ImmutableDict["AdamObject", InRegionDirectives]]
 
 
 def main() -> None:
-    ball = AdamObject(name="ball", initial_position=None)
-    box = AdamObject(name="box", initial_position=None)
+    top_to_bottom = straight_up("top-to-bottom")
+    side_to_side_0 = symmetric("side-to-side-0")
+    side_to_side_1 = symmetric("side-to-side-1")
 
-    cardboard_box = AdamObject(name="cardboardBox", initial_position=None)
-    aardvark = AdamObject(name="aardvark", initial_position=None)
-    flamingo = AdamObject(name="flamingo", initial_position=None)
+    box = AdamObject(name="box", initial_position=None, axes=Axes(
+            primary_axis=top_to_bottom,
+            orienting_axes=immutableset([side_to_side_0, side_to_side_1]),
+        ),
+        relative_positions=None)
+
+    generating_axis = symmetric_vertical("ball-generating")
+    orienting_axis_0 = symmetric("ball-orienting-0")
+    orienting_axis_1 = symmetric("ball-orienting-1")
+
+    # ball on top of box
+    ball = AdamObject(name="ball", initial_position=None,
+        axes=Axes(
+            primary_axis=generating_axis,
+            orienting_axes=immutableset([orienting_axis_0, orienting_axis_1]),
+        ),
+        relative_positions=immutabledict(
+            (
+                obj,
+                InRegionDirectives(
+                    EXTERIOR_BUT_IN_CONTACT,
+                    GRAVITATIONAL_UP
+                )
+            )
+            for obj in [box]
+        )
+    )
+
+    cardboard_box = AdamObject(name="cardboardBox", initial_position=None, axes=None, relative_positions=None)
+    aardvark = AdamObject(name="aardvark", initial_position=None, axes=None, relative_positions=None)
+    flamingo = AdamObject(name="flamingo", initial_position=None, axes=None, relative_positions=None)
 
     positioning_model = AdamObjectPositioningModel.for_objects_random_positions(
         immutableset([ball, box, cardboard_box, aardvark, flamingo])
