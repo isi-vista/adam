@@ -9,7 +9,6 @@
    the capability to display objects with various properties
    supplied from elsewhere.
    """
-from math import pi, sin, cos
 
 from typing import Tuple, Optional, Dict
 import sys
@@ -108,10 +107,10 @@ class SituationVisualizer(ShowBase):
         Adds a piece of primitive geometry to the scene.
         Args:
             model_type: The shape used to represent the model
-            name: unique name given to this object
-            position: The position (x, y, z), (z is up) to place the new model
-            color: RBG color for this model
-            parent: Reference to a previously placed model (the type returned from this function). If supplied,
+            *name*: unique name given to this object
+            *position*: The position (x, y, z), (z is up) to place the new model
+            *color*: RBG color for this model
+            *parent*: Reference to a previously placed model (the type returned from this function). If supplied,
                     the new model will be *nested* under this parent model, making its position, orientation, scale
                     relative to the parent model.
 
@@ -176,29 +175,6 @@ class SituationVisualizer(ShowBase):
                 position.data[0], position.data[1], position.data[2]
             )
 
-    def test_scene_init(self) -> None:
-        """Initialize a test scene with sample geometry, including a camera rotate task"""
-        cylinder = self._load_model("cylinder.egg")
-        self.geo_nodes["cylinder"] = cylinder
-        # Reparent the model to render.
-        cylinder.reparentTo(self.render)
-
-        cube = self._load_model("cube.egg")
-        self.geo_nodes["cube0"] = cube
-        cube.reparentTo(self.render)
-        cube.setPos(0, 0, 5)
-        cube.setColor((1.0, 0.0, 0.0, 1.0))
-
-        cube2 = self._load_model("cube.egg")
-        self.geo_nodes["cube2"] = cube2
-        cube2.reparentTo(self.render)
-        cube2.setPos(5, 0, 1)
-        cube2.setScale(1.25, 1.25, 1.25)
-        cube2.setColor((0, 1, 0, 0.5))
-
-        # Add the spinCameraTask procedure to the task manager.
-        self.taskMgr.add(self._spin_camera_task, "SpinCameraTask", priority=-100)
-
     def run_for_seconds(self, seconds: float) -> None:
         """Executes main rendering loop for given seconds. This needs to be a
            healthy fraction of a second to see changes reflected in the scene."""
@@ -208,14 +184,6 @@ class SituationVisualizer(ShowBase):
 
     def print_scene_graph(self) -> None:
         print(self.render.ls())
-
-    # Define a procedure to move the camera.
-    def _spin_camera_task(self, task):
-        angle_degrees = task.time * 6.0
-        angle_radians = angle_degrees * (pi / 180.0)
-        self.camera.setPos(25 * sin(angle_radians), -25.0 * cos(angle_radians), 4)
-        self.camera.setHpr(angle_degrees, 0, 0)
-        return Task.cont
 
     def _camera_location_task(self, task):  # pylint: disable=unused-argument
         pos = self.camera.getPos()
