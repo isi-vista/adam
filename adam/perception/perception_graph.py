@@ -28,6 +28,7 @@ from typing import (
     Set,
     List,
     Type,
+    cast,
 )
 
 import graphviz
@@ -598,24 +599,29 @@ class PerceptionGraphPattern(PerceptionGraphProtocol):
         Using the debug return of our pattern matching, find the largest partial
         match between *self* and *graph_pattern*. If we find multiple such matches
         the returned option is deterministic but undefined.
+
+        TODO: this method has a known bug: https://github.com/isi-vista/adam/issues/488
+        but resolving it awaits https://github.com/isi-vista/adam/issues/461
         """
-        debug_mapping: Dict[Any, Any] = dict()
         matcher = PatternMatching(
             pattern=graph_pattern,
             graph_to_match_against=self,
             debug_callback=debug_callback,
         )
-        matches = immutableset(
-            matcher.matches(debug_mapping_sink=debug_mapping, matching_pattern=True)
+        attempted_match = matcher.first_match_or_failure_info(
+            matching_pattern_against_pattern=True
         )
-        if not matches.empty():
+        if isinstance(attempted_match, PerceptionGraphPatternMatch):
             # We found a match! This means our two patterns are the same and we should just keep the original
             return self
         else:
             # No match found so we use the biggest match provided by the debug sink. This provides an 'intersection'
             # between the two patterns
             return PerceptionGraphPattern(
-                graph=subgraph(self._graph, nodes=debug_mapping)
+                graph=subgraph(
+                    self._graph,
+                    nodes=attempted_match.pattern_node_to_graph_node_for_largest_match.keys(),
+                )
             )
 
     def copy_as_digraph(self) -> DiGraph:
@@ -694,38 +700,116 @@ class PatternMatching:
     # Callable object for debugging purposes. We use this to track the number of calls to match and render the graphs.
     debug_callback: Optional[DebugCallableType] = attrib(default=None, kw_only=True)
 
+    @attrs(frozen=True, kw_only=True, auto_attribs=True)
+    class MatchFailure:
+        """
+        Indicates a failed attempt at matching a `PerceptionGraphPattern`.
+
+        *pattern_node_to_graph_node_for_largest_match* indicates the partial match found
+        with the largest number of nodes.
+        Note that this is not necessarily the largest possible partial match,
+        just the largest one encountered during the search process
+        before the algorithm decided that a full match was not possible.
+
+        *last_failed_pattern_node* is that the last pattern node attempted to be matched
+        at the point the algorithm decided a match was impossible.
+        Note that this is not necessarily the node responsible for the match failure;
+        it could fail due to the edge predicate on the connecting edge,
+        or it could fail due to there being no proper match for a pattern node
+        which had no good alignment earlier in the match process.
+        """
+
+        pattern: PerceptionGraphPattern
+        graph: PerceptionGraphProtocol
+        pattern_node_to_graph_node_for_largest_match: Dict[Any, Any]
+        last_failed_pattern_node: "NodePredicate"
+        largest_match_pattern_subgraph: PerceptionGraphPattern
+        # TODO: the below is just a DiGraph because these is currently overloaded
+        # to return match failures for both pattern-perception graph
+        # and pattern-pattern matches.
+        # It can be made a PerceptionGraph or PerceptionGraphPattern pending
+        # https://github.com/isi-vista/adam/issues/489
+        largest_match_graph_subgraph: DiGraph
+
+        @largest_match_pattern_subgraph.default  # noqa: F821
+        def _matched_pattern_subgraph_default(self) -> DiGraph:
+            return self.pattern._graph.subgraph(  # pylint:disable=protected-access
+                self.pattern_node_to_graph_node_for_largest_match.keys()
+            )
+
+        @largest_match_graph_subgraph.default  # noqa: F821
+        def _matched_graph_subgraph_default(self) -> DiGraph:
+            return self.graph._graph.subgraph(  # pylint:disable=protected-access
+                immutableset(self.pattern_node_to_graph_node_for_largest_match.values())
+            )
+
     def matches(
         self,
         *,
-        debug_mapping_sink: Optional[Dict[Any, Any]] = None,
         use_lookahead_pruning: bool = False,
-        matching_pattern: bool = False,
+        matching_pattern_against_pattern: bool = False,
         suppress_multiple_alignments_to_same_nodes: bool = True,
     ) -> Iterable["PerceptionGraphPatternMatch"]:
         """
         Attempt the matching and returns a generator over the set of possible matches.
-
-        Currently matching with look-ahead pruning seems to give false negatives,
-        so we recommend disabling it and have set the default to *False*:
-        https://github.com/isi-vista/adam/issues/401
-        When we fix the bug, we may change the default back to *True*.
-
-        If *debug_mapping_sink* is provided, the best partial matching found
-        will be written to it in case of a failed match.
 
         If *suppress_multiple_alignments_to_same_nodes* is *True* (default *True*),
         then only the first alignment encountered for a given set of nodes will be returned.
         This prevents you from e.g. getting multiple matches for different ways
         of aligning axes for symmetric objects.
         The cost is that we need to keep around a memory of previous node matches.
-        """
 
+        *matching_pattern_against_pattern* indicates
+        you are matching one pattern against another,
+        rather than against a perception graph.
+        This should get split off into its own distinct method:
+        https://github.com/isi-vista/adam/issues/487
+        """
+        for match in self._internal_matches(
+            matching_pattern_against_pattern=matching_pattern_against_pattern,
+            use_lookahead_pruning=use_lookahead_pruning,
+            suppress_multiple_alignments_to_same_nodes=suppress_multiple_alignments_to_same_nodes,
+        ):
+            # we want to ignore the failure objects returned for the use of
+            # first_match_or_failure_info
+            if isinstance(match, PerceptionGraphPatternMatch):
+                yield match
+
+    def first_match_or_failure_info(
+        self, *, matching_pattern_against_pattern: bool = False
+    ) -> Union["PerceptionGraphPatternMatch", "PatternMatching.MatchFailure"]:
+        """
+        Gets the first match encountered of the pattern against the graph
+        (which one is first is deterministic but undefined)
+        or a `PatternMatching.MatchFailure` giving debugging information
+        about a failed match attempt.
+        """
+        return first(
+            self._internal_matches(
+                matching_pattern_against_pattern=matching_pattern_against_pattern,
+                # lookahead pruning messes up the debug information by making the
+                # cause of failures appear "earlier" in the pattern than they really are.
+                use_lookahead_pruning=False,
+                suppress_multiple_alignments_to_same_nodes=True,
+            )
+        )
+
+    def _internal_matches(
+        self,
+        *,
+        use_lookahead_pruning: bool = False,
+        matching_pattern_against_pattern: bool = False,
+        suppress_multiple_alignments_to_same_nodes: bool = True,
+        collect_debug_statistics: bool = False,
+    ) -> Iterable[Union["PerceptionGraphPatternMatch", "PatternMatching.MatchFailure"]]:
         # Controlling the iteration order of the graphs
         # controls the order in which nodes are matched.
         # This has a significant, benchmark-confirmed impact on performance.
         sorted_graph_to_match_against = digraph_with_nodes_sorted_by(
             self.graph_to_match_against._graph,  # pylint: disable=W0212
-            _graph_node_order if not matching_pattern else _pattern_matching_node_order,
+            _graph_node_order
+            if not matching_pattern_against_pattern
+            else _pattern_matching_node_order,
         )
         sorted_pattern = digraph_with_nodes_sorted_by(
             self.pattern._graph, _pattern_matching_node_order  # pylint: disable=W0212
@@ -741,8 +825,8 @@ class PatternMatching:
 
         got_a_match = False
         for graph_node_to_matching_pattern_node in matching.subgraph_isomorphisms_iter(
-            debug=(debug_mapping_sink is not None),
-            matching_pattern=matching_pattern,
+            collect_debug_statistics=collect_debug_statistics,
+            matching_pattern=matching_pattern_against_pattern,
             debug_callback=self.debug_callback,
         ):
             got_a_match = True
@@ -766,12 +850,15 @@ class PatternMatching:
                     ),
                 )
             sets_of_nodes_matched.add(matched_graph_nodes)
-        if debug_mapping_sink is not None and not got_a_match:
-            # we failed to match the pattern.
-            # If the user requested it, we provide the largest matching we could find
-            # for debugging purposes.
-            debug_mapping_sink.clear()
-            debug_mapping_sink.update(matching.debug_largest_match)
+        if not got_a_match:
+            return PatternMatching.MatchFailure(
+                pattern=self.pattern,
+                graph=self.graph_to_match_against,
+                node_mapping=immutabledict(matching.debug_largest_match),
+                last_failed_pattern_node=cast(
+                    NodePredicate, matching.failing_pattern_node_for_deepest_match
+                ),
+            )
 
     def debug_matching(
         self,
@@ -791,7 +878,7 @@ class PatternMatching:
             self.pattern._graph,  # pylint:disable=protected-access
             use_lookahead_pruning=use_lookahead_pruning,
         )
-        for _ in matching.subgraph_isomorphisms_iter(debug=True):
+        for _ in matching.subgraph_isomorphisms_iter(collect_debug_statistics=True):
             pass
         if render_match_to:
             pattern_node_to_correspondence_index = {}
