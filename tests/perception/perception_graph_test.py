@@ -3,7 +3,8 @@ from itertools import chain
 from adam_test_utils import all_possible_test
 from more_itertools import first
 
-from adam.curriculum.curriculum_utils import standard_object
+from adam.curriculum.curriculum_utils import standard_object, PHASE1_CHOOSER, phase1_instances
+from adam.learner.subset import graph_without_learner
 from adam.ontology import OntologyNode
 from adam.ontology.phase1_ontology import (
     BIRD,
@@ -18,18 +19,20 @@ from adam.ontology.phase1_ontology import (
     above,
     bigger_than,
     on,
-)
+    BOX)
 from adam.ontology.structural_schema import ObjectStructuralSchema
+from adam.perception.developmental_primitive_perception import RgbColorPerception
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     GAILA_PHASE_1_PERCEPTION_GENERATOR,
 )
-from adam.perception.perception_graph import PerceptionGraph, PerceptionGraphPattern
+from adam.perception.perception_graph import PerceptionGraph, PerceptionGraphPattern, PerceptionGraphProtocol, \
+    PatternMatching, IsColorNodePredicate
 from adam.random_utils import RandomChooser
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
     color_variable,
     object_variable,
-)
+    all_possible)
 
 
 def test_house_on_table():
@@ -163,3 +166,68 @@ def do_object_on_table_test(
         if any(object_to_match_pattern.matcher(perception_graph).matches()):
             return False
     return True
+
+
+def test_last_failed_pattern_node():
+    """
+    Tests whether `MatchFailure` can find the correct node.
+    """
+
+    target_object = BOX
+    # Create train and test templates for the target objects
+    train_obj_object = object_variable("obj-with-color", target_object)
+    obj_template = Phase1SituationTemplate(
+        "colored-obj-object", salient_object_variables=[train_obj_object],
+    )
+    template = all_possible(
+                    obj_template,
+                    chooser=PHASE1_CHOOSER,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                )
+
+    train_curriculum = phase1_instances(
+        "all obj situations", situations=template
+    )
+
+    for (_, _, perceptual_representation) in train_curriculum.instances():
+        perception = graph_without_learner(
+            PerceptionGraph.from_frame(
+                perceptual_representation.frames[0]
+            ).copy_as_digraph()
+        )
+        whole_perception_pattern = PerceptionGraphPattern.from_graph(
+            perception.copy_as_digraph()
+        ).perception_graph_pattern
+        print('OUT:', perception.copy_as_digraph().nodes)
+        copy_of_perception_digraph = perception.copy_as_digraph()
+        nodes_to_remove = []
+        edges = []
+        different_nodes = []
+        for node in perception.copy_as_digraph().nodes:
+            if isinstance(node, RgbColorPerception):
+                new_node = RgbColorPerception(0, 0, 0)
+                for edge in perception.copy_as_digraph().edges:
+                    if len(edge) > 2:
+                        if edge[0] == node:
+                            edges.append((new_node, edge[1], edge[2]))
+                        if edge[1] == node:
+                            edges.append((edge[0], new_node, edge[2]))
+                    else:
+                        if edge[0] == node:
+                            edges.append((new_node, edge[1]))
+                        if edge[1] == node:
+                            edges.append((edge[0], new_node))
+                nodes_to_remove.append(node)
+                different_nodes.append(new_node)
+        for edge in edges:
+            copy_of_perception_digraph.add_edge(*edge)
+        copy_of_perception_digraph.remove_nodes_from(nodes_to_remove)
+
+        matcher = whole_perception_pattern.matcher(
+            PerceptionGraph(copy_of_perception_digraph)
+        )
+        matches = matcher.matches()
+        assert len(matches) > 0
+        for match in matcher.matches():
+            assert isinstance(match, PatternMatching.MatchFailure) and \
+                   isinstance(match.last_failed_pattern_node, IsColorNodePredicate)
