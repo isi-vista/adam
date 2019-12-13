@@ -64,3 +64,10 @@ class ShowNodes:
 
     def __call__(self, node):
         return node in self.nodes
+
+
+def copy_digraph(digraph: DiGraph) -> DiGraph:
+    """
+    We need this for use as an attrs converter.
+    """
+    return digraph.copy()

@@ -33,7 +33,7 @@ from typing import (
 )
 
 import graphviz
-from adam.utils.networkx_utils import digraph_with_nodes_sorted_by
+from adam.utils.networkx_utils import digraph_with_nodes_sorted_by, copy_digraph
 from attr.validators import instance_of, optional
 from immutablecollections import ImmutableDict, immutabledict, immutableset, ImmutableSet
 from immutablecollections.converter_utils import _to_immutabledict, _to_tuple
@@ -162,7 +162,7 @@ class PerceptionGraph(PerceptionGraphProtocol):
 
     These can be matched against by `PerceptionGraphPattern`\ s.
     """
-    _graph: DiGraph = attrib(validator=instance_of(DiGraph))
+    _graph: DiGraph = attrib(validator=instance_of(DiGraph), converter=copy_digraph)
 
     @staticmethod
     def from_frame(frame: DevelopmentalPrimitivePerceptionFrame) -> "PerceptionGraph":
@@ -381,7 +381,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
     knowledge of an object for object recognition.
     """
 
-    _graph: DiGraph = attrib(validator=instance_of(DiGraph))
+    _graph: DiGraph = attrib(validator=instance_of(DiGraph), converter=copy_digraph)
 
     def matcher(
         self,
@@ -734,7 +734,7 @@ class PatternMatching:
         # https://github.com/isi-vista/adam/issues/489
         largest_match_graph_subgraph: DiGraph = attrib()
 
-        def __attrs_post__init(self) -> None:
+        def __attrs_post_init__(self) -> None:
             if (
                 self.last_failed_pattern_node
                 not in self.pattern._graph.nodes  # pylint:disable=protected-access
@@ -744,6 +744,20 @@ class PatternMatching:
                     f"Something has gone wrong: the pattern "
                     f"does not contain the failed node:"
                     f"{self.last_failed_pattern_node}"
+                )
+
+            if set(self.pattern_node_to_graph_node_for_largest_match.keys()) != set(
+                self.largest_match_pattern_subgraph._graph.nodes  # pylint:disable=protected-access
+            ):
+                raise RuntimeError(
+                    "Mismatch between node alignment and largest partial " "pattern match"
+                )
+
+            if set(self.pattern_node_to_graph_node_for_largest_match.values()) != set(
+                self.largest_match_graph_subgraph.nodes
+            ):
+                raise RuntimeError(
+                    "Mismatch between node alignment and largest partial graph " "match"
                 )
 
         @largest_match_pattern_subgraph.default  # noqa: F821

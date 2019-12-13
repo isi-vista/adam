@@ -432,11 +432,17 @@ class GraphMatching:
                             (pattern_predecessor, pattern_node)
                         ] += 1
                     return False
-                if not pattern_predicate(
-                    predecessor_mapped_node_in_graph,
-                    graph_edge[edge_label_key],
-                    graph_node,
-                ):
+
+                graph_edge_label = graph_edge[edge_label_key]
+
+                if self.matching_pattern_against_pattern:
+                    edge_ok = pattern_predicate.matches_predicate(graph_edge_label)
+                else:
+                    edge_ok = pattern_predicate(
+                        predecessor_mapped_node_in_graph, graph_edge_label, graph_node
+                    )
+
+                if not edge_ok:
                     if collect_debug_statistics:
                         self.pattern_edge_to_num_predicate_failures[
                             (pattern_predecessor, pattern_node)
@@ -473,9 +479,15 @@ class GraphMatching:
                         ] += 1
                     return False
 
-                if not pattern_predicate(
-                    graph_node, graph_edge[edge_label_key], successor_mapped_node_in_graph
-                ):
+                graph_edge_label = graph_edge[edge_label_key]
+
+                if self.matching_pattern_against_pattern:
+                    edge_ok = pattern_predicate.matches_predicate(graph_edge_label)
+                else:
+                    edge_ok = pattern_predicate(
+                        graph_node, graph_edge_label, successor_mapped_node_in_graph
+                    )
+                if not edge_ok:
                     if collect_debug_statistics:
                         self.pattern_edge_to_num_predicate_failures[
                             (pattern_node, pattern_successor)
