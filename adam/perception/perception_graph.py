@@ -29,6 +29,7 @@ from typing import (
     List,
     Type,
     cast,
+    Sized,
 )
 
 import graphviz
@@ -37,13 +38,13 @@ from attr.validators import instance_of, optional
 from immutablecollections import ImmutableDict, immutabledict, immutableset, ImmutableSet
 from immutablecollections.converter_utils import _to_immutabledict, _to_tuple
 from more_itertools import first
-from networkx import DiGraph
+from networkx import DiGraph, connected_components
 from typing_extensions import Protocol
 
 from adam.axes import AxesInfo, HasAxes
 from adam.axis import GeonAxis
 from adam.geon import Geon, MaybeHasGeon
-from adam.ontology import OntologyNode
+from adam.ontology import OntologyNode, IN_REGION
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY, PART_OF
 from adam.ontology.phase1_spatial_relations import Direction, Distance, Region
 from adam.ontology.structural_schema import ObjectStructuralSchema
@@ -372,7 +373,7 @@ class PerceptionGraph(PerceptionGraphProtocol):
 
 
 @attrs(frozen=True, slots=True)
-class PerceptionGraphPattern(PerceptionGraphProtocol):
+class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
     r"""
     A pattern which can match `PerceptionGraph`\ s.
 
@@ -456,6 +457,12 @@ class PerceptionGraphPattern(PerceptionGraphProtocol):
             perception_graph_pattern=PerceptionGraphPattern(pattern_graph),
             perception_graph_node_to_pattern_node=perception_node_to_pattern_node,
         )
+
+    def __len__(self) -> int:
+        return len(self._graph)
+
+    def copy_as_digraph(self) -> DiGraph:
+        return self._graph.copy()
 
     @staticmethod
     def _translate_graph(
@@ -622,9 +629,6 @@ class PerceptionGraphPattern(PerceptionGraphProtocol):
                 )
             )
 
-    def copy_as_digraph(self) -> DiGraph:
-        return copy(self._graph)
-
 
 class DumpPartialMatchCallback:
     """
@@ -730,6 +734,18 @@ class PatternMatching:
         # https://github.com/isi-vista/adam/issues/489
         largest_match_graph_subgraph: DiGraph = attrib()
 
+        def __attrs_post__init(self) -> None:
+            if (
+                self.last_failed_pattern_node
+                not in self.pattern._graph.nodes  # pylint:disable=protected-access
+            ):
+
+                raise RuntimeError(
+                    f"Something has gone wrong: the pattern "
+                    f"does not contain the failed node:"
+                    f"{self.last_failed_pattern_node}"
+                )
+
         @largest_match_pattern_subgraph.default  # noqa: F821
         def _matched_pattern_subgraph_default(self) -> DiGraph:
             return PerceptionGraphPattern(
@@ -767,6 +783,9 @@ class PatternMatching:
         https://github.com/isi-vista/adam/issues/487
         """
         for match in self._internal_matches(
+            graph_to_match_against=self.graph_to_match_against,
+            pattern=self.pattern,
+            debug_callback=self.debug_callback,
             use_lookahead_pruning=use_lookahead_pruning,
             suppress_multiple_alignments_to_same_nodes=suppress_multiple_alignments_to_same_nodes,
             initial_partial_match=initial_partial_match,
@@ -787,6 +806,9 @@ class PatternMatching:
         """
         return first(
             self._internal_matches(
+                graph_to_match_against=self.graph_to_match_against,
+                pattern=self.pattern,
+                debug_callback=self.debug_callback,
                 # lookahead pruning messes up the debug information by making the
                 # cause of failures appear "earlier" in the pattern than they really are.
                 use_lookahead_pruning=False,
@@ -795,9 +817,50 @@ class PatternMatching:
             )
         )
 
+    def relax_pattern_until_it_matches(self) -> Optional[PerceptionGraphPattern]:
+        """
+        Prunes or relaxes the *pattern* for this matching until it successfully matches
+        using heuristic rules.
+
+        If a matching relaxed `PerceptionGraphPattern` can be found, it is returned.
+        Otherwise, *None* is returned.
+        """
+
+        # We start with the original pattern and attempt to match progressively relaxed versions.
+        cur_pattern: Optional[PerceptionGraphPattern] = self.pattern
+        # When we try to match relaxed patterns, we will remember how much we could match
+        # last time so we don't start from scratch.
+        partial_match: Mapping[Any, Any] = {}
+
+        while cur_pattern and len(cur_pattern) > 0:  # pylint:disable=len-as-condition
+            match_attempt = first(
+                self._internal_matches(
+                    graph_to_match_against=self.graph_to_match_against,
+                    pattern=cur_pattern,
+                    debug_callback=None,
+                    # Using lookahead pruning would make our guess at the "cause"
+                    # of the match failure be too "early" in the pattern graph search.
+                    use_lookahead_pruning=False,
+                    suppress_multiple_alignments_to_same_nodes=True,
+                    initial_partial_match=partial_match,
+                )
+            )
+            if isinstance(match_attempt, PerceptionGraphPatternMatch):
+                return cur_pattern
+            else:
+                # If we couldn't successfully match the current part of the pattern,
+                # chop off the node which we think might have caused the match to fail.
+                # Why is this cast necessary? mypy should be able to infer this...
+                cur_pattern = self._relax_pattern(match_attempt)
+        # no relaxation could successfully match
+        return None
+
     def _internal_matches(
         self,
         *,
+        graph_to_match_against: PerceptionGraphProtocol,
+        pattern: PerceptionGraphPattern,
+        debug_callback: Optional[Callable[[Any, Any], None]],
         use_lookahead_pruning: bool = False,
         suppress_multiple_alignments_to_same_nodes: bool = True,
         collect_debug_statistics: bool = False,
@@ -807,13 +870,13 @@ class PatternMatching:
         # controls the order in which nodes are matched.
         # This has a significant, benchmark-confirmed impact on performance.
         sorted_graph_to_match_against = digraph_with_nodes_sorted_by(
-            self.graph_to_match_against._graph,  # pylint: disable=W0212
+            graph_to_match_against._graph,  # pylint: disable=W0212
             _graph_node_order
             if not self.matching_pattern_against_pattern
             else _pattern_matching_node_order,
         )
         sorted_pattern = digraph_with_nodes_sorted_by(
-            self.pattern._graph, _pattern_matching_node_order  # pylint: disable=W0212
+            pattern._graph, _pattern_matching_node_order  # pylint: disable=W0212
         )
 
         matching = GraphMatching(
@@ -828,7 +891,7 @@ class PatternMatching:
         got_a_match = False
         for graph_node_to_matching_pattern_node in matching.subgraph_isomorphisms_iter(
             collect_debug_statistics=collect_debug_statistics,
-            debug_callback=self.debug_callback,
+            debug_callback=debug_callback,
             initial_partial_match=initial_partial_match,
         ):
             matched_graph_nodes: ImmutableSet[PerceptionGraphNode] = immutableset(
@@ -840,8 +903,8 @@ class PatternMatching:
             ):
                 got_a_match = True
                 yield PerceptionGraphPatternMatch(
-                    graph_matched_against=self.graph_to_match_against,
-                    matched_pattern=self.pattern,
+                    graph_matched_against=graph_to_match_against,
+                    matched_pattern=pattern,
                     matched_sub_graph=PerceptionGraph(
                         subgraph(
                             matching.graph, graph_node_to_matching_pattern_node.keys()
@@ -856,8 +919,8 @@ class PatternMatching:
             # mypy doesn't like the assignment to the pattern_node_to_graph_node_for_largest_match
             # argument for reasons which are unclear to me. It works fine, though.
             yield PatternMatching.MatchFailure(  # type: ignore
-                pattern=self.pattern,
-                graph=self.graph_to_match_against,
+                pattern=pattern,
+                graph=graph_to_match_against,
                 pattern_node_to_graph_node_for_largest_match=immutabledict(
                     matching.debug_largest_match
                 ),
@@ -865,6 +928,108 @@ class PatternMatching:
                     NodePredicate, matching.failing_pattern_node_for_deepest_match
                 ),
             )
+
+    def _relax_pattern(
+        self, match_failure: "PatternMatching.MatchFailure"
+    ) -> Optional[PerceptionGraphPattern]:
+        """
+        Attempts to produce a "relaxed" version of pattern
+        which has a better chance of matching,
+        given the clue that *last_failed_pattern_node* was the last pattern node
+        which could not be aligned in the previous pattern alignment attempt.
+
+        This is to support `relax_pattern_until_it_matches`.
+        """
+        if len(match_failure.pattern) == 1:
+            # It's the end of the line: we've pruned out all the pattern nodes.
+            return None
+
+        pattern_as_digraph = match_failure.pattern.copy_as_digraph()
+
+        # first, we delete the last_failed_pattern_node.
+        # If that node was an object, we also recursively delete its sub-objects
+        # and any Regions it or they belonged to.
+        nodes_to_delete_directly: List[NodePredicate] = []
+
+        RELATION_EDGES_TO_FOLLOW_WHEN_DELETING = {  # pylint:disable=invalid-name
+            PART_OF,
+            IN_REGION,
+        }
+
+        def gather_nodes_to_excise(focus_node: NodePredicate) -> None:
+            nodes_to_delete_directly.append(focus_node)
+
+            # If this is an object, also excise any sub-objects.
+            for predecessor in pattern_as_digraph.pred[focus_node]:
+                edge_label = pattern_as_digraph.edges[predecessor, focus_node][
+                    "predicate"
+                ]
+                if (
+                    isinstance(edge_label, RelationTypeIsPredicate)
+                    and edge_label.relation_type in RELATION_EDGES_TO_FOLLOW_WHEN_DELETING
+                ):
+                    gather_nodes_to_excise(predecessor)
+
+        gather_nodes_to_excise(match_failure.last_failed_pattern_node)
+
+        pattern_as_digraph.remove_nodes_from(immutableset(nodes_to_delete_directly))
+
+        if len(pattern_as_digraph) == 0:  # pylint:disable=len-as-condition
+            # We deleted the whole graph, so no relaxation is possible.
+            return None
+
+        # The deletions above may have left disconncted "islands" in the pattern.
+        # We remove these as well by deleting all connected components except the one
+        # containing the successful portion of the pattern match.
+
+        pattern_as_undirected_graph = pattern_as_digraph.to_undirected(as_view=True)
+
+        if (
+            len(  # pylint:disable=len-as-condition
+                match_failure.largest_match_pattern_subgraph
+            )
+            > 0
+        ):
+            # We just need any node which did match so we know which connected component
+            # to keep from the post-deletion graph
+            probe_node = first(
+                match_failure.largest_match_pattern_subgraph._graph.nodes  # pylint:disable=protected-access
+            )
+
+            to_delete_due_to_disconnection: List[NodePredicate] = []
+            connected_components_containing_successful_pattern_matches = 0
+            for connected_component in connected_components(pattern_as_undirected_graph):
+                if probe_node not in connected_component:
+                    # this is a component which is now disconnected from the successful partial match
+                    to_delete_due_to_disconnection.extend(connected_component)
+                else:
+                    connected_components_containing_successful_pattern_matches += 1
+
+            if connected_components_containing_successful_pattern_matches != 1:
+                raise RuntimeError(
+                    f"Expected the successfully matching portion of the pattern"
+                    f" to belong to a single connected component, but it was in "
+                    f"{connected_components_containing_successful_pattern_matches}"
+                )
+
+            pattern_as_digraph.remove_nodes_from(to_delete_due_to_disconnection)
+        else:
+            # If nothing was successfully matched, it is less clear how to choose what portion
+            # of the pattern to keep. For now, we are going to keep the largest connected component.
+            # BEWARE: we have not confirmed the order of connected components is deterministic.
+            components = sorted(
+                list(connected_components(pattern_as_undirected_graph)),
+                key=lambda x: len(x),  # pylint:disable=unnecessary-lambda
+            )
+
+            # We know there is some component because otherwise we would have bailed out
+            # after we did the first deletion pass above.
+            biggest_component = first(components)
+            for component in components:
+                if component != biggest_component:
+                    pattern_as_digraph.remove_nodes_from(component)
+
+        return PerceptionGraphPattern(pattern_as_digraph.copy())
 
     @matching_pattern_against_pattern.default
     def _matching_pattern_against_pattern_default(self) -> bool:
