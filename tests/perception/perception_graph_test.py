@@ -1,5 +1,7 @@
+import random as r
 from itertools import chain
 
+import pytest
 from adam_test_utils import all_possible_test
 from more_itertools import first
 
@@ -24,6 +26,7 @@ from adam.ontology.phase1_ontology import (
     bigger_than,
     on,
     BOX,
+    PART_OF,
 )
 from adam.ontology.structural_schema import ObjectStructuralSchema
 from adam.perception.developmental_primitive_perception import RgbColorPerception
@@ -35,6 +38,7 @@ from adam.perception.perception_graph import (
     PerceptionGraphPattern,
     PatternMatching,
     IsColorNodePredicate,
+    PerceptionGraphPatternMatch,
 )
 from adam.random_utils import RandomChooser
 from adam.situation.templates.phase1_templates import (
@@ -43,6 +47,8 @@ from adam.situation.templates.phase1_templates import (
     object_variable,
     all_possible,
 )
+
+r.seed(0)
 
 
 def test_house_on_table():
@@ -208,7 +214,7 @@ def test_last_failed_pattern_node():
             perception.copy_as_digraph()
         ).perception_graph_pattern
         # Create an altered perception graph we replace the color node
-        copy_of_perception_digraph = perception.copy_as_digraph()
+        altered_perception_digraph = perception.copy_as_digraph()
         nodes_to_remove = []
         edges = []
         different_nodes = []
@@ -217,33 +223,265 @@ def test_last_failed_pattern_node():
             if isinstance(node, RgbColorPerception):
                 new_node = RgbColorPerception(0, 0, 0)
                 # Get edge information
-                for edge in perception.copy_as_digraph().edges:
-                    if len(edge) > 2:
-                        if edge[0] == node:
-                            edges.append((new_node, edge[1], edge[2]))
-                        if edge[1] == node:
-                            edges.append((edge[0], new_node, edge[2]))
-                    else:
-                        if edge[0] == node:
-                            edges.append((new_node, edge[1]))
-                        if edge[1] == node:
-                            edges.append((edge[0], new_node))
+                for edge in perception.copy_as_digraph().edges(data=True):
+                    if edge[0] == node:
+                        edges.append((new_node, edge[1], edge[2]))
+                    if edge[1] == node:
+                        edges.append((edge[0], new_node, edge[2]))
                 nodes_to_remove.append(node)
                 different_nodes.append(new_node)
 
         # add new nodes
         for node in different_nodes:
-            copy_of_perception_digraph.add_node(node)
+            altered_perception_digraph.add_node(node)
         # add edge information
         for edge in edges:
-            copy_of_perception_digraph.add_edge(*edge)
+            altered_perception_digraph.add_edge(edge[0], edge[1])
+            for k, v in edge[2].items():
+                altered_perception_digraph[edge[0]][edge[1]][k] = v
         # remove original node
-        copy_of_perception_digraph.remove_nodes_from(nodes_to_remove)
+        altered_perception_digraph.remove_nodes_from(nodes_to_remove)
 
         # Start the matching process
         matcher = whole_perception_pattern.matcher(
-            PerceptionGraph(copy_of_perception_digraph)
+            PerceptionGraph(altered_perception_digraph)
         )
         match_or_failure = matcher.first_match_or_failure_info()
         assert isinstance(match_or_failure, PatternMatching.MatchFailure)
         assert isinstance(match_or_failure.last_failed_pattern_node, IsColorNodePredicate)
+
+
+def test_successfully_extending_partial_match():
+    """
+    Tests whether we can match a perception pattern successfully
+    """
+
+    target_object = BOX
+    # Create train and test templates for the target objects
+    train_obj_object = object_variable("obj-with-color", target_object)
+    obj_template = Phase1SituationTemplate(
+        "colored-obj-object", salient_object_variables=[train_obj_object]
+    )
+    template = all_possible(
+        obj_template, chooser=PHASE1_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY
+    )
+
+    train_curriculum = phase1_instances("all obj situations", situations=template)
+
+    for (_, _, perceptual_representation) in train_curriculum.instances():
+        # Original perception graph
+        perception = graph_without_learner(
+            PerceptionGraph.from_frame(
+                perceptual_representation.frames[0]
+            ).copy_as_digraph()
+        )
+
+        # Create an altered perception graph we remove the color node
+        altered_perception_digraph = perception.copy_as_digraph()
+        nodes_to_remove = []
+        for node in perception.copy_as_digraph().nodes:
+            # If we find a color node, we make it black
+            if isinstance(node, RgbColorPerception):
+                nodes_to_remove.append(node)
+
+        # remove color node
+        altered_perception_digraph.remove_nodes_from(nodes_to_remove)
+        assert len(altered_perception_digraph.nodes) != len(
+            perception.copy_as_digraph().nodes
+        )
+
+        # Partial perception pattern
+        whole_perception_pattern = PerceptionGraphPattern.from_graph(
+            perception.copy_as_digraph()
+        ).perception_graph_pattern
+
+        partial_perception_pattern = PerceptionGraphPattern.from_graph(
+            altered_perception_digraph
+        ).perception_graph_pattern
+
+        assert len(altered_perception_digraph.nodes) != len(
+            perception.copy_as_digraph().nodes
+        )
+
+        # Start the matching process, get a partial match
+        matcher = partial_perception_pattern.matcher(
+            PerceptionGraph(altered_perception_digraph)
+        )
+        partial_match: PerceptionGraphPatternMatch = first(matcher.matches())
+        partial_mapping = partial_match.pattern_node_to_matched_graph_node
+        assert len(partial_mapping) == len(
+            partial_perception_pattern.copy_as_digraph().nodes
+        )
+        assert len(partial_mapping) == len(altered_perception_digraph.nodes)
+
+        # Try to extend the partial mapping, to create a complete mapping
+        matcher_2 = whole_perception_pattern.matcher(perception)
+        complete_match: PerceptionGraphPatternMatch = first(
+            matcher_2.matches(initial_partial_match=partial_mapping)
+        )
+        complete_mapping = complete_match.pattern_node_to_matched_graph_node
+        assert len(complete_mapping) == len(perception.copy_as_digraph().nodes)
+        assert len(complete_mapping) == len(
+            whole_perception_pattern.copy_as_digraph().nodes
+        )
+
+
+def test_semantically_infeasible_partial_match():
+    """
+    Tests whether semantic feasibility works as intended
+    """
+
+    target_object = BOX
+    # Create train and test templates for the target objects
+    train_obj_object = object_variable("obj-with-color", target_object)
+    obj_template = Phase1SituationTemplate(
+        "colored-obj-object", salient_object_variables=[train_obj_object]
+    )
+    template = all_possible(
+        obj_template, chooser=PHASE1_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY
+    )
+
+    train_curriculum = phase1_instances("all obj situations", situations=template)
+
+    for (_, _, perceptual_representation) in train_curriculum.instances():
+        # Original perception graph
+        perception = graph_without_learner(
+            PerceptionGraph.from_frame(
+                perceptual_representation.frames[0]
+            ).copy_as_digraph()
+        )
+        whole_perception_pattern = PerceptionGraphPattern.from_graph(
+            perception.copy_as_digraph()
+        ).perception_graph_pattern
+
+        # Create an altered perception graph we remove the color node
+        altered_perception_digraph = perception.copy_as_digraph()
+        nodes_to_remove = []
+        edges = []
+        different_nodes = []
+        for node in perception.copy_as_digraph().nodes:
+            # If we find a color node, we make it black
+            if isinstance(node, RgbColorPerception):
+                new_node = RgbColorPerception(0, 0, 0)
+                # Get edge information
+                for edge in perception.copy_as_digraph().edges(data=True):
+                    if edge[0] == node:
+                        edges.append((new_node, edge[1], edge[2]))
+                    if edge[1] == node:
+                        edges.append((edge[0], new_node, edge[2]))
+                nodes_to_remove.append(node)
+                different_nodes.append(new_node)
+
+        # remove original node
+        altered_perception_digraph.remove_nodes_from(nodes_to_remove)
+
+        # Partial perception pattern
+        partial_perception_pattern = PerceptionGraphPattern.from_graph(
+            altered_perception_digraph
+        ).perception_graph_pattern
+
+        # add new nodes
+        for node in different_nodes:
+            altered_perception_digraph.add_node(node)
+        # add edge information
+        for edge in edges:
+            altered_perception_digraph.add_edge(edge[0], edge[1])
+            for k, v in edge[2].items():
+                altered_perception_digraph[edge[0]][edge[1]][k] = v
+
+        altered_perception_pattern = PerceptionGraphPattern.from_graph(
+            altered_perception_digraph
+        ).perception_graph_pattern
+
+        # Start the matching process, get a partial match
+        matcher = partial_perception_pattern.matcher(
+            PerceptionGraph(altered_perception_digraph)
+        )
+        partial_match: PerceptionGraphPatternMatch = first(matcher.matches())
+        partial_mapping = partial_match.pattern_node_to_matched_graph_node
+        assert len(partial_mapping) == len(
+            partial_perception_pattern.copy_as_digraph().nodes
+        )
+
+        # Try to extend the partial mapping, we expect a semantic infeasibility runtime error
+        matcher_2 = altered_perception_pattern.matcher(perception)
+        with pytest.raises(RuntimeError):
+            complete_match: PerceptionGraphPatternMatch = first(
+                matcher_2.matches(initial_partial_match=partial_mapping)
+            )
+
+
+def test_syntactically_infeasible_partial_match():
+    """
+    Tests whether syntactic feasibility works as intended
+    """
+
+    target_object = BOX
+    # Create train and test templates for the target objects
+    train_obj_object = object_variable("obj-with-color", target_object)
+    obj_template = Phase1SituationTemplate(
+        "colored-obj-object", salient_object_variables=[train_obj_object]
+    )
+    template = all_possible(
+        obj_template, chooser=PHASE1_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY
+    )
+
+    train_curriculum = phase1_instances("all obj situations", situations=template)
+
+    for (_, _, perceptual_representation) in train_curriculum.instances():
+        # Original perception graph
+        perception = graph_without_learner(
+            PerceptionGraph.from_frame(
+                perceptual_representation.frames[0]
+            ).copy_as_digraph()
+        )
+        whole_perception_pattern = PerceptionGraphPattern.from_graph(
+            perception.copy_as_digraph()
+        ).perception_graph_pattern
+
+        # Create an altered perception graph we remove the color node
+        altered_perception_digraph = perception.copy_as_digraph()
+        nodes = []
+        edges = []
+        for node in perception.copy_as_digraph().nodes:
+            # If we find a color node, we add an extra edge to it
+            if isinstance(node, RgbColorPerception):
+                nodes.append(node)
+
+        partial_graph = altered_perception_digraph.copy()
+        partial_graph.remove_nodes_from(nodes)
+        # Partial perception pattern
+        partial_perception_pattern = PerceptionGraphPattern.from_graph(
+            partial_graph
+        ).perception_graph_pattern
+
+        # change edge information
+        for node in nodes:
+            random_node = r.choice(list(altered_perception_digraph.nodes))
+            altered_perception_digraph.add_edge(node, random_node, label=PART_OF)
+            random_node_2 = r.choice(list(altered_perception_digraph.nodes))
+            altered_perception_digraph.add_edge(random_node_2, node, label=PART_OF)
+
+        altered_perception_pattern = PerceptionGraphPattern.from_graph(
+            altered_perception_digraph
+        ).perception_graph_pattern
+
+        # Start the matching process, get a partial match
+        matcher = partial_perception_pattern.matcher(
+            PerceptionGraph(altered_perception_digraph)
+        )
+        partial_match: PerceptionGraphPatternMatch = first(matcher.matches())
+        partial_mapping = partial_match.pattern_node_to_matched_graph_node
+        assert len(partial_mapping) == len(
+            partial_perception_pattern.copy_as_digraph().nodes
+        )
+        assert len(partial_mapping) != len(
+            whole_perception_pattern.copy_as_digraph().nodes
+        )
+
+        # Try to extend the partial mapping, we expect a semantic infeasibility runtime error
+        matcher_2 = altered_perception_pattern.matcher(perception)
+        with pytest.raises(RuntimeError):
+            complete_match: PerceptionGraphPatternMatch = first(
+                matcher_2.matches(initial_partial_match=partial_mapping)
+            )

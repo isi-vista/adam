@@ -139,7 +139,7 @@ class PerceptionGraphProtocol(Protocol):
     _graph: DiGraph = attrib(validator=instance_of(DiGraph))
 
     def copy_as_digraph(self) -> DiGraph:
-        return copy(self._graph)
+        return self._graph.copy()
 
     def render_to_file(
         self,
@@ -369,7 +369,7 @@ class PerceptionGraph(PerceptionGraphProtocol):
         return node_id
 
     def copy_as_digraph(self) -> DiGraph:
-        return copy(self._graph)
+        return self._graph.copy()
 
 
 @attrs(frozen=True, slots=True)

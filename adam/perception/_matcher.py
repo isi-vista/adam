@@ -255,11 +255,7 @@ class GraphMatching:
             # In terms of state updates, this imitates what would happen if we called
             # match() recursively (as we do in a normal match)
             # and just happened to make exactly this sequence of alignment choices.
-            if not self.semantic_feasibility(
-                aligned_graph_node,
-                pattern_node,
-                matching_pattern=self.matching_pattern_against_pattern,
-            ):
+            if not self.semantic_feasibility(aligned_graph_node, pattern_node):
                 raise RuntimeError(
                     f"Requested to begin matching from an alignment which aligns "
                     f"semantically infeasible nodes: "
@@ -403,6 +399,7 @@ class GraphMatching:
         # where both endpoints are mapped in the current mapping.
         # If there is an edge with an unmapped endpoint,
         # it will get tested when that endpoint node is checked for semantic feasibility.
+        print(pattern_node)
         for pattern_predecessor in self.pattern.pred[pattern_node]:
             predecessor_mapped_node_in_graph = self.pattern_node_to_graph_node.get(
                 pattern_predecessor
