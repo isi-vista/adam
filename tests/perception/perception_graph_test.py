@@ -202,7 +202,7 @@ def test_last_failed_pattern_node():
     train_curriculum = phase1_instances("all obj situations", situations=template)
 
     for (_, _, perceptual_representation) in train_curriculum.instances():
-        # Origianl perception graph
+        # Original perception graph
         perception = graph_without_learner(
             PerceptionGraph.from_frame(
                 perceptual_representation.frames[0]
