@@ -13,29 +13,28 @@ to defining the type of Nodes in our `PerceptionGraph`\ s readers should start w
 reading other parts of this module.
 """
 from abc import ABC, abstractmethod
-from copy import copy
 from pathlib import Path
+from time import process_time
 from typing import (
     Any,
     Callable,
     Dict,
     Iterable,
+    List,
     Mapping,
     Optional,
+    Set,
+    Sized,
     Tuple,
+    Type,
     TypeVar,
     Union,
-    Set,
-    List,
-    Type,
     cast,
-    Sized,
 )
 
 import graphviz
-from adam.utils.networkx_utils import digraph_with_nodes_sorted_by, copy_digraph
 from attr.validators import instance_of, optional
-from immutablecollections import ImmutableDict, immutabledict, immutableset, ImmutableSet
+from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
 from immutablecollections.converter_utils import _to_immutabledict, _to_tuple
 from more_itertools import first
 from networkx import DiGraph, connected_components
@@ -44,7 +43,7 @@ from typing_extensions import Protocol
 from adam.axes import AxesInfo, HasAxes
 from adam.axis import GeonAxis
 from adam.geon import Geon, MaybeHasGeon
-from adam.ontology import OntologyNode, IN_REGION
+from adam.ontology import IN_REGION, OntologyNode
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY, PART_OF
 from adam.ontology.phase1_spatial_relations import Direction, Distance, Region
 from adam.ontology.structural_schema import ObjectStructuralSchema
@@ -62,10 +61,8 @@ from adam.perception.high_level_semantics_situation_to_developmental_primitive_p
 from adam.random_utils import RandomChooser
 from adam.situation import SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
-from adam.utils.networkx_utils import subgraph
+from adam.utils.networkx_utils import copy_digraph, digraph_with_nodes_sorted_by, subgraph
 from attr import attrib, attrs
-
-from time import process_time
 
 
 class Incrementer:

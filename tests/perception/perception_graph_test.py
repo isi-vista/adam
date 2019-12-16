@@ -3,7 +3,7 @@ from itertools import chain
 
 import pytest
 from adam_test_utils import all_possible_test
-from more_itertools import first
+from more_itertools import first, only
 
 from adam.curriculum.curriculum_utils import (
     standard_object,
@@ -253,12 +253,14 @@ def test_last_failed_pattern_node():
 
 def test_successfully_extending_partial_match():
     """
-    Tests whether we can match a perception pattern successfully
+    Tests whether we can match a perception pattern against a perception graph
+    when initializing the search from a partial match.
     """
 
     target_object = BOX
     # Create train and test templates for the target objects
     train_obj_object = object_variable("obj-with-color", target_object)
+
     obj_template = Phase1SituationTemplate(
         "colored-obj-object", salient_object_variables=[train_obj_object]
     )
@@ -268,62 +270,37 @@ def test_successfully_extending_partial_match():
 
     train_curriculum = phase1_instances("all obj situations", situations=template)
 
-    for (_, _, perceptual_representation) in train_curriculum.instances():
-        # Original perception graph
-        perception = graph_without_learner(
-            PerceptionGraph.from_frame(
-                perceptual_representation.frames[0]
-            ).copy_as_digraph()
-        )
+    perceptual_representation = only(train_curriculum.instances())[2]
 
-        # Create an altered perception graph we remove the color node
-        altered_perception_digraph = perception.copy_as_digraph()
-        nodes_to_remove = []
-        for node in perception.copy_as_digraph().nodes:
-            # If we find a color node, we make it black
-            if isinstance(node, RgbColorPerception):
-                nodes_to_remove.append(node)
+    # Original perception graph
+    perception = PerceptionGraph.from_frame(perceptual_representation.frames[0])
 
-        # remove color node
-        altered_perception_digraph.remove_nodes_from(nodes_to_remove)
-        assert len(altered_perception_digraph.nodes) != len(
-            perception.copy_as_digraph().nodes
-        )
+    # Create a perception pattern for the whole thing
+    # and also a perception pattern for a subset of the whole pattern
+    whole_perception_pattern = PerceptionGraphPattern.from_graph(
+        perception.copy_as_digraph()
+    ).perception_graph_pattern
 
-        # Partial perception pattern
-        whole_perception_pattern = PerceptionGraphPattern.from_graph(
-            perception.copy_as_digraph()
-        ).perception_graph_pattern
+    partial_digraph = whole_perception_pattern.copy_as_digraph()
+    partial_digraph.remove_nodes_from(
+        [node for node in partial_digraph.nodes if isinstance(node, IsColorNodePredicate)]
+    )
+    partial_perception_pattern = PerceptionGraphPattern(partial_digraph)
 
-        partial_perception_pattern = PerceptionGraphPattern.from_graph(
-            altered_perception_digraph
-        ).perception_graph_pattern
+    # get our initial match by matching the partial pattern
+    matcher = partial_perception_pattern.matcher(perception)
 
-        assert len(altered_perception_digraph.nodes) != len(
-            perception.copy_as_digraph().nodes
-        )
+    partial_match: PerceptionGraphPatternMatch = first(matcher.matches())
+    partial_mapping = partial_match.pattern_node_to_matched_graph_node
 
-        # Start the matching process, get a partial match
-        matcher = partial_perception_pattern.matcher(
-            PerceptionGraph(altered_perception_digraph)
-        )
-        partial_match: PerceptionGraphPatternMatch = first(matcher.matches())
-        partial_mapping = partial_match.pattern_node_to_matched_graph_node
-        assert len(partial_mapping) == len(
-            partial_perception_pattern.copy_as_digraph().nodes
-        )
-        assert len(partial_mapping) == len(altered_perception_digraph.nodes)
-
-        # Try to extend the partial mapping, to create a complete mapping
-        matcher_2 = whole_perception_pattern.matcher(perception)
-        complete_match: PerceptionGraphPatternMatch = first(
-            matcher_2.matches(initial_partial_match=partial_mapping)
-        )
-        complete_mapping = complete_match.pattern_node_to_matched_graph_node
-        assert len(complete_mapping) == len(perception.copy_as_digraph().nodes)
-        assert len(complete_mapping) == len(
-            whole_perception_pattern.copy_as_digraph().nodes
-        )
+    # Try to extend the partial mapping, to create a complete mapping
+    matcher_2 = whole_perception_pattern.matcher(perception)
+    complete_match: PerceptionGraphPatternMatch = first(
+        matcher_2.matches(initial_partial_match=partial_mapping)
+    )
+    complete_mapping = complete_match.pattern_node_to_matched_graph_node
+    assert len(complete_mapping) == len(perception.copy_as_digraph().nodes)
+    assert len(complete_mapping) == len(whole_perception_pattern.copy_as_digraph().nodes)
 
 
 def test_semantically_infeasible_partial_match():
