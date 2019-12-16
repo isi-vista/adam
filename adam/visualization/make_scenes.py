@@ -428,7 +428,12 @@ def _solve_top_level_positions(
              in terms of indices with parent_positions
     """
     objs = [
-        AdamObject(name=name, initial_position=parent_position)
+        AdamObject(
+            name=name,
+            initial_position=parent_position,
+            axes=None,
+            relative_positions=None,
+        )
         for name, parent_position in parent_positions.items()
     ]
 
