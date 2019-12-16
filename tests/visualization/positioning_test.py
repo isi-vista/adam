@@ -11,11 +11,19 @@ from adam.visualization.positioning import (
 
 def test_running_model() -> None:
     # for code coverage purposes
-    ball = AdamObject(name="ball", initial_position=(0, 0, 10))
-    box = AdamObject(name="box", initial_position=(0, 0, 1))
+    ball = AdamObject(
+        name="ball", initial_position=(0, 0, 10), axes=None, relative_positions=None
+    )
+    box = AdamObject(
+        name="box", initial_position=(0, 0, 1), axes=None, relative_positions=None
+    )
 
-    aardvark = AdamObject(name="aardvark", initial_position=(1, 2, 1))
-    flamingo = AdamObject(name="flamingo", initial_position=(-1, 1, 2))
+    aardvark = AdamObject(
+        name="aardvark", initial_position=(1, 2, 1), axes=None, relative_positions=None
+    )
+    flamingo = AdamObject(
+        name="flamingo", initial_position=(-1, 1, 2), axes=None, relative_positions=None
+    )
     objs = [ball, box, aardvark, flamingo]
     run_model(objs, num_iterations=10, yield_steps=10)
 
