@@ -320,72 +320,65 @@ def test_semantically_infeasible_partial_match():
 
     train_curriculum = phase1_instances("all obj situations", situations=template)
 
-    for (_, _, perceptual_representation) in train_curriculum.instances():
-        # Original perception graph
-        perception = graph_without_learner(
-            PerceptionGraph.from_frame(
-                perceptual_representation.frames[0]
-            ).copy_as_digraph()
-        )
-        whole_perception_pattern = PerceptionGraphPattern.from_graph(
-            perception.copy_as_digraph()
-        ).perception_graph_pattern
+    perceptual_representation = only(train_curriculum.instances())[2]
+    # Original perception graph
+    perception = graph_without_learner(
+        PerceptionGraph.from_frame(perceptual_representation.frames[0]).copy_as_digraph()
+    )
+    whole_perception_pattern = PerceptionGraphPattern.from_graph(
+        perception.copy_as_digraph()
+    ).perception_graph_pattern
 
-        # Create an altered perception graph we remove the color node
-        altered_perception_digraph = perception.copy_as_digraph()
-        nodes_to_remove = []
-        edges = []
-        different_nodes = []
-        for node in perception.copy_as_digraph().nodes:
-            # If we find a color node, we make it black
-            if isinstance(node, RgbColorPerception):
-                new_node = RgbColorPerception(0, 0, 0)
-                # Get edge information
-                for edge in perception.copy_as_digraph().edges(data=True):
-                    if edge[0] == node:
-                        edges.append((new_node, edge[1], edge[2]))
-                    if edge[1] == node:
-                        edges.append((edge[0], new_node, edge[2]))
-                nodes_to_remove.append(node)
-                different_nodes.append(new_node)
+    # Create an altered perception graph we remove the color node
+    altered_perception_digraph = perception.copy_as_digraph()
+    nodes_to_remove = []
+    edges = []
+    different_nodes = []
+    for node in perception.copy_as_digraph().nodes:
+        # If we find a color node, we make it black
+        if isinstance(node, RgbColorPerception):
+            new_node = RgbColorPerception(0, 0, 0)
+            # Get edge information
+            for edge in perception.copy_as_digraph().edges(data=True):
+                if edge[0] == node:
+                    edges.append((new_node, edge[1], edge[2]))
+                if edge[1] == node:
+                    edges.append((edge[0], new_node, edge[2]))
+            nodes_to_remove.append(node)
+            different_nodes.append(new_node)
 
-        # remove original node
-        altered_perception_digraph.remove_nodes_from(nodes_to_remove)
+    # remove original node
+    altered_perception_digraph.remove_nodes_from(nodes_to_remove)
 
-        # Partial perception pattern
-        partial_perception_pattern = PerceptionGraphPattern.from_graph(
-            altered_perception_digraph
-        ).perception_graph_pattern
+    # add new nodes
+    for node in different_nodes:
+        altered_perception_digraph.add_node(node)
+    # add edge information
+    for edge in edges:
+        altered_perception_digraph.add_edge(edge[0], edge[1])
+        for k, v in edge[2].items():
+            altered_perception_digraph[edge[0]][edge[1]][k] = v
 
-        # add new nodes
-        for node in different_nodes:
-            altered_perception_digraph.add_node(node)
-        # add edge information
-        for edge in edges:
-            altered_perception_digraph.add_edge(edge[0], edge[1])
-            for k, v in edge[2].items():
-                altered_perception_digraph[edge[0]][edge[1]][k] = v
+    altered_perception_pattern = PerceptionGraphPattern.from_graph(
+        altered_perception_digraph
+    ).perception_graph_pattern
 
-        altered_perception_pattern = PerceptionGraphPattern.from_graph(
-            altered_perception_digraph
-        ).perception_graph_pattern
+    partial_digraph = altered_perception_pattern.copy_as_digraph()
+    partial_digraph.remove_nodes_from(
+        [node for node in partial_digraph.nodes if isinstance(node, IsColorNodePredicate)]
+    )
 
-        # Start the matching process, get a partial match
-        matcher = partial_perception_pattern.matcher(
-            PerceptionGraph(altered_perception_digraph)
-        )
-        partial_match: PerceptionGraphPatternMatch = first(matcher.matches())
-        partial_mapping = partial_match.pattern_node_to_matched_graph_node
-        assert len(partial_mapping) == len(
-            partial_perception_pattern.copy_as_digraph().nodes
-        )
+    # Start the matching process, get a partial match
+    matcher = whole_perception_pattern.matcher(perception)
+    partial_match: PerceptionGraphPatternMatch = first(matcher.matches())
+    partial_mapping = partial_match.pattern_node_to_matched_graph_node
 
-        # Try to extend the partial mapping, we expect a semantic infeasibility runtime error
-        matcher_2 = altered_perception_pattern.matcher(perception)
-        with pytest.raises(RuntimeError):
-            complete_match: PerceptionGraphPatternMatch = first(
-                matcher_2.matches(initial_partial_match=partial_mapping)
-            )
+    # Try to extend the partial mapping, we expect a semantic infeasibility runtime error
+    matcher_2 = whole_perception_pattern.matcher(
+        PerceptionGraph(altered_perception_digraph)
+    )
+    with pytest.raises(RuntimeError):
+        first(matcher_2.matches(initial_partial_match=partial_mapping))
 
 
 def test_syntactically_infeasible_partial_match():
@@ -405,60 +398,46 @@ def test_syntactically_infeasible_partial_match():
 
     train_curriculum = phase1_instances("all obj situations", situations=template)
 
-    for (_, _, perceptual_representation) in train_curriculum.instances():
-        # Original perception graph
-        perception = graph_without_learner(
-            PerceptionGraph.from_frame(
-                perceptual_representation.frames[0]
-            ).copy_as_digraph()
-        )
-        whole_perception_pattern = PerceptionGraphPattern.from_graph(
-            perception.copy_as_digraph()
-        ).perception_graph_pattern
+    perceptual_representation = only(train_curriculum.instances())[2]
+    # Original perception graph
+    perception = graph_without_learner(
+        PerceptionGraph.from_frame(perceptual_representation.frames[0]).copy_as_digraph()
+    )
+    whole_perception_pattern = PerceptionGraphPattern.from_graph(
+        perception.copy_as_digraph()
+    ).perception_graph_pattern
 
-        # Create an altered perception graph we remove the color node
-        altered_perception_digraph = perception.copy_as_digraph()
-        nodes = []
-        edges = []
-        for node in perception.copy_as_digraph().nodes:
-            # If we find a color node, we add an extra edge to it
-            if isinstance(node, RgbColorPerception):
-                nodes.append(node)
+    # Create an altered perception graph we remove the color node
+    altered_perception_digraph = perception.copy_as_digraph()
+    nodes = []
+    for node in perception.copy_as_digraph().nodes:
+        # If we find a color node, we add an extra edge to it
+        if isinstance(node, RgbColorPerception):
+            nodes.append(node)
 
-        partial_graph = altered_perception_digraph.copy()
-        partial_graph.remove_nodes_from(nodes)
-        # Partial perception pattern
-        partial_perception_pattern = PerceptionGraphPattern.from_graph(
-            partial_graph
-        ).perception_graph_pattern
+    # change edge information
+    for node in nodes:
+        random_node = r.choice(list(altered_perception_digraph.nodes))
+        altered_perception_digraph.add_edge(node, random_node, label=PART_OF)
+        random_node_2 = r.choice(list(altered_perception_digraph.nodes))
+        altered_perception_digraph.add_edge(random_node_2, node, label=PART_OF)
 
-        # change edge information
-        for node in nodes:
-            random_node = r.choice(list(altered_perception_digraph.nodes))
-            altered_perception_digraph.add_edge(node, random_node, label=PART_OF)
-            random_node_2 = r.choice(list(altered_perception_digraph.nodes))
-            altered_perception_digraph.add_edge(random_node_2, node, label=PART_OF)
+    altered_perception_pattern = PerceptionGraphPattern.from_graph(
+        altered_perception_digraph
+    ).perception_graph_pattern
 
-        altered_perception_pattern = PerceptionGraphPattern.from_graph(
-            altered_perception_digraph
-        ).perception_graph_pattern
+    partial_digraph = altered_perception_pattern.copy_as_digraph()
+    partial_digraph.remove_nodes_from(
+        [node for node in partial_digraph.nodes if isinstance(node, IsColorNodePredicate)]
+    )
 
-        # Start the matching process, get a partial match
-        matcher = partial_perception_pattern.matcher(
-            PerceptionGraph(altered_perception_digraph)
-        )
-        partial_match: PerceptionGraphPatternMatch = first(matcher.matches())
-        partial_mapping = partial_match.pattern_node_to_matched_graph_node
-        assert len(partial_mapping) == len(
-            partial_perception_pattern.copy_as_digraph().nodes
-        )
-        assert len(partial_mapping) != len(
-            whole_perception_pattern.copy_as_digraph().nodes
-        )
-
-        # Try to extend the partial mapping, we expect a semantic infeasibility runtime error
-        matcher_2 = altered_perception_pattern.matcher(perception)
-        with pytest.raises(RuntimeError):
-            complete_match: PerceptionGraphPatternMatch = first(
-                matcher_2.matches(initial_partial_match=partial_mapping)
-            )
+    # Start the matching process, get a partial match
+    matcher = whole_perception_pattern.matcher(perception)
+    partial_match: PerceptionGraphPatternMatch = first(matcher.matches())
+    partial_mapping = partial_match.pattern_node_to_matched_graph_node
+    # Try to extend the partial mapping, we expect a semantic infeasibility runtime error
+    matcher_2 = whole_perception_pattern.matcher(
+        PerceptionGraph(altered_perception_digraph)
+    )
+    with pytest.raises(RuntimeError):
+        first(matcher_2.matches(initial_partial_match=partial_mapping))

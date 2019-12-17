@@ -399,7 +399,6 @@ class GraphMatching:
         # where both endpoints are mapped in the current mapping.
         # If there is an edge with an unmapped endpoint,
         # it will get tested when that endpoint node is checked for semantic feasibility.
-        print(pattern_node)
         for pattern_predecessor in self.pattern.pred[pattern_node]:
             predecessor_mapped_node_in_graph = self.pattern_node_to_graph_node.get(
                 pattern_predecessor
