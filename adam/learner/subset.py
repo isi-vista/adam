@@ -1,17 +1,19 @@
 from typing import Dict, Generic, Mapping, Optional, Tuple
 
 from immutablecollections import immutabledict
-from more_itertools import first
-from networkx import DiGraph, isolates
 
 from adam.language import (
     LinguisticDescription,
     LinguisticDescriptionT,
     TokenSequenceLinguisticDescription,
 )
-from adam.learner import LanguageLearner, LearningExample
-from adam.ontology.phase1_ontology import LEARNER
-from adam.perception import ObjectPerception, PerceptionT, PerceptualRepresentation
+from adam.learner import (
+    LanguageLearner,
+    LearningExample,
+    get_largest_matching_pattern,
+    graph_without_learner,
+)
+from adam.perception import PerceptionT, PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
@@ -19,7 +21,6 @@ from adam.perception.perception_graph import (
     DebugCallableType,
     PerceptionGraph,
     PerceptionGraphPattern,
-    PerceptionGraphPatternMatch,
 )
 from attr import Factory, attrib, attrs
 
@@ -122,44 +123,3 @@ class SubsetLanguageLearner(
             )
         else:
             return immutabledict()
-
-
-def get_largest_matching_pattern(
-    pattern: PerceptionGraphPattern,
-    graph: PerceptionGraph,
-    *,
-    debug_callback: Optional[DebugCallableType] = None,
-) -> PerceptionGraphPattern:
-    """ Helper function to return the largest matching sub-pattern
-    for a perception pattern and graph pair
-    *which is discovered during the match search process*.
-    This is not guaranteed to be the largest possible partial match.
-    Improvement of this is pending https://github.com/isi-vista/adam/issues/461
-    """
-    matching = pattern.matcher(graph, debug_callback=debug_callback)
-    attempted_match = matching.first_match_or_failure_info()
-
-    if isinstance(attempted_match, PerceptionGraphPatternMatch):
-        # if matched, get the match
-        return attempted_match.matched_pattern
-    else:
-        return attempted_match.largest_match_pattern_subgraph
-
-
-def graph_without_learner(graph: DiGraph) -> PerceptionGraph:
-    # Get the learner node
-    learner_node_candidates = [
-        node
-        for node in graph.nodes()
-        if isinstance(node, ObjectPerception) and node.debug_handle == LEARNER.handle
-    ]
-    if len(learner_node_candidates) > 1:
-        raise RuntimeError("More than one learners in perception.")
-    elif len(learner_node_candidates) == 1:
-        learner_node = first(learner_node_candidates)
-        # Remove learner
-        graph.remove_node(learner_node)
-        # remove remaining islands
-        islands = list(isolates(graph))
-        graph.remove_nodes_from(islands)
-    return PerceptionGraph(graph)

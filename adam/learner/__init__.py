@@ -3,14 +3,24 @@ Interfaces for language learning code.
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Generic, Mapping
+from typing import Dict, Generic, Mapping, Optional, Any
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import immutabledict
+from more_itertools import first
+from networkx import DiGraph, isolates
 
 from adam.language import LinguisticDescription, LinguisticDescriptionT
-from adam.perception import PerceptionT, PerceptualRepresentation
+from adam.ontology.phase1_ontology import LEARNER
+from adam.perception import PerceptionT, PerceptualRepresentation, ObjectPerception
+from adam.perception.perception_graph import (
+    PerceptionGraph,
+    PerceptionGraphPattern,
+    DebugCallableType,
+    PerceptionGraphPatternMatch,
+)
+from adam.utils.networkx_utils import subgraph
 
 
 @attrs(frozen=True)
@@ -102,3 +112,44 @@ class MemorizingLanguageLearner(
             return immutabledict(((memorized_description, 1.0),))
         else:
             return immutabledict()
+
+
+def get_largest_matching_pattern(
+    pattern: PerceptionGraphPattern,
+    graph: PerceptionGraph,
+    *,
+    debug_callback: Optional[DebugCallableType] = None,
+) -> PerceptionGraphPattern:
+    """ Helper function to return the largest matching `PerceptionGraphPattern`
+    for learner from a perception pattern and graph pair."""
+    # Initialize matcher in debug version to keep largest subgraph
+    matching = pattern.matcher(graph, debug_callback=debug_callback)
+    match_attempt = matching.first_match_or_failure_info()
+
+    if isinstance(match_attempt, PerceptionGraphPatternMatch):
+        # if matched, get the match
+        return match_attempt.matched_pattern
+    else:
+        # otherwise get the largest subgraph and initialze new PatternGraph from it
+        return match_attempt.largest_match_pattern_subgraph
+
+
+def graph_without_learner(graph: DiGraph) -> PerceptionGraph:
+    """ Helper function to return a `PerceptionGraph`
+    without a ground object and its related nodes."""
+    # Get the learner node
+    learner_node_candidates = [
+        node
+        for node in graph.nodes()
+        if isinstance(node, ObjectPerception) and node.debug_handle == LEARNER.handle
+    ]
+    if len(learner_node_candidates) > 1:
+        raise RuntimeError("More than one learners in perception.")
+    elif len(learner_node_candidates) == 1:
+        learner_node = first(learner_node_candidates)
+        # Remove learner
+        graph.remove_node(learner_node)
+        # remove remaining islands
+        islands = list(isolates(graph))
+        graph.remove_nodes_from(islands)
+    return PerceptionGraph(graph)
