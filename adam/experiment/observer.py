@@ -10,6 +10,7 @@ from adam.curriculum_to_html import CurriculumToHtmlDumper
 from adam.language import LinguisticDescription, LinguisticDescriptionT
 from adam.language.language_generator import SituationT
 from adam.perception import PerceptionT, PerceptualRepresentation
+from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 
 
 class DescriptionObserver(Generic[SituationT, LinguisticDescriptionT, PerceptionT], ABC):
@@ -99,6 +100,7 @@ table td { p
 }
 """
 
+
 @attrs(slots=True)
 class HTMLLogger:
 
@@ -112,11 +114,14 @@ class HTMLLogger:
     def __attrs_post_init__(self):
         self.logging_dir = self.output_dir / self.experiment_name
         self.logging_dir.mkdir(parents=True, exist_ok=True)
-        self.outfile = open(self.logging_dir / (self.curriculum_name + '.html'), 'w')
+        self.outfile = open(self.logging_dir / (self.curriculum_name + ".html"), "w")
         self.html_dumper = CurriculumToHtmlDumper()
         self.outfile.write(f"<head>\n\t<style>{CSS}\n\t</style>\n</head>")
-        self.outfile.write(f"\n<body>\n\t<h1>{self.experiment_name} - {self.curriculum_name}</h1>")
-        self.outfile.write("""
+        self.outfile.write(
+            f"\n<body>\n\t<h1>{self.experiment_name} - {self.curriculum_name}</h1>"
+        )
+        self.outfile.write(
+            """
             <script>
             function myFunction(id) {
               var x = document.getElementById(id);
@@ -128,10 +133,18 @@ class HTMLLogger:
             }
             </script>
             """
-           )
+        )
 
-
-    def log(self, *, instance_number: int, observer_name: str, true_description: str, learner_description: str, situation_string: str, perception_string: str):
+    def log(
+        self,
+        *,
+        instance_number: int,
+        observer_name: str,
+        true_description: str,
+        learner_description: str,
+        situation_string: str,
+        perception_string: str,
+    ):
 
         clickable_perception_string = f"""
             <button onclick="myFunction('myPerception{instance_number}')">View Perception</button>
@@ -174,12 +187,16 @@ class HTMLLogger:
 
 
 @attrs(slots=True)
-class HTMLLoggerObserver(DescriptionObserver[SituationT, LinguisticDescriptionT, PerceptionT]):
+class HTMLLoggerObserver(
+    DescriptionObserver[SituationT, LinguisticDescriptionT, PerceptionT]
+):
     r"""
     Logs the true description and learner's descriptions throughout the learning process.
     """
     name: str = attrib(validator=instance_of(str))
-    html_logger: HTMLLogger = attrib(init=True, validator=instance_of(HTMLLogger), kw_only=True)
+    html_logger: HTMLLogger = attrib(
+        init=True, validator=instance_of(HTMLLogger), kw_only=True
+    )
     counter: int = attrib(kw_only=True, default=0)
 
     def observe(  # pylint:disable=unused-argument
@@ -191,14 +208,23 @@ class HTMLLoggerObserver(DescriptionObserver[SituationT, LinguisticDescriptionT,
     ) -> None:
 
         # Convert the data to html text
-        top_choice = ''
+        top_choice = ""
         if predicted_descriptions:
-            description: LinguisticDescription = max(predicted_descriptions.items(), key=_by_score)[0]
-            top_choice = ' '.join(description.as_token_sequence())
+            description: LinguisticDescription = max(
+                predicted_descriptions.items(), key=_by_score
+            )[0]
+            top_choice = " ".join(description.as_token_sequence())
 
-        situation_text, _ = self.html_logger.html_dumper._situation_text(situation)
-        perception_text = self.html_logger.html_dumper._perception_text(perceptual_representation)
-        true_description_text = ' '.join(true_description.as_token_sequence())
+        if situation and isinstance(situation, HighLevelSemanticsSituation):
+            situation_text, _ = self.html_logger.html_dumper.situation_text(situation)
+        else:
+            situation_text = ""
+
+        perception_text = self.html_logger.html_dumper.perception_text(  # type: ignore
+            perceptual_representation
+        )
+
+        true_description_text = " ".join(true_description.as_token_sequence())
 
         # Log into html file
         # We want to log the true description, the learners guess, the perception, and situation
@@ -208,7 +234,7 @@ class HTMLLoggerObserver(DescriptionObserver[SituationT, LinguisticDescriptionT,
             true_description=true_description_text,
             learner_description=top_choice,
             situation_string=situation_text,
-            perception_string=perception_text
+            perception_string=perception_text,
         )
         self.counter += 1
 
