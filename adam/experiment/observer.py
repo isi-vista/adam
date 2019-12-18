@@ -1,7 +1,7 @@
 import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Generic, Mapping, Optional, Tuple, io
+from typing import Generic, Mapping, Optional, Tuple
 
 from attr import attrib, attrs
 from attr.validators import instance_of
@@ -102,139 +102,200 @@ table td { p
 
 
 @attrs(slots=True)
-class HTMLLogger:
+class LearningProgressHtmlLogger:
 
-    output_dir: Path = attrib(validator=instance_of(Path), kw_only=True)
-    experiment_name: str = attrib(validator=instance_of(str), kw_only=True)
-    curriculum_name: str = attrib(validator=instance_of(str), kw_only=True)
-    logging_dir: Path = attrib(init=False)
-    outfile: io = attrib(init=False)
-    html_dumper: CurriculumToHtmlDumper = attrib(init=False)
+    outfile_dir: str = attrib(validator=instance_of(str))
+    html_dumper: CurriculumToHtmlDumper = attrib(
+        validator=instance_of(CurriculumToHtmlDumper)
+    )
+    pre_observed_description: Optional[LinguisticDescription] = attrib(
+        init=False, default=None
+    )
 
-    def __attrs_post_init__(self):
-        self.logging_dir = self.output_dir / self.experiment_name
-        self.logging_dir.mkdir(parents=True, exist_ok=True)
-        self.outfile = open(self.logging_dir / (self.curriculum_name + ".html"), "w")
-        self.html_dumper = CurriculumToHtmlDumper()
-        self.outfile.write(f"<head>\n\t<style>{CSS}\n\t</style>\n</head>")
-        self.outfile.write(
-            f"\n<body>\n\t<h1>{self.experiment_name} - {self.curriculum_name}</h1>"
+    @staticmethod
+    def create_logger(
+        *, output_dir: Path, experiment_name: str, curriculum_name: str
+    ) -> "LearningProgressHtmlLogger":
+        logging_dir = output_dir / experiment_name
+        logging_dir.mkdir(parents=True, exist_ok=True)
+        outfile_dir = str(logging_dir / (curriculum_name + ".html"))
+
+        with open(outfile_dir, "a+") as outfile:
+            html_dumper = CurriculumToHtmlDumper()
+
+            outfile.write(f"<head>\n\t<style>{CSS}\n\t</style>\n</head>")
+            outfile.write(f"\n<body>\n\t<h1>{experiment_name} - {curriculum_name}</h1>")
+            # A JavaScript function to allow toggling perception information
+            outfile.write(
+                """
+                <script>
+                function myFunction(id) {
+                  var x = document.getElementById(id);
+                  if (x.style.display === "none") {
+                    x.style.display = "block";
+                  } else {
+                    x.style.display = "none";
+                  }
+                }
+                </script>
+                """
+            )
+        return LearningProgressHtmlLogger(
+            outfile_dir=outfile_dir, html_dumper=html_dumper
         )
-        self.outfile.write(
-            """
-            <script>
-            function myFunction(id) {
-              var x = document.getElementById(id);
-              if (x.style.display === "none") {
-                x.style.display = "block";
-              } else {
-                x.style.display = "none";
-              }
-            }
-            </script>
-            """
-        )
 
-    def log(
+    def pre_observer(self) -> "HTMLLoggerPreObserver":  # type: ignore
+        return HTMLLoggerPreObserver(name="Pre-observer", html_logger=self)
+
+    def post_observer(self) -> "HTMLLoggerPostObserver":  # type: ignore
+        return HTMLLoggerPostObserver(name="Post-observer", html_logger=self)
+
+    def pre_observer_log(
+        self, observed_description: Optional[LinguisticDescription]
+    ) -> None:
+        self.pre_observed_description = observed_description
+
+    def post_observer_log(
         self,
         *,
-        instance_number: int,
         observer_name: str,
-        true_description: str,
-        learner_description: str,
-        situation_string: str,
-        perception_string: str,
+        instance_number: int,
+        situation: Optional[SituationT],
+        true_description: LinguisticDescription,
+        perceptual_representation: PerceptualRepresentation[PerceptionT],
+        predicted_descriptions: Mapping[LinguisticDescription, float],
     ):
+
+        learner_pre_description = ""
+        if self.pre_observed_description is not None:
+            learner_pre_description = " ".join(
+                self.pre_observed_description.as_token_sequence()
+            )
+            self.pre_observed_description = None
+
+        # Convert the data to html text
+        learner_description = ""
+        if predicted_descriptions:
+            description: LinguisticDescription = max(
+                predicted_descriptions.items(), key=_by_score
+            )[0]
+            learner_description = " ".join(description.as_token_sequence())
+
+        if situation and isinstance(situation, HighLevelSemanticsSituation):
+            situation_text, _ = self.html_dumper.situation_text(situation)
+        else:
+            situation_text = ""
+
+        perception_text = self.html_dumper.perception_text(  # type: ignore
+            perceptual_representation
+        )
+
+        true_description_text = " ".join(true_description.as_token_sequence())
 
         clickable_perception_string = f"""
             <button onclick="myFunction('myPerception{instance_number}')">View Perception</button>
             <div id="myPerception{instance_number}" style="display: none">
-            {perception_string}
+            {perception_text}
             </div>
             """
 
-        self.outfile.write(
-            f"\n\t<table>\n"
-            f"\t\t<thead>\n"
-            f"\t\t\t<tr>\n"
-            f'\t\t\t\t<th colspan="3">\n'
-            f"\t\t\t\t\t<h2>Learning Instance: {observer_name} report number {instance_number}</h2>\n"
-            f"\t\t\t\t</th>\n\t\t\t</tr>\n"
-            f"\t\t</thead>\n"
-            f"\t\t<tbody>\n"
-            f"\t\t\t<tr>\n"
-            f"\t\t\t\t<td>\n"
-            f'\t\t\t\t\t<h3 id="situation-{instance_number}">Situation</h3>\n'
-            f"\t\t\t\t</td>\n"
-            f"\t\t\t\t<td>\n"
-            f'\t\t\t\t\t<h3 id="true-{instance_number}">True Description</h3>\n'
-            f"\t\t\t\t</td>\n"
-            f"\t\t\t\t<td>\n"
-            f'\t\t\t\t\t<h3 id="learner-{instance_number}">Learner\'s Description</h3>\n'
-            f"\t\t\t\t</td>\n"
-            f"\t\t\t\t<td>\n"
-            f'\t\t\t\t\t<h3 id="perception-{instance_number}">Learner Perception</h3>\n'
-            f"\t\t\t\t</td>\n"
-            f"\t\t\t</tr>\n"
-            f"\t\t\t<tr>\n"
-            f'\t\t\t\t<td valign="top">{situation_string}\n\t\t\t\t</td>\n'
-            f'\t\t\t\t<td valign="top">{true_description}</td>\n'
-            f'\t\t\t\t<td valign="top">{learner_description}</td>\n'
-            f'\t\t\t\t<td valign="top">{clickable_perception_string}\n\t\t\t\t</td>\n'
-            f"\t\t\t</tr>\n\t\t</tbody>\n\t</table>"
-        )
-        self.outfile.write("\n</body>")
+        # Log into html file
+        # We want to log the true description, the learners guess, the perception, and situation
+        with open(self.outfile_dir, "a+") as outfile:
+            outfile.write(
+                f"\n\t<table>\n"
+                f"\t\t<thead>\n"
+                f"\t\t\t<tr>\n"
+                f'\t\t\t\t<th colspan="3">\n'
+                f"\t\t\t\t\t<h2>Learning Instance: {observer_name} report number {instance_number}</h2>\n"
+                f"\t\t\t\t</th>\n\t\t\t</tr>\n"
+                f"\t\t</thead>\n"
+                f"\t\t<tbody>\n"
+                f"\t\t\t<tr>\n"
+                f"\t\t\t\t<td>\n"
+                f'\t\t\t\t\t<h3 id="situation-{instance_number}">Situation</h3>\n'
+                f"\t\t\t\t</td>\n"
+                f"\t\t\t\t<td>\n"
+                f'\t\t\t\t\t<h3 id="true-{instance_number}">True Description</h3>\n'
+                f"\t\t\t\t</td>\n"
+                f"\t\t\t\t<td>\n"
+                f'\t\t\t\t\t<h3 id="learner-pre-{instance_number}">Learner\'s Old Description</h3>\n'
+                f"\t\t\t\t</td>\n"
+                f"\t\t\t\t<td>\n"
+                f'\t\t\t\t\t<h3 id="learner-post-{instance_number}">Learner\'s New Description</h3>\n'
+                f"\t\t\t\t</td>\n"
+                f"\t\t\t\t<td>\n"
+                f'\t\t\t\t\t<h3 id="perception-{instance_number}">Learner Perception</h3>\n'
+                f"\t\t\t\t</td>\n"
+                f"\t\t\t</tr>\n"
+                f"\t\t\t<tr>\n"
+                f'\t\t\t\t<td valign="top">{situation_text}\n\t\t\t\t</td>\n'
+                f'\t\t\t\t<td valign="top">{true_description_text}</td>\n'
+                f'\t\t\t\t<td valign="top">{learner_pre_description}</td>\n'
+                f'\t\t\t\t<td valign="top">{learner_description}</td>\n'
+                f'\t\t\t\t<td valign="top">{clickable_perception_string}\n\t\t\t\t</td>\n'
+                f"\t\t\t</tr>\n\t\t</tbody>\n\t</table>"
+            )
+            outfile.write("\n</body>")
 
 
 @attrs(slots=True)
-class HTMLLoggerObserver(
+class HTMLLoggerPreObserver(
     DescriptionObserver[SituationT, LinguisticDescriptionT, PerceptionT]
 ):
     r"""
     Logs the true description and learner's descriptions throughout the learning process.
     """
     name: str = attrib(validator=instance_of(str))
-    html_logger: HTMLLogger = attrib(
-        init=True, validator=instance_of(HTMLLogger), kw_only=True
+    html_logger: LearningProgressHtmlLogger = attrib(
+        init=True, validator=instance_of(LearningProgressHtmlLogger), kw_only=True
     )
-    counter: int = attrib(kw_only=True, default=0)
 
-    def observe(  # pylint:disable=unused-argument
+    def observe(
         self,
         situation: Optional[SituationT],
         true_description: LinguisticDescription,
         perceptual_representation: PerceptualRepresentation[PerceptionT],
         predicted_descriptions: Mapping[LinguisticDescription, float],
     ) -> None:
-
-        # Convert the data to html text
-        top_choice = ""
+        # pylint: disable=unused-argument
+        learner_description: Optional[LinguisticDescription] = None
         if predicted_descriptions:
-            description: LinguisticDescription = max(
-                predicted_descriptions.items(), key=_by_score
-            )[0]
-            top_choice = " ".join(description.as_token_sequence())
+            learner_description = max(predicted_descriptions.items(), key=_by_score)[0]
 
-        if situation and isinstance(situation, HighLevelSemanticsSituation):
-            situation_text, _ = self.html_logger.html_dumper.situation_text(situation)
-        else:
-            situation_text = ""
+        self.html_logger.pre_observer_log(observed_description=learner_description)
 
-        perception_text = self.html_logger.html_dumper.perception_text(  # type: ignore
-            perceptual_representation
-        )
+    def report(self) -> None:
+        pass
 
-        true_description_text = " ".join(true_description.as_token_sequence())
 
-        # Log into html file
-        # We want to log the true description, the learners guess, the perception, and situation
-        self.html_logger.log(
-            instance_number=self.counter,
+@attrs(slots=True)
+class HTMLLoggerPostObserver(
+    DescriptionObserver[SituationT, LinguisticDescriptionT, PerceptionT]
+):
+    r"""
+    Logs the true description and learner's descriptions throughout the learning process.
+    """
+    name: str = attrib(validator=instance_of(str))
+    html_logger: LearningProgressHtmlLogger = attrib(
+        init=True, validator=instance_of(LearningProgressHtmlLogger), kw_only=True
+    )
+    counter: int = attrib(kw_only=True, default=0)
+
+    def observe(
+        self,
+        situation: Optional[SituationT],
+        true_description: LinguisticDescription,
+        perceptual_representation: PerceptualRepresentation[PerceptionT],
+        predicted_descriptions: Mapping[LinguisticDescription, float],
+    ) -> None:
+        self.html_logger.post_observer_log(
             observer_name=self.name,
-            true_description=true_description_text,
-            learner_description=top_choice,
-            situation_string=situation_text,
-            perception_string=perception_text,
+            instance_number=self.counter,
+            situation=situation,
+            true_description=true_description,
+            perceptual_representation=perceptual_representation,
+            predicted_descriptions=predicted_descriptions,
         )
         self.counter += 1
 
