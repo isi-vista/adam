@@ -6,7 +6,7 @@ from adam.curriculum.preposition_curriculum import (
 )
 from adam.curriculum_to_html import STR_TO_CURRICULUM
 from adam.experiment import execute_experiment, Experiment
-from adam.experiment.observer import HTMLLogger, HTMLLoggerPreObserver
+from adam.experiment.observer import HTMLLogger, HTMLLoggerObserver
 from adam.learner.preposition_subset import PrepositionSubsetLanguageLearner
 from adam.random_utils import RandomChooser
 
@@ -21,7 +21,7 @@ def main(params: Parameters) -> None:
                         experiment_name=experiment_name,
                         curriculum_name='prepositions_curriculum')
 
-    preobserver = HTMLLoggerPreObserver(name='preobserver', html_logger=logger)
+    preobserver = HTMLLoggerObserver(name='preobserver', html_logger=logger)
 
     execute_experiment(
         Experiment(

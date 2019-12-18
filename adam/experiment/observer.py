@@ -6,6 +6,7 @@ from typing import Generic, Mapping, Optional, Tuple, io
 from attr import attrib, attrs
 from attr.validators import instance_of
 
+from adam.curriculum_to_html import CurriculumToHtmlDumper
 from adam.language import LinguisticDescription, LinguisticDescriptionT
 from adam.language.language_generator import SituationT
 from adam.perception import PerceptionT, PerceptualRepresentation
@@ -86,6 +87,18 @@ class TopChoiceExactMatchObserver(
         )
 
 
+CSS = """
+body {
+    font-size: 1em;
+    font-family: sans-serif;
+}
+
+table td { p
+    padding: 1em; 
+    background-color: #FAE5D3 ;
+}
+"""
+
 @attrs(slots=True)
 class HTMLLogger:
 
@@ -94,23 +107,59 @@ class HTMLLogger:
     curriculum_name: str = attrib(validator=instance_of(str), kw_only=True)
     logging_dir: Path = attrib(init=False)
     outfile: io = attrib(init=False)
+    html_dumper: CurriculumToHtmlDumper = attrib(init=False)
 
     def __attrs_post_init__(self):
         self.logging_dir = self.output_dir / self.experiment_name
         self.logging_dir.mkdir(parents=True, exist_ok=True)
         self.outfile = open(self.logging_dir / (self.curriculum_name + '.html'), 'w')
+        self.html_dumper = CurriculumToHtmlDumper()
+        self.outfile.write(f"<head>\n\t<style>{CSS}\n\t</style>\n</head>")
+        self.outfile.write(f"\n<body>\n\t<h1>{self.experiment_name} - {self.curriculum_name}</h1>")
 
-    def log(self, html_string: str):
-        self.outfile.write(html_string)
+
+    def log(self, *, instance_number: int, observer_name: str, true_description: str, learner_description: str, situation_string: str, perception_string: str):
+        self.outfile.write(
+            f"\n\t<table>\n"
+            f"\t\t<thead>\n"
+            f"\t\t\t<tr>\n"
+            f'\t\t\t\t<th colspan="3">\n'
+            f"\t\t\t\t\t<h2>Learning Instance: {observer_name} report number {instance_number}</h2>\n"
+            f"\t\t\t\t</th>\n\t\t\t</tr>\n"
+            f"\t\t</thead>\n"
+            f"\t\t<tbody>\n"
+            f"\t\t\t<tr>\n"
+            f"\t\t\t\t<td>\n"
+            f'\t\t\t\t\t<h3 id="situation-{instance_number}">Situation</h3>\n'
+            f"\t\t\t\t</td>\n"
+            f"\t\t\t\t<td>\n"
+            f'\t\t\t\t\t<h3 id="true-{instance_number}">True Description</h3>\n'
+            f"\t\t\t\t</td>\n"
+            f"\t\t\t\t<td>\n"
+            f'\t\t\t\t\t<h3 id="learner-{instance_number}">Learner\'s Description</h3>\n'
+            f"\t\t\t\t</td>\n"
+            f"\t\t\t\t<td>\n"
+            f'\t\t\t\t\t<h3 id="perception-{instance_number}">Learner Perception</h3>\n'
+            f"\t\t\t\t</td>\n"
+            f"\t\t\t</tr>\n"
+            f"\t\t\t<tr>\n"
+            f'\t\t\t\t<td valign="top">{situation_string}\n\t\t\t\t</td>\n'
+            f'\t\t\t\t<td valign="top">{true_description}</td>\n'
+            f'\t\t\t\t<td valign="top">{learner_description}</td>\n'
+            f'\t\t\t\t<td valign="top">{perception_string}\n\t\t\t\t</td>\n'
+            f"\t\t\t</tr>\n\t\t</tbody>\n\t</table>"
+        )
+        self.outfile.write("\n</body>")
 
 
 @attrs(slots=True)
-class HTMLLoggerPreObserver(DescriptionObserver[SituationT, LinguisticDescriptionT, PerceptionT]):
+class HTMLLoggerObserver(DescriptionObserver[SituationT, LinguisticDescriptionT, PerceptionT]):
     r"""
     Logs the true description and learner's descriptions throughout the learning process.
     """
     name: str = attrib(validator=instance_of(str))
     html_logger: HTMLLogger = attrib(init=True, validator=instance_of(HTMLLogger), kw_only=True)
+    counter: int = attrib(kw_only=True, default=0)
 
     def observe(  # pylint:disable=unused-argument
         self,
@@ -120,17 +169,27 @@ class HTMLLoggerPreObserver(DescriptionObserver[SituationT, LinguisticDescriptio
         predicted_descriptions: Mapping[LinguisticDescription, float],
     ) -> None:
 
+        # Convert the data to html text
         top_choice = ''
         if predicted_descriptions:
-            top_choice = max(predicted_descriptions.items(), key=_by_score)
+            description: LinguisticDescription = max(predicted_descriptions.items(), key=_by_score)[0]
+            top_choice = ' '.join(description.as_token_sequence())
+
+        situation_text, _ = self.html_logger.html_dumper._situation_text(situation)
+        perception_text = self.html_logger.html_dumper._perception_text(perceptual_representation)
+        true_description_text = ' '.join(true_description.as_token_sequence())
 
         # Log into html file
+        # We want to log the true description, the learners guess, the perception, and situation
         self.html_logger.log(
-            f"{self.name}: Logging pre-observer"
-            f"True Description: {true_description}"
-            f"Learner's description: {top_choice}"
-            # Log perception and situation
+            instance_number=self.counter,
+            observer_name=self.name,
+            true_description=true_description_text,
+            learner_description=top_choice,
+            situation_string=situation_text,
+            perception_string=perception_text
         )
+        self.counter += 1
 
     def report(self) -> None:
         pass
