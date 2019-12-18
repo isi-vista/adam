@@ -116,9 +116,30 @@ class HTMLLogger:
         self.html_dumper = CurriculumToHtmlDumper()
         self.outfile.write(f"<head>\n\t<style>{CSS}\n\t</style>\n</head>")
         self.outfile.write(f"\n<body>\n\t<h1>{self.experiment_name} - {self.curriculum_name}</h1>")
+        self.outfile.write("""
+            <script>
+            function myFunction(id) {
+              var x = document.getElementById(id);
+              if (x.style.display === "none") {
+                x.style.display = "block";
+              } else {
+                x.style.display = "none";
+              }
+            }
+            </script>
+            """
+           )
 
 
     def log(self, *, instance_number: int, observer_name: str, true_description: str, learner_description: str, situation_string: str, perception_string: str):
+
+        clickable_perception_string = f"""
+            <button onclick="myFunction('myPerception{instance_number}')">View Perception</button>
+            <div id="myPerception{instance_number}" style="display: none">
+            {perception_string}
+            </div>
+            """
+
         self.outfile.write(
             f"\n\t<table>\n"
             f"\t\t<thead>\n"
@@ -146,7 +167,7 @@ class HTMLLogger:
             f'\t\t\t\t<td valign="top">{situation_string}\n\t\t\t\t</td>\n'
             f'\t\t\t\t<td valign="top">{true_description}</td>\n'
             f'\t\t\t\t<td valign="top">{learner_description}</td>\n'
-            f'\t\t\t\t<td valign="top">{perception_string}\n\t\t\t\t</td>\n'
+            f'\t\t\t\t<td valign="top">{clickable_perception_string}\n\t\t\t\t</td>\n'
             f"\t\t\t</tr>\n\t\t</tbody>\n\t</table>"
         )
         self.outfile.write("\n</body>")
