@@ -34,7 +34,7 @@ from adam.curriculum.m6_curriculum import make_m6_curriculum
 from adam.curriculum.preposition_curriculum import make_prepositions_curriculum
 from adam.curriculum.pursuit_curriculum import make_pursuit_curriculum
 from adam.curriculum.phase1_curriculum import build_gaila_phase_1_curriculum
-from adam.experiment import InstanceGroup
+from adam.curriculum import InstanceGroup
 from adam.geon import Geon
 from adam.axes import WORLD_AXES, AxesInfo, _GravitationalAxis
 from adam.language.dependency import LinearizedDependencyTree
