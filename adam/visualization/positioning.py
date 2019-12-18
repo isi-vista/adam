@@ -2,9 +2,12 @@
 This module defines a bounding box type and implements a constraint solver
 that can position multiple bounding boxes s/t they do not overlap
 (in addition to other constraints).
+
+main() function used for testing purposes. Primary function made available to outside callers
+is run_model()
 """
 from itertools import combinations
-from typing import Mapping, AbstractSet
+from typing import Mapping, AbstractSet, Tuple, Optional, List, Iterable
 from attr import attrs, attrib
 
 import numpy as np
@@ -20,7 +23,11 @@ from vistautils.preconditions import check_arg
 
 # see https://github.com/pytorch/pytorch/issues/24807 re: pylint issue
 ORIGIN = torch.zeros(3, dtype=torch.float)  # pylint: disable=not-callable
-COLLISION_PENALTY = 10
+GRAVITY_PENALTY = torch.tensor([1], dtype=torch.float)  # pylint: disable=not-callable
+BELOW_GROUND_PENALTY = 2 * GRAVITY_PENALTY
+COLLISION_PENALTY = 5 * GRAVITY_PENALTY
+
+LOSS_EPSILON = 1.0e-04
 
 
 @attrs(frozen=True, auto_attribs=True)
@@ -28,17 +35,18 @@ class AdamObject:
     """Used for testing purposes, to attach a name to a bounding box"""
 
     name: str
+    initial_position: Optional[Tuple[float, float, float]]
 
 
 def main() -> None:
-    ball = AdamObject(name="ball")
-    box = AdamObject(name="box")
+    ball = AdamObject(name="ball", initial_position=None)
+    box = AdamObject(name="box", initial_position=None)
 
-    cardboard_box = AdamObject(name="cardboardBox")
-    aardvark = AdamObject(name="aardvark")
-    flamingo = AdamObject(name="flamingo")
+    cardboard_box = AdamObject(name="cardboardBox", initial_position=None)
+    aardvark = AdamObject(name="aardvark", initial_position=None)
+    flamingo = AdamObject(name="flamingo", initial_position=None)
 
-    positioning_model = AdamObjectPositioningModel.for_objects(
+    positioning_model = AdamObjectPositioningModel.for_objects_random_positions(
         immutableset([ball, box, cardboard_box, aardvark, flamingo])
     )
     # we will start with an aggressive learning rate
@@ -52,10 +60,13 @@ def main() -> None:
         patience=3,
     )
 
-    iterations = 25
-    for _ in range(iterations):
+    iterations = 100
+    for iteration in range(iterations):
+        print(f"====== Iteration {iteration} ======")
+        positioning_model.dump_object_positions(prefix="\t")
+
         loss = positioning_model()
-        print(f"Loss: {loss.item()}")
+        print(f"\tLoss: {loss.item()}")
         loss.backward()
 
         optimizer.step()
@@ -63,7 +74,71 @@ def main() -> None:
 
         learning_rate_schedule.step(loss)
 
-        positioning_model.dump_object_positions()
+    print("========= Final Positions ========")
+    positioning_model.dump_object_positions(prefix="\t")
+
+
+@attrs(frozen=True, auto_attribs=True)
+class PositionsMap:
+    """Convenience type: list of positions corresponding to objects in a scene."""
+
+    name_to_position: Mapping[str, torch.Tensor]
+
+    def __len__(self) -> int:
+        return len(self.name_to_position)
+
+
+def run_model(
+    objs: List[AdamObject],
+    *,
+    num_iterations: int = 200,
+    yield_steps: Optional[int] = None,
+) -> Iterable[PositionsMap]:
+    r"""
+    Construct a positioning model given a list of objects to position, return their position values.
+    The model will return final positions either after the given number of iterations, or if the model
+    converges in a position where it is unable to find a gradient to continue.
+    Args:
+        objs: list of `AdamObject`\ s requested to be positioned
+        *num_iterations*: total number of SGD iterations.
+        *yield_steps*: If provided, the current positions of all objects will be returned after this many steps
+
+    Returns: PositionsMap: Map of object name -> Tensor (3,) of its position
+
+    """
+    positioning_model = AdamObjectPositioningModel.for_objects(immutableset(objs))
+
+    # we will start with an aggressive learning rate
+    optimizer = optim.SGD(positioning_model.parameters(), lr=1.0)
+    # but will decrease it whenever the loss plateaus
+    learning_rate_schedule = ReduceLROnPlateau(
+        optimizer,
+        "min",
+        # decrease the rate if the loss hasn't improved in
+        # 10 epochs
+        patience=10,
+    )
+
+    iterations = num_iterations
+    for i in range(iterations):
+        print(f"====== Iteration {i} =======")
+        loss = positioning_model()
+        # if we lose any substantial gradient, stop the search
+        if loss < LOSS_EPSILON:
+            break
+        print(f"\tLoss: {loss.item()}")
+        loss.backward()
+
+        optimizer.step()
+        optimizer.zero_grad()
+
+        learning_rate_schedule.step(loss)
+
+        positioning_model.dump_object_positions(prefix="\t")
+        if yield_steps and i % yield_steps == 0:
+            yield positioning_model.get_objects_positions()
+
+    return positioning_model.get_objects_positions()
 
 
 @attrs(frozen=True, slots=True)
@@ -86,6 +161,34 @@ class AxisAlignedBoundingBox:
 
     def center_distance_from_point(self, point: torch.Tensor) -> torch.Tensor:
         return torch.dist(self.center, point, 2)
+
+    def z_coordinate_of_lowest_corner(self) -> torch.Tensor:
+        """
+        Get the position of the lowest corner of the box.
+
+        The third coordinate is interpreted as the height relative to the ground at z=0.
+        Returns: (1,) tensor
+
+        """
+        # all corners are considered (in case of a rotated box)
+        corners = self.get_corners()
+        # find the minimum z value
+        min_corner_z = torch.min(
+            # gather just the z coordinate from the tensor of all corners
+            # turning (8,3) into (8,1)
+            torch.gather(
+                corners,
+                1,
+                # create a (8, 1) tensor filled with elements corresponding to the index of the Z coordinate
+                # these indices are used by torch.gather() to retrieve the correct elements from the corners tensor
+                torch.repeat_interleave(
+                    torch.tensor([[2]]),  # pylint: disable=not-callable
+                    torch.tensor([8]),  # pylint: disable=not-callable
+                    dim=0,
+                ),
+            )
+        )
+        return min_corner_z - ORIGIN[2]
 
     @staticmethod
     def create_at_random_position(
@@ -247,15 +350,32 @@ class AdamObjectPositioningModel(torch.nn.Module):  # type: ignore
         self.object_bounding_boxes = adam_object_to_bounding_box.values()
 
         for (adam_object, bounding_box) in self.adam_object_to_bounding_box.items():
-            self.register_parameter(
-                adam_object.name, Parameter(bounding_box.center, requires_grad=True)
-            )
+            # suppress mypy error about supplying a Tensor where it expects a Parameter
+            self.register_parameter(adam_object.name, bounding_box.center)  # type: ignore
 
-        self.distance_to_origin_penalty = DistanceFromOriginPenalty()
         self.collision_penalty = CollisionPenalty()
+        self.below_ground_penalty = BelowGroundPenalty()
+        self.weak_gravity_penalty = WeakGravityPenalty()
 
     @staticmethod
     def for_objects(
+        adam_objects: AbstractSet[AdamObject]
+    ) -> "AdamObjectPositioningModel":
+        objects_to_bounding_boxes: ImmutableDict[
+            AdamObject, AxisAlignedBoundingBox
+        ] = immutabledict(
+            (
+                adam_object,
+                AxisAlignedBoundingBox.create_at_center_point(
+                    center=np.array(adam_object.initial_position)
+                ),
+            )
+            for adam_object in adam_objects
+        )
+        return AdamObjectPositioningModel(objects_to_bounding_boxes)
+
+    @staticmethod
+    def for_objects_random_positions(
         adam_objects: AbstractSet[AdamObject]
     ) -> "AdamObjectPositioningModel":
         objects_to_bounding_boxes: ImmutableDict[
@@ -272,34 +392,88 @@ class AdamObjectPositioningModel(torch.nn.Module):  # type: ignore
         return AdamObjectPositioningModel(objects_to_bounding_boxes)
 
     def forward(self):  # pylint: disable=arguments-differ
-        distance_penalty = sum(
-            self.distance_to_origin_penalty(box) for box in self.object_bounding_boxes
-        )
         collision_penalty = sum(
             self.collision_penalty(box1, box2)
             for (box1, box2) in combinations(self.object_bounding_boxes, 2)
         )
-        print(
-            f"distance penalty: {distance_penalty}\ncollision penalty: {collision_penalty}"
+        below_ground_penalty = sum(
+            self.below_ground_penalty(box) for box in self.object_bounding_boxes
         )
-        return distance_penalty + collision_penalty
+        weak_gravity_penalty = sum(
+            self.weak_gravity_penalty(box) for box in self.object_bounding_boxes
+        )
+        print(
+            f"collision penalty: {collision_penalty}"
+            f"\nout of bounds penalty: {below_ground_penalty}"
+            f"\ngravity penalty: {weak_gravity_penalty}"
+        )
+        return collision_penalty + below_ground_penalty + weak_gravity_penalty
 
-    def dump_object_positions(self) -> None:
+    def dump_object_positions(self, *, prefix: str = "") -> None:
         for (adam_object, bounding_box) in self.adam_object_to_bounding_box.items():
-            print(f"{adam_object.name} = {bounding_box.center.data}")
+            print(f"{prefix}{adam_object.name} = {bounding_box.center.data}")
+
+    def get_object_position(self, obj: AdamObject) -> torch.Tensor:
+        """
+        Retrieves the (center) position of an AdamObject contained in this model.
+        Args:
+            obj: AdamObject whose position is requested
+
+        Returns: (3,) tensor of the requested object's position.
+
+        Raises KeyError if an AdamObject not contained in this model is queried.
+        """
+        return self.adam_object_to_bounding_box[obj].center.data
+
+    def get_objects_positions(self) -> PositionsMap:
+        """
+        Retrieves positions of all AdamObjects contained in this model.
+        Returns: PositionsList
+
+        """
+        return PositionsMap(
+            immutabledict(
+                (adam_obj.name, bounding_box.center.data)
+                for adam_obj, bounding_box in self.adam_object_to_bounding_box.items()
+            )
+        )
 
 
-class DistanceFromOriginPenalty(nn.Module):  # type: ignore
+class BelowGroundPenalty(nn.Module):  # type: ignore
     """
-    Model that penalizes boxes that are distant from the origin.
+    Model that penalizes boxes lying outside of the scene (i.e. below the ground plane) or off-camera)
     """
+
+    def __init(self) -> None:  # pylint: disable=useless-super-delegation
+        super().__init__()
+
+    def forward(self, *inputs):  # pylint: disable=arguments-differ
+        bounding_box: AxisAlignedBoundingBox = inputs[0]
+        distance_above_ground = bounding_box.z_coordinate_of_lowest_corner()
+        if distance_above_ground >= 0:
+            return 0
+        else:
+            return -distance_above_ground
+
+
+class WeakGravityPenalty(nn.Module):  # type: ignore
+    """
+    Model that penalizes boxes that are not resting on the ground.
+    """
+
+    # TODO: exempt birds from this constraint https://github.com/isi-vista/adam/issues/485
 
     def __init__(self) -> None:  # pylint: disable=useless-super-delegation
         super().__init__()
 
     def forward(self, *inputs):  # pylint: disable=arguments-differ
         bounding_box: AxisAlignedBoundingBox = inputs[0]
-        return bounding_box.center_distance_from_point(ORIGIN)
+        distance_above_ground = bounding_box.z_coordinate_of_lowest_corner()
+        if distance_above_ground <= 0:
+            return 0.0
+        else:
+            # a linear penalty leads to a constant gradient, just like real gravity
+            return GRAVITY_PENALTY * distance_above_ground
 
 
 class CollisionPenalty(nn.Module):  # type: ignore

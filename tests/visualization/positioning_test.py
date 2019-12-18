@@ -1,20 +1,23 @@
 import numpy as np
-import pytest
 
 from adam.visualization.positioning import (
     AxisAlignedBoundingBox,
     CollisionPenalty,
-    DistanceFromOriginPenalty,
+    WeakGravityPenalty,
+    AdamObject,
+    run_model,
 )
 
-# re-use in-module test:
-from adam.visualization.positioning import main as optimization_test
 
+def test_running_model() -> None:
+    # for code coverage purposes
+    ball = AdamObject(name="ball", initial_position=(0, 0, 10))
+    box = AdamObject(name="box", initial_position=(0, 0, 1))
 
-def test_optimization() -> None:
-    # Check that the position optimization system runs without crashing
-    np.random.seed(127)
-    optimization_test()
+    aardvark = AdamObject(name="aardvark", initial_position=(1, 2, 1))
+    flamingo = AdamObject(name="flamingo", initial_position=(-1, 1, 2))
+    objs = [ball, box, aardvark, flamingo]
+    run_model(objs, num_iterations=10, yield_steps=10)
 
 
 def test_collision_constraint() -> None:
@@ -37,19 +40,20 @@ def test_collision_constraint() -> None:
     assert res <= 0
 
 
-def test_distance_constraint() -> None:
-    aabb0 = AxisAlignedBoundingBox.create_at_center_point(center=np.array([0, 0, 0]))
-    aabb_far = AxisAlignedBoundingBox.create_at_center_point(center=np.array([50, 0, 0]))
+def test_gravity_constraint() -> None:
+    aabb_floating = AxisAlignedBoundingBox.create_at_center_point(
+        center=np.array([0, 0, 5])
+    )
 
-    # this penalty is the Euclidean distance of the box from the origin
-    distance_from_origin = DistanceFromOriginPenalty()
+    # boxes are 2 units tall by default, so this one is resting on the ground
+    aabb_grounded = AxisAlignedBoundingBox.create_at_center_point(
+        center=np.array([0, 0, 1])
+    )
 
-    aabb_far_dist = distance_from_origin(aabb_far)
-    aabb0_dist = distance_from_origin(aabb0)
+    gravity_penalty = WeakGravityPenalty()
 
-    # aabb_far should be further from the origin than aabb0
-    assert aabb_far_dist > aabb0_dist
+    floating_result = gravity_penalty(aabb_floating)
+    assert floating_result > 0
 
-    # check the distances of the boxes
-    assert aabb_far_dist.item() == pytest.approx(50.0)
-    assert aabb0_dist.item() == pytest.approx(0.0)
+    grounded_result = gravity_penalty(aabb_grounded)
+    assert grounded_result <= 0

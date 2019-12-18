@@ -375,10 +375,7 @@ class PrepositionSubsetLanguageLearner(
             matcher = preposition_pattern.graph_pattern.matcher(
                 recognized_object_perception.perception_graph
             )
-            debug_mapping: Dict[Any, Any] = dict()
-            for match in matcher.matches(
-                debug_mapping_sink=debug_mapping if self._debug_file else None
-            ):
+            for match in matcher.matches():
                 # if it is, use that preposition to describe the situation.
                 description_to_score.append(
                     (
@@ -396,13 +393,5 @@ class PrepositionSubsetLanguageLearner(
                         1.0,
                     )
                 )
-                if debug_mapping:
-                    self._print(
-                        subgraph(
-                            preposition_pattern.graph_pattern.copy_as_digraph(),
-                            nodes=debug_mapping,
-                        ),
-                        "Largest Partial Match",
-                    )
 
         return immutabledict(description_to_score)

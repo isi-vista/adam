@@ -74,6 +74,8 @@ from adam.ontology.phase1_spatial_relations import (
     SpatialPath,
     TO,
     TOWARD,
+    Distance,
+    Direction,
 )
 from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
 from adam.relation import (
@@ -473,7 +475,7 @@ _TORSO = OntologyNode("torso")
 subtype(_TORSO, _BODY_PART)
 _ANIMAL_LEG = OntologyNode("(animal) leg")
 subtype(_ANIMAL_LEG, _BODY_PART)
-_INANIMATE_LEG = OntologyNode("(inanimate) leg")
+_INANIMATE_LEG = OntologyNode("(furniture) leg")
 subtype(_INANIMATE_LEG, INANIMATE_OBJECT)
 _CHAIR_BACK = OntologyNode("chairback")
 subtype(_CHAIR_BACK, INANIMATE_OBJECT)
@@ -572,15 +574,21 @@ def _on_region_factory(reference_object: _ObjectT) -> Region[_ObjectT]:
 on = make_dsl_region_relation(_on_region_factory)  # pylint:disable=invalid-name
 
 
-def _near_region_factory(reference_object: _ObjectT) -> Region[_ObjectT]:
-    return Region(reference_object=reference_object, distance=PROXIMAL)
+def _near_region_factory(
+    reference_object: _ObjectT, *, direction: Direction[_ObjectT] = None
+) -> Region[_ObjectT]:
+    return Region(
+        reference_object=reference_object, distance=PROXIMAL, direction=direction
+    )
 
 
 near = make_dsl_region_relation(_near_region_factory)  # pylint:disable=invalid-name
 
 
-def _far_region_factory(reference_object: _ObjectT) -> Region[_ObjectT]:
-    return Region(reference_object=reference_object, distance=DISTAL)
+def _far_region_factory(
+    reference_object: _ObjectT, *, direction: Direction[_ObjectT] = None
+) -> Region[_ObjectT]:
+    return Region(reference_object=reference_object, distance=DISTAL, direction=direction)
 
 
 far = make_dsl_region_relation(_far_region_factory)  # pylint:disable=invalid-name
@@ -667,12 +675,20 @@ def _inside_region_factory(reference_object: _ObjectT) -> Region[_ObjectT]:
 inside = make_dsl_region_relation(_inside_region_factory)  # pylint:disable=invalid-name
 
 
-def _above_region_factory(reference_object: _ObjectT) -> Region[_ObjectT]:
-    return Region(reference_object=reference_object, direction=GRAVITATIONAL_UP)
+def _above_region_factory(
+    reference_object: _ObjectT, *, dist: Distance = None
+) -> Region[_ObjectT]:
+    return Region(
+        reference_object=reference_object, distance=dist, direction=GRAVITATIONAL_UP
+    )
 
 
-def _below_region_factory(reference_object: _ObjectT) -> Region[_ObjectT]:
-    return Region(reference_object=reference_object, direction=GRAVITATIONAL_DOWN)
+def _below_region_factory(
+    reference_object: _ObjectT, *, dist: Distance = None
+) -> Region[_ObjectT]:
+    return Region(
+        reference_object=reference_object, distance=dist, direction=GRAVITATIONAL_DOWN
+    )
 
 
 above = make_opposite_dsl_region_relation(  # pylint:disable=invalid-name
@@ -680,15 +696,19 @@ above = make_opposite_dsl_region_relation(  # pylint:disable=invalid-name
 )
 
 
-def _strictly_above_region_factory(reference_object: _ObjectT) -> Region[_ObjectT]:
+def _strictly_above_region_factory(
+    reference_object: _ObjectT, *, dist: Distance = DISTAL
+) -> Region[_ObjectT]:
     return Region(
-        reference_object=reference_object, distance=DISTAL, direction=GRAVITATIONAL_UP
+        reference_object=reference_object, distance=dist, direction=GRAVITATIONAL_UP
     )
 
 
-def _strictly_below_region_factory(reference_object: _ObjectT) -> Region[_ObjectT]:
+def _strictly_below_region_factory(
+    reference_object: _ObjectT, *, dist: Distance = DISTAL
+) -> Region[_ObjectT]:
     return Region(
-        reference_object=reference_object, distance=DISTAL, direction=GRAVITATIONAL_DOWN
+        reference_object=reference_object, distance=dist, direction=GRAVITATIONAL_DOWN
     )
 
 

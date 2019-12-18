@@ -1,28 +1,28 @@
-from typing import Dict, Generic, Mapping, Tuple, Optional
+from typing import Dict, Generic, Mapping, Optional, Tuple
 
-from attr import Factory, attrib, attrs
 from immutablecollections import immutabledict
 
 from adam.language import (
+    LinguisticDescription,
     LinguisticDescriptionT,
     TokenSequenceLinguisticDescription,
-    LinguisticDescription,
 )
 from adam.learner import (
     LanguageLearner,
     LearningExample,
-    graph_without_learner,
     get_largest_matching_pattern,
+    graph_without_learner,
 )
 from adam.perception import PerceptionT, PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
 from adam.perception.perception_graph import (
+    DebugCallableType,
     PerceptionGraph,
     PerceptionGraphPattern,
-    DebugCallableType,
 )
+from attr import Factory, attrib, attrs
 
 
 @attrs(slots=True)

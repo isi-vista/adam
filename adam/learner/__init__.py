@@ -18,6 +18,7 @@ from adam.perception.perception_graph import (
     PerceptionGraph,
     PerceptionGraphPattern,
     DebugCallableType,
+    PerceptionGraphPatternMatch,
 )
 from adam.utils.networkx_utils import subgraph
 
@@ -123,17 +124,14 @@ def get_largest_matching_pattern(
     for learner from a perception pattern and graph pair."""
     # Initialize matcher in debug version to keep largest subgraph
     matching = pattern.matcher(graph, debug_callback=debug_callback)
-    debug_sink: Dict[Any, Any] = {}
-    match_mapping = list(matching.matches(debug_mapping_sink=debug_sink))
+    match_attempt = matching.first_match_or_failure_info()
 
-    if match_mapping:
+    if isinstance(match_attempt, PerceptionGraphPatternMatch):
         # if matched, get the match
-        return match_mapping[0].matched_pattern
+        return match_attempt.matched_pattern
     else:
         # otherwise get the largest subgraph and initialze new PatternGraph from it
-        matched_pattern_nodes = debug_sink.keys()
-        matching_sub_digraph = subgraph(pattern.copy_as_digraph(), matched_pattern_nodes)
-        return PerceptionGraphPattern(matching_sub_digraph)
+        return PerceptionGraphPattern(match_attempt.largest_match_pattern_subgraph)
 
 
 def graph_without_learner(graph: DiGraph) -> PerceptionGraph:

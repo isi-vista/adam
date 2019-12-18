@@ -14,6 +14,7 @@ from typing import (
     Mapping,
 )
 
+from adam.axis import GeonAxis
 from adam.curriculum.curriculum_utils import Phase1InstanceGroup
 from attr import attrib, attrs
 from attr.validators import instance_of
@@ -29,12 +30,13 @@ from vistautils.parameters import Parameters
 from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 from vistautils.preconditions import check_state
 
+from adam.curriculum.m6_curriculum import make_m6_curriculum
 from adam.curriculum.preposition_curriculum import make_prepositions_curriculum
 from adam.curriculum.pursuit_curriculum import make_pursuit_curriculum
 from adam.curriculum.phase1_curriculum import build_gaila_phase_1_curriculum
 from adam.experiment import InstanceGroup
 from adam.geon import Geon
-from adam.axes import WORLD_AXES, AxesInfo
+from adam.axes import WORLD_AXES, AxesInfo, _GravitationalAxis
 from adam.language.dependency import LinearizedDependencyTree
 from adam.ontology import IN_REGION, IS_SPEAKER, OntologyNode
 from adam.ontology.during import DuringAction
@@ -45,7 +47,7 @@ from adam.ontology.phase1_ontology import (
     MUCH_SMALLER_THAN,
     MUCH_BIGGER_THAN,
 )
-from adam.ontology.phase1_spatial_relations import Region, SpatialPath
+from adam.ontology.phase1_spatial_relations import Region, SpatialPath, Direction
 from adam.perception import ObjectPerception, PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -100,11 +102,16 @@ EXPLANATION_HEADER = (
     "\n\t '>>' denotes the 'much bigger than' relation.</li>"
     "<li>Many objects also have associated Geons, which describe their shape "
     "according to Biederman's visual perception theory (see deliverable docs for a citation).</li>"
+    "<li>The colors provided in the background of a phrase reading 'color=#XXXXXX' is the color indicated by the hex code</li>"
+    "<li>The Axis Facing section, if included, lists which axes of the objects in the scene face a given object. "
+    "In most cases, this information is only provided for the addressee in a scene.</li>"
+    "</ul>"
 )
 STR_TO_CURRICULUM: Mapping[str, Callable[[], Iterable[Phase1InstanceGroup]]] = {
     "phase1": build_gaila_phase_1_curriculum,
     "prepositions": make_prepositions_curriculum,
     "pursuit": make_pursuit_curriculum,
+    "m6-curriculum": make_m6_curriculum,
 }
 
 
@@ -435,7 +442,20 @@ class CurriculumToHtmlDumper:
         """
         speaker = None
         output_text = [f"\n\t\t\t\t\t<h4>Objects</h4>\n\t\t\t\t\t<ul>"]
+        seen_handles_to_next_index: Dict[str, int] = {}
+        situation_obj_to_handle: Dict[SituationObject, str] = {}
         for obj in situation.all_objects:
+            handle: str
+            if obj.ontology_node.handle in seen_handles_to_next_index:
+                handle = (
+                    obj.ontology_node.handle
+                    + "_"
+                    + str(seen_handles_to_next_index[obj.ontology_node.handle])
+                )
+                seen_handles_to_next_index[obj.ontology_node.handle] += 1
+            else:
+                handle = obj.ontology_node.handle + "_0"
+                seen_handles_to_next_index[obj.ontology_node.handle] = 1
             property_string: str
             prop_strings = []
             if obj.properties:
@@ -446,9 +466,8 @@ class CurriculumToHtmlDumper:
                 property_string = "[" + ",".join(prop_strings) + "]"
             else:
                 property_string = ""
-            output_text.append(
-                f"\t\t\t\t\t\t<li>{obj.ontology_node.handle}{property_string}</li>"
-            )
+            output_text.append(f"\t\t\t\t\t\t<li>{handle}{property_string}</li>")
+            situation_obj_to_handle[obj] = handle
         output_text.append("\t\t\t\t\t</ul>")
         if situation.actions:
             output_text.append("\t\t\t\t\t<h4>Actions</h4>\n\t\t\t\t\t<ul>")
@@ -459,37 +478,50 @@ class CurriculumToHtmlDumper:
                 for mapping in acts.argument_roles_to_fillers.keys():
                     for object_ in acts.argument_roles_to_fillers[mapping]:
                         output_text.append(
-                            f"\t\t\t\t\t\t<li>{mapping.handle} is {self._situation_object_or_region_text(object_)}</li>"
+                            f"\t\t\t\t\t\t<li>{mapping.handle} is {self._situation_object_or_region_text(object_, situation_obj_to_handle)}</li>"
                         )
                 for mapping in acts.auxiliary_variable_bindings.keys():
                     output_text.append(
-                        f"\t\t\t\t\t\t<li>{mapping.debug_handle} is {self._situation_object_or_region_text(acts.auxiliary_variable_bindings[mapping])}"
+                        f"\t\t\t\t\t\t<li>{mapping.debug_handle} is {self._situation_object_or_region_text(acts.auxiliary_variable_bindings[mapping], situation_obj_to_handle)}"
                     )
             output_text.append("\t\t\t\t\t</ul>")
         if situation.always_relations:
             output_text.append("\t\t\t\t\t<h4>Relations</h4>\n\t\t\t\t\t<ul>")
             for rel in situation.always_relations:
                 output_text.append(
-                    f"\t\t\t\t\t\t<li>{rel.relation_type.handle}({rel.first_slot.ontology_node.handle},"
-                    f"{self._situation_object_or_region_text(rel.second_slot)})</li>"
+                    f"\t\t\t\t\t\t<li>{rel.relation_type.handle}({situation_obj_to_handle[rel.first_slot]},"
+                    f"{self._situation_object_or_region_text(rel.second_slot, situation_obj_to_handle)})</li>"
                 )
             output_text.append("\t\t\t\t\t</ul>")
         return ("\n".join(output_text), speaker)
 
     def _situation_object_or_region_text(
-        self, obj_or_region: Union[SituationObject, SituationRegion]
+        self,
+        obj_or_region: Union[SituationObject, SituationRegion],
+        obj_to_handle: Dict[SituationObject, str],
     ) -> str:
+        def _direction(direction: Direction[SituationObject]) -> str:
+            polarity = "+" if direction.positive else "-"
+            axes_function = (
+                direction.relative_to_axis
+                if isinstance(direction.relative_to_axis, _GravitationalAxis)
+                else direction.relative_to_axis.__repr__(  # type: ignore
+                    object_map=obj_to_handle
+                )
+            )
+            return f"{polarity}{axes_function}"
+
         if isinstance(obj_or_region, SituationObject):
-            return obj_or_region.ontology_node.handle
+            return obj_to_handle[obj_or_region]
         else:
             parts = []
             parts.append(
-                f"reference_object={obj_or_region.reference_object.ontology_node.handle}"
+                f"reference_object={obj_to_handle[obj_or_region.reference_object]}"
             )
             if obj_or_region.distance:
                 parts.append(f"distance={obj_or_region.distance.name}")
             if obj_or_region.direction:
-                parts.append(f"direction={obj_or_region.direction}")
+                parts.append(f"direction={_direction(obj_or_region.direction)}")
 
             return "Region(" + ", ".join(parts) + ")"
 
@@ -629,10 +661,10 @@ class CurriculumToHtmlDumper:
                     prop_string = (
                         f'<span style="background-color: {prop.color}; '
                         f'color: {prop.color.inverse()}; border: 1px solid black;">'
-                        f"{prop.color.hex}</span>"
+                        f"color={prop.color.hex}</span>"
                     )
                 elif isinstance(prop, HasBinaryProperty):
-                    prop_string = str(prop.binary_property)
+                    prop_string = prop.binary_property.handle
                 else:
                     raise RuntimeError(f"Cannot render property: {prop}")
 
@@ -669,10 +701,13 @@ class CurriculumToHtmlDumper:
         root = ObjectPerception("root", axes=WORLD_AXES)
         graph.add_node(root)
         expressed_relations = set()
+        axis_to_object: Dict[GeonAxis, ObjectPerception] = {}
 
         for object_ in all_objects:
             graph.add_node(object_)
             graph.add_edge(root, object_)
+            for axis in object_.axes.all_axes:
+                axis_to_object[axis] = object_
 
         for relation_ in all_relations:
             if relation_.relation_type == PART_OF:
@@ -761,14 +796,15 @@ class CurriculumToHtmlDumper:
             output_text.append(("\t\t\t\t\t<h5>Axis Facings</h5>"))
             output_text.append(("\t\t\t\t\t<ul>"))
             for object_ in axis_info.axes_facing:
-                facing_axes_str = ", ".join(
-                    str(axis) for axis in axis_info.axes_facing[object_]
-                )
                 output_text.append(
-                    f"\t\t\t\t\t\t<li>{object_.debug_handle} faced by "
-                    f"{facing_axes_str}</li>"
+                    f"\t\t\t\t\t\t<li>{object_.debug_handle} faced by:\n\t\t\t\t\t\t<ul>"
                 )
-            output_text.append(("\t\t\t\t\t</ul>"))
+                for axis in axis_info.axes_facing[object_]:
+                    output_text.append(
+                        f"\t\t\t\t\t\t\t<li>{axis} possessed by {axis_to_object[axis]}</li>"
+                    )
+                output_text.append("\t\t\t\t\t\t</ul>")
+            output_text.append("\t\t\t\t\t</ul>")
 
         return "\n".join(output_text)
 
