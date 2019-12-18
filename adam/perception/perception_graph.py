@@ -369,7 +369,7 @@ class PerceptionGraph(PerceptionGraphProtocol):
         return self._graph.copy()
 
 
-@attrs(frozen=True, slots=True)
+@attrs(frozen=True, slots=True, repr=False)
 class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
     r"""
     A pattern which can match `PerceptionGraph`\ s.
@@ -648,6 +648,9 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
                     nodes=attempted_match.pattern_node_to_graph_node_for_largest_match.keys(),
                 )
             )
+
+    def __repr__(self) -> str:
+        return f"PerceptionGraphPattern(nodes={self._graph.nodes}, edges={self._graph.edges})"
 
 
 class DumpPartialMatchCallback:

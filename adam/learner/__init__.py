@@ -131,7 +131,7 @@ def get_largest_matching_pattern(
         return match_attempt.matched_pattern
     else:
         # otherwise get the largest subgraph and initialze new PatternGraph from it
-        return PerceptionGraphPattern(match_attempt.largest_match_pattern_subgraph)
+        return match_attempt.largest_match_pattern_subgraph
 
 
 def graph_without_learner(graph: DiGraph) -> PerceptionGraph:

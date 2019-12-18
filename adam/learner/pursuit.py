@@ -95,6 +95,10 @@ class PursuitLanguageLearner(
         # The learner’s words are W, meanings are M, their associations are A, and the new utterance is U = (W_U, M_U).
         # For every w in W_U
         for word in observed_linguistic_description:
+            # TODO: pursuit learner hard-coded to ignore determiners
+            # https://github.com/isi-vista/adam/issues/498
+            if word in ("a", "the"):
+                continue
             if word in self._words_to_number_of_observations:
                 self._words_to_number_of_observations[word] += 1
             else:
@@ -257,7 +261,8 @@ class PursuitLanguageLearner(
             self._lexicon[word] = leading_hypothesis_pattern
             # Remove the word from hypotheses
             self._words_to_hypotheses_and_scores.pop(word)
-            print("Lexicalized", word)
+            logging.info("Lexicalized %s as %s", word, leading_hypothesis_pattern)
+            print(f"LExicalized {word} as {leading_hypothesis_pattern}")
 
     @staticmethod
     def get_meanings_from_perception(
