@@ -1,27 +1,27 @@
-from typing import Dict, Generic, Mapping, Tuple, Optional, Any
+from typing import Dict, Generic, Mapping, Optional, Tuple
 
-from attr import Factory, attrib, attrs
 from immutablecollections import immutabledict
 from more_itertools import first
 from networkx import DiGraph, isolates
 
 from adam.language import (
+    LinguisticDescription,
     LinguisticDescriptionT,
     TokenSequenceLinguisticDescription,
-    LinguisticDescription,
 )
 from adam.learner import LanguageLearner, LearningExample
 from adam.ontology.phase1_ontology import LEARNER
-from adam.perception import PerceptionT, PerceptualRepresentation, ObjectPerception
+from adam.perception import ObjectPerception, PerceptionT, PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
 from adam.perception.perception_graph import (
+    DebugCallableType,
     PerceptionGraph,
     PerceptionGraphPattern,
-    DebugCallableType,
+    PerceptionGraphPatternMatch,
 )
-from adam.utils.networkx_utils import subgraph
+from attr import Factory, attrib, attrs
 
 
 @attrs(slots=True)
@@ -130,20 +130,20 @@ def get_largest_matching_pattern(
     *,
     debug_callback: Optional[DebugCallableType] = None,
 ) -> PerceptionGraphPattern:
-    """ Helper function to return the largest matching pattern for learner from a perception pattern and graph pair."""
-    # Initialize matcher in debug version to keep largest subgraph
+    """ Helper function to return the largest matching sub-pattern
+    for a perception pattern and graph pair
+    *which is discovered during the match search process*.
+    This is not guaranteed to be the largest possible partial match.
+    Improvement of this is pending https://github.com/isi-vista/adam/issues/461
+    """
     matching = pattern.matcher(graph, debug_callback=debug_callback)
-    debug_sink: Dict[Any, Any] = {}
-    match_mapping = list(matching.matches(debug_mapping_sink=debug_sink))
+    attempted_match = matching.first_match_or_failure_info()
 
-    if match_mapping:
+    if isinstance(attempted_match, PerceptionGraphPatternMatch):
         # if matched, get the match
-        return match_mapping[0].matched_pattern
+        return attempted_match.matched_pattern
     else:
-        # otherwise get the largest subgraph and initialze new PatternGraph from it
-        matched_pattern_nodes = debug_sink.keys()
-        matching_sub_digraph = subgraph(pattern.copy_as_digraph(), matched_pattern_nodes)
-        return PerceptionGraphPattern(matching_sub_digraph)
+        return attempted_match.largest_match_pattern_subgraph
 
 
 def graph_without_learner(graph: DiGraph) -> PerceptionGraph:

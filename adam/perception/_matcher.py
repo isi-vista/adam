@@ -21,7 +21,7 @@ from collections import defaultdict
 from itertools import chain
 from typing import Mapping, Any, Dict, Callable, Optional
 
-from immutablecollections import immutableset, ImmutableSet
+from immutablecollections import immutableset, ImmutableSet, immutabledict
 from more_itertools import flatten
 from networkx import DiGraph
 
@@ -33,8 +33,19 @@ class GraphMatching:
     """
 
     def __init__(
-        self, graph: DiGraph, pattern: DiGraph, use_lookahead_pruning: bool = True
+        self,
+        graph: DiGraph,
+        pattern: DiGraph,
+        *,
+        use_lookahead_pruning: bool = True,
+        matching_pattern_against_pattern: bool = False,
     ) -> None:
+        """
+        *matching_pattern_against_pattern* should be indicated as true if the two graphs
+        which are being matched are both made up of `NodePredicate` objects.
+        See https://github.com/isi-vista/adam/issues/489
+        for disentangling pattern-graph and pattern-pattern matching.
+        """
         self.graph = graph
         self.pattern = pattern
         # we specify disable_order_check here because we know the DiGraph provides
@@ -60,7 +71,10 @@ class GraphMatching:
         # in debug mode, we keep track of the largest (by # of nodes) incomplete match
         # we can find
         self.debug_largest_match: Mapping[Any, Any] = {}
+        self.failing_pattern_node_for_deepest_match = None
+
         self.use_lookahead_pruning = use_lookahead_pruning
+        self.matching_pattern_against_pattern = matching_pattern_against_pattern
 
         self._reset_debugging_maps()
 
@@ -80,8 +94,11 @@ class GraphMatching:
         # we should turn this into a non-recursive implementation.
         sys.setrecursionlimit(self.old_recursion_limit)
 
-    def candidate_pairs_iter(self):
-        """Iterator over candidate pairs of nodes in G1 and G2."""
+    def next_match_candidates(self):
+        """
+        Get a tuple of the next pattern node to match and an Iterable of graph nodes
+        to try to match it against.
+        """
 
         # All computations are done using the current state!
 
@@ -111,8 +128,7 @@ class GraphMatching:
         # Shouldn't that indicate a failed match?
         if graph_match_forward_frontier and pattern_match_forward_frontier:
             pattern_node = min(pattern_match_forward_frontier, key=min_key)
-            for graph_node in graph_match_forward_frontier:
-                yield graph_node, pattern_node
+            return (pattern_node, graph_match_forward_frontier)
         else:
             # Compute the "backward frontier" sets.
             # These are the nodes which are reachable in one hop from the currently matched nodes
@@ -134,20 +150,24 @@ class GraphMatching:
             # but the graph does not? Shouldn't that indicate a failed match?
             if graph_match_backwards_frontier and pattern_match_backwards_frontier:
                 pattern_node = min(pattern_match_backwards_frontier, key=min_key)
-                for graph_node in graph_match_backwards_frontier:
-                    yield graph_node, pattern_node
+                return (pattern_node, graph_match_backwards_frontier)
             else:
                 # otherwise we just take the first unmatched pattern node
                 pattern_node = min(
                     pattern_nodes - set(self.pattern_node_to_graph_node), key=min_key
                 )
-                for graph_node in graph_nodes:
-                    if graph_node not in self.graph_node_to_pattern_node:
-                        yield graph_node, pattern_node
+                return (
+                    pattern_node,
+                    [
+                        graph_node
+                        for graph_node in graph_nodes
+                        if graph_node not in self.graph_node_to_pattern_node
+                    ],
+                )
 
         # For all other cases, we don't have any candidate pairs.
 
-    def initialize(self):
+    def initialize(self, *, initial_partial_match: Mapping[Any, Any] = immutabledict()):
         """Reinitializes the state of the algorithm.
 
         This method should be redefined if using something other than DiGMState.
@@ -155,8 +175,8 @@ class GraphMatching:
         """
 
         # the alignment of nodes between pattern and graph for the match so far
-        self.graph_node_to_pattern_node = {}
-        self.pattern_node_to_graph_node = {}
+        self.graph_node_to_pattern_node: Dict[Any, Any] = {}
+        self.pattern_node_to_graph_node: Dict[Any, Any] = {}
 
         # See the paper for definitions of M_x and T_x^{y}
 
@@ -166,15 +186,16 @@ class GraphMatching:
         # For efficiency during search, these are dicts mapping each node
         # to the depth of the search tree when the node was first encountered
         # as a neighbor to the match.
-        self.graph_nodes_in_or_preceding_match = {}
-        self.pattern_nodes_in_or_preceding_match = {}
-        self.graph_nodes_in_or_succeeding_match = {}
-        self.pattern_nodes_in_or_succeeding_match = {}
+        self.graph_nodes_in_or_preceding_match: Dict[Any, int] = {}
+        self.pattern_nodes_in_or_preceding_match: Dict[Any, int] = {}
+        self.graph_nodes_in_or_succeeding_match: Dict[Any, int] = {}
+        self.pattern_nodes_in_or_succeeding_match: Dict[Any, int] = {}
 
         self.state = GraphMatchingState(self)
 
         # Provide a convenient way to access the isomorphism mapping.
         self.mapping = self.graph_node_to_pattern_node.copy()
+        self._jump_to_partial_match(initial_partial_match)
 
     def debug_diagnostics(self) -> Mapping[Any, Any]:
         # for nodes, we want to partition them into three groups
@@ -216,43 +237,43 @@ class GraphMatching:
             "syntax_failures": syntax_node_failures,
         }
 
-    def is_isomorphic(self):
-        """Returns True if G1 and G2 are isomorphic graphs."""
-
-        # Let's do two very quick checks!
-        # QUESTION: Should we call faster_graph_could_be_isomorphic(G1,G2)?
-        # For now, I just copy the code.
-
-        # Check global properties
-        if self.graph.order() != self.pattern.order():
-            return False
-
-        # Check local properties
-        graph_node_degree = sorted(d for n, d in self.graph.degree())
-        pattern_node_degree = sorted(d for n, d in self.pattern.degree())
-        if graph_node_degree != pattern_node_degree:
-            return False
-
-        try:
-            next(self.isomorphisms_iter())
-            return True
-        except StopIteration:
-            return False
-
-    def isomorphisms_iter(self):
-        """Generator over isomorphisms between G1 and G2."""
-        # Declare that we are looking for a graph-graph isomorphism.
-        self.test = "graph"
-        self.initialize()
-        for mapping in self.match():
-            yield mapping
+    def _jump_to_partial_match(
+        self, initial_pattern_node_to_graph_node: Mapping[Any, Any]
+    ) -> None:
+        if self.pattern_node_to_graph_node:
+            raise RuntimeError(
+                "Cannot call _jump_to_partial_match from a non-empty state"
+            )
+        for (
+            pattern_node,
+            aligned_graph_node,
+        ) in initial_pattern_node_to_graph_node.items():
+            # Ick, ick, ick - when the state objects are created,
+            # they perform the necessary alterations to this class's data structures
+            # *as a side-effect*.
+            # I'd rather avoid that, but is inherited from the NetworkX code we are adapting.
+            # In terms of state updates, this imitates what would happen if we called
+            # match() recursively (as we do in a normal match)
+            # and just happened to make exactly this sequence of alignment choices.
+            if not self.semantic_feasibility(aligned_graph_node, pattern_node):
+                raise RuntimeError(
+                    f"Requested to begin matching from an alignment which aligns "
+                    f"semantically infeasible nodes: "
+                    f"{pattern_node} to {aligned_graph_node}"
+                )
+            if not self.syntactic_feasibility(aligned_graph_node, pattern_node):
+                raise RuntimeError(
+                    f"Requested to begin matching from an alignment which aligns "
+                    f"syntactically infeasible nodes: "
+                    f"{pattern_node} to {aligned_graph_node}"
+                )
+            self.state.__class__(self, aligned_graph_node, pattern_node)
 
     def match(
         self,
         *,
-        debug: bool = False,
+        collect_debug_statistics: bool = False,
         debug_callback: Optional[Callable[[Any, Any], None]] = None,
-        matching_pattern: bool = False
     ):
         """Extends the isomorphism mapping.
 
@@ -260,14 +281,11 @@ class GraphMatching:
         isomorphism can be found between G1 and G2.  It cleans up the class
         variables after each recursive call. If an isomorphism is found,
         we yield the mapping.
-
-        *matching_pattern* should be indicated as true if the two graphs
-        which are being matched are both made up of `NodePredicate` objects.
-
         """
-        if debug and len(self.pattern_node_to_graph_node) >= len(
+        at_largest_match_so_far = len(self.pattern_node_to_graph_node) >= len(
             self.debug_largest_match
-        ):
+        )
+        if at_largest_match_so_far:
             self.debug_largest_match = self.pattern_node_to_graph_node.copy()
             # Check rendering debug flag to see if we should render the graph
             if debug_callback:
@@ -278,31 +296,42 @@ class GraphMatching:
             # The mapping is complete.
             yield self.mapping
         else:
-            for graph_node, pattern_node in self.candidate_pairs_iter():
+            (
+                next_pattern_node_to_match,
+                graph_nodes_to_match_against,
+            ) = self.next_match_candidates()
+            if at_largest_match_so_far:
+                # We failed to extend our largest match so far.
+                # We record what pattern node we were trying to match when this extension failed.
+                # This can be useful for debugging and for pattern pruning and refinement.
+                self.failing_pattern_node_for_deepest_match = next_pattern_node_to_match
+            for graph_node in graph_nodes_to_match_against:
                 if self.semantic_feasibility(
                     graph_node,
-                    pattern_node,
-                    debug=debug,
-                    matching_pattern=matching_pattern,
+                    next_pattern_node_to_match,
+                    collect_debug_statistics=collect_debug_statistics,
                 ):
-                    if debug:
-                        self.node_to_syntax_attempts[pattern_node] += 1
-                    if self.syntactic_feasibility(graph_node, pattern_node):
+                    if collect_debug_statistics:
+                        self.node_to_syntax_attempts[next_pattern_node_to_match] += 1
+                    if self.syntactic_feasibility(graph_node, next_pattern_node_to_match):
                         # Recursive call, adding the feasible state.
-                        newstate = self.state.__class__(self, graph_node, pattern_node)
+                        newstate = self.state.__class__(
+                            self, graph_node, next_pattern_node_to_match
+                        )
                         for mapping in self.match(
-                            debug=debug, debug_callback=debug_callback
+                            collect_debug_statistics=collect_debug_statistics,
+                            debug_callback=debug_callback,
                         ):
                             yield mapping
 
                         # restore data structures
                         newstate.restore()
                     else:
-                        if debug:
-                            self.node_to_syntax_failures[pattern_node] += 1
+                        if collect_debug_statistics:
+                            self.node_to_syntax_failures[next_pattern_node_to_match] += 1
 
     def semantic_feasibility(
-        self, graph_node, pattern_node, debug=False, matching_pattern=False
+        self, graph_node, pattern_node, collect_debug_statistics=False
     ):
         """Returns True if adding (G1_node, G2_node) is symantically feasible.
 
@@ -341,7 +370,7 @@ class GraphMatching:
         the above form to keep the match() method functional. Implementations
         should consider multigraphs.
         """
-        if debug:
+        if collect_debug_statistics:
             self.pattern_node_to_num_predicate_attempts[pattern_node] += 1
 
         # We assume the nodes of G2 are node predicates which must hold true for the
@@ -350,14 +379,18 @@ class GraphMatching:
         # __call__ function on the Predicates, we need to call the .matches_predicate
         # instead. We use a boolean rather than checking at runtime to speed up this
         # process
-        if matching_pattern:
+        if self.matching_pattern_against_pattern:
+            # This is the key used to look up edge labels on the graph being matched against.
+            edge_label_key = "predicate"
             if not pattern_node.matches_predicate(graph_node):
-                if debug:
+                if collect_debug_statistics:
                     self.pattern_node_to_num_predicate_failures[pattern_node] += 1
                 return False
         else:
+            # This is the key used to look up edge labels on the graph being matched against.
+            edge_label_key = "label"
             if not pattern_node(graph_node):
-                if debug:
+                if collect_debug_statistics:
                     self.pattern_node_to_num_predicate_failures[pattern_node] += 1
                 return False
 
@@ -384,21 +417,29 @@ class GraphMatching:
                     predecessor_mapped_node_in_graph, graph_node
                 )
 
-                if debug:
+                if collect_debug_statistics:
                     self.pattern_edge_to_num_match_attempts[
                         (pattern_predecessor, pattern_node)
                     ] += 1
 
                 if not graph_edge:
-                    if debug:
+                    if collect_debug_statistics:
                         self.pattern_edge_to_num_presence_failures[
                             (pattern_predecessor, pattern_node)
                         ] += 1
                     return False
-                if not pattern_predicate(
-                    predecessor_mapped_node_in_graph, graph_edge["label"], graph_node
-                ):
-                    if debug:
+
+                graph_edge_label = graph_edge[edge_label_key]
+
+                if self.matching_pattern_against_pattern:
+                    edge_ok = pattern_predicate.matches_predicate(graph_edge_label)
+                else:
+                    edge_ok = pattern_predicate(
+                        predecessor_mapped_node_in_graph, graph_edge_label, graph_node
+                    )
+
+                if not edge_ok:
+                    if collect_debug_statistics:
                         self.pattern_edge_to_num_predicate_failures[
                             (pattern_predecessor, pattern_node)
                         ] += 1
@@ -422,22 +463,28 @@ class GraphMatching:
                     graph_node, successor_mapped_node_in_graph
                 )
 
-                if debug:
+                if collect_debug_statistics:
                     self.pattern_edge_to_num_match_attempts[
                         (pattern_node, pattern_successor)
                     ] += 1
 
                 if not graph_edge:
-                    if debug:
+                    if collect_debug_statistics:
                         self.pattern_edge_to_num_presence_failures[
                             (pattern_node, pattern_successor)
                         ] += 1
                     return False
 
-                if not pattern_predicate(
-                    graph_node, graph_edge["label"], successor_mapped_node_in_graph
-                ):
-                    if debug:
+                graph_edge_label = graph_edge[edge_label_key]
+
+                if self.matching_pattern_against_pattern:
+                    edge_ok = pattern_predicate.matches_predicate(graph_edge_label)
+                else:
+                    edge_ok = pattern_predicate(
+                        graph_node, graph_edge_label, successor_mapped_node_in_graph
+                    )
+                if not edge_ok:
+                    if collect_debug_statistics:
                         self.pattern_edge_to_num_predicate_failures[
                             (pattern_node, pattern_successor)
                         ] += 1
@@ -452,43 +499,25 @@ class GraphMatching:
         except StopIteration:
             return False
 
-    def subgraph_is_monomorphic(self):
-        """Returns True if a subgraph of G1 is monomorphic to G2."""
-        try:
-            next(self.subgraph_monomorphisms_iter())
-            return True
-        except StopIteration:
-            return False
-
-    #    subgraph_is_isomorphic.__doc__ += "\n" + subgraph.replace('\n','\n'+indent)
-
     def subgraph_isomorphisms_iter(
         self,
         *,
-        debug: bool = False,
+        collect_debug_statistics: bool = False,
         debug_callback: Optional[Callable[[Any, Any], None]] = None,
-        matching_pattern: bool = False
+        initial_partial_match: Mapping[Any, Any] = immutabledict(),
     ):
         """Generator over isomorphisms between a subgraph of G1 and G2."""
         # Declare that we are looking for graph-subgraph isomorphism.
         self.test = "subgraph"
-        self.initialize()
+        self.initialize(initial_partial_match=initial_partial_match)
         self.debug_largest_match = {}
+        self.failing_pattern_node_for_deepest_match = None
         self._reset_debugging_maps()
         for mapping in self.match(
-            debug=debug, debug_callback=debug_callback, matching_pattern=matching_pattern
+            collect_debug_statistics=collect_debug_statistics,
+            debug_callback=debug_callback,
         ):
             yield mapping
-
-    def subgraph_monomorphisms_iter(self):
-        """Generator over monomorphisms between a subgraph of G1 and G2."""
-        # Declare that we are looking for graph-subgraph monomorphism.
-        self.test = "mono"
-        self.initialize()
-        for mapping in self.match():
-            yield mapping
-
-    #    subgraph_isomorphisms_iter.__doc__ += "\n" + subgraph.replace('\n','\n'+indent)
 
     def syntactic_feasibility(self, graph_node, pattern_node):
         """Returns True if adding (G1_node, G2_node) is syntactically feasible.
