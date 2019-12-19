@@ -190,7 +190,7 @@ class FacingAddresseeAxis(Generic[_ObjectT], AxisFunction[_ObjectT]):
         return f"FacingAddresseeAxis(_object={handle})"
 
 
-_GRAVITATIONAL_DOWN_TO_UP_AXIS = straight_up("gravitational-up")
+GRAVITATIONAL_DOWN_TO_UP_AXIS = straight_up("gravitational-up")
 _SOUTH_TO_NORTH_AXIS = directed("south-to-north")
 _WEST_TO_EAST_AXIS = directed("west-to-east")
 _LEARNER_DOWN_TO_UP_AXIS = straight_up("learner-vertical")
@@ -203,7 +203,7 @@ class _GravitationalAxis(AxisFunction[Any]):
     def to_concrete_axis(
         self, axes_info: Optional[AxesInfo[Any]]  # pylint:disable=unused-argument
     ) -> GeonAxis:
-        return _GRAVITATIONAL_DOWN_TO_UP_AXIS
+        return GRAVITATIONAL_DOWN_TO_UP_AXIS
 
     def copy_remapping_objects(
         self, object_map: Mapping[_ObjectT, _ObjectToT]  # pylint:disable=unused-argument
@@ -275,7 +275,7 @@ class HasAxes(Protocol):
 
 
 WORLD_AXES = Axes(
-    primary_axis=_GRAVITATIONAL_DOWN_TO_UP_AXIS,
+    primary_axis=GRAVITATIONAL_DOWN_TO_UP_AXIS,
     orienting_axes=[_SOUTH_TO_NORTH_AXIS, _WEST_TO_EAST_AXIS],
 )
 LEARNER_AXES = Axes(
