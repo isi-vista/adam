@@ -34,7 +34,7 @@ from adam.curriculum.m6_curriculum import make_m6_curriculum
 from adam.curriculum.preposition_curriculum import make_prepositions_curriculum
 from adam.curriculum.pursuit_curriculum import make_pursuit_curriculum
 from adam.curriculum.phase1_curriculum import build_gaila_phase_1_curriculum
-from adam.experiment import InstanceGroup
+from adam.curriculum import InstanceGroup
 from adam.geon import Geon
 from adam.axes import WORLD_AXES, AxesInfo, _GravitationalAxis
 from adam.language.dependency import LinearizedDependencyTree
@@ -205,7 +205,7 @@ class CurriculumToHtmlDumper:
                         f"Expected the Perceptual Representation to contain DevelopmentalPrimitivePerceptionFrame got "
                         f"{type(perception.frames)}"
                     )
-                (_, speaker) = self._situation_text(situation)
+                (_, speaker) = self.situation_text(situation)
                 length = len(self._linguistic_text(dependency_tree, speaker).split())
                 all_instances.append((situation, dependency_tree, perception, length))
 
@@ -217,12 +217,12 @@ class CurriculumToHtmlDumper:
 
         rendered_instances = []
         for (situation, dependency_tree, perception, _) in all_instances:
-            (situation_text, speaker) = self._situation_text(situation)
+            (situation_text, speaker) = self.situation_text(situation)
             rendered_instances.append(
                 InstanceHolder(
                     situation=situation_text,
                     lingustics=self._linguistic_text(dependency_tree, speaker),
-                    perception=self._perception_text(perception),
+                    perception=self.perception_text(perception),
                 )
             )
 
@@ -387,12 +387,12 @@ class CurriculumToHtmlDumper:
                     f"Expected the Perceptual Representation to contain DevelopmentalPrimitivePerceptionFrame got "
                     f"{type(perception.frames)}"
                 )
-            (situation_text, speaker) = self._situation_text(situation)
+            (situation_text, speaker) = self.situation_text(situation)
             rendered_instances.append(
                 InstanceHolder(
                     situation=situation_text,
                     lingustics=self._linguistic_text(dependency_tree, speaker),
-                    perception=self._perception_text(perception),
+                    perception=self.perception_text(perception),
                 )
             )
 
@@ -434,7 +434,7 @@ class CurriculumToHtmlDumper:
             html_out.write(f"\t<a href='index.html'>" f"Back to Index</a>")
             html_out.write("\n</body>")
 
-    def _situation_text(
+    def situation_text(
         self, situation: HighLevelSemanticsSituation
     ) -> Tuple[str, Optional[SituationObject]]:
         """
@@ -575,7 +575,7 @@ class CurriculumToHtmlDumper:
                     )
         return single_size_relation
 
-    def _perception_text(
+    def perception_text(
         self, perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]
     ) -> str:
         """

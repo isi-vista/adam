@@ -1,0 +1,3 @@
+    adam_root: '/Users/isiboston/ISI/ADAM/adam'
+    output_directory: '/Users/isiboston/ISI/ADAM/html_outputs'
+    experiment: 'm6-experiments'
