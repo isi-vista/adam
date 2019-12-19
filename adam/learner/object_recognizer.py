@@ -1,3 +1,4 @@
+import logging
 from typing import Iterable, List, Tuple
 
 from immutablecollections import ImmutableDict, immutabledict, immutableset, ImmutableSet
@@ -77,6 +78,10 @@ class ObjectRecognizer:
                 self._replace_match_with_object_graph_node(
                     graph_to_modify, pattern_match, matched_object_nodes, description
                 )
+        if matched_object_nodes:
+            logging.info(
+                "Object recognizer recognized: %s", [x[0] for x in matched_object_nodes]
+            )
         return PerceptionGraphFromObjectRecognizer(
             perception_graph=PerceptionGraph(graph=graph_to_modify),
             description_to_matched_object_node=immutabledict(matched_object_nodes),
