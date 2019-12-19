@@ -118,9 +118,11 @@ class LearningProgressHtmlLogger:
     ) -> "LearningProgressHtmlLogger":
         logging_dir = output_dir / experiment_name
         logging_dir.mkdir(parents=True, exist_ok=True)
-        outfile_dir = str(logging_dir / (curriculum_name + ".html"))
+        output_html_path = str(logging_dir / (curriculum_name + ".html"))
 
-        with open(outfile_dir, "a+") as outfile:
+        logging.info("Experiment will be logged to %s", output_html_path)
+
+        with open(output_html_path, "w") as outfile:
             html_dumper = CurriculumToHtmlDumper()
 
             outfile.write(f"<head>\n\t<style>{CSS}\n\t</style>\n</head>")
@@ -141,14 +143,21 @@ class LearningProgressHtmlLogger:
                 """
             )
         return LearningProgressHtmlLogger(
-            outfile_dir=outfile_dir, html_dumper=html_dumper
+            outfile_dir=output_html_path, html_dumper=html_dumper
         )
 
     def pre_observer(self) -> "HTMLLoggerPreObserver":  # type: ignore
         return HTMLLoggerPreObserver(name="Pre-observer", html_logger=self)
 
     def post_observer(self) -> "HTMLLoggerPostObserver":  # type: ignore
-        return HTMLLoggerPostObserver(name="Post-observer", html_logger=self)
+        return HTMLLoggerPostObserver(
+            name="Post-observer", html_logger=self, test_mode=False
+        )
+
+    def test_observer(self) -> "HTMLLoggerPostObserver":  # type: ignore
+        return HTMLLoggerPostObserver(
+            name="Test-observer", html_logger=self, test_mode=True
+        )
 
     def pre_observer_log(
         self, observed_description: Optional[LinguisticDescription]
@@ -164,6 +173,7 @@ class LearningProgressHtmlLogger:
         true_description: LinguisticDescription,
         perceptual_representation: PerceptualRepresentation[PerceptionT],
         predicted_descriptions: Mapping[LinguisticDescription, float],
+        test_mode: bool,
     ):
 
         learner_pre_description = ""
@@ -219,11 +229,23 @@ class LearningProgressHtmlLogger:
                 f'\t\t\t\t\t<h3 id="true-{instance_number}">True Description</h3>\n'
                 f"\t\t\t\t</td>\n"
                 f"\t\t\t\t<td>\n"
-                f'\t\t\t\t\t<h3 id="learner-pre-{instance_number}">Learner\'s Old Description</h3>\n'
-                f"\t\t\t\t</td>\n"
-                f"\t\t\t\t<td>\n"
-                f'\t\t\t\t\t<h3 id="learner-post-{instance_number}">Learner\'s New Description</h3>\n'
-                f"\t\t\t\t</td>\n"
+            )
+            if test_mode:
+                # in test mode we don't update the learner, so there is no pre- and
+                # post-description, just a single description.
+                outfile.write(
+                    f'\t\t\t\t\t<h3 id="learner-pre-{instance_number}">Learner\'s Description</h3>\n'
+                    f"\t\t\t\t</td>\n"
+                )
+            else:
+                outfile.write(
+                    f'\t\t\t\t\t<h3 id="learner-pre-{instance_number}">Learner\'s Old Description</h3>\n'
+                    f"\t\t\t\t</td>\n"
+                    f"\t\t\t\t<td>\n"
+                    f'\t\t\t\t\t<h3 id="learner-post-{instance_number}">Learner\'s New Description</h3>\n'
+                    f"\t\t\t\t</td>\n"
+                )
+            outfile.write(
                 f"\t\t\t\t<td>\n"
                 f'\t\t\t\t\t<h3 id="perception-{instance_number}">Learner Perception</h3>\n'
                 f"\t\t\t\t</td>\n"
@@ -231,8 +253,18 @@ class LearningProgressHtmlLogger:
                 f"\t\t\t<tr>\n"
                 f'\t\t\t\t<td valign="top">{situation_text}\n\t\t\t\t</td>\n'
                 f'\t\t\t\t<td valign="top">{true_description_text}</td>\n'
-                f'\t\t\t\t<td valign="top">{learner_pre_description}</td>\n'
-                f'\t\t\t\t<td valign="top">{learner_description}</td>\n'
+            )
+            if test_mode:
+                outfile.write(
+                    f'\t\t\t\t<td valign="top">{learner_pre_description}</td>\n'
+                )
+            else:
+                outfile.write(
+                    f'\t\t\t\t<td valign="top">{learner_pre_description}</td>\n'
+                    f'\t\t\t\t<td valign="top">{learner_description}</td>\n'
+                )
+
+            outfile.write(
                 f'\t\t\t\t<td valign="top">{clickable_perception_string}\n\t\t\t\t</td>\n'
                 f"\t\t\t</tr>\n\t\t</tbody>\n\t</table>"
             )
@@ -278,8 +310,9 @@ class HTMLLoggerPostObserver(
     """
     name: str = attrib(validator=instance_of(str))
     html_logger: LearningProgressHtmlLogger = attrib(
-        init=True, validator=instance_of(LearningProgressHtmlLogger), kw_only=True
+        validator=instance_of(LearningProgressHtmlLogger), kw_only=True
     )
+    test_mode: bool = attrib(validator=instance_of(bool), kw_only=True)
     counter: int = attrib(kw_only=True, default=0)
 
     def observe(
@@ -296,6 +329,7 @@ class HTMLLoggerPostObserver(
             true_description=true_description,
             perceptual_representation=perceptual_representation,
             predicted_descriptions=predicted_descriptions,
+            test_mode=self.test_mode,
         )
         self.counter += 1
 

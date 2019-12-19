@@ -1,0 +1,7 @@
+_includes:
+   - "../../root.params"
+   - "pursuit-nouns.m6.params"
+
+output_directory: '%adam_experiment_root%/m6/deniz'
+experiment: 'each-object-by-itself-pursuit'
+curriculum: each-object-by-itself
