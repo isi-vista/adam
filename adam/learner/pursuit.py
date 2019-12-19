@@ -2,6 +2,8 @@ import logging
 import random as r
 from typing import Dict, Generic, Mapping, Tuple, Optional, List
 
+from vistautils.parameters import Parameters
+
 from attr import Factory, attrib, attrs
 from immutablecollections import immutabledict
 from more_itertools import first
@@ -63,6 +65,19 @@ class PursuitLanguageLearner(
         init=False, default=Factory(dict)
     )
     debug_counter = 0
+
+    @staticmethod
+    def from_parameters(params: Parameters) -> "PursuitLanguageLearner":  # type: ignore
+        return PursuitLanguageLearner(
+            learning_factor=params.floating_point("learning_factor"),
+            graph_match_confirmation_threshold=params.floating_point(
+                "graph_match_confirmation_threshold"
+            ),
+            describe_from_lexicon_threshold=params.floating_point(
+                "describe_from_lexicon_threshold"
+            ),
+            lexicon_entry_threshold=params.floating_point("lexicon_entry_threshold"),
+        )
 
     def observe(
         self, learning_example: LearningExample[PerceptionT, LinguisticDescription]

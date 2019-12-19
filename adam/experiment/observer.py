@@ -118,9 +118,11 @@ class LearningProgressHtmlLogger:
     ) -> "LearningProgressHtmlLogger":
         logging_dir = output_dir / experiment_name
         logging_dir.mkdir(parents=True, exist_ok=True)
-        outfile_dir = str(logging_dir / (curriculum_name + ".html"))
+        output_html_path = str(logging_dir / (curriculum_name + ".html"))
 
-        with open(outfile_dir, "a+") as outfile:
+        logging.info("Experiment will be logged to %s", output_html_path)
+
+        with open(output_html_path, "w") as outfile:
             html_dumper = CurriculumToHtmlDumper()
 
             outfile.write(f"<head>\n\t<style>{CSS}\n\t</style>\n</head>")
@@ -141,7 +143,7 @@ class LearningProgressHtmlLogger:
                 """
             )
         return LearningProgressHtmlLogger(
-            outfile_dir=outfile_dir, html_dumper=html_dumper
+            outfile_dir=output_html_path, html_dumper=html_dumper
         )
 
     def pre_observer(self) -> "HTMLLoggerPreObserver":  # type: ignore

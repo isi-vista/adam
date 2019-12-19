@@ -4,7 +4,7 @@ from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 from adam.curriculum.m6_curriculum import make_m6_curriculum
 from adam.experiment import execute_experiment, Experiment
 from adam.experiment.observer import LearningProgressHtmlLogger
-from adam.learner.subset import SubsetLanguageLearner
+from adam.learner.pursuit import PursuitLanguageLearner
 from adam.random_utils import RandomChooser
 
 
@@ -22,7 +22,9 @@ def main(params: Parameters) -> None:
         Experiment(
             name="static-prepositions",
             training_stages=make_m6_curriculum(),
-            learner_factory=SubsetLanguageLearner,
+            learner_factory=lambda: PursuitLanguageLearner.from_parameters(
+                params.namespace("pursuit")
+            ),
             pre_example_training_observers=[logger.pre_observer()],
             post_example_training_observers=[logger.post_observer()],
             test_instance_groups=[],
