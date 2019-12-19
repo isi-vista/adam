@@ -175,6 +175,8 @@ class SituationVisualizer(ShowBase):
     def set_positions(self, new_positions: PositionsMap):
         """Modify the position of all top level geometry nodes in the scene."""
         for name, position in new_positions.name_to_position.items():
+            if name == "the ground" or name == "learner":
+                continue
             self.geo_nodes[name].setPos(
                 position.data[0], position.data[1], position.data[2]
             )

@@ -7,7 +7,7 @@ main() function used for testing purposes. Primary function made available to ou
 is run_model()
 """
 from itertools import combinations
-from typing import Mapping, AbstractSet, Tuple, Optional, List, Iterable
+from typing import Mapping, AbstractSet, Optional, List, Iterable
 from attr import attrs, attrib
 
 import numpy as np
@@ -18,7 +18,7 @@ from torch.nn import Parameter
 import torch.optim as optim
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
-from immutablecollections import immutabledict, immutableset, ImmutableDict
+from immutablecollections import immutabledict, immutableset, ImmutableDict, ImmutableSet
 from vistautils.preconditions import check_arg
 
 from adam.axes import (
@@ -32,16 +32,15 @@ from adam.axes import (
 )
 
 from adam.ontology.phase1_spatial_relations import (
-    Distance,
     PROXIMAL,
     DISTAL,
     EXTERIOR_BUT_IN_CONTACT,
+    Region,
 )
 from adam.ontology.phase1_spatial_relations import (
     Direction,
     GRAVITATIONAL_UP,
     GRAVITATIONAL_DOWN,
-    ReferenceObjectT,
 )
 from adam.perception import ObjectPerception
 
@@ -72,38 +71,19 @@ EXTERIOR_BUT_IN_CONTACT_EPS = torch.tensor(  # pylint: disable=not-callable
 )
 
 
-@attrs(frozen=True, auto_attribs=True)
-class InRegionDirectives:
-    """Used to group distance and directions together to avoid packaging them in a Tuple"""
-
-    distance: Distance
-    direction: Direction[ObjectPerception]
-
-
-@attrs(frozen=True, auto_attribs=True)
-class AdamObject:
-    """Used for testing purposes, to attach a name to a bounding box"""
-
-    name: str
-    initial_position: Optional[Tuple[float, float, float]]
-    axes: Optional[Axes]
-    relative_positions: Optional[ImmutableDict["AdamObject", InRegionDirectives]]
-
-
 def main() -> None:
 
     top_to_bottom = straight_up("top-to-bottom")
     side_to_side_0 = symmetric("side-to-side-0")
     side_to_side_1 = symmetric("side-to-side-1")
 
-    box = AdamObject(
-        name="box",
-        initial_position=None,
+    box = ObjectPerception(
+        "box",
+        geon=None,
         axes=Axes(
             primary_axis=top_to_bottom,
             orienting_axes=immutableset([side_to_side_0, side_to_side_1]),
         ),
-        relative_positions=None,
     )
 
     generating_axis = symmetric_vertical("ball-generating")
@@ -111,33 +91,23 @@ def main() -> None:
     orienting_axis_1 = symmetric("ball-orienting-1")
 
     # ball situated on top of box
-    ball = AdamObject(
-        name="ball",
-        initial_position=None,
+    ball = ObjectPerception(
+        "ball",
+        geon=None,
         axes=Axes(
             primary_axis=generating_axis,
             orienting_axes=immutableset([orienting_axis_0, orienting_axis_1]),
         ),
-        relative_positions=immutabledict(
-            (obj, InRegionDirectives(EXTERIOR_BUT_IN_CONTACT, GRAVITATIONAL_UP))
-            for obj in [box]
-        ),
     )
+
+    in_region_relations: Mapping[ObjectPerception, List[Region[ObjectPerception]]] = {
+        ball: [Region[ObjectPerception](box, EXTERIOR_BUT_IN_CONTACT, GRAVITATIONAL_UP)]
+    }
 
     # other objects have no particular constraints:
 
-    cardboard_box = AdamObject(
-        name="cardboardBox", initial_position=None, axes=None, relative_positions=None
-    )
-    aardvark = AdamObject(
-        name="aardvark", initial_position=None, axes=None, relative_positions=None
-    )
-    flamingo = AdamObject(
-        name="flamingo", initial_position=None, axes=None, relative_positions=None
-    )
-
-    positioning_model = AdamObjectPositioningModel.for_objects_random_positions(
-        immutableset([ball, box, cardboard_box, aardvark, flamingo])
+    positioning_model = PositioningModel.for_objects_random_positions(
+        immutableset([ball, box]), in_region_relations=in_region_relations
     )
     # we will start with an aggressive learning rate
     optimizer = optim.SGD(positioning_model.parameters(), lr=1.0)
@@ -179,7 +149,8 @@ class PositionsMap:
 
 
 def run_model(
-    objs: List[AdamObject],
+    top_level_objects: ImmutableSet[ObjectPerception],
+    in_region_map: Mapping[ObjectPerception, List[Region[ObjectPerception]]],
     *,
     num_iterations: int = 200,
     yield_steps: Optional[int] = None,
@@ -189,14 +160,17 @@ def run_model(
     The model will return final positions either after the given number of iterations, or if the model
     converges in a position where it is unable to find a gradient to continue.
     Args:
-        objs: list of `AdamObject`\ s requested to be positioned
+        top_level_objects: set of top-level objects requested to be positioned
+        in_region_map: in-region relations for all top-level and sub-objects in this scene
         *num_iterations*: total number of SGD iterations.
         *yield_steps*: If provided, the current positions of all objects will be returned after this many steps
 
     Returns: PositionsMap: Map of object name -> Tensor (3,) of its position
 
     """
-    positioning_model = AdamObjectPositioningModel.for_objects(immutableset(objs))
+    positioning_model = PositioningModel.for_objects_random_positions(
+        top_level_objects, in_region_relations=in_region_map
+    )
 
     # we will start with an aggressive learning rate
     optimizer = optim.SGD(positioning_model.parameters(), lr=1.0)
@@ -427,60 +401,57 @@ class AxisAlignedBoundingBox:
         return axes.matmul(corners.transpose(0, 1))
 
 
-class AdamObjectPositioningModel(torch.nn.Module):  # type: ignore
+class PositioningModel(torch.nn.Module):  # type: ignore
     """
     Model that combines multiple constraints on AxisAlignedBoundingBoxes.
     """
 
     def __init__(
-        self, adam_object_to_bounding_box: Mapping[AdamObject, AxisAlignedBoundingBox]
+        self,
+        object_perception_to_bounding_box: Mapping[
+            ObjectPerception, AxisAlignedBoundingBox
+        ],
+        in_region_relations: Mapping[ObjectPerception, List[Region[ObjectPerception]]],
     ) -> None:
         super().__init__()
-        self.adam_object_to_bounding_box = adam_object_to_bounding_box
-        self.object_bounding_boxes = adam_object_to_bounding_box.values()
+        self.object_perception_to_bounding_box = object_perception_to_bounding_box
+        self.in_region_relations = in_region_relations
+        self.object_bounding_boxes = object_perception_to_bounding_box.values()
 
-        for (adam_object, bounding_box) in self.adam_object_to_bounding_box.items():
+        for (
+            object_perception,
+            bounding_box,
+        ) in self.object_perception_to_bounding_box.items():
             # suppress mypy error about supplying a Tensor where it expects a Parameter
-            self.register_parameter(adam_object.name, bounding_box.center)  # type: ignore
+            self.register_parameter(  # type: ignore
+                object_perception.debug_handle, bounding_box.center
+            )
 
         self.collision_penalty = CollisionPenalty()
         self.below_ground_penalty = BelowGroundPenalty()
         self.weak_gravity_penalty = WeakGravityPenalty()
-        self.relational_penalty = RelationalPenalty()
-
-    @staticmethod
-    def for_objects(
-        adam_objects: AbstractSet[AdamObject]
-    ) -> "AdamObjectPositioningModel":
-        objects_to_bounding_boxes: ImmutableDict[
-            AdamObject, AxisAlignedBoundingBox
-        ] = immutabledict(
-            (
-                adam_object,
-                AxisAlignedBoundingBox.create_at_center_point(
-                    center=np.array(adam_object.initial_position)
-                ),
-            )
-            for adam_object in adam_objects
+        self.in_region_penalty = InRegionPenalty(
+            object_perception_to_bounding_box, in_region_relations
         )
-        return AdamObjectPositioningModel(objects_to_bounding_boxes)
 
     @staticmethod
     def for_objects_random_positions(
-        adam_objects: AbstractSet[AdamObject]
-    ) -> "AdamObjectPositioningModel":
+        object_perceptions: AbstractSet[ObjectPerception],
+        *,
+        in_region_relations: Mapping[ObjectPerception, List[Region[ObjectPerception]]],
+    ) -> "PositioningModel":
         objects_to_bounding_boxes: ImmutableDict[
-            AdamObject, AxisAlignedBoundingBox
+            ObjectPerception, AxisAlignedBoundingBox
         ] = immutabledict(
             (
-                adam_object,
+                object_perception,
                 AxisAlignedBoundingBox.create_at_random_position(
-                    min_distance_from_origin=5, max_distance_from_origin=10
+                    min_distance_from_origin=10, max_distance_from_origin=20
                 ),
             )
-            for adam_object in adam_objects
+            for object_perception in object_perceptions
         )
-        return AdamObjectPositioningModel(objects_to_bounding_boxes)
+        return PositioningModel(objects_to_bounding_boxes, in_region_relations)
 
     def forward(self):  # pylint: disable=arguments-differ
         collision_penalty = sum(
@@ -493,35 +464,37 @@ class AdamObjectPositioningModel(torch.nn.Module):  # type: ignore
         weak_gravity_penalty = sum(
             self.weak_gravity_penalty(box) for box in self.object_bounding_boxes
         )
-        relational_penalty = sum(
-            self.relational_penalty(
-                self.adam_object_to_bounding_box[adam_obj1],
-                self.adam_object_to_bounding_box[adam_obj2],
-                adam_obj1,
-                adam_obj2,
+        in_region_penalty = sum(
+            self.in_region_penalty(
+                object_perception,
+                immutableset(self.in_region_relations[object_perception]),
             )
-            for (adam_obj1, adam_obj2) in combinations(
-                self.adam_object_to_bounding_box.keys(), 2
-            )
+            for object_perception in self.object_perception_to_bounding_box
+            if object_perception in self.in_region_relations
         )
         print(
             f"collision penalty: {collision_penalty}"
             f"\nout of bounds penalty: {below_ground_penalty}"
             f"\ngravity penalty: {weak_gravity_penalty}"
-            f"\nrelational penalty: {relational_penalty}"
+            f"\nin-region penalty: {in_region_penalty}"
         )
         return (
             collision_penalty
             + below_ground_penalty
             + weak_gravity_penalty
-            + relational_penalty
+            + in_region_penalty
         )
 
     def dump_object_positions(self, *, prefix: str = "") -> None:
-        for (adam_object, bounding_box) in self.adam_object_to_bounding_box.items():
-            print(f"{prefix}{adam_object.name} = {bounding_box.center.data}")
+        for (
+            object_perception,
+            bounding_box,
+        ) in self.object_perception_to_bounding_box.items():
+            print(
+                f"{prefix}{object_perception.debug_handle} = {bounding_box.center.data}"
+            )
 
-    def get_object_position(self, obj: AdamObject) -> torch.Tensor:
+    def get_object_position(self, obj: ObjectPerception) -> torch.Tensor:
         """
         Retrieves the (center) position of an AdamObject contained in this model.
         Args:
@@ -531,7 +504,7 @@ class AdamObjectPositioningModel(torch.nn.Module):  # type: ignore
 
         Raises KeyError if an AdamObject not contained in this model is queried.
         """
-        return self.adam_object_to_bounding_box[obj].center.data
+        return self.object_perception_to_bounding_box[obj].center.data
 
     def get_objects_positions(self) -> PositionsMap:
         """
@@ -541,8 +514,8 @@ class AdamObjectPositioningModel(torch.nn.Module):  # type: ignore
         """
         return PositionsMap(
             immutabledict(
-                (adam_obj.name, bounding_box.center.data)
-                for adam_obj, bounding_box in self.adam_object_to_bounding_box.items()
+                (object_perception.debug_handle, bounding_box.center.data)
+                for object_perception, bounding_box in self.object_perception_to_bounding_box.items()
             )
         )
 
@@ -555,8 +528,9 @@ class BelowGroundPenalty(nn.Module):  # type: ignore
     def __init(self) -> None:  # pylint: disable=useless-super-delegation
         super().__init__()
 
-    def forward(self, *inputs):  # pylint: disable=arguments-differ
-        bounding_box: AxisAlignedBoundingBox = inputs[0]
+    def forward(  # type: ignore
+        self, bounding_box: AxisAlignedBoundingBox
+    ):  # pylint: disable=arguments-differ
         distance_above_ground = bounding_box.z_coordinate_of_lowest_corner()
         if distance_above_ground >= 0:
             return 0
@@ -574,8 +548,9 @@ class WeakGravityPenalty(nn.Module):  # type: ignore
     def __init__(self) -> None:  # pylint: disable=useless-super-delegation
         super().__init__()
 
-    def forward(self, *inputs):  # pylint: disable=arguments-differ
-        bounding_box: AxisAlignedBoundingBox = inputs[0]
+    def forward(  # type: ignore
+        self, bounding_box: AxisAlignedBoundingBox
+    ):  # pylint: disable=arguments-differ
         distance_above_ground = bounding_box.z_coordinate_of_lowest_corner()
         if distance_above_ground <= 0:
             return 0.0
@@ -592,9 +567,11 @@ class CollisionPenalty(nn.Module):  # type: ignore
     def __init__(self):  # pylint: disable=useless-super-delegation
         super().__init__()
 
-    def forward(self, *inputs):  # pylint: disable=arguments-differ
-        bounding_box_1: AxisAlignedBoundingBox = inputs[0]
-        bounding_box_2: AxisAlignedBoundingBox = inputs[1]
+    def forward(  # type: ignore
+        self,
+        bounding_box_1: AxisAlignedBoundingBox,
+        bounding_box_2: AxisAlignedBoundingBox,
+    ):  # pylint: disable=arguments-differ
 
         # get face norms from one of the boxes:
         face_norms = bounding_box_2.face_normal_vectors()
@@ -710,75 +687,92 @@ class CollisionPenalty(nn.Module):  # type: ignore
         return overlap_distance.max() * -1 * COLLISION_PENALTY
 
 
-class RelationalPenalty(nn.Module):  # type: ignore
+class InRegionPenalty(nn.Module):  # type: ignore
     """ Model that penalizes boxes for not adhering to relational (distance and direction)
-        constraints with other boxes
+        constraints with other boxes -- for being outside of the Region it is supposed to occupy
     """
 
-    def __init__(self):  # pylint: disable=useless-super-delegation
+    def __init__(
+        self,
+        object_perception_to_bounding_box: Mapping[
+            ObjectPerception, AxisAlignedBoundingBox
+        ],
+        in_region_relations: Mapping[ObjectPerception, List[Region[ObjectPerception]]],
+    ) -> None:  # pylint: disable=useless-super-delegation
         super().__init__()
+        self.object_perception_to_bounding_box = object_perception_to_bounding_box
+        self.in_region_relations = in_region_relations
 
-    def forward(self, *inputs):  # pylint: disable=arguments-differ
-        bounding_box_1: AxisAlignedBoundingBox = inputs[0]
-        bounding_box_2: AxisAlignedBoundingBox = inputs[1]
-        # adam objects store the constraints
-        adam_object_1: AdamObject = inputs[2]
-        adam_object_2: AdamObject = inputs[3]
+    def forward(  # type: ignore
+        self,
+        target_object: ObjectPerception,
+        designated_region: ImmutableSet[Region[ObjectPerception]],
+    ):  # pylint: disable=arguments-differ
 
-        print(f"{adam_object_1.name} positioned w/r/t {adam_object_2.name}")
+        print(f"{target_object.debug_handle} positioned w/r/t {designated_region}")
 
         # return 0 if object has no relative positions to apply
-        if not adam_object_1.relative_positions:
-            print(f"{adam_object_1.name} has no relative positioning constraints")
-            return torch.zeros(1)
-        if adam_object_2 not in adam_object_1.relative_positions:
-            print(f"{adam_object_1.name} not positioned relative to {adam_object_2.name}")
+        if not designated_region:
+            print(f"{target_object.debug_handle} has no relative positioning constraints")
             return torch.zeros(1)
 
-        if adam_object_2 in adam_object_1.relative_positions:
-            return RelationalPenalty.penalty(
-                bounding_box_1,
-                bounding_box_2,
-                adam_object_1.relative_positions[adam_object_2],
+        return sum(
+            self.penalty(
+                self.object_perception_to_bounding_box[target_object],
+                self.object_perception_to_bounding_box[region.reference_object],
+                region,
             )
+            for region in designated_region
+        )
 
-    @staticmethod
     def penalty(
-        box1: AxisAlignedBoundingBox,
-        box2: AxisAlignedBoundingBox,
-        box1_2_relation: InRegionDirectives,
+        self,
+        target_box: AxisAlignedBoundingBox,
+        reference_box: AxisAlignedBoundingBox,
+        region: Region[ObjectPerception],
     ):
         """
-        Assign a penalty for box1 if it does not comply with its relation to box2
+        Assign a penalty for target_box if it does not comply with its relation to reference_box according to
+        the degree of difference between the expected angle between the boxes and the expected distance between
+        the two objects.
         Args:
-            box1:
-            box2:
-            box1_2_relation: relation of box1 to box2
+            target_box: box to be penalized if positioned outside of region
+            reference_box: box referred to by region
+            region: region that target_box should be in
 
-        Returns: Tensor(1,) with a penalty
+        Returns: Tensor(1,) with penalty
 
         """
+        assert region.direction is not None
+        assert region.distance is not None
         # get direction that box 1 should be in w/r/t box 2
         # TODO: allow for addressee directions
-        direction_vector = RelationalPenalty.direction_to_world(box1_2_relation.direction)
+        direction_vector = self.direction_to_worldspace_vector(
+            region.direction, reference_box
+        )
 
-        current_vector = box1.center - box2.center
+        # TODO: rename this variable
+        current_direction_from_reference_to_target = (
+            target_box.center - reference_box.center
+        )
 
-        angle = angle_between(direction_vector, current_vector)
-        if torch.isnan(angle):
+        angle = angle_between(
+            direction_vector, current_direction_from_reference_to_target
+        )
+        if not angle or torch.isnan(angle):
             angle = torch.zeros(1, dtype=torch.float)
 
-        # TODO: change to reflect distance from box extents
-        distance = box1.center_distance_from_point(box2.center)
+        # TODO: change to reflect distance from box extents https://github.com/isi-vista/adam/issues/496
+        distance = target_box.center_distance_from_point(reference_box.center)
 
         # distal has a minimum distance away from object to qualify
-        if box1_2_relation.distance == DISTAL:
+        if region.distance == DISTAL:
             if distance < DISTAL_MIN_DISTANCE:
                 distance_penalty = DISTAL_MIN_DISTANCE - distance
             else:
                 distance_penalty = torch.zeros(1)
         # proximal has a min/max range
-        elif box1_2_relation.distance == PROXIMAL:
+        elif region.distance == PROXIMAL:
             if PROXIMAL_MIN_DISTANCE <= distance <= PROXIMAL_MAX_DISTANCE:
                 distance_penalty = torch.zeros(1)
             elif distance < PROXIMAL_MIN_DISTANCE:
@@ -788,7 +782,7 @@ class RelationalPenalty(nn.Module):  # type: ignore
 
         # exterior but in contact has a tiny epsilon of acceptable distance
         # assuming that collisions are handled elsewhere
-        elif box1_2_relation.distance == EXTERIOR_BUT_IN_CONTACT:
+        elif region.distance == EXTERIOR_BUT_IN_CONTACT:
             if distance > EXTERIOR_BUT_IN_CONTACT_EPS:
                 distance_penalty = distance
             else:
@@ -803,14 +797,14 @@ class RelationalPenalty(nn.Module):  # type: ignore
         )
         return angle * ANGLE_PENALTY + distance_penalty * DISTANCE_PENALTY
 
-    @staticmethod
-    def direction_to_world(
-        direction: Direction[ReferenceObjectT],
-        direction_reference: Optional[AxisAlignedBoundingBox] = None,
+    def direction_to_worldspace_vector(
+        self,
+        direction: Direction[ObjectPerception],
+        direction_reference: AxisAlignedBoundingBox,
         addressee_reference: Optional[AxisAlignedBoundingBox] = None,
     ) -> torch.Tensor:
         """
-        Convert a direction (potentially a direction w/r/t an object to a (3,) tensor.
+        Convert a direction to a (3,) tensor to represent the direction concretely in world-space.
         Args:
             direction: Direction object
             direction_reference: AABB corresponding to the object referenced by the direction parameter
@@ -832,20 +826,26 @@ class RelationalPenalty(nn.Module):  # type: ignore
         # horizontal axes mapped to world axes (as one of many possible visualizations)
         # We make the executive decision to map a horizontal relationship onto the X axis,
         # the better to view from a static camera position.
+        # TODO: change to reflect distance from box extents https://github.com/isi-vista/adam/issues/496
         if isinstance(direction.relative_to_axis, HorizontalAxisOfObject):
             if direction.positive:
-                return torch.tensor(  # pylint: disable=not-callable
-                    [1, 0, 0], dtype=torch.float
+                return (
+                    direction_reference.center
+                    + torch.tensor(  # pylint: disable=not-callable
+                        [1, 0, 0], dtype=torch.float
+                    )
                 )
             else:
-                return torch.tensor(  # pylint: disable=not-callable
-                    [-1, 0, 0], dtype=torch.float
+                return (
+                    direction_reference.center
+                    + torch.tensor(  # pylint: disable=not-callable
+                        [-1, 0, 0], dtype=torch.float
+                    )
                 )
 
         # in this case, calculate a vector facing toward or away from the addressee
         if (
             isinstance(direction.relative_to_axis, FacingAddresseeAxis)
-            and direction_reference is not None
             and addressee_reference is not None
         ):
             if direction.positive:
@@ -858,7 +858,7 @@ class RelationalPenalty(nn.Module):  # type: ignore
         raise NotImplementedError(f"direction_to_world called with {direction}")
 
 
-def angle_between(vector0: torch.Tensor, vector1: torch.Tensor) -> torch.Tensor:
+def angle_between(vector0: torch.Tensor, vector1: torch.Tensor) -> Optional[torch.Tensor]:
     """
     Returns angle between two vectors (tensors (3,) )
     Args:
@@ -868,6 +868,8 @@ def angle_between(vector0: torch.Tensor, vector1: torch.Tensor) -> torch.Tensor:
     Returns: tensor (1,) with the angle (in radians) between the two vectors.
            Will return NaN if either of the inputs is zero.
     """
+    if torch.nonzero(vector0).size(0) == 0 or torch.nonzero(vector1).size(0) == 0:
+        return None
     unit_vector0 = vector0 / torch.norm(vector0, 2)
     unit_vector1 = vector1 / torch.norm(vector1, 2)
     return unit_vector0.dot(unit_vector1).acos()
