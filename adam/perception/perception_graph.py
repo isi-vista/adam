@@ -12,6 +12,7 @@ to defining the type of Nodes in our `PerceptionGraph`\ s readers should start w
 `PerceptionGraphProtocol`, `PerceptionGraph`, and `PerceptionGraphPattern` before
 reading other parts of this module.
 """
+import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
 from time import process_time
@@ -31,6 +32,7 @@ from typing import (
     Union,
     cast,
 )
+from uuid import uuid4
 
 import graphviz
 from attr.validators import instance_of, optional
@@ -627,35 +629,24 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
         graph_pattern: "PerceptionGraphPattern",
         *,
         debug_callback: Optional[DebugCallableType] = None,
-    ) -> "PerceptionGraphPattern":
+    ) -> Optional["PerceptionGraphPattern"]:
         """
         Determine the largest partial match between two `PerceptionGraphPattern`s
 
-        Using the debug return of our pattern matching, find the largest partial
-        match between *self* and *graph_pattern*. If we find multiple such matches
-        the returned option is deterministic but undefined.
-
-        TODO: this method has a known bug: https://github.com/isi-vista/adam/issues/488
-        but resolving it awaits https://github.com/isi-vista/adam/issues/461
+        The algorithm used is approximate and is not guaranteed to return the largest
+        possible match.
         """
         matcher = PatternMatching(
             pattern=graph_pattern,
             graph_to_match_against=self,
             debug_callback=debug_callback,
+            matching_pattern_against_pattern=True,
         )
-        attempted_match = matcher.first_match_or_failure_info()
-        if isinstance(attempted_match, PerceptionGraphPatternMatch):
-            # We found a match! This means our two patterns are the same and we should just keep the original
-            return self
+        attempted_match = matcher.relax_pattern_until_it_matches()
+        if attempted_match:
+            return attempted_match
         else:
-            # No match found so we use the biggest match provided by the debug sink. This provides an 'intersection'
-            # between the two patterns
-            return PerceptionGraphPattern(
-                graph=subgraph(
-                    self._graph,
-                    nodes=attempted_match.pattern_node_to_graph_node_for_largest_match.keys(),
-                )
-            )
+            return None
 
     def __repr__(self) -> str:
         return (
