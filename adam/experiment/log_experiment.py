@@ -5,6 +5,7 @@ from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 
 from adam.curriculum.m6_curriculum import make_m6_curriculum
 from adam.curriculum.phase1_curriculum import _make_each_object_by_itself_curriculum
+from adam.curriculum.pursuit_curriculum import make_pursuit_curriculum, make_simple_pursuit_curriculum
 from adam.experiment import execute_experiment, Experiment
 from adam.experiment.observer import LearningProgressHtmlLogger
 from adam.learner import LanguageLearner
@@ -49,7 +50,7 @@ def learner_factory_from_params(
 
 
 def curriculum_from_params(params: Parameters):
-    curriculum_name = params.string("curriculum", ["m6-deniz", "each-object-by-itself"])
+    curriculum_name = params.string("curriculum", ["m6-deniz", "each-object-by-itself", "pursuit-with-noise"])
     if curriculum_name == "m6-deniz":
         return (make_m6_curriculum(), [])
     elif curriculum_name == "each-object-by-itself":
@@ -57,6 +58,14 @@ def curriculum_from_params(params: Parameters):
             [_make_each_object_by_itself_curriculum()],
             [_make_each_object_by_itself_curriculum()],
         )
+    elif curriculum_name == "pursuit-with-noise":
+        pursuit_curriculum_params = params.namespace("pursuit-curriculum-params")
+        num_instances = pursuit_curriculum_params.optional_integer('num_instances')
+        num_noise_instances = pursuit_curriculum_params.optional_integer('num_noise_instances')
+        num_objects_in_instance = pursuit_curriculum_params.optional_integer('num_objects_in_instance')
+        return ([make_simple_pursuit_curriculum(num_instances=num_instances,
+                                               num_objects_in_instance=num_objects_in_instance,
+                                               num_noise_instances=num_noise_instances)], [])
     else:
         raise RuntimeError("Can't happen")
 

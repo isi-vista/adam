@@ -255,11 +255,11 @@ class PursuitLanguageLearner(
             leading_hypothesis_score + self._learning_factor
         ) / (sum_of_all_scores + number_of_meanings * self._learning_factor)
         # file (w, h^) into the lexicon
-        print(
-            "Lexicon prob:",
-            probability_of_meaning_given_word,
-            leading_hypothesis_pattern.copy_as_digraph().nodes,
-        )
+        # print(
+        #     "Lexicon prob:",
+        #     probability_of_meaning_given_word,
+        #     leading_hypothesis_pattern.copy_as_digraph().nodes,
+        # )
         # TODO: We sometimes prematurely lexicalize words, so we use this arbitrary counter threshold
         if (
             probability_of_meaning_given_word > self._lexicon_entry_threshold
