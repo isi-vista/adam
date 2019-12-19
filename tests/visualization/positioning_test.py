@@ -4,28 +4,47 @@ from adam.visualization.positioning import (
     AxisAlignedBoundingBox,
     CollisionPenalty,
     WeakGravityPenalty,
-    AdamObject,
     run_model,
 )
+from typing import Mapping, List
+from adam.perception import ObjectPerception
+from adam.ontology.phase1_spatial_relations import Region
+from adam.axes import (
+    Axes,
+    straight_up,
+    # directed,
+    symmetric,
+    symmetric_vertical,
+)
+from immutablecollections import immutableset
 
 
 def test_running_model() -> None:
     # for code coverage purposes
-    ball = AdamObject(
-        name="ball", initial_position=(0, 0, 10), axes=None, relative_positions=None
+    ball = ObjectPerception(
+        "ball",
+        axes=Axes(
+            geon=None,
+            primary_axis=symmetric_vertical("ball-generating"),
+            orienting_axes=immutableset(
+                [symmetric("side-to-side0"), symmetric("side-to-side1")]
+            ),
+        ),
     )
-    box = AdamObject(
-        name="box", initial_position=(0, 0, 1), axes=None, relative_positions=None
+    box = ObjectPerception(
+        "box",
+        axes=Axes(
+            geon=None,
+            primary_axis=straight_up("top_to_bottom"),
+            orienting_axes=immutableset(
+                [symmetric("side-to-side0"), symmetric("side-to-side1")]
+            ),
+        ),
     )
 
-    aardvark = AdamObject(
-        name="aardvark", initial_position=(1, 2, 1), axes=None, relative_positions=None
-    )
-    flamingo = AdamObject(
-        name="flamingo", initial_position=(-1, 1, 2), axes=None, relative_positions=None
-    )
-    objs = [ball, box, aardvark, flamingo]
-    run_model(objs, num_iterations=10, yield_steps=10)
+    objs = immutableset([ball, box])
+    relations: Mapping[ObjectPerception, List[Region[ObjectPerception]]] = {}
+    run_model(objs, relations, num_iterations=10, yield_steps=10)
 
 
 def test_collision_constraint() -> None:
