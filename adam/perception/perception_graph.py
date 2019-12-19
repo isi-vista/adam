@@ -40,6 +40,8 @@ from more_itertools import first
 from networkx import DiGraph, connected_components, is_isomorphic, set_node_attributes
 from typing_extensions import Protocol
 
+from vistautils.misc_utils import str_list_limited
+
 from adam.axes import AxesInfo, HasAxes
 from adam.axis import GeonAxis
 from adam.geon import Geon, MaybeHasGeon
@@ -150,7 +152,7 @@ class PerceptionGraphProtocol(Protocol):
         """
 
 
-@attrs(frozen=True)
+@attrs(frozen=True, repr=False)
 class PerceptionGraph(PerceptionGraphProtocol):
     r"""
     Represents a `DevelopmentalPrimitivePerceptionFrame` as a directed graph.
@@ -367,6 +369,12 @@ class PerceptionGraph(PerceptionGraphProtocol):
 
     def copy_as_digraph(self) -> DiGraph:
         return self._graph.copy()
+
+    def __repr__(self) -> str:
+        return (
+            f"PerceptionGraph(nodes={str_list_limited(self._graph.nodes, 10)}, edges="
+            f"{str_list_limited(self._graph.edges(data='label'), 15)})"
+        )
 
 
 @attrs(frozen=True, slots=True, repr=False)
@@ -650,7 +658,11 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
             )
 
     def __repr__(self) -> str:
-        return f"PerceptionGraphPattern(nodes={self._graph.nodes}, edges={self._graph.edges})"
+        return (
+            f"PerceptionGraphPattern(nodes={str_list_limited(self._graph.nodes, 10)}, "
+            f"edges="
+            f"{str_list_limited(self._graph.edges(data='predicate'), 10)})"
+        )
 
 
 class DumpPartialMatchCallback:
