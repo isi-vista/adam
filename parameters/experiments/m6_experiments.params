@@ -4,6 +4,7 @@ _includes:
 output_directory: '%adam_experiment_root%/m6'
 experiment: 'm6'
 
+learner: pursuit
 pursuit:
    learning_factor: 0.5
    graph_match_confirmation_threshold: 0.9
