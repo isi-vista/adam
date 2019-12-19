@@ -1,0 +1,8 @@
+_includes:
+   - "../../root.params"
+
+learner: pursuit
+pursuit:
+   learning_factor: 0.5
+   graph_match_confirmation_threshold: 0.9
+   lexicon_entry_threshold: 0.7

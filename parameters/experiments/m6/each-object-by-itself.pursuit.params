@@ -3,5 +3,5 @@ _includes:
    - "pursuit-nouns.m6.params"
 
 output_directory: '%adam_experiment_root%/m6/deniz'
-experiment: 'm6-deniz'
-curriculum: m6-deniz
+experiment: 'each-object-by-itself-pursuit'
+curriculum: each-object-by-itself

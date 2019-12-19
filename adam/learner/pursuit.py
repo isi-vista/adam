@@ -56,8 +56,6 @@ class PursuitLanguageLearner(
     _learning_factor: float = attrib(default=0.1, kw_only=True)
     # We use this threshold to measure whether a new perception sufficiently matches a previous hypothesis.
     _graph_match_confirmation_threshold: float = attrib(default=0.9, kw_only=True)
-    # We use this threshold to check whether we should describe a scene using lexicpn word
-    _describe_from_lexicon_threshold: float = attrib(default=0.9, kw_only=True)
     # Threshold value for adding word to lexicon
     _lexicon_entry_threshold: float = attrib(default=0.8, kw_only=True)
     # Counter to be used to prevent prematurely lexicalizing novel words
@@ -72,9 +70,6 @@ class PursuitLanguageLearner(
             learning_factor=params.floating_point("learning_factor"),
             graph_match_confirmation_threshold=params.floating_point(
                 "graph_match_confirmation_threshold"
-            ),
-            describe_from_lexicon_threshold=params.floating_point(
-                "describe_from_lexicon_threshold"
             ),
             lexicon_entry_threshold=params.floating_point("lexicon_entry_threshold"),
         )
@@ -248,16 +243,13 @@ class PursuitLanguageLearner(
         # If any conditional probability P(h^|w) exceeds a certain threshold value (h), then file (w, h^) into the
         # lexicon
         # From Pursuit paper: P(h|w) = (A(w,h) + Gamma) / (Sum(A_w) + N x Gamma)
-        previous_hypotheses_and_scores = self._words_to_hypotheses_and_scores[word]
-        leading_hypothesis_pattern = max(
-            previous_hypotheses_and_scores,
-            key=lambda key: previous_hypotheses_and_scores[key],
-        )
-        leading_hypothesis_score = previous_hypotheses_and_scores[
-            leading_hypothesis_pattern
-        ]
-        sum_of_all_scores = sum(previous_hypotheses_and_scores.values())
-        number_of_meanings = len(previous_hypotheses_and_scores)
+        leading_hypothesis_entry = self._leading_hypothesis_for(word)
+        assert leading_hypothesis_entry
+        (leading_hypothesis_pattern, leading_hypothesis_score) = leading_hypothesis_entry
+
+        all_hypotheses_for_word = self._words_to_hypotheses_and_scores[word]
+        sum_of_all_scores = sum(all_hypotheses_for_word.values())
+        number_of_meanings = len(all_hypotheses_for_word)
 
         probability_of_meaning_given_word = (
             leading_hypothesis_score + self._learning_factor
@@ -373,9 +365,36 @@ class PursuitLanguageLearner(
             if first_match is not None:
                 learned_description = ("a", word)
                 continue
+
+        if not learned_description:
+            # no lexicalized word matched the perception,
+            # but we can still try to match our leading hypotheses
+            for word in self._words_to_hypotheses_and_scores.keys():
+                # mypy doesn't know the leading hypothesis will always exist here,
+                # but we do.
+                (leading_hypothesis, _) = self._leading_hypothesis_for(  # type: ignore
+                    word
+                )
+                matcher = leading_hypothesis.matcher(observed_perception_graph)
+                match = first(matcher.matches(), default=None)
+                if match:
+                    learned_description = ("a", word)
+                    continue
+
         if learned_description:
             return immutabledict(
                 ((TokenSequenceLinguisticDescription(learned_description), 1.0),)
             )
         else:
             return immutabledict()
+
+    def _leading_hypothesis_for(
+        self, word: str
+    ) -> Optional[Tuple[PerceptionGraphPattern, float]]:
+        hypotheses_and_scores_for_word = self._words_to_hypotheses_and_scores.get(
+            word, None
+        )
+        if hypotheses_and_scores_for_word:
+            return max(hypotheses_and_scores_for_word.items(), key=lambda entry: entry[1])
+        else:
+            return None
