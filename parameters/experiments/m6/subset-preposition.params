@@ -5,3 +5,4 @@ output_directory: '%adam_experiment_root%/m6/deniz'
 experiment: 'm6-preposition-subset'
 learner: preposition-subset
 curriculum: m6-preposition
+log_directory: "%output_directory%/logs"

@@ -14,6 +14,7 @@ from adam.experiment import execute_experiment, Experiment
 from adam.experiment.observer import LearningProgressHtmlLogger
 from adam.learner import LanguageLearner
 from adam.learner.preposition_subset import PrepositionSubsetLanguageLearner
+from adam.perception.perception_graph import GraphLogger
 from adam.learner.pursuit import PursuitLanguageLearner
 from adam.random_utils import RandomChooser
 
@@ -51,7 +52,12 @@ def learner_factory_from_params(
     if learner_type == "pursuit":
         return lambda: PursuitLanguageLearner.from_parameters(params.namespace("pursuit"))
     elif learner_type == "preposition-subset":
-        return PrepositionSubsetLanguageLearner
+        return lambda: PrepositionSubsetLanguageLearner(
+            graph_logger=GraphLogger(
+                log_directory=params.creatable_directory("log_directory"),
+                enable_graph_rendering=True,
+            )
+        )
     else:
         raise RuntimeError("can't happen")
 
