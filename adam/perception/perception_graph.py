@@ -1782,34 +1782,30 @@ An object match modified in a preposition relationship
 """
 
 
-@attrs(frozen=True, slots=True, eq=False)
-class PrepositionPattern:
-    graph_pattern: PerceptionGraphPattern = attrib(
-        validator=instance_of(PerceptionGraphPattern), kw_only=True
-    )
-    object_map: Mapping[str, MatchedObjectPerceptionPredicate] = attrib(
-        converter=_to_immutabledict, kw_only=True
-    )
-
-    def intersection(self, pattern: "PrepositionPattern") -> "PrepositionPattern":
-        graph_pattern = self.graph_pattern.intersection(pattern.graph_pattern)
-        mapping_builder = []
-        items_to_iterate: List[Tuple[str, MatchedObjectPerceptionPredicate]] = []
-        items_to_iterate.extend(self.object_map.items())
-        items_to_iterate.extend(pattern.object_map.items())
-        for name, pattern_node in immutableset(items_to_iterate):
-            if (
-                pattern_node
-                in graph_pattern._graph.nodes  # pylint:disable=protected-access
-            ):
-                mapping_builder.append((name, pattern_node))
-
-        return PrepositionPattern(graph_pattern=graph_pattern, object_map=mapping_builder)
-
-
 _KT = TypeVar("_KT")
 _VT = TypeVar("_VT")
 
 
 def _invert_to_immutabledict(mapping: Mapping[_KT, _VT]) -> ImmutableDict[_VT, _KT]:
     return immutabledict((v, k) for (k, v) in mapping.items())
+
+
+@attrs(frozen=True)
+class GraphLogger:
+    log_directory: Path = attrib(validator=instance_of(Path))
+    enable_graph_rendering: bool = attrib(validator=instance_of(bool))
+
+    def log_graph(
+        self,
+        graph: Union[PerceptionGraph, PerceptionGraphPattern],
+        level,
+        msg: str,
+        *args,
+    ) -> None:
+        if self.enable_graph_rendering:
+            graph_name = str(uuid4())
+            filename = self.log_directory / f"{graph_name}"
+            graph.render_to_file(graph_name, filename)
+            logging.log(level, f"Rendered to {filename}.pdf\n{msg}", *args)
+        else:
+            logging.log(level, msg, *args)
