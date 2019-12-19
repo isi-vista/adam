@@ -3,12 +3,17 @@ from typing import Callable
 from vistautils.parameters import Parameters
 from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 
-from adam.curriculum.m6_curriculum import make_m6_curriculum
+from adam.curriculum.m6_curriculum import (
+    make_m6_curriculum,
+    M6_PREPOSITION_SUBCURRICULUM_GENERATORS,
+    instantiate_subcurricula,
+)
 from adam.curriculum.phase1_curriculum import _make_each_object_by_itself_curriculum
 from adam.curriculum.pursuit_curriculum import make_simple_pursuit_curriculum
 from adam.experiment import execute_experiment, Experiment
 from adam.experiment.observer import LearningProgressHtmlLogger
 from adam.learner import LanguageLearner
+from adam.learner.preposition_subset import PrepositionSubsetLanguageLearner
 from adam.learner.pursuit import PursuitLanguageLearner
 from adam.random_utils import RandomChooser
 
@@ -42,16 +47,19 @@ def main(params: Parameters) -> None:
 def learner_factory_from_params(
     params: Parameters
 ) -> Callable[[], LanguageLearner]:  # type: ignore
-    learner_type = params.string("learner", ["pursuit"])
+    learner_type = params.string("learner", ["pursuit", "preposition-subset"])
     if learner_type == "pursuit":
         return lambda: PursuitLanguageLearner.from_parameters(params.namespace("pursuit"))
+    elif learner_type == "preposition-subset":
+        return PrepositionSubsetLanguageLearner
     else:
         raise RuntimeError("can't happen")
 
 
 def curriculum_from_params(params: Parameters):
     curriculum_name = params.string(
-        "curriculum", ["m6-deniz", "each-object-by-itself", "pursuit-with-noise"]
+        "curriculum",
+        ["m6-deniz", "each-object-by-itself", "pursuit-with-noise", "m6-preposition"],
     )
     if curriculum_name == "m6-deniz":
         return (make_m6_curriculum(), [])
@@ -77,6 +85,8 @@ def curriculum_from_params(params: Parameters):
             ],
             [],
         )
+    elif curriculum_name == "m6-preposition":
+        return (instantiate_subcurricula(M6_PREPOSITION_SUBCURRICULUM_GENERATORS), [])
     else:
         raise RuntimeError("Can't happen")
 

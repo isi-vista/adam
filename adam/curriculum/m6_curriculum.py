@@ -9,46 +9,45 @@ basic color terms (red, blue, green, white, black…), one, two, my, your)
 """
 import random as r
 from itertools import chain
-from typing import List, Callable
 
 from immutablecollections import immutableset
 
 from adam.curriculum import ExplicitWithSituationInstanceGroup
 from adam.curriculum.curriculum_utils import (
-    Phase1InstanceGroup,
-    standard_object,
     PHASE1_CHOOSER,
+    Phase1InstanceGroup,
     phase1_instances,
+    standard_object,
 )
 from adam.curriculum.phase1_curriculum import (
     _make_each_object_by_itself_curriculum,
-    _make_objects_with_colors_curriculum,
     _make_object_on_ground_curriculum,
+    _make_objects_with_colors_curriculum,
 )
 from adam.curriculum.preposition_curriculum import (
-    _on_template,
-    _beside_template,
-    _under_template,
-    _over_template,
     _behind_template,
+    _beside_template,
+    _on_template,
+    _over_template,
+    _under_template,
 )
 from adam.ontology import IS_ADDRESSEE, IS_SPEAKER
 from adam.ontology.phase1_ontology import (
-    BIRD,
     BALL,
-    CUP,
-    BOX,
-    HAT,
-    COOKIE,
+    BIRD,
     BOOK,
-    TRUCK,
-    CHAIR,
+    BOX,
     CAR,
-    HOUSE,
-    TABLE,
+    CHAIR,
+    COOKIE,
+    CUP,
     GAILA_PHASE_1_ONTOLOGY,
-    MOM,
+    HAT,
+    HOUSE,
     LEARNER,
+    MOM,
+    TABLE,
+    TRUCK,
 )
 from adam.situation.templates.phase1_templates import sampled
 
@@ -209,16 +208,7 @@ def _make_m6_in_front_curriculum() -> Phase1InstanceGroup:
     )
 
 
-m6_instance_groups: List[Callable[[], Phase1InstanceGroup]] = [
-    # Single objects
-    _make_each_object_by_itself_curriculum,
-    # Objects with modifiers
-    # Colors
-    _make_objects_with_colors_curriculum,
-    # One, two, many
-    # _make_multiple_objects_curriculum,
-    # Prepositions
-    _make_object_on_ground_curriculum,
+M6_PREPOSITION_SUBCURRICULUM_GENERATORS = [
     _make_m6_on_curriculum,
     _make_m6_beside_curriculum,
     _make_m6_under_curriculum,
@@ -228,17 +218,37 @@ m6_instance_groups: List[Callable[[], Phase1InstanceGroup]] = [
 ]
 
 
+M6_SUBCURRICULUM_GENERATORS = list(
+    chain(
+        [
+            [  # Single objects
+                _make_each_object_by_itself_curriculum,
+                # Objects with modifiers
+                # Colors
+                _make_objects_with_colors_curriculum,
+                _make_object_on_ground_curriculum,
+            ],
+            M6_PREPOSITION_SUBCURRICULUM_GENERATORS,
+        ]
+    )
+)
+
+
 def _make_m6_mixed_curriculum() -> Phase1InstanceGroup:
     all_instances = [
         instance
-        for instance_group in m6_instance_groups
-        for instance in instance_group().instances()
+        for instance_group in M6_SUBCURRICULUM_GENERATORS
+        for instance in instance_group().instances()  # type: ignore
     ]
     r.shuffle(all_instances)
     return ExplicitWithSituationInstanceGroup("m6_mixed", tuple(all_instances))
 
 
+def instantiate_subcurricula(subcurricula):
+    return [subcurriculum() for subcurriculum in subcurricula]
+
+
 def make_m6_curriculum():
-    return [instance_group() for instance_group in m6_instance_groups] + [
+    return instantiate_subcurricula(M6_SUBCURRICULUM_GENERATORS) + [
         _make_m6_mixed_curriculum()
     ]
