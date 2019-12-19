@@ -1,3 +1,5 @@
-    adam_root: '/Users/isiboston/ISI/ADAM/adam'
-    output_directory: '/Users/isiboston/ISI/ADAM/html_outputs'
-    experiment: 'm6-experiments'
+_includes:
+   - "../root.params"
+
+output_directory: '%adam_experiment_root%/m6'
+experiment: 'm6'
