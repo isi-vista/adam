@@ -24,6 +24,7 @@ from adam.perception.perception_graph import (
     PerceptionGraphNode,
     MatchedObjectNode,
     _graph_node_order,
+    GraphLogger,
 )
 from attr import Factory, attrib, attrs
 
@@ -48,6 +49,7 @@ class PrepositionSubsetLanguageLearner(
 
     _object_recognizer: ObjectRecognizer = attrib(init=False, default=ObjectRecognizer())
     _debug_file: Optional[str] = attrib(kw_only=True, default=None)
+    _graph_logger: Optional[GraphLogger] = attrib(default=None)
 
     def _print(self, graph: DiGraph, name: str) -> None:
         if self._debug_file:
@@ -69,11 +71,13 @@ class PrepositionSubsetLanguageLearner(
         else:
             raise RuntimeError("Cannot process perception type.")
 
-        logging.info(
-            "*** Preposition subset learner observing %s=%s",
-            learning_example.linguistic_description,
-            original_perception,
-        )
+        if self._graph_logger:
+            self._graph_logger.log_graph(
+                original_perception,
+                logging.INFO,
+                "*** Preposition subset learner observing %s",
+                learning_example.linguistic_description,
+            )
 
         observed_linguistic_description = (
             learning_example.linguistic_description.as_token_sequence()
@@ -89,10 +93,12 @@ class PrepositionSubsetLanguageLearner(
             original_perception
         )
 
-        logging.info(
-            "Perception post-object-recognition: %s",
-            recognized_object_perception.perception_graph,
-        )
+        if self._graph_logger:
+            self._graph_logger.log_graph(
+                recognized_object_perception.perception_graph,
+                logging.INFO,
+                "Perception post-object-recognition",
+            )
 
         object_match_nodes = []
         token_indices_of_matched_object_words = []
@@ -178,10 +184,12 @@ class PrepositionSubsetLanguageLearner(
             template_variables_to_object_match_nodes,
         )
 
-        logging.info(
-            "Preposition hypothesis from current perception: %s",
-            preposition_pattern.graph_pattern,
-        )
+        if self._graph_logger:
+            self._graph_logger.log_graph(
+                preposition_pattern.graph_pattern,
+                logging.INFO,
+                "Preposition hypothesis from current perception",
+            )
         # DEBUG
         self._print(
             preposition_pattern.graph_pattern.copy_as_digraph(),
@@ -195,11 +203,13 @@ class PrepositionSubsetLanguageLearner(
             previous_hypothesis = self._surface_template_to_preposition_pattern[
                 preposition_surface_template
             ].graph_pattern
-            logging.info(
-                "We have seen this preposition template before. Here is our hypothesis "
-                "prior to seeing this example: %s",
-                previous_hypothesis,
-            )
+            if self._graph_logger:
+                self._graph_logger.log_graph(
+                    previous_hypothesis,
+                    logging.INFO,
+                    "We have seen this preposition template before. Here is our hypothesis "
+                    "prior to seeing this example",
+                )
 
             previous_hypothesis_as_digraph = previous_hypothesis.copy_as_digraph()
             self._print(previous_hypothesis_as_digraph, "pre-intersection current: ")
@@ -211,18 +221,24 @@ class PrepositionSubsetLanguageLearner(
                 preposition_surface_template
             ].intersection(preposition_pattern)
 
-            self._surface_template_to_preposition_pattern[
-                preposition_surface_template
-            ] = new_hypothesis
-
-            logging.info("New hypothesis: %s", new_hypothesis.graph_pattern)
-
-            self._print(
+            if new_hypothesis:
                 self._surface_template_to_preposition_pattern[
                     preposition_surface_template
-                ].graph_pattern.copy_as_digraph(),
-                "post-intersection: ",
-            )
+                ] = new_hypothesis
+
+                if self._graph_logger:
+                    self._graph_logger.log_graph(
+                        new_hypothesis.graph_pattern, logging.INFO, "New hypothesis"
+                    )
+
+                self._print(
+                    self._surface_template_to_preposition_pattern[
+                        preposition_surface_template
+                    ].graph_pattern.copy_as_digraph(),
+                    "post-intersection: ",
+                )
+            else:
+                raise RuntimeError("Intersection is the empty pattern :-(")
         else:
             logging.info(
                 "This is a new preposition template; accepting current hypothesis"
