@@ -1,4 +1,4 @@
-from typing import Any, Iterable, List, Mapping, Tuple
+from typing import Any, Iterable, List, Mapping, Optional, Tuple
 
 from attr.validators import deep_mapping, instance_of
 from immutablecollections import immutableset
@@ -94,20 +94,25 @@ class PrepositionPattern:
                 f"but got {actual_object_variable_names}"
             )
 
-    def intersection(self, pattern: "PrepositionPattern") -> "PrepositionPattern":
-        graph_pattern = self.graph_pattern.intersection(pattern.graph_pattern)
-        mapping_builder = []
-        items_to_iterate: List[Tuple[str, MatchedObjectPerceptionPredicate]] = []
-        items_to_iterate.extend(self.object_variable_name_to_pattern_node.items())
-        items_to_iterate.extend(pattern.object_variable_name_to_pattern_node.items())
-        for name, pattern_node in immutableset(items_to_iterate):
-            if (
-                pattern_node
-                in graph_pattern._graph.nodes  # pylint:disable=protected-access
-            ):
-                mapping_builder.append((name, pattern_node))
+    def intersection(
+        self, pattern: "PrepositionPattern"
+    ) -> Optional["PrepositionPattern"]:
+        intersected_pattern = self.graph_pattern.intersection(pattern.graph_pattern)
+        if intersected_pattern:
+            mapping_builder = []
+            items_to_iterate: List[Tuple[str, MatchedObjectPerceptionPredicate]] = []
+            items_to_iterate.extend(self.object_variable_name_to_pattern_node.items())
+            items_to_iterate.extend(pattern.object_variable_name_to_pattern_node.items())
+            for name, pattern_node in immutableset(items_to_iterate):
+                if (
+                    pattern_node
+                    in intersected_pattern._graph.nodes  # pylint:disable=protected-access
+                ):
+                    mapping_builder.append((name, pattern_node))
 
-        return PrepositionPattern(
-            graph_pattern=graph_pattern,
-            object_variable_name_to_pattern_node=mapping_builder,
-        )
+            return PrepositionPattern(
+                graph_pattern=intersected_pattern,
+                object_variable_name_to_pattern_node=mapping_builder,
+            )
+        else:
+            return None
