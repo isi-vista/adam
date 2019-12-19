@@ -1,9 +1,10 @@
 _includes:
-   - "../root.params"
+   - "../../root.params"
 
-output_directory: '%adam_experiment_root%/m6'
-experiment: 'm6'
+output_directory: '%adam_experiment_root%/m6/deniz'
+experiment: 'm6-deniz'
 
+curriculum: m6-deniz
 learner: pursuit
 pursuit:
    learning_factor: 0.5

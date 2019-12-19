@@ -13,7 +13,7 @@ from adam.random_utils import RandomChooser
 
 def main(params: Parameters) -> None:
     output_dir = params.creatable_directory("output_directory")
-    experiment_name = params.optional_string("experiment", default="m6_experiments")
+    experiment_name = params.string("experiment")
 
     logger = LearningProgressHtmlLogger.create_logger(
         output_dir=output_dir,
@@ -23,8 +23,8 @@ def main(params: Parameters) -> None:
 
     execute_experiment(
         Experiment(
-            name="static-prepositions",
-            training_stages=make_m6_curriculum(),
+            name=experiment_name,
+            training_stages=curriculum_from_params(params),
             learner_factory=learner_factory_from_params(params),
             pre_example_training_observers=[logger.pre_observer()],
             post_example_training_observers=[logger.post_observer()],
@@ -43,6 +43,14 @@ def learner_factory_from_params(
         return lambda: PursuitLanguageLearner.from_parameters(params.namespace("pursuit"))
     else:
         raise RuntimeError("can't happen")
+
+
+def curriculum_from_params(params: Parameters):
+    curriculum_name = params.string("curriculum", ["m6-deniz"])
+    if curriculum_name == "m6-deniz":
+        return make_m6_curriculum()
+    else:
+        raise RuntimeError("Can't happen")
 
 
 if __name__ == "__main__":
