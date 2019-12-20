@@ -67,22 +67,34 @@ class ObjectRecognizer:
     which can be used to learn additional semantics which relate objects to other objects
     """
 
+    object_names_to_patterns: Mapping[str, PerceptionGraphPattern] = attrib(
+        validator=deep_mapping(instance_of(str), instance_of(PerceptionGraphPattern))
+    )
+
+    @staticmethod
+    def for_ontology_types(ontology_types: Iterable[OntologyNode]) -> "ObjectRecognizer":
+        return ObjectRecognizer(
+            object_names_to_patterns=immutabledict(
+                (
+                    obj_type.handle,
+                    PerceptionGraphPattern.from_schema(
+                        first(GAILA_PHASE_1_ONTOLOGY.structural_schemata(obj_type))
+                    ),
+                )
+                for obj_type in ontology_types
+            )
+        )
+
     def match_objects(
-        self,
-        perception_graph: PerceptionGraph,
-        possible_perceived_objects: Iterable[
-            Tuple[str, PerceptionGraphPattern]
-        ] = _LIST_OF_PERCEIVED_PATTERNS,
+        self, perception_graph: PerceptionGraph
     ) -> PerceptionGraphFromObjectRecognizer:
         """
         Match object patterns to objects in the scenes, then add a node for the matched object and copy relationships
         to it. These new patterns can be used to determine static prepositional relationships.
         """
-        logger = GraphLogger(Path("/Users/gabbard/tmp"), enable_graph_rendering=True)
         matched_object_nodes: List[Tuple[str, MatchedObjectNode]] = []
         graph_to_return = perception_graph.copy_as_digraph()
-        for (description, pattern) in possible_perceived_objects:
-            logger.log_graph(pattern, logging.INFO, description)
+        for (description, pattern) in self.object_names_to_patterns.items():
             matcher = pattern.matcher(PerceptionGraph(graph_to_return))
             pattern_match = first(matcher.matches(use_lookahead_pruning=True), None)
             # It's important not to simply iterate over pattern matches

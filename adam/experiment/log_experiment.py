@@ -4,18 +4,20 @@ from vistautils.parameters import Parameters
 from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 
 from adam.curriculum.m6_curriculum import (
-    make_m6_curriculum,
+    M6_PREPOSITION_CURRICULUM_OBJECTS,
     M6_PREPOSITION_SUBCURRICULUM_GENERATORS,
     instantiate_subcurricula,
+    make_m6_curriculum,
 )
 from adam.curriculum.phase1_curriculum import _make_each_object_by_itself_curriculum
 from adam.curriculum.pursuit_curriculum import make_simple_pursuit_curriculum
-from adam.experiment import execute_experiment, Experiment
+from adam.experiment import Experiment, execute_experiment
 from adam.experiment.observer import LearningProgressHtmlLogger
 from adam.learner import LanguageLearner
+from adam.learner.object_recognizer import ObjectRecognizer
 from adam.learner.preposition_subset import PrepositionSubsetLanguageLearner
-from adam.perception.perception_graph import GraphLogger
 from adam.learner.pursuit import PursuitLanguageLearner
+from adam.perception.perception_graph import GraphLogger
 from adam.random_utils import RandomChooser
 
 
@@ -56,7 +58,11 @@ def learner_factory_from_params(
             graph_logger=GraphLogger(
                 log_directory=params.creatable_directory("log_directory"),
                 enable_graph_rendering=True,
-            )
+            ),
+            # Eval hack! This is specific to the M6 ontology
+            object_recognizer=ObjectRecognizer.for_ontology_types(
+                M6_PREPOSITION_CURRICULUM_OBJECTS
+            ),
         )
     else:
         raise RuntimeError("can't happen")
