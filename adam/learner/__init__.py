@@ -120,19 +120,12 @@ def get_largest_matching_pattern(
     graph: PerceptionGraph,
     *,
     debug_callback: Optional[DebugCallableType] = None,
+    graph_logger: Optional[GraphLogger] = None
 ) -> PerceptionGraphPattern:
     """ Helper function to return the largest matching `PerceptionGraphPattern`
     for learner from a perception pattern and graph pair."""
-    # Initialize matcher in debug version to keep largest subgraph
     matching = pattern.matcher(graph, debug_callback=debug_callback)
-    match_attempt = matching.first_match_or_failure_info()
-
-    if isinstance(match_attempt, PerceptionGraphPatternMatch):
-        # if matched, get the match
-        return match_attempt.matched_pattern
-    else:
-        # otherwise get the largest subgraph and initialze new PatternGraph from it
-        return match_attempt.largest_match_pattern_subgraph
+    return matching.relax_pattern_until_it_matches(graph_logger=graph_logger)
 
 
 def graph_without_learner(graph: DiGraph) -> PerceptionGraph:
