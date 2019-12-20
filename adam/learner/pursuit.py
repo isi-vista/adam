@@ -360,7 +360,7 @@ class PursuitLanguageLearner(
         for word, meaning_pattern in self._lexicon.items():
             # Use PerceptionGraphPattern.matcher and matcher.matches() for a complete match
             matcher = meaning_pattern.matcher(observed_perception_graph)
-            matches = matcher.matches()
+            matches = matcher.matches(use_lookahead_pruning=True)
             first_match = first(matches, default=None)
             if first_match is not None:
                 learned_description = ("a", word)
@@ -376,7 +376,7 @@ class PursuitLanguageLearner(
                     word
                 )
                 matcher = leading_hypothesis.matcher(observed_perception_graph)
-                match = first(matcher.matches(), default=None)
+                match = first(matcher.matches(use_lookahead_pruning=True), default=None)
                 if match:
                     learned_description = ("a", word)
                     continue

@@ -423,7 +423,7 @@ class PrepositionSubsetLanguageLearner(
             matcher = preposition_pattern.graph_pattern.matcher(
                 recognized_object_perception.perception_graph
             )
-            for match in matcher.matches():
+            for match in matcher.matches(use_lookahead_pruning=True):
                 # if it is, use that preposition to describe the situation.
                 description_to_score.append(
                     (

@@ -1,4 +1,7 @@
-from immutablecollections import immutableset
+from typing import Mapping
+
+from immutablecollections import immutableset, immutabledict
+from more_itertools import first
 
 from adam.curriculum.curriculum_utils import (
     standard_object,

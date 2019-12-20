@@ -179,7 +179,11 @@ def do_object_on_table_test(
             situation_with_negative_object, chooser=RandomChooser.for_seed(0)
         )
         perception_graph = PerceptionGraph.from_frame(perception.frames[0])
-        if any(object_to_match_pattern.matcher(perception_graph).matches()):
+        if any(
+            object_to_match_pattern.matcher(perception_graph).matches(
+                use_lookahead_pruning=True
+            )
+        ):
             return False
     return True
 
@@ -290,7 +294,9 @@ def test_successfully_extending_partial_match():
     # get our initial match by matching the partial pattern
     matcher = partial_perception_pattern.matcher(perception)
 
-    partial_match: PerceptionGraphPatternMatch = first(matcher.matches())
+    partial_match: PerceptionGraphPatternMatch = first(
+        matcher.matches(use_lookahead_pruning=True)
+    )
     partial_mapping = partial_match.pattern_node_to_matched_graph_node
 
     # Try to extend the partial mapping, to create a complete mapping

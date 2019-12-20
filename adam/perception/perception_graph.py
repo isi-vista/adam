@@ -811,7 +811,7 @@ class PatternMatching:
     def matches(
         self,
         *,
-        use_lookahead_pruning: bool = False,
+        use_lookahead_pruning: bool,
         suppress_multiple_alignments_to_same_nodes: bool = True,
         initial_partial_match: Mapping[Any, Any] = immutabledict(),
     ) -> Iterable["PerceptionGraphPatternMatch"]:
@@ -917,7 +917,7 @@ class PatternMatching:
         graph_to_match_against: PerceptionGraphProtocol,
         pattern: PerceptionGraphPattern,
         debug_callback: Optional[Callable[[Any, Any], None]],
-        use_lookahead_pruning: bool = False,
+        use_lookahead_pruning: bool,
         suppress_multiple_alignments_to_same_nodes: bool = True,
         collect_debug_statistics: bool = False,
         initial_partial_match: Mapping[Any, Any] = immutabledict(),
