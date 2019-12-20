@@ -629,6 +629,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
         graph_pattern: "PerceptionGraphPattern",
         *,
         debug_callback: Optional[DebugCallableType] = None,
+        graph_logger: Optional["GraphLogger"] = None,
     ) -> Optional["PerceptionGraphPattern"]:
         """
         Determine the largest partial match between two `PerceptionGraphPattern`s
@@ -642,7 +643,9 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
             debug_callback=debug_callback,
             matching_pattern_against_pattern=True,
         )
-        attempted_match = matcher.relax_pattern_until_it_matches()
+        attempted_match = matcher.relax_pattern_until_it_matches(
+            graph_logger=graph_logger
+        )
         if attempted_match:
             return attempted_match
         else:
@@ -862,7 +865,9 @@ class PatternMatching:
             )
         )
 
-    def relax_pattern_until_it_matches(self) -> Optional[PerceptionGraphPattern]:
+    def relax_pattern_until_it_matches(
+        self, *, graph_logger: Optional["GraphLogger"] = None
+    ) -> Optional[PerceptionGraphPattern]:
         """
         Prunes or relaxes the *pattern* for this matching until it successfully matches
         using heuristic rules.
@@ -877,6 +882,7 @@ class PatternMatching:
         # last time so we don't start from scratch.
         partial_match: Mapping[Any, Any] = {}
 
+        relaxation_step = 0
         while cur_pattern and len(cur_pattern) > 0:  # pylint:disable=len-as-condition
             match_attempt = first(
                 self._internal_matches(
@@ -893,10 +899,15 @@ class PatternMatching:
             if isinstance(match_attempt, PerceptionGraphPatternMatch):
                 return cur_pattern
             else:
+                relaxation_step += 1
                 # If we couldn't successfully match the current part of the pattern,
                 # chop off the node which we think might have caused the match to fail.
                 # Why is this cast necessary? mypy should be able to infer this...
                 cur_pattern = self._relax_pattern(match_attempt)
+                if graph_logger and cur_pattern:
+                    graph_logger.log_graph(
+                        cur_pattern, logging.INFO, "Relaxation step %s", relaxation_step
+                    )
         # no relaxation could successfully match
         return None
 
@@ -1017,7 +1028,12 @@ class PatternMatching:
                 ):
                     gather_nodes_to_excise(predecessor)
 
+        logging.info(
+            "Relaxation: last failed pattern node is %s",
+            match_failure.last_failed_pattern_node,
+        )
         gather_nodes_to_excise(match_failure.last_failed_pattern_node)
+        logging.info("Nodes to delete directly: %s", nodes_to_delete_directly)
 
         pattern_as_digraph.remove_nodes_from(immutableset(nodes_to_delete_directly))
 
@@ -1059,6 +1075,10 @@ class PatternMatching:
                     f"{connected_components_containing_successful_pattern_matches}"
                 )
 
+            logging.info(
+                "Relaxation: deleted due to disconnection: %s",
+                to_delete_due_to_disconnection,
+            )
             pattern_as_digraph.remove_nodes_from(to_delete_due_to_disconnection)
         else:
             # If nothing was successfully matched, it is less clear how to choose what portion
@@ -1074,6 +1094,10 @@ class PatternMatching:
             biggest_component = first(components)
             for component in components:
                 if component != biggest_component:
+                    logging.info(
+                        "Relaxation: deleted due to being in smaller component: %s",
+                        component,
+                    )
                     pattern_as_digraph.remove_nodes_from(component)
 
         return PerceptionGraphPattern(pattern_as_digraph.copy())

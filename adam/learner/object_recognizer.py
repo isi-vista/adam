@@ -1,8 +1,8 @@
 import logging
 from itertools import chain
-from pathlib import Path
-from typing import Iterable, List, Tuple
+from typing import Iterable, List, Mapping, Tuple
 
+from attr.validators import deep_mapping, instance_of
 from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
 from immutablecollections.converter_utils import _to_immutabledict
 from more_itertools import first
@@ -15,7 +15,6 @@ from adam.ontology.phase1_ontology import (
     PHASE_1_CURRICULUM_OBJECTS,
 )
 from adam.perception.perception_graph import (
-    GraphLogger,
     MatchedObjectNode,
     PerceptionGraph,
     PerceptionGraphNode,

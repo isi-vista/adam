@@ -1,3 +1,4 @@
+from logging import INFO
 from typing import Any, Iterable, List, Mapping, Optional, Tuple
 
 from attr.validators import deep_mapping, instance_of
@@ -9,6 +10,7 @@ from adam.perception.perception_graph import (
     MatchedObjectNode,
     MatchedObjectPerceptionPredicate,
     PerceptionGraphPattern,
+    GraphLogger,
 )
 from attr import attrib, attrs
 
@@ -95,10 +97,14 @@ class PrepositionPattern:
             )
 
     def intersection(
-        self, pattern: "PrepositionPattern"
+        self, pattern: "PrepositionPattern", *, graph_logger: Optional[GraphLogger] = None
     ) -> Optional["PrepositionPattern"]:
-        intersected_pattern = self.graph_pattern.intersection(pattern.graph_pattern)
+        intersected_pattern = self.graph_pattern.intersection(
+            pattern.graph_pattern, graph_logger=graph_logger
+        )
         if intersected_pattern:
+            if graph_logger:
+                graph_logger.log_graph(intersected_pattern, INFO, "Intersected pattern")
             mapping_builder = []
             items_to_iterate: List[Tuple[str, MatchedObjectPerceptionPredicate]] = []
             items_to_iterate.extend(self.object_variable_name_to_pattern_node.items())
