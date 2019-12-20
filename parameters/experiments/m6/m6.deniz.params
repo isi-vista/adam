@@ -2,6 +2,6 @@ _includes:
    - "../../root.params"
    - "pursuit-nouns.m6.params"
 
-output_directory: '%adam_experiment_root%/'
+output_directory: '%adam_experiment_root%/m6/'
 experiment: 'm6-deniz'
 curriculum: m6-deniz

@@ -1,7 +1,7 @@
 _includes:
    - "../../root.params"
 
-output_directory: '%adam_experiment_root%/'
+output_directory: '%adam_experiment_root%/m6/'
 experiment: 'static-prepositions'
 curriculum: m6-preposition
 learner: preposition-subset
