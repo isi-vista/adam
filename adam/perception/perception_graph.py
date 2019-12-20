@@ -1878,3 +1878,71 @@ class GraphLogger:
                     pickle.dump(graph, out)
         else:
             logging.log(level, msg, *args)
+
+    def log_match_failure(
+        self, match_failure: PatternMatching.MatchFailure, level, msg: str, *args
+    ) -> None:
+        if self.enable_graph_rendering:
+            graph_correspondence_ids: Mapping[Any, str] = immutabledict(
+                (graph_node, str(i))
+                for (i, (_, graph_node)) in enumerate(
+                    match_failure.pattern_node_to_graph_node_for_largest_match.items()
+                )
+            )
+            self.log_graph(
+                match_failure.graph,
+                level,
+                msg + " [graph] ",
+                *args,
+                match_correspondence_ids=graph_correspondence_ids,
+            )
+
+            pattern_correspondence_ids: Mapping[Any, str] = immutabledict(
+                (pattern_node, str(i))
+                for (i, (pattern_node, _)) in enumerate(
+                    match_failure.pattern_node_to_graph_node_for_largest_match.items()
+                )
+            )
+            self.log_graph(
+                match_failure.pattern,
+                level,
+                msg + " [pattern] ",
+                *args,
+                match_correspondence_ids=pattern_correspondence_ids,
+            )
+        else:
+            logging.log(level, msg, *args)
+
+    def log_pattern_match(
+        self, pattern_match: PerceptionGraphPatternMatch, level, msg: str, *args
+    ) -> None:
+        if self.enable_graph_rendering:
+            graph_correspondence_ids: Mapping[Any, str] = immutabledict(
+                (graph_node, str(i))
+                for (i, (_, graph_node)) in enumerate(
+                    pattern_match.pattern_node_to_matched_graph_node.items()
+                )
+            )
+            self.log_graph(
+                pattern_match.graph_matched_against,
+                level,
+                msg + " [graph] ",
+                *args,
+                match_correspondence_ids=graph_correspondence_ids,
+            )
+
+            pattern_correspondence_ids: Mapping[Any, str] = immutabledict(
+                (pattern_node, str(i))
+                for (i, (pattern_node, _)) in enumerate(
+                    pattern_match.pattern_node_to_matched_graph_node.items()
+                )
+            )
+            self.log_graph(
+                pattern_match.matched_pattern,
+                level,
+                msg + " [pattern] ",
+                *args,
+                match_correspondence_ids=pattern_correspondence_ids,
+            )
+        else:
+            logging.log(level, msg, *args)
