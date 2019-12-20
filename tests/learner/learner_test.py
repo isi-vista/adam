@@ -158,7 +158,7 @@ def test_pursuit_learner():
     # lexicalize items sufficiently because of diminishing lexicon probability through training
     learner = PursuitLanguageLearner(
         learning_factor=0.5,
-        graph_match_confirmation_threshold=0.9,
+        graph_match_confirmation_threshold=0.7,
         lexicon_entry_threshold=0.7,
     )  # type: ignore
     for training_stage in [train_curriculum]:
