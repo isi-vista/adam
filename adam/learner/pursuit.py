@@ -29,8 +29,10 @@ from adam.perception.perception_graph import (
     PerceptionGraph,
     PerceptionGraphPattern,
     DebugCallableType,
+    GraphLogger,
 )
 from adam.utils import networkx_utils
+from attr.validators import instance_of, optional
 
 r.seed(0)
 
@@ -61,6 +63,9 @@ class PursuitLanguageLearner(
     # Counter to be used to prevent prematurely lexicalizing novel words
     _words_to_number_of_observations: Dict[str, int] = attrib(
         init=False, default=Factory(dict)
+    )
+    _graph_logger: Optional[GraphLogger] = attrib(
+        validator=optional(instance_of(GraphLogger)), default=None
     )
     debug_counter = 0
 
@@ -173,6 +178,7 @@ class PursuitLanguageLearner(
             leading_hypothesis_pattern,
             observed_perception_graph,
             debug_callback=self._debug_callback,
+            graph_logger=self._graph_logger,
         )
         current_hypothesis_score = self._words_to_hypotheses_and_scores[word][
             leading_hypothesis_pattern

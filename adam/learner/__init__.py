@@ -19,6 +19,7 @@ from adam.perception.perception_graph import (
     PerceptionGraphPattern,
     DebugCallableType,
     PerceptionGraphPatternMatch,
+    GraphLogger,
 )
 from adam.utils.networkx_utils import subgraph
 

@@ -1,5 +1,7 @@
+import logging
 import random
 from itertools import chain
+from pathlib import Path
 from typing import Optional
 
 from adam.curriculum.phase1_curriculum import PHASE1_CHOOSER, phase1_instances
@@ -17,7 +19,11 @@ from adam.ontology.phase1_ontology import (
     GAILA_PHASE_1_ONTOLOGY,
     LEARNER,
 )
-from adam.perception.perception_graph import DebugCallableType, DumpPartialMatchCallback
+from adam.perception.perception_graph import (
+    DebugCallableType,
+    DumpPartialMatchCallback,
+    GraphLogger,
+)
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
     all_possible,
@@ -171,6 +177,7 @@ def test_pursuit_learner():
             test_instance_language,
             test_instance_perception,
         ) in test_instance_group.instances():
+            logging.info("lang: %s", test_instance_language)
             descriptions_from_learner = learner.describe(test_instance_perception)
             gold = test_instance_language.as_token_sequence()
             assert [desc.as_token_sequence() for desc in descriptions_from_learner][
