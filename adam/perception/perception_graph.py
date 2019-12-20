@@ -1441,7 +1441,7 @@ class IsOntologyNodePredicate(NodePredicate):
     property_value: OntologyNode = attrib(validator=instance_of(OntologyNode))
 
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
-        # geons might be wrapped in tuples with their id()
+        # ontology nodes might be wrapped in tuples with their id()
         # in order to simulate comparison by object ID.
         if isinstance(graph_node, tuple):
             graph_node = graph_node[0]
