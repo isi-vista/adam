@@ -48,7 +48,7 @@ class PrepositionSubsetLanguageLearner(
         PrepositionSurfaceTemplate, PrepositionPattern
     ] = attrib(init=False, default=Factory(dict))
 
-    _object_recognizer: ObjectRecognizer = attrib(init=False, default=ObjectRecognizer())
+    _object_recognizer: ObjectRecognizer = attrib(validator=instance_of(ObjectRecognizer))
     _debug_file: Optional[str] = attrib(kw_only=True, default=None)
     _graph_logger: Optional[GraphLogger] = attrib(default=None)
 

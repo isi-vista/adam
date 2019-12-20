@@ -53,10 +53,19 @@ from adam.situation.templates.phase1_templates import sampled
 
 r.seed(0)
 
+M6_PREPOSITION_CURRICULUM_SMALL_OBJECTS = [BALL, CUP, BOX, HAT, BOOK, COOKIE, BIRD]
+M6_PREPOSITION_CURRICULUM_LARGER_OBJECTS = [TABLE, HOUSE, CAR, CHAIR, TRUCK]
+M6_PREPOSITION_CURRICULUM_OBJECTS = list(
+    chain(
+        M6_PREPOSITION_CURRICULUM_SMALL_OBJECTS, M6_PREPOSITION_CURRICULUM_LARGER_OBJECTS
+    )
+)
+
+
 # Create object variables for objects to use in prepositions
 SMALL_OBJECT_VARS = [
     standard_object("small_" + str(i), obj)
-    for i, obj in enumerate([BALL, CUP, BOX, HAT, BOOK, COOKIE, BIRD])
+    for i, obj in enumerate(M6_PREPOSITION_CURRICULUM_SMALL_OBJECTS)
 ]
 LARGE_OBJECT_VARS = [
     standard_object("large_" + str(i), obj)
