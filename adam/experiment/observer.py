@@ -255,9 +255,7 @@ class LearningProgressHtmlLogger:
                 f'\t\t\t\t<td valign="top">{true_description_text}</td>\n'
             )
             if test_mode:
-                outfile.write(
-                    f'\t\t\t\t<td valign="top">{learner_pre_description}</td>\n'
-                )
+                outfile.write(f'\t\t\t\t<td valign="top">{learner_description}</td>\n')
             else:
                 outfile.write(
                     f'\t\t\t\t<td valign="top">{learner_pre_description}</td>\n'
