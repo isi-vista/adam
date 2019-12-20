@@ -1,32 +1,32 @@
 import random as r
 from itertools import chain
+from pathlib import Path
 
 import pytest
-from adam_test_utils import all_possible_test
 from more_itertools import first, only
 
 from adam.curriculum.curriculum_utils import (
-    standard_object,
     PHASE1_CHOOSER,
     phase1_instances,
+    standard_object,
 )
 from adam.learner.subset import graph_without_learner
 from adam.ontology import OntologyNode
 from adam.ontology.phase1_ontology import (
     BIRD,
+    BOX,
     GAILA_PHASE_1_ONTOLOGY,
     GROUND,
     HOUSE,
     INANIMATE_OBJECT,
     IS_BODY_PART,
     LIQUID,
+    PART_OF,
     TABLE,
     _HOUSE_SCHEMA,
     above,
     bigger_than,
     on,
-    BOX,
-    PART_OF,
 )
 from adam.ontology.structural_schema import ObjectStructuralSchema
 from adam.perception.developmental_primitive_perception import RgbColorPerception
@@ -34,19 +34,21 @@ from adam.perception.high_level_semantics_situation_to_developmental_primitive_p
     GAILA_PHASE_1_PERCEPTION_GENERATOR,
 )
 from adam.perception.perception_graph import (
+    GraphLogger,
+    IsColorNodePredicate,
+    PatternMatching,
     PerceptionGraph,
     PerceptionGraphPattern,
-    PatternMatching,
-    IsColorNodePredicate,
     PerceptionGraphPatternMatch,
 )
 from adam.random_utils import RandomChooser
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
+    all_possible,
     color_variable,
     object_variable,
-    all_possible,
 )
+from adam_test_utils import all_possible_test
 
 r.seed(0)
 
@@ -224,8 +226,8 @@ def test_last_failed_pattern_node():
         different_nodes = []
         for node in perception.copy_as_digraph().nodes:
             # If we find a color node, we make it black
-            if isinstance(node, RgbColorPerception):
-                new_node = RgbColorPerception(0, 0, 0)
+            if isinstance(node, tuple) and isinstance(node[0], RgbColorPerception):
+                new_node = (RgbColorPerception(0, 0, 0), 42)
                 # Get edge information
                 for edge in perception.copy_as_digraph().edges(data=True):
                     if edge[0] == node:
