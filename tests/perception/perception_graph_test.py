@@ -304,7 +304,10 @@ def test_successfully_extending_partial_match():
     # Try to extend the partial mapping, to create a complete mapping
     matcher_2 = whole_perception_pattern.matcher(perception)
     complete_match: PerceptionGraphPatternMatch = first(
-        matcher_2.matches(initial_partial_match=partial_mapping)
+        matcher_2.matches(
+            initial_partial_match=partial_mapping, use_lookahead_pruning=True
+        ),
+        None,
     )
     complete_mapping = complete_match.pattern_node_to_matched_graph_node
     assert len(complete_mapping) == len(perception.copy_as_digraph().nodes)
