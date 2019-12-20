@@ -149,6 +149,7 @@ class PerceptionGraphProtocol(Protocol):
         output_file: Path,
         *,
         match_correspondence_ids: Mapping[Any, str] = immutabledict(),
+        robust=True,
     ) -> None:
         """
         Debugging tool to render the graph to PDF using *dot*.
@@ -173,18 +174,28 @@ class PerceptionGraph(PerceptionGraphProtocol):
         """
         graph = DiGraph()
 
-        def map_node(obj: Any):
+        def map_node(obj: Any, *, force_unique_counter: Optional[int] = None):
+            # in some cases, a special index will be given to force
+            # otherwise identical objects to be treated separately.
+            # We do this for properties, for example, so that if two things
+            # are both animate, they end up with distinct animacy nodes in the graph
+            # which could be e.g. treated differently during pattern relaxation.
+            if force_unique_counter is not None:
+                return (obj, force_unique_counter)
             # Regions and Geons are normally treated as value objects,
             # but we want to maintain their distinctness in the perceptual graph
             # for the purpose of matching patterns, so we make their corresponding
             # graph nods compare by identity.
-            if isinstance(obj, (Region, Geon)):
+            elif isinstance(obj, (Region, Geon)):
                 return (obj, id(obj))
             else:
                 return obj
 
         def map_edge(label: Any):
             return {"label": label}
+
+        # see force_unique_counter in map_node above
+        property_index = 0
 
         for perceived_object in frame.perceived_objects:
             # Every perceived object is a node in the graph.
@@ -228,11 +239,14 @@ class PerceptionGraph(PerceptionGraphProtocol):
 
         dest_node: Any
         for property_ in frame.property_assertions:
+            property_index += 1
             source_node = map_node(property_.perceived_object)
             if isinstance(property_, HasBinaryProperty):
-                dest_node = map_node(property_.binary_property)
+                dest_node = map_node(
+                    property_.binary_property, force_unique_counter=property_index
+                )
             elif isinstance(property_, HasColor):
-                dest_node = map_node(property_.color)
+                dest_node = map_node(property_.color, force_unique_counter=property_index)
             else:
                 raise RuntimeError(f"Don't know how to translate property {property_}")
             graph.add_edge(source_node, dest_node, label=HAS_PROPERTY_LABEL)
@@ -249,6 +263,7 @@ class PerceptionGraph(PerceptionGraphProtocol):
         output_file: Path,
         *,
         match_correspondence_ids: Mapping[Any, str] = immutabledict(),
+        robust=True,
     ) -> None:
         """
         Debugging tool to render the graph to PDF using *dot*.
@@ -258,6 +273,8 @@ class PerceptionGraph(PerceptionGraphProtocol):
         what the correspond to in a pattern by supplying
         *match_correspondence_ids* which maps graph nodes to
         the desired correspondence labels.
+
+        If *robust* is *True* (the default), then this will suppress crashes on failures.
         """
         dot_graph = graphviz.Digraph(graph_name)
         dot_graph.attr(rankdir="LR")
@@ -310,7 +327,13 @@ class PerceptionGraph(PerceptionGraphProtocol):
                     constraint=constraint_string,
                 )
 
-        dot_graph.render(str(output_file))
+        try:
+            dot_graph.render(str(output_file))
+        except Exception as e:  # pylint:disable=broad-except
+            if robust:
+                logging.warning("Error during dot rendering: %s", e)
+            else:
+                raise
 
     def _to_dot_node(
         self,
@@ -458,11 +481,17 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
             first(perception.frames)
         ).copy_as_digraph()
 
-        # We remove color and properties that is added by situation generation, but is not in schema
+        # We remove color and properties that are added by situation generation,
+        # but are not in schemas.
         nodes_to_remove = [
             node
             for node in perception_graph
-            if isinstance(node, RgbColorPerception) or isinstance(node, OntologyNode)
+            # Perception generation wraps properties in tuples, so we need to unwrap them.
+            if isinstance(node, tuple)
+            and (
+                isinstance(node[0], RgbColorPerception)
+                or isinstance(node[0], OntologyNode)
+            )
         ]
         perception_graph.remove_nodes_from(nodes_to_remove)
 
@@ -507,18 +536,18 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
 
             key = node
             if key not in perception_node_to_pattern_node:
+                # first unwrap any nodes which have been tuple-ized to force distinctness.
                 if isinstance(node, tuple):
                     node = node[0]
-                    if isinstance(node, Geon):
-                        perception_node_to_pattern_node[
-                            key
-                        ] = GeonPredicate.exactly_matching(node)
-                    elif isinstance(node, Region):
-                        perception_node_to_pattern_node[
-                            key
-                        ] = RegionPredicate.matching_distance(node)
-                    else:
-                        raise RuntimeError(f"Don't know how to map tuple node {node}")
+
+                if isinstance(node, Geon):
+                    perception_node_to_pattern_node[key] = GeonPredicate.exactly_matching(
+                        node
+                    )
+                elif isinstance(node, Region):
+                    perception_node_to_pattern_node[
+                        key
+                    ] = RegionPredicate.matching_distance(node)
                 elif isinstance(node, GeonAxis):
                     perception_node_to_pattern_node[key] = AxisPredicate.from_axis(node)
                 elif isinstance(node, ObjectPerception):
@@ -571,6 +600,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
         output_file: Path,
         *,
         match_correspondence_ids: Mapping[Any, str] = immutabledict(),
+        robust=True,
     ) -> None:
         """
         Debugging tool to render the pattern to PDF using *dot*.
@@ -623,7 +653,13 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
                     target_dot_node, source_dot_node, predicate.dot_label(), back="true"
                 )
 
-        dot_graph.render(output_file)
+        try:
+            dot_graph.render(str(output_file))
+        except Exception as e:  # pylint:disable=broad-except
+            if robust:
+                logging.warning("Error during dot rendering: %s", e)
+            else:
+                raise
 
     def intersection(
         self,
@@ -1403,6 +1439,10 @@ class IsOntologyNodePredicate(NodePredicate):
     property_value: OntologyNode = attrib(validator=instance_of(OntologyNode))
 
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
+        # geons might be wrapped in tuples with their id()
+        # in order to simulate comparison by object ID.
+        if isinstance(graph_node, tuple):
+            graph_node = graph_node[0]
         return graph_node == self.property_value
 
     def dot_label(self) -> str:
