@@ -284,7 +284,10 @@ class PursuitLanguageLearner(
             self._lexicon[word] = leading_hypothesis_pattern
             # Remove the word from hypotheses
             self._words_to_hypotheses_and_scores.pop(word)
-            logging.info("Lexicalized %s as %s", word, leading_hypothesis_pattern)
+            if self._graph_logger:
+                self._graph_logger.log_graph(
+                    leading_hypothesis_pattern, logging.INFO, "Lexicalized %s", word
+                )
             print(f"LExicalized {word} as {leading_hypothesis_pattern}")
 
     @staticmethod
