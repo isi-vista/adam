@@ -853,6 +853,7 @@ class PatternMatching:
         use_lookahead_pruning: bool,
         suppress_multiple_alignments_to_same_nodes: bool = True,
         initial_partial_match: Mapping[Any, Any] = immutabledict(),
+        graph_logger: Optional["GraphLogger"] = None,
     ) -> Iterable["PerceptionGraphPatternMatch"]:
         """
         Attempt the matching and returns a generator over the set of possible matches.
@@ -876,6 +877,7 @@ class PatternMatching:
             use_lookahead_pruning=use_lookahead_pruning,
             suppress_multiple_alignments_to_same_nodes=suppress_multiple_alignments_to_same_nodes,
             initial_partial_match=initial_partial_match,
+            graph_logger=graph_logger,
         ):
             # we want to ignore the failure objects returned for the use of
             # first_match_or_failure_info
@@ -883,7 +885,10 @@ class PatternMatching:
                 yield match
 
     def first_match_or_failure_info(
-        self, *, initial_partial_match: Mapping[Any, Any] = immutabledict()
+        self,
+        *,
+        initial_partial_match: Mapping[Any, Any] = immutabledict(),
+        graph_logger: Optional["GraphLogger"] = None,
     ) -> Union["PerceptionGraphPatternMatch", "PatternMatching.MatchFailure"]:
         """
         Gets the first match encountered of the pattern against the graph
@@ -901,6 +906,7 @@ class PatternMatching:
                 use_lookahead_pruning=False,
                 suppress_multiple_alignments_to_same_nodes=True,
                 initial_partial_match=initial_partial_match,
+                graph_logger=graph_logger,
             )
         )
 
@@ -960,6 +966,7 @@ class PatternMatching:
         suppress_multiple_alignments_to_same_nodes: bool = True,
         collect_debug_statistics: bool = False,
         initial_partial_match: Mapping[Any, Any] = immutabledict(),
+        graph_logger: Optional["GraphLogger"] = None,
     ) -> Iterable[Union["PerceptionGraphPatternMatch", "PatternMatching.MatchFailure"]]:
         # Controlling the iteration order of the graphs
         # controls the order in which nodes are matched.
@@ -1015,7 +1022,7 @@ class PatternMatching:
         if not got_a_match:
             # mypy doesn't like the assignment to the pattern_node_to_graph_node_for_largest_match
             # argument for reasons which are unclear to me. It works fine, though.
-            yield PatternMatching.MatchFailure(  # type: ignore
+            match_failure = PatternMatching.MatchFailure(  # type: ignore
                 pattern=pattern,
                 graph=graph_to_match_against,
                 pattern_node_to_graph_node_for_largest_match=immutabledict(
@@ -1025,6 +1032,11 @@ class PatternMatching:
                     NodePredicate, matching.failing_pattern_node_for_deepest_match
                 ),
             )
+            if graph_logger:
+                graph_logger.log_match_failure(
+                    match_failure, logging.INFO, "Match failure"
+                )
+            yield match_failure
 
     def _relax_pattern(
         self, match_failure: "PatternMatching.MatchFailure"
@@ -1861,15 +1873,18 @@ class GraphLogger:
 
     def log_graph(
         self,
-        graph: Union[PerceptionGraph, PerceptionGraphPattern],
+        graph: PerceptionGraphProtocol,
         level,
         msg: str,
         *args,
+        match_correspondence_ids: Mapping[Any, str] = immutabledict(),
     ) -> None:
         if self.enable_graph_rendering:
             graph_name = str(uuid4())
             filename = self.log_directory / f"{graph_name}"
-            graph.render_to_file(graph_name, filename)
+            graph.render_to_file(
+                graph_name, filename, match_correspondence_ids=match_correspondence_ids
+            )
             logging.log(level, f"Rendered to {filename}.pdf\n{msg}", *args)
             if self.serialize_graphs:
                 serialized_file = self.log_directory / f"{graph_name}.serialized"
