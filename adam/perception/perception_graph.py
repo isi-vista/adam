@@ -343,34 +343,36 @@ class PerceptionGraph(PerceptionGraphProtocol):
         match_correspondence_ids: Mapping[Any, str],
     ) -> str:
         if isinstance(perception_node, tuple):
-            perception_node = perception_node[0]
+            unwrapped_perception_node = perception_node[0]
+        else:
+            unwrapped_perception_node = perception_node
 
         # object perceptions have no content, so they are blank nodes
-        if isinstance(perception_node, ObjectPerception):
-            label = perception_node.debug_handle
+        if isinstance(unwrapped_perception_node, ObjectPerception):
+            label = unwrapped_perception_node.debug_handle
         # regions do have content but we express those as edges to other nodes
-        elif isinstance(perception_node, Region):
-            if perception_node.distance:
-                dist_string = f"[{perception_node.distance.name}]"
+        elif isinstance(unwrapped_perception_node, Region):
+            if unwrapped_perception_node.distance:
+                dist_string = f"[{unwrapped_perception_node.distance.name}]"
             else:
                 dist_string = ""
             label = f"reg:{dist_string}"
-        elif isinstance(perception_node, GeonAxis):
-            label = f"axis:{perception_node.debug_name}"
-        elif isinstance(perception_node, RgbColorPerception):
-            label = perception_node.hex
-        elif isinstance(perception_node, OntologyNode):
-            label = perception_node.handle
-        elif isinstance(perception_node, Geon):
-            label = str(perception_node.cross_section) + str(
-                perception_node.cross_section_size
+        elif isinstance(unwrapped_perception_node, GeonAxis):
+            label = f"axis:{unwrapped_perception_node.debug_name}"
+        elif isinstance(unwrapped_perception_node, RgbColorPerception):
+            label = unwrapped_perception_node.hex
+        elif isinstance(unwrapped_perception_node, OntologyNode):
+            label = unwrapped_perception_node.handle
+        elif isinstance(unwrapped_perception_node, Geon):
+            label = str(unwrapped_perception_node.cross_section) + str(
+                unwrapped_perception_node.cross_section_size
             )
-        elif isinstance(perception_node, MatchedObjectNode):
-            label = " ".join(perception_node.name)
+        elif isinstance(unwrapped_perception_node, MatchedObjectNode):
+            label = " ".join(unwrapped_perception_node.name)
         else:
             raise RuntimeError(
                 f"Do not know how to perception node render node "
-                f"{perception_node} with dot"
+                f"{unwrapped_perception_node} with dot"
             )
 
         # if we are rendering a pattern which partially matched against a graph,
