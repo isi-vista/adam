@@ -311,6 +311,9 @@ def test_successfully_extending_partial_match():
     assert len(complete_mapping) == len(whole_perception_pattern.copy_as_digraph().nodes)
 
 
+@pytest.mark.skip(
+    "Testing the wrong things, see https://github.com/isi-vista/adam/issues/504"
+)
 def test_semantically_infeasible_partial_match():
     """
     Tests whether semantic feasibility works as intended
@@ -378,7 +381,9 @@ def test_semantically_infeasible_partial_match():
 
     # Start the matching process, get a partial match
     matcher = whole_perception_pattern.matcher(perception)
-    partial_match: PerceptionGraphPatternMatch = first(matcher.matches())
+    partial_match: PerceptionGraphPatternMatch = first(
+        matcher.matches(use_lookahead_pruning=True)
+    )
     partial_mapping = partial_match.pattern_node_to_matched_graph_node
 
     # Try to extend the partial mapping, we expect a semantic infeasibility runtime error
@@ -386,16 +391,25 @@ def test_semantically_infeasible_partial_match():
         PerceptionGraph(altered_perception_digraph)
     )
     with pytest.raises(RuntimeError):
-        first(matcher_2.matches(initial_partial_match=partial_mapping))
+        first(
+            matcher_2.matches(
+                initial_partial_match=partial_mapping, use_lookahead_pruning=True
+            ),
+            None,
+        )
 
 
+@pytest.mark.skip(
+    "Testing the wrong things, see https://github.com/isi-vista/adam/issues/504"
+)
 def test_syntactically_infeasible_partial_match():
     """
     Tests whether syntactic feasibility works as intended
     """
 
+    # We use a situation to generate the perceptual representation
+    # for a box with color.
     target_object = BOX
-    # Create train and test templates for the target objects
     train_obj_object = object_variable("obj-with-color", target_object)
     obj_template = Phase1SituationTemplate(
         "colored-obj-object", salient_object_variables=[train_obj_object]
@@ -407,6 +421,7 @@ def test_syntactically_infeasible_partial_match():
     train_curriculum = phase1_instances("all obj situations", situations=template)
 
     perceptual_representation = only(train_curriculum.instances())[2]
+
     # Original perception graph
     perception = graph_without_learner(
         PerceptionGraph.from_frame(perceptual_representation.frames[0]).copy_as_digraph()
@@ -441,11 +456,18 @@ def test_syntactically_infeasible_partial_match():
 
     # Start the matching process, get a partial match
     matcher = whole_perception_pattern.matcher(perception)
-    partial_match: PerceptionGraphPatternMatch = first(matcher.matches())
+    partial_match: PerceptionGraphPatternMatch = first(
+        matcher.matches(use_lookahead_pruning=True), None
+    )
     partial_mapping = partial_match.pattern_node_to_matched_graph_node
     # Try to extend the partial mapping, we expect a semantic infeasibility runtime error
     matcher_2 = whole_perception_pattern.matcher(
         PerceptionGraph(altered_perception_digraph)
     )
     with pytest.raises(RuntimeError):
-        first(matcher_2.matches(initial_partial_match=partial_mapping))
+        first(
+            matcher_2.matches(
+                initial_partial_match=partial_mapping, use_lookahead_pruning=True
+            ),
+            None,
+        )
