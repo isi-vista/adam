@@ -1466,6 +1466,11 @@ class IsColorNodePredicate(NodePredicate):
     color: RgbColorPerception = attrib(validator=instance_of(RgbColorPerception))
 
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
+        # color nodes might be wrapped in tuples with their id()
+        # in order to simulate comparison by object ID.
+        if isinstance(graph_node, tuple):
+            graph_node = graph_node[0]
+
         if isinstance(graph_node, RgbColorPerception):
             return (
                 (graph_node.red == self.color.red)
