@@ -29,6 +29,7 @@ from adam.perception.perception_graph import (
 from attr import Factory, attrib, attrs
 
 from adam.utils.networkx_utils import digraph_with_nodes_sorted_by, subgraph
+from attr.validators import instance_of
 
 PrepositionSurfaceTemplate = Tuple[str, ...]
 """
@@ -219,7 +220,7 @@ class PrepositionSubsetLanguageLearner(
             )
             new_hypothesis = self._surface_template_to_preposition_pattern[
                 preposition_surface_template
-            ].intersection(preposition_pattern)
+            ].intersection(preposition_pattern, graph_logger=self._graph_logger)
 
             if new_hypothesis:
                 self._surface_template_to_preposition_pattern[
