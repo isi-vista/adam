@@ -199,6 +199,7 @@ class PursuitLanguageLearner(
         # b.i) If the hypothesis is confirmed, we reinforce it.
         is_hypothesis_confirmed = match_ratio >= self._graph_match_confirmation_threshold
         if is_hypothesis_confirmed:
+            logging.info("Current hypothesis is confirmed.")
             # TODO RMG: this is where we can handle hypothesis pruning
             # because if we have a partial match which still passes the threshold,
             # we can either replace the current hypothesis with it
@@ -214,7 +215,7 @@ class PursuitLanguageLearner(
             self._words_to_hypotheses_and_scores[word][
                 leading_hypothesis_pattern
             ] = new_hypothesis_score
-
+            logging.info("Updating hypothesis score to %s", new_hypothesis_score)
         # b.ii) If the hypothesis is disconfirmed, so we weaken the previous score
         else:
             # Penalize A(w,h)
@@ -223,6 +224,11 @@ class PursuitLanguageLearner(
             self._words_to_hypotheses_and_scores[word][
                 leading_hypothesis_pattern
             ] = new_hypothesis_score
+            logging.info(
+                "Working hypothesis disconfirmed. Reducing score from %s -> %s",
+                current_hypothesis_score,
+                new_hypothesis_score,
+            )
 
             # Reward A(w, h’) for a randomly selected h’ in M_U
             meanings = self.get_meanings_from_perception(observed_perception_graph)
@@ -236,6 +242,9 @@ class PursuitLanguageLearner(
                 self._words_to_hypotheses_and_scores[word][
                     random_new_hypothesis
                 ] = self._learning_factor
+                logging.info(
+                    "Registered a new hypothesis with score %s", self._learning_factor
+                )
 
         return is_hypothesis_confirmed
 
@@ -254,6 +263,7 @@ class PursuitLanguageLearner(
         probability_of_meaning_given_word = (
             leading_hypothesis_score + self._learning_factor
         ) / (sum_of_all_scores + number_of_meanings * self._learning_factor)
+        logging.info("Prob of meaning given word: %s", probability_of_meaning_given_word)
         # file (w, h^) into the lexicon
         # print(
         #     "Lexicon prob:",
