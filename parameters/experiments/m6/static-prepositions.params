@@ -1,0 +1,8 @@
+_includes:
+   - "../../root.params"
+
+output_directory: '%adam_experiment_root%/'
+experiment: 'static-prepositions'
+curriculum: m6-preposition
+learner: preposition-subset
+log_directory: "%output_directory%/logs"

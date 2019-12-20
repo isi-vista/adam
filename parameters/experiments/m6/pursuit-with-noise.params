@@ -2,7 +2,7 @@ _includes:
    - "../../root.params"
    - "pursuit-nouns.m6.params"
 
-output_directory: '%adam_experiment_root%/m6/deniz'
+output_directory: '%adam_experiment_root%/'
 experiment: 'pursuit-with-noise'
 curriculum: pursuit-with-noise
 pursuit-curriculum-params:

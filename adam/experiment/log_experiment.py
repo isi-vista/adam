@@ -28,7 +28,7 @@ def main(params: Parameters) -> None:
     logger = LearningProgressHtmlLogger.create_logger(
         output_dir=output_dir,
         experiment_name=experiment_name,
-        curriculum_name="m6_curriculum",
+        curriculum_name="index",
     )
 
     (training_instance_groups, test_instance_groups) = curriculum_from_params(params)

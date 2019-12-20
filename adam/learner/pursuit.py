@@ -279,7 +279,7 @@ class PursuitLanguageLearner(
             # Remove the word from hypotheses
             self._words_to_hypotheses_and_scores.pop(word)
             logging.info("Lexicalized %s as %s", word, leading_hypothesis_pattern)
-            print(f"LExicalized {word} as {leading_hypothesis_pattern}")
+            # print(f"Lexicalized {word} as {leading_hypothesis_pattern}")
 
     @staticmethod
     def get_meanings_from_perception(
