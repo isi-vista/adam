@@ -311,10 +311,10 @@ class PursuitLanguageLearner(
 
         # 2) for each of these, walk along the part of relationships backwards,
         # i.e find all of the subparts of the root object
-        for root_object_percetion_node in root_object_percetion_nodes:
+        for root_object_perception_node in root_object_percetion_nodes:
             # Iteratively get all other object perceptions that connect to a root with a part of relation
-            all_object_perception_nodes = [root_object_percetion_node]
-            frontier = [root_object_percetion_node]
+            all_object_perception_nodes = [root_object_perception_node]
+            frontier = [root_object_perception_node]
             updated = True
             while updated:
                 updated = False
