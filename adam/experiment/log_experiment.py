@@ -58,6 +58,7 @@ def learner_factory_from_params(
             graph_logger=GraphLogger(
                 log_directory=params.creatable_directory("log_directory"),
                 enable_graph_rendering=True,
+                serialize_graphs=True,
             ),
             # Eval hack! This is specific to the M6 ontology
             object_recognizer=ObjectRecognizer.for_ontology_types(

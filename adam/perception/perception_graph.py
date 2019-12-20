@@ -13,6 +13,7 @@ to defining the type of Nodes in our `PerceptionGraph`\ s readers should start w
 reading other parts of this module.
 """
 import logging
+import pickle
 from abc import ABC, abstractmethod
 from pathlib import Path
 from time import process_time
@@ -1809,6 +1810,7 @@ def _invert_to_immutabledict(mapping: Mapping[_KT, _VT]) -> ImmutableDict[_VT, _
 class GraphLogger:
     log_directory: Path = attrib(validator=instance_of(Path))
     enable_graph_rendering: bool = attrib(validator=instance_of(bool))
+    serialize_graphs: bool = attrib(validator=instance_of(bool), default=False)
 
     def log_graph(
         self,
@@ -1822,5 +1824,10 @@ class GraphLogger:
             filename = self.log_directory / f"{graph_name}"
             graph.render_to_file(graph_name, filename)
             logging.log(level, f"Rendered to {filename}.pdf\n{msg}", *args)
+            if self.serialize_graphs:
+                serialized_file = self.log_directory / f"{graph_name}.serialized"
+                logging.info("Serializing to %s", serialized_file)
+                with open(str(serialized_file), "wb") as out:
+                    pickle.dump(graph, out)
         else:
             logging.log(level, msg, *args)
