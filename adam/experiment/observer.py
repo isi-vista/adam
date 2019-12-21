@@ -3,6 +3,8 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Generic, Mapping, Optional, Tuple
 
+from more_itertools import only, take
+
 from attr import attrib, attrs
 from attr.validators import instance_of
 
@@ -108,9 +110,7 @@ class LearningProgressHtmlLogger:
     html_dumper: CurriculumToHtmlDumper = attrib(
         validator=instance_of(CurriculumToHtmlDumper)
     )
-    pre_observed_description: Optional[LinguisticDescription] = attrib(
-        init=False, default=None
-    )
+    pre_observed_description: Optional[str] = attrib(init=False, default=None)
 
     @staticmethod
     def create_logger(
@@ -160,9 +160,9 @@ class LearningProgressHtmlLogger:
         )
 
     def pre_observer_log(
-        self, observed_description: Optional[LinguisticDescription]
+        self, predicted_descriptions: Mapping[LinguisticDescription, float]
     ) -> None:
-        self.pre_observed_description = observed_description
+        self.pre_observed_description = pretty_descriptions(predicted_descriptions)
 
     def post_observer_log(
         self,
@@ -175,21 +175,12 @@ class LearningProgressHtmlLogger:
         predicted_descriptions: Mapping[LinguisticDescription, float],
         test_mode: bool,
     ):
+        learner_pre_description = self.pre_observed_description
+        self.pre_observed_description = None
 
-        learner_pre_description = ""
-        if self.pre_observed_description is not None:
-            learner_pre_description = " ".join(
-                self.pre_observed_description.as_token_sequence()
-            )
-            self.pre_observed_description = None
+        learner_description = pretty_descriptions(predicted_descriptions)
 
-        # Convert the data to html text
-        learner_description = ""
-        if predicted_descriptions:
-            description: LinguisticDescription = max(
-                predicted_descriptions.items(), key=_by_score
-            )[0]
-            learner_description = " ".join(description.as_token_sequence())
+        logging.info(f"desc{learner_description}")
 
         if situation and isinstance(situation, HighLevelSemanticsSituation):
             situation_text, _ = self.html_dumper.situation_text(situation)
@@ -289,11 +280,7 @@ class HTMLLoggerPreObserver(
         predicted_descriptions: Mapping[LinguisticDescription, float],
     ) -> None:
         # pylint: disable=unused-argument
-        learner_description: Optional[LinguisticDescription] = None
-        if predicted_descriptions:
-            learner_description = max(predicted_descriptions.items(), key=_by_score)[0]
-
-        self.html_logger.pre_observer_log(observed_description=learner_description)
+        self.html_logger.pre_observer_log(predicted_descriptions)
 
     def report(self) -> None:
         pass
@@ -338,3 +325,21 @@ class HTMLLoggerPostObserver(
 # used by TopChoiceExactMatchObserver
 def _by_score(scored_description: Tuple[LinguisticDescription, float]) -> float:
     return scored_description[1]
+
+
+def pretty_descriptions(descriptions: Mapping[LinguisticDescription, float]) -> str:
+    if len(descriptions) > 1:
+        top_descriptions = take(3, sorted(descriptions.items(), key=_by_score))
+        parts = ["<ul>"]
+        parts.extend(
+            [
+                f"<li>{description} ({score:.2})</li>"
+                for (description, score) in top_descriptions
+            ]
+        )
+        parts.append("</ul>")
+        return "\n".join(parts)
+    elif len(descriptions) == 1:
+        return "".join(only(descriptions).as_token_sequence())
+    else:
+        return ""
