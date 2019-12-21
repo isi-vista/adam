@@ -1066,7 +1066,7 @@ class PatternMatching:
 
         RELATION_EDGES_TO_FOLLOW_WHEN_DELETING = {  # pylint:disable=invalid-name
             PART_OF,
-            IN_REGION,
+            # IN_REGION,
         }
 
         def gather_nodes_to_excise(focus_node: NodePredicate) -> None:
