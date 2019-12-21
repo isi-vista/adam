@@ -42,13 +42,12 @@ from immutablecollections.converter_utils import _to_immutabledict, _to_tuple
 from more_itertools import first
 from networkx import DiGraph, connected_components, is_isomorphic, set_node_attributes
 from typing_extensions import Protocol
-
 from vistautils.misc_utils import str_list_limited
 
 from adam.axes import AxesInfo, HasAxes
 from adam.axis import GeonAxis
 from adam.geon import Geon, MaybeHasGeon
-from adam.ontology import IN_REGION, OntologyNode
+from adam.ontology import OntologyNode
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY, PART_OF
 from adam.ontology.phase1_spatial_relations import Direction, Distance, Region
 from adam.ontology.structural_schema import ObjectStructuralSchema
@@ -948,7 +947,9 @@ class PatternMatching:
                 # If we couldn't successfully match the current part of the pattern,
                 # chop off the node which we think might have caused the match to fail.
                 # Why is this cast necessary? mypy should be able to infer this...
-                cur_pattern = self._relax_pattern(match_attempt)
+                cur_pattern = self._relax_pattern(
+                    match_attempt, graph_logger=graph_logger
+                )
                 if graph_logger and cur_pattern:
                     graph_logger.log_graph(
                         cur_pattern, logging.INFO, "Relaxation step %s", relaxation_step
@@ -1039,7 +1040,10 @@ class PatternMatching:
             yield match_failure
 
     def _relax_pattern(
-        self, match_failure: "PatternMatching.MatchFailure"
+        self,
+        match_failure: "PatternMatching.MatchFailure",
+        *,
+        graph_logger: Optional["GraphLogger"] = None,
     ) -> Optional[PerceptionGraphPattern]:
         """
         Attempts to produce a "relaxed" version of pattern
@@ -1062,10 +1066,13 @@ class PatternMatching:
 
         RELATION_EDGES_TO_FOLLOW_WHEN_DELETING = {  # pylint:disable=invalid-name
             PART_OF,
-            IN_REGION,
+            # IN_REGION,
         }
 
         def gather_nodes_to_excise(focus_node: NodePredicate) -> None:
+            if focus_node in match_failure.pattern_node_to_graph_node_for_largest_match:
+                # don't delete or continue deleting through a node which successfully matched
+                return
             nodes_to_delete_directly.append(focus_node)
 
             # If this is an object, also excise any sub-objects.
@@ -1079,11 +1086,31 @@ class PatternMatching:
                 ):
                     gather_nodes_to_excise(predecessor)
 
-        logging.info(
-            "Relaxation: last failed pattern node is %s",
-            match_failure.last_failed_pattern_node,
-        )
-        gather_nodes_to_excise(match_failure.last_failed_pattern_node)
+        last_failed_node = match_failure.last_failed_pattern_node
+        logging.info("Relaxation: last failed pattern node is %s", last_failed_node)
+        gather_nodes_to_excise(last_failed_node)
+
+        if isinstance(last_failed_node, IsColorNodePredicate):
+            # We treat colors as a special case.
+            # In a complex object (e.g. a dog), an object and a large number of its
+            # sub-components will share the same color.
+            # Usually if the color is irrelevant to a pattern in one place,
+            # it is irrelevant in many other places.
+            # Relaxing the pattern by peeling the color predicates off one by one can be very slow,
+            # especially since such large patterns are slow to match in the first place.
+            # Therefore, if we remove a color predicate in one place, we remove it
+            # from the entire pattern.
+            color = last_failed_node.color
+
+            same_color_nodes = [
+                node
+                for node in pattern_as_digraph.nodes
+                if isinstance(node, IsColorNodePredicate) and node.color == color
+            ]
+            if same_color_nodes:
+                logging.info("Deleting extra color nodes: %s", same_color_nodes)
+            nodes_to_delete_directly.extend(same_color_nodes)
+
         logging.info("Nodes to delete directly: %s", nodes_to_delete_directly)
 
         pattern_as_digraph.remove_nodes_from(immutableset(nodes_to_delete_directly))
@@ -1120,6 +1147,10 @@ class PatternMatching:
                     connected_components_containing_successful_pattern_matches += 1
 
             if connected_components_containing_successful_pattern_matches != 1:
+                if graph_logger:
+                    graph_logger.log_match_failure(
+                        match_failure, logging.INFO, "Pattern match component failure"
+                    )
                 raise RuntimeError(
                     f"Expected the successfully matching portion of the pattern"
                     f" to belong to a single connected component, but it was in "

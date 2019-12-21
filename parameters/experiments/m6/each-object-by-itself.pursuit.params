@@ -5,3 +5,5 @@ _includes:
 output_directory: '%adam_experiment_root%/m6/'
 experiment: 'object_recognition'
 curriculum: each-object-by-itself
+
+debug_log_directory: /Users/gabbard/tmp
