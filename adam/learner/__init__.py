@@ -121,7 +121,7 @@ def get_largest_matching_pattern(
     *,
     debug_callback: Optional[DebugCallableType] = None,
     graph_logger: Optional[GraphLogger] = None
-) -> PerceptionGraphPattern:
+) -> Optional[PerceptionGraphPattern]:
     """ Helper function to return the largest matching `PerceptionGraphPattern`
     for learner from a perception pattern and graph pair."""
     matching = pattern.matcher(graph, debug_callback=debug_callback)
