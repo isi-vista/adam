@@ -2,7 +2,7 @@ r"""
 Code to specify what is shown to `LanguageLearner`\ s and in what order.
 """
 from abc import ABC, abstractmethod
-from typing import Generic, Iterable, Optional, Tuple
+from typing import Generic, Iterable, Optional, Tuple, List
 
 from attr import attrib, attrs
 from attr.validators import instance_of
@@ -117,7 +117,7 @@ class GeneratedFromSituationsInstanceGroup(
     """
     The name of the instance group.
     """
-    _situations: Iterable[SituationT] = attrib(validator=instance_of(Iterable))
+    _situations: Tuple[SituationT, ...] = attrib(converter=_to_tuple)
     r"""
     The sequence of `Situation`\ s to derive linguistic and perceptual representations from for
     training.

@@ -1,4 +1,7 @@
-from immutablecollections import immutableset
+from typing import Mapping
+
+from immutablecollections import immutableset, immutabledict
+from more_itertools import first
 
 from adam.curriculum.curriculum_utils import (
     standard_object,
@@ -15,6 +18,7 @@ from adam.curriculum.preposition_curriculum import (
     _in_front_template,
 )
 from adam.learner import LearningExample
+from adam.learner.object_recognizer import ObjectRecognizer
 from adam.learner.preposition_subset import PrepositionSubsetLanguageLearner
 import pytest
 
@@ -27,12 +31,28 @@ from adam.ontology.phase1_ontology import (
     CUP,
     LEARNER,
     MOM,
+    PHASE_1_CURRICULUM_OBJECTS,
 )
+from adam.perception.perception_graph import PerceptionGraphPattern
 from adam.situation.templates.phase1_templates import sampled, object_variable
+
+_TEST_OBJECTS: Mapping[str, PerceptionGraphPattern] = immutabledict(
+    (
+        node.handle,
+        PerceptionGraphPattern.from_schema(
+            first(GAILA_PHASE_1_ONTOLOGY.structural_schemata(node))
+        ),
+    )
+    for node in PHASE_1_CURRICULUM_OBJECTS
+    if node
+    in GAILA_PHASE_1_ONTOLOGY._structural_schemata.keys()  # pylint:disable=protected-access
+)
+
+OBJECT_RECOGNIZER = ObjectRecognizer(_TEST_OBJECTS)
 
 
 def test_subset_preposition_on_learner():
-    learner = PrepositionSubsetLanguageLearner()
+    learner = PrepositionSubsetLanguageLearner(object_recognizer=OBJECT_RECOGNIZER)
     ball = standard_object("ball", BALL)
     table = standard_object("chair", TABLE)
     on_train_curriculum = phase1_instances(
@@ -75,7 +95,7 @@ def test_subset_preposition_on_learner():
 
 
 def test_subset_preposition_beside_learner():
-    learner = PrepositionSubsetLanguageLearner()
+    learner = PrepositionSubsetLanguageLearner(object_recognizer=OBJECT_RECOGNIZER)
     ball = standard_object("ball", BALL)
     table = standard_object("chair", TABLE)
     beside_train_curriculum = phase1_instances(
@@ -122,7 +142,7 @@ def test_subset_preposition_beside_learner():
 
 
 def test_subset_preposition_under_learner():
-    learner = PrepositionSubsetLanguageLearner()
+    learner = PrepositionSubsetLanguageLearner(object_recognizer=OBJECT_RECOGNIZER)
     ball = standard_object("ball", BALL)
     table = standard_object("chair", TABLE)
     under_train_curriculum = phase1_instances(
@@ -169,7 +189,7 @@ def test_subset_preposition_under_learner():
 
 
 def test_subset_preposition_over_learner():
-    learner = PrepositionSubsetLanguageLearner()
+    learner = PrepositionSubsetLanguageLearner(object_recognizer=OBJECT_RECOGNIZER)
     ball = standard_object("ball", BALL)
     table = standard_object("chair", TABLE)
     over_train_curriculum = phase1_instances(
@@ -216,7 +236,7 @@ def test_subset_preposition_over_learner():
 # See https://github.com/isi-vista/adam/issues/422
 @pytest.mark.skip(msg="In Preposition Test Temporarily Disabled")
 def test_subset_preposition_in_learner():
-    learner = PrepositionSubsetLanguageLearner()
+    learner = PrepositionSubsetLanguageLearner(object_recognizer=OBJECT_RECOGNIZER)
     water = object_variable("water", WATER)
     cup = standard_object("cup", CUP)
     in_train_curriculum = phase1_instances(
@@ -259,7 +279,7 @@ def test_subset_preposition_in_learner():
 
 
 def test_subset_preposition_behind_learner():
-    learner = PrepositionSubsetLanguageLearner()
+    learner = PrepositionSubsetLanguageLearner(object_recognizer=OBJECT_RECOGNIZER)
     ball = standard_object("ball", BALL)
     table = standard_object("chair", TABLE)
     learner_object = standard_object("learner", LEARNER, added_properties=[IS_ADDRESSEE])
@@ -316,7 +336,7 @@ def test_subset_preposition_behind_learner():
 
 
 def test_subset_preposition_in_front_learner():
-    learner = PrepositionSubsetLanguageLearner()
+    learner = PrepositionSubsetLanguageLearner(object_recognizer=OBJECT_RECOGNIZER)
     ball = standard_object("ball", BALL)
     table = standard_object("chair", TABLE)
     learner_object = standard_object("learner", LEARNER, added_properties=[IS_ADDRESSEE])

@@ -37,7 +37,7 @@ class GraphMatching:
         graph: DiGraph,
         pattern: DiGraph,
         *,
-        use_lookahead_pruning: bool = True,
+        use_lookahead_pruning: bool,
         matching_pattern_against_pattern: bool = False,
     ) -> None:
         """

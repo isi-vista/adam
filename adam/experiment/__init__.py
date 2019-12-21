@@ -145,7 +145,7 @@ def execute_experiment(
                         )
                 else:
                     raise ValueError(
-                        "Obsserved training instances cannot lack a situation"
+                        "Observed training instances cannot lack a situation"
                     )
 
             learner.observe(

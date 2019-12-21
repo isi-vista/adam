@@ -1,26 +1,28 @@
-from typing import Iterable, List, Tuple
+import logging
+from itertools import chain
+from typing import Iterable, List, Mapping, Tuple
 
-from immutablecollections import ImmutableDict, immutabledict, immutableset, ImmutableSet
+from attr.validators import deep_mapping, instance_of
+from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
 from immutablecollections.converter_utils import _to_immutabledict
 from more_itertools import first
 from networkx import DiGraph
 
+from adam.axes import GRAVITATIONAL_DOWN_TO_UP_AXIS, LEARNER_AXES, WORLD_AXES
 from adam.ontology import OntologyNode
 from adam.ontology.phase1_ontology import (
     GAILA_PHASE_1_ONTOLOGY,
     PHASE_1_CURRICULUM_OBJECTS,
-    TRUCK,
 )
 from adam.perception.perception_graph import (
     MatchedObjectNode,
     PerceptionGraph,
+    PerceptionGraphNode,
     PerceptionGraphPattern,
     PerceptionGraphPatternMatch,
-    PerceptionGraphNode,
+    RelationTypeIsPredicate,
 )
-from attr import attrs, attrib
-
-OBJECTS_WHICH_FAIL_TO_MATCH_DUE_TO_KNOWN_BUG = [TRUCK]
+from attr import attrib, attrs
 
 _LIST_OF_PERCEIVED_PATTERNS = immutableset(
     (
@@ -32,7 +34,6 @@ _LIST_OF_PERCEIVED_PATTERNS = immutableset(
     for node in PHASE_1_CURRICULUM_OBJECTS
     if node
     in GAILA_PHASE_1_ONTOLOGY._structural_schemata.keys()  # pylint:disable=protected-access
-    and node not in OBJECTS_WHICH_FAIL_TO_MATCH_DUE_TO_KNOWN_BUG
 )
 
 MATCHED_OBJECT_PATTERN_LABEL = OntologyNode("has-matched-object-pattern")
@@ -50,6 +51,15 @@ class PerceptionGraphFromObjectRecognizer:
     )
 
 
+# these are shared aspects of the world which, although they might be referenced by
+# object recognition patterns, should not be deleted when those patterns are match.
+# For example, a geon axis local to an object is no longer needed when the object
+# has been recognized, but we still need the gravitational axes
+SHARED_WORLD_ITEMS = set(
+    chain([GRAVITATIONAL_DOWN_TO_UP_AXIS], WORLD_AXES.all_axes, LEARNER_AXES.all_axes)
+)
+
+
 @attrs(frozen=True)
 class ObjectRecognizer:
     """
@@ -57,28 +67,51 @@ class ObjectRecognizer:
     which can be used to learn additional semantics which relate objects to other objects
     """
 
+    object_names_to_patterns: Mapping[str, PerceptionGraphPattern] = attrib(
+        validator=deep_mapping(instance_of(str), instance_of(PerceptionGraphPattern))
+    )
+
+    @staticmethod
+    def for_ontology_types(ontology_types: Iterable[OntologyNode]) -> "ObjectRecognizer":
+        return ObjectRecognizer(
+            object_names_to_patterns=immutabledict(
+                (
+                    obj_type.handle,
+                    PerceptionGraphPattern.from_schema(
+                        first(GAILA_PHASE_1_ONTOLOGY.structural_schemata(obj_type))
+                    ),
+                )
+                for obj_type in ontology_types
+            )
+        )
+
     def match_objects(
-        self,
-        perception_graph: PerceptionGraph,
-        possible_perceived_objects: Iterable[
-            Tuple[str, PerceptionGraphPattern]
-        ] = _LIST_OF_PERCEIVED_PATTERNS,
+        self, perception_graph: PerceptionGraph
     ) -> PerceptionGraphFromObjectRecognizer:
         """
         Match object patterns to objects in the scenes, then add a node for the matched object and copy relationships
         to it. These new patterns can be used to determine static prepositional relationships.
         """
         matched_object_nodes: List[Tuple[str, MatchedObjectNode]] = []
-        graph_to_modify = perception_graph.copy_as_digraph()
-        for (description, pattern) in possible_perceived_objects:
-            matcher = pattern.matcher(perception_graph)
-            pattern_matches = list(matcher.matches(use_lookahead_pruning=True))
-            for pattern_match in pattern_matches:
+        graph_to_return = perception_graph.copy_as_digraph()
+        for (description, pattern) in self.object_names_to_patterns.items():
+            matcher = pattern.matcher(PerceptionGraph(graph_to_return))
+            pattern_match = first(matcher.matches(use_lookahead_pruning=True), None)
+            # It's important not to simply iterate over pattern matches
+            # because they might overlap, or be variants of the same match
+            # (e.g. permutations of how table legs match)
+            while pattern_match:
                 self._replace_match_with_object_graph_node(
-                    graph_to_modify, pattern_match, matched_object_nodes, description
+                    graph_to_return, pattern_match, matched_object_nodes, description
                 )
+                matcher = pattern.matcher(PerceptionGraph(graph_to_return))
+                pattern_match = first(matcher.matches(use_lookahead_pruning=True), None)
+        if matched_object_nodes:
+            logging.info(
+                "Object recognizer recognized: %s", [x[0] for x in matched_object_nodes]
+            )
         return PerceptionGraphFromObjectRecognizer(
-            perception_graph=PerceptionGraph(graph=graph_to_modify),
+            perception_graph=PerceptionGraph(graph=graph_to_return),
             description_to_matched_object_node=immutabledict(matched_object_nodes),
         )
 
@@ -104,6 +137,16 @@ class ObjectRecognizer:
         )
 
         for matched_subgraph_node in matched_subgraph_nodes:
+            if isinstance(matched_subgraph_node, MatchedObjectNode):
+                raise RuntimeError(
+                    f"We do not currently allow object recognitions to themselves "
+                    f"operate over other object recognitions, but got match "
+                    f"{pattern_match.matched_sub_graph}"
+                )
+
+            if matched_subgraph_node in SHARED_WORLD_ITEMS:
+                continue
+
             # If there is an edge from the matched sub-graph to a node outside it,
             # also add an edge from the object match node to that node.
             for (
@@ -114,6 +157,16 @@ class ObjectRecognizer:
                     edge_data = networkx_graph_to_modify_in_place.get_edge_data(
                         matched_subgraph_node, matched_subgraph_node_successor
                     )
+                    label = edge_data["label"]
+                    if (
+                        isinstance(label, RelationTypeIsPredicate)
+                        and label.dot_label == "rel(" "has-matched-object-pattern)"
+                    ):
+                        raise RuntimeError(
+                            f"Overlapping nodes in object recognition: "
+                            f"{matched_subgraph_node}, "
+                            f"{matched_subgraph_node_successor}"
+                        )
                     networkx_graph_to_modify_in_place.add_edge(
                         matched_object_node, matched_subgraph_node_successor, **edge_data
                     )
@@ -128,16 +181,32 @@ class ObjectRecognizer:
                     edge_data = networkx_graph_to_modify_in_place.get_edge_data(
                         matched_subgraph_node_predecessor, matched_subgraph_node
                     )
+                    label = edge_data["label"]
+                    if (
+                        isinstance(label, RelationTypeIsPredicate)
+                        and label.dot_label == "rel(" "has-matched-object-pattern)"
+                    ):
+                        raise RuntimeError(
+                            f"Overlapping nodes in object recognition: "
+                            f"{matched_subgraph_node}, "
+                            f"{matched_subgraph_node_predecessor}"
+                        )
+
                     networkx_graph_to_modify_in_place.add_edge(
                         matched_subgraph_node_predecessor,
                         matched_object_node,
-                        **edge_data
+                        **edge_data,
                     )
 
             # we also link every node in the matched sub-graph to the newly introduced node
             # representing the object match.
-            networkx_graph_to_modify_in_place.add_edge(
-                matched_subgraph_node,
-                matched_object_node,
-                label=MATCHED_OBJECT_PATTERN_LABEL,
-            )
+            # networkx_graph_to_modify_in_place.add_edge(
+            #     matched_subgraph_node,
+            #     matched_object_node,
+            #     label=MATCHED_OBJECT_PATTERN_LABEL,
+            # )
+        networkx_graph_to_modify_in_place.remove_nodes_from(
+            matched_node
+            for matched_node in matched_subgraph_nodes
+            if matched_node not in SHARED_WORLD_ITEMS
+        )

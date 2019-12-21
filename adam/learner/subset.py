@@ -1,3 +1,4 @@
+import logging
 from typing import Dict, Generic, Mapping, Optional, Tuple
 
 from immutablecollections import immutabledict
@@ -72,10 +73,15 @@ class SubsetLanguageLearner(
                 observed_perception_graph,
                 debug_callback=self._debug_callback,
             )
-            # Update the leading hypothesis
-            self._descriptions_to_pattern_hypothesis[
-                observed_linguistic_description
-            ] = hypothesis_pattern_common_subgraph
+            if hypothesis_pattern_common_subgraph:
+                # Update the leading hypothesis
+                self._descriptions_to_pattern_hypothesis[
+                    observed_linguistic_description
+                ] = hypothesis_pattern_common_subgraph
+            else:
+                logging.warning(
+                    "Intersection of graphs had empty result; keeping original pattern"
+                )
 
         else:
             # If it's a new description, learn a new hypothesis/pattern, generated as a pattern graph frm the
@@ -113,8 +119,10 @@ class SubsetLanguageLearner(
                 observed_perception_graph,
                 debug_callback=self._debug_callback,
             )
-            common_pattern_size = len(common_pattern.copy_as_digraph().nodes)
-            if common_pattern_size > max_matching_subgraph_size:
+            common_pattern_size = (
+                len(common_pattern.copy_as_digraph().nodes) if common_pattern else 0
+            )
+            if common_pattern and common_pattern_size > max_matching_subgraph_size:
                 learned_description = description
                 max_matching_subgraph_size = common_pattern_size
         if learned_description:
