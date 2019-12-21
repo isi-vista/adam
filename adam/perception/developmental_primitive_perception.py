@@ -93,7 +93,7 @@ class HasBinaryProperty(PropertyPerception):
         return f"hasProperty({self.perceived_object}, {self.binary_property})"
 
 
-@attrs(slots=True, frozen=True, repr=False)
+@attrs(slots=True, frozen=True, repr=False, eq=True)
 class RgbColorPerception:
     """
     A perceived color.
