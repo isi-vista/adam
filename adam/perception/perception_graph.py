@@ -1070,6 +1070,9 @@ class PatternMatching:
         }
 
         def gather_nodes_to_excise(focus_node: NodePredicate) -> None:
+            if focus_node in match_failure.pattern_node_to_graph_node_for_largest_match:
+                # don't delete or continue deleting through a node which successfully matched
+                return
             nodes_to_delete_directly.append(focus_node)
 
             # If this is an object, also excise any sub-objects.
