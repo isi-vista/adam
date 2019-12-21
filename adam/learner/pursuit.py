@@ -144,9 +144,11 @@ class PursuitLanguageLearner(
         meanings = self.get_meanings_from_perception(observed_perception_graph)
         pattern_hypothesis = first(meanings)
         min_score = float("inf")
+        # Of the possible meanings for the word in this scene,
+        # make our initial hypothesis the one with the least association
+        # with any other word.
         for meaning in meanings:
-            # Get the maximum association score for that meaning
-            # TODO Try to make this more effcient?
+            # TODO Try to make this more efficient?
             max_association_score = max(
                 [
                     s
