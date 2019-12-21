@@ -333,13 +333,13 @@ def pretty_descriptions(descriptions: Mapping[LinguisticDescription, float]) -> 
         parts = ["<ul>"]
         parts.extend(
             [
-                f"<li>{description} ({score:.2})</li>"
+                f"<li>{description.as_token_string()} ({score:.2})</li>"
                 for (description, score) in top_descriptions
             ]
         )
         parts.append("</ul>")
         return "\n".join(parts)
     elif len(descriptions) == 1:
-        return "".join(only(descriptions).as_token_sequence())
+        return "".join(only(descriptions).as_token_string())
     else:
         return ""

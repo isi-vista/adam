@@ -28,6 +28,9 @@ class LinguisticDescription(ABC):
             A tuple of token strings describing this `LinguisticDescription`
         """
 
+    def as_token_string(self) -> str:
+        return " ".join(self.as_token_sequence())
+
 
 LinguisticDescriptionT = TypeVar("LinguisticDescriptionT", bound=LinguisticDescription)
 
