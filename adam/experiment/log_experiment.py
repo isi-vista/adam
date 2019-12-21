@@ -90,7 +90,9 @@ def curriculum_from_params(params: Parameters):
         return (make_m6_curriculum(), [])
     elif curriculum_name == "each-object-by-itself":
         return (
-            [_make_each_object_by_itself_curriculum()],
+            # We show the learned each item 6 times,
+            # because pursuit won't lexicalize anything it hasn't seen five times.
+            list(repeat(_make_each_object_by_itself_curriculum(), 6)),
             [_make_each_object_by_itself_curriculum()],
         )
     elif curriculum_name == "pursuit-with-noise":
