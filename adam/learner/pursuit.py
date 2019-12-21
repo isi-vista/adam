@@ -379,40 +379,42 @@ class PursuitLanguageLearner(
             raise RuntimeError("Cannot process perception type.")
         observed_perception_graph = graph_without_learner(original_perception_graph)
 
-        # TODO: Discuss how to generate a description. Currently we pick the perfect match, works with single objects
-        learned_description = None
+        descriptions = []
+
         for word, meaning_pattern in self._lexicon.items():
             # Use PerceptionGraphPattern.matcher and matcher.matches() for a complete match
             matcher = meaning_pattern.matcher(observed_perception_graph)
-            matches = matcher.matches(
-                use_lookahead_pruning=True, graph_logger=self._graph_logger
-            )
-            first_match = first(matches, default=None)
-            if first_match is not None:
-                learned_description = ("a", word)
-                continue
+            if any(
+                matcher.matches(
+                    use_lookahead_pruning=True, graph_logger=self._graph_logger
+                )
+            ):
+                learned_description = TokenSequenceLinguisticDescription(("a", word))
+                descriptions.append((learned_description, 1.0))
 
-        if not learned_description:
+        if not descriptions:
             # no lexicalized word matched the perception,
             # but we can still try to match our leading hypotheses
             for word in self._words_to_hypotheses_and_scores.keys():
                 # mypy doesn't know the leading hypothesis will always exist here,
                 # but we do.
-                (leading_hypothesis, _) = self._leading_hypothesis_for(  # type: ignore
+                leading_hypothesis_pair = self._leading_hypothesis_for(  # type: ignore
                     word
                 )
-                matcher = leading_hypothesis.matcher(observed_perception_graph)
-                match = first(matcher.matches(use_lookahead_pruning=True), default=None)
-                if match:
-                    learned_description = ("a", word)
-                    continue
 
-        if learned_description:
-            return immutabledict(
-                ((TokenSequenceLinguisticDescription(learned_description), 1.0),)
-            )
-        else:
-            return immutabledict()
+                if leading_hypothesis_pair:
+                    (leading_hypothesis, score) = leading_hypothesis_pair
+                    matcher = leading_hypothesis.matcher(observed_perception_graph)
+                    match = first(
+                        matcher.matches(use_lookahead_pruning=True), default=None
+                    )
+                    if match:
+                        learned_description = TokenSequenceLinguisticDescription(
+                            ("a", word)
+                        )
+                        descriptions.append((learned_description, score))
+
+        return immutabledict(descriptions)
 
     def _leading_hypothesis_for(
         self, word: str
