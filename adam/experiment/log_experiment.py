@@ -23,8 +23,8 @@ from adam.perception.perception_graph import GraphLogger
 from adam.random_utils import RandomChooser
 
 
-def main(params: Parameters) -> None:
-    output_dir = params.creatable_directory("output_directory")
+def log_experiment_entry_point(params: Parameters) -> None:
+    experiment_group_dir = params.creatable_directory("experiment_group_dir")
     experiment_name = params.string("experiment")
     debug_log_dir = params.optional_creatable_directory("debug_log_directory")
 
@@ -36,7 +36,7 @@ def main(params: Parameters) -> None:
         graph_logger = None
 
     logger = LearningProgressHtmlLogger.create_logger(
-        output_dir=output_dir, experiment_name=experiment_name
+        output_dir=experiment_group_dir, experiment_name=experiment_name
     )
 
     (training_instance_groups, test_instance_groups) = curriculum_from_params(params)
@@ -65,11 +65,7 @@ def learner_factory_from_params(
         )
     elif learner_type == "preposition-subset":
         return lambda: PrepositionSubsetLanguageLearner(
-            graph_logger=GraphLogger(
-                log_directory=params.creatable_directory("log_directory"),
-                enable_graph_rendering=True,
-                serialize_graphs=True,
-            ),
+            graph_logger=graph_logger,
             # Eval hack! This is specific to the M6 ontology
             object_recognizer=ObjectRecognizer.for_ontology_types(
                 M6_PREPOSITION_CURRICULUM_OBJECTS
@@ -117,4 +113,4 @@ def curriculum_from_params(params: Parameters):
 
 
 if __name__ == "__main__":
-    parameters_only_entry_point(main)
+    parameters_only_entry_point(log_experiment_entry_point)

@@ -1,9 +1,7 @@
 _includes:
    - "../../root.params"
    - "pursuit-nouns.m6.params"
+   - "m6.params"
 
-output_directory: '%adam_experiment_root%/m6/'
-experiment: 'object_recognition'
+experiment: 'object-recognition-solo'
 curriculum: each-object-by-itself
-
-debug_log_directory: /Users/gabbard/tmp
