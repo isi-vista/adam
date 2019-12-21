@@ -110,7 +110,7 @@ def curriculum_from_params(params: Parameters):
                     num_noise_instances=num_noise_instances,
                 )
             ],
-            [],
+            [_make_each_object_by_itself_curriculum()],
         )
     elif curriculum_name == "m6-preposition":
         return (instantiate_subcurricula(M6_PREPOSITION_SUBCURRICULUM_GENERATORS), [])
