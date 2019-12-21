@@ -42,13 +42,12 @@ from immutablecollections.converter_utils import _to_immutabledict, _to_tuple
 from more_itertools import first
 from networkx import DiGraph, connected_components, is_isomorphic, set_node_attributes
 from typing_extensions import Protocol
-
 from vistautils.misc_utils import str_list_limited
 
 from adam.axes import AxesInfo, HasAxes
 from adam.axis import GeonAxis
 from adam.geon import Geon, MaybeHasGeon
-from adam.ontology import IN_REGION, OntologyNode
+from adam.ontology import OntologyNode
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY, PART_OF
 from adam.ontology.phase1_spatial_relations import Direction, Distance, Region
 from adam.ontology.structural_schema import ObjectStructuralSchema
@@ -1084,11 +1083,31 @@ class PatternMatching:
                 ):
                     gather_nodes_to_excise(predecessor)
 
-        logging.info(
-            "Relaxation: last failed pattern node is %s",
-            match_failure.last_failed_pattern_node,
-        )
-        gather_nodes_to_excise(match_failure.last_failed_pattern_node)
+        last_failed_node = match_failure.last_failed_pattern_node
+        logging.info("Relaxation: last failed pattern node is %s", last_failed_node)
+        gather_nodes_to_excise(last_failed_node)
+
+        if isinstance(last_failed_node, IsColorNodePredicate):
+            # We treat colors as a special case.
+            # In a complex object (e.g. a dog), an object and a large number of its
+            # sub-components will share the same color.
+            # Usually if the color is irrelevant to a pattern in one place,
+            # it is irrelevant in many other places.
+            # Relaxing the pattern by peeling the color predicates off one by one can be very slow,
+            # especially since such large patterns are slow to match in the first place.
+            # Therefore, if we remove a color predicate in one place, we remove it
+            # from the entire pattern.
+            color = last_failed_node.color
+
+            same_color_nodes = [
+                node
+                for node in pattern_as_digraph.nodes
+                if isinstance(node, IsColorNodePredicate) and node.color == color
+            ]
+            if same_color_nodes:
+                logging.info("Deleting extra color nodes: %s", same_color_nodes)
+            nodes_to_delete_directly.extend(same_color_nodes)
+
         logging.info("Nodes to delete directly: %s", nodes_to_delete_directly)
 
         pattern_as_digraph.remove_nodes_from(immutableset(nodes_to_delete_directly))
