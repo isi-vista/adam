@@ -273,9 +273,11 @@ def all_possible(
     """
     Generator for all possible instantiations of *situation_template* with *ontology*.
     """
-    return _Phase1SituationTemplateGenerator(
-        ontology=ontology, variable_assigner=_CrossProductVariableAssigner()
-    ).generate_situations(situation_template, chooser=chooser)
+    return list(
+        _Phase1SituationTemplateGenerator(
+            ontology=ontology, variable_assigner=_CrossProductVariableAssigner()
+        ).generate_situations(situation_template, chooser=chooser)
+    )
 
 
 def sampled(
@@ -289,11 +291,13 @@ def sampled(
     Gets *max_to_sample* instantiations of *situation_template* with *ontology*
     """
     check_arg(max_to_sample >= 0)
-    return take(
-        max_to_sample,
-        _Phase1SituationTemplateGenerator(
-            ontology=ontology, variable_assigner=_SamplingVariableAssigner()
-        ).generate_situations(situation_template, chooser=chooser),
+    return list(
+        take(
+            max_to_sample,
+            _Phase1SituationTemplateGenerator(
+                ontology=ontology, variable_assigner=_SamplingVariableAssigner()
+            ).generate_situations(situation_template, chooser=chooser),
+        )
     )
 
 
@@ -304,9 +308,11 @@ def fixed_assignment(
     ontology: Ontology,
     chooser: SequenceChooser,
 ) -> Iterable[HighLevelSemanticsSituation]:
-    return _Phase1SituationTemplateGenerator(
-        ontology=ontology, variable_assigner=_FixedVariableAssigner(assignment)
-    ).generate_situations(situation_template, chooser=chooser)
+    return list(
+        _Phase1SituationTemplateGenerator(
+            ontology=ontology, variable_assigner=_FixedVariableAssigner(assignment)
+        ).generate_situations(situation_template, chooser=chooser)
+    )
 
 
 @attrs(frozen=True, slots=True)
