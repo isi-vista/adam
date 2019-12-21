@@ -948,7 +948,9 @@ class PatternMatching:
                 # If we couldn't successfully match the current part of the pattern,
                 # chop off the node which we think might have caused the match to fail.
                 # Why is this cast necessary? mypy should be able to infer this...
-                cur_pattern = self._relax_pattern(match_attempt)
+                cur_pattern = self._relax_pattern(
+                    match_attempt, graph_logger=graph_logger
+                )
                 if graph_logger and cur_pattern:
                     graph_logger.log_graph(
                         cur_pattern, logging.INFO, "Relaxation step %s", relaxation_step
@@ -1039,7 +1041,10 @@ class PatternMatching:
             yield match_failure
 
     def _relax_pattern(
-        self, match_failure: "PatternMatching.MatchFailure"
+        self,
+        match_failure: "PatternMatching.MatchFailure",
+        *,
+        graph_logger: Optional["GraphLogger"] = None,
     ) -> Optional[PerceptionGraphPattern]:
         """
         Attempts to produce a "relaxed" version of pattern
@@ -1120,6 +1125,10 @@ class PatternMatching:
                     connected_components_containing_successful_pattern_matches += 1
 
             if connected_components_containing_successful_pattern_matches != 1:
+                if graph_logger:
+                    graph_logger.log_match_failure(
+                        match_failure, logging.INFO, "Pattern match component failure"
+                    )
                 raise RuntimeError(
                     f"Expected the successfully matching portion of the pattern"
                     f" to belong to a single connected component, but it was in "

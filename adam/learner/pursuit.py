@@ -70,13 +70,16 @@ class PursuitLanguageLearner(
     debug_counter = 0
 
     @staticmethod
-    def from_parameters(params: Parameters) -> "PursuitLanguageLearner":  # type: ignore
+    def from_parameters(
+        params: Parameters, *, graph_logger: Optional[GraphLogger] = None
+    ) -> "PursuitLanguageLearner":  # type: ignore
         return PursuitLanguageLearner(
             learning_factor=params.floating_point("learning_factor"),
             graph_match_confirmation_threshold=params.floating_point(
                 "graph_match_confirmation_threshold"
             ),
             lexicon_entry_threshold=params.floating_point("lexicon_entry_threshold"),
+            graph_logger=graph_logger,
         )
 
     def observe(
@@ -156,6 +159,15 @@ class PursuitLanguageLearner(
             if max_association_score < min_score:
                 pattern_hypothesis = meaning
                 min_score = max_association_score
+
+        if self._graph_logger:
+            self._graph_logger.log_graph(
+                pattern_hypothesis,
+                logging.INFO,
+                "Initializing meaning for %s " "with score %s",
+                word,
+                self._learning_factor,
+            )
 
         self._words_to_hypotheses_and_scores[word] = {
             pattern_hypothesis: self._learning_factor

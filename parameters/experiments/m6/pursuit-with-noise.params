@@ -9,3 +9,5 @@ pursuit-curriculum-params:
    num_instances: 10
    num_noise_instances: 1
    num_objects_in_instance: 3
+
+debug_log_directory: /Users/gabbard/tmp

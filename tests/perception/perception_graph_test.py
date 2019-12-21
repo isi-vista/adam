@@ -1,6 +1,5 @@
 import random as r
 from itertools import chain
-from pathlib import Path
 
 import pytest
 from more_itertools import first, only
@@ -34,7 +33,6 @@ from adam.perception.high_level_semantics_situation_to_developmental_primitive_p
     GAILA_PHASE_1_PERCEPTION_GENERATOR,
 )
 from adam.perception.perception_graph import (
-    GraphLogger,
     IsColorNodePredicate,
     PatternMatching,
     PerceptionGraph,

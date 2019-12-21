@@ -160,6 +160,7 @@ def test_pursuit_learner():
         learning_factor=0.5,
         graph_match_confirmation_threshold=0.7,
         lexicon_entry_threshold=0.7,
+        graph_logger=GraphLogger(Path("/Users/gabbard/tmp"), enable_graph_rendering=True),
     )  # type: ignore
     for training_stage in [train_curriculum]:
         for (

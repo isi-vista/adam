@@ -1,4 +1,6 @@
-from typing import Callable
+import logging
+from itertools import repeat
+from typing import Callable, Optional
 
 from vistautils.parameters import Parameters
 from vistautils.parameters_only_entrypoint import parameters_only_entry_point
@@ -24,6 +26,14 @@ from adam.random_utils import RandomChooser
 def main(params: Parameters) -> None:
     output_dir = params.creatable_directory("output_directory")
     experiment_name = params.string("experiment")
+    debug_log_dir = params.optional_creatable_directory("debug_log_directory")
+
+    graph_logger: Optional[GraphLogger]
+    if debug_log_dir:
+        logging.info("Debug graphs will be written to %s", debug_log_dir)
+        graph_logger = GraphLogger(debug_log_dir, enable_graph_rendering=True)
+    else:
+        graph_logger = None
 
     logger = LearningProgressHtmlLogger.create_logger(
         output_dir=output_dir,
@@ -37,7 +47,7 @@ def main(params: Parameters) -> None:
         Experiment(
             name=experiment_name,
             training_stages=training_instance_groups,
-            learner_factory=learner_factory_from_params(params),
+            learner_factory=learner_factory_from_params(params, graph_logger),
             pre_example_training_observers=[logger.pre_observer()],
             post_example_training_observers=[logger.post_observer()],
             test_instance_groups=test_instance_groups,
@@ -48,11 +58,13 @@ def main(params: Parameters) -> None:
 
 
 def learner_factory_from_params(
-    params: Parameters
+    params: Parameters, graph_logger: Optional[GraphLogger]
 ) -> Callable[[], LanguageLearner]:  # type: ignore
     learner_type = params.string("learner", ["pursuit", "preposition-subset"])
     if learner_type == "pursuit":
-        return lambda: PursuitLanguageLearner.from_parameters(params.namespace("pursuit"))
+        return lambda: PursuitLanguageLearner.from_parameters(
+            params.namespace("pursuit"), graph_logger=graph_logger
+        )
     elif learner_type == "preposition-subset":
         return lambda: PrepositionSubsetLanguageLearner(
             graph_logger=GraphLogger(
