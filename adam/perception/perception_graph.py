@@ -1896,11 +1896,12 @@ def _invert_to_immutabledict(mapping: Mapping[_KT, _VT]) -> ImmutableDict[_VT, _
     return immutabledict((v, k) for (k, v) in mapping.items())
 
 
-@attrs(frozen=True)
+@attrs
 class GraphLogger:
     log_directory: Path = attrib(validator=instance_of(Path))
     enable_graph_rendering: bool = attrib(validator=instance_of(bool))
     serialize_graphs: bool = attrib(validator=instance_of(bool), default=False)
+    call_count: int = attrib(init=False, default=0)
 
     def log_graph(
         self,
@@ -1910,13 +1911,16 @@ class GraphLogger:
         *args,
         match_correspondence_ids: Mapping[Any, str] = immutabledict(),
     ) -> None:
+        self.call_count += 1
         if self.enable_graph_rendering:
             graph_name = str(uuid4())
             filename = self.log_directory / f"{graph_name}"
             graph.render_to_file(
                 graph_name, filename, match_correspondence_ids=match_correspondence_ids
             )
-            logging.log(level, f"Rendered to {filename}.pdf\n{msg}", *args)
+            logging.log(
+                level, f"[{self.call_count}] Rendered to {filename}.pdf\n{msg}", *args
+            )
             if self.serialize_graphs:
                 serialized_file = self.log_directory / f"{graph_name}.serialized"
                 logging.info("Serializing to %s", serialized_file)

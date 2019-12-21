@@ -240,11 +240,17 @@ class PursuitLanguageLearner(
                 match_ratio >= self._graph_match_confirmation_threshold
                 and hypothesis_pattern_common_subgraph
             ):
-                logging.info("Introducing partial match as a new hypothesis.")
+                logging.info(
+                    "Introducing partial match as a new hypothesis; %s of %s nodes "
+                    "matched.",
+                    num_nodes_matched,
+                    leading_hypothesis_num_nodes,
+                )
                 new_hypothesis = hypothesis_pattern_common_subgraph
             else:
                 # otherwise, we follow the paper and hypothesize a randomly selected meaning
                 # from the scene.
+                logging.info("Choosing random meaning from the scene")
                 meanings = self.get_meanings_from_perception(observed_perception_graph)
                 new_hypothesis = r.choice(meanings)
 
@@ -253,9 +259,13 @@ class PursuitLanguageLearner(
             hypothesis_for_word[new_hypothesis] = max(
                 self._learning_factor, hypothesis_for_word.get(new_hypothesis, 0.0)
             )
-            logging.info(
-                "Registered a new hypothesis with score %s", self._learning_factor
-            )
+            if self._graph_logger:
+                self._graph_logger.log_graph(
+                    new_hypothesis,
+                    logging.INFO,
+                    "Registered a new hypothesis with score %s",
+                    self._learning_factor,
+                )
 
         return hypothesis_is_confirmed
 
@@ -274,21 +284,26 @@ class PursuitLanguageLearner(
         probability_of_meaning_given_word = (
             leading_hypothesis_score + self._learning_factor
         ) / (sum_of_all_scores + number_of_meanings * self._learning_factor)
-        logging.info("Prob of meaning given word: %s", probability_of_meaning_given_word)
+        times_word_has_been_seen = self._words_to_number_of_observations[word]
+        logging.info(
+            "Prob of meaning given word: %s, Times seen: %s",
+            probability_of_meaning_given_word,
+            times_word_has_been_seen,
+        )
         # file (w, h^) into the lexicon
 
         # TODO: We sometimes prematurely lexicalize words, so we use this arbitrary counter threshold
-        if (
-            probability_of_meaning_given_word > self._lexicon_entry_threshold
-            and self._words_to_number_of_observations[word] > 5
-        ):
-            self._lexicon[word] = leading_hypothesis_pattern
-            # Remove the word from hypotheses
-            self._words_to_hypotheses_and_scores.pop(word)
-            if self._graph_logger:
-                self._graph_logger.log_graph(
-                    leading_hypothesis_pattern, logging.INFO, "Lexicalized %s", word
-                )
+        if probability_of_meaning_given_word > self._lexicon_entry_threshold:
+            if times_word_has_been_seen > 5:
+                self._lexicon[word] = leading_hypothesis_pattern
+                # Remove the word from hypotheses
+                self._words_to_hypotheses_and_scores.pop(word)
+                if self._graph_logger:
+                    self._graph_logger.log_graph(
+                        leading_hypothesis_pattern, logging.INFO, "Lexicalized %s", word
+                    )
+            else:
+                logging.info("Would lexicalize, but haven't see the word often enough")
 
     @staticmethod
     def get_meanings_from_perception(
@@ -400,7 +415,10 @@ class PursuitLanguageLearner(
                     (leading_hypothesis, score) = leading_hypothesis_pair
                     matcher = leading_hypothesis.matcher(observed_perception_graph)
                     match = first(
-                        matcher.matches(use_lookahead_pruning=True), default=None
+                        matcher.matches(
+                            use_lookahead_pruning=True, graph_logger=self._graph_logger
+                        ),
+                        default=None,
                     )
                     if match:
                         learned_description = TokenSequenceLinguisticDescription(
