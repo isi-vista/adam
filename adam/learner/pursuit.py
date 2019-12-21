@@ -276,11 +276,7 @@ class PursuitLanguageLearner(
         ) / (sum_of_all_scores + number_of_meanings * self._learning_factor)
         logging.info("Prob of meaning given word: %s", probability_of_meaning_given_word)
         # file (w, h^) into the lexicon
-        # print(
-        #     "Lexicon prob:",
-        #     probability_of_meaning_given_word,
-        #     leading_hypothesis_pattern.copy_as_digraph().nodes,
-        # )
+
         # TODO: We sometimes prematurely lexicalize words, so we use this arbitrary counter threshold
         if (
             probability_of_meaning_given_word > self._lexicon_entry_threshold
@@ -293,7 +289,6 @@ class PursuitLanguageLearner(
                 self._graph_logger.log_graph(
                     leading_hypothesis_pattern, logging.INFO, "Lexicalized %s", word
                 )
-            print(f"LExicalized {word} as {leading_hypothesis_pattern}")
 
     @staticmethod
     def get_meanings_from_perception(
@@ -401,7 +396,6 @@ class PursuitLanguageLearner(
                 leading_hypothesis_pair = self._leading_hypothesis_for(  # type: ignore
                     word
                 )
-
                 if leading_hypothesis_pair:
                     (leading_hypothesis, score) = leading_hypothesis_pair
                     matcher = leading_hypothesis.matcher(observed_perception_graph)

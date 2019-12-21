@@ -114,11 +114,11 @@ class LearningProgressHtmlLogger:
 
     @staticmethod
     def create_logger(
-        *, output_dir: Path, experiment_name: str, curriculum_name: str
+        *, output_dir: Path, experiment_name: str
     ) -> "LearningProgressHtmlLogger":
         logging_dir = output_dir / experiment_name
         logging_dir.mkdir(parents=True, exist_ok=True)
-        output_html_path = str(logging_dir / (curriculum_name + ".html"))
+        output_html_path = str(logging_dir / "index.html")
 
         logging.info("Experiment will be logged to %s", output_html_path)
 
@@ -126,7 +126,7 @@ class LearningProgressHtmlLogger:
             html_dumper = CurriculumToHtmlDumper()
 
             outfile.write(f"<head>\n\t<style>{CSS}\n\t</style>\n</head>")
-            outfile.write(f"\n<body>\n\t<h1>{experiment_name} - {curriculum_name}</h1>")
+            outfile.write(f"\n<body>\n\t<h1>{experiment_name}</h1>")
             # A JavaScript function to allow toggling perception information
             outfile.write(
                 """
