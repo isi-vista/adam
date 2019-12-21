@@ -180,7 +180,9 @@ class PursuitLanguageLearner(
     ) -> bool:
         # Select the most probable meaning h for w
         # I.e., if we already have hypotheses, get the leading hypothesis and compare it with the observed perception
-        previous_hypotheses_and_scores = self._words_to_hypotheses_and_scores[word]
+
+        hypothesis_for_word = self._words_to_hypotheses_and_scores[word]
+        previous_hypotheses_and_scores = hypothesis_for_word
         leading_hypothesis_pattern = max(
             previous_hypotheses_and_scores,
             key=lambda key: previous_hypotheses_and_scores[key],
@@ -194,79 +196,68 @@ class PursuitLanguageLearner(
             debug_callback=self._debug_callback,
             graph_logger=self._graph_logger,
         )
-        current_hypothesis_score = self._words_to_hypotheses_and_scores[word][
-            leading_hypothesis_pattern
-        ]
+        current_hypothesis_score = hypothesis_for_word[leading_hypothesis_pattern]
         self.debug_counter += 1
 
-        # The chunk below is for debugging, figuring out what's happening at each learning step.
-
-        # print(self.debug_counter, word, 'perceived node count:', len(observed_perception_graph.copy_as_digraph().nodes),
-        #       'Match (common/hypothesis)', len(hypothesis_pattern_common_subgraph.copy_as_digraph().nodes), '/',
-        #       len(leading_hypothesis_pattern.copy_as_digraph().nodes))
-        # observed_perception_graph.render_to_file(str(self.debug_counter)+'perception',
-        #                                          output_file='renders/'+str(self.debug_counter)+'perception')
-        # leading_hypothesis_pattern.render_to_file(str(self.debug_counter)+'leading',
-        #                                           output_file='renders/'+str(self.debug_counter)+'leading')
-        # hypothesis_pattern_common_subgraph.render_to_file(str(self.debug_counter)+'common',
-        #                                                   output_file='renders/'+str(self.debug_counter)+'common')
-        # if self.debug_counter == 50: raise RuntimeError
-
-        match_ratio = len(
-            hypothesis_pattern_common_subgraph.copy_as_digraph().nodes
-        ) / len(leading_hypothesis_pattern.copy_as_digraph().nodes)
+        leading_hypothesis_num_nodes = len(
+            leading_hypothesis_pattern.copy_as_digraph().nodes
+        )
+        num_nodes_matched = (
+            len(hypothesis_pattern_common_subgraph.copy_as_digraph().nodes)
+            if hypothesis_pattern_common_subgraph
+            else 0
+        )
+        match_ratio = num_nodes_matched / leading_hypothesis_num_nodes
 
         # b.i) If the hypothesis is confirmed, we reinforce it.
-        is_hypothesis_confirmed = match_ratio >= self._graph_match_confirmation_threshold
-        if is_hypothesis_confirmed:
+        hypothesis_is_confirmed = num_nodes_matched == leading_hypothesis_num_nodes
+        if hypothesis_is_confirmed and hypothesis_pattern_common_subgraph:
             logging.info("Current hypothesis is confirmed.")
-            # TODO RMG: this is where we can handle hypothesis pruning
-            # because if we have a partial match which still passes the threshold,
-            # we can either replace the current hypothesis with it
-            # or else add it as a new hypothesis
             # Reinforce A(w,h)
             new_hypothesis_score = current_hypothesis_score + self._learning_factor * (
                 1 - current_hypothesis_score
             )
-            # print('Reinforcing ', word, match_ratio, new_hypothesis_score,
-            #       leading_hypothesis_pattern.copy_as_digraph().nodes)
 
             # Register the updated hypothesis score of A(w,h)
-            self._words_to_hypotheses_and_scores[word][
-                leading_hypothesis_pattern
-            ] = new_hypothesis_score
+            hypothesis_for_word[leading_hypothesis_pattern] = new_hypothesis_score
             logging.info("Updating hypothesis score to %s", new_hypothesis_score)
         # b.ii) If the hypothesis is disconfirmed, so we weaken the previous score
         else:
             # Penalize A(w,h)
             new_hypothesis_score = current_hypothesis_score * (1 - self._learning_factor)
             # Register the updated hypothesis score of A(w,h)
-            self._words_to_hypotheses_and_scores[word][
-                leading_hypothesis_pattern
-            ] = new_hypothesis_score
+            hypothesis_for_word[leading_hypothesis_pattern] = new_hypothesis_score
             logging.info(
                 "Working hypothesis disconfirmed. Reducing score from %s -> %s",
                 current_hypothesis_score,
                 new_hypothesis_score,
             )
 
-            # Reward A(w, h’) for a randomly selected h’ in M_U
-            meanings = self.get_meanings_from_perception(observed_perception_graph)
-            random_new_hypothesis: PerceptionGraphPattern = r.choice(meanings)
-            # TODO RMG: should this increase the score somehow if the hypothesis is already known?
-            # If we don't have this random hypothesis is new, put it in the dictionary
-            if not any(
-                random_new_hypothesis.check_isomorphism(old_hypo)
-                for old_hypo in self._words_to_hypotheses_and_scores[word]
+            # This is where we differ from the pursuit paper.
+            # If a sufficiently close relaxed version of our pattern matches,
+            # we used that relaxed version as the new hypothesis to introduce
+            if (
+                match_ratio >= self._graph_match_confirmation_threshold
+                and hypothesis_pattern_common_subgraph
             ):
-                self._words_to_hypotheses_and_scores[word][
-                    random_new_hypothesis
-                ] = self._learning_factor
-                logging.info(
-                    "Registered a new hypothesis with score %s", self._learning_factor
-                )
+                logging.info("Introducing partial match as a new hypothesis.")
+                new_hypothesis = hypothesis_pattern_common_subgraph
+            else:
+                # otherwise, we follow the paper and hypothesize a randomly selected meaning
+                # from the scene.
+                meanings = self.get_meanings_from_perception(observed_perception_graph)
+                new_hypothesis = r.choice(meanings)
 
-        return is_hypothesis_confirmed
+            # TODO: there's a problem here - since all hypotheses are distinct,
+            # we could accidentally introduce the same hypothesis multiple times here.
+            hypothesis_for_word[new_hypothesis] = max(
+                self._learning_factor, hypothesis_for_word.get(new_hypothesis, 0.0)
+            )
+            logging.info(
+                "Registered a new hypothesis with score %s", self._learning_factor
+            )
+
+        return hypothesis_is_confirmed
 
     def lexicon_step(self, word: str) -> None:
         # If any conditional probability P(h^|w) exceeds a certain threshold value (h), then file (w, h^) into the
