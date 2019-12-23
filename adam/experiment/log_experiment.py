@@ -10,6 +10,7 @@ from adam.curriculum.m6_curriculum import (
     M6_PREPOSITION_SUBCURRICULUM_GENERATORS,
     instantiate_subcurricula,
     make_m6_curriculum,
+    M6_CURRICULUM_ALL_OBJECTS,
 )
 from adam.curriculum.phase1_curriculum import _make_each_object_by_itself_curriculum
 from adam.curriculum.pursuit_curriculum import make_simple_pursuit_curriculum
@@ -99,6 +100,7 @@ def curriculum_from_params(params: Parameters):
         return (
             [
                 make_simple_pursuit_curriculum(
+                    target_objects=M6_CURRICULUM_ALL_OBJECTS,
                     num_instances=num_instances,
                     num_objects_in_instance=num_objects_in_instance,
                     num_noise_instances=num_noise_instances,
