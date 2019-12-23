@@ -6,8 +6,8 @@ _includes:
 experiment: 'object-recognition-noise'
 curriculum: pursuit-with-noise
 pursuit-curriculum-params:
-   num_instances: 10
-   num_noise_instances: 1
+   num_instances: 20
+   num_noise_instances: 2
    num_objects_in_instance: 3
 
 # debug_log_directory: /Users/gabbard/tmp
