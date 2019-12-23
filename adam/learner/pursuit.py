@@ -3,10 +3,11 @@ import random as r
 from pathlib import Path
 from typing import Dict, Generic, List, Mapping, Optional, Set, Tuple
 
-from attr.validators import instance_of, optional
+from attr.validators import instance_of, optional, in_
 from immutablecollections import immutabledict
 from more_itertools import first
 from vistautils.parameters import Parameters
+from vistautils.range import Range
 
 from adam.language import (
     LinguisticDescription,
@@ -52,6 +53,16 @@ class PursuitLanguageLearner(
     _lexicon: Dict[str, PerceptionGraphPattern] = attrib(
         init=False, default=Factory(dict)
     )
+    _smoothing_parameter: float = attrib(
+        validator=in_(Range.greater_than(0.0)), kw_only=True
+    )
+    """
+    This smoothing factor is added to the scores of all hypotheses
+    when forming a probability distribution over hypotheses.
+    This should be a small value, at most 0.1 and possibly much less.
+    See section 2.2 of the Pursuit paper.
+    """
+
     _debug_callback: Optional[DebugCallableType] = attrib(default=None)
 
     # Learning factor (gamma) is the factor with which we update the hypotheses scores during reinforcement.
@@ -94,6 +105,7 @@ class PursuitLanguageLearner(
                 "graph_match_confirmation_threshold"
             ),
             lexicon_entry_threshold=params.floating_point("lexicon_entry_threshold"),
+            smoothing_parameter=params.floating_point("smoothing_parameter"),
             graph_logger=graph_logger,
             log_word_hypotheses_to=log_word_hypotheses_dir,
         )
@@ -301,8 +313,8 @@ class PursuitLanguageLearner(
         number_of_meanings = len(all_hypotheses_for_word)
 
         probability_of_meaning_given_word = (
-            leading_hypothesis_score + self._learning_factor
-        ) / (sum_of_all_scores + number_of_meanings * self._learning_factor)
+            leading_hypothesis_score + self._smoothing_parameter
+        ) / (sum_of_all_scores + number_of_meanings * self._smoothing_parameter)
         times_word_has_been_seen = self._words_to_number_of_observations[word]
         logging.info(
             "Prob of meaning given word: %s, Times seen: %s",
