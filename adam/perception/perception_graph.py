@@ -1151,11 +1151,12 @@ class PatternMatching:
                     graph_logger.log_match_failure(
                         match_failure, logging.INFO, "Pattern match component failure"
                     )
-                raise RuntimeError(
-                    f"Expected the successfully matching portion of the pattern"
-                    f" to belong to a single connected component, but it was in "
-                    f"{connected_components_containing_successful_pattern_matches}"
-                )
+                return None
+                # raise RuntimeError(
+                #     f"Expected the successfully matching portion of the pattern"
+                #     f" to belong to a single connected component, but it was in "
+                #     f"{connected_components_containing_successful_pattern_matches}"
+                # )
 
             logging.info(
                 "Relaxation: deleted due to disconnection: %s",
