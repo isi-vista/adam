@@ -1911,10 +1911,13 @@ class GraphLogger:
         msg: str,
         *args,
         match_correspondence_ids: Mapping[Any, str] = immutabledict(),
+        graph_name: Optional[str] = None,
     ) -> None:
         self.call_count += 1
         if self.enable_graph_rendering:
-            graph_name = str(uuid4())
+            if not graph_name:
+                graph_name = str(uuid4())
+
             filename = self.log_directory / f"{graph_name}"
             graph.render_to_file(
                 graph_name, filename, match_correspondence_ids=match_correspondence_ids
@@ -1931,8 +1934,16 @@ class GraphLogger:
             logging.log(level, msg, *args)
 
     def log_match_failure(
-        self, match_failure: PatternMatching.MatchFailure, level, msg: str, *args
+        self,
+        match_failure: PatternMatching.MatchFailure,
+        level,
+        msg: str,
+        *args,
+        graph_name: Optional[str] = None,
     ) -> None:
+        if not graph_name:
+            graph_name = str(uuid4())
+
         if self.enable_graph_rendering:
             graph_correspondence_ids: Mapping[Any, str] = immutabledict(
                 (graph_node, str(i))
@@ -1946,6 +1957,7 @@ class GraphLogger:
                 msg + " [graph] ",
                 *args,
                 match_correspondence_ids=graph_correspondence_ids,
+                graph_name=f"{graph_name}-graph",
             )
 
             pattern_correspondence_ids: Mapping[Any, str] = immutabledict(
@@ -1960,13 +1972,22 @@ class GraphLogger:
                 msg + " [pattern] ",
                 *args,
                 match_correspondence_ids=pattern_correspondence_ids,
+                graph_name=f"{graph_name}-pattern",
             )
         else:
             logging.log(level, msg, *args)
 
     def log_pattern_match(
-        self, pattern_match: PerceptionGraphPatternMatch, level, msg: str, *args
+        self,
+        pattern_match: PerceptionGraphPatternMatch,
+        level,
+        msg: str,
+        *args,
+        graph_name: Optional[str] = None,
     ) -> None:
+        if not graph_name:
+            graph_name = str(uuid4())
+
         if self.enable_graph_rendering:
             graph_correspondence_ids: Mapping[Any, str] = immutabledict(
                 (graph_node, str(i))
@@ -1980,6 +2001,7 @@ class GraphLogger:
                 msg + " [graph] ",
                 *args,
                 match_correspondence_ids=graph_correspondence_ids,
+                graph_name=f"{graph_name}-graph",
             )
 
             pattern_correspondence_ids: Mapping[Any, str] = immutabledict(
@@ -1994,6 +2016,7 @@ class GraphLogger:
                 msg + " [pattern] ",
                 *args,
                 match_correspondence_ids=pattern_correspondence_ids,
+                graph_name=f"{graph_name}-pattern",
             )
         else:
             logging.log(level, msg, *args)

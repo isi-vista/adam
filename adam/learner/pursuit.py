@@ -1,38 +1,38 @@
 import logging
 import random as r
-from typing import Dict, Generic, Mapping, Tuple, Optional, List
+from pathlib import Path
+from typing import Dict, Generic, List, Mapping, Optional, Set, Tuple
 
-from vistautils.parameters import Parameters
-
-from attr import Factory, attrib, attrs
+from attr.validators import instance_of, optional
 from immutablecollections import immutabledict
 from more_itertools import first
+from vistautils.parameters import Parameters
 
 from adam.language import (
+    LinguisticDescription,
     LinguisticDescriptionT,
     TokenSequenceLinguisticDescription,
-    LinguisticDescription,
 )
 from adam.learner import (
     LanguageLearner,
     LearningExample,
-    graph_without_learner,
     get_largest_matching_pattern,
+    graph_without_learner,
 )
 from adam.ontology.phase1_spatial_relations import Region
-from adam.perception import PerceptionT, PerceptualRepresentation, ObjectPerception
+from adam.perception import ObjectPerception, PerceptionT, PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
     RgbColorPerception,
 )
 from adam.perception.perception_graph import (
-    PerceptionGraph,
-    PerceptionGraphPattern,
     DebugCallableType,
     GraphLogger,
+    PerceptionGraph,
+    PerceptionGraphPattern,
 )
 from adam.utils import networkx_utils
-from attr.validators import instance_of, optional
+from attr import Factory, attrib, attrs
 
 r.seed(0)
 
@@ -69,10 +69,25 @@ class PursuitLanguageLearner(
     )
     debug_counter = 0
 
+    # the following two fields are used if the user wishes the hypotheses for word meanings
+    # to be logged at each step of learning for detailed debugging.
+    _log_word_hypotheses_to: Optional[Path] = attrib(
+        validator=optional(instance_of(Path)), default=None
+    )
+    _word_to_logger: Dict[str, GraphLogger] = attrib(init=False, default=Factory(dict))
+    _rendered_word_hypothesis_pair_ids: Set[str] = attrib(
+        init=False, default=Factory(set)
+    )
+
     @staticmethod
     def from_parameters(
         params: Parameters, *, graph_logger: Optional[GraphLogger] = None
     ) -> "PursuitLanguageLearner":  # type: ignore
+        log_word_hypotheses_dir = params.optional_creatable_directory(
+            "log_word_hypotheses_dir"
+        )
+        if log_word_hypotheses_dir:
+            logging.info("Hypotheses will be logged to %s", log_word_hypotheses_dir)
         return PursuitLanguageLearner(
             learning_factor=params.floating_point("learning_factor"),
             graph_match_confirmation_threshold=params.floating_point(
@@ -80,6 +95,7 @@ class PursuitLanguageLearner(
             ),
             lexicon_entry_threshold=params.floating_point("lexicon_entry_threshold"),
             graph_logger=graph_logger,
+            log_word_hypotheses_to=log_word_hypotheses_dir,
         )
 
     def observe(
@@ -136,6 +152,9 @@ class PursuitLanguageLearner(
                     # Try lexicon step if we confirmed a meaning
                     if is_hypothesis_confirmed:
                         self.lexicon_step(word)
+
+                if self._log_word_hypotheses_to:
+                    self._log_hypotheses(word)
 
     def initialization_step(self, word: str, observed_perception_graph: PerceptionGraph):
         # If it's a novel word, learn a new hypothesis/pattern,
@@ -438,3 +457,69 @@ class PursuitLanguageLearner(
             return max(hypotheses_and_scores_for_word.items(), key=lambda entry: entry[1])
         else:
             return None
+
+    def _log_hypotheses(self, word: str) -> None:
+        assert self._log_word_hypotheses_to
+
+        # if the user has asked us
+        # to log the progress of the learner's hypotheses about word meanings,
+        # then we use a GraphLogger per-word to write diagram's
+        # of each word's hypotheses into their own sub-directory
+        if word in self._word_to_logger:
+            graph_logger = self._word_to_logger[word]
+        else:
+            log_directory_for_word = self._log_word_hypotheses_to / word
+
+            graph_logger = GraphLogger(
+                log_directory=log_directory_for_word, enable_graph_rendering=True
+            )
+            self._word_to_logger[word] = graph_logger
+
+        def compute_hypothesis_id(h: PerceptionGraphPattern) -> str:
+            # negative hashes cause the dot rendered to crash
+            return str(abs(hash((word, h))))
+
+        if word in self._lexicon:
+            logging.info("The word %s has been lexicalized", word)
+            lexicalized_meaning = self._lexicon[word]
+            hypothesis_id = compute_hypothesis_id(lexicalized_meaning)
+            if hypothesis_id not in self._rendered_word_hypothesis_pair_ids:
+                graph_logger.log_graph(
+                    lexicalized_meaning,
+                    logging.INFO,
+                    "Rendering lexicalized " "meaning %s " "for %s",
+                    hypothesis_id,
+                    word,
+                    graph_name=str(hypothesis_id),
+                )
+                self._rendered_word_hypothesis_pair_ids.add(hypothesis_id)
+        else:
+            scored_hypotheses_for_word = self._words_to_hypotheses_and_scores[
+                word
+            ].items()
+            # First, make sure all the hypotheses have been rendered.
+            # We use the hash of this pair to generate a unique ID to match up logging messages
+            # to the PDFs of hypothesized meaning graphs.
+            for (hypothesis, _) in scored_hypotheses_for_word:
+                hypothesis_id = compute_hypothesis_id(hypothesis)
+                if hypothesis_id not in self._rendered_word_hypothesis_pair_ids:
+                    graph_logger.log_graph(
+                        hypothesis,
+                        logging.INFO,
+                        "Rendering  " "hypothesized " "meaning %s for %s",
+                        hypothesis_id,
+                        word,
+                        graph_name=str(hypothesis_id),
+                    )
+                    self._rendered_word_hypothesis_pair_ids.add(hypothesis_id)
+
+            logging.info(
+                "After update, hypotheses for %s are %s",
+                word,
+                ", ".join(
+                    f"{compute_hypothesis_id(hypothesis)}={score}"
+                    for (hypothesis, score) in reversed(
+                        sorted(scored_hypotheses_for_word, key=lambda x: x[1])
+                    )
+                ),
+            )
