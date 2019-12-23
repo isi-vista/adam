@@ -255,13 +255,15 @@ class PursuitLanguageLearner(
         # b.ii) If the hypothesis is disconfirmed, so we weaken the previous score
         else:
             # Penalize A(w,h)
-            new_hypothesis_score = current_hypothesis_score * (1 - self._learning_factor)
+            penalized_hypothesis_score = current_hypothesis_score * (
+                1.0 - self._learning_factor
+            )
             # Register the updated hypothesis score of A(w,h)
-            hypothesis_for_word[leading_hypothesis_pattern] = new_hypothesis_score
+            hypothesis_for_word[leading_hypothesis_pattern] = penalized_hypothesis_score
             logging.info(
                 "Working hypothesis disconfirmed. Reducing score from %s -> %s",
                 current_hypothesis_score,
-                new_hypothesis_score,
+                penalized_hypothesis_score,
             )
 
             # This is where we differ from the pursuit paper.
