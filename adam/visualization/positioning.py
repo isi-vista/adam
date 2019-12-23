@@ -722,7 +722,8 @@ class InRegionPenalty(nn.Module):  # type: ignore
                 self.object_perception_to_bounding_box[region.reference_object],
                 region,
             )
-            for region in designated_region
+            # positioning w/r/t the ground is handled by other constraints
+            for region in designated_region if region.reference_object.debug_handle != "the ground"
         )
 
     def penalty(
