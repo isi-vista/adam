@@ -350,10 +350,10 @@ class PursuitLanguageLearner(
                     cur_score_for_new_hypothesis = hypotheses_for_word.get(
                         hypothesis_object_to_reward, 0.0
                     )
-                    hypotheses_for_word[
-                        hypothesis_object_to_reward
-                    ] = cur_score_for_new_hypothesis + self._learning_factor * (1.0 -
-                                                                              cur_score_for_new_hypothesis)
+                    hypotheses_for_word[hypothesis_object_to_reward] = (
+                        cur_score_for_new_hypothesis
+                        + self._learning_factor * (1.0 - cur_score_for_new_hypothesis)
+                    )
                     hypothesis_objects_boosted_on_this_update.add(
                         hypothesis_object_to_reward
                     )
