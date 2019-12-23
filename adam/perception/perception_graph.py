@@ -502,10 +502,15 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
         ).perception_graph_pattern
 
     @staticmethod
-    def from_graph(perception_graph: DiGraph) -> "PerceptionGraphPatternFromGraph":
+    def from_graph(
+        perception_graph: Union[DiGraph, PerceptionGraph]
+    ) -> "PerceptionGraphPatternFromGraph":
         """
         Creates a pattern for recognizing an object based on its *perception_graph*.
         """
+        if isinstance(perception_graph, PerceptionGraph):
+            perception_graph = perception_graph._graph  # pylint:disable=protected-access
+
         pattern_graph = DiGraph()
         perception_node_to_pattern_node: Dict[PerceptionGraphNode, NodePredicate] = {}
         PerceptionGraphPattern._translate_graph(
@@ -575,7 +580,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
             else:
                 raise RuntimeError(f"Cannot map edge {label}")
 
-        # We add every node in the source graph, after translating their type with map_node
+        # We add every node in the source graph, after translating their type with map_node .
         for original_node in perception_graph.nodes:
             # Add each node
             pattern_node = map_node(original_node)
