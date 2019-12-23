@@ -3,7 +3,7 @@ _includes:
 
 learner: pursuit
 pursuit:
-   learning_factor: 0.5
+   learning_factor: 0.05
    graph_match_confirmation_threshold: 0.7
    lexicon_entry_threshold: 0.7
    smoothing_parameter: .001
