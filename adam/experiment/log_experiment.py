@@ -96,7 +96,7 @@ def curriculum_from_params(params: Parameters):
                     _make_each_object_by_itself_curriculum(
                         perception_generator=GAILA_M6_PERCEPTION_GENERATOR
                     ),
-                    6,
+                    10,
                 )
             ),
             [
