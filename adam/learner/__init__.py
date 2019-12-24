@@ -122,13 +122,17 @@ def get_largest_matching_pattern(
     *,
     debug_callback: Optional[DebugCallableType] = None,
     graph_logger: Optional[GraphLogger] = None,
-    ontology: Ontology
+    ontology: Ontology,
+    match_ratio: Optional[float] = None,
+    matching_objects: bool
 ) -> Optional[PerceptionGraphPattern]:
     """ Helper function to return the largest matching `PerceptionGraphPattern`
     for learner from a perception pattern and graph pair."""
-    matching = pattern.matcher(graph, debug_callback=debug_callback)
+    matching = pattern.matcher(
+        graph, debug_callback=debug_callback, matching_objects=matching_objects
+    )
     return matching.relax_pattern_until_it_matches(
-        graph_logger=graph_logger, ontology=ontology
+        graph_logger=graph_logger, ontology=ontology, min_ratio=match_ratio
     )
 
 

@@ -241,6 +241,11 @@ class PursuitLanguageLearner(
             key=lambda key: previous_hypotheses_and_scores[key],
         )
 
+        logging.info(
+            "Current leading hypothesis is %s",
+            abs(hash((word, leading_hypothesis_pattern))),
+        )
+
         current_hypothesis_score = hypotheses_for_word[leading_hypothesis_pattern]
         self.debug_counter += 1
 
@@ -394,6 +399,7 @@ class PursuitLanguageLearner(
             debug_callback=self._debug_callback,
             graph_logger=self._graph_logger,
             ontology=self._ontology,
+            matching_objects=True,
         )
         self.debug_counter += 1
 
@@ -535,7 +541,9 @@ class PursuitLanguageLearner(
 
         for word, meaning_pattern in self._lexicon.items():
             # Use PerceptionGraphPattern.matcher and matcher.matches() for a complete match
-            matcher = meaning_pattern.matcher(observed_perception_graph)
+            matcher = meaning_pattern.matcher(
+                observed_perception_graph, matching_objects=True
+            )
             if any(
                 matcher.matches(
                     use_lookahead_pruning=True, graph_logger=self._graph_logger
@@ -555,7 +563,9 @@ class PursuitLanguageLearner(
                 )
                 if leading_hypothesis_pair:
                     (leading_hypothesis, score) = leading_hypothesis_pair
-                    matcher = leading_hypothesis.matcher(observed_perception_graph)
+                    matcher = leading_hypothesis.matcher(
+                        observed_perception_graph, matching_objects=True
+                    )
                     match = first(
                         matcher.matches(
                             use_lookahead_pruning=True, graph_logger=self._graph_logger

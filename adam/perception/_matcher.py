@@ -15,7 +15,7 @@ where matches most frequently fail in order to assist with hypothesis refinement
 
 This code should not be used by anything except the perception_graph module.
 """
-
+import logging
 import sys
 from collections import defaultdict
 from itertools import chain
@@ -24,6 +24,9 @@ from typing import Mapping, Any, Dict, Callable, Optional
 from immutablecollections import immutableset, ImmutableSet, immutabledict
 from more_itertools import flatten
 from networkx import DiGraph
+
+from adam.ontology.phase1_ontology import PART_OF
+from adam.perception import ObjectPerception
 
 
 class GraphMatching:
@@ -39,6 +42,7 @@ class GraphMatching:
         *,
         use_lookahead_pruning: bool,
         matching_pattern_against_pattern: bool = False,
+        matching_objects: bool,
     ) -> None:
         """
         *matching_pattern_against_pattern* should be indicated as true if the two graphs
@@ -75,6 +79,8 @@ class GraphMatching:
 
         self.use_lookahead_pruning = use_lookahead_pruning
         self.matching_pattern_against_pattern = matching_pattern_against_pattern
+
+        self._matching_objects = matching_objects
 
         self._reset_debugging_maps()
 
@@ -291,10 +297,13 @@ class GraphMatching:
             if debug_callback:
                 debug_callback(self.graph, self.graph_node_to_pattern_node)
         if len(self.graph_node_to_pattern_node) == len(self.pattern):
-            # Save the final mapping, otherwise garbage collection deletes it.
-            self.mapping = self.graph_node_to_pattern_node.copy()
-            # The mapping is complete.
-            yield self.mapping
+            if self._match_is_legal():
+                # Save the final mapping, otherwise garbage collection deletes it.
+                self.mapping = self.graph_node_to_pattern_node.copy()
+                # The mapping is complete.
+                yield self.mapping
+            else:
+                return
         else:
             (
                 next_pattern_node_to_match,
@@ -329,6 +338,37 @@ class GraphMatching:
                     else:
                         if collect_debug_statistics:
                             self.node_to_syntax_failures[next_pattern_node_to_match] += 1
+
+    def _match_is_legal(self) -> bool:
+        """
+        Performs final checks on an apparently complete match to ensure domain-specific
+        constraints are satisfied.
+
+        This should eventually be injected from outside.
+
+        The caller guarantees all pattern nodes are aligned already.
+        """
+        # We don't want to allow matching a pattern against an incomplete portion of an object;
+        # that is, if you match part of a sub-object, you have to match all object perceptions
+        # beneath it.
+        if self._matching_objects:
+            for graph_node in self.graph_node_to_pattern_node:
+                if isinstance(graph_node, ObjectPerception):
+                    for predecessor in self.graph.predecessors(graph_node):
+                        if (
+                            isinstance(predecessor, ObjectPerception)
+                            and predecessor not in self.graph_node_to_pattern_node
+                        ):
+                            if (
+                                self.graph.edges[predecessor, graph_node]["label"]
+                                == PART_OF
+                            ):
+                                logging.info(
+                                    "Blocking match against a non-sub-object portion of another "
+                                    "object"
+                                )
+                                return False
+        return True
 
     def semantic_feasibility(
         self, graph_node, pattern_node, collect_debug_statistics=False

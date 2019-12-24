@@ -83,8 +83,7 @@ def learner_factory_from_params(
 
 def curriculum_from_params(params: Parameters):
     curriculum_name = params.string(
-        "curriculum",
-        ["m6-deniz", "each-object-by-itself", "pursuit-with-noise", "m6-preposition"],
+        "curriculum", ["m6-deniz", "each-object-by-itself", "pursuit", "m6-preposition"]
     )
     if curriculum_name == "m6-deniz":
         return (make_m6_curriculum(), [])
@@ -106,7 +105,7 @@ def curriculum_from_params(params: Parameters):
                 )
             ],
         )
-    elif curriculum_name == "pursuit-with-noise":
+    elif curriculum_name == "pursuit":
         pursuit_curriculum_params = params.namespace("pursuit-curriculum-params")
         num_instances = pursuit_curriculum_params.integer("num_instances")
         num_noise_instances = pursuit_curriculum_params.integer("num_noise_instances")

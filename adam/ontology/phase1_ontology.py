@@ -307,8 +307,8 @@ BOOK = OntologyNode(
         CAN_HAVE_THINGS_RESTING_ON_THEM,
         PERSON_CAN_HAVE,
         RED,
-        BLUE,
-        GREEN,
+        # BLUE,
+        # GREEN,
     ],
 )
 subtype(BOOK, INANIMATE_OBJECT)

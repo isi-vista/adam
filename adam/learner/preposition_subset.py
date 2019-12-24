@@ -427,7 +427,7 @@ class PrepositionSubsetLanguageLearner(
         ) in self._surface_template_to_preposition_pattern.items():
             # try to see if (our model of) its semantics is present in the situation.
             matcher = preposition_pattern.graph_pattern.matcher(
-                recognized_object_perception.perception_graph
+                recognized_object_perception.perception_graph, matching_objects=False
             )
             for match in matcher.matches(use_lookahead_pruning=True):
                 # if it is, use that preposition to describe the situation.

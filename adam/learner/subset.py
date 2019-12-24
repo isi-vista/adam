@@ -76,6 +76,7 @@ class SubsetLanguageLearner(
                 observed_perception_graph,
                 debug_callback=self._debug_callback,
                 ontology=self._ontology,
+                matching_objects=True,
             )
             if hypothesis_pattern_common_subgraph:
                 # Update the leading hypothesis
@@ -123,6 +124,7 @@ class SubsetLanguageLearner(
                 observed_perception_graph,
                 debug_callback=self._debug_callback,
                 ontology=self._ontology,
+                matching_objects=True,
             )
             common_pattern_size = (
                 len(common_pattern.copy_as_digraph().nodes) if common_pattern else 0

@@ -136,7 +136,7 @@ def do_object_on_table_test(
         # -{idx}.pdf")
         # object_to_match_pattern.render_to_file(f"object_to_match pattern", out_dir /
         # "object_to_match_pattern.pdf")
-        matcher = object_to_match_pattern.matcher(perception_graph)
+        matcher = object_to_match_pattern.matcher(perception_graph, matching_objects=True)
         # debug_matching = matcher.debug_matching(
         #    use_lookahead_pruning=False, render_match_to=Path("/Users/gabbard/tmp")
         # )
@@ -180,9 +180,9 @@ def do_object_on_table_test(
         )
         perception_graph = PerceptionGraph.from_frame(perception.frames[0])
         if any(
-            object_to_match_pattern.matcher(perception_graph).matches(
-                use_lookahead_pruning=True
-            )
+            object_to_match_pattern.matcher(
+                perception_graph, matching_objects=True
+            ).matches(use_lookahead_pruning=True)
         ):
             return False
     return True
