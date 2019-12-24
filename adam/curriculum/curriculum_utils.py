@@ -25,7 +25,7 @@ from adam.situation.templates.phase1_templates import (
 )
 
 GROUND_OBJECT_TEMPLATE = object_variable("ground", GROUND)
-PHASE1_CHOOSER = RandomChooser.for_seed(2)
+PHASE1_CHOOSER = RandomChooser.for_seed(0)
 Phase1InstanceGroup = InstanceGroup[  # pylint:disable=invalid-name
     HighLevelSemanticsSituation,
     LinearizedDependencyTree,
