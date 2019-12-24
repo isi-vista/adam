@@ -7,3 +7,4 @@ pursuit:
    graph_match_confirmation_threshold: 0.7
    lexicon_entry_threshold: 0.7
    smoothing_parameter: .001
+   log_word_hypotheses_dir: /Users/gabbard/tmp/pursuit

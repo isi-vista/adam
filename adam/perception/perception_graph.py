@@ -58,6 +58,7 @@ from adam.perception.developmental_primitive_perception import (
     HasBinaryProperty,
     HasColor,
     RgbColorPerception,
+    RgbColorSpaceBox,
 )
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
@@ -563,7 +564,11 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
                 elif isinstance(node, OntologyNode):
                     perception_node_to_pattern_node[key] = IsOntologyNodePredicate(node)
                 elif isinstance(node, RgbColorPerception):
-                    perception_node_to_pattern_node[key] = IsColorNodePredicate(node)
+                    perception_node_to_pattern_node[key] = ColorInBoxPredicate(
+                        RgbColorSpaceBox.box_around(
+                            node, PerceptionGraphPattern._COLOR_RADIUS
+                        )
+                    )
                 elif isinstance(node, MatchedObjectNode):
                     perception_node_to_pattern_node[
                         key
@@ -599,6 +604,12 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
                 pattern_graph.edges[pattern_from_node, pattern_to_node].update(
                     mapped_edge
                 )
+
+    _COLOR_RADIUS = 20.0
+    """
+    This is how much slack to give in each RGB component for considering a color "the same",
+    by default.
+    """
 
     def render_to_file(  # pragma: no cover
         self,
@@ -1095,7 +1106,7 @@ class PatternMatching:
         logging.info("Relaxation: last failed pattern node is %s", last_failed_node)
         gather_nodes_to_excise(last_failed_node)
 
-        if isinstance(last_failed_node, IsColorNodePredicate):
+        if isinstance(last_failed_node, ColorInBoxPredicate):
             # We treat colors as a special case.
             # In a complex object (e.g. a dog), an object and a large number of its
             # sub-components will share the same color.
@@ -1110,7 +1121,7 @@ class PatternMatching:
             same_color_nodes = [
                 node
                 for node in pattern_as_digraph.nodes
-                if isinstance(node, IsColorNodePredicate) and node.color == color
+                if isinstance(node, ColorInBoxPredicate) and node.color == color
             ]
             if same_color_nodes:
                 logging.info("Deleting extra color nodes: %s", same_color_nodes)
@@ -1511,8 +1522,8 @@ class IsOntologyNodePredicate(NodePredicate):
 
 
 @attrs(frozen=True, slots=True, eq=False)
-class IsColorNodePredicate(NodePredicate):
-    color: RgbColorPerception = attrib(validator=instance_of(RgbColorPerception))
+class ColorInBoxPredicate(NodePredicate):
+    color_box: RgbColorSpaceBox = attrib(validator=instance_of(RgbColorSpaceBox))
 
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
         # color nodes might be wrapped in tuples with their id()
@@ -1520,29 +1531,19 @@ class IsColorNodePredicate(NodePredicate):
         if isinstance(graph_node, tuple):
             graph_node = graph_node[0]
 
-        if isinstance(graph_node, RgbColorPerception):
-            return (
-                (graph_node.red == self.color.red)
-                and (graph_node.blue == self.color.blue)
-                and (graph_node.green == self.color.green)
-            )
-        return False
+        return isinstance(graph_node, RgbColorPerception) and graph_node in self.color_box
 
     def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
-        if isinstance(predicate_node, IsColorNodePredicate):
-            return (
-                (predicate_node.color.red == self.color.red)
-                and (predicate_node.color.blue == self.color.blue)
-                and (predicate_node.color.green == self.color.green)
-            )
+        if isinstance(predicate_node, ColorInBoxPredicate):
+            return self.color_box.encloses(predicate_node.color_box)
         return False
 
     def dot_label(self) -> str:
-        return f"prop({self.color.hex})"
+        return f"prop({self.color_box})"
 
     def is_equivalent(self, other) -> bool:
-        if isinstance(other, IsColorNodePredicate):
-            return self.color.hex == other.color.hex
+        if isinstance(other, ColorInBoxPredicate):
+            return self.color_box == other.color_box
         return False
 
 
@@ -1832,7 +1833,7 @@ _PATTERN_PREDICATE_NODE_ORDER = [
     MatchedObjectPerceptionPredicate,
     # properties and colors tend to be highlight restrictive, so let's match them first
     IsOntologyNodePredicate,
-    IsColorNodePredicate,
+    ColorInBoxPredicate,
     AnyObjectPerception,
     GeonPredicate,
     RegionPredicate,

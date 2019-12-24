@@ -33,7 +33,7 @@ from adam.perception.high_level_semantics_situation_to_developmental_primitive_p
     GAILA_PHASE_1_PERCEPTION_GENERATOR,
 )
 from adam.perception.perception_graph import (
-    IsColorNodePredicate,
+    ColorInBoxPredicate,
     PatternMatching,
     PerceptionGraph,
     PerceptionGraphPattern,
@@ -252,7 +252,7 @@ def test_last_failed_pattern_node():
         )
         match_or_failure = matcher.first_match_or_failure_info()
         assert isinstance(match_or_failure, PatternMatching.MatchFailure)
-        assert isinstance(match_or_failure.last_failed_pattern_node, IsColorNodePredicate)
+        assert isinstance(match_or_failure.last_failed_pattern_node, ColorInBoxPredicate)
 
 
 def test_successfully_extending_partial_match():
@@ -287,7 +287,7 @@ def test_successfully_extending_partial_match():
 
     partial_digraph = whole_perception_pattern.copy_as_digraph()
     partial_digraph.remove_nodes_from(
-        [node for node in partial_digraph.nodes if isinstance(node, IsColorNodePredicate)]
+        [node for node in partial_digraph.nodes if isinstance(node, ColorInBoxPredicate)]
     )
     partial_perception_pattern = PerceptionGraphPattern(partial_digraph)
 
@@ -377,7 +377,7 @@ def test_semantically_infeasible_partial_match():
 
     partial_digraph = altered_perception_pattern.copy_as_digraph()
     partial_digraph.remove_nodes_from(
-        [node for node in partial_digraph.nodes if isinstance(node, IsColorNodePredicate)]
+        [node for node in partial_digraph.nodes if isinstance(node, ColorInBoxPredicate)]
     )
 
     # Start the matching process, get a partial match
@@ -452,7 +452,7 @@ def test_syntactically_infeasible_partial_match():
 
     partial_digraph = altered_perception_pattern.copy_as_digraph()
     partial_digraph.remove_nodes_from(
-        [node for node in partial_digraph.nodes if isinstance(node, IsColorNodePredicate)]
+        [node for node in partial_digraph.nodes if isinstance(node, ColorInBoxPredicate)]
     )
 
     # Start the matching process, get a partial match

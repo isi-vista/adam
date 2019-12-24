@@ -1,4 +1,5 @@
 from abc import ABC
+from typing import Sequence, Union
 
 from attr import attrib, attrs
 from attr.validators import in_, instance_of
@@ -93,15 +94,18 @@ class HasBinaryProperty(PropertyPerception):
         return f"hasProperty({self.perceived_object}, {self.binary_property})"
 
 
+_VALID_COLOR_RANGE = Range.closed(0, 255)
+
+
 @attrs(slots=True, frozen=True, repr=False, eq=True)
 class RgbColorPerception:
     """
     A perceived color.
     """
 
-    red: int = attrib(validator=in_(Range.closed(0, 255)))
-    green: int = attrib(validator=in_(Range.closed(0, 255)))
-    blue: int = attrib(validator=in_(Range.closed(0, 255)))
+    red: int = attrib(validator=in_(_VALID_COLOR_RANGE))
+    green: int = attrib(validator=in_(_VALID_COLOR_RANGE))
+    blue: int = attrib(validator=in_(_VALID_COLOR_RANGE))
 
     def inverse(self) -> "RgbColorPerception":
         return RgbColorPerception(255 - self.red, 255 - self.green, 255 - self.blue)
@@ -117,6 +121,97 @@ class RgbColorPerception:
 
         """
         return self.hex
+
+
+@attrs(slots=True, frozen=True, repr=False, eq=True)
+class RgbColorSpaceBox:
+    """
+    A box-like region in RGB color space.
+
+    This can be used as a simple way to represent ranges of colors.
+    """
+
+    red_range: attrib(validator=instance_of(Range))
+    green_range: attrib(validator=instance_of(Range))
+    blue_range: attrib(validator=instance_of(Range))
+
+    def __attrs_post_init__(self) -> None:
+        check_arg(_VALID_COLOR_RANGE.encloses(self.red_range))
+        check_arg(_VALID_COLOR_RANGE.encloses(self.green_range))
+        check_arg(_VALID_COLOR_RANGE.encloses(self.blue_range))
+
+    @staticmethod
+    def box_around(
+        color: RgbColorPerception, *, taxicab_radius: float
+    ) -> "RgbColorSpaceBox":
+        return RgbColorSpaceBox(
+            Range.closed(
+                max(0, color.red - taxicab_radius), min(255, color.red + taxicab_radius)
+            ),
+            Range.closed(
+                max(0, color.green - taxicab_radius),
+                min(255, color.green + taxicab_radius),
+            ),
+            Range.closed(
+                max(0, color.blue - taxicab_radius), min(255, color.blue + taxicab_radius)
+            ),
+        )
+
+    def encloses(self, other: "RgbColorSpaceBox") -> bool:
+        return (
+            self.red_range.encloses(other.red_range)
+            and self.green_range.encloses(other.green_range)
+            and self.blue_range.encloses(other.blue_range)
+        )
+
+    def minimal_enclosing_box(
+        self, colors: Sequence[Union[RgbColorPerception, "RgbColorSpaceBox"]]
+    ) -> "RgbColorSpaceBox":
+        reds = []
+        greens = []
+        blues = []
+
+        for color in colors:
+            if isinstance(color, RgbColorPerception):
+                reds.append(color.red)
+                greens.append(color.green)
+                blues.append(color.blue)
+            else:
+                reds.append(color.red_range.upper_bound, color.red_range.lower_bound)
+                greens.append(
+                    color.green_range.upper_bound, color.green_range.lower_bound
+                )
+                blues.append(color.blue_range.upper_bound, color.blue_range.lower_bound)
+
+        return RgbColorSpaceBox(
+            red_range=Range.closed(min(reds), max(reds)),
+            green_range=Range.closed(min(greens), max(greens)),
+            blue_range=Range.closed(min(blues), max(blues)),
+        )
+
+    def fraction_of_color_space_covered(self) -> float:
+        """
+        The fraction of the RGB color space this cube covers.
+
+        Note that this can give unintuitive results - all shades of pure red
+        ( any value for red, 0 for green and blue)
+        covered 0% of the color space!
+        """
+        return (
+            (self.red_range.upper_bound - self.red_range.lower_bound)
+            * (self.green_range.upper_bound - self.green_range.lower_bound)
+            * (self.blue_range.upper_bound - self.blue_range.lower_bound)
+        ) / (255 * 255 * 255)
+
+    def __contains__(self, rgb: RgbColorPerception) -> bool:
+        return (
+            rgb.red in self.red_range
+            and rgb.green in self.green_range
+            and rgb.blue in self.blue_range
+        )
+
+    def __repr__(self) -> str:
+        return f"r{self.red_range}g{self.green_range}b{self.blue_range}"
 
 
 @attrs(slots=True, frozen=True, repr=False)
