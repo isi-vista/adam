@@ -647,6 +647,16 @@ much_bigger_than = make_opposite_dsl_relation(  # pylint:disable=invalid-name
     MUCH_BIGGER_THAN, opposite_type=MUCH_SMALLER_THAN
 )
 
+SIZE_RELATIONS = immutableset(
+    [BIGGER_THAN, MUCH_BIGGER_THAN, SMALLER_THAN, MUCH_SMALLER_THAN]
+)
+ABOUT_THE_SAME_SIZE_AS_LEARNER = OntologyNode("aboutSameSizeAsLearner")
+"""
+This is for use only when generating perceptions,
+where we special-case size relations to the learner to also
+be represented as properties,
+which makes object learner simpler
+"""
 
 HAS = OntologyNode("has")
 subtype(HAS, RELATION)

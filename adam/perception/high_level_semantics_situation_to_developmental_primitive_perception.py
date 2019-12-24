@@ -39,6 +39,9 @@ from adam.ontology.phase1_ontology import (
     PART_OF,
     TWO_DIMENSIONAL,
     on,
+    SIZE_RELATIONS,
+    ABOUT_THE_SAME_SIZE_AS_LEARNER,
+    BABY,
 )
 from adam.ontology.phase1_spatial_relations import INTERIOR, Region, SpatialPath
 from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
@@ -213,6 +216,7 @@ class _PerceptionGeneration:
         self._perceive_colors()
 
         # Handle implicit size relations
+        self._perceive_size_relative_to_learner()
         # self._perceive_implicit_size()
 
         # for now, we assume that actions do not alter the relationship of objects axes
@@ -1116,6 +1120,44 @@ class _PerceptionGeneration:
         return immutablesetmultidict(
             (relation.first_slot, relation) for relation in self._relation_perceptions
         )
+
+    def _perceive_size_relative_to_learner(self) -> None:
+        """
+        When doing object recognition,
+        size relations relative to the learner play a special role.
+        Since relations with other objects are currently not examined
+        by our object recognition algorithms,
+        it is easier if we represent this as a property as well as a relation.
+        """
+        for object_ in self._situation.all_objects:
+            ontology_type = object_.ontology_node
+            size_relations = immutableset(
+                relation
+                for relation in self._situation.ontology.subjects_to_relations[
+                    ontology_type
+                ]
+                if relation.relation_type in SIZE_RELATIONS
+                and relation.second_slot == BABY
+            )
+            if size_relations:
+                if len(size_relations) > 1:
+                    raise RuntimeError(
+                        f"Expected only one size relations for "
+                        f"{ontology_type} but got {size_relations}"
+                    )
+                self._property_assertion_perceptions.append(
+                    HasBinaryProperty(
+                        self._objects_to_perceptions[object_],
+                        only(size_relations).relation_type,
+                    )
+                )
+            else:
+                self._property_assertion_perceptions.append(
+                    HasBinaryProperty(
+                        self._objects_to_perceptions[object_],
+                        ABOUT_THE_SAME_SIZE_AS_LEARNER,
+                    )
+                )
 
     def _perceive_axis_info(self) -> AxesInfo[ObjectPerception]:
         return self._situation.axis_info.copy_remapping_objects(
