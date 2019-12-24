@@ -48,6 +48,15 @@ from adam.ontology.phase1_ontology import (
     MOM,
     TABLE,
     TRUCK,
+    DAD,
+    BABY,
+    WATER,
+    HAND,
+    DOG,
+    MILK,
+    HEAD,
+    JUICE,
+    DOOR,
 )
 from adam.situation.templates.phase1_templates import sampled
 
@@ -61,6 +70,30 @@ M6_PREPOSITION_CURRICULUM_OBJECTS = list(
     )
 )
 
+M6_CURRICULUM_ALL_OBJECTS = [
+    MOM,
+    DAD,
+    BABY,
+    BOOK,
+    HOUSE,
+    CAR,
+    WATER,
+    BALL,
+    JUICE,
+    CUP,
+    BOX,
+    CHAIR,
+    HEAD,
+    MILK,
+    HAND,
+    DOG,
+    TRUCK,
+    DOOR,
+    HAT,
+    TABLE,
+    COOKIE,
+    BIRD,
+]
 
 # Create object variables for objects to use in prepositions
 SMALL_OBJECT_VARS = [

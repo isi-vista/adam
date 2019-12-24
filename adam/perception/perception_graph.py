@@ -502,10 +502,15 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
         ).perception_graph_pattern
 
     @staticmethod
-    def from_graph(perception_graph: DiGraph) -> "PerceptionGraphPatternFromGraph":
+    def from_graph(
+        perception_graph: Union[DiGraph, PerceptionGraph]
+    ) -> "PerceptionGraphPatternFromGraph":
         """
         Creates a pattern for recognizing an object based on its *perception_graph*.
         """
+        if isinstance(perception_graph, PerceptionGraph):
+            perception_graph = perception_graph._graph  # pylint:disable=protected-access
+
         pattern_graph = DiGraph()
         perception_node_to_pattern_node: Dict[PerceptionGraphNode, NodePredicate] = {}
         PerceptionGraphPattern._translate_graph(
@@ -575,7 +580,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
             else:
                 raise RuntimeError(f"Cannot map edge {label}")
 
-        # We add every node in the source graph, after translating their type with map_node
+        # We add every node in the source graph, after translating their type with map_node .
         for original_node in perception_graph.nodes:
             # Add each node
             pattern_node = map_node(original_node)
@@ -1151,11 +1156,12 @@ class PatternMatching:
                     graph_logger.log_match_failure(
                         match_failure, logging.INFO, "Pattern match component failure"
                     )
-                raise RuntimeError(
-                    f"Expected the successfully matching portion of the pattern"
-                    f" to belong to a single connected component, but it was in "
-                    f"{connected_components_containing_successful_pattern_matches}"
-                )
+                return None
+                # raise RuntimeError(
+                #     f"Expected the successfully matching portion of the pattern"
+                #     f" to belong to a single connected component, but it was in "
+                #     f"{connected_components_containing_successful_pattern_matches}"
+                # )
 
             logging.info(
                 "Relaxation: deleted due to disconnection: %s",
@@ -1896,11 +1902,12 @@ def _invert_to_immutabledict(mapping: Mapping[_KT, _VT]) -> ImmutableDict[_VT, _
     return immutabledict((v, k) for (k, v) in mapping.items())
 
 
-@attrs(frozen=True)
+@attrs
 class GraphLogger:
     log_directory: Path = attrib(validator=instance_of(Path))
     enable_graph_rendering: bool = attrib(validator=instance_of(bool))
     serialize_graphs: bool = attrib(validator=instance_of(bool), default=False)
+    call_count: int = attrib(init=False, default=0)
 
     def log_graph(
         self,
@@ -1909,14 +1916,20 @@ class GraphLogger:
         msg: str,
         *args,
         match_correspondence_ids: Mapping[Any, str] = immutabledict(),
+        graph_name: Optional[str] = None,
     ) -> None:
+        self.call_count += 1
         if self.enable_graph_rendering:
-            graph_name = str(uuid4())
+            if not graph_name:
+                graph_name = str(uuid4())
+
             filename = self.log_directory / f"{graph_name}"
             graph.render_to_file(
                 graph_name, filename, match_correspondence_ids=match_correspondence_ids
             )
-            logging.log(level, f"Rendered to {filename}.pdf\n{msg}", *args)
+            logging.log(
+                level, f"[{self.call_count}] Rendered to {filename}.pdf\n{msg}", *args
+            )
             if self.serialize_graphs:
                 serialized_file = self.log_directory / f"{graph_name}.serialized"
                 logging.info("Serializing to %s", serialized_file)
@@ -1926,8 +1939,16 @@ class GraphLogger:
             logging.log(level, msg, *args)
 
     def log_match_failure(
-        self, match_failure: PatternMatching.MatchFailure, level, msg: str, *args
+        self,
+        match_failure: PatternMatching.MatchFailure,
+        level,
+        msg: str,
+        *args,
+        graph_name: Optional[str] = None,
     ) -> None:
+        if not graph_name:
+            graph_name = str(uuid4())
+
         if self.enable_graph_rendering:
             graph_correspondence_ids: Mapping[Any, str] = immutabledict(
                 (graph_node, str(i))
@@ -1941,6 +1962,7 @@ class GraphLogger:
                 msg + " [graph] ",
                 *args,
                 match_correspondence_ids=graph_correspondence_ids,
+                graph_name=f"{graph_name}-graph",
             )
 
             pattern_correspondence_ids: Mapping[Any, str] = immutabledict(
@@ -1955,13 +1977,22 @@ class GraphLogger:
                 msg + " [pattern] ",
                 *args,
                 match_correspondence_ids=pattern_correspondence_ids,
+                graph_name=f"{graph_name}-pattern",
             )
         else:
             logging.log(level, msg, *args)
 
     def log_pattern_match(
-        self, pattern_match: PerceptionGraphPatternMatch, level, msg: str, *args
+        self,
+        pattern_match: PerceptionGraphPatternMatch,
+        level,
+        msg: str,
+        *args,
+        graph_name: Optional[str] = None,
     ) -> None:
+        if not graph_name:
+            graph_name = str(uuid4())
+
         if self.enable_graph_rendering:
             graph_correspondence_ids: Mapping[Any, str] = immutabledict(
                 (graph_node, str(i))
@@ -1975,6 +2006,7 @@ class GraphLogger:
                 msg + " [graph] ",
                 *args,
                 match_correspondence_ids=graph_correspondence_ids,
+                graph_name=f"{graph_name}-graph",
             )
 
             pattern_correspondence_ids: Mapping[Any, str] = immutabledict(
@@ -1989,6 +2021,7 @@ class GraphLogger:
                 msg + " [pattern] ",
                 *args,
                 match_correspondence_ids=pattern_correspondence_ids,
+                graph_name=f"{graph_name}-pattern",
             )
         else:
             logging.log(level, msg, *args)

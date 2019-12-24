@@ -156,11 +156,15 @@ def test_pursuit_learner():
     # complete or a very small match.
     # The lexicon threshold works better between 0.07-0.3, but we need to play around with it because we end up not
     # lexicalize items sufficiently because of diminishing lexicon probability through training
+    rng = random.Random()
+    rng.seed(0)
     learner = PursuitLanguageLearner(
         learning_factor=0.5,
         graph_match_confirmation_threshold=0.7,
         lexicon_entry_threshold=0.7,
         graph_logger=GraphLogger(Path("/Users/gabbard/tmp"), enable_graph_rendering=True),
+        rng=rng,
+        smoothing_parameter=0.001,
     )  # type: ignore
     for training_stage in [train_curriculum]:
         for (

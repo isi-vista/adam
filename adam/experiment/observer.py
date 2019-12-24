@@ -180,8 +180,6 @@ class LearningProgressHtmlLogger:
 
         learner_description = pretty_descriptions(predicted_descriptions)
 
-        logging.info(f"desc{learner_description}")
-
         if situation and isinstance(situation, HighLevelSemanticsSituation):
             situation_text, _ = self.html_dumper.situation_text(situation)
         else:
