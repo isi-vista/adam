@@ -290,7 +290,7 @@ TABLE = OntologyNode(
         CAN_HAVE_THINGS_RESTING_ON_THEM,
         HAS_SPACE_UNDER,
         CAN_BE_SAT_ON_BY_PEOPLE,
-        # LIGHT_BROWN,
+        LIGHT_BROWN,
         DARK_BROWN,
     ],
 )
@@ -307,8 +307,8 @@ BOOK = OntologyNode(
         CAN_HAVE_THINGS_RESTING_ON_THEM,
         PERSON_CAN_HAVE,
         RED,
-        # BLUE,
-        # GREEN,
+        BLUE,
+        GREEN,
     ],
 )
 subtype(BOOK, INANIMATE_OBJECT)
@@ -361,7 +361,7 @@ CHAIR = OntologyNode(
         CAN_FILL_TEMPLATE_SLOT,
         CAN_HAVE_THINGS_RESTING_ON_THEM,
         CAN_BE_SAT_ON_BY_PEOPLE,
-        # LIGHT_BROWN,
+        LIGHT_BROWN,
         DARK_BROWN,
     ],
 )
