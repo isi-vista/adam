@@ -1,7 +1,6 @@
 import logging
 import random
 from itertools import chain
-from pathlib import Path
 from typing import Optional
 
 from adam.curriculum.phase1_curriculum import PHASE1_CHOOSER, phase1_instances
@@ -19,11 +18,7 @@ from adam.ontology.phase1_ontology import (
     GAILA_PHASE_1_ONTOLOGY,
     LEARNER,
 )
-from adam.perception.perception_graph import (
-    DebugCallableType,
-    DumpPartialMatchCallback,
-    GraphLogger,
-)
+from adam.perception.perception_graph import DebugCallableType, DumpPartialMatchCallback
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
     all_possible,
@@ -59,7 +54,9 @@ def run_subset_learner_for_object(
         ),
     )
 
-    learner = SubsetLanguageLearner(debug_callback=debug_callback)  # type: ignore
+    learner = SubsetLanguageLearner(  # type: ignore
+        debug_callback=debug_callback, ontology=GAILA_PHASE_1_ONTOLOGY
+    )
     for training_stage in [obj_curriculum]:
         for (
             _,
@@ -162,9 +159,9 @@ def test_pursuit_learner():
         learning_factor=0.5,
         graph_match_confirmation_threshold=0.7,
         lexicon_entry_threshold=0.7,
-        graph_logger=GraphLogger(Path("/Users/gabbard/tmp"), enable_graph_rendering=True),
         rng=rng,
         smoothing_parameter=0.001,
+        ontology=GAILA_PHASE_1_ONTOLOGY,
     )  # type: ignore
     for training_stage in [train_curriculum]:
         for (

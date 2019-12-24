@@ -20,6 +20,10 @@ from adam.learner import LanguageLearner
 from adam.learner.object_recognizer import ObjectRecognizer
 from adam.learner.preposition_subset import PrepositionSubsetLanguageLearner
 from adam.learner.pursuit import PursuitLanguageLearner
+from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
+from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
+    GAILA_M6_PERCEPTION_GENERATOR,
+)
 from adam.perception.perception_graph import GraphLogger
 from adam.random_utils import RandomChooser
 
@@ -71,6 +75,7 @@ def learner_factory_from_params(
             object_recognizer=ObjectRecognizer.for_ontology_types(
                 M6_PREPOSITION_CURRICULUM_OBJECTS
             ),
+            ontology=GAILA_PHASE_1_ONTOLOGY,
         )
     else:
         raise RuntimeError("can't happen")
@@ -87,8 +92,19 @@ def curriculum_from_params(params: Parameters):
         return (
             # We show the learned each item 6 times,
             # because pursuit won't lexicalize anything it hasn't seen five times.
-            list(repeat(_make_each_object_by_itself_curriculum(), 6)),
-            [_make_each_object_by_itself_curriculum()],
+            list(
+                repeat(
+                    _make_each_object_by_itself_curriculum(
+                        perception_generator=GAILA_M6_PERCEPTION_GENERATOR
+                    ),
+                    6,
+                )
+            ),
+            [
+                _make_each_object_by_itself_curriculum(
+                    perception_generator=GAILA_M6_PERCEPTION_GENERATOR
+                )
+            ],
         )
     elif curriculum_name == "pursuit-with-noise":
         pursuit_curriculum_params = params.namespace("pursuit-curriculum-params")
@@ -104,9 +120,14 @@ def curriculum_from_params(params: Parameters):
                     num_instances=num_instances,
                     num_objects_in_instance=num_objects_in_instance,
                     num_noise_instances=num_noise_instances,
+                    perception_generator=GAILA_M6_PERCEPTION_GENERATOR,
                 )
             ],
-            [_make_each_object_by_itself_curriculum()],
+            [
+                _make_each_object_by_itself_curriculum(
+                    perception_generator=GAILA_M6_PERCEPTION_GENERATOR
+                )
+            ],
         )
     elif curriculum_name == "m6-preposition":
         return (instantiate_subcurricula(M6_PREPOSITION_SUBCURRICULUM_GENERATORS), [])

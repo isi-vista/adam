@@ -97,6 +97,10 @@ from adam.ontology.phase1_spatial_relations import (
     TOWARD,
     Direction,
 )
+from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
+    GAILA_PHASE_1_PERCEPTION_GENERATOR,
+    HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
+)
 from adam.random_utils import RandomChooser
 from adam.situation import Action, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
@@ -111,7 +115,9 @@ from adam.situation.templates.phase1_templates import (
 
 
 # Show each object once by itself
-def _make_each_object_by_itself_curriculum() -> Phase1InstanceGroup:
+def _make_each_object_by_itself_curriculum(
+    perception_generator: HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator = GAILA_PHASE_1_PERCEPTION_GENERATOR
+) -> Phase1InstanceGroup:
     single_object_template = Phase1SituationTemplate(
         "single-object", salient_object_variables=[object_variable("object")]
     )
@@ -127,6 +133,7 @@ def _make_each_object_by_itself_curriculum() -> Phase1InstanceGroup:
                 )
             ]
         ),
+        perception_generator=perception_generator,
     )
 
 

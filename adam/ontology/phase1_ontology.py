@@ -290,7 +290,7 @@ TABLE = OntologyNode(
         CAN_HAVE_THINGS_RESTING_ON_THEM,
         HAS_SPACE_UNDER,
         CAN_BE_SAT_ON_BY_PEOPLE,
-        LIGHT_BROWN,
+        # LIGHT_BROWN,
         DARK_BROWN,
     ],
 )
@@ -361,7 +361,7 @@ CHAIR = OntologyNode(
         CAN_FILL_TEMPLATE_SLOT,
         CAN_HAVE_THINGS_RESTING_ON_THEM,
         CAN_BE_SAT_ON_BY_PEOPLE,
-        LIGHT_BROWN,
+        # LIGHT_BROWN,
         DARK_BROWN,
     ],
 )
@@ -657,6 +657,8 @@ where we special-case size relations to the learner to also
 be represented as properties,
 which makes object learner simpler
 """
+
+subtype(ABOUT_THE_SAME_SIZE_AS_LEARNER, PROPERTY)
 
 HAS = OntologyNode("has")
 subtype(HAS, RELATION)

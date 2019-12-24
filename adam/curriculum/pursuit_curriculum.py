@@ -21,6 +21,10 @@ from adam.ontology.phase1_ontology import (
     TABLE,
     DOG,
 )
+from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
+    HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
+    GAILA_PHASE_1_PERCEPTION_GENERATOR,
+)
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
     object_variable,
@@ -35,6 +39,7 @@ def make_simple_pursuit_curriculum(
     num_instances: int = 10,
     num_noise_instances: int = 0,
     num_objects_in_instance: int = 3,
+    perception_generator: HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator = GAILA_PHASE_1_PERCEPTION_GENERATOR,
 ) -> Phase1InstanceGroup:
     """
     Creates a Pursuit-learning curriculum with for a set of standard objects. Each instance in the curriculum is a set
@@ -81,6 +86,7 @@ def make_simple_pursuit_curriculum(
                     chooser=PHASE1_CHOOSER,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                 ),
+                perception_generator=perception_generator,
             ).instances()
         )
 
@@ -102,6 +108,7 @@ def make_simple_pursuit_curriculum(
                 chooser=PHASE1_CHOOSER,
                 ontology=GAILA_PHASE_1_ONTOLOGY,
             ),
+            perception_generator=perception_generator,
         ).instances()
         # [1] is the index of the linguistic description in an instance
         # It doesn't matter which non-noise instance is chosen

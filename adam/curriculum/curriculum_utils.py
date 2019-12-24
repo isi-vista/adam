@@ -14,6 +14,7 @@ from adam.perception.developmental_primitive_perception import (
 )
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     GAILA_PHASE_1_PERCEPTION_GENERATOR,
+    HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
 )
 from adam.random_utils import RandomChooser
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
@@ -58,7 +59,9 @@ def standard_object(
 
 
 def phase1_instances(
-    description: str, situations: Iterable[HighLevelSemanticsSituation]
+    description: str,
+    situations: Iterable[HighLevelSemanticsSituation],
+    perception_generator: HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator = GAILA_PHASE_1_PERCEPTION_GENERATOR,
 ) -> Phase1InstanceGroup:
     """
     Convenience method for more compactly creating sub-curricula for phase 1.
@@ -68,7 +71,7 @@ def phase1_instances(
         description,
         situations=situations,
         language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
-        perception_generator=GAILA_PHASE_1_PERCEPTION_GENERATOR,
+        perception_generator=perception_generator,
         chooser=PHASE1_CHOOSER,
     )
 

@@ -48,7 +48,8 @@ from adam.axes import AxesInfo, HasAxes
 from adam.axis import GeonAxis
 from adam.geon import Geon, MaybeHasGeon
 from adam.ontology import OntologyNode
-from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY, PART_OF
+from adam.ontology.ontology import Ontology
+from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY, PART_OF, COLOR
 from adam.ontology.phase1_spatial_relations import Direction, Distance, Region
 from adam.ontology.structural_schema import ObjectStructuralSchema
 from adam.perception import ObjectPerception
@@ -673,6 +674,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
         *,
         debug_callback: Optional[DebugCallableType] = None,
         graph_logger: Optional["GraphLogger"] = None,
+        ontology: Ontology,
     ) -> Optional["PerceptionGraphPattern"]:
         """
         Determine the largest partial match between two `PerceptionGraphPattern`s
@@ -687,7 +689,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
             matching_pattern_against_pattern=True,
         )
         attempted_match = matcher.relax_pattern_until_it_matches(
-            graph_logger=graph_logger
+            graph_logger=graph_logger, ontology=ontology
         )
         if attempted_match:
             return attempted_match
@@ -915,7 +917,7 @@ class PatternMatching:
         )
 
     def relax_pattern_until_it_matches(
-        self, *, graph_logger: Optional["GraphLogger"] = None
+        self, *, graph_logger: Optional["GraphLogger"] = None, ontology: Ontology
     ) -> Optional[PerceptionGraphPattern]:
         """
         Prunes or relaxes the *pattern* for this matching until it successfully matches
@@ -953,7 +955,7 @@ class PatternMatching:
                 # chop off the node which we think might have caused the match to fail.
                 # Why is this cast necessary? mypy should be able to infer this...
                 cur_pattern = self._relax_pattern(
-                    match_attempt, graph_logger=graph_logger
+                    match_attempt, graph_logger=graph_logger, ontology=ontology
                 )
                 if graph_logger and cur_pattern:
                     graph_logger.log_graph(
@@ -1047,6 +1049,7 @@ class PatternMatching:
     def _relax_pattern(
         self,
         match_failure: "PatternMatching.MatchFailure",
+        ontology: Ontology,
         *,
         graph_logger: Optional["GraphLogger"] = None,
     ) -> Optional[PerceptionGraphPattern]:
@@ -1095,6 +1098,8 @@ class PatternMatching:
         logging.info("Relaxation: last failed pattern node is %s", last_failed_node)
         gather_nodes_to_excise(last_failed_node)
 
+        same_color_nodes: List[NodePredicate]
+
         if isinstance(last_failed_node, IsColorNodePredicate):
             # We treat colors as a special case.
             # In a complex object (e.g. a dog), an object and a large number of its
@@ -1112,9 +1117,24 @@ class PatternMatching:
                 for node in pattern_as_digraph.nodes
                 if isinstance(node, IsColorNodePredicate) and node.color == color
             ]
-            if same_color_nodes:
-                logging.info("Deleting extra color nodes: %s", same_color_nodes)
-            nodes_to_delete_directly.extend(same_color_nodes)
+        elif isinstance(
+            last_failed_node, IsOntologyNodePredicate
+        ) and ontology.is_subtype_of(last_failed_node.property_value, COLOR):
+            # same as above, but for the case where we are perceiving colors discretely.
+            discrete_color = last_failed_node.property_value
+
+            same_color_nodes = [
+                node
+                for node in pattern_as_digraph.nodes
+                if isinstance(node, IsOntologyNodePredicate)
+                and node.property_value == discrete_color
+            ]
+        else:
+            same_color_nodes = []
+
+        if same_color_nodes:
+            logging.info("Deleting extra color nodes: %s", same_color_nodes)
+        nodes_to_delete_directly.extend(same_color_nodes)
 
         logging.info("Nodes to delete directly: %s", nodes_to_delete_directly)
 

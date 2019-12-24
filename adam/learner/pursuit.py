@@ -20,6 +20,8 @@ from adam.learner import (
     get_largest_matching_pattern,
     graph_without_learner,
 )
+from adam.ontology.ontology import Ontology
+from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
 from adam.ontology.phase1_spatial_relations import Region
 from adam.perception import ObjectPerception, PerceptionT, PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
@@ -61,6 +63,7 @@ class PursuitLanguageLearner(
     This should be a small value, at most 0.1 and possibly much less.
     See section 2.2 of the Pursuit paper.
     """
+    _ontology: Ontology = attrib(validator=instance_of(Ontology), kw_only=True)
 
     _rng: Random = attrib(validator=instance_of(Random))
     _debug_callback: Optional[DebugCallableType] = attrib(default=None)
@@ -117,6 +120,7 @@ class PursuitLanguageLearner(
             graph_logger=graph_logger,
             log_word_hypotheses_to=log_word_hypotheses_dir,
             rng=rng,
+            ontology=GAILA_PHASE_1_ONTOLOGY,
         )
 
     def observe(
@@ -389,6 +393,7 @@ class PursuitLanguageLearner(
             graph,
             debug_callback=self._debug_callback,
             graph_logger=self._graph_logger,
+            ontology=self._ontology,
         )
         self.debug_counter += 1
 

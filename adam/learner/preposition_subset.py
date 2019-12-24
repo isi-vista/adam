@@ -13,6 +13,7 @@ from adam.language import (
 from adam.learner import LanguageLearner, LearningExample
 from adam.learner.object_recognizer import ObjectRecognizer
 from adam.learner.preposition_pattern import PrepositionPattern, _GROUND, _MODIFIED
+from adam.ontology.ontology import Ontology
 from adam.perception import PerceptionT, PerceptualRepresentation, ObjectPerception
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -49,6 +50,7 @@ class PrepositionSubsetLanguageLearner(
     ] = attrib(init=False, default=Factory(dict))
 
     _object_recognizer: ObjectRecognizer = attrib(validator=instance_of(ObjectRecognizer))
+    _ontology: Ontology = attrib(validator=instance_of(Ontology))
     _debug_file: Optional[str] = attrib(kw_only=True, default=None)
     _graph_logger: Optional[GraphLogger] = attrib(default=None)
 
@@ -220,7 +222,11 @@ class PrepositionSubsetLanguageLearner(
             )
             new_hypothesis = self._surface_template_to_preposition_pattern[
                 preposition_surface_template
-            ].intersection(preposition_pattern, graph_logger=self._graph_logger)
+            ].intersection(
+                preposition_pattern,
+                graph_logger=self._graph_logger,
+                ontology=self._ontology,
+            )
 
             if new_hypothesis:
                 self._surface_template_to_preposition_pattern[

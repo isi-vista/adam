@@ -14,6 +14,7 @@ from adam.learner import (
     get_largest_matching_pattern,
     graph_without_learner,
 )
+from adam.ontology.ontology import Ontology
 from adam.perception import PerceptionT, PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -24,6 +25,7 @@ from adam.perception.perception_graph import (
     PerceptionGraphPattern,
 )
 from attr import Factory, attrib, attrs
+from attr.validators import instance_of
 
 
 @attrs(slots=True)
@@ -38,6 +40,7 @@ class SubsetLanguageLearner(
     _descriptions_to_pattern_hypothesis: Dict[
         Tuple[str, ...], PerceptionGraphPattern
     ] = attrib(init=False, default=Factory(dict))
+    _ontology: Ontology = attrib(validator=instance_of(Ontology), kw_only=True)
     _debug_callback: Optional[DebugCallableType] = attrib(default=None, kw_only=True)
 
     def observe(
@@ -72,6 +75,7 @@ class SubsetLanguageLearner(
                 previous_pattern_hypothesis,
                 observed_perception_graph,
                 debug_callback=self._debug_callback,
+                ontology=self._ontology,
             )
             if hypothesis_pattern_common_subgraph:
                 # Update the leading hypothesis
@@ -118,6 +122,7 @@ class SubsetLanguageLearner(
                 pattern_hypothesis,
                 observed_perception_graph,
                 debug_callback=self._debug_callback,
+                ontology=self._ontology,
             )
             common_pattern_size = (
                 len(common_pattern.copy_as_digraph().nodes) if common_pattern else 0

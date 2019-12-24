@@ -1,3 +1,4 @@
+from enum import auto, Enum
 from itertools import chain
 from typing import AbstractSet, Dict, List, Mapping, Optional, Union, cast, MutableMapping
 
@@ -67,6 +68,22 @@ from adam.situation.high_level_semantics_situation import HighLevelSemanticsSitu
 from attr import Factory, attrib, attrs
 
 
+class ColorPerceptionMode(Enum):
+    """
+    Used as a field on `HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator`
+    to indicate how colors should be perceived.
+    """
+
+    CONTINUOUS = auto()
+    """
+    Perceive colors are RGB triples
+    """
+    DISCRETE = auto()
+    """
+    Perceive colors as discrete categories.
+    """
+
+
 @attrs(frozen=True, slots=True)
 class HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
     PerceptualRepresentationGenerator[
@@ -85,6 +102,10 @@ class HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
     The `Ontology` assumed to be used by both the `HighLevelSemanticsSituation`
     and the output `DevelopmentalPrimitivePerceptionFrame`.
     """
+
+    color_perception_mode: ColorPerceptionMode = attrib(
+        validator=instance_of(ColorPerceptionMode), default=ColorPerceptionMode.CONTINUOUS
+    )
 
     def generate_perception(
         self,
@@ -916,20 +937,29 @@ class _PerceptionGeneration:
             Convert a color property to an RgbColorPerception if needed
             before calling `assert_color`
             """
-            if color_node in COLORS_TO_RGBS.keys():
-                color_options = COLORS_TO_RGBS[color_node]
-                if color_options:
-                    r, g, b = self._chooser.choice(color_options)
-                    rgb_color = RgbColorPerception(r, g, b)
-                    assert_color(object_perception, rgb_color)
-                    return rgb_color
-                else:  # Handles the case of TRANSPARENT
-                    assert_color(object_perception, color_node)
-                    return color_node
+            if self._generator.color_perception_mode == ColorPerceptionMode.CONTINUOUS:
+                if color_node in COLORS_TO_RGBS.keys():
+                    color_options = COLORS_TO_RGBS[color_node]
+                    if color_options:
+                        r, g, b = self._chooser.choice(color_options)
+                        rgb_color = RgbColorPerception(r, g, b)
+                        assert_color(object_perception, rgb_color)
+                        return rgb_color
+                    else:  # Handles the case of TRANSPARENT
+                        assert_color(object_perception, color_node)
+                        return color_node
+                else:
+                    raise RuntimeError(
+                        f"Not sure how to generate perception for the unknown property "
+                        f"{color_node} "
+                        f"which is marked as COLOR"
+                    )
+            elif self._generator.color_perception_mode == ColorPerceptionMode.DISCRETE:
+                assert_color(object_perception, color_node)
+                return color_node
             else:
                 raise RuntimeError(
-                    f"Not sure how to generate perception for the unknown property {color_node} "
-                    f"which is marked as COLOR"
+                    f"Unknown color perception mode {self._generator.color_perception_mode}"
                 )
 
         def dfs_walk(node: ObjectPerception, inherited_color=None):
@@ -1168,6 +1198,15 @@ class _PerceptionGeneration:
 GAILA_PHASE_1_PERCEPTION_GENERATOR = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
     GAILA_PHASE_1_ONTOLOGY
 )
+
+GAILA_M6_PERCEPTION_GENERATOR = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
+    GAILA_PHASE_1_ONTOLOGY, color_perception_mode=ColorPerceptionMode.DISCRETE
+)
+"""
+This is the same as `GAILA_PHASE_1_PERCEPTION_GENERATOR`,
+but it uses a discrete color representation.
+After modifier learning is complete we will switch to the full perception generator.
+"""
 
 
 @attrs(auto_exc=True, auto_attribs=True)
