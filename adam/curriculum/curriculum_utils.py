@@ -44,7 +44,7 @@ def standard_object(
     ] = immutableset(),
 ) -> TemplateObjectVariable:
     """
-    Prefered method of generating template objects as this automatically prevent liquids and
+    Preferred method of generating template objects as this automatically prevent liquids and
     body parts from object selection.
     """
     banned_properties_final = [IS_BODY_PART, LIQUID]
