@@ -43,12 +43,15 @@ from more_itertools import first
 from networkx import DiGraph, connected_components, is_isomorphic, set_node_attributes
 from typing_extensions import Protocol
 from vistautils.misc_utils import str_list_limited
+from vistautils.preconditions import check_arg
+from vistautils.range import Range
 
 from adam.axes import AxesInfo, HasAxes
 from adam.axis import GeonAxis
 from adam.geon import Geon, MaybeHasGeon
 from adam.ontology import OntologyNode
-from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY, PART_OF
+from adam.ontology.ontology import Ontology
+from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY, PART_OF, COLOR
 from adam.ontology.phase1_spatial_relations import Direction, Distance, Region
 from adam.ontology.structural_schema import ObjectStructuralSchema
 from adam.perception import ObjectPerception
@@ -442,6 +445,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
         graph_to_match_against: PerceptionGraphProtocol,
         *,
         debug_callback: Optional[DebugCallableType] = None,
+        matching_objects: bool,
     ) -> "PatternMatching":
         """
         Creates an object representing an attempt to match this pattern
@@ -451,6 +455,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
             pattern=self,
             graph_to_match_against=graph_to_match_against,
             debug_callback=debug_callback,
+            matching_objects=matching_objects,
         )
 
     @staticmethod
@@ -673,6 +678,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
         *,
         debug_callback: Optional[DebugCallableType] = None,
         graph_logger: Optional["GraphLogger"] = None,
+        ontology: Ontology,
     ) -> Optional["PerceptionGraphPattern"]:
         """
         Determine the largest partial match between two `PerceptionGraphPattern`s
@@ -685,9 +691,10 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
             graph_to_match_against=self,
             debug_callback=debug_callback,
             matching_pattern_against_pattern=True,
+            matching_objects=False,
         )
         attempted_match = matcher.relax_pattern_until_it_matches(
-            graph_logger=graph_logger
+            graph_logger=graph_logger, ontology=ontology
         )
         if attempted_match:
             return attempted_match
@@ -776,6 +783,12 @@ class PatternMatching:
         validator=instance_of(PerceptionGraphProtocol)
     )
     matching_pattern_against_pattern: bool = attrib()
+    # the attrs mypy plugin complains for the below
+    # "Non-default attributes not allowed after default attributes."
+    # But that doesn't seem to be our situation? And it works fine?
+    _matching_objects: bool = attrib(  # type: ignore
+        validator=instance_of(bool), kw_only=True
+    )
 
     # Callable object for debugging purposes. We use this to track the number of calls to match and render the graphs.
     debug_callback: Optional[DebugCallableType] = attrib(default=None, kw_only=True)
@@ -915,7 +928,11 @@ class PatternMatching:
         )
 
     def relax_pattern_until_it_matches(
-        self, *, graph_logger: Optional["GraphLogger"] = None
+        self,
+        *,
+        graph_logger: Optional["GraphLogger"] = None,
+        ontology: Ontology,
+        min_ratio: Optional[float] = None,
     ) -> Optional[PerceptionGraphPattern]:
         """
         Prunes or relaxes the *pattern* for this matching until it successfully matches
@@ -925,6 +942,11 @@ class PatternMatching:
         Otherwise, *None* is returned.
         """
 
+        min_num_nodes_to_continue = 1
+        if min_ratio:
+            check_arg(min_ratio in Range.open_closed(0.0, 1.0))
+            min_num_nodes_to_continue = int(min_ratio * len(self.pattern))
+
         # We start with the original pattern and attempt to match progressively relaxed versions.
         cur_pattern: Optional[PerceptionGraphPattern] = self.pattern
         # When we try to match relaxed patterns, we will remember how much we could match
@@ -932,7 +954,9 @@ class PatternMatching:
         partial_match: Mapping[Any, Any] = {}
 
         relaxation_step = 0
-        while cur_pattern and len(cur_pattern) > 0:  # pylint:disable=len-as-condition
+        while (
+            cur_pattern and len(cur_pattern) >= min_num_nodes_to_continue
+        ):  # pylint:disable=len-as-condition
             match_attempt = first(
                 self._internal_matches(
                     graph_to_match_against=self.graph_to_match_against,
@@ -953,11 +977,15 @@ class PatternMatching:
                 # chop off the node which we think might have caused the match to fail.
                 # Why is this cast necessary? mypy should be able to infer this...
                 cur_pattern = self._relax_pattern(
-                    match_attempt, graph_logger=graph_logger
+                    match_attempt, graph_logger=graph_logger, ontology=ontology
                 )
                 if graph_logger and cur_pattern:
                     graph_logger.log_graph(
-                        cur_pattern, logging.INFO, "Relaxation step %s", relaxation_step
+                        cur_pattern,
+                        logging.INFO,
+                        "Relaxation step %s, cur pattern size %s",
+                        relaxation_step,
+                        len(cur_pattern),
                     )
         # no relaxation could successfully match
         return None
@@ -992,6 +1020,7 @@ class PatternMatching:
             sorted_pattern,
             use_lookahead_pruning=use_lookahead_pruning,
             matching_pattern_against_pattern=self.matching_pattern_against_pattern,
+            matching_objects=self._matching_objects,
         )
 
         sets_of_nodes_matched: Set[ImmutableSet[PerceptionGraphNode]] = set()
@@ -1047,6 +1076,7 @@ class PatternMatching:
     def _relax_pattern(
         self,
         match_failure: "PatternMatching.MatchFailure",
+        ontology: Ontology,
         *,
         graph_logger: Optional["GraphLogger"] = None,
     ) -> Optional[PerceptionGraphPattern]:
@@ -1093,7 +1123,17 @@ class PatternMatching:
 
         last_failed_node = match_failure.last_failed_pattern_node
         logging.info("Relaxation: last failed pattern node is %s", last_failed_node)
+
+        if last_failed_node in match_failure.pattern_node_to_graph_node_for_largest_match:
+            # This means the supposed "last_failed_node" was in fact matched successfully,
+            # so the match failure must be because all alignments found were judged
+            # illegal. In that case, no relaxation can fix things.
+            logging.info("Match found is illegal; no relaxation can help")
+            return None
+
         gather_nodes_to_excise(last_failed_node)
+
+        same_color_nodes: List[NodePredicate]
 
         if isinstance(last_failed_node, IsColorNodePredicate):
             # We treat colors as a special case.
@@ -1112,9 +1152,24 @@ class PatternMatching:
                 for node in pattern_as_digraph.nodes
                 if isinstance(node, IsColorNodePredicate) and node.color == color
             ]
-            if same_color_nodes:
-                logging.info("Deleting extra color nodes: %s", same_color_nodes)
-            nodes_to_delete_directly.extend(same_color_nodes)
+        elif isinstance(
+            last_failed_node, IsOntologyNodePredicate
+        ) and ontology.is_subtype_of(last_failed_node.property_value, COLOR):
+            # same as above, but for the case where we are perceiving colors discretely.
+            discrete_color = last_failed_node.property_value
+
+            same_color_nodes = [
+                node
+                for node in pattern_as_digraph.nodes
+                if isinstance(node, IsOntologyNodePredicate)
+                and node.property_value == discrete_color
+            ]
+        else:
+            same_color_nodes = []
+
+        if same_color_nodes:
+            logging.info("Deleting extra color nodes: %s", same_color_nodes)
+        nodes_to_delete_directly.extend(same_color_nodes)
 
         logging.info("Nodes to delete directly: %s", nodes_to_delete_directly)
 

@@ -58,6 +58,9 @@ from adam.ontology.phase1_ontology import (
     JUICE,
     DOOR,
 )
+from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
+    GAILA_M6_PERCEPTION_GENERATOR,
+)
 from adam.situation.templates.phase1_templates import sampled
 
 r.seed(0)
@@ -121,6 +124,7 @@ def _make_m6_on_curriculum() -> Phase1InstanceGroup:
                 for object_2 in r.sample(LARGE_OBJECT_VARS, 3)
             ]
         ),
+        perception_generator=GAILA_M6_PERCEPTION_GENERATOR,
     )
 
 
@@ -145,6 +149,7 @@ def _make_m6_beside_curriculum() -> Phase1InstanceGroup:
                 for object_2 in r.sample(LARGE_OBJECT_VARS, 3)
             ]
         ),
+        perception_generator=GAILA_M6_PERCEPTION_GENERATOR,
     )
 
 
@@ -169,6 +174,7 @@ def _make_m6_under_curriculum() -> Phase1InstanceGroup:
                 for object_2 in r.sample(LARGE_OBJECT_VARS, 3)
             ]
         ),
+        perception_generator=GAILA_M6_PERCEPTION_GENERATOR,
     )
 
 
@@ -193,6 +199,7 @@ def _make_m6_over_curriculum() -> Phase1InstanceGroup:
                 for object_2 in r.sample(LARGE_OBJECT_VARS, 3)
             ]
         ),
+        perception_generator=GAILA_M6_PERCEPTION_GENERATOR,
     )
 
 
@@ -220,6 +227,7 @@ def _make_m6_behind_curriculum() -> Phase1InstanceGroup:
                 for object_2 in r.sample(LARGE_OBJECT_VARS, 3)
             ]
         ),
+        perception_generator=GAILA_M6_PERCEPTION_GENERATOR,
     )
 
 
@@ -247,6 +255,7 @@ def _make_m6_in_front_curriculum() -> Phase1InstanceGroup:
                 for object_2 in r.sample(LARGE_OBJECT_VARS, 3)
             ]
         ),
+        perception_generator=GAILA_M6_PERCEPTION_GENERATOR,
     )
 
 

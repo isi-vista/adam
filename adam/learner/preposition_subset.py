@@ -13,6 +13,7 @@ from adam.language import (
 from adam.learner import LanguageLearner, LearningExample
 from adam.learner.object_recognizer import ObjectRecognizer
 from adam.learner.preposition_pattern import PrepositionPattern, _GROUND, _MODIFIED
+from adam.ontology.ontology import Ontology
 from adam.perception import PerceptionT, PerceptualRepresentation, ObjectPerception
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -49,6 +50,7 @@ class PrepositionSubsetLanguageLearner(
     ] = attrib(init=False, default=Factory(dict))
 
     _object_recognizer: ObjectRecognizer = attrib(validator=instance_of(ObjectRecognizer))
+    _ontology: Ontology = attrib(validator=instance_of(Ontology))
     _debug_file: Optional[str] = attrib(kw_only=True, default=None)
     _graph_logger: Optional[GraphLogger] = attrib(default=None)
 
@@ -220,7 +222,11 @@ class PrepositionSubsetLanguageLearner(
             )
             new_hypothesis = self._surface_template_to_preposition_pattern[
                 preposition_surface_template
-            ].intersection(preposition_pattern, graph_logger=self._graph_logger)
+            ].intersection(
+                preposition_pattern,
+                graph_logger=self._graph_logger,
+                ontology=self._ontology,
+            )
 
             if new_hypothesis:
                 self._surface_template_to_preposition_pattern[
@@ -421,7 +427,7 @@ class PrepositionSubsetLanguageLearner(
         ) in self._surface_template_to_preposition_pattern.items():
             # try to see if (our model of) its semantics is present in the situation.
             matcher = preposition_pattern.graph_pattern.matcher(
-                recognized_object_perception.perception_graph
+                recognized_object_perception.perception_graph, matching_objects=False
             )
             for match in matcher.matches(use_lookahead_pruning=True):
                 # if it is, use that preposition to describe the situation.

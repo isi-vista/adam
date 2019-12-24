@@ -6,6 +6,7 @@ from immutablecollections import immutableset
 from immutablecollections.converter_utils import _to_immutabledict
 from networkx import DiGraph
 
+from adam.ontology.ontology import Ontology
 from adam.perception.perception_graph import (
     MatchedObjectNode,
     MatchedObjectPerceptionPredicate,
@@ -97,10 +98,14 @@ class PrepositionPattern:
             )
 
     def intersection(
-        self, pattern: "PrepositionPattern", *, graph_logger: Optional[GraphLogger] = None
+        self,
+        pattern: "PrepositionPattern",
+        *,
+        graph_logger: Optional[GraphLogger] = None,
+        ontology: Ontology,
     ) -> Optional["PrepositionPattern"]:
         intersected_pattern = self.graph_pattern.intersection(
-            pattern.graph_pattern, graph_logger=graph_logger
+            pattern.graph_pattern, graph_logger=graph_logger, ontology=ontology
         )
         if intersected_pattern:
             if graph_logger:

@@ -1,0 +1,13 @@
+_includes:
+   - "../../root.params"
+   - "pursuit-nouns.m6.params"
+   - "m6.params"
+
+experiment: 'object-recognition-single-noise'
+curriculum: pursuit
+pursuit-curriculum-params:
+   num_instances: 20
+   num_noise_instances: 0
+   num_objects_in_instance: 3
+
+# debug_log_directory: /Users/gabbard/tmp

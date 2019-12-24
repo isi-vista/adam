@@ -95,7 +95,9 @@ class ObjectRecognizer:
         matched_object_nodes: List[Tuple[str, MatchedObjectNode]] = []
         graph_to_return = perception_graph.copy_as_digraph()
         for (description, pattern) in self.object_names_to_patterns.items():
-            matcher = pattern.matcher(PerceptionGraph(graph_to_return))
+            matcher = pattern.matcher(
+                PerceptionGraph(graph_to_return), matching_objects=True
+            )
             pattern_match = first(matcher.matches(use_lookahead_pruning=True), None)
             # It's important not to simply iterate over pattern matches
             # because they might overlap, or be variants of the same match
@@ -104,7 +106,9 @@ class ObjectRecognizer:
                 self._replace_match_with_object_graph_node(
                     graph_to_return, pattern_match, matched_object_nodes, description
                 )
-                matcher = pattern.matcher(PerceptionGraph(graph_to_return))
+                matcher = pattern.matcher(
+                    PerceptionGraph(graph_to_return), matching_objects=True
+                )
                 pattern_match = first(matcher.matches(use_lookahead_pruning=True), None)
         if matched_object_nodes:
             logging.info(

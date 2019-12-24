@@ -136,7 +136,7 @@ def do_object_on_table_test(
         # -{idx}.pdf")
         # object_to_match_pattern.render_to_file(f"object_to_match pattern", out_dir /
         # "object_to_match_pattern.pdf")
-        matcher = object_to_match_pattern.matcher(perception_graph)
+        matcher = object_to_match_pattern.matcher(perception_graph, matching_objects=True)
         # debug_matching = matcher.debug_matching(
         #    use_lookahead_pruning=False, render_match_to=Path("/Users/gabbard/tmp")
         # )
@@ -180,9 +180,9 @@ def do_object_on_table_test(
         )
         perception_graph = PerceptionGraph.from_frame(perception.frames[0])
         if any(
-            object_to_match_pattern.matcher(perception_graph).matches(
-                use_lookahead_pruning=True
-            )
+            object_to_match_pattern.matcher(
+                perception_graph, matching_objects=True
+            ).matches(use_lookahead_pruning=True)
         ):
             return False
     return True
@@ -248,7 +248,7 @@ def test_last_failed_pattern_node():
 
         # Start the matching process
         matcher = whole_perception_pattern.matcher(
-            PerceptionGraph(altered_perception_digraph)
+            PerceptionGraph(altered_perception_digraph), matching_objects=False
         )
         match_or_failure = matcher.first_match_or_failure_info()
         assert isinstance(match_or_failure, PatternMatching.MatchFailure)
@@ -292,7 +292,7 @@ def test_successfully_extending_partial_match():
     partial_perception_pattern = PerceptionGraphPattern(partial_digraph)
 
     # get our initial match by matching the partial pattern
-    matcher = partial_perception_pattern.matcher(perception)
+    matcher = partial_perception_pattern.matcher(perception, matching_objects=False)
 
     partial_match: PerceptionGraphPatternMatch = first(
         matcher.matches(use_lookahead_pruning=True)
@@ -300,7 +300,7 @@ def test_successfully_extending_partial_match():
     partial_mapping = partial_match.pattern_node_to_matched_graph_node
 
     # Try to extend the partial mapping, to create a complete mapping
-    matcher_2 = whole_perception_pattern.matcher(perception)
+    matcher_2 = whole_perception_pattern.matcher(perception, matching_objects=False)
     complete_match: PerceptionGraphPatternMatch = first(
         matcher_2.matches(
             initial_partial_match=partial_mapping, use_lookahead_pruning=True

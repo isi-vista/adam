@@ -5,6 +5,7 @@ Interfaces for language learning code.
 from abc import ABC, abstractmethod
 from typing import Dict, Generic, Mapping, Optional, Any
 
+from adam.ontology.ontology import Ontology
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import immutabledict
@@ -120,12 +121,19 @@ def get_largest_matching_pattern(
     graph: PerceptionGraph,
     *,
     debug_callback: Optional[DebugCallableType] = None,
-    graph_logger: Optional[GraphLogger] = None
+    graph_logger: Optional[GraphLogger] = None,
+    ontology: Ontology,
+    match_ratio: Optional[float] = None,
+    matching_objects: bool
 ) -> Optional[PerceptionGraphPattern]:
     """ Helper function to return the largest matching `PerceptionGraphPattern`
     for learner from a perception pattern and graph pair."""
-    matching = pattern.matcher(graph, debug_callback=debug_callback)
-    return matching.relax_pattern_until_it_matches(graph_logger=graph_logger)
+    matching = pattern.matcher(
+        graph, debug_callback=debug_callback, matching_objects=matching_objects
+    )
+    return matching.relax_pattern_until_it_matches(
+        graph_logger=graph_logger, ontology=ontology, min_ratio=match_ratio
+    )
 
 
 def graph_without_learner(graph: DiGraph) -> PerceptionGraph:

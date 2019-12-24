@@ -658,6 +658,8 @@ be represented as properties,
 which makes object learner simpler
 """
 
+subtype(ABOUT_THE_SAME_SIZE_AS_LEARNER, PROPERTY)
+
 HAS = OntologyNode("has")
 subtype(HAS, RELATION)
 has = make_dsl_relation(HAS)  # pylint:disable=invalid-name

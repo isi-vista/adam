@@ -3,10 +3,10 @@ _includes:
    - "pursuit-nouns.m6.params"
    - "m6.params"
 
-experiment: 'object-recognition-noise'
-curriculum: pursuit-with-noise
+experiment: 'object-recognition-double-noise'
+curriculum: pursuit
 pursuit-curriculum-params:
-   num_instances: 20
+   num_instances: 40
    num_noise_instances: 2
    num_objects_in_instance: 3
 

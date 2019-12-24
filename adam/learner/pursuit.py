@@ -20,6 +20,8 @@ from adam.learner import (
     get_largest_matching_pattern,
     graph_without_learner,
 )
+from adam.ontology.ontology import Ontology
+from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
 from adam.ontology.phase1_spatial_relations import Region
 from adam.perception import ObjectPerception, PerceptionT, PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
@@ -61,6 +63,7 @@ class PursuitLanguageLearner(
     This should be a small value, at most 0.1 and possibly much less.
     See section 2.2 of the Pursuit paper.
     """
+    _ontology: Ontology = attrib(validator=instance_of(Ontology), kw_only=True)
 
     _rng: Random = attrib(validator=instance_of(Random))
     _debug_callback: Optional[DebugCallableType] = attrib(default=None)
@@ -117,6 +120,7 @@ class PursuitLanguageLearner(
             graph_logger=graph_logger,
             log_word_hypotheses_to=log_word_hypotheses_dir,
             rng=rng,
+            ontology=GAILA_PHASE_1_ONTOLOGY,
         )
 
     def observe(
@@ -235,6 +239,11 @@ class PursuitLanguageLearner(
         leading_hypothesis_pattern = max(
             previous_hypotheses_and_scores,
             key=lambda key: previous_hypotheses_and_scores[key],
+        )
+
+        logging.info(
+            "Current leading hypothesis is %s",
+            abs(hash((word, leading_hypothesis_pattern))),
         )
 
         current_hypothesis_score = hypotheses_for_word[leading_hypothesis_pattern]
@@ -389,6 +398,8 @@ class PursuitLanguageLearner(
             graph,
             debug_callback=self._debug_callback,
             graph_logger=self._graph_logger,
+            ontology=self._ontology,
+            matching_objects=True,
         )
         self.debug_counter += 1
 
@@ -530,7 +541,9 @@ class PursuitLanguageLearner(
 
         for word, meaning_pattern in self._lexicon.items():
             # Use PerceptionGraphPattern.matcher and matcher.matches() for a complete match
-            matcher = meaning_pattern.matcher(observed_perception_graph)
+            matcher = meaning_pattern.matcher(
+                observed_perception_graph, matching_objects=True
+            )
             if any(
                 matcher.matches(
                     use_lookahead_pruning=True, graph_logger=self._graph_logger
@@ -550,7 +563,9 @@ class PursuitLanguageLearner(
                 )
                 if leading_hypothesis_pair:
                     (leading_hypothesis, score) = leading_hypothesis_pair
-                    matcher = leading_hypothesis.matcher(observed_perception_graph)
+                    matcher = leading_hypothesis.matcher(
+                        observed_perception_graph, matching_objects=True
+                    )
                     match = first(
                         matcher.matches(
                             use_lookahead_pruning=True, graph_logger=self._graph_logger
