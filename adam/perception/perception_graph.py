@@ -783,7 +783,12 @@ class PatternMatching:
         validator=instance_of(PerceptionGraphProtocol)
     )
     matching_pattern_against_pattern: bool = attrib()
-    _matching_objects: bool = attrib(validator=instance_of(bool), kw_only=True)
+    # the attrs mypy plugin complains for the below
+    # "Non-default attributes not allowed after default attributes."
+    # But that doesn't seem to be our situation? And it works fine?
+    _matching_objects: bool = attrib(  # type: ignore
+        validator=instance_of(bool), kw_only=True
+    )
 
     # Callable object for debugging purposes. We use this to track the number of calls to match and render the graphs.
     debug_callback: Optional[DebugCallableType] = attrib(default=None, kw_only=True)
