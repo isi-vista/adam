@@ -23,6 +23,7 @@ from panda3d.core import PointLight  # pylint: disable=no-name-in-module
 from panda3d.core import Material  # pylint: disable=no-name-in-module
 from panda3d.core import NodePath  # pylint: disable=no-name-in-module
 from panda3d.core import TextNode  # pylint: disable=no-name-in-module
+from panda3d.core import AntialiasAttrib # pylint: disable=no-name-in-module
 
 from direct.gui.OnscreenText import OnscreenText  # pylint: disable=no-name-in-module
 from adam.visualization.positioning import PositionsMap
@@ -78,21 +79,35 @@ class SituationVisualizer(ShowBase):
             self.camera.setHpr(0, -10, 0)
 
         # set GUI text re: camera position and periodic task
-        self.camera_pos_text = OnscreenText(
-            text="position:",
-            pos=(-1.25, -0.7),
-            scale=0.07,
-            mayChange=True,
-            align=TextNode.ALeft,
-        )
-        self.camera_hpr_text = OnscreenText(
-            text="orientation:",
+        # self.camera_pos_text = OnscreenText(
+        #     text="position:",
+        #     pos=(-1.25, -0.7),
+        #     scale=0.07,
+        #     mayChange=True,
+        #     align=TextNode.ALeft,
+        # )
+        # self.camera_hpr_text = OnscreenText(
+        #     text="orientation:",
+        #     pos=(-1.25, -0.8),
+        #     scale=0.07,
+        #     mayChange=True,
+        #     align=TextNode.ALeft,
+        # )
+        # self.taskMgr.doMethodLater(0.25, self._camera_location_task, "CameraLocationTask")
+        self.title_text = OnscreenText(
+            text="placeholder",
             pos=(-1.25, -0.8),
             scale=0.07,
             mayChange=True,
             align=TextNode.ALeft,
         )
-        self.taskMgr.doMethodLater(0.25, self._camera_location_task, "CameraLocationTask")
+
+        # toggle on antialiasing
+        self.render.setAntialias(AntialiasAttrib.MAuto)
+
+    def set_title(self, new_title: str):
+        self.title_text.setText(new_title)
+        self.run_for_seconds(0.5)
 
     def add_model(
         self,
