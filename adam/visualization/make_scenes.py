@@ -101,7 +101,9 @@ def main(params: Parameters) -> None:
 
         # for debugging purposes to view the results before positioning:
         viz.run_for_seconds(1)
-        screenshot_name = input("Press ENTER to run the positioning system or enter name to save a screenshot")
+        screenshot_name = input(
+            "Press ENTER to run the positioning system or enter name to save a screenshot"
+        )
         if screenshot_name:
             viz.screenshot(screenshot_name)
 
@@ -128,7 +130,9 @@ def main(params: Parameters) -> None:
             # viz.print_scene_graph()
         viz.run_for_seconds(1)
 
-        screenshot_name = input("Press ENTER to continue to the next scene, or the name of a file to save a screenshot to: ")
+        screenshot_name = input(
+            "Press ENTER to continue to the next scene, or the name of a file to save a screenshot to: "
+        )
         if screenshot_name:
             viz.screenshot(screenshot_name)
         viz.clear_scene()

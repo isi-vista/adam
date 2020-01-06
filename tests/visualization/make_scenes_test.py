@@ -11,7 +11,7 @@ from typing import Tuple
 def test_scenes_creation() -> Tuple[
     Tuple[float, float, float], Tuple[float, float, float]
 ]:
-    for i, (_, obj_graph) in enumerate(
+    for i, (_, _, obj_graph, _) in enumerate(
         SceneCreator.create_scenes(build_gaila_phase_1_curriculum())
     ):
 

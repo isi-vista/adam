@@ -24,7 +24,6 @@ def test_running_model() -> None:
     ball = ObjectPerception(
         "ball",
         axes=Axes(
-            geon=None,
             primary_axis=symmetric_vertical("ball-generating"),
             orienting_axes=immutableset(
                 [symmetric("side-to-side0"), symmetric("side-to-side1")]
@@ -34,7 +33,6 @@ def test_running_model() -> None:
     box = ObjectPerception(
         "box",
         axes=Axes(
-            geon=None,
             primary_axis=straight_up("top_to_bottom"),
             orienting_axes=immutableset(
                 [symmetric("side-to-side0"), symmetric("side-to-side1")]

@@ -23,7 +23,7 @@ from panda3d.core import PointLight  # pylint: disable=no-name-in-module
 from panda3d.core import Material  # pylint: disable=no-name-in-module
 from panda3d.core import NodePath  # pylint: disable=no-name-in-module
 from panda3d.core import TextNode  # pylint: disable=no-name-in-module
-from panda3d.core import AntialiasAttrib # pylint: disable=no-name-in-module
+from panda3d.core import AntialiasAttrib  # pylint: disable=no-name-in-module
 
 from direct.gui.OnscreenText import OnscreenText  # pylint: disable=no-name-in-module
 from adam.visualization.positioning import PositionsMap
