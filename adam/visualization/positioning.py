@@ -17,6 +17,7 @@ import torch.nn as nn
 from torch.nn import Parameter
 import torch.optim as optim
 from torch.optim.lr_scheduler import ReduceLROnPlateau
+from torch.nn import PairwiseDistance
 
 from immutablecollections import immutabledict, immutableset, ImmutableDict, ImmutableSet
 from vistautils.preconditions import check_arg
@@ -226,6 +227,20 @@ class AxisAlignedBoundingBox:
     def center_distance_from_point(self, point: torch.Tensor) -> torch.Tensor:
         return torch.dist(self.center, point, 2)
 
+    def nearest_center_face_distance_from_point(self, point: torch.Tensor) -> torch.Tensor:
+        """ returns the distance from the closest face center to the given point
+
+        Args:
+            point: tensor (3,) of a coordinate to check distance from this box's face centers
+        Returns: tensor (1,)
+
+        """
+        centers = self.get_face_centers()
+        print(centers.size())
+        return torch.min(
+            PairwiseDistance().forward(self.get_face_centers(), point.expand(6, 3))
+        )
+
     def z_coordinate_of_lowest_corner(self) -> torch.Tensor:
         """
         Get the position of the lowest corner of the box.
@@ -317,6 +332,24 @@ class AxisAlignedBoundingBox:
             dtype=torch.float,
         ).matmul(self.scale)
         # see https://github.com/pytorch/pytorch/issues/24807 re: pylint issue
+
+    def get_face_centers(self) -> torch.Tensor:
+        """
+        Returns the center point of each of the box's 6 faces.
+        Returns: tensor (6, 3)
+        """
+        corners = self.get_corners()
+        return torch.stack( # pylint: disable=not-callable
+            [
+                torch.div(corners[0] + corners[6], 2), # left face
+                torch.div(corners[0] + corners[5], 2), # backward face
+                torch.div(corners[1] + corners[7], 2), # right face
+                torch.div(corners[2] + corners[7], 2), # forward face
+                torch.div(corners[0] + corners[3], 2), # bottom face
+                torch.div(corners[4] + corners[7], 2) # top face
+            ],
+            dim=0
+        )
 
     def _minus_ones_corner(self) -> torch.Tensor:
         """
@@ -764,8 +797,7 @@ class InRegionPenalty(nn.Module):  # type: ignore
         if not angle or torch.isnan(angle):
             angle = torch.zeros(1, dtype=torch.float)
 
-        # TODO: change to reflect distance from box extents https://github.com/isi-vista/adam/issues/496
-        distance = target_box.center_distance_from_point(reference_box.center)
+        distance = target_box.nearest_center_face_distance_from_point(reference_box.center)
 
         # distal has a minimum distance away from object to qualify
         if region.distance == DISTAL:
