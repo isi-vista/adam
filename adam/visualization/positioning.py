@@ -723,7 +723,8 @@ class InRegionPenalty(nn.Module):  # type: ignore
                 region,
             )
             # positioning w/r/t the ground is handled by other constraints
-            for region in designated_region if region.reference_object.debug_handle != "the ground"
+            for region in designated_region
+            if region.reference_object.debug_handle != "the ground"
         )
 
     def penalty(
