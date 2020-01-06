@@ -73,13 +73,14 @@ def main(params: Parameters) -> None:
     # go through curriculum scenes and output geometry types
     print("scene generation test")
     viz = SituationVisualizer()
-    for i, (property_map, in_region_map, obj_graph) in enumerate(
+    for i, (property_map, in_region_map, obj_graph, tokens) in enumerate(
         SceneCreator.create_scenes([_make_object_beside_object_curriculum()])
     ):
         # debug: skip the first few scenes with people in them
         if i < 10:
             continue
         print(f"SCENE {i}")
+        viz.set_title(" ".join(token for token in tokens))
         # for debugging purposes:
         SceneCreator.graph_for_each(obj_graph, print_obj_names)
 
@@ -88,20 +89,33 @@ def main(params: Parameters) -> None:
             render_obj, viz, property_map
         )  # bind visualizer and properties to nested obj rendering function
         bound_render_nested_obj = partial(render_obj_nested, viz, property_map)
-        # render each object in graph
-        SceneCreator.graph_for_each_top_level(
-            obj_graph, bound_render_obj, bound_render_nested_obj
-        )
+        try:
+            # render each object in graph
+            SceneCreator.graph_for_each_top_level(
+                obj_graph, bound_render_obj, bound_render_nested_obj
+            )
+        except RuntimeError:
+            viz.clear_scene()
+            viz.run_for_seconds(0.5)
+            continue
 
         # for debugging purposes to view the results before positioning:
-        viz.run_for_seconds(0.5)
-        input("Press ENTER to run the positioning system")
+        viz.run_for_seconds(1)
+        screenshot_name = input("Press ENTER to run the positioning system or enter name to save a screenshot")
+        if screenshot_name:
+            viz.screenshot(screenshot_name)
 
         # now that every object has been instantiated into the scene,
         # they need to be re-positioned.
 
         for repositioned_map in _solve_top_level_positions(
-            immutableset([node.perceived_obj for node in obj_graph]),
+            immutableset(
+                [
+                    node.perceived_obj
+                    for node in obj_graph
+                    if node.name != "learner" and node.name != "the ground"
+                ]
+            ),
             in_region_map,
             iterations=num_iterations,
             yield_steps=steps_before_vis,
@@ -112,8 +126,11 @@ def main(params: Parameters) -> None:
             # the visualizer seems to need about a second to render an update
             viz.run_for_seconds(1)
             # viz.print_scene_graph()
+        viz.run_for_seconds(1)
 
-        input("Press ENTER to continue to the next scene")
+        screenshot_name = input("Press ENTER to continue to the next scene, or the name of a file to save a screenshot to: ")
+        if screenshot_name:
+            viz.screenshot(screenshot_name)
         viz.clear_scene()
         viz.run_for_seconds(0.25)
 
@@ -218,7 +235,7 @@ class SceneCreator:
         ) in instance_groups:  # each InstanceGroup a page related to a curriculum topic
             for (
                 _,  # situation
-                _,  # dependency_tree
+                dependency_tree,  # dependency_tree
                 perception,
             ) in instance_group.instances():  # each instance is a scene
                 # scene_objects = []
@@ -265,7 +282,7 @@ class SceneCreator:
                         if obj not in property_map:
                             property_map[obj].append(None)
 
-                yield property_map, in_region_map, nested_objects
+                yield property_map, in_region_map, nested_objects, dependency_tree.as_token_sequence()
 
     @staticmethod
     def cross_section_to_geo(cs: CrossSection) -> Shape:
