@@ -51,12 +51,12 @@ from adam.perception import ObjectPerception
 ORIGIN = torch.zeros(3, dtype=torch.float)  # pylint: disable=not-callable
 GRAVITY_PENALTY = torch.tensor([1], dtype=torch.float)  # pylint: disable=not-callable
 BELOW_GROUND_PENALTY = 2 * GRAVITY_PENALTY
-COLLISION_PENALTY = 5 * GRAVITY_PENALTY
+COLLISION_PENALTY = 1 * GRAVITY_PENALTY
 
 LOSS_EPSILON = 1.0e-04
 
 ANGLE_PENALTY = torch.tensor([5], dtype=torch.float)  # pylint: disable=not-callable
-DISTANCE_PENALTY = torch.tensor([2], dtype=torch.float)  # pylint: disable=not-callable
+DISTANCE_PENALTY = torch.tensor([1], dtype=torch.float)  # pylint: disable=not-callable
 
 PROXIMAL_MIN_DISTANCE = torch.tensor(  # pylint: disable=not-callable
     [0.5], dtype=torch.float
@@ -65,7 +65,7 @@ PROXIMAL_MAX_DISTANCE = torch.tensor(  # pylint: disable=not-callable
     [2], dtype=torch.float
 )
 
-DISTAL_MIN_DISTANCE = torch.tensor([2], dtype=torch.float)  # pylint: disable=not-callable
+DISTAL_MIN_DISTANCE = torch.tensor([4], dtype=torch.float)  # pylint: disable=not-callable
 
 EXTERIOR_BUT_IN_CONTACT_EPS = torch.tensor(  # pylint: disable=not-callable
     [1e-5], dtype=torch.float
@@ -227,7 +227,9 @@ class AxisAlignedBoundingBox:
     def center_distance_from_point(self, point: torch.Tensor) -> torch.Tensor:
         return torch.dist(self.center, point, 2)
 
-    def nearest_center_face_distance_from_point(self, point: torch.Tensor) -> torch.Tensor:
+    def nearest_center_face_distance_from_point(
+        self, point: torch.Tensor
+    ) -> torch.Tensor:
         """ returns the distance from the closest face center to the given point
 
         Args:
@@ -236,10 +238,22 @@ class AxisAlignedBoundingBox:
 
         """
         centers = self.get_face_centers()
-        print(centers.size())
-        return torch.min(
-            PairwiseDistance().forward(self.get_face_centers(), point.expand(6, 3))
-        )
+        return torch.min(PairwiseDistance().forward(centers, point.expand(6, 3)))
+
+    def nearest_center_face_point(self, point: torch.Tensor) -> torch.Tensor:
+        """
+        Returns the closest face center of the box to the given point
+        Args:
+            point: tensor (3,) x,y,z coordinate: an arbitrary point in 3d space
+
+        Returns: tensor (3,) x,y,z coordinate: the center face of the box closest to the function argument
+
+        """
+        # TODO: need to get the row INDEX for the minimum face distance
+        face_centers = self.get_face_centers()
+        return face_centers[
+            torch.argmin(PairwiseDistance().forward(face_centers, point.expand(6, 3)))
+        ]
 
     def z_coordinate_of_lowest_corner(self) -> torch.Tensor:
         """
@@ -339,16 +353,16 @@ class AxisAlignedBoundingBox:
         Returns: tensor (6, 3)
         """
         corners = self.get_corners()
-        return torch.stack( # pylint: disable=not-callable
+        return torch.stack(  # pylint: disable=not-callable
             [
-                torch.div(corners[0] + corners[6], 2), # left face
-                torch.div(corners[0] + corners[5], 2), # backward face
-                torch.div(corners[1] + corners[7], 2), # right face
-                torch.div(corners[2] + corners[7], 2), # forward face
-                torch.div(corners[0] + corners[3], 2), # bottom face
-                torch.div(corners[4] + corners[7], 2) # top face
+                torch.div(corners[0] + corners[6], 2),  # left face
+                torch.div(corners[0] + corners[5], 2),  # backward face
+                torch.div(corners[1] + corners[7], 2),  # right face
+                torch.div(corners[2] + corners[7], 2),  # forward face
+                torch.div(corners[0] + corners[3], 2),  # bottom face
+                torch.div(corners[4] + corners[7], 2),  # top face
             ],
-            dim=0
+            dim=0,
         )
 
     def _minus_ones_corner(self) -> torch.Tensor:
@@ -786,18 +800,22 @@ class InRegionPenalty(nn.Module):  # type: ignore
             region.direction, reference_box
         )
 
-        # TODO: rename this variable
         current_direction_from_reference_to_target = (
-            target_box.center - reference_box.center
+            target_box.center - reference_box.nearest_center_face_point(target_box.center)
         )
 
         angle = angle_between(
             direction_vector, current_direction_from_reference_to_target
         )
+        print(f"DIRECTION VECTOR: {direction_vector}")
+        print(f"REF TO TARG VECTOR: {current_direction_from_reference_to_target}")
+        print(f"ANGLE (rads): {angle}")
         if not angle or torch.isnan(angle):
             angle = torch.zeros(1, dtype=torch.float)
 
-        distance = target_box.nearest_center_face_distance_from_point(reference_box.center)
+        distance = target_box.nearest_center_face_distance_from_point(
+            reference_box.center
+        )
 
         # distal has a minimum distance away from object to qualify
         if region.distance == DISTAL:
@@ -863,18 +881,13 @@ class InRegionPenalty(nn.Module):  # type: ignore
         # TODO: change to reflect distance from box extents https://github.com/isi-vista/adam/issues/496
         if isinstance(direction.relative_to_axis, HorizontalAxisOfObject):
             if direction.positive:
-                return (
-                    direction_reference.center
-                    + torch.tensor(  # pylint: disable=not-callable
-                        [1, 0, 0], dtype=torch.float
-                    )
+                return torch.tensor(  # pylint: disable=not-callable
+                    [1, 0, 0], dtype=torch.float
                 )
+
             else:
-                return (
-                    direction_reference.center
-                    + torch.tensor(  # pylint: disable=not-callable
-                        [-1, 0, 0], dtype=torch.float
-                    )
+                return torch.tensor(  # pylint: disable=not-callable
+                    [-1, 0, 0], dtype=torch.float
                 )
 
         # in this case, calculate a vector facing toward or away from the addressee
