@@ -1,10 +1,14 @@
 import numpy as np
+import torch
+
+from math import isclose, pi
 
 from adam.visualization.positioning import (
     AxisAlignedBoundingBox,
     CollisionPenalty,
     WeakGravityPenalty,
     run_model,
+    angle_between,
 )
 from typing import Mapping, List
 from adam.perception import ObjectPerception
@@ -82,3 +86,33 @@ def test_gravity_constraint() -> None:
 
     grounded_result = gravity_penalty(aabb_grounded)
     assert grounded_result <= 0
+
+
+def test_angle_between() -> None:
+    # test that using a zero vector in angle calculation returns None
+    assert (
+        angle_between(
+            torch.tensor([0, 0, 0]),  # pylint: disable=not-callable
+            torch.tensor([1, 1, 1]),  # pylint: disable=not-callable
+        )
+        is None
+    )
+    # check angle between perpendicular vectors
+    result = angle_between(
+        torch.tensor([1, 0, 0], dtype=torch.float),  # pylint: disable=not-callable
+        torch.tensor([0, 0, 1], dtype=torch.float),  # pylint: disable=not-callable
+    )
+    assert result is not None
+    assert isclose(result.item(), pi / 2, rel_tol=0.05)
+    # check parallel vectors
+    result = angle_between(
+        torch.tensor([1, 0, 0], dtype=torch.float),  # pylint: disable=not-callable
+        torch.tensor([1, 0, 0], dtype=torch.float),  # pylint: disable=not-callable
+    )
+    assert result is not None and isclose(result.item(), 0, rel_tol=0.05)
+    # check 180 degrees away
+    result = angle_between(
+        torch.tensor([1, 0, 0], dtype=torch.float),  # pylint: disable=not-callable
+        torch.tensor([-1, 0, 0], dtype=torch.float),  # pylint: disable=not-callable
+    )
+    assert result is not None and isclose(result.item(), pi, rel_tol=0.05)
