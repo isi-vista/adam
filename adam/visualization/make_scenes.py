@@ -3,7 +3,17 @@
    operating and when other code (gathering and processing scene information)
    is executing in a serial manner.
    """
-from typing import Iterable, List, Tuple, Union, DefaultDict, Optional, Callable, Any
+from typing import (
+    Iterable,
+    List,
+    Tuple,
+    Union,
+    DefaultDict,
+    Optional,
+    Callable,
+    Any,
+    Generator,
+)
 from functools import partial
 
 import random
@@ -232,7 +242,7 @@ class SceneElements:
     # scene nodes arranged in a tree structure
     object_graph: List[SceneNode] = attr.ib()
     # utterance related to the scene
-    tokens: List[str] = attr.ib()
+    tokens: Tuple[str, ...] = attr.ib()
 
 
 @attrs(frozen=True, slots=True)
@@ -251,7 +261,7 @@ class SceneCreator:
                 DevelopmentalPrimitivePerceptionFrame,
             ]
         ],
-    ) -> SceneElements:
+    ) -> Generator[SceneElements, None, None]:
         for (
             instance_group
         ) in instance_groups:  # each InstanceGroup a page related to a curriculum topic

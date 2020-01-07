@@ -16,7 +16,6 @@ import os
 
 import time
 from direct.showbase.ShowBase import ShowBase  # pylint: disable=no-name-in-module
-from direct.task import Task  # pylint: disable=no-name-in-module
 
 from panda3d.core import DirectionalLight  # pylint: disable=no-name-in-module
 from panda3d.core import PointLight  # pylint: disable=no-name-in-module
