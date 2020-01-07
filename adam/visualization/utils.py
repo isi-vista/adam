@@ -1,4 +1,7 @@
 import enum
+from immutablecollections import immutableset
+
+OBJECT_NAMES_TO_EXCLUDE = immutableset(["the ground", "learner"])
 
 
 class Shape(enum.Enum):

@@ -27,7 +27,7 @@ from panda3d.core import AntialiasAttrib  # pylint: disable=no-name-in-module
 
 from direct.gui.OnscreenText import OnscreenText  # pylint: disable=no-name-in-module
 from adam.visualization.positioning import PositionsMap
-from adam.visualization.utils import Shape
+from adam.visualization.utils import Shape, OBJECT_NAMES_TO_EXCLUDE
 
 from adam.perception.developmental_primitive_perception import RgbColorPerception
 
@@ -78,22 +78,6 @@ class SituationVisualizer(ShowBase):
             self.camera.setPos(0, -45, 9)
             self.camera.setHpr(0, -10, 0)
 
-        # set GUI text re: camera position and periodic task
-        # self.camera_pos_text = OnscreenText(
-        #     text="position:",
-        #     pos=(-1.25, -0.7),
-        #     scale=0.07,
-        #     mayChange=True,
-        #     align=TextNode.ALeft,
-        # )
-        # self.camera_hpr_text = OnscreenText(
-        #     text="orientation:",
-        #     pos=(-1.25, -0.8),
-        #     scale=0.07,
-        #     mayChange=True,
-        #     align=TextNode.ALeft,
-        # )
-        # self.taskMgr.doMethodLater(0.25, self._camera_location_task, "CameraLocationTask")
         self.title_text = OnscreenText(
             text="placeholder",
             pos=(-1.25, -0.8),
@@ -190,7 +174,7 @@ class SituationVisualizer(ShowBase):
     def set_positions(self, new_positions: PositionsMap):
         """Modify the position of all top level geometry nodes in the scene."""
         for name, position in new_positions.name_to_position.items():
-            if name == "the ground" or name == "learner":
+            if name in OBJECT_NAMES_TO_EXCLUDE:
                 continue
             self.geo_nodes[name].setPos(
                 position.data[0], position.data[1], position.data[2]
@@ -205,13 +189,6 @@ class SituationVisualizer(ShowBase):
 
     def print_scene_graph(self) -> None:
         print(self.render.ls())
-
-    def _camera_location_task(self, task):  # pylint: disable=unused-argument
-        pos = self.camera.getPos()
-        hpr = self.camera.getHpr()
-        self.camera_pos_text.setText(f"position: {pos}")
-        self.camera_hpr_text.setText(f"orientation: {hpr}")
-        return Task.again  # perform task with delay
 
     def _load_model(self, name: str):
         working_dir = os.path.abspath((sys.path[0]))
