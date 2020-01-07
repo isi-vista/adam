@@ -35,9 +35,10 @@ from adam.perception.developmental_primitive_perception import (
     Relation,
 )
 from adam.ontology import OntologyNode
+from adam.relation import IN_REGION
 
 from adam.visualization.panda3d_interface import SituationVisualizer
-from adam.visualization.utils import Shape
+from adam.visualization.utils import Shape, OBJECT_NAMES_TO_EXCLUDE
 
 from adam.visualization.positioning import run_model, PositionsMap
 from adam.ontology.phase1_spatial_relations import Region
@@ -73,31 +74,29 @@ def main(params: Parameters) -> None:
     # go through curriculum scenes and output geometry types
     print("scene generation test")
     viz = SituationVisualizer()
-    for i, (property_map, in_region_map, obj_graph, tokens) in enumerate(
+    for i, scene_elements in enumerate(
         SceneCreator.create_scenes([_make_object_beside_object_curriculum()])
     ):
         # debug: skip the first few scenes with people in them
         if i < 10:
             continue
         print(f"SCENE {i}")
-        viz.set_title(" ".join(token for token in tokens))
+        viz.set_title(" ".join(token for token in scene_elements.tokens))
         # for debugging purposes:
-        SceneCreator.graph_for_each(obj_graph, print_obj_names)
+        SceneCreator.graph_for_each(scene_elements.object_graph, print_obj_names)
 
         # bind visualizer and properties to top level rendering function:
         bound_render_obj = partial(
-            render_obj, viz, property_map
+            render_obj, viz, scene_elements.property_map
         )  # bind visualizer and properties to nested obj rendering function
-        bound_render_nested_obj = partial(render_obj_nested, viz, property_map)
-        try:
-            # render each object in graph
-            SceneCreator.graph_for_each_top_level(
-                obj_graph, bound_render_obj, bound_render_nested_obj
-            )
-        except RuntimeError:
-            viz.clear_scene()
-            viz.run_for_seconds(0.5)
-            continue
+        bound_render_nested_obj = partial(
+            render_obj_nested, viz, scene_elements.property_map
+        )
+        # render each object in graph
+
+        SceneCreator.graph_for_each_top_level(
+            scene_elements.object_graph, bound_render_obj, bound_render_nested_obj
+        )
 
         # for debugging purposes to view the results before positioning:
         viz.run_for_seconds(1)
@@ -114,11 +113,11 @@ def main(params: Parameters) -> None:
             immutableset(
                 [
                     node.perceived_obj
-                    for node in obj_graph
-                    if node.name != "learner" and node.name != "the ground"
+                    for node in scene_elements.object_graph
+                    if node.name not in OBJECT_NAMES_TO_EXCLUDE
                 ]
             ),
-            in_region_map,
+            scene_elements.in_region_map,
             iterations=num_iterations,
             yield_steps=steps_before_vis,
         ):
@@ -153,6 +152,7 @@ def render_obj(
         renderer: rendering engine to render this object with
         properties: set of properties (colors, etc) associated with obj
         obj: the object to be rendered
+        omit_irregular: flag for ignoring irregular geons
 
     Returns: a Panda3d NodePath: the path within the rendering engine's scene graph to the object/node
              rendered by calling this function.
@@ -191,8 +191,8 @@ def render_obj_nested(
     shape = SceneCreator.cross_section_to_geo(obj.geon.cross_section)
     # TODO***: allow for Irregular geons to be rendered
     if shape == Shape.IRREGULAR:
-        raise RuntimeError(
-            "Irregular shapes (i.e. liquids) are not currently supported by the rendering system"
+        raise NotImplementedError(
+            "Irregular shapes (i.e. liquids, cars, chair backs, etc) are not currently supported by the rendering system"
         )
     color = None
     for prop in properties[obj]:
@@ -218,6 +218,24 @@ def print_obj_names(obj: ObjectPerception) -> None:
 
 
 @attrs(frozen=True, slots=True)
+class SceneElements:
+    """ Convenience wrapper for the various sub-objects returned by SceneCreator """
+
+    # Objects -> their properties
+    property_map: DefaultDict[
+        ObjectPerception, List[Optional[Union[RgbColorPerception, OntologyNode]]]
+    ] = attr.ib()
+    # objects -> in_region relations
+    in_region_map: DefaultDict[
+        ObjectPerception, List[Region[ObjectPerception]]
+    ] = attr.ib()
+    # scene nodes arranged in a tree structure
+    object_graph: List[SceneNode] = attr.ib()
+    # utterance related to the scene
+    tokens: List[str] = attr.ib()
+
+
+@attrs(frozen=True, slots=True)
 class SceneCreator:
     """
     Static class for creating a graph structure out of ObjectPerceptions.
@@ -233,7 +251,7 @@ class SceneCreator:
                 DevelopmentalPrimitivePerceptionFrame,
             ]
         ],
-    ):
+    ) -> SceneElements:
         for (
             instance_group
         ) in instance_groups:  # each InstanceGroup a page related to a curriculum topic
@@ -269,7 +287,7 @@ class SceneCreator:
                     # copy over the relations that each ObjectPerception has
                     # primarily interested in in-region relations
                     for relation in frame.relations:
-                        if relation.relation_type.handle == "in-region" and isinstance(
+                        if relation.relation_type == IN_REGION and isinstance(
                             relation.second_slot, Region
                         ):
                             in_region_map[relation.first_slot].append(
@@ -286,7 +304,12 @@ class SceneCreator:
                         if obj not in property_map:
                             property_map[obj].append(None)
 
-                yield property_map, in_region_map, nested_objects, dependency_tree.as_token_sequence()
+                yield SceneElements(
+                    property_map,
+                    in_region_map,
+                    nested_objects,
+                    dependency_tree.as_token_sequence(),
+                )
 
     @staticmethod
     def cross_section_to_geo(cs: CrossSection) -> Shape:
@@ -402,10 +425,7 @@ class SceneCreator:
            recursively applied function. """
         for top_level in graph:
             # special cases not rendered here:
-            if (
-                top_level.perceived_obj.debug_handle == "the ground"
-                or top_level.perceived_obj.debug_handle == "learner"
-            ):
+            if top_level.perceived_obj.debug_handle in OBJECT_NAMES_TO_EXCLUDE:
                 continue
             top_return = top_fn(top_level.perceived_obj)
             nodes = [(node, top_return) for node in top_level.children]

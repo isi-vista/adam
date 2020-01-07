@@ -9,6 +9,7 @@ is run_model()
 from itertools import combinations
 from typing import Mapping, AbstractSet, Optional, List, Iterable
 from attr import attrs, attrib
+import logging
 
 import numpy as np
 from numpy import ndarray
@@ -49,15 +50,21 @@ from adam.perception import ObjectPerception
 
 
 ORIGIN = torch.zeros(3, dtype=torch.float)  # pylint: disable=not-callable
+# penalty weighting for keeping objects on the ground
 GRAVITY_PENALTY = torch.tensor([1], dtype=torch.float)  # pylint: disable=not-callable
+# penalty weighting for keeping objects from clipping into the ground
 BELOW_GROUND_PENALTY = 2 * GRAVITY_PENALTY
-COLLISION_PENALTY = 1 * GRAVITY_PENALTY
+# penalty weighting for keeping objects from colliding with one another
+COLLISION_PENALTY = 5 * GRAVITY_PENALTY
 
 LOSS_EPSILON = 1.0e-04
 
+# penalty weighting for adjusting the angle between relatively-positioned objects
 ANGLE_PENALTY = torch.tensor([5], dtype=torch.float)  # pylint: disable=not-callable
+# penalty weighting for adjusting the separation of relatively-positioned objects
 DISTANCE_PENALTY = torch.tensor([1], dtype=torch.float)  # pylint: disable=not-callable
 
+# concreteized definitions of the relative distance categories:
 PROXIMAL_MIN_DISTANCE = torch.tensor(  # pylint: disable=not-callable
     [0.5], dtype=torch.float
 )
@@ -249,7 +256,6 @@ class AxisAlignedBoundingBox:
         Returns: tensor (3,) x,y,z coordinate: the center face of the box closest to the function argument
 
         """
-        # TODO: need to get the row INDEX for the minimum face distance
         face_centers = self.get_face_centers()
         return face_centers[
             torch.argmin(PairwiseDistance().forward(face_centers, point.expand(6, 3)))
@@ -796,9 +802,7 @@ class InRegionPenalty(nn.Module):  # type: ignore
         assert region.distance is not None
         # get direction that box 1 should be in w/r/t box 2
         # TODO: allow for addressee directions
-        direction_vector = self.direction_to_worldspace_vector(
-            region.direction, reference_box
-        )
+        direction_vector = self.direction_as_unit_vector(region.direction, reference_box)
 
         current_direction_from_reference_to_target = (
             target_box.center - reference_box.nearest_center_face_point(target_box.center)
@@ -807,9 +811,9 @@ class InRegionPenalty(nn.Module):  # type: ignore
         angle = angle_between(
             direction_vector, current_direction_from_reference_to_target
         )
-        print(f"DIRECTION VECTOR: {direction_vector}")
-        print(f"REF TO TARG VECTOR: {current_direction_from_reference_to_target}")
-        print(f"ANGLE (rads): {angle}")
+        logging.debug(f"DIRECTION VECTOR: {direction_vector}")
+        logging.debug(f"REF TO TARG VECTOR: {current_direction_from_reference_to_target}")
+        logging.debug(f"ANGLE (rads): {angle}")
         if not angle or torch.isnan(angle):
             angle = torch.zeros(1, dtype=torch.float)
 
@@ -849,20 +853,20 @@ class InRegionPenalty(nn.Module):  # type: ignore
         )
         return angle * ANGLE_PENALTY + distance_penalty * DISTANCE_PENALTY
 
-    def direction_to_worldspace_vector(
+    def direction_as_unit_vector(
         self,
         direction: Direction[ObjectPerception],
         direction_reference: AxisAlignedBoundingBox,
         addressee_reference: Optional[AxisAlignedBoundingBox] = None,
     ) -> torch.Tensor:
         """
-        Convert a direction to a (3,) tensor to represent the direction concretely in world-space.
+        Convert a direction to a unit vector (3,) tensor to represent the direction.
         Args:
             direction: Direction object
             direction_reference: AABB corresponding to the object referenced by the direction parameter
             addressee_reference: AABB corresponding the an addressee referenced by the direction parameter
 
-        Returns: (3,) Tensor. A vector describing a direction in world-space.
+        Returns: (3,) Tensor. A unit vector describing a direction.
 
         """
         # special case: gravity
