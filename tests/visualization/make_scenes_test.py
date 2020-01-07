@@ -1,5 +1,5 @@
 from adam.curriculum.phase1_curriculum import build_gaila_phase_1_curriculum
-from adam.visualization.make_scenes import SceneCreator, SceneElements
+from adam.visualization.make_scenes import SceneCreator
 from adam.geon import CrossSection
 from adam.visualization.utils import Shape
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
