@@ -35,7 +35,7 @@ class SituationVisualizer(ShowBase):
 
     model_to_file = {
         Shape.SQUARE: "cube.egg",
-        Shape.CIRCULAR: "sphere.egg",
+        Shape.CIRCULAR: "smooth_sphere.egg",
         Shape.OVALISH: "ovalish.egg",
         Shape.RECTANGULAR: "rectangular.egg",
     }
@@ -86,7 +86,7 @@ class SituationVisualizer(ShowBase):
         )
 
         # toggle on antialiasing
-        self.render.setAntialias(AntialiasAttrib.MAuto)
+        self.render.setAntialias(AntialiasAttrib.M_multisample)
 
     def set_title(self, new_title: str):
         self.title_text.setText(new_title)
