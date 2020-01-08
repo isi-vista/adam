@@ -11,7 +11,7 @@ from typing import Tuple
 def test_scenes_creation() -> Tuple[
     Tuple[float, float, float], Tuple[float, float, float]
 ]:
-    for i, (_, obj_graph) in enumerate(
+    for i, scene_elements in enumerate(
         SceneCreator.create_scenes(build_gaila_phase_1_curriculum())
     ):
 
@@ -25,11 +25,11 @@ def test_scenes_creation() -> Tuple[
         def test_cs_to_shape(cs: CrossSection) -> Shape:
             return SceneCreator.cross_section_to_geo(cs)
 
-        SceneCreator.graph_for_each(obj_graph, test_for_each)
+        SceneCreator.graph_for_each(scene_elements.object_graph, test_for_each)
         SceneCreator.graph_for_each_top_level(
-            obj_graph, test_for_each, test_for_each_nested_really_nested
+            scene_elements.object_graph, test_for_each, test_for_each_nested_really_nested
         )
-        for obj in obj_graph:
+        for obj in scene_elements.object_graph:
             if obj.perceived_obj.geon:
                 test_cs_to_shape(obj.perceived_obj.geon.cross_section)
 

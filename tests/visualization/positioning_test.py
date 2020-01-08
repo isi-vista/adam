@@ -1,23 +1,52 @@
 import numpy as np
+import torch
+
+from math import isclose, pi
 
 from adam.visualization.positioning import (
     AxisAlignedBoundingBox,
     CollisionPenalty,
     WeakGravityPenalty,
-    AdamObject,
     run_model,
+    angle_between,
 )
+from typing import Mapping, List
+from adam.perception import ObjectPerception
+from adam.ontology.phase1_spatial_relations import Region
+from adam.axes import (
+    Axes,
+    straight_up,
+    # directed,
+    symmetric,
+    symmetric_vertical,
+)
+from immutablecollections import immutableset
 
 
 def test_running_model() -> None:
     # for code coverage purposes
-    ball = AdamObject(name="ball", initial_position=(0, 0, 10))
-    box = AdamObject(name="box", initial_position=(0, 0, 1))
+    ball = ObjectPerception(
+        "ball",
+        axes=Axes(
+            primary_axis=symmetric_vertical("ball-generating"),
+            orienting_axes=immutableset(
+                [symmetric("side-to-side0"), symmetric("side-to-side1")]
+            ),
+        ),
+    )
+    box = ObjectPerception(
+        "box",
+        axes=Axes(
+            primary_axis=straight_up("top_to_bottom"),
+            orienting_axes=immutableset(
+                [symmetric("side-to-side0"), symmetric("side-to-side1")]
+            ),
+        ),
+    )
 
-    aardvark = AdamObject(name="aardvark", initial_position=(1, 2, 1))
-    flamingo = AdamObject(name="flamingo", initial_position=(-1, 1, 2))
-    objs = [ball, box, aardvark, flamingo]
-    run_model(objs, num_iterations=10, yield_steps=10)
+    objs = immutableset([ball, box])
+    relations: Mapping[ObjectPerception, List[Region[ObjectPerception]]] = {}
+    run_model(objs, relations, num_iterations=10, yield_steps=10)
 
 
 def test_collision_constraint() -> None:
@@ -57,3 +86,33 @@ def test_gravity_constraint() -> None:
 
     grounded_result = gravity_penalty(aabb_grounded)
     assert grounded_result <= 0
+
+
+def test_angle_between() -> None:
+    # test that using a zero vector in angle calculation returns None
+    assert (
+        angle_between(
+            torch.tensor([0, 0, 0]),  # pylint: disable=not-callable
+            torch.tensor([1, 1, 1]),  # pylint: disable=not-callable
+        )
+        is None
+    )
+    # check angle between perpendicular vectors
+    result = angle_between(
+        torch.tensor([1, 0, 0], dtype=torch.float),  # pylint: disable=not-callable
+        torch.tensor([0, 0, 1], dtype=torch.float),  # pylint: disable=not-callable
+    )
+    assert result is not None
+    assert isclose(result.item(), pi / 2, rel_tol=0.05)
+    # check parallel vectors
+    result = angle_between(
+        torch.tensor([1, 0, 0], dtype=torch.float),  # pylint: disable=not-callable
+        torch.tensor([1, 0, 0], dtype=torch.float),  # pylint: disable=not-callable
+    )
+    assert result is not None and isclose(result.item(), 0, rel_tol=0.05)
+    # check 180 degrees away
+    result = angle_between(
+        torch.tensor([1, 0, 0], dtype=torch.float),  # pylint: disable=not-callable
+        torch.tensor([-1, 0, 0], dtype=torch.float),  # pylint: disable=not-callable
+    )
+    assert result is not None and isclose(result.item(), pi, rel_tol=0.05)

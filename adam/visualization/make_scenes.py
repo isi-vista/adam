@@ -12,7 +12,7 @@ from typing import (
     Optional,
     Callable,
     Any,
-    Dict,
+    Generator,
 )
 from functools import partial
 
@@ -20,12 +20,12 @@ import random
 from collections import defaultdict
 
 # currently useful for positioning multiple objects:
-from adam.curriculum.phase1_curriculum import _make_multiple_objects_curriculum
+from adam.curriculum.phase1_curriculum import _make_object_beside_object_curriculum
 import attr
 from attr import attrs
 from vistautils.parameters import Parameters
 from vistautils.parameters_only_entrypoint import parameters_only_entry_point
-from immutablecollections import ImmutableSet
+from immutablecollections import ImmutableSet, immutableset
 
 # consider refactoring away this dependency
 from panda3d.core import NodePath  # pylint: disable=no-name-in-module
@@ -45,11 +45,13 @@ from adam.perception.developmental_primitive_perception import (
     Relation,
 )
 from adam.ontology import OntologyNode
+from adam.relation import IN_REGION
 
 from adam.visualization.panda3d_interface import SituationVisualizer
-from adam.visualization.utils import Shape
+from adam.visualization.utils import Shape, OBJECT_NAMES_TO_EXCLUDE
 
-from adam.visualization.positioning import run_model, AdamObject, PositionsMap
+from adam.visualization.positioning import run_model, PositionsMap
+from adam.ontology.phase1_spatial_relations import Region
 
 USAGE_MESSAGE = """make_scenes.py param_file
                 \twhere param_file has the following parameters:
@@ -82,35 +84,50 @@ def main(params: Parameters) -> None:
     # go through curriculum scenes and output geometry types
     print("scene generation test")
     viz = SituationVisualizer()
-    for i, (property_map, obj_graph) in enumerate(
-        SceneCreator.create_scenes([_make_multiple_objects_curriculum()])
+    for i, scene_elements in enumerate(
+        SceneCreator.create_scenes([_make_object_beside_object_curriculum()])
     ):
         # debug: skip the first few scenes with people in them
-        if i < 3:
+        if i < 10:
             continue
         print(f"SCENE {i}")
+        viz.set_title(" ".join(token for token in scene_elements.tokens))
         # for debugging purposes:
-        SceneCreator.graph_for_each(obj_graph, print_obj_names)
+        SceneCreator.graph_for_each(scene_elements.object_graph, print_obj_names)
 
         # bind visualizer and properties to top level rendering function:
         bound_render_obj = partial(
-            render_obj, viz, property_map
+            render_obj, viz, scene_elements.property_map
         )  # bind visualizer and properties to nested obj rendering function
-        bound_render_nested_obj = partial(render_obj_nested, viz, property_map)
+        bound_render_nested_obj = partial(
+            render_obj_nested, viz, scene_elements.property_map
+        )
         # render each object in graph
+
         SceneCreator.graph_for_each_top_level(
-            obj_graph, bound_render_obj, bound_render_nested_obj
+            scene_elements.object_graph, bound_render_obj, bound_render_nested_obj
         )
 
         # for debugging purposes to view the results before positioning:
-        viz.run_for_seconds(0.5)
-        input("Press ENTER to run the positioning system")
+        viz.run_for_seconds(1)
+        screenshot_name = input(
+            "Press ENTER to run the positioning system or enter name to save a screenshot"
+        )
+        if screenshot_name:
+            viz.screenshot(screenshot_name)
 
         # now that every object has been instantiated into the scene,
         # they need to be re-positioned.
 
         for repositioned_map in _solve_top_level_positions(
-            viz.top_level_positions(),
+            immutableset(
+                [
+                    node.perceived_obj
+                    for node in scene_elements.object_graph
+                    if node.name not in OBJECT_NAMES_TO_EXCLUDE
+                ]
+            ),
+            scene_elements.in_region_map,
             iterations=num_iterations,
             yield_steps=steps_before_vis,
         ):
@@ -120,8 +137,13 @@ def main(params: Parameters) -> None:
             # the visualizer seems to need about a second to render an update
             viz.run_for_seconds(1)
             # viz.print_scene_graph()
+        viz.run_for_seconds(1)
 
-        input("Press ENTER to continue to the next scene")
+        screenshot_name = input(
+            "Press ENTER to continue to the next scene, or the name of a file to save a screenshot to: "
+        )
+        if screenshot_name:
+            viz.screenshot(screenshot_name)
         viz.clear_scene()
         viz.run_for_seconds(0.25)
 
@@ -140,6 +162,7 @@ def render_obj(
         renderer: rendering engine to render this object with
         properties: set of properties (colors, etc) associated with obj
         obj: the object to be rendered
+        omit_irregular: flag for ignoring irregular geons
 
     Returns: a Panda3d NodePath: the path within the rendering engine's scene graph to the object/node
              rendered by calling this function.
@@ -178,8 +201,8 @@ def render_obj_nested(
     shape = SceneCreator.cross_section_to_geo(obj.geon.cross_section)
     # TODO***: allow for Irregular geons to be rendered
     if shape == Shape.IRREGULAR:
-        raise RuntimeError(
-            "Irregular shapes (i.e. liquids) are not currently supported by the rendering system"
+        raise NotImplementedError(
+            "Irregular shapes (i.e. liquids, cars, chair backs, etc) are not currently supported by the rendering system"
         )
     color = None
     for prop in properties[obj]:
@@ -205,6 +228,24 @@ def print_obj_names(obj: ObjectPerception) -> None:
 
 
 @attrs(frozen=True, slots=True)
+class SceneElements:
+    """ Convenience wrapper for the various sub-objects returned by SceneCreator """
+
+    # Objects -> their properties
+    property_map: DefaultDict[
+        ObjectPerception, List[Optional[Union[RgbColorPerception, OntologyNode]]]
+    ] = attr.ib()
+    # objects -> in_region relations
+    in_region_map: DefaultDict[
+        ObjectPerception, List[Region[ObjectPerception]]
+    ] = attr.ib()
+    # scene nodes arranged in a tree structure
+    object_graph: List[SceneNode] = attr.ib()
+    # utterance related to the scene
+    tokens: Tuple[str, ...] = attr.ib()
+
+
+@attrs(frozen=True, slots=True)
 class SceneCreator:
     """
     Static class for creating a graph structure out of ObjectPerceptions.
@@ -220,13 +261,13 @@ class SceneCreator:
                 DevelopmentalPrimitivePerceptionFrame,
             ]
         ],
-    ):
+    ) -> Generator[SceneElements, None, None]:
         for (
             instance_group
         ) in instance_groups:  # each InstanceGroup a page related to a curriculum topic
             for (
                 _,  # situation
-                _,  # dependency_tree
+                dependency_tree,  # dependency_tree
                 perception,
             ) in instance_group.instances():  # each instance is a scene
                 # scene_objects = []
@@ -237,6 +278,11 @@ class SceneCreator:
                 # we only care about the perception at the moment
 
                 for frame in perception.frames:  # DevelopmentalPrimitivePerceptionFrame
+
+                    in_region_map: DefaultDict[
+                        ObjectPerception, List[Region[ObjectPerception]]
+                    ] = defaultdict(list)
+
                     # actions will have multiple frames - these will have to be rendered differently
                     for prop in frame.property_assertions:
                         if isinstance(prop, HasColor):
@@ -246,6 +292,16 @@ class SceneCreator:
                             # append OntologyNode
                             property_map[prop.perceived_object].append(
                                 prop.binary_property
+                            )
+
+                    # copy over the relations that each ObjectPerception has
+                    # primarily interested in in-region relations
+                    for relation in frame.relations:
+                        if relation.relation_type == IN_REGION and isinstance(
+                            relation.second_slot, Region
+                        ):
+                            in_region_map[relation.first_slot].append(
+                                relation.second_slot
                             )
 
                     nested_objects = SceneCreator._nest_objects(
@@ -258,7 +314,12 @@ class SceneCreator:
                         if obj not in property_map:
                             property_map[obj].append(None)
 
-                yield property_map, nested_objects
+                yield SceneElements(
+                    property_map,
+                    in_region_map,
+                    nested_objects,
+                    dependency_tree.as_token_sequence(),
+                )
 
     @staticmethod
     def cross_section_to_geo(cs: CrossSection) -> Shape:
@@ -374,10 +435,7 @@ class SceneCreator:
            recursively applied function. """
         for top_level in graph:
             # special cases not rendered here:
-            if (
-                top_level.perceived_obj.debug_handle == "the ground"
-                or top_level.perceived_obj.debug_handle == "learner"
-            ):
+            if top_level.perceived_obj.debug_handle in OBJECT_NAMES_TO_EXCLUDE:
                 continue
             top_return = top_fn(top_level.perceived_obj)
             nodes = [(node, top_return) for node in top_level.children]
@@ -413,26 +471,29 @@ class SceneCreator:
 
 # TODO: scale of top-level bounding boxes is weird because it needs to encompass all sub-objects
 def _solve_top_level_positions(
-    parent_positions: Dict[str, Tuple[float, float, float]],
+    top_level_objects: ImmutableSet[ObjectPerception],
+    in_region_map: DefaultDict[ObjectPerception, List[Region[ObjectPerception]]],
     iterations: int = 200,
     yield_steps: Optional[int] = None,
 ) -> Iterable[PositionsMap]:
     """
         Solves for positions of top-level objects.
     Args:
-        parent_positions: list of top level objects to be positioned by model
+        top_level_objects: set of top level objects (ObjectPerception)s
+        in_region_map: map of all ObjectPerception -> Region (in-region relations) for top level and sub-objects
         iterations: number of iterations to run model for
         yield_steps: number of iterations that must pass before a new set of positions is yielded/returned
 
     Returns: List of (3,) tensors, describing the updated positions of the top level objects, corresponding
              in terms of indices with parent_positions
     """
-    objs = [
-        AdamObject(name=name, initial_position=parent_position)
-        for name, parent_position in parent_positions.items()
-    ]
 
-    return run_model(objs, num_iterations=iterations, yield_steps=yield_steps)
+    return run_model(
+        top_level_objects,
+        in_region_map,
+        num_iterations=iterations,
+        yield_steps=yield_steps,
+    )
 
 
 if __name__ == "__main__":
