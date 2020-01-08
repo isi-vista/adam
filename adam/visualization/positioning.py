@@ -161,6 +161,7 @@ def run_model(
     *,
     num_iterations: int = 200,
     yield_steps: Optional[int] = None,
+    seed: int = None
 ) -> Iterable[PositionsMap]:
     r"""
     Construct a positioning model given a list of objects to position, return their position values.
@@ -175,6 +176,8 @@ def run_model(
     Returns: PositionsMap: Map of object name -> Tensor (3,) of its position
 
     """
+    if seed is not None:
+        np.random.seed(seed)
     positioning_model = PositioningModel.for_objects_random_positions(
         top_level_objects, in_region_relations=in_region_map
     )

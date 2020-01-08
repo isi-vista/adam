@@ -130,6 +130,7 @@ def main(params: Parameters) -> None:
                 ]
             ),
             scene_elements.in_region_map,
+            seed=params.integer("seed"),
             iterations=num_iterations,
             yield_steps=steps_before_vis,
         ):
@@ -475,6 +476,7 @@ class SceneCreator:
 def _solve_top_level_positions(
     top_level_objects: ImmutableSet[ObjectPerception],
     in_region_map: DefaultDict[ObjectPerception, List[Region[ObjectPerception]]],
+    seed: int,
     iterations: int = 200,
     yield_steps: Optional[int] = None,
 ) -> Iterable[PositionsMap]:
@@ -495,6 +497,7 @@ def _solve_top_level_positions(
         in_region_map,
         num_iterations=iterations,
         yield_steps=yield_steps,
+        seed=seed
     )
 
 
