@@ -9,7 +9,6 @@ is run_model()
 from itertools import combinations
 from typing import Mapping, AbstractSet, Optional, List, Iterable
 from attr import attrs, attrib
-import logging
 
 import numpy as np
 from numpy import ndarray
@@ -811,9 +810,6 @@ class InRegionPenalty(nn.Module):  # type: ignore
         angle = angle_between(
             direction_vector, current_direction_from_reference_to_target
         )
-        logging.debug(f"DIRECTION VECTOR: {direction_vector}")
-        logging.debug(f"REF TO TARG VECTOR: {current_direction_from_reference_to_target}")
-        logging.debug(f"ANGLE (rads): {angle}")
         if not angle or torch.isnan(angle):
             angle = torch.zeros(1, dtype=torch.float)
 
