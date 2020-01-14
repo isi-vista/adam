@@ -1,5 +1,5 @@
 """Main interface for Panda3D rendering.
-   Executing this module meant for testing purposes.
+   Executing this module meant for testing purposes. (viewing an object in isolation)
    Defines various default settings (ground plane, lighting, camera
    position. Provides interfaces for adding objects to the scene
    as well as for clearing the scene entirely.
@@ -38,6 +38,15 @@ class SituationVisualizer(ShowBase):
         Shape.CIRCULAR: "smooth_sphere.egg",
         Shape.OVALISH: "ovalish.egg",
         Shape.RECTANGULAR: "rectangular.egg",
+    }
+    specific_model_to_file = {
+        "ball": "basketball.egg",
+        "hat": "cowboyhat.egg",
+        "box": "cardboard_box.egg",
+        "cup": "mug.egg",
+        "table": "table.egg",
+        "door": "door.egg",
+        "book": "book.egg",
     }
 
     def __init__(self) -> None:
@@ -118,12 +127,19 @@ class SituationVisualizer(ShowBase):
         print(f"adding: {model_type}")
         if color is None:
             color = RgbColorPerception(50, 50, 50)
-        try:
-            new_model = self._load_model(SituationVisualizer.model_to_file[model_type])
+        # attempt to find a model file for a particular type of object
+        specific_model_type = name.split("_")[0]
+        if specific_model_type in SituationVisualizer.specific_model_to_file:
+            new_model = self._load_model(SituationVisualizer.specific_model_to_file[specific_model_type])
             new_model.name = name
-        except KeyError:
-            print(f"No geometry found for {model_type}")
-            raise
+        # back off: attempt to find a model for the object's geon
+        else:
+            try:
+                new_model = self._load_model(SituationVisualizer.model_to_file[model_type])
+                new_model.name = name
+            except KeyError:
+                print(f"No geometry found for {model_type}")
+                raise
         # top level:
         if parent is None:
             if name in self.geo_nodes:
@@ -192,3 +208,21 @@ class SituationVisualizer(ShowBase):
     def _load_model(self, name: str):
         working_dir = os.path.abspath((sys.path[0]))
         return self.loader.loadModel(working_dir + "/adam/visualization/models/" + name)
+
+
+if __name__ == "__main__":
+    from argparse import ArgumentParser
+
+    visualizer = SituationVisualizer()
+    print(f"Current name to file bindings:\n{visualizer.specific_model_to_file}")
+    parser = ArgumentParser()
+    parser.add_argument("model_name", type=str, help="model name (lowercase) to view in isolation")
+    parser.add_argument("--x", type=float, help="x position", default=0.0)
+    parser.add_argument("--y", type=float, help="y position", default=0.0)
+    parser.add_argument("--z", type=float, help="z position", default=0.0)
+    args = parser.parse_args()
+
+
+    visualizer.add_model(None, name=args.model_name, color=None, position=(args.x, args.y, args.z))
+    visualizer.set_title(args.model_name)
+    visualizer.run()
