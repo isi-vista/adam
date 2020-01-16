@@ -7,7 +7,7 @@ main() function used for testing purposes. Primary function made available to ou
 is run_model()
 """
 from itertools import combinations
-from typing import Mapping, AbstractSet, Optional, List, Iterable
+from typing import Mapping, AbstractSet, Optional, List, Iterable, Tuple
 from attr import attrs, attrib
 
 import numpy as np
@@ -158,6 +158,7 @@ class PositionsMap:
 def run_model(
     top_level_objects: ImmutableSet[ObjectPerception],
     in_region_map: Mapping[ObjectPerception, List[Region[ObjectPerception]]],
+    object_scales: Mapping[str, Tuple[float, float, float]],
     *,
     num_iterations: int = 200,
     yield_steps: Optional[int] = None,
@@ -175,8 +176,8 @@ def run_model(
     Returns: PositionsMap: Map of object name -> Tensor (3,) of its position
 
     """
-    positioning_model = PositioningModel.for_objects_random_positions(
-        top_level_objects, in_region_relations=in_region_map
+    positioning_model = PositioningModel.for_scaled_objects_random_positions(
+        top_level_objects, in_region_relations=in_region_map, scale_map=object_scales
     )
 
     # we will start with an aggressive learning rate
@@ -504,6 +505,30 @@ class PositioningModel(torch.nn.Module):  # type: ignore
             for object_perception in object_perceptions
         )
         return PositioningModel(objects_to_bounding_boxes, in_region_relations)
+
+    @staticmethod
+    def for_scaled_objects_random_positions(
+            object_perceptions: AbstractSet[ObjectPerception],
+            *,
+            in_region_relations: Mapping[ObjectPerception, List[Region[ObjectPerception]]],
+            scale_map: Mapping[str, Tuple[float, float, float]]
+    ) -> "PositioningModel":
+
+        dict_items: List[Tuple[ObjectPerception, AxisAlignedBoundingBox]] = []
+        for object_perception in object_perceptions:
+            model_lookup = object_perception.debug_handle.split("_")[0]
+            try:
+                scale = scale_map[model_lookup]
+            except KeyError:
+                print(f"couldn't find scale for {object_perception.debug_handle}")
+                scale = (1.0, 1.0, 1.0)
+            bounding_box = AxisAlignedBoundingBox.create_at_random_position_scaled(
+                min_distance_from_origin=10, max_distance_from_origin=20,
+                object_scale=torch.tensor([scale[0], scale[1], scale[2]])  # pylint: disable=not-callable
+            )
+            dict_items.append((object_perception, bounding_box))
+        return PositioningModel(immutabledict(dict_items), in_region_relations)
+
 
     def forward(self):  # pylint: disable=arguments-differ
         collision_penalty = sum(

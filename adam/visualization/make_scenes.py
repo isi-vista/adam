@@ -13,6 +13,7 @@ from typing import (
     Callable,
     Any,
     Generator,
+    Mapping,
 )
 from functools import partial
 
@@ -52,7 +53,7 @@ from adam.ontology import OntologyNode
 from adam.relation import IN_REGION
 
 from adam.visualization.panda3d_interface import SituationVisualizer
-from adam.visualization.utils import Shape, OBJECT_NAMES_TO_EXCLUDE
+from adam.visualization.utils import Shape, OBJECT_NAMES_TO_EXCLUDE, cross_section_to_geo
 
 from adam.visualization.positioning import run_model, PositionsMap
 from adam.ontology.phase1_spatial_relations import Region
@@ -89,6 +90,10 @@ def main(params: Parameters) -> None:
     # go through curriculum scenes and output geometry types
     print("scene generation test")
     viz = SituationVisualizer()
+    model_scales = viz.get_model_scales()
+    for model_name, scale in model_scales.items():
+        print(f"{model_name} -> {scale}")
+
     for i, scene_elements in enumerate(
         SceneCreator.create_scenes([make_curriculum()])
     ):
@@ -132,6 +137,7 @@ def main(params: Parameters) -> None:
                 ]
             ),
             scene_elements.in_region_map,
+            model_scales,
             iterations=num_iterations,
             yield_steps=steps_before_vis,
         ):
@@ -202,7 +208,7 @@ def render_obj_nested(
         else:
             pos = SceneCreator.random_leaf_position()
         return renderer.add_dummy_node(obj.debug_handle, pos, parent)
-    shape = SceneCreator.cross_section_to_geo(obj.geon.cross_section)
+    shape = cross_section_to_geo(obj.geon.cross_section)
     # TODO***: allow for Irregular geons to be rendered
     if shape == Shape.IRREGULAR:
         logging.warning("Irregular shape for %s could not be rendered", obj.debug_handle)
@@ -325,36 +331,7 @@ class SceneCreator:
                     dependency_tree.as_token_sequence(),
                 )
 
-    @staticmethod
-    def cross_section_to_geo(cs: CrossSection) -> Shape:
-        """
-        Converts a cross section into a geon type, based on the properties of the cross section
-        Args:
-            cs: CrossSection to be mapped to a Geon type
 
-        Returns: Shape: a convenience enum mapping to a file name for the to-be-rendered geometry
-
-        """
-        if cs.has_rotational_symmetry and cs.has_reflective_symmetry and cs.curved:
-            return Shape("CIRCULAR")
-        elif cs.has_rotational_symmetry and cs.has_reflective_symmetry and not cs.curved:
-            return Shape("SQUARE")
-        elif not cs.has_rotational_symmetry and cs.has_reflective_symmetry and cs.curved:
-            return Shape("OVALISH")
-        elif (
-            not cs.has_rotational_symmetry
-            and cs.has_reflective_symmetry
-            and not cs.curved
-        ):
-            return Shape("RECTANGULAR")
-        elif (
-            not cs.has_rotational_symmetry
-            and not cs.has_reflective_symmetry
-            and not cs.curved
-        ):
-            return Shape("IRREGULAR")
-        else:
-            raise ValueError("Unknown Geon composition")
 
     @staticmethod
     def _nest_objects(
@@ -477,6 +454,7 @@ class SceneCreator:
 def _solve_top_level_positions(
     top_level_objects: ImmutableSet[ObjectPerception],
     in_region_map: DefaultDict[ObjectPerception, List[Region[ObjectPerception]]],
+    model_scales: Mapping[str, Tuple[float, float, float]],
     iterations: int = 200,
     yield_steps: Optional[int] = None,
 ) -> Iterable[PositionsMap]:
@@ -495,6 +473,7 @@ def _solve_top_level_positions(
     return run_model(
         top_level_objects,
         in_region_map,
+        model_scales,
         num_iterations=iterations,
         yield_steps=yield_steps,
     )

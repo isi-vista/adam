@@ -23,22 +23,25 @@ from panda3d.core import Material  # pylint: disable=no-name-in-module
 from panda3d.core import NodePath  # pylint: disable=no-name-in-module
 from panda3d.core import TextNode  # pylint: disable=no-name-in-module
 from panda3d.core import AntialiasAttrib  # pylint: disable=no-name-in-module
+from panda3d.core import LPoint3f
 
 from direct.gui.OnscreenText import OnscreenText  # pylint: disable=no-name-in-module
 from adam.visualization.positioning import PositionsMap
-from adam.visualization.utils import Shape, OBJECT_NAMES_TO_EXCLUDE
+from adam.visualization.utils import Shape, OBJECT_NAMES_TO_EXCLUDE, GEON_SHAPES, MODEL_NAMES
 
 from adam.perception.developmental_primitive_perception import RgbColorPerception
 
 
-class SituationVisualizer(ShowBase):
 
+
+class SituationVisualizer(ShowBase):
     model_to_file = {
         Shape.SQUARE: "cube.egg",
         Shape.CIRCULAR: "smooth_sphere.egg",
         Shape.OVALISH: "ovalish.egg",
         Shape.RECTANGULAR: "rectangular.egg",
     }
+
     specific_model_to_file = {
         "ball": "basketball.egg",
         "hat": "cowboyhat.egg",
@@ -48,6 +51,7 @@ class SituationVisualizer(ShowBase):
         "door": "door.egg",
         "book": "book.egg",
     }
+
 
     def __init__(self) -> None:
         super().__init__(self)
@@ -212,9 +216,26 @@ class SituationVisualizer(ShowBase):
     def print_scene_graph(self) -> None:
         print(self.render.ls())
 
+    def get_model_scales(self) -> Dict[str, Tuple[float, float, float]]:
+        scale_map: Dict[str, Tuple[float, float, float]] = {}
+        for shape in GEON_SHAPES:
+            model = self._load_model(SituationVisualizer.model_to_file[shape])
+            bounds = model.getTightBounds()
+            scale_map[shape.name] = bounds_to_scale(bounds[0], bounds[1])
+        for name in MODEL_NAMES:
+            model = self._load_model(SituationVisualizer.specific_model_to_file[name])
+            bounds = model.getTightBounds()
+            scale_map[name] = bounds_to_scale(bounds[0], bounds[1])
+
+        return scale_map
+
     def _load_model(self, name: str):
         working_dir = os.path.abspath((sys.path[0]))
         return self.loader.loadModel(working_dir + "/adam/visualization/models/" + name)
+
+
+def bounds_to_scale(min_corner: LPoint3f, max_corner: LPoint3f) -> Tuple[float, float, float]:
+    return max_corner.x - min_corner.x, max_corner.y - min_corner.y, max_corner.z - min_corner.z
 
 
 if __name__ == "__main__":
