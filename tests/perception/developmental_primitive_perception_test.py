@@ -7,7 +7,8 @@ from adam.ontology.phase1_ontology import (
     _PERSON_SCHEMA,
     _BALL_SCHEMA,
     _TABLE_SCHEMA,
-    CUP, _make_cup_schema)
+    _make_cup_schema,
+)
 from adam.ontology.phase1_spatial_relations import EXTERIOR_BUT_IN_CONTACT, Region
 from adam.perception import ObjectPerception, PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
@@ -92,18 +93,21 @@ def test_difference():
 
     diff = diff_primitive_perception_frames(before=first_frame, after=second_frame)
     assert len(diff.removed_relations) == 2
-    assert len(diff.added_relations) == 0
+    assert not diff.added_relations
     assert len(diff.added_objects) == 1
-    assert len(diff.removed_objects) == 0
+    assert not diff.removed_objects
     assert diff.before_axis_info == first_frame.axis_info
     assert diff.after_axis_info == second_frame.axis_info
+    assert not diff.added_property_assertions
+    assert not diff.removed_property_assertions
 
     # Reversed
     diff_2 = diff_primitive_perception_frames(before=second_frame, after=first_frame)
     assert len(diff_2.added_relations) == 2
-    assert len(diff_2.removed_relations) == 0
-    assert len(diff_2.added_objects) == 0
+    assert not diff_2.removed_relations
+    assert not diff_2.added_objects
     assert len(diff_2.removed_objects) == 1
     assert diff_2.before_axis_info == second_frame.axis_info
     assert diff_2.after_axis_info == first_frame.axis_info
-
+    assert not diff_2.added_property_assertions
+    assert not diff_2.removed_property_assertions

@@ -95,5 +95,5 @@ def diff_primitive_perception_frames(
         added_relations=after.relations.difference(before.relations),
         removed_relations=before.relations.difference(after.relations),
         before_axis_info=before.axis_info,
-        after_axis_info=after.axis_info
+        after_axis_info=after.axis_info,
     )
