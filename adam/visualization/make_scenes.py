@@ -18,11 +18,13 @@ from functools import partial
 
 import random
 from collections import defaultdict
+import numpy as np
 
-# currently useful for positioning multiple objects:
 import logging
 
-from adam.curriculum.phase1_curriculum import _make_object_beside_object_curriculum
+# currently useful for positioning multiple objects:
+from adam.curriculum.phase1_curriculum import _make_object_beside_object_curriculum as make_curriculum
+
 import attr
 from attr import attrs
 from vistautils.parameters import Parameters
@@ -82,12 +84,13 @@ def main(params: Parameters) -> None:
     steps_before_vis = params.positive_integer("steps_before_vis")
 
     random.seed(params.integer("seed"))
+    np.random.seed(params.integer("seed"))
 
     # go through curriculum scenes and output geometry types
     print("scene generation test")
     viz = SituationVisualizer()
     for i, scene_elements in enumerate(
-        SceneCreator.create_scenes([_make_object_beside_object_curriculum()])
+        SceneCreator.create_scenes([make_curriculum()])
     ):
         # debug: skip the first few scenes with people in them
         if i < 10:
@@ -109,7 +112,6 @@ def main(params: Parameters) -> None:
         SceneCreator.graph_for_each_top_level(
             scene_elements.object_graph, bound_render_obj, bound_render_nested_obj
         )
-
         # for debugging purposes to view the results before positioning:
         viz.run_for_seconds(1)
         screenshot_name = input(
@@ -130,7 +132,6 @@ def main(params: Parameters) -> None:
                 ]
             ),
             scene_elements.in_region_map,
-            seed=params.integer("seed"),
             iterations=num_iterations,
             yield_steps=steps_before_vis,
         ):
@@ -476,7 +477,6 @@ class SceneCreator:
 def _solve_top_level_positions(
     top_level_objects: ImmutableSet[ObjectPerception],
     in_region_map: DefaultDict[ObjectPerception, List[Region[ObjectPerception]]],
-    seed: int,
     iterations: int = 200,
     yield_steps: Optional[int] = None,
 ) -> Iterable[PositionsMap]:
@@ -497,7 +497,6 @@ def _solve_top_level_positions(
         in_region_map,
         num_iterations=iterations,
         yield_steps=yield_steps,
-        seed=seed
     )
 
 

@@ -42,7 +42,7 @@ class SituationVisualizer(ShowBase):
     specific_model_to_file = {
         "ball": "basketball.egg",
         "hat": "cowboyhat.egg",
-        "box": "cardboard_box.egg",
+        # "box": "cardboard_box.egg",
         "cup": "mug.egg",
         "table": "table.egg",
         "door": "door.egg",
@@ -68,7 +68,7 @@ class SituationVisualizer(ShowBase):
         self.ground_plane.reparentTo(self.render)
         self.ground_plane.setPos(0, 0, 0)
         m = Material()
-        m.setDiffuse((255, 255, 255, 255))
+        m.setDiffuse((249, 249, 249, 255))
         # the "1" argument to setMaterial is crucial to have it override
         # an existing material
         self.ground_plane.setMaterial(m, 1)
@@ -162,7 +162,14 @@ class SituationVisualizer(ShowBase):
         parent: Optional[NodePath] = None,
     ) -> NodePath:
         print(f"\nAdding Dummy node: {name}")
-        new_node = NodePath(name)
+
+        specific_model_type = name.split("_")[0]
+        if specific_model_type in SituationVisualizer.specific_model_to_file:
+            print(f"\nADDING SPECIFIC MODEL")
+            new_node = self._load_model(SituationVisualizer.specific_model_to_file[specific_model_type])
+            new_node.name = name
+        else:
+            new_node = NodePath(name)
         if parent is None:
             new_node.reparentTo(self.render)
             if name in self.geo_nodes:
