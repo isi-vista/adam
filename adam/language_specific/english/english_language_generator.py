@@ -51,7 +51,7 @@ from adam.language_specific.english.english_syntax import (
     SECOND_PERSON,
     SIMPLE_ENGLISH_DEPENDENCY_TREE_LINEARIZER,
 )
-from adam.ontology import IN_REGION, IS_ADDRESSEE, IS_SPEAKER, OntologyNode
+from adam.ontology import IN_REGION, IS_ADDRESSEE, IS_SPEAKER, OntologyNode, CONTACTS
 from adam.ontology.phase1_ontology import (
     AGENT,
     COLOR,
@@ -695,6 +695,9 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 else:
                     # we don't want to translate relations of the agent (yet)
                     return
+            elif relation.relation_type == CONTACTS:
+                # we ignore this relation as there are also in-region relations with contacts
+                pass
             else:
                 raise RuntimeError(
                     f"Currently only know how to translate IN_REGION "

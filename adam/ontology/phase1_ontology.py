@@ -13,7 +13,7 @@ The following will eventually end up here:
 - Relations, Modifiers, Function Words: basic color terms (red, blue, green, white, black…), one,
   two, I, me, my, you, your, to, in, on, [beside, behind, in front of, over, under], up, down
 """
-from typing import Iterable, Optional, Sequence, Tuple, TypeVar
+from typing import Iterable, Optional, Sequence, Tuple, TypeVar, Union, Any
 
 from immutablecollections import ImmutableDict, immutabledict, immutableset
 from more_itertools import flatten
@@ -52,6 +52,7 @@ from adam.ontology import (
     RELATION,
     THING,
     minimal_ontology_graph,
+    CONTACTS,
 )
 from adam.ontology.action_description import (
     ActionDescription,
@@ -85,8 +86,8 @@ from adam.relation import (
     make_dsl_relation,
     make_opposite_dsl_region_relation,
     make_opposite_dsl_relation,
-    make_symmetric_dsl_region_relation,
     negate,
+    _ensure_iterable,
 )
 
 _ontology_graph = minimal_ontology_graph()  # pylint:disable=invalid-name
@@ -665,19 +666,33 @@ subtype(HAS, RELATION)
 has = make_dsl_relation(HAS)  # pylint:disable=invalid-name
 
 
-def _contact_region_factory(reference_object: _ObjectT) -> Region[_ObjectT]:
-    return Region(reference_object=reference_object, distance=EXTERIOR_BUT_IN_CONTACT)
-
-
-# mypy's reveal_type says the type of "contacts" is
-# 'def (Union[ObjectT`-1, typing.Iterable[ObjectT`-1]], Union[ObjectT`-1, typing.Iterable[
-# ObjectT`-1]]) -> builtins.tuple[adam.relation.Relation[ObjectT`-1]]'
-# but `ObjectT`-1 won't bind, so when called below we get things like
-# Argument 2 has incompatible type "SubObject"; expected "Union[ObjectT, Iterable[ObjectT]]"
-# For now I'm just suppressing the typing and I'll look more into this later.
-contacts = make_symmetric_dsl_region_relation(  # pylint:disable=invalid-name
-    _contact_region_factory
-)
+def contacts(
+    arg1s: Union[Any, Iterable[Any]], arg2s: Union[Any, Iterable[Any]]
+) -> Tuple[Relation[Any], ...]:
+    arg1s = _ensure_iterable(arg1s)
+    arg2s = _ensure_iterable(arg2s)
+    # For the contacts relation, we create region relations with distance of proximal,
+    # as well as a specific contacts relations in both ways
+    return flatten(
+        [
+            tuple(
+                Relation(
+                    IN_REGION, arg1, Region(reference_object=arg2, distance=PROXIMAL)
+                )
+                for arg1 in arg1s
+                for arg2 in arg2s
+            ),
+            tuple(
+                Relation(
+                    IN_REGION, arg2, Region(reference_object=arg1, distance=PROXIMAL)
+                )
+                for arg1 in arg1s
+                for arg2 in arg2s
+            ),
+            tuple(Relation(CONTACTS, arg1, arg2) for arg1 in arg1s for arg2 in arg2s),
+            tuple(Relation(CONTACTS, arg2, arg1) for arg1 in arg1s for arg2 in arg2s),
+        ]
+    )
 
 
 def _inside_region_factory(reference_object: _ObjectT) -> Region[_ObjectT]:

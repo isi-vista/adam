@@ -112,6 +112,11 @@ Indicates that an object is located in a `Region`.
 This is used to support the Landau and Jackendoff interpretation of prepositions.
 """
 
+CONTACTS = OntologyNode("contacts")
+"""
+Indicates that an object contacts another
+"""
+
 IS_SUBSTANCE = OntologyNode("substance")
 
 PERCEIVABLE = OntologyNode("perceivable")
@@ -144,6 +149,7 @@ REQUIRED_ONTOLOGY_NODES = immutableset(
         META_PROPERTY,
         CAN_FILL_TEMPLATE_SLOT,
         IN_REGION,
+        CONTACTS,
         IS_SUBSTANCE,
         PERCEIVABLE,
         IS_ADDRESSEE,
@@ -164,6 +170,7 @@ def minimal_ontology_graph():
     for node in REQUIRED_ONTOLOGY_NODES:
         ret.add_node(node)
     ret.add_edge(IN_REGION, RELATION)
+    ret.add_edge(CONTACTS, RELATION)
     ret.add_edge(CAN_FILL_TEMPLATE_SLOT, PROPERTY)
     # TODO: should we move substances out from under THING
     # in the ontology?
