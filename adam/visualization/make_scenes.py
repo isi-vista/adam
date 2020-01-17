@@ -20,6 +20,8 @@ import random
 from collections import defaultdict
 
 # currently useful for positioning multiple objects:
+import logging
+
 from adam.curriculum.phase1_curriculum import _make_object_beside_object_curriculum
 import attr
 from attr import attrs
@@ -201,9 +203,7 @@ def render_obj_nested(
     shape = SceneCreator.cross_section_to_geo(obj.geon.cross_section)
     # TODO***: allow for Irregular geons to be rendered
     if shape == Shape.IRREGULAR:
-        raise NotImplementedError(
-            "Irregular shapes (i.e. liquids, cars, chair backs, etc) are not currently supported by the rendering system"
-        )
+        logging.warning("Irregular shape for %s could not be rendered", obj.debug_handle)
     color = None
     for prop in properties[obj]:
         if isinstance(prop, RgbColorPerception):
@@ -212,6 +212,8 @@ def render_obj_nested(
         pos = SceneCreator.random_root_position()
     else:
         pos = SceneCreator.random_leaf_position()
+    if shape == Shape.IRREGULAR:
+        return renderer.add_dummy_node(name=obj.debug_handle, position=pos, parent=parent)
     return renderer.add_model(
         shape, name=obj.debug_handle, position=pos, color=color, parent=parent
     )
