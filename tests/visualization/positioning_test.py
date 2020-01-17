@@ -10,7 +10,7 @@ from adam.visualization.positioning import (
     run_model,
     angle_between,
 )
-from typing import Mapping, List
+from typing import Mapping, List, Tuple
 from adam.perception import ObjectPerception
 from adam.ontology.phase1_spatial_relations import Region
 from adam.axes import (
@@ -46,7 +46,11 @@ def test_running_model() -> None:
 
     objs = immutableset([ball, box])
     relations: Mapping[ObjectPerception, List[Region[ObjectPerception]]] = {}
-    run_model(objs, relations, num_iterations=10, yield_steps=10)
+    scales: Mapping[str, Tuple[float, float, float]] = {
+        "box": (1.0, 1.0, 1.0),
+        "ball": (2.0, 1.0, 1.0),
+    }
+    run_model(objs, relations, scales, num_iterations=10, yield_steps=10)
 
 
 def test_collision_constraint() -> None:

@@ -1,7 +1,7 @@
 from adam.curriculum.phase1_curriculum import build_gaila_phase_1_curriculum
 from adam.visualization.make_scenes import SceneCreator
 from adam.geon import CrossSection
-from adam.visualization.utils import Shape
+from adam.visualization.utils import Shape, cross_section_to_geo
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     ObjectPerception,
 )
@@ -23,7 +23,7 @@ def test_scenes_creation() -> Tuple[
             return other
 
         def test_cs_to_shape(cs: CrossSection) -> Shape:
-            return SceneCreator.cross_section_to_geo(cs)
+            return cross_section_to_geo(cs)
 
         SceneCreator.graph_for_each(scene_elements.object_graph, test_for_each)
         SceneCreator.graph_for_each_top_level(

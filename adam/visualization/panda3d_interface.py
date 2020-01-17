@@ -23,15 +23,18 @@ from panda3d.core import Material  # pylint: disable=no-name-in-module
 from panda3d.core import NodePath  # pylint: disable=no-name-in-module
 from panda3d.core import TextNode  # pylint: disable=no-name-in-module
 from panda3d.core import AntialiasAttrib  # pylint: disable=no-name-in-module
-from panda3d.core import LPoint3f
+from panda3d.core import LPoint3f  # pylint: disable=no-name-in-module
 
 from direct.gui.OnscreenText import OnscreenText  # pylint: disable=no-name-in-module
 from adam.visualization.positioning import PositionsMap
-from adam.visualization.utils import Shape, OBJECT_NAMES_TO_EXCLUDE, GEON_SHAPES, MODEL_NAMES
+from adam.visualization.utils import (
+    Shape,
+    OBJECT_NAMES_TO_EXCLUDE,
+    GEON_SHAPES,
+    MODEL_NAMES,
+)
 
 from adam.perception.developmental_primitive_perception import RgbColorPerception
-
-
 
 
 class SituationVisualizer(ShowBase):
@@ -51,7 +54,6 @@ class SituationVisualizer(ShowBase):
         "door": "door.egg",
         "book": "book.egg",
     }
-
 
     def __init__(self) -> None:
         super().__init__(self)
@@ -134,12 +136,16 @@ class SituationVisualizer(ShowBase):
         # attempt to find a model file for a particular type of object
         specific_model_type = name.split("_")[0]
         if specific_model_type in SituationVisualizer.specific_model_to_file:
-            new_model = self._load_model(SituationVisualizer.specific_model_to_file[specific_model_type])
+            new_model = self._load_model(
+                SituationVisualizer.specific_model_to_file[specific_model_type]
+            )
             new_model.name = name
         # back off: attempt to find a model for the object's geon
         else:
             try:
-                new_model = self._load_model(SituationVisualizer.model_to_file[model_type])
+                new_model = self._load_model(
+                    SituationVisualizer.model_to_file[model_type]
+                )
                 new_model.name = name
             except KeyError:
                 print(f"No geometry found for {model_type}")
@@ -170,7 +176,9 @@ class SituationVisualizer(ShowBase):
         specific_model_type = name.split("_")[0]
         if specific_model_type in SituationVisualizer.specific_model_to_file:
             print(f"\nADDING SPECIFIC MODEL")
-            new_node = self._load_model(SituationVisualizer.specific_model_to_file[specific_model_type])
+            new_node = self._load_model(
+                SituationVisualizer.specific_model_to_file[specific_model_type]
+            )
             new_node.name = name
         else:
             new_node = NodePath(name)
@@ -234,23 +242,35 @@ class SituationVisualizer(ShowBase):
         return self.loader.loadModel(working_dir + "/adam/visualization/models/" + name)
 
 
-def bounds_to_scale(min_corner: LPoint3f, max_corner: LPoint3f) -> Tuple[float, float, float]:
-    return max_corner.x - min_corner.x, max_corner.y - min_corner.y, max_corner.z - min_corner.z
+def bounds_to_scale(
+    min_corner: LPoint3f, max_corner: LPoint3f
+) -> Tuple[float, float, float]:
+    return (
+        max_corner.x - min_corner.x,
+        max_corner.y - min_corner.y,
+        max_corner.z - min_corner.z,
+    )
 
 
 if __name__ == "__main__":
     from argparse import ArgumentParser
 
-    visualizer = SituationVisualizer()
-    print(f"Current name to file bindings:\n{visualizer.specific_model_to_file}")
-    parser = ArgumentParser()
-    parser.add_argument("model_name", type=str, help="model name (lowercase) to view in isolation")
-    parser.add_argument("--x", type=float, help="x position", default=0.0)
-    parser.add_argument("--y", type=float, help="y position", default=0.0)
-    parser.add_argument("--z", type=float, help="z position", default=0.0)
-    args = parser.parse_args()
+    VISUALIZER = SituationVisualizer()
+    print(f"Current name to file bindings:\n{VISUALIZER.specific_model_to_file}")
+    PARSER = ArgumentParser()
+    PARSER.add_argument(
+        "model_name", type=str, help="model name (lowercase) to view in isolation"
+    )
+    PARSER.add_argument("--x", type=float, help="x position", default=0.0)
+    PARSER.add_argument("--y", type=float, help="y position", default=0.0)
+    PARSER.add_argument("--z", type=float, help="z position", default=0.0)
+    ARGS = PARSER.parse_args()
 
-
-    visualizer.add_model(None, name=args.model_name, color=None, position=(args.x, args.y, args.z))
-    visualizer.set_title(args.model_name)
-    visualizer.run()
+    VISUALIZER.add_model(
+        Shape.IRREGULAR,
+        name=ARGS.model_name,
+        color=None,
+        position=(ARGS.x, ARGS.y, ARGS.z),
+    )
+    VISUALIZER.set_title(ARGS.model_name)
+    VISUALIZER.run()

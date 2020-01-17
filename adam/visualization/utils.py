@@ -6,6 +6,7 @@ from adam.geon import CrossSection
 
 OBJECT_NAMES_TO_EXCLUDE = immutableset(["the ground", "learner"])
 
+
 class Shape(enum.Enum):
     CIRCULAR = "CIRCULAR"
     SQUARE = "SQUARE"
@@ -29,11 +30,7 @@ def cross_section_to_geo(cs: CrossSection) -> Shape:
         return Shape("SQUARE")
     elif not cs.has_rotational_symmetry and cs.has_reflective_symmetry and cs.curved:
         return Shape("OVALISH")
-    elif (
-        not cs.has_rotational_symmetry
-        and cs.has_reflective_symmetry
-        and not cs.curved
-    ):
+    elif not cs.has_rotational_symmetry and cs.has_reflective_symmetry and not cs.curved:
         return Shape("RECTANGULAR")
     elif (
         not cs.has_rotational_symmetry
@@ -48,8 +45,6 @@ def cross_section_to_geo(cs: CrossSection) -> Shape:
 # currently supported shapes and models
 GEON_SHAPES = [Shape.SQUARE, Shape.CIRCULAR, Shape.OVALISH, Shape.RECTANGULAR]
 MODEL_NAMES = ["ball", "hat", "cup", "table", "door", "book"]
-
-
 
 
 def model_lookup(object_percept: ObjectPerception) -> Optional[str]:
@@ -70,9 +65,9 @@ def model_lookup(object_percept: ObjectPerception) -> Optional[str]:
     if object_percept.geon is None:
         return None
 
+    # otherwise return its geon's name
     shape = cross_section_to_geo(object_percept.geon.cross_section)
     if shape in GEON_SHAPES:
         return shape.name
 
-    # otherwise return its geon's name
-
+    return None

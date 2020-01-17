@@ -508,14 +508,15 @@ class PositioningModel(torch.nn.Module):  # type: ignore
 
     @staticmethod
     def for_scaled_objects_random_positions(
-            object_perceptions: AbstractSet[ObjectPerception],
-            *,
-            in_region_relations: Mapping[ObjectPerception, List[Region[ObjectPerception]]],
-            scale_map: Mapping[str, Tuple[float, float, float]]
+        object_perceptions: AbstractSet[ObjectPerception],
+        *,
+        in_region_relations: Mapping[ObjectPerception, List[Region[ObjectPerception]]],
+        scale_map: Mapping[str, Tuple[float, float, float]],
     ) -> "PositioningModel":
 
         dict_items: List[Tuple[ObjectPerception, AxisAlignedBoundingBox]] = []
         for object_perception in object_perceptions:
+            print(f"Adding {object_perception.debug_handle} to model")
             model_lookup = object_perception.debug_handle.split("_")[0]
             try:
                 scale = scale_map[model_lookup]
@@ -523,12 +524,14 @@ class PositioningModel(torch.nn.Module):  # type: ignore
                 print(f"couldn't find scale for {object_perception.debug_handle}")
                 scale = (1.0, 1.0, 1.0)
             bounding_box = AxisAlignedBoundingBox.create_at_random_position_scaled(
-                min_distance_from_origin=10, max_distance_from_origin=20,
-                object_scale=torch.tensor([scale[0], scale[1], scale[2]])  # pylint: disable=not-callable
+                min_distance_from_origin=10,
+                max_distance_from_origin=20,
+                object_scale=torch.tensor(  # pylint: disable=not-callable
+                    [scale[0], scale[1], scale[2]]
+                ),
             )
             dict_items.append((object_perception, bounding_box))
         return PositioningModel(immutabledict(dict_items), in_region_relations)
-
 
     def forward(self):  # pylint: disable=arguments-differ
         collision_penalty = sum(
@@ -822,6 +825,9 @@ class InRegionPenalty(nn.Module):  # type: ignore
         Returns: Tensor(1,) with penalty
 
         """
+        print(
+            f"TARGET: {target_box.center} REFERENCE: {reference_box.center} REGION:{region}"
+        )
         assert region.direction is not None
         assert region.distance is not None
         # get direction that box 1 should be in w/r/t box 2
