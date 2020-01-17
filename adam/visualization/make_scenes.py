@@ -24,7 +24,9 @@ import numpy as np
 import logging
 
 # currently useful for positioning multiple objects:
-from adam.curriculum.phase1_curriculum import _make_object_beside_object_curriculum as make_curriculum
+from adam.curriculum.phase1_curriculum import (
+    _make_object_beside_object_curriculum as make_curriculum,
+)
 
 import attr
 from attr import attrs
@@ -38,7 +40,6 @@ from panda3d.core import NodePath  # pylint: disable=no-name-in-module
 from adam.language.dependency import LinearizedDependencyTree
 
 from adam.experiment import InstanceGroup
-from adam.geon import CrossSection
 
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.perception.developmental_primitive_perception import (
@@ -94,9 +95,7 @@ def main(params: Parameters) -> None:
     for model_name, scale in model_scales.items():
         print(f"{model_name} -> {scale}")
 
-    for i, scene_elements in enumerate(
-        SceneCreator.create_scenes([make_curriculum()])
-    ):
+    for i, scene_elements in enumerate(SceneCreator.create_scenes([make_curriculum()])):
         # debug: skip the first few scenes with people in them
         if i < 10:
             continue
@@ -331,8 +330,6 @@ class SceneCreator:
                     dependency_tree.as_token_sequence(),
                 )
 
-
-
     @staticmethod
     def _nest_objects(
         perceived_objects: ImmutableSet[ObjectPerception],
@@ -384,9 +381,19 @@ class SceneCreator:
                 scene_graph.append(search_node)
             # find node with key
             for nested in d[key]:
-                search_node.children.append(
-                    SceneNode(nested.debug_handle, nested, parent=search_node)
-                )
+                # check if this object's children are already in the scene graph,
+                # if so, nest them under this object instead of the top level
+                existing_node = None
+                for node in scene_graph:
+                    if node.name == nested.debug_handle:
+                        existing_node = node
+                if existing_node is None:
+                    search_node.children.append(
+                        SceneNode(nested.debug_handle, nested, parent=search_node)
+                    )
+                else:
+                    search_node.children.append(existing_node)
+                    scene_graph.remove(existing_node)
 
         return scene_graph
 
