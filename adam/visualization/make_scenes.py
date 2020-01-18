@@ -28,6 +28,7 @@ from adam.curriculum.phase1_curriculum import (
     _make_object_beside_object_curriculum as make_curriculum,
 )
 
+
 import attr
 from attr import attrs
 from vistautils.parameters import Parameters
@@ -96,6 +97,7 @@ def main(params: Parameters) -> None:
         print(f"{model_name} -> {scale}")
 
     for i, scene_elements in enumerate(SceneCreator.create_scenes([make_curriculum()])):
+
         # debug: skip the first few scenes with people in them
         if i < 10:
             continue

@@ -30,6 +30,7 @@ def cross_section_to_geo(cs: CrossSection) -> Shape:
         return Shape("SQUARE")
     elif not cs.has_rotational_symmetry and cs.has_reflective_symmetry and cs.curved:
         return Shape("OVALISH")
+
     elif not cs.has_rotational_symmetry and cs.has_reflective_symmetry and not cs.curved:
         return Shape("RECTANGULAR")
     elif (
@@ -66,6 +67,7 @@ def model_lookup(object_percept: ObjectPerception) -> Optional[str]:
         return None
 
     # otherwise return its geon's name
+
     shape = cross_section_to_geo(object_percept.geon.cross_section)
     if shape in GEON_SHAPES:
         return shape.name

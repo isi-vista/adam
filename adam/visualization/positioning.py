@@ -516,7 +516,9 @@ class PositioningModel(torch.nn.Module):  # type: ignore
 
         dict_items: List[Tuple[ObjectPerception, AxisAlignedBoundingBox]] = []
         for object_perception in object_perceptions:
+
             print(f"Adding {object_perception.debug_handle} to model")
+
             model_lookup = object_perception.debug_handle.split("_")[0]
             try:
                 scale = scale_map[model_lookup]
