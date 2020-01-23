@@ -120,11 +120,16 @@ def main(params: Parameters) -> None:
         )
         # for debugging purposes to view the results before positioning:
         viz.run_for_seconds(1)
-        screenshot_name = input(
-            "Press ENTER to run the positioning system or enter name to save a screenshot"
+        command = input(
+            "Press ENTER to run the positioning system or enter name to save a screenshot\n"
+            "Or type 's' for (step or for skip) to skip this scene > "
         )
-        if screenshot_name:
-            viz.screenshot(screenshot_name)
+        if command == "s":
+            viz.clear_scene()
+            viz.run_for_seconds(0.25)
+            continue
+        if command:
+            viz.screenshot(command)
 
         # now that every object has been instantiated into the scene,
         # they need to be re-positioned.

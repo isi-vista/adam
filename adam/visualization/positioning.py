@@ -573,7 +573,7 @@ class PositioningModel(torch.nn.Module):  # type: ignore
             bounding_box,
         ) in self.object_perception_to_bounding_box.items():
             print(
-                f"{prefix}{object_perception.debug_handle} = {bounding_box.center.data}"
+                f"{prefix}{object_perception.debug_handle} = {bounding_box.center.data}\n{prefix}scale:{bounding_box.scale.data}"
             )
 
     def get_object_position(self, obj: ObjectPerception) -> torch.Tensor:
