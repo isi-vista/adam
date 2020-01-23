@@ -312,9 +312,6 @@ def test_successfully_extending_partial_match():
     assert len(complete_mapping) == len(whole_perception_pattern.copy_as_digraph().nodes)
 
 
-@pytest.mark.skip(
-    "Testing the wrong things, see https://github.com/isi-vista/adam/issues/504"
-)
 def test_semantically_infeasible_partial_match():
     """
     Tests whether semantic feasibility works as intended
@@ -348,8 +345,8 @@ def test_semantically_infeasible_partial_match():
     different_nodes = []
     for node in perception.copy_as_digraph().nodes:
         # If we find a color node, we make it black
-        if isinstance(node, RgbColorPerception):
-            new_node = RgbColorPerception(0, 0, 0)
+        if isinstance(node, tuple) and isinstance(node[0], RgbColorPerception):
+            new_node = (RgbColorPerception(0, 0, 0), node[1])
             # Get edge information
             for edge in perception.copy_as_digraph().edges(data=True):
                 if edge[0] == node:
@@ -381,28 +378,27 @@ def test_semantically_infeasible_partial_match():
     )
 
     # Start the matching process, get a partial match
-    matcher = whole_perception_pattern.matcher(perception)
+    matcher = whole_perception_pattern.matcher(perception, matching_objects=True)
     partial_match: PerceptionGraphPatternMatch = first(
         matcher.matches(use_lookahead_pruning=True)
     )
     partial_mapping = partial_match.pattern_node_to_matched_graph_node
 
     # Try to extend the partial mapping, we expect a semantic infeasibility runtime error
-    matcher_2 = whole_perception_pattern.matcher(
-        PerceptionGraph(altered_perception_digraph)
+    second_matcher = whole_perception_pattern.matcher(
+        PerceptionGraph(altered_perception_digraph), matching_objects=True
     )
+    # The partial mapping (obtained from first matcher with original perception graph)
+    # semantically doesn't match the one in the altered version (second matcher with altered graph)
     with pytest.raises(RuntimeError):
         first(
-            matcher_2.matches(
+            second_matcher.matches(
                 initial_partial_match=partial_mapping, use_lookahead_pruning=True
             ),
             None,
         )
 
 
-@pytest.mark.skip(
-    "Testing the wrong things, see https://github.com/isi-vista/adam/issues/504"
-)
 def test_syntactically_infeasible_partial_match():
     """
     Tests whether syntactic feasibility works as intended
@@ -436,7 +432,7 @@ def test_syntactically_infeasible_partial_match():
     nodes = []
     for node in perception.copy_as_digraph().nodes:
         # If we find a color node, we add an extra edge to it
-        if isinstance(node, RgbColorPerception):
+        if isinstance(node, tuple) and isinstance(node[0], RgbColorPerception):
             nodes.append(node)
 
     # change edge information
@@ -446,28 +442,21 @@ def test_syntactically_infeasible_partial_match():
         random_node_2 = r.choice(list(altered_perception_digraph.nodes))
         altered_perception_digraph.add_edge(random_node_2, node, label=PART_OF)
 
-    altered_perception_pattern = PerceptionGraphPattern.from_graph(
-        altered_perception_digraph
-    ).perception_graph_pattern
-
-    partial_digraph = altered_perception_pattern.copy_as_digraph()
-    partial_digraph.remove_nodes_from(
-        [node for node in partial_digraph.nodes if isinstance(node, IsColorNodePredicate)]
-    )
-
     # Start the matching process, get a partial match
-    matcher = whole_perception_pattern.matcher(perception)
+    first_matcher = whole_perception_pattern.matcher(perception, matching_objects=True)
     partial_match: PerceptionGraphPatternMatch = first(
-        matcher.matches(use_lookahead_pruning=True), None
+        first_matcher.matches(use_lookahead_pruning=True), None
     )
     partial_mapping = partial_match.pattern_node_to_matched_graph_node
     # Try to extend the partial mapping, we expect a semantic infeasibility runtime error
-    matcher_2 = whole_perception_pattern.matcher(
-        PerceptionGraph(altered_perception_digraph)
+    second_matcher = whole_perception_pattern.matcher(
+        PerceptionGraph(altered_perception_digraph), matching_objects=True
     )
+    # The partial mapping (obtained from first matcher with original perception graph)
+    # syntactically doesn't match the one in the altered version (second matcher with altered graph)
     with pytest.raises(RuntimeError):
         first(
-            matcher_2.matches(
+            second_matcher.matches(
                 initial_partial_match=partial_mapping, use_lookahead_pruning=True
             ),
             None,
