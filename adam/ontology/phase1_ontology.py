@@ -2232,6 +2232,26 @@ _ACTIONS_TO_DESCRIPTIONS.extend(_make_go_description())
 _ACTIONS_TO_DESCRIPTIONS.extend(_make_push_descriptions())
 _ACTIONS_TO_DESCRIPTIONS.extend(_make_throw_descriptions())
 
+
+GAILA_PHASE_1_SIZE_GRADES: Tuple[Tuple[OntologyNode, ...], ...] = (
+    (HOUSE,),
+    (_ROOF, _WALL),
+    (CAR, TRUCK),
+    (_TRAILER, _FLATBED),
+    (_TRUCK_CAB,),
+    (TABLE, DOOR),
+    (_TABLETOP,),
+    (MOM, DAD),
+    (DOG, BOX, CHAIR, _TIRE),
+    (BABY,),
+    (_BODY,),
+    (_TORSO, _CHAIR_BACK, _CHAIR_SEAT),
+    (_ARM, _ANIMAL_LEG, _INANIMATE_LEG),
+    (HAND, HEAD, _ARM_SEGMENT, _LEG_SEGMENT, _FOOT),
+    (BALL, BIRD, BOOK, COOKIE, CUP, HAT),
+    (_TAIL, _WING),
+)
+
 GAILA_PHASE_1_ONTOLOGY = Ontology(
     "gaila-phase-1",
     _ontology_graph,
@@ -2259,26 +2279,7 @@ GAILA_PHASE_1_ONTOLOGY = Ontology(
     ],
     action_to_description=_ACTIONS_TO_DESCRIPTIONS,
     relations=build_size_relationships(
-        (
-            (HOUSE,),
-            (_ROOF, _WALL),
-            (CAR, TRUCK),
-            (_TRAILER, _FLATBED),
-            (_TRUCK_CAB,),
-            (TABLE, DOOR),
-            (_TABLETOP,),
-            (MOM, DAD),
-            (DOG, BOX, CHAIR, _TIRE),
-            (BABY,),
-            (_BODY,),
-            (_TORSO, _CHAIR_BACK, _CHAIR_SEAT),
-            (_ARM, _ANIMAL_LEG, _INANIMATE_LEG),
-            (HAND, HEAD, _ARM_SEGMENT, _LEG_SEGMENT, _FOOT),
-            (BALL, BIRD, BOOK, COOKIE, CUP, HAT),
-            (_TAIL, _WING),
-        ),
-        relation_type=BIGGER_THAN,
-        opposite_type=SMALLER_THAN,
+        GAILA_PHASE_1_SIZE_GRADES, relation_type=BIGGER_THAN, opposite_type=SMALLER_THAN
     ),
 )
 

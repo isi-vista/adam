@@ -14,6 +14,7 @@ from typing import (
     Any,
     Generator,
     Mapping,
+    Dict,
 )
 from functools import partial
 
@@ -59,6 +60,7 @@ from adam.visualization.utils import Shape, OBJECT_NAMES_TO_EXCLUDE, cross_secti
 
 from adam.visualization.positioning import run_model, PositionsMap
 from adam.ontology.phase1_spatial_relations import Region
+from adam.ontology.phase1_ontology import GAILA_PHASE_1_SIZE_GRADES, MOM, DAD
 
 USAGE_MESSAGE = """make_scenes.py param_file
                 \twhere param_file has the following parameters:
@@ -491,6 +493,30 @@ def _solve_top_level_positions(
         num_iterations=iterations,
         yield_steps=yield_steps,
     )
+
+
+def _create_object_scale_multiplier_mapping() -> Dict[OntologyNode, float]:
+    mapping: Dict[OntologyNode, float] = {}
+
+    # get the index in the size grades corresponding to people, as a reference point
+    human_index = GAILA_PHASE_1_SIZE_GRADES.index((MOM, DAD))
+
+    # two different scales are operating here (linearly): things bigger than adult humans, and things smaller
+    # than adult humans.
+    for i, size_grade in enumerate(GAILA_PHASE_1_SIZE_GRADES):
+        if i < human_index:
+            multiplier = 1 + 0.5 * (human_index - i)
+        elif i == human_index:
+            multiplier = 1.0
+        else:
+            multiplier = (len(GAILA_PHASE_1_SIZE_GRADES) - i) / (
+                len(GAILA_PHASE_1_SIZE_GRADES) - human_index
+            )
+
+        for ontology_node in size_grade:
+            mapping[ontology_node] = multiplier
+
+    return mapping
 
 
 if __name__ == "__main__":

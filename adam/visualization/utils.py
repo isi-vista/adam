@@ -1,8 +1,9 @@
 import enum
 from typing import Optional
-from immutablecollections import immutableset
+from immutablecollections import immutableset, immutabledict, ImmutableDict
 from adam.perception import ObjectPerception
 from adam.geon import CrossSection
+from adam.ontology.phase1_ontology import PHASE_1_CURRICULUM_OBJECTS, OntologyNode
 
 OBJECT_NAMES_TO_EXCLUDE = immutableset(["the ground", "learner"])
 
@@ -46,6 +47,10 @@ def cross_section_to_geon(cs: CrossSection) -> Shape:
 # currently supported shapes and models
 GEON_SHAPES = [Shape.SQUARE, Shape.CIRCULAR, Shape.OVALISH, Shape.RECTANGULAR]
 MODEL_NAMES = ["ball", "hat", "cup", "table", "door", "book"]
+
+NAME_TO_ONTOLOGY_NODE: ImmutableDict[str, OntologyNode] = immutabledict(
+    (node.handle, node) for node in PHASE_1_CURRICULUM_OBJECTS
+)
 
 
 def model_lookup(object_percept: ObjectPerception) -> Optional[str]:
