@@ -14,7 +14,6 @@ from typing import (
     Any,
     Generator,
     Mapping,
-    Dict,
 )
 from functools import partial
 
@@ -56,11 +55,15 @@ from adam.ontology import OntologyNode
 from adam.relation import IN_REGION
 
 from adam.visualization.panda3d_interface import SituationVisualizer
-from adam.visualization.utils import Shape, OBJECT_NAMES_TO_EXCLUDE, cross_section_to_geon
+from adam.visualization.utils import (
+    Shape,
+    OBJECT_NAMES_TO_EXCLUDE,
+    cross_section_to_geon,
+    OBJECT_SCALE_MULTIPLIER_MAP,
+)
 
 from adam.visualization.positioning import run_model, PositionsMap
 from adam.ontology.phase1_spatial_relations import Region
-from adam.ontology.phase1_ontology import GAILA_PHASE_1_SIZE_GRADES, MOM, DAD
 
 USAGE_MESSAGE = """make_scenes.py param_file
                 \twhere param_file has the following parameters:
@@ -95,14 +98,19 @@ def main(params: Parameters) -> None:
     print("scene generation test")
     viz = SituationVisualizer()
     model_scales = viz.get_model_scales()
+    for object_type, multiplier in OBJECT_SCALE_MULTIPLIER_MAP.items():
+        if object_type in model_scales:
+            v3 = model_scales[object_type]
+            new_v3 = (v3[0] * multiplier, v3[1] * multiplier, v3[2] * multiplier)
+            model_scales[object_type] = new_v3
+        else:
+            model_scales[object_type] = (multiplier, multiplier, multiplier)
+
     for model_name, scale in model_scales.items():
         logging.info("SCALE: %s -> %s", model_name, scale.__str__())
 
     for i, scene_elements in enumerate(SceneCreator.create_scenes([make_curriculum()])):
 
-        # debug: skip the first few scenes with people in them
-        if i < 10:
-            continue
         print(f"SCENE {i}")
         viz.set_title(" ".join(token for token in scene_elements.tokens))
         # for debugging purposes:
@@ -230,8 +238,17 @@ def render_obj_nested(
         pos = SceneCreator.random_leaf_position()
     if shape == Shape.IRREGULAR:
         return renderer.add_dummy_node(name=obj.debug_handle, position=pos, parent=parent)
+    object_type = obj.debug_handle.split("_")[0]
+    scale_multiplier = 1.0
+    if object_type in OBJECT_SCALE_MULTIPLIER_MAP:
+        scale_multiplier = OBJECT_SCALE_MULTIPLIER_MAP[object_type]
     return renderer.add_model(
-        shape, name=obj.debug_handle, position=pos, color=color, parent=parent
+        shape,
+        name=obj.debug_handle,
+        position=pos,
+        color=color,
+        parent=parent,
+        scale_multiplier=scale_multiplier,
     )
 
 
@@ -493,30 +510,6 @@ def _solve_top_level_positions(
         num_iterations=iterations,
         yield_steps=yield_steps,
     )
-
-
-def _create_object_scale_multiplier_mapping() -> Dict[OntologyNode, float]:
-    mapping: Dict[OntologyNode, float] = {}
-
-    # get the index in the size grades corresponding to people, as a reference point
-    human_index = GAILA_PHASE_1_SIZE_GRADES.index((MOM, DAD))
-
-    # two different scales are operating here (linearly): things bigger than adult humans, and things smaller
-    # than adult humans.
-    for i, size_grade in enumerate(GAILA_PHASE_1_SIZE_GRADES):
-        if i < human_index:
-            multiplier = 1 + 0.5 * (human_index - i)
-        elif i == human_index:
-            multiplier = 1.0
-        else:
-            multiplier = (len(GAILA_PHASE_1_SIZE_GRADES) - i) / (
-                len(GAILA_PHASE_1_SIZE_GRADES) - human_index
-            )
-
-        for ontology_node in size_grade:
-            mapping[ontology_node] = multiplier
-
-    return mapping
 
 
 if __name__ == "__main__":

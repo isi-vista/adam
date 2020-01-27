@@ -116,6 +116,7 @@ class SituationVisualizer(ShowBase):
         position: Tuple[float, float, float],
         color: RgbColorPerception = None,
         parent: Optional[NodePath] = None,
+        scale_multiplier: Optional[float] = 1.0,
     ) -> NodePath:
         """
         Adds a piece of primitive geometry to the scene.
@@ -131,7 +132,7 @@ class SituationVisualizer(ShowBase):
         Returns: NodePath: a Panda3D type specifying the exact path to the object in the renderer's scene graph
 
         """
-        print(f"adding: {model_type}")
+
         if color is None:
             color = RgbColorPerception(50, 50, 50)
         # attempt to find a model file for a particular type of object
@@ -141,9 +142,11 @@ class SituationVisualizer(ShowBase):
                 SituationVisualizer.specific_model_to_file[specific_model_type]
             )
             new_model.name = name
+            print(f"adding: {name}")
         # back off: attempt to find a model for the object's geon
         else:
             try:
+                print(f"adding: {model_type}")
                 new_model = self._load_model(
                     SituationVisualizer.model_to_file[model_type]
                 )
@@ -151,6 +154,11 @@ class SituationVisualizer(ShowBase):
             except KeyError:
                 print(f"No geometry found for {model_type}")
                 raise
+
+        scale = new_model.getScale()
+        new_model.setSx(scale.x * scale_multiplier)
+        new_model.setSy(scale.y * scale_multiplier)
+        new_model.setSz(scale.z * scale_multiplier)
         # top level:
         if parent is None:
             if name in self.geo_nodes:
@@ -164,6 +172,7 @@ class SituationVisualizer(ShowBase):
             new_model.reparentTo(parent)
         new_model.setPos(position[0], position[1], position[2])
         new_model.setColor((color.red / 255, color.green / 255, color.blue / 255, 1.0))
+
         return new_model
 
     def add_dummy_node(
