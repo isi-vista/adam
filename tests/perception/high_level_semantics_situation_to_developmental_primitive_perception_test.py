@@ -1,6 +1,7 @@
 import pytest
 from more_itertools import only, quantify
 
+from adam.axes import HorizontalAxisOfObject
 from adam.ontology import IN_REGION, OntologyNode, IS_SPEAKER
 from adam.ontology.phase1_ontology import (
     AGENT,
@@ -50,6 +51,8 @@ from adam.ontology.phase1_spatial_relations import (
     INTERIOR,
     Region,
     TOWARD,
+    PROXIMAL,
+    Direction,
 )
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -313,14 +316,50 @@ def test_relations_between_objects_and_ground():
     first_frame = perception.frames[0]
     ball_perception = perception_with_handle(first_frame, "ball_0")
     ground_perception = perception_with_handle(first_frame, "the ground")
+    table_perception = perception_with_handle(first_frame, "table_0")
 
     first_frame_relations = first_frame.relations
     second_frame_relations = perception.frames[1].relations
 
     assert on(ball_perception, ground_perception)[0] in first_frame_relations
-    assert on(ball_perception, ground_perception)[0] in second_frame_relations
-    # Other objects already have existing relations, that will be taken care in #309
-    # TODO: https://github.com/isi-vista/adam/issues/309
+    assert on(table_perception, ground_perception)[0] in first_frame_relations
+    assert on(table_perception, ground_perception)[0] in second_frame_relations
+
+
+def test_grounding_of_unsupported_objects():
+    box = situation_object(ontology_node=BOX)
+    ball = situation_object(ontology_node=BALL)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[box, ball],
+        always_relations=[
+            Relation(
+                IN_REGION,
+                ball,
+                Region(
+                    box,
+                    distance=PROXIMAL,
+                    direction=Direction(
+                        positive=True,
+                        relative_to_axis=HorizontalAxisOfObject(box, index=0),
+                    ),
+                ),
+            )
+        ],
+    )
+
+    perception = _PERCEPTION_GENERATOR.generate_perception(
+        situation, chooser=RandomChooser.for_seed(0)
+    )
+    first_frame = perception.frames[0]
+    ball_perception = perception_with_handle(first_frame, "ball_0")
+    ground_perception = perception_with_handle(first_frame, "the ground")
+    box_perception = perception_with_handle(first_frame, "box_0")
+
+    first_frame_relations = first_frame.relations
+
+    assert on(ball_perception, ground_perception)[0] in first_frame_relations
+    assert on(box_perception, ground_perception)[0] in first_frame_relations
 
 
 def test_liquid_in_and_out_of_container():

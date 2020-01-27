@@ -1139,7 +1139,7 @@ class _PerceptionGeneration:
         for situation_object in self._situation.all_objects:
             if situation_object.ontology_node != GROUND:
                 if self._objects_to_perceptions[situation_object] in objects_to_relations:
-                    # If this object is not on anything else, it should be in ground
+                    # If this object is not on anything else, it should be on the ground
                     object_is_on_something = False
                     for relation in objects_to_relations[
                         self._objects_to_perceptions[situation_object]
