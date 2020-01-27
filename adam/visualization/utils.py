@@ -15,7 +15,7 @@ class Shape(enum.Enum):
     IRREGULAR = "IRREGULAR"
 
 
-def cross_section_to_geo(cs: CrossSection) -> Shape:
+def cross_section_to_geon(cs: CrossSection) -> Shape:
     """
     Converts a cross section into a geon type, based on the properties of the cross section
     Args:
@@ -68,7 +68,7 @@ def model_lookup(object_percept: ObjectPerception) -> Optional[str]:
 
     # otherwise return its geon's name
 
-    shape = cross_section_to_geo(object_percept.geon.cross_section)
+    shape = cross_section_to_geon(object_percept.geon.cross_section)
     if shape in GEON_SHAPES:
         return shape.name
 

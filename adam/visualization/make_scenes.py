@@ -55,7 +55,7 @@ from adam.ontology import OntologyNode
 from adam.relation import IN_REGION
 
 from adam.visualization.panda3d_interface import SituationVisualizer
-from adam.visualization.utils import Shape, OBJECT_NAMES_TO_EXCLUDE, cross_section_to_geo
+from adam.visualization.utils import Shape, OBJECT_NAMES_TO_EXCLUDE, cross_section_to_geon
 
 from adam.visualization.positioning import run_model, PositionsMap
 from adam.ontology.phase1_spatial_relations import Region
@@ -94,7 +94,7 @@ def main(params: Parameters) -> None:
     viz = SituationVisualizer()
     model_scales = viz.get_model_scales()
     for model_name, scale in model_scales.items():
-        print(f"{model_name} -> {scale}")
+        logging.info("SCALE: %s -> %s", model_name, scale.__str__())
 
     for i, scene_elements in enumerate(SceneCreator.create_scenes([make_curriculum()])):
 
@@ -214,7 +214,7 @@ def render_obj_nested(
         else:
             pos = SceneCreator.random_leaf_position()
         return renderer.add_dummy_node(obj.debug_handle, pos, parent)
-    shape = cross_section_to_geo(obj.geon.cross_section)
+    shape = cross_section_to_geon(obj.geon.cross_section)
     # TODO***: allow for Irregular geons to be rendered
     if shape == Shape.IRREGULAR:
         logging.warning("Irregular shape for %s could not be rendered", obj.debug_handle)
