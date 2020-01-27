@@ -23,6 +23,7 @@ from panda3d.core import Material  # pylint: disable=no-name-in-module
 from panda3d.core import NodePath  # pylint: disable=no-name-in-module
 from panda3d.core import TextNode  # pylint: disable=no-name-in-module
 from panda3d.core import AntialiasAttrib  # pylint: disable=no-name-in-module
+from panda3d.core import Filename  # pylint: disable=no-name-in-module
 
 from direct.gui.OnscreenText import OnscreenText  # pylint: disable=no-name-in-module
 from adam.visualization.positioning import PositionsMap
@@ -190,5 +191,5 @@ class SituationVisualizer(ShowBase):
         print(self.render.ls())
 
     def _load_model(self, name: str):
-        working_dir = os.path.abspath((sys.path[0]))
+        working_dir = Filename.fromOsSpecific(os.path.abspath((sys.path[0])))
         return self.loader.loadModel(working_dir + "/adam/visualization/models/" + name)
