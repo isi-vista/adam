@@ -13,16 +13,22 @@ from typing import (
     Callable,
     Any,
     Generator,
+    Mapping,
 )
 from functools import partial
 
 import random
 from collections import defaultdict
+import numpy as np
 
-# currently useful for positioning multiple objects:
 import logging
 
-from adam.curriculum.phase1_curriculum import _make_object_beside_object_curriculum
+# currently useful for positioning multiple objects:
+from adam.curriculum.phase1_curriculum import (
+    _make_object_beside_object_curriculum as make_curriculum,
+)
+
+
 import attr
 from attr import attrs
 from vistautils.parameters import Parameters
@@ -35,7 +41,6 @@ from panda3d.core import NodePath  # pylint: disable=no-name-in-module
 from adam.language.dependency import LinearizedDependencyTree
 
 from adam.experiment import InstanceGroup
-from adam.geon import CrossSection
 
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.perception.developmental_primitive_perception import (
@@ -50,7 +55,7 @@ from adam.ontology import OntologyNode
 from adam.relation import IN_REGION
 
 from adam.visualization.panda3d_interface import SituationVisualizer
-from adam.visualization.utils import Shape, OBJECT_NAMES_TO_EXCLUDE
+from adam.visualization.utils import Shape, OBJECT_NAMES_TO_EXCLUDE, cross_section_to_geon
 
 from adam.visualization.positioning import run_model, PositionsMap
 from adam.ontology.phase1_spatial_relations import Region
@@ -82,13 +87,17 @@ def main(params: Parameters) -> None:
     steps_before_vis = params.positive_integer("steps_before_vis")
 
     random.seed(params.integer("seed"))
+    np.random.seed(params.integer("seed"))
 
     # go through curriculum scenes and output geometry types
     print("scene generation test")
     viz = SituationVisualizer()
-    for i, scene_elements in enumerate(
-        SceneCreator.create_scenes([_make_object_beside_object_curriculum()])
-    ):
+    model_scales = viz.get_model_scales()
+    for model_name, scale in model_scales.items():
+        logging.info("SCALE: %s -> %s", model_name, scale.__str__())
+
+    for i, scene_elements in enumerate(SceneCreator.create_scenes([make_curriculum()])):
+
         # debug: skip the first few scenes with people in them
         if i < 10:
             continue
@@ -109,14 +118,18 @@ def main(params: Parameters) -> None:
         SceneCreator.graph_for_each_top_level(
             scene_elements.object_graph, bound_render_obj, bound_render_nested_obj
         )
-
         # for debugging purposes to view the results before positioning:
         viz.run_for_seconds(1)
-        screenshot_name = input(
-            "Press ENTER to run the positioning system or enter name to save a screenshot"
+        command = input(
+            "Press ENTER to run the positioning system or enter name to save a screenshot\n"
+            "Or type 's' for (step or for skip) to skip this scene > "
         )
-        if screenshot_name:
-            viz.screenshot(screenshot_name)
+        if command == "s":
+            viz.clear_scene()
+            viz.run_for_seconds(0.25)
+            continue
+        if command:
+            viz.screenshot(command)
 
         # now that every object has been instantiated into the scene,
         # they need to be re-positioned.
@@ -130,6 +143,7 @@ def main(params: Parameters) -> None:
                 ]
             ),
             scene_elements.in_region_map,
+            model_scales,
             iterations=num_iterations,
             yield_steps=steps_before_vis,
         ):
@@ -200,7 +214,7 @@ def render_obj_nested(
         else:
             pos = SceneCreator.random_leaf_position()
         return renderer.add_dummy_node(obj.debug_handle, pos, parent)
-    shape = SceneCreator.cross_section_to_geo(obj.geon.cross_section)
+    shape = cross_section_to_geon(obj.geon.cross_section)
     # TODO***: allow for Irregular geons to be rendered
     if shape == Shape.IRREGULAR:
         logging.warning("Irregular shape for %s could not be rendered", obj.debug_handle)
@@ -324,37 +338,6 @@ class SceneCreator:
                 )
 
     @staticmethod
-    def cross_section_to_geo(cs: CrossSection) -> Shape:
-        """
-        Converts a cross section into a geon type, based on the properties of the cross section
-        Args:
-            cs: CrossSection to be mapped to a Geon type
-
-        Returns: Shape: a convenience enum mapping to a file name for the to-be-rendered geometry
-
-        """
-        if cs.has_rotational_symmetry and cs.has_reflective_symmetry and cs.curved:
-            return Shape("CIRCULAR")
-        elif cs.has_rotational_symmetry and cs.has_reflective_symmetry and not cs.curved:
-            return Shape("SQUARE")
-        elif not cs.has_rotational_symmetry and cs.has_reflective_symmetry and cs.curved:
-            return Shape("OVALISH")
-        elif (
-            not cs.has_rotational_symmetry
-            and cs.has_reflective_symmetry
-            and not cs.curved
-        ):
-            return Shape("RECTANGULAR")
-        elif (
-            not cs.has_rotational_symmetry
-            and not cs.has_reflective_symmetry
-            and not cs.curved
-        ):
-            return Shape("IRREGULAR")
-        else:
-            raise ValueError("Unknown Geon composition")
-
-    @staticmethod
     def _nest_objects(
         perceived_objects: ImmutableSet[ObjectPerception],
         relations: ImmutableSet[Relation["ObjectPerception"]],
@@ -405,9 +388,19 @@ class SceneCreator:
                 scene_graph.append(search_node)
             # find node with key
             for nested in d[key]:
-                search_node.children.append(
-                    SceneNode(nested.debug_handle, nested, parent=search_node)
-                )
+                # check if this object's children are already in the scene graph,
+                # if so, nest them under this object instead of the top level
+                existing_node = None
+                for node in scene_graph:
+                    if node.name == nested.debug_handle:
+                        existing_node = node
+                if existing_node is None:
+                    search_node.children.append(
+                        SceneNode(nested.debug_handle, nested, parent=search_node)
+                    )
+                else:
+                    search_node.children.append(existing_node)
+                    scene_graph.remove(existing_node)
 
         return scene_graph
 
@@ -475,6 +468,7 @@ class SceneCreator:
 def _solve_top_level_positions(
     top_level_objects: ImmutableSet[ObjectPerception],
     in_region_map: DefaultDict[ObjectPerception, List[Region[ObjectPerception]]],
+    model_scales: Mapping[str, Tuple[float, float, float]],
     iterations: int = 200,
     yield_steps: Optional[int] = None,
 ) -> Iterable[PositionsMap]:
@@ -493,6 +487,7 @@ def _solve_top_level_positions(
     return run_model(
         top_level_objects,
         in_region_map,
+        model_scales,
         num_iterations=iterations,
         yield_steps=yield_steps,
     )
