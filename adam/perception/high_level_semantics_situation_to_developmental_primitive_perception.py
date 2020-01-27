@@ -44,7 +44,13 @@ from adam.ontology.phase1_ontology import (
     ABOUT_THE_SAME_SIZE_AS_LEARNER,
     BABY,
 )
-from adam.ontology.phase1_spatial_relations import INTERIOR, Region, SpatialPath
+from adam.ontology.phase1_spatial_relations import (
+    INTERIOR,
+    Region,
+    SpatialPath,
+    EXTERIOR_BUT_IN_CONTACT,
+    GRAVITATIONAL_UP,
+)
 from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
 from adam.perception import (
     GROUND_PERCEPTION,
@@ -1133,9 +1139,27 @@ class _PerceptionGeneration:
         for situation_object in self._situation.all_objects:
             if situation_object.ontology_node != GROUND:
                 if self._objects_to_perceptions[situation_object] in objects_to_relations:
-                    # TODO: Handle associating contacts ground so long as a pre-existing relation
-                    #  doesn't define this. https://github.com/isi-vista/adam/issues/309
-                    pass
+                    # If this object is not on anything else, it should be on the ground
+                    object_is_on_something = False
+                    for relation in objects_to_relations[
+                        self._objects_to_perceptions[situation_object]
+                    ]:
+                        if relation.relation_type == IN_REGION and isinstance(
+                            relation.second_slot, Region
+                        ):
+                            region = relation.second_slot
+                            if (
+                                region.distance == EXTERIOR_BUT_IN_CONTACT
+                                and region.direction == GRAVITATIONAL_UP
+                            ):
+                                object_is_on_something = True
+                    if not object_is_on_something:
+                        self._relation_perceptions.append(
+                            on(
+                                self._objects_to_perceptions[situation_object],
+                                perceived_ground,
+                            )
+                        )
                 else:
                     self._relation_perceptions.append(
                         on(
