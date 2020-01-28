@@ -7,6 +7,7 @@ from adam.ontology.phase1_ontology import (
     _PERSON_SCHEMA,
     _BALL_SCHEMA,
     _TABLE_SCHEMA,
+    _make_cup_schema,
 )
 from adam.ontology.phase1_spatial_relations import EXTERIOR_BUT_IN_CONTACT, Region
 from adam.perception import ObjectPerception, PerceptualRepresentation
@@ -73,6 +74,8 @@ def test_relations():
 
 def test_difference():
     ball = ObjectPerception("ball", _BALL_SCHEMA.geon.copy())
+    cup = ObjectPerception("cup", _make_cup_schema().geon.copy())
+
     table = ObjectPerception("table", axes=_TABLE_SCHEMA.axes.copy())
 
     first_frame = DevelopmentalPrimitivePerceptionFrame(
@@ -85,8 +88,26 @@ def test_difference():
     )
 
     second_frame = DevelopmentalPrimitivePerceptionFrame(
-        perceived_objects=[ball, table], relations=[above(ball, table)]
+        perceived_objects=[ball, table, cup], relations=[above(ball, table)]
     )
 
     diff = diff_primitive_perception_frames(before=first_frame, after=second_frame)
     assert len(diff.removed_relations) == 2
+    assert not diff.added_relations
+    assert len(diff.added_objects) == 1
+    assert not diff.removed_objects
+    assert diff.before_axis_info == first_frame.axis_info
+    assert diff.after_axis_info == second_frame.axis_info
+    assert not diff.added_property_assertions
+    assert not diff.removed_property_assertions
+
+    # Reversed
+    diff_2 = diff_primitive_perception_frames(before=second_frame, after=first_frame)
+    assert len(diff_2.added_relations) == 2
+    assert not diff_2.removed_relations
+    assert not diff_2.added_objects
+    assert len(diff_2.removed_objects) == 1
+    assert diff_2.before_axis_info == second_frame.axis_info
+    assert diff_2.after_axis_info == first_frame.axis_info
+    assert not diff_2.added_property_assertions
+    assert not diff_2.removed_property_assertions

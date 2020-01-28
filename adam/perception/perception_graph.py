@@ -354,11 +354,7 @@ class PerceptionGraph(PerceptionGraphProtocol):
             label = unwrapped_perception_node.debug_handle
         # regions do have content but we express those as edges to other nodes
         elif isinstance(unwrapped_perception_node, Region):
-            if unwrapped_perception_node.distance:
-                dist_string = f"[{unwrapped_perception_node.distance.name}]"
-            else:
-                dist_string = ""
-            label = f"reg:{dist_string}"
+            label = f"reg:{unwrapped_perception_node}"
         elif isinstance(unwrapped_perception_node, GeonAxis):
             label = f"axis:{unwrapped_perception_node.debug_name}"
         elif isinstance(unwrapped_perception_node, RgbColorPerception):

@@ -1,7 +1,9 @@
 from attr import attrib, attrs
+from attr.validators import instance_of
 from immutablecollections import ImmutableSet, immutableset
 from immutablecollections.converter_utils import _to_immutableset
 
+from adam.axes import AxesInfo
 from adam.perception import ObjectPerception
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -53,6 +55,24 @@ class DevelopmentalPrimitivePerceptionFrameDiff:
     r"""
     the set of `RelationPerception`\ s, that were present on the first perception frame, but not the second
     """
+    before_axis_info: AxesInfo["ObjectPerception"] = attrib(
+        # instance default okay because immutable
+        validator=instance_of(AxesInfo),  # type: ignore
+        kw_only=True,
+        default=AxesInfo(),
+    )
+    r"""
+    the `AxisInfo` of the first perception frame
+    """
+    after_axis_info: AxesInfo["ObjectPerception"] = attrib(
+        # instance default okay because immutable
+        validator=instance_of(AxesInfo),  # type: ignore
+        kw_only=True,
+        default=AxesInfo(),
+    )
+    r"""
+    the `AxisInfo` of the second perception frame
+    """
 
 
 def diff_primitive_perception_frames(
@@ -74,4 +94,6 @@ def diff_primitive_perception_frames(
         ),
         added_relations=after.relations.difference(before.relations),
         removed_relations=before.relations.difference(after.relations),
+        before_axis_info=before.axis_info,
+        after_axis_info=after.axis_info,
     )
