@@ -2,6 +2,7 @@ import numpy as np
 import torch
 
 from math import isclose, pi
+from immutablecollections import immutableset
 
 from adam.visualization.positioning import (
     AxisAlignedBoundingBox,
@@ -9,10 +10,10 @@ from adam.visualization.positioning import (
     WeakGravityPenalty,
     run_model,
     angle_between,
+    InRegionPenalty,
 )
 from typing import Mapping, List, Tuple
 from adam.perception import ObjectPerception
-from adam.ontology.phase1_spatial_relations import Region
 from adam.axes import (
     Axes,
     straight_up,
@@ -20,7 +21,8 @@ from adam.axes import (
     symmetric,
     symmetric_vertical,
 )
-from immutablecollections import immutableset
+from adam.ontology.phase1_spatial_relations import Region, PROXIMAL, Direction
+from adam.axes import HorizontalAxisOfObject
 
 
 def test_running_model() -> None:
@@ -120,3 +122,68 @@ def test_angle_between() -> None:
         torch.tensor([-1, 0, 0], dtype=torch.float),  # pylint: disable=not-callable
     )
     assert result is not None and isclose(result.item(), pi, rel_tol=0.05)
+
+
+def test_in_region_constraint() -> None:
+    ball = ObjectPerception(
+        "ball",
+        axes=Axes(
+            primary_axis=symmetric_vertical("ball-generating"),
+            orienting_axes=immutableset(
+                [symmetric("side-to-side0"), symmetric("side-to-side1")]
+            ),
+        ),
+    )
+    box = ObjectPerception(
+        "box",
+        axes=Axes(
+            primary_axis=straight_up("top_to_bottom"),
+            orienting_axes=immutableset(
+                [symmetric("side-to-side0"), symmetric("side-to-side1")]
+            ),
+        ),
+    )
+
+    aabb_ball = AxisAlignedBoundingBox.create_at_center_point(center=np.array([0, 0, 1]))
+
+    aabb_box = AxisAlignedBoundingBox.create_at_center_point(center=np.array([0, -2, 1]))
+
+    # specifying that the box should be to the right of the ball
+
+    direction = Direction(
+        positive=True, relative_to_axis=HorizontalAxisOfObject(ball, index=0)
+    )
+
+    region = Region(ball, PROXIMAL, direction)
+
+    obj_percept_to_aabb = {ball: aabb_ball, box: aabb_box}
+
+    in_region_relations = {box: [region]}
+
+    in_region_penalty = InRegionPenalty(obj_percept_to_aabb, in_region_relations)
+
+    box_penalty = in_region_penalty(box, immutableset([region]))
+    assert box_penalty > 0
+
+    # now with a box that *is* to the right of the ball
+
+    box2 = ObjectPerception(
+        "box2",
+        axes=Axes(
+            primary_axis=straight_up("top_to_bottom"),
+            orienting_axes=immutableset(
+                [symmetric("side-to-side0"), symmetric("side-to-side1")]
+            ),
+        ),
+    )
+    aabb_box2 = AxisAlignedBoundingBox.create_at_center_point(center=np.array([2, 0, 1]))
+
+    obj_percept_to_aabb = {ball: aabb_ball, box2: aabb_box2}
+
+    in_region_relations = {box2: [region]}
+
+    in_region_penalty = InRegionPenalty(obj_percept_to_aabb, in_region_relations)
+
+    box_penalty = in_region_penalty(box2, immutableset([region]))
+
+    assert box_penalty == 0
