@@ -52,7 +52,7 @@ def cross_section_to_geon(cs: CrossSection) -> Shape:
 
 # currently supported shapes and models
 GEON_SHAPES = [Shape.SQUARE, Shape.CIRCULAR, Shape.OVALISH, Shape.RECTANGULAR]
-MODEL_NAMES = ["ball", "hat", "cup", "table", "door", "book"]
+MODEL_NAMES = ["ball", "hat", "cup", "table", "door", "book", "car", "bird", "chair"]
 
 NAME_TO_ONTOLOGY_NODE: ImmutableDict[str, OntologyNode] = immutabledict(
     (node.handle, node) for node in PHASE_1_CURRICULUM_OBJECTS

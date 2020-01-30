@@ -54,6 +54,9 @@ class SituationVisualizer(ShowBase):
         "table": "table.egg",
         "door": "door.egg",
         "book": "book.egg",
+        "bird": "bird.egg",
+        "car": "car.egg",
+        "chair": "chair.egg",
     }
 
     def __init__(self) -> None:
@@ -180,6 +183,7 @@ class SituationVisualizer(ShowBase):
         name: str,
         position: Tuple[float, float, float],
         parent: Optional[NodePath] = None,
+        scale_multiplier: Optional[float] = 1.0,
     ) -> NodePath:
         print(f"\nAdding Dummy node: {name}")
 
@@ -190,6 +194,10 @@ class SituationVisualizer(ShowBase):
                 SituationVisualizer.specific_model_to_file[specific_model_type]
             )
             new_node.name = name
+            scale = new_node.getScale()
+            new_node.setSx(scale.x * scale_multiplier)
+            new_node.setSy(scale.y * scale_multiplier)
+            new_node.setSz(scale.z * scale_multiplier)
         else:
             new_node = NodePath(name)
         if parent is None:
