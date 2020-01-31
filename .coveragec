@@ -4,6 +4,8 @@ source = adam
 
 [report]
 exclude_lines =
+    # Dont test lines with this comment
+    pragma: no cover
     if self.debug:
     pragma: no cover
     raise NotImplementedError
