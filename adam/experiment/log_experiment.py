@@ -19,7 +19,7 @@ from adam.experiment.observer import LearningProgressHtmlLogger
 from adam.learner import LanguageLearner
 from adam.learner.object_recognizer import ObjectRecognizer
 from adam.learner.preposition_subset import PrepositionSubsetLanguageLearner
-from adam.learner.pursuit import PursuitLanguageLearner
+from adam.learner.pursuit import PursuitLanguageLearner, ObjectPursuitLearner
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     GAILA_M6_PERCEPTION_GENERATOR,
@@ -65,7 +65,7 @@ def learner_factory_from_params(
 ) -> Callable[[], LanguageLearner]:  # type: ignore
     learner_type = params.string("learner", ["pursuit", "preposition-subset"])
     if learner_type == "pursuit":
-        return lambda: PursuitLanguageLearner.from_parameters(
+        return lambda: ObjectPursuitLearner.from_parameters(
             params.namespace("pursuit"), graph_logger=graph_logger
         )
     elif learner_type == "preposition-subset":

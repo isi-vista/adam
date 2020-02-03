@@ -2,7 +2,19 @@ import logging
 from abc import abstractmethod
 from pathlib import Path
 from random import Random
-from typing import Dict, Generic, Iterable, List, Mapping, Optional, Set, Tuple, TypeVar, Sequence
+from typing import (
+    Dict,
+    Generic,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Set,
+    Tuple,
+    TypeVar,
+    Sequence,
+    Type,
+)
 
 from attr.validators import in_, instance_of, optional
 from immutablecollections import immutabledict
@@ -21,6 +33,7 @@ from adam.learner import (
     get_largest_matching_pattern,
     graph_without_learner,
 )
+from adam.learner.preposition_pattern import PrepositionPattern
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
 from adam.ontology.phase1_spatial_relations import Region
@@ -34,11 +47,30 @@ from adam.perception.perception_graph import (
     GraphLogger,
     PerceptionGraph,
     PerceptionGraphPattern,
+    PatternMatching,
 )
 from adam.utils import networkx_utils
 from attr import Factory, attrib, attrs
 
 HypothesisT = TypeVar("HypothesisT")
+
+
+@attrs
+class MasterPursuitLearner(LanguageLearner[PerceptionT, LinguisticDescription]):
+    """
+    An implementation of `LanguageLearner` for pursuit learning that utilizes different learners.
+    """
+
+    def observe(
+        self, learning_example: LearningExample[PerceptionT, LinguisticDescription]
+    ) -> None:
+        pass
+
+    def describe(
+        self, perception: PerceptualRepresentation[PerceptionT]
+    ) -> Mapping[LinguisticDescription, float]:
+        pass
+
 
 @attrs
 class PursuitLanguageLearner(
@@ -46,16 +78,14 @@ class PursuitLanguageLearner(
     LanguageLearner[PerceptionT, LinguisticDescription],
 ):
     """
-    An implementation of `LanguageLearner` for pursuit learning based approach for single object
-    detection.
+    An implementation of `LanguageLearner` for pursuit learning as a base for different pursuit based
+    learners.
     """
 
-    _words_to_hypotheses_and_scores: Dict[
-        str, Dict[HypothesisT, float]
-    ] = attrib(init=False, default=Factory(dict))
-    _lexicon: Dict[str, HypothesisT] = attrib(
+    _words_to_hypotheses_and_scores: Dict[str, Dict[HypothesisT, float]] = attrib(
         init=False, default=Factory(dict)
     )
+    _lexicon: Dict[str, HypothesisT] = attrib(init=False, default=Factory(dict))
     _smoothing_parameter: float = attrib(
         validator=in_(Range.greater_than(0.0)), kw_only=True
     )
@@ -102,32 +132,6 @@ class PursuitLanguageLearner(
 
     _observation_num = attrib(init=False, default=0)
 
-    @staticmethod
-    def from_parameters(
-        params: Parameters, *, graph_logger: Optional[GraphLogger] = None
-    ) -> "PursuitLanguageLearner":  # type: ignore
-        log_word_hypotheses_dir = params.optional_creatable_directory(
-            "log_word_hypotheses_dir"
-        )
-        if log_word_hypotheses_dir:
-            logging.info("Hypotheses will be logged to %s", log_word_hypotheses_dir)
-
-        rng = Random()
-        rng.seed(params.optional_integer("random_seed", default=0))
-
-        return PursuitLanguageLearner(
-            learning_factor=params.floating_point("learning_factor"),
-            graph_match_confirmation_threshold=params.floating_point(
-                "graph_match_confirmation_threshold"
-            ),
-            lexicon_entry_threshold=params.floating_point("lexicon_entry_threshold"),
-            smoothing_parameter=params.floating_point("smoothing_parameter"),
-            graph_logger=graph_logger,
-            log_word_hypotheses_to=log_word_hypotheses_dir,
-            rng=rng,
-            ontology=GAILA_PHASE_1_ONTOLOGY,
-        )
-
     def observe(
         self, learning_example: LearningExample[PerceptionT, LinguisticDescription]
     ) -> None:
@@ -155,7 +159,7 @@ class PursuitLanguageLearner(
 
     def learn_with_pursuit(
         self,
-        observed_perception_graph: HypothesisT,
+        observed_perception_graph: PerceptionGraph,
         observed_linguistic_description: Tuple[str, ...],
     ) -> None:
         logging.info(f"Pursuit learner observing {observed_linguistic_description}")
@@ -190,26 +194,21 @@ class PursuitLanguageLearner(
                 if self._log_word_hypotheses_to:
                     self._log_hypotheses(word)
 
-    # GENERALIZE TODO: put the abstract methods together
-    @abstractmethod
-    def _candidate_meanings(self, observed_perception_graph: PerceptionGraph) -> Sequence[HypothesisT]:
-        """
-        GENERALIZE TODO: give me a docstring
-        """
-
     def initialization_step(self, word: str, observed_perception_graph: PerceptionGraph):
         # If it's a novel word, learn a new hypothesis/pattern,
         # generated as a pattern graph from the perception.
         # We want h_0 = arg_min_(m in M_U) max(A_m); i.e. h_0 is pattern_hypothesis
         # GENERALIZE TODO: we need a plug-inable way to generate candidate meanings
-        meanings = self._candidate_meanings(observed_perception_graph)
+        hypotheses: Sequence[HypothesisT] = self._candidate_meanings(
+            observed_perception_graph
+        )
 
-        pattern_hypothesis = first(meanings)
+        pattern_hypothesis = first(hypotheses)
         min_score = float("inf")
         # Of the possible meanings for the word in this scene,
         # make our initial hypothesis the one with the least association
         # with any other word.
-        for meaning in meanings:
+        for hypothesis in hypotheses:
             # TODO Try to make this more efficient?
             # GENERALIZE TODO: generalize isomorphism checking
             max_association_score = max(
@@ -217,12 +216,12 @@ class PursuitLanguageLearner(
                     s
                     for w, h_to_s in self._words_to_hypotheses_and_scores.items()
                     for h, s in h_to_s.items()
-                    if h.check_isomorphism(meaning)
+                    if self._check_hypothesis_isomorphism(h, hypothesis)
                 ]
                 + [0]
             )
             if max_association_score < min_score:
-                pattern_hypothesis = meaning
+                pattern_hypothesis = hypothesis
                 min_score = max_association_score
 
         if self._graph_logger:
@@ -262,7 +261,7 @@ class PursuitLanguageLearner(
 
         # If the leading hypothesis sufficiently matches the observation, reinforce it
         # To do, we check how much of the leading pattern hypothesis matches the perception
-        # GENERALIZE_TODO: way of computing partial matches
+        # GENERALIZE TODO: way of computing partial matches
         partial_match = self._compute_match_ratio(
             leading_hypothesis_pattern, observed_perception_graph
         )
@@ -296,7 +295,7 @@ class PursuitLanguageLearner(
             # This is where we differ from the pursuit paper.
             # If a sufficiently close relaxed version of our pattern matches,
             # we used that relaxed version as the new hypothesis to introduce
-            hypotheses_to_reward = []
+            hypotheses_to_reward: List[HypothesisT] = []
             if (
                 partial_match.match_ratio() >= self._graph_match_confirmation_threshold
                 and partial_match.matching_subgraph
@@ -308,6 +307,7 @@ class PursuitLanguageLearner(
                     partial_match.num_nodes_in_pattern,
                 )
                 hypotheses_to_reward.append(partial_match.matching_subgraph)
+
             else:
                 # Here's where it gets complicated.
                 # In the Pursuit paper, at this point they choose a random meaning from the scene.
@@ -319,19 +319,18 @@ class PursuitLanguageLearner(
                 logging.info(
                     "Choosing a random object from the scene to use as the word meaning"
                 )
+
                 # GENERALIZE TODO: choose random hypotheses to choose from
-                objects = self.get_objects_from_perception(observed_perception_graph)
-                chosen_object = self._rng.choice(objects)
+                perceptions = self._candidate_perceptions(observed_perception_graph)
+                chosen_perception = self._rng.choice(perceptions)
                 hypotheses_to_reward.append(
-                    PerceptionGraphPattern.from_graph(
-                        chosen_object
-                    ).perception_graph_pattern
+                    self._meaning_from_perception(chosen_perception)
                 )
 
                 for hypothesis in hypotheses_for_word:
                     # GENERALIZE TODO: match ratio computation
                     non_leading_hypothesis_partial_match = self._compute_match_ratio(
-                        hypothesis, chosen_object
+                        hypothesis, chosen_perception
                     )
                     if (
                         non_leading_hypothesis_partial_match.match_ratio()
@@ -346,7 +345,7 @@ class PursuitLanguageLearner(
                             )
 
             # Guard against the same object being rewarded more than once on the same update step.
-            hypothesis_objects_boosted_on_this_update: Set[PerceptionGraphPattern] = set()
+            hypothesis_objects_boosted_on_this_update: Set[HypothesisT] = set()
             for hypothesis_to_reward in hypotheses_to_reward:
                 # Because equality can't be computed straightforwardly between DiGraphs,
                 # we can't just lookup the new_hypothesis in hypotheses_for_word
@@ -401,34 +400,6 @@ class PursuitLanguageLearner(
 
         def match_ratio(self) -> float:
             return self.num_nodes_matched / self.num_nodes_in_pattern
-
-    def _compute_match_ratio(
-        self, pattern: PerceptionGraphPattern, graph: PerceptionGraph
-    ) -> "PursuitLanguageLearner.PartialMatch":
-        """
-        Computes the fraction of pattern graph nodes of *pattern* which match *graph*.
-        """
-        hypothesis_pattern_common_subgraph = get_largest_matching_pattern(
-            pattern,
-            graph,
-            debug_callback=self._debug_callback,
-            graph_logger=self._graph_logger,
-            ontology=self._ontology,
-            matching_objects=True,
-        )
-        self.debug_counter += 1
-
-        leading_hypothesis_num_nodes = len(pattern)
-        num_nodes_matched = (
-            len(hypothesis_pattern_common_subgraph.copy_as_digraph().nodes)
-            if hypothesis_pattern_common_subgraph
-            else 0
-        )
-        return PursuitLanguageLearner.PartialMatch(
-            hypothesis_pattern_common_subgraph,
-            num_nodes_matched=num_nodes_matched,
-            num_nodes_in_pattern=leading_hypothesis_num_nodes,
-        )
 
     def lexicon_step(self, word: str) -> None:
         # If any conditional probability P(h^|w) exceeds a certain threshold value (h), then file
@@ -556,9 +527,7 @@ class PursuitLanguageLearner(
 
         for word, meaning_pattern in self._lexicon.items():
             # Use PerceptionGraphPattern.matcher and matcher.matches() for a complete match
-            matcher = meaning_pattern.matcher(
-                observed_perception_graph, matching_objects=True
-            )
+            matcher = self._matcher(meaning_pattern, observed_perception_graph)
             if any(
                 matcher.matches(
                     use_lookahead_pruning=True, graph_logger=self._graph_logger
@@ -578,9 +547,7 @@ class PursuitLanguageLearner(
                 )
                 if leading_hypothesis_pair:
                     (leading_hypothesis, score) = leading_hypothesis_pair
-                    matcher = leading_hypothesis.matcher(
-                        observed_perception_graph, matching_objects=True
-                    )
+                    matcher = self._matcher(leading_hypothesis, observed_perception_graph)
                     match = first(
                         matcher.matches(
                             use_lookahead_pruning=True, graph_logger=self._graph_logger
@@ -595,9 +562,7 @@ class PursuitLanguageLearner(
 
         return immutabledict(descriptions)
 
-    def _leading_hypothesis_for(
-        self, word: str
-    ) -> Optional[Tuple[PerceptionGraphPattern, float]]:
+    def _leading_hypothesis_for(self, word: str) -> Optional[Tuple[HypothesisT, float]]:
         hypotheses_and_scores_for_word = self._words_to_hypotheses_and_scores.get(
             word, None
         )
@@ -623,7 +588,7 @@ class PursuitLanguageLearner(
             )
             self._word_to_logger[word] = graph_logger
 
-        def compute_hypothesis_id(h: PerceptionGraphPattern) -> str:
+        def compute_hypothesis_id(h: HypothesisT) -> str:
             # negative hashes cause the dot rendered to crash
             return str(abs(hash((word, h))))
 
@@ -672,27 +637,230 @@ class PursuitLanguageLearner(
                 ),
             )
 
+    @abstractmethod
+    def _find_identical_hypothesis(
+        self, new_hypothesis: HypothesisT, candidates: Iterable[HypothesisT]
+    ) -> Optional[HypothesisT]:
+        """
+        Finds the first hypothesis object, if any, in *candidates*
+        which is isomorphic to *new_hypothesis*.
+        """
+
+    @abstractmethod
+    def _candidate_perceptions(self, observed_perception_graph) -> List[PerceptionGraph]:
+        """
+        Returns a sequence of candidate perceptions of a specific type, given an *observed_perception_graph*.
+        """
+
+    @abstractmethod
+    def _candidate_meanings(
+        self, observed_perception_graph: PerceptionGraph
+    ) -> Sequence[HypothesisT]:
+        """
+        Returns a sequence of candidate meanings of a specific type, given a sequence of *perceptions*.
+        """
+
+    @abstractmethod
+    def _meaning_from_perception(self, perception: PerceptionGraph) -> HypothesisT:
+        """
+        Returns a meaning representation for a given *perception*.
+        """
+
+    @abstractmethod
+    def _compute_match_ratio(
+        self, hypothesis: HypothesisT, graph: PerceptionGraph
+    ) -> "PursuitLanguageLearner.PartialMatch":
+        """
+        Computes the fraction of pattern graph nodes of *hypothesis* which match *graph*.
+        """
+
+    @abstractmethod
+    def _check_hypothesis_isomorphism(
+        self, h: HypothesisT, hypothesis: HypothesisT
+    ) -> bool:
+        """
+        Checks if two hypotheses are isomorphic.
+        """
+
+    @abstractmethod
+    def _matcher(
+        self, hypothesis: HypothesisT, observed_perception_graph: PerceptionGraph
+    ) -> PatternMatching:
+        """
+        Returns the pattern matching given a *hypothesis* and *observed_perception_graph*
+        """
+
+
+class ObjectPursuitLearner(
+    Generic[PerceptionT, LinguisticDescriptionT],
+    PursuitLanguageLearner[PerceptionGraphPattern, PerceptionT, LinguisticDescriptionT],
+):
+    """
+    An implementation of pursuit learner for object recognition
+    """
+
+    def _meaning_from_perception(
+        self, perception: PerceptionGraph
+    ) -> PerceptionGraphPattern:
+        return PerceptionGraphPattern.from_graph(perception).perception_graph_pattern
+
+    def _candidate_perceptions(self, observed_perception_graph) -> List[PerceptionGraph]:
+        return self.get_objects_from_perception(observed_perception_graph)
+
+    def _candidate_meanings(
+        self, observed_perception_graph: PerceptionGraph
+    ) -> Sequence[PerceptionGraphPattern]:
+        return [
+            self._meaning_from_perception(object_)
+            for object_ in self._candidate_perceptions(observed_perception_graph)
+        ]
+
+    def _matcher(
+        self,
+        hypothesis: PerceptionGraphPattern,
+        observed_perception_graph: PerceptionGraph,
+    ) -> PatternMatching:
+        return hypothesis.matcher(observed_perception_graph, matching_objects=True)
+
+    def _compute_match_ratio(
+        self, hypothesis: PerceptionGraphPattern, graph: PerceptionGraph
+    ) -> "PursuitLanguageLearner.PartialMatch":
+        pattern = hypothesis
+        hypothesis_pattern_common_subgraph = get_largest_matching_pattern(
+            pattern,
+            graph,
+            debug_callback=self._debug_callback,
+            graph_logger=self._graph_logger,
+            ontology=self._ontology,
+            matching_objects=True,
+        )
+        self.debug_counter += 1
+
+        leading_hypothesis_num_nodes = len(pattern)
+        num_nodes_matched = (
+            len(hypothesis_pattern_common_subgraph.copy_as_digraph().nodes)
+            if hypothesis_pattern_common_subgraph
+            else 0
+        )
+        return PursuitLanguageLearner.PartialMatch(
+            hypothesis_pattern_common_subgraph,
+            num_nodes_matched=num_nodes_matched,
+            num_nodes_in_pattern=leading_hypothesis_num_nodes,
+        )
+
     def _find_identical_hypothesis(
         self,
         new_hypothesis: PerceptionGraphPattern,
         candidates: Iterable[PerceptionGraphPattern],
     ) -> Optional[PerceptionGraphPattern]:
-        """
-        Finds the first hypothesis object, if any, in *candidates*
-        which is isomorphic to *new_hypothesis*.
-        """
         for candidate in candidates:
             if new_hypothesis.check_isomorphism(candidate):
                 return candidate
         return None
 
+    def _check_hypothesis_isomorphism(
+        self, h: PerceptionGraphPattern, hypothesis: PerceptionGraphPattern
+    ) -> bool:
+        return h.check_isomorphism(hypothesis)
 
-class ObjectPursuitLearner(Generic[PerceptionT, LinguisticDescriptionT],
-                               PursuitLanguageLearner[PerceptionGraphPattern, PerceptionT, LinguisticDescriptionT]):
-    def _candidate_meanings(self, observed_perception_graph: PerceptionGraph) -> Sequence[
-        PerceptionGraphPattern]:
-        return [
-            PerceptionGraphPattern.from_graph(object_).perception_graph_pattern
-            for object_ in self.get_objects_from_perception(observed_perception_graph)
-        ]
+    @staticmethod
+    def from_parameters(
+        params: Parameters, *, graph_logger: Optional[GraphLogger] = None
+    ) -> "ObjectPursuitLearner":  # type: ignore
+        log_word_hypotheses_dir = params.optional_creatable_directory(
+            "log_word_hypotheses_dir"
+        )
+        if log_word_hypotheses_dir:
+            logging.info("Hypotheses will be logged to %s", log_word_hypotheses_dir)
 
+        rng = Random()
+        rng.seed(params.optional_integer("random_seed", default=0))
+
+        return ObjectPursuitLearner(
+            learning_factor=params.floating_point("learning_factor"),
+            graph_match_confirmation_threshold=params.floating_point(
+                "graph_match_confirmation_threshold"
+            ),
+            lexicon_entry_threshold=params.floating_point("lexicon_entry_threshold"),
+            smoothing_parameter=params.floating_point("smoothing_parameter"),
+            graph_logger=graph_logger,
+            log_word_hypotheses_to=log_word_hypotheses_dir,
+            rng=rng,
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+        )
+
+
+class PrepositionPursuitLearner(
+    Generic[PerceptionT, LinguisticDescriptionT],
+    PursuitLanguageLearner[PrepositionPattern, PerceptionT, LinguisticDescriptionT],
+):
+    """
+    An implementation of pursuit learner for preposition leaning
+    """
+
+    def _meaning_from_perception(self, perception: PerceptionGraph) -> HypothesisT:
+        # TODO implement
+        pass
+
+    def _candidate_perceptions(self, observed_perception_graph) -> List[PerceptionGraph]:
+        # TODO implement
+        return []
+
+    def _candidate_meanings(
+        self, observed_perception_graph: PerceptionGraph
+    ) -> Sequence[PrepositionPattern]:
+        # TODO implement
+        return []
+
+    def _matcher(
+        self, hypothesis: PrepositionPattern, observed_perception_graph: PerceptionGraph
+    ) -> PatternMatching:
+        # TODO check mapping info
+        return hypothesis.graph_pattern.matcher(
+            observed_perception_graph, matching_objects=False
+        )
+
+    def _compute_match_ratio(
+        self, hypothesis: PrepositionPattern, graph: PerceptionGraph
+    ) -> "PursuitLanguageLearner.PartialMatch":
+        pattern = hypothesis.graph_pattern
+        hypothesis_pattern_common_subgraph = get_largest_matching_pattern(
+            pattern,
+            graph,
+            debug_callback=self._debug_callback,
+            graph_logger=self._graph_logger,
+            ontology=self._ontology,
+            matching_objects=True,
+        )
+        self.debug_counter += 1
+
+        leading_hypothesis_num_nodes = len(pattern)
+        num_nodes_matched = (
+            len(hypothesis_pattern_common_subgraph.copy_as_digraph().nodes)
+            if hypothesis_pattern_common_subgraph
+            else 0
+        )
+        return PursuitLanguageLearner.PartialMatch(
+            # TODO: change this to prepsotion pattern
+            hypothesis_pattern_common_subgraph,
+            num_nodes_matched=num_nodes_matched,
+            num_nodes_in_pattern=leading_hypothesis_num_nodes,
+        )
+
+    def _find_identical_hypothesis(
+        self, new_hypothesis: PrepositionPattern, candidates: Iterable[PrepositionPattern]
+    ) -> Optional[PrepositionPattern]:
+        """
+        Finds the first hypothesis object, if any, in *candidates*
+        which is isomorphic to *new_hypothesis*.
+        """
+        for candidate in candidates:
+            if self._check_hypothesis_isomorphism(new_hypothesis, candidate):
+                return candidate
+        return None
+
+    def _check_hypothesis_isomorphism(
+        self, h: PrepositionPattern, hypothesis: PrepositionPattern
+    ) -> bool:
+        # TODO: Check mapping equality
+        return h.graph_pattern.check_isomorphism(hypothesis.graph_pattern)
