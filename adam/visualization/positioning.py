@@ -1,3 +1,4 @@
+# pragma: no cover
 """
 This module defines a bounding box type and implements a constraint solver
 that can position multiple bounding boxes s/t they do not overlap

@@ -1,3 +1,4 @@
+# pragma: no cover
 import enum
 from typing import Optional, List, Tuple
 from immutablecollections import immutableset, immutabledict, ImmutableDict

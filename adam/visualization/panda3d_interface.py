@@ -1,3 +1,4 @@
+# pragma: no cover
 """Main interface for Panda3D rendering.
    Executing this module meant for testing purposes. (viewing an object in isolation)
    Defines various default settings (ground plane, lighting, camera
