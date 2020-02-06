@@ -340,6 +340,12 @@ class _Phase1SituationTemplateGenerator(
     ) -> Iterable[HighLevelSemanticsSituation]:
         check_arg(isinstance(template, Phase1SituationTemplate))
         try:
+            has_addressee = False
+            for object_ in template.all_object_variables:
+                if IS_ADDRESSEE in object_.asserted_properties:
+                    has_addressee = True
+                    break
+
             # gather property variables from object variables
             property_variables = immutableset(
                 property_
@@ -365,7 +371,7 @@ class _Phase1SituationTemplateGenerator(
             ):
                 # instantiate all objects in the situation according to the variable assignment.
                 object_var_to_instantiations = self._instantiate_objects(
-                    template, variable_assignment
+                    template, variable_assignment, has_addressee=has_addressee
                 )
 
                 # Cannot have multiple instantiations of the same recognized particular.
@@ -403,11 +409,18 @@ class _Phase1SituationTemplateGenerator(
         self,
         template: Phase1SituationTemplate,
         variable_assignment: "TemplateVariableAssignment",
+        *,
+        has_addressee: bool,
     ):
         object_var_to_instantiations: Mapping[
             TemplateObjectVariable, SituationObject
         ] = immutabledict(
-            (obj_var, self._instantiate_object(obj_var, variable_assignment))
+            (
+                obj_var,
+                self._instantiate_object(
+                    obj_var, variable_assignment, has_addressee=has_addressee
+                ),
+            )
             for obj_var in template.all_object_variables
         )
         return object_var_to_instantiations
@@ -416,9 +429,15 @@ class _Phase1SituationTemplateGenerator(
         self,
         object_var: TemplateObjectVariable,
         variable_assignment: "TemplateVariableAssignment",
+        *,
+        has_addressee: bool,
     ) -> SituationObject:
         object_type = variable_assignment.object_variables_to_fillers[object_var]
-
+        asserted_properties = object_var.asserted_properties
+        if object_type == LEARNER and not has_addressee:
+            asserted_properties = immutableset(
+                object_var.asserted_properties.union([IS_ADDRESSEE])
+            )
         return SituationObject.instantiate_ontology_node(
             ontology_node=object_type,
             properties=[
@@ -426,7 +445,7 @@ class _Phase1SituationTemplateGenerator(
                 variable_assignment.property_variables_to_fillers[asserted_property]
                 if isinstance(asserted_property, TemplatePropertyVariable)
                 else asserted_property
-                for asserted_property in object_var.asserted_properties
+                for asserted_property in asserted_properties
             ],
             ontology=self.ontology,
         )
@@ -437,6 +456,25 @@ class _Phase1SituationTemplateGenerator(
         variable_assignment: "TemplateVariableAssignment",
         object_var_to_instantiations,
     ) -> HighLevelSemanticsSituation:
+        other_objects = [
+            object_var_to_instantiations[obj_var]
+            for obj_var in (
+                template.all_object_variables.difference(
+                    template.salient_object_variables
+                )
+            )
+        ]
+        if LEARNER not in immutableset(
+            object_.ontology_node for object_ in object_var_to_instantiations.values()
+        ):
+            other_objects.append(
+                SituationObject.instantiate_ontology_node(
+                    LEARNER,
+                    properties=[IS_ADDRESSEE],
+                    debug_handle="learner",
+                    ontology=self.ontology,
+                )
+            )
         return HighLevelSemanticsSituation(
             from_template=template.name,
             ontology=self.ontology,
@@ -444,14 +482,7 @@ class _Phase1SituationTemplateGenerator(
                 object_var_to_instantiations[obj_var]
                 for obj_var in template.salient_object_variables
             ],
-            other_objects=[
-                object_var_to_instantiations[obj_var]
-                for obj_var in (
-                    template.all_object_variables.difference(
-                        template.salient_object_variables
-                    )
-                )
-            ],
+            other_objects=other_objects,
             always_relations=[
                 relation.copy_remapping_objects(object_var_to_instantiations)
                 for relation in template.asserted_always_relations

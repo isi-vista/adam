@@ -10,7 +10,7 @@ from more_itertools import flatten
 from vistautils.preconditions import check_arg
 
 from adam.axes import AxesInfo
-from adam.ontology import OntologyNode
+from adam.ontology import OntologyNode, IS_ADDRESSEE
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import is_recognized_particular
 from adam.ontology.phase1_spatial_relations import Region
@@ -129,6 +129,17 @@ class HighLevelSemanticsSituation(Situation):
 
     def __attrs_post_init__(self) -> None:
         check_arg(self.salient_objects, "A situation must contain at least one object")
+        has_addressee = False
+        for object_ in self.all_objects:
+            if IS_ADDRESSEE in object_.properties:
+                has_addressee = True
+                break
+
+        if not has_addressee:
+            raise RuntimeError(
+                f"Tried to create a situation without an addressee. Situation: {self}"
+            )
+
         for relation in self.always_relations:
             if not isinstance(relation.first_slot, SituationObject) or not isinstance(
                 relation.second_slot, (SituationObject, Region)
