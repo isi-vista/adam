@@ -53,6 +53,7 @@ from adam.utils import networkx_utils
 from attr import Factory, attrib, attrs
 
 HypothesisT = TypeVar("HypothesisT")
+HypothesisT2 = TypeVar("HypothesisT2")
 
 
 @attrs
@@ -244,13 +245,13 @@ class AbstractPursuitLearner(
 
         # If the leading hypothesis sufficiently matches the observation, reinforce it
         # To do, we check how much of the leading pattern hypothesis matches the perception
-        partial_match = self._compute_match_ratio(
+        partial_match = self._find_partial_match(
             leading_hypothesis_pattern, observed_perception_graph
         )
 
         # b.i) If the hypothesis is confirmed, we reinforce it.
         hypothesis_is_confirmed = partial_match.matched_exactly()
-        if hypothesis_is_confirmed and partial_match.matching_subgraph:
+        if hypothesis_is_confirmed and partial_match.partial_match_hypothesis():
             logging.info("Current hypothesis is confirmed.")
             # Reinforce A(w,h)
             new_hypothesis_score = current_hypothesis_score + self._learning_factor * (
@@ -279,8 +280,8 @@ class AbstractPursuitLearner(
             # we used that relaxed version as the new hypothesis to introduce
             hypotheses_to_reward: List[HypothesisT] = []
             if (
-                partial_match.match_ratio() >= self._graph_match_confirmation_threshold
-                and partial_match.matching_subgraph
+                partial_match.match_score() >= self._graph_match_confirmation_threshold
+                and partial_match.partial_match_hypothesis()
             ):
                 logging.info(
                     "Introducing partial match as a new hypothesis; %s of %s nodes "
@@ -288,7 +289,10 @@ class AbstractPursuitLearner(
                     partial_match.num_nodes_matched,
                     partial_match.num_nodes_in_pattern,
                 )
-                hypotheses_to_reward.append(partial_match.matching_subgraph)
+                # we know if partial_match_hypothesis is non-None above, it still will be.
+                hypotheses_to_reward.append(  # type: ignore
+                    partial_match.partial_match_hypothesis()
+                )
 
             else:
                 # Here's where it gets complicated.
@@ -311,11 +315,11 @@ class AbstractPursuitLearner(
 
                 for hypothesis in hypotheses_for_word:
                     # GENERALIZE TODO: match ratio computation
-                    non_leading_hypothesis_partial_match = self._compute_match_ratio(
+                    non_leading_hypothesis_partial_match = self._find_partial_match(
                         hypothesis, chosen_perception
                     )
                     if (
-                        non_leading_hypothesis_partial_match.match_ratio()
+                        non_leading_hypothesis_partial_match.match_score()
                         > self._graph_match_confirmation_threshold
                     ):
                         hypotheses_to_reward.append(hypothesis)
@@ -365,22 +369,28 @@ class AbstractPursuitLearner(
         return hypothesis_is_confirmed
 
     @attrs(frozen=True)
-    class PartialMatch:
+    class PartialMatch(Generic[HypothesisT2]):
         """
         *match_ratio* should be 1.0 exactly for a perfect match.
         """
 
-        matching_subgraph: Optional[PerceptionGraphPattern] = attrib(
-            validator=optional(instance_of(PerceptionGraphPattern))
-        )
-        num_nodes_matched: int = attrib(validator=instance_of(int), kw_only=True)
-        num_nodes_in_pattern: int = attrib(validator=instance_of(int), kw_only=True)
+        @abstractmethod
+        def partial_match_hypothesis(self) -> Optional[HypothesisT2]:
+            """
+            TODO for Deniz: add docstring
+            """
 
+        @abstractmethod
         def matched_exactly(self) -> bool:
-            return self.num_nodes_matched == self.num_nodes_in_pattern
+            """
+            TODO for Deniz: add docstring
+            """
 
-        def match_ratio(self) -> float:
-            return self.num_nodes_matched / self.num_nodes_in_pattern
+        @abstractmethod
+        def match_score(self) -> float:
+            """
+            TODO for Deniz: add docstring
+            """
 
     def lexicon_step(self, word: str) -> None:
         # If any conditional probability P(h^|w) exceeds a certain threshold value (h), then file
@@ -491,6 +501,14 @@ class AbstractPursuitLearner(
         logging.info(f"Got {len(meanings)} candidate meanings")
         return meanings
 
+    @abstractmethod
+    def _matches(
+        self, *, hypothesis: HypothesisT, observed_perception_graph: PerceptionGraph
+    ) -> bool:
+        """
+        TODO Deniz docstring
+        """
+
     def describe(
         self, perception: PerceptualRepresentation[PerceptionT]
     ) -> Mapping[LinguisticDescription, float]:
@@ -508,11 +526,9 @@ class AbstractPursuitLearner(
 
         for word, meaning_pattern in self._lexicon.items():
             # Use PerceptionGraphPattern.matcher and matcher.matches() for a complete match
-            matcher = self._matcher(meaning_pattern, observed_perception_graph)
-            if any(
-                matcher.matches(
-                    use_lookahead_pruning=True, graph_logger=self._graph_logger
-                )
+            if self._matches(
+                hypothesis=meaning_pattern,
+                observed_perception_graph=observed_perception_graph,
             ):
                 learned_description = TokenSequenceLinguisticDescription(("a", word))
                 descriptions.append((learned_description, 1.0))
@@ -528,14 +544,10 @@ class AbstractPursuitLearner(
                 )
                 if leading_hypothesis_pair:
                     (leading_hypothesis, score) = leading_hypothesis_pair
-                    matcher = self._matcher(leading_hypothesis, observed_perception_graph)
-                    match = first(
-                        matcher.matches(
-                            use_lookahead_pruning=True, graph_logger=self._graph_logger
-                        ),
-                        default=None,
-                    )
-                    if match:
+                    if self._matches(
+                        hypothesis=leading_hypothesis,
+                        observed_perception_graph=observed_perception_graph,
+                    ):
                         learned_description = TokenSequenceLinguisticDescription(
                             ("a", word)
                         )
@@ -650,9 +662,9 @@ class AbstractPursuitLearner(
         """
 
     @abstractmethod
-    def _compute_match_ratio(
+    def _find_partial_match(
         self, hypothesis: HypothesisT, graph: PerceptionGraph
-    ) -> "AbstractPursuitLearner.PartialMatch":
+    ) -> "AbstractPursuitLearner.PartialMatch[HypothesisT]":
         """
         Compute the degree to which a meaning matches a perception.
         The resulting score should be between 0.0 (no match) and 1.0 (a perfect match)
@@ -662,14 +674,6 @@ class AbstractPursuitLearner(
     def _are_isomorphic(self, h: HypothesisT, hypothesis: HypothesisT) -> bool:
         """
         Checks if two hypotheses are isomorphic.
-        """
-
-    @abstractmethod
-    def _matcher(
-        self, hypothesis: HypothesisT, observed_perception_graph: PerceptionGraph
-    ) -> PatternMatching:
-        """
-        Returns the pattern matching given a *hypothesis* and *observed_perception_graph*
         """
 
 
@@ -697,16 +701,39 @@ class ObjectPursuitLearner(
             for object_ in self._candidate_perceptions(observed_perception_graph)
         ]
 
-    def _matcher(
+    def _matches(
         self,
+        *,
         hypothesis: PerceptionGraphPattern,
         observed_perception_graph: PerceptionGraph,
-    ) -> PatternMatching:
-        return hypothesis.matcher(observed_perception_graph, matching_objects=True)
+    ) -> bool:
+        matcher = hypothesis.matcher(observed_perception_graph, matching_objects=True)
+        return any(
+            matcher.matches(use_lookahead_pruning=True, graph_logger=self._graph_logger)
+        )
 
-    def _compute_match_ratio(
+    @attrs(frozen=True)
+    class ObjectHypothesisPartialMatch(
+        AbstractPursuitLearner.PartialMatch[PerceptionGraphPattern]
+    ):
+        _partial_match_hypothesis: Optional[PerceptionGraphPattern] = attrib(
+            validator=optional(instance_of(PerceptionGraphPattern))
+        )
+        num_nodes_matched: int = attrib(validator=instance_of(int), kw_only=True)
+        num_nodes_in_pattern: int = attrib(validator=instance_of(int), kw_only=True)
+
+        def partial_match_hypothesis(self) -> Optional[PerceptionGraphPattern]:
+            return self._partial_match_hypothesis
+
+        def matched_exactly(self) -> bool:
+            return self.num_nodes_matched == self.num_nodes_in_pattern
+
+        def match_score(self) -> float:
+            return self.num_nodes_matched / self.num_nodes_in_pattern
+
+    def _find_partial_match(
         self, hypothesis: PerceptionGraphPattern, graph: PerceptionGraph
-    ) -> "AbstractPursuitLearner.PartialMatch":
+    ) -> "ObjectPursuitLearner.ObjectHypothesisPartialMatch":
         pattern = hypothesis
         hypothesis_pattern_common_subgraph = get_largest_matching_pattern(
             pattern,
@@ -724,7 +751,7 @@ class ObjectPursuitLearner(
             if hypothesis_pattern_common_subgraph
             else 0
         )
-        return AbstractPursuitLearner.PartialMatch(
+        return ObjectPursuitLearner.ObjectHypothesisPartialMatch(
             hypothesis_pattern_common_subgraph,
             num_nodes_matched=num_nodes_matched,
             num_nodes_in_pattern=leading_hypothesis_num_nodes,
@@ -794,17 +821,9 @@ class PrepositionPursuitLearner(
         # TODO implement
         return []
 
-    def _matcher(
-        self, hypothesis: PrepositionPattern, observed_perception_graph: PerceptionGraph
-    ) -> PatternMatching:
-        # TODO check mapping info
-        return hypothesis.graph_pattern.matcher(
-            observed_perception_graph, matching_objects=False
-        )
-
-    def _compute_match_ratio(
+    def _find_partial_match(
         self, hypothesis: PrepositionPattern, graph: PerceptionGraph
-    ) -> "AbstractPursuitLearner.PartialMatch":
+    ) -> "AbstractPursuitLearner.PartialMatch[PrepositionPattern]":
         pattern = hypothesis.graph_pattern
         hypothesis_pattern_common_subgraph = get_largest_matching_pattern(
             pattern,
