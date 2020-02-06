@@ -8,7 +8,7 @@ from immutablecollections import ImmutableSet, immutableset, immutablesetmultidi
 from more_itertools import first, only
 from networkx import DiGraph
 
-from adam.axes import FacingAddresseeAxis
+from adam.axes import FacingAddresseeAxis, GRAVITATIONAL_DOWN_TO_UP_AXIS
 from adam.language.dependency import (
     DependencyRole,
     DependencyTree,
@@ -70,6 +70,7 @@ from adam.ontology.phase1_spatial_relations import (
     PROXIMAL,
     Region,
     TOWARD,
+    GRAVITATIONAL_UP,
 )
 from adam.random_utils import SequenceChooser
 from adam.relation import Relation
@@ -597,17 +598,50 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             When a `Region` appears as the filler of the semantic role `GOAL`,
             determine what preposition to use to express it in English.
             """
-            if region.distance == INTERIOR:
-                return "in"
-            elif (
+            if (
                 region.distance == EXTERIOR_BUT_IN_CONTACT
                 and region.direction
                 and region.direction.positive
                 # TODO: put constraints on the axis
             ):
                 return "on"
+            # TODO: handle beside, in front of, and behind
+            elif region.distance == PROXIMAL:
+                return "to"
+            elif region.distance == INTERIOR:
+                return "in"
+            elif region.direction == GRAVITATIONAL_UP:
+                return "over"
             elif region.direction == GRAVITATIONAL_DOWN:
                 return "under"
+            elif region.direction and self.situation.axis_info:
+                if not self.situation.axis_info.addressee:
+                    raise RuntimeError(
+                        f"Unable to translate region into a preposition because an addressee is lacking. "
+                        f"Region: {region}"
+                    )
+                if (
+                    region.direction.relative_to_axis
+                    in self.situation.axis_info.axes_facing[
+                        self.situation.axis_info.addressee
+                    ]
+                    and region.direction.positive
+                ):
+                    return "in front of"
+                elif (
+                    region.direction.relative_to_axis
+                    in self.situation.axis_info.axes_facing[
+                        self.situation.axis_info.addressee
+                    ]
+                    and not region.direction.positive
+                ):
+                    return "behind"
+                elif region.direction.relative_to_axis != GRAVITATIONAL_DOWN_TO_UP_AXIS:
+                    return "beside"
+                else:
+                    raise RuntimeError(
+                        f"Don't know how to translate {region} to a preposition yet"
+                    )
             else:
                 raise RuntimeError(
                     f"Don't know how to translate {region} to a preposition yet"

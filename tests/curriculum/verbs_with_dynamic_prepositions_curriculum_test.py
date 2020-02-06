@@ -1,4 +1,4 @@
-from adam.curriculum.verbs_with_prepositions_curriculum import (
+from adam.curriculum.verbs_with_dynamic_prepositions_curriculum import (
     _make_go_to,
     _make_go_in,
     _make_go_beside,
