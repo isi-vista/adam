@@ -1,5 +1,5 @@
 import logging
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 from pathlib import Path
 from random import Random
 from typing import (
@@ -56,30 +56,15 @@ HypothesisT = TypeVar("HypothesisT")
 
 
 @attrs
-class MasterPursuitLearner(LanguageLearner[PerceptionT, LinguisticDescription]):
-    """
-    An implementation of `LanguageLearner` for pursuit learning that utilizes different learners.
-    """
-
-    def observe(
-        self, learning_example: LearningExample[PerceptionT, LinguisticDescription]
-    ) -> None:
-        pass
-
-    def describe(
-        self, perception: PerceptualRepresentation[PerceptionT]
-    ) -> Mapping[LinguisticDescription, float]:
-        pass
-
-
-@attrs
-class PursuitLanguageLearner(
+class AbstractPursuitLearner(
     Generic[HypothesisT, PerceptionT, LinguisticDescriptionT],
     LanguageLearner[PerceptionT, LinguisticDescription],
+    ABC,
 ):
     """
     An implementation of `LanguageLearner` for pursuit learning as a base for different pursuit based
-    learners.
+    learners. Paper on Pursuit Learning Algorithm: https://www.ling.upenn.edu/~ycharles/papers/pursuit-final.pdf
+
     """
 
     _words_to_hypotheses_and_scores: Dict[str, Dict[HypothesisT, float]] = attrib(
@@ -198,7 +183,6 @@ class PursuitLanguageLearner(
         # If it's a novel word, learn a new hypothesis/pattern,
         # generated as a pattern graph from the perception.
         # We want h_0 = arg_min_(m in M_U) max(A_m); i.e. h_0 is pattern_hypothesis
-        # GENERALIZE TODO: we need a plug-inable way to generate candidate meanings
         hypotheses: Sequence[HypothesisT] = self._candidate_meanings(
             observed_perception_graph
         )
@@ -210,13 +194,12 @@ class PursuitLanguageLearner(
         # with any other word.
         for hypothesis in hypotheses:
             # TODO Try to make this more efficient?
-            # GENERALIZE TODO: generalize isomorphism checking
             max_association_score = max(
                 [
                     s
                     for w, h_to_s in self._words_to_hypotheses_and_scores.items()
                     for h, s in h_to_s.items()
-                    if self._check_hypothesis_isomorphism(h, hypothesis)
+                    if self._are_isomorphic(h, hypothesis)
                 ]
                 + [0]
             )
@@ -261,7 +244,6 @@ class PursuitLanguageLearner(
 
         # If the leading hypothesis sufficiently matches the observation, reinforce it
         # To do, we check how much of the leading pattern hypothesis matches the perception
-        # GENERALIZE TODO: way of computing partial matches
         partial_match = self._compute_match_ratio(
             leading_hypothesis_pattern, observed_perception_graph
         )
@@ -354,7 +336,6 @@ class PursuitLanguageLearner(
                 if hypothesis_to_reward in hypotheses_for_word:
                     hypothesis_object_to_reward = hypothesis_to_reward
                 else:
-                    # GENERALIZE TODO: determine if hypotheses are identical
                     existing_hypothesis_matching_new_hypothesis = self._find_identical_hypothesis(
                         hypothesis_to_reward, candidates=hypotheses_for_word
                     )
@@ -589,7 +570,7 @@ class PursuitLanguageLearner(
             self._word_to_logger[word] = graph_logger
 
         def compute_hypothesis_id(h: HypothesisT) -> str:
-            # negative hashes cause the dot rendered to crash
+            # negative hashes cause the dot renderer to crash
             return str(abs(hash((word, h))))
 
         if word in self._lexicon:
@@ -647,9 +628,11 @@ class PursuitLanguageLearner(
         """
 
     @abstractmethod
-    def _candidate_perceptions(self, observed_perception_graph) -> List[PerceptionGraph]:
+    def _candidate_perceptions(
+        self, observed_perception_graph: PerceptionGraph
+    ) -> List[PerceptionGraph]:
         """
-        Returns a sequence of candidate perceptions of a specific type, given an *observed_perception_graph*.
+        Returns candidate perception graphs from a scene which might correspond to words of the type being learned.
         """
 
     @abstractmethod
@@ -657,27 +640,26 @@ class PursuitLanguageLearner(
         self, observed_perception_graph: PerceptionGraph
     ) -> Sequence[HypothesisT]:
         """
-        Returns a sequence of candidate meanings of a specific type, given a sequence of *perceptions*.
+        Returns candidate meaning hypotheses from a scene which might correspond to words of the type being learned.
         """
 
     @abstractmethod
     def _meaning_from_perception(self, perception: PerceptionGraph) -> HypothesisT:
         """
-        Returns a meaning representation for a given *perception*.
+        Returns a meaning representation of type *HypothesisT* for a given *perception*.
         """
 
     @abstractmethod
     def _compute_match_ratio(
         self, hypothesis: HypothesisT, graph: PerceptionGraph
-    ) -> "PursuitLanguageLearner.PartialMatch":
+    ) -> "AbstractPursuitLearner.PartialMatch":
         """
-        Computes the fraction of pattern graph nodes of *hypothesis* which match *graph*.
+        Compute the degree to which a meaning matches a perception.
+        The resulting score should be between 0.0 (no match) and 1.0 (a perfect match)
         """
 
     @abstractmethod
-    def _check_hypothesis_isomorphism(
-        self, h: HypothesisT, hypothesis: HypothesisT
-    ) -> bool:
+    def _are_isomorphic(self, h: HypothesisT, hypothesis: HypothesisT) -> bool:
         """
         Checks if two hypotheses are isomorphic.
         """
@@ -693,7 +675,7 @@ class PursuitLanguageLearner(
 
 class ObjectPursuitLearner(
     Generic[PerceptionT, LinguisticDescriptionT],
-    PursuitLanguageLearner[PerceptionGraphPattern, PerceptionT, LinguisticDescriptionT],
+    AbstractPursuitLearner[PerceptionGraphPattern, PerceptionT, LinguisticDescriptionT],
 ):
     """
     An implementation of pursuit learner for object recognition
@@ -724,7 +706,7 @@ class ObjectPursuitLearner(
 
     def _compute_match_ratio(
         self, hypothesis: PerceptionGraphPattern, graph: PerceptionGraph
-    ) -> "PursuitLanguageLearner.PartialMatch":
+    ) -> "AbstractPursuitLearner.PartialMatch":
         pattern = hypothesis
         hypothesis_pattern_common_subgraph = get_largest_matching_pattern(
             pattern,
@@ -742,7 +724,7 @@ class ObjectPursuitLearner(
             if hypothesis_pattern_common_subgraph
             else 0
         )
-        return PursuitLanguageLearner.PartialMatch(
+        return AbstractPursuitLearner.PartialMatch(
             hypothesis_pattern_common_subgraph,
             num_nodes_matched=num_nodes_matched,
             num_nodes_in_pattern=leading_hypothesis_num_nodes,
@@ -758,7 +740,7 @@ class ObjectPursuitLearner(
                 return candidate
         return None
 
-    def _check_hypothesis_isomorphism(
+    def _are_isomorphic(
         self, h: PerceptionGraphPattern, hypothesis: PerceptionGraphPattern
     ) -> bool:
         return h.check_isomorphism(hypothesis)
@@ -792,7 +774,7 @@ class ObjectPursuitLearner(
 
 class PrepositionPursuitLearner(
     Generic[PerceptionT, LinguisticDescriptionT],
-    PursuitLanguageLearner[PrepositionPattern, PerceptionT, LinguisticDescriptionT],
+    AbstractPursuitLearner[PrepositionPattern, PerceptionT, LinguisticDescriptionT],
 ):
     """
     An implementation of pursuit learner for preposition leaning
@@ -822,7 +804,7 @@ class PrepositionPursuitLearner(
 
     def _compute_match_ratio(
         self, hypothesis: PrepositionPattern, graph: PerceptionGraph
-    ) -> "PursuitLanguageLearner.PartialMatch":
+    ) -> "AbstractPursuitLearner.PartialMatch":
         pattern = hypothesis.graph_pattern
         hypothesis_pattern_common_subgraph = get_largest_matching_pattern(
             pattern,
@@ -840,7 +822,7 @@ class PrepositionPursuitLearner(
             if hypothesis_pattern_common_subgraph
             else 0
         )
-        return PursuitLanguageLearner.PartialMatch(
+        return AbstractPursuitLearner.PartialMatch(
             # TODO: change this to prepsotion pattern
             hypothesis_pattern_common_subgraph,
             num_nodes_matched=num_nodes_matched,
@@ -855,11 +837,11 @@ class PrepositionPursuitLearner(
         which is isomorphic to *new_hypothesis*.
         """
         for candidate in candidates:
-            if self._check_hypothesis_isomorphism(new_hypothesis, candidate):
+            if self._are_isomorphic(new_hypothesis, candidate):
                 return candidate
         return None
 
-    def _check_hypothesis_isomorphism(
+    def _are_isomorphic(
         self, h: PrepositionPattern, hypothesis: PrepositionPattern
     ) -> bool:
         # TODO: Check mapping equality

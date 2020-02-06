@@ -19,7 +19,7 @@ from adam.experiment.observer import LearningProgressHtmlLogger
 from adam.learner import LanguageLearner
 from adam.learner.object_recognizer import ObjectRecognizer
 from adam.learner.preposition_subset import PrepositionSubsetLanguageLearner
-from adam.learner.pursuit import PursuitLanguageLearner, ObjectPursuitLearner
+from adam.learner.pursuit import AbstractPursuitLearner, ObjectPursuitLearner
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     GAILA_M6_PERCEPTION_GENERATOR,
