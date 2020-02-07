@@ -821,9 +821,28 @@ class PrepositionPursuitLearner(
         # TODO implement
         return []
 
+    @attrs(frozen=True)
+    class PrepositionHypothesisPartialMatch(
+        AbstractPursuitLearner.PartialMatch[PrepositionPattern]
+    ):
+        _partial_match_hypothesis: Optional[PrepositionPattern] = attrib(
+            validator=optional(instance_of(PrepositionPattern))
+        )
+        num_nodes_matched: int = attrib(validator=instance_of(int), kw_only=True)
+        num_nodes_in_pattern: int = attrib(validator=instance_of(int), kw_only=True)
+
+        def partial_match_hypothesis(self) -> Optional[PrepositionPattern]:
+            return self._partial_match_hypothesis
+
+        def matched_exactly(self) -> bool:
+            return self.num_nodes_matched == self.num_nodes_in_pattern
+
+        def match_score(self) -> float:
+            return self.num_nodes_matched / self.num_nodes_in_pattern
+
     def _find_partial_match(
         self, hypothesis: PrepositionPattern, graph: PerceptionGraph
-    ) -> "AbstractPursuitLearner.PartialMatch[PrepositionPattern]":
+    ) -> "PrepositionPursuitLearner.PrepositionHypothesisPartialMatch":
         pattern = hypothesis.graph_pattern
         hypothesis_pattern_common_subgraph = get_largest_matching_pattern(
             pattern,
@@ -841,9 +860,16 @@ class PrepositionPursuitLearner(
             if hypothesis_pattern_common_subgraph
             else 0
         )
-        return AbstractPursuitLearner.PartialMatch(
-            # TODO: change this to prepsotion pattern
-            hypothesis_pattern_common_subgraph,
+        if hypothesis_pattern_common_subgraph:
+            partial_hypothesis: Optional[PrepositionPattern] = PrepositionPattern(
+                graph_pattern=hypothesis_pattern_common_subgraph,
+                object_variable_name_to_pattern_node=hypothesis.object_variable_name_to_pattern_node,
+            )
+        else:
+            partial_hypothesis = None
+
+        return PrepositionPursuitLearner.PrepositionHypothesisPartialMatch(
+            partial_hypothesis,
             num_nodes_matched=num_nodes_matched,
             num_nodes_in_pattern=leading_hypothesis_num_nodes,
         )
