@@ -128,8 +128,6 @@ class AbstractPursuitLearner(
     _words_to_number_of_observations: Dict[str, int] = attrib(
         init=False, default=Factory(dict)
     )
-    # GENERALIZE TODO: We will need to define an interface HypothesisLogger which
-    # doesn't commit to what the hypothesis type is.
     _graph_logger: Optional[HypothesisGraphLogger] = attrib(
         validator=optional(instance_of(HypothesisGraphLogger)), default=None
     )
@@ -140,7 +138,6 @@ class AbstractPursuitLearner(
     _log_word_hypotheses_to: Optional[Path] = attrib(
         validator=optional(instance_of(Path)), default=None
     )
-    # GENERALIZE TODO: GraphLogger again
     _word_to_logger: Dict[str, HypothesisGraphLogger] = attrib(
         init=False, default=Factory(dict)
     )
@@ -338,7 +335,6 @@ class AbstractPursuitLearner(
                     "Choosing a random object from the scene to use as the word meaning"
                 )
 
-                # GENERALIZE TODO: choose random hypotheses to choose from
                 perceptions = self._candidate_perceptions(observed_perception_graph)
                 chosen_perception = self._rng.choice(perceptions)
                 hypotheses_to_reward.append(
@@ -346,7 +342,6 @@ class AbstractPursuitLearner(
                 )
 
                 for hypothesis in hypotheses_for_word:
-                    # GENERALIZE TODO: match ratio computation
                     non_leading_hypothesis_partial_match = self._find_partial_match(
                         hypothesis, chosen_perception
                     )
