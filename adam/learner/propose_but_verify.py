@@ -250,9 +250,7 @@ class ProposeButVerifyLanguageLearner(
                 self._rendered_word_hypothesis_pair_ids.add(hypothesis_id)
         else:
             logging.info(
-                "The word %s has never been seen before",
-                word,
-                "\nTHere are no current hypotheses for it",
+                f"The word {word} has never been seen before. There are no current hypotheses for it",
             )
 
     # Helper method, from pursuit.py
