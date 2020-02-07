@@ -19,12 +19,11 @@ from adam.experiment.observer import LearningProgressHtmlLogger
 from adam.learner import LanguageLearner
 from adam.learner.object_recognizer import ObjectRecognizer
 from adam.learner.preposition_subset import PrepositionSubsetLanguageLearner
-from adam.learner.pursuit import AbstractPursuitLearner, ObjectPursuitLearner
+from adam.learner.pursuit import ObjectPursuitLearner, HypothesisGraphLogger
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     GAILA_M6_PERCEPTION_GENERATOR,
 )
-from adam.perception.perception_graph import GraphLogger
 from adam.random_utils import RandomChooser
 
 
@@ -33,10 +32,10 @@ def log_experiment_entry_point(params: Parameters) -> None:
     experiment_name = params.string("experiment")
     debug_log_dir = params.optional_creatable_directory("debug_log_directory")
 
-    graph_logger: Optional[GraphLogger]
+    graph_logger: Optional[HypothesisGraphLogger]
     if debug_log_dir:
         logging.info("Debug graphs will be written to %s", debug_log_dir)
-        graph_logger = GraphLogger(debug_log_dir, enable_graph_rendering=True)
+        graph_logger = HypothesisGraphLogger(debug_log_dir, enable_graph_rendering=True)
     else:
         graph_logger = None
 
@@ -61,7 +60,7 @@ def log_experiment_entry_point(params: Parameters) -> None:
 
 
 def learner_factory_from_params(
-    params: Parameters, graph_logger: Optional[GraphLogger]
+    params: Parameters, graph_logger: Optional[HypothesisGraphLogger]
 ) -> Callable[[], LanguageLearner]:  # type: ignore
     learner_type = params.string("learner", ["pursuit", "preposition-subset"])
     if learner_type == "pursuit":

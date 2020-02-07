@@ -13,9 +13,10 @@ from typing import (
     Tuple,
     TypeVar,
     Sequence,
-    Type,
+    Any,
 )
 
+from attr import Factory, attrib, attrs
 from attr.validators import in_, instance_of, optional
 from immutablecollections import immutabledict
 from more_itertools import first
@@ -47,13 +48,42 @@ from adam.perception.perception_graph import (
     GraphLogger,
     PerceptionGraph,
     PerceptionGraphPattern,
-    PatternMatching,
 )
 from adam.utils import networkx_utils
-from attr import Factory, attrib, attrs
 
 HypothesisT = TypeVar("HypothesisT")
 HypothesisT2 = TypeVar("HypothesisT2")
+
+
+@attrs
+class HypothesisGraphLogger(GraphLogger):
+    """
+    Subclass of hypothesis graph logger to generalize hypothesis logging
+    """
+    def log_hypothesis_graph(
+        self,
+        hypothesis: HypothesisT,
+        level,
+        msg: str,
+        *args,
+        match_correspondence_ids: Mapping[Any, str] = immutabledict(),
+        graph_name: Optional[str] = None,
+    ) -> None:
+        if isinstance(hypothesis, PerceptionGraphPattern):
+            graph = hypothesis
+        elif isinstance(hypothesis, PrepositionPattern):
+            graph = hypothesis.graph_pattern
+        else:
+            raise RuntimeError("Logging unknown hypothesis type")
+        GraphLogger.log_graph(
+            self,
+            graph=graph,
+            level=level,
+            # TODO unsure how to pass *args
+            msg=msg,
+            match_correspondence_ids=match_correspondence_ids,
+            graph_name=graph_name,
+        )
 
 
 @attrs
@@ -100,8 +130,8 @@ class AbstractPursuitLearner(
     )
     # GENERALIZE TODO: We will need to define an interface HypothesisLogger which
     # doesn't commit to what the hypothesis type is.
-    _graph_logger: Optional[GraphLogger] = attrib(
-        validator=optional(instance_of(GraphLogger)), default=None
+    _graph_logger: Optional[HypothesisGraphLogger] = attrib(
+        validator=optional(instance_of(HypothesisGraphLogger)), default=None
     )
     debug_counter = 0
 
@@ -111,7 +141,9 @@ class AbstractPursuitLearner(
         validator=optional(instance_of(Path)), default=None
     )
     # GENERALIZE TODO: GraphLogger again
-    _word_to_logger: Dict[str, GraphLogger] = attrib(init=False, default=Factory(dict))
+    _word_to_logger: Dict[str, HypothesisGraphLogger] = attrib(
+        init=False, default=Factory(dict)
+    )
     _rendered_word_hypothesis_pair_ids: Set[str] = attrib(
         init=False, default=Factory(set)
     )
@@ -209,7 +241,7 @@ class AbstractPursuitLearner(
                 min_score = max_association_score
 
         if self._graph_logger:
-            self._graph_logger.log_graph(
+            self._graph_logger.log_hypothesis_graph(
                 pattern_hypothesis,
                 logging.INFO,
                 "Initializing meaning for %s " "with score %s",
@@ -324,7 +356,7 @@ class AbstractPursuitLearner(
                     ):
                         hypotheses_to_reward.append(hypothesis)
                         if self._graph_logger:
-                            self._graph_logger.log_graph(
+                            self._graph_logger.log_hypothesis_graph(
                                 hypothesis,
                                 logging.INFO,
                                 "Boosting existing non-leading hypothesis",
@@ -373,6 +405,9 @@ class AbstractPursuitLearner(
         """
         *match_ratio* should be 1.0 exactly for a perfect match.
         """
+
+        num_nodes_matched: int = attrib(validator=instance_of(int), kw_only=True)
+        num_nodes_in_pattern: int = attrib(validator=instance_of(int), kw_only=True)
 
         @abstractmethod
         def partial_match_hypothesis(self) -> Optional[HypothesisT2]:
@@ -424,7 +459,7 @@ class AbstractPursuitLearner(
                 # Remove the word from hypotheses
                 self._words_to_hypotheses_and_scores.pop(word)
                 if self._graph_logger:
-                    self._graph_logger.log_graph(
+                    self._graph_logger.log_hypothesis_graph(
                         leading_hypothesis_pattern, logging.INFO, "Lexicalized %s", word
                     )
             else:
@@ -576,7 +611,7 @@ class AbstractPursuitLearner(
         else:
             log_directory_for_word = self._log_word_hypotheses_to / word
 
-            graph_logger = GraphLogger(
+            graph_logger = HypothesisGraphLogger(
                 log_directory=log_directory_for_word, enable_graph_rendering=True
             )
             self._word_to_logger[word] = graph_logger
@@ -590,7 +625,7 @@ class AbstractPursuitLearner(
             lexicalized_meaning = self._lexicon[word]
             hypothesis_id = compute_hypothesis_id(lexicalized_meaning)
             if hypothesis_id not in self._rendered_word_hypothesis_pair_ids:
-                graph_logger.log_graph(
+                graph_logger.log_hypothesis_graph(
                     lexicalized_meaning,
                     logging.INFO,
                     "Rendering lexicalized " "meaning %s " "for %s",
@@ -609,7 +644,7 @@ class AbstractPursuitLearner(
             for (hypothesis, _) in scored_hypotheses_for_word:
                 hypothesis_id = compute_hypothesis_id(hypothesis)
                 if hypothesis_id not in self._rendered_word_hypothesis_pair_ids:
-                    graph_logger.log_graph(
+                    graph_logger.log_hypothesis_graph(
                         hypothesis,
                         logging.INFO,
                         "Rendering  " "hypothesized " "meaning %s for %s",
@@ -774,7 +809,7 @@ class ObjectPursuitLearner(
 
     @staticmethod
     def from_parameters(
-        params: Parameters, *, graph_logger: Optional[GraphLogger] = None
+        params: Parameters, *, graph_logger: Optional[HypothesisGraphLogger] = None
     ) -> "ObjectPursuitLearner":  # type: ignore
         log_word_hypotheses_dir = params.optional_creatable_directory(
             "log_word_hypotheses_dir"
