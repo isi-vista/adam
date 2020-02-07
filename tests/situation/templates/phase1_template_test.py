@@ -22,6 +22,7 @@ from adam.ontology.phase1_ontology import (
     BALL,
     near,
     GAILA_PHASE_1_ONTOLOGY,
+    MOM,
 )
 from adam.ontology.structural_schema import ObjectStructuralSchema
 from adam.random_utils import RandomChooser
@@ -137,6 +138,13 @@ def test_learner_as_default_addressee():
         salient_object_variables=[object_variable("ball", root_node=BALL)],
     )
 
+    template_with_addressee = Phase1SituationTemplate(
+        "template with addressee",
+        salient_object_variables=[
+            object_variable("mom", root_node=MOM, added_properties=[IS_ADDRESSEE])
+        ],
+    )
+
     situation_with_learner = sampled(
         template_with_learner,
         ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -151,10 +159,20 @@ def test_learner_as_default_addressee():
         max_to_sample=1,
     )
 
+    situation_with_addressee = sampled(
+        template_with_addressee,
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        chooser=RandomChooser.for_seed(0),
+        max_to_sample=1,
+    )
+
     for object_ in situation_with_learner[0].all_objects:
         if object_.ontology_node == LEARNER:
             assert IS_ADDRESSEE in object_.properties
             break
+
+    assert situation_with_learner[0].axis_info
+    assert situation_with_learner[0].axis_info.addressee
 
     assert len(situation_with_out_learner[0].all_objects) == 2
 
@@ -162,3 +180,13 @@ def test_learner_as_default_addressee():
         if object_.ontology_node == LEARNER:
             assert IS_ADDRESSEE in object_.properties
             break
+
+    assert situation_with_out_learner[0].axis_info
+    assert situation_with_out_learner[0].axis_info.addressee
+
+    for object_ in situation_with_addressee[0].all_objects:
+        if object_.ontology_node == LEARNER:
+            assert False
+
+    assert situation_with_addressee[0].axis_info
+    assert situation_with_addressee[0].axis_info.addressee

@@ -15,6 +15,7 @@ from typing import (
     Sequence,
     TypeVar,
     Union,
+    Tuple,
 )
 
 from attr.validators import instance_of
@@ -402,10 +403,7 @@ class _Phase1SituationTemplateGenerator(
 
                 # use them to instantiate the entire situation
                 situation = self._instantiate_situation(
-                    template,
-                    variable_assignment,
-                    object_var_to_instantiations,
-                    default_addressee_node=default_addressee_node,
+                    template, variable_assignment, object_var_to_instantiations
                 )
                 if self._satisfies_constraints(
                     template, situation, object_var_to_instantiations
@@ -435,9 +433,9 @@ class _Phase1SituationTemplateGenerator(
         has_addressee: bool,
         default_addressee_node: OntologyNode,
     ):
-        object_var_to_instantiations: Mapping[
-            TemplateObjectVariable, SituationObject
-        ] = immutabledict(
+        object_var_to_instantiations_mutable: List[
+            Tuple[TemplateObjectVariable, SituationObject]
+        ] = [
             (
                 obj_var,
                 self._instantiate_object(
@@ -448,8 +446,29 @@ class _Phase1SituationTemplateGenerator(
                 ),
             )
             for obj_var in template.all_object_variables
-        )
-        return object_var_to_instantiations
+        ]
+        if (
+            default_addressee_node
+            not in immutableset(
+                object_.ontology_node
+                for (_, object_) in object_var_to_instantiations_mutable
+            )
+            and not has_addressee
+        ):
+            object_var_to_instantiations_mutable.append(
+                (
+                    object_variable(
+                        default_addressee_node.handle, default_addressee_node
+                    ),
+                    SituationObject.instantiate_ontology_node(
+                        default_addressee_node,
+                        properties=[IS_ADDRESSEE],
+                        debug_handle=default_addressee_node.handle + "_default_addressee",
+                        ontology=self.ontology,
+                    ),
+                )
+            )
+        return immutabledict(object_var_to_instantiations_mutable)
 
     def _instantiate_object(
         self,
@@ -482,28 +501,7 @@ class _Phase1SituationTemplateGenerator(
         template: Phase1SituationTemplate,
         variable_assignment: "TemplateVariableAssignment",
         object_var_to_instantiations,
-        *,
-        default_addressee_node: OntologyNode,
     ) -> HighLevelSemanticsSituation:
-        other_objects = [
-            object_var_to_instantiations[obj_var]
-            for obj_var in (
-                template.all_object_variables.difference(
-                    template.salient_object_variables
-                )
-            )
-        ]
-        if default_addressee_node not in immutableset(
-            object_.ontology_node for object_ in object_var_to_instantiations.values()
-        ):
-            other_objects.append(
-                SituationObject.instantiate_ontology_node(
-                    default_addressee_node,
-                    properties=[IS_ADDRESSEE],
-                    debug_handle="learner",
-                    ontology=self.ontology,
-                )
-            )
         return HighLevelSemanticsSituation(
             from_template=template.name,
             ontology=self.ontology,
@@ -511,7 +509,15 @@ class _Phase1SituationTemplateGenerator(
                 object_var_to_instantiations[obj_var]
                 for obj_var in template.salient_object_variables
             ],
-            other_objects=other_objects,
+            other_objects=[
+                object_var_to_instantiations[obj_var]  # type: ignore
+                for obj_var in (
+                    immutableset(object_var_to_instantiations.keys()).difference(
+                        template.salient_object_variables
+                    )
+                )
+                # We use the keys of the mapping in case a default addressee was added
+            ],
             always_relations=[
                 relation.copy_remapping_objects(object_var_to_instantiations)
                 for relation in template.asserted_always_relations
