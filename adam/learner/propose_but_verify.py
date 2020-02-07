@@ -1,13 +1,11 @@
 import logging
 from pathlib import Path
-from random import Random, choice
-from typing import Dict, Generic, Iterable, List, Mapping, Optional, Set, Tuple
+from random import Random
+from typing import Dict, Generic, List, Mapping, Optional, Set, Tuple
 
-from attr.validators import in_, instance_of, optional
+from attr.validators import instance_of, optional
 from immutablecollections import immutabledict
-from more_itertools import first
 from vistautils.parameters import Parameters
-from vistautils.range import Range
 
 from adam.language import (
     LinguisticDescription,
@@ -39,20 +37,30 @@ from attr import Factory, attrib, attrs
 
 
 @attrs()
-class ProposeButVerifyLanguageLearner(Generic[PerceptionT, LinguisticDescriptionT],
-                                      LanguageLearner[PerceptionT, LinguisticDescription]):
+class ProposeButVerifyLanguageLearner(
+    Generic[PerceptionT, LinguisticDescriptionT],
+    LanguageLearner[PerceptionT, LinguisticDescription],
+):
 
     _ontology: Ontology = attrib(validator=instance_of(Ontology), kw_only=True)
     _observation_num = attrib(init=False, default=0)
     _rng: Random = attrib(validator=instance_of(Random))
-    _words_to_hypotheses: Dict[str, PerceptionGraphPattern] = attrib(init=False, default=Factory(dict))
-    _log_word_hypotheses_to: Optional[Path] = attrib(validator=optional(instance_of(Path)), default=None)
-    _graph_logger: Optional[GraphLogger] = attrib(validator=optional(instance_of(GraphLogger)), default=None)
+    _words_to_hypotheses: Dict[str, PerceptionGraphPattern] = attrib(
+        init=False, default=Factory(dict)
+    )
+    _log_word_hypotheses_to: Optional[Path] = attrib(
+        validator=optional(instance_of(Path)), default=None
+    )
+    _graph_logger: Optional[GraphLogger] = attrib(
+        validator=optional(instance_of(GraphLogger)), default=None
+    )
     debug_counter = 0
     _debug_callback: Optional[DebugCallableType] = attrib(default=None)
     _graph_match_confirmation_threshold: float = attrib(default=0.9, kw_only=True)
     _word_to_logger: Dict[str, GraphLogger] = attrib(init=False, default=Factory(dict))
-    _rendered_word_hypothesis_pair_ids: Set[str] = attrib(init=False, default=Factory(set))
+    _rendered_word_hypothesis_pair_ids: Set[str] = attrib(
+        init=False, default=Factory(set)
+    )
 
     @staticmethod
     def from_parameters(
@@ -77,9 +85,10 @@ class ProposeButVerifyLanguageLearner(Generic[PerceptionT, LinguisticDescription
             ontology=GAILA_PHASE_1_ONTOLOGY,
         )
 
-
     # observe method
-    def observe(self, learning_example: LearningExample[PerceptionT, LinguisticDescription]) -> None:
+    def observe(
+        self, learning_example: LearningExample[PerceptionT, LinguisticDescription]
+    ) -> None:
 
         logging.info("Observation %s", self._observation_num)
         self._observation_num += 1
@@ -96,14 +105,19 @@ class ProposeButVerifyLanguageLearner(Generic[PerceptionT, LinguisticDescription
         # Remove learner from the perception
         observed_perception_graph = graph_without_learner(original_perception_graph)
         observed_linguistic_description = (
-            learning_example.linguistic_description.as_token_sequence())
+            learning_example.linguistic_description.as_token_sequence()
+        )
 
-        self.learn_propose_but_verify(observed_perception_graph, observed_linguistic_description)
+        self.learn_propose_but_verify(
+            observed_perception_graph, observed_linguistic_description
+        )
 
     # learn method
-    def learn_propose_but_verify(self, observed_perception_graph: PerceptionGraph,
-                                 observed_linguistic_description: Tuple[str, ...],
-                                 ) -> None:
+    def learn_propose_but_verify(
+        self,
+        observed_perception_graph: PerceptionGraph,
+        observed_linguistic_description: Tuple[str, ...],
+    ) -> None:
         logging.info(f"Pursuit learner observing {observed_linguistic_description}")
         for word in observed_linguistic_description:
             if word in ("a", "the"):
@@ -141,21 +155,19 @@ class ProposeButVerifyLanguageLearner(Generic[PerceptionT, LinguisticDescription
                 pattern_hypothesis,
                 logging.INFO,
                 "Initializing (randomly chosen) meaning for %s ",
-                word
+                word,
             )
 
         self._words_to_hypotheses[word] = pattern_hypothesis
-        pass
 
     # Test Hypothesis
-    def test_hypothesis_step(self, word: str, observed_perception_graph: PerceptionGraph) -> bool:
+    def test_hypothesis_step(
+        self, word: str, observed_perception_graph: PerceptionGraph
+    ) -> bool:
         # Compare existing hypothesis with observation
         # Return whether
         hypotheses_for_word = self._words_to_hypotheses[word]
-        logging.info(
-            "Current hypothesis is %s",
-            abs(hash((word, hypotheses_for_word))),
-        )
+        logging.info("Current hypothesis is %s", abs(hash((word, hypotheses_for_word))))
         self.debug_counter += 1
         # If the leading hypothesis sufficiently matches the observation, reinforce it
         # To do, we check how much of the leading pattern hypothesis matches the perception
@@ -169,11 +181,14 @@ class ProposeButVerifyLanguageLearner(Generic[PerceptionT, LinguisticDescription
             logging.info("Hypothesis is confirmed")
         # If the hypothesis is disconfirmed
         else:
-            logging.info(f"Hypothesis is disconfirmed (Match ratio: {partial_match.match_ratio()}")
+            logging.info(
+                f"Hypothesis is disconfirmed (Match ratio: {partial_match.match_ratio()}"
+            )
         return hypothesis_is_confirmed
 
-    def describe(self, perception: PerceptualRepresentation[PerceptionT]
-                 ) -> Mapping[LinguisticDescription, float]:
+    def describe(
+        self, perception: PerceptualRepresentation[PerceptionT]
+    ) -> Mapping[LinguisticDescription, float]:
         if len(perception.frames) != 1:
             raise RuntimeError("Subset learner can only handle single frames for now")
         if isinstance(perception.frames[0], DevelopmentalPrimitivePerceptionFrame):
@@ -234,13 +249,16 @@ class ProposeButVerifyLanguageLearner(Generic[PerceptionT, LinguisticDescription
                 )
                 self._rendered_word_hypothesis_pair_ids.add(hypothesis_id)
         else:
-            logging.info("The word %s has never been seen before", word)
-            logging.info("There are no current hypotheses for", word)
+            logging.info(
+                "The word %s has never been seen before",
+                word,
+                "\nTHere are no current hypotheses for it",
+            )
 
     # Helper method, from pursuit.py
     @staticmethod
     def get_objects_from_perception(
-            observed_perception_graph: PerceptionGraph
+        observed_perception_graph: PerceptionGraph
     ) -> List[PerceptionGraph]:
         perception_as_digraph = observed_perception_graph.copy_as_digraph()
         perception_as_graph = perception_as_digraph.to_undirected()
@@ -252,10 +270,10 @@ class ProposeButVerifyLanguageLearner(Generic[PerceptionT, LinguisticDescription
         for node in perception_as_graph.nodes:
             if isinstance(node, ObjectPerception) and node.debug_handle != "the ground":
                 if not any(
-                        [
-                            u == node and str(data["label"]) == "partOf"
-                            for u, v, data in perception_as_digraph.edges.data()
-                        ]
+                    [
+                        u == node and str(data["label"]) == "partOf"
+                        for u, v, data in perception_as_digraph.edges.data()
+                    ]
                 ):
                     root_object_perception_nodes.append(node)
 
@@ -293,9 +311,9 @@ class ProposeButVerifyLanguageLearner(Generic[PerceptionT, LinguisticDescription
                     # TODO: We currently remove colors to achieve a match - otherwise finding
                     #  patterns fails.
                     if (
-                            isinstance(neighbor, Region)
-                            and neighbor.reference_object not in all_object_perception_nodes
-                            or isinstance(neighbor, RgbColorPerception)
+                        isinstance(neighbor, Region)
+                        and neighbor.reference_object not in all_object_perception_nodes
+                        or isinstance(neighbor, RgbColorPerception)
                     ):
                         continue
                     # Append all other none-object nodes to be kept in the subgraph
