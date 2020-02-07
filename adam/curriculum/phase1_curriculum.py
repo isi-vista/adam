@@ -1335,19 +1335,6 @@ def _make_push_curriculum() -> Phase1InstanceGroup:
         constraining_relations=[bigger_than(push_surface, pusher)],
     )
 
-    # push explicit goal
-    # push_explicit_goal = Phase1SituationTemplate(
-    #     "push-explicit-goal",
-    #     salient_object_variables=[pusher, push_surface],
-    #     actions=[
-    #         Action(
-    #             PUSH,
-    #             argument_roles_to_fillers=[(AGENT, pusher), (THEME, pushee)],
-    #             auxiliary_variable_bindings=[(PUSH_SURFACE_AUX, push_surface)]),
-    #     ],
-    #     constraining_relations=[bigger_than(push_surface, pusher)],
-    # )
-
     return phase1_instances(
         "pushing",
         chain(
