@@ -269,6 +269,7 @@ def all_possible(
     *,
     ontology: Ontology,
     chooser: SequenceChooser,
+    default_addressee_node: OntologyNode = LEARNER,
 ) -> Iterable[HighLevelSemanticsSituation]:
     """
     Generator for all possible instantiations of *situation_template* with *ontology*.
@@ -276,7 +277,11 @@ def all_possible(
     return list(
         _Phase1SituationTemplateGenerator(
             ontology=ontology, variable_assigner=_CrossProductVariableAssigner()
-        ).generate_situations(situation_template, chooser=chooser)
+        ).generate_situations(
+            situation_template,
+            chooser=chooser,
+            default_addressee_node=default_addressee_node,
+        )
     )
 
 
@@ -286,6 +291,7 @@ def sampled(
     ontology: Ontology,
     chooser: SequenceChooser,
     max_to_sample: int,
+    default_addressee_node: OntologyNode = LEARNER,
 ) -> Iterable[HighLevelSemanticsSituation]:
     """
     Gets *max_to_sample* instantiations of *situation_template* with *ontology*
@@ -296,7 +302,11 @@ def sampled(
             max_to_sample,
             _Phase1SituationTemplateGenerator(
                 ontology=ontology, variable_assigner=_SamplingVariableAssigner()
-            ).generate_situations(situation_template, chooser=chooser),
+            ).generate_situations(
+                situation_template,
+                chooser=chooser,
+                default_addressee_node=default_addressee_node,
+            ),
         )
     )
 
@@ -307,11 +317,16 @@ def fixed_assignment(
     *,
     ontology: Ontology,
     chooser: SequenceChooser,
+    default_addressee_node: OntologyNode = LEARNER,
 ) -> Iterable[HighLevelSemanticsSituation]:
     return list(
         _Phase1SituationTemplateGenerator(
             ontology=ontology, variable_assigner=_FixedVariableAssigner(assignment)
-        ).generate_situations(situation_template, chooser=chooser)
+        ).generate_situations(
+            situation_template,
+            chooser=chooser,
+            default_addressee_node=default_addressee_node,
+        )
     )
 
 
@@ -337,6 +352,7 @@ class _Phase1SituationTemplateGenerator(
         chooser: SequenceChooser = Factory(
             RandomChooser.for_seed
         ),  # pylint:disable=unused-argument
+        default_addressee_node: OntologyNode = LEARNER,
     ) -> Iterable[HighLevelSemanticsSituation]:
         check_arg(isinstance(template, Phase1SituationTemplate))
         try:
@@ -371,7 +387,10 @@ class _Phase1SituationTemplateGenerator(
             ):
                 # instantiate all objects in the situation according to the variable assignment.
                 object_var_to_instantiations = self._instantiate_objects(
-                    template, variable_assignment, has_addressee=has_addressee
+                    template,
+                    variable_assignment,
+                    has_addressee=has_addressee,
+                    default_addressee_node=default_addressee_node,
                 )
 
                 # Cannot have multiple instantiations of the same recognized particular.
@@ -383,7 +402,10 @@ class _Phase1SituationTemplateGenerator(
 
                 # use them to instantiate the entire situation
                 situation = self._instantiate_situation(
-                    template, variable_assignment, object_var_to_instantiations
+                    template,
+                    variable_assignment,
+                    object_var_to_instantiations,
+                    default_addressee_node=default_addressee_node,
                 )
                 if self._satisfies_constraints(
                     template, situation, object_var_to_instantiations
@@ -411,6 +433,7 @@ class _Phase1SituationTemplateGenerator(
         variable_assignment: "TemplateVariableAssignment",
         *,
         has_addressee: bool,
+        default_addressee_node: OntologyNode,
     ):
         object_var_to_instantiations: Mapping[
             TemplateObjectVariable, SituationObject
@@ -418,7 +441,10 @@ class _Phase1SituationTemplateGenerator(
             (
                 obj_var,
                 self._instantiate_object(
-                    obj_var, variable_assignment, has_addressee=has_addressee
+                    obj_var,
+                    variable_assignment,
+                    has_addressee=has_addressee,
+                    default_addressee_node=default_addressee_node,
                 ),
             )
             for obj_var in template.all_object_variables
@@ -431,10 +457,11 @@ class _Phase1SituationTemplateGenerator(
         variable_assignment: "TemplateVariableAssignment",
         *,
         has_addressee: bool,
+        default_addressee_node: OntologyNode,
     ) -> SituationObject:
         object_type = variable_assignment.object_variables_to_fillers[object_var]
         asserted_properties = object_var.asserted_properties
-        if object_type == LEARNER and not has_addressee:
+        if object_type == default_addressee_node and not has_addressee:
             asserted_properties = immutableset(
                 object_var.asserted_properties.union([IS_ADDRESSEE])
             )
@@ -455,6 +482,8 @@ class _Phase1SituationTemplateGenerator(
         template: Phase1SituationTemplate,
         variable_assignment: "TemplateVariableAssignment",
         object_var_to_instantiations,
+        *,
+        default_addressee_node: OntologyNode,
     ) -> HighLevelSemanticsSituation:
         other_objects = [
             object_var_to_instantiations[obj_var]
@@ -464,12 +493,12 @@ class _Phase1SituationTemplateGenerator(
                 )
             )
         ]
-        if LEARNER not in immutableset(
+        if default_addressee_node not in immutableset(
             object_.ontology_node for object_ in object_var_to_instantiations.values()
         ):
             other_objects.append(
                 SituationObject.instantiate_ontology_node(
-                    LEARNER,
+                    default_addressee_node,
                     properties=[IS_ADDRESSEE],
                     debug_handle="learner",
                     ontology=self.ontology,
