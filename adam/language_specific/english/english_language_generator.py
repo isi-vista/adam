@@ -61,6 +61,7 @@ from adam.ontology.phase1_ontology import (
     HAS,
     LEARNER,
     PATIENT,
+    SIT,
     THEME,
 )
 from adam.ontology.phase1_spatial_relations import (
@@ -656,7 +657,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                             modifiers.append(
                                 (ADVERBIAL_MODIFIER, DependencyTreeToken("up", ADVERB))
                             )
-                elif action.action_type == FALL:
+                elif action.action_type == FALL or action.action_type == SIT:
                     # hack, awaiting https://github.com/isi-vista/adam/issues/239
                     modifiers.append(
                         (ADVERBIAL_MODIFIER, DependencyTreeToken("down", ADVERB))
