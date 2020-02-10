@@ -44,8 +44,8 @@ class Cross_SituationalLanguageLearner(
     LanguageLearner[PerceptionT, LinguisticDescription],
 ):
     """
-    An implementation of `LanguageLearner` for cross-situational learning based approach for single object
-    detection.
+    An implementation of `LanguageLearner` for cross-situational learning based approach for single
+    object detection.
     """
 
     _words_to_hypotheses_and_scores: Dict[
@@ -64,8 +64,12 @@ class Cross_SituationalLanguageLearner(
     This smoothing factor is added to the scores of all hypotheses
     when forming a probability distribution over hypotheses.
     This should be a small value, at most 0.1 and possibly much less.
-    See section 2.2 of the Pursuit paper.
+    See section 3.3 of the Cross-Situational paper.
     """
+    _expected_number_of_meanings: float = attrib(
+        validator=in_(Range.greater_than(0.0)), kw_only=True
+    )
+
     _ontology: Ontology = attrib(validator=instance_of(Ontology), kw_only=True)
 
     _rng: Random = attrib(validator=instance_of(Random))
@@ -120,6 +124,7 @@ class Cross_SituationalLanguageLearner(
             ),
             lexicon_entry_threshold=params.floating_point("lexicon_entry_threshold"),
             smoothing_parameter=params.floating_point("smoothing_parameter"),
+            expected_number_of_meanings=params.floating_point("expected_number_of_meanings"),
             graph_logger=graph_logger,
             log_word_hypotheses_to=log_word_hypotheses_dir,
             rng=rng,
@@ -202,24 +207,6 @@ class Cross_SituationalLanguageLearner(
                 # Update all word meaning probabilities for the word
                 self.update_probability(word)
 
-            # If don't already know the meaning of the word, go through learning steps:
-            if word not in self._lexicon:
-                logging.info(f"Considering '{word}'")
-                if word not in self._words_to_hypotheses_and_scores:
-                    # a) Initialization step, if the word is a novel word
-                    self.initialization_step(word, observed_perception_graph)
-                else:
-                    # b) If we already have a hypothesis, run the learning reinforcement step
-                    is_hypothesis_confirmed = self.learning_step(
-                        word, observed_perception_graph
-                    )
-                    # Try lexicon step if we confirmed a meaning
-                    if is_hypothesis_confirmed:
-                        self.lexicon_step(word)
-
-                if self._log_word_hypotheses_to:
-                    self._log_hypotheses(word)
-
     def alignment_probability(
         self, word: str, words: Tuple[str, ...], meaning: PerceptionGraphPattern
     ) -> float:
@@ -246,8 +233,8 @@ class Cross_SituationalLanguageLearner(
         for meaning in self._words_to_hypotheses_and_probability[word]:
             normalizing_factor = 0f
             for other_meaning in self._words_to_hypotheses_and_scores[word]:
-                normalizing_factor += self._words_to_hypotheses_and_scores[word][other_meaning] + self._expected_meaning_types * self._smoothing_parameter
-            normalizing_factor -= self._words_to_hypotheses_and_scores[word][meaning] + self._expected_meaning_types * self._smoothing_parameter
+                normalizing_factor += self._words_to_hypotheses_and_scores[word][other_meaning] + self._expected_number_of_meanings * self._smoothing_parameter
+            normalizing_factor -= self._words_to_hypotheses_and_scores[word][meaning] + self._expected_number_of_meanings * self._smoothing_parameter
             self._words_to_hypotheses_and_probability[word][meaning] = (self._words_to_hypotheses_and_scores[word][meaning] + self.smoothing_parameter) / normalizing_factor
 
     # Check necessity for cross-situational implementation
@@ -407,7 +394,6 @@ class Cross_SituationalLanguageLearner(
         logging.info(f"Got {len(meanings)} candidate meanings")
         return meanings
 
-    # Re-inplement for cross-situatinal
     def describe(
         self, perception: PerceptualRepresentation[PerceptionT]
     ) -> Mapping[LinguisticDescription, float]:
@@ -467,11 +453,11 @@ class Cross_SituationalLanguageLearner(
     def _leading_hypothesis_for(
         self, word: str
     ) -> Optional[Tuple[PerceptionGraphPattern, float]]:
-        hypotheses_and_scores_for_word = self._words_to_hypotheses_and_scores.get(
+        hypotheses_and_scores_for_word = self._words_to_hypotheses_and_probability.get(
             word, None
         )
         if hypotheses_and_scores_for_word:
-            return max(hypotheses_and_scores_for_word.items(), key=lambda entry: entry[1])
+            return max(hypotheses_and_probability_for_word.items(), key=lambda entry: entry[1])
         else:
             return None
 
