@@ -1,6 +1,6 @@
 from typing import Iterable, Tuple
 
-from immutablecollections import immutableset
+from immutablecollections import immutableset, ImmutableSet
 from more_itertools import flatten
 
 from adam.curriculum.curriculum_utils import (
@@ -9,7 +9,9 @@ from adam.curriculum.curriculum_utils import (
     PHASE1_CHOOSER,
     Phase1InstanceGroup,
 )
-from adam.language_specific.english.english_language_generator import USE_ADVERBIAL_PATH_MODIFIER
+from adam.language_specific.english.english_language_generator import (
+    USE_ADVERBIAL_PATH_MODIFIER,
+)
 from adam.ontology import THING
 from adam.ontology.phase1_ontology import (
     AGENT,
@@ -48,7 +50,7 @@ def _sit_on_template(
     surface: TemplateObjectVariable,
     seat: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
-    syntax_hints: immutableset(),
+    syntax_hints: ImmutableSet[str],
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
         f"{agent.handle}-sits-on-{seat.handle}",
@@ -81,7 +83,7 @@ def _sit_in_template(
     surface: TemplateObjectVariable,
     seat: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
-    syntax_hints: immutableset(),
+    syntax_hints: ImmutableSet[str],
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
         f"{agent.handle}-sits-(down)-in-{seat.handle}",
@@ -113,10 +115,7 @@ def _make_sit_on(num_samples: int = 5, *, noise_objects: int = 0) -> Phase1Insta
     background = immutableset(
         standard_object(f"noise_object_{x}") for x in range(noise_objects)
     )
-    syntax_hints_options = (
-        ("default", []),  # type: ignore
-        ("adverbial-mod", [USE_ADVERBIAL_PATH_MODIFIER]),
-    )
+    syntax_hints_options = ([], [USE_ADVERBIAL_PATH_MODIFIER])  # type: ignore
 
     return phase1_instances(
         "Sit On",
@@ -143,10 +142,7 @@ def _make_sit_in(num_samples: int = 5, *, noise_objects: int = 0) -> Phase1Insta
     background = immutableset(
         standard_object(f"noise_object_{x}") for x in range(noise_objects)
     )
-    syntax_hints_options = (
-        ("default", []),  # type: ignore
-        ("adverbial-mod", [USE_ADVERBIAL_PATH_MODIFIER]),
-    )
+    syntax_hints_options = ([], [USE_ADVERBIAL_PATH_MODIFIER])  # type: ignore
 
     return phase1_instances(
         "Sit In",

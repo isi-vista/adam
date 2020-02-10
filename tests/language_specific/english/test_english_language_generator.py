@@ -576,6 +576,42 @@ def test_fall_down_syntax_hint():
     assert generated_tokens(situation_with_modifier) == ("a", "ball", "falls", "down")
 
 
+def test_action_with_advmod_and_preposition():
+    mom = situation_object(MOM)
+    chair = situation_object(CHAIR)
+
+    situation_with_advmod_and_preposition = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom, chair],
+        actions=[
+            Action(
+                SIT,
+                argument_roles_to_fillers=[
+                    (AGENT, mom),
+                    (
+                        GOAL,
+                        Region(
+                            chair,
+                            direction=GRAVITATIONAL_UP,
+                            distance=EXTERIOR_BUT_IN_CONTACT,
+                        ),
+                    ),
+                ],
+            )
+        ],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
+    )
+
+    assert generated_tokens(situation_with_advmod_and_preposition) == (
+        "Mom",
+        "sits",
+        "down",
+        "on",
+        "a",
+        "chair",
+    )
+
+
 def test_transfer_of_possession():
     mom = situation_object(MOM)
     baby = situation_object(BABY)
