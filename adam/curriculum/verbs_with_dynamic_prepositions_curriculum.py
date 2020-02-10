@@ -207,7 +207,7 @@ def _go_over_template(
                         Region(
                             goal_object,
                             distance=DISTAL if is_distal else PROXIMAL,
-                            direction=GRAVITATIONAL_DOWN,
+                            direction=GRAVITATIONAL_UP,
                         ),
                     ),
                 ],
@@ -237,7 +237,7 @@ def _go_under_template(
                         Region(
                             goal_object,
                             distance=DISTAL if is_distal else PROXIMAL,
-                            direction=GRAVITATIONAL_UP,
+                            direction=GRAVITATIONAL_DOWN,
                         ),
                     ),
                 ],

@@ -611,9 +611,9 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             elif region.distance == INTERIOR:
                 return "in"
             elif region.direction == GRAVITATIONAL_UP:
-                return "under"
-            elif region.direction == GRAVITATIONAL_DOWN:
                 return "over"
+            elif region.direction == GRAVITATIONAL_DOWN:
+                return "under"
             elif region.direction and self.situation.axis_info:
                 if not self.situation.axis_info.addressee:
                     raise RuntimeError(
