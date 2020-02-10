@@ -39,7 +39,7 @@ from attr import Factory, attrib, attrs
 
 
 @attrs
-class Cross_SituationalLanguageLearner(
+class CrossSituationalLanguageLearner(
     Generic[PerceptionT, LinguisticDescriptionT],
     LanguageLearner[PerceptionT, LinguisticDescription],
 ):
@@ -107,7 +107,7 @@ class Cross_SituationalLanguageLearner(
     @staticmethod
     def from_parameters(
         params: Parameters, *, graph_logger: Optional[GraphLogger] = None
-    ) -> "Cross_SituationalLanguageLearner":  # type: ignore
+    ) -> "CrossSituationalLanguageLearner":  # type: ignore
         log_word_hypotheses_dir = params.optional_creatable_directory(
             "log_word_hypotheses_dir"
         )
@@ -117,14 +117,16 @@ class Cross_SituationalLanguageLearner(
         rng = Random()
         rng.seed(params.optional_integer("random_seed", default=0))
 
-        return Cross_SituationalLanguageLearner(
+        return CrossSituationalLanguageLearner(
             learning_factor=params.floating_point("learning_factor"),
             graph_match_confirmation_threshold=params.floating_point(
                 "graph_match_confirmation_threshold"
             ),
             lexicon_entry_threshold=params.floating_point("lexicon_entry_threshold"),
             smoothing_parameter=params.floating_point("smoothing_parameter"),
-            expected_number_of_meanings=params.floating_point("expected_number_of_meanings"),
+            expected_number_of_meanings=params.floating_point(
+                "expected_number_of_meanings"
+            ),
             graph_logger=graph_logger,
             log_word_hypotheses_to=log_word_hypotheses_dir,
             rng=rng,
@@ -139,7 +141,9 @@ class Cross_SituationalLanguageLearner(
 
         perception = learning_example.perception
         if len(perception.frames) != 1:
-            raise RuntimeError("Cross-situational learner can only handle single frames for now")
+            raise RuntimeError(
+                "Cross-situational learner can only handle single frames for now"
+            )
         if isinstance(perception.frames[0], DevelopmentalPrimitivePerceptionFrame):
             original_perception_graph = PerceptionGraph.from_frame(
                 perception.frames[0]
@@ -162,14 +166,16 @@ class Cross_SituationalLanguageLearner(
         observed_perception_graph: PerceptionGraph,
         observed_linguistic_description: Tuple[str, ...],
     ) -> None:
-        logging.info(f"Cross-situational learner observing {observed_linguistic_description}")
+        logging.info(
+            f"Cross-situational learner observing {observed_linguistic_description}"
+        )
         # The learner’s words are W, meanings are M, their associations are A, and the new
         # utterance is U = (W_U, M_U).
         # For every w in W_U
         # Adding "dummy word" that smoothes out learning for situations where a word shows up
         # without it's meaning or vice versa. Also smoothes out meanings that show up without a word
         # in general.
-        words = observed_linguistic_description+tuple("d")
+        words = observed_linguistic_description + tuple("d")
         meanings = [
             PerceptionGraphPattern.from_graph(object_).perception_graph_pattern
             for object_ in self.get_objects_from_perception(observed_perception_graph)
@@ -193,15 +199,19 @@ class Cross_SituationalLanguageLearner(
                     self._words_to_hypotheses_and_probability[word] = {}
                 # For each meaning, update the association score for the word meaning pair
                 for meaning in meanings:
-                    for hypothesis, score in self._words_to_hypotheses_and_scores[word].items():
-                        if hypotheses.check_isomorphism(meaning):
+                    for hypothesis in self._words_to_hypotheses_and_scores[word]:
+                        if hypothesis.check_isomorphism(meaning):
                             # Updating association score as described by the paper below
                             # assoc(w, m) = pass_assoc(w, m) + a(w|m, U)
                             # https://onlinelibrary.wiley.com/doi/full/10.1111/j.1551-6709.2010.01104.x (2)
-                            self._words_to_hypotheses_and_scores[word][hypothesis] += self.alignment_probability(word, words, hypotheses)
+                            self._words_to_hypotheses_and_scores[word][
+                                hypothesis
+                            ] += self.alignment_probability(word, words, hypothesis)
                             break
                     else:
-                        self._words_to_hypotheses_and_scores[word][meaning] = self.alignment_probability(word, words, meaning)
+                        self._words_to_hypotheses_and_scores[word][
+                            meaning
+                        ] = self.alignment_probability(word, words, meaning)
                         self._words_to_hypotheses_and_probability[word][meaning] = 0
 
                 # Update all word meaning probabilities for the word
@@ -216,26 +226,39 @@ class Cross_SituationalLanguageLearner(
         # (added earlier in the program) which smoothes when the meaning and word is present without
         # it's counterpart.
         # https://onlinelibrary.wiley.com/doi/full/10.1111/j.1551-6709.2010.01104.x (1)
-        normalizing_factor = 0f
+        normalizing_factor = 0.0
         for other_word in words:
             if other_word is not word:
-                for hypothesis, probability in self._words_to_hypotheses_and_probability[other_word].items():
+                for hypothesis, probability in self._words_to_hypotheses_and_probability[
+                    other_word
+                ].items():
                     if hypothesis.check_isomorphism(meaning):
                         normalizing_factor += probability
-        return self._words_to_hypotheses_and_probability[word][meaning] / normalizing_factor
+        return (
+            self._words_to_hypotheses_and_probability[word][meaning] / normalizing_factor
+        )
 
-    def update_probability(self, word: str) -> float:
+    def update_probability(self, word: str):
         # Update all word meaning probabilities for given word as defined by the paper below
         # p(m|w) = assoc(m, w) + lambda / sum(for m' in M)(assoc(m', w) + beta * lambda)
         # where w and m are given words and meanings, lambda is a smoothing factor, M is all
         # meanings encountered, beta is the expected number of meaning types.
         # https://onlinelibrary.wiley.com/doi/full/10.1111/j.1551-6709.2010.01104.x (3)
         for meaning in self._words_to_hypotheses_and_probability[word]:
-            normalizing_factor = 0f
+            normalizing_factor = 0.0
             for other_meaning in self._words_to_hypotheses_and_scores[word]:
-                normalizing_factor += self._words_to_hypotheses_and_scores[word][other_meaning] + self._expected_number_of_meanings * self._smoothing_parameter
-            normalizing_factor -= self._words_to_hypotheses_and_scores[word][meaning] + self._expected_number_of_meanings * self._smoothing_parameter
-            self._words_to_hypotheses_and_probability[word][meaning] = (self._words_to_hypotheses_and_scores[word][meaning] + self.smoothing_parameter) / normalizing_factor
+                normalizing_factor += (
+                    self._words_to_hypotheses_and_scores[word][other_meaning]
+                    + self._expected_number_of_meanings * self._smoothing_parameter
+                )
+            normalizing_factor -= (
+                self._words_to_hypotheses_and_scores[word][meaning]
+                + self._expected_number_of_meanings * self._smoothing_parameter
+            )
+            self._words_to_hypotheses_and_probability[word][meaning] = (
+                self._words_to_hypotheses_and_scores[word][meaning]
+                + self._smoothing_parameter
+            ) / normalizing_factor
 
     # Check necessity for cross-situational implementation
     @attrs(frozen=True)
@@ -258,7 +281,7 @@ class Cross_SituationalLanguageLearner(
 
     def _compute_match_ratio(
         self, pattern: PerceptionGraphPattern, graph: PerceptionGraph
-    ) -> "Cross_SituationalLanguageLearner.PartialMatch":
+    ) -> "CrossSituationalLanguageLearner.PartialMatch":
         """
         Computes the fraction of pattern graph nodes of *pattern* which match *graph*.
         """
@@ -278,7 +301,7 @@ class Cross_SituationalLanguageLearner(
             if hypothesis_pattern_common_subgraph
             else 0
         )
-        return Cross_SituationalLanguageLearner.PartialMatch(
+        return CrossSituationalLanguageLearner.PartialMatch(
             hypothesis_pattern_common_subgraph,
             num_nodes_matched=num_nodes_matched,
             num_nodes_in_pattern=leading_hypothesis_num_nodes,
@@ -453,11 +476,13 @@ class Cross_SituationalLanguageLearner(
     def _leading_hypothesis_for(
         self, word: str
     ) -> Optional[Tuple[PerceptionGraphPattern, float]]:
-        hypotheses_and_scores_for_word = self._words_to_hypotheses_and_probability.get(
+        hypotheses_and_probability_for_word = self._words_to_hypotheses_and_probability.get(
             word, None
         )
-        if hypotheses_and_scores_for_word:
-            return max(hypotheses_and_probability_for_word.items(), key=lambda entry: entry[1])
+        if hypotheses_and_probability_for_word:
+            return max(
+                hypotheses_and_probability_for_word.items(), key=lambda entry: entry[1]
+            )
         else:
             return None
 
