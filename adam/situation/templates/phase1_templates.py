@@ -357,12 +357,6 @@ class _Phase1SituationTemplateGenerator(
     ) -> Iterable[HighLevelSemanticsSituation]:
         check_arg(isinstance(template, Phase1SituationTemplate))
         try:
-            has_addressee = False
-            for object_ in template.all_object_variables:
-                if IS_ADDRESSEE in object_.asserted_properties:
-                    has_addressee = True
-                    break
-
             # gather property variables from object variables
             property_variables = immutableset(
                 property_
@@ -390,7 +384,6 @@ class _Phase1SituationTemplateGenerator(
                 object_var_to_instantiations = self._instantiate_objects(
                     template,
                     variable_assignment,
-                    has_addressee=has_addressee,
                     default_addressee_node=default_addressee_node,
                 )
 
@@ -430,9 +423,13 @@ class _Phase1SituationTemplateGenerator(
         template: Phase1SituationTemplate,
         variable_assignment: "TemplateVariableAssignment",
         *,
-        has_addressee: bool,
         default_addressee_node: OntologyNode,
     ):
+        has_addressee = any(
+            IS_ADDRESSEE in object_.asserted_properties
+            for object_ in template.all_object_variables
+        )
+
         object_var_to_instantiations_mutable: List[
             Tuple[TemplateObjectVariable, SituationObject]
         ] = [
