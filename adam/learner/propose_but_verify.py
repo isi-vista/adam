@@ -104,7 +104,9 @@ class ProposeButVerifyLanguageLearner(
 
         perception = learning_example.perception
         if len(perception.frames) != 1:
-            raise RuntimeError("ProposeButVerify learner can only handle single frames for now")
+            raise RuntimeError(
+                "ProposeButVerify learner can only handle single frames for now"
+            )
         if isinstance(perception.frames[0], DevelopmentalPrimitivePerceptionFrame):
             original_perception_graph = PerceptionGraph.from_frame(
                 perception.frames[0]
@@ -127,7 +129,9 @@ class ProposeButVerifyLanguageLearner(
         observed_perception_graph: PerceptionGraph,
         observed_linguistic_description: Tuple[str, ...],
     ) -> None:
-        logging.info(f"ProposeButVerify learner observing {observed_linguistic_description}")
+        logging.info(
+            f"ProposeButVerify learner observing {observed_linguistic_description}"
+        )
         for word in observed_linguistic_description:
             if word in ("a", "the"):
                 continue
@@ -147,7 +151,9 @@ class ProposeButVerifyLanguageLearner(
             if self._log_word_hypotheses_to:
                 self._log_hypotheses(word)
 
-    def initialize_new_meaning(self, word: str, observed_perception_graph: PerceptionGraph):
+    def initialize_new_meaning(
+        self, word: str, observed_perception_graph: PerceptionGraph
+    ):
         # If the word has never been seen before OR word does not match any
         # 'object' in the current frame, learn a new hypothesis/pattern
         # generated as a pattern graph from the perception.
@@ -183,7 +189,7 @@ class ProposeButVerifyLanguageLearner(
         partial_match = self._compute_match_ratio(
             hypotheses_for_word, observed_perception_graph
         )
-        hypothesis_is_confirmed = (partial_match.match_ratio() > self._minimum_match_ratio)
+        hypothesis_is_confirmed = partial_match.match_ratio() > self._minimum_match_ratio
         # If the hypothesis is confirmed, we leave it as it is
         if hypothesis_is_confirmed and partial_match.matching_subgraph:
             logging.info(
@@ -215,7 +221,9 @@ class ProposeButVerifyLanguageLearner(
             partial_match = self._compute_match_ratio(
                 hypotheses_for_word, observed_perception_graph
             )
-            hypothesis_is_confirmed = (partial_match.match_ratio() > self._minimum_match_ratio)
+            hypothesis_is_confirmed = (
+                partial_match.match_ratio() > self._minimum_match_ratio
+            )
             if hypothesis_is_confirmed:
                 learned_description = TokenSequenceLinguisticDescription(("a", word))
                 descriptions.append((learned_description, 1.0))
