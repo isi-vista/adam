@@ -51,10 +51,10 @@ def log_experiment_entry_point(params: Parameters) -> None:
             name=experiment_name,
             training_stages=training_instance_groups,
             learner_factory=learner_factory_from_params(params, graph_logger),
-            pre_example_training_observers=[logger.pre_observer()],
-            post_example_training_observers=[logger.post_observer()],
+            pre_example_training_observers=[logger.pre_observers()],
+            post_example_training_observers=[logger.post_observers()],
             test_instance_groups=test_instance_groups,
-            test_observers=[logger.test_observer()],
+            test_observers=[logger.test_observers()],
             sequence_chooser=RandomChooser.for_seed(0),
         )
     )

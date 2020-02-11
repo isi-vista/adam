@@ -90,6 +90,52 @@ class TopChoiceExactMatchObserver(
         )
 
 
+@attrs(slots=True)
+class CandidateAccuracyObserver(
+    DescriptionObserver[SituationT, LinguisticDescriptionT, PerceptionT]
+):
+    r"""
+    Log how often the 'gold' description is present in the learner's candidate descriptions.
+    Provide an accuracy score.
+    """
+    name: str = attrib(validator=instance_of(str))
+    _num_predictions: int = attrib(init=False, default=0)
+    _num_predictions_with_gold_in_candidates: int = attrib(init=False, default=0)
+
+    def observe(  # pylint:disable=unused-argument
+        self,
+        situation: Optional[SituationT],
+        true_description: LinguisticDescription,
+        perceptual_representation: PerceptualRepresentation[PerceptionT],
+        predicted_descriptions: Mapping[LinguisticDescription, float],
+    ) -> None:
+        self._num_predictions += 1
+
+        descriptions_as_token_sequences = [
+            desc.as_token_sequence() for desc in predicted_descriptions
+        ]
+        if true_description.as_token_sequence() in descriptions_as_token_sequences:
+            self._num_predictions_with_gold_in_candidates += 1
+
+    def report(self) -> None:
+        logging.info(
+            f"{self.name}: accuracy of learner's predictions ('gold' description was in learner's candidates) "
+            f"{self._num_predictions_with_gold_in_candidates} / {self._num_predictions} predictions ("
+            f"{100.0 * self.accuracy():2.3f} %)"
+        )
+
+    def accuracy(self) -> float:
+        """
+        Return accuracy value of the number of predictions made where the 'gold' description was present in
+        the learner's candidate descriptions.
+        Returns: accuracy score (float)
+
+        """
+        if not self._num_predictions:
+            raise RuntimeError("Requested accuracy before any predictions were made")
+        return self._num_predictions_with_gold_in_candidates / self._num_predictions
+
+
 CSS = """
 body {
     font-size: 1em;
@@ -146,23 +192,31 @@ class LearningProgressHtmlLogger:
             outfile_dir=output_html_path, html_dumper=html_dumper
         )
 
-    def pre_observer(self) -> "HTMLLoggerPreObserver":  # type: ignore
+    def pre_observers(self) -> "DescriptionObserver":  # type: ignore
         return HTMLLoggerPreObserver(name="Pre-observer", html_logger=self)
 
-    def post_observer(self) -> "HTMLLoggerPostObserver":  # type: ignore
+    def post_observers(self) -> "DescriptionObserver":  # type: ignore
         return HTMLLoggerPostObserver(
             name="Post-observer", html_logger=self, test_mode=False
         )
 
-    def test_observer(self) -> "HTMLLoggerPostObserver":  # type: ignore
+    def test_observers(self) -> "DescriptionObserver":  # type: ignore
         return HTMLLoggerPostObserver(
             name="Test-observer", html_logger=self, test_mode=True
         )
 
     def pre_observer_log(
-        self, predicted_descriptions: Mapping[LinguisticDescription, float]
+        self,
+        predicted_descriptions: Mapping[LinguisticDescription, float],
+        accuracy: Optional[float] = None,
     ) -> None:
-        self.pre_observed_description = pretty_descriptions(predicted_descriptions)
+        if accuracy is not None:
+            accuracy_str = f"\nAccuracy: {accuracy:2.2f}%"
+        else:
+            accuracy_str = ""
+        self.pre_observed_description = (
+            pretty_descriptions(predicted_descriptions) + accuracy_str
+        )
 
     def post_observer_log(
         self,
@@ -174,6 +228,7 @@ class LearningProgressHtmlLogger:
         perceptual_representation: PerceptualRepresentation[PerceptionT],
         predicted_descriptions: Mapping[LinguisticDescription, float],
         test_mode: bool,
+        accuracy: float,
     ):
         learner_pre_description = self.pre_observed_description
         self.pre_observed_description = None
@@ -244,11 +299,13 @@ class LearningProgressHtmlLogger:
                 f'\t\t\t\t<td valign="top">{true_description_text}</td>\n'
             )
             if test_mode:
-                outfile.write(f'\t\t\t\t<td valign="top">{learner_description}</td>\n')
+                outfile.write(
+                    f'\t\t\t\t<td valign="top">{learner_description}<br/>Accuracy: {accuracy:2.2f}</td>\n'
+                )
             else:
                 outfile.write(
                     f'\t\t\t\t<td valign="top">{learner_pre_description}</td>\n'
-                    f'\t\t\t\t<td valign="top">{learner_description}</td>\n'
+                    f'\t\t\t\t<td valign="top">{learner_description}<br/>Accuracy: {accuracy:2.2f}</td>\n'
                 )
 
             outfile.write(
@@ -285,13 +342,10 @@ class HTMLLoggerPreObserver(
 
 
 @attrs(slots=True)
-class HTMLLoggerPostObserver(
-    DescriptionObserver[SituationT, LinguisticDescriptionT, PerceptionT]
-):
+class HTMLLoggerPostObserver(CandidateAccuracyObserver):  # type: ignore
     r"""
     Logs the true description and learner's descriptions throughout the learning process.
     """
-    name: str = attrib(validator=instance_of(str))
     html_logger: LearningProgressHtmlLogger = attrib(
         validator=instance_of(LearningProgressHtmlLogger), kw_only=True
     )
@@ -305,6 +359,9 @@ class HTMLLoggerPostObserver(
         perceptual_representation: PerceptualRepresentation[PerceptionT],
         predicted_descriptions: Mapping[LinguisticDescription, float],
     ) -> None:
+        super(HTMLLoggerPostObserver, self).observe(
+            situation, true_description, perceptual_representation, predicted_descriptions
+        )
         self.html_logger.post_observer_log(
             observer_name=self.name,
             instance_number=self.counter,
@@ -313,6 +370,7 @@ class HTMLLoggerPostObserver(
             perceptual_representation=perceptual_representation,
             predicted_descriptions=predicted_descriptions,
             test_mode=self.test_mode,
+            accuracy=self.accuracy(),
         )
         self.counter += 1
 
