@@ -15,6 +15,7 @@ from typing import (
     Sequence,
     TypeVar,
     Union,
+    Tuple,
 )
 
 from attr.validators import instance_of
@@ -269,6 +270,7 @@ def all_possible(
     *,
     ontology: Ontology,
     chooser: SequenceChooser,
+    default_addressee_node: OntologyNode = LEARNER,
 ) -> Iterable[HighLevelSemanticsSituation]:
     """
     Generator for all possible instantiations of *situation_template* with *ontology*.
@@ -276,7 +278,11 @@ def all_possible(
     return list(
         _Phase1SituationTemplateGenerator(
             ontology=ontology, variable_assigner=_CrossProductVariableAssigner()
-        ).generate_situations(situation_template, chooser=chooser)
+        ).generate_situations(
+            situation_template,
+            chooser=chooser,
+            default_addressee_node=default_addressee_node,
+        )
     )
 
 
@@ -286,6 +292,7 @@ def sampled(
     ontology: Ontology,
     chooser: SequenceChooser,
     max_to_sample: int,
+    default_addressee_node: OntologyNode = LEARNER,
 ) -> Iterable[HighLevelSemanticsSituation]:
     """
     Gets *max_to_sample* instantiations of *situation_template* with *ontology*
@@ -296,7 +303,11 @@ def sampled(
             max_to_sample,
             _Phase1SituationTemplateGenerator(
                 ontology=ontology, variable_assigner=_SamplingVariableAssigner()
-            ).generate_situations(situation_template, chooser=chooser),
+            ).generate_situations(
+                situation_template,
+                chooser=chooser,
+                default_addressee_node=default_addressee_node,
+            ),
         )
     )
 
@@ -307,11 +318,16 @@ def fixed_assignment(
     *,
     ontology: Ontology,
     chooser: SequenceChooser,
+    default_addressee_node: OntologyNode = LEARNER,
 ) -> Iterable[HighLevelSemanticsSituation]:
     return list(
         _Phase1SituationTemplateGenerator(
             ontology=ontology, variable_assigner=_FixedVariableAssigner(assignment)
-        ).generate_situations(situation_template, chooser=chooser)
+        ).generate_situations(
+            situation_template,
+            chooser=chooser,
+            default_addressee_node=default_addressee_node,
+        )
     )
 
 
@@ -337,6 +353,7 @@ class _Phase1SituationTemplateGenerator(
         chooser: SequenceChooser = Factory(
             RandomChooser.for_seed
         ),  # pylint:disable=unused-argument
+        default_addressee_node: OntologyNode = LEARNER,
     ) -> Iterable[HighLevelSemanticsSituation]:
         check_arg(isinstance(template, Phase1SituationTemplate))
         try:
@@ -365,7 +382,9 @@ class _Phase1SituationTemplateGenerator(
             ):
                 # instantiate all objects in the situation according to the variable assignment.
                 object_var_to_instantiations = self._instantiate_objects(
-                    template, variable_assignment
+                    template,
+                    variable_assignment,
+                    default_addressee_node=default_addressee_node,
                 )
 
                 # Cannot have multiple instantiations of the same recognized particular.
@@ -403,22 +422,65 @@ class _Phase1SituationTemplateGenerator(
         self,
         template: Phase1SituationTemplate,
         variable_assignment: "TemplateVariableAssignment",
+        *,
+        default_addressee_node: OntologyNode,
     ):
-        object_var_to_instantiations: Mapping[
-            TemplateObjectVariable, SituationObject
-        ] = immutabledict(
-            (obj_var, self._instantiate_object(obj_var, variable_assignment))
-            for obj_var in template.all_object_variables
+        has_addressee = any(
+            IS_ADDRESSEE in object_.asserted_properties
+            for object_ in template.all_object_variables
         )
-        return object_var_to_instantiations
+
+        object_var_to_instantiations_mutable: List[
+            Tuple[TemplateObjectVariable, SituationObject]
+        ] = [
+            (
+                obj_var,
+                self._instantiate_object(
+                    obj_var,
+                    variable_assignment,
+                    has_addressee=has_addressee,
+                    default_addressee_node=default_addressee_node,
+                ),
+            )
+            for obj_var in template.all_object_variables
+        ]
+        if (
+            default_addressee_node
+            not in immutableset(
+                object_.ontology_node
+                for (_, object_) in object_var_to_instantiations_mutable
+            )
+            and not has_addressee
+        ):
+            object_var_to_instantiations_mutable.append(
+                (
+                    object_variable(
+                        default_addressee_node.handle, default_addressee_node
+                    ),
+                    SituationObject.instantiate_ontology_node(
+                        default_addressee_node,
+                        properties=[IS_ADDRESSEE],
+                        debug_handle=default_addressee_node.handle + "_default_addressee",
+                        ontology=self.ontology,
+                    ),
+                )
+            )
+        return immutabledict(object_var_to_instantiations_mutable)
 
     def _instantiate_object(
         self,
         object_var: TemplateObjectVariable,
         variable_assignment: "TemplateVariableAssignment",
+        *,
+        has_addressee: bool,
+        default_addressee_node: OntologyNode,
     ) -> SituationObject:
         object_type = variable_assignment.object_variables_to_fillers[object_var]
-
+        asserted_properties = object_var.asserted_properties
+        if object_type == default_addressee_node and not has_addressee:
+            asserted_properties = immutableset(
+                object_var.asserted_properties.union([IS_ADDRESSEE])
+            )
         return SituationObject.instantiate_ontology_node(
             ontology_node=object_type,
             properties=[
@@ -426,7 +488,7 @@ class _Phase1SituationTemplateGenerator(
                 variable_assignment.property_variables_to_fillers[asserted_property]
                 if isinstance(asserted_property, TemplatePropertyVariable)
                 else asserted_property
-                for asserted_property in object_var.asserted_properties
+                for asserted_property in asserted_properties
             ],
             ontology=self.ontology,
         )
@@ -445,12 +507,13 @@ class _Phase1SituationTemplateGenerator(
                 for obj_var in template.salient_object_variables
             ],
             other_objects=[
-                object_var_to_instantiations[obj_var]
+                object_var_to_instantiations[obj_var]  # type: ignore
                 for obj_var in (
-                    template.all_object_variables.difference(
+                    immutableset(object_var_to_instantiations.keys()).difference(
                         template.salient_object_variables
                     )
                 )
+                # We use the keys of the mapping in case a default addressee was added
             ],
             always_relations=[
                 relation.copy_remapping_objects(object_var_to_instantiations)
