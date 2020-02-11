@@ -49,6 +49,10 @@ from adam.ontology.phase1_ontology import (
     strictly_above,
     JUMP,
     JUMP_INITIAL_SUPPORTER_AUX,
+    DOG,
+    HOLLOW,
+    GO,
+    LEARNER,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -64,7 +68,7 @@ from adam.ontology.phase1_spatial_relations import (
 )
 from adam.random_utils import FixedIndexChooser
 from adam.relation import Relation
-from adam.situation import Action
+from adam.situation import Action, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam_test_utils import situation_object
 from tests.sample_situations import make_bird_flies_over_a_house
@@ -930,6 +934,98 @@ def test_object_behind_in_front_object():
         ),
     )
     assert generated_tokens(behind_situation) == ("a", "box", "behind", "a", "table")
+
+
+def test_regions_as_goal():
+    agent = situation_object(DOG)
+    goal_object = situation_object(BOX, properties=[HOLLOW])
+    learner = situation_object(LEARNER, properties=[IS_ADDRESSEE])
+
+    def region_as_goal_situation(
+        goal: Region[SituationObject]
+    ) -> HighLevelSemanticsSituation:
+        return HighLevelSemanticsSituation(
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+            salient_objects=[agent, goal_object],
+            actions=[
+                Action(GO, argument_roles_to_fillers=[(AGENT, agent), (GOAL, goal)])
+            ],
+            axis_info=AxesInfo(
+                addressee=learner,
+                axes_facing=[
+                    (
+                        learner,
+                        # TODO: fix this hack
+                        HorizontalAxisOfObject(
+                            obj, index=1
+                        ).to_concrete_axis(  # type: ignore
+                            None
+                        ),
+                    )
+                    for obj in [agent, goal_object, learner]
+                    if obj.axes
+                ],
+            ),
+        )
+
+    # To
+    assert generated_tokens(
+        region_as_goal_situation(Region(goal_object, distance=PROXIMAL))
+    ) == ("a", "dog", "goes", "to", "a", "box")
+    # In
+    assert generated_tokens(
+        region_as_goal_situation(Region(goal_object, distance=INTERIOR))
+    ) == ("a", "dog", "goes", "in", "a", "box")
+    # Beside
+    assert generated_tokens(
+        region_as_goal_situation(
+            Region(
+                goal_object,
+                distance=PROXIMAL,
+                direction=Direction(
+                    positive=True,
+                    relative_to_axis=HorizontalAxisOfObject(goal_object, index=0),
+                ),
+            )
+        )
+    ) == ("a", "dog", "goes", "beside", "a", "box")
+    # Beside
+    assert generated_tokens(
+        region_as_goal_situation(
+            Region(
+                goal_object,
+                distance=PROXIMAL,
+                direction=Direction(
+                    positive=False,
+                    relative_to_axis=HorizontalAxisOfObject(goal_object, index=0),
+                ),
+            )
+        )
+    ) == ("a", "dog", "goes", "beside", "a", "box")
+    # Behind
+    assert generated_tokens(
+        region_as_goal_situation(
+            Region(
+                goal_object,
+                distance=PROXIMAL,
+                direction=Direction(
+                    positive=False, relative_to_axis=FacingAddresseeAxis(goal_object)
+                ),
+            )
+        )
+    ) == ("a", "dog", "goes", "behind", "a", "box")
+    # In front of
+    assert generated_tokens(
+        region_as_goal_situation(
+            Region(
+                goal_object,
+                distance=PROXIMAL,
+                direction=Direction(
+                    positive=True, relative_to_axis=FacingAddresseeAxis(goal_object)
+                ),
+            )
+        )
+    ) == ("a", "dog", "goes", "behind", "a", "box")
 
 
 def generated_tokens(situation):

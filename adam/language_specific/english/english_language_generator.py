@@ -8,7 +8,7 @@ from immutablecollections import ImmutableSet, immutableset, immutablesetmultidi
 from more_itertools import first, only
 from networkx import DiGraph
 
-from adam.axes import FacingAddresseeAxis
+from adam.axes import FacingAddresseeAxis, GRAVITATIONAL_DOWN_TO_UP_AXIS
 from adam.language.dependency import (
     DependencyRole,
     DependencyTree,
@@ -70,6 +70,7 @@ from adam.ontology.phase1_spatial_relations import (
     PROXIMAL,
     Region,
     TOWARD,
+    GRAVITATIONAL_UP,
 )
 from adam.random_utils import SequenceChooser
 from adam.relation import Relation
@@ -606,8 +607,36 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 # TODO: put constraints on the axis
             ):
                 return "on"
+            elif region.distance == PROXIMAL and not region.direction:
+                return "to"
+            elif region.distance == INTERIOR:
+                return "in"
+            elif region.direction == GRAVITATIONAL_UP:
+                return "over"
             elif region.direction == GRAVITATIONAL_DOWN:
                 return "under"
+            elif region.direction and self.situation.axis_info:
+                if not self.situation.axis_info.addressee:
+                    raise RuntimeError(
+                        f"Unable to translate region into a preposition because an addressee is lacking. "
+                        f"Region: {region}\nSituation: {self.situation}"
+                    )
+                if (
+                    region.direction.relative_to_axis
+                    in self.situation.axis_info.axes_facing[
+                        self.situation.axis_info.addressee
+                    ]
+                ):
+                    if region.direction.positive:
+                        return "in front of"
+                    else:
+                        return "behind"
+                elif region.direction.relative_to_axis != GRAVITATIONAL_DOWN_TO_UP_AXIS:
+                    return "beside"
+                else:
+                    raise RuntimeError(
+                        f"Don't know how to translate {region} to a preposition yet"
+                    )
             else:
                 raise RuntimeError(
                     f"Don't know how to translate {region} to a preposition yet"
