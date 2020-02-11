@@ -631,7 +631,10 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                         return "in front of"
                     else:
                         return "behind"
-                elif region.direction.relative_to_axis != GRAVITATIONAL_DOWN_TO_UP_AXIS:
+                elif (
+                    region.direction.relative_to_axis != GRAVITATIONAL_DOWN_TO_UP_AXIS
+                    and region.distance == PROXIMAL
+                ):
                     return "beside"
                 else:
                     raise RuntimeError(
