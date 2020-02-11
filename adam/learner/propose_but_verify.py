@@ -41,6 +41,15 @@ class ProposeButVerifyLanguageLearner(
     Generic[PerceptionT, LinguisticDescriptionT],
     LanguageLearner[PerceptionT, LinguisticDescription],
 ):
+    """
+    An implementation of `LanguageLearner` for the 'propose but verify' learning based approach for
+    single object detection. This model does not retain any information pertaining to
+    disconfirmed hypothesis and is based on a "win-stay, lose-shift" ideology.
+
+    Reference: https://www.ling.upenn.edu/~ycharles/papers/pursuit-final.pdf
+    Section 1 of this paper on pursuit learning includes an introduction to the 'propose but
+    verify' learning approach.
+    """
 
     _ontology: Ontology = attrib(validator=instance_of(Ontology), kw_only=True)
     _observation_num = attrib(init=False, default=0)
@@ -61,6 +70,7 @@ class ProposeButVerifyLanguageLearner(
     _rendered_word_hypothesis_pair_ids: Set[str] = attrib(
         init=False, default=Factory(set)
     )
+    _minimum_match_ratio: float = attrib(default=0.8, kw_only=True)
 
     @staticmethod
     def from_parameters(
@@ -89,13 +99,12 @@ class ProposeButVerifyLanguageLearner(
     def observe(
         self, learning_example: LearningExample[PerceptionT, LinguisticDescription]
     ) -> None:
-
         logging.info("Observation %s", self._observation_num)
         self._observation_num += 1
 
         perception = learning_example.perception
         if len(perception.frames) != 1:
-            raise RuntimeError("Pursuit learner can only handle single frames for now")
+            raise RuntimeError("ProposeButVerify learner can only handle single frames for now")
         if isinstance(perception.frames[0], DevelopmentalPrimitivePerceptionFrame):
             original_perception_graph = PerceptionGraph.from_frame(
                 perception.frames[0]
@@ -118,27 +127,27 @@ class ProposeButVerifyLanguageLearner(
         observed_perception_graph: PerceptionGraph,
         observed_linguistic_description: Tuple[str, ...],
     ) -> None:
-        logging.info(f"Pursuit learner observing {observed_linguistic_description}")
+        logging.info(f"ProposeButVerify learner observing {observed_linguistic_description}")
         for word in observed_linguistic_description:
             if word in ("a", "the"):
                 continue
             logging.info(f"Considering '{word}'")
             if word not in self._words_to_hypotheses:
                 # a) If word has never been seen before, go through initialization step
-                self.initialization_step(word, observed_perception_graph)
+                self.initialize_new_meaning(word, observed_perception_graph)
             else:
                 # b) If word has been seen before, test the recorded hypothesis
-                if self.test_hypothesis_step(word, observed_perception_graph):
+                if self.verify_hypothesis(word, observed_perception_graph):
                     # If hypothesis is confirmed, do nothing
                     continue
                 else:
                     # If hypothesis is not confirmed, treat word as an unseen word, and go
                     # through the initialization step again (to randomly select meaning)
-                    self.initialization_step(word, observed_perception_graph)
+                    self.initialize_new_meaning(word, observed_perception_graph)
             if self._log_word_hypotheses_to:
                 self._log_hypotheses(word)
 
-    def initialization_step(self, word: str, observed_perception_graph: PerceptionGraph):
+    def initialize_new_meaning(self, word: str, observed_perception_graph: PerceptionGraph):
         # If the word has never been seen before OR word does not match any
         # 'object' in the current frame, learn a new hypothesis/pattern
         # generated as a pattern graph from the perception.
@@ -161,7 +170,7 @@ class ProposeButVerifyLanguageLearner(
         self._words_to_hypotheses[word] = pattern_hypothesis
 
     # Test Hypothesis
-    def test_hypothesis_step(
+    def verify_hypothesis(
         self, word: str, observed_perception_graph: PerceptionGraph
     ) -> bool:
         # Compare existing hypothesis with observation
@@ -174,11 +183,12 @@ class ProposeButVerifyLanguageLearner(
         partial_match = self._compute_match_ratio(
             hypotheses_for_word, observed_perception_graph
         )
-
-        hypothesis_is_confirmed = partial_match.matched_exactly()
+        hypothesis_is_confirmed = (partial_match.match_ratio() > self._minimum_match_ratio)
         # If the hypothesis is confirmed, we leave it as it is
         if hypothesis_is_confirmed and partial_match.matching_subgraph:
-            logging.info("Hypothesis is confirmed")
+            logging.info(
+                f"Hypothesis is confirmed (Match ratio: {partial_match.match_ratio()}"
+            )
         # If the hypothesis is disconfirmed
         else:
             logging.info(
@@ -200,18 +210,16 @@ class ProposeButVerifyLanguageLearner(
         observed_perception_graph = graph_without_learner(original_perception_graph)
 
         descriptions = []
-        for word, meaning_pattern in self._words_to_hypotheses.items():
-            # Use PerceptionGraphPattern.matcher and matcher.matches() for a complete match
-            matcher = meaning_pattern.matcher(
-                observed_perception_graph, matching_objects=True
+        for word in self._words_to_hypotheses.keys():
+            hypotheses_for_word = self._words_to_hypotheses[word]
+            partial_match = self._compute_match_ratio(
+                hypotheses_for_word, observed_perception_graph
             )
-            if any(
-                matcher.matches(
-                    use_lookahead_pruning=True, graph_logger=self._graph_logger
-                )
-            ):
+            hypothesis_is_confirmed = (partial_match.match_ratio() > self._minimum_match_ratio)
+            if hypothesis_is_confirmed:
                 learned_description = TokenSequenceLinguisticDescription(("a", word))
                 descriptions.append((learned_description, 1.0))
+        logging.info(f"Description: {descriptions}")
         return immutabledict(descriptions)
 
     def _log_hypotheses(self, word: str) -> None:
