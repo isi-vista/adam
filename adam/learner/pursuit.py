@@ -18,7 +18,7 @@ from typing import (
 
 from attr import Factory, attrib, attrs
 from attr.validators import in_, instance_of, optional
-from immutablecollections import immutabledict
+from immutablecollections import immutabledict, ImmutableSet, immutableset
 from more_itertools import first
 from vistautils.parameters import Parameters
 from vistautils.range import Range
@@ -34,7 +34,8 @@ from adam.learner import (
     get_largest_matching_pattern,
     graph_without_learner,
 )
-from adam.learner.preposition_pattern import PrepositionPattern
+from adam.learner.preposition_pattern import PrepositionPattern, _MODIFIED, _GROUND
+from adam.learner.preposition_subset import PrepositionSurfaceTemplate
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
 from adam.ontology.phase1_spatial_relations import Region
@@ -48,9 +49,13 @@ from adam.perception.perception_graph import (
     GraphLogger,
     PerceptionGraph,
     PerceptionGraphPattern,
+    MatchedObjectNode,
 )
 from adam.utils import networkx_utils
 
+# Abstract type to represent learned items such as words (str) and preposition phrases (PrepositionSurfaceTemplate)
+LearnedItemT = TypeVar("LearnedItemT")
+# Abstract type to represent hypothesis types
 HypothesisT = TypeVar("HypothesisT")
 HypothesisT2 = TypeVar("HypothesisT2")
 
@@ -60,6 +65,7 @@ class HypothesisGraphLogger(GraphLogger):
     """
     Subclass of hypothesis graph logger to generalize hypothesis logging
     """
+
     def log_hypothesis_graph(
         self,
         hypothesis: HypothesisT,
@@ -88,7 +94,7 @@ class HypothesisGraphLogger(GraphLogger):
 
 @attrs
 class AbstractPursuitLearner(
-    Generic[HypothesisT, PerceptionT, LinguisticDescriptionT],
+    Generic[LearnedItemT, HypothesisT, PerceptionT, LinguisticDescriptionT],
     LanguageLearner[PerceptionT, LinguisticDescription],
     ABC,
 ):
@@ -98,10 +104,10 @@ class AbstractPursuitLearner(
 
     """
 
-    _words_to_hypotheses_and_scores: Dict[str, Dict[HypothesisT, float]] = attrib(
-        init=False, default=Factory(dict)
-    )
-    _lexicon: Dict[str, HypothesisT] = attrib(init=False, default=Factory(dict))
+    _learned_item_to_hypotheses_and_scores: Dict[
+        LearnedItemT, Dict[HypothesisT, float]
+    ] = attrib(init=False, default=Factory(dict))
+    _lexicon: Dict[LearnedItemT, HypothesisT] = attrib(init=False, default=Factory(dict))
     _smoothing_parameter: float = attrib(
         validator=in_(Range.greater_than(0.0)), kw_only=True
     )
@@ -125,7 +131,7 @@ class AbstractPursuitLearner(
     # Threshold value for adding word to lexicon
     _lexicon_entry_threshold: float = attrib(default=0.8, kw_only=True)
     # Counter to be used to prevent prematurely lexicalizing novel words
-    _words_to_number_of_observations: Dict[str, int] = attrib(
+    _learned_item_to_number_of_observations: Dict[LearnedItemT, int] = attrib(
         init=False, default=Factory(dict)
     )
     _graph_logger: Optional[HypothesisGraphLogger] = attrib(
@@ -135,81 +141,58 @@ class AbstractPursuitLearner(
 
     # the following two fields are used if the user wishes the hypotheses for word meanings
     # to be logged at each step of learning for detailed debugging.
-    _log_word_hypotheses_to: Optional[Path] = attrib(
+    _log_learned_item_hypotheses_to: Optional[Path] = attrib(
         validator=optional(instance_of(Path)), default=None
     )
-    _word_to_logger: Dict[str, HypothesisGraphLogger] = attrib(
+    _learned_item_to_logger: Dict[LearnedItemT, HypothesisGraphLogger] = attrib(
         init=False, default=Factory(dict)
     )
-    _rendered_word_hypothesis_pair_ids: Set[str] = attrib(
+    _rendered_learned_item_hypothesis_pair_ids: Set[str] = attrib(
         init=False, default=Factory(set)
     )
 
     _observation_num = attrib(init=False, default=0)
 
-    def observe(
-        self, learning_example: LearningExample[PerceptionT, LinguisticDescription]
-    ) -> None:
-        logging.info("Observation %s", self._observation_num)
-        self._observation_num += 1
-
-        perception = learning_example.perception
-        if len(perception.frames) != 1:
-            raise RuntimeError("Pursuit learner can only handle single frames for now")
-        if isinstance(perception.frames[0], DevelopmentalPrimitivePerceptionFrame):
-            original_perception_graph = PerceptionGraph.from_frame(
-                perception.frames[0]
-            ).copy_as_digraph()
-        else:
-            raise RuntimeError("Cannot process perception type.")
-        # Remove learner from the perception
-        observed_perception_graph = graph_without_learner(original_perception_graph)
-        observed_linguistic_description = (
-            learning_example.linguistic_description.as_token_sequence()
-        )
-
-        self.learn_with_pursuit(
-            observed_perception_graph, observed_linguistic_description
-        )
-
     def learn_with_pursuit(
         self,
         observed_perception_graph: PerceptionGraph,
-        observed_linguistic_description: Tuple[str, ...],
+        items_to_learn: Tuple[LearnedItemT, ...],
     ) -> None:
-        logging.info(f"Pursuit learner observing {observed_linguistic_description}")
+        logging.info(f"Pursuit learner observing {items_to_learn}")
         # The learner’s words are W, meanings are M, their associations are A, and the new
         # utterance is U = (W_U, M_U).
         # For every w in W_U
-        for word in observed_linguistic_description:
+        for item in items_to_learn:
             # TODO: pursuit learner hard-coded to ignore determiners
             # https://github.com/isi-vista/adam/issues/498
-            if word in ("a", "the"):
+            if item in ("a", "the"):
                 continue
-            if word in self._words_to_number_of_observations:
-                self._words_to_number_of_observations[word] += 1
+            if item in self._learned_item_to_number_of_observations:
+                self._learned_item_to_number_of_observations[item] += 1
             else:
-                self._words_to_number_of_observations[word] = 1
+                self._learned_item_to_number_of_observations[item] = 1
 
             # If don't already know the meaning of the word, go through learning steps:
-            if word not in self._lexicon:
-                logging.info(f"Considering '{word}'")
-                if word not in self._words_to_hypotheses_and_scores:
+            if item not in self._lexicon:
+                logging.info(f"Considering '{item}'")
+                if item not in self._learned_item_to_hypotheses_and_scores:
                     # a) Initialization step, if the word is a novel word
-                    self.initialization_step(word, observed_perception_graph)
+                    self.initialization_step(item, observed_perception_graph)
                 else:
                     # b) If we already have a hypothesis, run the learning reinforcement step
                     is_hypothesis_confirmed = self.learning_step(
-                        word, observed_perception_graph
+                        item, observed_perception_graph
                     )
                     # Try lexicon step if we confirmed a meaning
                     if is_hypothesis_confirmed:
-                        self.lexicon_step(word)
+                        self.lexicon_step(item)
 
-                if self._log_word_hypotheses_to:
-                    self._log_hypotheses(word)
+                if self._log_learned_item_hypotheses_to:
+                    self._log_hypotheses(item)
 
-    def initialization_step(self, word: str, observed_perception_graph: PerceptionGraph):
+    def initialization_step(
+        self, item: LearnedItemT, observed_perception_graph: PerceptionGraph
+    ):
         # If it's a novel word, learn a new hypothesis/pattern,
         # generated as a pattern graph from the perception.
         # We want h_0 = arg_min_(m in M_U) max(A_m); i.e. h_0 is pattern_hypothesis
@@ -227,7 +210,7 @@ class AbstractPursuitLearner(
             max_association_score = max(
                 [
                     s
-                    for w, h_to_s in self._words_to_hypotheses_and_scores.items()
+                    for w, h_to_s in self._learned_item_to_hypotheses_and_scores.items()
                     for h, s in h_to_s.items()
                     if self._are_isomorphic(h, hypothesis)
                 ]
@@ -242,23 +225,23 @@ class AbstractPursuitLearner(
                 pattern_hypothesis,
                 logging.INFO,
                 "Initializing meaning for %s " "with score %s",
-                word,
+                item,
                 self._learning_factor,
             )
 
-        self._words_to_hypotheses_and_scores[word] = {
+        self._learned_item_to_hypotheses_and_scores[item] = {
             pattern_hypothesis: self._learning_factor
         }
 
     def learning_step(
-        self, word: str, observed_perception_graph: PerceptionGraph
+        self, item: LearnedItemT, observed_perception_graph: PerceptionGraph
     ) -> bool:
         # Select the most probable meaning h for w
         # I.e., if we already have hypotheses, get the leading hypothesis and compare it with the
         # observed perception
 
-        hypotheses_for_word = self._words_to_hypotheses_and_scores[word]
-        previous_hypotheses_and_scores = hypotheses_for_word
+        hypotheses_for_item = self._learned_item_to_hypotheses_and_scores[item]
+        previous_hypotheses_and_scores = hypotheses_for_item
         leading_hypothesis_pattern = max(
             previous_hypotheses_and_scores,
             key=lambda key: previous_hypotheses_and_scores[key],
@@ -266,10 +249,10 @@ class AbstractPursuitLearner(
 
         logging.info(
             "Current leading hypothesis is %s",
-            abs(hash((word, leading_hypothesis_pattern))),
+            abs(hash((item, leading_hypothesis_pattern))),
         )
 
-        current_hypothesis_score = hypotheses_for_word[leading_hypothesis_pattern]
+        current_hypothesis_score = hypotheses_for_item[leading_hypothesis_pattern]
         self.debug_counter += 1
 
         # If the leading hypothesis sufficiently matches the observation, reinforce it
@@ -288,7 +271,7 @@ class AbstractPursuitLearner(
             )
 
             # Register the updated hypothesis score of A(w,h)
-            hypotheses_for_word[leading_hypothesis_pattern] = new_hypothesis_score
+            hypotheses_for_item[leading_hypothesis_pattern] = new_hypothesis_score
             logging.info("Updating hypothesis score to %s", new_hypothesis_score)
         # b.ii) If the hypothesis is disconfirmed, so we weaken the previous score
         else:
@@ -297,7 +280,7 @@ class AbstractPursuitLearner(
                 1.0 - self._learning_factor
             )
             # Register the updated hypothesis score of A(w,h)
-            hypotheses_for_word[leading_hypothesis_pattern] = penalized_hypothesis_score
+            hypotheses_for_item[leading_hypothesis_pattern] = penalized_hypothesis_score
             logging.info(
                 "Working hypothesis disconfirmed. Reducing score from %s -> %s",
                 current_hypothesis_score,
@@ -341,7 +324,7 @@ class AbstractPursuitLearner(
                     self._meaning_from_perception(chosen_perception)
                 )
 
-                for hypothesis in hypotheses_for_word:
+                for hypothesis in hypotheses_for_item:
                     non_leading_hypothesis_partial_match = self._find_partial_match(
                         hypothesis, chosen_perception
                     )
@@ -364,11 +347,11 @@ class AbstractPursuitLearner(
                 # we can't just lookup the new_hypothesis in hypotheses_for_word
                 # to determine if we've seen it before.
                 # Instead, we need to do a more complicated check.
-                if hypothesis_to_reward in hypotheses_for_word:
+                if hypothesis_to_reward in hypotheses_for_item:
                     hypothesis_object_to_reward = hypothesis_to_reward
                 else:
                     existing_hypothesis_matching_new_hypothesis = self._find_identical_hypothesis(
-                        hypothesis_to_reward, candidates=hypotheses_for_word
+                        hypothesis_to_reward, candidates=hypotheses_for_item
                     )
                     if existing_hypothesis_matching_new_hypothesis:
                         hypothesis_object_to_reward = (
@@ -382,10 +365,10 @@ class AbstractPursuitLearner(
                     hypothesis_object_to_reward
                     not in hypothesis_objects_boosted_on_this_update
                 ):
-                    cur_score_for_new_hypothesis = hypotheses_for_word.get(
+                    cur_score_for_new_hypothesis = hypotheses_for_item.get(
                         hypothesis_object_to_reward, 0.0
                     )
-                    hypotheses_for_word[hypothesis_object_to_reward] = (
+                    hypotheses_for_item[hypothesis_object_to_reward] = (
                         cur_score_for_new_hypothesis
                         + self._learning_factor * (1.0 - cur_score_for_new_hypothesis)
                     )
@@ -422,23 +405,23 @@ class AbstractPursuitLearner(
             TODO for Deniz: add docstring
             """
 
-    def lexicon_step(self, word: str) -> None:
+    def lexicon_step(self, item: LearnedItemT) -> None:
         # If any conditional probability P(h^|w) exceeds a certain threshold value (h), then file
         # (w, h^) into the
         # lexicon
         # From Pursuit paper: P(h|w) = (A(w,h) + Gamma) / (Sum(A_w) + N x Gamma)
-        leading_hypothesis_entry = self._leading_hypothesis_for(word)
+        leading_hypothesis_entry = self._leading_hypothesis_for(item)
         assert leading_hypothesis_entry
         (leading_hypothesis_pattern, leading_hypothesis_score) = leading_hypothesis_entry
 
-        all_hypotheses_for_word = self._words_to_hypotheses_and_scores[word]
+        all_hypotheses_for_word = self._learned_item_to_hypotheses_and_scores[item]
         sum_of_all_scores = sum(all_hypotheses_for_word.values())
         number_of_meanings = len(all_hypotheses_for_word)
 
         probability_of_meaning_given_word = (
             leading_hypothesis_score + self._smoothing_parameter
         ) / (sum_of_all_scores + number_of_meanings * self._smoothing_parameter)
-        times_word_has_been_seen = self._words_to_number_of_observations[word]
+        times_word_has_been_seen = self._learned_item_to_number_of_observations[item]
         logging.info(
             "Prob of meaning given word: %s, Times seen: %s",
             probability_of_meaning_given_word,
@@ -450,12 +433,12 @@ class AbstractPursuitLearner(
         #  threshold
         if probability_of_meaning_given_word > self._lexicon_entry_threshold:
             if times_word_has_been_seen > 5:
-                self._lexicon[word] = leading_hypothesis_pattern
+                self._lexicon[item] = leading_hypothesis_pattern
                 # Remove the word from hypotheses
-                self._words_to_hypotheses_and_scores.pop(word)
+                self._learned_item_to_hypotheses_and_scores.pop(item)
                 if self._graph_logger:
                     self._graph_logger.log_hypothesis_graph(
-                        leading_hypothesis_pattern, logging.INFO, "Lexicalized %s", word
+                        leading_hypothesis_pattern, logging.INFO, "Lexicalized %s", item
                     )
             else:
                 logging.info("Would lexicalize, but haven't see the word often enough")
@@ -531,127 +514,75 @@ class AbstractPursuitLearner(
         logging.info(f"Got {len(meanings)} candidate meanings")
         return meanings
 
-    @abstractmethod
-    def _matches(
-        self, *, hypothesis: HypothesisT, observed_perception_graph: PerceptionGraph
-    ) -> bool:
-        """
-        TODO Deniz docstring
-        """
-
-    def describe(
-        self, perception: PerceptualRepresentation[PerceptionT]
-    ) -> Mapping[LinguisticDescription, float]:
-        if len(perception.frames) != 1:
-            raise RuntimeError("Subset learner can only handle single frames for now")
-        if isinstance(perception.frames[0], DevelopmentalPrimitivePerceptionFrame):
-            original_perception_graph = PerceptionGraph.from_frame(
-                perception.frames[0]
-            ).copy_as_digraph()
-        else:
-            raise RuntimeError("Cannot process perception type.")
-        observed_perception_graph = graph_without_learner(original_perception_graph)
-
-        descriptions = []
-
-        for word, meaning_pattern in self._lexicon.items():
-            # Use PerceptionGraphPattern.matcher and matcher.matches() for a complete match
-            if self._matches(
-                hypothesis=meaning_pattern,
-                observed_perception_graph=observed_perception_graph,
-            ):
-                learned_description = TokenSequenceLinguisticDescription(("a", word))
-                descriptions.append((learned_description, 1.0))
-
-        if not descriptions:
-            # no lexicalized word matched the perception,
-            # but we can still try to match our leading hypotheses
-            for word in self._words_to_hypotheses_and_scores.keys():
-                # mypy doesn't know the leading hypothesis will always exist here,
-                # but we do.
-                leading_hypothesis_pair = self._leading_hypothesis_for(  # type: ignore
-                    word
-                )
-                if leading_hypothesis_pair:
-                    (leading_hypothesis, score) = leading_hypothesis_pair
-                    if self._matches(
-                        hypothesis=leading_hypothesis,
-                        observed_perception_graph=observed_perception_graph,
-                    ):
-                        learned_description = TokenSequenceLinguisticDescription(
-                            ("a", word)
-                        )
-                        descriptions.append((learned_description, score))
-
-        return immutabledict(descriptions)
-
-    def _leading_hypothesis_for(self, word: str) -> Optional[Tuple[HypothesisT, float]]:
-        hypotheses_and_scores_for_word = self._words_to_hypotheses_and_scores.get(
-            word, None
+    def _leading_hypothesis_for(
+        self, item: LearnedItemT
+    ) -> Optional[Tuple[HypothesisT, float]]:
+        hypotheses_and_scores_for_word = self._learned_item_to_hypotheses_and_scores.get(
+            item, None
         )
         if hypotheses_and_scores_for_word:
             return max(hypotheses_and_scores_for_word.items(), key=lambda entry: entry[1])
         else:
             return None
 
-    def _log_hypotheses(self, word: str) -> None:
-        assert self._log_word_hypotheses_to
+    def _log_hypotheses(self, item: LearnedItemT) -> None:
+        assert self._log_learned_item_hypotheses_to
 
         # if the user has asked us
         # to log the progress of the learner's hypotheses about word meanings,
         # then we use a GraphLogger per-word to write diagram's
         # of each word's hypotheses into their own sub-directory
-        if word in self._word_to_logger:
-            graph_logger = self._word_to_logger[word]
+        if item in self._learned_item_to_logger:
+            graph_logger = self._learned_item_to_logger[item]
         else:
-            log_directory_for_word = self._log_word_hypotheses_to / word
+            log_directory_for_word = self._log_learned_item_hypotheses_to / str(item)
 
             graph_logger = HypothesisGraphLogger(
                 log_directory=log_directory_for_word, enable_graph_rendering=True
             )
-            self._word_to_logger[word] = graph_logger
+            self._learned_item_to_logger[item] = graph_logger
 
         def compute_hypothesis_id(h: HypothesisT) -> str:
             # negative hashes cause the dot renderer to crash
-            return str(abs(hash((word, h))))
+            return str(abs(hash((item, h))))
 
-        if word in self._lexicon:
-            logging.info("The word %s has been lexicalized", word)
-            lexicalized_meaning = self._lexicon[word]
+        if item in self._lexicon:
+            logging.info("The word %s has been lexicalized", item)
+            lexicalized_meaning = self._lexicon[item]
             hypothesis_id = compute_hypothesis_id(lexicalized_meaning)
-            if hypothesis_id not in self._rendered_word_hypothesis_pair_ids:
+            if hypothesis_id not in self._rendered_learned_item_hypothesis_pair_ids:
                 graph_logger.log_hypothesis_graph(
                     lexicalized_meaning,
                     logging.INFO,
                     "Rendering lexicalized " "meaning %s " "for %s",
                     hypothesis_id,
-                    word,
+                    item,
                     graph_name=str(hypothesis_id),
                 )
-                self._rendered_word_hypothesis_pair_ids.add(hypothesis_id)
+                self._rendered_learned_item_hypothesis_pair_ids.add(hypothesis_id)
         else:
-            scored_hypotheses_for_word = self._words_to_hypotheses_and_scores[
-                word
+            scored_hypotheses_for_word = self._learned_item_to_hypotheses_and_scores[
+                item
             ].items()
             # First, make sure all the hypotheses have been rendered.
             # We use the hash of this pair to generate a unique ID to match up logging messages
             # to the PDFs of hypothesized meaning graphs.
             for (hypothesis, _) in scored_hypotheses_for_word:
                 hypothesis_id = compute_hypothesis_id(hypothesis)
-                if hypothesis_id not in self._rendered_word_hypothesis_pair_ids:
+                if hypothesis_id not in self._rendered_learned_item_hypothesis_pair_ids:
                     graph_logger.log_hypothesis_graph(
                         hypothesis,
                         logging.INFO,
                         "Rendering  " "hypothesized " "meaning %s for %s",
                         hypothesis_id,
-                        word,
+                        item,
                         graph_name=str(hypothesis_id),
                     )
-                    self._rendered_word_hypothesis_pair_ids.add(hypothesis_id)
+                    self._rendered_learned_item_hypothesis_pair_ids.add(hypothesis_id)
 
             logging.info(
                 "After update, hypotheses for %s are %s",
-                word,
+                item,
                 ", ".join(
                     f"{compute_hypothesis_id(hypothesis)}={score}"
                     for (hypothesis, score) in reversed(
@@ -659,6 +590,32 @@ class AbstractPursuitLearner(
                     )
                 ),
             )
+
+    @abstractmethod
+    def observe(
+        self,
+        learning_example: LearningExample[PerceptionT, LinguisticDescription],
+        **kwargs,
+    ) -> None:
+        """
+        TODO: Doscsting
+        """
+
+    @abstractmethod
+    def describe(
+        self, perception: PerceptualRepresentation[PerceptionT], **kwargs
+    ) -> Mapping[LinguisticDescription, float]:
+        """
+        TODO: Docstring
+        """
+
+    @abstractmethod
+    def _matches(
+        self, *, hypothesis: HypothesisT, observed_perception_graph: PerceptionGraph
+    ) -> bool:
+        """
+        TODO Deniz docstring
+        """
 
     @abstractmethod
     def _find_identical_hypothesis(
@@ -709,11 +666,86 @@ class AbstractPursuitLearner(
 
 class ObjectPursuitLearner(
     Generic[PerceptionT, LinguisticDescriptionT],
-    AbstractPursuitLearner[PerceptionGraphPattern, PerceptionT, LinguisticDescriptionT],
+    AbstractPursuitLearner[
+        str, PerceptionGraphPattern, PerceptionT, LinguisticDescriptionT
+    ],
 ):
     """
     An implementation of pursuit learner for object recognition
     """
+
+    def observe(
+        self,
+        learning_example: LearningExample[PerceptionT, LinguisticDescription],
+        **kwargs,
+    ) -> None:
+        logging.info("Observation %s", self._observation_num)
+        self._observation_num += 1
+
+        perception = learning_example.perception
+        if len(perception.frames) != 1:
+            raise RuntimeError("Pursuit learner can only handle single frames for now")
+        if isinstance(perception.frames[0], DevelopmentalPrimitivePerceptionFrame):
+            original_perception_graph = PerceptionGraph.from_frame(
+                perception.frames[0]
+            ).copy_as_digraph()
+        else:
+            raise RuntimeError("Cannot process perception type.")
+        # Remove learner from the perception
+        observed_perception_graph = graph_without_learner(original_perception_graph)
+        observed_linguistic_description = (
+            learning_example.linguistic_description.as_token_sequence()
+        )
+
+        self.learn_with_pursuit(
+            observed_perception_graph, observed_linguistic_description
+        )
+
+    def describe(
+        self, perception: PerceptualRepresentation[PerceptionT], **kwargs
+    ) -> Mapping[LinguisticDescription, float]:
+        if len(perception.frames) != 1:
+            raise RuntimeError("Subset learner can only handle single frames for now")
+        if isinstance(perception.frames[0], DevelopmentalPrimitivePerceptionFrame):
+            original_perception_graph = PerceptionGraph.from_frame(
+                perception.frames[0]
+            ).copy_as_digraph()
+        else:
+            raise RuntimeError("Cannot process perception type.")
+        observed_perception_graph = graph_without_learner(original_perception_graph)
+
+        descriptions = []
+
+        for word, meaning_pattern in self._lexicon.items():
+            # Use PerceptionGraphPattern.matcher and matcher.matches() for a complete match
+            if self._matches(
+                hypothesis=meaning_pattern,
+                observed_perception_graph=observed_perception_graph,
+            ):
+                learned_description = TokenSequenceLinguisticDescription(("a", word))
+                descriptions.append((learned_description, 1.0))
+
+        if not descriptions:
+            # no lexicalized word matched the perception,
+            # but we can still try to match our leading hypotheses
+            for word in self._learned_item_to_hypotheses_and_scores.keys():
+                # mypy doesn't know the leading hypothesis will always exist here,
+                # but we do.
+                leading_hypothesis_pair = self._leading_hypothesis_for(  # type: ignore
+                    word
+                )
+                if leading_hypothesis_pair:
+                    (leading_hypothesis, score) = leading_hypothesis_pair
+                    if self._matches(
+                        hypothesis=leading_hypothesis,
+                        observed_perception_graph=observed_perception_graph,
+                    ):
+                        learned_description = TokenSequenceLinguisticDescription(
+                            ("a", word)
+                        )
+                        descriptions.append((learned_description, score))
+
+        return immutabledict(descriptions)
 
     def _meaning_from_perception(
         self, perception: PerceptionGraph
@@ -831,25 +863,164 @@ class ObjectPursuitLearner(
 
 class PrepositionPursuitLearner(
     Generic[PerceptionT, LinguisticDescriptionT],
-    AbstractPursuitLearner[PrepositionPattern, PerceptionT, LinguisticDescriptionT],
+    AbstractPursuitLearner[
+        PrepositionSurfaceTemplate,
+        PrepositionPattern,
+        PerceptionT,
+        LinguisticDescriptionT,
+    ],
 ):
     """
     An implementation of pursuit learner for preposition leaning
     """
 
-    def _meaning_from_perception(self, perception: PerceptionGraph) -> HypothesisT:
+    # Variables for tracking preposition phrase information. These are filled in observe.
+    object_match_node_for_ground: Optional[MatchedObjectNode] = None
+    object_match_node_for_modified: Optional[MatchedObjectNode] = None
+    template_variables_to_object_match_nodes: Optional[
+        ImmutableSet[Tuple[str, Any]]
+    ] = None
+
+    def observe(
+        self,
+        learning_example: LearningExample[PerceptionT, LinguisticDescription],
+        object_match_nodes: List[MatchedObjectNode] = [],
+        token_indices_of_matched_object_words: List[int] = [],
+        **kwargs,
+    ) -> None:
+        # We are also given the list of matched nodes in the perception
+        # We can't learn prepositions without already knowing some objects in the learning instance
+        perception = learning_example.perception
+        if len(perception.frames) != 1:
+            raise RuntimeError(
+                "Preposition learner can only handle single frames for now"
+            )
+        if isinstance(perception.frames[0], DevelopmentalPrimitivePerceptionFrame):
+            original_perception = PerceptionGraph.from_frame(perception.frames[0])
+        else:
+            raise RuntimeError("Cannot process perception type.")
+
+        observed_linguistic_description = (
+            learning_example.linguistic_description.as_token_sequence()
+        )
+
+        if (
+            len(object_match_nodes) != 2
+            and len(token_indices_of_matched_object_words) != 2
+        ):
+            raise RuntimeError(
+                f"Learning a preposition with more than two recognized objects is not currently supported. "
+                f"Found {len(object_match_nodes)} from "
+                f"{observed_linguistic_description}."
+            )
+
+        # TODO: Simplify this. It's currently copied from Subset for conveniece
+        # If we have to reorder the bounds so that the smallest number is first we want the nodes to match ordering
+        (  # pylint:disable=unbalanced-tuple-unpacking
+            token_offset_of_modified_word,
+            token_offset_of_ground_word,
+        ) = token_indices_of_matched_object_words
+        if token_offset_of_modified_word < token_offset_of_ground_word:
+            (  # pylint:disable=unbalanced-tuple-unpacking
+                object_match_node_for_modified,
+                object_match_node_for_ground,
+            ) = object_match_nodes
+        else:
+            # the matches are in the wrong order; we want to modifier ordered first
+            # TODO: English-specific
+            (token_offset_of_ground_word, token_offset_of_modified_word) = (
+                token_offset_of_modified_word,
+                token_offset_of_ground_word,
+            )
+            (  # pylint:disable=unbalanced-tuple-unpacking
+                object_match_node_for_ground,
+                object_match_node_for_modified,
+            ) = object_match_nodes
+
+        # This is the lingustics description we learned
+        prepositional_phrase_tokens = observed_linguistic_description[
+            token_offset_of_modified_word : token_offset_of_ground_word + 1
+        ]
+
+        # for learning, we need to represent this in a way which abstracts
+        # from the particular modified and ground word.
+        preposition_surface_template_mutable = list(prepositional_phrase_tokens)
+        preposition_surface_template_mutable[0] = _MODIFIED
+        preposition_surface_template_mutable[-1] = _GROUND
+        # TODO: Remove this hard coded insert of an article
+        # see: https://github.com/isi-vista/adam/issues/434
+        preposition_surface_template_mutable.insert(0, "a")
+        # we need these to be immutable after creation because we use them as dictionary keys.
+        preposition_surface_template = tuple(preposition_surface_template_mutable)
+
+        logging.info("Identified preposition template: %s", preposition_surface_template)
+
+        # This is the template_variables_to_object_match_nodes of sentence locations to pattern nodes
+        template_variables_to_object_match_nodes: ImmutableSet[
+            Tuple[str, Any]
+        ] = immutableset(
+            [
+                (_MODIFIED, object_match_node_for_modified),
+                (_GROUND, object_match_node_for_ground),
+            ]
+        )
+        self.object_match_node_for_ground = object_match_node_for_ground
+        self.object_match_node_for_modified = object_match_node_for_modified
+        self.template_variables_to_object_match_nodes = (
+            template_variables_to_object_match_nodes
+        )
+
+        self.learn_with_pursuit(
+            observed_perception_graph=original_perception,
+            items_to_learn=(preposition_surface_template,),
+        )
+
+        # TODO Rest should happen inside pursuit functions (meaning, etc)
+
+        # Generate hypothesis for the given learning example
+        preposition_pattern = self._make_preposition_hypothesis(
+            object_match_node_for_ground,
+            object_match_node_for_modified,
+            original_perception,
+            template_variables_to_object_match_nodes,
+        )
+
+    def describe(
+        self, perception: PerceptualRepresentation[PerceptionT], **kwargs
+    ) -> Mapping[LinguisticDescription, float]:
+        # TODO: Implement with help from pursuit subset
+        pass
+
+    def _matches(
+        self, *, hypothesis: HypothesisT, observed_perception_graph: PerceptionGraph
+    ) -> bool:
+        pass
+
+    def _meaning_from_perception(self, perception: PerceptionGraph) -> PrepositionPattern:
         # TODO implement
         pass
 
     def _candidate_perceptions(self, observed_perception_graph) -> List[PerceptionGraph]:
-        # TODO implement
+        # In order to
+        # TODO implemsent
         return []
 
     def _candidate_meanings(
         self, observed_perception_graph: PerceptionGraph
     ) -> Sequence[PrepositionPattern]:
-        # TODO implement
-        return []
+        return [
+            self._meaning_from_perception(object_)
+            for object_ in self._candidate_perceptions(observed_perception_graph)
+        ]
+
+    # Objects:
+    # def _meaning_from_perception(
+    #     self, perception: PerceptionGraph
+    # ) -> PerceptionGraphPattern:
+    #     return PerceptionGraphPattern.from_graph(perception).perception_graph_pattern
+    #
+    # def _candidate_perceptions(self, observed_perception_graph) -> List[PerceptionGraph]:
+    #     return self.get_objects_from_perception(observed_perception_graph)
 
     @attrs(frozen=True)
     class PrepositionHypothesisPartialMatch(
@@ -919,5 +1090,13 @@ class PrepositionPursuitLearner(
     def _are_isomorphic(
         self, h: PrepositionPattern, hypothesis: PrepositionPattern
     ) -> bool:
-        # TODO: Check mapping equality
-        return h.graph_pattern.check_isomorphism(hypothesis.graph_pattern)
+        # Check mapping equality of preposition patterns
+        first_mapping = h.object_variable_name_to_pattern_node
+        second_mapping = hypothesis.object_variable_name_to_pattern_node
+        are_equal_mappings = len(first_mapping) == len(second_mapping) and all(
+            k in second_mapping and second_mapping[k].is_equivalent(v)
+            for k, v in first_mapping.items()
+        )
+        return are_equal_mappings and h.graph_pattern.check_isomorphism(
+            hypothesis.graph_pattern
+        )
