@@ -150,7 +150,7 @@ table td { p
 
 
 @attrs(slots=True)
-class LearningProgressHtmlLogger:
+class LearningProgressHtmlLogger:  # pragma: no cover
 
     outfile_dir: str = attrib(validator=instance_of(str))
     html_dumper: CurriculumToHtmlDumper = attrib(
@@ -316,7 +316,7 @@ class LearningProgressHtmlLogger:
 
 
 @attrs(slots=True)
-class HTMLLoggerPreObserver(
+class HTMLLoggerPreObserver(  # pragma: no cover
     DescriptionObserver[SituationT, LinguisticDescriptionT, PerceptionT]
 ):
     r"""
@@ -341,7 +341,7 @@ class HTMLLoggerPreObserver(
         pass
 
 
-@attrs(slots=True)
+@attrs(slots=True)  # pragma: no cover
 class HTMLLoggerPostObserver(CandidateAccuracyObserver):  # type: ignore
     r"""
     Logs the true description and learner's descriptions throughout the learning process.
