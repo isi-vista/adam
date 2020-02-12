@@ -15,7 +15,7 @@ from adam.curriculum.m6_curriculum import (
 from adam.curriculum.phase1_curriculum import _make_each_object_by_itself_curriculum
 from adam.curriculum.pursuit_curriculum import make_simple_pursuit_curriculum
 from adam.experiment import Experiment, execute_experiment
-from adam.experiment.observer import LearningProgressHtmlLogger
+from adam.experiment.observer import LearningProgressHtmlLogger, CandidateAccuracyObserver
 from adam.learner import LanguageLearner
 from adam.learner.object_recognizer import ObjectRecognizer
 from adam.learner.preposition_subset import PrepositionSubsetLanguageLearner
@@ -51,10 +51,13 @@ def log_experiment_entry_point(params: Parameters) -> None:
             name=experiment_name,
             training_stages=training_instance_groups,
             learner_factory=learner_factory_from_params(params, graph_logger),
-            pre_example_training_observers=[logger.pre_observers()],
-            post_example_training_observers=[logger.post_observers()],
+            pre_example_training_observers=[
+                logger.pre_observer(),
+                CandidateAccuracyObserver("pre-acc-observer"),
+            ],
+            post_example_training_observers=[logger.post_observer()],
             test_instance_groups=test_instance_groups,
-            test_observers=[logger.test_observers()],
+            test_observers=[logger.test_observer()],
             sequence_chooser=RandomChooser.for_seed(0),
         )
     )

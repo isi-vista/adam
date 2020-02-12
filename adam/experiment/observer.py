@@ -118,13 +118,19 @@ class CandidateAccuracyObserver(
             self._num_predictions_with_gold_in_candidates += 1
 
     def report(self) -> None:
-        logging.info(
-            f"{self.name}: accuracy of learner's predictions ('gold' description was in learner's candidates) "
-            f"{self._num_predictions_with_gold_in_candidates} / {self._num_predictions} predictions ("
-            f"{100.0 * self.accuracy():2.3f} %)"
-        )
+        accuracy = self.accuracy()
+        if accuracy is not None:
+            logging.info(
+                "%s: accuracy of learner's predictions ('gold' description was in learner's candidates) "
+                "%d / %d predictions ("
+                "%03.2f %%)",
+                self.name,
+                self._num_predictions_with_gold_in_candidates,
+                self._num_predictions,
+                100 * accuracy,
+            )
 
-    def accuracy(self) -> float:
+    def accuracy(self) -> Optional[float]:
         """
         Return accuracy value of the number of predictions made where the 'gold' description was present in
         the learner's candidate descriptions.
@@ -132,7 +138,7 @@ class CandidateAccuracyObserver(
 
         """
         if not self._num_predictions:
-            raise RuntimeError("Requested accuracy before any predictions were made")
+            return None
         return self._num_predictions_with_gold_in_candidates / self._num_predictions
 
 
@@ -192,17 +198,27 @@ class LearningProgressHtmlLogger:  # pragma: no cover
             outfile_dir=output_html_path, html_dumper=html_dumper
         )
 
-    def pre_observers(self) -> "DescriptionObserver":  # type: ignore
+    def pre_observer(self) -> "DescriptionObserver":  # type: ignore
         return HTMLLoggerPreObserver(name="Pre-observer", html_logger=self)
 
-    def post_observers(self) -> "DescriptionObserver":  # type: ignore
+    def post_observer(self) -> "DescriptionObserver":  # type: ignore
         return HTMLLoggerPostObserver(
-            name="Post-observer", html_logger=self, test_mode=False
+            name="Post-observer",
+            html_logger=self,
+            candidate_accuracy_observer=CandidateAccuracyObserver(
+                name="Post-observer-acc"
+            ),
+            test_mode=False,
         )
 
-    def test_observers(self) -> "DescriptionObserver":  # type: ignore
+    def test_observer(self) -> "DescriptionObserver":  # type: ignore
         return HTMLLoggerPostObserver(
-            name="Test-observer", html_logger=self, test_mode=True
+            name="Test-observer",
+            html_logger=self,
+            candidate_accuracy_observer=CandidateAccuracyObserver(
+                name="Test-observer-acc"
+            ),
+            test_mode=True,
         )
 
     def pre_observer_log(
@@ -228,8 +244,10 @@ class LearningProgressHtmlLogger:  # pragma: no cover
         perceptual_representation: PerceptualRepresentation[PerceptionT],
         predicted_descriptions: Mapping[LinguisticDescription, float],
         test_mode: bool,
-        accuracy: float,
+        accuracy: Optional[float],
     ):
+        if accuracy is None:
+            accuracy = 0.0
         learner_pre_description = self.pre_observed_description
         self.pre_observed_description = None
 
@@ -341,13 +359,19 @@ class HTMLLoggerPreObserver(  # pragma: no cover
         pass
 
 
-@attrs(slots=True)  # pragma: no cover
-class HTMLLoggerPostObserver(CandidateAccuracyObserver):  # type: ignore
+@attrs(slots=True)
+class HTMLLoggerPostObserver(  # pragma: no cover
+    DescriptionObserver[SituationT, LinguisticDescriptionT, PerceptionT]
+):
     r"""
     Logs the true description and learner's descriptions throughout the learning process.
     """
+    name: str = attrib(validator=instance_of(str))
     html_logger: LearningProgressHtmlLogger = attrib(
         validator=instance_of(LearningProgressHtmlLogger), kw_only=True
+    )
+    candidate_accuracy_observer = attrib(
+        validator=instance_of(CandidateAccuracyObserver), kw_only=True
     )
     test_mode: bool = attrib(validator=instance_of(bool), kw_only=True)
     counter: int = attrib(kw_only=True, default=0)
@@ -359,7 +383,7 @@ class HTMLLoggerPostObserver(CandidateAccuracyObserver):  # type: ignore
         perceptual_representation: PerceptualRepresentation[PerceptionT],
         predicted_descriptions: Mapping[LinguisticDescription, float],
     ) -> None:
-        super(HTMLLoggerPostObserver, self).observe(
+        self.candidate_accuracy_observer.observe(
             situation, true_description, perceptual_representation, predicted_descriptions
         )
         self.html_logger.post_observer_log(
@@ -370,7 +394,7 @@ class HTMLLoggerPostObserver(CandidateAccuracyObserver):  # type: ignore
             perceptual_representation=perceptual_representation,
             predicted_descriptions=predicted_descriptions,
             test_mode=self.test_mode,
-            accuracy=self.accuracy(),
+            accuracy=self.candidate_accuracy_observer.accuracy(),
         )
         self.counter += 1
 
