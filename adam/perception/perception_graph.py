@@ -7,7 +7,7 @@ among other things.
 This file first defines `PerceptionGraph`\ s,
 then defines `PerceptionGraphPattern`\ s to match them.
 
-The MatchedObjectNode is defined at the top of this module as it is needed prior
+The `MatchedObjectNode` is defined at the top of this module as it is needed prior
 to defining the type of Nodes in our `PerceptionGraph`\ s readers should start with
 `PerceptionGraphProtocol`, `PerceptionGraph`, and `PerceptionGraphPattern` before
 reading other parts of this module.
