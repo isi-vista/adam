@@ -733,53 +733,34 @@ def _make_jump_curriculum() -> Phase1InstanceGroup:
     jumper = standard_object("jumper_0", THING, required_properties=[CAN_JUMP])
     jumped_over = standard_object("jumped_over")
 
-    # "A person jumps"
-    jump_on_ground = Phase1SituationTemplate(
-        "jump",
-        salient_object_variables=[jumper],
-        actions=[
-            Action(
-                JUMP,
-                argument_roles_to_fillers=[(AGENT, jumper)],
-                auxiliary_variable_bindings=[
-                    (JUMP_INITIAL_SUPPORTER_AUX, GROUND_OBJECT_TEMPLATE)
+    def _make_templates() -> Iterable[Phase1SituationTemplate]:
+        # "A person jumps"
+        for use_adverbial_path_modifier in (True, False):
+            yield Phase1SituationTemplate(
+                "jump-on-ground",
+                salient_object_variables=[jumper],
+                actions=[
+                    Action(
+                        JUMP,
+                        argument_roles_to_fillers=[(AGENT, jumper)],
+                        auxiliary_variable_bindings=[
+                            (JUMP_INITIAL_SUPPORTER_AUX, GROUND_OBJECT_TEMPLATE)
+                        ],
+                    )
                 ],
+                syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER]
+                if use_adverbial_path_modifier
+                else [],
             )
-        ],
-    )
-
-    # "A person jumps over a ball"
-    jump_over_object = Phase1SituationTemplate(
-        "jump-over",
-        salient_object_variables=[jumper, jumped_over],
-        actions=[
-            Action(
-                JUMP,
-                argument_roles_to_fillers=[(AGENT, jumper)],
-                during=DuringAction(at_some_point=[strictly_above(jumper, jumped_over)]),
-                auxiliary_variable_bindings=[
-                    (JUMP_INITIAL_SUPPORTER_AUX, GROUND_OBJECT_TEMPLATE)
-                ],
-            )
-        ],
-        constraining_relations=[bigger_than(jumper, jumped_over)],
-    )
 
     return phase1_instances(
         "jumping",
         chain(
             *[
                 all_possible(
-                    jump_on_ground,
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER,
-                ),
-                sampled(
-                    jump_over_object,
-                    max_to_sample=25,
-                    chooser=PHASE1_CHOOSER,
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                ),
+                    template, ontology=GAILA_PHASE_1_ONTOLOGY, chooser=PHASE1_CHOOSER
+                )
+                for template in _make_templates()
             ]
         ),
     )

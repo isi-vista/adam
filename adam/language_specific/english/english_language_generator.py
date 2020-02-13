@@ -62,6 +62,7 @@ from adam.ontology.phase1_ontology import (
     LEARNER,
     PATIENT,
     THEME,
+    JUMP,
 )
 from adam.ontology.phase1_spatial_relations import (
     EXTERIOR_BUT_IN_CONTACT,
@@ -660,6 +661,10 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     # hack, awaiting https://github.com/isi-vista/adam/issues/239
                     modifiers.append(
                         (ADVERBIAL_MODIFIER, DependencyTreeToken("down", ADVERB))
+                    )
+                elif action.action_type == JUMP:
+                    modifiers.append(
+                        (ADJECTIVAL_MODIFIER, DependencyTreeToken("up", ADVERB))
                     )
 
             return modifiers
