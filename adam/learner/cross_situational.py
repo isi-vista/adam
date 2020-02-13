@@ -2,6 +2,7 @@ import logging
 from pathlib import Path
 from random import Random
 from typing import Dict, Generic, Iterable, List, Mapping, Optional, Set, Tuple
+from collections import defaultdict
 
 from attr.validators import in_, instance_of, optional
 from immutablecollections import immutabledict
@@ -17,8 +18,8 @@ from adam.language import (
 from adam.learner import (
     LanguageLearner,
     LearningExample,
-    get_largest_matching_pattern,
     graph_without_learner,
+    get_largest_matching_pattern,
 )
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
@@ -37,6 +38,8 @@ from adam.perception.perception_graph import (
 from adam.utils import networkx_utils
 from attr import Factory, attrib, attrs
 
+from vistautils.misc_utils import str_list_limited
+
 
 @attrs
 class CrossSituationalLanguageLearner(
@@ -46,14 +49,26 @@ class CrossSituationalLanguageLearner(
     """
     An implementation of `LanguageLearner` for cross-situational learning based approach for single
     object detection.
+    This learner aims to learn via storing all possible meanings and narrowing down to one meaning
+    by caclulating association scores and probability based off those association scores for each
+    utterance situation pair. It does so be associating all words to certain meanings. For new words
+    meanings that are not associated strongly to another word already are associated evenly. For
+    words encountered before, words are associated more strongly to meanings encountered with that
+    word before and less strongly to newer meanings. Lastly, very familar word meaning pairs are
+    associated together only, these would be words generally considered lexicalized. Once
+    associations are made a probability for each word meaning pair being correct is caclulated.
+    Finally if the proibability is high enough the word is lexicalized. More information can be
+    found here: https://onlinelibrary.wiley.com/doi/full/10.1111/j.1551-6709.2010.01104.x
     """
 
+    # Represents the association scores for each word meaning pair
     _words_to_hypotheses_and_scores: Dict[
         str, Dict[PerceptionGraphPattern, float]
-    ] = attrib(init=False, default=Factory(dict))
+    ] = attrib(init=False, default=defaultdict(dict))
+    # Represents the probability for each word meaning pair being correct
     _words_to_hypotheses_and_probability: Dict[
         str, Dict[PerceptionGraphPattern, float]
-    ] = attrib(init=False, default=Factory(dict))
+    ] = attrib(init=False, default=defaultdict(dict))
     _lexicon: Dict[str, PerceptionGraphPattern] = attrib(
         init=False, default=Factory(dict)
     )
@@ -75,9 +90,6 @@ class CrossSituationalLanguageLearner(
     _rng: Random = attrib(validator=instance_of(Random))
     _debug_callback: Optional[DebugCallableType] = attrib(default=None)
 
-    # Learning factor (gamma) is the factor with which we update the hypotheses scores during
-    # reinforcement.
-    _learning_factor: float = attrib(default=0.1, kw_only=True)
     # We use this threshold to measure whether a new perception sufficiently matches a previous
     # hypothesis.
     _graph_match_confirmation_threshold: float = attrib(default=0.9, kw_only=True)
@@ -160,7 +172,6 @@ class CrossSituationalLanguageLearner(
             observed_perception_graph, observed_linguistic_description
         )
 
-    # Re-implement for cross-situational
     def learn_with_cross_situational(
         self,
         observed_perception_graph: PerceptionGraph,
@@ -177,9 +188,18 @@ class CrossSituationalLanguageLearner(
         # in general.
         words = observed_linguistic_description + tuple("d")
         meanings = [
-            PerceptionGraphPattern.from_graph(object_).perception_graph_pattern
+            object_
             for object_ in self.get_objects_from_perception(observed_perception_graph)
         ]
+
+        probabilities_and_hypotheses_for_words: Dict[
+            str, Dict[PerceptionGraphPattern, float]
+        ] = dict()
+        for word in words:
+            probabilities_and_hypotheses_for_words[word] = self.get_probabilities(
+                word, meanings
+            )
+
         for word in words:
             # TODO: pursuit learner hard-coded to ignore determiners
             # https://github.com/isi-vista/adam/issues/498
@@ -190,77 +210,114 @@ class CrossSituationalLanguageLearner(
             else:
                 self._words_to_number_of_observations[word] = 1
 
-            # If word is not known, go through learning steps
-            if word not in self._lexicon:
+            # Remove meanings strongly associated with words in the lexicon
+            if word in self._lexicon:
+                pass
+                # match = self._find_most_similar_meaning()
+                # if match[1]
+                #     match =
+                #     if self._compute_match_ratio(self._lexicon[word], meaning).ma >= self._graph_match_confirmation_threshold:
+                #         meanings.remove(meaning)
+            else:
                 logging.info(f"Considering '{word}'")
-                # Initialize necessary components if needed
-                if word not in self._words_to_hypotheses_and_scores:
-                    self._words_to_hypotheses_and_scores[word] = {}
-                    self._words_to_hypotheses_and_probability[word] = {}
                 # For each meaning, update the association score for the word meaning pair
                 for meaning in meanings:
-                    for hypothesis in self._words_to_hypotheses_and_scores[word]:
-                        if hypothesis.check_isomorphism(meaning):
-                            # Updating association score as described by the paper below
-                            # assoc(w, m) = pass_assoc(w, m) + a(w|m, U)
-                            # https://onlinelibrary.wiley.com/doi/full/10.1111/j.1551-6709.2010.01104.x (2)
-                            self._words_to_hypotheses_and_scores[word][
-                                hypothesis
-                            ] += self.alignment_probability(word, words, hypothesis)
-                            break
-                    else:
+                    match, matching_hypothesis = self._find_similar_hypothesis(
+                        meaning, self._words_to_hypotheses_and_scores[word].keys()
+                    )
+                    # Updating association score as described by the paper below
+                    # assoc(w, m) = pass_assoc(w, m) + a(w|m, U)
+                    # https://onlinelibrary.wiley.com/doi/full/10.1111/j.1551-6709.2010.01104.x (2)
+                    if match and matching_hypothesis:
                         self._words_to_hypotheses_and_scores[word][
+                            match.matching_subgraph
+                        ] = (
+                            self.alignment_probability(
+                                word,
+                                words,
+                                meaning,
+                                probabilities_and_hypotheses_for_words,
+                            )
+                            + self._words_to_hypotheses_and_scores[word][
+                                matching_hypothesis
+                            ]
+                        )
+                        self._words_to_hypotheses_and_scores[word].pop(
+                            matching_hypothesis
+                        )
+                    else:
+                        new_hypothesis = PerceptionGraphPattern.from_graph(
                             meaning
-                        ] = self.alignment_probability(word, words, meaning)
-                        self._words_to_hypotheses_and_probability[word][meaning] = 0
+                        ).perception_graph_pattern
+                        self._words_to_hypotheses_and_scores[word][
+                            new_hypothesis
+                        ] = self.alignment_probability(
+                            word, words, meaning, probabilities_and_hypotheses_for_words
+                        )
 
-                # Update all word meaning probabilities for the word
-                self.update_probability(word)
+                self.lexicon_step(word)
+
+                if self._log_word_hypotheses_to:
+                    self._log_hypotheses(word)
 
     def alignment_probability(
-        self, word: str, words: Tuple[str, ...], meaning: PerceptionGraphPattern
+        self,
+        word: str,
+        words: Tuple[str, ...],
+        meaning: PerceptionGraph,
+        probabilities: Dict[str, Dict[PerceptionGraphPattern, float]],
     ) -> float:
         # Returns alignment probability as defined by the paper below
-        # a(m|w, U) = p(m|w) / sum(for w' in U or {d})(p(m|w')),
-        # where m|w is the word meaning pair, U is the utterance being analyzed, {d} is a dummy word
-        # (added earlier in the program) which smoothes when the meaning and word is present without
-        # it's counterpart.
+        # a^(t)(m|w, U) = p^(t-1)(m|w) / sum(for w' in U or {d})(p^(t-1)(m|w')),
+        # where m|w is the word meaning pair, U is the utterance being analyzed, t is the time when
+        # the occurence happened (simply using the probabilities present before we started analyzing
+        # this utterance) {d} is a dummy word (added earlier in the program) which smoothes when the
+        # meaning and word is present without it's counterpart.
         # https://onlinelibrary.wiley.com/doi/full/10.1111/j.1551-6709.2010.01104.x (1)
         normalizing_factor = 0.0
         for other_word in words:
             if other_word is not word:
-                for hypothesis, probability in self._words_to_hypotheses_and_probability[
-                    other_word
-                ].items():
-                    if hypothesis.check_isomorphism(meaning):
-                        normalizing_factor += probability
-        return (
-            self._words_to_hypotheses_and_probability[word][meaning] / normalizing_factor
-        )
+                _, hypothesis = self._find_similar_hypothesis(
+                    meaning, probabilities[other_word].keys()
+                )
+                if hypothesis:
+                    normalizing_factor += probabilities[other_word][hypothesis]
+        # if not normalizing_factor:
+        #     normalizing_factor = 1.0
+        _, hypothesis = self._find_similar_hypothesis(meaning, probabilities[word].keys())
+        return probabilities[word][hypothesis] / normalizing_factor
 
-    def update_probability(self, word: str):
+    def get_probabilities(
+        self, word: str, meanings: Iterable[PerceptionGraph]
+    ) -> Dict[PerceptionGraphPattern, float]:
         # Update all word meaning probabilities for given word as defined by the paper below
-        # p(m|w) = assoc(m, w) + lambda / sum(for m' in M)(assoc(m', w) + beta * lambda)
+        # p(m|w) = assoc(m, w) + lambda / sum(for m' in M)(assoc(m', w)) + (beta * lambda)
         # where w and m are given words and meanings, lambda is a smoothing factor, M is all
         # meanings encountered, beta is the expected number of meaning types.
         # https://onlinelibrary.wiley.com/doi/full/10.1111/j.1551-6709.2010.01104.x (3)
-        for meaning in self._words_to_hypotheses_and_probability[word]:
-            normalizing_factor = 0.0
-            for other_meaning in self._words_to_hypotheses_and_scores[word]:
-                normalizing_factor += (
-                    self._words_to_hypotheses_and_scores[word][other_meaning]
-                    + self._expected_number_of_meanings * self._smoothing_parameter
-                )
-            normalizing_factor -= (
-                self._words_to_hypotheses_and_scores[word][meaning]
-                + self._expected_number_of_meanings * self._smoothing_parameter
-            )
-            self._words_to_hypotheses_and_probability[word][meaning] = (
-                self._words_to_hypotheses_and_scores[word][meaning]
+        probabilities: Dict[PerceptionGraphPattern, float] = dict()
+        for meaning in meanings:
+            if self._find_similar_hypothesis(
+                meaning, self._words_to_hypotheses_and_scores[word].keys()
+            ) == (None, None):
+                new_hypothesis = PerceptionGraphPattern.from_graph(
+                    meaning
+                ).perception_graph_pattern
+                normalizing_factor = self._expected_number_of_meanings * self._smoothing_parameter
+                for other_meaning in self._words_to_hypotheses_and_scores[word]:
+                    normalizing_factor += self._words_to_hypotheses_and_scores[word][other_meaning]
+                probabilities[new_hypothesis] = self._smoothing_parameter / normalizing_factor
+        for hypothesis in self._words_to_hypotheses_and_scores[word]:
+            normalizing_factor = self._expected_number_of_meanings * self._smoothing_parameter
+            for other_hypothesis in self._words_to_hypotheses_and_scores[word]:
+                normalizing_factor += self._words_to_hypotheses_and_scores[word][other_hypothesis]
+            normalizing_factor -= self._words_to_hypotheses_and_scores[word][hypothesis]
+            probabilities[hypothesis] = (
+                self._words_to_hypotheses_and_scores[word][hypothesis]
                 + self._smoothing_parameter
             ) / normalizing_factor
+        return probabilities
 
-    # Check necessity for cross-situational implementation
     @attrs(frozen=True)
     class PartialMatch:
         """
@@ -307,44 +364,43 @@ class CrossSituationalLanguageLearner(
             num_nodes_in_pattern=leading_hypothesis_num_nodes,
         )
 
-    # Re-implement for cross-situational
     def lexicon_step(self, word: str) -> None:
         # If any conditional probability P(h^|w) exceeds a certain threshold value (h), then file
-        # (w, h^) into the
-        # lexicon
-        # From Pursuit paper: P(h|w) = (A(w,h) + Gamma) / (Sum(A_w) + N x Gamma)
+        # (w, h^) into the lexicon
         leading_hypothesis_entry = self._leading_hypothesis_for(word)
-        assert leading_hypothesis_entry
-        (leading_hypothesis_pattern, leading_hypothesis_score) = leading_hypothesis_entry
+        if leading_hypothesis_entry:
+            (
+                leading_hypothesis_pattern,
+                probability_of_meaning_given_word,
+            ) = leading_hypothesis_entry
 
-        all_hypotheses_for_word = self._words_to_hypotheses_and_scores[word]
-        sum_of_all_scores = sum(all_hypotheses_for_word.values())
-        number_of_meanings = len(all_hypotheses_for_word)
+            times_word_has_been_seen = self._words_to_number_of_observations[word]
+            logging.info(
+                "Prob of meaning given word: %s, Times seen: %s",
+                probability_of_meaning_given_word,
+                times_word_has_been_seen,
+            )
+            # file (w, h^) into the lexicon
 
-        probability_of_meaning_given_word = (
-            leading_hypothesis_score + self._smoothing_parameter
-        ) / (sum_of_all_scores + number_of_meanings * self._smoothing_parameter)
-        times_word_has_been_seen = self._words_to_number_of_observations[word]
-        logging.info(
-            "Prob of meaning given word: %s, Times seen: %s",
-            probability_of_meaning_given_word,
-            times_word_has_been_seen,
-        )
-        # file (w, h^) into the lexicon
-
-        # TODO: We sometimes prematurely lexicalize words, so we use this arbitrary counter
-        #  threshold
-        if probability_of_meaning_given_word > self._lexicon_entry_threshold:
-            if times_word_has_been_seen > 5:
-                self._lexicon[word] = leading_hypothesis_pattern
-                # Remove the word from hypotheses
-                self._words_to_hypotheses_and_scores.pop(word)
-                if self._graph_logger:
-                    self._graph_logger.log_graph(
-                        leading_hypothesis_pattern, logging.INFO, "Lexicalized %s", word
+            # Check this as it may not be an issue for cross-situational
+            # TODO: We sometimes prematurely lexicalize words, so we use this arbitrary counter
+            #  threshold
+            if probability_of_meaning_given_word > self._lexicon_entry_threshold:
+                if times_word_has_been_seen > 5:
+                    self._lexicon[word] = leading_hypothesis_pattern
+                    # Remove the word from hypotheses
+                    self._words_to_hypotheses_and_scores.pop(word)
+                    if self._graph_logger:
+                        self._graph_logger.log_graph(
+                            leading_hypothesis_pattern,
+                            logging.INFO,
+                            "Lexicalized %s",
+                            word,
+                        )
+                else:
+                    logging.info(
+                        "Would lexicalize, but haven't see the word often enough"
                     )
-            else:
-                logging.info("Would lexicalize, but haven't see the word often enough")
 
     @staticmethod
     def get_objects_from_perception(
@@ -455,7 +511,7 @@ class CrossSituationalLanguageLearner(
                     word
                 )
                 if leading_hypothesis_pair:
-                    (leading_hypothesis, score) = leading_hypothesis_pair
+                    (leading_hypothesis, probability) = leading_hypothesis_pair
                     matcher = leading_hypothesis.matcher(
                         observed_perception_graph, matching_objects=True
                     )
@@ -469,19 +525,24 @@ class CrossSituationalLanguageLearner(
                         learned_description = TokenSequenceLinguisticDescription(
                             ("a", word)
                         )
-                        descriptions.append((learned_description, score))
+                        descriptions.append((learned_description, probability))
+
+        print(self._lexicon)
+        print(description)
 
         return immutabledict(descriptions)
 
     def _leading_hypothesis_for(
         self, word: str
     ) -> Optional[Tuple[PerceptionGraphPattern, float]]:
-        hypotheses_and_probability_for_word = self._words_to_hypotheses_and_probability.get(
-            word, None
-        )
-        if hypotheses_and_probability_for_word:
+        hypotheses_and_probabilities_for_word = self.get_probabilities(word, [])
+        if hypotheses_and_probabilities_for_word:
+            # leading = max(
+            #     hypotheses_and_scores_for_word.items(), key=lambda entry: entry[1]
+            # )
+            # print(f'{word}: {str_list_limited(leading[0]._graph.nodes, 1)}, {leading[1]}')
             return max(
-                hypotheses_and_probability_for_word.items(), key=lambda entry: entry[1]
+                hypotheses_and_probabilities_for_word.items(), key=lambda entry: entry[1]
             )
         else:
             return None
@@ -552,16 +613,29 @@ class CrossSituationalLanguageLearner(
                 ),
             )
 
-    def _find_identical_hypothesis(
+    def _find_similar_hypothesis(
         self,
-        new_hypothesis: PerceptionGraphPattern,
+        new_hypothesis: PerceptionGraph,
         candidates: Iterable[PerceptionGraphPattern],
-    ) -> Optional[PerceptionGraphPattern]:
+    ) -> Tuple[Optional[PartialMatch], Optional[PerceptionGraphPattern]]:
         """
-        Finds the first hypothesis object, if any, in *candidates*
-        which is isomorphic to *new_hypothesis*.
+        Finds the object in candidates most similar to new_hypothesis and returns it with the ratio.
         """
+        candidates = iter(candidates)
+        try:
+            old_hypothesis = next(candidates)
+            match = self._compute_match_ratio(old_hypothesis, new_hypothesis)
+        except StopIteration:
+            return None, None
         for candidate in candidates:
-            if new_hypothesis.check_isomorphism(candidate):
-                return candidate
-        return None
+            new_match = self._compute_match_ratio(candidate, new_hypothesis)
+            if new_match.match_ratio() > match.match_ratio():
+                match = new_match
+                old_hypothesis = candidate
+        if (
+            match.match_ratio() >= self._graph_match_confirmation_threshold
+            and match.matching_subgraph
+        ):
+            return match, old_hypothesis
+        else:
+            return None, None
