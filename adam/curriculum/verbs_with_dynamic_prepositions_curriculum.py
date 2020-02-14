@@ -9,6 +9,10 @@ from adam.curriculum.curriculum_utils import (
     phase1_instances,
     PHASE1_CHOOSER,
     Phase1InstanceGroup,
+    GROUND_OBJECT_TEMPLATE,
+)
+from adam.language_specific.english.english_language_generator import (
+    USE_ADVERBIAL_PATH_MODIFIER,
 )
 from adam.ontology import THING
 from adam.ontology.during import DuringAction
@@ -26,10 +30,14 @@ from adam.ontology.phase1_ontology import (
     CAN_BE_SAT_ON_BY_PEOPLE,
     near,
     CAN_FLY,
+    strictly_above,
+    HAS_SPACE_UNDER,
 )
 from adam.ontology.phase1_spatial_relations import (
     Region,
     Direction,
+    AWAY_FROM,
+    TOWARD,
     DISTAL,
     INTERIOR,
     GRAVITATIONAL_UP,
@@ -99,14 +107,12 @@ def _fly_beside_template(
                                     direction=Direction(
                                         positive=is_right,
                                         relative_to_axis=HorizontalAxisOfObject(
-                                            object_passed,
-                                            index=0
+                                            object_passed, index=0
                                         ),
                                     ),
                                 ),
                                 reference_axis=HorizontalAxisOfObject(
-                                    object_passed,
-                                    index=0
+                                    object_passed, index=0
                                 ),
                             ),
                         )
@@ -155,6 +161,82 @@ def _fly_behind_template(
                 ),
             )
         ],
+    )
+
+
+def _fly_over_template(
+    # A bird flies over a ball
+    agent: TemplateObjectVariable,
+    object_in_path: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        f"{agent.handle}-flies-over-{object_in_path.handle}",
+        salient_object_variables=[agent, object_in_path],
+        background_object_variables=background,
+        actions=[
+            Action(
+                FLY,
+                argument_roles_to_fillers=[(AGENT, agent)],
+                during=DuringAction(
+                    at_some_point=[strictly_above(agent, object_in_path)]
+                ),
+            )
+        ],
+    )
+
+
+def _fly_under_template(
+    # A bird flies under a chair
+    agent: TemplateObjectVariable,
+    object_in_path: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        f"{agent.handle}-flies-under-{object_in_path.handle}",
+        salient_object_variables=[agent, object_in_path],
+        background_object_variables=background,
+        actions=[
+            Action(
+                FLY,
+                argument_roles_to_fillers=[(AGENT, agent)],
+                during=DuringAction(
+                    at_some_point=[strictly_above(object_in_path, agent)]
+                ),
+            )
+        ],
+        constraining_relations=[bigger_than(object_in_path, agent)],
+    )
+
+
+def _fly_up_down_template(
+    # A bird flies up
+    agent: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+    goes_up: bool,
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        f"{agent.handle}-flies-up-down",
+        salient_object_variables=[agent],
+        background_object_variables=background,
+        actions=[
+            Action(
+                FLY,
+                argument_roles_to_fillers=[(AGENT, agent)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            agent,
+                            SpatialPath(
+                                AWAY_FROM if goes_up else TOWARD,
+                                reference_object=GROUND_OBJECT_TEMPLATE,
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
     )
 
 
@@ -235,14 +317,88 @@ def _make_fly_behind(
     )
 
 
+def _make_fly_over(
+    num_samples: int = 5, *, noise_objects: int = 0
+) -> Phase1InstanceGroup:
+    agent = standard_object("agent", THING, required_properties=[CAN_FLY])
+    object_in_path = standard_object("object_in_path", THING)
+    background = immutableset(
+        standard_object(f"noise_object_{x}") for x in range(noise_objects)
+    )
+
+    return phase1_instances(
+        "Fly Over",
+        flatten(
+            [
+                sampled(
+                    _fly_over_template(agent, object_in_path, background),
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                    chooser=PHASE1_CHOOSER,
+                    max_to_sample=num_samples,
+                )
+            ]
+        ),
+    )
+
+
+def _make_fly_under(
+    num_samples: int = 5, *, noise_objects: int = 0
+) -> Phase1InstanceGroup:
+    agent = standard_object("agent", THING, required_properties=[CAN_FLY])
+    object_in_path = standard_object(
+        "object_in_path", THING, required_properties=[HAS_SPACE_UNDER]
+    )
+    background = immutableset(
+        standard_object(f"noise_object_{x}") for x in range(noise_objects)
+    )
+
+    return phase1_instances(
+        "Fly Under",
+        flatten(
+            [
+                sampled(
+                    _fly_under_template(agent, object_in_path, background),
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                    chooser=PHASE1_CHOOSER,
+                    max_to_sample=num_samples,
+                )
+            ]
+        ),
+    )
+
+
+def _make_fly_up_down(
+    num_samples: int = 5, *, noise_objects: int = 0
+) -> Phase1InstanceGroup:
+    agent = standard_object("agent", THING, required_properties=[CAN_FLY])
+    background = immutableset(
+        standard_object(f"noise_object_{x}") for x in range(noise_objects)
+    )
+
+    return phase1_instances(
+        "Fly Up Down",
+        flatten(
+            [
+                sampled(
+                    _fly_up_down_template(agent, background, goes_up),
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                    chooser=PHASE1_CHOOSER,
+                    max_to_sample=num_samples,
+                )
+                for goes_up in BOOL_SET
+            ]
+        ),
+    )
+
+
 def make_verb_with_dynamic_prepositions_curriculum(
     num_samples: int = 5, *, num_noise_objects: int = 0
 ):
     return [
         _make_fly_in(num_samples, noise_objects=num_noise_objects),
-        _make_fly_over(num_samples, noise_objects=num_noise_objects),
-        _make_fly_under(num_samples, noise_objects=num_noise_objects),
         _make_fly_beside(num_samples, noise_objects=num_noise_objects),
         _make_fly_behind(num_samples, noise_objects=num_noise_objects),
+        _make_fly_over(num_samples, noise_objects=num_noise_objects),
+        _make_fly_under(num_samples, noise_objects=num_noise_objects),
         _make_fly_up_down(num_samples, noise_objects=num_noise_objects),
     ]

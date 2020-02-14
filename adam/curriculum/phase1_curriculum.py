@@ -507,62 +507,6 @@ def _make_fly_curriculum() -> Phase1InstanceGroup:
         for up in (True, False)
     ]
 
-    # "a bird flies up"
-    # "a bird flies down"
-    fly_up_down = [
-        Phase1SituationTemplate(
-            "fly-up-down",
-            salient_object_variables=[bird],
-            actions=[
-                Action(
-                    FLY,
-                    argument_roles_to_fillers=[(AGENT, bird)],
-                    during=DuringAction(
-                        objects_to_paths=[
-                            (
-                                bird,
-                                SpatialPath(
-                                    AWAY_FROM if up else TOWARD,
-                                    reference_object=GROUND_OBJECT_TEMPLATE,
-                                ),
-                            )
-                        ]
-                    ),
-                )
-            ],
-            syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
-        )
-        for up in (True, False)
-    ]
-
-    # "a bird flies over a house"
-    fly_over = Phase1SituationTemplate(
-        "fly-over",
-        salient_object_variables=[bird, object_0],
-        actions=[
-            Action(
-                FLY,
-                argument_roles_to_fillers=[(AGENT, bird)],
-                during=DuringAction(at_some_point=[strictly_above(bird, object_0)]),
-            )
-        ],
-    )
-
-    # "a bird flies under a table"
-    fly_under = Phase1SituationTemplate(
-        "fly-under",
-        salient_object_variables=[bird, object_with_space_under],
-        actions=[
-            Action(
-                FLY,
-                argument_roles_to_fillers=[(AGENT, bird)],
-                during=DuringAction(
-                    at_some_point=[strictly_above(object_with_space_under, bird)]
-                ),
-            )
-        ],
-    )
-
     return phase1_instances(
         "flying",
         chain(
@@ -572,22 +516,7 @@ def _make_fly_curriculum() -> Phase1InstanceGroup:
                         template, ontology=GAILA_PHASE_1_ONTOLOGY, chooser=PHASE1_CHOOSER
                     )
                     for template in bare_fly
-                ),
-                flatten(
-                    all_possible(
-                        template, ontology=GAILA_PHASE_1_ONTOLOGY, chooser=PHASE1_CHOOSER
-                    )
-                    for template in fly_up_down
-                ),
-                all_possible(
-                    fly_under, ontology=GAILA_PHASE_1_ONTOLOGY, chooser=PHASE1_CHOOSER
-                ),
-                sampled(
-                    fly_over,
-                    max_to_sample=25,
-                    chooser=PHASE1_CHOOSER,
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                ),
+                )
             ]
         ),
     )
