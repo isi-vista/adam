@@ -19,7 +19,8 @@ from typing import (
 from attr import Factory, attrib, attrs
 from attr.validators import in_, instance_of, optional
 from immutablecollections import immutabledict, ImmutableSet, immutableset
-from more_itertools import first
+from more_itertools import first, flatten
+from networkx import all_shortest_paths
 from vistautils.parameters import Parameters
 from vistautils.range import Range
 
@@ -50,10 +51,14 @@ from adam.perception.perception_graph import (
     PerceptionGraph,
     PerceptionGraphPattern,
     MatchedObjectNode,
+    PerceptionGraphNode,
+    _graph_node_order,
 )
 from adam.utils import networkx_utils
 
 # Abstract type to represent learned items such as words (str) and preposition phrases (PrepositionSurfaceTemplate)
+from adam.utils.networkx_utils import digraph_with_nodes_sorted_by
+
 LearnedItemT = TypeVar("LearnedItemT")
 # Abstract type to represent hypothesis types
 HypothesisT = TypeVar("HypothesisT")
@@ -83,10 +88,10 @@ class HypothesisGraphLogger(GraphLogger):
             raise RuntimeError("Logging unknown hypothesis type")
         GraphLogger.log_graph(
             self,
-            graph=graph,
-            level=level,
-            # TODO unsure how to pass *args
-            msg=msg,
+            graph,
+            level,
+            msg,
+            *args,
             match_correspondence_ids=match_correspondence_ids,
             graph_name=graph_name,
         )
@@ -593,20 +598,18 @@ class AbstractPursuitLearner(
 
     @abstractmethod
     def observe(
-        self,
-        learning_example: LearningExample[PerceptionT, LinguisticDescription],
-        **kwargs,
+        self, learning_example: LearningExample[PerceptionT, LinguisticDescription]
     ) -> None:
         """
-        TODO: Doscsting
+        A pursuit based implementation of the Language Learner observe method.
         """
 
     @abstractmethod
     def describe(
-        self, perception: PerceptualRepresentation[PerceptionT], **kwargs
+        self, perception: PerceptualRepresentation[PerceptionT]
     ) -> Mapping[LinguisticDescription, float]:
         """
-        TODO: Docstring
+        A pursuit based implementation of the Language Learner describe method.
         """
 
     @abstractmethod
@@ -675,9 +678,7 @@ class ObjectPursuitLearner(
     """
 
     def observe(
-        self,
-        learning_example: LearningExample[PerceptionT, LinguisticDescription],
-        **kwargs,
+        self, learning_example: LearningExample[PerceptionT, LinguisticDescription]
     ) -> None:
         logging.info("Observation %s", self._observation_num)
         self._observation_num += 1
@@ -702,7 +703,7 @@ class ObjectPursuitLearner(
         )
 
     def describe(
-        self, perception: PerceptualRepresentation[PerceptionT], **kwargs
+        self, perception: PerceptualRepresentation[PerceptionT]
     ) -> Mapping[LinguisticDescription, float]:
         if len(perception.frames) != 1:
             raise RuntimeError("Subset learner can only handle single frames for now")
@@ -878,15 +879,14 @@ class PrepositionPursuitLearner(
     object_match_node_for_ground: Optional[MatchedObjectNode] = None
     object_match_node_for_modified: Optional[MatchedObjectNode] = None
     template_variables_to_object_match_nodes: Optional[
-        ImmutableSet[Tuple[str, Any]]
+        Iterable[Tuple[str, MatchedObjectNode]]
     ] = None
 
     def observe(
         self,
         learning_example: LearningExample[PerceptionT, LinguisticDescription],
-        object_match_nodes: List[MatchedObjectNode] = [],
-        token_indices_of_matched_object_words: List[int] = [],
-        **kwargs,
+        object_match_nodes: Optional[List[MatchedObjectNode]] = None,
+        token_indices_of_matched_object_words: Optional[List[int]] = None,
     ) -> None:
         # We are also given the list of matched nodes in the perception
         # We can't learn prepositions without already knowing some objects in the learning instance
@@ -904,6 +904,10 @@ class PrepositionPursuitLearner(
             learning_example.linguistic_description.as_token_sequence()
         )
 
+        if not object_match_nodes or not token_indices_of_matched_object_words:
+            raise RuntimeError(
+                "Pursuit Preposition Learner is missing match node arguments"
+            )
         if (
             len(object_match_nodes) != 2
             and len(token_indices_of_matched_object_words) != 2
@@ -955,34 +959,19 @@ class PrepositionPursuitLearner(
 
         logging.info("Identified preposition template: %s", preposition_surface_template)
 
+        self.object_match_node_for_ground = object_match_node_for_ground
+        self.object_match_node_for_modified = object_match_node_for_modified
         # This is the template_variables_to_object_match_nodes of sentence locations to pattern nodes
-        template_variables_to_object_match_nodes: ImmutableSet[
-            Tuple[str, Any]
-        ] = immutableset(
+        self.template_variables_to_object_match_nodes = immutableset(
             [
                 (_MODIFIED, object_match_node_for_modified),
                 (_GROUND, object_match_node_for_ground),
             ]
         )
-        self.object_match_node_for_ground = object_match_node_for_ground
-        self.object_match_node_for_modified = object_match_node_for_modified
-        self.template_variables_to_object_match_nodes = (
-            template_variables_to_object_match_nodes
-        )
 
         self.learn_with_pursuit(
             observed_perception_graph=original_perception,
             items_to_learn=(preposition_surface_template,),
-        )
-
-        # TODO Rest should happen inside pursuit functions (meaning, etc)
-
-        # Generate hypothesis for the given learning example
-        preposition_pattern = self._make_preposition_hypothesis(
-            object_match_node_for_ground,
-            object_match_node_for_modified,
-            original_perception,
-            template_variables_to_object_match_nodes,
         )
 
     def describe(
@@ -992,18 +981,79 @@ class PrepositionPursuitLearner(
         pass
 
     def _matches(
-        self, *, hypothesis: HypothesisT, observed_perception_graph: PerceptionGraph
+        self,
+        *,
+        hypothesis: PrepositionPattern,
+        observed_perception_graph: PerceptionGraph,
     ) -> bool:
-        pass
+        # TODO: Are we supposed to check for match nodes - and if so, how?
+        matcher = hypothesis.graph_pattern.matcher(
+            observed_perception_graph, matching_objects=True
+        )
+        return any(
+            matcher.matches(use_lookahead_pruning=True, graph_logger=self._graph_logger)
+        )
 
     def _meaning_from_perception(self, perception: PerceptionGraph) -> PrepositionPattern:
-        # TODO implement
-        pass
+        if self.template_variables_to_object_match_nodes:
+            return PrepositionPattern.from_graph(
+                perception, self.template_variables_to_object_match_nodes
+            )
+        else:
+            raise RuntimeError(
+                "Empty template variables:", self.template_variables_to_object_match_nodes
+            )
 
     def _candidate_perceptions(self, observed_perception_graph) -> List[PerceptionGraph]:
-        # In order to
-        # TODO implemsent
-        return []
+        # The directions of edges in the perception graph are not necessarily meaningful
+        # from the point-of-view of hypothesis generation, so we need an undirected copy
+        # of the graph.
+        perception_graph = observed_perception_graph.copy_as_digraph()
+        # as_view=True loses determinism
+        perception_graph_as_undirected = observed_perception_graph.copy_as_digraph().to_undirected(
+            as_view=False
+        )
+        # The core of our hypothesis for the semantics of a preposition is all nodes
+        # along the shortest path between the two objects involved in the perception graph.
+        hypothesis_spine_nodes: ImmutableSet[PerceptionGraphNode] = immutableset(
+            flatten(
+                # if there are multiple paths between the object match nodes,
+                # we aren't sure which are relevant, so we include them all in our hypothesis
+                # and figure we can trim out irrelevant stuff as we make more observations.
+                all_shortest_paths(
+                    perception_graph_as_undirected,
+                    self.object_match_node_for_ground,
+                    self.object_match_node_for_modified,
+                )
+            )
+        )
+
+        # Along the core of our hypothesis we also want to collect the predecessors and successors
+        hypothesis_nodes_mutable = []
+        for node in hypothesis_spine_nodes:
+            if node not in [
+                self.object_match_node_for_ground,
+                self.object_match_node_for_modified,
+            ]:
+                for successor in perception_graph.successors(node):
+                    if not isinstance(successor, ObjectPerception):
+                        hypothesis_nodes_mutable.append(successor)
+                for predecessor in perception_graph.predecessors(node):
+                    if not isinstance(predecessor, ObjectPerception):
+                        hypothesis_nodes_mutable.append(predecessor)
+
+        hypothesis_nodes_mutable.extend(hypothesis_spine_nodes)
+
+        # We wrap the nodes in an immutable set to remove duplicates
+        hypothesis_nodes = immutableset(hypothesis_nodes_mutable)
+
+        preposition_pattern_graph = digraph_with_nodes_sorted_by(
+            networkx_utils.subgraph(
+                observed_perception_graph.copy_as_digraph(), nodes=hypothesis_nodes
+            ),
+            _graph_node_order,
+        )
+        return [PerceptionGraph(preposition_pattern_graph)]
 
     def _candidate_meanings(
         self, observed_perception_graph: PerceptionGraph
@@ -1012,15 +1062,6 @@ class PrepositionPursuitLearner(
             self._meaning_from_perception(object_)
             for object_ in self._candidate_perceptions(observed_perception_graph)
         ]
-
-    # Objects:
-    # def _meaning_from_perception(
-    #     self, perception: PerceptionGraph
-    # ) -> PerceptionGraphPattern:
-    #     return PerceptionGraphPattern.from_graph(perception).perception_graph_pattern
-    #
-    # def _candidate_perceptions(self, observed_perception_graph) -> List[PerceptionGraph]:
-    #     return self.get_objects_from_perception(observed_perception_graph)
 
     @attrs(frozen=True)
     class PrepositionHypothesisPartialMatch(
