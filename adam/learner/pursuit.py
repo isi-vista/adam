@@ -35,10 +35,7 @@ from adam.learner import (
     get_largest_matching_pattern,
     graph_without_learner,
 )
-from adam.learner.object_recognizer import (
-    ObjectRecognizer,
-    PerceptionGraphFromObjectRecognizer,
-)
+from adam.learner.object_recognizer import ObjectRecognizer
 from adam.learner.preposition_pattern import PrepositionPattern, _MODIFIED, _GROUND
 from adam.learner.preposition_subset import PrepositionSurfaceTemplate
 from adam.ontology.ontology import Ontology
@@ -57,6 +54,8 @@ from adam.perception.perception_graph import (
     MatchedObjectNode,
     PerceptionGraphNode,
     _graph_node_order,
+    MatchedObjectPerceptionPredicate,
+    NodePredicate,
 )
 from adam.utils import networkx_utils
 
@@ -885,7 +884,6 @@ class PrepositionPursuitLearner(
     template_variables_to_object_match_nodes: Optional[
         Iterable[Tuple[str, MatchedObjectNode]]
     ] = None
-    _recognized_object_perception: Optional[PerceptionGraphFromObjectRecognizer] = None
 
     def observe(
         self,
@@ -911,7 +909,7 @@ class PrepositionPursuitLearner(
         )
 
         # Convert the observed perception to a version with recognized objects
-        self._recognized_object_perception = object_recognizer.match_objects(
+        recognized_object_perception = object_recognizer.match_objects(
             original_perception
         )
 
@@ -921,13 +919,11 @@ class PrepositionPursuitLearner(
         for (idx, token) in enumerate(observed_linguistic_description):
             if (
                 token
-                in self._recognized_object_perception.description_to_matched_object_node.keys()
+                in recognized_object_perception.description_to_matched_object_node.keys()
             ):
                 token_indices_of_matched_object_words.append(idx)
                 object_match_nodes.append(
-                    self._recognized_object_perception.description_to_matched_object_node[
-                        token
-                    ]
+                    recognized_object_perception.description_to_matched_object_node[token]
                 )
         if (
             len(object_match_nodes) != 2
@@ -991,15 +987,108 @@ class PrepositionPursuitLearner(
         )
 
         self.learn_with_pursuit(
-            observed_perception_graph=self._recognized_object_perception.perception_graph,
+            observed_perception_graph=recognized_object_perception.perception_graph,
             items_to_learn=(preposition_surface_template,),
         )
 
     def describe(
-        self, perception: PerceptualRepresentation[PerceptionT], **kwargs
+        self,
+        perception: PerceptualRepresentation[PerceptionT],
+        object_recognizer: Optional[ObjectRecognizer] = None,
     ) -> Mapping[LinguisticDescription, float]:
         # TODO: Implement with help from pursuit subset
-        pass
+        if len(perception.frames) != 1:
+            raise RuntimeError(
+                "Preposition learner can only handle single frames for now"
+            )
+        if isinstance(perception.frames[0], DevelopmentalPrimitivePerceptionFrame):
+            original_perception = PerceptionGraph.from_frame(perception.frames[0])
+        else:
+            raise RuntimeError("Cannot process perception type.")
+        if not object_recognizer:
+            raise RuntimeError("Preposition learner is missing object recognizer")
+
+        recognized_object_perception = object_recognizer.match_objects(
+            original_perception
+        )
+
+        object_match_node_to_object_handle: Mapping[
+            PerceptionGraphNode, str
+        ] = immutabledict(
+            (node, description)
+            for description, node in recognized_object_perception.description_to_matched_object_node.items()
+        )
+
+        # this will be our output
+        description_to_score: List[Tuple[TokenSequenceLinguisticDescription, float]] = []
+
+        def replace_template_variables_with_object_names(
+            preposition_surface_template: Tuple[str, ...],
+            object_variable_name_to_object_match_pattern_node: Mapping[
+                str, MatchedObjectPerceptionPredicate
+            ],
+            pattern_node_to_aligned_perception_node: Mapping[
+                NodePredicate, PerceptionGraphNode
+            ],
+        ) -> Tuple[str, ...]:
+            rtnr: List[str] = []
+            # each entry in a preposition surface object_match_node is either a token
+            # (typically a preposition) or one of the two placeholders
+            # MODIFIED and GROUND
+            for token_or_surface_template_variable in preposition_surface_template:
+                if (
+                    token_or_surface_template_variable
+                    in object_variable_name_to_object_match_pattern_node.keys()
+                ):
+                    # If we have a placeholder, we need to figure out what object should
+                    # fill it in this particular situation.
+
+                    # This will be either MODIFIED or GROUND
+                    surface_template_variable = token_or_surface_template_variable
+                    # Get the corresponding variable in the preposition perception pattern.
+                    object_match_variable_node = object_variable_name_to_object_match_pattern_node[
+                        surface_template_variable
+                    ]
+                    # This variable should have matched against an object that we recognized
+                    # with the object matcher, which would have introduced an object_match_node
+                    object_match_node = pattern_node_to_aligned_perception_node[
+                        object_match_variable_node
+                    ]
+                    # and for each of these object matches, we were provided with a name,
+                    # which is what we use in the linguistic description.
+                    rtnr.append(object_match_node_to_object_handle[object_match_node])
+                else:
+                    # tokens are just copied directly to the description
+                    token = token_or_surface_template_variable
+                    rtnr.append(token)
+            return tuple(rtnr)
+
+        # For each preposition we've learned
+        for (preposition_surface_template, preposition_pattern) in self._lexicon.items():
+            # try to see if (our model of) its semantics is present in the situation.
+            matcher = preposition_pattern.graph_pattern.matcher(
+                recognized_object_perception.perception_graph, matching_objects=False
+            )
+            for match in matcher.matches(use_lookahead_pruning=True):
+                # if it is, use that preposition to describe the situation.
+                description_to_score.append(
+                    (
+                        TokenSequenceLinguisticDescription(
+                            # we generate the description by taking the preposition surface template
+                            # which has MODIFIER and GROUND variables,
+                            # and replacing those variables by the actual names
+                            # of the matched objects.
+                            replace_template_variables_with_object_names(
+                                preposition_surface_template,
+                                preposition_pattern.object_variable_name_to_pattern_node,
+                                match.pattern_node_to_matched_graph_node,
+                            )
+                        ),
+                        1.0,
+                    )
+                )
+
+        return immutabledict(description_to_score)
 
     def _matches(
         self,
