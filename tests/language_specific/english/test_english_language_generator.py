@@ -1,5 +1,6 @@
 from typing import Tuple
 
+import pytest
 from more_itertools import only
 
 from adam.axes import HorizontalAxisOfObject, FacingAddresseeAxis, AxesInfo
@@ -947,6 +948,7 @@ def test_regions_as_goal():
         return HighLevelSemanticsSituation(
             ontology=GAILA_PHASE_1_ONTOLOGY,
             salient_objects=[agent, goal_object],
+            other_objects=[learner],
             actions=[
                 Action(GO, argument_roles_to_fillers=[(AGENT, agent), (GOAL, goal)])
             ],
@@ -1026,6 +1028,37 @@ def test_regions_as_goal():
             )
         )
     ) == ("a", "dog", "goes", "in front of", "a", "box")
+
+
+def test_region_with_out_addressee():
+    agent = situation_object(DOG)
+    goal_object = situation_object(BOX, properties=[HOLLOW])
+    with pytest.raises(RuntimeError):
+        generated_tokens(
+            HighLevelSemanticsSituation(
+                ontology=GAILA_PHASE_1_ONTOLOGY,
+                salient_objects=[agent, goal_object],
+                actions=[
+                    Action(
+                        GO,
+                        argument_roles_to_fillers=[
+                            (AGENT, agent),
+                            (
+                                GOAL,
+                                Region(
+                                    goal_object,
+                                    distance=PROXIMAL,
+                                    direction=Direction(
+                                        positive=True,
+                                        relative_to_axis=FacingAddresseeAxis(goal_object),
+                                    ),
+                                ),
+                            ),
+                        ],
+                    )
+                ],
+            )
+        )
 
 
 def generated_tokens(situation):

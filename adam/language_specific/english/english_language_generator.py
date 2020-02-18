@@ -615,6 +615,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 return "over"
             elif region.direction == GRAVITATIONAL_DOWN:
                 return "under"
+            # region.distance == DISTAL is not check as this does not define a specific preposition in scope for M9
             elif region.direction and self.situation.axis_info:
                 if not self.situation.axis_info.addressee:
                     raise RuntimeError(
