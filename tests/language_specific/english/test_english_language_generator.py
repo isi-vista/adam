@@ -1025,7 +1025,7 @@ def test_regions_as_goal():
                 ),
             )
         )
-    ) == ("a", "dog", "goes", "behind", "a", "box")
+    ) == ("a", "dog", "goes", "in front of", "a", "box")
 
 
 def generated_tokens(situation):
