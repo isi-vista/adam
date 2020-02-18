@@ -621,12 +621,9 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                         f"Unable to translate region into a preposition because an addressee is lacking. "
                         f"Region: {region}\nSituation: {self.situation}"
                     )
-                if (
-                    region.direction.relative_to_axis
-                    in self.situation.axis_info.axes_facing[
-                        self.situation.axis_info.addressee
-                    ]
-                ):
+                # HACK, from M3
+                # see: https://github.com/isi-vista/adam/issues/573
+                if isinstance(region.direction.relative_to_axis, FacingAddresseeAxis):
                     if region.direction.positive:
                         return "in front of"
                     else:
@@ -779,6 +776,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                             preposition = "under"
                     else:
                         # TODO: hack for M3; revisit in cleanup
+                        # see: https://github.com/isi-vista/adam/issues/573
                         if isinstance(
                             region.direction.relative_to_axis, FacingAddresseeAxis
                         ):
