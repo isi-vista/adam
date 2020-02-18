@@ -1,3 +1,4 @@
+from itertools import chain
 from typing import Iterable
 
 from immutablecollections import immutableset
@@ -153,7 +154,6 @@ def _push_beside_template(
     goal_reference: TemplateObjectVariable,
     surface: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
-    is_distal: bool,
     is_right: bool,
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
@@ -170,7 +170,7 @@ def _push_beside_template(
                         GOAL,
                         Region(
                             goal_reference,
-                            distance=DISTAL if is_distal else PROXIMAL,
+                            distance=PROXIMAL,
                             direction=Direction(
                                 positive=is_right,
                                 relative_to_axis=HorizontalAxisOfObject(
@@ -191,16 +191,17 @@ def _push_beside_template(
     )
 
 
-def _push_in_front_of_template(
+def _push_in_front_of_behind_template(
     agent: TemplateObjectVariable,
     theme: TemplateObjectVariable,
     goal_reference: TemplateObjectVariable,
     surface: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
     is_distal: bool,
+    is_in_front: bool,
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
-        f"{agent.handle}-pushes-{theme.handle}-in-front-of-{goal_reference.handle}",
+        f"{agent.handle}-pushes-{theme.handle}-in-front-of-behind-{goal_reference.handle}",
         salient_object_variables=[agent, theme, goal_reference],
         background_object_variables=background,
         actions=[
@@ -215,7 +216,7 @@ def _push_in_front_of_template(
                             goal_reference,
                             distance=DISTAL if is_distal else PROXIMAL,
                             direction=Direction(
-                                positive=True,
+                                positive=is_in_front,
                                 relative_to_axis=FacingAddresseeAxis(goal_reference),
                             ),
                         ),
@@ -232,107 +233,16 @@ def _push_in_front_of_template(
     )
 
 
-def _push_behind_template(
-    agent: TemplateObjectVariable,
-    theme: TemplateObjectVariable,
-    goal_reference: TemplateObjectVariable,
-    surface: TemplateObjectVariable,
-    background: Iterable[TemplateObjectVariable],
-    is_distal: bool,
-) -> Phase1SituationTemplate:
-    return Phase1SituationTemplate(
-        f"{agent.handle}-pushes-{theme.handle}-behind-{goal_reference.handle}",
-        salient_object_variables=[agent, theme, goal_reference],
-        background_object_variables=background,
-        actions=[
-            Action(
-                PUSH,
-                argument_roles_to_fillers=[
-                    (AGENT, agent),
-                    (THEME, theme),
-                    (
-                        GOAL,
-                        Region(
-                            goal_reference,
-                            distance=DISTAL if is_distal else PROXIMAL,
-                            direction=Direction(
-                                positive=False,
-                                relative_to_axis=FacingAddresseeAxis(goal_reference),
-                            ),
-                        ),
-                    ),
-                ],
-                auxiliary_variable_bindings=[(PUSH_SURFACE_AUX, surface)],
-                during=DuringAction(continuously=[on(theme, surface)]),
-            )
-        ],
-        constraining_relations=[
-            bigger_than(surface, agent),
-            bigger_than(surface, goal_reference),
-        ],
-    )
-
-
-def _make_push_to(num_samples: int = 5, *, noise_objects: int = 0) -> Phase1InstanceGroup:
+def _make_push_with_prepositions(
+    num_samples: int = 5, *, noise_objects: int = 0
+) -> Phase1InstanceGroup:
     agent = standard_object("agent", THING, required_properties=[ANIMATE])
     theme = standard_object("theme", INANIMATE_OBJECT)
     goal_reference = standard_object("goal_reference", INANIMATE_OBJECT)
-    surface = standard_object(
-        "surface", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
-    )
-    background = immutableset(
-        standard_object(f"noise_object_{x}") for x in range(noise_objects)
-    )
-
-    return phase1_instances(
-        "Push To",
-        flatten(
-            [
-                sampled(
-                    _push_to_template(agent, theme, goal_reference, surface, background),
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER,
-                    max_to_sample=num_samples,
-                )
-            ]
-        ),
-    )
-
-
-def _make_push_in(num_samples: int = 5, *, noise_objects: int = 0) -> Phase1InstanceGroup:
-    agent = standard_object("agent", THING, required_properties=[ANIMATE])
-    theme = standard_object("theme", INANIMATE_OBJECT)
-    goal_reference = standard_object(
+    goal_in = standard_object(
         "goal_reference", INANIMATE_OBJECT, required_properties=[HOLLOW]
     )
-    surface = standard_object(
-        "surface", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
-    )
-    background = immutableset(
-        standard_object(f"noise_object_{x}") for x in range(noise_objects)
-    )
-
-    return phase1_instances(
-        "Push In",
-        flatten(
-            [
-                sampled(
-                    _push_in_template(agent, theme, goal_reference, surface, background),
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER,
-                    max_to_sample=num_samples,
-                )
-            ]
-        ),
-    )
-
-
-def _make_push_under(
-    num_samples: int = 5, *, noise_objects: int = 0
-) -> Phase1InstanceGroup:
-    agent = standard_object("agent", THING, required_properties=[ANIMATE])
-    theme = standard_object("theme", INANIMATE_OBJECT)
-    goal_reference = standard_object(
+    goal_under = standard_object(
         "goal_reference", INANIMATE_OBJECT, required_properties=[HAS_SPACE_UNDER]
     )
     surface = standard_object(
@@ -341,140 +251,85 @@ def _make_push_under(
     background = immutableset(
         standard_object(f"noise_object_{x}") for x in range(noise_objects)
     )
+    to_in_templates = [
+        _push_to_template(agent, theme, goal_reference, surface, background),
+        _push_in_template(agent, theme, goal_in, surface, background),
+    ]
 
     return phase1_instances(
-        "Push Under",
-        flatten(
-            [
-                sampled(
-                    _push_under_template(
-                        agent,
-                        theme,
-                        goal_reference,
-                        surface,
-                        background,
-                        is_distal=is_distal,
-                    ),
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER,
-                    max_to_sample=num_samples,
-                )
-                for is_distal in BOOL_SET
-            ]
-        ),
-    )
-
-
-def _make_push_beside(
-    num_samples: int = 5, *, noise_objects: int = 0
-) -> Phase1InstanceGroup:
-    agent = standard_object("agent", THING, required_properties=[ANIMATE])
-    theme = standard_object("theme", INANIMATE_OBJECT)
-    goal_reference = standard_object("goal_reference", INANIMATE_OBJECT)
-    surface = standard_object(
-        "surface", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
-    )
-    background = immutableset(
-        standard_object(f"noise_object_{x}") for x in range(noise_objects)
-    )
-
-    return phase1_instances(
-        "Push Beside",
-        flatten(
-            [
-                sampled(
-                    _push_beside_template(
-                        agent,
-                        theme,
-                        goal_reference,
-                        surface,
-                        background,
-                        is_distal=is_distal,
-                        is_right=is_right,
-                    ),
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER,
-                    max_to_sample=num_samples,
-                )
-                for is_distal in BOOL_SET
-                for is_right in BOOL_SET
-            ]
-        ),
-    )
-
-
-def _make_push_in_front_of(
-    num_samples: int = 5, *, noise_objects: int = 0
-) -> Phase1InstanceGroup:
-    agent = standard_object("agent", THING, required_properties=[ANIMATE])
-    theme = standard_object("theme", INANIMATE_OBJECT)
-    goal_reference = standard_object(
-        "goal_reference", INANIMATE_OBJECT, required_properties=[HAS_SPACE_UNDER]
-    )
-    surface = standard_object(
-        "surface", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
-    )
-    background = immutableset(
-        standard_object(f"noise_object_{x}") for x in range(noise_objects)
-    )
-
-    return phase1_instances(
-        "Push In Front Of",
-        flatten(
-            [
-                sampled(
-                    _push_in_front_of_template(
-                        agent,
-                        theme,
-                        goal_reference,
-                        surface,
-                        background,
-                        is_distal=is_distal,
-                    ),
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER,
-                    max_to_sample=num_samples,
-                )
-                for is_distal in BOOL_SET
-            ]
-        ),
-    )
-
-
-def _make_push_behind(
-    num_samples: int = 5, *, noise_objects: int = 0
-) -> Phase1InstanceGroup:
-    agent = standard_object("agent", THING, required_properties=[ANIMATE])
-    theme = standard_object("theme", INANIMATE_OBJECT)
-    goal_reference = standard_object(
-        "goal_reference", INANIMATE_OBJECT, required_properties=[HAS_SPACE_UNDER]
-    )
-    surface = standard_object(
-        "surface", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
-    )
-    background = immutableset(
-        standard_object(f"noise_object_{x}") for x in range(noise_objects)
-    )
-
-    return phase1_instances(
-        "Push Behind",
-        flatten(
-            [
-                sampled(
-                    _push_behind_template(
-                        agent,
-                        theme,
-                        goal_reference,
-                        surface,
-                        background,
-                        is_distal=is_distal,
-                    ),
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER,
-                    max_to_sample=num_samples,
-                )
-                for is_distal in BOOL_SET
-            ]
+        "Push + PP",
+        chain(
+            # to, in
+            flatten(
+                [
+                    sampled(
+                        template,
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER,
+                        max_to_sample=num_samples,
+                    )
+                    for template in to_in_templates
+                ]
+            ),
+            # beside
+            flatten(
+                [
+                    sampled(
+                        _push_beside_template(
+                            agent,
+                            theme,
+                            goal_reference,
+                            surface,
+                            background,
+                            is_right=is_right,
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER,
+                        max_to_sample=num_samples,
+                    )
+                    for is_right in BOOL_SET
+                ]
+            ),
+            # under
+            flatten(
+                [
+                    sampled(
+                        _push_under_template(
+                            agent,
+                            theme,
+                            goal_under,
+                            surface,
+                            background,
+                            is_distal=is_distal,
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER,
+                        max_to_sample=num_samples,
+                    )
+                    for is_distal in BOOL_SET
+                ]
+            ),
+            # in front of, behind
+            flatten(
+                [
+                    sampled(
+                        _push_in_front_of_behind_template(
+                            agent,
+                            theme,
+                            goal_reference,
+                            surface,
+                            background,
+                            is_distal=is_distal,
+                            is_in_front=is_in_front,
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER,
+                        max_to_sample=num_samples,
+                    )
+                    for is_distal in BOOL_SET
+                    for is_in_front in BOOL_SET
+                ]
+            ),
         ),
     )
 
@@ -482,11 +337,4 @@ def _make_push_behind(
 def make_verb_with_dynamic_prepositions_curriculum(
     num_samples: int = 5, *, num_noise_objects: int = 0
 ):
-    return [
-        _make_push_to(num_samples, noise_objects=num_noise_objects),
-        _make_push_in(num_samples, noise_objects=num_noise_objects),
-        _make_push_under(num_samples, noise_objects=num_noise_objects),
-        _make_push_beside(num_samples, noise_objects=num_noise_objects),
-        _make_push_in_front_of(num_samples, noise_objects=num_noise_objects),
-        _make_push_behind(num_samples, noise_objects=num_noise_objects),
-    ]
+    return [_make_push_with_prepositions(num_samples, noise_objects=num_noise_objects)]
