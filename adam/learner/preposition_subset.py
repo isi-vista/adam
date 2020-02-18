@@ -290,6 +290,7 @@ class PrepositionSubsetLanguageLearner(
 
         self._print(perception_graph_as_undirected, "Undirected perception graph")
 
+        print(perception_graph_as_undirected.nodes)
         for path in all_shortest_paths(
             perception_graph_as_undirected,
             object_match_node_for_ground,

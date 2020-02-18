@@ -35,6 +35,10 @@ from adam.learner import (
     get_largest_matching_pattern,
     graph_without_learner,
 )
+from adam.learner.object_recognizer import (
+    ObjectRecognizer,
+    PerceptionGraphFromObjectRecognizer,
+)
 from adam.learner.preposition_pattern import PrepositionPattern, _MODIFIED, _GROUND
 from adam.learner.preposition_subset import PrepositionSurfaceTemplate
 from adam.ontology.ontology import Ontology
@@ -881,12 +885,12 @@ class PrepositionPursuitLearner(
     template_variables_to_object_match_nodes: Optional[
         Iterable[Tuple[str, MatchedObjectNode]]
     ] = None
+    _recognized_object_perception: Optional[PerceptionGraphFromObjectRecognizer] = None
 
     def observe(
         self,
         learning_example: LearningExample[PerceptionT, LinguisticDescription],
-        object_match_nodes: Optional[List[MatchedObjectNode]] = None,
-        token_indices_of_matched_object_words: Optional[List[int]] = None,
+        object_recognizer: Optional[ObjectRecognizer] = None,
     ) -> None:
         # We are also given the list of matched nodes in the perception
         # We can't learn prepositions without already knowing some objects in the learning instance
@@ -899,21 +903,38 @@ class PrepositionPursuitLearner(
             original_perception = PerceptionGraph.from_frame(perception.frames[0])
         else:
             raise RuntimeError("Cannot process perception type.")
+        if not object_recognizer:
+            raise RuntimeError("Preposition learner is missing object recognizer")
 
         observed_linguistic_description = (
             learning_example.linguistic_description.as_token_sequence()
         )
 
-        if not object_match_nodes or not token_indices_of_matched_object_words:
-            raise RuntimeError(
-                "Pursuit Preposition Learner is missing match node arguments"
-            )
+        # Convert the observed perception to a version with recognized objects
+        self._recognized_object_perception = object_recognizer.match_objects(
+            original_perception
+        )
+
+        # Get the match nodes and their word indices
+        object_match_nodes = []
+        token_indices_of_matched_object_words = []
+        for (idx, token) in enumerate(observed_linguistic_description):
+            if (
+                token
+                in self._recognized_object_perception.description_to_matched_object_node.keys()
+            ):
+                token_indices_of_matched_object_words.append(idx)
+                object_match_nodes.append(
+                    self._recognized_object_perception.description_to_matched_object_node[
+                        token
+                    ]
+                )
         if (
             len(object_match_nodes) != 2
             and len(token_indices_of_matched_object_words) != 2
         ):
             raise RuntimeError(
-                f"Learning a preposition with more than two recognized objects is not currently supported. "
+                f"Learning a preposition with more or less than two recognized objects is not currently supported. "
                 f"Found {len(object_match_nodes)} from "
                 f"{observed_linguistic_description}."
             )
@@ -970,7 +991,7 @@ class PrepositionPursuitLearner(
         )
 
         self.learn_with_pursuit(
-            observed_perception_graph=original_perception,
+            observed_perception_graph=self._recognized_object_perception.perception_graph,
             items_to_learn=(preposition_surface_template,),
         )
 
@@ -1009,7 +1030,7 @@ class PrepositionPursuitLearner(
         # from the point-of-view of hypothesis generation, so we need an undirected copy
         # of the graph.
         perception_graph = observed_perception_graph.copy_as_digraph()
-        # as_view=True loses determinism
+        # as_view=True loses s
         perception_graph_as_undirected = observed_perception_graph.copy_as_digraph().to_undirected(
             as_view=False
         )

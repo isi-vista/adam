@@ -90,7 +90,7 @@ def test_subset_learner_dog():
     run_subset_learner_for_object(DOG, debug_callback)
 
 
-def test_pursuit_learner():
+def test_pursuit_object_learner():
     target_objects = [
         BALL,
         # PERSON,

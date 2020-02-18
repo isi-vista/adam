@@ -1,3 +1,4 @@
+import random
 from typing import Mapping
 
 from immutablecollections import immutableset, immutabledict
@@ -22,6 +23,7 @@ from adam.learner.object_recognizer import ObjectRecognizer
 from adam.learner.preposition_subset import PrepositionSubsetLanguageLearner
 import pytest
 
+from adam.learner.pursuit import PrepositionPursuitLearner
 from adam.ontology import IS_ADDRESSEE, IS_SPEAKER
 from adam.ontology.phase1_ontology import (
     BALL,
@@ -33,30 +35,23 @@ from adam.ontology.phase1_ontology import (
     MOM,
     PHASE_1_CURRICULUM_OBJECTS,
 )
-from adam.perception.perception_graph import PerceptionGraphPattern
+from adam.perception.perception_graph import PerceptionGraphPattern, PerceptionGraph
 from adam.situation.templates.phase1_templates import sampled, object_variable
 
-_TEST_OBJECTS: Mapping[str, PerceptionGraphPattern] = immutabledict(
-    (
-        node.handle,
-        PerceptionGraphPattern.from_schema(
-            first(GAILA_PHASE_1_ONTOLOGY.structural_schemata(node))
-        ),
-    )
-    for node in PHASE_1_CURRICULUM_OBJECTS
-    if node
-    in GAILA_PHASE_1_ONTOLOGY._structural_schemata.keys()  # pylint:disable=protected-access
-)
 
-OBJECT_RECOGNIZER = ObjectRecognizer(_TEST_OBJECTS)
-
-
-def test_subset_preposition_on_learner():
-    learner = PrepositionSubsetLanguageLearner(
-        object_recognizer=OBJECT_RECOGNIZER, ontology=GAILA_PHASE_1_ONTOLOGY
-    )
+def test_pursuit_preposition_on_learner():
+    rng = random.Random()
+    rng.seed(0)
+    learner = PrepositionPursuitLearner(
+        learning_factor=0.5,
+        graph_match_confirmation_threshold=0.7,
+        lexicon_entry_threshold=0.7,
+        rng=rng,
+        smoothing_parameter=0.001,
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+    )  # type: ignore
     ball = standard_object("ball", BALL)
-    table = standard_object("chair", TABLE)
+    table = standard_object("table", TABLE)
     on_train_curriculum = phase1_instances(
         "Preposition Unit Train",
         situations=sampled(
@@ -76,13 +71,25 @@ def test_subset_preposition_on_learner():
         ),
     )
 
+    # Set up object recognizer, given the two objects we 'already' recognize
+    object_recognizer = ObjectRecognizer(
+        {
+            node.handle: PerceptionGraphPattern.from_schema(
+                first(GAILA_PHASE_1_ONTOLOGY.structural_schemata(node))
+            )
+            for node in [BALL, TABLE]
+        }
+    )
+
     for (
         _,
         linguistic_description,
         perceptual_representation,
     ) in on_train_curriculum.instances():
+        # Get the object matches first - preposition learner can't learn without already recognized objects
         learner.observe(
-            LearningExample(perceptual_representation, linguistic_description)
+            LearningExample(perceptual_representation, linguistic_description),
+            object_recognizer=object_recognizer,
         )
 
     for (
