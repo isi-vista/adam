@@ -59,19 +59,30 @@ from adam.perception.perception_graph import (
 )
 from adam.utils import networkx_utils
 
-# Abstract type to represent learned items such as words (str) and preposition phrases (PrepositionSurfaceTemplate)
 from adam.utils.networkx_utils import digraph_with_nodes_sorted_by
 
+# Abstract type to represent learned items such as words (str) and preposition phrases (PrepositionSurfaceTemplate)
 LearnedItemT = TypeVar("LearnedItemT")
 # Abstract type to represent hypothesis types
 HypothesisT = TypeVar("HypothesisT")
 HypothesisT2 = TypeVar("HypothesisT2")
 
 
-@attrs
-class HypothesisGraphLogger(GraphLogger):
+@attrs(frozen=True, slots=True, eq=False)
+class ObjectPattern:
     """
-    Subclass of hypothesis graph logger to generalize hypothesis logging
+    Class representing an object hypothesis
+    """
+
+    graph_pattern: PerceptionGraphPattern = attrib(
+        validator=instance_of(PerceptionGraphPattern)
+    )
+
+
+@attrs
+class HypothesisLogger(GraphLogger):
+    """
+    Subclass of graph logger to generalize hypothesis logging
     """
 
     def log_hypothesis_graph(
@@ -83,9 +94,9 @@ class HypothesisGraphLogger(GraphLogger):
         match_correspondence_ids: Mapping[Any, str] = immutabledict(),
         graph_name: Optional[str] = None,
     ) -> None:
-        if isinstance(hypothesis, PerceptionGraphPattern):
-            graph = hypothesis
-        elif isinstance(hypothesis, PrepositionPattern):
+        if isinstance(hypothesis, ObjectPattern) or isinstance(
+            hypothesis, PrepositionPattern
+        ):
             graph = hypothesis.graph_pattern
         else:
             raise RuntimeError("Logging unknown hypothesis type")
@@ -109,7 +120,8 @@ class AbstractPursuitLearner(
     """
     An implementation of `LanguageLearner` for pursuit learning as a base for different pursuit based
     learners. Paper on Pursuit Learning Algorithm: https://www.ling.upenn.edu/~ycharles/papers/pursuit-final.pdf
-
+    The Pursuit Learner operatoes on two abstract types: 'LearnedItemT' represents learned items such as words (str),
+    and 'HypothesisT' which represents hypothesis types such as PrepositionPatterns.
     """
 
     _learned_item_to_hypotheses_and_scores: Dict[
@@ -142,8 +154,8 @@ class AbstractPursuitLearner(
     _learned_item_to_number_of_observations: Dict[LearnedItemT, int] = attrib(
         init=False, default=Factory(dict)
     )
-    _graph_logger: Optional[HypothesisGraphLogger] = attrib(
-        validator=optional(instance_of(HypothesisGraphLogger)), default=None
+    _hypothesis_logger: Optional[HypothesisLogger] = attrib(
+        validator=optional(instance_of(HypothesisLogger)), default=None
     )
     debug_counter = 0
 
@@ -152,9 +164,10 @@ class AbstractPursuitLearner(
     _log_learned_item_hypotheses_to: Optional[Path] = attrib(
         validator=optional(instance_of(Path)), default=None
     )
-    _learned_item_to_logger: Dict[LearnedItemT, HypothesisGraphLogger] = attrib(
+    _learned_item_to_logger: Dict[LearnedItemT, HypothesisLogger] = attrib(
         init=False, default=Factory(dict)
     )
+    # Set of ids to track hypothesis that are rendered for graph logging
     _rendered_learned_item_hypothesis_pair_ids: Set[str] = attrib(
         init=False, default=Factory(set)
     )
@@ -204,7 +217,7 @@ class AbstractPursuitLearner(
         # If it's a novel word, learn a new hypothesis/pattern,
         # generated as a pattern graph from the perception.
         # We want h_0 = arg_min_(m in M_U) max(A_m); i.e. h_0 is pattern_hypothesis
-        hypotheses: Sequence[HypothesisT] = self._candidate_meanings(
+        hypotheses: Sequence[HypothesisT] = self._candidate_hypotheses(
             observed_perception_graph
         )
 
@@ -228,8 +241,8 @@ class AbstractPursuitLearner(
                 pattern_hypothesis = hypothesis
                 min_score = max_association_score
 
-        if self._graph_logger:
-            self._graph_logger.log_hypothesis_graph(
+        if self._hypothesis_logger:
+            self._hypothesis_logger.log_hypothesis_graph(
                 pattern_hypothesis,
                 logging.INFO,
                 "Initializing meaning for %s " "with score %s",
@@ -310,6 +323,7 @@ class AbstractPursuitLearner(
                     partial_match.num_nodes_in_pattern,
                 )
                 # we know if partial_match_hypothesis is non-None above, it still will be.
+                # we know if partial_match_hypothesis is non-None above, it still will be.
                 hypotheses_to_reward.append(  # type: ignore
                     partial_match.partial_match_hypothesis()
                 )
@@ -329,7 +343,7 @@ class AbstractPursuitLearner(
                 perceptions = self._candidate_perceptions(observed_perception_graph)
                 chosen_perception = self._rng.choice(perceptions)
                 hypotheses_to_reward.append(
-                    self._meaning_from_perception(chosen_perception)
+                    self._hypothesis_from_perception(chosen_perception)
                 )
 
                 for hypothesis in hypotheses_for_item:
@@ -341,8 +355,8 @@ class AbstractPursuitLearner(
                         > self._graph_match_confirmation_threshold
                     ):
                         hypotheses_to_reward.append(hypothesis)
-                        if self._graph_logger:
-                            self._graph_logger.log_hypothesis_graph(
+                        if self._hypothesis_logger:
+                            self._hypothesis_logger.log_hypothesis_graph(
                                 hypothesis,
                                 logging.INFO,
                                 "Boosting existing non-leading hypothesis",
@@ -389,6 +403,7 @@ class AbstractPursuitLearner(
     @attrs(frozen=True)
     class PartialMatch(Generic[HypothesisT2]):
         """
+        A class to hold hypothesis match information, such as the partial_match_hypothesis.
         *match_ratio* should be 1.0 exactly for a perfect match.
         """
 
@@ -398,19 +413,19 @@ class AbstractPursuitLearner(
         @abstractmethod
         def partial_match_hypothesis(self) -> Optional[HypothesisT2]:
             """
-            TODO for Deniz: add docstring
+            Returns a hypothesis corresponding to the partial match.
             """
 
         @abstractmethod
         def matched_exactly(self) -> bool:
             """
-            TODO for Deniz: add docstring
+            Returns a boolean indicating whether the matching was an exact match
             """
 
         @abstractmethod
         def match_score(self) -> float:
             """
-            TODO for Deniz: add docstring
+            Returns a score (e.g. ratio of matching nodes) indicating how much the hypotheses match
             """
 
     def lexicon_step(self, item: LearnedItemT) -> None:
@@ -444,8 +459,8 @@ class AbstractPursuitLearner(
                 self._lexicon[item] = leading_hypothesis_pattern
                 # Remove the word from hypotheses
                 self._learned_item_to_hypotheses_and_scores.pop(item)
-                if self._graph_logger:
-                    self._graph_logger.log_hypothesis_graph(
+                if self._hypothesis_logger:
+                    self._hypothesis_logger.log_hypothesis_graph(
                         leading_hypothesis_pattern, logging.INFO, "Lexicalized %s", item
                     )
             else:
@@ -545,7 +560,7 @@ class AbstractPursuitLearner(
         else:
             log_directory_for_word = self._log_learned_item_hypotheses_to / str(item)
 
-            graph_logger = HypothesisGraphLogger(
+            graph_logger = HypothesisLogger(
                 log_directory=log_directory_for_word, enable_graph_rendering=True
             )
             self._learned_item_to_logger[item] = graph_logger
@@ -599,6 +614,17 @@ class AbstractPursuitLearner(
                 ),
             )
 
+    def _candidate_hypotheses(
+        self, observed_perception_graph: PerceptionGraph
+    ) -> Sequence[HypothesisT]:
+        """
+        Given a perception graph, returns all possible meaning hypotheses of type HypothesisT in that graph.
+        """
+        return [
+            self._hypothesis_from_perception(object_)
+            for object_ in self._candidate_perceptions(observed_perception_graph)
+        ]
+
     @abstractmethod
     def observe(
         self, learning_example: LearningExample[PerceptionT, LinguisticDescription]
@@ -613,14 +639,6 @@ class AbstractPursuitLearner(
     ) -> Mapping[LinguisticDescription, float]:
         """
         A pursuit based implementation of the Language Learner describe method.
-        """
-
-    @abstractmethod
-    def _matches(
-        self, *, hypothesis: HypothesisT, observed_perception_graph: PerceptionGraph
-    ) -> bool:
-        """
-        TODO Deniz docstring
         """
 
     @abstractmethod
@@ -641,17 +659,9 @@ class AbstractPursuitLearner(
         """
 
     @abstractmethod
-    def _candidate_meanings(
-        self, observed_perception_graph: PerceptionGraph
-    ) -> Sequence[HypothesisT]:
+    def _hypothesis_from_perception(self, perception: PerceptionGraph) -> HypothesisT:
         """
-        Returns candidate meaning hypotheses from a scene which might correspond to words of the type being learned.
-        """
-
-    @abstractmethod
-    def _meaning_from_perception(self, perception: PerceptionGraph) -> HypothesisT:
-        """
-        Returns a meaning representation of type *HypothesisT* for a given *perception*.
+        Returns a meaning hypothesis representation of type *HypothesisT* for a given *perception*.
         """
 
     @abstractmethod
@@ -672,9 +682,7 @@ class AbstractPursuitLearner(
 
 class ObjectPursuitLearner(
     Generic[PerceptionT, LinguisticDescriptionT],
-    AbstractPursuitLearner[
-        str, PerceptionGraphPattern, PerceptionT, LinguisticDescriptionT
-    ],
+    AbstractPursuitLearner[str, ObjectPattern, PerceptionT, LinguisticDescriptionT],
 ):
     """
     An implementation of pursuit learner for object recognition
@@ -751,44 +759,37 @@ class ObjectPursuitLearner(
 
         return immutabledict(descriptions)
 
-    def _meaning_from_perception(
-        self, perception: PerceptionGraph
-    ) -> PerceptionGraphPattern:
-        return PerceptionGraphPattern.from_graph(perception).perception_graph_pattern
+    def _hypothesis_from_perception(self, perception: PerceptionGraph) -> ObjectPattern:
+        return ObjectPattern(
+            PerceptionGraphPattern.from_graph(perception).perception_graph_pattern
+        )
 
     def _candidate_perceptions(self, observed_perception_graph) -> List[PerceptionGraph]:
         return self.get_objects_from_perception(observed_perception_graph)
 
-    def _candidate_meanings(
-        self, observed_perception_graph: PerceptionGraph
-    ) -> Sequence[PerceptionGraphPattern]:
-        return [
-            self._meaning_from_perception(object_)
-            for object_ in self._candidate_perceptions(observed_perception_graph)
-        ]
-
     def _matches(
-        self,
-        *,
-        hypothesis: PerceptionGraphPattern,
-        observed_perception_graph: PerceptionGraph,
+        self, *, hypothesis: ObjectPattern, observed_perception_graph: PerceptionGraph
     ) -> bool:
-        matcher = hypothesis.matcher(observed_perception_graph, matching_objects=True)
+        matcher = hypothesis.graph_pattern.matcher(
+            observed_perception_graph, matching_objects=True
+        )
         return any(
-            matcher.matches(use_lookahead_pruning=True, graph_logger=self._graph_logger)
+            matcher.matches(
+                use_lookahead_pruning=True, graph_logger=self._hypothesis_logger
+            )
         )
 
     @attrs(frozen=True)
     class ObjectHypothesisPartialMatch(
-        AbstractPursuitLearner.PartialMatch[PerceptionGraphPattern]
+        AbstractPursuitLearner.PartialMatch[ObjectPattern]
     ):
-        _partial_match_hypothesis: Optional[PerceptionGraphPattern] = attrib(
-            validator=optional(instance_of(PerceptionGraphPattern))
+        _partial_match_hypothesis: Optional[ObjectPattern] = attrib(
+            validator=optional(instance_of(ObjectPattern))
         )
         num_nodes_matched: int = attrib(validator=instance_of(int), kw_only=True)
         num_nodes_in_pattern: int = attrib(validator=instance_of(int), kw_only=True)
 
-        def partial_match_hypothesis(self) -> Optional[PerceptionGraphPattern]:
+        def partial_match_hypothesis(self) -> Optional[ObjectPattern]:
             return self._partial_match_hypothesis
 
         def matched_exactly(self) -> bool:
@@ -798,14 +799,14 @@ class ObjectPursuitLearner(
             return self.num_nodes_matched / self.num_nodes_in_pattern
 
     def _find_partial_match(
-        self, hypothesis: PerceptionGraphPattern, graph: PerceptionGraph
+        self, hypothesis: ObjectPattern, graph: PerceptionGraph
     ) -> "ObjectPursuitLearner.ObjectHypothesisPartialMatch":
-        pattern = hypothesis
+        pattern = hypothesis.graph_pattern
         hypothesis_pattern_common_subgraph = get_largest_matching_pattern(
             pattern,
             graph,
             debug_callback=self._debug_callback,
-            graph_logger=self._graph_logger,
+            graph_logger=self._hypothesis_logger,
             ontology=self._ontology,
             matching_objects=True,
         )
@@ -817,30 +818,29 @@ class ObjectPursuitLearner(
             if hypothesis_pattern_common_subgraph
             else 0
         )
+
         return ObjectPursuitLearner.ObjectHypothesisPartialMatch(
-            hypothesis_pattern_common_subgraph,
+            ObjectPattern(hypothesis_pattern_common_subgraph)
+            if hypothesis_pattern_common_subgraph
+            else None,
             num_nodes_matched=num_nodes_matched,
             num_nodes_in_pattern=leading_hypothesis_num_nodes,
         )
 
     def _find_identical_hypothesis(
-        self,
-        new_hypothesis: PerceptionGraphPattern,
-        candidates: Iterable[PerceptionGraphPattern],
-    ) -> Optional[PerceptionGraphPattern]:
+        self, new_hypothesis: ObjectPattern, candidates: Iterable[ObjectPattern]
+    ) -> Optional[ObjectPattern]:
         for candidate in candidates:
-            if new_hypothesis.check_isomorphism(candidate):
+            if new_hypothesis.graph_pattern.check_isomorphism(candidate.graph_pattern):
                 return candidate
         return None
 
-    def _are_isomorphic(
-        self, h: PerceptionGraphPattern, hypothesis: PerceptionGraphPattern
-    ) -> bool:
-        return h.check_isomorphism(hypothesis)
+    def _are_isomorphic(self, h: ObjectPattern, hypothesis: ObjectPattern) -> bool:
+        return h.graph_pattern.check_isomorphism(hypothesis.graph_pattern)
 
     @staticmethod
     def from_parameters(
-        params: Parameters, *, graph_logger: Optional[HypothesisGraphLogger] = None
+        params: Parameters, *, graph_logger: Optional[HypothesisLogger] = None
     ) -> "ObjectPursuitLearner":  # type: ignore
         log_word_hypotheses_dir = params.optional_creatable_directory(
             "log_word_hypotheses_dir"
@@ -1090,21 +1090,9 @@ class PrepositionPursuitLearner(
 
         return immutabledict(description_to_score)
 
-    def _matches(
-        self,
-        *,
-        hypothesis: PrepositionPattern,
-        observed_perception_graph: PerceptionGraph,
-    ) -> bool:
-        # TODO: Are we supposed to check for match nodes - and if so, how?
-        matcher = hypothesis.graph_pattern.matcher(
-            observed_perception_graph, matching_objects=True
-        )
-        return any(
-            matcher.matches(use_lookahead_pruning=True, graph_logger=self._graph_logger)
-        )
-
-    def _meaning_from_perception(self, perception: PerceptionGraph) -> PrepositionPattern:
+    def _hypothesis_from_perception(
+        self, perception: PerceptionGraph
+    ) -> PrepositionPattern:
         if self.template_variables_to_object_match_nodes:
             return PrepositionPattern.from_graph(
                 perception, self.template_variables_to_object_match_nodes
@@ -1165,14 +1153,6 @@ class PrepositionPursuitLearner(
         )
         return [PerceptionGraph(preposition_pattern_graph)]
 
-    def _candidate_meanings(
-        self, observed_perception_graph: PerceptionGraph
-    ) -> Sequence[PrepositionPattern]:
-        return [
-            self._meaning_from_perception(object_)
-            for object_ in self._candidate_perceptions(observed_perception_graph)
-        ]
-
     @attrs(frozen=True)
     class PrepositionHypothesisPartialMatch(
         AbstractPursuitLearner.PartialMatch[PrepositionPattern]
@@ -1200,7 +1180,7 @@ class PrepositionPursuitLearner(
             pattern,
             graph,
             debug_callback=self._debug_callback,
-            graph_logger=self._graph_logger,
+            graph_logger=self._hypothesis_logger,
             ontology=self._ontology,
             matching_objects=True,
         )

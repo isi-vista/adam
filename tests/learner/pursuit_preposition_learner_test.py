@@ -341,7 +341,7 @@ def test_subset_preposition_in_learner():
             node.handle: PerceptionGraphPattern.from_schema(
                 first(GAILA_PHASE_1_ONTOLOGY.structural_schemata(node))
             )
-            for node in [BALL, TABLE]
+            for node in [WATER, CUP]
         }
     )
     for (
