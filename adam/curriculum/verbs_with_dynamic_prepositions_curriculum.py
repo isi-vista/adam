@@ -32,6 +32,7 @@ from adam.ontology.phase1_ontology import (
     EXTERIOR_BUT_IN_CONTACT,
     HAS_SPACE_UNDER,
     PUSH,
+    PUT,
     THEME,
     PUSH_SURFACE_AUX,
     ANIMATE,
@@ -123,7 +124,7 @@ def _push_in_template(
         background_object_variables=background,
         actions=[
             Action(
-                PUSH,
+                PUT,
                 argument_roles_to_fillers=[
                     (AGENT, agent),
                     (THEME, theme),
@@ -157,7 +158,7 @@ def _push_under_template(
         background_object_variables=background,
         actions=[
             Action(
-                PUSH,
+                PUT,
                 argument_roles_to_fillers=[
                     (AGENT, agent),
                     (THEME, theme),
@@ -199,7 +200,7 @@ def _push_beside_template(
         background_object_variables=background,
         actions=[
             Action(
-                PUSH,
+                PUT,
                 argument_roles_to_fillers=[
                     (AGENT, agent),
                     (THEME, theme),
@@ -242,7 +243,7 @@ def _push_in_front_of_behind_template(
         background_object_variables=background,
         actions=[
             Action(
-                PUSH,
+                PUT,
                 argument_roles_to_fillers=[
                     (AGENT, agent),
                     (THEME, theme),
