@@ -250,7 +250,7 @@ def test_cross_situational_learner():
     # We can use this to generate the actual pursuit curriculum
     train_curriculum = make_simple_pursuit_curriculum(
         target_objects=target_objects,
-        num_instances=15,
+        num_instances=50,
         num_objects_in_instance=3,
         num_noise_instances=0,
     )
@@ -264,11 +264,11 @@ def test_cross_situational_learner():
     rng = random.Random()
     rng.seed(0)
     learner = CrossSituationalLanguageLearner(
-        graph_match_confirmation_threshold=0.7,
+        graph_match_confirmation_threshold=0.85,
         lexicon_entry_threshold=0.7,
         rng=rng,
-        smoothing_parameter=0.00001,
-        expected_number_of_meanings=8500,
+        smoothing_parameter=0.001,
+        expected_number_of_meanings=10,
         ontology=GAILA_PHASE_1_ONTOLOGY,
     )  # type: ignore
     for training_stage in [train_curriculum]:
@@ -290,6 +290,8 @@ def test_cross_situational_learner():
             logging.info("lang: %s", test_instance_language)
             descriptions_from_learner = learner.describe(test_instance_perception)
             gold = test_instance_language.as_token_sequence()
+            print(gold)
+            print([desc.as_token_sequence() for desc in descriptions_from_learner])
             assert [desc.as_token_sequence() for desc in descriptions_from_learner][
                 0
             ] == gold
