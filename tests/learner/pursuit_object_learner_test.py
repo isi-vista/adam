@@ -250,7 +250,7 @@ def test_cross_situational_learner():
     # We can use this to generate the actual pursuit curriculum
     train_curriculum = make_simple_pursuit_curriculum(
         target_objects=target_objects,
-        num_instances=50,
+        num_instances=30,
         num_objects_in_instance=3,
         num_noise_instances=0,
     )
