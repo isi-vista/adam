@@ -615,7 +615,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 return "over"
             elif region.direction == GRAVITATIONAL_DOWN:
                 return "under"
-            # region.distance == DISTAL is not check as this does not define a specific preposition in scope for M9
+            # region.distance == DISTAL is not check as this does not define a specific preposition in scope for Phase 1
             elif region.direction and self.situation.axis_info:
                 if not self.situation.axis_info.addressee:
                     raise RuntimeError(
@@ -625,6 +625,12 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 # HACK, from M3
                 # see: https://github.com/isi-vista/adam/issues/573
                 if isinstance(region.direction.relative_to_axis, FacingAddresseeAxis):
+                    # "in front of" and "behind" is defined without a distance as you can accurate use the phrase
+                    # regardless of distance example:
+                    # "the teacher is in front of your laptop"
+                    # (Assuming the laptop is near the back of class and the addressee is facing the front of the room)
+                    # "your friend is in front of your laptop"
+                    # (Assuming the friend is one row up in the classroom)
                     if region.direction.positive:
                         return "in front of"
                     else:
