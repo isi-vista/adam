@@ -240,10 +240,10 @@ def _make_push_with_prepositions(
     theme = standard_object("theme", INANIMATE_OBJECT)
     goal_reference = standard_object("goal_reference", INANIMATE_OBJECT)
     goal_in = standard_object(
-        "goal_reference", INANIMATE_OBJECT, required_properties=[HOLLOW]
+        "goal_in", INANIMATE_OBJECT, required_properties=[HOLLOW]
     )
     goal_under = standard_object(
-        "goal_reference", INANIMATE_OBJECT, required_properties=[HAS_SPACE_UNDER]
+        "goal_under", INANIMATE_OBJECT, required_properties=[HAS_SPACE_UNDER]
     )
     surface = standard_object(
         "surface", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
