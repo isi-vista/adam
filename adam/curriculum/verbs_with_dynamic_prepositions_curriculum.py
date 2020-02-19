@@ -407,7 +407,9 @@ def _make_push_with_prepositions(
     )
 
 
-def _make_sit_with_prepositions(num_samples: int = 5, *, noise_objects: int = 0) -> Phase1InstanceGroup:
+def _make_sit_with_prepositions(
+    num_samples: int = 5, *, noise_objects: int = 0
+) -> Phase1InstanceGroup:
     agent = standard_object("agent", THING, required_properties=[ANIMATE])
     seat = standard_object(
         "seat", INANIMATE_OBJECT, required_properties=[CAN_BE_SAT_ON_BY_PEOPLE]
@@ -440,7 +442,9 @@ def _make_sit_with_prepositions(num_samples: int = 5, *, noise_objects: int = 0)
             flatten(
                 [
                     sampled(
-                        _sit_in_template(agent, seat_in, surface, background, syntax_hints),
+                        _sit_in_template(
+                            agent, seat_in, surface, background, syntax_hints
+                        ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER,
                         max_to_sample=num_samples,
@@ -448,7 +452,7 @@ def _make_sit_with_prepositions(num_samples: int = 5, *, noise_objects: int = 0)
                     for syntax_hints in syntax_hints_options
                 ]
             ),
-        )
+        ),
     )
 
 
