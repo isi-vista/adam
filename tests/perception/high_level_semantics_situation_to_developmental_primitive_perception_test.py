@@ -113,7 +113,6 @@ def test_person_and_ball():
         "leg-segment_3",
         "foot_1",
         "the ground",
-        "learner",
     }
 
     assert person_and_ball_perception.frames[0].relations
@@ -497,7 +496,7 @@ def test_explicit_ground():
     object_handles = set(obj.debug_handle for obj in perceived_objects)
 
     # assert that a second "ground" object was not generated
-    assert object_handles == {"the ground", "learner"}
+    assert object_handles == {"the ground"}
 
 
 def test_perceive_relations_during():
