@@ -274,7 +274,7 @@ def _sit_on_template(
                 auxiliary_variable_bindings=[(SIT_THING_SAT_ON, seat)],
             )
         ],
-        constraining_relations=[bigger_than(surface, seat)],
+        constraining_relations=[bigger_than(surface, seat), bigger_than(seat, agent)],
         syntax_hints=syntax_hints,
     )
 
