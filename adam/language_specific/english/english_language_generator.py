@@ -609,8 +609,6 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 return "on"
             elif region.distance == PROXIMAL and not region.direction:
                 return "to"
-            elif region.distance == INTERIOR:
-                return "in"
             elif region.direction == GRAVITATIONAL_UP:
                 return "over"
             elif region.direction == GRAVITATIONAL_DOWN:
