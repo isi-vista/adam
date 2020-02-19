@@ -8,7 +8,7 @@ from immutablecollections import ImmutableSet, immutableset, immutablesetmultidi
 from more_itertools import first, only
 from networkx import DiGraph
 
-from adam.axes import FacingAddresseeAxis
+from adam.axes import FacingAddresseeAxis, GRAVITATIONAL_DOWN_TO_UP_AXIS
 from adam.language.dependency import (
     DependencyRole,
     DependencyTree,
@@ -71,6 +71,7 @@ from adam.ontology.phase1_spatial_relations import (
     PROXIMAL,
     Region,
     TOWARD,
+    GRAVITATIONAL_UP,
 )
 from adam.random_utils import SequenceChooser
 from adam.relation import Relation
@@ -607,8 +608,41 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 # TODO: put constraints on the axis
             ):
                 return "on"
+            elif region.distance == PROXIMAL and not region.direction:
+                return "to"
+            elif region.direction == GRAVITATIONAL_UP:
+                return "over"
             elif region.direction == GRAVITATIONAL_DOWN:
                 return "under"
+            # region.distance == DISTAL is not check as this does not define a specific preposition in scope for Phase 1
+            elif region.direction and self.situation.axis_info:
+                if not self.situation.axis_info.addressee:
+                    raise RuntimeError(
+                        f"Unable to translate region into a preposition because an addressee is lacking. "
+                        f"Region: {region}\nSituation: {self.situation}"
+                    )
+                # HACK, from M3
+                # see: https://github.com/isi-vista/adam/issues/573
+                if isinstance(region.direction.relative_to_axis, FacingAddresseeAxis):
+                    # "in front of" and "behind" is defined without a distance as you can accurate use the phrase
+                    # regardless of distance example:
+                    # "the teacher is in front of your laptop"
+                    # (Assuming the laptop is near the back of class and the addressee is facing the front of the room)
+                    # "your friend is in front of your laptop"
+                    # (Assuming the friend is one row up in the classroom)
+                    if region.direction.positive:
+                        return "in front of"
+                    else:
+                        return "behind"
+                elif (
+                    region.direction.relative_to_axis != GRAVITATIONAL_DOWN_TO_UP_AXIS
+                    and region.distance == PROXIMAL
+                ):
+                    return "beside"
+                else:
+                    raise RuntimeError(
+                        f"Don't know how to translate {region} to a preposition yet"
+                    )
             else:
                 raise RuntimeError(
                     f"Don't know how to translate {region} to a preposition yet"
@@ -748,6 +782,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                             preposition = "under"
                     else:
                         # TODO: hack for M3; revisit in cleanup
+                        # see: https://github.com/isi-vista/adam/issues/573
                         if isinstance(
                             region.direction.relative_to_axis, FacingAddresseeAxis
                         ):

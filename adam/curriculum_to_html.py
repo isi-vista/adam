@@ -35,6 +35,9 @@ from adam.curriculum.preposition_curriculum import make_prepositions_curriculum
 from adam.curriculum.pursuit_curriculum import make_pursuit_curriculum
 from adam.curriculum.phase1_curriculum import build_gaila_phase_1_curriculum
 from adam.curriculum import InstanceGroup
+from adam.curriculum.verbs_with_dynamic_prepositions_curriculum import (
+    make_verb_with_dynamic_prepositions_curriculum,
+)
 from adam.geon import Geon
 from adam.axes import WORLD_AXES, AxesInfo, _GravitationalAxis
 from adam.language.dependency import LinearizedDependencyTree
@@ -112,6 +115,7 @@ STR_TO_CURRICULUM: Mapping[str, Callable[[], Iterable[Phase1InstanceGroup]]] = {
     "prepositions": make_prepositions_curriculum,
     "pursuit": make_pursuit_curriculum,
     "m6-curriculum": make_m6_curriculum,
+    "dynamic-prepositions": make_verb_with_dynamic_prepositions_curriculum,
 }
 
 

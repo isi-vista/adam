@@ -13,15 +13,24 @@ from adam.ontology import (
     REQUIRED_ONTOLOGY_NODES,
     THING,
     minimal_ontology_graph,
+    IS_ADDRESSEE,
 )
 from adam.ontology.ontology import Ontology
-from adam.ontology.phase1_ontology import RECOGNIZED_PARTICULAR_PROPERTY
+from adam.ontology.phase1_ontology import (
+    RECOGNIZED_PARTICULAR_PROPERTY,
+    LEARNER,
+    BALL,
+    near,
+    GAILA_PHASE_1_ONTOLOGY,
+    MOM,
+)
 from adam.ontology.structural_schema import ObjectStructuralSchema
 from adam.random_utils import RandomChooser
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
     all_possible,
     object_variable,
+    sampled,
 )
 from adam.axes import WORLD_AXES
 
@@ -41,6 +50,7 @@ for required_ontology_node in REQUIRED_ONTOLOGY_NODES:
 # so here we do it as a property
 _TOY_VEHICLE = OntologyNode("toy_vehicle")
 _subtype(_TOY_VEHICLE, PROPERTY)
+_subtype(IS_ADDRESSEE, PROPERTY)
 
 _TOY = OntologyNode("toy")
 _subtype(_TOY, THING)
@@ -61,6 +71,8 @@ _MOM = OntologyNode("mom", [CAN_FILL_TEMPLATE_SLOT])
 _subtype(_MOM, _PERSON)
 _DAD = OntologyNode("dad", [CAN_FILL_TEMPLATE_SLOT])
 _subtype(_DAD, _PERSON)
+_LEARNER = OntologyNode("learner", [CAN_FILL_TEMPLATE_SLOT])
+_subtype(_LEARNER, _PERSON)
 
 
 def _testing_schemata(
@@ -74,7 +86,7 @@ def _testing_schemata(
 _TESTING_ONTOLOGY = Ontology(
     "test-ontology",
     _TESTING_ONTOLOGY_GRAPH,
-    structural_schemata=_testing_schemata([_MOM, _DAD, _BALL, _TRUCK, _CAR]),
+    structural_schemata=_testing_schemata([_MOM, _DAD, _BALL, _TRUCK, _CAR, _LEARNER]),
 )
 
 
@@ -90,8 +102,10 @@ def test_two_objects():
     reference_object_sets = {
         immutableset(["mom", "toy_truck"]),
         immutableset(["dad", "toy_truck"]),
+        immutableset(["learner", "toy_truck"]),
         immutableset(["mom", "toy_car"]),
         immutableset(["dad", "toy_car"]),
+        immutableset(["learner", "toy_car"]),
     }
 
     generated_object_sets = set(
@@ -103,7 +117,76 @@ def test_two_objects():
             two_object_template,
             ontology=_TESTING_ONTOLOGY,
             chooser=RandomChooser.for_seed(0),
+            default_addressee_node=_LEARNER,
         )
     )
 
     assert generated_object_sets == reference_object_sets
+
+
+def test_learner_as_default_addressee():
+    learner = object_variable("learner", root_node=LEARNER)
+    ball = object_variable("ball", root_node=BALL)
+    template_with_learner = Phase1SituationTemplate(
+        "template with learner",
+        salient_object_variables=[learner, ball],
+        asserted_always_relations=[near(learner, ball)],
+    )
+
+    template_with_out_learner = Phase1SituationTemplate(
+        "template with out learner",
+        salient_object_variables=[object_variable("ball", root_node=BALL)],
+    )
+
+    template_with_addressee = Phase1SituationTemplate(
+        "template with addressee",
+        salient_object_variables=[
+            object_variable("mom", root_node=MOM, added_properties=[IS_ADDRESSEE])
+        ],
+    )
+
+    situation_with_learner = sampled(
+        template_with_learner,
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        chooser=RandomChooser.for_seed(0),
+        max_to_sample=1,
+    )
+
+    situation_with_out_learner = sampled(
+        template_with_out_learner,
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        chooser=RandomChooser.for_seed(0),
+        max_to_sample=1,
+    )
+
+    situation_with_addressee = sampled(
+        template_with_addressee,
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        chooser=RandomChooser.for_seed(0),
+        max_to_sample=1,
+    )
+
+    for object_ in situation_with_learner[0].all_objects:
+        if object_.ontology_node == LEARNER:
+            assert IS_ADDRESSEE in object_.properties
+            break
+
+    assert situation_with_learner[0].axis_info
+    assert situation_with_learner[0].axis_info.addressee
+
+    assert len(situation_with_out_learner[0].all_objects) == 2
+
+    for object_ in situation_with_out_learner[0].all_objects:
+        if object_.ontology_node == LEARNER:
+            assert IS_ADDRESSEE in object_.properties
+            break
+
+    assert situation_with_out_learner[0].axis_info
+    assert situation_with_out_learner[0].axis_info.addressee
+
+    for object_ in situation_with_addressee[0].all_objects:
+        if object_.ontology_node == LEARNER:
+            assert False
+
+    assert situation_with_addressee[0].axis_info
+    assert situation_with_addressee[0].axis_info.addressee
