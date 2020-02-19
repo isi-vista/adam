@@ -239,9 +239,7 @@ def _make_push_with_prepositions(
     agent = standard_object("agent", THING, required_properties=[ANIMATE])
     theme = standard_object("theme", INANIMATE_OBJECT)
     goal_reference = standard_object("goal_reference", INANIMATE_OBJECT)
-    goal_in = standard_object(
-        "goal_in", INANIMATE_OBJECT, required_properties=[HOLLOW]
-    )
+    goal_in = standard_object("goal_in", INANIMATE_OBJECT, required_properties=[HOLLOW])
     goal_under = standard_object(
         "goal_under", INANIMATE_OBJECT, required_properties=[HAS_SPACE_UNDER]
     )
