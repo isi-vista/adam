@@ -284,7 +284,7 @@ class AbstractPursuitLearner(
 
         # b.i) If the hypothesis is confirmed, we reinforce it.
         hypothesis_is_confirmed = partial_match.matched_exactly()
-        if hypothesis_is_confirmed and partial_match.partial_match_hypothesis():
+        if hypothesis_is_confirmed and partial_match.partial_match_hypothesis:
             logging.info("Current hypothesis is confirmed.")
             # Reinforce A(w,h)
             new_hypothesis_score = current_hypothesis_score + self._learning_factor * (
@@ -314,7 +314,7 @@ class AbstractPursuitLearner(
             hypotheses_to_reward: List[HypothesisT] = []
             if (
                 partial_match.match_score() >= self._graph_match_confirmation_threshold
-                and partial_match.partial_match_hypothesis()
+                and partial_match.partial_match_hypothesis
             ):
                 logging.info(
                     "Introducing partial match as a new hypothesis; %s of %s nodes "
@@ -325,7 +325,7 @@ class AbstractPursuitLearner(
                 # we know if partial_match_hypothesis is non-None above, it still will be.
                 # we know if partial_match_hypothesis is non-None above, it still will be.
                 hypotheses_to_reward.append(  # type: ignore
-                    partial_match.partial_match_hypothesis()
+                    partial_match.partial_match_hypothesis
                 )
 
             else:
@@ -407,14 +407,9 @@ class AbstractPursuitLearner(
         *match_ratio* should be 1.0 exactly for a perfect match.
         """
 
+        partial_match_hypothesis: Optional[HypothesisT2] = attrib(kw_only=True)
         num_nodes_matched: int = attrib(validator=instance_of(int), kw_only=True)
         num_nodes_in_pattern: int = attrib(validator=instance_of(int), kw_only=True)
-
-        @abstractmethod
-        def partial_match_hypothesis(self) -> Optional[HypothesisT2]:
-            """
-            Returns a hypothesis corresponding to the partial match.
-            """
 
         @abstractmethod
         def matched_exactly(self) -> bool:
@@ -425,7 +420,7 @@ class AbstractPursuitLearner(
         @abstractmethod
         def match_score(self) -> float:
             """
-            Returns a score (e.g. ratio of matching nodes) indicating how much the hypotheses match
+            Returns a score in [0.0, 1.0] where 0.0 indicates no match at all and 1.0 indicates a perfect match
             """
 
     def lexicon_step(self, item: LearnedItemT) -> None:
@@ -783,14 +778,11 @@ class ObjectPursuitLearner(
     class ObjectHypothesisPartialMatch(
         AbstractPursuitLearner.PartialMatch[ObjectPattern]
     ):
-        _partial_match_hypothesis: Optional[ObjectPattern] = attrib(
+        partial_match_hypothesis: Optional[ObjectPattern] = attrib(
             validator=optional(instance_of(ObjectPattern))
         )
         num_nodes_matched: int = attrib(validator=instance_of(int), kw_only=True)
         num_nodes_in_pattern: int = attrib(validator=instance_of(int), kw_only=True)
-
-        def partial_match_hypothesis(self) -> Optional[ObjectPattern]:
-            return self._partial_match_hypothesis
 
         def matched_exactly(self) -> bool:
             return self.num_nodes_matched == self.num_nodes_in_pattern
@@ -1157,14 +1149,11 @@ class PrepositionPursuitLearner(
     class PrepositionHypothesisPartialMatch(
         AbstractPursuitLearner.PartialMatch[PrepositionPattern]
     ):
-        _partial_match_hypothesis: Optional[PrepositionPattern] = attrib(
+        partial_match_hypothesis: Optional[PrepositionPattern] = attrib(
             validator=optional(instance_of(PrepositionPattern))
         )
         num_nodes_matched: int = attrib(validator=instance_of(int), kw_only=True)
         num_nodes_in_pattern: int = attrib(validator=instance_of(int), kw_only=True)
-
-        def partial_match_hypothesis(self) -> Optional[PrepositionPattern]:
-            return self._partial_match_hypothesis
 
         def matched_exactly(self) -> bool:
             return self.num_nodes_matched == self.num_nodes_in_pattern
