@@ -96,9 +96,9 @@ class CrossSituationalLanguageLearner(
     # Threshold value for adding word to lexicon
     _lexicon_entry_threshold: float = attrib(default=0.8, kw_only=True)
     # Counter to be used to prevent prematurely lexicalizing novel words
-    _word_meaning_pairs_to_number_of_observations: Dict[Tuple[str, PerceptionGraphPattern], int] = attrib(
-        init=False, default=defaultdict(int)
-    )
+    _word_meaning_pairs_to_number_of_observations: Dict[
+        Tuple[str, PerceptionGraphPattern], int
+    ] = attrib(init=False, default=defaultdict(int))
     _graph_logger: Optional[GraphLogger] = attrib(
         validator=optional(instance_of(GraphLogger)), default=None
     )
@@ -224,16 +224,13 @@ class CrossSituationalLanguageLearner(
                         match.matching_subgraph
                     ] = (
                         self.alignment_probability(
-                            word,
-                            words,
-                            meaning,
-                            probabilities_and_hypotheses_for_words,
+                            word, words, meaning, probabilities_and_hypotheses_for_words
                         )
-                        + self._words_to_hypotheses_and_scores[word][
-                            matching_hypothesis
-                        ]
+                        + self._words_to_hypotheses_and_scores[word][matching_hypothesis]
                     )
-                    self._word_meaning_pairs_to_number_of_observations[(word, match.matching_subgraph)] += 1
+                    self._word_meaning_pairs_to_number_of_observations[
+                        (word, match.matching_subgraph)
+                    ] += 1
                     if matching_hypothesis.check_isomorphism(match.matching_subgraph):
                         pass
                     else:
@@ -249,8 +246,9 @@ class CrossSituationalLanguageLearner(
                     ] = self.alignment_probability(
                         word, words, meaning, probabilities_and_hypotheses_for_words
                     )
-                    self._word_meaning_pairs_to_number_of_observations[(word, new_hypothesis)] += 1
-
+                    self._word_meaning_pairs_to_number_of_observations[
+                        (word, new_hypothesis)
+                    ] += 1
 
             # self.lexicon_step(word)
 
@@ -298,19 +296,30 @@ class CrossSituationalLanguageLearner(
                 new_hypothesis = PerceptionGraphPattern.from_graph(
                     meaning
                 ).perception_graph_pattern
-                normalizing_factor = self._expected_number_of_meanings * self._smoothing_parameter
+                normalizing_factor = (
+                    self._expected_number_of_meanings * self._smoothing_parameter
+                )
                 for other_meaning in self._words_to_hypotheses_and_scores[word]:
-                    normalizing_factor += self._words_to_hypotheses_and_scores[word][other_meaning]
-                probabilities[new_hypothesis] = self._smoothing_parameter / normalizing_factor
+                    normalizing_factor += self._words_to_hypotheses_and_scores[word][
+                        other_meaning
+                    ]
+                probabilities[new_hypothesis] = (
+                    self._smoothing_parameter / normalizing_factor
+                )
         for hypothesis in self._words_to_hypotheses_and_scores[word]:
             normalizing_factor = 0
             for other_hypothesis in self._words_to_hypotheses_and_scores[word]:
-                normalizing_factor += self._words_to_hypotheses_and_scores[word][other_hypothesis]
+                normalizing_factor += self._words_to_hypotheses_and_scores[word][
+                    other_hypothesis
+                ]
             normalizing_factor -= self._words_to_hypotheses_and_scores[word][hypothesis]
             probabilities[hypothesis] = (
                 self._words_to_hypotheses_and_scores[word][hypothesis]
                 + self._smoothing_parameter
-            ) / (normalizing_factor + (self._expected_number_of_meanings * self._smoothing_parameter))
+            ) / (
+                normalizing_factor
+                + (self._expected_number_of_meanings * self._smoothing_parameter)
+            )
         return probabilities
 
     @attrs(frozen=True)
@@ -369,11 +378,13 @@ class CrossSituationalLanguageLearner(
                 probability_of_meaning_given_word,
             ) = leading_hypothesis_entry
 
-            times_word_has_been_seen = self._words_to_number_of_observations[word]
+            times_word_meaning_pair_has_been_seen = self._word_meaning_pairs_to_number_of_observations[
+                (word, leading_hypothesis_pattern)
+            ]
             logging.info(
                 "Prob of meaning given word: %s, Times seen: %s",
                 probability_of_meaning_given_word,
-                times_word_has_been_seen,
+                times_word_meaning_pair_has_been_seen,
             )
             # file (w, h^) into the lexicon
 
@@ -381,7 +392,7 @@ class CrossSituationalLanguageLearner(
             # TODO: We sometimes prematurely lexicalize words, so we use this arbitrary counter
             #  threshold
             if probability_of_meaning_given_word > self._lexicon_entry_threshold:
-                if times_word_has_been_seen > 5:
+                if times_word_meaning_pair_has_been_seen > 5:
                     self._lexicon[word] = leading_hypothesis_pattern
                     # Remove the word from hypotheses
                     self._words_to_hypotheses_and_scores.pop(word)
@@ -504,9 +515,9 @@ class CrossSituationalLanguageLearner(
                 # but we do.
                 # Hardcoded ignoring of 'a' and 'd'. Need to check if this is necessary starting
                 # with 'a' then 'd'
-                if word == 'd':
+                if word == "d":
                     continue
-                elif word == 'a':
+                elif word == "a":
                     continue
                 leading_hypothesis_pair = self._leading_hypothesis_for(  # type: ignore
                     word
@@ -539,7 +550,7 @@ class CrossSituationalLanguageLearner(
             )
             # Need to test if necessary or not
             if self._word_meaning_pairs_to_number_of_observations[(word, leading[0])] < 5:
-                logging.info(f'{word} | {leading[0]} pair not seen enough')
+                logging.info(f"{word} | {leading[0]} pair not seen enough")
                 hypotheses_and_probabilities_for_word.pop(leading[0])
             else:
                 return leading
