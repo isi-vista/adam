@@ -200,7 +200,6 @@ class SituationVisualizer(ShowBase):
         # nested
         else:
             new_model.reparentTo(parent)
-        # new_model.setPos(position[0], position[1], position[2])
         new_model.setColor((color.red / 255, color.green / 255, color.blue / 255, 1.0))
 
         return new_model
@@ -239,7 +238,6 @@ class SituationVisualizer(ShowBase):
             self.geo_nodes[new_node.name] = new_node
         else:
             new_node.reparentTo(parent)
-        # new_node.setPos(*position)
         return new_node
 
     def clear_scene(self) -> None:
