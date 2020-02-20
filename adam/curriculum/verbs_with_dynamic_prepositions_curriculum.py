@@ -4,7 +4,11 @@ from typing import Iterable
 from immutablecollections import immutableset
 from more_itertools import flatten
 
-from adam.axes import HorizontalAxisOfObject, FacingAddresseeAxis
+from adam.axes import (
+    HorizontalAxisOfObject,
+    FacingAddresseeAxis,
+    GRAVITATIONAL_AXIS_FUNCTION,
+)
 from adam.curriculum.curriculum_utils import (
     standard_object,
     phase1_instances,
@@ -28,6 +32,8 @@ from adam.ontology.phase1_ontology import (
     INANIMATE_OBJECT,
     CAN_HAVE_THINGS_RESTING_ON_THEM,
     GO,
+    _GO_GOAL,
+    above,
 )
 from adam.ontology.phase1_spatial_relations import (
     Region,
@@ -37,6 +43,8 @@ from adam.ontology.phase1_spatial_relations import (
     GRAVITATIONAL_DOWN,
     DISTAL,
     GRAVITATIONAL_UP,
+    SpatialPath,
+    VIA,
 )
 from adam.situation import Action
 from adam.situation.templates.phase1_templates import (
@@ -314,12 +322,13 @@ def _go_beside_template(
     )
 
 
-def _go_behind_template(
+def _go_behind_in_front_template(
     agent: TemplateObjectVariable,
     goal_object: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
     *,
     is_distal: bool,
+    is_behind: bool,
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
         f"go_behind-{agent.handle}-behind-{goal_object.handle}",
@@ -336,7 +345,7 @@ def _go_behind_template(
                             goal_object,
                             distance=DISTAL if is_distal else PROXIMAL,
                             direction=Direction(
-                                positive=False,
+                                positive=False if is_behind else True,
                                 relative_to_axis=FacingAddresseeAxis(goal_object),
                             ),
                         ),
@@ -347,15 +356,17 @@ def _go_behind_template(
     )
 
 
-def _go_in_front_of_template(
+def _go_over_under_template(
     agent: TemplateObjectVariable,
     goal_object: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
     *,
-    is_distal,
+    is_distal: bool,
+    is_over: bool,
 ) -> Phase1SituationTemplate:
+    handle = "over" if is_over else "under"
     return Phase1SituationTemplate(
-        f"go_in_front_of-{agent.handle}-behind-{goal_object.handle}",
+        f"go_{handle}-{agent.handle}-{handle}-{goal_object.handle}",
         salient_object_variables=[agent, goal_object],
         background_object_variables=background,
         actions=[
@@ -368,75 +379,98 @@ def _go_in_front_of_template(
                         Region(
                             goal_object,
                             distance=DISTAL if is_distal else PROXIMAL,
-                            direction=Direction(
-                                positive=True,
-                                relative_to_axis=FacingAddresseeAxis(goal_object),
+                            direction=GRAVITATIONAL_UP if is_over else GRAVITATIONAL_DOWN,
+                        ),
+                    ),
+                ],
+            )
+        ],
+    )
+
+
+def _go_behind_in_front_path_template(
+    agent: TemplateObjectVariable,
+    goal_object: TemplateObjectVariable,
+    path_object: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+    *,
+    is_behind: bool,
+) -> Phase1SituationTemplate:
+    additional_background = [goal_object, path_object]
+    additional_background.extend(background)
+    total_background = immutableset(additional_background)
+    handle = "behind" if is_behind else "in-front-of"
+    return Phase1SituationTemplate(
+        f"go_{handle}-{agent.handle}-{handle}-{goal_object.handle}-via-{path_object.handle}",
+        salient_object_variables=[agent],
+        background_object_variables=total_background,
+        actions=[
+            Action(
+                GO,
+                argument_roles_to_fillers=[(AGENT, agent)],
+                auxiliary_variable_bindings=[(_GO_GOAL, goal_object)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            path_object,
+                            SpatialPath(
+                                operator=VIA,
+                                reference_object=path_object,
+                                reference_axis=FacingAddresseeAxis(path_object),
+                                orientation_changed=True,
                             ),
-                        ),
-                    ),
-                ],
+                        )
+                    ],
+                    # TODO: ADD 'at_some_point' condition for in_front or behind regional conditions
+                    # See: https://github.com/isi-vista/adam/issues/583
+                ),
             )
         ],
+        gazed_objects=[agent],
     )
 
 
-def _go_over_template(
+def _go_over_under_path_template(
     agent: TemplateObjectVariable,
     goal_object: TemplateObjectVariable,
+    path_object: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
     *,
-    is_distal: bool,
+    is_over: bool,
 ) -> Phase1SituationTemplate:
+    additional_background = [goal_object, path_object]
+    additional_background.extend(background)
+    total_background = immutableset(additional_background)
+    handle = "over" if is_over else "under"
     return Phase1SituationTemplate(
-        f"go_over-{agent.handle}-over-{goal_object.handle}",
-        salient_object_variables=[agent, goal_object],
-        background_object_variables=background,
+        f"go_{handle}-{agent.handle}-{handle}-{goal_object.handle}-via-{path_object.handle}",
+        salient_object_variables=[agent],
+        background_object_variables=total_background,
         actions=[
             Action(
                 GO,
-                argument_roles_to_fillers=[
-                    (AGENT, agent),
-                    (
-                        GOAL,
-                        Region(
-                            goal_object,
-                            distance=DISTAL if is_distal else PROXIMAL,
-                            direction=GRAVITATIONAL_UP,
-                        ),
-                    ),
-                ],
+                argument_roles_to_fillers=[(AGENT, agent)],
+                auxiliary_variable_bindings=[(_GO_GOAL, goal_object)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            path_object,
+                            SpatialPath(
+                                operator=VIA,
+                                reference_object=path_object,
+                                reference_axis=GRAVITATIONAL_AXIS_FUNCTION,
+                            ),
+                        )
+                    ],
+                    at_some_point=[
+                        above(agent, path_object)
+                        if is_over
+                        else above(path_object, agent)
+                    ],
+                ),
             )
         ],
-    )
-
-
-def _go_under_template(
-    agent: TemplateObjectVariable,
-    goal_object: TemplateObjectVariable,
-    background: Iterable[TemplateObjectVariable],
-    *,
-    is_distal: bool,
-) -> Phase1SituationTemplate:
-    return Phase1SituationTemplate(
-        f"go_under-{agent.handle}-under-{goal_object.handle}",
-        salient_object_variables=[agent, goal_object],
-        background_object_variables=background,
-        actions=[
-            Action(
-                GO,
-                argument_roles_to_fillers=[
-                    (AGENT, agent),
-                    (
-                        GOAL,
-                        Region(
-                            goal_object,
-                            distance=DISTAL if is_distal else PROXIMAL,
-                            direction=GRAVITATIONAL_DOWN,
-                        ),
-                    ),
-                ],
-            )
-        ],
+        gazed_objects=[agent],
     )
 
 
@@ -545,6 +579,11 @@ def _make_go_with_prepositions(num_samples: int = 5, *, noise_objects: int = 0):
     goal_object_hollow = standard_object(
         "goal_object_hollow", required_properties=[HOLLOW]
     )
+    path_object = standard_object(
+        "path_object",
+        required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM, HAS_SPACE_UNDER],
+    )
+
     background = immutableset(
         standard_object(f"noise_object_{x}") for x in range(noise_objects)
     )
@@ -588,60 +627,74 @@ def _make_go_with_prepositions(num_samples: int = 5, *, noise_objects: int = 0):
                     for is_right in BOOL_SET
                 ]
             ),
-            # Behind
+            # Behind & In Front Of
             flatten(
                 [
                     sampled(
-                        _go_behind_template(
-                            agent, goal_object, background, is_distal=is_distal
+                        _go_behind_in_front_template(
+                            agent,
+                            goal_object,
+                            background,
+                            is_distal=is_distal,
+                            is_behind=is_behind,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER,
                         max_to_sample=num_samples,
                     )
                     for is_distal in BOOL_SET
+                    for is_behind in BOOL_SET
                 ]
             ),
-            # In Front Of
+            # Over & Under
             flatten(
                 [
                     sampled(
-                        _go_in_front_of_template(
-                            agent, goal_object, background, is_distal=is_distal
+                        _go_over_under_template(
+                            agent,
+                            goal_object,
+                            background,
+                            is_distal=is_distal,
+                            is_over=is_over,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER,
                         max_to_sample=num_samples,
                     )
                     for is_distal in BOOL_SET
+                    for is_over in BOOL_SET
                 ]
             ),
-            # Over
+            # Behind & In Front Of Paths
             flatten(
                 [
                     sampled(
-                        _go_over_template(
-                            agent, goal_object, background, is_distal=is_distal
+                        _go_behind_in_front_path_template(
+                            agent,
+                            goal_object,
+                            path_object,
+                            background,
+                            is_behind=is_behind,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER,
                         max_to_sample=num_samples,
                     )
-                    for is_distal in BOOL_SET
+                    for is_behind in BOOL_SET
                 ]
             ),
-            # Under
+            # Over & Under Paths
             flatten(
                 [
                     sampled(
-                        _go_under_template(
-                            agent, goal_object, background, is_distal=is_distal
+                        _go_over_under_path_template(
+                            agent, goal_object, path_object, background, is_over=is_over
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER,
                         max_to_sample=num_samples,
                     )
-                    for is_distal in BOOL_SET
+                    for is_over in BOOL_SET
                 ]
             ),
         ),
