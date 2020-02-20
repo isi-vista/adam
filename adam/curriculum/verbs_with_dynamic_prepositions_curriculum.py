@@ -1,3 +1,4 @@
+from itertools import chain
 from typing import Iterable
 
 from immutablecollections import immutableset
@@ -10,6 +11,9 @@ from adam.curriculum.curriculum_utils import (
     PHASE1_CHOOSER,
     Phase1InstanceGroup,
     GROUND_OBJECT_TEMPLATE,
+)
+from adam.language_specific.english.english_language_generator import (
+    USE_ADVERBIAL_PATH_MODIFIER,
 )
 from adam.ontology import THING
 from adam.ontology.during import DuringAction
@@ -65,7 +69,6 @@ def _throw_to_template(
     theme: TemplateObjectVariable,
     goal_reference: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
-    is_distal: bool,
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
         f"{agent.handle}-throws-{theme.handle}-to-{goal_reference.handle}",
@@ -77,12 +80,7 @@ def _throw_to_template(
                 argument_roles_to_fillers=[
                     (AGENT, agent),
                     (THEME, theme),
-                    (
-                        GOAL,
-                        Region(
-                            goal_reference, distance=DISTAL if is_distal else PROXIMAL
-                        ),
-                    ),
+                    (GOAL, Region(goal_reference, distance=PROXIMAL)),
                 ],
             )
         ],
@@ -96,7 +94,7 @@ def _throw_to_recipient_template(
     theme: TemplateObjectVariable,
     goal: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
-    is_distal: bool,
+    *,
     is_caught: bool,
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
@@ -111,7 +109,7 @@ def _throw_to_recipient_template(
                 else [
                     (AGENT, agent),
                     (THEME, theme),
-                    (GOAL, Region(goal, distance=DISTAL if is_distal else PROXIMAL)),
+                    (GOAL, Region(goal, distance=PROXIMAL)),
                 ],
             )
         ],
@@ -183,7 +181,7 @@ def _throw_beside_template(
     theme: TemplateObjectVariable,
     goal_reference: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
-    is_distal: bool,
+    *,
     is_right: bool,
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
@@ -206,7 +204,7 @@ def _throw_beside_template(
                                     goal_reference, index=0
                                 ),
                             ),
-                            distance=DISTAL if is_distal else PROXIMAL,
+                            distance=PROXIMAL,
                         ),
                     ),
                 ],
@@ -221,6 +219,7 @@ def _throw_in_front_of_behind_template(
     theme: TemplateObjectVariable,
     goal_reference: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
+    *,
     is_distal: bool,
     is_in_front: bool,
 ) -> Phase1SituationTemplate:
@@ -258,6 +257,7 @@ def _throw_under_template(
     theme: TemplateObjectVariable,
     goal_reference: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
+    *,
     is_distal: bool,
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
@@ -295,7 +295,6 @@ def _throw_path_over_template(
     object_in_path: TemplateObjectVariable,
     implicit_goal_reference: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
-    is_distal: bool,
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
         f"{agent.handle}-throws-{theme.handle}-with-path-over-{object_in_path.handle}",
@@ -306,13 +305,7 @@ def _throw_path_over_template(
                 THROW,
                 argument_roles_to_fillers=[(AGENT, agent), (THEME, theme)],
                 auxiliary_variable_bindings=[
-                    (
-                        THROW_GOAL,
-                        Region(
-                            implicit_goal_reference,
-                            distance=DISTAL if is_distal else PROXIMAL,
-                        ),
-                    )
+                    (THROW_GOAL, Region(implicit_goal_reference, distance=PROXIMAL))
                 ],
                 during=DuringAction(
                     at_some_point=[strictly_above(theme, object_in_path)]
@@ -330,6 +323,7 @@ def _throw_path_under_template(
     object_in_path: TemplateObjectVariable,
     implicit_goal_reference: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
+    *,
     is_distal: bool,
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
@@ -363,12 +357,12 @@ def _throw_path_under_template(
 
 def _throw_up_down_template(
     # Up: the thrown object goes above the thrower at some point
-    # Down: the thrown object travels downward
+    # Down: the thrown object only travels downward
     agent: TemplateObjectVariable,
     theme: TemplateObjectVariable,
     implicit_goal_reference: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
-    is_distal: bool,
+    *,
     is_up: bool,
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
@@ -380,13 +374,7 @@ def _throw_up_down_template(
                 THROW,
                 argument_roles_to_fillers=[(AGENT, agent), (THEME, theme)],
                 auxiliary_variable_bindings=[
-                    (
-                        THROW_GOAL,
-                        Region(
-                            implicit_goal_reference,
-                            distance=DISTAL if is_distal else PROXIMAL,
-                        ),
-                    )
+                    (THROW_GOAL, Region(implicit_goal_reference, distance=PROXIMAL))
                 ],
                 during=DuringAction(at_some_point=[above(theme, agent)])
                 if is_up
@@ -401,303 +389,168 @@ def _throw_up_down_template(
             )
         ],
         constraining_relations=[bigger_than(agent, theme)],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
     )
 
 
-def _make_throw_to(
+def _make_throw_with_prepositions(
     num_samples: int = 5, *, noise_objects: int = 0
 ) -> Phase1InstanceGroup:
     agent = standard_object("agent", THING, required_properties=[ANIMATE])
     theme = standard_object("theme", INANIMATE_OBJECT)
+    theme_can_have = standard_object(
+        "theme_can_have", INANIMATE_OBJECT, required_properties=[PERSON_CAN_HAVE]
+    )
     goal_reference = standard_object("goal_reference", THING)
-    background = immutableset(
-        standard_object(f"noise_object_{x}") for x in range(noise_objects)
+    goal_catcher = standard_object("goal_catcher", THING, required_properties=[ANIMATE])
+    goal_in = standard_object("goal_in", THING, required_properties=[HOLLOW])
+    goal_on = standard_object(
+        "goal_on", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
     )
-
-    return phase1_instances(
-        "Throw To",
-        flatten(
-            [
-                sampled(
-                    _throw_to_template(
-                        agent, theme, goal_reference, background, is_distal
-                    ),
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER,
-                    max_to_sample=num_samples,
-                )
-                for is_distal in BOOL_SET
-            ]
-        ),
-    )
-
-
-def _make_throw_to_recipient(
-    num_samples: int = 5, *, noise_objects: int = 0
-) -> Phase1InstanceGroup:
-    agent = standard_object("agent", THING, required_properties=[ANIMATE])
-    theme = standard_object(
-        "theme", INANIMATE_OBJECT, required_properties=[PERSON_CAN_HAVE]
-    )
-    goal = standard_object("goal_reference", THING, required_properties=[ANIMATE])
-    background = immutableset(
-        standard_object(f"noise_object_{x}") for x in range(noise_objects)
-    )
-    action_variable("throw-to-recipient-verb", with_properties=[TRANSFER_OF_POSSESSION])
-
-    return phase1_instances(
-        "Throw To Recipient",
-        flatten(
-            [
-                sampled(
-                    _throw_to_recipient_template(
-                        agent, theme, goal, background, is_distal, is_caught
-                    ),
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER,
-                    max_to_sample=num_samples,
-                )
-                for is_distal in BOOL_SET
-                for is_caught in BOOL_SET
-            ]
-        ),
-    )
-
-
-def _make_throw_in(
-    num_samples: int = 5, *, noise_objects: int = 0
-) -> Phase1InstanceGroup:
-    agent = standard_object("agent", THING, required_properties=[ANIMATE])
-    theme = standard_object("theme", INANIMATE_OBJECT)
-    goal_reference = standard_object(
-        "goal_reference", THING, required_properties=[HOLLOW]
-    )
-    background = immutableset(
-        standard_object(f"noise_object_{x}") for x in range(noise_objects)
-    )
-
-    return phase1_instances(
-        "Throw In",
-        flatten(
-            [
-                sampled(
-                    _throw_in_template(agent, theme, goal_reference, background),
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER,
-                    max_to_sample=num_samples,
-                )
-            ]
-        ),
-    )
-
-
-def _make_throw_on(
-    num_samples: int = 5, *, noise_objects: int = 0
-) -> Phase1InstanceGroup:
-    agent = standard_object("agent", THING, required_properties=[ANIMATE])
-    theme = standard_object("theme", INANIMATE_OBJECT)
-    goal_reference = standard_object(
-        "goal_reference", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
-    )
-    background = immutableset(
-        standard_object(f"noise_object_{x}") for x in range(noise_objects)
-    )
-
-    return phase1_instances(
-        "Throw On",
-        flatten(
-            [
-                sampled(
-                    _throw_on_template(agent, theme, goal_reference, background),
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER,
-                    max_to_sample=num_samples,
-                )
-            ]
-        ),
-    )
-
-
-def _make_throw_beside(
-    num_samples: int = 5, *, noise_objects: int = 0
-) -> Phase1InstanceGroup:
-    agent = standard_object("agent", THING, required_properties=[ANIMATE])
-    theme = standard_object("theme", INANIMATE_OBJECT)
-    goal_reference = standard_object("goal_reference", THING)
-    background = immutableset(
-        standard_object(f"noise_object_{x}") for x in range(noise_objects)
-    )
-
-    return phase1_instances(
-        "Throw Beside",
-        flatten(
-            [
-                sampled(
-                    _throw_beside_template(
-                        agent, theme, goal_reference, background, is_distal, is_right
-                    ),
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER,
-                    max_to_sample=num_samples,
-                )
-                for is_distal in BOOL_SET
-                for is_right in BOOL_SET
-            ]
-        ),
-    )
-
-
-def _make_throw_in_front_of_behind(
-    num_samples: int = 5, *, noise_objects: int = 0
-) -> Phase1InstanceGroup:
-    agent = standard_object("agent", THING, required_properties=[ANIMATE])
-    theme = standard_object("theme", INANIMATE_OBJECT)
-    goal_reference = standard_object("goal_reference", THING)
-    background = immutableset(
-        standard_object(f"noise_object_{x}") for x in range(noise_objects)
-    )
-
-    return phase1_instances(
-        "Throw In Front Of Behind",
-        flatten(
-            [
-                sampled(
-                    _throw_in_front_of_behind_template(
-                        agent, theme, goal_reference, background, is_distal, is_in_front
-                    ),
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER,
-                    max_to_sample=num_samples,
-                )
-                for is_distal in BOOL_SET
-                for is_in_front in BOOL_SET
-            ]
-        ),
-    )
-
-
-def _make_throw_under(
-    num_samples: int = 5, *, noise_objects: int = 0
-) -> Phase1InstanceGroup:
-    agent = standard_object("agent", THING, required_properties=[ANIMATE])
-    theme = standard_object("theme", INANIMATE_OBJECT)
-    goal_reference = standard_object(
-        "goal_reference", THING, required_properties=[HAS_SPACE_UNDER]
-    )
-    background = immutableset(
-        standard_object(f"noise_object_{x}") for x in range(noise_objects)
-    )
-
-    return phase1_instances(
-        "Throw Under",
-        flatten(
-            [
-                sampled(
-                    _throw_on_template(agent, theme, goal_reference, background),
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER,
-                    max_to_sample=num_samples,
-                )
-            ]
-        ),
-    )
-
-
-def _make_throw_path_over(
-    num_samples: int = 5, *, noise_objects: int = 0
-) -> Phase1InstanceGroup:
-    agent = standard_object("agent", THING, required_properties=[ANIMATE])
-    theme = standard_object("theme", INANIMATE_OBJECT)
-    object_in_path = standard_object("object_in_path", THING)
-    implicit_goal_reference = standard_object("goal_reference", THING)
-    background = immutableset(
-        standard_object(f"noise_object_{x}") for x in range(noise_objects)
-    )
-
-    return phase1_instances(
-        "Throw With Path Over",
-        flatten(
-            [
-                sampled(
-                    _throw_path_over_template(
-                        agent,
-                        theme,
-                        object_in_path,
-                        implicit_goal_reference,
-                        background,
-                        is_distal,
-                    ),
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER,
-                    max_to_sample=num_samples,
-                )
-                for is_distal in BOOL_SET
-            ]
-        ),
-    )
-
-
-def _make_throw_path_under(
-    num_samples: int = 5, *, noise_objects: int = 0
-) -> Phase1InstanceGroup:
-    agent = standard_object("agent", THING, required_properties=[ANIMATE])
-    theme = standard_object("theme", INANIMATE_OBJECT)
-    object_in_path = standard_object(
-        "object_in_path", THING, required_properties=[HAS_SPACE_UNDER]
+    goal_under = standard_object(
+        "goal_under", THING, required_properties=[HAS_SPACE_UNDER]
     )
     implicit_goal_reference = standard_object("goal_reference", THING)
     background = immutableset(
         standard_object(f"noise_object_{x}") for x in range(noise_objects)
     )
+    situation_templates = [
+        _throw_to_template(agent, theme, goal_reference, background),
+        _throw_in_template(agent, theme, goal_in, background),
+        _throw_on_template(agent, theme, goal_on, background),
+    ]
 
     return phase1_instances(
-        "Throw With Path Under",
-        flatten(
-            [
-                sampled(
-                    _throw_path_under_template(
-                        agent,
-                        theme,
-                        object_in_path,
-                        implicit_goal_reference,
-                        background,
-                        is_distal,
-                    ),
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER,
-                    max_to_sample=num_samples,
-                )
-                for is_distal in BOOL_SET
-            ]
-        ),
-    )
-
-
-def _make_throw_up_down(
-    num_samples: int = 5, *, noise_objects: int = 0
-) -> Phase1InstanceGroup:
-    agent = standard_object("agent", THING, required_properties=[ANIMATE])
-    theme = standard_object("theme", INANIMATE_OBJECT)
-    goal_reference = standard_object("goal_reference", THING)
-    background = immutableset(
-        standard_object(f"noise_object_{x}") for x in range(noise_objects)
-    )
-
-    return phase1_instances(
-        "Throw Up Down",
-        flatten(
-            [
-                sampled(
-                    _throw_in_front_of_behind_template(
-                        agent, theme, goal_reference, background, is_distal, is_up
-                    ),
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER,
-                    max_to_sample=num_samples,
-                )
-                for is_distal in BOOL_SET
-                for is_up in BOOL_SET
-            ]
+        "Throw + PP",
+        chain(
+            # to, in, on
+            flatten(
+                [
+                    sampled(
+                        template,
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER,
+                        max_to_sample=num_samples,
+                    )
+                    for template in situation_templates
+                ]
+            ),
+            # to (expecting object to be caught)
+            flatten(
+                [
+                    sampled(
+                        _throw_to_recipient_template(
+                            agent,
+                            theme_can_have,
+                            goal_catcher,
+                            background,
+                            is_caught=is_caught,
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER,
+                        max_to_sample=num_samples,
+                    )
+                    for is_caught in BOOL_SET
+                ]
+            ),
+            # beside
+            flatten(
+                [
+                    sampled(
+                        _throw_beside_template(
+                            agent, theme, goal_reference, background, is_right=is_right
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER,
+                        max_to_sample=num_samples,
+                    )
+                    for is_right in BOOL_SET
+                ]
+            ),
+            # in front of, behind
+            flatten(
+                [
+                    sampled(
+                        _throw_in_front_of_behind_template(
+                            agent,
+                            theme,
+                            goal_reference,
+                            background,
+                            is_distal=is_distal,
+                            is_in_front=is_in_front,
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER,
+                        max_to_sample=num_samples,
+                    )
+                    for is_distal in BOOL_SET
+                    for is_in_front in BOOL_SET
+                ]
+            ),
+            # under
+            flatten(
+                [
+                    sampled(
+                        _throw_under_template(
+                            agent, theme, goal_under, background, is_distal=is_distal
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER,
+                        max_to_sample=num_samples,
+                    )
+                    for is_distal in BOOL_SET
+                ]
+            ),
+            # path over
+            flatten(
+                [
+                    sampled(
+                        _throw_path_over_template(
+                            agent,
+                            theme,
+                            goal_reference,
+                            implicit_goal_reference,
+                            background,
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER,
+                        max_to_sample=num_samples,
+                    )
+                ]
+            ),
+            # path under
+            flatten(
+                [
+                    sampled(
+                        _throw_path_under_template(
+                            agent,
+                            theme,
+                            goal_under,
+                            implicit_goal_reference,
+                            background,
+                            is_distal=is_distal,
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER,
+                        max_to_sample=num_samples,
+                    )
+                    for is_distal in BOOL_SET
+                ]
+            ),
+            # up, down
+            flatten(
+                [
+                    sampled(
+                        _throw_up_down_template(
+                            agent, theme, goal_reference, background, is_up=is_up
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER,
+                        max_to_sample=num_samples,
+                    )
+                    for is_up in BOOL_SET
+                ]
+            ),
         ),
     )
 
@@ -705,15 +558,4 @@ def _make_throw_up_down(
 def make_verb_with_dynamic_prepositions_curriculum(
     num_samples: int = 5, *, num_noise_objects: int = 0
 ):
-    return [
-        _make_throw_to(num_samples, noise_objects=num_noise_objects),
-        _make_throw_to_recipient(num_samples, noise_objects=num_noise_objects),
-        _make_throw_on(num_samples, noise_objects=num_noise_objects),
-        _make_throw_in(num_samples, noise_objects=num_noise_objects),
-        _make_throw_beside(num_samples, noise_objects=num_noise_objects),
-        _make_throw_in_front_of_behind(num_samples, noise_objects=num_noise_objects),
-        _make_throw_under(num_samples, noise_objects=num_noise_objects),
-        _make_throw_path_over(num_samples, noise_objects=num_noise_objects),
-        _make_throw_path_under(num_samples, noise_objects=num_noise_objects),
-        _make_throw_up_down(num_samples, noise_objects=num_noise_objects),
-    ]
+    return [_make_throw_with_prepositions(num_samples, noise_objects=num_noise_objects)]
