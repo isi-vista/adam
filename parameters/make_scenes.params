@@ -1,3 +1,4 @@
 iterations: 200
 steps_before_vis: 20
 seed: 2020
+scene: 1

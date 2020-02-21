@@ -92,6 +92,8 @@ def main(params: Parameters) -> None:
     num_iterations = params.positive_integer("iterations")
     steps_before_vis = params.positive_integer("steps_before_vis")
 
+    specific_scene = params.positive_integer("scene")
+
     random.seed(params.integer("seed"))
     np.random.seed(params.integer("seed"))
 
@@ -111,8 +113,11 @@ def main(params: Parameters) -> None:
         logging.info("SCALE: %s -> %s", model_name, scale.__str__())
 
     for i, scene_elements in enumerate(SceneCreator.create_scenes([make_curriculum()])):
-        if i < 1:
+        # If a scene number is provided in the params file, only render that scene
+        if specific_scene and i < specific_scene:
             continue
+        if specific_scene and i > specific_scene:
+            break
         print(f"SCENE {i}")
         viz.set_title(" ".join(token for token in scene_elements.tokens))
         # for debugging purposes:
