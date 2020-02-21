@@ -2,6 +2,7 @@ import random as r
 from itertools import chain
 
 import pytest
+from immutablecollections import immutableset
 from more_itertools import first, only
 
 from adam.curriculum.curriculum_utils import (
@@ -38,6 +39,8 @@ from adam.perception.perception_graph import (
     PerceptionGraph,
     PerceptionGraphPattern,
     PerceptionGraphPatternMatch,
+    TemporallyScopedEdgeLabel,
+    TemporalScope,
 )
 from adam.random_utils import RandomChooser
 from adam.situation.templates.phase1_templates import (
@@ -49,6 +52,26 @@ from adam.situation.templates.phase1_templates import (
 from adam_test_utils import all_possible_test
 
 r.seed(0)
+
+
+def test_temporally_scoped_attribute():
+    before = TemporallyScopedEdgeLabel.for_dynamic_perception(
+        "foo", when=TemporalScope.BEFORE
+    )
+    assert before.attribute == "foo"
+    assert before.temporal_specifiers == immutableset([TemporalScope.BEFORE])
+
+    before_and_after = TemporallyScopedEdgeLabel.for_dynamic_perception(
+        "foo", when=[TemporalScope.BEFORE, TemporalScope.AFTER]
+    )
+    assert before_and_after.attribute == "foo"
+    assert before_and_after.temporal_specifiers == immutableset(
+        [TemporalScope.BEFORE, TemporalScope.AFTER]
+    )
+
+    # You have to give a TemporalSpecifier
+    with pytest.raises(RuntimeError):
+        TemporallyScopedEdgeLabel.for_dynamic_perception("foo", when=[])
 
 
 def test_house_on_table():

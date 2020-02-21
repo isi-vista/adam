@@ -15,6 +15,7 @@ reading other parts of this module.
 import logging
 import pickle
 from abc import ABC, abstractmethod
+from enum import Enum
 from pathlib import Path
 from time import process_time
 from typing import (
@@ -36,9 +37,13 @@ from typing import (
 from uuid import uuid4
 
 import graphviz
-from attr.validators import instance_of, optional
+from attr.validators import instance_of, optional, and_, deep_iterable
 from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
-from immutablecollections.converter_utils import _to_immutabledict, _to_tuple
+from immutablecollections.converter_utils import (
+    _to_immutabledict,
+    _to_tuple,
+    _to_immutableset,
+)
 from more_itertools import first
 from networkx import DiGraph, connected_components, is_isomorphic, set_node_attributes
 from typing_extensions import Protocol
@@ -104,7 +109,85 @@ PerceptionGraphNode = Union[
     GeonAxis,
     MatchedObjectNode,
 ]
-PerceptionGraphEdgeLabel = Union[OntologyNode, str, Direction[Any]]
+
+# If this is changed, assert_valid_edge_label below needs to be updated.
+EdgeLabel = Union[OntologyNode, str, Direction[Any]]
+"""
+This is the core information stored on a perception graph edge.
+This is wrapped in `TemporallyScopdPerceptionGraphEdgeAttribute`
+before actually being applied to a `DiGraph` edge.
+"""
+
+
+def assert_valid_edge_label(base_edge_label: Any) -> None:
+    # This needs to be updated
+    # if the EdgeLabel type alias is updated.
+    # Sadly type aliases cannot be used with isinstance. :-(
+    if not isinstance(base_edge_label, (OntologyNode, str, Direction)):
+        raise RuntimeError(
+            f"Edge labels must be either OntologyNode, str, "
+            f"or Direction, but got {base_edge_label}"
+        )
+
+
+def valid_edge_label(inst: Any, attr: Any, value: Any) -> None:
+    """
+    Wraps `assert_valid_edge_label` for use as an *attrs* validator.
+    """
+    assert_valid_edge_label(value)
+
+
+class TemporalScope(Enum):
+    """
+    In a dynamic situation,
+    specifies the relationship of a perception graph edges to the perception frames.
+    """
+
+    BEFORE = "before"
+    """
+    Indicates a relationship holds in the first frame.
+    """
+    AFTER = "after"
+    """
+    Indicates a relationship holds in the second frame.
+    """
+    DURING = "during"
+    """
+    Indicates a relationship holds in the interval between frames.
+    """
+
+
+@attrs(slots=True, frozen=True)
+class TemporallyScopedEdgeLabel:
+    r"""
+    An edge attribute in a `PerceptionGraph` which is annotated for what times it holds true.
+
+    These should only be used in  `PerceptionGraph`\ s representing dynamic situations,
+    in which every edge label should be wrapped with this class.
+    """
+    # update this if EdgeLabel is updated.
+    attribute: EdgeLabel = attrib(validator=valid_edge_label)
+    temporal_specifiers: ImmutableSet[TemporalScope] = attrib(
+        converter=_to_immutableset,
+        default=immutableset(),
+        validator=deep_iterable(instance_of(TemporalScope)),
+    )
+
+    def __attrs_post_init__(self) -> None:
+        if not self.temporal_specifiers:
+            raise RuntimeError(
+                "Cannot have a TemporallyScopedPerceptionGraphEdgeAttribute "
+                "without any temporal specifiers"
+            )
+
+    @staticmethod
+    def for_dynamic_perception(
+        attribute: EdgeLabel, when=Union[TemporalScope, Iterable[TemporalScope]]
+    ) -> "TemporallyScopedEdgeLabel":
+        if isinstance(when, TemporalScope):
+            when = [when]
+        return TemporallyScopedEdgeLabel(attribute, when)
+
 
 # certain constant edges used by PerceptionGraphs
 REFERENCE_OBJECT_LABEL = OntologyNode("reference-object")
@@ -141,6 +224,7 @@ Edge label in a `PerceptionGraph` linking an `Axis` to a `ObjectPerception` it i
 
 class PerceptionGraphProtocol(Protocol):
     _graph: DiGraph = attrib(validator=instance_of(DiGraph))
+    _dynamic: bool = attrib(validator=instance_of(bool))
 
     def copy_as_digraph(self) -> DiGraph:
         return self._graph.copy()
@@ -163,7 +247,13 @@ class PerceptionGraph(PerceptionGraphProtocol):
     r"""
     Represents a `DevelopmentalPrimitivePerceptionFrame` as a directed graph.
 
+    Perception graphs may be static (representing a single snapshot of a situation)
+    or dynamic, representing a changing situation.
+    This is encoded by the *_dynamic* field.
+
     `ObjectPerception`\ s, properties, `Geon`\ s, `GeonAxis`\ s, and `Region`\ s are nodes.
+    Edges should have the *label* attribute mapped to an `EdgeLabel`, if the graph is static,
+    or to `TemporallyScopedEdgeLabel`, if dynamic.
 
     These can be matched against by `PerceptionGraphPattern`\ s.
     """
@@ -402,6 +492,39 @@ class PerceptionGraph(PerceptionGraphProtocol):
             f"{str_list_limited(self._graph.edges(data='label'), 15)})"
         )
 
+    def __attrs_post_init__(self) -> None:
+        # Every edge must have a label
+        for (source, target, data_dict) in self._graph.edges(data=True):
+            try:
+                if "label" in data_dict:
+                    label_value = data_dict["label"]
+                    if self._dynamic:
+                        if isinstance(label_value, TemporallyScopedEdgeLabel):
+                            assert_valid_edge_label(label_value.attribute)
+                        else:
+                            raise RuntimeError(
+                                "In a dynamic graph, all edge labels must be "
+                                "wrapped in TemporallyScopedEdgeLabel"
+                            )
+                    else:
+                        if isinstance(label_value, TemporallyScopedEdgeLabel):
+                            raise RuntimeError(
+                                "TemporallyScopedEdgeLabels may not appear "
+                                "in a static graph."
+                            )
+                        else:
+                            assert_valid_edge_label(label_value)
+                else:
+                    raise RuntimeError(
+                        f"Every edge in a PerceptionGraph must have a 'label' "
+                        f"attribute"
+                    )
+            except RuntimeError as e:
+                raise RuntimeError(
+                    "Error validating PerceptionGraphEdge from {source} to {target} "
+                    f"with attributes {data_dict}"
+                ) from e
+
 
 @attrs(frozen=True, slots=True, repr=False)
 class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
@@ -427,7 +550,8 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
 
     def check_isomorphism(self, other_graph: "PerceptionGraphPattern") -> bool:
         """
-        Compares two pattern graphs and returns true if they are isomorphic, including edges and node attributes.
+        Compares two pattern graphs and returns true if they are isomorphic, including edges and
+        node attributes.
         """
         return is_isomorphic(
             self._graph,
@@ -472,7 +596,8 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
         perception_generator = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
             GAILA_PHASE_1_ONTOLOGY
         )
-        # We explicitly exclude ground and learner in perception generation, which were not specified in the schema
+        # We explicitly exclude ground and learner in perception generation, which were not
+        # specified in the schema
         perception = perception_generator.generate_perception(
             situation, chooser=RandomChooser.for_seed(0), include_ground=False
         )
@@ -1651,7 +1776,7 @@ class EdgePredicate(ABC):
     def __call__(
         self,
         source_object_perception: PerceptionGraphNode,
-        edge_label: PerceptionGraphEdgeLabel,
+        edge_label: EdgeLabel,
         dest_object_percption: PerceptionGraphNode,
     ) -> bool:
         """
@@ -1688,7 +1813,7 @@ class AnyEdgePredicate(EdgePredicate):
     def __call__(
         self,
         source_object_perception: PerceptionGraphNode,
-        edge_label: PerceptionGraphEdgeLabel,
+        edge_label: EdgeLabel,
         dest_object_percption: PerceptionGraphNode,
     ) -> bool:
         return True
@@ -1711,7 +1836,7 @@ class RelationTypeIsPredicate(EdgePredicate):
     def __call__(
         self,
         source_object_perception: PerceptionGraphNode,
-        edge_label: PerceptionGraphEdgeLabel,
+        edge_label: EdgeLabel,
         dest_object_percption: PerceptionGraphNode,
     ) -> bool:
         return edge_label == self.relation_type
@@ -1741,7 +1866,7 @@ class DirectionPredicate(EdgePredicate):
     def __call__(
         self,
         source_object_perception: PerceptionGraphNode,
-        edge_label: PerceptionGraphEdgeLabel,
+        edge_label: EdgeLabel,
         dest_object_percption: PerceptionGraphNode,
     ) -> bool:
         return (
