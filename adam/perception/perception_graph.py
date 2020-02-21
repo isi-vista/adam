@@ -141,7 +141,7 @@ def valid_edge_label(inst: Any, attr: Any, value: Any) -> None:
 class TemporalScope(Enum):
     """
     In a dynamic situation,
-    specifies the relationship of a perception graph edges to the perception frames.
+    specifies the relationship of perception graph edges to the perception frames.
     """
 
     BEFORE = "before"
