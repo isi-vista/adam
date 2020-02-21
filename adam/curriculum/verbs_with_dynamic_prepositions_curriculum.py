@@ -1,3 +1,4 @@
+from itertools import chain
 from typing import Iterable
 
 from immutablecollections import immutableset
@@ -321,227 +322,133 @@ def _move_thing_in_front_of_behind_template(
     )
 
 
-def _make_move_beside(
+def _make_move_with_prepositions(
     num_samples: int = 5, *, noise_objects: int = 0
 ) -> Phase1InstanceGroup:
     agent = standard_object("agent", THING, required_properties=[SELF_MOVING])
+    theme = standard_object("theme", INANIMATE_OBJECT)
     goal_reference = standard_object("goal_reference", THING)
-    background = immutableset(
-        standard_object(f"noise_object_{x}") for x in range(noise_objects)
+    goal_in = standard_object("goal_in", THING, required_properties=[HOLLOW])
+    goal_on = standard_object(
+        "goal_on", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
     )
-
-    return phase1_instances(
-        "Move Beside",
-        flatten(
-            [
-                sampled(
-                    _move_beside_template(
-                        agent, goal_reference, background, is_distal, is_right
-                    ),
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER,
-                    max_to_sample=num_samples,
-                )
-                for is_distal in BOOL_SET
-                for is_right in BOOL_SET
-            ]
-        ),
-    )
-
-
-def _make_move_in_front_of_behind(
-    num_samples: int = 5, *, noise_objects: int = 0
-) -> Phase1InstanceGroup:
-    agent = standard_object("agent", THING, required_properties=[SELF_MOVING])
-    goal_reference = standard_object("goal_reference", THING)
-    background = immutableset(
-        standard_object(f"noise_object_{x}") for x in range(noise_objects)
-    )
-
-    return phase1_instances(
-        "Move In Front Of Behind",
-        flatten(
-            [
-                sampled(
-                    _move_in_front_of_behind_template(
-                        agent, goal_reference, background, is_distal, is_in_front
-                    ),
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER,
-                    max_to_sample=num_samples,
-                )
-                for is_distal in BOOL_SET
-                for is_in_front in BOOL_SET
-            ]
-        ),
-    )
-
-
-def _make_move_under(
-    num_samples: int = 5, *, noise_objects: int = 0
-) -> Phase1InstanceGroup:
-    agent = standard_object("agent", THING, required_properties=[SELF_MOVING])
-    goal_reference = standard_object(
-        "goal_reference", THING, required_properties=[HAS_SPACE_UNDER]
+    goal_under = standard_object(
+        "goal_under", THING, required_properties=[HAS_SPACE_UNDER]
     )
     background = immutableset(
         standard_object(f"noise_object_{x}") for x in range(noise_objects)
     )
+    situation_templates = [
+        _move_thing_in_template(agent, theme, goal_in, background),
+        _move_thing_on_template(agent, theme, goal_on, background),
+    ]
 
     return phase1_instances(
-        "Move Under",
-        flatten(
-            [
-                sampled(
-                    _move_under_template(agent, goal_reference, background, is_distal),
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER,
-                    max_to_sample=num_samples,
-                )
-                for is_distal in BOOL_SET
-            ]
-        ),
-    )
-
-
-def _make_move_thing_in(
-    num_samples: int = 5, *, noise_objects: int = 0
-) -> Phase1InstanceGroup:
-    agent = standard_object("agent", THING, required_properties=[ANIMATE])
-    theme = standard_object("theme", THING, required_properties=[INANIMATE_OBJECT])
-    goal_reference = standard_object(
-        "goal_reference", THING, required_properties=[HOLLOW]
-    )
-    background = immutableset(
-        standard_object(f"noise_object_{x}") for x in range(noise_objects)
-    )
-
-    return phase1_instances(
-        "Move Thing In",
-        flatten(
-            [
-                sampled(
-                    _move_thing_in_template(agent, theme, goal_reference, background),
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER,
-                    max_to_sample=num_samples,
-                )
-            ]
-        ),
-    )
-
-
-def _make_move_thing_on(
-    num_samples: int = 5, *, noise_objects: int = 0
-) -> Phase1InstanceGroup:
-    agent = standard_object("agent", THING, required_properties=[ANIMATE])
-    theme = standard_object("theme", THING, required_properties=[INANIMATE_OBJECT])
-    goal_reference = standard_object(
-        "goal_reference", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
-    )
-    background = immutableset(
-        standard_object(f"noise_object_{x}") for x in range(noise_objects)
-    )
-
-    return phase1_instances(
-        "Move Thing In",
-        flatten(
-            [
-                sampled(
-                    _move_thing_on_template(agent, theme, goal_reference, background),
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER,
-                    max_to_sample=num_samples,
-                )
-            ]
-        ),
-    )
-
-
-def _make_move_thing_under(
-    num_samples: int = 5, *, noise_objects: int = 0
-) -> Phase1InstanceGroup:
-    agent = standard_object("agent", THING, required_properties=[ANIMATE])
-    theme = standard_object("theme", THING, required_properties=[INANIMATE_OBJECT])
-    goal_reference = standard_object(
-        "goal_reference", THING, required_properties=[HAS_SPACE_UNDER]
-    )
-    background = immutableset(
-        standard_object(f"noise_object_{x}") for x in range(noise_objects)
-    )
-
-    return phase1_instances(
-        "Move Thing Under",
-        flatten(
-            [
-                sampled(
-                    _move_thing_under_template(
-                        agent, theme, goal_reference, background, is_distal
-                    ),
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER,
-                    max_to_sample=num_samples,
-                )
-                for is_distal in BOOL_SET
-            ]
-        ),
-    )
-
-
-def _make_move_thing_beside(
-    num_samples: int = 5, *, noise_objects: int = 0
-) -> Phase1InstanceGroup:
-    agent = standard_object("agent", THING, required_properties=[ANIMATE])
-    theme = standard_object("theme", THING, required_properties=[INANIMATE_OBJECT])
-    goal_reference = standard_object("goal_reference", THING)
-    background = immutableset(
-        standard_object(f"noise_object_{x}") for x in range(noise_objects)
-    )
-
-    return phase1_instances(
-        "Move Thing Beside",
-        flatten(
-            [
-                sampled(
-                    _move_thing_beside_template(
-                        agent, theme, goal_reference, background, is_distal, is_right
-                    ),
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER,
-                    max_to_sample=num_samples,
-                )
-                for is_distal in BOOL_SET
-                for is_right in BOOL_SET
-            ]
-        ),
-    )
-
-
-def _make_move_thing_in_front_of_behind(
-    num_samples: int = 5, *, noise_objects: int = 0
-) -> Phase1InstanceGroup:
-    agent = standard_object("agent", THING, required_properties=[ANIMATE])
-    theme = standard_object("theme", THING, required_properties=[INANIMATE_OBJECT])
-    goal_reference = standard_object("goal_reference", THING)
-    background = immutableset(
-        standard_object(f"noise_object_{x}") for x in range(noise_objects)
-    )
-
-    return phase1_instances(
-        "Move Thing In Front Of Behind",
-        flatten(
-            [
-                sampled(
-                    _move_thing_in_front_of_behind_template(
-                        agent, theme, goal_reference, background, is_distal, is_in_front
-                    ),
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER,
-                    max_to_sample=num_samples,
-                )
-                for is_distal in BOOL_SET
-                for is_in_front in BOOL_SET
-            ]
+        "Move + PP",
+        chain(
+            # move beside
+            flatten(
+                [
+                    sampled(
+                        _move_beside_template(
+                            agent, goal_reference, background, is_distal, is_right
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER,
+                        max_to_sample=num_samples,
+                    )
+                    for is_distal in BOOL_SET
+                    for is_right in BOOL_SET
+                ]
+            ),
+            # move in front, behind
+            flatten(
+                [
+                    sampled(
+                        _move_in_front_of_behind_template(
+                            agent, goal_reference, background, is_distal, is_in_front
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER,
+                        max_to_sample=num_samples,
+                    )
+                    for is_distal in BOOL_SET
+                    for is_in_front in BOOL_SET
+                ]
+            ),
+            # move under
+            flatten(
+                [
+                    sampled(
+                        _move_under_template(agent, goal_under, background, is_distal),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER,
+                        max_to_sample=num_samples,
+                    )
+                    for is_distal in BOOL_SET
+                ]
+            ),
+            # move something in, on
+            flatten(
+                [
+                    sampled(
+                        template,
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER,
+                        max_to_sample=num_samples,
+                    )
+                    for template in situation_templates
+                ]
+            ),
+            # move something under
+            flatten(
+                [
+                    sampled(
+                        _move_thing_under_template(
+                            agent, theme, goal_under, background, is_distal
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER,
+                        max_to_sample=num_samples,
+                    )
+                    for is_distal in BOOL_SET
+                ]
+            ),
+            # move something beside
+            flatten(
+                [
+                    sampled(
+                        _move_thing_beside_template(
+                            agent, theme, goal_reference, background, is_distal, is_right
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER,
+                        max_to_sample=num_samples,
+                    )
+                    for is_distal in BOOL_SET
+                    for is_right in BOOL_SET
+                ]
+            ),
+            # move something in front of, behind
+            flatten(
+                [
+                    sampled(
+                        _move_thing_in_front_of_behind_template(
+                            agent,
+                            theme,
+                            goal_reference,
+                            background,
+                            is_distal,
+                            is_in_front,
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER,
+                        max_to_sample=num_samples,
+                    )
+                    for is_distal in BOOL_SET
+                    for is_in_front in BOOL_SET
+                ]
+            ),
         ),
     )
 
@@ -549,13 +456,4 @@ def _make_move_thing_in_front_of_behind(
 def make_verb_with_dynamic_prepositions_curriculum(
     num_samples: int = 5, *, num_noise_objects: int = 0
 ):
-    return [
-        _make_move_beside(num_samples, noise_objects=num_noise_objects),
-        _make_move_in_front_of_behind(num_samples, noise_objects=num_noise_objects),
-        _make_move_under(num_samples, noise_objects=num_noise_objects),
-        _make_move_thing_in(num_samples, noise_objects=num_noise_objects),
-        _make_move_thing_on(num_samples, noise_objects=num_noise_objects),
-        _make_move_thing_beside(num_samples, noise_objects=num_noise_objects),
-        _make_move_thing_in_front_of_behind(num_samples, noise_objects=num_noise_objects),
-        _make_move_thing_under(num_samples, noise_objects=num_noise_objects),
-    ]
+    return [_make_move_with_prepositions(num_samples, noise_objects=num_noise_objects)]
