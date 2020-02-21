@@ -45,6 +45,7 @@ class SituationVisualizer(ShowBase):
         Shape.CIRCULAR: "smooth_sphere.egg",
         Shape.OVALISH: "ovalish.egg",
         Shape.RECTANGULAR: "rectangular.egg",
+        Shape.IRREGULAR: "puddle.egg",
     }
 
     specific_model_to_file = {
@@ -65,11 +66,11 @@ class SituationVisualizer(ShowBase):
         "chair-(furniture) leg_1": "chair-leg_left_back.egg",
         "chair-(furniture) leg_2": "chair-leg_right_back.egg",
         "chair-(furniture) leg_3": "chair-leg_right_front.egg",
-        "table-(furniture) leg_0": "table-leg_left_front.egg",
-        "table-(furniture) leg_1": "table-leg_left_back.egg",
-        "table-(furniture) leg_2": "table-leg_right_back.egg",
-        "table-(furniture) leg_3": "table-leg_right_front.egg",
-        "table-tabletop_0": "table-tabletop.egg",
+        # "table-(furniture) leg_0": "table-leg_left_front.egg",
+        # "table-(furniture) leg_1": "table-leg_left_back.egg",
+        # "table-(furniture) leg_2": "table-leg_right_back.egg",
+        # "table-(furniture) leg_3": "table-leg_right_front.egg",
+        # "table-tabletop_0": "table-tabletop.egg",
     }
 
     models_used_for_scale_reference = {

@@ -147,15 +147,14 @@ def model_lookup(
         return name
 
     # if this is a sub object, see if the part name is supported for the parent object
-    if parent:
+    if parent and name in _PART_NAME_TO_ONTOLOGY_NODE:
         parent_name = parent.name.split("_")[0]
-        print(f"name: {name}, parent_name: {parent_name}")
         # convert unique sub-object index into a prototypical index
-        sub_object_cardinality = (
-            int(object_percept.debug_handle.split("_")[1])
-            % _PART_CARDINALITY[parent_name][name]
-        )
-        if name in _PART_NAME_TO_ONTOLOGY_NODE:
+        if parent_name in _PART_CARDINALITY:
+            sub_object_cardinality = (
+                int(object_percept.debug_handle.split("_")[1])
+                % _PART_CARDINALITY[parent_name][name]
+            )
             return "%s-%s_%d" % (parent_name, name, sub_object_cardinality)
 
     # fallback: if this object at least has a geon, we will render that instead

@@ -92,7 +92,7 @@ def main(params: Parameters) -> None:
     num_iterations = params.positive_integer("iterations")
     steps_before_vis = params.positive_integer("steps_before_vis")
 
-    specific_scene = params.positive_integer("scene")
+    specific_scene = params.optional_positive_integer("scene")
 
     random.seed(params.integer("seed"))
     np.random.seed(params.integer("seed"))
