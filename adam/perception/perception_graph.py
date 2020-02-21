@@ -349,6 +349,34 @@ class PerceptionGraph(PerceptionGraphProtocol):
 
         return PerceptionGraph(graph)
 
+    def copy_with_temporal_scopes(
+        self, temporal_scopes: Iterable[TemporalScope]
+    ) -> "PerceptionGraph":
+        r"""
+        Produces a copy of this perception graph with the given `TemporalScope`\ s
+        applied to all edges. This new graph will be dynamic.
+
+        This graph must be a static graph or a `RuntimeError` will be raised.
+        """
+        if self._dynamic:
+            raise RuntimeError(
+                "Cannot use dynamic_copy_with_temporal_scopes on a graph which is "
+                "already dynamic"
+            )
+
+        temporal_scopes = immutableset(temporal_scopes)
+
+        wrapped_graph = self.copy_as_digraph()
+
+        for (source, target) in wrapped_graph.edges():
+            unwrapped_label = wrapped_graph[source, target]["label"]
+            temporally_scoped_label = TemporallyScopedEdgeLabel.for_dynamic_perception(
+                unwrapped_label, when=temporal_scopes
+            )
+            wrapped_graph[source, target]["label"] = temporally_scoped_label
+
+        return PerceptionGraph(dynamic=True, graph=wrapped_graph)
+
     def render_to_file(  # pragma: no cover
         self,
         graph_name: str,
