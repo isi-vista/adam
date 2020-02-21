@@ -16,6 +16,7 @@ import logging
 import pickle
 from abc import ABC, abstractmethod
 from enum import Enum
+from itertools import chain
 from pathlib import Path
 from time import process_time
 from typing import (
@@ -59,7 +60,7 @@ from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY, PART_OF, COLOR
 from adam.ontology.phase1_spatial_relations import Direction, Distance, Region
 from adam.ontology.structural_schema import ObjectStructuralSchema
-from adam.perception import ObjectPerception
+from adam.perception import ObjectPerception, PerceptualRepresentation
 from adam.perception._matcher import GraphMatching
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -348,6 +349,92 @@ class PerceptionGraph(PerceptionGraphProtocol):
                 graph.add_edge(axis, object_, label=FACING_OBJECT_LABEL)
 
         return PerceptionGraph(graph)
+
+    @staticmethod
+    def from_dynamic_perceptual_representation(
+        perceptual_representation: PerceptualRepresentation[
+            DevelopmentalPrimitivePerceptionFrame
+        ]
+    ) -> "PerceptionGraph":
+        check_arg(
+            len(perceptual_representation.frames) == 2,
+            "Can only create a DynamicPerceptionGraph from exactly two frames, "
+            "but got %s",
+            (len(perceptual_representation.frames),),
+        )
+
+        # TODO: handle "during" field of PerceptualRepresentation
+
+        # First, we translate each of the two frames into PerceptionGraphs independently.
+        # The edges of each graph are marked with the appropriate "temporal specifier"
+        # which tells whether they belong to the "before" frame or the "after" frame.
+        before_frame_graph = (
+            PerceptionGraph.from_frame(perceptual_representation.frames[0])
+            .copy_with_temporal_scopes([TemporalScope.BEFORE])
+            .copy_as_digraph()
+        )
+
+        after_frame_graph = (
+            PerceptionGraph.from_frame(perceptual_representation.frames[1])
+            .copy_with_temporal_scopes([TemporalScope.AFTER])
+            .copy_as_digraph()
+        )
+
+        # This will be what the PerceptionGraph we are building will wrap.
+        _dynamic_digraph = DiGraph()
+        # Start with everything which is in the first frame's PerceptionGraph.
+        _dynamic_digraph.update(before_frame_graph)
+
+        # We have to be more careful adding things from the second frame's PerceptionGraph.
+        # We can freely add all the nodes because they don't contain temporal information
+        # and adding the same node twice is harmless.
+        _dynamic_digraph.add_nodes_from(after_frame_graph.nodes)
+
+        # But now we need to walk edge-by-edge through the second graph,
+        # adding edges which don't collide with our current edges,
+        # but merging together edges which do (because we aren't using hypergraphs).
+        # Note that because of the way perception graphs are constructed,
+        # nodes representing objects will be reference-identical
+        # between the two frame --> graph translations,
+        # so we can use that to merge them below.
+        for (source, target, after_label) in after_frame_graph.edges.data("label"):
+            if _dynamic_digraph.has_edge(source, target):
+                # This edge also appears in the first frame,
+                # so we need to merge the edge metadata between the frames.
+
+                # We know the edges in these graphs are wrapped with temporal scopes
+                # because we applied the temporal scopes above.
+                after_label = cast(TemporallyScopedEdgeLabel, after_label)
+                before_label: TemporallyScopedEdgeLabel = _dynamic_digraph.edges[
+                    source, target
+                ]["label"]
+
+                # We don't know how to merge edges which differ in anything
+                # except temporal specifiers
+                if before_label.attribute == after_label.attribute:
+                    _dynamic_digraph.edges[source, target][
+                        "label"
+                    ] = TemporallyScopedEdgeLabel(
+                        before_label.attribute,
+                        temporal_specifiers=chain(
+                            before_label.temporal_specifiers,
+                            after_label.temporal_specifiers,
+                        ),
+                    )
+                else:
+                    raise RuntimeError(
+                        f"We currently don't know how to handle a change in label "
+                        f"on an edge between the before frame and the after frame."
+                        f"Source={source}; Target={target}; "
+                        f"before label={before_label.attribute}; "
+                        f"after label={after_label.attribute}"
+                    )
+            else:
+                # This edge does not also appear in the first frame,
+                # so no merging is needed.
+                _dynamic_digraph.add_edge(source, target, label=after_label)
+
+        return PerceptionGraph(graph=_dynamic_digraph, dynamic=True)
 
     def copy_with_temporal_scopes(
         self, temporal_scopes: Iterable[TemporalScope]
