@@ -1891,7 +1891,7 @@ class EdgePredicate(ABC):
     def __call__(
         self,
         source_object_perception: PerceptionGraphNode,
-        edge_label: EdgeLabel,
+        edge_label: Union[EdgeLabel, TemporallyScopedEdgeLabel],
         dest_object_percption: PerceptionGraphNode,
     ) -> bool:
         """
@@ -1920,6 +1920,54 @@ class EdgePredicate(ABC):
 
 
 @attrs(frozen=True, slots=True)
+class HoldsAtTemporalScopePredicate(EdgePredicate):
+    """
+    `EdgePredicate` which matches an edge with a `TemporallyScopedEdgeLabel`
+    whose attribute matches *wrapped_edge_predicate*
+    and which has at least the temporal scope *temporal_scope*
+    (but may have others).
+    """
+
+    wrapped_edge_predicate: EdgePredicate = attrib(validator=instance_of(EdgePredicate))
+    temporal_scope: TemporalScope = attrib(validator=instance_of(TemporalScope))
+
+    def __call__(
+        self,
+        source_object_perception: PerceptionGraphNode,
+        edge_label: Union[EdgeLabel, TemporallyScopedEdgeLabel],
+        dest_object_percption: PerceptionGraphNode,
+    ) -> bool:
+        if isinstance(edge_label, TemporallyScopedEdgeLabel):
+            return (
+                self.temporal_scope in edge_label.temporal_specifiers
+                and self.wrapped_edge_predicate(
+                    source_object_perception, edge_label.attribute, dest_object_percption
+                )
+            )
+        else:
+            raise RuntimeError(
+                f"Cannot apply HoldsAtTemporalScopePredicate to anything but "
+                f"a TemporallyScopedEdgeLabel."
+                f"This exception probably indicates that you are applying "
+                f"a pattern intended for a dynamic situation to a static situation."
+                f"Source: {source_object_perception}; Dest: {dest_object_percption};"
+                f"Predicate: {self}; Label: {edge_label}"
+            )
+
+    def dot_label(self) -> str:
+        return f"{self.wrapped_edge_predicate}@{self.temporal_scope}"
+
+    def matches_predicate(self, edge_predicate: "EdgePredicate") -> bool:
+        return (
+            isinstance(edge_predicate, HoldsAtTemporalScopePredicate)
+            and self.temporal_scope == edge_predicate.temporal_scope
+            and self.wrapped_edge_predicate.matches_predicate(
+                edge_predicate.wrapped_edge_predicate
+            )
+        )
+
+
+@attrs(frozen=True, slots=True)
 class AnyEdgePredicate(EdgePredicate):
     """
     `EdgePredicate` which matches any edge.
@@ -1928,7 +1976,7 @@ class AnyEdgePredicate(EdgePredicate):
     def __call__(
         self,
         source_object_perception: PerceptionGraphNode,
-        edge_label: EdgeLabel,
+        edge_label: Union[EdgeLabel, TemporallyScopedEdgeLabel],
         dest_object_percption: PerceptionGraphNode,
     ) -> bool:
         return True
@@ -1951,7 +1999,7 @@ class RelationTypeIsPredicate(EdgePredicate):
     def __call__(
         self,
         source_object_perception: PerceptionGraphNode,
-        edge_label: EdgeLabel,
+        edge_label: Union[EdgeLabel, TemporallyScopedEdgeLabel],
         dest_object_percption: PerceptionGraphNode,
     ) -> bool:
         return edge_label == self.relation_type
@@ -1981,7 +2029,7 @@ class DirectionPredicate(EdgePredicate):
     def __call__(
         self,
         source_object_perception: PerceptionGraphNode,
-        edge_label: EdgeLabel,
+        edge_label: Union[EdgeLabel, TemporallyScopedEdgeLabel],
         dest_object_percption: PerceptionGraphNode,
     ) -> bool:
         return (
