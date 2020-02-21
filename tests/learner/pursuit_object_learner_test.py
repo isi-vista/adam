@@ -261,12 +261,9 @@ def test_cross_situational_learner():
     # complete or a very small match.
     # The lexicon threshold works better between 0.07-0.3, but we need to play around with it because we end up not
     # lexicalize items sufficiently because of diminishing lexicon probability through training
-    rng = random.Random()
-    rng.seed(0)
     learner = CrossSituationalLanguageLearner(
         graph_match_confirmation_threshold=0.85,
         lexicon_entry_threshold=0.7,
-        rng=rng,
         smoothing_parameter=0.001,
         expected_number_of_meanings=10,
         ontology=GAILA_PHASE_1_ONTOLOGY,

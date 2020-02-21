@@ -85,7 +85,6 @@ class CrossSituationalLanguageLearner(
 
     _ontology: Ontology = attrib(validator=instance_of(Ontology), kw_only=True)
 
-    _rng: Random = attrib(validator=instance_of(Random))
     _debug_callback: Optional[DebugCallableType] = attrib(default=None)
 
     # We use this threshold to measure whether a new perception sufficiently matches a previous
@@ -124,9 +123,6 @@ class CrossSituationalLanguageLearner(
         if log_word_hypotheses_dir:
             logging.info("Hypotheses will be logged to %s", log_word_hypotheses_dir)
 
-        rng = Random()
-        rng.seed(params.optional_integer("random_seed", default=0))
-
         return CrossSituationalLanguageLearner(
             learning_factor=params.floating_point("learning_factor"),
             graph_match_confirmation_threshold=params.floating_point(
@@ -139,7 +135,6 @@ class CrossSituationalLanguageLearner(
             ),
             graph_logger=graph_logger,
             log_word_hypotheses_to=log_word_hypotheses_dir,
-            rng=rng,
             ontology=GAILA_PHASE_1_ONTOLOGY,
         )
 
