@@ -57,6 +57,8 @@ class SituationVisualizer(ShowBase):
         "book": "book.egg",
         "bird": "bird.egg",
         "car": "car.egg",
+        "dad":"person.egg",
+        "mom":"person.egg",
         "chair-chairback_0": "chair-chairback.egg",
         "chair-chairseat_0": "chair-chairseat.egg",
         "chair-(furniture) leg_0": "chair-leg_left_front.egg",
@@ -162,7 +164,7 @@ class SituationVisualizer(ShowBase):
         """
 
         if color is None:
-            color = RgbColorPerception(50, 50, 50)
+            color = RgbColorPerception(122, 122, 122)
         # attempt to find a model file for a particular type of object
         if lookup_name in SituationVisualizer.specific_model_to_file:
             new_model = self._load_model(
