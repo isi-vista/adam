@@ -166,7 +166,6 @@ class TemporallyScopedEdgeLabel:
     These should only be used in  `PerceptionGraph`\ s representing dynamic situations,
     in which every edge label should be wrapped with this class.
     """
-    # update this if EdgeLabel is updated.
     attribute: EdgeLabel = attrib(validator=valid_edge_label)
     temporal_specifiers: ImmutableSet[TemporalScope] = attrib(
         converter=_to_immutableset,
@@ -364,6 +363,7 @@ class PerceptionGraph(PerceptionGraphProtocol):
         )
 
         # TODO: handle "during" field of PerceptualRepresentation
+        # https://github.com/isi-vista/adam/issues/593
 
         # First, we translate each of the two frames into PerceptionGraphs independently.
         # The edges of each graph are marked with the appropriate "temporal specifier"
