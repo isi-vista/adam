@@ -48,7 +48,7 @@ from adam.situation.templates.phase1_templates import (
 BOOL_SET = immutableset([True, False])
 
 
-def _move_beside_template(
+def _x_move_beside_y_template(
     # "A baby moves beside a car"
     agent: TemplateObjectVariable,
     goal_reference: TemplateObjectVariable,
@@ -84,7 +84,7 @@ def _move_beside_template(
     )
 
 
-def _move_in_front_of_behind_template(
+def _x_move_in_front_of_behind_y_template(
     # "Mom moves in front of a house"
     agent: TemplateObjectVariable,
     goal_reference: TemplateObjectVariable,
@@ -120,7 +120,7 @@ def _move_in_front_of_behind_template(
     )
 
 
-def _move_under_template(
+def _x_move_under_y_template(
     # "A dog moves under a chair"
     agent: TemplateObjectVariable,
     goal_reference: TemplateObjectVariable,
@@ -151,7 +151,7 @@ def _move_under_template(
     )
 
 
-def _move_thing_in_template(
+def _x_move_y_in_z_template(
     # "Dad moves a book in a box"
     agent: TemplateObjectVariable,
     theme: TemplateObjectVariable,
@@ -177,7 +177,7 @@ def _move_thing_in_template(
     )
 
 
-def _move_thing_on_template(
+def _x_move_y_on_z_template(
     # "Mom moves a cookie on a table"
     agent: TemplateObjectVariable,
     theme: TemplateObjectVariable,
@@ -210,7 +210,7 @@ def _move_thing_on_template(
     )
 
 
-def _move_thing_under_template(
+def _x_move_y_under_z_template(
     # "A baby moves a car under a chair"
     agent: TemplateObjectVariable,
     theme: TemplateObjectVariable,
@@ -244,7 +244,7 @@ def _move_thing_under_template(
     )
 
 
-def _move_thing_beside_template(
+def _x_move_y_beside_z_template(
     # "A dog moves a cookie beside a baby"
     agent: TemplateObjectVariable,
     theme: TemplateObjectVariable,
@@ -283,7 +283,7 @@ def _move_thing_beside_template(
     )
 
 
-def _move_thing_in_front_of_behind_template(
+def _x_move_y_in_front_of_behind_z_template(
     # "Dad moves a chair behind a house"
     agent: TemplateObjectVariable,
     theme: TemplateObjectVariable,
@@ -339,8 +339,8 @@ def _make_move_with_prepositions(
         standard_object(f"noise_object_{x}") for x in range(noise_objects)
     )
     situation_templates = [
-        _move_thing_in_template(agent, theme, goal_in, background),
-        _move_thing_on_template(agent, theme, goal_on, background),
+        _x_move_y_in_z_template(agent, theme, goal_in, background),
+        _x_move_y_on_z_template(agent, theme, goal_on, background),
     ]
 
     return phase1_instances(
@@ -350,7 +350,7 @@ def _make_move_with_prepositions(
             flatten(
                 [
                     sampled(
-                        _move_beside_template(
+                        _x_move_beside_y_template(
                             agent, goal_reference, background, is_distal, is_right
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -365,7 +365,7 @@ def _make_move_with_prepositions(
             flatten(
                 [
                     sampled(
-                        _move_in_front_of_behind_template(
+                        _x_move_in_front_of_behind_y_template(
                             agent, goal_reference, background, is_distal, is_in_front
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -380,7 +380,9 @@ def _make_move_with_prepositions(
             flatten(
                 [
                     sampled(
-                        _move_under_template(agent, goal_under, background, is_distal),
+                        _x_move_under_y_template(
+                            agent, goal_under, background, is_distal
+                        ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER,
                         max_to_sample=num_samples,
@@ -404,7 +406,7 @@ def _make_move_with_prepositions(
             flatten(
                 [
                     sampled(
-                        _move_thing_under_template(
+                        _x_move_y_under_z_template(
                             agent, theme, goal_under, background, is_distal
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -418,7 +420,7 @@ def _make_move_with_prepositions(
             flatten(
                 [
                     sampled(
-                        _move_thing_beside_template(
+                        _x_move_y_beside_z_template(
                             agent, theme, goal_reference, background, is_distal, is_right
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -433,7 +435,7 @@ def _make_move_with_prepositions(
             flatten(
                 [
                     sampled(
-                        _move_thing_in_front_of_behind_template(
+                        _x_move_y_in_front_of_behind_z_template(
                             agent,
                             theme,
                             goal_reference,
