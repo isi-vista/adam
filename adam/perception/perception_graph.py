@@ -690,6 +690,15 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
         Creates an object representing an attempt to match this pattern
         against *graph_to_match_against*.
         """
+        if graph_to_match_against.dynamic != self.dynamic:
+            pattern_adjective = "dynamic" if self.dynamic else "static"
+            graph_adjective = "dynamic" if graph_to_match_against.dynamic else "static"
+            raise RuntimeError(
+                f"Static patterns can only be applied to static graphs "
+                f"and dynamic patterns to dynamic graphcs, "
+                f"but tried to apply a {pattern_adjective} pattern to a "
+                f"{graph_adjective} graph."
+            )
         return PatternMatching(
             pattern=self,
             graph_to_match_against=graph_to_match_against,
