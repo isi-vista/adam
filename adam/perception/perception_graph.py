@@ -601,9 +601,6 @@ class PerceptionGraph(PerceptionGraphProtocol):
 
         return node_id
 
-    def copy_as_digraph(self) -> DiGraph:
-        return self._graph.copy()
-
     def __repr__(self) -> str:
         return (
             f"PerceptionGraph(nodes={str_list_limited(self._graph.nodes, 10)}, edges="
@@ -776,9 +773,6 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
 
     def __len__(self) -> int:
         return len(self._graph)
-
-    def copy_as_digraph(self) -> DiGraph:
-        return self._graph.copy()
 
     def copy_with_temporal_scope(
         self, required_temporal_scope: TemporalScope
