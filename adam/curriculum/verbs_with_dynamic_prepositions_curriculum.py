@@ -51,6 +51,8 @@ from adam.ontology.phase1_ontology import (
     near,
     far,
     inside,
+    TAKE,
+    near,
 )
 from adam.ontology.phase1_spatial_relations import (
     Region,
@@ -764,6 +766,27 @@ def _x_rolls_y_over_under_z_template(
     )
 
 
+# TAKE templates
+
+
+def _take_to_template(
+    agent: TemplateObjectVariable,
+    theme: TemplateObjectVariable,
+    goal_reference: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        f"{agent.handle}-takes-{theme.handle}-to-{goal_reference.handle}",
+        salient_object_variables=[agent, theme, goal_reference],
+        background_object_variables=background,
+        actions=[
+            Action(TAKE, argument_roles_to_fillers=[(AGENT, agent), (THEME, theme)])
+        ],
+        after_action_relations=flatten_relations(near(theme, goal_reference)),
+        constraining_relations=[bigger_than(agent, theme)],
+    )
+
+
 def _make_push_with_prepositions(
     num_samples: int = 5, *, noise_objects: int = 0
 ) -> Phase1InstanceGroup:
@@ -1216,6 +1239,31 @@ def _make_roll_with_prepositions(num_samples: int = 5, *, noise_objects: int = 0
     )
 
 
+def _make_take_with_prepositions(
+    num_samples: int = 5, *, noise_objects: int = 0
+) -> Phase1InstanceGroup:
+    agent = standard_object("agent", THING, required_properties=[ANIMATE])
+    theme = standard_object("theme", INANIMATE_OBJECT)
+    goal_reference = standard_object("goal_reference", INANIMATE_OBJECT)
+    background = immutableset(
+        standard_object(f"noise_object_{x}") for x in range(noise_objects)
+    )
+
+    return phase1_instances(
+        "Take + PP",
+        flatten(
+            [
+                sampled(
+                    _take_to_template(agent, theme, goal_reference, background),
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                    chooser=PHASE1_CHOOSER,
+                    max_to_sample=num_samples,
+                )
+            ]
+        ),
+    )
+
+
 def make_verb_with_dynamic_prepositions_curriculum(
     num_samples: int = 5, *, num_noise_objects: int = 0
 ):
@@ -1224,4 +1272,5 @@ def make_verb_with_dynamic_prepositions_curriculum(
         _make_go_with_prepositions(num_samples, noise_objects=num_noise_objects),
         _make_sit_with_prepositions(num_samples, noise_objects=num_noise_objects),
         _make_roll_with_prepositions(num_samples, noise_objects=num_noise_objects),
+        _make_take_with_prepositions(num_samples, noise_objects=num_noise_objects),
     ]

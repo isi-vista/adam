@@ -792,6 +792,8 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                                 preposition = "behind"
                         elif region.distance == PROXIMAL:
                             preposition = "beside"
+            elif region.distance == PROXIMAL:
+                preposition = "to"
 
             if not preposition:
                 raise RuntimeError(

@@ -54,6 +54,9 @@ from adam.ontology.phase1_ontology import (
     HOLLOW,
     GO,
     LEARNER,
+    near,
+    TAKE,
+    CAR,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -648,6 +651,34 @@ def test_transfer_of_possession():
                 reference_tokens = ("Mom", verb, "a", "cookie", "to", "a", "baby")
 
             assert generated_tokens(situation) == reference_tokens
+
+
+def test_take_to_car():
+    baby = situation_object(BABY)
+    ball = situation_object(BALL)
+    car = situation_object(CAR)
+
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[baby, ball, car],
+        actions=[
+            Action(
+                action_type=TAKE, argument_roles_to_fillers=[(AGENT, baby), (THEME, ball)]
+            )
+        ],
+        after_action_relations=[near(ball, car)],
+    )
+
+    assert generated_tokens(situation) == (
+        "a",
+        "baby",
+        "takes",
+        "a",
+        "ball",
+        "to",
+        "a",
+        "car",
+    )
 
 
 def test_arguments_same_ontology_type():
