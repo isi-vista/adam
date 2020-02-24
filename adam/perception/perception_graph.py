@@ -459,11 +459,11 @@ class PerceptionGraph(PerceptionGraphProtocol):
         wrapped_graph = self.copy_as_digraph()
 
         for (source, target) in wrapped_graph.edges():
-            unwrapped_label = wrapped_graph[source, target]["label"]
+            unwrapped_label = wrapped_graph.edges[source, target]["label"]
             temporally_scoped_label = TemporallyScopedEdgeLabel.for_dynamic_perception(
                 unwrapped_label, when=temporal_scopes
             )
-            wrapped_graph[source, target]["label"] = temporally_scoped_label
+            wrapped_graph.edges[source, target]["label"] = temporally_scoped_label
 
         return PerceptionGraph(dynamic=True, graph=wrapped_graph)
 
