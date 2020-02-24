@@ -2,7 +2,6 @@ import random as r
 from itertools import chain
 
 import pytest
-from immutablecollections import immutableset
 from more_itertools import first, only
 
 from adam.curriculum.curriculum_utils import (
@@ -11,7 +10,7 @@ from adam.curriculum.curriculum_utils import (
     standard_object,
 )
 from adam.learner.subset import graph_without_learner
-from adam.ontology import OntologyNode
+from adam.ontology import IN_REGION, OntologyNode
 from adam.ontology.phase1_ontology import (
     BIRD,
     BOX,
@@ -23,13 +22,20 @@ from adam.ontology.phase1_ontology import (
     LIQUID,
     PART_OF,
     TABLE,
+    _BALL_SCHEMA,
     _HOUSE_SCHEMA,
+    _TABLE_SCHEMA,
     above,
     bigger_than,
     on,
 )
+from adam.ontology.phase1_spatial_relations import DISTAL, EXTERIOR_BUT_IN_CONTACT, Region
 from adam.ontology.structural_schema import ObjectStructuralSchema
-from adam.perception.developmental_primitive_perception import RgbColorPerception
+from adam.perception import ObjectPerception, PerceptualRepresentation
+from adam.perception.developmental_primitive_perception import (
+    DevelopmentalPrimitivePerceptionFrame,
+    RgbColorPerception,
+)
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     GAILA_PHASE_1_PERCEPTION_GENERATOR,
 )
@@ -39,10 +45,11 @@ from adam.perception.perception_graph import (
     PerceptionGraph,
     PerceptionGraphPattern,
     PerceptionGraphPatternMatch,
-    TemporallyScopedEdgeLabel,
     TemporalScope,
+    TemporallyScopedEdgeLabel,
 )
 from adam.random_utils import RandomChooser
+from adam.relation import Relation
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
     all_possible,
@@ -50,6 +57,7 @@ from adam.situation.templates.phase1_templates import (
     object_variable,
 )
 from adam_test_utils import all_possible_test
+from immutablecollections import immutableset
 
 r.seed(0)
 
@@ -483,4 +491,34 @@ def test_syntactically_infeasible_partial_match():
                 initial_partial_match=partial_mapping, use_lookahead_pruning=True
             ),
             None,
+        )
+
+
+def test_dynamic_perception_graph_instantiation():
+    ball = ObjectPerception("ball", _BALL_SCHEMA.geon.copy())
+    table = ObjectPerception("table", axes=_TABLE_SCHEMA.axes.copy())
+
+    first_frame = DevelopmentalPrimitivePerceptionFrame(
+        perceived_objects=[ball, table],
+        relations=[
+            above(ball, table),
+            Relation(IN_REGION, ball, Region(table, distance=EXTERIOR_BUT_IN_CONTACT)),
+            Relation(IN_REGION, table, Region(ball, distance=EXTERIOR_BUT_IN_CONTACT)),
+        ],
+    )
+
+    second_frame = DevelopmentalPrimitivePerceptionFrame(
+        perceived_objects=[ball, table],
+        relations=[Relation(IN_REGION, ball, Region(table, distance=DISTAL))],
+    )
+
+    perception_graph = PerceptionGraph.from_dynamic_perceptual_representation(
+        PerceptualRepresentation(frames=[first_frame, second_frame])
+    )
+    assert perception_graph.dynamic
+
+    # Ensure we don't attempt to handle more than two frames yet.
+    with pytest.raises(ValueError):
+        PerceptionGraph.from_dynamic_perceptual_representation(
+            PerceptualRepresentation(frames=[first_frame, second_frame, second_frame])
         )
