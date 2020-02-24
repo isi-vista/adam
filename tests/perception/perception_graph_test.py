@@ -572,3 +572,52 @@ def test_copy_with_temporal_scopes_content():
         assert all(
             specifier in [TemporalScope.AFTER] for specifier in label.temporal_specifiers
         )
+
+
+def test_perception_graph_post_init_edge_cases():
+    target_object = BOX
+    train_obj_object = object_variable("obj-with-color", target_object)
+    obj_template = Phase1SituationTemplate(
+        "colored-obj-object", salient_object_variables=[train_obj_object]
+    )
+    template = all_possible(
+        obj_template, chooser=PHASE1_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY
+    )
+    train_curriculum = phase1_instances("all obj situations", situations=template)
+    perceptual_representation = only(train_curriculum.instances())[2]
+    perception_graph = graph_without_learner(
+        PerceptionGraph.from_frame(perceptual_representation.frames[0]).copy_as_digraph()
+    )
+    temporal_perception_graph = perception_graph.copy_with_temporal_scopes(
+        temporal_scopes=[TemporalScope.AFTER]
+    )
+    temporal_digraph = temporal_perception_graph.copy_as_digraph()
+    # Test valid edge label
+    # The only feasible test seems to be the instation, since creating a corrupt instance throws the same RuntimeError
+    with pytest.raises(RuntimeError):
+        TemporallyScopedEdgeLabel(None)
+
+    # In a dynamic graph, all edge labels must be wrapped in TemporallyScopedEdgeLabel
+    new_graph = DiGraph()
+    for (source, target) in temporal_digraph.edges():
+        new_graph.add_edge(source, target)
+        new_graph[source][target]["label"] = None
+    with pytest.raises(RuntimeError):
+        PerceptionGraph(new_graph, dynamic=True)
+
+    # TemporallyScopedEdgeLabels may not appear in a static graph
+    new_graph = DiGraph()
+    for (source, target) in temporal_digraph.edges():
+        new_graph.add_edge(source, target)
+        new_graph[source][target]["label"] = TemporallyScopedEdgeLabel(
+            "attribute", [TemporalScope.AFTER]
+        )
+    with pytest.raises(RuntimeError):
+        PerceptionGraph(new_graph)
+
+    # Every edge in a PerceptionGraph must have a 'label
+    new_graph = DiGraph()
+    for (source, target) in temporal_digraph.edges():
+        new_graph.add_edge(source, target)
+    with pytest.raises(RuntimeError):
+        PerceptionGraph(new_graph)
