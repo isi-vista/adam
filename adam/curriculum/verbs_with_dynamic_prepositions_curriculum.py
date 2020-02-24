@@ -29,9 +29,6 @@ from adam.ontology.phase1_ontology import (
     GAILA_PHASE_1_ONTOLOGY,
     HOLLOW,
     SIT,
-    ANIMATE,
-    INANIMATE_OBJECT,
-    CAN_HAVE_THINGS_RESTING_ON_THEM,
     SIT_THING_SAT_ON,
     CAN_BE_SAT_ON_BY_PEOPLE,
     EXTERIOR_BUT_IN_CONTACT,
@@ -42,7 +39,6 @@ from adam.ontology.phase1_ontology import (
     ANIMATE,
     INANIMATE_OBJECT,
     CAN_HAVE_THINGS_RESTING_ON_THEM,
-    on,
     GO,
     ROLL,
     _GO_GOAL,
@@ -1227,6 +1223,5 @@ def make_verb_with_dynamic_prepositions_curriculum(
         _make_push_with_prepositions(num_samples, noise_objects=num_noise_objects),
         _make_go_with_prepositions(num_samples, noise_objects=num_noise_objects),
         _make_sit_with_prepositions(num_samples, noise_objects=num_noise_objects),
-    ]
         _make_roll_with_prepositions(num_samples, noise_objects=num_noise_objects),
     ]
