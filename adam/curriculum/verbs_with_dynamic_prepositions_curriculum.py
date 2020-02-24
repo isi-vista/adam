@@ -16,6 +16,7 @@ from adam.curriculum.curriculum_utils import (
     phase1_instances,
     PHASE1_CHOOSER,
     Phase1InstanceGroup,
+    make_background,
 )
 from adam.language_specific.english.english_language_generator import (
     USE_ADVERBIAL_PATH_MODIFIER,
@@ -24,14 +25,10 @@ from adam.ontology import THING
 from adam.ontology.during import DuringAction
 from adam.ontology.phase1_ontology import (
     AGENT,
-    bigger_than,
     GOAL,
     GAILA_PHASE_1_ONTOLOGY,
     HOLLOW,
     SIT,
-    ANIMATE,
-    INANIMATE_OBJECT,
-    CAN_HAVE_THINGS_RESTING_ON_THEM,
     SIT_THING_SAT_ON,
     CAN_BE_SAT_ON_BY_PEOPLE,
     EXTERIOR_BUT_IN_CONTACT,
@@ -39,10 +36,21 @@ from adam.ontology.phase1_ontology import (
     PUSH,
     THEME,
     PUSH_SURFACE_AUX,
-    on,
+    ANIMATE,
+    INANIMATE_OBJECT,
+    CAN_HAVE_THINGS_RESTING_ON_THEM,
     GO,
+    ROLL,
     _GO_GOAL,
+    ROLL_SURFACE_AUXILIARY,
+    ROLLABLE,
+    GROUND,
     above,
+    on,
+    bigger_than,
+    near,
+    far,
+    inside,
 )
 from adam.ontology.phase1_spatial_relations import (
     Region,
@@ -55,6 +63,7 @@ from adam.ontology.phase1_spatial_relations import (
     SpatialPath,
     VIA,
 )
+from adam.relation import flatten_relations
 from adam.situation import Action
 from adam.situation.templates.phase1_templates import (
     TemplateObjectVariable,
@@ -545,6 +554,216 @@ def _sit_in_template(
     )
 
 
+def _x_roll_beside_y_template(
+    agent: TemplateObjectVariable,
+    goal_reference: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+    surface: TemplateObjectVariable,
+    *,
+    is_right: bool,
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        f"{agent.handle}-rolls-beside-{goal_reference.handle}",
+        salient_object_variables=[agent, goal_reference],
+        background_object_variables=background,
+        actions=[
+            Action(
+                ROLL,
+                argument_roles_to_fillers=[(AGENT, agent)],
+                auxiliary_variable_bindings=[(ROLL_SURFACE_AUXILIARY, surface)],
+            )
+        ],
+        after_action_relations=flatten_relations(
+            near(
+                agent,
+                goal_reference,
+                direction=Direction(
+                    positive=is_right,
+                    relative_to_axis=HorizontalAxisOfObject(goal_reference, index=0),
+                ),
+            )
+        ),
+        gazed_objects=[agent],
+    )
+
+
+def _x_roll_behind_in_front_y_template(
+    agent: TemplateObjectVariable,
+    goal_reference: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+    surface: TemplateObjectVariable,
+    *,
+    is_distal: bool,
+    is_behind: bool,
+) -> Phase1SituationTemplate:
+    direction = Direction(
+        positive=True if is_behind else False,
+        relative_to_axis=FacingAddresseeAxis(goal_reference),
+    )
+    return Phase1SituationTemplate(
+        f"{agent.handle}-rolls-behind-{goal_reference.handle}",
+        salient_object_variables=[agent, goal_reference],
+        background_object_variables=background,
+        actions=[
+            Action(
+                ROLL,
+                argument_roles_to_fillers=[(AGENT, agent)],
+                auxiliary_variable_bindings=[(ROLL_SURFACE_AUXILIARY, surface)],
+            )
+        ],
+        after_action_relations=flatten_relations(
+            far(agent, goal_reference, direction=direction)
+            if is_distal
+            else near(agent, goal_reference, direction=direction)
+        ),
+        gazed_objects=[agent],
+    )
+
+
+def _x_roll_under_y_template(
+    agent: TemplateObjectVariable,
+    goal_reference: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+    surface: TemplateObjectVariable,
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        f"{agent.handle}-rolls-under-{goal_reference.handle}",
+        salient_object_variables=[agent, goal_reference],
+        background_object_variables=background,
+        actions=[
+            Action(
+                ROLL,
+                argument_roles_to_fillers=[(AGENT, agent)],
+                auxiliary_variable_bindings=[(ROLL_SURFACE_AUXILIARY, surface)],
+            )
+        ],
+        after_action_relations=flatten_relations(above(goal_reference, agent)),
+        gazed_objects=[agent],
+    )
+
+
+def _x_roll_y_in_z_template(
+    agent: TemplateObjectVariable,
+    theme: TemplateObjectVariable,
+    goal_reference: TemplateObjectVariable,
+    surface: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        f"{agent.handle}-rolls-{theme.handle}-in-{goal_reference.handle}",
+        salient_object_variables=[agent, theme, goal_reference],
+        background_object_variables=background,
+        actions=[
+            Action(
+                ROLL,
+                argument_roles_to_fillers=[(AGENT, agent), (THEME, theme)],
+                auxiliary_variable_bindings=[(ROLL_SURFACE_AUXILIARY, surface)],
+            )
+        ],
+        constraining_relations=[bigger_than([agent, goal_reference], theme)],
+        after_action_relations=flatten_relations(inside(theme, goal_reference)),
+        gazed_objects=[theme],
+    )
+
+
+def _x_roll_y_beside_z_template(
+    agent: TemplateObjectVariable,
+    theme: TemplateObjectVariable,
+    goal_reference: TemplateObjectVariable,
+    surface: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+    *,
+    is_right: bool,
+) -> Phase1SituationTemplate:
+    direction = Direction(
+        positive=True if is_right else False,
+        relative_to_axis=HorizontalAxisOfObject(goal_reference, index=0),
+    )
+    return Phase1SituationTemplate(
+        f"{agent.handle}-rolls-{theme.handle}-beside-{goal_reference.handle}",
+        salient_object_variables=[agent, theme, goal_reference],
+        background_object_variables=background,
+        actions=[
+            Action(
+                ROLL,
+                argument_roles_to_fillers=[(AGENT, agent), (THEME, theme)],
+                auxiliary_variable_bindings=[(ROLL_SURFACE_AUXILIARY, surface)],
+            )
+        ],
+        constraining_relations=[bigger_than(agent, theme)],
+        after_action_relations=flatten_relations(
+            near(theme, goal_reference, direction=direction)
+        ),
+        gazed_objects=[theme],
+    )
+
+
+def _x_roll_y_behind_in_front_z_template(
+    agent: TemplateObjectVariable,
+    theme: TemplateObjectVariable,
+    goal_reference: TemplateObjectVariable,
+    surface: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+    *,
+    is_distal: bool,
+    is_behind: bool,
+) -> Phase1SituationTemplate:
+    value = "behind" if is_behind else "in-front-of"
+    direction = Direction(
+        positive=True if is_behind else False,
+        relative_to_axis=FacingAddresseeAxis(goal_reference),
+    )
+
+    return Phase1SituationTemplate(
+        f"{agent.handle}-rolls-{theme.handle}-{value}-{goal_reference.handle}",
+        salient_object_variables=[agent, theme, goal_reference],
+        background_object_variables=background,
+        actions=[
+            Action(
+                ROLL,
+                argument_roles_to_fillers=[(AGENT, agent), (THEME, theme)],
+                auxiliary_variable_bindings=[(ROLL_SURFACE_AUXILIARY, surface)],
+            )
+        ],
+        constraining_relations=[bigger_than(agent, theme)],
+        after_action_relations=flatten_relations(
+            far(theme, goal_reference, direction=direction)
+            if is_distal
+            else near(theme, goal_reference, direction=direction)
+        ),
+        gazed_objects=[theme],
+    )
+
+
+def _x_rolls_y_over_under_z_template(
+    agent: TemplateObjectVariable,
+    theme: TemplateObjectVariable,
+    goal_reference: TemplateObjectVariable,
+    surface: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+    *,
+    is_over: bool,
+) -> Phase1SituationTemplate:
+    value = "over" if is_over else "under"
+    return Phase1SituationTemplate(
+        f"{agent.handle}-rolls-{theme.handle}-{value}-{goal_reference}",
+        salient_object_variables=[agent, theme, goal_reference],
+        background_object_variables=background,
+        actions=[
+            Action(
+                ROLL,
+                argument_roles_to_fillers=[(AGENT, agent), (THEME, theme)],
+                auxiliary_variable_bindings=[(ROLL_SURFACE_AUXILIARY, surface)],
+            )
+        ],
+        constraining_relations=[bigger_than(agent, theme)],
+        after_action_relations=flatten_relations(
+            above(theme, goal_reference) if is_over else above(goal_reference, theme)
+        ),
+        gazed_objects=[theme],
+    )
+
+
 def _make_push_with_prepositions(
     num_samples: int = 5, *, noise_objects: int = 0
 ) -> Phase1InstanceGroup:
@@ -821,6 +1040,182 @@ def _make_sit_with_prepositions(
     )
 
 
+def _make_roll_with_prepositions(num_samples: int = 5, *, noise_objects: int = 0):
+    agent = standard_object("agent", THING, required_properties=[ANIMATE])
+    goal_object = standard_object("goal_object")
+    goal_object_hollow = standard_object(
+        "goal_object_hollow", required_properties=[HOLLOW]
+    )
+    theme = standard_object("rollee", required_properties=[ROLLABLE])
+    ground = standard_object("ground", root_node=GROUND)
+    roll_surface = standard_object(
+        "rollable_surface", required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
+    )
+    noise_objects_immutable: Iterable[TemplateObjectVariable] = immutableset(
+        standard_object(f"noise_object_{x}") for x in range(noise_objects)
+    )
+    surfaces: Iterable[TemplateObjectVariable] = immutableset([ground, roll_surface])
+    all_objects_mutable = [ground, roll_surface]
+    all_objects_mutable.extend(noise_objects_immutable)
+    all_object: Iterable[TemplateObjectVariable] = immutableset(all_objects_mutable)
+
+    return phase1_instances(
+        "Roll + PP",
+        chain(
+            # X rolls beside Y
+            flatten(
+                [
+                    sampled(
+                        _x_roll_beside_y_template(
+                            agent,
+                            goal_object,
+                            make_background([roll_surface], all_object),
+                            ground,
+                            is_right=is_right,
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER,
+                        max_to_sample=num_samples,
+                    )
+                    for is_right in BOOL_SET
+                ]
+            ),
+            # X rolls behind/In front of Y
+            flatten(
+                [
+                    sampled(
+                        _x_roll_behind_in_front_y_template(
+                            agent,
+                            goal_object,
+                            make_background([roll_surface], all_object),
+                            ground,
+                            is_distal=is_distal,
+                            is_behind=is_behind,
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER,
+                        max_to_sample=num_samples,
+                    )
+                    for is_distal in BOOL_SET
+                    for is_behind in BOOL_SET
+                ]
+            ),
+            # X rolls under Y
+            flatten(
+                [
+                    sampled(
+                        _x_roll_under_y_template(
+                            agent,
+                            goal_object,
+                            make_background([roll_surface], all_object),
+                            ground,
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER,
+                        max_to_sample=num_samples,
+                    )
+                ]
+            ),
+            # X rolls Y in Z
+            flatten(
+                [
+                    sampled(
+                        _x_roll_y_in_z_template(
+                            agent,
+                            theme,
+                            goal_object_hollow,
+                            ground,
+                            make_background([roll_surface], all_object),
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER,
+                        max_to_sample=num_samples,
+                    )
+                ]
+            ),
+            # X rolls Y beside Z
+            flatten(
+                [
+                    sampled(
+                        _x_roll_y_beside_z_template(
+                            agent,
+                            theme,
+                            goal_object,
+                            ground,
+                            make_background([roll_surface], all_object),
+                            is_right=is_right,
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER,
+                        max_to_sample=num_samples,
+                    )
+                    for is_right in BOOL_SET
+                ]
+            ),
+            # X rolls Y behind/In front of Z
+            flatten(
+                [
+                    sampled(
+                        _x_roll_y_behind_in_front_z_template(
+                            agent,
+                            theme,
+                            goal_object,
+                            ground,
+                            make_background([roll_surface], all_object),
+                            is_distal=is_distal,
+                            is_behind=is_behind,
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER,
+                        max_to_sample=num_samples,
+                    )
+                    for is_distal in BOOL_SET
+                    for is_behind in BOOL_SET
+                ]
+            ),
+            # X rolls Y over/under Z
+            flatten(
+                [
+                    sampled(
+                        _x_rolls_y_over_under_z_template(
+                            agent,
+                            theme,
+                            goal_object,
+                            ground,
+                            make_background([ground], all_object),
+                            is_over=is_over,
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER,
+                        max_to_sample=num_samples,
+                    )
+                    for is_over in BOOL_SET
+                ]
+            ),
+            # X rolls (Y) over/under Z - As Goal
+            flatten(
+                [
+                    sampled(
+                        _x_rolls_y_over_under_z_template(
+                            agent,
+                            theme,
+                            surface,
+                            surface,
+                            noise_objects_immutable,
+                            is_over=is_over,
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER,
+                        max_to_sample=num_samples,
+                    )
+                    for is_over in BOOL_SET
+                    for surface in surfaces
+                ]
+            ),
+        ),
+    )
+
+
 def make_verb_with_dynamic_prepositions_curriculum(
     num_samples: int = 5, *, num_noise_objects: int = 0
 ):
@@ -828,4 +1223,5 @@ def make_verb_with_dynamic_prepositions_curriculum(
         _make_push_with_prepositions(num_samples, noise_objects=num_noise_objects),
         _make_go_with_prepositions(num_samples, noise_objects=num_noise_objects),
         _make_sit_with_prepositions(num_samples, noise_objects=num_noise_objects),
+        _make_roll_with_prepositions(num_samples, noise_objects=num_noise_objects),
     ]
