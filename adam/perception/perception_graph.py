@@ -771,6 +771,34 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
     def copy_as_digraph(self) -> DiGraph:
         return self._graph.copy()
 
+    def copy_with_temporal_scope(
+        self, required_temporal_scope: TemporalScope
+    ) -> "PerceptionGraphPattern":
+        r"""
+        Produces a copy of this perception graph pattern
+        where all edge predicates now require that the edge in the target graph being matched
+        hold at *required_temporal_scope*.
+
+        The new pattern will be dynamic.
+
+        This pattern must be a static graph or a `RuntimeError` will be raised.
+        """
+        if self.dynamic:
+            raise RuntimeError(
+                "Cannot use copy_with_temporal_scopes on a pattern which is already dynamic"
+            )
+
+        wrapped_graph = self.copy_as_digraph()
+
+        for (source, target) in wrapped_graph.edges():
+            unwrapped_predicate = wrapped_graph[source, target]["predicate"]
+            temporally_scoped_predicate = HoldsAtTemporalScopePredicate(
+                unwrapped_predicate, required_temporal_scope
+            )
+            wrapped_graph[source, target]["predicate"] = temporally_scoped_predicate
+
+        return PerceptionGraphPattern(dynamic=True, graph=wrapped_graph)
+
     @staticmethod
     def _translate_graph(
         perception_graph: DiGraph,
