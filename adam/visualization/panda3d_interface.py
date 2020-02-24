@@ -58,6 +58,7 @@ class SituationVisualizer(ShowBase):
         "book": "book.egg",
         "bird": "bird.egg",
         "car": "car.egg",
+        "cookie":"cookie.egg",
         "dad": "person.egg",
         "mom": "person.egg",
         "chair-chairback_0": "chair-chairback.egg",
@@ -84,6 +85,7 @@ class SituationVisualizer(ShowBase):
         "book": "book.egg",
         "bird": "bird.egg",
         "car": "car.egg",
+        "cookie":"cookie.egg",
     }
 
     def __init__(self) -> None:
