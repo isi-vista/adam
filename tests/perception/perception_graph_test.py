@@ -3,6 +3,7 @@ from itertools import chain
 
 import pytest
 from more_itertools import first, only
+from networkx import DiGraph
 
 from adam.curriculum.curriculum_utils import (
     PHASE1_CHOOSER,
@@ -522,3 +523,9 @@ def test_dynamic_perception_graph_instantiation():
         PerceptionGraph.from_dynamic_perceptual_representation(
             PerceptualRepresentation(frames=[first_frame, second_frame, second_frame])
         )
+
+
+def test_cannot_make_dynamic_copy_of_a_dynamic_graph():
+    graph = PerceptionGraph(graph=DiGraph(), dynamic=True)
+    with pytest.raises(RuntimeError):
+        graph.copy_with_temporal_scopes([TemporalScope.BEFORE])
