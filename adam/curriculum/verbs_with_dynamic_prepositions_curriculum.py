@@ -52,7 +52,6 @@ from adam.ontology.phase1_ontology import (
     far,
     inside,
     TAKE,
-    near,
 )
 from adam.ontology.phase1_spatial_relations import (
     Region,
