@@ -529,3 +529,46 @@ def test_cannot_make_dynamic_copy_of_a_dynamic_graph():
     graph = PerceptionGraph(graph=DiGraph(), dynamic=True)
     with pytest.raises(RuntimeError):
         graph.copy_with_temporal_scopes([TemporalScope.BEFORE])
+
+
+def test_copy_with_temporal_scopes_content():
+    """
+    Tests whether copy_with_temporal_scopes converts graphs to be dynamic as intended
+    """
+
+    # We use a situation to generate the perceptual representation
+    # for a box with color.
+    target_object = BOX
+    train_obj_object = object_variable("obj-with-color", target_object)
+    obj_template = Phase1SituationTemplate(
+        "colored-obj-object", salient_object_variables=[train_obj_object]
+    )
+    template = all_possible(
+        obj_template, chooser=PHASE1_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY
+    )
+
+    train_curriculum = phase1_instances("all obj situations", situations=template)
+
+    perceptual_representation = only(train_curriculum.instances())[2]
+
+    perception_graph = graph_without_learner(
+        PerceptionGraph.from_frame(perceptual_representation.frames[0]).copy_as_digraph()
+    )
+    temporal_perception_graph = perception_graph.copy_with_temporal_scopes(
+        temporal_scopes=[TemporalScope.AFTER]
+    )
+    for (source, target) in perception_graph.copy_as_digraph().edges():
+        assert not isinstance(
+            perception_graph.copy_as_digraph()[source][target]["label"],
+            TemporallyScopedEdgeLabel,
+        )
+    for (source, target) in temporal_perception_graph.copy_as_digraph().edges():
+        # Check type, and then the content
+        label = temporal_perception_graph.copy_as_digraph()[source][target]["label"]
+        assert isinstance(label, TemporallyScopedEdgeLabel)
+        assert (
+            label.attribute == perception_graph.copy_as_digraph()[source][target]["label"]
+        )
+        assert all(
+            specifier in [TemporalScope.AFTER] for specifier in label.temporal_specifiers
+        )
