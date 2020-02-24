@@ -38,26 +38,17 @@ from typing import (
 from uuid import uuid4
 
 import graphviz
-from attr.validators import instance_of, optional, and_, deep_iterable
-from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
-from immutablecollections.converter_utils import (
-    _to_immutabledict,
-    _to_tuple,
-    _to_immutableset,
-)
+from attr.validators import deep_iterable, instance_of, optional
 from more_itertools import first
 from networkx import DiGraph, connected_components, is_isomorphic, set_node_attributes
 from typing_extensions import Protocol
-from vistautils.misc_utils import str_list_limited
-from vistautils.preconditions import check_arg
-from vistautils.range import Range
 
 from adam.axes import AxesInfo, HasAxes
 from adam.axis import GeonAxis
 from adam.geon import Geon, MaybeHasGeon
 from adam.ontology import OntologyNode
 from adam.ontology.ontology import Ontology
-from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY, PART_OF, COLOR
+from adam.ontology.phase1_ontology import COLOR, GAILA_PHASE_1_ONTOLOGY, PART_OF
 from adam.ontology.phase1_spatial_relations import Direction, Distance, Region
 from adam.ontology.structural_schema import ObjectStructuralSchema
 from adam.perception import ObjectPerception, PerceptualRepresentation
@@ -76,6 +67,15 @@ from adam.situation import SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.utils.networkx_utils import copy_digraph, digraph_with_nodes_sorted_by, subgraph
 from attr import attrib, attrs
+from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
+from immutablecollections.converter_utils import (
+    _to_immutabledict,
+    _to_immutableset,
+    _to_tuple,
+)
+from vistautils.misc_utils import str_list_limited
+from vistautils.preconditions import check_arg
+from vistautils.range import Range
 
 
 class Incrementer:
@@ -131,7 +131,9 @@ def assert_valid_edge_label(base_edge_label: Any) -> None:
         )
 
 
-def valid_edge_label(inst: Any, attr: Any, value: Any) -> None:
+def valid_edge_label(
+    inst: Any, attr: Any, value: Any  # pylint:disable=unused-argument
+) -> None:
     """
     Wraps `assert_valid_edge_label` for use as an *attrs* validator.
     """
@@ -223,8 +225,8 @@ Edge label in a `PerceptionGraph` linking an `Axis` to a `ObjectPerception` it i
 
 
 class PerceptionGraphProtocol(Protocol):
-    _graph: DiGraph = attrib(validator=instance_of(DiGraph))
-    _dynamic: bool = attrib(validator=instance_of(bool))
+    _graph: DiGraph
+    dynamic: bool
 
     def copy_as_digraph(self) -> DiGraph:
         return self._graph.copy()
@@ -258,6 +260,7 @@ class PerceptionGraph(PerceptionGraphProtocol):
     These can be matched against by `PerceptionGraphPattern`\ s.
     """
     _graph: DiGraph = attrib(validator=instance_of(DiGraph), converter=copy_digraph)
+    dynamic: bool = attrib(validator=instance_of(bool), default=False)
 
     @staticmethod
     def from_frame(frame: DevelopmentalPrimitivePerceptionFrame) -> "PerceptionGraph":
@@ -445,7 +448,7 @@ class PerceptionGraph(PerceptionGraphProtocol):
 
         This graph must be a static graph or a `RuntimeError` will be raised.
         """
-        if self._dynamic:
+        if self.dynamic:
             raise RuntimeError(
                 "Cannot use dynamic_copy_with_temporal_scopes on a graph which is "
                 "already dynamic"
@@ -613,7 +616,7 @@ class PerceptionGraph(PerceptionGraphProtocol):
             try:
                 if "label" in data_dict:
                     label_value = data_dict["label"]
-                    if self._dynamic:
+                    if self.dynamic:
                         if isinstance(label_value, TemporallyScopedEdgeLabel):
                             assert_valid_edge_label(label_value.attribute)
                         else:
@@ -636,7 +639,7 @@ class PerceptionGraph(PerceptionGraphProtocol):
                     )
             except RuntimeError as e:
                 raise RuntimeError(
-                    "Error validating PerceptionGraphEdge from {source} to {target} "
+                    f"Error validating PerceptionGraphEdge from {source} to {target} "
                     f"with attributes {data_dict}"
                 ) from e
 
@@ -651,6 +654,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
     """
 
     _graph: DiGraph = attrib(validator=instance_of(DiGraph), converter=copy_digraph)
+    dynamic: bool = attrib(validator=instance_of(bool), default=False)
 
     def _node_match(
         self, node1: Dict[str, "NodePredicate"], node2: Dict[str, "NodePredicate"]
@@ -1274,14 +1278,33 @@ class PatternMatching:
                 or not suppress_multiple_alignments_to_same_nodes
             ):
                 got_a_match = True
+
+                matched_subgraph_digraph = subgraph(
+                    matching.graph, graph_node_to_matching_pattern_node.keys()
+                ).copy()
+                matched_subgraph_dynamic = graph_to_match_against.dynamic
+
+                matched_subgraph: PerceptionGraphProtocol
+                if isinstance(graph_to_match_against, PerceptionGraph):
+                    matched_subgraph = PerceptionGraph(
+                        graph=matched_subgraph_digraph, dynamic=matched_subgraph_dynamic
+                    )
+                elif isinstance(graph_to_match_against, PerceptionGraphPattern):
+                    matched_subgraph = PerceptionGraphPattern(
+                        graph=matched_subgraph_digraph, dynamic=matched_subgraph_dynamic
+                    )
+                else:
+                    raise RuntimeError(
+                        f"Can only match against PerceptionGraphs or "
+                        f"PerceptionGraphPatterns but got a "
+                        f"{type(graph_to_match_against)}"
+                    )
+
                 yield PerceptionGraphPatternMatch(
                     graph_matched_against=graph_to_match_against,
                     matched_pattern=pattern,
-                    matched_sub_graph=PerceptionGraph(
-                        subgraph(
-                            matching.graph, graph_node_to_matching_pattern_node.keys()
-                        ).copy()
-                    ),
+                    # mypy doesn't like
+                    matched_sub_graph=matched_subgraph,
                     pattern_node_to_matched_graph_node=_invert_to_immutabledict(
                         graph_node_to_matching_pattern_node
                     ),
@@ -1501,8 +1524,8 @@ class PerceptionGraphPatternMatch:
     graph_matched_against: PerceptionGraphProtocol = attrib(
         validator=instance_of(PerceptionGraphProtocol), kw_only=True
     )
-    matched_sub_graph: PerceptionGraph = attrib(
-        validator=instance_of(PerceptionGraph), kw_only=True
+    matched_sub_graph: PerceptionGraphProtocol = attrib(
+        validator=instance_of(PerceptionGraphProtocol), kw_only=True
     )
     pattern_node_to_matched_graph_node: Mapping[
         "NodePredicate", PerceptionGraphNode
@@ -1913,7 +1936,7 @@ class EdgePredicate(ABC):
         return False
 
     @abstractmethod
-    def matches_predicate(self, edge_label: "EdgePredicate") -> bool:
+    def matches_predicate(self, edge_predicate: "EdgePredicate") -> bool:
         """
         Returns whether *edge_label* matches *self*
         """
@@ -1940,7 +1963,8 @@ class HoldsAtTemporalScopePredicate(EdgePredicate):
         if isinstance(edge_label, TemporallyScopedEdgeLabel):
             return (
                 self.temporal_scope in edge_label.temporal_specifiers
-                and self.wrapped_edge_predicate(
+                # This is callable. I don't know why pylint doesn't understand that.
+                and self.wrapped_edge_predicate(  # pylint:disable=not-callable
                     source_object_perception, edge_label.attribute, dest_object_percption
                 )
             )
@@ -1984,8 +2008,8 @@ class AnyEdgePredicate(EdgePredicate):
     def dot_label(self) -> str:
         return "*"
 
-    def matches_predicate(self, edge_label: "EdgePredicate") -> bool:
-        return isinstance(edge_label, AnyEdgePredicate)
+    def matches_predicate(self, edge_predicate: "EdgePredicate") -> bool:
+        return isinstance(edge_predicate, AnyEdgePredicate)
 
 
 @attrs(frozen=True, slots=True)
@@ -2010,10 +2034,10 @@ class RelationTypeIsPredicate(EdgePredicate):
     def reverse_in_dot_graph(self) -> bool:
         return self.relation_type == PART_OF
 
-    def matches_predicate(self, edge_label: "EdgePredicate") -> bool:
+    def matches_predicate(self, edge_predicate: "EdgePredicate") -> bool:
         return (
-            isinstance(edge_label, RelationTypeIsPredicate)
-            and edge_label.relation_type == self.relation_type
+            isinstance(edge_predicate, RelationTypeIsPredicate)
+            and edge_predicate.relation_type == self.relation_type
         )
 
 
@@ -2044,9 +2068,10 @@ class DirectionPredicate(EdgePredicate):
     def exactly_matching(direction: Direction[Any]) -> "DirectionPredicate":
         return DirectionPredicate(direction)
 
-    def matches_predicate(self, edge_label: "EdgePredicate") -> bool:
-        return isinstance(edge_label, DirectionPredicate) and (
-            edge_label.reference_direction.positive == self.reference_direction.positive
+    def matches_predicate(self, edge_predicate: "EdgePredicate") -> bool:
+        return isinstance(edge_predicate, DirectionPredicate) and (
+            edge_predicate.reference_direction.positive
+            == self.reference_direction.positive
         )
 
 
