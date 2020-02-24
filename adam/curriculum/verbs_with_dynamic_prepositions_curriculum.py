@@ -4,7 +4,11 @@ from typing import Iterable
 from immutablecollections import immutableset
 from more_itertools import flatten
 
-from adam.axes import HorizontalAxisOfObject, FacingAddresseeAxis, GRAVITATIONAL_AXIS_FUNCTION
+from adam.axes import (
+    HorizontalAxisOfObject,
+    FacingAddresseeAxis,
+    GRAVITATIONAL_AXIS_FUNCTION,
+)
 from adam.curriculum.curriculum_utils import (
     standard_object,
     phase1_instances,
@@ -33,7 +37,12 @@ from adam.ontology.phase1_ontology import (
     above,
     HAS_SPACE_UNDER,
     PERSON_CAN_HAVE,
-    _GO_GOAL, GO, on, PUSH_SURFACE_AUX, PUSH)
+    _GO_GOAL,
+    GO,
+    on,
+    PUSH_SURFACE_AUX,
+    PUSH,
+)
 from adam.ontology.phase1_spatial_relations import (
     Region,
     Direction,
@@ -44,7 +53,10 @@ from adam.ontology.phase1_spatial_relations import (
     DISTAL,
     TOWARD,
     SpatialPath,
-    VIA, GRAVITATIONAL_DOWN)
+    VIA,
+    GRAVITATIONAL_DOWN,
+    AWAY_FROM,
+)
 from adam.situation import Action
 from adam.situation.templates.phase1_templates import (
     TemplateObjectVariable,
@@ -790,10 +802,17 @@ def _throw_up_down_template(
                 auxiliary_variable_bindings=[
                     (THROW_GOAL, Region(implicit_goal_reference, distance=PROXIMAL))
                 ],
-                during=DuringAction(at_some_point=[above(theme, agent)])
-                if is_up
-                else DuringAction(
+                during=DuringAction(
                     objects_to_paths=[
+                        (
+                            theme,
+                            SpatialPath(
+                                AWAY_FROM, reference_object=GROUND_OBJECT_TEMPLATE
+                            ),
+                        )
+                    ]
+                    if is_up
+                    else [
                         (
                             theme,
                             SpatialPath(TOWARD, reference_object=GROUND_OBJECT_TEMPLATE),
