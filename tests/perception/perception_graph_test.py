@@ -48,6 +48,7 @@ from adam.perception.perception_graph import (
     PerceptionGraphPatternMatch,
     TemporalScope,
     TemporallyScopedEdgeLabel,
+    HoldsAtTemporalScopePredicate,
 )
 from adam.random_utils import RandomChooser
 from adam.relation import Relation
@@ -621,3 +622,95 @@ def test_perception_graph_post_init_edge_cases():
         new_graph.add_edge(source, target)
     with pytest.raises(RuntimeError):
         PerceptionGraph(new_graph)
+
+
+def test_matching_static_vs_dynamic_graphs():
+    target_object = BOX
+    train_obj_object = object_variable("obj-with-color", target_object)
+    obj_template = Phase1SituationTemplate(
+        "colored-obj-object", salient_object_variables=[train_obj_object]
+    )
+    template = all_possible(
+        obj_template, chooser=PHASE1_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY
+    )
+    train_curriculum = phase1_instances("all obj situations", situations=template)
+    perceptual_representation = only(train_curriculum.instances())[2]
+
+    perception_graph = graph_without_learner(
+        PerceptionGraph.from_frame(perceptual_representation.frames[0]).copy_as_digraph()
+    )
+    temporal_perception_graph = perception_graph.copy_with_temporal_scopes(
+        temporal_scopes=[TemporalScope.AFTER]
+    )
+
+    perception_pattern = PerceptionGraphPattern.from_graph(
+        perception_graph.copy_as_digraph()
+    ).perception_graph_pattern
+
+    temporal_perception_pattern = perception_pattern.copy_with_temporal_scope(
+        required_temporal_scope=TemporalScope.AFTER
+    )
+
+    # Test runtime error for matching static pattern against dynamic graph and vice versa
+
+    with pytest.raises(RuntimeError):
+        perception_pattern.matcher(temporal_perception_graph, matching_objects=False)
+
+    with pytest.raises(RuntimeError):
+        temporal_perception_pattern.matcher(perception_graph, matching_objects=False)
+
+
+def test_copy_with_temporal_scope_pattern_content():
+    """
+    Tests whether copy_with_temporal_scope converts patterns to be dynamic as intended
+    """
+
+    # We use a situation to generate the perceptual representation
+    # for a box with color.
+    target_object = BOX
+    train_obj_object = object_variable("obj-with-color", target_object)
+    obj_template = Phase1SituationTemplate(
+        "colored-obj-object", salient_object_variables=[train_obj_object]
+    )
+    template = all_possible(
+        obj_template, chooser=PHASE1_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY
+    )
+
+    train_curriculum = phase1_instances("all obj situations", situations=template)
+
+    perceptual_representation = only(train_curriculum.instances())[2]
+
+    perception_graph = graph_without_learner(
+        PerceptionGraph.from_frame(perceptual_representation.frames[0]).copy_as_digraph()
+    )
+
+    perception_pattern = PerceptionGraphPattern.from_graph(
+        perception_graph.copy_as_digraph()
+    ).perception_graph_pattern
+
+    temporal_perception_pattern = perception_pattern.copy_with_temporal_scope(
+        required_temporal_scope=TemporalScope.AFTER
+    )
+
+    # Exception while applying to dynamic pattern
+    with pytest.raises(RuntimeError):
+        temporal_perception_pattern.copy_with_temporal_scope(
+            required_temporal_scope=TemporalScope.AFTER
+        )
+
+    for (source, target) in perception_pattern.copy_as_digraph().edges():
+        assert not isinstance(
+            perception_pattern.copy_as_digraph()[source][target]["predicate"],
+            HoldsAtTemporalScopePredicate,
+        )
+    for (source, target) in temporal_perception_pattern.copy_as_digraph().edges():
+        # Check type, and then the content
+        predicate = temporal_perception_pattern.copy_as_digraph()[source][target][
+            "predicate"
+        ]
+        assert isinstance(predicate, HoldsAtTemporalScopePredicate)
+        assert (
+            predicate.wrapped_edge_predicate
+            == perception_pattern.copy_as_digraph()[source][target]["predicate"]
+        )
+        assert predicate.temporal_scope == TemporalScope.AFTER

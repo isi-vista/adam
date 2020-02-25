@@ -794,11 +794,11 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
         wrapped_graph = self.copy_as_digraph()
 
         for (source, target) in wrapped_graph.edges():
-            unwrapped_predicate = wrapped_graph[source, target]["predicate"]
+            unwrapped_predicate = wrapped_graph.edges[source, target]["predicate"]
             temporally_scoped_predicate = HoldsAtTemporalScopePredicate(
                 unwrapped_predicate, required_temporal_scope
             )
-            wrapped_graph[source, target]["predicate"] = temporally_scoped_predicate
+            wrapped_graph.edges[source, target]["predicate"] = temporally_scoped_predicate
 
         return PerceptionGraphPattern(dynamic=True, graph=wrapped_graph)
 
