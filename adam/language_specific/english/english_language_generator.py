@@ -765,9 +765,13 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     return None
 
             preposition: Optional[str] = None
+
             if region.distance == INTERIOR:
                 preposition = "in"
-            elif region.direction:
+            elif region.distance == PROXIMAL:
+                preposition = "to"
+
+            if region.direction:
                 direction_axis = region.direction.relative_to_axis.to_concrete_axis(
                     self.situation.axis_info
                 )
@@ -781,8 +785,6 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                         else:
                             preposition = "under"
                     else:
-                        # TODO: hack for M3; revisit in cleanup
-                        # see: https://github.com/isi-vista/adam/issues/573
                         if isinstance(
                             region.direction.relative_to_axis, FacingAddresseeAxis
                         ):
@@ -792,8 +794,6 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                                 preposition = "behind"
                         elif region.distance == PROXIMAL:
                             preposition = "beside"
-            elif region.distance == PROXIMAL:
-                preposition = "to"
 
             if not preposition:
                 raise RuntimeError(
