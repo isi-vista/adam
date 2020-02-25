@@ -105,7 +105,18 @@ def cross_section_to_geon(cs: CrossSection) -> Shape:
 
 # currently supported shapes and models
 GEON_SHAPES = [Shape.SQUARE, Shape.CIRCULAR, Shape.OVALISH, Shape.RECTANGULAR]
-MODEL_NAMES = ["ball", "hat", "cup", "table", "door", "book", "car", "bird", "chair", "dog"]
+MODEL_NAMES = [
+    "ball",
+    "hat",
+    "cup",
+    "table",
+    "door",
+    "book",
+    "car",
+    "bird",
+    "chair",
+    "dog",
+]
 MODEL_PART_NAMES = {"table": ["tabletop", "(furniture) leg"]}
 
 NAME_TO_ONTOLOGY_NODE: ImmutableDict[str, OntologyNode] = immutabledict(
@@ -124,7 +135,20 @@ _PART_CARDINALITY: ImmutableDict[str, ImmutableDict[str, int]] = immutabledict(
             "chair",
             immutabledict([("chairback", 1), ("chairseat", 1), ("(furniture) leg", 4)]),
         ),
-        ("dog", immutabledict(([("dog-head", 1), ("foot", 4), ("tail", 1), ("torso", 1), ("leg-segment", 8)]))),
+        (
+            "dog",
+            immutabledict(
+                (
+                    [
+                        ("dog-head", 1),
+                        ("foot", 4),
+                        ("tail", 1),
+                        ("torso", 1),
+                        ("leg-segment", 8),
+                    ]
+                )
+            ),
+        ),
     ]
 )
 

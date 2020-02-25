@@ -226,7 +226,6 @@ class SituationVisualizer(ShowBase):
 
         return new_model
 
-
     def add_dummy_node(
         self,
         name: str,
@@ -348,7 +347,10 @@ if __name__ == "__main__":
 
     for MODEL_NAME in ARGS.model_names:
         NODE = VISUALIZER.add_model(
-            Shape.IRREGULAR, name=MODEL_NAME, color=RgbColorPerception(100, 100, 100), lookup_name=MODEL_NAME
+            Shape.IRREGULAR,
+            name=MODEL_NAME,
+            color=RgbColorPerception(100, 100, 100),
+            lookup_name=MODEL_NAME,
         )
         node_pos = NODE.get_pos()
         NODE.setPos(node_pos.x + ARGS.x, node_pos.y + ARGS.y, node_pos.z + ARGS.z)
