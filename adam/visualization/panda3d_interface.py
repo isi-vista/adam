@@ -87,6 +87,11 @@ class SituationVisualizer(ShowBase):
         "dog-foot_3": "dog-foot_left_back.egg",
         "dog-leg-segment_6": "dog-leg-segment_0_right_back.egg",
         "dog-leg-segment_7": "dog-leg-segment_1_right_back.egg",
+        "car-tire_0": "car-tire_left_front.egg",
+        "car-tire_1": "car-tire_left_back.egg",
+        "car-tire_2": "car-tire_right_back.egg",
+        "car-tire_3": "car-tire_right_front.egg",
+        "car-body_0": "car-body.egg",
     }
 
     models_used_for_scale_reference = {
