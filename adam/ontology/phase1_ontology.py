@@ -2241,7 +2241,7 @@ GAILA_PHASE_1_SIZE_GRADES: Tuple[Tuple[OntologyNode, ...], ...] = (
     (_TRUCK_CAB,),
     (TABLE, DOOR),
     (_TABLETOP,),
-    (MOM, DAD),
+    (MOM, DAD, PERSON),
     (DOG, BOX, CHAIR, _TIRE),
     (BABY,),
     (_BODY,),

@@ -11,6 +11,7 @@ from adam.ontology.phase1_ontology import (
     GAILA_PHASE_1_SIZE_GRADES,
     MOM,
     DAD,
+    PERSON,
 )
 
 from adam.ontology.phase1_ontology import (
@@ -104,7 +105,7 @@ def cross_section_to_geon(cs: CrossSection) -> Shape:
 
 # currently supported shapes and models
 GEON_SHAPES = [Shape.SQUARE, Shape.CIRCULAR, Shape.OVALISH, Shape.RECTANGULAR]
-MODEL_NAMES = ["ball", "hat", "cup", "table", "door", "book", "car", "bird", "chair"]
+MODEL_NAMES = ["ball", "hat", "cup", "table", "door", "book", "car", "bird", "chair", "dog"]
 MODEL_PART_NAMES = {"table": ["tabletop", "(furniture) leg"]}
 
 NAME_TO_ONTOLOGY_NODE: ImmutableDict[str, OntologyNode] = immutabledict(
@@ -123,6 +124,7 @@ _PART_CARDINALITY: ImmutableDict[str, ImmutableDict[str, int]] = immutabledict(
             "chair",
             immutabledict([("chairback", 1), ("chairseat", 1), ("(furniture) leg", 4)]),
         ),
+        ("dog", immutabledict(([("dog-head", 1), ("foot", 4), ("tail", 1), ("torso", 1), ("leg-segment", 8)]))),
     ]
 )
 
@@ -143,11 +145,16 @@ def model_lookup(
     # if the object has a specific (atomic) model, return that
 
     name = object_percept.debug_handle.split("_")[0]
-    if name in MODEL_NAMES:
+    if name in MODEL_NAMES or object_percept.geon is None:
         return name
 
     # if this is a sub object, see if the part name is supported for the parent object
     if parent and name in _PART_NAME_TO_ONTOLOGY_NODE:
+
+        # get the top level parent of this object
+        while parent.parent is not None and parent.parent.name != "render":
+            parent = parent.parent
+
         parent_name = parent.name.split("_")[0]
         # convert unique sub-object index into a prototypical index
         if parent_name in _PART_CARDINALITY:
@@ -169,7 +176,7 @@ def model_lookup(
 def _create_object_scale_multiplier_mapping() -> ImmutableDict[str, float]:
 
     # get the index in the size grades corresponding to people, as a reference point
-    human_index = GAILA_PHASE_1_SIZE_GRADES.index((MOM, DAD))
+    human_index = GAILA_PHASE_1_SIZE_GRADES.index((MOM, DAD, PERSON))
 
     # two different scales are operating here (linearly): things bigger than adult humans, and things smaller
     # than adult humans.

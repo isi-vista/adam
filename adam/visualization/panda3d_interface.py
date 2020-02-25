@@ -58,7 +58,7 @@ class SituationVisualizer(ShowBase):
         "book": "book.egg",
         "bird": "bird.egg",
         "car": "car.egg",
-        "cookie":"cookie.egg",
+        "cookie": "cookie.egg",
         "dad": "person.egg",
         "mom": "person.egg",
         "chair-chairback_0": "chair-chairback.egg",
@@ -72,6 +72,21 @@ class SituationVisualizer(ShowBase):
         "table-(furniture) leg_2": "table-leg_right_back.egg",
         "table-(furniture) leg_3": "table-leg_right_front.egg",
         "table-tabletop_0": "table-tabletop.egg",
+        "dog-dog-head_0": "dog-dog-head.egg",
+        "dog-torso_0": "dog-torso.egg",
+        "dog-tail_0": "dog-tail.egg",
+        "dog-foot_0": "dog-foot_left_front.egg",
+        "dog-leg-segment_0": "dog-leg-segment_0_left_front.egg",
+        "dog-leg-segment_1": "dog-leg-segment_1_left_front.egg",
+        "dog-foot_1": "dog-foot_right_front.egg",
+        "dog-leg-segment_2": "dog-leg-segment_0_right_front.egg",
+        "dog-leg-segment_3": "dog-leg-segment_1_right_front.egg",
+        "dog-foot_2": "dog-foot_left_back.egg",
+        "dog-leg-segment_4": "dog-leg-segment_0_left_back.egg",
+        "dog-leg-segment_5": "dog-leg-segment_1_left_back.egg",
+        "dog-foot_3": "dog-foot_left_back.egg",
+        "dog-leg-segment_6": "dog-leg-segment_0_right_back.egg",
+        "dog-leg-segment_7": "dog-leg-segment_1_right_back.egg",
     }
 
     models_used_for_scale_reference = {
@@ -85,7 +100,9 @@ class SituationVisualizer(ShowBase):
         "book": "book.egg",
         "bird": "bird.egg",
         "car": "car.egg",
-        "cookie":"cookie.egg",
+        "cookie": "cookie.egg",
+        "dog": "dog.egg",
+        "person": "person.egg",
     }
 
     def __init__(self) -> None:
@@ -178,7 +195,7 @@ class SituationVisualizer(ShowBase):
         # back off: attempt to find a model for the object's geon
         else:
             try:
-                print(f"adding: {model_type}")
+                print(f"adding geon: {model_type}")
                 new_model = self._load_model(
                     SituationVisualizer.model_to_file[model_type]
                 )
@@ -209,6 +226,7 @@ class SituationVisualizer(ShowBase):
 
         return new_model
 
+
     def add_dummy_node(
         self,
         name: str,
@@ -217,8 +235,7 @@ class SituationVisualizer(ShowBase):
         position: Optional[Tuple[float, float, float]] = None,
         scale_multiplier: Optional[float] = 1.0,
     ) -> NodePath:
-        print(f"\nAdding Dummy node: {name}")
-
+        # TODO: name 'dummy_node' isn't totally accurate now
         if lookup_name in SituationVisualizer.specific_model_to_file:
             print(f"\nADDING SPECIFIC MODEL")
             new_node = self._load_model(
@@ -331,7 +348,7 @@ if __name__ == "__main__":
 
     for MODEL_NAME in ARGS.model_names:
         NODE = VISUALIZER.add_model(
-            Shape.IRREGULAR, name=MODEL_NAME, color=None, lookup_name=MODEL_NAME
+            Shape.IRREGULAR, name=MODEL_NAME, color=RgbColorPerception(100, 100, 100), lookup_name=MODEL_NAME
         )
         node_pos = NODE.get_pos()
         NODE.setPos(node_pos.x + ARGS.x, node_pos.y + ARGS.y, node_pos.z + ARGS.z)
