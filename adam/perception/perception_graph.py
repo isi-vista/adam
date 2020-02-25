@@ -7,7 +7,7 @@ among other things.
 This file first defines `PerceptionGraph`\ s,
 then defines `PerceptionGraphPattern`\ s to match them.
 
-The MatchedObjectNode is defined at the top of this module as it is needed prior
+The `MatchedObjectNode` is defined at the top of this module as it is needed prior
 to defining the type of Nodes in our `PerceptionGraph`\ s readers should start with
 `PerceptionGraphProtocol`, `PerceptionGraph`, and `PerceptionGraphPattern` before
 reading other parts of this module.
@@ -15,6 +15,8 @@ reading other parts of this module.
 import logging
 import pickle
 from abc import ABC, abstractmethod
+from enum import Enum
+from itertools import chain
 from pathlib import Path
 from time import process_time
 from typing import (
@@ -36,25 +38,20 @@ from typing import (
 from uuid import uuid4
 
 import graphviz
-from attr.validators import instance_of, optional
-from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
-from immutablecollections.converter_utils import _to_immutabledict, _to_tuple
+from attr.validators import deep_iterable, instance_of, optional
 from more_itertools import first
 from networkx import DiGraph, connected_components, is_isomorphic, set_node_attributes
 from typing_extensions import Protocol
-from vistautils.misc_utils import str_list_limited
-from vistautils.preconditions import check_arg
-from vistautils.range import Range
 
 from adam.axes import AxesInfo, HasAxes
 from adam.axis import GeonAxis
 from adam.geon import Geon, MaybeHasGeon
 from adam.ontology import OntologyNode
 from adam.ontology.ontology import Ontology
-from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY, PART_OF, COLOR
+from adam.ontology.phase1_ontology import COLOR, GAILA_PHASE_1_ONTOLOGY, PART_OF
 from adam.ontology.phase1_spatial_relations import Direction, Distance, Region
 from adam.ontology.structural_schema import ObjectStructuralSchema
-from adam.perception import ObjectPerception
+from adam.perception import ObjectPerception, PerceptualRepresentation
 from adam.perception._matcher import GraphMatching
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -70,6 +67,15 @@ from adam.situation import SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.utils.networkx_utils import copy_digraph, digraph_with_nodes_sorted_by, subgraph
 from attr import attrib, attrs
+from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
+from immutablecollections.converter_utils import (
+    _to_immutabledict,
+    _to_immutableset,
+    _to_tuple,
+)
+from vistautils.misc_utils import str_list_limited
+from vistautils.preconditions import check_arg
+from vistautils.range import Range
 
 
 class Incrementer:
@@ -104,7 +110,86 @@ PerceptionGraphNode = Union[
     GeonAxis,
     MatchedObjectNode,
 ]
-PerceptionGraphEdgeLabel = Union[OntologyNode, str, Direction[Any]]
+
+# If this is changed, assert_valid_edge_label below needs to be updated.
+EdgeLabel = Union[OntologyNode, str, Direction[Any]]
+"""
+This is the core information stored on a perception graph edge.
+This is wrapped in `TemporallyScopdPerceptionGraphEdgeAttribute`
+before actually being applied to a `DiGraph` edge.
+"""
+
+
+def assert_valid_edge_label(base_edge_label: Any) -> None:
+    # This needs to be updated
+    # if the EdgeLabel type alias is updated.
+    # Sadly type aliases cannot be used with isinstance. :-(
+    if not isinstance(base_edge_label, (OntologyNode, str, Direction)):
+        raise RuntimeError(
+            f"Edge labels must be either OntologyNode, str, "
+            f"or Direction, but got {base_edge_label}"
+        )
+
+
+def valid_edge_label(
+    inst: Any, attr: Any, value: Any  # pylint:disable=unused-argument
+) -> None:
+    """
+    Wraps `assert_valid_edge_label` for use as an *attrs* validator.
+    """
+    assert_valid_edge_label(value)
+
+
+class TemporalScope(Enum):
+    """
+    In a dynamic situation,
+    specifies the relationship of perception graph edges to the perception frames.
+    """
+
+    BEFORE = "before"
+    """
+    Indicates a relationship holds in the first frame.
+    """
+    AFTER = "after"
+    """
+    Indicates a relationship holds in the second frame.
+    """
+    DURING = "during"
+    """
+    Indicates a relationship holds in the interval between frames.
+    """
+
+
+@attrs(slots=True, frozen=True)
+class TemporallyScopedEdgeLabel:
+    r"""
+    An edge attribute in a `PerceptionGraph` which is annotated for what times it holds true.
+
+    These should only be used in  `PerceptionGraph`\ s representing dynamic situations,
+    in which every edge label should be wrapped with this class.
+    """
+    attribute: EdgeLabel = attrib(validator=valid_edge_label)
+    temporal_specifiers: ImmutableSet[TemporalScope] = attrib(
+        converter=_to_immutableset,
+        default=immutableset(),
+        validator=deep_iterable(instance_of(TemporalScope)),
+    )
+
+    def __attrs_post_init__(self) -> None:
+        if not self.temporal_specifiers:
+            raise RuntimeError(
+                "Cannot have a TemporallyScopedPerceptionGraphEdgeAttribute "
+                "without any temporal specifiers"
+            )
+
+    @staticmethod
+    def for_dynamic_perception(
+        attribute: EdgeLabel, when=Union[TemporalScope, Iterable[TemporalScope]]
+    ) -> "TemporallyScopedEdgeLabel":
+        if isinstance(when, TemporalScope):
+            when = [when]
+        return TemporallyScopedEdgeLabel(attribute, when)
+
 
 # certain constant edges used by PerceptionGraphs
 REFERENCE_OBJECT_LABEL = OntologyNode("reference-object")
@@ -140,7 +225,8 @@ Edge label in a `PerceptionGraph` linking an `Axis` to a `ObjectPerception` it i
 
 
 class PerceptionGraphProtocol(Protocol):
-    _graph: DiGraph = attrib(validator=instance_of(DiGraph))
+    _graph: DiGraph
+    dynamic: bool
 
     def copy_as_digraph(self) -> DiGraph:
         return self._graph.copy()
@@ -163,11 +249,18 @@ class PerceptionGraph(PerceptionGraphProtocol):
     r"""
     Represents a `DevelopmentalPrimitivePerceptionFrame` as a directed graph.
 
+    Perception graphs may be static (representing a single snapshot of a situation)
+    or dynamic, representing a changing situation.
+    This is encoded by the *_dynamic* field.
+
     `ObjectPerception`\ s, properties, `Geon`\ s, `GeonAxis`\ s, and `Region`\ s are nodes.
+    Edges should have the *label* attribute mapped to an `EdgeLabel`, if the graph is static,
+    or to `TemporallyScopedEdgeLabel`, if dynamic.
 
     These can be matched against by `PerceptionGraphPattern`\ s.
     """
     _graph: DiGraph = attrib(validator=instance_of(DiGraph), converter=copy_digraph)
+    dynamic: bool = attrib(validator=instance_of(bool), default=False)
 
     @staticmethod
     def from_frame(frame: DevelopmentalPrimitivePerceptionFrame) -> "PerceptionGraph":
@@ -258,6 +351,121 @@ class PerceptionGraph(PerceptionGraphProtocol):
                 graph.add_edge(axis, object_, label=FACING_OBJECT_LABEL)
 
         return PerceptionGraph(graph)
+
+    @staticmethod
+    def from_dynamic_perceptual_representation(
+        perceptual_representation: PerceptualRepresentation[
+            DevelopmentalPrimitivePerceptionFrame
+        ]
+    ) -> "PerceptionGraph":
+        check_arg(
+            len(perceptual_representation.frames) == 2,
+            "Can only create a DynamicPerceptionGraph from exactly two frames, "
+            "but got %s",
+            (len(perceptual_representation.frames),),
+        )
+
+        # TODO: handle "during" field of PerceptualRepresentation
+        # https://github.com/isi-vista/adam/issues/593
+
+        # First, we translate each of the two frames into PerceptionGraphs independently.
+        # The edges of each graph are marked with the appropriate "temporal specifier"
+        # which tells whether they belong to the "before" frame or the "after" frame.
+        before_frame_graph = (
+            PerceptionGraph.from_frame(perceptual_representation.frames[0])
+            .copy_with_temporal_scopes([TemporalScope.BEFORE])
+            .copy_as_digraph()
+        )
+
+        after_frame_graph = (
+            PerceptionGraph.from_frame(perceptual_representation.frames[1])
+            .copy_with_temporal_scopes([TemporalScope.AFTER])
+            .copy_as_digraph()
+        )
+
+        # This will be what the PerceptionGraph we are building will wrap.
+        _dynamic_digraph = DiGraph()
+        # Start with everything which is in the first frame's PerceptionGraph.
+        _dynamic_digraph.update(before_frame_graph)
+
+        # We have to be more careful adding things from the second frame's PerceptionGraph.
+        # We can freely add all the nodes because they don't contain temporal information
+        # and adding the same node twice is harmless.
+        _dynamic_digraph.add_nodes_from(after_frame_graph.nodes)
+
+        # But now we need to walk edge-by-edge through the second graph,
+        # adding edges which don't collide with our current edges,
+        # but merging together edges which do (because we aren't using hypergraphs).
+        # Note that because of the way perception graphs are constructed,
+        # nodes representing objects will be reference-identical
+        # between the two frame --> graph translations,
+        # so we can use that to merge them below.
+        for (source, target, after_label) in after_frame_graph.edges.data("label"):
+            if _dynamic_digraph.has_edge(source, target):
+                # This edge also appears in the first frame,
+                # so we need to merge the edge metadata between the frames.
+
+                # We know the edges in these graphs are wrapped with temporal scopes
+                # because we applied the temporal scopes above.
+                after_label = cast(TemporallyScopedEdgeLabel, after_label)
+                before_label: TemporallyScopedEdgeLabel = _dynamic_digraph.edges[
+                    source, target
+                ]["label"]
+
+                # We don't know how to merge edges which differ in anything
+                # except temporal specifiers
+                if before_label.attribute == after_label.attribute:
+                    _dynamic_digraph.edges[source, target][
+                        "label"
+                    ] = TemporallyScopedEdgeLabel(
+                        before_label.attribute,
+                        temporal_specifiers=chain(
+                            before_label.temporal_specifiers,
+                            after_label.temporal_specifiers,
+                        ),
+                    )
+                else:
+                    raise RuntimeError(
+                        f"We currently don't know how to handle a change in label "
+                        f"on an edge between the before frame and the after frame."
+                        f"Source={source}; Target={target}; "
+                        f"before label={before_label.attribute}; "
+                        f"after label={after_label.attribute}"
+                    )
+            else:
+                # This edge does not also appear in the first frame,
+                # so no merging is needed.
+                _dynamic_digraph.add_edge(source, target, label=after_label)
+
+        return PerceptionGraph(graph=_dynamic_digraph, dynamic=True)
+
+    def copy_with_temporal_scopes(
+        self, temporal_scopes: Iterable[TemporalScope]
+    ) -> "PerceptionGraph":
+        r"""
+        Produces a copy of this perception graph with the given `TemporalScope`\ s
+        applied to all edges. This new graph will be dynamic.
+
+        This graph must be a static graph or a `RuntimeError` will be raised.
+        """
+        if self.dynamic:
+            raise RuntimeError(
+                "Cannot use dynamic_copy_with_temporal_scopes on a graph which is "
+                "already dynamic"
+            )
+
+        temporal_scopes = immutableset(temporal_scopes)
+
+        wrapped_graph = self.copy_as_digraph()
+
+        for (source, target) in wrapped_graph.edges():
+            unwrapped_label = wrapped_graph.edges[source, target]["label"]
+            temporally_scoped_label = TemporallyScopedEdgeLabel.for_dynamic_perception(
+                unwrapped_label, when=temporal_scopes
+            )
+            wrapped_graph.edges[source, target]["label"] = temporally_scoped_label
+
+        return PerceptionGraph(dynamic=True, graph=wrapped_graph)
 
     def render_to_file(  # pragma: no cover
         self,
@@ -393,14 +601,44 @@ class PerceptionGraph(PerceptionGraphProtocol):
 
         return node_id
 
-    def copy_as_digraph(self) -> DiGraph:
-        return self._graph.copy()
-
     def __repr__(self) -> str:
         return (
             f"PerceptionGraph(nodes={str_list_limited(self._graph.nodes, 10)}, edges="
             f"{str_list_limited(self._graph.edges(data='label'), 15)})"
         )
+
+    def __attrs_post_init__(self) -> None:
+        # Every edge must have a label
+        for (source, target, data_dict) in self._graph.edges(data=True):
+            try:
+                if "label" in data_dict:
+                    label_value = data_dict["label"]
+                    if self.dynamic:
+                        if isinstance(label_value, TemporallyScopedEdgeLabel):
+                            assert_valid_edge_label(label_value.attribute)
+                        else:
+                            raise RuntimeError(
+                                "In a dynamic graph, all edge labels must be "
+                                "wrapped in TemporallyScopedEdgeLabel"
+                            )
+                    else:
+                        if isinstance(label_value, TemporallyScopedEdgeLabel):
+                            raise RuntimeError(
+                                "TemporallyScopedEdgeLabels may not appear "
+                                "in a static graph."
+                            )
+                        else:
+                            assert_valid_edge_label(label_value)
+                else:
+                    raise RuntimeError(
+                        f"Every edge in a PerceptionGraph must have a 'label' "
+                        f"attribute"
+                    )
+            except RuntimeError as e:
+                raise RuntimeError(
+                    f"Error validating PerceptionGraphEdge from {source} to {target} "
+                    f"with attributes {data_dict}"
+                ) from e
 
 
 @attrs(frozen=True, slots=True, repr=False)
@@ -413,6 +651,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
     """
 
     _graph: DiGraph = attrib(validator=instance_of(DiGraph), converter=copy_digraph)
+    dynamic: bool = attrib(validator=instance_of(bool), default=False)
 
     def _node_match(
         self, node1: Dict[str, "NodePredicate"], node2: Dict[str, "NodePredicate"]
@@ -427,7 +666,8 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
 
     def check_isomorphism(self, other_graph: "PerceptionGraphPattern") -> bool:
         """
-        Compares two pattern graphs and returns true if they are isomorphic, including edges and node attributes.
+        Compares two pattern graphs and returns true if they are isomorphic, including edges and
+        node attributes.
         """
         return is_isomorphic(
             self._graph,
@@ -447,6 +687,15 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
         Creates an object representing an attempt to match this pattern
         against *graph_to_match_against*.
         """
+        if graph_to_match_against.dynamic != self.dynamic:
+            pattern_adjective = "dynamic" if self.dynamic else "static"
+            graph_adjective = "dynamic" if graph_to_match_against.dynamic else "static"
+            raise RuntimeError(
+                f"Static patterns can only be applied to static graphs "
+                f"and dynamic patterns to dynamic graphcs, "
+                f"but tried to apply a {pattern_adjective} pattern to a "
+                f"{graph_adjective} graph."
+            )
         return PatternMatching(
             pattern=self,
             graph_to_match_against=graph_to_match_against,
@@ -472,7 +721,8 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
         perception_generator = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
             GAILA_PHASE_1_ONTOLOGY
         )
-        # We explicitly exclude ground and learner in perception generation, which were not specified in the schema
+        # We explicitly exclude ground and learner in perception generation, which were not
+        # specified in the schema
         perception = perception_generator.generate_perception(
             situation, chooser=RandomChooser.for_seed(0), include_ground=False
         )
@@ -524,8 +774,33 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
     def __len__(self) -> int:
         return len(self._graph)
 
-    def copy_as_digraph(self) -> DiGraph:
-        return self._graph.copy()
+    def copy_with_temporal_scope(
+        self, required_temporal_scope: TemporalScope
+    ) -> "PerceptionGraphPattern":
+        r"""
+        Produces a copy of this perception graph pattern
+        where all edge predicates now require that the edge in the target graph being matched
+        hold at *required_temporal_scope*.
+
+        The new pattern will be dynamic.
+
+        This pattern must be a static graph or a `RuntimeError` will be raised.
+        """
+        if self.dynamic:
+            raise RuntimeError(
+                "Cannot use copy_with_temporal_scopes on a pattern which is already dynamic"
+            )
+
+        wrapped_graph = self.copy_as_digraph()
+
+        for (source, target) in wrapped_graph.edges():
+            unwrapped_predicate = wrapped_graph.edges[source, target]["predicate"]
+            temporally_scoped_predicate = HoldsAtTemporalScopePredicate(
+                unwrapped_predicate, required_temporal_scope
+            )
+            wrapped_graph.edges[source, target]["predicate"] = temporally_scoped_predicate
+
+        return PerceptionGraphPattern(dynamic=True, graph=wrapped_graph)
 
     @staticmethod
     def _translate_graph(
@@ -1034,14 +1309,33 @@ class PatternMatching:
                 or not suppress_multiple_alignments_to_same_nodes
             ):
                 got_a_match = True
+
+                matched_subgraph_digraph = subgraph(
+                    matching.graph, graph_node_to_matching_pattern_node.keys()
+                ).copy()
+                matched_subgraph_dynamic = graph_to_match_against.dynamic
+
+                matched_subgraph: PerceptionGraphProtocol
+                if isinstance(graph_to_match_against, PerceptionGraph):
+                    matched_subgraph = PerceptionGraph(
+                        graph=matched_subgraph_digraph, dynamic=matched_subgraph_dynamic
+                    )
+                elif isinstance(graph_to_match_against, PerceptionGraphPattern):
+                    matched_subgraph = PerceptionGraphPattern(
+                        graph=matched_subgraph_digraph, dynamic=matched_subgraph_dynamic
+                    )
+                else:
+                    raise RuntimeError(
+                        f"Can only match against PerceptionGraphs or "
+                        f"PerceptionGraphPatterns but got a "
+                        f"{type(graph_to_match_against)}"
+                    )
+
                 yield PerceptionGraphPatternMatch(
                     graph_matched_against=graph_to_match_against,
                     matched_pattern=pattern,
-                    matched_sub_graph=PerceptionGraph(
-                        subgraph(
-                            matching.graph, graph_node_to_matching_pattern_node.keys()
-                        ).copy()
-                    ),
+                    # mypy doesn't like
+                    matched_sub_graph=matched_subgraph,
                     pattern_node_to_matched_graph_node=_invert_to_immutabledict(
                         graph_node_to_matching_pattern_node
                     ),
@@ -1261,8 +1555,8 @@ class PerceptionGraphPatternMatch:
     graph_matched_against: PerceptionGraphProtocol = attrib(
         validator=instance_of(PerceptionGraphProtocol), kw_only=True
     )
-    matched_sub_graph: PerceptionGraph = attrib(
-        validator=instance_of(PerceptionGraph), kw_only=True
+    matched_sub_graph: PerceptionGraphProtocol = attrib(
+        validator=instance_of(PerceptionGraphProtocol), kw_only=True
     )
     pattern_node_to_matched_graph_node: Mapping[
         "NodePredicate", PerceptionGraphNode
@@ -1651,7 +1945,7 @@ class EdgePredicate(ABC):
     def __call__(
         self,
         source_object_perception: PerceptionGraphNode,
-        edge_label: PerceptionGraphEdgeLabel,
+        edge_label: Union[EdgeLabel, TemporallyScopedEdgeLabel],
         dest_object_percption: PerceptionGraphNode,
     ) -> bool:
         """
@@ -1673,10 +1967,59 @@ class EdgePredicate(ABC):
         return False
 
     @abstractmethod
-    def matches_predicate(self, edge_label: "EdgePredicate") -> bool:
+    def matches_predicate(self, edge_predicate: "EdgePredicate") -> bool:
         """
         Returns whether *edge_label* matches *self*
         """
+
+
+@attrs(frozen=True, slots=True)
+class HoldsAtTemporalScopePredicate(EdgePredicate):
+    """
+    `EdgePredicate` which matches an edge with a `TemporallyScopedEdgeLabel`
+    whose attribute matches *wrapped_edge_predicate*
+    and which has at least the temporal scope *temporal_scope*
+    (but may have others).
+    """
+
+    wrapped_edge_predicate: EdgePredicate = attrib(validator=instance_of(EdgePredicate))
+    temporal_scope: TemporalScope = attrib(validator=instance_of(TemporalScope))
+
+    def __call__(
+        self,
+        source_object_perception: PerceptionGraphNode,
+        edge_label: Union[EdgeLabel, TemporallyScopedEdgeLabel],
+        dest_object_percption: PerceptionGraphNode,
+    ) -> bool:
+        if isinstance(edge_label, TemporallyScopedEdgeLabel):
+            return (
+                self.temporal_scope in edge_label.temporal_specifiers
+                # This is callable. I don't know why pylint doesn't understand that.
+                and self.wrapped_edge_predicate(  # pylint:disable=not-callable
+                    source_object_perception, edge_label.attribute, dest_object_percption
+                )
+            )
+        else:
+            raise RuntimeError(
+                f"Cannot apply HoldsAtTemporalScopePredicate to anything but "
+                f"a TemporallyScopedEdgeLabel."
+                f"This exception probably indicates that you are applying "
+                f"a pattern intended for a dynamic situation to a static situation."
+                f"Source: {source_object_perception}; Dest: {dest_object_percption};"
+                f"Predicate: {self}; Label: {edge_label}"
+            )
+
+    def dot_label(self) -> str:
+        return f"{self.wrapped_edge_predicate}@{self.temporal_scope}"
+
+    def matches_predicate(self, edge_predicate: "EdgePredicate") -> bool:
+        return (
+            isinstance(edge_predicate, HoldsAtTemporalScopePredicate)
+            and self.temporal_scope == edge_predicate.temporal_scope
+            and self.wrapped_edge_predicate.matches_predicate(
+                edge_predicate.wrapped_edge_predicate
+            )
+        )
 
 
 @attrs(frozen=True, slots=True)
@@ -1688,7 +2031,7 @@ class AnyEdgePredicate(EdgePredicate):
     def __call__(
         self,
         source_object_perception: PerceptionGraphNode,
-        edge_label: PerceptionGraphEdgeLabel,
+        edge_label: Union[EdgeLabel, TemporallyScopedEdgeLabel],
         dest_object_percption: PerceptionGraphNode,
     ) -> bool:
         return True
@@ -1696,8 +2039,8 @@ class AnyEdgePredicate(EdgePredicate):
     def dot_label(self) -> str:
         return "*"
 
-    def matches_predicate(self, edge_label: "EdgePredicate") -> bool:
-        return isinstance(edge_label, AnyEdgePredicate)
+    def matches_predicate(self, edge_predicate: "EdgePredicate") -> bool:
+        return isinstance(edge_predicate, AnyEdgePredicate)
 
 
 @attrs(frozen=True, slots=True)
@@ -1711,7 +2054,7 @@ class RelationTypeIsPredicate(EdgePredicate):
     def __call__(
         self,
         source_object_perception: PerceptionGraphNode,
-        edge_label: PerceptionGraphEdgeLabel,
+        edge_label: Union[EdgeLabel, TemporallyScopedEdgeLabel],
         dest_object_percption: PerceptionGraphNode,
     ) -> bool:
         return edge_label == self.relation_type
@@ -1722,10 +2065,10 @@ class RelationTypeIsPredicate(EdgePredicate):
     def reverse_in_dot_graph(self) -> bool:
         return self.relation_type == PART_OF
 
-    def matches_predicate(self, edge_label: "EdgePredicate") -> bool:
+    def matches_predicate(self, edge_predicate: "EdgePredicate") -> bool:
         return (
-            isinstance(edge_label, RelationTypeIsPredicate)
-            and edge_label.relation_type == self.relation_type
+            isinstance(edge_predicate, RelationTypeIsPredicate)
+            and edge_predicate.relation_type == self.relation_type
         )
 
 
@@ -1741,7 +2084,7 @@ class DirectionPredicate(EdgePredicate):
     def __call__(
         self,
         source_object_perception: PerceptionGraphNode,
-        edge_label: PerceptionGraphEdgeLabel,
+        edge_label: Union[EdgeLabel, TemporallyScopedEdgeLabel],
         dest_object_percption: PerceptionGraphNode,
     ) -> bool:
         return (
@@ -1756,9 +2099,10 @@ class DirectionPredicate(EdgePredicate):
     def exactly_matching(direction: Direction[Any]) -> "DirectionPredicate":
         return DirectionPredicate(direction)
 
-    def matches_predicate(self, edge_label: "EdgePredicate") -> bool:
-        return isinstance(edge_label, DirectionPredicate) and (
-            edge_label.reference_direction.positive == self.reference_direction.positive
+    def matches_predicate(self, edge_predicate: "EdgePredicate") -> bool:
+        return isinstance(edge_predicate, DirectionPredicate) and (
+            edge_predicate.reference_direction.positive
+            == self.reference_direction.positive
         )
 
 

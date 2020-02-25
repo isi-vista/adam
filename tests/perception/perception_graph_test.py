@@ -3,6 +3,7 @@ from itertools import chain
 
 import pytest
 from more_itertools import first, only
+from networkx import DiGraph
 
 from adam.curriculum.curriculum_utils import (
     PHASE1_CHOOSER,
@@ -10,7 +11,7 @@ from adam.curriculum.curriculum_utils import (
     standard_object,
 )
 from adam.learner.subset import graph_without_learner
-from adam.ontology import OntologyNode
+from adam.ontology import IN_REGION, OntologyNode
 from adam.ontology.phase1_ontology import (
     BIRD,
     BOX,
@@ -22,13 +23,20 @@ from adam.ontology.phase1_ontology import (
     LIQUID,
     PART_OF,
     TABLE,
+    _BALL_SCHEMA,
     _HOUSE_SCHEMA,
+    _TABLE_SCHEMA,
     above,
     bigger_than,
     on,
 )
+from adam.ontology.phase1_spatial_relations import DISTAL, EXTERIOR_BUT_IN_CONTACT, Region
 from adam.ontology.structural_schema import ObjectStructuralSchema
-from adam.perception.developmental_primitive_perception import RgbColorPerception
+from adam.perception import ObjectPerception, PerceptualRepresentation
+from adam.perception.developmental_primitive_perception import (
+    DevelopmentalPrimitivePerceptionFrame,
+    RgbColorPerception,
+)
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     GAILA_PHASE_1_PERCEPTION_GENERATOR,
 )
@@ -38,8 +46,13 @@ from adam.perception.perception_graph import (
     PerceptionGraph,
     PerceptionGraphPattern,
     PerceptionGraphPatternMatch,
+    TemporalScope,
+    TemporallyScopedEdgeLabel,
+    HoldsAtTemporalScopePredicate,
+    AnyEdgePredicate,
 )
 from adam.random_utils import RandomChooser
+from adam.relation import Relation
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
     all_possible,
@@ -47,8 +60,29 @@ from adam.situation.templates.phase1_templates import (
     object_variable,
 )
 from adam_test_utils import all_possible_test
+from immutablecollections import immutableset
 
 r.seed(0)
+
+
+def test_temporally_scoped_attribute():
+    before = TemporallyScopedEdgeLabel.for_dynamic_perception(
+        "foo", when=TemporalScope.BEFORE
+    )
+    assert before.attribute == "foo"
+    assert before.temporal_specifiers == immutableset([TemporalScope.BEFORE])
+
+    before_and_after = TemporallyScopedEdgeLabel.for_dynamic_perception(
+        "foo", when=[TemporalScope.BEFORE, TemporalScope.AFTER]
+    )
+    assert before_and_after.attribute == "foo"
+    assert before_and_after.temporal_specifiers == immutableset(
+        [TemporalScope.BEFORE, TemporalScope.AFTER]
+    )
+
+    # You have to give a TemporalSpecifier
+    with pytest.raises(RuntimeError):
+        TemporallyScopedEdgeLabel.for_dynamic_perception("foo", when=[])
 
 
 def test_house_on_table():
@@ -461,3 +495,258 @@ def test_syntactically_infeasible_partial_match():
             ),
             None,
         )
+
+
+def test_dynamic_perception_graph_instantiation():
+    ball = ObjectPerception("ball", _BALL_SCHEMA.geon.copy())
+    table = ObjectPerception("table", axes=_TABLE_SCHEMA.axes.copy())
+
+    first_frame = DevelopmentalPrimitivePerceptionFrame(
+        perceived_objects=[ball, table],
+        relations=[
+            above(ball, table),
+            Relation(IN_REGION, ball, Region(table, distance=EXTERIOR_BUT_IN_CONTACT)),
+            Relation(IN_REGION, table, Region(ball, distance=EXTERIOR_BUT_IN_CONTACT)),
+        ],
+    )
+
+    second_frame = DevelopmentalPrimitivePerceptionFrame(
+        perceived_objects=[ball, table],
+        relations=[Relation(IN_REGION, ball, Region(table, distance=DISTAL))],
+    )
+
+    perception_graph = PerceptionGraph.from_dynamic_perceptual_representation(
+        PerceptualRepresentation(frames=[first_frame, second_frame])
+    )
+    assert perception_graph.dynamic
+
+    # Ensure we don't attempt to handle more than two frames yet.
+    with pytest.raises(ValueError):
+        PerceptionGraph.from_dynamic_perceptual_representation(
+            PerceptualRepresentation(frames=[first_frame, second_frame, second_frame])
+        )
+
+
+def test_cannot_make_dynamic_copy_of_a_dynamic_graph():
+    graph = PerceptionGraph(graph=DiGraph(), dynamic=True)
+    with pytest.raises(RuntimeError):
+        graph.copy_with_temporal_scopes([TemporalScope.BEFORE])
+
+
+def test_copy_with_temporal_scopes_content():
+    """
+    Tests whether copy_with_temporal_scopes converts graphs to be dynamic as intended
+    """
+
+    # We use a situation to generate the perceptual representation
+    # for a box with color.
+    target_object = BOX
+    train_obj_object = object_variable("obj-with-color", target_object)
+    obj_template = Phase1SituationTemplate(
+        "colored-obj-object", salient_object_variables=[train_obj_object]
+    )
+    template = all_possible(
+        obj_template, chooser=PHASE1_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY
+    )
+
+    train_curriculum = phase1_instances("all obj situations", situations=template)
+
+    perceptual_representation = only(train_curriculum.instances())[2]
+
+    perception_graph = graph_without_learner(
+        PerceptionGraph.from_frame(perceptual_representation.frames[0]).copy_as_digraph()
+    )
+    temporal_perception_graph = perception_graph.copy_with_temporal_scopes(
+        temporal_scopes=[TemporalScope.AFTER]
+    )
+    for (source, target) in perception_graph.copy_as_digraph().edges():
+        assert not isinstance(
+            perception_graph.copy_as_digraph()[source][target]["label"],
+            TemporallyScopedEdgeLabel,
+        )
+    for (source, target) in temporal_perception_graph.copy_as_digraph().edges():
+        # Check type, and then the content
+        label = temporal_perception_graph.copy_as_digraph()[source][target]["label"]
+        assert isinstance(label, TemporallyScopedEdgeLabel)
+        assert (
+            label.attribute == perception_graph.copy_as_digraph()[source][target]["label"]
+        )
+        assert all(
+            specifier in [TemporalScope.AFTER] for specifier in label.temporal_specifiers
+        )
+
+
+def test_perception_graph_post_init_edge_cases():
+    target_object = BOX
+    train_obj_object = object_variable("obj-with-color", target_object)
+    obj_template = Phase1SituationTemplate(
+        "colored-obj-object", salient_object_variables=[train_obj_object]
+    )
+    template = all_possible(
+        obj_template, chooser=PHASE1_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY
+    )
+    train_curriculum = phase1_instances("all obj situations", situations=template)
+    perceptual_representation = only(train_curriculum.instances())[2]
+    perception_graph = graph_without_learner(
+        PerceptionGraph.from_frame(perceptual_representation.frames[0]).copy_as_digraph()
+    )
+    temporal_perception_graph = perception_graph.copy_with_temporal_scopes(
+        temporal_scopes=[TemporalScope.AFTER]
+    )
+    temporal_digraph = temporal_perception_graph.copy_as_digraph()
+    # Test valid edge label
+    # The only feasible test seems to be the instation, since creating a corrupt instance throws the same RuntimeError
+    with pytest.raises(RuntimeError):
+        TemporallyScopedEdgeLabel(None)
+
+    # In a dynamic graph, all edge labels must be wrapped in TemporallyScopedEdgeLabel
+    new_graph = DiGraph()
+    for (source, target) in temporal_digraph.edges():
+        new_graph.add_edge(source, target)
+        new_graph[source][target]["label"] = None
+    with pytest.raises(RuntimeError):
+        PerceptionGraph(new_graph, dynamic=True)
+
+    # TemporallyScopedEdgeLabels may not appear in a static graph
+    new_graph = DiGraph()
+    for (source, target) in temporal_digraph.edges():
+        new_graph.add_edge(source, target)
+        new_graph[source][target]["label"] = TemporallyScopedEdgeLabel(
+            "attribute", [TemporalScope.AFTER]
+        )
+    with pytest.raises(RuntimeError):
+        PerceptionGraph(new_graph)
+
+    # Every edge in a PerceptionGraph must have a 'label
+    new_graph = DiGraph()
+    for (source, target) in temporal_digraph.edges():
+        new_graph.add_edge(source, target)
+    with pytest.raises(RuntimeError):
+        PerceptionGraph(new_graph)
+
+
+def test_matching_static_vs_dynamic_graphs():
+    target_object = BOX
+    train_obj_object = object_variable("obj-with-color", target_object)
+    obj_template = Phase1SituationTemplate(
+        "colored-obj-object", salient_object_variables=[train_obj_object]
+    )
+    template = all_possible(
+        obj_template, chooser=PHASE1_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY
+    )
+    train_curriculum = phase1_instances("all obj situations", situations=template)
+    perceptual_representation = only(train_curriculum.instances())[2]
+
+    perception_graph = graph_without_learner(
+        PerceptionGraph.from_frame(perceptual_representation.frames[0]).copy_as_digraph()
+    )
+    temporal_perception_graph = perception_graph.copy_with_temporal_scopes(
+        temporal_scopes=[TemporalScope.AFTER]
+    )
+
+    perception_pattern = PerceptionGraphPattern.from_graph(
+        perception_graph.copy_as_digraph()
+    ).perception_graph_pattern
+
+    temporal_perception_pattern = perception_pattern.copy_with_temporal_scope(
+        required_temporal_scope=TemporalScope.AFTER
+    )
+
+    # Test runtime error for matching static pattern against dynamic graph and vice versa
+
+    with pytest.raises(RuntimeError):
+        perception_pattern.matcher(temporal_perception_graph, matching_objects=False)
+
+    with pytest.raises(RuntimeError):
+        temporal_perception_pattern.matcher(perception_graph, matching_objects=False)
+
+
+def test_copy_with_temporal_scope_pattern_content():
+    """
+    Tests whether copy_with_temporal_scope converts patterns to be dynamic as intended
+    """
+
+    # We use a situation to generate the perceptual representation
+    # for a box with color.
+    target_object = BOX
+    train_obj_object = object_variable("obj-with-color", target_object)
+    obj_template = Phase1SituationTemplate(
+        "colored-obj-object", salient_object_variables=[train_obj_object]
+    )
+    template = all_possible(
+        obj_template, chooser=PHASE1_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY
+    )
+
+    train_curriculum = phase1_instances("all obj situations", situations=template)
+
+    perceptual_representation = only(train_curriculum.instances())[2]
+
+    perception_graph = graph_without_learner(
+        PerceptionGraph.from_frame(perceptual_representation.frames[0]).copy_as_digraph()
+    )
+
+    perception_pattern = PerceptionGraphPattern.from_graph(
+        perception_graph.copy_as_digraph()
+    ).perception_graph_pattern
+
+    temporal_perception_graph = perception_graph.copy_with_temporal_scopes(
+        temporal_scopes=[TemporalScope.AFTER]
+    )
+    temporal_perception_pattern = perception_pattern.copy_with_temporal_scope(
+        required_temporal_scope=TemporalScope.AFTER
+    )
+
+    # Exception while applying to dynamic pattern
+    with pytest.raises(RuntimeError):
+        temporal_perception_pattern.copy_with_temporal_scope(
+            required_temporal_scope=TemporalScope.AFTER
+        )
+
+    for (source, target) in perception_pattern.copy_as_digraph().edges():
+        assert not isinstance(
+            perception_pattern.copy_as_digraph()[source][target]["predicate"],
+            HoldsAtTemporalScopePredicate,
+        )
+    for (source, target) in temporal_perception_pattern.copy_as_digraph().edges():
+        # Check type, and then the content
+        predicate = temporal_perception_pattern.copy_as_digraph()[source][target][
+            "predicate"
+        ]
+        # Test HoldsAtTemporalScope dot label, matches predicate
+        assert isinstance(predicate.dot_label(), str)
+        assert predicate.matches_predicate(
+            HoldsAtTemporalScopePredicate(
+                predicate.wrapped_edge_predicate, predicate.temporal_scope
+            )
+        )
+        assert not predicate.matches_predicate(
+            HoldsAtTemporalScopePredicate(
+                predicate.wrapped_edge_predicate, TemporalScope.BEFORE
+            )
+        )
+        assert isinstance(predicate, HoldsAtTemporalScopePredicate)
+        assert (
+            predicate.wrapped_edge_predicate
+            == perception_pattern.copy_as_digraph()[source][target]["predicate"]
+        )
+        assert predicate.temporal_scope == TemporalScope.AFTER
+
+    # Test normal matching behavior
+    temporal_matcher = temporal_perception_pattern.matcher(
+        temporal_perception_graph, matching_objects=False
+    )
+    first(temporal_matcher.matches(use_lookahead_pruning=True))
+
+    # Test HoldsAtTemporalScopePredicate
+    for (source, target) in perception_graph.copy_as_digraph().edges():
+        label = "test edge label"
+        edge_predicate = AnyEdgePredicate()
+        temporal_predicate = HoldsAtTemporalScopePredicate(
+            edge_predicate, TemporalScope.AFTER
+        )
+
+        temporal_edge_label = TemporallyScopedEdgeLabel(label, [TemporalScope.AFTER])
+        assert temporal_predicate(source, temporal_edge_label, target)
+        # Non temporal edge exception
+        with pytest.raises(RuntimeError):
+            temporal_predicate(source, label, target)
