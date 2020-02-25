@@ -57,10 +57,10 @@ from adam.relation import IN_REGION
 
 from adam.visualization.panda3d_interface import SituationVisualizer
 from adam.visualization.utils import (
-    Shape,
     OBJECT_NAMES_TO_EXCLUDE,
     cross_section_to_geon,
     OBJECT_SCALE_MULTIPLIER_MAP,
+    model_lookup,
 )
 
 from adam.visualization.positioning import run_model, PositionsMap
@@ -92,6 +92,8 @@ def main(params: Parameters) -> None:
     num_iterations = params.positive_integer("iterations")
     steps_before_vis = params.positive_integer("steps_before_vis")
 
+    specific_scene = params.optional_positive_integer("scene")
+
     random.seed(params.integer("seed"))
     np.random.seed(params.integer("seed"))
 
@@ -111,21 +113,36 @@ def main(params: Parameters) -> None:
         logging.info("SCALE: %s -> %s", model_name, scale.__str__())
 
     for i, scene_elements in enumerate(SceneCreator.create_scenes([make_curriculum()])):
-
+        # If a scene number is provided in the params file, only render that scene
+        if specific_scene and i < specific_scene:
+            continue
+        if specific_scene and i > specific_scene:
+            break
         print(f"SCENE {i}")
         viz.set_title(" ".join(token for token in scene_elements.tokens))
         # for debugging purposes:
         SceneCreator.graph_for_each(scene_elements.object_graph, print_obj_names)
 
         # bind visualizer and properties to top level rendering function:
-        bound_render_obj = partial(
-            render_obj, viz, scene_elements.property_map
-        )  # bind visualizer and properties to nested obj rendering function
+        bound_render_obj = partial(render_obj, viz, scene_elements.property_map)
+        # bind visualizer and properties to nested obj rendering function
+        bound_render_nested_obj = partial(
+            render_obj_nested, viz, scene_elements.property_map
+        )
+
         # render each object in graph
 
         SceneCreator.graph_for_each_top_level(
-            scene_elements.object_graph, bound_render_obj
+            scene_elements.object_graph, bound_render_obj, bound_render_nested_obj
         )
+
+        # apply scale to top level nodes in scene
+        for node in scene_elements.object_graph:
+            if node.name not in OBJECT_NAMES_TO_EXCLUDE:
+                viz.multiply_scale(
+                    node.name, OBJECT_SCALE_MULTIPLIER_MAP[node.name.split("_")[0]]
+                )
+
         # for debugging purposes to view the results before positioning:
         viz.run_for_seconds(1)
         command = input(
@@ -216,41 +233,19 @@ def render_obj_nested(
              rendered by calling this function.
 
     """
-    # if model is represented as a single piece of geometry, get its scale multiplier
-    scale_multiplier = 1.0
-    object_type = obj.debug_handle.split("_")[0]
-    if object_type in OBJECT_SCALE_MULTIPLIER_MAP:
-        scale_multiplier = OBJECT_SCALE_MULTIPLIER_MAP[object_type]
+    model_name = model_lookup(obj, parent)
+    print(f"MODEL NAME: {model_name}")
 
     if obj.geon is None:
-        if parent is None:
-            pos = SceneCreator.random_root_position()
-        else:
-            pos = SceneCreator.random_leaf_position()
-        return renderer.add_dummy_node(
-            obj.debug_handle, pos, parent, scale_multiplier=scale_multiplier
-        )
+        return renderer.add_dummy_node(obj.debug_handle, model_name, parent)
     shape = cross_section_to_geon(obj.geon.cross_section)
-    # TODO***: allow for Irregular geons to be rendered
-    if shape == Shape.IRREGULAR:
-        logging.warning("Irregular shape for %s could not be rendered", obj.debug_handle)
+
     color = None
     for prop in properties[obj]:
         if isinstance(prop, RgbColorPerception):
             color = prop
-    if parent is None:
-        pos = SceneCreator.random_root_position()
-    else:
-        pos = SceneCreator.random_leaf_position()
-    if shape == Shape.IRREGULAR:
-        return renderer.add_dummy_node(name=obj.debug_handle, position=pos, parent=parent)
     return renderer.add_model(
-        shape,
-        name=obj.debug_handle,
-        position=pos,
-        color=color,
-        parent=parent,
-        scale_multiplier=scale_multiplier,
+        shape, name=obj.debug_handle, lookup_name=model_name, color=color, parent=parent
     )
 
 
@@ -442,14 +437,29 @@ class SceneCreator:
 
     @staticmethod
     def graph_for_each_top_level(
-        graph: List[SceneNode], top_fn: Callable[[ObjectPerception], Any]
+        graph: List[SceneNode],
+        top_fn: Callable[[ObjectPerception], Any],
+        recurse_fn: Callable[[ObjectPerception, Any], Any],
     ) -> None:
-        """Apply some function only to root elements of graph. """
+        """Apply some function only to root elements of graph.
+           Use return value from top level function as argument in
+           recursively applied function. """
         for top_level in graph:
             # special cases not rendered here:
             if top_level.perceived_obj.debug_handle in OBJECT_NAMES_TO_EXCLUDE:
                 continue
-            top_fn(top_level.perceived_obj)
+            top_return = top_fn(top_level.perceived_obj)
+            # initialize nodes list with children of top level node
+            nodes = [(node, top_return) for node in top_level.children]
+            while nodes:
+                recurse: List[Tuple[SceneNode, Any]] = []
+                for node, ret in nodes:
+                    if not node.children and ret is not None:
+                        recurse_fn(node.perceived_obj, ret)
+                    else:
+                        new_return = recurse_fn(node.perceived_obj, ret)
+                        recurse += [(child, new_return) for child in node.children]
+                nodes = recurse
 
     @staticmethod
     def random_root_position() -> Tuple[float, float, float]:
