@@ -474,10 +474,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
         )
         # We explicitly exclude ground and learner in perception generation, which were not specified in the schema
         perception = perception_generator.generate_perception(
-            situation,
-            chooser=RandomChooser.for_seed(0),
-            include_ground=False,
-            include_learner=False,
+            situation, chooser=RandomChooser.for_seed(0), include_ground=False
         )
         perception_graph = PerceptionGraph.from_frame(
             first(perception.frames)

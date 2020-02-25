@@ -18,11 +18,17 @@ def test_scenes_creation() -> Tuple[
         def test_for_each(obj: ObjectPerception) -> None:
             print(obj.debug_handle)
 
+        def test_for_each_nested_really_nested(obj: ObjectPerception, other: str) -> str:
+            print(obj.debug_handle)
+            return other
+
         def test_cs_to_shape(cs: CrossSection) -> Shape:
             return cross_section_to_geon(cs)
 
         SceneCreator.graph_for_each(scene_elements.object_graph, test_for_each)
-        SceneCreator.graph_for_each_top_level(scene_elements.object_graph, test_for_each)
+        SceneCreator.graph_for_each_top_level(
+            scene_elements.object_graph, test_for_each, test_for_each_nested_really_nested
+        )
         for obj in scene_elements.object_graph:
             if obj.perceived_obj.geon:
                 test_cs_to_shape(obj.perceived_obj.geon.cross_section)

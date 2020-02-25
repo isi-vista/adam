@@ -7,7 +7,7 @@ from adam.curriculum.phase1_curriculum import PHASE1_CHOOSER, phase1_instances
 from adam.curriculum.pursuit_curriculum import make_simple_pursuit_curriculum
 from adam.language_specific.english.english_language_generator import IGNORE_COLORS
 from adam.learner import LearningExample
-from adam.learner.pursuit import PursuitLanguageLearner
+from adam.learner.pursuit import ObjectPursuitLearner
 from adam.learner.subset import SubsetLanguageLearner
 from adam.ontology import OntologyNode
 from adam.ontology.phase1_ontology import (
@@ -90,7 +90,7 @@ def test_subset_learner_dog():
     run_subset_learner_for_object(DOG, debug_callback)
 
 
-def test_pursuit_learner():
+def test_pursuit_object_learner():
     target_objects = [
         BALL,
         # PERSON,
@@ -155,7 +155,7 @@ def test_pursuit_learner():
     # lexicalize items sufficiently because of diminishing lexicon probability through training
     rng = random.Random()
     rng.seed(0)
-    learner = PursuitLanguageLearner(
+    learner = ObjectPursuitLearner(
         learning_factor=0.5,
         graph_match_confirmation_threshold=0.7,
         lexicon_entry_threshold=0.7,

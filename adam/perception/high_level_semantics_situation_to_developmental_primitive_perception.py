@@ -119,7 +119,6 @@ class HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
         chooser: SequenceChooser,
         *,
         include_ground=True,
-        include_learner=True,
     ) -> PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]:
         check_arg(
             situation.ontology == self.ontology,
@@ -128,9 +127,7 @@ class HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
             "ontology.",
         )
         # all the work is done in a stateful _PerceptionGeneration object
-        return _PerceptionGeneration(
-            self, situation, chooser, include_ground, include_learner
-        ).do()
+        return _PerceptionGeneration(self, situation, chooser, include_ground).do()
 
 
 @attrs(frozen=True, slots=True)
@@ -174,7 +171,6 @@ class _PerceptionGeneration:
     )
     _chooser: SequenceChooser = attrib(validator=instance_of(SequenceChooser))
     _include_ground = attrib(validator=instance_of(bool))
-    _include_learner = attrib(validator=instance_of(bool))
     _objects_to_perceptions: Dict[SituationObject, ObjectPerception] = attrib(
         init=False, default=Factory(dict)
     )
@@ -328,18 +324,6 @@ class _PerceptionGeneration:
             self._perceive_object(
                 SituationObject.instantiate_ontology_node(
                     GROUND, ontology=self._generator.ontology
-                )
-            )
-        if (
-            not any(
-                situation_object.ontology_node == LEARNER
-                for situation_object in self._situation.all_objects
-            )
-            and self._include_learner
-        ):
-            self._perceive_object(
-                SituationObject.instantiate_ontology_node(
-                    LEARNER, ontology=self._generator.ontology
                 )
             )
         for situation_object in self._situation.all_objects:
