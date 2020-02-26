@@ -780,7 +780,7 @@ def _fall_on_template(
         salient_object_variables=[theme, goal_reference],
         background_object_variables=background,
         actions=[Action(FALL, argument_roles_to_fillers=[(THEME, theme)])],
-        after_action_relations=flatten_relations(on(theme, goal_reference)),
+        after_action_relations=on(theme, goal_reference),
         constraining_relations=[bigger_than(goal_reference, theme)],
         syntax_hints=syntax_hints,
     )
@@ -798,7 +798,7 @@ def _fall_in_template(
         salient_object_variables=[theme, goal_reference],
         background_object_variables=background,
         actions=[Action(FALL, argument_roles_to_fillers=[(THEME, theme)])],
-        after_action_relations=flatten_relations(inside(theme, goal_reference)),
+        after_action_relations=inside(theme, goal_reference),
         constraining_relations=[bigger_than(goal_reference, theme)],
         syntax_hints=syntax_hints,
     )
@@ -821,9 +821,7 @@ def _fall_beside_template(
         salient_object_variables=[theme, goal_reference],
         background_object_variables=background,
         actions=[Action(FALL, argument_roles_to_fillers=[(THEME, theme)])],
-        after_action_relations=flatten_relations(
-            near(theme, goal_reference, direction=direction)
-        ),
+        after_action_relations=near(theme, goal_reference, direction=direction),
         syntax_hints=syntax_hints,
     )
 
@@ -845,7 +843,7 @@ def _fall_in_front_of_behind_template(
         salient_object_variables=[theme, goal_reference],
         background_object_variables=background,
         actions=[Action(FALL, argument_roles_to_fillers=[(THEME, theme)])],
-        after_action_relations=flatten_relations(
+        after_action_relations=(
             far(theme, goal_reference, direction=direction)
             if is_distal
             else near(theme, goal_reference, direction=direction)
