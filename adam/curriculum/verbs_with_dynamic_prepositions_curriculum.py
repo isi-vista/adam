@@ -1,9 +1,10 @@
-from itertools import chain
-
 from immutablecollections import immutableset, ImmutableSet
-from more_itertools import flatten
 
+from itertools import chain
 from typing import Iterable
+
+from immutablecollections import immutableset
+from more_itertools import flatten
 
 from adam.axes import (
     HorizontalAxisOfObject,

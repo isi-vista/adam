@@ -507,7 +507,7 @@ class _Phase1SituationTemplateGenerator(
         asserted_properties = object_var.asserted_properties
         if object_type == default_addressee_node and not has_addressee:
             asserted_properties = immutableset(
-                object_var.asserted_properties.union([IS_ADDRESSEE])
+                object_var.asserted_properties.union({IS_ADDRESSEE})
             )
         return SituationObject.instantiate_ontology_node(
             ontology_node=object_type,
