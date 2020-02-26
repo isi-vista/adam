@@ -20,7 +20,7 @@ from attr import Factory, attrib, attrs
 from attr.validators import in_, instance_of, optional
 from immutablecollections import immutabledict, ImmutableSet, immutableset
 from more_itertools import first, flatten
-from networkx import all_shortest_paths
+from networkx import all_shortest_paths, DiGraph
 from vistautils.parameters import Parameters
 from vistautils.range import Range
 
@@ -38,6 +38,7 @@ from adam.learner import (
 from adam.learner.object_recognizer import ObjectRecognizer
 from adam.learner.preposition_pattern import PrepositionPattern, _MODIFIED, _GROUND
 from adam.learner.preposition_subset import PrepositionSurfaceTemplate
+from adam.learner.verb_pattern import VerbPattern
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
 from adam.ontology.phase1_spatial_relations import Region
@@ -56,6 +57,7 @@ from adam.perception.perception_graph import (
     _graph_node_order,
     MatchedObjectPerceptionPredicate,
     NodePredicate,
+    TemporalScope,
 )
 from adam.utils import networkx_utils
 
@@ -988,7 +990,6 @@ class PrepositionPursuitLearner(
         perception: PerceptualRepresentation[PerceptionT],
         object_recognizer: Optional[ObjectRecognizer] = None,
     ) -> Mapping[LinguisticDescription, float]:
-        # TODO: Implement with help from pursuit subset
         if len(perception.frames) != 1:
             raise RuntimeError(
                 "Preposition learner can only handle single frames for now"
@@ -1087,7 +1088,8 @@ class PrepositionPursuitLearner(
     ) -> PrepositionPattern:
         if self.template_variables_to_object_match_nodes:
             return PrepositionPattern.from_graph(
-                perception, self.template_variables_to_object_match_nodes
+                perception.copy_as_digraph(),
+                self.template_variables_to_object_match_nodes,
             )
         else:
             raise RuntimeError(
@@ -1211,6 +1213,145 @@ class PrepositionPursuitLearner(
         self, h: PrepositionPattern, hypothesis: PrepositionPattern
     ) -> bool:
         # Check mapping equality of preposition patterns
+        first_mapping = h.object_variable_name_to_pattern_node
+        second_mapping = hypothesis.object_variable_name_to_pattern_node
+        are_equal_mappings = len(first_mapping) == len(second_mapping) and all(
+            k in second_mapping and second_mapping[k].is_equivalent(v)
+            for k, v in first_mapping.items()
+        )
+        return are_equal_mappings and h.graph_pattern.check_isomorphism(
+            hypothesis.graph_pattern
+        )
+
+
+class VerbPursuitLearner(
+    Generic[PerceptionT, LinguisticDescriptionT],
+    AbstractPursuitLearner[str, VerbPattern, PerceptionT, LinguisticDescriptionT],
+):
+    """
+    An implementation of pursuit learner for learning verb semantics
+    """
+
+    # Variables for tracking verb phrase information. These are filled in observe.
+    object_match_node_for_subject: Optional[MatchedObjectNode] = None
+    object_match_node_for_object: Optional[MatchedObjectNode] = None
+    object_match_node_for_instrument: Optional[MatchedObjectNode] = None
+    template_variables_to_object_match_nodes: Optional[
+        Iterable[Tuple[str, MatchedObjectNode]]
+    ] = None
+
+    def observe(
+        self, learning_example: LearningExample[PerceptionT, LinguisticDescription]
+    ) -> None:
+        pass
+
+    def describe(
+        self, perception: PerceptualRepresentation[PerceptionT]
+    ) -> Mapping[LinguisticDescription, float]:
+        pass
+
+    def _candidate_perceptions(
+        self, observed_perception_graph: PerceptionGraph
+    ) -> List[PerceptionGraph]:
+        # TODO: Discuss which part of the graph is relevant for verbs
+        # For now, we are extracting the part of the graph that changes (i.e edges that are marked only before,
+        # during, or after)
+        observed_diraph = observed_perception_graph.copy_as_digraph()
+        # This will be the graph representing the candidate:
+        difference_digraph = DiGraph()
+
+        # We add any edge that might be marking a change, i.e anything that doesn't have both AFTER
+        # and BEFORE in it.
+        # TODO add DURING once we implement it
+        for (
+            source,
+            target,
+            label,
+        ) in observed_perception_graph.observed_diraph().edges.data("label"):
+            if not (
+                TemporalScope.AFTER in label.temporal_specifiers
+                and TemporalScope.BEFORE in label.temporal_specifiers
+            ):
+
+                difference_digraph.add_edge(source, target, label=label)
+
+        return [PerceptionGraph(graph=difference_digraph, dynamic=True)]
+
+    def _hypothesis_from_perception(self, perception: PerceptionGraph) -> VerbPattern:
+        if not perception.dynamic:
+            raise RuntimeError("Perception for verb must be dynamic")
+        if not self.template_variables_to_object_match_nodes:
+            raise RuntimeError(
+                "Empty template variables:", self.template_variables_to_object_match_nodes
+            )
+        return VerbPattern.from_graph(
+            perception.copy_as_digraph(), self.template_variables_to_object_match_nodes
+        )
+
+    @attrs(frozen=True)
+    class VerbHypothesisPartialMatch(
+        AbstractPursuitLearner.PartialMatch[PrepositionPattern]
+    ):
+        partial_match_hypothesis: Optional[PrepositionPattern] = attrib(
+            validator=optional(instance_of(PrepositionPattern))
+        )
+        num_nodes_matched: int = attrib(validator=instance_of(int), kw_only=True)
+        num_nodes_in_pattern: int = attrib(validator=instance_of(int), kw_only=True)
+
+        def matched_exactly(self) -> bool:
+            return self.num_nodes_matched == self.num_nodes_in_pattern
+
+        def match_score(self) -> float:
+            return self.num_nodes_matched / self.num_nodes_in_patte
+
+    def _find_partial_match(
+        self, hypothesis: VerbPattern, graph: PerceptionGraph
+    ) -> "VerbPursuitLearner.VerbHypothesisPartialMatch[VerbPattern]":
+        pattern = hypothesis.graph_pattern
+        hypothesis_pattern_common_subgraph = get_largest_matching_pattern(
+            pattern,
+            graph,
+            debug_callback=self._debug_callback,
+            graph_logger=self._hypothesis_logger,
+            ontology=self._ontology,
+            matching_objects=True,
+        )
+        self.debug_counter += 1
+
+        leading_hypothesis_num_nodes = len(pattern)
+        num_nodes_matched = (
+            len(hypothesis_pattern_common_subgraph.copy_as_digraph().nodes)
+            if hypothesis_pattern_common_subgraph
+            else 0
+        )
+        if hypothesis_pattern_common_subgraph:
+            partial_hypothesis: Optional[PrepositionPattern] = PrepositionPattern(
+                graph_pattern=hypothesis_pattern_common_subgraph,
+                object_variable_name_to_pattern_node=hypothesis.object_variable_name_to_pattern_node,
+            )
+        else:
+            partial_hypothesis = None
+
+        return VerbPursuitLearner.VerbHypothesisPartialMatch(
+            partial_hypothesis,
+            num_nodes_matched=num_nodes_matched,
+            num_nodes_in_pattern=leading_hypothesis_num_nodes,
+        )
+
+    def _find_identical_hypothesis(
+        self, new_hypothesis: VerbPattern, candidates: Iterable[VerbPattern]
+    ) -> Optional[VerbPattern]:
+        """
+        Finds the first hypothesis object, if any, in *candidates*
+        which is isomorphic to *new_hypothesis*.
+        """
+        for candidate in candidates:
+            if self._are_isomorphic(new_hypothesis, candidate):
+                return candidate
+        return None
+
+    def _are_isomorphic(self, h: VerbPattern, hypothesis: VerbPattern) -> bool:
+        # Check mapping equality of verb patterns
         first_mapping = h.object_variable_name_to_pattern_node
         second_mapping = hypothesis.object_variable_name_to_pattern_node
         are_equal_mappings = len(first_mapping) == len(second_mapping) and all(
