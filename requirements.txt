@@ -1,12 +1,7 @@
 # core requirements
 attrs==19.3.0
-<<<<<<< HEAD
-vistautils==0.19.0
-immutablecollections==0.9.0
-=======
 vistautils==0.20.0
 immutablecollections==0.10.0
->>>>>>> master
 networkx==2.3
 more-itertools==7.2.0
 
