@@ -100,10 +100,9 @@ def _push_to_template(
                 during=DuringAction(continuously=[on(theme, surface)]),
             )
         ],
-        constraining_relations=[
-            bigger_than(surface, agent),
-            bigger_than(surface, goal_reference),
-        ],
+        constraining_relations=flatten_relations(
+            [bigger_than(surface, agent), bigger_than(surface, goal_reference)]
+        ),
     )
 
 
@@ -130,11 +129,13 @@ def _push_in_template(
                 during=DuringAction(continuously=[on(theme, surface)]),
             )
         ],
-        constraining_relations=[
-            bigger_than(surface, agent),
-            bigger_than(surface, goal_reference),
-            bigger_than(goal_reference, theme),
-        ],
+        constraining_relations=flatten_relations(
+            [
+                bigger_than(surface, agent),
+                bigger_than(surface, goal_reference),
+                bigger_than(goal_reference, theme),
+            ]
+        ),
     )
 
 
@@ -169,11 +170,13 @@ def _push_under_template(
                 during=DuringAction(continuously=[on(theme, surface)]),
             )
         ],
-        constraining_relations=[
-            bigger_than(surface, agent),
-            bigger_than(surface, goal_reference),
-            bigger_than(goal_reference, theme),
-        ],
+        constraining_relations=flatten_relations(
+            [
+                bigger_than(surface, agent),
+                bigger_than(surface, goal_reference),
+                bigger_than(goal_reference, theme),
+            ]
+        ),
     )
 
 
@@ -213,10 +216,9 @@ def _push_beside_template(
                 during=DuringAction(continuously=[on(theme, surface)]),
             )
         ],
-        constraining_relations=[
-            bigger_than(surface, agent),
-            bigger_than(surface, goal_reference),
-        ],
+        constraining_relations=flatten_relations(
+            [bigger_than(surface, agent), bigger_than(surface, goal_reference)]
+        ),
     )
 
 
@@ -255,10 +257,9 @@ def _push_in_front_of_behind_template(
                 during=DuringAction(continuously=[on(theme, surface)]),
             )
         ],
-        constraining_relations=[
-            bigger_than(surface, agent),
-            bigger_than(surface, goal_reference),
-        ],
+        constraining_relations=flatten_relations(
+            [bigger_than(surface, agent), bigger_than(surface, goal_reference)]
+        ),
     )
 
 
@@ -302,7 +303,7 @@ def _go_in_template(
                 ],
             )
         ],
-        constraining_relations=[bigger_than(goal_object, agent)],
+        constraining_relations=flatten_relations(bigger_than(goal_object, agent)),
     )
 
 
@@ -524,7 +525,9 @@ def _sit_on_template(
                 auxiliary_variable_bindings=[(SIT_THING_SAT_ON, seat)],
             )
         ],
-        constraining_relations=[bigger_than(surface, seat), bigger_than(seat, agent)],
+        constraining_relations=flatten_relations(
+            [bigger_than(surface, seat), bigger_than(seat, agent)]
+        ),
         syntax_hints=syntax_hints,
     )
 
@@ -550,7 +553,9 @@ def _sit_in_template(
                 auxiliary_variable_bindings=[(SIT_THING_SAT_ON, seat)],
             )
         ],
-        constraining_relations=[bigger_than(surface, seat), bigger_than(seat, agent)],
+        constraining_relations=flatten_relations(
+            [bigger_than(surface, seat), bigger_than(seat, agent)]
+        ),
         syntax_hints=syntax_hints,
     )
 
@@ -661,7 +666,9 @@ def _x_roll_y_in_z_template(
                 auxiliary_variable_bindings=[(ROLL_SURFACE_AUXILIARY, surface)],
             )
         ],
-        constraining_relations=[bigger_than([agent, goal_reference], theme)],
+        constraining_relations=flatten_relations(
+            [bigger_than([agent, goal_reference], theme)]
+        ),
         after_action_relations=flatten_relations(inside(theme, goal_reference)),
         gazed_objects=[theme],
     )
@@ -691,7 +698,7 @@ def _x_roll_y_beside_z_template(
                 auxiliary_variable_bindings=[(ROLL_SURFACE_AUXILIARY, surface)],
             )
         ],
-        constraining_relations=[bigger_than(agent, theme)],
+        constraining_relations=flatten_relations([bigger_than(agent, theme)]),
         after_action_relations=flatten_relations(
             near(theme, goal_reference, direction=direction)
         ),
@@ -726,7 +733,7 @@ def _x_roll_y_behind_in_front_z_template(
                 auxiliary_variable_bindings=[(ROLL_SURFACE_AUXILIARY, surface)],
             )
         ],
-        constraining_relations=[bigger_than(agent, theme)],
+        constraining_relations=flatten_relations([bigger_than(agent, theme)]),
         after_action_relations=flatten_relations(
             far(theme, goal_reference, direction=direction)
             if is_distal
@@ -757,7 +764,7 @@ def _x_rolls_y_over_under_z_template(
                 auxiliary_variable_bindings=[(ROLL_SURFACE_AUXILIARY, surface)],
             )
         ],
-        constraining_relations=[bigger_than(agent, theme)],
+        constraining_relations=flatten_relations([bigger_than(agent, theme)]),
         after_action_relations=flatten_relations(
             above(theme, goal_reference) if is_over else above(goal_reference, theme)
         ),
@@ -780,8 +787,8 @@ def _fall_on_template(
         salient_object_variables=[theme, goal_reference],
         background_object_variables=background,
         actions=[Action(FALL, argument_roles_to_fillers=[(THEME, theme)])],
-        after_action_relations=on(theme, goal_reference),
-        constraining_relations=[bigger_than(goal_reference, theme)],
+        after_action_relations=flatten_relations(on(theme, goal_reference)),
+        constraining_relations=flatten_relations(bigger_than(goal_reference, theme)),
         syntax_hints=syntax_hints,
     )
 
@@ -798,8 +805,8 @@ def _fall_in_template(
         salient_object_variables=[theme, goal_reference],
         background_object_variables=background,
         actions=[Action(FALL, argument_roles_to_fillers=[(THEME, theme)])],
-        after_action_relations=inside(theme, goal_reference),
-        constraining_relations=[bigger_than(goal_reference, theme)],
+        after_action_relations=flatten_relations(inside(theme, goal_reference)),
+        constraining_relations=flatten_relations(bigger_than(goal_reference, theme)),
         syntax_hints=syntax_hints,
     )
 
@@ -821,7 +828,9 @@ def _fall_beside_template(
         salient_object_variables=[theme, goal_reference],
         background_object_variables=background,
         actions=[Action(FALL, argument_roles_to_fillers=[(THEME, theme)])],
-        after_action_relations=near(theme, goal_reference, direction=direction),
+        after_action_relations=flatten_relations(
+            near(theme, goal_reference, direction=direction)
+        ),
         syntax_hints=syntax_hints,
     )
 
@@ -843,7 +852,7 @@ def _fall_in_front_of_behind_template(
         salient_object_variables=[theme, goal_reference],
         background_object_variables=background,
         actions=[Action(FALL, argument_roles_to_fillers=[(THEME, theme)])],
-        after_action_relations=(
+        after_action_relations=flatten_relations(
             far(theme, goal_reference, direction=direction)
             if is_distal
             else near(theme, goal_reference, direction=direction)
