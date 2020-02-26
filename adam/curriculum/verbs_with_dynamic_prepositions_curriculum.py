@@ -1,4 +1,4 @@
-from immutablecollections import immutableset, ImmutableSet
+from immutablecollections import ImmutableSet
 
 from itertools import chain
 from typing import Iterable
