@@ -92,6 +92,8 @@ class SituationVisualizer(ShowBase):
         "car-tire_2": "car-tire_right_back.egg",
         "car-tire_3": "car-tire_right_front.egg",
         "car-body_0": "car-body.egg",
+        "house-roof_0": "house-roof.egg",
+        "house-wall_0": "house-wall.egg",
     }
 
     models_used_for_scale_reference = {
