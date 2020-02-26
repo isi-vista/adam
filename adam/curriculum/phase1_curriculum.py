@@ -5,6 +5,7 @@ Curricula for DARPA GAILA Phase 1
 from itertools import chain
 from typing import Iterable, Sequence
 
+from immutablecollections import immutableset
 from more_itertools import flatten
 
 from adam.axes import HorizontalAxisOfObject, FacingAddresseeAxis, AxesInfo
@@ -96,12 +97,14 @@ from adam.ontology.phase1_spatial_relations import (
     SpatialPath,
     TOWARD,
     Direction,
+    TO,
 )
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     GAILA_PHASE_1_PERCEPTION_GENERATOR,
     HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
 )
 from adam.random_utils import RandomChooser
+from adam.relation import flatten_relations
 from adam.situation import Action, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.situation.templates.phase1_templates import (
@@ -111,6 +114,7 @@ from adam.situation.templates.phase1_templates import (
     color_variable,
     object_variable,
     sampled,
+    TemplateObjectVariable,
 )
 
 
@@ -1420,11 +1424,45 @@ def _make_throw_curriculum() -> Phase1InstanceGroup:
     )
 
 
+def _make_come_down_template(
+    agent: TemplateObjectVariable,
+    goal_reference: TemplateObjectVariable,
+    speaker: TemplateObjectVariable,
+    ground: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+) -> Phase1SituationTemplate:
+    background_objects_mutable = [speaker, ground]
+    background_objects_mutable.extend(background)
+    background_objects = immutableset(background_objects_mutable)
+    # TODO: Make sure the agent isn't in contact with the ground at the start
+    # See: https://github.com/isi-vista/adam/issues/597
+    return Phase1SituationTemplate(
+        f"{agent.handle}-come-to-{goal_reference.handle}",
+        salient_object_variables=[agent, goal_reference],
+        background_object_variables=background_objects,
+        actions=[
+            Action(
+                COME,
+                argument_roles_to_fillers=[(AGENT, agent), (GOAL, goal_reference)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (agent, SpatialPath(TOWARD, ground)),
+                        (agent, SpatialPath(TO, goal_reference)),
+                    ]
+                ),
+            )
+        ],
+        asserted_always_relations=flatten_relations(near(speaker, goal_reference)),
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
+    )
+
+
 def _make_come_curriculum() -> Phase1InstanceGroup:
     movee = standard_object("movee", required_properties=[SELF_MOVING])
     learner = standard_object("leaner_0", LEARNER)
     speaker = standard_object("speaker", PERSON, added_properties=[IS_SPEAKER])
     object_ = standard_object("object_0", THING)
+    ground = standard_object("ground", root_node=GROUND)
 
     come_to_speaker = Phase1SituationTemplate(
         "come-to-speaker",
@@ -1450,8 +1488,6 @@ def _make_come_curriculum() -> Phase1InstanceGroup:
         ],
     )
 
-    # TODO: "Come on" https://github.com/isi-vista/adam/issues/328
-
     return phase1_instances(
         "come",
         chain(
@@ -1468,6 +1504,14 @@ def _make_come_curriculum() -> Phase1InstanceGroup:
                 ),
                 sampled(
                     come_to_object,
+                    max_to_sample=25,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                    chooser=PHASE1_CHOOSER,
+                ),
+                sampled(
+                    _make_come_down_template(
+                        movee, object_, speaker, ground, immutableset()
+                    ),
                     max_to_sample=25,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER,

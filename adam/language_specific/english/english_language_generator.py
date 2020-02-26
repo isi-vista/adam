@@ -768,10 +768,12 @@ class SimpleRuleBasedEnglishLanguageGenerator(
 
             if region.distance == INTERIOR:
                 preposition = "in"
-            elif region.distance == PROXIMAL:
+
+            elif region.distance == PROXIMAL and not region.direction:
                 preposition = "to"
 
-            if region.direction:
+            elif region.direction:
+
                 direction_axis = region.direction.relative_to_axis.to_concrete_axis(
                     self.situation.axis_info
                 )
