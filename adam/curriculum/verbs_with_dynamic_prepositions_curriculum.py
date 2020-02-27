@@ -52,6 +52,7 @@ from adam.ontology.phase1_ontology import (
     TAKE,
     PUT,
     has,
+    PERSON,
 )
 from adam.ontology import THING, IS_SPEAKER, IS_ADDRESSEE
 from adam.ontology.phase1_spatial_relations import (
@@ -1658,13 +1659,13 @@ def _make_put_with_prepositions(
     agent = standard_object("agent", THING, required_properties=[ANIMATE])
     speaker_agent = standard_object(
         "speaker_agent",
-        THING,
+        PERSON,
         required_properties=[ANIMATE],
         added_properties=[IS_SPEAKER],
     )
     addressee_agent = standard_object(
         "addressee_agent",
-        THING,
+        PERSON,
         required_properties=[ANIMATE],
         added_properties=[IS_ADDRESSEE],
     )
