@@ -60,8 +60,6 @@ class SituationVisualizer(ShowBase):
         "bird": "bird.egg",
         "car": "car.egg",
         "cookie": "cookie.egg",
-        "dad": "person.egg",
-        "mom": "person.egg",
         "juice": "juice.egg",
         "milk": "milk.egg",
         "water": "water.egg",
@@ -98,6 +96,20 @@ class SituationVisualizer(ShowBase):
         "car-body_0": "car-body.egg",
         "house-roof_0": "house-roof.egg",
         "house-wall_0": "house-wall.egg",
+        "person-head_0": "person-head.egg",
+        "person-torso_0": "person-torso.egg",
+        "person-armsegment_0": "person-armsegment_0_right.egg",
+        "person-armsegment_1": "person-armsegment_1_right.egg",
+        "person-armsegment_2": "person-armsegment_2_left.egg",
+        "person-armsegment_3": "person-armsegment_3_left.egg",
+        "person-leg-segment_0": "person-leg-segment_0_right.egg",
+        "person-leg-segment_1": "person-leg-segment_1_right.egg",
+        "person-leg-segment_2": "person-leg-segment_2_left.egg",
+        "person-leg-segment_3": "person-leg-segment_3_left.egg",
+        "person-hand_0": "person-hand_right.egg",
+        "person-hand_1": "person-hand_left.egg",
+        "person-foot_0": "person-foot_right.egg",
+        "person-foot_1": "person-foot_left.egg",
     }
 
     models_used_for_scale_reference = {
@@ -254,6 +266,7 @@ class SituationVisualizer(ShowBase):
         scale_multiplier: Optional[float] = 1.0,
     ) -> NodePath:
         # TODO: name 'dummy_node' isn't totally accurate now
+        print(f"lookup name for dummy node: {lookup_name}")
         if lookup_name in SituationVisualizer.specific_model_to_file:
             print(f"\nADDING SPECIFIC MODEL")
             new_node = self._load_model(

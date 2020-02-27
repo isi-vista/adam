@@ -36,6 +36,8 @@ from adam.ontology.phase1_ontology import (
     _BIRD_HEAD,
     _LEG_SEGMENT,
     _FOOT,
+    HEAD,
+    HAND,
 )
 
 OBJECT_NAMES_TO_EXCLUDE = immutableset(["the ground", "learner"])
@@ -63,6 +65,8 @@ _SUBOBJECTS = immutableset(
         _BIRD_HEAD,
         _LEG_SEGMENT,
         _FOOT,
+        HEAD,
+        HAND,
     ]
 )
 
@@ -120,6 +124,7 @@ MODEL_NAMES = [
     "water",
     "juice",
     "milk",
+    "person",
 ]
 MODEL_PART_NAMES = {"table": ["tabletop", "(furniture) leg"]}
 
@@ -153,7 +158,20 @@ _PART_CARDINALITY: ImmutableDict[str, ImmutableDict[str, int]] = immutabledict(
                 )
             ),
         ),
-        ("car", immutabledict([("tire", 4), ("body", 1)]))
+        ("car", immutabledict([("tire", 4), ("body", 1)])),
+        (
+            "person",
+            immutabledict(
+                [
+                    ("head", 1),
+                    ("torso", 1),
+                    ("armsegment", 4),
+                    ("leg-segment", 4),
+                    ("hand", 2),
+                    ("foot", 2),
+                ]
+            ),
+        ),
     ]
 )
 
@@ -185,6 +203,7 @@ def model_lookup(
             parent = parent.parent
 
         parent_name = parent.name.split("_")[0]
+        print(f"parent name: {parent_name}")
         # convert unique sub-object index into a prototypical index
         if parent_name in _PART_CARDINALITY:
             sub_object_cardinality = (
