@@ -52,6 +52,7 @@ from adam.ontology.phase1_ontology import (
     PUT,
     has,
     IS_BODY_PART,
+    LIQUID,
 )
 from adam.ontology import THING, IS_SPEAKER, IS_ADDRESSEE
 from adam.ontology.phase1_spatial_relations import (
@@ -72,6 +73,7 @@ from adam.situation.templates.phase1_templates import (
     TemplateObjectVariable,
     Phase1SituationTemplate,
     sampled,
+    object_variable,
 )
 
 BOOL_SET = immutableset([True, False])
@@ -904,7 +906,14 @@ def _put_on_template(
                 argument_roles_to_fillers=[
                     (AGENT, agent),
                     (THEME, theme),
-                    (GOAL, Region(goal_reference, distance=EXTERIOR_BUT_IN_CONTACT, direction=GRAVITATIONAL_UP)),
+                    (
+                        GOAL,
+                        Region(
+                            goal_reference,
+                            distance=EXTERIOR_BUT_IN_CONTACT,
+                            direction=GRAVITATIONAL_UP,
+                        ),
+                    ),
                 ],
             )
         ],
@@ -1669,8 +1678,10 @@ def _make_put_with_prepositions(
     goal_under = standard_object(
         "goal_under", INANIMATE_OBJECT, required_properties=[HAS_SPACE_UNDER]
     )
-    body_part_goal = standard_object(
+    body_part_goal = object_variable(
         "body_part_goal",
+        INANIMATE_OBJECT,
+        banned_properties=[LIQUID],
         required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM, IS_BODY_PART],
     )
     background = immutableset(
