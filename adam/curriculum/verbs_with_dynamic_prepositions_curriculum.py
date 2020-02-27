@@ -136,8 +136,7 @@ def _push_in_template(
         ],
         constraining_relations=flatten_relations(
             [
-                bigger_than(surface, agent),
-                bigger_than(surface, goal_reference),
+                bigger_than(surface, [agent, goal_reference]),
                 bigger_than(goal_reference, theme),
             ]
         ),
@@ -177,8 +176,7 @@ def _push_under_template(
         ],
         constraining_relations=flatten_relations(
             [
-                bigger_than(surface, agent),
-                bigger_than(surface, goal_reference),
+                bigger_than(surface, [agent, goal_reference]),
                 bigger_than(goal_reference, theme),
             ]
         ),
@@ -222,7 +220,7 @@ def _push_beside_template(
             )
         ],
         constraining_relations=flatten_relations(
-            [bigger_than(surface, agent), bigger_than(surface, goal_reference)]
+            bigger_than(surface, [agent, goal_reference])
         ),
     )
 
@@ -263,7 +261,7 @@ def _push_in_front_of_behind_template(
             )
         ],
         constraining_relations=flatten_relations(
-            [bigger_than(surface, agent), bigger_than(surface, goal_reference)]
+            bigger_than(surface, [agent, goal_reference])
         ),
     )
 
@@ -918,7 +916,7 @@ def _put_on_template(
             )
         ],
         constraining_relations=flatten_relations(
-            [bigger_than(agent, theme), bigger_than(goal_reference, theme)]
+            bigger_than([agent, goal_reference], theme)
         ),
     )
 
@@ -952,7 +950,7 @@ def _put_on_body_part_template(
             )
         ],
         constraining_relations=flatten_relations(
-            [bigger_than(goal_reference, theme), bigger_than(agent, theme)]
+            bigger_than([agent, goal_reference], theme)
         ),
         asserted_always_relations=flatten_relations(has(agent, goal_reference)),
     )
@@ -979,7 +977,7 @@ def _put_in_template(
             )
         ],
         constraining_relations=flatten_relations(
-            [bigger_than(goal_reference, theme), bigger_than(agent, theme)]
+            bigger_than([agent, goal_reference], theme)
         ),
     )
 
@@ -1013,7 +1011,7 @@ def _put_under_template(
             )
         ],
         constraining_relations=flatten_relations(
-            [bigger_than(goal_reference, theme), bigger_than(agent, theme)]
+            bigger_than([agent, goal_reference], theme)
         ),
     )
 
