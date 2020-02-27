@@ -260,7 +260,9 @@ class _PerceptionGeneration:
 
         if not self._situation.actions:
             if self._include_ground:
-                self._relation_perceptions.extend(self._perceive_ground_relations(self._relation_perceptions))
+                self._relation_perceptions.extend(
+                    self._perceive_ground_relations(self._relation_perceptions)
+                )
             return PerceptualRepresentation.single_frame(
                 DevelopmentalPrimitivePerceptionFrame(
                     perceived_objects=self._object_perceptions,
