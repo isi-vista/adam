@@ -19,6 +19,7 @@ import time
 from direct.showbase.ShowBase import ShowBase  # pylint: disable=no-name-in-module
 
 from panda3d.core import DirectionalLight  # pylint: disable=no-name-in-module
+from panda3d.core import AmbientLight  # pylint: disable=no-name-in-module
 from panda3d.core import PointLight  # pylint: disable=no-name-in-module
 from panda3d.core import Material  # pylint: disable=no-name-in-module
 from panda3d.core import NodePath  # pylint: disable=no-name-in-module
@@ -61,6 +62,9 @@ class SituationVisualizer(ShowBase):
         "cookie": "cookie.egg",
         "dad": "person.egg",
         "mom": "person.egg",
+        "juice": "juice.egg",
+        "milk": "milk.egg",
+        "water": "water.egg",
         "chair-chairback_0": "chair-chairback.egg",
         "chair-chairseat_0": "chair-chairseat.egg",
         "chair-(furniture) leg_0": "chair-leg_left_front.egg",
@@ -110,6 +114,9 @@ class SituationVisualizer(ShowBase):
         "cookie": "cookie.egg",
         "dog": "dog.egg",
         "person": "person.egg",
+        "juice": "juice.egg",
+        "milk": "milk.egg",
+        "water": "water.egg",
     }
 
     def __init__(self) -> None:
@@ -124,6 +131,11 @@ class SituationVisualizer(ShowBase):
         plight_node = self.render.attachNewNode(plight)
         plight_node.setPos(10, 20, 1)
         self.render.setLight(plight_node)
+
+        alight = AmbientLight('alight')
+        alight.setColor((0.2, 0.2, 0.2, 1))
+        alnp = self.render.attachNewNode(alight)
+        self.render.setLight(alnp)
 
         # self.render is the top node of the default scene graph
 

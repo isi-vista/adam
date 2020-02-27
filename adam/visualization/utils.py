@@ -116,6 +116,10 @@ MODEL_NAMES = [
     "bird",
     "chair",
     "dog",
+    "cookie",
+    "water",
+    "juice",
+    "milk",
 ]
 MODEL_PART_NAMES = {"table": ["tabletop", "(furniture) leg"]}
 
