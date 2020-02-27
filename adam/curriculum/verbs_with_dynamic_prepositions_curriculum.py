@@ -790,8 +790,8 @@ def _take_to_template(
             Action(TAKE, argument_roles_to_fillers=[(AGENT, agent), (THEME, theme)])
         ],
         after_action_relations=flatten_relations(near(theme, goal_reference)),
-        constraining_relations=flatten_relations(bigger_than(agent, theme))
-    ),
+        constraining_relations=flatten_relations(bigger_than(agent, theme)),
+    )
 
 
 # FALL templates
@@ -1356,7 +1356,7 @@ def _make_take_with_prepositions(
                     max_to_sample=num_samples,
                 )
             ]
-        )
+        ),
     )
 
 
