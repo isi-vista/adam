@@ -153,6 +153,7 @@ _PART_CARDINALITY: ImmutableDict[str, ImmutableDict[str, int]] = immutabledict(
                 )
             ),
         ),
+        ("car", immutabledict([("tire", 4), ("body", 1)]))
     ]
 )
 
