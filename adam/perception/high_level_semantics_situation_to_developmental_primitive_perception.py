@@ -286,6 +286,7 @@ class _PerceptionGeneration:
 
         # Add ground for always perception if needed
         if self._include_ground:
+            # Grabbing any "always" ground relations
             self._relation_perceptions.extend(
                 self._perceive_ground_relations(
                     relations=chain(
@@ -297,6 +298,8 @@ class _PerceptionGeneration:
                     )
                 )
             )
+            # Due to the presence of an action need to specify implicit ground relations before and
+            # after the action seperately.
             before_ground = self._perceive_ground_relations(
                 relations=chain(
                     self._relation_perceptions,
@@ -747,7 +750,9 @@ class _PerceptionGeneration:
             self._objects_to_perceptions
         )
 
-    def _perceive_ground_relations(self, relations: Iterable[Relation[ObjectPerception]]):
+    def _perceive_ground_relations(
+        self, relations: Iterable[Relation[ObjectPerception]]
+    ) -> ImmutableSet[Relation[ObjectPerception]]:
         objects_to_relations = self._objects_to_relations(relations)
         ground_relations: List[Relation[ObjectPerception]] = []
         perceived_ground: Optional[ObjectPerception] = None
@@ -773,21 +778,21 @@ class _PerceptionGeneration:
                             ):
                                 object_is_on_something = True
                     if not object_is_on_something:
-                        ground_relations.append(
+                        ground_relations.extend(
                             on(
                                 self._objects_to_perceptions[situation_object],
                                 perceived_ground,
-                            )[0]
+                            )
                         )
                 else:
-                    ground_relations.append(
+                    ground_relations.extend(
                         on(
                             self._objects_to_perceptions[situation_object],
                             perceived_ground,
-                        )[0]
+                        )
                     )
 
-        return ground_relations
+        return immutableset(ground_relations)
 
     def _objects_to_relations(
         self, relations: Iterable[Relation[ObjectPerception]]
