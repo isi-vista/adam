@@ -58,6 +58,30 @@ def standard_object(
     )
 
 
+def body_part_object(
+    debug_handle: str,
+    root_node: OntologyNode = INANIMATE_OBJECT,
+    *,
+    required_properties: Iterable[OntologyNode] = tuple(),
+    banned_properties: Iterable[OntologyNode] = immutableset(),
+    added_properties: Iterable[
+        Union[OntologyNode, TemplatePropertyVariable]
+    ] = immutableset(),
+) -> TemplateObjectVariable:
+    """
+    Method for generating template objects that are body parts.
+    """
+    required_properties_final = [IS_BODY_PART]
+    required_properties_final.extend(required_properties)
+    return object_variable(
+        debug_handle=debug_handle,
+        root_node=root_node,
+        banned_properties=banned_properties,
+        required_properties=required_properties_final,
+        added_properties=added_properties,
+    )
+
+
 def phase1_instances(
     description: str,
     situations: Iterable[HighLevelSemanticsSituation],

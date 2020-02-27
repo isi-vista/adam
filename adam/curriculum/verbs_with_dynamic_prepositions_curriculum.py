@@ -15,6 +15,7 @@ from adam.curriculum.curriculum_utils import (
     PHASE1_CHOOSER,
     Phase1InstanceGroup,
     make_background,
+    body_part_object,
 )
 from adam.language_specific.english.english_language_generator import (
     USE_ADVERBIAL_PATH_MODIFIER,
@@ -51,8 +52,6 @@ from adam.ontology.phase1_ontology import (
     TAKE,
     PUT,
     has,
-    IS_BODY_PART,
-    LIQUID,
 )
 from adam.ontology import THING, IS_SPEAKER, IS_ADDRESSEE
 from adam.ontology.phase1_spatial_relations import (
@@ -73,7 +72,6 @@ from adam.situation.templates.phase1_templates import (
     TemplateObjectVariable,
     Phase1SituationTemplate,
     sampled,
-    object_variable,
 )
 
 BOOL_SET = immutableset([True, False])
@@ -1676,11 +1674,8 @@ def _make_put_with_prepositions(
     goal_under = standard_object(
         "goal_under", INANIMATE_OBJECT, required_properties=[HAS_SPACE_UNDER]
     )
-    body_part_goal = object_variable(
-        "body_part_goal",
-        INANIMATE_OBJECT,
-        banned_properties=[LIQUID],
-        required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM, IS_BODY_PART],
+    body_part_goal = body_part_object(
+        "body_part_goal", required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
     )
     background = immutableset(
         standard_object(f"noise_object_{x}") for x in range(noise_objects)
