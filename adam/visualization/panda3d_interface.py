@@ -132,7 +132,7 @@ class SituationVisualizer(ShowBase):
         plight_node.setPos(10, 20, 1)
         self.render.setLight(plight_node)
 
-        alight = AmbientLight('alight')
+        alight = AmbientLight("alight")
         alight.setColor((0.2, 0.2, 0.2, 1))
         alnp = self.render.attachNewNode(alight)
         self.render.setLight(alnp)
