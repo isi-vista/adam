@@ -787,6 +787,8 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                         else:
                             preposition = "under"
                     else:
+                        # TODO: hack for M3; revisit in cleanup
+                        # see: https://github.com/isi-vista/adam/issues/573
                         if isinstance(
                             region.direction.relative_to_axis, FacingAddresseeAxis
                         ):
