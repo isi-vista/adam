@@ -124,7 +124,7 @@ def _push_in_template(
         background_object_variables=background,
         actions=[
             Action(
-                PUT,
+                PUSH,
                 argument_roles_to_fillers=[
                     (AGENT, agent),
                     (THEME, theme),
@@ -158,7 +158,7 @@ def _push_under_template(
         background_object_variables=background,
         actions=[
             Action(
-                PUT,
+                PUSH,
                 argument_roles_to_fillers=[
                     (AGENT, agent),
                     (THEME, theme),
@@ -199,7 +199,7 @@ def _push_beside_template(
         background_object_variables=background,
         actions=[
             Action(
-                PUT,
+                PUSH,
                 argument_roles_to_fillers=[
                     (AGENT, agent),
                     (THEME, theme),
@@ -242,7 +242,7 @@ def _push_in_front_of_behind_template(
         background_object_variables=background,
         actions=[
             Action(
-                PUT,
+                PUSH,
                 argument_roles_to_fillers=[
                     (AGENT, agent),
                     (THEME, theme),
