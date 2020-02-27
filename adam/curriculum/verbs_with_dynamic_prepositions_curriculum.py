@@ -38,6 +38,7 @@ from adam.ontology.phase1_spatial_relations import (
     Direction,
     GRAVITATIONAL_UP,
 )
+from adam.relation import flatten_relations
 from adam.situation import Action
 from adam.situation.templates.phase1_templates import (
     TemplateObjectVariable,
@@ -147,7 +148,7 @@ def _x_move_under_y_template(
                 ],
             )
         ],
-        constraining_relations=[bigger_than(goal_reference, agent)],
+        constraining_relations=flatten_relations(bigger_than(goal_reference, agent)),
     )
 
 
@@ -173,7 +174,7 @@ def _x_move_y_in_z_template(
                 during=DuringAction(continuously=[contacts(agent, theme)]),
             )
         ],
-        constraining_relations=[bigger_than(goal_reference, theme)],
+        constraining_relations=flatten_relations(bigger_than(goal_reference, theme)),
     )
 
 
@@ -206,7 +207,7 @@ def _x_move_y_on_z_template(
                 during=DuringAction(continuously=[contacts(agent, theme)]),
             )
         ],
-        constraining_relations=[bigger_than(goal_reference, theme)],
+        constraining_relations=flatten_relations(bigger_than(goal_reference, theme)),
     )
 
 
@@ -240,7 +241,7 @@ def _x_move_y_under_z_template(
                 during=DuringAction(continuously=[contacts(agent, theme)]),
             )
         ],
-        constraining_relations=[bigger_than(goal_reference, theme)],
+        constraining_relations=flatten_relations(bigger_than(goal_reference, theme)),
     )
 
 
