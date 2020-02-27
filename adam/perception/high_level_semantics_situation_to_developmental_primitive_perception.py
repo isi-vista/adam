@@ -764,7 +764,7 @@ class _PerceptionGeneration:
             if situation_object.ontology_node != GROUND:
                 if self._objects_to_perceptions[situation_object] in objects_to_relations:
                     # If this object is not on anything else, it should be on the ground
-                    object_is_on_something = False
+                    object_is_on_ground = True
                     for relation in objects_to_relations[
                         self._objects_to_perceptions[situation_object]
                     ]:
@@ -775,9 +775,9 @@ class _PerceptionGeneration:
                             if (
                                 region.distance == EXTERIOR_BUT_IN_CONTACT
                                 and region.direction == GRAVITATIONAL_UP
-                            ):
-                                object_is_on_something = True
-                    if not object_is_on_something:
+                            ) or region.distance == INTERIOR:
+                                object_is_on_ground = False
+                    if object_is_on_ground:
                         ground_relations.extend(
                             on(
                                 self._objects_to_perceptions[situation_object],
