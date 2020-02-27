@@ -5,7 +5,8 @@ from adam.curriculum.verbs_with_dynamic_prepositions_curriculum import (
     _make_sit_with_prepositions,
     _make_take_with_prepositions,
     _make_fall_with_prepositions,
-    _make_put_with_prepositions)
+    _make_put_with_prepositions,
+)
 from tests.curriculum.phase1_curriculum_test import curriculum_test
 
 

@@ -29,10 +29,8 @@ from adam.ontology.phase1_ontology import (
     SIT,
     SIT_THING_SAT_ON,
     CAN_BE_SAT_ON_BY_PEOPLE,
-    EXTERIOR_BUT_IN_CONTACT,
     HAS_SPACE_UNDER,
     PUSH,
-    PUT,
     THEME,
     PUSH_SURFACE_AUX,
     ANIMATE,
@@ -97,8 +95,8 @@ def _push_to_template(
             Action(
                 PUSH,
                 argument_roles_to_fillers=[
-                                              (AGENT, agent),
-                                              (THEME, theme),
+                    (AGENT, agent),
+                    (THEME, theme),
                     (GOAL, Region(goal_reference, distance=PROXIMAL)),
                 ],
                 auxiliary_variable_bindings=[(PUSH_SURFACE_AUX, surface)],
@@ -182,7 +180,6 @@ def _push_under_template(
                 bigger_than(goal_reference, theme),
             ]
         ),
-
     )
 
 
@@ -205,26 +202,26 @@ def _push_beside_template(
                     (AGENT, agent),
                     (THEME, theme),
                     (
-                    GOAL,
-                    Region(
-                        goal_reference,
-                        distance=PROXIMAL,
-                        direction=Direction(
-                            positive=is_right,
-                            relative_to_axis=HorizontalAxisOfObject(
-                                goal_reference, index=0
+                        GOAL,
+                        Region(
+                            goal_reference,
+                            distance=PROXIMAL,
+                            direction=Direction(
+                                positive=is_right,
+                                relative_to_axis=HorizontalAxisOfObject(
+                                    goal_reference, index=0
+                                ),
                             ),
                         ),
                     ),
-            ),
+                ],
+                auxiliary_variable_bindings=[(PUSH_SURFACE_AUX, surface)],
+                during=DuringAction(continuously=[on(theme, surface)]),
+            )
         ],
-        auxiliary_variable_bindings=[(PUSH_SURFACE_AUX, surface)],
-        during=DuringAction(continuously=[on(theme, surface)]),
-    )
-    ],
-    constraining_relations = flatten_relations(
-        [bigger_than(surface, agent), bigger_than(surface, goal_reference)]
-    ),
+        constraining_relations=flatten_relations(
+            [bigger_than(surface, agent), bigger_than(surface, goal_reference)]
+        ),
     )
 
 
@@ -887,13 +884,15 @@ def _fall_in_front_of_behind_template(
         syntax_hints=syntax_hints,
     )
 
+
 # PUT templates
 
+
 def _put_on_template(
-        agent: TemplateObjectVariable,
-        theme: TemplateObjectVariable,
-        goal_reference: TemplateObjectVariable,
-        background: Iterable[TemplateObjectVariable],
+    agent: TemplateObjectVariable,
+    theme: TemplateObjectVariable,
+    goal_reference: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
         f"{agent.handle}-puts-{theme.handle}-on-{goal_reference.handle}",
@@ -905,7 +904,7 @@ def _put_on_template(
                 argument_roles_to_fillers=[
                     (AGENT, agent),
                     (THEME, theme),
-                    (GOAL, Region(goal_reference, distance=PROXIMAL)),
+                    (GOAL, Region(goal_reference, distance=EXTERIOR_BUT_IN_CONTACT, direction=GRAVITATIONAL_UP)),
                 ],
             )
         ],
@@ -914,12 +913,13 @@ def _put_on_template(
         ),
     )
 
+
 def _put_on_body_part_template(
-        # X puts Y on body part
-        agent: TemplateObjectVariable,
-        theme: TemplateObjectVariable,
-        goal_reference: TemplateObjectVariable,
-        background: Iterable[TemplateObjectVariable],
+    # X puts Y on body part
+    agent: TemplateObjectVariable,
+    theme: TemplateObjectVariable,
+    goal_reference: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
         f"{agent.handle}-puts-{theme.handle}-on-{goal_reference.handle}",
@@ -943,20 +943,17 @@ def _put_on_body_part_template(
             )
         ],
         constraining_relations=flatten_relations(
-            [
-                bigger_than(goal_reference, theme),
-                bigger_than(agent, theme),
-            ]
+            [bigger_than(goal_reference, theme), bigger_than(agent, theme)]
         ),
         asserted_always_relations=flatten_relations(has(agent, goal_reference)),
     )
 
 
 def _put_in_template(
-        agent: TemplateObjectVariable,
-        theme: TemplateObjectVariable,
-        goal_reference: TemplateObjectVariable,
-        background: Iterable[TemplateObjectVariable],
+    agent: TemplateObjectVariable,
+    theme: TemplateObjectVariable,
+    goal_reference: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
         f"{agent.handle}-puts-{theme.handle}-in-{goal_reference.handle}",
@@ -972,19 +969,18 @@ def _put_in_template(
                 ],
             )
         ],
-        constraining_relations=flatten_relations([
-            bigger_than(goal_reference, theme),
-            bigger_than(agent, theme),
-        ]),
+        constraining_relations=flatten_relations(
+            [bigger_than(goal_reference, theme), bigger_than(agent, theme)]
+        ),
     )
 
 
 def _put_under_template(
-        agent: TemplateObjectVariable,
-        theme: TemplateObjectVariable,
-        goal_reference: TemplateObjectVariable,
-        background: Iterable[TemplateObjectVariable],
-        is_distal: bool,
+    agent: TemplateObjectVariable,
+    theme: TemplateObjectVariable,
+    goal_reference: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+    is_distal: bool,
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
         f"{agent.handle}-puts-{theme.handle}-under-{goal_reference.handle}",
@@ -1007,19 +1003,18 @@ def _put_under_template(
                 ],
             )
         ],
-        constraining_relations=flatten_relations([
-            bigger_than(goal_reference, theme),
-            bigger_than(agent, theme),
-        ]),
+        constraining_relations=flatten_relations(
+            [bigger_than(goal_reference, theme), bigger_than(agent, theme)]
+        ),
     )
 
 
 def _put_beside_template(
-        agent: TemplateObjectVariable,
-        theme: TemplateObjectVariable,
-        goal_reference: TemplateObjectVariable,
-        background: Iterable[TemplateObjectVariable],
-        is_right: bool,
+    agent: TemplateObjectVariable,
+    theme: TemplateObjectVariable,
+    goal_reference: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+    is_right: bool,
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
         f"{agent.handle}-puts-{theme.handle}-beside-{goal_reference.handle}",
@@ -1047,9 +1042,7 @@ def _put_beside_template(
                 ],
             )
         ],
-        constraining_relations=flatten_relations(
-            [bigger_than(agent, theme)]
-        ),
+        constraining_relations=flatten_relations([bigger_than(agent, theme)]),
     )
 
 
@@ -1085,9 +1078,7 @@ def _put_in_front_of_behind_template(
                 ],
             )
         ],
-        constraining_relations=flatten_relations(
-            [bigger_than(agent, theme)]
-        ),
+        constraining_relations=flatten_relations([bigger_than(agent, theme)]),
     )
 
 
@@ -1680,7 +1671,6 @@ def _make_put_with_prepositions(
     )
     body_part_goal = standard_object(
         "body_part_goal",
-        THING,
         required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM, IS_BODY_PART],
     )
     background = immutableset(
