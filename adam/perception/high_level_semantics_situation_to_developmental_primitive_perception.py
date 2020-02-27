@@ -260,7 +260,7 @@ class _PerceptionGeneration:
 
         if not self._situation.actions:
             if self._include_ground:
-                self._perceive_ground_relations(self._relation_perceptions)
+                self._relation_perceptions.extend(self._perceive_ground_relations(self._relation_perceptions))
             return PerceptualRepresentation.single_frame(
                 DevelopmentalPrimitivePerceptionFrame(
                     perceived_objects=self._object_perceptions,
@@ -282,12 +282,29 @@ class _PerceptionGeneration:
             for relation in self._situation.after_action_relations
         ]
 
+        # Add ground for always perception if needed
         if self._include_ground:
-            self._perceive_ground_relations(
+            self._relation_perceptions.extend(
+                self._perceive_ground_relations(
+                    relations=chain(
+                        self._relation_perceptions,
+                        explicit_before_relations,
+                        _action_perception.before_relations,
+                        explicit_after_relations,
+                        _action_perception.after_relations,
+                    )
+                )
+            )
+            before_ground = self._perceive_ground_relations(
                 relations=chain(
                     self._relation_perceptions,
                     explicit_before_relations,
                     _action_perception.before_relations,
+                )
+            )
+            after_ground = self._perceive_ground_relations(
+                relations=chain(
+                    self._relation_perceptions,
                     explicit_after_relations,
                     _action_perception.after_relations,
                 )
@@ -299,6 +316,7 @@ class _PerceptionGeneration:
                 self._relation_perceptions,
                 explicit_before_relations,
                 _action_perception.before_relations,
+                before_ground,
             ),
             property_assertions=self._property_assertion_perceptions,
             axis_info=axis_info,
@@ -309,6 +327,7 @@ class _PerceptionGeneration:
                 self._relation_perceptions,
                 explicit_after_relations,
                 _action_perception.after_relations,
+                after_ground,
             ),
             property_assertions=self._property_assertion_perceptions,
             axis_info=axis_info,
@@ -728,6 +747,7 @@ class _PerceptionGeneration:
 
     def _perceive_ground_relations(self, relations: Iterable[Relation[ObjectPerception]]):
         objects_to_relations = self._objects_to_relations(relations)
+        ground_relations: List[Relation[ObjectPerception]] = []
         perceived_ground: Optional[ObjectPerception] = None
         for object_ in self._object_perceptions:
             if self._object_perceptions_to_ontology_nodes[object_] == GROUND:
@@ -751,19 +771,21 @@ class _PerceptionGeneration:
                             ):
                                 object_is_on_something = True
                     if not object_is_on_something:
-                        self._relation_perceptions.append(  # type: ignore
+                        ground_relations.append(
                             on(
                                 self._objects_to_perceptions[situation_object],
                                 perceived_ground,
-                            )
+                            )[0]
                         )
                 else:
-                    self._relation_perceptions.append(  # type: ignore
+                    ground_relations.append(
                         on(
                             self._objects_to_perceptions[situation_object],
                             perceived_ground,
-                        )
+                        )[0]
                     )
+
+        return ground_relations
 
     def _objects_to_relations(
         self, relations: Iterable[Relation[ObjectPerception]]
