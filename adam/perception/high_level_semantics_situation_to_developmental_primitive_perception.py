@@ -751,14 +751,14 @@ class _PerceptionGeneration:
                             ):
                                 object_is_on_something = True
                     if not object_is_on_something:
-                        self._relation_perceptions.append(
+                        self._relation_perceptions.append(  # type: ignore
                             on(
                                 self._objects_to_perceptions[situation_object],
                                 perceived_ground,
                             )
                         )
                 else:
-                    self._relation_perceptions.append(
+                    self._relation_perceptions.append(  # type: ignore
                         on(
                             self._objects_to_perceptions[situation_object],
                             perceived_ground,
