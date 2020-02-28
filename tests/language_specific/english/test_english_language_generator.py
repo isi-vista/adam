@@ -58,6 +58,8 @@ from adam.ontology.phase1_ontology import (
     TAKE,
     CAR,
     ROLL_SURFACE_AUXILIARY,
+    has,
+    bigger_than,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -73,7 +75,7 @@ from adam.ontology.phase1_spatial_relations import (
     VIA,
 )
 from adam.random_utils import FixedIndexChooser
-from adam.relation import Relation
+from adam.relation import Relation, flatten_relations
 from adam.situation import Action, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam_test_utils import situation_object
@@ -1262,6 +1264,126 @@ def region_as_goal_situation(
             ],
         ),
     )
+
+
+def test_more_than_one_action():
+    agent = situation_object(DOG)
+    box = situation_object(BOX)
+    situation = HighLevelSemanticsSituation(
+        salient_objects=[agent],
+        other_objects=[box],
+        actions=[
+            Action(GO, argument_roles_to_fillers=[(AGENT, agent), (GOAL, box)]),
+            Action(FALL, argument_roles_to_fillers=[(AGENT, box), (GOAL, agent)]),
+        ],
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+    )
+
+    with pytest.raises(RuntimeError):
+        generated_tokens(situation)
+
+
+def test_multiple_has_relations():
+    agent = situation_object(MOM)
+    ball = situation_object(BALL)
+    cookie = situation_object(COOKIE)
+    situation = HighLevelSemanticsSituation(
+        salient_objects=[agent, ball],
+        always_relations=[has(agent, [ball, cookie])],
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+    )
+
+    with pytest.raises(RuntimeError):
+        generated_tokens(situation)
+
+
+# Skipping test because we fail to correctly translate I
+# See: https://github.com/isi-vista/adam/issues/605
+@pytest.mark.skip("Skipping has as a verb")
+def test_has_as_verb():
+    speaker = situation_object(MOM, properties=[IS_SPEAKER])
+    ball = situation_object(BALL)
+    box = situation_object(BOX)
+
+    speaker_has_ball = HighLevelSemanticsSituation(
+        salient_objects=[speaker, ball],
+        always_relations=[has(speaker, ball)],
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+    )
+
+    speaker_has_ball_on_box = HighLevelSemanticsSituation(
+        salient_objects=[speaker, ball, box],
+        always_relations=flatten_relations([has(speaker, ball), on(ball, box)]),
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+    )
+
+    assert ("I", "have", "my", "ball") == generated_tokens(speaker_has_ball)
+
+    assert ("I", "have", "my", "ball", "on", "a", "box") == generated_tokens(
+        speaker_has_ball_on_box
+    )
+
+
+def test_multiple_posession():
+    speaker = situation_object(MOM, properties=[IS_SPEAKER])
+    addressee = situation_object(DAD, properties=[IS_ADDRESSEE])
+    ball = situation_object(BALL)
+    multiple_possession = HighLevelSemanticsSituation(
+        salient_objects=[speaker, addressee, ball],
+        always_relations=[has([speaker, addressee], ball)],
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+    )
+
+    with pytest.raises(RuntimeError):
+        generated_tokens(multiple_possession)
+
+
+def test_fail_relation():
+    mom = situation_object(MOM)
+    ball = situation_object(BALL)
+
+    ball_bigger_mom = HighLevelSemanticsSituation(
+        salient_objects=[mom, ball],
+        always_relations=[bigger_than(ball, mom)],
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+    )
+
+    with pytest.raises(RuntimeError):
+        generated_tokens(ball_bigger_mom)
+
+
+def test_multiple_action_heads():
+    mom = situation_object(MOM)
+    dad = situation_object(DAD)
+    box = situation_object(BOX)
+
+    mom_and_dad_go_to_box = HighLevelSemanticsSituation(
+        salient_objects=[mom, dad, box],
+        actions=[
+            Action(
+                GO, argument_roles_to_fillers=[(AGENT, mom), (AGENT, dad), (GOAL, box)]
+            )
+        ],
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+    )
+
+    with pytest.raises(RuntimeError):
+        generated_tokens(mom_and_dad_go_to_box)
+
+
+def test_only_goal():
+    box = situation_object(BOX)
+
+    only_goal = HighLevelSemanticsSituation(
+        salient_objects=[box],
+        actions=[
+            Action(GO, argument_roles_to_fillers=[(GOAL, Region(box, distance=PROXIMAL))])
+        ],
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+    )
+
+    with pytest.raises(RuntimeError):
+        generated_tokens(only_goal)
 
 
 def generated_tokens(situation):

@@ -225,11 +225,6 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             # (e.g. in a situation where one box is on a table and one is below it,
             # don't output "two boxes")
             # https://github.com/isi-vista/adam/issues/129
-            if not _object.ontology_node:
-                raise RuntimeError(
-                    f"Don't know how to handle objects which don't correspond to "
-                    f"an ontology node currently: {_object}"
-                )
 
             # Check if the situation object is the speaker
             if IS_SPEAKER in _object.properties:
