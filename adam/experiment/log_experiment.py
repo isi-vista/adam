@@ -15,16 +15,15 @@ from adam.curriculum.m6_curriculum import (
 from adam.curriculum.phase1_curriculum import _make_each_object_by_itself_curriculum
 from adam.curriculum.pursuit_curriculum import make_simple_pursuit_curriculum
 from adam.experiment import Experiment, execute_experiment
-from adam.experiment.observer import LearningProgressHtmlLogger
+from adam.experiment.observer import LearningProgressHtmlLogger, CandidateAccuracyObserver
 from adam.learner import LanguageLearner
 from adam.learner.object_recognizer import ObjectRecognizer
 from adam.learner.preposition_subset import PrepositionSubsetLanguageLearner
-from adam.learner.pursuit import PursuitLanguageLearner
+from adam.learner.pursuit import ObjectPursuitLearner, HypothesisLogger
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     GAILA_M6_PERCEPTION_GENERATOR,
 )
-from adam.perception.perception_graph import GraphLogger
 from adam.random_utils import RandomChooser
 
 
@@ -33,10 +32,10 @@ def log_experiment_entry_point(params: Parameters) -> None:
     experiment_name = params.string("experiment")
     debug_log_dir = params.optional_creatable_directory("debug_log_directory")
 
-    graph_logger: Optional[GraphLogger]
+    graph_logger: Optional[HypothesisLogger]
     if debug_log_dir:
         logging.info("Debug graphs will be written to %s", debug_log_dir)
-        graph_logger = GraphLogger(debug_log_dir, enable_graph_rendering=True)
+        graph_logger = HypothesisLogger(debug_log_dir, enable_graph_rendering=True)
     else:
         graph_logger = None
 
@@ -51,7 +50,10 @@ def log_experiment_entry_point(params: Parameters) -> None:
             name=experiment_name,
             training_stages=training_instance_groups,
             learner_factory=learner_factory_from_params(params, graph_logger),
-            pre_example_training_observers=[logger.pre_observer()],
+            pre_example_training_observers=[
+                logger.pre_observer(),
+                CandidateAccuracyObserver("pre-acc-observer"),
+            ],
             post_example_training_observers=[logger.post_observer()],
             test_instance_groups=test_instance_groups,
             test_observers=[logger.test_observer()],
@@ -61,11 +63,11 @@ def log_experiment_entry_point(params: Parameters) -> None:
 
 
 def learner_factory_from_params(
-    params: Parameters, graph_logger: Optional[GraphLogger]
+    params: Parameters, graph_logger: Optional[HypothesisLogger]
 ) -> Callable[[], LanguageLearner]:  # type: ignore
     learner_type = params.string("learner", ["pursuit", "preposition-subset"])
     if learner_type == "pursuit":
-        return lambda: PursuitLanguageLearner.from_parameters(
+        return lambda: ObjectPursuitLearner.from_parameters(
             params.namespace("pursuit"), graph_logger=graph_logger
         )
     elif learner_type == "preposition-subset":

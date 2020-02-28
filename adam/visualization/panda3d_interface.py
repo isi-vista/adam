@@ -45,6 +45,7 @@ class SituationVisualizer(ShowBase):
         Shape.CIRCULAR: "smooth_sphere.egg",
         Shape.OVALISH: "ovalish.egg",
         Shape.RECTANGULAR: "rectangular.egg",
+        Shape.IRREGULAR: "puddle.egg",
     }
 
     specific_model_to_file = {
@@ -57,7 +58,32 @@ class SituationVisualizer(ShowBase):
         "book": "book.egg",
         "bird": "bird.egg",
         "car": "car.egg",
+        "dad": "person.egg",
+        "mom": "person.egg",
+        "chair-chairback_0": "chair-chairback.egg",
+        "chair-chairseat_0": "chair-chairseat.egg",
+        "chair-(furniture) leg_0": "chair-leg_left_front.egg",
+        "chair-(furniture) leg_1": "chair-leg_left_back.egg",
+        "chair-(furniture) leg_2": "chair-leg_right_back.egg",
+        "chair-(furniture) leg_3": "chair-leg_right_front.egg",
+        # "table-(furniture) leg_0": "table-leg_left_front.egg",
+        # "table-(furniture) leg_1": "table-leg_left_back.egg",
+        # "table-(furniture) leg_2": "table-leg_right_back.egg",
+        # "table-(furniture) leg_3": "table-leg_right_front.egg",
+        # "table-tabletop_0": "table-tabletop.egg",
+    }
+
+    models_used_for_scale_reference = {
         "chair": "chair.egg",
+        "ball": "basketball.egg",
+        "hat": "cowboyhat.egg",
+        # "box": "cardboard_box.egg",
+        "cup": "mug.egg",
+        "table": "table.egg",
+        "door": "door.egg",
+        "book": "book.egg",
+        "bird": "bird.egg",
+        "car": "car.egg",
     }
 
     def __init__(self) -> None:
@@ -117,9 +143,10 @@ class SituationVisualizer(ShowBase):
         model_type: Shape,
         *,
         name: str,
-        position: Tuple[float, float, float],
+        lookup_name: str,
         color: RgbColorPerception = None,
         parent: Optional[NodePath] = None,
+        position: Optional[Tuple[float, float, float]] = None,
         scale_multiplier: Optional[float] = 1.0,
     ) -> NodePath:
         """
@@ -138,12 +165,11 @@ class SituationVisualizer(ShowBase):
         """
 
         if color is None:
-            color = RgbColorPerception(50, 50, 50)
+            color = RgbColorPerception(122, 122, 122)
         # attempt to find a model file for a particular type of object
-        specific_model_type = name.split("_")[0]
-        if specific_model_type in SituationVisualizer.specific_model_to_file:
+        if lookup_name in SituationVisualizer.specific_model_to_file:
             new_model = self._load_model(
-                SituationVisualizer.specific_model_to_file[specific_model_type]
+                SituationVisualizer.specific_model_to_file[lookup_name]
             )
             new_model.name = name
             print(f"adding: {name}")
@@ -158,6 +184,9 @@ class SituationVisualizer(ShowBase):
             except KeyError:
                 print(f"No geometry found for {model_type}")
                 raise
+
+        if position:
+            new_model.setPos(position[0], position[1], position[2])
 
         scale = new_model.getScale()
         new_model.setSx(scale.x * scale_multiplier)
@@ -174,7 +203,6 @@ class SituationVisualizer(ShowBase):
         # nested
         else:
             new_model.reparentTo(parent)
-        new_model.setPos(position[0], position[1], position[2])
         new_model.setColor((color.red / 255, color.green / 255, color.blue / 255, 1.0))
 
         return new_model
@@ -182,25 +210,28 @@ class SituationVisualizer(ShowBase):
     def add_dummy_node(
         self,
         name: str,
-        position: Tuple[float, float, float],
+        lookup_name: str,
         parent: Optional[NodePath] = None,
+        position: Optional[Tuple[float, float, float]] = None,
         scale_multiplier: Optional[float] = 1.0,
     ) -> NodePath:
         print(f"\nAdding Dummy node: {name}")
 
-        specific_model_type = name.split("_")[0]
-        if specific_model_type in SituationVisualizer.specific_model_to_file:
+        if lookup_name in SituationVisualizer.specific_model_to_file:
             print(f"\nADDING SPECIFIC MODEL")
             new_node = self._load_model(
-                SituationVisualizer.specific_model_to_file[specific_model_type]
+                SituationVisualizer.specific_model_to_file[lookup_name]
             )
             new_node.name = name
-            scale = new_node.getScale()
-            new_node.setSx(scale.x * scale_multiplier)
-            new_node.setSy(scale.y * scale_multiplier)
-            new_node.setSz(scale.z * scale_multiplier)
+
         else:
             new_node = NodePath(name)
+        scale = new_node.getScale()
+        new_node.setSx(scale.x * scale_multiplier)
+        new_node.setSy(scale.y * scale_multiplier)
+        new_node.setSz(scale.z * scale_multiplier)
+        if position:
+            new_node.setPos(position[0], position[1], position[2])
         if parent is None:
             new_node.reparentTo(self.render)
             if name in self.geo_nodes:
@@ -210,7 +241,6 @@ class SituationVisualizer(ShowBase):
             self.geo_nodes[new_node.name] = new_node
         else:
             new_node.reparentTo(parent)
-        new_node.setPos(*position)
         return new_node
 
     def clear_scene(self) -> None:
@@ -233,6 +263,13 @@ class SituationVisualizer(ShowBase):
                 position.data[0], position.data[1], position.data[2]
             )
 
+    def multiply_scale(self, geo_node_name: str, scale_multiplier: float):
+        node = self.geo_nodes[geo_node_name]
+        scale = node.get_scale()
+        node.setSx(scale.x * scale_multiplier)
+        node.setSy(scale.y * scale_multiplier)
+        node.setSz(scale.z * scale_multiplier)
+
     def run_for_seconds(self, seconds: float) -> None:
         """Executes main rendering loop for given seconds. This needs to be a
            healthy fraction of a second to see changes reflected in the scene."""
@@ -250,7 +287,9 @@ class SituationVisualizer(ShowBase):
             bounds = model.getTightBounds()
             scale_map[shape.name] = bounds_to_scale(bounds[0], bounds[1])
         for name in MODEL_NAMES:
-            model = self._load_model(SituationVisualizer.specific_model_to_file[name])
+            model = self._load_model(
+                SituationVisualizer.models_used_for_scale_reference[name]
+            )
             bounds = model.getTightBounds()
             scale_map[name] = bounds_to_scale(bounds[0], bounds[1])
 
@@ -278,18 +317,21 @@ if __name__ == "__main__":
     print(f"Current name to file bindings:\n{VISUALIZER.specific_model_to_file}")
     PARSER = ArgumentParser()
     PARSER.add_argument(
-        "model_name", type=str, help="model name (lowercase) to view in isolation"
+        "model_names",
+        type=str,
+        nargs="*",
+        help="model name (lowercase) to view in isolation",
     )
     PARSER.add_argument("--x", type=float, help="x position", default=0.0)
     PARSER.add_argument("--y", type=float, help="y position", default=0.0)
     PARSER.add_argument("--z", type=float, help="z position", default=0.0)
     ARGS = PARSER.parse_args()
 
-    VISUALIZER.add_model(
-        Shape.IRREGULAR,
-        name=ARGS.model_name,
-        color=None,
-        position=(ARGS.x, ARGS.y, ARGS.z),
-    )
-    VISUALIZER.set_title(ARGS.model_name)
+    for MODEL_NAME in ARGS.model_names:
+        NODE = VISUALIZER.add_model(
+            Shape.IRREGULAR, name=MODEL_NAME, color=None, lookup_name=MODEL_NAME
+        )
+        node_pos = NODE.get_pos()
+        NODE.setPos(node_pos.x + ARGS.x, node_pos.y + ARGS.y, node_pos.z + ARGS.z)
+    VISUALIZER.set_title(ARGS.model_names[0])
     VISUALIZER.run()
