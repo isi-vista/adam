@@ -172,6 +172,21 @@ _PART_CARDINALITY: ImmutableDict[str, ImmutableDict[str, int]] = immutabledict(
                 ]
             ),
         ),
+        (
+            "bird",
+            immutabledict(
+                [
+                    ("bird-head", 1),
+                    ("torso", 1),
+                    ("leg-segment", 8),
+                    ("foot", 2),
+                    ("wing", 2),
+                    ("tail", 1),
+                ]
+            ),
+        ),
+        ("truck", immutabledict([("tire", 8), ("body", 1), ("flatbed", 1)])),
+        ("house", immutabledict([("roof", 1), ("wall", 1)])),
     ]
 )
 
