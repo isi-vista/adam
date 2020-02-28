@@ -26,7 +26,7 @@ import logging
 
 # currently useful for positioning multiple objects:
 from adam.curriculum.phase1_curriculum import (
-    _make_object_beside_object_curriculum as make_curriculum,
+    _make_take_curriculum as make_curriculum,
 )
 
 
@@ -346,12 +346,13 @@ class SceneCreator:
                         if obj not in property_map:
                             property_map[obj].append(None)
 
-                yield SceneElements(
-                    property_map,
-                    in_region_map,
-                    nested_objects,
-                    dependency_tree.as_token_sequence(),
-                )
+                    # TODO: indicate whether this is a continuation of the same scene (next frame) or a new scene)
+                    yield SceneElements(
+                        property_map,
+                        in_region_map,
+                        nested_objects,
+                        dependency_tree.as_token_sequence(),
+                    )
 
     @staticmethod
     def _nest_objects(

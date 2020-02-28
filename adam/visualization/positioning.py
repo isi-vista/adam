@@ -177,6 +177,9 @@ def run_model(
     Returns: PositionsMap: Map of object name -> Tensor (3,) of its position
 
     """
+    print(top_level_objects)
+    print(in_region_map)
+
     positioning_model = PositioningModel.for_scaled_objects_random_positions(
         top_level_objects, in_region_relations=in_region_map, scale_map=object_scales
     )
