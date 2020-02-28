@@ -1049,6 +1049,9 @@ class _PerceptionGeneration:
 
         # find axes for the object
         if situation_object:
+            debug_handle = (
+                situation_object.ontology_node.handle + "_" + debug_handle.split("_")[1]
+            )
             # This is a top-level object which has already been assigned axes
             # by the situation. We should not change or copy them
             # or else references to them by the situation
