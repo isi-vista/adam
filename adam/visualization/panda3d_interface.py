@@ -110,6 +110,11 @@ class SituationVisualizer(ShowBase):
         "person-hand_1": "person-hand_left.egg",
         "person-foot_0": "person-foot_right.egg",
         "person-foot_1": "person-foot_left.egg",
+        "truck-truckcab_0-body_0": "truck-body.egg",
+        "truck-truckcab_0-tire_0": "truck-tire_left_front",
+        "truck-truckcab_0-tire_1": "truck-tire_left_back",
+        "truck-truckcab_0-tire_2": "truck-tire_right_back",
+        "truck-truckcab_0-tire_3": "truck-tire_right_front",
     }
 
     models_used_for_scale_reference = {
