@@ -151,6 +151,7 @@ def _push_under_template(
     goal_reference: TemplateObjectVariable,
     surface: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
+    *,
     is_distal: bool,
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
@@ -191,6 +192,7 @@ def _push_beside_template(
     goal_reference: TemplateObjectVariable,
     surface: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
+    *,
     is_right: bool,
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
@@ -233,6 +235,7 @@ def _push_in_front_of_behind_template(
     goal_reference: TemplateObjectVariable,
     surface: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
+    *,
     is_distal: bool,
     is_in_front: bool,
 ) -> Phase1SituationTemplate:
@@ -254,7 +257,7 @@ def _push_in_front_of_behind_template(
                             direction=Direction(
                                 positive=is_in_front,
                                 relative_to_axis=FacingAddresseeAxis(
-                                    goal_reference, index=0
+                                    goal_reference
                                 ),
                             ),
                         ),
@@ -509,6 +512,7 @@ def _sit_on_template(
     surface: TemplateObjectVariable,
     seat: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
+    *,
     syntax_hints: ImmutableSet[str],
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
@@ -544,6 +548,7 @@ def _sit_in_template(
     surface: TemplateObjectVariable,
     seat: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
+    *,
     syntax_hints: ImmutableSet[str],
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
@@ -991,6 +996,7 @@ def _put_under_template(
     theme: TemplateObjectVariable,
     goal_reference: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
+    *,
     is_distal: bool,
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
@@ -1025,6 +1031,7 @@ def _put_beside_template(
     theme: TemplateObjectVariable,
     goal_reference: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
+    *,
     is_right: bool,
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
@@ -1062,6 +1069,7 @@ def _put_in_front_of_behind_template(
     theme: TemplateObjectVariable,
     goal_reference: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
+    *,
     is_distal: bool,
     is_in_front: bool,
 ) -> Phase1SituationTemplate:
@@ -1098,6 +1106,7 @@ def _x_move_beside_y_template(
     agent: TemplateObjectVariable,
     goal_reference: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
+    *,
     is_right: bool,
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
@@ -1133,6 +1142,7 @@ def _x_move_in_front_of_behind_y_template(
     agent: TemplateObjectVariable,
     goal_reference: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
+    *,
     is_distal: bool,
     is_in_front: bool,
 ) -> Phase1SituationTemplate:
@@ -1153,7 +1163,7 @@ def _x_move_in_front_of_behind_y_template(
                             direction=Direction(
                                 positive=is_in_front,
                                 relative_to_axis=FacingAddresseeAxis(
-                                    goal_reference, index=0
+                                    goal_reference
                                 ),
                             ),
                         ),
@@ -1169,6 +1179,7 @@ def _x_move_under_y_template(
     agent: TemplateObjectVariable,
     goal_reference: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
+    *,
     is_distal: bool,
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
@@ -1260,6 +1271,7 @@ def _x_move_y_under_z_template(
     theme: TemplateObjectVariable,
     goal_reference: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
+    *,
     is_distal: bool,
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
@@ -1294,6 +1306,7 @@ def _x_move_y_beside_z_template(
     theme: TemplateObjectVariable,
     goal_reference: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
+    *,
     is_right: bool,
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
@@ -1332,6 +1345,7 @@ def _x_move_y_in_front_of_behind_z_template(
     theme: TemplateObjectVariable,
     goal_reference: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
+    *,
     is_distal: bool,
     is_in_front: bool,
 ) -> Phase1SituationTemplate:
@@ -1353,7 +1367,7 @@ def _x_move_y_in_front_of_behind_z_template(
                             direction=Direction(
                                 positive=is_in_front,
                                 relative_to_axis=FacingAddresseeAxis(
-                                    goal_reference, index=0
+                                    goal_reference
                                 ),
                             ),
                         ),
@@ -1615,7 +1629,7 @@ def _make_sit_with_prepositions(
             flatten(
                 [
                     sampled(
-                        _sit_on_template(agent, seat, surface, background, syntax_hints),
+                        _sit_on_template(agent, seat, surface, background, syntax_hints=syntax_hints),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER,
                         max_to_sample=num_samples,
@@ -1628,7 +1642,7 @@ def _make_sit_with_prepositions(
                 [
                     sampled(
                         _sit_in_template(
-                            agent, seat_in, surface, background, syntax_hints
+                            agent, seat_in, surface, background, syntax_hints=syntax_hints
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER,
@@ -2074,7 +2088,7 @@ def _make_move_with_prepositions(
                 [
                     sampled(
                         _x_move_beside_y_template(
-                            agent, goal_reference, background, is_right
+                            agent, goal_reference, background, is_right=is_right
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER,
@@ -2088,7 +2102,7 @@ def _make_move_with_prepositions(
                 [
                     sampled(
                         _x_move_in_front_of_behind_y_template(
-                            agent, goal_reference, background, is_distal, is_in_front
+                            agent, goal_reference, background, is_distal=is_distal, is_in_front=is_in_front
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER,
@@ -2103,7 +2117,7 @@ def _make_move_with_prepositions(
                 [
                     sampled(
                         _x_move_under_y_template(
-                            agent, goal_under, background, is_distal
+                            agent, goal_under, background, is_distal=is_distal
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER,
@@ -2129,7 +2143,7 @@ def _make_move_with_prepositions(
                 [
                     sampled(
                         _x_move_y_under_z_template(
-                            agent, theme, goal_under, background, is_distal
+                            agent, theme, goal_under, background, is_distal=is_distal
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER,
@@ -2143,7 +2157,7 @@ def _make_move_with_prepositions(
                 [
                     sampled(
                         _x_move_y_beside_z_template(
-                            agent, theme, goal_reference, background, is_right
+                            agent, theme, goal_reference, background, is_right=is_right
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER,
@@ -2161,8 +2175,8 @@ def _make_move_with_prepositions(
                             theme,
                             goal_reference,
                             background,
-                            is_distal,
-                            is_in_front,
+                            is_distal=is_distal,
+                            is_in_front=is_in_front,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER,
