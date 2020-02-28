@@ -256,9 +256,7 @@ def _push_in_front_of_behind_template(
                             distance=DISTAL if is_distal else PROXIMAL,
                             direction=Direction(
                                 positive=is_in_front,
-                                relative_to_axis=FacingAddresseeAxis(
-                                    goal_reference
-                                ),
+                                relative_to_axis=FacingAddresseeAxis(goal_reference),
                             ),
                         ),
                     ),
@@ -1162,9 +1160,7 @@ def _x_move_in_front_of_behind_y_template(
                             distance=DISTAL if is_distal else PROXIMAL,
                             direction=Direction(
                                 positive=is_in_front,
-                                relative_to_axis=FacingAddresseeAxis(
-                                    goal_reference
-                                ),
+                                relative_to_axis=FacingAddresseeAxis(goal_reference),
                             ),
                         ),
                     ),
@@ -1366,9 +1362,7 @@ def _x_move_y_in_front_of_behind_z_template(
                             distance=DISTAL if is_distal else PROXIMAL,
                             direction=Direction(
                                 positive=is_in_front,
-                                relative_to_axis=FacingAddresseeAxis(
-                                    goal_reference
-                                ),
+                                relative_to_axis=FacingAddresseeAxis(goal_reference),
                             ),
                         ),
                     ),
@@ -1629,7 +1623,9 @@ def _make_sit_with_prepositions(
             flatten(
                 [
                     sampled(
-                        _sit_on_template(agent, seat, surface, background, syntax_hints=syntax_hints),
+                        _sit_on_template(
+                            agent, seat, surface, background, syntax_hints=syntax_hints
+                        ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER,
                         max_to_sample=num_samples,
@@ -2063,21 +2059,24 @@ def _make_move_with_prepositions(
     num_samples: int = 5, *, noise_objects: int = 0
 ) -> Phase1InstanceGroup:
     agent = standard_object("agent", THING, required_properties=[SELF_MOVING])
+    manipulating_agent = standard_object(
+        "manipulating_agent", THING, required_properties=[ANIMATE]
+    )
     theme = standard_object("theme", INANIMATE_OBJECT)
-    goal_reference = standard_object("goal_reference", THING)
-    goal_in = standard_object("goal_in", THING, required_properties=[HOLLOW])
+    goal_reference = standard_object("goal_reference", INANIMATE_OBJECT)
+    goal_in = standard_object("goal_in", INANIMATE_OBJECT, required_properties=[HOLLOW])
     goal_on = standard_object(
-        "goal_on", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
+        "goal_on", INANIMATE_OBJECT, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
     )
     goal_under = standard_object(
-        "goal_under", THING, required_properties=[HAS_SPACE_UNDER]
+        "goal_under", INANIMATE_OBJECT, required_properties=[HAS_SPACE_UNDER]
     )
     background = immutableset(
         standard_object(f"noise_object_{x}") for x in range(noise_objects)
     )
     situation_templates = [
-        _x_move_y_in_z_template(agent, theme, goal_in, background),
-        _x_move_y_on_z_template(agent, theme, goal_on, background),
+        _x_move_y_in_z_template(manipulating_agent, theme, goal_in, background),
+        _x_move_y_on_z_template(manipulating_agent, theme, goal_on, background),
     ]
 
     return phase1_instances(
@@ -2102,7 +2101,11 @@ def _make_move_with_prepositions(
                 [
                     sampled(
                         _x_move_in_front_of_behind_y_template(
-                            agent, goal_reference, background, is_distal=is_distal, is_in_front=is_in_front
+                            agent,
+                            goal_reference,
+                            background,
+                            is_distal=is_distal,
+                            is_in_front=is_in_front,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER,
@@ -2143,7 +2146,11 @@ def _make_move_with_prepositions(
                 [
                     sampled(
                         _x_move_y_under_z_template(
-                            agent, theme, goal_under, background, is_distal=is_distal
+                            manipulating_agent,
+                            theme,
+                            goal_under,
+                            background,
+                            is_distal=is_distal,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER,
@@ -2157,7 +2164,11 @@ def _make_move_with_prepositions(
                 [
                     sampled(
                         _x_move_y_beside_z_template(
-                            agent, theme, goal_reference, background, is_right=is_right
+                            manipulating_agent,
+                            theme,
+                            goal_reference,
+                            background,
+                            is_right=is_right,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER,
@@ -2171,7 +2182,7 @@ def _make_move_with_prepositions(
                 [
                     sampled(
                         _x_move_y_in_front_of_behind_z_template(
-                            agent,
+                            manipulating_agent,
                             theme,
                             goal_reference,
                             background,

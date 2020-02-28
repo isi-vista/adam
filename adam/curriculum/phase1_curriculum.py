@@ -1129,7 +1129,6 @@ def _make_move_curriculum() -> Phase1InstanceGroup:
         "move-goal-reference", THING, required_properties=[INANIMATE]
     )
 
-    # since we lack other prepositions at the moment,
     # all movement has the goal of being near an arbitrary inanimate object
     aux_variable_bindings = [(MOVE_GOAL, Region(move_goal_reference, distance=PROXIMAL))]
 
@@ -1159,8 +1158,6 @@ def _make_move_curriculum() -> Phase1InstanceGroup:
         ],
         constraining_relations=[bigger_than(other_mover_0, movee_0)],
     )
-
-    # TODO: version with explicit goal
 
     return phase1_instances(
         "move",
