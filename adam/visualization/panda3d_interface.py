@@ -115,6 +115,17 @@ class SituationVisualizer(ShowBase):
         "truck-truckcab_0-tire_1": "truck-tire_left_back",
         "truck-truckcab_0-tire_2": "truck-tire_right_back",
         "truck-truckcab_0-tire_3": "truck-tire_right_front",
+        "bird-head_0": "bird-head.egg",
+        "bird-torso_0": "bird-torso.egg",
+        "bird-(animal) leg_0-foot_0": "bird-foot_left.egg",
+        "bird-(animal) leg_0-leg-segment_0": "bird-leg_above_knee_left.egg",
+        "bird-(animal) leg_0-leg-segment_1": "bird-leg_below_knee_left.egg",
+        "bird-(animal) leg_1-foot_1": "bird-foot_right.egg",
+        "bird-(animal) leg_1-leg-segment_2": "bird-leg_above_knee_right.egg",
+        "bird-(animal) leg_1-leg-segment_3": "bird-leg_below_knee_right.egg",
+        "bird-wing_0": "bird-wing_left.egg",
+        "bird-wing_1": "bird-wing_right.egg",
+        "bird-tail_0": "bird-tail.egg",
     }
 
     models_used_for_scale_reference = {
