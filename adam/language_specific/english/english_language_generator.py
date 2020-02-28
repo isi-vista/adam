@@ -242,7 +242,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                             property_ in relation.first_slot.properties
                             for property_ in [IS_SPEAKER]
                         )
-                        and len(self.situation.actions) == 0
+                        and not self.situation.actions
                     )
                 ):
                     noun_lexicon_entry = I
