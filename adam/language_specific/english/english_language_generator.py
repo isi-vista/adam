@@ -233,12 +233,18 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             if IS_SPEAKER in _object.properties:
                 if syntactic_role_if_known == NOMINAL_SUBJECT:
                     noun_lexicon_entry = I
-                elif any(relation for relation in self.situation.always_relations if
-                         (relation.relation_type == HAS and
-                          any(property_ in relation.first_slot.properties
-                              for property_ in [IS_SPEAKER]) and
-                          len(self.situation.actions) == 0)
-                         ):
+                elif any(
+                    relation
+                    for relation in self.situation.always_relations
+                    if (
+                        relation.relation_type == HAS
+                        and any(
+                            property_ in relation.first_slot.properties
+                            for property_ in [IS_SPEAKER]
+                        )
+                        and len(self.situation.actions) == 0
+                    )
+                ):
                     noun_lexicon_entry = I
                 else:
                     noun_lexicon_entry = ME

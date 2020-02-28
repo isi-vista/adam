@@ -454,6 +454,7 @@ def test_i_put_a_cookie_in_dads_box_using_my_as_mom_speaker():
         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
     ).as_token_sequence() == ("I", "put", "a", "cookie", "in", "Dad", "'s", "box")
 
+
 def test_i_have_my_ball():
     baby = situation_object(BABY, properties=[IS_SPEAKER])
     ball = situation_object(BALL)
