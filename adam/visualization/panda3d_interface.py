@@ -115,6 +115,12 @@ class SituationVisualizer(ShowBase):
         "truck-tire_1": "truck-tire_left_back",
         "truck-tire_2": "truck-tire_right_back",
         "truck-tire_3": "truck-tire_right_front",
+        # TEMPORARY MAPPING OF BACK 8 WHEELS TO SAME MODEL AS FRONT WHEELS
+        "truck-tire_4": "truck-tire_left_front",
+        "truck-tire_5": "truck-tire_left_back",
+        "truck-tire_6": "truck-tire_right_back",
+        "truck-tire_7": "truck-tire_right_front",
+        "truck-flatbed_0": "truck-body.egg",
         "bird-bird-head_0": "bird-head.egg",
         "bird-torso_0": "bird-torso.egg",
         "bird-foot_0": "bird-foot_left.egg",
