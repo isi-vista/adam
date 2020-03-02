@@ -1221,7 +1221,9 @@ def _x_move_y_in_z_template(
                     (THEME, theme),
                     (GOAL, Region(goal_reference, distance=INTERIOR)),
                 ],
-                during=DuringAction(continuously=[contacts(agent, theme)]),
+                during=DuringAction(
+                    continuously=flatten_relations(contacts(agent, theme))
+                ),
             )
         ],
         constraining_relations=flatten_relations(bigger_than(goal_reference, theme)),
@@ -1254,7 +1256,9 @@ def _x_move_y_on_z_template(
                         ),
                     ),
                 ],
-                during=DuringAction(continuously=[contacts(agent, theme)]),
+                during=DuringAction(
+                    continuously=flatten_relations(contacts(agent, theme))
+                ),
             )
         ],
         constraining_relations=flatten_relations(bigger_than(goal_reference, theme)),
@@ -1289,7 +1293,9 @@ def _x_move_y_under_z_template(
                         ),
                     ),
                 ],
-                during=DuringAction(continuously=[contacts(agent, theme)]),
+                during=DuringAction(
+                    continuously=flatten_relations(contacts(agent, theme))
+                ),
             )
         ],
         constraining_relations=flatten_relations(bigger_than(goal_reference, theme)),
@@ -1329,7 +1335,9 @@ def _x_move_y_beside_z_template(
                         ),
                     ),
                 ],
-                during=DuringAction(continuously=[contacts(agent, theme)]),
+                during=DuringAction(
+                    continuously=flatten_relations(contacts(agent, theme))
+                ),
             )
         ],
     )
@@ -1367,7 +1375,9 @@ def _x_move_y_in_front_of_behind_z_template(
                         ),
                     ),
                 ],
-                during=DuringAction(continuously=[contacts(agent, theme)]),
+                during=DuringAction(
+                    continuously=flatten_relations(contacts(agent, theme))
+                ),
             )
         ],
     )
