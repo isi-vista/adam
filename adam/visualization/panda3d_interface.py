@@ -145,6 +145,8 @@ class SituationVisualizer(ShowBase):
         "juice": "juice.egg",
         "milk": "milk.egg",
         "water": "water.egg",
+        "house": "house.egg",
+        "truck": "truck.egg",
     }
 
     def __init__(self) -> None:
