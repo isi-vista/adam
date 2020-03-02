@@ -1,6 +1,9 @@
 from adam.curriculum import GeneratedFromSituationsInstanceGroup
 from adam.experiment import Experiment, execute_experiment
-from adam.experiment.observer import TopChoiceExactMatchObserver
+from adam.experiment.observer import (
+    TopChoiceExactMatchObserver,
+    CandidateAccuracyObserver,
+)
 from adam.language.language_generator import SingleObjectLanguageGenerator
 from adam.language_specific.english.english_phase_1_lexicon import (
     GAILA_PHASE_1_ENGLISH_LEXICON,
@@ -36,16 +39,24 @@ def test_simple_experiment():
         chooser=RandomChooser.for_seed(0),
     )
 
+    pre_acc = CandidateAccuracyObserver("pre")
+    post_acc = CandidateAccuracyObserver("post")
+    test_acc = CandidateAccuracyObserver("test")
+
     experiment = Experiment(
         name="simple",
         training_stages=[only_show_truck],
         learner_factory=MemorizingLanguageLearner,
-        pre_example_training_observers=[TopChoiceExactMatchObserver("pre")],
-        post_example_training_observers=[TopChoiceExactMatchObserver("post")],
+        pre_example_training_observers=[TopChoiceExactMatchObserver("pre"), pre_acc],
+        post_example_training_observers=[TopChoiceExactMatchObserver("post"), post_acc],
         warm_up_test_instance_groups=[only_show_truck],
         test_instance_groups=[only_show_truck],
-        test_observers=[TopChoiceExactMatchObserver("test")],
+        test_observers=[TopChoiceExactMatchObserver("test"), test_acc],
         sequence_chooser=RandomChooser.for_seed(0),
     )
 
     execute_experiment(experiment)
+
+    assert pre_acc.accuracy() == 0.0
+    assert post_acc.accuracy() == 1.0
+    assert test_acc.accuracy() == 1.0

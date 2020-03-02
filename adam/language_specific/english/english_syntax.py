@@ -38,8 +38,8 @@ _ENGLISH_HEAD_TO_ROLE_ORDER: ImmutableDict[
                 HEAD,
                 INDIRECT_OBJECT,
                 OBJECT,
-                OBLIQUE_NOMINAL,
                 ADVERBIAL_MODIFIER,
+                OBLIQUE_NOMINAL,
             ),
         ),
         # At the moment we put CASE_MARKING first because in our current example

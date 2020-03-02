@@ -208,6 +208,34 @@ class Phase1SituationTemplate(SituationTemplate):
     A set of `TemplateObjectVariables` s which are the focus of the speaker. 
     Defaults to all semantic role fillers of situation actions.
     """
+    before_action_relations: ImmutableSet[Relation[TemplateObjectVariable]] = attrib(
+        converter=_to_immutableset, kw_only=True, default=immutableset()
+    )
+    """
+    The relations which hold in this `SituationTemplate`,
+    before, but not necessarily after, any actions which occur.
+    
+    It is not necessary to state every relationship which holds in a situation.
+    Rather this should contain the salient relationships
+    which should be expressed in the linguistic description.
+    
+    Do not specify those relations here which are *implied* by any actions which occur.
+    Those are handled automatically. 
+    """
+    after_action_relations: ImmutableSet[Relation[TemplateObjectVariable]] = attrib(
+        converter=_to_immutableset, kw_only=True, default=immutableset()
+    )
+    """
+    The relations which hold in this `SituationTemplate`,
+    after, but not necessarily before, any actions which occur.
+
+    It is not necessary to state every relationship which holds in a situation.
+    Rather this should contain the salient relationships
+    which should be expressed in the linguistic description.
+
+    Do not specify those relations here which are *implied* by any actions which occur.
+    Those are handled automatically. 
+    """
 
     def __attrs_post_init__(self) -> None:
         check_arg(
@@ -479,7 +507,7 @@ class _Phase1SituationTemplateGenerator(
         asserted_properties = object_var.asserted_properties
         if object_type == default_addressee_node and not has_addressee:
             asserted_properties = immutableset(
-                object_var.asserted_properties.union([IS_ADDRESSEE])
+                object_var.asserted_properties.union({IS_ADDRESSEE})
             )
         return SituationObject.instantiate_ontology_node(
             ontology_node=object_type,
@@ -526,6 +554,14 @@ class _Phase1SituationTemplateGenerator(
                     variable_assignment.action_variables_to_fillers,
                 )
                 for action in template.actions
+            ],
+            before_action_relations=[
+                relation.copy_remapping_objects(object_var_to_instantiations)
+                for relation in template.before_action_relations
+            ],
+            after_action_relations=[
+                relation.copy_remapping_objects(object_var_to_instantiations)
+                for relation in template.after_action_relations
             ],
             syntax_hints=template.syntax_hints,
             axis_info=self._compute_axis_info(object_var_to_instantiations),
