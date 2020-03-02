@@ -227,12 +227,16 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     f"Don't know how to handle objects which don't correspond to "
                     f"an ontology node currently: {_object}"
                 )
-            # TODO: we don't currently translate modifiers of nouns.
 
             # Check if the situation object is the speaker
             if IS_SPEAKER in _object.properties:
                 if syntactic_role_if_known == NOMINAL_SUBJECT:
                     noun_lexicon_entry = I
+                # For when HAS (which is a RELATION) is the verb and the speaker is the subject.
+                # (This Special case is needed because HAS is a RELATION and not an ACTION in the
+                # ontology, so HAS is never recognized as the NOMINAL_SUBJECT as this
+                # determination normally occurs in translate_action_to_verb(), which only
+                # processes ACTIONs)
                 elif any(
                     relation
                     for relation in self.situation.always_relations
