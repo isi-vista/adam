@@ -26,7 +26,7 @@ import logging
 
 # currently useful for positioning multiple objects:
 from adam.curriculum.phase1_curriculum import (
-    _make_object_beside_object_curriculum as make_curriculum,
+    _make_each_object_by_itself_curriculum as make_curriculum,
 )
 
 
