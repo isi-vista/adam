@@ -2066,9 +2066,24 @@ _MOVE_MANIPULATOR = ActionDescriptionVariable(THING, properties=[CAN_MANIPULATE_
 
 
 def _make_move_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
+    during_move_self: DuringAction[ActionDescriptionVariable] = DuringAction(
+        objects_to_paths=[(_MOVE_AGENT, SpatialPath(TO, MOVE_GOAL))]
+    )
+    during_move_object: DuringAction[ActionDescriptionVariable] = DuringAction(
+        objects_to_paths=[
+            (_MOVE_AGENT, SpatialPath(TO, MOVE_GOAL)),
+            (_MOVE_THEME, SpatialPath(TO, MOVE_GOAL)),
+        ]
+    )
+    enduring = [
+        partOf(_MOVE_MANIPULATOR, _MOVE_AGENT),
+        contacts(_MOVE_MANIPULATOR, _MOVE_THEME),
+    ]
+
     # bare move - "X moves (of its own accord)"
     yield MOVE, ActionDescription(
         frame=ActionDescriptionFrame({AGENT: _MOVE_AGENT}),
+        during=during_move_self,
         postconditions=[Relation(IN_REGION, _MOVE_AGENT, MOVE_GOAL)],
         asserted_properties=[
             (_MOVE_AGENT, VOLITIONALLY_INVOLVED),
@@ -2080,11 +2095,28 @@ def _make_move_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
     # X moves Y
     yield MOVE, ActionDescription(
         frame=ActionDescriptionFrame({AGENT: _MOVE_AGENT, THEME: _MOVE_THEME}),
-        postconditions=[Relation(IN_REGION, _MOVE_THEME, MOVE_GOAL)],
+        during=during_move_object,
+        enduring_conditions=enduring,
+        postconditions=[
+            Relation(IN_REGION, _MOVE_THEME, MOVE_GOAL),
+            Relation(IN_REGION, _MOVE_AGENT, MOVE_GOAL),
+        ],
         asserted_properties=[
             (_MOVE_AGENT, VOLITIONALLY_INVOLVED),
             (_MOVE_AGENT, CAUSES_CHANGE),
             (_MOVE_THEME, UNDERGOES_CHANGE),
+        ],
+    )
+
+    # X moves to Z
+    yield MOVE, ActionDescription(
+        frame=ActionDescriptionFrame({AGENT: _MOVE_AGENT, GOAL: MOVE_GOAL}),
+        during=during_move_self,
+        postconditions=[Relation(IN_REGION, _MOVE_AGENT, MOVE_GOAL)],
+        asserted_properties=[
+            (_MOVE_AGENT, VOLITIONALLY_INVOLVED),
+            (_MOVE_AGENT, CAUSES_CHANGE),
+            (_MOVE_AGENT, UNDERGOES_CHANGE),
         ],
     )
 
@@ -2094,7 +2126,12 @@ def _make_move_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
         frame=ActionDescriptionFrame(
             {AGENT: _MOVE_AGENT, THEME: _MOVE_THEME, GOAL: MOVE_GOAL}
         ),
-        postconditions=[Relation(IN_REGION, _MOVE_THEME, MOVE_GOAL)],
+        during=during_move_object,
+        enduring_conditions=enduring,
+        postconditions=[
+            Relation(IN_REGION, _MOVE_THEME, MOVE_GOAL),
+            Relation(IN_REGION, _MOVE_AGENT, MOVE_GOAL),
+        ],
         asserted_properties=[
             (_MOVE_AGENT, VOLITIONALLY_INVOLVED),
             (_MOVE_AGENT, CAUSES_CHANGE),
