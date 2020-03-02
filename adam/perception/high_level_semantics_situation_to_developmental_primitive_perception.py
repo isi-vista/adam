@@ -1049,6 +1049,9 @@ class _PerceptionGeneration:
 
         # find axes for the object
         if situation_object:
+            # use the debug handle from the situation object if it is available, as it is more
+            # specific in the case of people (e.g. mom, dad, baby) than the debug handle
+            # generated from the ObjectStructuralSchema
             debug_handle = (
                 situation_object.ontology_node.handle + "_" + debug_handle.split("_")[1]
             )
