@@ -25,9 +25,7 @@ import numpy as np
 import logging
 
 # currently useful for positioning multiple objects:
-from adam.curriculum.phase1_curriculum import (
-    _make_take_curriculum as make_curriculum,
-)
+from adam.curriculum.phase1_curriculum import _make_take_curriculum as make_curriculum
 
 
 import attr
@@ -143,6 +141,17 @@ def main(params: Parameters) -> None:
                     node.name, OBJECT_SCALE_MULTIPLIER_MAP[node.name.split("_")[0]]
                 )
 
+        # find the Region relations that refer to separate objects:
+        # (e.g. the cookie is in the region of the hand (of the person), not the leg-segment in in the region of the torso).
+        inter_object_in_region_map: DefaultDict[
+            ObjectPerception, List[Region[ObjectPerception]]
+        ] = defaultdict(list)
+        for top_level_node in scene_elements.object_graph:
+            if top_level_node.perceived_obj in scene_elements.in_region_map:
+                inter_object_in_region_map[
+                    top_level_node.perceived_obj
+                ] = scene_elements.in_region_map[top_level_node.perceived_obj]
+
         # for debugging purposes to view the results before positioning:
         viz.run_for_seconds(1)
         command = input(
@@ -167,7 +176,7 @@ def main(params: Parameters) -> None:
                     if node.name not in OBJECT_NAMES_TO_EXCLUDE
                 ]
             ),
-            scene_elements.in_region_map,
+            inter_object_in_region_map,
             model_scales,
             iterations=num_iterations,
             yield_steps=steps_before_vis,
