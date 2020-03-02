@@ -170,15 +170,13 @@ def run_model(
     converges in a position where it is unable to find a gradient to continue.
     Args:
         top_level_objects: set of top-level objects requested to be positioned
-        in_region_map: in-region relations for all top-level and sub-objects in this scene
+        in_region_map: in-region relations for all top-level objects in this scene
         *num_iterations*: total number of SGD iterations.
         *yield_steps*: If provided, the current positions of all objects will be returned after this many steps
 
     Returns: PositionsMap: Map of object name -> Tensor (3,) of its position
 
     """
-    print(top_level_objects)
-    print(in_region_map)
 
     positioning_model = PositioningModel.for_scaled_objects_random_positions(
         top_level_objects, in_region_relations=in_region_map, scale_map=object_scales
@@ -548,7 +546,13 @@ class PositioningModel(torch.nn.Module):  # type: ignore
             self.below_ground_penalty(box) for box in self.object_bounding_boxes
         )
         weak_gravity_penalty = sum(
-            self.weak_gravity_penalty(box) for box in self.object_bounding_boxes
+            self.weak_gravity_penalty(
+                bounding_box,
+                object_perception,
+                immutableset(self.in_region_relations[object_perception]),
+            )
+            for object_perception, bounding_box in self.object_perception_to_bounding_box.items()
+            if object_perception in self.in_region_relations
         )
         in_region_penalty = sum(
             self.in_region_penalty(
@@ -631,12 +635,25 @@ class WeakGravityPenalty(nn.Module):  # type: ignore
 
     # TODO: exempt birds from this constraint https://github.com/isi-vista/adam/issues/485
 
-    def __init__(self) -> None:  # pylint: disable=useless-super-delegation
+    def __init__(
+            self,
+            object_perception_to_bounding_box: Mapping[
+                ObjectPerception, AxisAlignedBoundingBox
+            ],
+            in_region_relations: Mapping[ObjectPerception, List[Region[ObjectPerception]]],
+    ) -> None:  # pylint: disable=useless-super-delegation
         super().__init__()
+        self.object_perception_to_bounding_box = object_perception_to_bounding_box
+        self.in_region_relations = in_region_relations
 
-    def forward(  # type: ignore
-        self, bounding_box: AxisAlignedBoundingBox
+    def forward(self,
+        bounding_box: AxisAlignedBoundingBox,
+        target_object: ObjectPerception,
+        designated_region: ImmutableSet[Region[ObjectPerception]],
     ):  # pylint: disable=arguments-differ
+        # if this object is not supposed to be on the ground, don't apply the gravity constraint.
+
+
         distance_above_ground = bounding_box.z_coordinate_of_lowest_corner()
         if distance_above_ground <= 0:
             return 0.0
