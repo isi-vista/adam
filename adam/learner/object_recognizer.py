@@ -94,9 +94,10 @@ class ObjectRecognizer:
         """
         matched_object_nodes: List[Tuple[str, MatchedObjectNode]] = []
         graph_to_return = perception_graph.copy_as_digraph()
+        is_dynamic = perception_graph.dynamic
         for (description, pattern) in self.object_names_to_patterns.items():
             matcher = pattern.matcher(
-                PerceptionGraph(graph_to_return), matching_objects=True
+                PerceptionGraph(graph_to_return, is_dynamic), matching_objects=True
             )
             pattern_match = first(matcher.matches(use_lookahead_pruning=True), None)
             # It's important not to simply iterate over pattern matches
@@ -107,7 +108,7 @@ class ObjectRecognizer:
                     graph_to_return, pattern_match, matched_object_nodes, description
                 )
                 matcher = pattern.matcher(
-                    PerceptionGraph(graph_to_return), matching_objects=True
+                    PerceptionGraph(graph_to_return, is_dynamic), matching_objects=True
                 )
                 pattern_match = first(matcher.matches(use_lookahead_pruning=True), None)
         if matched_object_nodes:
@@ -115,7 +116,7 @@ class ObjectRecognizer:
                 "Object recognizer recognized: %s", [x[0] for x in matched_object_nodes]
             )
         return PerceptionGraphFromObjectRecognizer(
-            perception_graph=PerceptionGraph(graph=graph_to_return),
+            perception_graph=PerceptionGraph(graph=graph_to_return, dynamic=is_dynamic),
             description_to_matched_object_node=immutabledict(matched_object_nodes),
         )
 

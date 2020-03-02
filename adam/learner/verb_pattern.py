@@ -12,12 +12,16 @@ from adam.perception.perception_graph import (
     PerceptionGraphPattern,
 )
 
+VerbSurfaceTemplate = Tuple[str, ...]
+
 # Constants used to map locations in a verb phrase for mapping
-_SUBJECT = "SUBJECT"
-_OBJECT = "OBJECT"
+_AGENT = "AGENT"
+_PATIENT = "PATIENT"
+_GOAL = "GOAL"
+_THEME = "THEME"
 _INSTRUMENT = "INSTRUMENT"
 
-_EXPECTED_OBJECT_VARIABLES = {_SUBJECT, _OBJECT, _INSTRUMENT}
+_EXPECTED_OBJECT_VARIABLES = {_AGENT, _PATIENT, _GOAL, _THEME, _INSTRUMENT}
 
 
 @attrs(frozen=True, slots=True, eq=False)
@@ -46,7 +50,8 @@ class VerbPattern:
         This function returns a `VerbPattern` from a dynamic *perception_graph* and a *description_to_match_object_node*
         """
         description_to_node_immutable = immutableset(description_to_match_object_node)
-        if _SUBJECT not in description_to_match_object_node:
+        descriptions, _ = zip(*description_to_match_object_node)
+        if _AGENT not in descriptions:
             raise RuntimeError(
                 f"Expected at least one subject in a preposition graph. Found "
                 f"{description_to_node_immutable}"

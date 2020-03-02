@@ -38,7 +38,7 @@ from adam.learner import (
 from adam.learner.object_recognizer import ObjectRecognizer
 from adam.learner.preposition_pattern import PrepositionPattern, _MODIFIED, _GROUND
 from adam.learner.preposition_subset import PrepositionSurfaceTemplate
-from adam.learner.verb_pattern import VerbPattern
+from adam.learner.verb_pattern import VerbPattern, _AGENT, _PATIENT, VerbSurfaceTemplate
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
 from adam.ontology.phase1_spatial_relations import Region
@@ -60,7 +60,6 @@ from adam.perception.perception_graph import (
     TemporalScope,
 )
 from adam.utils import networkx_utils
-
 from adam.utils.networkx_utils import digraph_with_nodes_sorted_by
 
 # Abstract type to represent learned items such as words (str) and preposition phrases (PrepositionSurfaceTemplate)
@@ -533,6 +532,49 @@ class AbstractPursuitLearner(
             meanings.append(PerceptionGraph(subgraph))
         logging.info(f"Got {len(meanings)} candidate meanings")
         return meanings
+
+    @staticmethod
+    def replace_template_variables_with_object_names(
+        surface_template: Tuple[str, ...],
+        object_variable_name_to_object_match_pattern_node: Mapping[
+            str, MatchedObjectPerceptionPredicate
+        ],
+        pattern_node_to_aligned_perception_node: Mapping[
+            NodePredicate, PerceptionGraphNode
+        ],
+        object_match_node_to_object_handle: Mapping[PerceptionGraphNode, str],
+    ) -> Tuple[str, ...]:
+        rtnr: List[str] = []
+        # each entry in a verb surface object_match_node is either a token
+        # (typically a preposition) or one of the two placeholders
+        # e.g. AGENT and PATIENT
+        for token_or_surface_template_variable in surface_template:
+            if (
+                token_or_surface_template_variable
+                in object_variable_name_to_object_match_pattern_node.keys()
+            ):
+                # If we have a placeholder, we need to figure out what object should
+                # fill it in this particular situation.
+
+                # This will be either MODIFIED or GROUND
+                surface_template_variable = token_or_surface_template_variable
+                # Get the corresponding variable in the preposition perception pattern.
+                object_match_variable_node = object_variable_name_to_object_match_pattern_node[
+                    surface_template_variable
+                ]
+                # This variable should have matched against an object that we recognized
+                # with the object matcher, which would have introduced an object_match_node
+                object_match_node = pattern_node_to_aligned_perception_node[
+                    object_match_variable_node
+                ]
+                # and for each of these object matches, we were provided with a name,
+                # which is what we use in the linguistic description.
+                rtnr.append(object_match_node_to_object_handle[object_match_node])
+            else:
+                # tokens are just copied directly to the description
+                token = token_or_surface_template_variable
+                rtnr.append(token)
+        return tuple(rtnr)
 
     def _leading_hypothesis_for(
         self, item: LearnedItemT
@@ -1015,47 +1057,6 @@ class PrepositionPursuitLearner(
         # this will be our output
         description_to_score: List[Tuple[TokenSequenceLinguisticDescription, float]] = []
 
-        def replace_template_variables_with_object_names(
-            preposition_surface_template: Tuple[str, ...],
-            object_variable_name_to_object_match_pattern_node: Mapping[
-                str, MatchedObjectPerceptionPredicate
-            ],
-            pattern_node_to_aligned_perception_node: Mapping[
-                NodePredicate, PerceptionGraphNode
-            ],
-        ) -> Tuple[str, ...]:
-            rtnr: List[str] = []
-            # each entry in a preposition surface object_match_node is either a token
-            # (typically a preposition) or one of the two placeholders
-            # MODIFIED and GROUND
-            for token_or_surface_template_variable in preposition_surface_template:
-                if (
-                    token_or_surface_template_variable
-                    in object_variable_name_to_object_match_pattern_node.keys()
-                ):
-                    # If we have a placeholder, we need to figure out what object should
-                    # fill it in this particular situation.
-
-                    # This will be either MODIFIED or GROUND
-                    surface_template_variable = token_or_surface_template_variable
-                    # Get the corresponding variable in the preposition perception pattern.
-                    object_match_variable_node = object_variable_name_to_object_match_pattern_node[
-                        surface_template_variable
-                    ]
-                    # This variable should have matched against an object that we recognized
-                    # with the object matcher, which would have introduced an object_match_node
-                    object_match_node = pattern_node_to_aligned_perception_node[
-                        object_match_variable_node
-                    ]
-                    # and for each of these object matches, we were provided with a name,
-                    # which is what we use in the linguistic description.
-                    rtnr.append(object_match_node_to_object_handle[object_match_node])
-                else:
-                    # tokens are just copied directly to the description
-                    token = token_or_surface_template_variable
-                    rtnr.append(token)
-            return tuple(rtnr)
-
         # For each preposition we've learned
         for (preposition_surface_template, preposition_pattern) in self._lexicon.items():
             # try to see if (our model of) its semantics is present in the situation.
@@ -1071,10 +1072,11 @@ class PrepositionPursuitLearner(
                             # which has MODIFIER and GROUND variables,
                             # and replacing those variables by the actual names
                             # of the matched objects.
-                            replace_template_variables_with_object_names(
+                            PrepositionPursuitLearner.replace_template_variables_with_object_names(
                                 preposition_surface_template,
                                 preposition_pattern.object_variable_name_to_pattern_node,
                                 match.pattern_node_to_matched_graph_node,
+                                object_match_node_to_object_handle,
                             )
                         ),
                         1.0,
@@ -1226,29 +1228,163 @@ class PrepositionPursuitLearner(
 
 class VerbPursuitLearner(
     Generic[PerceptionT, LinguisticDescriptionT],
-    AbstractPursuitLearner[str, VerbPattern, PerceptionT, LinguisticDescriptionT],
+    AbstractPursuitLearner[
+        VerbSurfaceTemplate, VerbPattern, PerceptionT, LinguisticDescriptionT
+    ],
 ):
     """
     An implementation of pursuit learner for learning verb semantics
     """
 
     # Variables for tracking verb phrase information. These are filled in observe.
-    object_match_node_for_subject: Optional[MatchedObjectNode] = None
-    object_match_node_for_object: Optional[MatchedObjectNode] = None
+    object_match_node_for_agent: Optional[MatchedObjectNode] = None
+    object_match_node_for_patient: Optional[MatchedObjectNode] = None
+    object_match_node_for_goal: Optional[MatchedObjectNode] = None
+    object_match_node_for_theme: Optional[MatchedObjectNode] = None
     object_match_node_for_instrument: Optional[MatchedObjectNode] = None
     template_variables_to_object_match_nodes: Optional[
         Iterable[Tuple[str, MatchedObjectNode]]
     ] = None
 
     def observe(
-        self, learning_example: LearningExample[PerceptionT, LinguisticDescription]
+        self,
+        learning_example: LearningExample[PerceptionT, LinguisticDescription],
+        object_recognizer: Optional[ObjectRecognizer] = None,
     ) -> None:
-        pass
+        perception = learning_example.perception
+        if len(perception.frames) != 2:
+            raise RuntimeError("Verb learner can only handle double-frame perceptions")
+        if isinstance(perception.frames[0], DevelopmentalPrimitivePerceptionFrame):
+            original_perception = PerceptionGraph.from_dynamic_perceptual_representation(  # type: ignore
+                perception
+            )
+        else:
+            raise RuntimeError("Cannot process perception type.")
+        if not object_recognizer:
+            raise RuntimeError("Verb learner is missing object recognizer")
+
+        observed_linguistic_description = (
+            learning_example.linguistic_description.as_token_sequence()
+        )
+
+        # Convert the observed perception to a version with recognized objects
+        recognized_object_perception = object_recognizer.match_objects(
+            original_perception
+        )
+
+        # Get the match nodes and their word indices
+        token_idx_of_words_to_object_match_nodes = {}
+        for (idx, token) in enumerate(observed_linguistic_description):
+            if (
+                token
+                in recognized_object_perception.description_to_matched_object_node.keys()
+            ):
+                token_idx_of_words_to_object_match_nodes[
+                    idx
+                ] = recognized_object_perception.description_to_matched_object_node[token]
+
+        # if we have one, assume it's the agent
+        # if we have two or more, assume the phrase is between the agent and the next item
+        # TODO: The current approach is english specific.
+        sorted_indices = sorted(token_idx_of_words_to_object_match_nodes.keys())
+        agent_idx = sorted_indices[0]
+
+        # This is the lingustics description we learned
+        if len(sorted_indices) > 1:
+            verb_phrase_tokens = observed_linguistic_description[
+                agent_idx : sorted_indices[1] + 1
+            ]
+        else:
+            verb_phrase_tokens = observed_linguistic_description[agent_idx:]
+
+        # TODO we need to come up with a syntactically intelligent way of parsing other positions
+        verb_surface_template_mutable = list(verb_phrase_tokens)
+        verb_surface_template_mutable[0] = _AGENT
+        verb_surface_template_mutable[-1] = _PATIENT
+
+        # we need these to be immutable after creation because we use them as dictionary keys.
+        verb_surface_template = tuple(verb_surface_template_mutable)
+        logging.info("Identified verb template: %s", verb_surface_template)
+
+        self.object_match_node_for_agent = token_idx_of_words_to_object_match_nodes[
+            sorted_indices[0]
+        ]
+        if len(sorted_indices) > 1:
+            self.object_match_node_for_patient = token_idx_of_words_to_object_match_nodes[
+                sorted_indices[1]
+            ]
+
+        # This is the template_variables_to_object_match_nodes of sentence locations to pattern nodes
+        vars_to_nodes_list: List[Tuple[str, MatchedObjectNode]] = [
+            (_AGENT, self.object_match_node_for_agent)
+        ]
+        if len(sorted_indices) > 1:
+            if self.object_match_node_for_patient is not None:
+                vars_to_nodes_list.append((_PATIENT, self.object_match_node_for_patient))
+
+        self.template_variables_to_object_match_nodes = immutableset(vars_to_nodes_list)
+        self.learn_with_pursuit(
+            observed_perception_graph=recognized_object_perception.perception_graph,
+            items_to_learn=(verb_surface_template,),
+        )
 
     def describe(
-        self, perception: PerceptualRepresentation[PerceptionT]
+        self,
+        perception: PerceptualRepresentation[PerceptionT],
+        object_recognizer: Optional[ObjectRecognizer] = None,
     ) -> Mapping[LinguisticDescription, float]:
-        pass
+        if len(perception.frames) != 2:
+            raise RuntimeError("Verb learner can only handle double-frame perceptions")
+        if isinstance(perception.frames[0], DevelopmentalPrimitivePerceptionFrame):
+            original_perception = PerceptionGraph.from_dynamic_perceptual_representation(  # type: ignore
+                perception
+            )
+        else:
+            raise RuntimeError("Cannot process perception type.")
+        if not object_recognizer:
+            raise RuntimeError("Verb learner is missing object recognizer")
+
+        recognized_object_perception = object_recognizer.match_objects(
+            original_perception
+        )
+
+        object_match_node_to_object_handle: Mapping[
+            PerceptionGraphNode, str
+        ] = immutabledict(
+            (node, description)
+            for description, node in recognized_object_perception.description_to_matched_object_node.items()
+        )
+
+        # this will be our output
+        description_to_score: List[Tuple[TokenSequenceLinguisticDescription, float]] = []
+
+        # For each verb we've learned
+        for (verb_surface_template, verb_pattern) in self._lexicon.items():
+            # try to see if (our model of) its semantics is present in the situation.
+            matcher = verb_pattern.graph_pattern.matcher(
+                recognized_object_perception.perception_graph, matching_objects=False
+            )
+            for match in matcher.matches(use_lookahead_pruning=True):
+                # if it is, use that verb to describe the situation.
+                description_to_score.append(
+                    (
+                        TokenSequenceLinguisticDescription(
+                            # we generate the description by taking the preposition surface template
+                            # which has AGENT and PATIENT variables,
+                            # and replacing those variables by the actual names
+                            # of the matched objects.
+                            VerbPursuitLearner.replace_template_variables_with_object_names(
+                                verb_surface_template,
+                                verb_pattern.object_variable_name_to_pattern_node,
+                                match.pattern_node_to_matched_graph_node,
+                                object_match_node_to_object_handle,
+                            )
+                        ),
+                        1.0,
+                    )
+                )
+
+        return immutabledict(description_to_score)
 
     def _candidate_perceptions(
         self, observed_perception_graph: PerceptionGraph
@@ -1256,7 +1392,6 @@ class VerbPursuitLearner(
         # TODO: Discuss which part of the graph is relevant for verbs
         # For now, we are extracting the part of the graph that changes (i.e edges that are marked only before,
         # during, or after)
-        observed_diraph = observed_perception_graph.copy_as_digraph()
         # This will be the graph representing the candidate:
         difference_digraph = DiGraph()
 
@@ -1267,7 +1402,7 @@ class VerbPursuitLearner(
             source,
             target,
             label,
-        ) in observed_perception_graph.observed_diraph().edges.data("label"):
+        ) in observed_perception_graph.copy_as_digraph().edges.data("label"):
             if not (
                 TemporalScope.AFTER in label.temporal_specifiers
                 and TemporalScope.BEFORE in label.temporal_specifiers
@@ -1289,11 +1424,9 @@ class VerbPursuitLearner(
         )
 
     @attrs(frozen=True)
-    class VerbHypothesisPartialMatch(
-        AbstractPursuitLearner.PartialMatch[PrepositionPattern]
-    ):
-        partial_match_hypothesis: Optional[PrepositionPattern] = attrib(
-            validator=optional(instance_of(PrepositionPattern))
+    class VerbHypothesisPartialMatch(AbstractPursuitLearner.PartialMatch[VerbPattern]):
+        partial_match_hypothesis: Optional[VerbPattern] = attrib(
+            validator=optional(instance_of(VerbPattern))
         )
         num_nodes_matched: int = attrib(validator=instance_of(int), kw_only=True)
         num_nodes_in_pattern: int = attrib(validator=instance_of(int), kw_only=True)
@@ -1302,11 +1435,11 @@ class VerbPursuitLearner(
             return self.num_nodes_matched == self.num_nodes_in_pattern
 
         def match_score(self) -> float:
-            return self.num_nodes_matched / self.num_nodes_in_patte
+            return self.num_nodes_matched / self.num_nodes_in_pattern
 
     def _find_partial_match(
         self, hypothesis: VerbPattern, graph: PerceptionGraph
-    ) -> "VerbPursuitLearner.VerbHypothesisPartialMatch[VerbPattern]":
+    ) -> "VerbPursuitLearner.VerbHypothesisPartialMatch":
         pattern = hypothesis.graph_pattern
         hypothesis_pattern_common_subgraph = get_largest_matching_pattern(
             pattern,
@@ -1325,7 +1458,7 @@ class VerbPursuitLearner(
             else 0
         )
         if hypothesis_pattern_common_subgraph:
-            partial_hypothesis: Optional[PrepositionPattern] = PrepositionPattern(
+            partial_hypothesis: Optional[VerbPattern] = VerbPattern(
                 graph_pattern=hypothesis_pattern_common_subgraph,
                 object_variable_name_to_pattern_node=hypothesis.object_variable_name_to_pattern_node,
             )
