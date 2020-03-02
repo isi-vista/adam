@@ -1466,7 +1466,7 @@ def _jump_over_template(
                 JUMP,
                 argument_roles_to_fillers=[(AGENT, agent)],
                 during=DuringAction(
-                    at_some_point=[strictly_above(agent, object_in_path)]
+                    at_some_point=flatten_relations(strictly_above(agent, object_in_path))
                 ),
                 auxiliary_variable_bindings=[
                     (JUMP_INITIAL_SUPPORTER_AUX, GROUND_OBJECT_TEMPLATE)
@@ -1482,6 +1482,7 @@ def _jump_beside_template(
     agent: TemplateObjectVariable,
     goal_reference: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
+    *,
     is_right: bool,
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
@@ -1520,6 +1521,7 @@ def _jump_in_front_of_behind_template(
     agent: TemplateObjectVariable,
     goal_reference: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
+    *,
     is_distal: bool,
     is_in_front: bool,
 ) -> Phase1SituationTemplate:
@@ -2381,127 +2383,72 @@ def _make_move_with_prepositions(
     )
 
 
-def _make_jump_in(num_samples: int = 5, *, noise_objects: int = 0) -> Phase1InstanceGroup:
+def _make_jump_with_prepositions(
+    num_samples: int = 5, *, noise_objects: int = 0
+) -> Phase1InstanceGroup:
     agent = standard_object("agent", THING, required_properties=[CAN_JUMP])
-    goal_reference = standard_object(
-        "goal_reference", THING, required_properties=[HOLLOW]
-    )
-    background = immutableset(
-        standard_object(f"noise_object_{x}") for x in range(noise_objects)
-    )
-
-    return phase1_instances(
-        "Jump In",
-        flatten(
-            [
-                sampled(
-                    _jump_in_template(agent, goal_reference, background),
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER,
-                    max_to_sample=num_samples,
-                )
-            ]
-        ),
-    )
-
-
-def _make_jump_on(num_samples: int = 5, *, noise_objects: int = 0) -> Phase1InstanceGroup:
-    agent = standard_object("agent", THING, required_properties=[CAN_JUMP])
-    goal_reference = standard_object(
+    goal_reference = standard_object("goal_reference", THING)
+    goal_in = standard_object("goal_reference", THING, required_properties=[HOLLOW])
+    goal_on = standard_object(
         "goal_reference", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
     )
     background = immutableset(
         standard_object(f"noise_object_{x}") for x in range(noise_objects)
     )
+    templates = [
+        _jump_in_template(agent, goal_in, background),
+        _jump_on_template(agent, goal_on, background),
+        _jump_over_template(agent, goal_reference, background),
+    ]
 
     return phase1_instances(
-        "Jump On",
-        flatten(
-            [
-                sampled(
-                    _jump_on_template(agent, goal_reference, background),
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER,
-                    max_to_sample=num_samples,
-                )
-            ]
-        ),
-    )
-
-
-def _make_jump_beside(
-    num_samples: int = 5, *, noise_objects: int = 0
-) -> Phase1InstanceGroup:
-    agent = standard_object("agent", THING, required_properties=[CAN_JUMP])
-    goal_reference = standard_object("goal_reference", THING)
-    background = immutableset(
-        standard_object(f"noise_object_{x}") for x in range(noise_objects)
-    )
-
-    return phase1_instances(
-        "Jump Beside",
-        flatten(
-            [
-                sampled(
-                    _jump_beside_template(agent, goal_reference, background, is_right),
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER,
-                    max_to_sample=num_samples,
-                )
-                for is_right in BOOL_SET
-            ]
-        ),
-    )
-
-
-def _make_jump_in_front_of_behind(
-    num_samples: int = 5, *, noise_objects: int = 0
-) -> Phase1InstanceGroup:
-    agent = standard_object("agent", THING, required_properties=[CAN_JUMP])
-    goal_reference = standard_object("goal_reference", THING)
-    background = immutableset(
-        standard_object(f"noise_object_{x}") for x in range(noise_objects)
-    )
-
-    return phase1_instances(
-        "Jump In Front Of Behind",
-        flatten(
-            [
-                sampled(
-                    _jump_in_front_of_behind_template(
-                        agent, goal_reference, background, is_distal, is_in_front
-                    ),
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER,
-                    max_to_sample=num_samples,
-                )
-                for is_distal in BOOL_SET
-                for is_in_front in BOOL_SET
-            ]
-        ),
-    )
-
-
-def _make_jump_over(
-    num_samples: int = 5, *, noise_objects: int = 0
-) -> Phase1InstanceGroup:
-    agent = standard_object("agent", THING, required_properties=[CAN_JUMP])
-    object_in_path = standard_object("goal_reference", THING)
-    background = immutableset(
-        standard_object(f"noise_object_{x}") for x in range(noise_objects)
-    )
-
-    return phase1_instances(
-        "Jump Over",
-        flatten(
-            [
-                sampled(
-                    _jump_over_template(agent, object_in_path, background),
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER,
-                    max_to_sample=num_samples,
-                )
-            ]
+        "Jump + PP",
+        chain(
+            # in, on, over
+            flatten(
+                [
+                    sampled(
+                        template,
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER,
+                        max_to_sample=num_samples,
+                    )
+                    for template in templates
+                ]
+            ),
+            # beside
+            flatten(
+                [
+                    sampled(
+                        _jump_beside_template(
+                            agent, goal_reference, background, is_right=is_right
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER,
+                        max_to_sample=num_samples,
+                    )
+                    for is_right in BOOL_SET
+                ]
+            ),
+            # in front of, behind
+            flatten(
+                [
+                    sampled(
+                        _jump_in_front_of_behind_template(
+                            agent,
+                            goal_reference,
+                            background,
+                            is_distal=is_distal,
+                            is_in_front=is_in_front,
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER,
+                        max_to_sample=num_samples,
+                    )
+                    for is_distal in BOOL_SET
+                    for is_in_front in BOOL_SET
+                ]
+            ),
         ),
     )
 
@@ -2518,9 +2465,5 @@ def make_verb_with_dynamic_prepositions_curriculum(
         _make_fall_with_prepositions(num_samples, noise_objects=num_noise_objects),
         _make_put_with_prepositions(num_samples, noise_objects=num_noise_objects),
         _make_move_with_prepositions(num_samples, noise_objects=num_noise_objects),
-        _make_jump_on(num_samples, noise_objects=num_noise_objects),
-        _make_jump_in(num_samples, noise_objects=num_noise_objects),
-        _make_jump_beside(num_samples, noise_objects=num_noise_objects),
-        _make_jump_in_front_of_behind(num_samples, noise_objects=num_noise_objects),
-        _make_jump_over(num_samples, noise_objects=num_noise_objects),
+        _make_jump_with_prepositions(num_samples, noise_objects=num_noise_objects),
     ]

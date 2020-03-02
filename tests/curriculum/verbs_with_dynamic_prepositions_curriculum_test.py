@@ -7,6 +7,7 @@ from adam.curriculum.verbs_with_dynamic_prepositions_curriculum import (
     _make_fall_with_prepositions,
     _make_put_with_prepositions,
     _make_move_with_prepositions,
+    _make_jump_with_prepositions,
 )
 from tests.curriculum.phase1_curriculum_test import curriculum_test
 
@@ -41,3 +42,7 @@ def test_make_put():
 
 def test_make_move():
     curriculum_test(_make_move_with_prepositions())
+
+
+def test_make_jump():
+    curriculum_test(_make_jump_with_prepositions())
