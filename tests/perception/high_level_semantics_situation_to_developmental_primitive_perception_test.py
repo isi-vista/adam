@@ -7,6 +7,7 @@ from adam.ontology.phase1_ontology import (
     AGENT,
     ANIMATE,
     BALL,
+    BABY,
     BLACK,
     BLUE,
     BOX,
@@ -321,11 +322,44 @@ def test_relations_between_objects_and_ground():
     second_frame_relations = perception.frames[1].relations
 
     assert on(ball_perception, ground_perception)[0] in first_frame_relations
+    assert on(ball_perception, ground_perception)[0] not in second_frame_relations
     assert on(table_perception, ground_perception)[0] in first_frame_relations
     assert on(table_perception, ground_perception)[0] in second_frame_relations
 
 
 def test_grounding_of_unsupported_objects():
+    box = situation_object(ontology_node=BOX)
+    ball = situation_object(ontology_node=BALL)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[box, ball],
+        always_relations=[
+            Relation(
+                IN_REGION,
+                ball,
+                Region(
+                    box,
+                    distance=INTERIOR,
+                ),
+            )
+        ],
+    )
+
+    perception = _PERCEPTION_GENERATOR.generate_perception(
+        situation, chooser=RandomChooser.for_seed(0)
+    )
+    first_frame = perception.frames[0]
+    ball_perception = perception_with_handle(first_frame, "ball_0")
+    ground_perception = perception_with_handle(first_frame, "the ground")
+    box_perception = perception_with_handle(first_frame, "box_0")
+
+    first_frame_relations = first_frame.relations
+
+    assert on(ball_perception, ground_perception)[0] not in first_frame_relations
+    assert on(box_perception, ground_perception)[0] in first_frame_relations
+
+
+def test_objects_in_something_not_implcitly_grounded():
     box = situation_object(ontology_node=BOX)
     ball = situation_object(ontology_node=BALL)
     situation = HighLevelSemanticsSituation(
@@ -359,6 +393,35 @@ def test_grounding_of_unsupported_objects():
 
     assert on(ball_perception, ground_perception)[0] in first_frame_relations
     assert on(box_perception, ground_perception)[0] in first_frame_relations
+
+
+def test_dynamic_prepositions_implicit_grounding():
+    # person_put_ball_on_table
+    truck = situation_object(ontology_node=TRUCK)
+    baby = situation_object(ontology_node=BABY)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[baby, truck],
+        actions=[Action(FALL,  argument_roles_to_fillers=[(THEME, baby)])],
+        after_action_relations=[on(baby, truck)],
+    )
+
+    perception = _PERCEPTION_GENERATOR.generate_perception(
+        situation, chooser=RandomChooser.for_seed(0)
+    )
+    first_frame = perception.frames[0]
+    baby_perception = perception_with_handle(first_frame, "person_0")
+    ground_perception = perception_with_handle(first_frame, "the ground")
+    truck_perception = perception_with_handle(first_frame, "truck_0")
+
+    first_frame_relations = first_frame.relations
+    second_frame_relations = perception.frames[1].relations
+
+    assert on(baby_perception, truck_perception)[0] not in first_frame_relations
+    assert on(baby_perception, truck_perception)[0] in second_frame_relations
+    assert on(baby_perception, ground_perception)[0] not in second_frame_relations
+    assert on(truck_perception, ground_perception)[0] in first_frame_relations
+    assert on(truck_perception, ground_perception)[0] in second_frame_relations
 
 
 def test_liquid_in_and_out_of_container():
