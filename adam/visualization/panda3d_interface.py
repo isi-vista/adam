@@ -19,6 +19,7 @@ import time
 from direct.showbase.ShowBase import ShowBase  # pylint: disable=no-name-in-module
 
 from panda3d.core import DirectionalLight  # pylint: disable=no-name-in-module
+from panda3d.core import AmbientLight  # pylint: disable=no-name-in-module
 from panda3d.core import PointLight  # pylint: disable=no-name-in-module
 from panda3d.core import Material  # pylint: disable=no-name-in-module
 from panda3d.core import NodePath  # pylint: disable=no-name-in-module
@@ -58,19 +59,79 @@ class SituationVisualizer(ShowBase):
         "book": "book.egg",
         "bird": "bird.egg",
         "car": "car.egg",
-        "dad": "person.egg",
-        "mom": "person.egg",
+        "cookie": "cookie.egg",
+        "juice": "juice.egg",
+        "milk": "milk.egg",
+        "water": "water.egg",
         "chair-chairback_0": "chair-chairback.egg",
         "chair-chairseat_0": "chair-chairseat.egg",
         "chair-(furniture) leg_0": "chair-leg_left_front.egg",
         "chair-(furniture) leg_1": "chair-leg_left_back.egg",
         "chair-(furniture) leg_2": "chair-leg_right_back.egg",
         "chair-(furniture) leg_3": "chair-leg_right_front.egg",
-        # "table-(furniture) leg_0": "table-leg_left_front.egg",
-        # "table-(furniture) leg_1": "table-leg_left_back.egg",
-        # "table-(furniture) leg_2": "table-leg_right_back.egg",
-        # "table-(furniture) leg_3": "table-leg_right_front.egg",
-        # "table-tabletop_0": "table-tabletop.egg",
+        "table-(furniture) leg_0": "table-leg_left_front.egg",
+        "table-(furniture) leg_1": "table-leg_left_back.egg",
+        "table-(furniture) leg_2": "table-leg_right_back.egg",
+        "table-(furniture) leg_3": "table-leg_right_front.egg",
+        "table-tabletop_0": "table-tabletop.egg",
+        "dog-dog-head_0": "dog-dog-head.egg",
+        "dog-torso_0": "dog-torso.egg",
+        "dog-tail_0": "dog-tail.egg",
+        "dog-foot_0": "dog-foot_left_front.egg",
+        "dog-leg-segment_0": "dog-leg-segment_0_left_front.egg",
+        "dog-leg-segment_1": "dog-leg-segment_1_left_front.egg",
+        "dog-foot_1": "dog-foot_right_front.egg",
+        "dog-leg-segment_2": "dog-leg-segment_0_right_front.egg",
+        "dog-leg-segment_3": "dog-leg-segment_1_right_front.egg",
+        "dog-foot_2": "dog-foot_left_back.egg",
+        "dog-leg-segment_4": "dog-leg-segment_0_left_back.egg",
+        "dog-leg-segment_5": "dog-leg-segment_1_left_back.egg",
+        "dog-foot_3": "dog-foot_left_back.egg",
+        "dog-leg-segment_6": "dog-leg-segment_0_right_back.egg",
+        "dog-leg-segment_7": "dog-leg-segment_1_right_back.egg",
+        "car-tire_0": "car-tire_left_front.egg",
+        "car-tire_1": "car-tire_left_back.egg",
+        "car-tire_2": "car-tire_right_back.egg",
+        "car-tire_3": "car-tire_right_front.egg",
+        "car-body_0": "car-body.egg",
+        "house-roof_0": "house-roof.egg",
+        "house-wall_0": "house-wall.egg",
+        "person-head_0": "person-head.egg",
+        "person-torso_0": "person-torso.egg",
+        "person-armsegment_0": "person-armsegment_0_right.egg",
+        "person-armsegment_1": "person-armsegment_1_right.egg",
+        "person-armsegment_2": "person-armsegment_2_left.egg",
+        "person-armsegment_3": "person-armsegment_3_left.egg",
+        "person-leg-segment_0": "person-leg-segment_0_right.egg",
+        "person-leg-segment_1": "person-leg-segment_1_right.egg",
+        "person-leg-segment_2": "person-leg-segment_2_left.egg",
+        "person-leg-segment_3": "person-leg-segment_3_left.egg",
+        "person-hand_0": "person-hand_right.egg",
+        "person-hand_1": "person-hand_left.egg",
+        "person-foot_0": "person-foot_right.egg",
+        "person-foot_1": "person-foot_left.egg",
+        "truck-body_0": "truck-body.egg",
+        "truck-tire_0": "truck-tire_left_front",
+        "truck-tire_1": "truck-tire_left_back",
+        "truck-tire_2": "truck-tire_right_back",
+        "truck-tire_3": "truck-tire_right_front",
+        # TEMPORARY MAPPING OF BACK 8 WHEELS TO SAME MODEL AS FRONT WHEELS
+        "truck-tire_4": "truck-tire_left_front",
+        "truck-tire_5": "truck-tire_left_back",
+        "truck-tire_6": "truck-tire_right_back",
+        "truck-tire_7": "truck-tire_right_front",
+        "truck-flatbed_0": "truck-body.egg",
+        "bird-bird-head_0": "bird-head.egg",
+        "bird-torso_0": "bird-torso.egg",
+        "bird-foot_0": "bird-foot_left.egg",
+        "bird-leg-segment_0": "bird-leg_above_knee_left.egg",
+        "bird-leg-segment_1": "bird-leg_below_knee_left.egg",
+        "bird-foot_1": "bird-foot_right.egg",
+        "bird-leg-segment_2": "bird-leg_above_knee_right.egg",
+        "bird-leg-segment_3": "bird-leg_below_knee_right.egg",
+        "bird-wing_0": "bird-wing_left.egg",
+        "bird-wing_1": "bird-wing_right.egg",
+        "bird-tail_0": "bird-tail.egg",
     }
 
     models_used_for_scale_reference = {
@@ -84,6 +145,14 @@ class SituationVisualizer(ShowBase):
         "book": "book.egg",
         "bird": "bird.egg",
         "car": "car.egg",
+        "cookie": "cookie.egg",
+        "dog": "dog.egg",
+        "person": "person.egg",
+        "juice": "juice.egg",
+        "milk": "milk.egg",
+        "water": "water.egg",
+        "house": "house.egg",
+        "truck": "truck.egg",
     }
 
     def __init__(self) -> None:
@@ -98,6 +167,11 @@ class SituationVisualizer(ShowBase):
         plight_node = self.render.attachNewNode(plight)
         plight_node.setPos(10, 20, 1)
         self.render.setLight(plight_node)
+
+        alight = AmbientLight("alight")
+        alight.setColor((0.2, 0.2, 0.2, 1))
+        alnp = self.render.attachNewNode(alight)
+        self.render.setLight(alnp)
 
         # self.render is the top node of the default scene graph
 
@@ -176,7 +250,7 @@ class SituationVisualizer(ShowBase):
         # back off: attempt to find a model for the object's geon
         else:
             try:
-                print(f"adding: {model_type}")
+                print(f"adding geon: {model_type}")
                 new_model = self._load_model(
                     SituationVisualizer.model_to_file[model_type]
                 )
@@ -215,8 +289,8 @@ class SituationVisualizer(ShowBase):
         position: Optional[Tuple[float, float, float]] = None,
         scale_multiplier: Optional[float] = 1.0,
     ) -> NodePath:
-        print(f"\nAdding Dummy node: {name}")
-
+        # TODO: name 'dummy_node' isn't totally accurate now
+        print(f"lookup name for dummy node: {lookup_name}")
         if lookup_name in SituationVisualizer.specific_model_to_file:
             print(f"\nADDING SPECIFIC MODEL")
             new_node = self._load_model(
@@ -329,7 +403,10 @@ if __name__ == "__main__":
 
     for MODEL_NAME in ARGS.model_names:
         NODE = VISUALIZER.add_model(
-            Shape.IRREGULAR, name=MODEL_NAME, color=None, lookup_name=MODEL_NAME
+            Shape.IRREGULAR,
+            name=MODEL_NAME,
+            color=RgbColorPerception(100, 100, 100),
+            lookup_name=MODEL_NAME,
         )
         node_pos = NODE.get_pos()
         NODE.setPos(node_pos.x + ARGS.x, node_pos.y + ARGS.y, node_pos.z + ARGS.z)

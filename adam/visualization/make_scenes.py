@@ -26,7 +26,7 @@ import logging
 
 # currently useful for positioning multiple objects:
 from adam.curriculum.phase1_curriculum import (
-    _make_object_beside_object_curriculum as make_curriculum,
+    _make_each_object_by_itself_curriculum as make_curriculum,
 )
 
 
@@ -138,7 +138,10 @@ def main(params: Parameters) -> None:
 
         # apply scale to top level nodes in scene
         for node in scene_elements.object_graph:
-            if node.name not in OBJECT_NAMES_TO_EXCLUDE:
+            if (
+                node.name not in OBJECT_NAMES_TO_EXCLUDE
+                and node.name.split("_")[0] in OBJECT_SCALE_MULTIPLIER_MAP
+            ):
                 viz.multiply_scale(
                     node.name, OBJECT_SCALE_MULTIPLIER_MAP[node.name.split("_")[0]]
                 )

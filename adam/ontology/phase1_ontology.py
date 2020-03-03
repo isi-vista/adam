@@ -2278,14 +2278,14 @@ GAILA_PHASE_1_SIZE_GRADES: Tuple[Tuple[OntologyNode, ...], ...] = (
     (_TRUCK_CAB,),
     (TABLE, DOOR),
     (_TABLETOP,),
-    (MOM, DAD),
+    (MOM, DAD, PERSON),
     (DOG, BOX, CHAIR, _TIRE),
     (BABY,),
     (_BODY,),
     (_TORSO, _CHAIR_BACK, _CHAIR_SEAT),
     (_ARM, _ANIMAL_LEG, _INANIMATE_LEG),
     (HAND, HEAD, _ARM_SEGMENT, _LEG_SEGMENT, _FOOT),
-    (BALL, BIRD, BOOK, COOKIE, CUP, HAT),
+    (BALL, BIRD, BOOK, COOKIE, CUP, HAT, JUICE, WATER, MILK),
     (_TAIL, _WING),
 )
 
