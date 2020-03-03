@@ -387,7 +387,6 @@ def test_objects_in_something_not_implcitly_grounded():
 
 
 def test_dynamic_prepositions_implicit_grounding():
-    # person_put_ball_on_table
     truck = situation_object(ontology_node=TRUCK)
     baby = situation_object(ontology_node=BABY)
     situation = HighLevelSemanticsSituation(
@@ -401,7 +400,7 @@ def test_dynamic_prepositions_implicit_grounding():
         situation, chooser=RandomChooser.for_seed(0)
     )
     first_frame = perception.frames[0]
-    baby_perception = perception_with_handle(first_frame, "person_0")
+    baby_perception = perception_with_handle(first_frame, "baby_0")
     ground_perception = perception_with_handle(first_frame, "the ground")
     truck_perception = perception_with_handle(first_frame, "truck_0")
 
