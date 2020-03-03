@@ -333,16 +333,7 @@ def test_grounding_of_unsupported_objects():
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         salient_objects=[box, ball],
-        always_relations=[
-            Relation(
-                IN_REGION,
-                ball,
-                Region(
-                    box,
-                    distance=INTERIOR,
-                ),
-            )
-        ],
+        always_relations=[Relation(IN_REGION, ball, Region(box, distance=INTERIOR))],
     )
 
     perception = _PERCEPTION_GENERATOR.generate_perception(
@@ -402,7 +393,7 @@ def test_dynamic_prepositions_implicit_grounding():
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         salient_objects=[baby, truck],
-        actions=[Action(FALL,  argument_roles_to_fillers=[(THEME, baby)])],
+        actions=[Action(FALL, argument_roles_to_fillers=[(THEME, baby)])],
         after_action_relations=[on(baby, truck)],
     )
 
