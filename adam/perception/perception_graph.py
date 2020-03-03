@@ -751,7 +751,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
 
     @staticmethod
     def from_graph(
-        perception_graph: Union[DiGraph, PerceptionGraph]
+        perception_graph: Union[DiGraph, PerceptionGraph], dynamic: bool = False
     ) -> "PerceptionGraphPatternFromGraph":
         """
         Creates a pattern for recognizing an object based on its *perception_graph*.
@@ -767,7 +767,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
             perception_node_to_pattern_node=perception_node_to_pattern_node,
         )
         return PerceptionGraphPatternFromGraph(
-            perception_graph_pattern=PerceptionGraphPattern(pattern_graph),
+            perception_graph_pattern=PerceptionGraphPattern(pattern_graph, dynamic=dynamic),
             perception_graph_node_to_pattern_node=perception_node_to_pattern_node,
         )
 
@@ -775,7 +775,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
         return len(self._graph)
 
     def copy_with_temporal_scope(
-        self, required_temporal_scope: TemporalScope
+        self, required_temporal_scopes: List[TemporalScope]
     ) -> "PerceptionGraphPattern":
         r"""
         Produces a copy of this perception graph pattern
@@ -796,7 +796,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
         for (source, target) in wrapped_graph.edges():
             unwrapped_predicate = wrapped_graph.edges[source, target]["predicate"]
             temporally_scoped_predicate = HoldsAtTemporalScopePredicate(
-                unwrapped_predicate, required_temporal_scope
+                unwrapped_predicate, required_temporal_scopes
             )
             wrapped_graph.edges[source, target]["predicate"] = temporally_scoped_predicate
 
@@ -850,6 +850,10 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
                 return {"predicate": RelationTypeIsPredicate(label)}
             elif isinstance(label, Direction):
                 return {"predicate": DirectionPredicate.exactly_matching(label)}
+            elif isinstance(label, TemporallyScopedEdgeLabel):
+                scopes = label.temporal_specifiers
+                non_temporal_predicate = map_edge(label.attribute)["predicate"]
+                return {"predicate": HoldsAtTemporalScopePredicate(wrapped_edge_predicate=non_temporal_predicate, temporal_scopes=scopes)}
             else:
                 raise RuntimeError(f"Cannot map edge {label}")
 
@@ -1983,7 +1987,7 @@ class HoldsAtTemporalScopePredicate(EdgePredicate):
     """
 
     wrapped_edge_predicate: EdgePredicate = attrib(validator=instance_of(EdgePredicate))
-    temporal_scope: TemporalScope = attrib(validator=instance_of(TemporalScope))
+    temporal_scopes: ImmutableSet[TemporalScope] = attrib(converter=_to_immutableset)
 
     def __call__(
         self,
@@ -1993,7 +1997,7 @@ class HoldsAtTemporalScopePredicate(EdgePredicate):
     ) -> bool:
         if isinstance(edge_label, TemporallyScopedEdgeLabel):
             return (
-                self.temporal_scope in edge_label.temporal_specifiers
+                all(scope in edge_label.temporal_specifiers for scope in self.temporal_scopes)
                 # This is callable. I don't know why pylint doesn't understand that.
                 and self.wrapped_edge_predicate(  # pylint:disable=not-callable
                     source_object_perception, edge_label.attribute, dest_object_percption

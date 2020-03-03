@@ -1263,9 +1263,7 @@ class VerbPursuitLearner(
         if not object_recognizer:
             raise RuntimeError("Verb learner is missing object recognizer")
 
-        observed_linguistic_description = (
-            learning_example.linguistic_description.as_token_sequence()
-        )
+        observed_linguistic_description = tuple([t.lower() for t in learning_example.linguistic_description.as_token_sequence()])
 
         # Convert the observed perception to a version with recognized objects
         recognized_object_perception = object_recognizer.match_objects(
