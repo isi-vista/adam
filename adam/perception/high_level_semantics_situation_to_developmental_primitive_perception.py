@@ -1030,9 +1030,17 @@ class _PerceptionGeneration:
         situation_object: Optional[SituationObject] = None,
     ) -> ObjectPerception:
 
-        debug_handle = self._object_handle_generator.subscripted_handle(
-            schema.ontology_node
-        )
+        # use the debug handle from the situation object if it is available, as it is more
+        # specific in the case of people (e.g. mom, dad, baby) than the debug handle
+        # generated from the ObjectStructuralSchema
+        if situation_object:
+            debug_handle = self._object_handle_generator.subscripted_handle(
+                situation_object.ontology_node
+            )
+        else:
+            debug_handle = self._object_handle_generator.subscripted_handle(
+                schema.ontology_node
+            )
 
         # find a geon for the object, if possible
         concrete_geon: Optional[Geon]
@@ -1049,12 +1057,6 @@ class _PerceptionGeneration:
 
         # find axes for the object
         if situation_object:
-            # use the debug handle from the situation object if it is available, as it is more
-            # specific in the case of people (e.g. mom, dad, baby) than the debug handle
-            # generated from the ObjectStructuralSchema
-            debug_handle = (
-                situation_object.ontology_node.handle + "_" + debug_handle.split("_")[1]
-            )
             # This is a top-level object which has already been assigned axes
             # by the situation. We should not change or copy them
             # or else references to them by the situation
