@@ -536,8 +536,6 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             argument_role: OntologyNode,
             filler: Union[SituationObject, SituationRegion],
         ) -> Tuple[DependencyRole, DependencyTreeToken]:
-            # TODO: to alternation
-            # https://github.com/isi-vista/adam/issues/150
             if isinstance(filler, SituationObject):
                 syntactic_role = self._translate_argument_role(
                     action, verb_lexical_entry, argument_role

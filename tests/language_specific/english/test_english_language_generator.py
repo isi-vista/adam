@@ -1297,9 +1297,6 @@ def test_multiple_has_relations():
         generated_tokens(situation)
 
 
-# Skipping test because we fail to correctly translate I
-# See: https://github.com/isi-vista/adam/issues/605
-@pytest.mark.skip("Skipping has as a verb")
 def test_has_as_verb():
     speaker = situation_object(MOM, properties=[IS_SPEAKER])
     ball = situation_object(BALL)
@@ -1384,6 +1381,99 @@ def test_only_goal():
 
     with pytest.raises(RuntimeError):
         generated_tokens(only_goal)
+
+
+def test_region_as_theme():
+    box = situation_object(BOX)
+
+    region_as_theme = HighLevelSemanticsSituation(
+        salient_objects=[box],
+        actions=[
+            Action(
+                FALL, argument_roles_to_fillers=[(THEME, Region(box, distance=PROXIMAL))]
+            )
+        ],
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+    )
+    with pytest.raises(RuntimeError):
+        generated_tokens(region_as_theme)
+
+
+def test_invalid_arguement_to_action():
+    box = situation_object(BOX)
+
+    invalid_argument = HighLevelSemanticsSituation(
+        salient_objects=[box],
+        actions=[Action(FALL, argument_roles_to_fillers=[(BOX, box)])],
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+    )
+
+    with pytest.raises(RuntimeError):
+        generated_tokens(invalid_argument)
+
+
+def test_beside_distal():
+    box = situation_object(BOX)
+    mom = situation_object(MOM)
+    learner = situation_object(LEARNER)
+
+    beside_distal = HighLevelSemanticsSituation(
+        salient_objects=[mom, box],
+        other_objects=[learner],
+        actions=[
+            Action(
+                GO,
+                argument_roles_to_fillers=[
+                    (AGENT, mom),
+                    (
+                        GOAL,
+                        Region(
+                            box,
+                            distance=DISTAL,
+                            direction=Direction(
+                                False, HorizontalAxisOfObject(box, index=0)
+                            ),
+                        ),
+                    ),
+                ],
+            )
+        ],
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        axis_info=AxesInfo(
+            addressee=learner,
+            axes_facing=[
+                (
+                    learner,
+                    # TODO: fix this hack
+                    HorizontalAxisOfObject(obj, index=1).to_concrete_axis(  # type: ignore
+                        None
+                    ),
+                )
+                for obj in [mom, box]
+                if obj.axes
+            ],
+        ),
+    )
+
+    basic_distal = HighLevelSemanticsSituation(
+        salient_objects=[mom, box],
+        actions=[
+            Action(
+                GO,
+                argument_roles_to_fillers=[
+                    (AGENT, mom),
+                    (GOAL, Region(box, distance=DISTAL)),
+                ],
+            )
+        ],
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+    )
+
+    with pytest.raises(RuntimeError):
+        generated_tokens(beside_distal)
+
+    with pytest.raises(RuntimeError):
+        generated_tokens(basic_distal)
 
 
 def generated_tokens(situation):
