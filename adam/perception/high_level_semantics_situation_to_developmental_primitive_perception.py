@@ -1,6 +1,16 @@
 from enum import auto, Enum
 from itertools import chain
-from typing import AbstractSet, Dict, List, Mapping, Optional, Union, cast, MutableMapping
+from typing import (
+    AbstractSet,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Union,
+    cast,
+    MutableMapping,
+    Iterable,
+)
 
 from attr.validators import instance_of
 from immutablecollections import (
@@ -250,7 +260,9 @@ class _PerceptionGeneration:
 
         if not self._situation.actions:
             if self._include_ground:
-                self._perceive_ground_relations()
+                self._relation_perceptions.extend(
+                    self._perceive_ground_relations(self._relation_perceptions)
+                )
             return PerceptualRepresentation.single_frame(
                 DevelopmentalPrimitivePerceptionFrame(
                     perceived_objects=self._object_perceptions,
@@ -272,12 +284,44 @@ class _PerceptionGeneration:
             for relation in self._situation.after_action_relations
         ]
 
+        # Add ground for always perception if needed
+        if self._include_ground:
+            # Grabbing any "always" ground relations
+            self._relation_perceptions.extend(
+                self._perceive_ground_relations(
+                    relations=chain(
+                        self._relation_perceptions,
+                        explicit_before_relations,
+                        _action_perception.before_relations,
+                        explicit_after_relations,
+                        _action_perception.after_relations,
+                    )
+                )
+            )
+            # Due to the presence of an action need to specify implicit ground relations before and
+            # after the action seperately.
+            before_ground = self._perceive_ground_relations(
+                relations=chain(
+                    self._relation_perceptions,
+                    explicit_before_relations,
+                    _action_perception.before_relations,
+                )
+            )
+            after_ground = self._perceive_ground_relations(
+                relations=chain(
+                    self._relation_perceptions,
+                    explicit_after_relations,
+                    _action_perception.after_relations,
+                )
+            )
+
         first_frame = DevelopmentalPrimitivePerceptionFrame(
             perceived_objects=self._object_perceptions,
             relations=chain(
                 self._relation_perceptions,
                 explicit_before_relations,
                 _action_perception.before_relations,
+                before_ground,
             ),
             property_assertions=self._property_assertion_perceptions,
             axis_info=axis_info,
@@ -288,6 +332,7 @@ class _PerceptionGeneration:
                 self._relation_perceptions,
                 explicit_after_relations,
                 _action_perception.after_relations,
+                after_ground,
             ),
             property_assertions=self._property_assertion_perceptions,
             axis_info=axis_info,
@@ -705,9 +750,12 @@ class _PerceptionGeneration:
             self._objects_to_perceptions
         )
 
-    def _perceive_ground_relations(self):
-        objects_to_relations = self._objects_to_relations()
-        perceived_ground: ObjectPerception = None
+    def _perceive_ground_relations(
+        self, relations: Iterable[Relation[ObjectPerception]]
+    ) -> ImmutableSet[Relation[ObjectPerception]]:
+        objects_to_relations = self._objects_to_relations(relations)
+        ground_relations: List[Relation[ObjectPerception]] = []
+        perceived_ground: Optional[ObjectPerception] = None
         for object_ in self._object_perceptions:
             if self._object_perceptions_to_ontology_nodes[object_] == GROUND:
                 perceived_ground = object_
@@ -716,7 +764,7 @@ class _PerceptionGeneration:
             if situation_object.ontology_node != GROUND:
                 if self._objects_to_perceptions[situation_object] in objects_to_relations:
                     # If this object is not on anything else, it should be on the ground
-                    object_is_on_something = False
+                    object_is_on_or_in_something = False
                     for relation in objects_to_relations[
                         self._objects_to_perceptions[situation_object]
                     ]:
@@ -727,28 +775,30 @@ class _PerceptionGeneration:
                             if (
                                 region.distance == EXTERIOR_BUT_IN_CONTACT
                                 and region.direction == GRAVITATIONAL_UP
-                            ):
-                                object_is_on_something = True
-                    if not object_is_on_something:
-                        self._relation_perceptions.append(
+                            ) or region.distance == INTERIOR:
+                                object_is_on_or_in_something = True
+                    if not object_is_on_or_in_something:
+                        ground_relations.extend(
                             on(
                                 self._objects_to_perceptions[situation_object],
                                 perceived_ground,
                             )
                         )
                 else:
-                    self._relation_perceptions.append(
+                    ground_relations.extend(
                         on(
                             self._objects_to_perceptions[situation_object],
                             perceived_ground,
                         )
                     )
 
+        return immutableset(ground_relations)
+
     def _objects_to_relations(
-        self
+        self, relations: Iterable[Relation[ObjectPerception]]
     ) -> ImmutableSetMultiDict[ObjectPerception, Relation[ObjectPerception]]:
         return immutablesetmultidict(
-            (relation.first_slot, relation) for relation in self._relation_perceptions
+            (relation.first_slot, relation) for relation in relations
         )
 
     @attrs(frozen=True, slots=True)
@@ -788,9 +838,6 @@ class _PerceptionGeneration:
             conditions=action_description.postconditions,
             action_object_variables_to_object_perceptions=action_objects_variables_to_perceived_objects,
         )
-
-        if self._include_ground:
-            self._perceive_ground_relations()
 
         return _PerceptionGeneration._ActionPerception(
             before_relations=immutableset(chain(enduring_relations, before_relations)),
