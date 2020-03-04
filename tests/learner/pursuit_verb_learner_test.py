@@ -16,7 +16,9 @@ from adam.ontology.phase1_ontology import (
     EAT,
     AGENT,
     PATIENT,
-    MOM, COOKIE)
+    MOM,
+    COOKIE,
+)
 from adam.perception.perception_graph import PerceptionGraphPattern, TemporalScope
 from adam.situation import Action
 from adam.situation.templates.phase1_templates import sampled, Phase1SituationTemplate
@@ -42,9 +44,7 @@ def test_pursuit_verb_eat_learner():
         "eat-object",
         salient_object_variables=[cookie, mom],
         actions=[
-            Action(
-                EAT, argument_roles_to_fillers=[(AGENT, mom), (PATIENT, cookie)]
-            )
+            Action(EAT, argument_roles_to_fillers=[(AGENT, mom), (PATIENT, cookie)])
         ],
     )
 
