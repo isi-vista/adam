@@ -648,7 +648,7 @@ def test_matching_static_vs_dynamic_graphs():
         perception_graph.copy_as_digraph()
     ).perception_graph_pattern
 
-    temporal_perception_pattern = perception_pattern.copy_with_temporal_scope(
+    temporal_perception_pattern = perception_pattern.copy_with_temporal_scopes(
         required_temporal_scope=TemporalScope.AFTER
     )
 
@@ -692,14 +692,14 @@ def test_copy_with_temporal_scope_pattern_content():
     temporal_perception_graph = perception_graph.copy_with_temporal_scopes(
         temporal_scopes=[TemporalScope.AFTER]
     )
-    temporal_perception_pattern = perception_pattern.copy_with_temporal_scope(
-        required_temporal_scope=TemporalScope.AFTER
+    temporal_perception_pattern = perception_pattern.copy_with_temporal_scopes(
+        required_temporal_scopes=TemporalScope.AFTER
     )
 
     # Exception while applying to dynamic pattern
     with pytest.raises(RuntimeError):
-        temporal_perception_pattern.copy_with_temporal_scope(
-            required_temporal_scope=TemporalScope.AFTER
+        temporal_perception_pattern.copy_with_temporal_scopes(
+            required_temporal_scopes=TemporalScope.AFTER
         )
 
     for (source, target) in perception_pattern.copy_as_digraph().edges():
@@ -716,12 +716,12 @@ def test_copy_with_temporal_scope_pattern_content():
         assert isinstance(predicate.dot_label(), str)
         assert predicate.matches_predicate(
             HoldsAtTemporalScopePredicate(
-                predicate.wrapped_edge_predicate, predicate.temporal_scope
+                predicate.wrapped_edge_predicate, predicate.temporal_scopes
             )
         )
         assert not predicate.matches_predicate(
             HoldsAtTemporalScopePredicate(
-                predicate.wrapped_edge_predicate, TemporalScope.BEFORE
+                predicate.wrapped_edge_predicate, [TemporalScope.BEFORE]
             )
         )
         assert isinstance(predicate, HoldsAtTemporalScopePredicate)
@@ -729,7 +729,8 @@ def test_copy_with_temporal_scope_pattern_content():
             predicate.wrapped_edge_predicate
             == perception_pattern.copy_as_digraph()[source][target]["predicate"]
         )
-        assert predicate.temporal_scope == TemporalScope.AFTER
+        assert len(predicate.temporal_scopes) == 1
+        assert only(predicate.temporal_scopes) == TemporalScope.AFTER
 
     # Test normal matching behavior
     temporal_matcher = temporal_perception_pattern.matcher(
@@ -742,7 +743,7 @@ def test_copy_with_temporal_scope_pattern_content():
         label = "test edge label"
         edge_predicate = AnyEdgePredicate()
         temporal_predicate = HoldsAtTemporalScopePredicate(
-            edge_predicate, TemporalScope.AFTER
+            edge_predicate, [TemporalScope.AFTER]
         )
 
         temporal_edge_label = TemporallyScopedEdgeLabel(label, [TemporalScope.AFTER])

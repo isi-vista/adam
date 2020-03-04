@@ -80,7 +80,9 @@ def test_pursuit_verb_eat_learner():
         {
             node.handle: PerceptionGraphPattern.from_schema(
                 first(GAILA_PHASE_1_ONTOLOGY.structural_schemata(node))
-            ).copy_with_temporal_scope(required_temporal_scopes=[TemporalScope.BEFORE, TemporalScope.AFTER])
+            ).copy_with_temporal_scopes(
+                required_temporal_scopes=[TemporalScope.BEFORE, TemporalScope.AFTER]
+            )
             for node in [MOM, COOKIE]
         }
     )
