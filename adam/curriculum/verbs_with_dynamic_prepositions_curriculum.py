@@ -9,7 +9,6 @@ from adam.axes import (
     FacingAddresseeAxis,
     GRAVITATIONAL_AXIS_FUNCTION,
 )
-
 from adam.curriculum.curriculum_utils import (
     standard_object,
     phase1_instances,
@@ -2027,8 +2026,6 @@ def _make_take_with_prepositions(
                     chooser=PHASE1_CHOOSER,
                     max_to_sample=num_samples,
                 )
-                for is_distal in BOOL_SET
-                for is_right in BOOL_SET
             ]
         ),
     )

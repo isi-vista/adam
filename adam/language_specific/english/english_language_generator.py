@@ -699,7 +699,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     )
                 elif action.action_type == JUMP:
                     modifiers.append(
-                        (ADJECTIVAL_MODIFIER, DependencyTreeToken("up", ADVERB))
+                        (ADVERBIAL_MODIFIER, DependencyTreeToken("up", ADVERB))
                     )
 
             return modifiers
