@@ -46,6 +46,7 @@ from typing_extensions import Protocol
 from adam.axes import AxesInfo, HasAxes
 from adam.axis import GeonAxis
 from adam.geon import Geon, MaybeHasGeon
+from adam.language import TokenSequenceLinguisticDescription
 from adam.ontology import OntologyNode
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import COLOR, GAILA_PHASE_1_ONTOLOGY, PART_OF
@@ -2433,3 +2434,23 @@ class GraphLogger:
             )
         else:
             logging.log(level, msg, *args)
+
+
+@attrs(frozen=True)
+class LanguageAlignedPerception:
+    language: TokenSequenceLinguisticDescription = attrib(
+        validator=instance_of(TokenSequenceLinguisticDescription)
+    )
+    perception_graph: PerceptionGraph = attrib(validator=instance_of(PerceptionGraph))
+    node_to_language_span: ImmutableDict[
+        PerceptionGraphNode, TokenSequenceLinguisticDescription.Span
+    ] = attrib(converter=_to_immutabledict)
+    language_span_to_node: ImmutableDict[
+        TokenSequenceLinguisticDescription.Span, PerceptionGraphNode
+    ] = attrib(init=False)
+
+    @language_span_to_node.default
+    def _init_language_span_to_node(
+        self
+    ) -> ImmutableDict[PerceptionGraphNode, TokenSequenceLinguisticDescription.Span]:
+        return immutabledict((v, k) for (k, v) in self.node_to_language_span.items())

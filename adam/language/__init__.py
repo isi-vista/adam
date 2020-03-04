@@ -7,6 +7,8 @@ from typing import Tuple, TypeVar
 from attr import attrib, attrs
 from attr.validators import instance_of
 
+from vistautils.preconditions import check_arg
+
 
 class LinguisticDescription(ABC):
     r"""
@@ -45,3 +47,11 @@ class TokenSequenceLinguisticDescription(LinguisticDescription):
 
     def as_token_sequence(self) -> Tuple[str, ...]:
         return self.tokens
+
+    @attrs(frozen=True, slots=True)
+    class Span:
+        _start_index: int = attrib(validator=instance_of(int))
+        _end_index: int = attrib(validator=instance_of(int))
+
+        def __attrs_post_init__(self) -> None:
+            check_arg(self._start_index <= self._end_index)
