@@ -2145,29 +2145,52 @@ JUMP_INITIAL_SUPPORTER_AUX = ActionDescriptionVariable(THING)
 
 def _make_jump_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
     jump_agent = ActionDescriptionVariable(THING, properties=[ANIMATE])
+    jump_goal = ActionDescriptionVariable(THING)
     jump_ground = ActionDescriptionVariable(GROUND)
 
+    preconditions = (
+        [
+            Relation(
+                IN_REGION,
+                jump_agent,
+                Region(JUMP_INITIAL_SUPPORTER_AUX, distance=EXTERIOR_BUT_IN_CONTACT),
+            )
+        ],
+    )
+
+    asserted_properties = [(jump_agent, VOLITIONALLY_INVOLVED), (jump_agent, MOVES)]
+
+    # bare jump
     yield (
         JUMP,
         ActionDescription(
             frame=ActionDescriptionFrame({AGENT: jump_agent}),
-            preconditions=[
-                Relation(
-                    IN_REGION,
-                    jump_agent,
-                    Region(JUMP_INITIAL_SUPPORTER_AUX, distance=EXTERIOR_BUT_IN_CONTACT),
-                )
-            ],
+            preconditions=preconditions,
             during=DuringAction(
                 objects_to_paths=[
                     (jump_agent, SpatialPath(AWAY_FROM, JUMP_INITIAL_SUPPORTER_AUX)),
                     (jump_agent, SpatialPath(AWAY_FROM, jump_ground)),
                 ]
             ),
-            asserted_properties=[
-                (jump_agent, VOLITIONALLY_INVOLVED),
-                (jump_agent, MOVES),
-            ],
+            asserted_properties=asserted_properties,
+        ),
+    )
+
+    # jump with goal
+    yield (
+        JUMP,
+        ActionDescription(
+            frame=ActionDescriptionFrame({AGENT: jump_agent, GOAL: jump_goal}),
+            preconditions=preconditions,
+            during=DuringAction(
+                objects_to_paths=[
+                    (jump_agent, SpatialPath(AWAY_FROM, JUMP_INITIAL_SUPPORTER_AUX)),
+                    (jump_agent, SpatialPath(AWAY_FROM, jump_ground)),
+                    (jump_agent, SpatialPath(TO, jump_goal)),
+                ]
+            ),
+            postconditions=[Relation(IN_REGION, jump_agent, jump_goal)],
+            asserted_properties=asserted_properties,
         ),
     )
 

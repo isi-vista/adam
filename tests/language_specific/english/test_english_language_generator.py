@@ -782,6 +782,24 @@ def test_bird_flies_up():
     assert generated_tokens(situation) == ("a", "bird", "flies", "up")
 
 
+def test_jump_up():
+    dad = situation_object(DAD)
+    ground = situation_object(GROUND)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[dad],
+        actions=[
+            Action(
+                JUMP,
+                argument_roles_to_fillers=[(AGENT, dad)],
+                auxiliary_variable_bindings=[(JUMP_INITIAL_SUPPORTER_AUX, ground)],
+            )
+        ],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
+    )
+    assert generated_tokens(situation) == ("Dad", "jumps", "up")
+
+
 def test_jumps_over():
     dad = situation_object(DAD)
     chair = situation_object(CHAIR)

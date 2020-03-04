@@ -16,6 +16,7 @@ from adam.curriculum.curriculum_utils import (
     Phase1InstanceGroup,
     make_background,
     body_part_object,
+    GROUND_OBJECT_TEMPLATE,
 )
 from adam.language_specific.english.english_language_generator import (
     USE_ADVERBIAL_PATH_MODIFIER,
@@ -56,6 +57,10 @@ from adam.ontology.phase1_ontology import (
     MOVE,
     contacts,
     SELF_MOVING,
+    JUMP_INITIAL_SUPPORTER_AUX,
+    CAN_JUMP,
+    strictly_above,
+    JUMP,
 )
 from adam.ontology import THING, IS_SPEAKER, IS_ADDRESSEE
 from adam.ontology.phase1_spatial_relations import (
@@ -1383,6 +1388,171 @@ def _x_move_y_in_front_of_behind_z_template(
     )
 
 
+# JUMP templates
+
+
+def _jump_in_template(
+    # "A dog jumps in a box"
+    agent: TemplateObjectVariable,
+    goal_reference: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        f"{agent.handle}-jumps-in-{goal_reference.handle}",
+        salient_object_variables=[agent, goal_reference],
+        background_object_variables=background,
+        actions=[
+            Action(
+                JUMP,
+                argument_roles_to_fillers=[
+                    (AGENT, agent),
+                    (GOAL, Region(goal_reference, distance=INTERIOR)),
+                ],
+                auxiliary_variable_bindings=[
+                    (JUMP_INITIAL_SUPPORTER_AUX, GROUND_OBJECT_TEMPLATE)
+                ],
+            )
+        ],
+        constraining_relations=flatten_relations(bigger_than(goal_reference, agent)),
+    )
+
+
+def _jump_on_template(
+    # "Mom jumps on a chair"
+    agent: TemplateObjectVariable,
+    goal_reference: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        f"{agent.handle}-jumps-on-{goal_reference.handle}",
+        salient_object_variables=[agent, goal_reference],
+        background_object_variables=background,
+        actions=[
+            Action(
+                JUMP,
+                argument_roles_to_fillers=[
+                    (AGENT, agent),
+                    (
+                        GOAL,
+                        Region(
+                            goal_reference,
+                            distance=EXTERIOR_BUT_IN_CONTACT,
+                            direction=GRAVITATIONAL_UP,
+                        ),
+                    ),
+                ],
+                auxiliary_variable_bindings=[
+                    (JUMP_INITIAL_SUPPORTER_AUX, GROUND_OBJECT_TEMPLATE)
+                ],
+            )
+        ],
+        constraining_relations=flatten_relations(bigger_than(goal_reference, agent)),
+    )
+
+
+def _jump_over_template(
+    # "Mom jumps over a ball"
+    agent: TemplateObjectVariable,
+    object_in_path: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        f"{agent.handle}-jumps-over-{object_in_path.handle}",
+        salient_object_variables=[agent, object_in_path],
+        background_object_variables=background,
+        actions=[
+            Action(
+                JUMP,
+                argument_roles_to_fillers=[(AGENT, agent)],
+                during=DuringAction(
+                    at_some_point=flatten_relations(strictly_above(agent, object_in_path))
+                ),
+                auxiliary_variable_bindings=[
+                    (JUMP_INITIAL_SUPPORTER_AUX, GROUND_OBJECT_TEMPLATE)
+                ],
+            )
+        ],
+        constraining_relations=flatten_relations(bigger_than(agent, object_in_path)),
+    )
+
+
+def _jump_beside_template(
+    # "Dad jumps beside a dog"
+    agent: TemplateObjectVariable,
+    goal_reference: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+    *,
+    is_right: bool,
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        f"{agent.handle}-jumps-beside-{goal_reference.handle}",
+        salient_object_variables=[agent, goal_reference],
+        background_object_variables=background,
+        actions=[
+            Action(
+                JUMP,
+                argument_roles_to_fillers=[
+                    (AGENT, agent),
+                    (
+                        GOAL,
+                        Region(
+                            goal_reference,
+                            distance=PROXIMAL,
+                            direction=Direction(
+                                positive=is_right,
+                                relative_to_axis=HorizontalAxisOfObject(
+                                    goal_reference, index=0
+                                ),
+                            ),
+                        ),
+                    ),
+                ],
+                auxiliary_variable_bindings=[
+                    (JUMP_INITIAL_SUPPORTER_AUX, GROUND_OBJECT_TEMPLATE)
+                ],
+            )
+        ],
+    )
+
+
+def _jump_in_front_of_behind_template(
+    # "A baby jumps in front of a ball"
+    agent: TemplateObjectVariable,
+    goal_reference: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+    *,
+    is_distal: bool,
+    is_in_front: bool,
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        f"{agent.handle}-jumps-in-front-of-behind-{goal_reference.handle}",
+        salient_object_variables=[agent, goal_reference],
+        background_object_variables=background,
+        actions=[
+            Action(
+                JUMP,
+                argument_roles_to_fillers=[
+                    (AGENT, agent),
+                    (
+                        GOAL,
+                        Region(
+                            goal_reference,
+                            distance=DISTAL if is_distal else PROXIMAL,
+                            direction=Direction(
+                                positive=is_in_front,
+                                relative_to_axis=FacingAddresseeAxis(goal_reference),
+                            ),
+                        ),
+                    ),
+                ],
+                auxiliary_variable_bindings=[
+                    (JUMP_INITIAL_SUPPORTER_AUX, GROUND_OBJECT_TEMPLATE)
+                ],
+            )
+        ],
+    )
+
+
 def _make_push_with_prepositions(
     num_samples: int = 5, *, noise_objects: int = 0
 ) -> Phase1InstanceGroup:
@@ -1492,7 +1662,6 @@ def _make_go_with_prepositions(num_samples: int = 5, *, noise_objects: int = 0):
         "path_object",
         required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM, HAS_SPACE_UNDER],
     )
-
     background = immutableset(
         standard_object(f"noise_object_{x}") for x in range(noise_objects)
     )
@@ -2211,6 +2380,76 @@ def _make_move_with_prepositions(
     )
 
 
+def _make_jump_with_prepositions(
+    num_samples: int = 5, *, noise_objects: int = 0
+) -> Phase1InstanceGroup:
+    agent = standard_object("agent", THING, required_properties=[CAN_JUMP])
+    goal_reference = standard_object("goal_reference", THING)
+    goal_in = standard_object("goal_reference", THING, required_properties=[HOLLOW])
+    goal_on = standard_object(
+        "goal_reference", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
+    )
+    background = immutableset(
+        standard_object(f"noise_object_{x}") for x in range(noise_objects)
+    )
+    templates = [
+        _jump_in_template(agent, goal_in, background),
+        _jump_on_template(agent, goal_on, background),
+        _jump_over_template(agent, goal_reference, background),
+    ]
+
+    return phase1_instances(
+        "Jump + PP",
+        chain(
+            # in, on, over
+            flatten(
+                [
+                    sampled(
+                        template,
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER,
+                        max_to_sample=num_samples,
+                    )
+                    for template in templates
+                ]
+            ),
+            # beside
+            flatten(
+                [
+                    sampled(
+                        _jump_beside_template(
+                            agent, goal_reference, background, is_right=is_right
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER,
+                        max_to_sample=num_samples,
+                    )
+                    for is_right in BOOL_SET
+                ]
+            ),
+            # in front of, behind
+            flatten(
+                [
+                    sampled(
+                        _jump_in_front_of_behind_template(
+                            agent,
+                            goal_reference,
+                            background,
+                            is_distal=is_distal,
+                            is_in_front=is_in_front,
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER,
+                        max_to_sample=num_samples,
+                    )
+                    for is_distal in BOOL_SET
+                    for is_in_front in BOOL_SET
+                ]
+            ),
+        ),
+    )
+
+
 def make_verb_with_dynamic_prepositions_curriculum(
     num_samples: int = 5, *, num_noise_objects: int = 0
 ):
@@ -2223,4 +2462,5 @@ def make_verb_with_dynamic_prepositions_curriculum(
         _make_fall_with_prepositions(num_samples, noise_objects=num_noise_objects),
         _make_put_with_prepositions(num_samples, noise_objects=num_noise_objects),
         _make_move_with_prepositions(num_samples, noise_objects=num_noise_objects),
+        _make_jump_with_prepositions(num_samples, noise_objects=num_noise_objects),
     ]
