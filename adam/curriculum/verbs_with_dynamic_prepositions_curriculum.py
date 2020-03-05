@@ -1568,15 +1568,8 @@ def _fly_in_template(
         f"{agent.handle}-flies-in-{goal_reference.handle}",
         salient_object_variables=[agent, goal_reference],
         background_object_variables=background,
-        actions=[
-            Action(
-                FLY,
-                argument_roles_to_fillers=[
-                    (AGENT, agent),
-                    (GOAL, Region(goal_reference, distance=INTERIOR)),
-                ],
-            )
-        ],
+        actions=[Action(FLY, argument_roles_to_fillers=[(AGENT, agent)])],
+        after_action_relations=flatten_relations(inside(agent, goal_reference)),
         constraining_relations=flatten_relations(bigger_than(goal_reference, agent)),
     )
 
