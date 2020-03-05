@@ -69,6 +69,7 @@ from adam.ontology.phase1_spatial_relations import (
     SpatialPath,
     Direction,
     PROXIMAL,
+    VIA,
 )
 from adam.random_utils import FixedIndexChooser
 from adam.relation import Relation
@@ -756,6 +757,44 @@ def test_bird_flies_over_dad():
     )
 
     assert generated_tokens(situation) == ("a", "bird", "flies", "over", "Dad")
+
+
+def test_bird_flies_path_beside():
+    bird = situation_object(BIRD)
+    car = situation_object(CAR)
+    car_region = Region(
+        car,
+        distance=PROXIMAL,
+        direction=Direction(
+            positive=True, relative_to_axis=HorizontalAxisOfObject(car, index=0)
+        ),
+    )
+
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[bird, car],
+        actions=[
+            Action(
+                FLY,
+                argument_roles_to_fillers=[(AGENT, bird)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            bird,
+                            SpatialPath(
+                                VIA,
+                                reference_object=car_region,
+                                reference_axis=HorizontalAxisOfObject(car, index=0),
+                            ),
+                        )
+                    ],
+                    at_some_point=[Relation(IN_REGION, bird, car_region)],
+                ),
+            )
+        ],
+    )
+
+    assert generated_tokens(situation) == ("a", "bird", "flies", "beside", "a", "car")
 
 
 def test_bird_flies_up():

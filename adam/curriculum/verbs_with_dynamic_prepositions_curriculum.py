@@ -64,7 +64,7 @@ from adam.ontology.phase1_ontology import (
     FLY,
     CAN_FLY,
 )
-from adam.ontology import THING, IS_SPEAKER, IS_ADDRESSEE
+from adam.ontology import THING, IS_SPEAKER, IS_ADDRESSEE, IN_REGION
 from adam.ontology.phase1_spatial_relations import (
     Region,
     PROXIMAL,
@@ -77,7 +77,7 @@ from adam.ontology.phase1_spatial_relations import (
     VIA,
     EXTERIOR_BUT_IN_CONTACT,
 )
-from adam.relation import flatten_relations
+from adam.relation import flatten_relations, Relation
 from adam.situation import Action
 from adam.situation.templates.phase1_templates import (
     TemplateObjectVariable,
@@ -1582,9 +1582,17 @@ def _fly_beside_template(
     *,
     is_right: bool,
 ) -> Phase1SituationTemplate:
+    object_region = Region(
+        object_passed,
+        distance=PROXIMAL,
+        direction=Direction(
+            positive=is_right,
+            relative_to_axis=HorizontalAxisOfObject(object_passed, index=0),
+        ),
+    )
     return Phase1SituationTemplate(
         f"{agent.handle}-flies-beside-{object_passed.handle}",
-        salient_object_variables=[agent],
+        salient_object_variables=[agent, object_passed],
         background_object_variables=background,
         actions=[
             Action(
@@ -1596,22 +1604,16 @@ def _fly_beside_template(
                             agent,
                             SpatialPath(
                                 VIA,
-                                reference_object=Region(
-                                    object_passed,
-                                    distance=PROXIMAL,
-                                    direction=Direction(
-                                        positive=is_right,
-                                        relative_to_axis=HorizontalAxisOfObject(
-                                            object_passed, index=0
-                                        ),
-                                    ),
-                                ),
+                                reference_object=object_region,
                                 reference_axis=HorizontalAxisOfObject(
                                     object_passed, index=0
                                 ),
                             ),
                         )
-                    ]
+                    ],
+                    at_some_point=flatten_relations(
+                        [Relation(IN_REGION, agent, object_region)]
+                    ),
                 ),
             )
         ],
@@ -1626,9 +1628,16 @@ def _fly_behind_template(
     *,
     is_distal: bool,
 ) -> Phase1SituationTemplate:
+    object_region = Region(
+        object_passed,
+        distance=DISTAL if is_distal else PROXIMAL,
+        direction=Direction(
+            positive=False, relative_to_axis=FacingAddresseeAxis(object_passed)
+        ),
+    )
     return Phase1SituationTemplate(
         f"{agent.handle}-flies-behind-{object_passed.handle}",
-        salient_object_variables=[agent],
+        salient_object_variables=[agent, object_passed],
         background_object_variables=background,
         actions=[
             Action(
@@ -1640,20 +1649,14 @@ def _fly_behind_template(
                             agent,
                             SpatialPath(
                                 VIA,
-                                reference_object=Region(
-                                    object_passed,
-                                    distance=DISTAL if is_distal else PROXIMAL,
-                                    direction=Direction(
-                                        positive=False,
-                                        relative_to_axis=FacingAddresseeAxis(
-                                            object_passed
-                                        ),
-                                    ),
-                                ),
+                                reference_object=object_region,
                                 reference_axis=FacingAddresseeAxis(object_passed),
                             ),
                         )
-                    ]
+                    ],
+                    at_some_point=flatten_relations(
+                        [Relation(IN_REGION, agent, object_region)]
+                    ),
                 ),
             )
         ],
