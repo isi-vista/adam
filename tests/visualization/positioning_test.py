@@ -13,7 +13,7 @@ from adam.visualization.positioning import (
     InRegionPenalty,
 )
 from typing import Mapping, List, Tuple
-from adam.perception import ObjectPerception
+from adam.perception import ObjectPerception, GROUND_PERCEPTION
 from adam.axes import (
     Axes,
     straight_up,
@@ -21,7 +21,13 @@ from adam.axes import (
     symmetric,
     symmetric_vertical,
 )
-from adam.ontology.phase1_spatial_relations import Region, PROXIMAL, Direction
+from adam.ontology.phase1_spatial_relations import (
+    Region,
+    PROXIMAL,
+    Direction,
+    GRAVITATIONAL_UP,
+    EXTERIOR_BUT_IN_CONTACT,
+)
 from adam.axes import HorizontalAxisOfObject
 
 
@@ -85,12 +91,37 @@ def test_gravity_constraint() -> None:
         center=np.array([0, 0, 1])
     )
 
-    gravity_penalty = WeakGravityPenalty({}, {})
+    ground_region = Region(GROUND_PERCEPTION, EXTERIOR_BUT_IN_CONTACT, GRAVITATIONAL_UP)
 
-    floating_result = gravity_penalty(aabb_floating)
+    floating_perception = ObjectPerception(
+        "floating_thing",
+        axes=Axes(
+            primary_axis=symmetric_vertical("floating-thing-generating"),
+            orienting_axes=immutableset(
+                [symmetric("side-to-side0"), symmetric("side-to-side1")]
+            ),
+        ),
+    )
+
+    grounded_perception = ObjectPerception(
+        "grounded_thing",
+        axes=Axes(
+            primary_axis=symmetric_vertical("grounded-thing-generating"),
+            orienting_axes=immutableset(
+                [symmetric("side-to-side0"), symmetric("side-to-side1")]
+            ),
+        ),
+    )
+
+    gravity_penalty = WeakGravityPenalty(
+        {floating_perception: aabb_floating, grounded_perception: aabb_grounded},
+        {floating_perception: [ground_region], grounded_perception: [ground_region]},
+    )
+
+    floating_result = gravity_penalty(aabb_floating, immutableset([ground_region]))
     assert floating_result > 0
 
-    grounded_result = gravity_penalty(aabb_grounded)
+    grounded_result = gravity_penalty(aabb_grounded, immutableset([ground_region]))
     assert grounded_result <= 0
 
 
