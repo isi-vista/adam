@@ -5,6 +5,7 @@ Curricula for DARPA GAILA Phase 1
 from itertools import chain
 from typing import Iterable, Sequence
 
+from immutablecollections import immutableset
 from more_itertools import flatten
 
 from adam.axes import HorizontalAxisOfObject, FacingAddresseeAxis, AxesInfo
@@ -96,12 +97,14 @@ from adam.ontology.phase1_spatial_relations import (
     SpatialPath,
     TOWARD,
     Direction,
+    TO,
 )
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     GAILA_PHASE_1_PERCEPTION_GENERATOR,
     HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
 )
 from adam.random_utils import RandomChooser
+from adam.relation import flatten_relations
 from adam.situation import Action, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.situation.templates.phase1_templates import (
@@ -111,6 +114,7 @@ from adam.situation.templates.phase1_templates import (
     color_variable,
     object_variable,
     sampled,
+    TemplateObjectVariable,
 )
 
 
@@ -475,12 +479,9 @@ def _make_object_in_other_object_curriculum() -> Phase1InstanceGroup:
 
 
 def _make_fly_curriculum() -> Phase1InstanceGroup:
-    # fly under something which has an under
+    # fly up or down
     bird = standard_object("bird_0", BIRD)
-    object_0 = standard_object("object_0", THING)
-    object_with_space_under = standard_object(
-        "object_0", THING, required_properties=[HAS_SPACE_UNDER]
-    )
+    syntax_hints_options = ([], [USE_ADVERBIAL_PATH_MODIFIER])  # type: ignore
 
     bare_fly = [
         Phase1SituationTemplate(
@@ -503,8 +504,10 @@ def _make_fly_curriculum() -> Phase1InstanceGroup:
                     ),
                 )
             ],
+            syntax_hints=syntax_hints,
         )
         for up in (True, False)
+        for syntax_hints in syntax_hints_options
     ]
 
     return phase1_instances(
@@ -660,55 +663,35 @@ def _make_speaker_addressee_curriculum() -> Phase1InstanceGroup:
 
 def _make_jump_curriculum() -> Phase1InstanceGroup:
     jumper = standard_object("jumper_0", THING, required_properties=[CAN_JUMP])
-    jumped_over = standard_object("jumped_over")
 
-    # "A person jumps"
-    jump_on_ground = Phase1SituationTemplate(
-        "jump",
-        salient_object_variables=[jumper],
-        actions=[
-            Action(
-                JUMP,
-                argument_roles_to_fillers=[(AGENT, jumper)],
-                auxiliary_variable_bindings=[
-                    (JUMP_INITIAL_SUPPORTER_AUX, GROUND_OBJECT_TEMPLATE)
+    def _make_templates() -> Iterable[Phase1SituationTemplate]:
+        # "A person jumps"
+        for use_adverbial_path_modifier in (True, False):
+            yield Phase1SituationTemplate(
+                "jump-on-ground",
+                salient_object_variables=[jumper],
+                actions=[
+                    Action(
+                        JUMP,
+                        argument_roles_to_fillers=[(AGENT, jumper)],
+                        auxiliary_variable_bindings=[
+                            (JUMP_INITIAL_SUPPORTER_AUX, GROUND_OBJECT_TEMPLATE)
+                        ],
+                    )
                 ],
+                syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER]
+                if use_adverbial_path_modifier
+                else [],
             )
-        ],
-    )
-
-    # "A person jumps over a ball"
-    jump_over_object = Phase1SituationTemplate(
-        "jump-over",
-        salient_object_variables=[jumper, jumped_over],
-        actions=[
-            Action(
-                JUMP,
-                argument_roles_to_fillers=[(AGENT, jumper)],
-                during=DuringAction(at_some_point=[strictly_above(jumper, jumped_over)]),
-                auxiliary_variable_bindings=[
-                    (JUMP_INITIAL_SUPPORTER_AUX, GROUND_OBJECT_TEMPLATE)
-                ],
-            )
-        ],
-        constraining_relations=[bigger_than(jumper, jumped_over)],
-    )
 
     return phase1_instances(
         "jumping",
         chain(
             *[
                 all_possible(
-                    jump_on_ground,
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER,
-                ),
-                sampled(
-                    jump_over_object,
-                    max_to_sample=25,
-                    chooser=PHASE1_CHOOSER,
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                ),
+                    template, ontology=GAILA_PHASE_1_ONTOLOGY, chooser=PHASE1_CHOOSER
+                )
+                for template in _make_templates()
             ]
         ),
     )
@@ -1054,7 +1037,6 @@ def _make_move_curriculum() -> Phase1InstanceGroup:
         "move-goal-reference", THING, required_properties=[INANIMATE]
     )
 
-    # since we lack other prepositions at the moment,
     # all movement has the goal of being near an arbitrary inanimate object
     aux_variable_bindings = [(MOVE_GOAL, Region(move_goal_reference, distance=PROXIMAL))]
 
@@ -1084,8 +1066,6 @@ def _make_move_curriculum() -> Phase1InstanceGroup:
         ],
         constraining_relations=[bigger_than(other_mover_0, movee_0)],
     )
-
-    # TODO: version with explicit goal
 
     return phase1_instances(
         "move",
@@ -1264,19 +1244,6 @@ def _make_push_curriculum() -> Phase1InstanceGroup:
         constraining_relations=[bigger_than(push_surface, pusher)],
     )
 
-    # push explicit goal
-    # push_explicit_goal = Phase1SituationTemplate(
-    #     "push-explicit-goal",
-    #     salient_object_variables=[pusher, push_surface],
-    #     actions=[
-    #         Action(
-    #             PUSH,
-    #             argument_roles_to_fillers=[(AGENT, pusher), (THEME, pushee)],
-    #             auxiliary_variable_bindings=[(PUSH_SURFACE_AUX, push_surface)]),
-    #     ],
-    #     constraining_relations=[bigger_than(push_surface, pusher)],
-    # )
-
     return phase1_instances(
         "pushing",
         chain(
@@ -1362,11 +1329,45 @@ def _make_throw_curriculum() -> Phase1InstanceGroup:
     )
 
 
+def _make_come_down_template(
+    agent: TemplateObjectVariable,
+    goal_reference: TemplateObjectVariable,
+    speaker: TemplateObjectVariable,
+    ground: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+) -> Phase1SituationTemplate:
+    background_objects_mutable = [speaker, ground]
+    background_objects_mutable.extend(background)
+    background_objects = immutableset(background_objects_mutable)
+    # TODO: Make sure the agent isn't in contact with the ground at the start
+    # See: https://github.com/isi-vista/adam/issues/597
+    return Phase1SituationTemplate(
+        f"{agent.handle}-come-to-{goal_reference.handle}",
+        salient_object_variables=[agent, goal_reference],
+        background_object_variables=background_objects,
+        actions=[
+            Action(
+                COME,
+                argument_roles_to_fillers=[(AGENT, agent), (GOAL, goal_reference)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (agent, SpatialPath(TOWARD, ground)),
+                        (agent, SpatialPath(TO, goal_reference)),
+                    ]
+                ),
+            )
+        ],
+        asserted_always_relations=flatten_relations(near(speaker, goal_reference)),
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
+    )
+
+
 def _make_come_curriculum() -> Phase1InstanceGroup:
     movee = standard_object("movee", required_properties=[SELF_MOVING])
     learner = standard_object("leaner_0", LEARNER)
     speaker = standard_object("speaker", PERSON, added_properties=[IS_SPEAKER])
     object_ = standard_object("object_0", THING)
+    ground = standard_object("ground", root_node=GROUND)
 
     come_to_speaker = Phase1SituationTemplate(
         "come-to-speaker",
@@ -1392,8 +1393,6 @@ def _make_come_curriculum() -> Phase1InstanceGroup:
         ],
     )
 
-    # TODO: "Come on" https://github.com/isi-vista/adam/issues/328
-
     return phase1_instances(
         "come",
         chain(
@@ -1410,6 +1409,14 @@ def _make_come_curriculum() -> Phase1InstanceGroup:
                 ),
                 sampled(
                     come_to_object,
+                    max_to_sample=25,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                    chooser=PHASE1_CHOOSER,
+                ),
+                sampled(
+                    _make_come_down_template(
+                        movee, object_, speaker, ground, immutableset()
+                    ),
                     max_to_sample=25,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER,

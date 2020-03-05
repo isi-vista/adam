@@ -2066,9 +2066,24 @@ _MOVE_MANIPULATOR = ActionDescriptionVariable(THING, properties=[CAN_MANIPULATE_
 
 
 def _make_move_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
+    during_move_self: DuringAction[ActionDescriptionVariable] = DuringAction(
+        objects_to_paths=[(_MOVE_AGENT, SpatialPath(TO, MOVE_GOAL))]
+    )
+    during_move_object: DuringAction[ActionDescriptionVariable] = DuringAction(
+        objects_to_paths=[
+            (_MOVE_AGENT, SpatialPath(TO, MOVE_GOAL)),
+            (_MOVE_THEME, SpatialPath(TO, MOVE_GOAL)),
+        ]
+    )
+    enduring = [
+        partOf(_MOVE_MANIPULATOR, _MOVE_AGENT),
+        contacts(_MOVE_MANIPULATOR, _MOVE_THEME),
+    ]
+
     # bare move - "X moves (of its own accord)"
     yield MOVE, ActionDescription(
         frame=ActionDescriptionFrame({AGENT: _MOVE_AGENT}),
+        during=during_move_self,
         postconditions=[Relation(IN_REGION, _MOVE_AGENT, MOVE_GOAL)],
         asserted_properties=[
             (_MOVE_AGENT, VOLITIONALLY_INVOLVED),
@@ -2080,11 +2095,28 @@ def _make_move_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
     # X moves Y
     yield MOVE, ActionDescription(
         frame=ActionDescriptionFrame({AGENT: _MOVE_AGENT, THEME: _MOVE_THEME}),
-        postconditions=[Relation(IN_REGION, _MOVE_THEME, MOVE_GOAL)],
+        during=during_move_object,
+        enduring_conditions=enduring,
+        postconditions=[
+            Relation(IN_REGION, _MOVE_THEME, MOVE_GOAL),
+            Relation(IN_REGION, _MOVE_AGENT, MOVE_GOAL),
+        ],
         asserted_properties=[
             (_MOVE_AGENT, VOLITIONALLY_INVOLVED),
             (_MOVE_AGENT, CAUSES_CHANGE),
             (_MOVE_THEME, UNDERGOES_CHANGE),
+        ],
+    )
+
+    # X moves to Z
+    yield MOVE, ActionDescription(
+        frame=ActionDescriptionFrame({AGENT: _MOVE_AGENT, GOAL: MOVE_GOAL}),
+        during=during_move_self,
+        postconditions=[Relation(IN_REGION, _MOVE_AGENT, MOVE_GOAL)],
+        asserted_properties=[
+            (_MOVE_AGENT, VOLITIONALLY_INVOLVED),
+            (_MOVE_AGENT, CAUSES_CHANGE),
+            (_MOVE_AGENT, UNDERGOES_CHANGE),
         ],
     )
 
@@ -2094,7 +2126,12 @@ def _make_move_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
         frame=ActionDescriptionFrame(
             {AGENT: _MOVE_AGENT, THEME: _MOVE_THEME, GOAL: MOVE_GOAL}
         ),
-        postconditions=[Relation(IN_REGION, _MOVE_THEME, MOVE_GOAL)],
+        during=during_move_object,
+        enduring_conditions=enduring,
+        postconditions=[
+            Relation(IN_REGION, _MOVE_THEME, MOVE_GOAL),
+            Relation(IN_REGION, _MOVE_AGENT, MOVE_GOAL),
+        ],
         asserted_properties=[
             (_MOVE_AGENT, VOLITIONALLY_INVOLVED),
             (_MOVE_AGENT, CAUSES_CHANGE),
@@ -2108,29 +2145,52 @@ JUMP_INITIAL_SUPPORTER_AUX = ActionDescriptionVariable(THING)
 
 def _make_jump_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
     jump_agent = ActionDescriptionVariable(THING, properties=[ANIMATE])
+    jump_goal = ActionDescriptionVariable(THING)
     jump_ground = ActionDescriptionVariable(GROUND)
 
+    preconditions = (
+        [
+            Relation(
+                IN_REGION,
+                jump_agent,
+                Region(JUMP_INITIAL_SUPPORTER_AUX, distance=EXTERIOR_BUT_IN_CONTACT),
+            )
+        ],
+    )
+
+    asserted_properties = [(jump_agent, VOLITIONALLY_INVOLVED), (jump_agent, MOVES)]
+
+    # bare jump
     yield (
         JUMP,
         ActionDescription(
             frame=ActionDescriptionFrame({AGENT: jump_agent}),
-            preconditions=[
-                Relation(
-                    IN_REGION,
-                    jump_agent,
-                    Region(JUMP_INITIAL_SUPPORTER_AUX, distance=EXTERIOR_BUT_IN_CONTACT),
-                )
-            ],
+            preconditions=preconditions,
             during=DuringAction(
                 objects_to_paths=[
                     (jump_agent, SpatialPath(AWAY_FROM, JUMP_INITIAL_SUPPORTER_AUX)),
                     (jump_agent, SpatialPath(AWAY_FROM, jump_ground)),
                 ]
             ),
-            asserted_properties=[
-                (jump_agent, VOLITIONALLY_INVOLVED),
-                (jump_agent, MOVES),
-            ],
+            asserted_properties=asserted_properties,
+        ),
+    )
+
+    # jump with goal
+    yield (
+        JUMP,
+        ActionDescription(
+            frame=ActionDescriptionFrame({AGENT: jump_agent, GOAL: jump_goal}),
+            preconditions=preconditions,
+            during=DuringAction(
+                objects_to_paths=[
+                    (jump_agent, SpatialPath(AWAY_FROM, JUMP_INITIAL_SUPPORTER_AUX)),
+                    (jump_agent, SpatialPath(AWAY_FROM, jump_ground)),
+                    (jump_agent, SpatialPath(TO, jump_goal)),
+                ]
+            ),
+            postconditions=[Relation(IN_REGION, jump_agent, jump_goal)],
+            asserted_properties=asserted_properties,
         ),
     )
 
@@ -2241,14 +2301,14 @@ GAILA_PHASE_1_SIZE_GRADES: Tuple[Tuple[OntologyNode, ...], ...] = (
     (_TRUCK_CAB,),
     (TABLE, DOOR),
     (_TABLETOP,),
-    (MOM, DAD),
+    (MOM, DAD, PERSON),
     (DOG, BOX, CHAIR, _TIRE),
     (BABY,),
     (_BODY,),
     (_TORSO, _CHAIR_BACK, _CHAIR_SEAT),
     (_ARM, _ANIMAL_LEG, _INANIMATE_LEG),
     (HAND, HEAD, _ARM_SEGMENT, _LEG_SEGMENT, _FOOT),
-    (BALL, BIRD, BOOK, COOKIE, CUP, HAT),
+    (BALL, BIRD, BOOK, COOKIE, CUP, HAT, JUICE, WATER, MILK),
     (_TAIL, _WING),
 )
 

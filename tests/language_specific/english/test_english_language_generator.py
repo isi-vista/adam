@@ -1,5 +1,6 @@
 from typing import Tuple
 
+import pytest
 from more_itertools import only
 
 from adam.axes import HorizontalAxisOfObject, FacingAddresseeAxis, AxesInfo
@@ -49,6 +50,13 @@ from adam.ontology.phase1_ontology import (
     strictly_above,
     JUMP,
     JUMP_INITIAL_SUPPORTER_AUX,
+    DOG,
+    HOLLOW,
+    GO,
+    LEARNER,
+    near,
+    TAKE,
+    CAR,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -64,7 +72,7 @@ from adam.ontology.phase1_spatial_relations import (
 )
 from adam.random_utils import FixedIndexChooser
 from adam.relation import Relation
-from adam.situation import Action
+from adam.situation import Action, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam_test_utils import situation_object
 from tests.sample_situations import make_bird_flies_over_a_house
@@ -447,6 +455,20 @@ def test_i_put_a_cookie_in_dads_box_using_my_as_mom_speaker():
     ).as_token_sequence() == ("I", "put", "a", "cookie", "in", "Dad", "'s", "box")
 
 
+def test_i_have_my_ball():
+    baby = situation_object(BABY, properties=[IS_SPEAKER])
+    ball = situation_object(BALL)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[baby, ball],
+        always_relations=[Relation(HAS, baby, ball)],
+    )
+
+    assert only(
+        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
+    ).as_token_sequence() == ("I", "have", "my", "ball")
+
+
 def test_dad_has_a_cookie():
     dad = situation_object(DAD)
     cookie = situation_object(COOKIE)
@@ -576,6 +598,42 @@ def test_fall_down_syntax_hint():
     assert generated_tokens(situation_with_modifier) == ("a", "ball", "falls", "down")
 
 
+def test_action_with_advmod_and_preposition():
+    mom = situation_object(MOM)
+    chair = situation_object(CHAIR)
+
+    situation_with_advmod_and_preposition = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom, chair],
+        actions=[
+            Action(
+                SIT,
+                argument_roles_to_fillers=[
+                    (AGENT, mom),
+                    (
+                        GOAL,
+                        Region(
+                            chair,
+                            direction=GRAVITATIONAL_UP,
+                            distance=EXTERIOR_BUT_IN_CONTACT,
+                        ),
+                    ),
+                ],
+            )
+        ],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
+    )
+
+    assert generated_tokens(situation_with_advmod_and_preposition) == (
+        "Mom",
+        "sits",
+        "down",
+        "on",
+        "a",
+        "chair",
+    )
+
+
 def test_transfer_of_possession():
     mom = situation_object(MOM)
     baby = situation_object(BABY)
@@ -607,6 +665,34 @@ def test_transfer_of_possession():
                 reference_tokens = ("Mom", verb, "a", "cookie", "to", "a", "baby")
 
             assert generated_tokens(situation) == reference_tokens
+
+
+def test_take_to_car():
+    baby = situation_object(BABY)
+    ball = situation_object(BALL)
+    car = situation_object(CAR)
+
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[baby, ball, car],
+        actions=[
+            Action(
+                action_type=TAKE, argument_roles_to_fillers=[(AGENT, baby), (THEME, ball)]
+            )
+        ],
+        after_action_relations=[near(ball, car)],
+    )
+
+    assert generated_tokens(situation) == (
+        "a",
+        "baby",
+        "takes",
+        "a",
+        "ball",
+        "to",
+        "a",
+        "car",
+    )
 
 
 def test_arguments_same_ontology_type():
@@ -694,6 +780,24 @@ def test_bird_flies_up():
     )
 
     assert generated_tokens(situation) == ("a", "bird", "flies", "up")
+
+
+def test_jump_up():
+    dad = situation_object(DAD)
+    ground = situation_object(GROUND)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[dad],
+        actions=[
+            Action(
+                JUMP,
+                argument_roles_to_fillers=[(AGENT, dad)],
+                auxiliary_variable_bindings=[(JUMP_INITIAL_SUPPORTER_AUX, ground)],
+            )
+        ],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
+    )
+    assert generated_tokens(situation) == ("Dad", "jumps", "up")
 
 
 def test_jumps_over():
@@ -930,6 +1034,168 @@ def test_object_behind_in_front_object():
         ),
     )
     assert generated_tokens(behind_situation) == ("a", "box", "behind", "a", "table")
+
+
+def test_to_regions_as_goal():
+    goal_object = situation_object(BOX, properties=[HOLLOW])
+    assert generated_tokens(
+        region_as_goal_situation(Region(goal_object, distance=PROXIMAL), goal_object)
+    ) == ("a", "dog", "goes", "to", "a", "box")
+
+
+def test_in_region_as_goal():
+    goal_object = situation_object(BOX, properties=[HOLLOW])
+    assert generated_tokens(
+        region_as_goal_situation(Region(goal_object, distance=INTERIOR), goal_object)
+    ) == ("a", "dog", "goes", "in", "a", "box")
+
+
+def test_beside_region_as_goal():
+    goal_object = situation_object(BOX, properties=[HOLLOW])
+    # Beside
+    assert generated_tokens(
+        region_as_goal_situation(
+            Region(
+                goal_object,
+                distance=PROXIMAL,
+                direction=Direction(
+                    positive=True,
+                    relative_to_axis=HorizontalAxisOfObject(goal_object, index=0),
+                ),
+            ),
+            goal_object,
+        )
+    ) == ("a", "dog", "goes", "beside", "a", "box")
+
+    # Beside
+    assert generated_tokens(
+        region_as_goal_situation(
+            Region(
+                goal_object,
+                distance=PROXIMAL,
+                direction=Direction(
+                    positive=False,
+                    relative_to_axis=HorizontalAxisOfObject(goal_object, index=0),
+                ),
+            ),
+            goal_object,
+        )
+    ) == ("a", "dog", "goes", "beside", "a", "box")
+
+
+def test_behind_region_as_goal():
+    goal_object = situation_object(BOX, properties=[HOLLOW])
+    # Behind
+    assert generated_tokens(
+        region_as_goal_situation(
+            Region(
+                goal_object,
+                distance=PROXIMAL,
+                direction=Direction(
+                    positive=False, relative_to_axis=FacingAddresseeAxis(goal_object)
+                ),
+            ),
+            goal_object,
+        )
+    ) == ("a", "dog", "goes", "behind", "a", "box")
+
+
+def test_in_front_of_region_as_goal():
+    # In front of
+    goal_object = situation_object(BOX, properties=[HOLLOW])
+    assert generated_tokens(
+        region_as_goal_situation(
+            Region(
+                goal_object,
+                distance=PROXIMAL,
+                direction=Direction(
+                    positive=True, relative_to_axis=FacingAddresseeAxis(goal_object)
+                ),
+            ),
+            goal_object,
+        )
+    ) == ("a", "dog", "goes", "in front of", "a", "box")
+
+
+def test_over_region_as_goal():
+    goal_object = situation_object(TABLE)
+    # Over
+    assert generated_tokens(
+        region_as_goal_situation(
+            Region(goal_object, distance=PROXIMAL, direction=GRAVITATIONAL_UP),
+            goal_object,
+        )
+    ) == ("a", "dog", "goes", "over", "a", "table")
+
+
+def test_under_region_as_goal():
+    goal_object = situation_object(TABLE)
+    # Over
+    assert generated_tokens(
+        region_as_goal_situation(
+            Region(goal_object, distance=PROXIMAL, direction=GRAVITATIONAL_DOWN),
+            goal_object,
+        )
+    ) == ("a", "dog", "goes", "under", "a", "table")
+
+
+def test_region_with_out_addressee():
+    agent = situation_object(DOG)
+    goal_object = situation_object(BOX, properties=[HOLLOW])
+    with pytest.raises(RuntimeError):
+        generated_tokens(
+            HighLevelSemanticsSituation(
+                ontology=GAILA_PHASE_1_ONTOLOGY,
+                salient_objects=[agent, goal_object],
+                actions=[
+                    Action(
+                        GO,
+                        argument_roles_to_fillers=[
+                            (AGENT, agent),
+                            (
+                                GOAL,
+                                Region(
+                                    goal_object,
+                                    distance=PROXIMAL,
+                                    direction=Direction(
+                                        positive=True,
+                                        relative_to_axis=FacingAddresseeAxis(goal_object),
+                                    ),
+                                ),
+                            ),
+                        ],
+                    )
+                ],
+            )
+        )
+
+
+def region_as_goal_situation(
+    goal: Region[SituationObject], goal_object: SituationObject
+) -> HighLevelSemanticsSituation:
+    agent = situation_object(DOG)
+    learner = situation_object(LEARNER, properties=[IS_ADDRESSEE])
+
+    return HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[agent, goal_object],
+        other_objects=[learner],
+        actions=[Action(GO, argument_roles_to_fillers=[(AGENT, agent), (GOAL, goal)])],
+        axis_info=AxesInfo(
+            addressee=learner,
+            axes_facing=[
+                (
+                    learner,
+                    # TODO: fix this hack
+                    HorizontalAxisOfObject(obj, index=1).to_concrete_axis(  # type: ignore
+                        None
+                    ),
+                )
+                for obj in [agent, goal_object, learner]
+                if obj.axes
+            ],
+        ),
+    )
 
 
 def generated_tokens(situation):

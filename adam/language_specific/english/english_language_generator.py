@@ -8,7 +8,7 @@ from immutablecollections import ImmutableSet, immutableset, immutablesetmultidi
 from more_itertools import first, only
 from networkx import DiGraph
 
-from adam.axes import FacingAddresseeAxis
+from adam.axes import FacingAddresseeAxis, GRAVITATIONAL_DOWN_TO_UP_AXIS
 from adam.language.dependency import (
     DependencyRole,
     DependencyTree,
@@ -61,7 +61,9 @@ from adam.ontology.phase1_ontology import (
     HAS,
     LEARNER,
     PATIENT,
+    SIT,
     THEME,
+    JUMP,
 )
 from adam.ontology.phase1_spatial_relations import (
     EXTERIOR_BUT_IN_CONTACT,
@@ -70,6 +72,7 @@ from adam.ontology.phase1_spatial_relations import (
     PROXIMAL,
     Region,
     TOWARD,
+    GRAVITATIONAL_UP,
 )
 from adam.random_utils import SequenceChooser
 from adam.relation import Relation
@@ -225,12 +228,28 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     f"Don't know how to handle objects which don't correspond to "
                     f"an ontology node currently: {_object}"
                 )
-            # TODO: we don't currently translate modifiers of nouns.
-            # Issue: https://github.com/isi-vista/adam/issues/58
 
             # Check if the situation object is the speaker
             if IS_SPEAKER in _object.properties:
                 if syntactic_role_if_known == NOMINAL_SUBJECT:
+                    noun_lexicon_entry = I
+                # For when HAS (which is a RELATION) is the verb and the speaker is the subject.
+                # (This Special case is needed because HAS is a RELATION and not an ACTION in the
+                # ontology, so HAS is never recognized as the NOMINAL_SUBJECT as this
+                # determination normally occurs in translate_action_to_verb(), which only
+                # processes ACTIONs)
+                elif any(
+                    relation
+                    for relation in self.situation.always_relations
+                    if (
+                        relation.relation_type == HAS
+                        and any(
+                            property_ in relation.first_slot.properties
+                            for property_ in [IS_SPEAKER]
+                        )
+                        and not self.situation.actions
+                    )
+                ):
                     noun_lexicon_entry = I
                 else:
                     noun_lexicon_entry = ME
@@ -606,8 +625,41 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 # TODO: put constraints on the axis
             ):
                 return "on"
+            elif region.distance == PROXIMAL and not region.direction:
+                return "to"
+            elif region.direction == GRAVITATIONAL_UP:
+                return "over"
             elif region.direction == GRAVITATIONAL_DOWN:
                 return "under"
+            # region.distance == DISTAL is not check as this does not define a specific preposition in scope for Phase 1
+            elif region.direction and self.situation.axis_info:
+                if not self.situation.axis_info.addressee:
+                    raise RuntimeError(
+                        f"Unable to translate region into a preposition because an addressee is lacking. "
+                        f"Region: {region}\nSituation: {self.situation}"
+                    )
+                # HACK, from M3
+                # see: https://github.com/isi-vista/adam/issues/573
+                if isinstance(region.direction.relative_to_axis, FacingAddresseeAxis):
+                    # "in front of" and "behind" is defined without a distance as you can accurate use the phrase
+                    # regardless of distance example:
+                    # "the teacher is in front of your laptop"
+                    # (Assuming the laptop is near the back of class and the addressee is facing the front of the room)
+                    # "your friend is in front of your laptop"
+                    # (Assuming the friend is one row up in the classroom)
+                    if region.direction.positive:
+                        return "in front of"
+                    else:
+                        return "behind"
+                elif (
+                    region.direction.relative_to_axis != GRAVITATIONAL_DOWN_TO_UP_AXIS
+                    and region.distance == PROXIMAL
+                ):
+                    return "beside"
+                else:
+                    raise RuntimeError(
+                        f"Don't know how to translate {region} to a preposition yet"
+                    )
             else:
                 raise RuntimeError(
                     f"Don't know how to translate {region} to a preposition yet"
@@ -656,10 +708,14 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                             modifiers.append(
                                 (ADVERBIAL_MODIFIER, DependencyTreeToken("up", ADVERB))
                             )
-                elif action.action_type == FALL:
+                elif action.action_type == FALL or action.action_type == SIT:
                     # hack, awaiting https://github.com/isi-vista/adam/issues/239
                     modifiers.append(
                         (ADVERBIAL_MODIFIER, DependencyTreeToken("down", ADVERB))
+                    )
+                elif action.action_type == JUMP:
+                    modifiers.append(
+                        (ADVERBIAL_MODIFIER, DependencyTreeToken("up", ADVERB))
                     )
 
             return modifiers
@@ -730,9 +786,15 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     return None
 
             preposition: Optional[str] = None
+
             if region.distance == INTERIOR:
                 preposition = "in"
+
+            elif region.distance == PROXIMAL and not region.direction:
+                preposition = "to"
+
             elif region.direction:
+
                 direction_axis = region.direction.relative_to_axis.to_concrete_axis(
                     self.situation.axis_info
                 )
@@ -747,6 +809,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                             preposition = "under"
                     else:
                         # TODO: hack for M3; revisit in cleanup
+                        # see: https://github.com/isi-vista/adam/issues/573
                         if isinstance(
                             region.direction.relative_to_axis, FacingAddresseeAxis
                         ):
