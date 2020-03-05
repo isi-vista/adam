@@ -52,14 +52,12 @@ from adam.ontology.phase1_ontology import (
     inside,
     TAKE,
     PUT,
-    has,
     PERSON,
     MOVE,
     contacts,
     SELF_MOVING,
     JUMP_INITIAL_SUPPORTER_AUX,
     CAN_JUMP,
-    strictly_above,
     JUMP,
     FLY,
     CAN_FLY,
@@ -82,6 +80,12 @@ from adam.situation import Action
 from adam.situation.templates.phase1_situation_templates import (
     _fly_over_template,
     _fly_under_template,
+    _jump_over_template,
+    _put_in_template,
+    _put_on_template,
+    _put_on_body_part_template,
+    _go_in_template,
+    _go_under_template,
 )
 from adam.situation.templates.phase1_templates import (
     TemplateObjectVariable,
@@ -304,28 +308,6 @@ def _go_to_template(
     )
 
 
-def _go_in_template(
-    agent: TemplateObjectVariable,
-    goal_object: TemplateObjectVariable,
-    background: Iterable[TemplateObjectVariable],
-) -> Phase1SituationTemplate:
-    return Phase1SituationTemplate(
-        f"go_in-{agent.handle}-in-{goal_object.handle}",
-        salient_object_variables=[agent, goal_object],
-        background_object_variables=background,
-        actions=[
-            Action(
-                GO,
-                argument_roles_to_fillers=[
-                    (AGENT, agent),
-                    (GOAL, Region(goal_object, distance=INTERIOR)),
-                ],
-            )
-        ],
-        constraining_relations=flatten_relations(bigger_than(goal_object, agent)),
-    )
-
-
 def _go_beside_template(
     agent: TemplateObjectVariable,
     goal_object: TemplateObjectVariable,
@@ -395,17 +377,15 @@ def _go_behind_in_front_template(
     )
 
 
-def _go_over_under_template(
+def _go_over_template(
     agent: TemplateObjectVariable,
     goal_object: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
     *,
     is_distal: bool,
-    is_over: bool,
 ) -> Phase1SituationTemplate:
-    handle = "over" if is_over else "under"
     return Phase1SituationTemplate(
-        f"go_{handle}-{agent.handle}-{handle}-{goal_object.handle}",
+        f"go_over-{agent.handle}-over-{goal_object.handle}",
         salient_object_variables=[agent, goal_object],
         background_object_variables=background,
         actions=[
@@ -418,7 +398,7 @@ def _go_over_under_template(
                         Region(
                             goal_object,
                             distance=DISTAL if is_distal else PROXIMAL,
-                            direction=GRAVITATIONAL_UP if is_over else GRAVITATIONAL_DOWN,
+                            direction=GRAVITATIONAL_UP,
                         ),
                     ),
                 ],
@@ -906,100 +886,6 @@ def _fall_in_front_of_behind_template(
 # PUT templates
 
 
-def _put_on_template(
-    agent: TemplateObjectVariable,
-    theme: TemplateObjectVariable,
-    goal_reference: TemplateObjectVariable,
-    background: Iterable[TemplateObjectVariable],
-) -> Phase1SituationTemplate:
-    return Phase1SituationTemplate(
-        f"{agent.handle}-puts-{theme.handle}-on-{goal_reference.handle}",
-        salient_object_variables=[agent, theme, goal_reference],
-        background_object_variables=background,
-        actions=[
-            Action(
-                PUT,
-                argument_roles_to_fillers=[
-                    (AGENT, agent),
-                    (THEME, theme),
-                    (
-                        GOAL,
-                        Region(
-                            goal_reference,
-                            distance=EXTERIOR_BUT_IN_CONTACT,
-                            direction=GRAVITATIONAL_UP,
-                        ),
-                    ),
-                ],
-            )
-        ],
-        constraining_relations=flatten_relations(
-            bigger_than([agent, goal_reference], theme)
-        ),
-    )
-
-
-def _put_on_body_part_template(
-    # X puts Y on body part
-    agent: TemplateObjectVariable,
-    theme: TemplateObjectVariable,
-    goal_reference: TemplateObjectVariable,
-    background: Iterable[TemplateObjectVariable],
-) -> Phase1SituationTemplate:
-    return Phase1SituationTemplate(
-        f"{agent.handle}-puts-{theme.handle}-on-{goal_reference.handle}",
-        salient_object_variables=[agent, theme, goal_reference],
-        background_object_variables=background,
-        actions=[
-            Action(
-                PUT,
-                argument_roles_to_fillers=[
-                    (AGENT, agent),
-                    (THEME, theme),
-                    (
-                        GOAL,
-                        Region(
-                            goal_reference,
-                            distance=EXTERIOR_BUT_IN_CONTACT,
-                            direction=GRAVITATIONAL_UP,
-                        ),
-                    ),
-                ],
-            )
-        ],
-        constraining_relations=flatten_relations(
-            bigger_than([agent, goal_reference], theme)
-        ),
-        asserted_always_relations=flatten_relations(has(agent, goal_reference)),
-    )
-
-
-def _put_in_template(
-    agent: TemplateObjectVariable,
-    theme: TemplateObjectVariable,
-    goal_reference: TemplateObjectVariable,
-    background: Iterable[TemplateObjectVariable],
-) -> Phase1SituationTemplate:
-    return Phase1SituationTemplate(
-        f"{agent.handle}-puts-{theme.handle}-in-{goal_reference.handle}",
-        salient_object_variables=[agent, theme, goal_reference],
-        background_object_variables=background,
-        actions=[
-            Action(
-                PUT,
-                argument_roles_to_fillers=[
-                    (AGENT, agent),
-                    (THEME, theme),
-                    (GOAL, Region(goal_reference, distance=INTERIOR)),
-                ],
-            )
-        ],
-        constraining_relations=flatten_relations(
-            bigger_than([agent, goal_reference], theme)
-        ),
-    )
-
-
 def _put_under_template(
     agent: TemplateObjectVariable,
     theme: TemplateObjectVariable,
@@ -1456,32 +1342,6 @@ def _jump_on_template(
     )
 
 
-def _jump_over_template(
-    # "Mom jumps over a ball"
-    agent: TemplateObjectVariable,
-    object_in_path: TemplateObjectVariable,
-    background: Iterable[TemplateObjectVariable],
-) -> Phase1SituationTemplate:
-    return Phase1SituationTemplate(
-        f"{agent.handle}-jumps-over-{object_in_path.handle}",
-        salient_object_variables=[agent, object_in_path],
-        background_object_variables=background,
-        actions=[
-            Action(
-                JUMP,
-                argument_roles_to_fillers=[(AGENT, agent)],
-                during=DuringAction(
-                    at_some_point=flatten_relations(strictly_above(agent, object_in_path))
-                ),
-                auxiliary_variable_bindings=[
-                    (JUMP_INITIAL_SUPPORTER_AUX, GROUND_OBJECT_TEMPLATE)
-                ],
-            )
-        ],
-        constraining_relations=flatten_relations(bigger_than(agent, object_in_path)),
-    )
-
-
 def _jump_beside_template(
     # "Dad jumps beside a dog"
     agent: TemplateObjectVariable,
@@ -1773,6 +1633,9 @@ def _make_go_with_prepositions(num_samples: int = 5, *, noise_objects: int = 0):
     goal_object_hollow = standard_object(
         "goal_object_hollow", required_properties=[HOLLOW]
     )
+    goal_object_with_space_under = standard_object(
+        "goal_object_with_space_under", required_properties=[HAS_SPACE_UNDER]
+    )
     path_object = standard_object(
         "path_object",
         required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM, HAS_SPACE_UNDER],
@@ -1839,23 +1702,35 @@ def _make_go_with_prepositions(num_samples: int = 5, *, noise_objects: int = 0):
                     for is_behind in BOOL_SET
                 ]
             ),
-            # Over & Under
+            # Over
             flatten(
                 [
                     sampled(
-                        _go_over_under_template(
-                            agent,
-                            goal_object,
-                            background,
-                            is_distal=is_distal,
-                            is_over=is_over,
+                        _go_over_template(
+                            agent, goal_object, background, is_distal=is_distal
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER,
                         max_to_sample=num_samples,
                     )
                     for is_distal in BOOL_SET
-                    for is_over in BOOL_SET
+                ]
+            ),
+            # Under
+            flatten(
+                [
+                    sampled(
+                        _go_under_template(
+                            agent,
+                            goal_object_with_space_under,
+                            background,
+                            is_distal=is_distal,
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER,
+                        max_to_sample=num_samples,
+                    )
+                    for is_distal in BOOL_SET
                 ]
             ),
             # Behind & In Front Of Paths

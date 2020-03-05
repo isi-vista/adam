@@ -60,7 +60,6 @@ from adam.ontology.phase1_ontology import (
     PUSH,
     PUSH_GOAL,
     PUSH_SURFACE_AUX,
-    PUT,
     ROLL,
     ROLLABLE,
     ROLL_SURFACE_AUXILIARY,
@@ -89,9 +88,7 @@ from adam.ontology.phase1_ontology import (
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
     EXTERIOR_BUT_IN_CONTACT,
-    GRAVITATIONAL_DOWN,
     GRAVITATIONAL_UP,
-    INTERIOR,
     PROXIMAL,
     Region,
     SpatialPath,
@@ -110,6 +107,12 @@ from adam.situation.high_level_semantics_situation import HighLevelSemanticsSitu
 from adam.situation.templates.phase1_situation_templates import (
     _fly_under_template,
     _fly_over_template,
+    _jump_over_template,
+    _put_in_template,
+    _put_on_template,
+    _put_on_body_part_template,
+    _go_in_template,
+    _go_under_template,
 )
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
@@ -485,7 +488,6 @@ def _make_object_in_other_object_curriculum() -> Phase1InstanceGroup:
 def _make_fly_curriculum() -> Phase1InstanceGroup:
     bird = standard_object("bird_0", BIRD)
     object_0 = standard_object("object_0", THING)
-    background_object = standard_object("background_object", THING)
     object_with_space_under = standard_object(
         "object_with_space_under", THING, required_properties=[HAS_SPACE_UNDER]
     )
@@ -532,9 +534,7 @@ def _make_fly_curriculum() -> Phase1InstanceGroup:
             flatten(
                 [
                     all_possible(
-                        _fly_under_template(
-                            bird, object_with_space_under, [background_object]
-                        ),
+                        _fly_under_template(bird, object_with_space_under, []),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER,
                     )
@@ -543,7 +543,7 @@ def _make_fly_curriculum() -> Phase1InstanceGroup:
             flatten(
                 [
                     sampled(
-                        _fly_over_template(bird, object_0, [background_object]),
+                        _fly_over_template(bird, object_0, []),
                         max_to_sample=25,
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER,
@@ -692,6 +692,7 @@ def _make_speaker_addressee_curriculum() -> Phase1InstanceGroup:
 
 def _make_jump_curriculum() -> Phase1InstanceGroup:
     jumper = standard_object("jumper_0", THING, required_properties=[CAN_JUMP])
+    jumped_over = standard_object("jumped_over")
 
     def _make_templates() -> Iterable[Phase1SituationTemplate]:
         # "A person jumps"
@@ -716,12 +717,24 @@ def _make_jump_curriculum() -> Phase1InstanceGroup:
     return phase1_instances(
         "jumping",
         chain(
-            *[
-                all_possible(
-                    template, ontology=GAILA_PHASE_1_ONTOLOGY, chooser=PHASE1_CHOOSER
-                )
-                for template in _make_templates()
-            ]
+            flatten(
+                [
+                    all_possible(
+                        template, ontology=GAILA_PHASE_1_ONTOLOGY, chooser=PHASE1_CHOOSER
+                    )
+                    for template in _make_templates()
+                ]
+            ),
+            flatten(
+                [
+                    sampled(
+                        _jump_over_template(jumper, jumped_over, []),
+                        max_to_sample=25,
+                        chooser=PHASE1_CHOOSER,
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                    )
+                ]
+            ),
         ),
     )
 
@@ -729,76 +742,29 @@ def _make_jump_curriculum() -> Phase1InstanceGroup:
 def _make_put_curriculum() -> Phase1InstanceGroup:
     putter = standard_object("putter_0", THING, required_properties=[ANIMATE])
     object_put = standard_object("object_0", required_properties=[INANIMATE])
-
     on_region_object = standard_object(
         "on_region_object", required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
     )
     in_region_object = standard_object("in_region_object", required_properties=[HOLLOW])
-
-    # X puts Y on Z
-    put_on_template = Phase1SituationTemplate(
-        "put-on",
-        salient_object_variables=[putter, object_put, on_region_object],
-        actions=[
-            Action(
-                PUT,
-                argument_roles_to_fillers=[
-                    (AGENT, putter),
-                    (THEME, object_put),
-                    (
-                        GOAL,
-                        Region(
-                            on_region_object,
-                            distance=EXTERIOR_BUT_IN_CONTACT,
-                            direction=GRAVITATIONAL_UP,
-                        ),
-                    ),
-                ],
-            )
-        ],
-        constraining_relations=[
-            bigger_than(on_region_object, object_put),
-            bigger_than(putter, object_put),
-        ],
-    )
-
-    # X puts Y in Z
-    put_in_template = Phase1SituationTemplate(
-        "put-in",
-        salient_object_variables=[putter, object_put, in_region_object],
-        actions=[
-            Action(
-                PUT,
-                argument_roles_to_fillers=[
-                    (AGENT, putter),
-                    (THEME, object_put),
-                    (GOAL, Region(in_region_object, distance=INTERIOR)),
-                ],
-            )
-        ],
-        constraining_relations=[
-            bigger_than(in_region_object, object_put),
-            bigger_than(putter, object_put),
-        ],
-    )
+    put_templates = [
+        _put_on_template(putter, object_put, on_region_object, []),
+        _put_in_template(putter, object_put, in_region_object, []),
+    ]
 
     return phase1_instances(
         "putting",
         chain(
-            *[
-                sampled(
-                    put_on_template,
-                    max_to_sample=25,
-                    chooser=PHASE1_CHOOSER,
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                ),
-                sampled(
-                    put_in_template,
-                    max_to_sample=25,
-                    chooser=PHASE1_CHOOSER,
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                ),
-            ]
+            flatten(
+                [
+                    sampled(
+                        template,
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER,
+                        max_to_sample=25,
+                    )
+                    for template in put_templates
+                ]
+            )
         ),
     )
 
@@ -823,49 +789,22 @@ def _make_put_on_speaker_addressee_body_part_curriculum() -> Phase1InstanceGroup
         required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM, IS_BODY_PART],
     )
 
-    # X puts Y on BodyPart
-    templates = [
-        Phase1SituationTemplate(
-            "put-on-body-part",
-            salient_object_variables=[putter, object_put, body_part_of_putter],
-            actions=[
-                Action(
-                    PUT,
-                    argument_roles_to_fillers=[
-                        (AGENT, putter),
-                        (THEME, object_put),
-                        (
-                            GOAL,
-                            Region(
-                                body_part_of_putter,
-                                distance=EXTERIOR_BUT_IN_CONTACT,
-                                direction=GRAVITATIONAL_UP,
-                            ),
-                        ),
-                    ],
-                )
-            ],
-            constraining_relations=[
-                bigger_than(body_part_of_putter, object_put),
-                bigger_than(putter, object_put),
-            ],
-            asserted_always_relations=[has(putter, body_part_of_putter)],
-        )
-        for putter in [speaker_putter, addressee_putter]
-    ]
-
     return phase1_instances(
         "putting-on-body-part-addressee-speaker",
         chain(
-            *[
-                sampled(
-                    template,
-                    max_to_sample=25,
-                    chooser=PHASE1_CHOOSER,
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                )
-                for template in templates
-            ]
+            flatten(
+                [
+                    sampled(
+                        _put_on_body_part_template(
+                            putter, object_put, body_part_of_putter, []
+                        ),
+                        max_to_sample=25,
+                        chooser=PHASE1_CHOOSER,
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                    )
+                    for putter in [speaker_putter, addressee_putter]
+                ]
+            )
         ),
     )
 
@@ -1153,7 +1092,11 @@ def _make_spin_curriculum() -> Phase1InstanceGroup:
 
 def _make_go_curriculum() -> Phase1InstanceGroup:
     goer = standard_object("goer", THING, required_properties=[ANIMATE])
-    goal_reference = standard_object("go-goal", THING, required_properties=[HOLLOW])
+    goal_reference = standard_object("go-goal", THING)
+    in_goal_reference = standard_object("go-in-goal", THING, required_properties=[HOLLOW])
+    under_goal_reference = standard_object(
+        "go-under-goal", THING, required_properties=[HAS_SPACE_UNDER]
+    )
 
     bare_go = Phase1SituationTemplate(
         "bare-go",
@@ -1169,55 +1112,35 @@ def _make_go_curriculum() -> Phase1InstanceGroup:
         ],
     )
 
-    go_in = Phase1SituationTemplate(
-        "go-in",
-        salient_object_variables=[goer, goal_reference],
-        actions=[
-            Action(
-                GO,
-                argument_roles_to_fillers=[
-                    (AGENT, goer),
-                    (GOAL, Region(goal_reference, distance=INTERIOR)),
-                ],
-            )
-        ],
-        constraining_relations=[bigger_than(goal_reference, goer)],
-    )
-
-    go_under = Phase1SituationTemplate(
-        "go-under",
-        salient_object_variables=[goer, goal_reference],
-        actions=[
-            Action(
-                GO,
-                argument_roles_to_fillers=[
-                    (AGENT, goer),
-                    (
-                        GOAL,
-                        Region(
-                            goal_reference,
-                            distance=PROXIMAL,
-                            direction=GRAVITATIONAL_DOWN,
-                        ),
-                    ),
-                ],
-            )
-        ],
-        constraining_relations=[bigger_than(goal_reference, goer)],
-    )
+    go_in = _go_in_template(goer, in_goal_reference, [])
 
     return phase1_instances(
         "go",
         chain(
-            *[
-                sampled(
-                    situation,
-                    max_to_sample=25,
-                    chooser=PHASE1_CHOOSER,
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                )
-                for situation in (bare_go, go_in, go_under)
-            ]
+            flatten(
+                [
+                    sampled(
+                        situation,
+                        max_to_sample=25,
+                        chooser=PHASE1_CHOOSER,
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                    )
+                    for situation in (bare_go, go_in)
+                ]
+            ),
+            flatten(
+                [
+                    sampled(
+                        _go_under_template(
+                            goer, under_goal_reference, [], is_distal=is_distal
+                        ),
+                        max_to_sample=25,
+                        chooser=PHASE1_CHOOSER,
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                    )
+                    for is_distal in (True, False)
+                ]
+            ),
         ),
     )
 
