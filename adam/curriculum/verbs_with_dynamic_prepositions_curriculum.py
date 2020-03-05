@@ -1620,23 +1620,24 @@ def _fly_beside_template(
     )
 
 
-def _fly_behind_template(
+def _fly_in_front_of_behind_template(
     # "A bird flies (along) behind a truck"
     agent: TemplateObjectVariable,
     object_passed: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
     *,
     is_distal: bool,
+    is_in_front: bool,
 ) -> Phase1SituationTemplate:
     object_region = Region(
         object_passed,
         distance=DISTAL if is_distal else PROXIMAL,
         direction=Direction(
-            positive=False, relative_to_axis=FacingAddresseeAxis(object_passed)
+            positive=is_in_front, relative_to_axis=FacingAddresseeAxis(object_passed)
         ),
     )
     return Phase1SituationTemplate(
-        f"{agent.handle}-flies-behind-{object_passed.handle}",
+        f"{agent.handle}-flies-in-front-of-behind-{object_passed.handle}",
         salient_object_variables=[agent, object_passed],
         background_object_variables=background,
         actions=[
@@ -2645,18 +2646,23 @@ def _make_fly_with_prepositions(
                     for is_right in BOOL_SET
                 ]
             ),
-            # behind
+            # in front of, behind
             flatten(
                 [
                     sampled(
-                        _fly_behind_template(
-                            agent, goal_reference, background, is_distal=is_distal
+                        _fly_in_front_of_behind_template(
+                            agent,
+                            goal_reference,
+                            background,
+                            is_distal=is_distal,
+                            is_in_front=is_in_front,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER,
                         max_to_sample=num_samples,
                     )
                     for is_distal in BOOL_SET
+                    for is_in_front in BOOL_SET
                 ]
             ),
             # over
