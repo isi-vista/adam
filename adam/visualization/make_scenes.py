@@ -177,7 +177,7 @@ def main(params: Parameters) -> None:
                     # make sure this is a sub-object
                     if child.hasMat() and child.parent.name != node_name:
                         # child has non-identity transformation matrix applied to it (transform differs from parent)
-                        # TODO: we could re-export all of the models in such a way to elimainate this extra layer
+                        # TODO: we could re-export all of the models in such a way to eliminate this extra layer
                         #       in the scene graph
                         child_node_to_offset[child.parent.name] = child.get_pos()
                 recurse_list = next_batch

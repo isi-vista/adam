@@ -731,11 +731,13 @@ class WeakGravityPenalty(nn.Module):  # type: ignore
     # TODO: exempt birds from this constraint https://github.com/isi-vista/adam/issues/485
 
     def __init__(
+
         self,
         object_perception_to_bounding_box: Mapping[
             ObjectPerception, AxisAlignedBoundingBox
         ],
         in_region_relations: Mapping[ObjectPerception, List[Region[ObjectPerception]]],
+
     ) -> None:  # pylint: disable=useless-super-delegation
         super().__init__()
         self.object_perception_to_bounding_box = object_perception_to_bounding_box
@@ -754,6 +756,7 @@ class WeakGravityPenalty(nn.Module):  # type: ignore
 
         if self.ground_region not in designated_regions:
             return 0.0
+
         distance_above_ground = bounding_box.z_coordinate_of_lowest_corner()
         if distance_above_ground <= 0:
             return 0.0
