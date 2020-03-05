@@ -2181,7 +2181,6 @@ def _make_take_with_prepositions(
                     chooser=PHASE1_CHOOSER,
                     max_to_sample=num_samples,
                 )
-                for is_distal in BOOL_SET
             ]
         ),
     )
