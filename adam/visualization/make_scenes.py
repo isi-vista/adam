@@ -36,7 +36,9 @@ from immutablecollections import ImmutableSet, immutableset
 
 # consider refactoring away this dependency
 from panda3d.core import NodePath  # pylint: disable=no-name-in-module
+from panda3d.core import LPoint3f  # pylint: disable=no-name-in-module
 
+from adam.math_3d import Point
 from adam.language.dependency import LinearizedDependencyTree
 
 from adam.experiment import InstanceGroup
@@ -84,6 +86,7 @@ class SceneNode:
     perceived_obj: ObjectPerception = attr.ib()
     children: List["SceneNode"] = attr.ib(factory=list)
     parent: "SceneNode" = attr.ib(default=None)
+    position: Point = attr.ib(default=Point(0, 0, 0))
 
 
 def main(params: Parameters) -> None:
@@ -155,6 +158,32 @@ def main(params: Parameters) -> None:
                     top_level_node.perceived_obj
                 ] = scene_elements.in_region_map[top_level_node.perceived_obj]
 
+        print(inter_object_in_region_map)
+
+        # we want to assemble a lookup of the offsets (position) of each object's subobjects.
+        sub_object_offsets = {}
+
+        for node_name, node in viz.geo_nodes.items():
+            child_node_to_offset = {}
+
+            recurse_list: List[NodePath] = node.children
+            while recurse_list:
+                next_batch: List[NodePath] = []
+                for child in recurse_list:
+                    print(
+                        f"{child.name}: {child.get_pos(viz.render)}, has transformation matrix applied: {child.hasMat()}"
+                    )
+                    next_batch += child.children
+                    # make sure this is a sub-object
+                    if child.hasMat() and child.parent.name != node_name:
+                        # child has non-identity transformation matrix applied to it (transform differs from parent)
+                        # TODO: we could re-export all of the models in such a way to elimainate this extra layer
+                        #       in the scene graph
+                        child_node_to_offset[child.parent.name] = child.get_pos()
+                recurse_list = next_batch
+
+            sub_object_offsets[node_name] = child_node_to_offset
+
         # for debugging purposes to view the results before positioning:
         viz.run_for_seconds(1)
         command = input(
@@ -172,15 +201,16 @@ def main(params: Parameters) -> None:
         # they need to be re-positioned.
 
         for repositioned_map in _solve_top_level_positions(
-            immutableset(
+            top_level_objects=immutableset(
                 [
                     node.perceived_obj
                     for node in scene_elements.object_graph
                     if node.name not in OBJECT_NAMES_TO_EXCLUDE
                 ]
             ),
-            inter_object_in_region_map,
-            model_scales,
+            sub_object_offsets=sub_object_offsets,
+            in_region_map=inter_object_in_region_map,
+            model_scales=model_scales,
             iterations=num_iterations,
             yield_steps=steps_before_vis,
         ):
@@ -495,7 +525,9 @@ class SceneCreator:
 
 # TODO: scale of top-level bounding boxes is weird because it needs to encompass all sub-objects
 def _solve_top_level_positions(
+    *,
     top_level_objects: ImmutableSet[ObjectPerception],
+    sub_object_offsets: Mapping[str, Mapping[str, LPoint3f]],
     in_region_map: DefaultDict[ObjectPerception, List[Region[ObjectPerception]]],
     model_scales: Mapping[str, Tuple[float, float, float]],
     iterations: int = 200,
@@ -515,6 +547,7 @@ def _solve_top_level_positions(
 
     return run_model(
         top_level_objects,
+        sub_object_offsets,
         in_region_map,
         model_scales,
         num_iterations=iterations,

@@ -52,7 +52,7 @@ def test_running_model() -> None:
         "box": (1.0, 1.0, 1.0),
         "ball": (2.0, 1.0, 1.0),
     }
-    run_model(objs, relations, scales, num_iterations=10, yield_steps=10)
+    run_model(objs, {}, relations, scales, num_iterations=10, yield_steps=10)
 
 
 def test_collision_constraint() -> None:
