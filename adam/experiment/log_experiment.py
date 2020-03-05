@@ -2,6 +2,7 @@ import logging
 from itertools import repeat
 from typing import Callable, Optional
 
+from adam.language_specific.english import ENGLISH_DETERMINERS
 from vistautils.parameters import Parameters
 from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 
@@ -75,7 +76,7 @@ def learner_factory_from_params(
             graph_logger=graph_logger,
             # Eval hack! This is specific to the M6 ontology
             object_recognizer=ObjectRecognizer.for_ontology_types(
-                M6_PREPOSITION_CURRICULUM_OBJECTS
+                M6_PREPOSITION_CURRICULUM_OBJECTS, determiners=ENGLISH_DETERMINERS
             ),
             ontology=GAILA_PHASE_1_ONTOLOGY,
         )

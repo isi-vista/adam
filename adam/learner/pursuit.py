@@ -36,7 +36,7 @@ from adam.learner import (
     graph_without_learner,
 )
 from adam.learner.object_recognizer import ObjectRecognizer
-from adam.learner.preposition_pattern import PrepositionPattern, _MODIFIED, _GROUND
+from adam.learner.preposition_pattern import PrepositionPattern, MODIFIED, GROUND
 from adam.learner.preposition_subset import PrepositionSurfaceTemplate
 from adam.learner.verb_pattern import VerbPattern, _AGENT, _PATIENT, VerbSurfaceTemplate
 from adam.ontology.ontology import Ontology
@@ -945,9 +945,8 @@ class PrepositionPursuitLearner(
         )
 
         # Convert the observed perception to a version with recognized objects
-        recognized_object_perception = object_recognizer.match_objects(
-            original_perception
-        )
+        object_recognition_result = object_recognizer.match_objects(original_perception)
+        recognized_object_perception = object_recognition_result.perception_graph
 
         # Get the match nodes and their word indices
         object_match_nodes = []
@@ -1002,8 +1001,8 @@ class PrepositionPursuitLearner(
         # for learning, we need to represent this in a way which abstracts
         # from the particular modified and ground word.
         preposition_surface_template_mutable = list(prepositional_phrase_tokens)
-        preposition_surface_template_mutable[0] = _MODIFIED
-        preposition_surface_template_mutable[-1] = _GROUND
+        preposition_surface_template_mutable[0] = MODIFIED
+        preposition_surface_template_mutable[-1] = GROUND
         # TODO: Remove this hard coded insert of an article
         # see: https://github.com/isi-vista/adam/issues/434
         preposition_surface_template_mutable.insert(0, "a")
@@ -1017,8 +1016,8 @@ class PrepositionPursuitLearner(
         # This is the template_variables_to_object_match_nodes of sentence locations to pattern nodes
         self.template_variables_to_object_match_nodes = immutableset(
             [
-                (_MODIFIED, object_match_node_for_modified),
-                (_GROUND, object_match_node_for_ground),
+                (MODIFIED, object_match_node_for_modified),
+                (GROUND, object_match_node_for_ground),
             ]
         )
 
@@ -1188,7 +1187,7 @@ class PrepositionPursuitLearner(
         if hypothesis_pattern_common_subgraph:
             partial_hypothesis: Optional[PrepositionPattern] = PrepositionPattern(
                 graph_pattern=hypothesis_pattern_common_subgraph,
-                object_variable_name_to_pattern_node=hypothesis.object_variable_name_to_pattern_node,
+                object_variable_name_to_pattern_node=hypothesis.template_variable_to_pattern_node,
             )
         else:
             partial_hypothesis = None
@@ -1215,8 +1214,8 @@ class PrepositionPursuitLearner(
         self, h: PrepositionPattern, hypothesis: PrepositionPattern
     ) -> bool:
         # Check mapping equality of preposition patterns
-        first_mapping = h.object_variable_name_to_pattern_node
-        second_mapping = hypothesis.object_variable_name_to_pattern_node
+        first_mapping = h.template_variable_to_pattern_node
+        second_mapping = hypothesis.template_variable_to_pattern_node
         are_equal_mappings = len(first_mapping) == len(second_mapping) and all(
             k in second_mapping and second_mapping[k].is_equivalent(v)
             for k, v in first_mapping.items()

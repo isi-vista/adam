@@ -77,6 +77,7 @@ from immutablecollections.converter_utils import (
 from vistautils.misc_utils import str_list_limited
 from vistautils.preconditions import check_arg
 from vistautils.range import Range
+from vistautils.span import Span
 
 
 class Incrementer:
@@ -2438,19 +2439,21 @@ class GraphLogger:
 
 @attrs(frozen=True)
 class LanguageAlignedPerception:
+    """
+    Represents an alignment between a `PerceptionGraph` and a `TokensSequenceLinguisticDescription`.
+
+    This can be generified in the future.
+    """
+
     language: TokenSequenceLinguisticDescription = attrib(
         validator=instance_of(TokenSequenceLinguisticDescription)
     )
     perception_graph: PerceptionGraph = attrib(validator=instance_of(PerceptionGraph))
-    node_to_language_span: ImmutableDict[
-        PerceptionGraphNode, TokenSequenceLinguisticDescription.Span
-    ] = attrib(converter=_to_immutabledict)
-    language_span_to_node: ImmutableDict[
-        TokenSequenceLinguisticDescription.Span, PerceptionGraphNode
-    ] = attrib(init=False)
+    node_to_language_span: ImmutableDict[MatchedObjectNode, Span] = attrib(
+        converter=_to_immutabledict
+    )
+    language_span_to_node: ImmutableDict[Span, PerceptionGraphNode] = attrib(init=False)
 
     @language_span_to_node.default
-    def _init_language_span_to_node(
-        self
-    ) -> ImmutableDict[PerceptionGraphNode, TokenSequenceLinguisticDescription.Span]:
+    def _init_language_span_to_node(self) -> ImmutableDict[PerceptionGraphNode, Span]:
         return immutabledict((v, k) for (k, v) in self.node_to_language_span.items())

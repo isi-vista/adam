@@ -1,10 +1,12 @@
 import logging
 from itertools import chain
-from typing import Iterable, List, Mapping, Tuple
+from typing import Iterable, List, Mapping, Tuple, Set
 
-from attr.validators import deep_mapping, instance_of
+from attr.validators import deep_mapping, instance_of, deep_iterable
+
+from adam.language import TokenSequenceLinguisticDescription
 from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
-from immutablecollections.converter_utils import _to_immutabledict
+from immutablecollections.converter_utils import _to_immutabledict, _to_immutableset
 from more_itertools import first
 from networkx import DiGraph
 
@@ -21,8 +23,10 @@ from adam.perception.perception_graph import (
     PerceptionGraphPattern,
     PerceptionGraphPatternMatch,
     RelationTypeIsPredicate,
+    LanguageAlignedPerception,
 )
 from attr import attrib, attrs
+from vistautils.span import Span
 
 _LIST_OF_PERCEIVED_PATTERNS = immutableset(
     (
@@ -70,9 +74,30 @@ class ObjectRecognizer:
     object_names_to_patterns: Mapping[str, PerceptionGraphPattern] = attrib(
         validator=deep_mapping(instance_of(str), instance_of(PerceptionGraphPattern))
     )
+    determiners: ImmutableSet[str] = attrib(
+        converter=_to_immutableset, validator=deep_iterable(instance_of(str))
+    )
+    """
+    This is a hack to handle determiners.
+    See https://github.com/isi-vista/adam/issues/498
+    """
+
+    def __attrs_post_init__(self) -> None:
+        non_lowercase_determiners = [
+            determiner
+            for determiner in self.determiners
+            if determiner.lower() != determiner
+        ]
+        if non_lowercase_determiners:
+            raise RuntimeError(
+                f"All determiners must be specified in lowercase, but got "
+                f"{non_lowercase_determiners}"
+            )
 
     @staticmethod
-    def for_ontology_types(ontology_types: Iterable[OntologyNode]) -> "ObjectRecognizer":
+    def for_ontology_types(
+        ontology_types: Iterable[OntologyNode], determiners: Iterable[str]
+    ) -> "ObjectRecognizer":
         return ObjectRecognizer(
             object_names_to_patterns=immutabledict(
                 (
@@ -82,19 +107,29 @@ class ObjectRecognizer:
                     ),
                 )
                 for obj_type in ontology_types
-            )
+            ),
+            determiners=determiners,
         )
 
     def match_objects(
-        self, perception_graph: PerceptionGraph
-    ) -> PerceptionGraphFromObjectRecognizer:
+        self, language_aligned_perception: LanguageAlignedPerception
+    ) -> LanguageAlignedPerception:
         """
-        Match object patterns to objects in the scenes, then add a node for the matched object and copy relationships
-        to it. These new patterns can be used to determine static prepositional relationships.
+        Recognize known objects in a `LanguageAlignedPerception`.
+
+        For each node matched, this will identify the relevant portion of the linguistic input
+        and record the correspondence.
+
+        The matched portion of the graph will be replaced with an `MatchedObjectNode`
+        which will inherit all relationships of any nodes internal to the matched portion
+        with any external nodes.
+
+        This is useful as a pre-processing step
+        before prepositional and verbal learning experiments.
         """
         matched_object_nodes: List[Tuple[str, MatchedObjectNode]] = []
-        graph_to_return = perception_graph.copy_as_digraph()
-        is_dynamic = perception_graph.dynamic
+        graph_to_return = language_aligned_perception.perception_graph.copy_as_digraph()
+        is_dynamic = language_aligned_perception.perception_graph.dynamic
         for (description, pattern) in self.object_names_to_patterns.items():
             matcher = pattern.matcher(
                 PerceptionGraph(graph_to_return, is_dynamic), matching_objects=True
@@ -113,11 +148,18 @@ class ObjectRecognizer:
                 pattern_match = first(matcher.matches(use_lookahead_pruning=True), None)
         if matched_object_nodes:
             logging.info(
-                "Object recognizer recognized: %s", [x[0] for x in matched_object_nodes]
+                "Object recognizer recognized: %s",
+                [description for (description, _) in matched_object_nodes],
             )
-        return PerceptionGraphFromObjectRecognizer(
-            perception_graph=PerceptionGraph(graph=graph_to_return, dynamic=is_dynamic),
-            description_to_matched_object_node=immutabledict(matched_object_nodes),
+        return LanguageAlignedPerception(
+            language=language_aligned_perception.language,
+            perception_graph=PerceptionGraph(
+                graph=graph_to_return,
+                dynamic=language_aligned_perception.perception_graph.dynamic,
+            ),
+            node_to_language_span=self._align_objects_to_tokens(
+                immutabledict(matched_object_nodes), language_aligned_perception.language
+            ),
         )
 
     def _replace_match_with_object_graph_node(
@@ -215,3 +257,44 @@ class ObjectRecognizer:
             for matched_node in matched_subgraph_nodes
             if matched_node not in SHARED_WORLD_ITEMS
         )
+
+    def _align_objects_to_tokens(
+        self,
+        description_to_object_node: Mapping[str, MatchedObjectNode],
+        language: TokenSequenceLinguisticDescription,
+    ) -> Mapping[MatchedObjectNode, Span]:
+        result: List[Tuple[MatchedObjectNode, Span]] = []
+
+        # We want to ban the same token index from being aligned twice.
+        matched_token_indices: Set[int] = set()
+
+        for (description, object_node) in description_to_object_node.items():
+            try:
+                end_index = language.index(description)
+            except IndexError:
+                raise RuntimeError(
+                    f"Name of recognized object ({description}) not found in "
+                    f"{language.as_token_string()}"
+                )
+
+            start_index = end_index
+            # This is a somewhat language-dependent hack to gobble up preceding determiners.
+            # See https://github.com/isi-vista/adam/issues/498 .
+            if end_index > 0:
+                possible_determiner_index = end_index - 1
+                if language[possible_determiner_index].lower() in self.determiners:
+                    start_index = possible_determiner_index
+
+            # We record what tokens were covered so we can block the same tokens being used twice.
+            for included_token_index in range(start_index, end_index + 1):
+                if included_token_index in matched_token_indices:
+                    raise RuntimeError(
+                        "We do not currently support the same object "
+                        "being mentioned twice in a sentence."
+                    )
+                matched_token_indices.add(included_token_index)
+
+            result.append(
+                (object_node, language.span(start_index, end_index_exclusive=end_index))
+            )
+        return immutabledict(result)

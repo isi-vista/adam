@@ -5,14 +5,10 @@ from immutablecollections import ImmutableSet, immutabledict, immutableset
 from more_itertools import flatten
 from networkx import all_shortest_paths, DiGraph
 
-from adam.language import (
-    LinguisticDescription,
-    LinguisticDescriptionT,
-    TokenSequenceLinguisticDescription,
-)
+from adam.language import LinguisticDescription, TokenSequenceLinguisticDescription
 from adam.learner import LanguageLearner, LearningExample
 from adam.learner.object_recognizer import ObjectRecognizer
-from adam.learner.preposition_pattern import PrepositionPattern, _GROUND, _MODIFIED
+from adam.learner.preposition_pattern import PrepositionPattern, GROUND, MODIFIED
 from adam.ontology.ontology import Ontology
 from adam.perception import PerceptionT, PerceptualRepresentation, ObjectPerception
 from adam.perception.developmental_primitive_perception import (
@@ -26,6 +22,7 @@ from adam.perception.perception_graph import (
     MatchedObjectNode,
     _graph_node_order,
     GraphLogger,
+    LanguageAlignedPerception,
 )
 from attr import Factory, attrib, attrs
 
@@ -42,8 +39,7 @@ a preposition may be used with. For example, "MODIFIED on a GROUND".
 
 @attrs
 class PrepositionSubsetLanguageLearner(
-    Generic[PerceptionT, LinguisticDescriptionT],
-    LanguageLearner[PerceptionT, LinguisticDescription],
+    Generic[PerceptionT], LanguageLearner[PerceptionT, TokenSequenceLinguisticDescription]
 ):
     _surface_template_to_preposition_pattern: Dict[
         PrepositionSurfaceTemplate, PrepositionPattern
@@ -64,7 +60,10 @@ class PrepositionSubsetLanguageLearner(
                     doc.write("\t" + str(edge) + "\n")
 
     def observe(
-        self, learning_example: LearningExample[PerceptionT, LinguisticDescription]
+        self,
+        learning_example: LearningExample[
+            PerceptionT, TokenSequenceLinguisticDescription
+        ],
     ) -> None:
         perception = learning_example.perception
         if len(perception.frames) != 1:
@@ -82,53 +81,55 @@ class PrepositionSubsetLanguageLearner(
                 learning_example.linguistic_description,
             )
 
-        observed_linguistic_description = (
-            learning_example.linguistic_description.as_token_sequence()
-        )
-
         # DEBUG
         self._print(
             original_perception.copy_as_digraph(),
-            " ".join(observed_linguistic_description),
+            learning_example.linguistic_description.as_token_string(),
         )
 
-        recognized_object_perception = self._object_recognizer.match_objects(
-            original_perception
+        post_recognition_object_perception_alignment = self._object_recognizer.match_objects(
+            LanguageAlignedPerception(
+                language=learning_example.linguistic_description,
+                perception_graph=original_perception,
+                node_to_language_span=immutabledict(),
+            )
         )
 
         if self._graph_logger:
             self._graph_logger.log_graph(
-                recognized_object_perception.perception_graph,
+                post_recognition_object_perception_alignment.perception_graph,
                 logging.INFO,
                 "Perception post-object-recognition",
             )
 
-        object_match_nodes = []
-        token_indices_of_matched_object_words = []
+        num_matched_objects = len(
+            post_recognition_object_perception_alignment.node_to_language_span
+        )
+        if num_matched_objects != 2:
+            raise RuntimeError(
+                f"Learning a preposition with more than two recognized objects "
+                f"is not currently supported. Found {num_matched_objects} for "
+                f"{learning_example.linguistic_description}."
+            )
 
-        # DEBUG
-        self._print(
-            recognized_object_perception.perception_graph.copy_as_digraph(),
-            "Recognized Perception",
+        sorted_object_nodes = tuple(
+            sorted(
+                post_recognition_object_perception_alignment.node_to_language_span.keys(),
+                key=lambda match_node: post_recognition_object_perception_alignment.node_to_language_span[
+                    match_node
+                ],
+            )
         )
 
-        for (idx, token) in enumerate(observed_linguistic_description):
-            if (
-                token
-                in recognized_object_perception.description_to_matched_object_node.keys()
-            ):
-                logging.info("Aligned word %s to a recognized object", token)
-                token_indices_of_matched_object_words.append(idx)
-                object_match_nodes.append(
-                    recognized_object_perception.description_to_matched_object_node[token]
-                )
+        # We represent prepositions as regex-like templates over the surface strings.
+        # As an English-specific hack, the leftmost recognized object
+        # is always taken to be the object modified, and the right one the ground.
+        template_variable_to_object_match_node = immutabledict(
+            [(MODIFIED, sorted_object_nodes[0]), (GROUND, sorted_object_nodes[1])]
+        )
 
-        if len(object_match_nodes) != 2:
-            raise RuntimeError(
-                f"Learning a preposition with more than two recognized objects is not currently supported. "
-                f"Found {len(object_match_nodes)} from {recognized_object_perception.description_to_matched_object_node.keys()} and "
-                f"{observed_linguistic_description}."
-            )
+        # Use this to create a SurfaceTemplate = Observation
+        # From this create a Preposition pattern = Hypothesis
 
         # If we have to reorder the bounds so that the smallest number is first we want the nodes to match ordering
         (  # pylint:disable=unbalanced-tuple-unpacking
@@ -160,8 +161,8 @@ class PrepositionSubsetLanguageLearner(
         # for learning, we need to represent this in a way which abstracts
         # from the particular modified and ground word.
         preposition_surface_template_mutable = list(prepositional_phrase_tokens)
-        preposition_surface_template_mutable[0] = _MODIFIED
-        preposition_surface_template_mutable[-1] = _GROUND
+        preposition_surface_template_mutable[0] = MODIFIED
+        preposition_surface_template_mutable[-1] = GROUND
         # TODO: Remove this hard coded insert of an article
         # see: https://github.com/isi-vista/adam/issues/434
         preposition_surface_template_mutable.insert(0, "a")
@@ -175,8 +176,8 @@ class PrepositionSubsetLanguageLearner(
             Tuple[str, Any]
         ] = immutableset(
             [
-                (_MODIFIED, object_match_node_for_modified),
-                (_GROUND, object_match_node_for_ground),
+                (MODIFIED, object_match_node_for_modified),
+                (GROUND, object_match_node_for_ground),
             ]
         )
 
@@ -348,7 +349,7 @@ class PrepositionSubsetLanguageLearner(
 
     def describe(
         self, perception: PerceptualRepresentation[PerceptionT]
-    ) -> Mapping[LinguisticDescription, float]:
+    ) -> Mapping[TokenSequenceLinguisticDescription, float]:
         if len(perception.frames) != 1:
             raise RuntimeError("Subset learner can only handle single frames for now")
         if isinstance(perception.frames[0], DevelopmentalPrimitivePerceptionFrame):
@@ -361,7 +362,7 @@ class PrepositionSubsetLanguageLearner(
 
         recognized_object_perception = self._object_recognizer.match_objects(
             original_perception
-        )
+        ).perception_graph
 
         # DEBGU
         self._print(

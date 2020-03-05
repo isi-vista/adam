@@ -1,5 +1,6 @@
 from typing import Mapping
 
+from adam.language_specific.english import ENGLISH_DETERMINERS
 from immutablecollections import immutableset, immutabledict
 from more_itertools import first
 
@@ -48,7 +49,7 @@ _TEST_OBJECTS: Mapping[str, PerceptionGraphPattern] = immutabledict(
     in GAILA_PHASE_1_ONTOLOGY._structural_schemata.keys()  # pylint:disable=protected-access
 )
 
-OBJECT_RECOGNIZER = ObjectRecognizer(_TEST_OBJECTS)
+OBJECT_RECOGNIZER = ObjectRecognizer(_TEST_OBJECTS, determiners=ENGLISH_DETERMINERS)
 
 
 def test_subset_preposition_on_learner():

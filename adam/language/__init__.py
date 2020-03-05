@@ -2,12 +2,12 @@ r"""
 Representations of the linguistic input and outputs of a `LanguageLearner`\ .
 """
 from abc import ABC, abstractmethod
-from typing import Tuple, TypeVar
+from typing import Tuple, TypeVar, Sequence, Sized
 
 from attr import attrib, attrs
 from attr.validators import instance_of
 
-from vistautils.preconditions import check_arg
+from vistautils.span import Span
 
 
 class LinguisticDescription(ABC):
@@ -38,7 +38,7 @@ LinguisticDescriptionT = TypeVar("LinguisticDescriptionT", bound=LinguisticDescr
 
 
 @attrs(frozen=True)
-class TokenSequenceLinguisticDescription(LinguisticDescription):
+class TokenSequenceLinguisticDescription(LinguisticDescription, Sequence[str]):
     """
     A `LinguisticDescription` which consists of a sequence of tokens.
     """
@@ -48,10 +48,11 @@ class TokenSequenceLinguisticDescription(LinguisticDescription):
     def as_token_sequence(self) -> Tuple[str, ...]:
         return self.tokens
 
-    @attrs(frozen=True, slots=True)
-    class Span:
-        _start_index: int = attrib(validator=instance_of(int))
-        _end_index: int = attrib(validator=instance_of(int))
+    def span(self, start_index: int, *, end_index_exclusive: int) -> Span:
+        return Span(start_index, end_index_exclusive)
 
-        def __attrs_post_init__(self) -> None:
-            check_arg(self._start_index <= self._end_index)
+    def __getitem__(self, item) -> str:
+        return self.tokens[item]
+
+    def __len__(self) -> int:
+        return len(self.tokens)
