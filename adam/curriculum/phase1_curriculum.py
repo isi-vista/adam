@@ -107,6 +107,10 @@ from adam.random_utils import RandomChooser
 from adam.relation import flatten_relations
 from adam.situation import Action, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
+from adam.situation.templates.phase1_situation_templates import (
+    _fly_under_template,
+    _fly_over_template,
+)
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
     action_variable,
@@ -479,8 +483,12 @@ def _make_object_in_other_object_curriculum() -> Phase1InstanceGroup:
 
 
 def _make_fly_curriculum() -> Phase1InstanceGroup:
-    # fly up or down
     bird = standard_object("bird_0", BIRD)
+    object_0 = standard_object("object_0", THING)
+    background_object = standard_object("background_object", THING)
+    object_with_space_under = standard_object(
+        "object_with_space_under", THING, required_properties=[HAS_SPACE_UNDER]
+    )
     syntax_hints_options = ([], [USE_ADVERBIAL_PATH_MODIFIER])  # type: ignore
 
     bare_fly = [
@@ -513,14 +521,35 @@ def _make_fly_curriculum() -> Phase1InstanceGroup:
     return phase1_instances(
         "flying",
         chain(
-            *[
-                flatten(
+            flatten(
+                [
                     all_possible(
                         template, ontology=GAILA_PHASE_1_ONTOLOGY, chooser=PHASE1_CHOOSER
                     )
                     for template in bare_fly
-                )
-            ]
+                ]
+            ),
+            flatten(
+                [
+                    all_possible(
+                        _fly_under_template(
+                            bird, object_with_space_under, [background_object]
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER,
+                    )
+                ]
+            ),
+            flatten(
+                [
+                    sampled(
+                        _fly_over_template(bird, object_0, [background_object]),
+                        max_to_sample=25,
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER,
+                    )
+                ]
+            ),
         ),
     )
 
