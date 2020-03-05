@@ -76,8 +76,6 @@ from adam.ontology.phase1_spatial_relations import (
     SpatialPath,
     VIA,
     EXTERIOR_BUT_IN_CONTACT,
-    AWAY_FROM,
-    TOWARD,
 )
 from adam.relation import flatten_relations
 from adam.situation import Action
@@ -1557,6 +1555,9 @@ def _jump_in_front_of_behind_template(
     )
 
 
+# FLY templates
+
+
 def _fly_in_template(
     # A bird flies in a house
     agent: TemplateObjectVariable,
@@ -1576,7 +1577,7 @@ def _fly_in_template(
                 ],
             )
         ],
-        constraining_relations=[bigger_than(goal_reference, agent)],
+        constraining_relations=flatten_relations(bigger_than(goal_reference, agent)),
     )
 
 
@@ -1585,7 +1586,7 @@ def _fly_beside_template(
     agent: TemplateObjectVariable,
     object_passed: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
-    is_distal: bool,
+    *,
     is_right: bool,
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
@@ -1604,7 +1605,7 @@ def _fly_beside_template(
                                 VIA,
                                 reference_object=Region(
                                     object_passed,
-                                    distance=DISTAL if is_distal else PROXIMAL,
+                                    distance=PROXIMAL,
                                     direction=Direction(
                                         positive=is_right,
                                         relative_to_axis=HorizontalAxisOfObject(
@@ -1629,6 +1630,7 @@ def _fly_behind_template(
     agent: TemplateObjectVariable,
     object_passed: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
+    *,
     is_distal: bool,
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
@@ -1680,7 +1682,7 @@ def _fly_over_template(
                 FLY,
                 argument_roles_to_fillers=[(AGENT, agent)],
                 during=DuringAction(
-                    at_some_point=[strictly_above(agent, object_in_path)]
+                    at_some_point=flatten_relations(strictly_above(agent, object_in_path))
                 ),
             )
         ],
@@ -1702,11 +1704,11 @@ def _fly_under_template(
                 FLY,
                 argument_roles_to_fillers=[(AGENT, agent)],
                 during=DuringAction(
-                    at_some_point=[strictly_above(object_in_path, agent)]
+                    at_some_point=flatten_relations(strictly_above(object_in_path, agent))
                 ),
             )
         ],
-        constraining_relations=[bigger_than(object_in_path, agent)],
+        constraining_relations=flatten_relations(bigger_than(object_in_path, agent)),
     )
 
 
@@ -2639,22 +2641,21 @@ def _make_fly_with_prepositions(
                 [
                     sampled(
                         _fly_beside_template(
-                            agent, goal_reference, background, is_distal, is_right
+                            agent, goal_reference, background, is_right=is_right
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER,
                         max_to_sample=num_samples,
                     )
-                    for is_distal in BOOL_SET
                     for is_right in BOOL_SET
                 ]
             ),
-            # in front, behind
+            # behind
             flatten(
                 [
                     sampled(
                         _fly_behind_template(
-                            agent, goal_reference, background, is_distal
+                            agent, goal_reference, background, is_distal=is_distal
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER,
