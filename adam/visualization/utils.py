@@ -125,8 +125,13 @@ MODEL_NAMES = [
     "juice",
     "milk",
     "person",
+    "house",
+    "truck",
+    "baby",
+    "dad",
+    "mom",
 ]
-MODEL_PART_NAMES = {"table": ["tabletop", "(furniture) leg"]}
+
 
 NAME_TO_ONTOLOGY_NODE: ImmutableDict[str, OntologyNode] = immutabledict(
     (node.handle, node) for node in PHASE_1_CURRICULUM_OBJECTS
@@ -173,12 +178,51 @@ _PART_CARDINALITY: ImmutableDict[str, ImmutableDict[str, int]] = immutabledict(
             ),
         ),
         (
+            "mom",
+            immutabledict(
+                [
+                    ("head", 1),
+                    ("torso", 1),
+                    ("armsegment", 4),
+                    ("leg-segment", 4),
+                    ("hand", 2),
+                    ("foot", 2),
+                ]
+            ),
+        ),
+        (
+            "dad",
+            immutabledict(
+                [
+                    ("head", 1),
+                    ("torso", 1),
+                    ("armsegment", 4),
+                    ("leg-segment", 4),
+                    ("hand", 2),
+                    ("foot", 2),
+                ]
+            ),
+        ),
+        (
+            "baby",
+            immutabledict(
+                [
+                    ("head", 1),
+                    ("torso", 1),
+                    ("armsegment", 4),
+                    ("leg-segment", 4),
+                    ("hand", 2),
+                    ("foot", 2),
+                ]
+            ),
+        ),
+        (
             "bird",
             immutabledict(
                 [
                     ("bird-head", 1),
                     ("torso", 1),
-                    ("leg-segment", 8),
+                    ("leg-segment", 4),
                     ("foot", 2),
                     ("wing", 2),
                     ("tail", 1),
