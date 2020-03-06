@@ -23,9 +23,18 @@ from adam.ontology.phase1_ontology import (
     near,
     GAILA_PHASE_1_ONTOLOGY,
     MOM,
+    GROUND,
+    BOX,
+    ROLL,
+    AGENT,
+    ROLL_SURFACE_AUXILIARY,
+    on,
+    far,
 )
 from adam.ontology.structural_schema import ObjectStructuralSchema
 from adam.random_utils import RandomChooser
+from adam.relation import flatten_relations
+from adam.situation import Action
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
     all_possible,
@@ -190,3 +199,34 @@ def test_learner_as_default_addressee():
 
     assert situation_with_addressee[0].axis_info
     assert situation_with_addressee[0].axis_info.addressee
+
+
+def test_before_after_relations_asserted():
+    ball = object_variable("ball", root_node=BALL)
+    box = object_variable("box", root_node=BOX)
+    ground = object_variable("ground", root_node=GROUND)
+
+    template_action = Phase1SituationTemplate(
+        "Before/After Relation",
+        salient_object_variables=[ball, box],
+        background_object_variables=[ground],
+        actions=[
+            Action(
+                ROLL,
+                argument_roles_to_fillers=[(AGENT, ball)],
+                auxiliary_variable_bindings=[(ROLL_SURFACE_AUXILIARY, ground)],
+            )
+        ],
+        before_action_relations=flatten_relations([on(ball, box)]),
+        after_action_relations=flatten_relations([far(ball, box)]),
+    )
+
+    situation_with_relations = sampled(
+        template_action,
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        chooser=RandomChooser.for_seed(0),
+        max_to_sample=1,
+    )
+
+    assert situation_with_relations[0].before_action_relations
+    assert situation_with_relations[0].after_action_relations

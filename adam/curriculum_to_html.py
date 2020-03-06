@@ -115,7 +115,7 @@ STR_TO_CURRICULUM: Mapping[str, Callable[[], Iterable[Phase1InstanceGroup]]] = {
     "prepositions": make_prepositions_curriculum,
     "pursuit": make_pursuit_curriculum,
     "m6-curriculum": make_m6_curriculum,
-    "dynamic-prepositions": make_verb_with_dynamic_prepositions_curriculum,
+    "verbs-with-dynamic-prepositions": make_verb_with_dynamic_prepositions_curriculum,
 }
 
 

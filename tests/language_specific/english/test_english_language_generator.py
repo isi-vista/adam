@@ -54,6 +54,9 @@ from adam.ontology.phase1_ontology import (
     HOLLOW,
     GO,
     LEARNER,
+    near,
+    TAKE,
+    CAR,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -66,6 +69,7 @@ from adam.ontology.phase1_spatial_relations import (
     SpatialPath,
     Direction,
     PROXIMAL,
+    VIA,
 )
 from adam.random_utils import FixedIndexChooser
 from adam.relation import Relation
@@ -452,6 +456,20 @@ def test_i_put_a_cookie_in_dads_box_using_my_as_mom_speaker():
     ).as_token_sequence() == ("I", "put", "a", "cookie", "in", "Dad", "'s", "box")
 
 
+def test_i_have_my_ball():
+    baby = situation_object(BABY, properties=[IS_SPEAKER])
+    ball = situation_object(BALL)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[baby, ball],
+        always_relations=[Relation(HAS, baby, ball)],
+    )
+
+    assert only(
+        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
+    ).as_token_sequence() == ("I", "have", "my", "ball")
+
+
 def test_dad_has_a_cookie():
     dad = situation_object(DAD)
     cookie = situation_object(COOKIE)
@@ -650,6 +668,34 @@ def test_transfer_of_possession():
             assert generated_tokens(situation) == reference_tokens
 
 
+def test_take_to_car():
+    baby = situation_object(BABY)
+    ball = situation_object(BALL)
+    car = situation_object(CAR)
+
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[baby, ball, car],
+        actions=[
+            Action(
+                action_type=TAKE, argument_roles_to_fillers=[(AGENT, baby), (THEME, ball)]
+            )
+        ],
+        after_action_relations=[near(ball, car)],
+    )
+
+    assert generated_tokens(situation) == (
+        "a",
+        "baby",
+        "takes",
+        "a",
+        "ball",
+        "to",
+        "a",
+        "car",
+    )
+
+
 def test_arguments_same_ontology_type():
     baby_0 = situation_object(BABY)
     baby_1 = situation_object(BABY)
@@ -713,6 +759,44 @@ def test_bird_flies_over_dad():
     assert generated_tokens(situation) == ("a", "bird", "flies", "over", "Dad")
 
 
+def test_bird_flies_path_beside():
+    bird = situation_object(BIRD)
+    car = situation_object(CAR)
+    car_region = Region(
+        car,
+        distance=PROXIMAL,
+        direction=Direction(
+            positive=True, relative_to_axis=HorizontalAxisOfObject(car, index=0)
+        ),
+    )
+
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[bird, car],
+        actions=[
+            Action(
+                FLY,
+                argument_roles_to_fillers=[(AGENT, bird)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            bird,
+                            SpatialPath(
+                                VIA,
+                                reference_object=car_region,
+                                reference_axis=HorizontalAxisOfObject(car, index=0),
+                            ),
+                        )
+                    ],
+                    at_some_point=[Relation(IN_REGION, bird, car_region)],
+                ),
+            )
+        ],
+    )
+
+    assert generated_tokens(situation) == ("a", "bird", "flies", "beside", "a", "car")
+
+
 def test_bird_flies_up():
     bird = situation_object(BIRD)
     ground = situation_object(GROUND)
@@ -735,6 +819,24 @@ def test_bird_flies_up():
     )
 
     assert generated_tokens(situation) == ("a", "bird", "flies", "up")
+
+
+def test_jump_up():
+    dad = situation_object(DAD)
+    ground = situation_object(GROUND)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[dad],
+        actions=[
+            Action(
+                JUMP,
+                argument_roles_to_fillers=[(AGENT, dad)],
+                auxiliary_variable_bindings=[(JUMP_INITIAL_SUPPORTER_AUX, ground)],
+            )
+        ],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
+    )
+    assert generated_tokens(situation) == ("Dad", "jumps", "up")
 
 
 def test_jumps_over():

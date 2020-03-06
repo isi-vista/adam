@@ -63,6 +63,7 @@ from adam.ontology.phase1_ontology import (
     PATIENT,
     SIT,
     THEME,
+    JUMP,
 )
 from adam.ontology.phase1_spatial_relations import (
     EXTERIOR_BUT_IN_CONTACT,
@@ -227,12 +228,28 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     f"Don't know how to handle objects which don't correspond to "
                     f"an ontology node currently: {_object}"
                 )
-            # TODO: we don't currently translate modifiers of nouns.
-            # Issue: https://github.com/isi-vista/adam/issues/58
 
             # Check if the situation object is the speaker
             if IS_SPEAKER in _object.properties:
                 if syntactic_role_if_known == NOMINAL_SUBJECT:
+                    noun_lexicon_entry = I
+                # For when HAS (which is a RELATION) is the verb and the speaker is the subject.
+                # (This Special case is needed because HAS is a RELATION and not an ACTION in the
+                # ontology, so HAS is never recognized as the NOMINAL_SUBJECT as this
+                # determination normally occurs in translate_action_to_verb(), which only
+                # processes ACTIONs)
+                elif any(
+                    relation
+                    for relation in self.situation.always_relations
+                    if (
+                        relation.relation_type == HAS
+                        and any(
+                            property_ in relation.first_slot.properties
+                            for property_ in [IS_SPEAKER]
+                        )
+                        and not self.situation.actions
+                    )
+                ):
                     noun_lexicon_entry = I
                 else:
                     noun_lexicon_entry = ME
@@ -696,6 +713,10 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     modifiers.append(
                         (ADVERBIAL_MODIFIER, DependencyTreeToken("down", ADVERB))
                     )
+                elif action.action_type == JUMP:
+                    modifiers.append(
+                        (ADVERBIAL_MODIFIER, DependencyTreeToken("up", ADVERB))
+                    )
 
             return modifiers
 
@@ -765,9 +786,15 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     return None
 
             preposition: Optional[str] = None
+
             if region.distance == INTERIOR:
                 preposition = "in"
+
+            elif region.distance == PROXIMAL and not region.direction:
+                preposition = "to"
+
             elif region.direction:
+
                 direction_axis = region.direction.relative_to_axis.to_concrete_axis(
                     self.situation.axis_info
                 )

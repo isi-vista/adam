@@ -8,17 +8,19 @@ main() function used for testing purposes. Primary function made available to ou
 is run_model()
 """
 from itertools import combinations
-from typing import Mapping, AbstractSet, Optional, List, Iterable, Tuple
+from typing import Mapping, AbstractSet, Optional, List, Iterable, Tuple, DefaultDict
 from attr import attrs, attrib
+from collections import defaultdict
 
 import numpy as np
-from numpy import ndarray
 import torch
 import torch.nn as nn
 from torch.nn import Parameter
 import torch.optim as optim
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.nn import PairwiseDistance
+
+from panda3d.core import LPoint3f  # pylint: disable=no-name-in-module
 
 from immutablecollections import immutabledict, immutableset, ImmutableDict, ImmutableSet
 from vistautils.preconditions import check_arg
@@ -44,7 +46,7 @@ from adam.ontology.phase1_spatial_relations import (
     GRAVITATIONAL_UP,
     GRAVITATIONAL_DOWN,
 )
-from adam.perception import ObjectPerception
+from adam.perception import ObjectPerception, GROUND_PERCEPTION
 
 # see https://github.com/pytorch/pytorch/issues/24807 re: pylint issue
 
@@ -115,7 +117,9 @@ def main() -> None:
     # other objects have no particular constraints:
 
     positioning_model = PositioningModel.for_objects_random_positions(
-        immutableset([ball, box]), in_region_relations=in_region_relations
+        object_perceptions=immutableset([ball, box]),
+        sub_objects={},
+        in_region_relations=in_region_relations,
     )
     # we will start with an aggressive learning rate
     optimizer = optim.SGD(positioning_model.parameters(), lr=1.0)
@@ -158,6 +162,7 @@ class PositionsMap:
 
 def run_model(
     top_level_objects: ImmutableSet[ObjectPerception],
+    sub_objects: Mapping[str, Mapping[str, LPoint3f]],
     in_region_map: Mapping[ObjectPerception, List[Region[ObjectPerception]]],
     object_scales: Mapping[str, Tuple[float, float, float]],
     *,
@@ -170,15 +175,20 @@ def run_model(
     converges in a position where it is unable to find a gradient to continue.
     Args:
         top_level_objects: set of top-level objects requested to be positioned
-        in_region_map: in-region relations for all top-level and sub-objects in this scene
+        sub_objects: mapping of sub-objects to their parent, and their relative position to that parent
+        in_region_map: in-region relations for all top-level objects in this scene
         *num_iterations*: total number of SGD iterations.
         *yield_steps*: If provided, the current positions of all objects will be returned after this many steps
 
     Returns: PositionsMap: Map of object name -> Tensor (3,) of its position
 
     """
+
     positioning_model = PositioningModel.for_scaled_objects_random_positions(
-        top_level_objects, in_region_relations=in_region_map, scale_map=object_scales
+        top_level_objects,
+        sub_objects,
+        in_region_relations=in_region_map,
+        scale_map=object_scales,
     )
 
     # we will start with an aggressive learning rate
@@ -214,7 +224,7 @@ def run_model(
     return positioning_model.get_objects_positions()
 
 
-@attrs(frozen=True, slots=True)
+@attrs(slots=True)
 class AxisAlignedBoundingBox:
     """
     Defines a 3D Box that is oriented to world axes.
@@ -231,6 +241,7 @@ class AxisAlignedBoundingBox:
     center: torch.Tensor = attrib()  # tensor shape: (3,)
     scale: torch.Tensor = attrib()  # tensor shape: (3, 3) - diagonal matrix
     # rotation: torch.Tensor = attrib()
+    offset: Optional[torch.Tensor] = attrib()
 
     def center_distance_from_point(self, point: torch.Tensor) -> torch.Tensor:
         return torch.dist(self.center, point, 2)
@@ -301,13 +312,39 @@ class AxisAlignedBoundingBox:
         )
 
     @staticmethod
-    def create_at_center_point(*, center: ndarray):
+    def create_at_center_point(*, center: np.array):
         return AxisAlignedBoundingBox(
             Parameter(
                 torch.tensor(center, dtype=torch.float),  # pylint: disable=not-callable
                 requires_grad=True,
             ),
             torch.diag(torch.ones(3)),
+            offset=None,
+        )
+
+    @staticmethod
+    def create_at_center_point_scaled(
+        *,
+        center: np.array,
+        object_scale: torch.Tensor,
+        is_parameter: bool,
+        offset: Optional[np.array] = None,
+    ):
+        if is_parameter:
+            return AxisAlignedBoundingBox(
+                Parameter(
+                    torch.tensor(  # pylint: disable=not-callable
+                        center, dtype=torch.float
+                    ),
+                    requires_grad=True,
+                ),
+                object_scale,
+                offset,
+            )
+        return AxisAlignedBoundingBox(
+            torch.tensor(center, dtype=torch.float),  # pylint: disable=not-callable
+            torch.diag(object_scale),
+            torch.tensor(offset, dtype=torch.float),  # pylint: disable=not-callable
         )
 
     @staticmethod
@@ -336,6 +373,7 @@ class AxisAlignedBoundingBox:
                 requires_grad=True,
             ),
             torch.diag(object_scale),
+            offset=None,
         )
 
     def get_corners(self) -> torch.Tensor:
@@ -465,13 +503,20 @@ class PositioningModel(torch.nn.Module):  # type: ignore
         object_perception_to_bounding_box: Mapping[
             ObjectPerception, AxisAlignedBoundingBox
         ],
+        object_to_sub_object_to_bounding_box: Mapping[
+            str, Mapping[str, AxisAlignedBoundingBox]
+        ],
         in_region_relations: Mapping[ObjectPerception, List[Region[ObjectPerception]]],
     ) -> None:
         super().__init__()
         self.object_perception_to_bounding_box = object_perception_to_bounding_box
+        self.object_to_sub_object_to_bounding_box = object_to_sub_object_to_bounding_box
         self.in_region_relations = in_region_relations
         self.object_bounding_boxes = object_perception_to_bounding_box.values()
-
+        sub_object_to_bounding_box = {}
+        for sub_obj_dict in self.object_to_sub_object_to_bounding_box.values():
+            for sub_obj_handle, aabb in sub_obj_dict.items():
+                sub_object_to_bounding_box[sub_obj_handle] = aabb
         for (
             object_perception,
             bounding_box,
@@ -483,14 +528,20 @@ class PositioningModel(torch.nn.Module):  # type: ignore
 
         self.collision_penalty = CollisionPenalty()
         self.below_ground_penalty = BelowGroundPenalty()
-        self.weak_gravity_penalty = WeakGravityPenalty()
-        self.in_region_penalty = InRegionPenalty(
+        self.weak_gravity_penalty = WeakGravityPenalty(
             object_perception_to_bounding_box, in_region_relations
+        )
+
+        self.in_region_penalty = InRegionPenalty(
+            object_perception_to_bounding_box,
+            sub_object_to_bounding_box,
+            in_region_relations,
         )
 
     @staticmethod
     def for_objects_random_positions(
         object_perceptions: AbstractSet[ObjectPerception],
+        sub_objects: Mapping[str, Mapping[str, LPoint3f]],
         *,
         in_region_relations: Mapping[ObjectPerception, List[Region[ObjectPerception]]],
     ) -> "PositioningModel":
@@ -505,17 +556,26 @@ class PositioningModel(torch.nn.Module):  # type: ignore
             )
             for object_perception in object_perceptions
         )
-        return PositioningModel(objects_to_bounding_boxes, in_region_relations)
+
+        sub_object_mapping = PositioningModel._create_sub_objs_to_bounding_boxes(
+            sub_objects
+        )
+
+        return PositioningModel(
+            objects_to_bounding_boxes, sub_object_mapping, in_region_relations
+        )
 
     @staticmethod
     def for_scaled_objects_random_positions(
         object_perceptions: AbstractSet[ObjectPerception],
+        sub_objects: Mapping[str, Mapping[str, LPoint3f]],
         *,
         in_region_relations: Mapping[ObjectPerception, List[Region[ObjectPerception]]],
         scale_map: Mapping[str, Tuple[float, float, float]],
     ) -> "PositioningModel":
 
         dict_items: List[Tuple[ObjectPerception, AxisAlignedBoundingBox]] = []
+
         for object_perception in object_perceptions:
 
             print(f"Adding {object_perception.debug_handle} to model")
@@ -534,9 +594,44 @@ class PositioningModel(torch.nn.Module):  # type: ignore
                 ),
             )
             dict_items.append((object_perception, bounding_box))
-        return PositioningModel(immutabledict(dict_items), in_region_relations)
+
+        sub_object_mapping = PositioningModel._create_sub_objs_to_bounding_boxes(
+            sub_objects
+        )
+
+        return PositioningModel(
+            immutabledict(dict_items), sub_object_mapping, in_region_relations
+        )
+
+    @staticmethod
+    def _create_sub_objs_to_bounding_boxes(
+        sub_objects: Mapping[str, Mapping[str, LPoint3f]],
+    ) -> Mapping[str, Mapping[str, AxisAlignedBoundingBox]]:
+        # create bounding boxes for sub-objects
+
+        parent_to_child: DefaultDict[
+            str, Mapping[str, AxisAlignedBoundingBox]
+        ] = defaultdict(dict)
+
+        for parent_obj, sub_obj_map in sub_objects.items():
+            sub_object_to_aabb = {}
+            for sub_obj, offset in sub_obj_map.items():
+                sub_object_to_aabb[
+                    sub_obj
+                ] = AxisAlignedBoundingBox.create_at_center_point_scaled(
+                    center=np.array([offset.x, offset.y, offset.z], dtype=float),
+                    # TODO: FIX THIS WITH REAL SCALE
+                    object_scale=torch.ones(3),  # pylint: disable=not-callable
+                    is_parameter=False,
+                    offset=np.array([offset.x, offset.y, offset.z], dtype=float),
+                )
+
+            parent_to_child[parent_obj] = sub_object_to_aabb
+        return parent_to_child
 
     def forward(self):  # pylint: disable=arguments-differ
+        self._update_subobject_positions()
+
         collision_penalty = sum(
             self.collision_penalty(box1, box2)
             for (box1, box2) in combinations(self.object_bounding_boxes, 2)
@@ -545,7 +640,11 @@ class PositioningModel(torch.nn.Module):  # type: ignore
             self.below_ground_penalty(box) for box in self.object_bounding_boxes
         )
         weak_gravity_penalty = sum(
-            self.weak_gravity_penalty(box) for box in self.object_bounding_boxes
+            self.weak_gravity_penalty(
+                bounding_box, immutableset(self.in_region_relations[object_perception])
+            )
+            for object_perception, bounding_box in self.object_perception_to_bounding_box.items()
+            if object_perception in self.in_region_relations
         )
         in_region_penalty = sum(
             self.in_region_penalty(
@@ -576,6 +675,16 @@ class PositioningModel(torch.nn.Module):  # type: ignore
             print(
                 f"{prefix}{object_perception.debug_handle} = {bounding_box.center.data}\n{prefix}scale:{bounding_box.scale.data}"
             )
+        print("Sub-object bounding box positions:")
+        for (
+            main_object,
+            sub_object_to_bounding_box,
+        ) in self.object_to_sub_object_to_bounding_box.items():
+            print(main_object)
+            for (sub_object, bounding_box) in sub_object_to_bounding_box.items():
+                print(
+                    f"\t{sub_object} = {bounding_box.center.data}\n\t{prefix}scale:{bounding_box.scale.data}"
+                )
 
     def get_object_position(self, obj: ObjectPerception) -> torch.Tensor:
         """
@@ -601,6 +710,13 @@ class PositioningModel(torch.nn.Module):  # type: ignore
                 for object_perception, bounding_box in self.object_perception_to_bounding_box.items()
             )
         )
+
+    def _update_subobject_positions(self) -> None:
+        for main_object, main_aabb in self.object_perception_to_bounding_box.items():
+            for _, sub_aabb in self.object_to_sub_object_to_bounding_box[
+                main_object.debug_handle
+            ].items():
+                sub_aabb.center = sub_aabb.offset + main_aabb.center
 
 
 class BelowGroundPenalty(nn.Module):  # type: ignore
@@ -628,12 +744,29 @@ class WeakGravityPenalty(nn.Module):  # type: ignore
 
     # TODO: exempt birds from this constraint https://github.com/isi-vista/adam/issues/485
 
-    def __init__(self) -> None:  # pylint: disable=useless-super-delegation
+    def __init__(
+        self,
+        object_perception_to_bounding_box: Mapping[
+            ObjectPerception, AxisAlignedBoundingBox
+        ],
+        in_region_relations: Mapping[ObjectPerception, List[Region[ObjectPerception]]],
+    ) -> None:  # pylint: disable=useless-super-delegation
         super().__init__()
+        self.object_perception_to_bounding_box = object_perception_to_bounding_box
+        self.in_region_relations = in_region_relations
+        self.ground_region = Region(
+            GROUND_PERCEPTION, EXTERIOR_BUT_IN_CONTACT, GRAVITATIONAL_UP
+        )
 
     def forward(  # type: ignore
-        self, bounding_box: AxisAlignedBoundingBox
+        self,
+        bounding_box: AxisAlignedBoundingBox,
+        designated_regions: ImmutableSet[Region[ObjectPerception]],
     ):  # pylint: disable=arguments-differ
+        # if this object is not supposed to be on the ground, don't apply the gravity constraint.
+        if self.ground_region not in designated_regions:
+            return 0.0
+
         distance_above_ground = bounding_box.z_coordinate_of_lowest_corner()
         if distance_above_ground <= 0:
             return 0.0
@@ -780,10 +913,15 @@ class InRegionPenalty(nn.Module):  # type: ignore
         object_perception_to_bounding_box: Mapping[
             ObjectPerception, AxisAlignedBoundingBox
         ],
+        sub_object_to_bounding_box: Mapping[str, AxisAlignedBoundingBox],
         in_region_relations: Mapping[ObjectPerception, List[Region[ObjectPerception]]],
     ) -> None:  # pylint: disable=useless-super-delegation
         super().__init__()
-        self.object_perception_to_bounding_box = object_perception_to_bounding_box
+        self.handle_to_bounding_box: Mapping[str, AxisAlignedBoundingBox] = {}
+        for object_perception, aabb in object_perception_to_bounding_box.items():
+            self.handle_to_bounding_box[object_perception.debug_handle] = aabb
+        for sub_object, aabb in sub_object_to_bounding_box.items():
+            self.handle_to_bounding_box[sub_object] = aabb
         self.in_region_relations = in_region_relations
 
     def forward(  # type: ignore
@@ -801,8 +939,8 @@ class InRegionPenalty(nn.Module):  # type: ignore
 
         return sum(
             self.penalty(
-                self.object_perception_to_bounding_box[target_object],
-                self.object_perception_to_bounding_box[region.reference_object],
+                self.handle_to_bounding_box[target_object.debug_handle],
+                self.handle_to_bounding_box[region.reference_object.debug_handle],
                 region,
             )
             # positioning w/r/t the ground is handled by other constraints
@@ -831,10 +969,11 @@ class InRegionPenalty(nn.Module):  # type: ignore
         print(
             f"TARGET: {target_box.center} REFERENCE: {reference_box.center} REGION:{region}"
         )
-        assert region.direction is not None
         assert region.distance is not None
         # get direction that box 1 should be in w/r/t box 2
         # TODO: allow for addressee directions
+
+        # if direction is not provided, this vector is zero
         direction_vector = self.direction_as_unit_vector(region.direction, reference_box)
 
         current_direction_from_reference_to_target = (
@@ -870,7 +1009,7 @@ class InRegionPenalty(nn.Module):  # type: ignore
         # assuming that collisions are handled elsewhere
         elif region.distance == EXTERIOR_BUT_IN_CONTACT:
             if distance > EXTERIOR_BUT_IN_CONTACT_EPS:
-                distance_penalty = distance
+                distance_penalty = distance * 4
             else:
                 distance_penalty = torch.zeros(1)
         else:
@@ -885,7 +1024,7 @@ class InRegionPenalty(nn.Module):  # type: ignore
 
     def direction_as_unit_vector(
         self,
-        direction: Direction[ObjectPerception],
+        direction: Optional[Direction[ObjectPerception]],
         direction_reference: AxisAlignedBoundingBox,
         addressee_reference: Optional[AxisAlignedBoundingBox] = None,
     ) -> torch.Tensor:
@@ -899,6 +1038,8 @@ class InRegionPenalty(nn.Module):  # type: ignore
         Returns: (3,) Tensor. A unit vector describing a direction.
 
         """
+        if direction is None:
+            return torch.zeros(3)
         # special case: gravity
         if direction == GRAVITATIONAL_UP:
             return torch.tensor(  # pylint: disable=not-callable
