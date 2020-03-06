@@ -78,8 +78,6 @@ from adam.ontology.phase1_spatial_relations import (
     SpatialPath,
     VIA,
     EXTERIOR_BUT_IN_CONTACT,
-    TOWARD,
-    AWAY_FROM,
 )
 from adam.relation import flatten_relations, Relation
 from adam.situation import Action
@@ -791,51 +789,6 @@ def _throw_path_under_template(
             bigger_than(agent, theme),
             bigger_than(object_in_path, theme),
         ],
-    )
-
-
-def _throw_up_down_template(
-    # Up: the thrown object goes above the thrower at some point
-    # Down: the thrown object only travels downward
-    agent: TemplateObjectVariable,
-    theme: TemplateObjectVariable,
-    implicit_goal_reference: TemplateObjectVariable,
-    background: Iterable[TemplateObjectVariable],
-    *,
-    is_up: bool,
-) -> Phase1SituationTemplate:
-    return Phase1SituationTemplate(
-        f"{agent.handle}-throws-{theme.handle}-up-down",
-        salient_object_variables=[agent, theme],
-        background_object_variables=background,
-        actions=[
-            Action(
-                THROW,
-                argument_roles_to_fillers=[(AGENT, agent), (THEME, theme)],
-                auxiliary_variable_bindings=[
-                    (THROW_GOAL, Region(implicit_goal_reference, distance=PROXIMAL))
-                ],
-                during=DuringAction(
-                    objects_to_paths=[
-                        (
-                            theme,
-                            SpatialPath(
-                                AWAY_FROM, reference_object=GROUND_OBJECT_TEMPLATE
-                            ),
-                        )
-                    ]
-                    if is_up
-                    else [
-                        (
-                            theme,
-                            SpatialPath(TOWARD, reference_object=GROUND_OBJECT_TEMPLATE),
-                        )
-                    ]
-                ),
-            )
-        ],
-        constraining_relations=[bigger_than(agent, theme)],
-        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
     )
 
 
@@ -2858,20 +2811,6 @@ def _make_throw_with_prepositions(
                         max_to_sample=num_samples,
                     )
                     for is_distal in BOOL_SET
-                ]
-            ),
-            # up, down
-            flatten(
-                [
-                    sampled(
-                        _throw_up_down_template(
-                            agent, theme, goal_reference, background, is_up=is_up
-                        ),
-                        ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
-                        max_to_sample=num_samples,
-                    )
-                    for is_up in BOOL_SET
                 ]
             ),
         ),

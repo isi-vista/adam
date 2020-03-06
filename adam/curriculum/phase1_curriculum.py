@@ -1260,23 +1260,80 @@ def _make_throw_curriculum() -> Phase1InstanceGroup:
         constraining_relations=[bigger_than(thrower, object_thrown)],
     )
 
+    # Throw up, down
+    throw_up_down_templates = [
+        Phase1SituationTemplate(
+            f"{thrower.handle}-throws-{object_thrown.handle}-up-down",
+            salient_object_variables=[thrower, object_thrown],
+            actions=[
+                Action(
+                    THROW,
+                    argument_roles_to_fillers=[(AGENT, thrower), (THEME, object_thrown)],
+                    auxiliary_variable_bindings=[
+                        (THROW_GOAL, Region(implicit_goal_reference, distance=PROXIMAL))
+                    ],
+                    during=DuringAction(
+                        objects_to_paths=[
+                            (
+                                object_thrown,
+                                SpatialPath(
+                                    AWAY_FROM, reference_object=GROUND_OBJECT_TEMPLATE
+                                ),
+                            )
+                        ]
+                        if is_up
+                        else [
+                            (
+                                object_thrown,
+                                SpatialPath(
+                                    TOWARD, reference_object=GROUND_OBJECT_TEMPLATE
+                                ),
+                            )
+                        ]
+                    ),
+                )
+            ],
+            constraining_relations=flatten_relations(bigger_than(thrower, object_thrown)),
+            syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
+        )
+        for is_up in (True, False)
+    ]
+
     return phase1_instances(
         "throwing",
         chain(
-            *[
-                sampled(
-                    throw_on_ground_template,
-                    max_to_sample=25,
-                    chooser=PHASE1_CHOOSER,
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                ),
-                sampled(
-                    throw_template,
-                    max_to_sample=25,
-                    chooser=PHASE1_CHOOSER,
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                ),
-            ]
+            flatten(
+                [
+                    sampled(
+                        throw_on_ground_template,
+                        max_to_sample=25,
+                        chooser=PHASE1_CHOOSER,
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                    )
+                ]
+            ),
+            flatten(
+                [
+                    sampled(
+                        throw_template,
+                        max_to_sample=25,
+                        chooser=PHASE1_CHOOSER,
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                    )
+                ]
+            ),
+            # up, down
+            flatten(
+                [
+                    sampled(
+                        template,
+                        max_to_sample=25,
+                        chooser=PHASE1_CHOOSER,
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                    )
+                    for template in throw_up_down_templates
+                ]
+            ),
         ),
     )
 
