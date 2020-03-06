@@ -4,7 +4,7 @@ from typing import Any, Iterable, List, Mapping, Optional, Tuple
 from attr.validators import deep_mapping, instance_of
 
 from adam.learner.surface_templates import SurfaceTemplateVariable
-from immutablecollections import immutableset
+from immutablecollections import immutableset, ImmutableDict
 from immutablecollections.converter_utils import _to_immutabledict
 from networkx import DiGraph
 
@@ -18,18 +18,18 @@ from adam.perception.perception_graph import (
 from attr import attrib, attrs
 
 # Constants used to map locations in a prepositional phrase for mapping
-MODIFIED = SurfaceTemplateVariable("slot1")
-GROUND = SurfaceTemplateVariable("slot2")
+SLOT1 = SurfaceTemplateVariable("slot1")
+SLOT2 = SurfaceTemplateVariable("slot2")
 
-_EXPECTED_OBJECT_VARIABLES = {MODIFIED, GROUND}
+_PREPOSITION_TEMPLATE_VARIABLES = {SLOT1, SLOT2}
 
 
 @attrs(frozen=True, slots=True, eq=False)
-class PrepositionPattern:
+class PerceptionGraphTemplate:
     graph_pattern: PerceptionGraphPattern = attrib(
         validator=instance_of(PerceptionGraphPattern), kw_only=True
     )
-    template_variable_to_pattern_node: Mapping[
+    template_variable_to_pattern_node: ImmutableDict[
         SurfaceTemplateVariable, MatchedObjectPerceptionPredicate
     ] = attrib(
         converter=_to_immutabledict,
@@ -39,6 +39,9 @@ class PrepositionPattern:
             instance_of(MatchedObjectPerceptionPredicate),
         ),
     )
+    pattern_node_to_template_variable: ImmutableDict[
+        MatchedObjectPerceptionPredicate, SurfaceTemplateVariable
+    ] = attrib(init=False)
 
     @staticmethod
     def from_graph(
@@ -46,7 +49,7 @@ class PrepositionPattern:
         template_variable_to_matched_object_node: Iterable[
             Tuple[SurfaceTemplateVariable, MatchedObjectNode]
         ],
-    ) -> "PrepositionPattern":
+    ) -> "PerceptionGraphTemplate":
         template_variable_to_matched_object_node = immutableset(
             template_variable_to_matched_object_node
         )
@@ -69,9 +72,9 @@ class PrepositionPattern:
                     (template_variable, matched_object_to_matched_predicate[object_node])
                 )
 
-        return PrepositionPattern(
+        return PerceptionGraphTemplate(
             graph_pattern=pattern_graph,
-            object_variable_name_to_pattern_node=template_variable_to_pattern_node,
+            template_variable_to_pattern_node=template_variable_to_pattern_node,
         )
 
     def __attrs_post_init__(self) -> None:
@@ -89,20 +92,20 @@ class PrepositionPattern:
                 )
 
         template_variables = set(self.template_variable_to_pattern_node.keys())
-        if template_variables != _EXPECTED_OBJECT_VARIABLES:
+        if template_variables != _PREPOSITION_TEMPLATE_VARIABLES:
             raise RuntimeError(
                 f"Expected a preposition pattern to have "
-                f"the object variables {_EXPECTED_OBJECT_VARIABLES} "
+                f"the object variables {_PREPOSITION_TEMPLATE_VARIABLES} "
                 f"but got {template_variables}"
             )
 
     def intersection(
         self,
-        pattern: "PrepositionPattern",
+        pattern: "PerceptionGraphTemplate",
         *,
         graph_logger: Optional[GraphLogger] = None,
         ontology: Ontology,
-    ) -> Optional["PrepositionPattern"]:
+    ) -> Optional["PerceptionGraphTemplate"]:
         intersected_pattern = self.graph_pattern.intersection(
             pattern.graph_pattern, graph_logger=graph_logger, ontology=ontology
         )
@@ -122,9 +125,15 @@ class PrepositionPattern:
                 ):
                     mapping_builder.append((template_variable, pattern_node))
 
-            return PrepositionPattern(
+            return PerceptionGraphTemplate(
                 graph_pattern=intersected_pattern,
-                object_variable_name_to_pattern_node=mapping_builder,
+                template_variable_to_pattern_node=mapping_builder,
             )
         else:
             return None
+
+    @pattern_node_to_template_variable.default
+    def _init_pattern_node_to_template_variable(
+        self
+    ) -> ImmutableDict[MatchedObjectPerceptionPredicate, SurfaceTemplateVariable]:
+        return self.template_variable_to_pattern_node.inverse()

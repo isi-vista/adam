@@ -4,7 +4,7 @@ from typing import Iterable, List, Mapping, Tuple, Set
 
 from attr.validators import deep_mapping, instance_of, deep_iterable
 
-from adam.language import TokenSequenceLinguisticDescription
+from adam.language import TokenSequenceLinguisticDescription, LinguisticDescription
 from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
 from immutablecollections.converter_utils import _to_immutabledict, _to_immutableset
 from more_itertools import first
@@ -112,13 +112,10 @@ class ObjectRecognizer:
         )
 
     def match_objects(
-        self, language_aligned_perception: LanguageAlignedPerception
-    ) -> LanguageAlignedPerception:
+        self, perception_graph: PerceptionGraph
+    ) -> PerceptionGraphFromObjectRecognizer:
         """
-        Recognize known objects in a `LanguageAlignedPerception`.
-
-        For each node matched, this will identify the relevant portion of the linguistic input
-        and record the correspondence.
+        Recognize known objects in a `PerceptionGraph`.
 
         The matched portion of the graph will be replaced with an `MatchedObjectNode`
         which will inherit all relationships of any nodes internal to the matched portion
@@ -128,8 +125,8 @@ class ObjectRecognizer:
         before prepositional and verbal learning experiments.
         """
         matched_object_nodes: List[Tuple[str, MatchedObjectNode]] = []
-        graph_to_return = language_aligned_perception.perception_graph.copy_as_digraph()
-        is_dynamic = language_aligned_perception.perception_graph.dynamic
+        graph_to_return = perception_graph.copy_as_digraph()
+        is_dynamic = perception_graph.dynamic
         for (description, pattern) in self.object_names_to_patterns.items():
             matcher = pattern.matcher(
                 PerceptionGraph(graph_to_return, is_dynamic), matching_objects=True
@@ -151,14 +148,34 @@ class ObjectRecognizer:
                 "Object recognizer recognized: %s",
                 [description for (description, _) in matched_object_nodes],
             )
+        return PerceptionGraphFromObjectRecognizer(
+            PerceptionGraph(graph=graph_to_return, dynamic=perception_graph.dynamic),
+            matched_object_nodes,
+        )
+
+    def match_objects_with_language(
+        self, language_aligned_perception: LanguageAlignedPerception
+    ) -> LanguageAlignedPerception:
+        """
+        Recognize known objects in a `LanguageAlignedPerception`.
+
+        For each node matched, this will identify the relevant portion of the linguistic input
+        and record the correspondence.
+
+        The matched portion of the graph will be replaced with an `MatchedObjectNode`
+        which will inherit all relationships of any nodes internal to the matched portion
+        with any external nodes.
+
+        This is useful as a pre-processing step
+        before prepositional and verbal learning experiments.
+        """
+        match_result = self.match_objects(language_aligned_perception.perception_graph)
         return LanguageAlignedPerception(
             language=language_aligned_perception.language,
-            perception_graph=PerceptionGraph(
-                graph=graph_to_return,
-                dynamic=language_aligned_perception.perception_graph.dynamic,
-            ),
+            perception_graph=match_result.perception_graph,
             node_to_language_span=self._align_objects_to_tokens(
-                immutabledict(matched_object_nodes), language_aligned_perception.language
+                match_result.description_to_matched_object_node,
+                language_aligned_perception.language,
             ),
         )
 
@@ -261,7 +278,7 @@ class ObjectRecognizer:
     def _align_objects_to_tokens(
         self,
         description_to_object_node: Mapping[str, MatchedObjectNode],
-        language: TokenSequenceLinguisticDescription,
+        language: LinguisticDescription,
     ) -> Mapping[MatchedObjectNode, Span]:
         result: List[Tuple[MatchedObjectNode, Span]] = []
 
@@ -270,23 +287,21 @@ class ObjectRecognizer:
 
         for (description, object_node) in description_to_object_node.items():
             try:
-                end_index = language.index(description)
-            except IndexError:
-                raise RuntimeError(
-                    f"Name of recognized object ({description}) not found in "
-                    f"{language.as_token_string()}"
-                )
+                end_index_inclusive = language.index(description)
+            except ValueError:
+                # A scene might contain things which are not referred to by the associated language.
+                continue
 
-            start_index = end_index
+            start_index = end_index_inclusive
             # This is a somewhat language-dependent hack to gobble up preceding determiners.
             # See https://github.com/isi-vista/adam/issues/498 .
-            if end_index > 0:
-                possible_determiner_index = end_index - 1
+            if end_index_inclusive > 0:
+                possible_determiner_index = end_index_inclusive - 1
                 if language[possible_determiner_index].lower() in self.determiners:
                     start_index = possible_determiner_index
 
             # We record what tokens were covered so we can block the same tokens being used twice.
-            for included_token_index in range(start_index, end_index + 1):
+            for included_token_index in range(start_index, end_index_inclusive + 1):
                 if included_token_index in matched_token_indices:
                     raise RuntimeError(
                         "We do not currently support the same object "
@@ -295,6 +310,11 @@ class ObjectRecognizer:
                 matched_token_indices.add(included_token_index)
 
             result.append(
-                (object_node, language.span(start_index, end_index_exclusive=end_index))
+                (
+                    object_node,
+                    language.span(
+                        start_index, end_index_exclusive=end_index_inclusive + 1
+                    ),
+                )
             )
         return immutabledict(result)

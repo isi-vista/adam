@@ -36,7 +36,7 @@ from adam.learner import (
     graph_without_learner,
 )
 from adam.learner.object_recognizer import ObjectRecognizer
-from adam.learner.preposition_pattern import PrepositionPattern, MODIFIED, GROUND
+from adam.learner.preposition_pattern import PerceptionGraphTemplate, SLOT1, SLOT2
 from adam.learner.preposition_subset import PrepositionSurfaceTemplate
 from adam.learner.verb_pattern import VerbPattern, _AGENT, _PATIENT, VerbSurfaceTemplate
 from adam.ontology.ontology import Ontology
@@ -96,7 +96,7 @@ class HypothesisLogger(GraphLogger):
         graph_name: Optional[str] = None,
     ) -> None:
         if isinstance(hypothesis, ObjectPattern) or isinstance(
-            hypothesis, PrepositionPattern
+            hypothesis, PerceptionGraphTemplate
         ):
             graph = hypothesis.graph_pattern
         else:
@@ -905,7 +905,7 @@ class PrepositionPursuitLearner(
     Generic[PerceptionT, LinguisticDescriptionT],
     AbstractPursuitLearner[
         PrepositionSurfaceTemplate,
-        PrepositionPattern,
+        PerceptionGraphTemplate,
         PerceptionT,
         LinguisticDescriptionT,
     ],
@@ -945,7 +945,9 @@ class PrepositionPursuitLearner(
         )
 
         # Convert the observed perception to a version with recognized objects
-        object_recognition_result = object_recognizer.match_objects(original_perception)
+        object_recognition_result = object_recognizer.match_objects_with_language(
+            original_perception
+        )
         recognized_object_perception = object_recognition_result.perception_graph
 
         # Get the match nodes and their word indices
@@ -1001,8 +1003,8 @@ class PrepositionPursuitLearner(
         # for learning, we need to represent this in a way which abstracts
         # from the particular modified and ground word.
         preposition_surface_template_mutable = list(prepositional_phrase_tokens)
-        preposition_surface_template_mutable[0] = MODIFIED
-        preposition_surface_template_mutable[-1] = GROUND
+        preposition_surface_template_mutable[0] = SLOT1
+        preposition_surface_template_mutable[-1] = SLOT2
         # TODO: Remove this hard coded insert of an article
         # see: https://github.com/isi-vista/adam/issues/434
         preposition_surface_template_mutable.insert(0, "a")
@@ -1016,8 +1018,8 @@ class PrepositionPursuitLearner(
         # This is the template_variables_to_object_match_nodes of sentence locations to pattern nodes
         self.template_variables_to_object_match_nodes = immutableset(
             [
-                (MODIFIED, object_match_node_for_modified),
-                (GROUND, object_match_node_for_ground),
+                (SLOT1, object_match_node_for_modified),
+                (SLOT2, object_match_node_for_ground),
             ]
         )
 
@@ -1042,7 +1044,7 @@ class PrepositionPursuitLearner(
         if not object_recognizer:
             raise RuntimeError("Preposition learner is missing object recognizer")
 
-        recognized_object_perception = object_recognizer.match_objects(
+        recognized_object_perception = object_recognizer.match_objects_with_language(
             original_perception
         )
 
@@ -1086,9 +1088,9 @@ class PrepositionPursuitLearner(
 
     def _hypothesis_from_perception(
         self, perception: PerceptionGraph
-    ) -> PrepositionPattern:
+    ) -> PerceptionGraphTemplate:
         if self.template_variables_to_object_match_nodes:
-            return PrepositionPattern.from_graph(
+            return PerceptionGraphTemplate.from_graph(
                 perception.copy_as_digraph(),
                 self.template_variables_to_object_match_nodes,
             )
@@ -1150,10 +1152,10 @@ class PrepositionPursuitLearner(
 
     @attrs(frozen=True)
     class PrepositionHypothesisPartialMatch(
-        AbstractPursuitLearner.PartialMatch[PrepositionPattern]
+        AbstractPursuitLearner.PartialMatch[PerceptionGraphTemplate]
     ):
-        partial_match_hypothesis: Optional[PrepositionPattern] = attrib(
-            validator=optional(instance_of(PrepositionPattern))
+        partial_match_hypothesis: Optional[PerceptionGraphTemplate] = attrib(
+            validator=optional(instance_of(PerceptionGraphTemplate))
         )
         num_nodes_matched: int = attrib(validator=instance_of(int), kw_only=True)
         num_nodes_in_pattern: int = attrib(validator=instance_of(int), kw_only=True)
@@ -1165,7 +1167,7 @@ class PrepositionPursuitLearner(
             return self.num_nodes_matched / self.num_nodes_in_pattern
 
     def _find_partial_match(
-        self, hypothesis: PrepositionPattern, graph: PerceptionGraph
+        self, hypothesis: PerceptionGraphTemplate, graph: PerceptionGraph
     ) -> "PrepositionPursuitLearner.PrepositionHypothesisPartialMatch":
         pattern = hypothesis.graph_pattern
         hypothesis_pattern_common_subgraph = get_largest_matching_pattern(
@@ -1185,7 +1187,9 @@ class PrepositionPursuitLearner(
             else 0
         )
         if hypothesis_pattern_common_subgraph:
-            partial_hypothesis: Optional[PrepositionPattern] = PrepositionPattern(
+            partial_hypothesis: Optional[
+                PerceptionGraphTemplate
+            ] = PerceptionGraphTemplate(
                 graph_pattern=hypothesis_pattern_common_subgraph,
                 object_variable_name_to_pattern_node=hypothesis.template_variable_to_pattern_node,
             )
@@ -1199,8 +1203,10 @@ class PrepositionPursuitLearner(
         )
 
     def _find_identical_hypothesis(
-        self, new_hypothesis: PrepositionPattern, candidates: Iterable[PrepositionPattern]
-    ) -> Optional[PrepositionPattern]:
+        self,
+        new_hypothesis: PerceptionGraphTemplate,
+        candidates: Iterable[PerceptionGraphTemplate],
+    ) -> Optional[PerceptionGraphTemplate]:
         """
         Finds the first hypothesis object, if any, in *candidates*
         which is isomorphic to *new_hypothesis*.
@@ -1211,7 +1217,7 @@ class PrepositionPursuitLearner(
         return None
 
     def _are_isomorphic(
-        self, h: PrepositionPattern, hypothesis: PrepositionPattern
+        self, h: PerceptionGraphTemplate, hypothesis: PerceptionGraphTemplate
     ) -> bool:
         # Check mapping equality of preposition patterns
         first_mapping = h.template_variable_to_pattern_node
@@ -1270,7 +1276,7 @@ class VerbPursuitLearner(
         )
 
         # Convert the observed perception to a version with recognized objects
-        recognized_object_perception = object_recognizer.match_objects(
+        recognized_object_perception = object_recognizer.match_objects_with_language(
             original_perception
         )
 
@@ -1346,7 +1352,7 @@ class VerbPursuitLearner(
         if not object_recognizer:
             raise RuntimeError("Verb learner is missing object recognizer")
 
-        recognized_object_perception = object_recognizer.match_objects(
+        recognized_object_perception = object_recognizer.match_objects_with_language(
             original_perception
         )
 
