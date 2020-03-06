@@ -2911,7 +2911,6 @@ def _make_fly_with_prepositions(
                         chooser=PHASE1_CHOOSER,
                         max_to_sample=num_samples,
                     )
-                    for is_distal in BOOL_SET
                 ]
             ),
             # beside
