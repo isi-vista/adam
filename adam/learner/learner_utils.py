@@ -28,21 +28,16 @@ def pattern_match_to_description(
         template_variable_to_filler=immutabledict(
             (
                 pattern.pattern_node_to_template_variable[pattern_node],
-                # Wrapped in a tuple because
-                # fillers can in general be
-                # multiple words.
-                (
-                    matched_objects_to_names[
-                        # We know, but the type
-                        # system does not,
-                        # that if a
-                        # MatchedObjectPerceptionPredicate
-                        # matched,
-                        # the graph node must be a
-                        # MatchedObjectNode
-                        cast(MatchedObjectNode, matched_graph_node)
-                    ],
-                ),
+                matched_objects_to_names[
+                    # We know, but the type
+                    # system does not,
+                    # that if a
+                    # MatchedObjectPerceptionPredicate
+                    # matched,
+                    # the graph node must be a
+                    # MatchedObjectNode
+                    cast(MatchedObjectNode, matched_graph_node)
+                ],
             )
             for (
                 pattern_node,
