@@ -113,10 +113,10 @@ class SurfaceTemplate:
 
 
 SLOT1 = SurfaceTemplateVariable("slot1")
-SLOT2 = SurfaceTemplateVariable("slot1")
-SLOT3 = SurfaceTemplateVariable("slot1")
-SLOT4 = SurfaceTemplateVariable("slot1")
-SLOT5 = SurfaceTemplateVariable("slot1")
-SLOT6 = SurfaceTemplateVariable("slot1")
+SLOT2 = SurfaceTemplateVariable("slot2")
+SLOT3 = SurfaceTemplateVariable("slot3")
+SLOT4 = SurfaceTemplateVariable("slot4")
+SLOT5 = SurfaceTemplateVariable("slot5")
+SLOT6 = SurfaceTemplateVariable("slot6")
 
 STANDARD_SLOT_VARIABLES = (SLOT1, SLOT2, SLOT3, SLOT4, SLOT5, SLOT6)
