@@ -164,7 +164,7 @@ class PrepositionPursuitLearner(
                 PerceptionGraphTemplate
             ] = PerceptionGraphTemplate(
                 graph_pattern=hypothesis_pattern_common_subgraph,
-                object_variable_name_to_pattern_node=hypothesis.template_variable_to_pattern_node,
+                template_variable_to_pattern_node=hypothesis.template_variable_to_pattern_node,
             )
         else:
             partial_hypothesis = None
