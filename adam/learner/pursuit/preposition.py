@@ -30,6 +30,7 @@ from attr import attrib, attrs
 from immutablecollections import immutabledict, ImmutableDict
 
 
+@attrs
 class PrepositionPursuitLearner(
     AbstractPursuitLearner[
         DevelopmentalPrimitivePerceptionFrame, TokenSequenceLinguisticDescription
@@ -39,7 +40,9 @@ class PrepositionPursuitLearner(
     An implementation of pursuit learner for preposition leaning
     """
 
-    _object_recognizer: ObjectRecognizer = attrib(validator=instance_of(ObjectRecognizer))
+    _object_recognizer: ObjectRecognizer = attrib(
+        validator=instance_of(ObjectRecognizer), kw_only=True
+    )
 
     def _assert_valid_input(
         self,

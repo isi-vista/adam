@@ -32,6 +32,7 @@ from immutablecollections import immutabledict
 from vistautils.parameters import Parameters
 
 
+@attrs
 class ObjectPursuitLearner(
     AbstractPursuitLearner[
         DevelopmentalPrimitivePerceptionFrame, TokenSequenceLinguisticDescription

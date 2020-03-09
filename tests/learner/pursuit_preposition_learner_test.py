@@ -58,6 +58,7 @@ def test_pursuit_preposition_on_learner():
         rng=rng,
         smoothing_parameter=0.001,
         ontology=GAILA_PHASE_1_ONTOLOGY,
+        object_recognizer=BALL_TABLE_OBJECT_RECOGNIZER,
     )  # type: ignore
     ball = standard_object("ball", BALL)
     table = standard_object("table", TABLE)
@@ -79,9 +80,6 @@ def test_pursuit_preposition_on_learner():
             max_to_sample=1,
         ),
     )
-
-    # Set up object recognizer, given the two objects we 'already' recognize
-    object_recognizer = BALL_TABLE_OBJECT_RECOGNIZER
 
     for (
         _,
