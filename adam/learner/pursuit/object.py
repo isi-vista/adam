@@ -176,7 +176,9 @@ class ObjectPursuitLearner(
         self, perception: PerceptionGraph
     ) -> PerceptionGraphTemplate:
         return PerceptionGraphTemplate(
-            PerceptionGraphPattern.from_graph(perception).perception_graph_pattern
+            graph_pattern=PerceptionGraphPattern.from_graph(
+                perception
+            ).perception_graph_pattern
         )
 
     def _candidate_perceptions(self, observed_perception_graph) -> List[PerceptionGraph]:
@@ -233,7 +235,7 @@ class ObjectPursuitLearner(
         )
 
         return ObjectPursuitLearner.ObjectHypothesisPartialMatch(
-            PerceptionGraphTemplate(hypothesis_pattern_common_subgraph)
+            PerceptionGraphTemplate(graph_pattern=hypothesis_pattern_common_subgraph)
             if hypothesis_pattern_common_subgraph
             else None,
             num_nodes_matched=num_nodes_matched,
