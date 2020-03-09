@@ -668,14 +668,6 @@ class AbstractPursuitLearner(
         """
 
     @abstractmethod
-    def _hypothesis_from_perception(
-        self, perception: PerceptionGraph
-    ) -> PerceptionGraphTemplate:
-        """
-        Returns a meaning hypothesis representation of type *PerceptionGraphTemplate* for a given *perception*.
-        """
-
-    @abstractmethod
     def _find_partial_match(
         self, hypothesis: PerceptionGraphTemplate, graph: PerceptionGraph
     ) -> "AbstractPursuitLearner.PartialMatch":
