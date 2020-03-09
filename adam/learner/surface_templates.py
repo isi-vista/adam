@@ -27,7 +27,7 @@ class SurfaceTemplate:
 
     Such a pattern consists of a sequence of token strings and `SurfaceTemplateVariable`\ s.
     """
-    elements: Tuple[Union[str, SurfaceTemplateVariable]] = attrib(  # type: ignore
+    elements: Tuple[Union[str, SurfaceTemplateVariable], ...] = attrib(  # type: ignore
         converter=_to_tuple,
         validator=deep_iterable(instance_of((str, SurfaceTemplateVariable))),
     )

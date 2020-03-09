@@ -87,15 +87,7 @@ class ObjectPursuitLearner(
     def _extract_surface_template(
         self, preprocessed_input: LanguageAlignedPerception
     ) -> SurfaceTemplate:
-        # Currently for object learner, we assume the input utterance
-        # is just the one-word object name.
-        if len(preprocessed_input.language) != 1:
-            raise RuntimeError(
-                f"Currently don't know how to do object learning with multi-token "
-                f"sequences but got {preprocessed_input.language}"
-            )
-
-        return SurfaceTemplate((preprocessed_input.language[0],))
+        return SurfaceTemplate(preprocessed_input.language.as_token_sequence())
 
     def _candidate_hypotheses(
         self, language_aligned_perception: LanguageAlignedPerception
