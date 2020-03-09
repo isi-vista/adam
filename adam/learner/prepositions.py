@@ -77,7 +77,7 @@ def preposition_hypothesis_from_perception(
     hypothesis_nodes = immutableset(hypothesis_nodes_mutable)
 
     preposition_pattern_graph = digraph_with_nodes_sorted_by(
-        subgraph(perception_digraph, nodes=hypothesis_nodes), _graph_node_order
+        subgraph(perception_digraph, hypothesis_nodes), _graph_node_order
     )
     return PerceptionGraphTemplate.from_graph(
         preposition_pattern_graph, template_variables_to_object_match_nodes.items()
