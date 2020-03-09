@@ -163,7 +163,7 @@ class VerbPursuitLearner(
         )
 
     @attrs(frozen=True)
-    class VerbHypothesisPartialMatch(AbstractPursuitLearner.PartialMatch[VerbPattern]):
+    class VerbHypothesisPartialMatch(AbstractPursuitLearner.PartialMatch):
         partial_match_hypothesis: Optional[VerbPattern] = attrib(
             validator=optional(instance_of(VerbPattern))
         )

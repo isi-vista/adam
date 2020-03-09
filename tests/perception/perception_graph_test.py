@@ -242,9 +242,7 @@ def test_last_failed_pattern_node():
     for (_, _, perceptual_representation) in train_curriculum.instances():
         # Original perception graph
         perception = graph_without_learner(
-            PerceptionGraph.from_frame(
-                perceptual_representation.frames[0]
-            ).copy_as_digraph()
+            PerceptionGraph.from_frame(perceptual_representation.frames[0])
         )
 
         # Original perception pattern
@@ -366,7 +364,7 @@ def test_semantically_infeasible_partial_match():
     perceptual_representation = only(train_curriculum.instances())[2]
     # Original perception graph
     perception = graph_without_learner(
-        PerceptionGraph.from_frame(perceptual_representation.frames[0]).copy_as_digraph()
+        PerceptionGraph.from_frame(perceptual_representation.frames[0])
     )
     whole_perception_pattern = PerceptionGraphPattern.from_graph(
         perception.copy_as_digraph()
@@ -455,7 +453,7 @@ def test_syntactically_infeasible_partial_match():
 
     # Original perception graph
     perception = graph_without_learner(
-        PerceptionGraph.from_frame(perceptual_representation.frames[0]).copy_as_digraph()
+        PerceptionGraph.from_frame(perceptual_representation.frames[0])
     )
     whole_perception_pattern = PerceptionGraphPattern.from_graph(
         perception.copy_as_digraph()
@@ -554,7 +552,7 @@ def test_copy_with_temporal_scopes_content():
     perceptual_representation = only(train_curriculum.instances())[2]
 
     perception_graph = graph_without_learner(
-        PerceptionGraph.from_frame(perceptual_representation.frames[0]).copy_as_digraph()
+        PerceptionGraph.from_frame(perceptual_representation.frames[0])
     )
     temporal_perception_graph = perception_graph.copy_with_temporal_scopes(
         temporal_scopes=[TemporalScope.AFTER]
@@ -588,7 +586,7 @@ def test_perception_graph_post_init_edge_cases():
     train_curriculum = phase1_instances("all obj situations", situations=template)
     perceptual_representation = only(train_curriculum.instances())[2]
     perception_graph = graph_without_learner(
-        PerceptionGraph.from_frame(perceptual_representation.frames[0]).copy_as_digraph()
+        PerceptionGraph.from_frame(perceptual_representation.frames[0])
     )
     temporal_perception_graph = perception_graph.copy_with_temporal_scopes(
         temporal_scopes=[TemporalScope.AFTER]
@@ -638,7 +636,7 @@ def test_matching_static_vs_dynamic_graphs():
     perceptual_representation = only(train_curriculum.instances())[2]
 
     perception_graph = graph_without_learner(
-        PerceptionGraph.from_frame(perceptual_representation.frames[0]).copy_as_digraph()
+        PerceptionGraph.from_frame(perceptual_representation.frames[0])
     )
     temporal_perception_graph = perception_graph.copy_with_temporal_scopes(
         temporal_scopes=[TemporalScope.AFTER]
@@ -682,7 +680,7 @@ def test_copy_with_temporal_scope_pattern_content():
     perceptual_representation = only(train_curriculum.instances())[2]
 
     perception_graph = graph_without_learner(
-        PerceptionGraph.from_frame(perceptual_representation.frames[0]).copy_as_digraph()
+        PerceptionGraph.from_frame(perceptual_representation.frames[0])
     )
 
     perception_pattern = PerceptionGraphPattern.from_graph(

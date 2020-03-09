@@ -50,9 +50,7 @@ class SubsetLanguageLearner(
         if len(perception.frames) != 1:
             raise RuntimeError("Subset learner can only handle single frames for now")
         if isinstance(perception.frames[0], DevelopmentalPrimitivePerceptionFrame):
-            original_perception_graph = PerceptionGraph.from_frame(
-                perception.frames[0]
-            ).copy_as_digraph()
+            original_perception_graph = PerceptionGraph.from_frame(perception.frames[0])
         else:
             raise RuntimeError("Cannot process perception type.")
 
@@ -104,9 +102,7 @@ class SubsetLanguageLearner(
         if len(perception.frames) != 1:
             raise RuntimeError("Subset learner can only handle single frames for now")
         if isinstance(perception.frames[0], DevelopmentalPrimitivePerceptionFrame):
-            original_perception_graph = PerceptionGraph.from_frame(
-                perception.frames[0]
-            ).copy_as_digraph()
+            original_perception_graph = PerceptionGraph.from_frame(perception.frames[0])
         else:
             raise RuntimeError("Cannot process perception type.")
         observed_perception_graph = graph_without_learner(original_perception_graph)
