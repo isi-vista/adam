@@ -2467,7 +2467,7 @@ class LanguageAlignedPerception:
     language: LinguisticDescription = attrib(validator=instance_of(LinguisticDescription))
     perception_graph: PerceptionGraph = attrib(validator=instance_of(PerceptionGraph))
     node_to_language_span: ImmutableDict[MatchedObjectNode, Span] = attrib(
-        converter=_sort_mapping_by_token_spans
+        converter=_sort_mapping_by_token_spans, default=immutabledict()
     )
     language_span_to_node: ImmutableDict[Span, PerceptionGraphNode] = attrib(init=False)
     aligned_nodes: ImmutableSet[MatchedObjectNode] = attrib(init=False)

@@ -50,9 +50,9 @@ class PerceptionGraphFromObjectRecognizer:
     """
 
     perception_graph: PerceptionGraph
-    description_to_matched_object_node: ImmutableDict[str, MatchedObjectNode] = attrib(
-        converter=_to_immutabledict
-    )
+    description_to_matched_object_node: ImmutableDict[
+        Tuple[str, ...], MatchedObjectNode
+    ] = attrib(converter=_to_immutabledict)
 
 
 # these are shared aspects of the world which, although they might be referenced by
@@ -124,7 +124,7 @@ class ObjectRecognizer:
         This is useful as a pre-processing step
         before prepositional and verbal learning experiments.
         """
-        matched_object_nodes: List[Tuple[str, MatchedObjectNode]] = []
+        matched_object_nodes: List[Tuple[Tuple[str, ...], MatchedObjectNode]] = []
         graph_to_return = perception_graph.copy_as_digraph()
         is_dynamic = perception_graph.dynamic
         for (description, pattern) in self.object_names_to_patterns.items():
@@ -183,7 +183,7 @@ class ObjectRecognizer:
         self,
         networkx_graph_to_modify_in_place: DiGraph,
         pattern_match: PerceptionGraphPatternMatch,
-        matched_object_nodes: List[Tuple[str, MatchedObjectNode]],
+        matched_object_nodes: List[Tuple[Tuple[str, ...], MatchedObjectNode]],
         description: str,
     ):
         """
@@ -192,7 +192,9 @@ class ObjectRecognizer:
         """
         matched_object_node = MatchedObjectNode(name=(description,))
 
-        matched_object_nodes.append((description, matched_object_node))
+        # We wrap the description in a tuple because it could in theory be multiple tokens,
+        # even though currently it never is.
+        matched_object_nodes.append(((description,), matched_object_node))
         networkx_graph_to_modify_in_place.add_node(matched_object_node)
 
         matched_subgraph_nodes: ImmutableSet[PerceptionGraphNode] = immutableset(
@@ -277,7 +279,7 @@ class ObjectRecognizer:
 
     def _align_objects_to_tokens(
         self,
-        description_to_object_node: Mapping[str, MatchedObjectNode],
+        description_to_object_node: Mapping[Tuple[str, ...], MatchedObjectNode],
         language: LinguisticDescription,
     ) -> Mapping[MatchedObjectNode, Span]:
         result: List[Tuple[MatchedObjectNode, Span]] = []
@@ -285,7 +287,13 @@ class ObjectRecognizer:
         # We want to ban the same token index from being aligned twice.
         matched_token_indices: Set[int] = set()
 
-        for (description, object_node) in description_to_object_node.items():
+        for (description_tuple, object_node) in description_to_object_node.items():
+            if len(description_tuple) != 1:
+                raise RuntimeError(
+                    f"Multi-token descriptions are not yet supported:"
+                    f"{description_tuple}"
+                )
+            description = description_tuple[0]
             try:
                 end_index_inclusive = language.index(description)
             except ValueError:

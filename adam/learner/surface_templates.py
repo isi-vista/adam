@@ -110,3 +110,13 @@ class SurfaceTemplate:
                 # element must be a single token str due to object validity checks.
                 output_tokens.append(element)
         return TokenSequenceLinguisticDescription(output_tokens)
+
+
+SLOT1 = SurfaceTemplateVariable("slot1")
+SLOT2 = SurfaceTemplateVariable("slot1")
+SLOT3 = SurfaceTemplateVariable("slot1")
+SLOT4 = SurfaceTemplateVariable("slot1")
+SLOT5 = SurfaceTemplateVariable("slot1")
+SLOT6 = SurfaceTemplateVariable("slot1")
+
+STANDARD_SLOT_VARIABLES = (SLOT1, SLOT2, SLOT3, SLOT4, SLOT5, SLOT6)

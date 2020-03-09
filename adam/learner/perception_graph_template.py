@@ -3,8 +3,8 @@ from typing import Any, Iterable, List, Mapping, Optional, Tuple
 
 from attr.validators import deep_mapping, instance_of
 
-from adam.learner.surface_templates import SurfaceTemplateVariable
-from immutablecollections import immutableset, ImmutableDict
+from adam.learner.surface_templates import SurfaceTemplateVariable, SLOT1, SLOT2
+from immutablecollections import immutableset, ImmutableDict, immutabledict
 from immutablecollections.converter_utils import _to_immutabledict
 from networkx import DiGraph
 
@@ -16,12 +16,6 @@ from adam.perception.perception_graph import (
     GraphLogger,
 )
 from attr import attrib, attrs
-
-# Constants used to map locations in a prepositional phrase for mapping
-SLOT1 = SurfaceTemplateVariable("slot1")
-SLOT2 = SurfaceTemplateVariable("slot2")
-
-_PREPOSITION_TEMPLATE_VARIABLES = {SLOT1, SLOT2}
 
 
 @attrs(frozen=True, slots=True, eq=False)
@@ -38,6 +32,7 @@ class PerceptionGraphTemplate:
             instance_of(SurfaceTemplateVariable),
             instance_of(MatchedObjectPerceptionPredicate),
         ),
+        default=immutabledict(),
     )
     pattern_node_to_template_variable: ImmutableDict[
         MatchedObjectPerceptionPredicate, SurfaceTemplateVariable
@@ -90,14 +85,6 @@ class PerceptionGraphTemplate:
                     f" but got {object_node} with id {id(object_node)}"
                     f" which doesn't exist in {self.graph_pattern}"
                 )
-
-        template_variables = set(self.template_variable_to_pattern_node.keys())
-        if template_variables != _PREPOSITION_TEMPLATE_VARIABLES:
-            raise RuntimeError(
-                f"Expected a preposition pattern to have "
-                f"the object variables {_PREPOSITION_TEMPLATE_VARIABLES} "
-                f"but got {template_variables}"
-            )
 
     def intersection(
         self,

@@ -7,7 +7,7 @@ from adam.curriculum.phase1_curriculum import PHASE1_CHOOSER, phase1_instances
 from adam.curriculum.pursuit_curriculum import make_simple_pursuit_curriculum
 from adam.language_specific.english.english_language_generator import IGNORE_COLORS
 from adam.learner import LearningExample
-from adam.learner.pursuit import ObjectPursuitLearner
+from adam.learner.pursuit.object import ObjectPursuitLearner
 from adam.learner.subset import SubsetLanguageLearner
 from adam.ontology import OntologyNode
 from adam.ontology.phase1_ontology import (

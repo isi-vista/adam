@@ -2,16 +2,22 @@ import logging
 from typing import Dict, Generic, List, Mapping, Optional, Tuple, cast
 
 from attr.validators import instance_of
-from more_itertools import flatten
-from networkx import DiGraph, all_shortest_paths
+from networkx import DiGraph
 
 from adam.language import LinguisticDescription
 from adam.learner import LanguageLearner, LearningExample
+from adam.learner.learner_utils import pattern_match_to_description
 from adam.learner.object_recognizer import ObjectRecognizer
-from adam.learner.preposition_pattern import PerceptionGraphTemplate, SLOT1, SLOT2
-from adam.learner.surface_templates import SurfaceTemplate, SurfaceTemplateVariable
+from adam.learner.perception_graph_template import PerceptionGraphTemplate
+from adam.learner.prepositions import preposition_hypothesis_from_perception
+from adam.learner.surface_templates import (
+    SurfaceTemplate,
+    SurfaceTemplateVariable,
+    SLOT1,
+    SLOT2,
+)
 from adam.ontology.ontology import Ontology
-from adam.perception import ObjectPerception, PerceptionT, PerceptualRepresentation
+from adam.perception import PerceptionT, PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
@@ -21,12 +27,9 @@ from adam.perception.perception_graph import (
     MatchedObjectNode,
     MatchedObjectPerceptionPredicate,
     PerceptionGraph,
-    PerceptionGraphNode,
-    _graph_node_order,
 )
-from adam.utils.networkx_utils import digraph_with_nodes_sorted_by, subgraph
 from attr import Factory, attrib, attrs
-from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
+from immutablecollections import ImmutableDict, immutabledict
 
 """
 This is a surface string pattern for a preposition. 
@@ -81,7 +84,6 @@ class PrepositionSubsetLanguageLearner(
             LanguageAlignedPerception(
                 language=learning_example.linguistic_description,
                 perception_graph=original_perception,
-                node_to_language_span=immutabledict(),
             )
         )
 
@@ -114,7 +116,7 @@ class PrepositionSubsetLanguageLearner(
             ]
         )
 
-        hypothesis_from_current_perception = self._hypothesis_from_perception(
+        hypothesis_from_current_perception = preposition_hypothesis_from_perception(
             post_recognition_object_perception_alignment,
             template_variables_to_object_match_nodes,
         )
@@ -204,83 +206,6 @@ class PrepositionSubsetLanguageLearner(
             raise RuntimeError("Cannot process perception type.")
         return original_perception
 
-    def _hypothesis_from_perception(
-        self,
-        scene_aligned_perception: LanguageAlignedPerception,
-        template_variables_to_object_match_nodes: Mapping[
-            SurfaceTemplateVariable, MatchedObjectNode
-        ],
-    ) -> PerceptionGraphTemplate:
-        """
-        Create a hypothesis for the semantics of a preposition based on the observed scene.
-        
-        Our current implementation is to just include the content 
-        on the path between the recognized object nodes
-        and one hop away from that path.
-        """
-
-        # The directions of edges in the perception graph are not necessarily meaningful
-        # from the point-of-view of hypothesis generation, so we need an undirected copy
-        # of the graph.
-        perception_digraph = scene_aligned_perception.perception_graph.copy_as_digraph()
-        perception_graph_undirected = perception_digraph.to_undirected(
-            # as_view=True loses determinism
-            as_view=False
-        )
-
-        self._print(perception_graph_undirected, "Undirected perception graph")
-
-        if {SLOT1, SLOT2} != set(template_variables_to_object_match_nodes.keys()):
-            raise RuntimeError(
-                "Can only make a preposition hypothesis if the recognized "
-                "objects are aligned to SurfaceTemplateVariables SLOT1 and SLOT2"
-            )
-
-        slot1_object = template_variables_to_object_match_nodes[SLOT1]
-        slot2_object = template_variables_to_object_match_nodes[SLOT2]
-
-        # The core of our hypothesis for the semantics of a preposition is all nodes
-        # along the shortest path between the two objects involved in the perception graph.
-        hypothesis_spine_nodes: ImmutableSet[PerceptionGraphNode] = immutableset(
-            flatten(
-                # if there are multiple paths between the object match nodes,
-                # we aren't sure which are relevant, so we include them all in our hypothesis
-                # and figure we can trim out irrelevant stuff as we make more observations.
-                all_shortest_paths(
-                    perception_graph_undirected, slot2_object, slot1_object
-                )
-            )
-        )
-
-        self._print(
-            subgraph(perception_graph_undirected, nodes=hypothesis_spine_nodes),
-            "Spine nodes",
-        )
-
-        # Along the core of our hypothesis we also want to collect the predecessors and successors
-        hypothesis_nodes_mutable = []
-        for node in hypothesis_spine_nodes:
-            if node not in {slot1_object, slot2_object}:
-                for successor in perception_digraph.successors(node):
-                    if not isinstance(successor, ObjectPerception):
-                        hypothesis_nodes_mutable.append(successor)
-                for predecessor in perception_digraph.predecessors(node):
-                    if not isinstance(predecessor, ObjectPerception):
-                        hypothesis_nodes_mutable.append(predecessor)
-
-        hypothesis_nodes_mutable.extend(hypothesis_spine_nodes)
-
-        # We wrap the nodes in an immutable set to remove duplicates
-        # while preserving iteration determinism.
-        hypothesis_nodes = immutableset(hypothesis_nodes_mutable)
-
-        preposition_pattern_graph = digraph_with_nodes_sorted_by(
-            subgraph(perception_digraph, nodes=hypothesis_nodes), _graph_node_order
-        )
-        return PerceptionGraphTemplate.from_graph(
-            preposition_pattern_graph, template_variables_to_object_match_nodes.items()
-        )
-
     def describe(
         self, perception: PerceptualRepresentation[PerceptionT]
     ) -> Mapping[LinguisticDescription, float]:
@@ -317,31 +242,11 @@ class PrepositionSubsetLanguageLearner(
                 # if it is, use that preposition to describe the situation.
                 description_to_score.append(
                     (
-                        preposition_surface_template.instantiate(
-                            template_variable_to_filler=immutabledict(
-                                (
-                                    preposition_pattern.pattern_node_to_template_variable[
-                                        pattern_node
-                                    ],
-                                    # Wrapped in a tuple because fillers can in general be
-                                    # multiple words.
-                                    (
-                                        recognized_objects_to_names[
-                                            # We know, but the type system does not,
-                                            # that if a MatchedObjectPerceptionPredicate matched,
-                                            # the graph node must be a MatchedObjectNode
-                                            cast(MatchedObjectNode, matched_graph_node)
-                                        ],
-                                    ),
-                                )
-                                for (
-                                    pattern_node,
-                                    matched_graph_node,
-                                ) in match.pattern_node_to_matched_graph_node.items()
-                                if isinstance(
-                                    pattern_node, MatchedObjectPerceptionPredicate
-                                )
-                            )
+                        pattern_match_to_description(
+                            surface_template=preposition_surface_template,
+                            pattern=preposition_pattern,
+                            match=match,
+                            matched_objects_to_names=recognized_objects_to_names,
                         ),
                         1.0,
                     )
