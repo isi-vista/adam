@@ -40,7 +40,9 @@ class PrepositionPursuitLearner(
     An implementation of pursuit learner for preposition leaning
     """
 
-    _object_recognizer: ObjectRecognizer = attrib(
+    # mypy doesn't realize that fields without defaults can come after those with defaults
+    # if they are keyword-only.
+    _object_recognizer: ObjectRecognizer = attrib(  # type: ignore
         validator=instance_of(ObjectRecognizer), kw_only=True
     )
 
