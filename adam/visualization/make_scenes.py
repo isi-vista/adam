@@ -98,7 +98,7 @@ def main(params: Parameters) -> None:
     random.seed(params.integer("seed"))
     np.random.seed(params.integer("seed"))
 
-    if params.string("debug_bounding_boxes") == "on":
+    if params.string("debug_bounding_boxes", default="off") == "on":
         debug_bounding_boxes = True
     else:
         debug_bounding_boxes = False

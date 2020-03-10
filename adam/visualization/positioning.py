@@ -191,26 +191,37 @@ def run_model(
         in_region_relations=in_region_map,
         scale_map=object_scales,
     )
-
+    patience = 10
     # we will start with an aggressive learning rate
-    optimizer = optim.SGD(positioning_model.parameters(), lr=1.0)
+    optimizer = optim.SGD(positioning_model.parameters(), lr=1.5)
     # but will decrease it whenever the loss plateaus
     learning_rate_schedule = ReduceLROnPlateau(
         optimizer,
         "min",
         # decrease the rate if the loss hasn't improved in
         # 10 epochs
-        patience=10,
+        patience=patience,
     )
 
     iterations = num_iterations
+    quit_patience = patience * 3
+    loss_eps = 1e-6
+    prev_loss = 0.0
+    epochs_without_improvement = 0
     for i in range(iterations):
         print(f"====== Iteration {i} =======")
         loss = positioning_model()
         # if we lose any substantial gradient, stop the search
         if loss < LOSS_EPSILON:
             break
-        print(f"\tLoss: {loss.item()}")
+        if prev_loss - loss < loss_eps:
+            epochs_without_improvement += 1
+        else:
+            epochs_without_improvement = 0
+        if epochs_without_improvement >= quit_patience:
+            break
+        prev_loss = loss
+        print(f"\tLoss: {loss.item()} bad: {epochs_without_improvement}")
         loss.backward()
 
         optimizer.step()
