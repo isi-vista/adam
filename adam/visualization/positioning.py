@@ -713,7 +713,7 @@ class PositioningModel(torch.nn.Module):  # type: ignore
             immutabledict(
                 (object_perception.debug_handle, bounding_box.scale.data)
                 for object_perception, bounding_box in self.object_perception_to_bounding_box.items()
-            )
+            ),
         )
 
     def _update_subobject_positions(self) -> None:

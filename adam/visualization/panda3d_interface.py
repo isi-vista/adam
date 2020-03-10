@@ -39,7 +39,7 @@ from adam.visualization.utils import (
 
 from adam.perception.developmental_primitive_perception import RgbColorPerception
 
-from torch import tensor
+from torch import Tensor
 
 
 class SituationVisualizer(ShowBase):
@@ -353,7 +353,7 @@ class SituationVisualizer(ShowBase):
             new_node.reparentTo(parent)
         return new_node
 
-    def add_debug_bounding_box(self, name: str, position: tensor, scale: tensor):
+    def add_debug_bounding_box(self, name: str, position: Tensor, scale: Tensor):
         new_node = self._load_model("debug_cube.egg")
         new_node.name = name
         new_node.setPos(position.data[0], position.data[1], position.data[2])
@@ -433,9 +433,9 @@ def bounds_to_scale(
     min_corner: LPoint3f, max_corner: LPoint3f
 ) -> Tuple[float, float, float]:
     return (
-        max_corner.x - min_corner.x,
-        max_corner.y - min_corner.y,
-        max_corner.z - min_corner.z,
+        (max_corner.x - min_corner.x) / 2,
+        (max_corner.y - min_corner.y) / 2,
+        (max_corner.z - min_corner.z) / 2,
     )
 
 

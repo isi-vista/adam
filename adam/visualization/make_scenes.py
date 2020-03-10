@@ -225,7 +225,11 @@ def main(params: Parameters) -> None:
             viz.set_positions(repositioned_map)
             if debug_bounding_boxes:
                 for name in repositioned_map.name_to_position:
-                    viz.add_debug_bounding_box(name, repositioned_map.name_to_position[name], repositioned_map.name_to_scale[name])
+                    viz.add_debug_bounding_box(
+                        name,
+                        repositioned_map.name_to_position[name],
+                        repositioned_map.name_to_scale[name],
+                    )
 
             # the visualizer seems to need about a second to render an update
             viz.run_for_seconds(1)
