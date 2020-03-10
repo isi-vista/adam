@@ -163,7 +163,7 @@ def main(params: Parameters) -> None:
                     top_level_node.perceived_obj
                 ] = scene_elements.in_region_map[top_level_node.perceived_obj]
 
-        print(inter_object_in_region_map)
+        # print(inter_object_in_region_map)
 
         # we want to assemble a lookup of the offsets (position) of each object's subobjects.
         sub_object_offsets = {}
@@ -175,9 +175,6 @@ def main(params: Parameters) -> None:
             while recurse_list:
                 next_batch: List[NodePath] = []
                 for child in recurse_list:
-                    print(
-                        f"{child.name}: {child.get_pos(viz.render)}, has transformation matrix applied: {child.hasMat()}"
-                    )
                     next_batch += child.children
                     # make sure this is a sub-object
                     if child.hasMat() and child.parent.name != node_name:
@@ -221,7 +218,6 @@ def main(params: Parameters) -> None:
         ):
             viz.clear_debug_nodes()
             viz.run_for_seconds(0.25)
-            print(f"repositioned values: {repositioned_map}")
             viz.set_positions(repositioned_map)
             if debug_bounding_boxes:
                 for name in repositioned_map.name_to_position:

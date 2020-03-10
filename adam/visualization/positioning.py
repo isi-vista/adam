@@ -68,16 +68,16 @@ DISTANCE_PENALTY = torch.tensor([1], dtype=torch.float)  # pylint: disable=not-c
 
 # concreteized definitions of the relative distance categories:
 PROXIMAL_MIN_DISTANCE = torch.tensor(  # pylint: disable=not-callable
-    [0.5], dtype=torch.float
+    [1], dtype=torch.float
 )
 PROXIMAL_MAX_DISTANCE = torch.tensor(  # pylint: disable=not-callable
-    [2], dtype=torch.float
+    [4], dtype=torch.float
 )
 
-DISTAL_MIN_DISTANCE = torch.tensor([4], dtype=torch.float)  # pylint: disable=not-callable
+DISTAL_MIN_DISTANCE = torch.tensor([5], dtype=torch.float)  # pylint: disable=not-callable
 
 EXTERIOR_BUT_IN_CONTACT_EPS = torch.tensor(  # pylint: disable=not-callable
-    [1e-5], dtype=torch.float
+    [1e-2], dtype=torch.float
 )
 
 
@@ -590,8 +590,6 @@ class PositioningModel(torch.nn.Module):  # type: ignore
 
         for object_perception in object_perceptions:
 
-            print(f"Adding {object_perception.debug_handle} to model")
-
             model_lookup = object_perception.debug_handle.split("_")[0]
             try:
                 scale = scale_map[model_lookup]
@@ -946,11 +944,11 @@ class InRegionPenalty(nn.Module):  # type: ignore
         designated_region: ImmutableSet[Region[ObjectPerception]],
     ):  # pylint: disable=arguments-differ
 
-        print(f"{target_object.debug_handle} positioned w/r/t {designated_region}")
+        # print(f"{target_object.debug_handle} positioned w/r/t {designated_region}")
 
         # return 0 if object has no relative positions to apply
         if not designated_region:
-            print(f"{target_object.debug_handle} has no relative positioning constraints")
+            # print(f"{target_object.debug_handle} has no relative positioning constraints")
             return torch.zeros(1)
 
         return sum(
@@ -982,9 +980,9 @@ class InRegionPenalty(nn.Module):  # type: ignore
         Returns: Tensor(1,) with penalty
 
         """
-        print(
-            f"TARGET: {target_box.center} REFERENCE: {reference_box.center} REGION:{region}"
-        )
+        # print(
+        #     f"TARGET: {target_box.center} REFERENCE: {reference_box.center} REGION:{region}"
+        # )
         assert region.distance is not None
         # get direction that box 1 should be in w/r/t box 2
         # TODO: allow for addressee directions
@@ -1033,9 +1031,6 @@ class InRegionPenalty(nn.Module):  # type: ignore
                 "Currently unable to support Interior distances w/ positioning solver"
             )
 
-        print(
-            f"Angle penalty: {angle * ANGLE_PENALTY} + distance penalty: {distance_penalty * DISTANCE_PENALTY}"
-        )
         return angle * ANGLE_PENALTY + distance_penalty * DISTANCE_PENALTY
 
     def direction_as_unit_vector(
