@@ -56,7 +56,6 @@ from adam.ontology.phase1_ontology import (
     THROW,
     THROW_GOAL,
     strictly_above,
-    PERSON_CAN_HAVE,
     MOVE,
     contacts,
     SELF_MOVING,
@@ -521,36 +520,7 @@ def _throw_to_template(
                 ],
             )
         ],
-        constraining_relations=[bigger_than(agent, theme)],
-    )
-
-
-def _throw_to_recipient_template(
-    # "Mom throws a ball to a baby"
-    agent: TemplateObjectVariable,
-    theme: TemplateObjectVariable,
-    goal: TemplateObjectVariable,
-    background: Iterable[TemplateObjectVariable],
-    *,
-    is_caught: bool,
-) -> Phase1SituationTemplate:
-    return Phase1SituationTemplate(
-        f"{agent.handle}-throws-{theme.handle}-to-recipient-{goal.handle}",
-        salient_object_variables=[agent, theme, goal],
-        background_object_variables=background,
-        actions=[
-            Action(
-                THROW,
-                argument_roles_to_fillers=[(AGENT, agent), (THEME, theme), (GOAL, goal)]
-                if is_caught
-                else [
-                    (AGENT, agent),
-                    (THEME, theme),
-                    (GOAL, Region(goal, distance=PROXIMAL)),
-                ],
-            )
-        ],
-        constraining_relations=[bigger_than(agent, theme), bigger_than(goal, theme)],
+        constraining_relations=flatten_relations(bigger_than(agent, theme)),
     )
 
 
@@ -575,10 +545,9 @@ def _throw_in_template(
                 ],
             )
         ],
-        constraining_relations=[
-            bigger_than(agent, theme),
-            bigger_than(goal_reference, theme),
-        ],
+        constraining_relations=flatten_relations(
+            bigger_than([agent, goal_reference], theme)
+        ),
     )
 
 
@@ -609,7 +578,7 @@ def _throw_on_template(
                 ],
             )
         ],
-        constraining_relations=[bigger_than(agent, theme)],
+        constraining_relations=flatten_relations(bigger_than(agent, theme)),
     )
 
 
@@ -647,7 +616,7 @@ def _throw_beside_template(
                 ],
             )
         ],
-        constraining_relations=[bigger_than(agent, theme)],
+        constraining_relations=flatten_relations(bigger_than(agent, theme)),
     )
 
 
@@ -684,7 +653,7 @@ def _throw_in_front_of_behind_template(
                 ],
             )
         ],
-        constraining_relations=[bigger_than(agent, theme)],
+        constraining_relations=flatten_relations(bigger_than(agent, theme)),
     )
 
 
@@ -718,10 +687,9 @@ def _throw_under_template(
                 ],
             )
         ],
-        constraining_relations=[
-            bigger_than(agent, theme),
-            bigger_than(goal_reference, theme),
-        ],
+        constraining_relations=flatten_relations(
+            bigger_than([agent, goal_reference], theme)
+        ),
     )
 
 
@@ -749,7 +717,7 @@ def _throw_path_over_template(
                 ),
             )
         ],
-        constraining_relations=[bigger_than(agent, theme)],
+        constraining_relations=flatten_relations(bigger_than(agent, theme)),
     )
 
 
@@ -785,10 +753,9 @@ def _throw_path_under_template(
                 ),
             )
         ],
-        constraining_relations=[
-            bigger_than(agent, theme),
-            bigger_than(object_in_path, theme),
-        ],
+        constraining_relations=flatten_relations(
+            bigger_than([agent, object_in_path], theme)
+        ),
     )
 
 
@@ -2674,11 +2641,7 @@ def _make_throw_with_prepositions(
 ) -> Phase1InstanceGroup:
     agent = standard_object("agent", THING, required_properties=[ANIMATE])
     theme = standard_object("theme", INANIMATE_OBJECT)
-    theme_can_have = standard_object(
-        "theme_can_have", INANIMATE_OBJECT, required_properties=[PERSON_CAN_HAVE]
-    )
-    goal_reference = standard_object("goal_reference", THING)
-    goal_catcher = standard_object("goal_catcher", THING, required_properties=[ANIMATE])
+    goal_reference = standard_object("goal_reference", INANIMATE_OBJECT)
     goal_in = standard_object("goal_in", THING, required_properties=[HOLLOW])
     goal_on = standard_object(
         "goal_on", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
@@ -2686,7 +2649,7 @@ def _make_throw_with_prepositions(
     goal_under = standard_object(
         "goal_under", THING, required_properties=[HAS_SPACE_UNDER]
     )
-    implicit_goal_reference = standard_object("goal_reference", THING)
+    implicit_goal_reference = standard_object("goal_reference", INANIMATE_OBJECT)
     background = immutableset(
         standard_object(f"noise_object_{x}") for x in range(noise_objects)
     )
@@ -2709,24 +2672,6 @@ def _make_throw_with_prepositions(
                         max_to_sample=num_samples,
                     )
                     for template in situation_templates
-                ]
-            ),
-            # to (expecting object to be caught)
-            flatten(
-                [
-                    sampled(
-                        _throw_to_recipient_template(
-                            agent,
-                            theme_can_have,
-                            goal_catcher,
-                            background,
-                            is_caught=is_caught,
-                        ),
-                        ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
-                        max_to_sample=num_samples,
-                    )
-                    for is_caught in BOOL_SET
                 ]
             ),
             # beside

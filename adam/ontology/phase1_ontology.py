@@ -2015,7 +2015,7 @@ def _make_throw_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription
                 Region(
                     reference_object=_THROW_GROUND,
                     distance=DISTAL,
-                    direction=GRAVITATIONAL_DOWN,
+                    direction=GRAVITATIONAL_UP,
                 ),
             )
         ],
@@ -2028,10 +2028,12 @@ def _make_throw_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription
         has(_THROW_AGENT, _THROW_THEME),
         contacts(_THROW_MANIPULATOR, _THROW_THEME),
     ]
-    postconditions = [
-        inside(_THROW_THEME, THROW_GOAL),
-        negate(contacts(_THROW_MANIPULATOR, _THROW_THEME)),
-    ]
+    postconditions = flatten_relations(
+        [
+            Relation(IN_REGION, _THROW_THEME, THROW_GOAL),
+            negate(contacts(_THROW_MANIPULATOR, _THROW_THEME)),
+        ]
+    )
     asserted_properties = [
         (_THROW_AGENT, VOLITIONALLY_INVOLVED),
         (_THROW_AGENT, CAUSES_CHANGE),
