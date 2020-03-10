@@ -31,7 +31,7 @@ from attr.validators import instance_of
 
 
 @attrs(slots=True)
-class SubsetLanguageLearner(
+class SubsetObjectLearner(
     Generic[PerceptionT],
     LanguageLearner[DevelopmentalPrimitivePerceptionFrame, LinguisticDescription],
 ):

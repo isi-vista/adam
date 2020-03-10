@@ -8,7 +8,7 @@ from adam.curriculum.pursuit_curriculum import make_simple_pursuit_curriculum
 from adam.language_specific.english.english_language_generator import IGNORE_COLORS
 from adam.learner import LearningExample
 from adam.learner.pursuit.object import ObjectPursuitLearner
-from adam.learner.subset import SubsetLanguageLearner
+from adam.learner.subset import SubsetObjectLearner
 from adam.ontology import OntologyNode
 from adam.ontology.phase1_ontology import (
     BALL,
@@ -54,7 +54,7 @@ def run_subset_learner_for_object(
         ),
     )
 
-    learner = SubsetLanguageLearner(  # type: ignore
+    learner = SubsetObjectLearner(  # type: ignore
         debug_callback=debug_callback, ontology=GAILA_PHASE_1_ONTOLOGY
     )
     for training_stage in [obj_curriculum]:

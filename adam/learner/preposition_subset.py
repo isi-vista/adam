@@ -38,7 +38,7 @@ a preposition may be used with. For example, "MODIFIED on a GROUND".
 
 
 @attrs
-class PrepositionSubsetLanguageLearner(
+class PrepositionSubsetLearner(
     LanguageLearner[DevelopmentalPrimitivePerceptionFrame, LinguisticDescription]
 ):
     _surface_template_to_preposition_pattern: Dict[
