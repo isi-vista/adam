@@ -11,7 +11,7 @@
    supplied from elsewhere.
    """
 
-from typing import Tuple, Optional, Dict
+from typing import Tuple, Optional, Dict, List
 import sys
 import os
 
@@ -38,6 +38,8 @@ from adam.visualization.utils import (
 )
 
 from adam.perception.developmental_primitive_perception import RgbColorPerception
+
+from torch import tensor
 
 
 class SituationVisualizer(ShowBase):
@@ -218,6 +220,9 @@ class SituationVisualizer(ShowBase):
         # container of nodes to be dynamically added / removed
         self.geo_nodes: Dict[str, NodePath] = {}
 
+        # list of debug bounding boxes
+        self.debug_bounding_boxes: List[NodePath] = []
+
         # set default camera position/orientation:
         # default mouse controls have to be disabled to set a position manually
         self.disableMouse()
@@ -348,11 +353,30 @@ class SituationVisualizer(ShowBase):
             new_node.reparentTo(parent)
         return new_node
 
+    def add_debug_bounding_box(self, name: str, position: tensor, scale: tensor):
+        new_node = self._load_model("debug_cube.egg")
+        new_node.name = name
+        new_node.setPos(position.data[0], position.data[1], position.data[2])
+        new_node.setScale(scale.data[0][0], scale.data[1][1], scale.data[2][2])
+        # m = Material()
+        # m.setDiffuse((200, 0, 0, 0))
+        # new_node.setColor((200, 0, 0, 10))
+        # new_node.setMaterial(m, 1)
+        new_node.reparentTo(self.render)
+        self.debug_bounding_boxes.append(new_node)
+
     def clear_scene(self) -> None:
         """Clears out all added objects (other than ground plane, camera, lights)"""
         for node in self.geo_nodes.values():
             node.remove_node()
         self.geo_nodes = {}
+        self.clear_debug_nodes()
+        self.print_scene_graph()
+
+    def clear_debug_nodes(self) -> None:
+        for node in self.debug_bounding_boxes:
+            node.remove_node()
+        self.debug_bounding_boxes = []
 
     def top_level_positions(self) -> Dict[str, Tuple[float, float, float]]:
         """Returns a Map of name -> position of all nodes of geometry objects

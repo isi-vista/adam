@@ -155,6 +155,7 @@ class PositionsMap:
     """Convenience type: list of positions corresponding to objects in a scene."""
 
     name_to_position: Mapping[str, torch.Tensor]
+    name_to_scale: Mapping[str, torch.Tensor]
 
     def __len__(self) -> int:
         return len(self.name_to_position)
@@ -707,6 +708,10 @@ class PositioningModel(torch.nn.Module):  # type: ignore
         return PositionsMap(
             immutabledict(
                 (object_perception.debug_handle, bounding_box.center.data)
+                for object_perception, bounding_box in self.object_perception_to_bounding_box.items()
+            ),
+            immutabledict(
+                (object_perception.debug_handle, bounding_box.scale.data)
                 for object_perception, bounding_box in self.object_perception_to_bounding_box.items()
             )
         )

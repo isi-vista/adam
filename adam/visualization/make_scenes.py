@@ -98,6 +98,11 @@ def main(params: Parameters) -> None:
     random.seed(params.integer("seed"))
     np.random.seed(params.integer("seed"))
 
+    if params.string("debug_bounding_boxes") == "on":
+        debug_bounding_boxes = True
+    else:
+        debug_bounding_boxes = False
+
     # go through curriculum scenes and output geometry types
     print("scene generation test")
     viz = SituationVisualizer()
@@ -119,7 +124,7 @@ def main(params: Parameters) -> None:
             continue
         if specific_scene and i > specific_scene:
             break
-        print(f"SCENE {i}")
+        print(f"SCENE {i}: {' '.join(scene_elements.tokens)}")
         viz.set_title(" ".join(token for token in scene_elements.tokens))
         # for debugging purposes:
         SceneCreator.graph_for_each(scene_elements.object_graph, print_obj_names)
@@ -214,8 +219,13 @@ def main(params: Parameters) -> None:
             iterations=num_iterations,
             yield_steps=steps_before_vis,
         ):
+            viz.clear_debug_nodes()
+            viz.run_for_seconds(0.25)
             print(f"repositioned values: {repositioned_map}")
             viz.set_positions(repositioned_map)
+            if debug_bounding_boxes:
+                for name in repositioned_map.name_to_position:
+                    viz.add_debug_bounding_box(name, repositioned_map.name_to_position[name], repositioned_map.name_to_scale[name])
 
             # the visualizer seems to need about a second to render an update
             viz.run_for_seconds(1)
