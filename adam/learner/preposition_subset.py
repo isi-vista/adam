@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Generic, List, Mapping, Optional, Tuple, cast
+from typing import Dict, Generic, List, Mapping, Optional, Tuple
 
 from attr.validators import instance_of
 from networkx import DiGraph
@@ -11,10 +11,10 @@ from adam.learner.object_recognizer import ObjectRecognizer
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
 from adam.learner.prepositions import preposition_hypothesis_from_perception
 from adam.learner.surface_templates import (
-    SurfaceTemplate,
-    SurfaceTemplateVariable,
     SLOT1,
     SLOT2,
+    SurfaceTemplate,
+    SurfaceTemplateVariable,
 )
 from adam.ontology.ontology import Ontology
 from adam.perception import PerceptionT, PerceptualRepresentation
@@ -25,7 +25,6 @@ from adam.perception.perception_graph import (
     GraphLogger,
     LanguageAlignedPerception,
     MatchedObjectNode,
-    MatchedObjectPerceptionPredicate,
     PerceptionGraph,
 )
 from attr import Factory, attrib, attrs
@@ -40,7 +39,7 @@ a preposition may be used with. For example, "MODIFIED on a GROUND".
 
 @attrs
 class PrepositionSubsetLanguageLearner(
-    Generic[PerceptionT], LanguageLearner[PerceptionT, LinguisticDescription]
+    LanguageLearner[DevelopmentalPrimitivePerceptionFrame, LinguisticDescription]
 ):
     _surface_template_to_preposition_pattern: Dict[
         SurfaceTemplate, PerceptionGraphTemplate
@@ -61,7 +60,10 @@ class PrepositionSubsetLanguageLearner(
                     doc.write("\t" + str(edge) + "\n")
 
     def observe(
-        self, learning_example: LearningExample[PerceptionT, LinguisticDescription]
+        self,
+        learning_example: LearningExample[
+            DevelopmentalPrimitivePerceptionFrame, LinguisticDescription
+        ],
     ) -> None:
         perception = learning_example.perception
         original_perception = self._build_perception_graph(perception)
@@ -207,7 +209,7 @@ class PrepositionSubsetLanguageLearner(
         return original_perception
 
     def describe(
-        self, perception: PerceptualRepresentation[PerceptionT]
+        self, perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]
     ) -> Mapping[LinguisticDescription, float]:
         original_perception = self._build_perception_graph(perception)
 
