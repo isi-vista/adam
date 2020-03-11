@@ -98,6 +98,11 @@ def main(params: Parameters) -> None:
     random.seed(params.integer("seed"))
     np.random.seed(params.integer("seed"))
 
+    if params.string("debug_bounding_boxes", default="off") == "on":
+        debug_bounding_boxes = True
+    else:
+        debug_bounding_boxes = False
+
     # go through curriculum scenes and output geometry types
     print("scene generation test")
     viz = SituationVisualizer()
@@ -119,7 +124,7 @@ def main(params: Parameters) -> None:
             continue
         if specific_scene and i > specific_scene:
             break
-        print(f"SCENE {i}")
+        print(f"SCENE {i}: {' '.join(scene_elements.tokens)}")
         viz.set_title(" ".join(token for token in scene_elements.tokens))
         # for debugging purposes:
         SceneCreator.graph_for_each(scene_elements.object_graph, print_obj_names)
@@ -158,7 +163,7 @@ def main(params: Parameters) -> None:
                     top_level_node.perceived_obj
                 ] = scene_elements.in_region_map[top_level_node.perceived_obj]
 
-        print(inter_object_in_region_map)
+        # print(inter_object_in_region_map)
 
         # we want to assemble a lookup of the offsets (position) of each object's subobjects.
         sub_object_offsets = {}
@@ -170,9 +175,6 @@ def main(params: Parameters) -> None:
             while recurse_list:
                 next_batch: List[NodePath] = []
                 for child in recurse_list:
-                    print(
-                        f"{child.name}: {child.get_pos(viz.render)}, has transformation matrix applied: {child.hasMat()}"
-                    )
                     next_batch += child.children
                     # make sure this is a sub-object
                     if child.hasMat() and child.parent.name != node_name:
@@ -214,8 +216,16 @@ def main(params: Parameters) -> None:
             iterations=num_iterations,
             yield_steps=steps_before_vis,
         ):
-            print(f"repositioned values: {repositioned_map}")
+            viz.clear_debug_nodes()
+            viz.run_for_seconds(0.25)
             viz.set_positions(repositioned_map)
+            if debug_bounding_boxes:
+                for name in repositioned_map.name_to_position:
+                    viz.add_debug_bounding_box(
+                        name,
+                        repositioned_map.name_to_position[name],
+                        repositioned_map.name_to_scale[name],
+                    )
 
             # the visualizer seems to need about a second to render an update
             viz.run_for_seconds(1)

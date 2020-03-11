@@ -13,10 +13,10 @@ def test_basic_3d_scene() -> None:
 
     model_scales = app.get_model_scales()
 
-    # test grabbing the scale of a model (cube should be 2x2x2)
-    assert isclose(model_scales[Shape.SQUARE.name][0], 2, rel_tol=0.05)
-    assert isclose(model_scales[Shape.SQUARE.name][1], 2, rel_tol=0.05)
-    assert isclose(model_scales[Shape.SQUARE.name][2], 2, rel_tol=0.05)
+    # test grabbing the scale of a model (cube should be 1x1x1)
+    assert isclose(model_scales[Shape.SQUARE.name][0], 1, rel_tol=0.05)
+    assert isclose(model_scales[Shape.SQUARE.name][1], 1, rel_tol=0.05)
+    assert isclose(model_scales[Shape.SQUARE.name][2], 1, rel_tol=0.05)
 
     app.add_model(Shape.SQUARE, name="Square0", lookup_name="Square0", position=(1, 2, 2))
     app.add_model(

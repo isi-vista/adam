@@ -68,16 +68,16 @@ DISTANCE_PENALTY = torch.tensor([1], dtype=torch.float)  # pylint: disable=not-c
 
 # concreteized definitions of the relative distance categories:
 PROXIMAL_MIN_DISTANCE = torch.tensor(  # pylint: disable=not-callable
-    [0.5], dtype=torch.float
+    [1], dtype=torch.float
 )
 PROXIMAL_MAX_DISTANCE = torch.tensor(  # pylint: disable=not-callable
-    [2], dtype=torch.float
+    [4], dtype=torch.float
 )
 
-DISTAL_MIN_DISTANCE = torch.tensor([4], dtype=torch.float)  # pylint: disable=not-callable
+DISTAL_MIN_DISTANCE = torch.tensor([5], dtype=torch.float)  # pylint: disable=not-callable
 
 EXTERIOR_BUT_IN_CONTACT_EPS = torch.tensor(  # pylint: disable=not-callable
-    [1e-5], dtype=torch.float
+    [1e-2], dtype=torch.float
 )
 
 
@@ -155,6 +155,7 @@ class PositionsMap:
     """Convenience type: list of positions corresponding to objects in a scene."""
 
     name_to_position: Mapping[str, torch.Tensor]
+    name_to_scale: Mapping[str, torch.Tensor]
 
     def __len__(self) -> int:
         return len(self.name_to_position)
@@ -190,26 +191,37 @@ def run_model(
         in_region_relations=in_region_map,
         scale_map=object_scales,
     )
-
+    patience = 10
     # we will start with an aggressive learning rate
-    optimizer = optim.SGD(positioning_model.parameters(), lr=1.0)
+    optimizer = optim.SGD(positioning_model.parameters(), lr=1.5)
     # but will decrease it whenever the loss plateaus
     learning_rate_schedule = ReduceLROnPlateau(
         optimizer,
         "min",
         # decrease the rate if the loss hasn't improved in
         # 10 epochs
-        patience=10,
+        patience=patience,
     )
 
     iterations = num_iterations
+    quit_patience = patience * 3
+    loss_eps = 1e-6
+    prev_loss = 0.0
+    epochs_without_improvement = 0
     for i in range(iterations):
         print(f"====== Iteration {i} =======")
         loss = positioning_model()
         # if we lose any substantial gradient, stop the search
         if loss < LOSS_EPSILON:
             break
-        print(f"\tLoss: {loss.item()}")
+        if prev_loss - loss < loss_eps:
+            epochs_without_improvement += 1
+        else:
+            epochs_without_improvement = 0
+        if epochs_without_improvement >= quit_patience:
+            break
+        prev_loss = loss
+        print(f"\tLoss: {loss.item()} bad: {epochs_without_improvement}")
         loss.backward()
 
         optimizer.step()
@@ -578,8 +590,6 @@ class PositioningModel(torch.nn.Module):  # type: ignore
 
         for object_perception in object_perceptions:
 
-            print(f"Adding {object_perception.debug_handle} to model")
-
             model_lookup = object_perception.debug_handle.split("_")[0]
             try:
                 scale = scale_map[model_lookup]
@@ -708,7 +718,11 @@ class PositioningModel(torch.nn.Module):  # type: ignore
             immutabledict(
                 (object_perception.debug_handle, bounding_box.center.data)
                 for object_perception, bounding_box in self.object_perception_to_bounding_box.items()
-            )
+            ),
+            immutabledict(
+                (object_perception.debug_handle, bounding_box.scale.data)
+                for object_perception, bounding_box in self.object_perception_to_bounding_box.items()
+            ),
         )
 
     def _update_subobject_positions(self) -> None:
@@ -930,11 +944,11 @@ class InRegionPenalty(nn.Module):  # type: ignore
         designated_region: ImmutableSet[Region[ObjectPerception]],
     ):  # pylint: disable=arguments-differ
 
-        print(f"{target_object.debug_handle} positioned w/r/t {designated_region}")
+        # print(f"{target_object.debug_handle} positioned w/r/t {designated_region}")
 
         # return 0 if object has no relative positions to apply
         if not designated_region:
-            print(f"{target_object.debug_handle} has no relative positioning constraints")
+            # print(f"{target_object.debug_handle} has no relative positioning constraints")
             return torch.zeros(1)
 
         return sum(
@@ -966,9 +980,9 @@ class InRegionPenalty(nn.Module):  # type: ignore
         Returns: Tensor(1,) with penalty
 
         """
-        print(
-            f"TARGET: {target_box.center} REFERENCE: {reference_box.center} REGION:{region}"
-        )
+        # print(
+        #     f"TARGET: {target_box.center} REFERENCE: {reference_box.center} REGION:{region}"
+        # )
         assert region.distance is not None
         # get direction that box 1 should be in w/r/t box 2
         # TODO: allow for addressee directions
@@ -1017,9 +1031,6 @@ class InRegionPenalty(nn.Module):  # type: ignore
                 "Currently unable to support Interior distances w/ positioning solver"
             )
 
-        print(
-            f"Angle penalty: {angle * ANGLE_PENALTY} + distance penalty: {distance_penalty * DISTANCE_PENALTY}"
-        )
         return angle * ANGLE_PENALTY + distance_penalty * DISTANCE_PENALTY
 
     def direction_as_unit_vector(
