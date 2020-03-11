@@ -169,6 +169,7 @@ def run_model(
     *,
     num_iterations: int = 200,
     yield_steps: Optional[int] = None,
+    previous_positions: Optional[PositionsMap] = None,
 ) -> Iterable[PositionsMap]:
     r"""
     Construct a positioning model given a list of objects to position, return their position values.
@@ -180,18 +181,28 @@ def run_model(
         in_region_map: in-region relations for all top-level objects in this scene
         *num_iterations*: total number of SGD iterations.
         *yield_steps*: If provided, the current positions of all objects will be returned after this many steps
+        previous_positions: If provided, attempt to use the positions contained within to initialize the scene
 
     Returns: PositionsMap: Map of object name -> Tensor (3,) of its position
 
     """
 
-    positioning_model = PositioningModel.for_scaled_objects_random_positions(
-        top_level_objects,
-        sub_objects,
-        in_region_relations=in_region_map,
-        scale_map=object_scales,
-    )
-    patience = 10
+    if previous_positions:
+        positioning_model = PositioningModel.for_scaled_objects_positioned(
+            top_level_objects,
+            sub_objects,
+            in_region_relations=in_region_map,
+            scale_map=object_scales,
+            positions_map=previous_positions,
+        )
+    else:
+        positioning_model = PositioningModel.for_scaled_objects_random_positions(
+            top_level_objects,
+            sub_objects,
+            in_region_relations=in_region_map,
+            scale_map=object_scales,
+        )
+
     # we will start with an aggressive learning rate
     optimizer = optim.SGD(positioning_model.parameters(), lr=1.5)
     # but will decrease it whenever the loss plateaus
@@ -350,7 +361,7 @@ class AxisAlignedBoundingBox:
                     ),
                     requires_grad=True,
                 ),
-                object_scale,
+                torch.diag(object_scale),
                 offset,
             )
         return AxisAlignedBoundingBox(
@@ -586,9 +597,48 @@ class PositioningModel(torch.nn.Module):  # type: ignore
         scale_map: Mapping[str, Tuple[float, float, float]],
     ) -> "PositioningModel":
 
+
+        return PositioningModel._scaled_objects_helper(
+            object_perceptions=object_perceptions,
+            sub_objects=sub_objects,
+            in_region_relations=in_region_relations,
+            scale_map=scale_map,
+            positions_map=None,
+        )
+
+    @staticmethod
+    def for_scaled_objects_positioned(
+        object_perceptions: AbstractSet[ObjectPerception],
+        sub_objects: Mapping[str, Mapping[str, LPoint3f]],
+        *,
+        in_region_relations: Mapping[ObjectPerception, List[Region[ObjectPerception]]],
+        scale_map: Mapping[str, Tuple[float, float, float]],
+        positions_map: PositionsMap,
+    ) -> "PositioningModel":
+
+        return PositioningModel._scaled_objects_helper(
+            object_perceptions=object_perceptions,
+            sub_objects=sub_objects,
+            in_region_relations=in_region_relations,
+            scale_map=scale_map,
+            positions_map=positions_map,
+        )
+
+    @staticmethod
+    def _scaled_objects_helper(
+        object_perceptions: AbstractSet[ObjectPerception],
+        sub_objects: Mapping[str, Mapping[str, LPoint3f]],
+        *,
+        in_region_relations: Mapping[ObjectPerception, List[Region[ObjectPerception]]],
+        scale_map: Mapping[str, Tuple[float, float, float]],
+        positions_map: Optional[PositionsMap],
+    ) -> "PositioningModel":
+
         dict_items: List[Tuple[ObjectPerception, AxisAlignedBoundingBox]] = []
 
         for object_perception in object_perceptions:
+
+            print(f"Adding {object_perception.debug_handle} to model")
 
             model_lookup = object_perception.debug_handle.split("_")[0]
             try:
@@ -596,13 +646,23 @@ class PositioningModel(torch.nn.Module):  # type: ignore
             except KeyError:
                 print(f"couldn't find scale for {object_perception.debug_handle}")
                 scale = (1.0, 1.0, 1.0)
-            bounding_box = AxisAlignedBoundingBox.create_at_random_position_scaled(
-                min_distance_from_origin=10,
-                max_distance_from_origin=20,
-                object_scale=torch.tensor(  # pylint: disable=not-callable
-                    [scale[0], scale[1], scale[2]]
-                ),
-            )
+
+            if positions_map:
+                bounding_box = AxisAlignedBoundingBox.create_at_center_point_scaled(
+                    center=positions_map.name_to_position[object_perception.debug_handle],
+                    object_scale=torch.tensor(  # pylint: disable=not-callable
+                        [scale[0], scale[1], scale[2]]
+                    ),
+                    is_parameter=True,
+                )
+            else:
+                bounding_box = AxisAlignedBoundingBox.create_at_random_position_scaled(
+                    min_distance_from_origin=10,
+                    max_distance_from_origin=20,
+                    object_scale=torch.tensor(  # pylint: disable=not-callable
+                        [scale[0], scale[1], scale[2]]
+                    ),
+                )
             dict_items.append((object_perception, bounding_box))
 
         sub_object_mapping = PositioningModel._create_sub_objs_to_bounding_boxes(

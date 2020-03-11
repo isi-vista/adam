@@ -118,6 +118,9 @@ def main(params: Parameters) -> None:
     for model_name, scale in model_scales.items():
         logging.info("SCALE: %s -> %s", model_name, scale.__str__())
 
+    # used to start a frame from where the previous one left off
+    previous_model_positions: Optional[PositionsMap] = None
+
     for i, scene_elements in enumerate(SceneCreator.create_scenes([make_curriculum()])):
         # If a scene number is provided in the params file, only render that scene
         if specific_scene and i < specific_scene:
@@ -133,14 +136,21 @@ def main(params: Parameters) -> None:
             + str(scene_elements.total_frames)
             + ")"
         )
+
+        # if this is a new scene, forget the positions from the last scene
+        if scene_elements.current_frame == 0:
+            previous_model_positions = None
+
         # for debugging purposes:
         SceneCreator.graph_for_each(scene_elements.object_graph, print_obj_names)
 
         # bind visualizer and properties to top level rendering function:
-        bound_render_obj = partial(render_obj, viz, scene_elements.property_map)
+        bound_render_obj = partial(
+            render_obj, viz, scene_elements.property_map, previous_model_positions
+        )
         # bind visualizer and properties to nested obj rendering function
         bound_render_nested_obj = partial(
-            render_obj_nested, viz, scene_elements.property_map
+            render_obj_nested, viz, scene_elements.property_map, previous_model_positions
         )
 
         # render each object in graph
@@ -209,6 +219,8 @@ def main(params: Parameters) -> None:
         # now that every object has been instantiated into the scene,
         # they need to be re-positioned.
 
+        repositioned_map = None
+
         for repositioned_map in _solve_top_level_positions(
             top_level_objects=immutableset(
                 [
@@ -222,9 +234,11 @@ def main(params: Parameters) -> None:
             model_scales=model_scales,
             iterations=num_iterations,
             yield_steps=steps_before_vis,
+            previous_positions=previous_model_positions,
         ):
             viz.clear_debug_nodes()
             viz.run_for_seconds(0.25)
+
             viz.set_positions(repositioned_map)
             if debug_bounding_boxes:
                 for name in repositioned_map.name_to_position:
@@ -237,6 +251,10 @@ def main(params: Parameters) -> None:
             # the visualizer seems to need about a second to render an update
             viz.run_for_seconds(1)
             # viz.print_scene_graph()
+            previous_model_positions = None
+
+        # only store previous positions when continuing to next frame / scene
+        previous_model_positions = repositioned_map
         viz.run_for_seconds(1)
 
         screenshot_name = input(
@@ -253,6 +271,7 @@ def render_obj(
     properties: DefaultDict[
         ObjectPerception, List[Optional[Union[RgbColorPerception, OntologyNode]]]
     ],
+    prev_positions: Optional[PositionsMap],
     obj: ObjectPerception,
 ) -> NodePath:
     """
@@ -261,14 +280,14 @@ def render_obj(
     Args:
         renderer: rendering engine to render this object with
         properties: set of properties (colors, etc) associated with obj
+        prev_positions: positions of models from last frame (if applicable)
         obj: the object to be rendered
-        omit_irregular: flag for ignoring irregular geons
 
     Returns: a Panda3d NodePath: the path within the rendering engine's scene graph to the object/node
              rendered by calling this function.
 
     """
-    return render_obj_nested(renderer, properties, obj, None)
+    return render_obj_nested(renderer, properties, prev_positions, obj, None)
 
 
 def render_obj_nested(
@@ -276,6 +295,7 @@ def render_obj_nested(
     properties: DefaultDict[
         ObjectPerception, List[Optional[Union[RgbColorPerception, OntologyNode]]]
     ],
+    prev_positions: Optional[PositionsMap],
     obj: ObjectPerception,
     parent: Optional[NodePath],
 ) -> NodePath:
@@ -285,6 +305,7 @@ def render_obj_nested(
     Args:
         renderer: rendering engine to render this object with
         properties: set of properties (colors, etc) associated with obj
+        prev_positions: positions of models from last frame (if applicable)
         obj: the object to be rendered
         parent: the parent of the object to be rendered
 
@@ -295,16 +316,34 @@ def render_obj_nested(
     model_name = model_lookup(obj, parent)
     print(f"MODEL NAME: {model_name}")
 
+    if not parent and prev_positions:
+        position_tensor = prev_positions.name_to_position[obj.debug_handle]
+        position_tuple: Optional[Tuple[float, float, float]] = (
+            position_tensor.data[0].item(),
+            position_tensor.data[1].item(),
+            position_tensor.data[2].item(),
+        )
+    else:
+        position_tuple = None
+
     if obj.geon is None:
-        return renderer.add_dummy_node(obj.debug_handle, model_name, parent)
+        return renderer.add_dummy_node(
+            obj.debug_handle, model_name, parent, position=position_tuple
+        )
     shape = cross_section_to_geon(obj.geon.cross_section)
 
     color = None
     for prop in properties[obj]:
         if isinstance(prop, RgbColorPerception):
             color = prop
+
     return renderer.add_model(
-        shape, name=obj.debug_handle, lookup_name=model_name, color=color, parent=parent
+        shape,
+        name=obj.debug_handle,
+        lookup_name=model_name,
+        color=color,
+        parent=parent,
+        position=position_tuple,
     )
 
 
@@ -555,6 +594,7 @@ def _solve_top_level_positions(
     model_scales: Mapping[str, Tuple[float, float, float]],
     iterations: int = 200,
     yield_steps: Optional[int] = None,
+    previous_positions: Optional[PositionsMap] = None,
 ) -> Iterable[PositionsMap]:
     """
         Solves for positions of top-level objects.
@@ -575,6 +615,7 @@ def _solve_top_level_positions(
         model_scales,
         num_iterations=iterations,
         yield_steps=yield_steps,
+        previous_positions=previous_positions,
     )
 
 
