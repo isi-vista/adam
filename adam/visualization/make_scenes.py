@@ -124,8 +124,15 @@ def main(params: Parameters) -> None:
             continue
         if specific_scene and i > specific_scene:
             break
-        print(f"SCENE {i}: {' '.join(scene_elements.tokens)}")
-        viz.set_title(" ".join(token for token in scene_elements.tokens))
+        print(f"SCENE {i}")
+        viz.set_title(
+            " ".join(token for token in scene_elements.tokens)
+            + " ("
+            + str(scene_elements.current_frame + 1)
+            + "/"
+            + str(scene_elements.total_frames)
+            + ")"
+        )
         # for debugging purposes:
         SceneCreator.graph_for_each(scene_elements.object_graph, print_obj_names)
 
@@ -327,6 +334,8 @@ class SceneElements:
     object_graph: List[SceneNode] = attr.ib()
     # utterance related to the scene
     tokens: Tuple[str, ...] = attr.ib()
+    current_frame: int = attr.ib(validator=attr.validators.instance_of(int))
+    total_frames: int = attr.ib(validator=attr.validators.instance_of(int))
 
 
 @attrs(frozen=True, slots=True)
@@ -361,7 +370,9 @@ class SceneCreator:
                 ] = defaultdict(list)
                 # we only care about the perception at the moment
 
-                for frame in perception.frames:  # DevelopmentalPrimitivePerceptionFrame
+                for frame_number, frame in enumerate(
+                    perception.frames
+                ):  # DevelopmentalPrimitivePerceptionFrame
 
                     in_region_map: DefaultDict[
                         ObjectPerception, List[Region[ObjectPerception]]
@@ -404,6 +415,8 @@ class SceneCreator:
                         in_region_map,
                         nested_objects,
                         dependency_tree.as_token_sequence(),
+                        frame_number,
+                        len(perception.frames),
                     )
 
     @staticmethod
