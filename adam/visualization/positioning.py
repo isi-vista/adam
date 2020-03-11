@@ -202,7 +202,7 @@ def run_model(
             in_region_relations=in_region_map,
             scale_map=object_scales,
         )
-
+    patience = 10
     # we will start with an aggressive learning rate
     optimizer = optim.SGD(positioning_model.parameters(), lr=1.5)
     # but will decrease it whenever the loss plateaus
@@ -596,7 +596,6 @@ class PositioningModel(torch.nn.Module):  # type: ignore
         in_region_relations: Mapping[ObjectPerception, List[Region[ObjectPerception]]],
         scale_map: Mapping[str, Tuple[float, float, float]],
     ) -> "PositioningModel":
-
 
         return PositioningModel._scaled_objects_helper(
             object_perceptions=object_perceptions,
