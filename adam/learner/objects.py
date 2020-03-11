@@ -1,47 +1,41 @@
 import logging
+from abc import ABC
 from random import Random
-from typing import Iterable, List, Optional, Sequence, Union
+from typing import Union, Sequence, List, Optional, Iterable
 
-from attr.validators import instance_of, optional
-
-from adam.language import LinguisticDescription, TokenSequenceLinguisticDescription
+from adam.language import LinguisticDescription
 from adam.learner import (
     LearningExample,
-    get_largest_matching_pattern,
     graph_without_learner,
+    get_largest_matching_pattern,
 )
+from adam.learner.learner_utils import assert_static_situation
 from adam.learner.object_recognizer import PerceptionGraphFromObjectRecognizer
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
 from adam.learner.pursuit import AbstractPursuitLearner, HypothesisLogger
+from adam.learner.subset import AbstractSubsetLearner
 from adam.learner.surface_templates import SurfaceTemplate
+from adam.learner.template_learner import AbstractTemplateLearner
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
 from adam.ontology.phase1_spatial_relations import Region
-from adam.perception import ObjectPerception, PerceptualRepresentation
+from adam.perception import PerceptualRepresentation, ObjectPerception
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
     RgbColorPerception,
 )
 from adam.perception.perception_graph import (
-    LanguageAlignedPerception,
     PerceptionGraph,
+    LanguageAlignedPerception,
     PerceptionGraphPattern,
 )
 from adam.utils import networkx_utils
-from attr import attrib, attrs, evolve
+from attr import evolve, attrs, attrib
+from attr.validators import optional, instance_of
 from immutablecollections import immutabledict
 from vistautils.parameters import Parameters
 
 
-@attrs
-class ObjectPursuitLearner(
-    AbstractPursuitLearner[
-        DevelopmentalPrimitivePerceptionFrame, TokenSequenceLinguisticDescription
-    ]
-):
-    """
-    An implementation of pursuit learner for object recognition
-    """
-
+class AbstractObjectTemplateLearner(AbstractTemplateLearner, ABC):
     def _assert_valid_input(
         self,
         to_check: Union[
@@ -49,15 +43,7 @@ class ObjectPursuitLearner(
             PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame],
         ],
     ) -> None:
-        if isinstance(to_check, LearningExample):
-            perception = to_check.perception
-        else:
-            perception = to_check
-
-        if len(perception.frames) != 1:
-            raise RuntimeError("Pursuit learner can only handle single frames for now")
-        if not isinstance(perception.frames[0], DevelopmentalPrimitivePerceptionFrame):
-            raise RuntimeError(f"Cannot process frame type: {type(perception.frames[0])}")
+        assert_static_situation(to_check)
 
     def _extract_perception_graph(
         self, perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]
@@ -89,6 +75,13 @@ class ObjectPursuitLearner(
         self, preprocessed_input: LanguageAlignedPerception
     ) -> SurfaceTemplate:
         return SurfaceTemplate(preprocessed_input.language.as_token_sequence())
+
+
+@attrs
+class ObjectPursuitLearner(AbstractPursuitLearner, AbstractObjectTemplateLearner):
+    """
+    An implementation of pursuit learner for object recognition
+    """
 
     def _candidate_hypotheses(
         self, language_aligned_perception: LanguageAlignedPerception
@@ -282,4 +275,22 @@ class ObjectPursuitLearner(
             log_word_hypotheses_to=log_word_hypotheses_dir,
             rng=rng,
             ontology=GAILA_PHASE_1_ONTOLOGY,
+        )
+
+
+@attrs(slots=True)
+class SubsetObjectLearner(AbstractSubsetLearner, AbstractObjectTemplateLearner):
+    """
+    An implementation of `LanguageLearner` for subset learning based approach for single object detection.
+    """
+
+    def _hypothesis_from_perception(
+        self, preprocessed_input: LanguageAlignedPerception
+    ) -> PerceptionGraphTemplate:
+        new_hypothesis = PerceptionGraphPattern.from_graph(
+            preprocessed_input.perception_graph.copy_as_digraph()
+        ).perception_graph_pattern
+        return PerceptionGraphTemplate(
+            graph_pattern=new_hypothesis,
+            template_variable_to_pattern_node=immutabledict(),
         )

@@ -22,7 +22,7 @@ from adam.curriculum.preposition_curriculum import (
 )
 from adam.learner import LearningExample
 from adam.learner.object_recognizer import ObjectRecognizer
-from adam.learner.pursuit.preposition import PrepositionPursuitLearner
+from adam.learner.prepositions import PrepositionPursuitLearner
 from adam.ontology import IS_ADDRESSEE, IS_SPEAKER
 from adam.ontology.phase1_ontology import (
     BALL,

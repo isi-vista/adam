@@ -3,42 +3,20 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from pathlib import Path
 from random import Random
-from typing import (
-    Any,
-    Dict,
-    Generic,
-    Iterable,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    TypeVar,
-    Union,
-)
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set, Tuple
 
 from attr.validators import in_, instance_of, optional
 from more_itertools import first
 
-from adam.language import (
-    LinguisticDescription,
-    LinguisticDescriptionT,
-    TokenSequenceLinguisticDescription,
-)
-from adam.learner import LanguageLearner, LearningExample
-from adam.learner.learner_utils import pattern_match_to_description
-from adam.learner.object_recognizer import PerceptionGraphFromObjectRecognizer
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
 from adam.learner.surface_templates import SurfaceTemplate
+from adam.learner.template_learner import AbstractTemplateLearner
 from adam.ontology.ontology import Ontology
-from adam.perception import PerceptionT, PerceptualRepresentation
 from adam.perception.perception_graph import (
     DebugCallableType,
     GraphLogger,
     LanguageAlignedPerception,
     PerceptionGraph,
-    PerceptionGraphPattern,
 )
 from attr import Factory, attrib, attrs
 from immutablecollections import immutabledict
@@ -76,11 +54,7 @@ class HypothesisLogger(GraphLogger):
 
 
 @attrs
-class AbstractPursuitLearner(
-    Generic[PerceptionT, LinguisticDescriptionT],
-    LanguageLearner[PerceptionT, LinguisticDescription],
-    ABC,
-):
+class AbstractPursuitLearner(AbstractTemplateLearner, ABC):
     """
     An implementation of `LanguageLearner` for pursuit learning as a base for different pursuit based
     learners. Paper on Pursuit Learning Algorithm: https://www.ling.upenn.edu/~ycharles/papers/pursuit-final.pdf
@@ -138,31 +112,11 @@ class AbstractPursuitLearner(
 
     _observation_num = attrib(init=False, default=0)
 
-    def observe(
-        self, learning_example: LearningExample[PerceptionT, LinguisticDescription]
+    def _learning_step(
+        self,
+        preprocessed_input: LanguageAlignedPerception,
+        surface_template: SurfaceTemplate,
     ) -> None:
-        logging.info("Observation %s", self._observation_num)
-        self._observation_num += 1
-
-        self._assert_valid_input(learning_example)
-
-        # Some learners need to track the alignment between perceived objects
-        # and portions of the input language, so internally we operate over
-        # LanguageAlignedPerceptions.
-        original_language_aligned_perception = LanguageAlignedPerception(
-            language=learning_example.linguistic_description,
-            perception_graph=self._extract_perception_graph(learning_example.perception),
-        )
-
-        # Pre-processing steps will be different depending on
-        # what sort of structures we are running.
-        preprocessed_input = self._preprocess_scene_for_learning(
-            original_language_aligned_perception
-        )
-
-        logging.info(f"Pursuit learner observing {preprocessed_input}")
-
-        surface_template = self._extract_surface_template(preprocessed_input)
         # We track this to prevent overly aggressive lexicalization.
         self._learned_item_to_number_of_observations[surface_template] += 1
 
@@ -183,129 +137,23 @@ class AbstractPursuitLearner(
             if self._log_learned_item_hypotheses_to:
                 self._log_hypotheses(surface_template)
 
-    def describe(
-        self, perception: PerceptualRepresentation[PerceptionT]
-    ) -> Mapping[LinguisticDescription, float]:
-        self._assert_valid_input(perception)
+    def _primary_templates(
+        self
+    ) -> Iterable[Tuple[SurfaceTemplate, PerceptionGraphTemplate, float]]:
+        return [
+            (surface_template, graph_pattern, 1.0)
+            for (surface_template, graph_pattern) in self._lexicon.items()
+        ]
 
-        original_perception_graph = self._extract_perception_graph(perception)
-        preprocessing_result = self._preprocess_scene_for_description(
-            original_perception_graph
-        )
-
-        preprocessed_perception_graph = preprocessing_result.perception_graph
-        matched_objects_to_names = (
-            preprocessing_result.description_to_matched_object_node.inverse()
-        )
-
-        # This accumulates our output.
-        description_to_score: List[Tuple[TokenSequenceLinguisticDescription, float]] = []
-
-        # We pull this out into a function because we do matching in two passes:
-        # first against templates whose meanings we are sure of (=have lexicalized)
-        # and then, if no match has been found, against those we are still learning.
-        def match_pattern(
-            *,
-            description_template: SurfaceTemplate,
-            pattern: PerceptionGraphTemplate,
-            score: float,
-        ) -> None:
-            # try to see if (our model of) its semantics is present in the situation.
-            matcher = pattern.graph_pattern.matcher(
-                preprocessed_perception_graph, matching_objects=False
-            )
-            for match in matcher.matches(use_lookahead_pruning=True):
-                # if it is, use that preposition to describe the situation.
-                description_to_score.append(
-                    (
-                        pattern_match_to_description(
-                            surface_template=description_template,
-                            pattern=pattern,
-                            match=match,
-                            matched_objects_to_names=matched_objects_to_names,
-                        ),
-                        score,
-                    )
-                )
-
-        # For each template whose semantics we are certain of (=have been added to the lexicon)
-        for (surface_template, graph_pattern) in self._lexicon.items():
-            match_pattern(
-                description_template=surface_template, pattern=graph_pattern, score=1.0
-            )
-
-        if not description_to_score:
-            # Try to match against patterns being learned
-            # only if no lexicalized pattern was matched.
-            for (
-                surface_template,
-                graph_patterns_to_scores,
-            ) in self._learned_item_to_hypotheses_and_scores.items():
-                for (graph_pattern, score) in graph_patterns_to_scores.items():
-                    match_pattern(
-                        description_template=surface_template,
-                        pattern=graph_pattern,
-                        score=score,
-                    )
-
-        return immutabledict(description_to_score)
-
-    @abstractmethod
-    def _assert_valid_input(
-        self,
-        to_check: Union[
-            LearningExample[PerceptionT, LinguisticDescription],
-            PerceptualRepresentation[PerceptionT],
-        ],
-    ) -> None:
-        """
-        Check that the learner is capable of handling this sort of learning example
-        (at training time) or perception (at description time).
-        """
-
-    @abstractmethod
-    def _extract_perception_graph(
-        self, perception: PerceptualRepresentation[PerceptionT]
-    ) -> PerceptionGraph:
-        """
-        Transforms the observed *perception* into a `PerceptionGraph`.
-
-        This should just do the basic transformation.
-        Leave further processing on the graph for `_preprocess_scene_for_learning`
-        and `preprocess_scene_for_description`.
-        """
-
-    @abstractmethod
-    def _preprocess_scene_for_learning(
-        self, language_aligned_perception: LanguageAlignedPerception
-    ) -> LanguageAlignedPerception:
-        """
-        Does any preprocessing necessary before the learning process begins.
-
-        This will typically share some common code with `_preprocess_scene_for_description`.
-        """
-
-    @abstractmethod
-    def _preprocess_scene_for_description(
-        self, perception_graph: PerceptionGraph
-    ) -> PerceptionGraphFromObjectRecognizer:
-        """
-        Does any preprocessing necessary before attempting to describe a scene.
-
-        This will typically share some common code with `_preprocess_scene_for_learning`.
-        """
-
-    @abstractmethod
-    def _extract_surface_template(
-        self, preprocessed_input: LanguageAlignedPerception
-    ) -> SurfaceTemplate:
-        r"""
-        We treat learning as acquiring an association between "templates"
-        over the token sequence and `PerceptionGraphTemplate`\ s.
-
-        This method determines the surface template we are trying to learn semantics for
-        for this particular training example.
-        """
+    def _fallback_templates(
+        self
+    ) -> Iterable[Tuple[SurfaceTemplate, PerceptionGraphTemplate, float]]:
+        for (
+            surface_template,
+            graph_patterns_to_scores,
+        ) in self._learned_item_to_hypotheses_and_scores.items():
+            for (graph_pattern, score) in graph_patterns_to_scores.items():
+                yield (surface_template, graph_pattern, score)
 
     def initialization_step(
         self,

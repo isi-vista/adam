@@ -10,7 +10,7 @@ from adam.curriculum.curriculum_utils import (
 )
 from adam.learner import LearningExample
 from adam.learner.object_recognizer import ObjectRecognizer
-from adam.learner.pursuit.verb import VerbPursuitLearner
+from adam.learner.verbs import VerbPursuitLearner
 from adam.ontology.phase1_ontology import (
     GAILA_PHASE_1_ONTOLOGY,
     EAT,

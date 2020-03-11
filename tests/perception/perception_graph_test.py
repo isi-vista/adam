@@ -10,7 +10,6 @@ from adam.curriculum.curriculum_utils import (
     phase1_instances,
     standard_object,
 )
-from adam.learner.subset import graph_without_learner
 from adam.ontology import IN_REGION, OntologyNode
 from adam.ontology.phase1_ontology import (
     BIRD,

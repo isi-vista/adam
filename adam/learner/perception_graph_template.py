@@ -1,21 +1,20 @@
 from logging import INFO
-from typing import Any, Iterable, List, Mapping, Optional, Tuple
+from typing import Any, Iterable, List, Optional, Tuple
 
 from attr.validators import deep_mapping, instance_of
 
-from adam.learner.surface_templates import SurfaceTemplateVariable, SLOT1, SLOT2
-from immutablecollections import immutableset, ImmutableDict, immutabledict
-from immutablecollections.converter_utils import _to_immutabledict
-from networkx import DiGraph
-
+from adam.learner.surface_templates import SurfaceTemplateVariable
 from adam.ontology.ontology import Ontology
 from adam.perception.perception_graph import (
+    GraphLogger,
     MatchedObjectNode,
     MatchedObjectPerceptionPredicate,
+    PerceptionGraph,
     PerceptionGraphPattern,
-    GraphLogger,
 )
 from attr import attrib, attrs
+from immutablecollections import ImmutableDict, immutabledict, immutableset
+from immutablecollections.converter_utils import _to_immutabledict
 
 
 @attrs(frozen=True, slots=True, eq=False)
@@ -40,7 +39,7 @@ class PerceptionGraphTemplate:
 
     @staticmethod
     def from_graph(
-        perception_graph: DiGraph,
+        perception_graph: PerceptionGraph,
         template_variable_to_matched_object_node: Iterable[
             Tuple[SurfaceTemplateVariable, MatchedObjectNode]
         ],
@@ -48,12 +47,9 @@ class PerceptionGraphTemplate:
         template_variable_to_matched_object_node = immutableset(
             template_variable_to_matched_object_node
         )
-        if len(template_variable_to_matched_object_node) != 2:
-            raise RuntimeError(
-                f"Expected only two object variables in a preposition graph. Found "
-                f"{len(template_variable_to_matched_object_node)} in {template_variable_to_matched_object_node}"
-            )
-        pattern_from_graph = PerceptionGraphPattern.from_graph(perception_graph)
+        pattern_from_graph = PerceptionGraphPattern.from_graph(
+            perception_graph.copy_as_digraph()
+        )
         pattern_graph = pattern_from_graph.perception_graph_pattern
         matched_object_to_matched_predicate = (
             pattern_from_graph.perception_graph_node_to_pattern_node
@@ -93,28 +89,40 @@ class PerceptionGraphTemplate:
         graph_logger: Optional[GraphLogger] = None,
         ontology: Ontology,
     ) -> Optional["PerceptionGraphTemplate"]:
+        r"""
+        Gets the `PerceptionGraphTemplate` which contains all aspects of a pattern
+        which are both in this template and *other_template*.
+
+        If this intersection is an empty graph or would not contain all `SurfaceTemplateVariables`\ s
+        """
+
+        # First we just intersect the pattern graph.
         intersected_pattern = self.graph_pattern.intersection(
             pattern.graph_pattern, graph_logger=graph_logger, ontology=ontology
         )
         if intersected_pattern:
+            # If we get a successful intersection,
+            # we then need to make sure we have the correct SurfaceTemplateVariables.
+
+            # It would be more intuitive to use self.template_variable_to_pattern_node,
+            # but the pattern intersection code seems to prefer to return nodes
+            # from the right-hand graph.
+            template_variable_to_pattern_node = pattern.template_variable_to_pattern_node
             if graph_logger:
                 graph_logger.log_graph(intersected_pattern, INFO, "Intersected pattern")
-            mapping_builder = []
-            items_to_iterate: List[
-                Tuple[SurfaceTemplateVariable, MatchedObjectPerceptionPredicate]
-            ] = []
-            items_to_iterate.extend(self.template_variable_to_pattern_node.items())
-            items_to_iterate.extend(pattern.template_variable_to_pattern_node.items())
-            for template_variable, pattern_node in immutableset(items_to_iterate):
-                if (
-                    pattern_node
-                    in intersected_pattern._graph.nodes  # pylint:disable=protected-access
-                ):
-                    mapping_builder.append((template_variable, pattern_node))
+            for (
+                surface_template_variable,
+                object_wildcard,
+            ) in template_variable_to_pattern_node.items():
+                if object_wildcard not in intersected_pattern:
+                    raise RuntimeError(
+                        f"Result of intersection lacks a wildcard node "
+                        f"for template variable {surface_template_variable}"
+                    )
 
             return PerceptionGraphTemplate(
                 graph_pattern=intersected_pattern,
-                template_variable_to_pattern_node=mapping_builder,
+                template_variable_to_pattern_node=template_variable_to_pattern_node,
             )
         else:
             return None

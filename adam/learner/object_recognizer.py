@@ -1,31 +1,30 @@
 import logging
 from itertools import chain
-from typing import Iterable, List, Mapping, Tuple, Set
+from typing import Iterable, List, Mapping, Set, Tuple
 
-from attr.validators import deep_mapping, instance_of, deep_iterable
-
-from adam.language import TokenSequenceLinguisticDescription, LinguisticDescription
-from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
-from immutablecollections.converter_utils import _to_immutabledict, _to_immutableset
+from attr.validators import deep_iterable, deep_mapping, instance_of
 from more_itertools import first
 from networkx import DiGraph
 
 from adam.axes import GRAVITATIONAL_DOWN_TO_UP_AXIS, LEARNER_AXES, WORLD_AXES
+from adam.language import LinguisticDescription
 from adam.ontology import OntologyNode
 from adam.ontology.phase1_ontology import (
     GAILA_PHASE_1_ONTOLOGY,
     PHASE_1_CURRICULUM_OBJECTS,
 )
 from adam.perception.perception_graph import (
+    LanguageAlignedPerception,
     MatchedObjectNode,
     PerceptionGraph,
     PerceptionGraphNode,
     PerceptionGraphPattern,
     PerceptionGraphPatternMatch,
     RelationTypeIsPredicate,
-    LanguageAlignedPerception,
 )
 from attr import attrib, attrs
+from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
+from immutablecollections.converter_utils import _to_immutabledict, _to_immutableset
 from vistautils.span import Span
 
 _LIST_OF_PERCEIVED_PATTERNS = immutableset(
@@ -53,6 +52,21 @@ class PerceptionGraphFromObjectRecognizer:
     description_to_matched_object_node: ImmutableDict[
         Tuple[str, ...], MatchedObjectNode
     ] = attrib(converter=_to_immutabledict)
+
+    def __attrs_post_init__(self) -> None:
+        matched_object_nodes = set(
+            node
+            for node in self.perception_graph.copy_as_digraph()
+            if isinstance(node, MatchedObjectNode)
+        )
+        described_matched_object_nodes = set(
+            self.description_to_matched_object_node.values()
+        )
+        if matched_object_nodes != described_matched_object_nodes:
+            raise RuntimeError(
+                "A matched object node should be present in the graph"
+                "if and only if it is described"
+            )
 
 
 # these are shared aspects of the world which, although they might be referenced by
@@ -143,6 +157,9 @@ class ObjectRecognizer:
                     PerceptionGraph(graph_to_return, is_dynamic), matching_objects=True
                 )
                 pattern_match = first(matcher.matches(use_lookahead_pruning=True), None)
+                # TODO: we currently match each object type only once!
+                # https://github.com/isi-vista/adam/issues/627
+                break
         if matched_object_nodes:
             logging.info(
                 "Object recognizer recognized: %s",

@@ -20,7 +20,7 @@ from adam.curriculum.preposition_curriculum import (
 )
 from adam.learner import LearningExample
 from adam.learner.object_recognizer import ObjectRecognizer
-from adam.learner.preposition_subset import PrepositionSubsetLearner
+from adam.learner.prepositions import SubsetPrepositionLearner
 import pytest
 
 from adam.ontology import IS_ADDRESSEE, IS_SPEAKER
@@ -53,7 +53,7 @@ OBJECT_RECOGNIZER = ObjectRecognizer(_TEST_OBJECTS, determiners=ENGLISH_DETERMIN
 
 
 def test_subset_preposition_on_learner():
-    learner = PrepositionSubsetLearner(
+    learner = SubsetPrepositionLearner(
         object_recognizer=OBJECT_RECOGNIZER, ontology=GAILA_PHASE_1_ONTOLOGY
     )
     ball = standard_object("ball", BALL)
@@ -98,7 +98,7 @@ def test_subset_preposition_on_learner():
 
 
 def test_subset_preposition_beside_learner():
-    learner = PrepositionSubsetLearner(
+    learner = SubsetPrepositionLearner(
         object_recognizer=OBJECT_RECOGNIZER, ontology=GAILA_PHASE_1_ONTOLOGY
     )
     ball = standard_object("ball", BALL)
@@ -147,7 +147,7 @@ def test_subset_preposition_beside_learner():
 
 
 def test_subset_preposition_under_learner():
-    learner = PrepositionSubsetLearner(
+    learner = SubsetPrepositionLearner(
         object_recognizer=OBJECT_RECOGNIZER, ontology=GAILA_PHASE_1_ONTOLOGY
     )
     ball = standard_object("ball", BALL)
@@ -196,7 +196,7 @@ def test_subset_preposition_under_learner():
 
 
 def test_subset_preposition_over_learner():
-    learner = PrepositionSubsetLearner(
+    learner = SubsetPrepositionLearner(
         object_recognizer=OBJECT_RECOGNIZER, ontology=GAILA_PHASE_1_ONTOLOGY
     )
     ball = standard_object("ball", BALL)
@@ -245,7 +245,7 @@ def test_subset_preposition_over_learner():
 # See https://github.com/isi-vista/adam/issues/422
 @pytest.mark.skip(msg="In Preposition Test Temporarily Disabled")
 def test_subset_preposition_in_learner():
-    learner = PrepositionSubsetLearner(
+    learner = SubsetPrepositionLearner(
         object_recognizer=OBJECT_RECOGNIZER, ontology=GAILA_PHASE_1_ONTOLOGY
     )
     water = object_variable("water", WATER)
@@ -290,7 +290,7 @@ def test_subset_preposition_in_learner():
 
 
 def test_subset_preposition_behind_learner():
-    learner = PrepositionSubsetLearner(
+    learner = SubsetPrepositionLearner(
         object_recognizer=OBJECT_RECOGNIZER, ontology=GAILA_PHASE_1_ONTOLOGY
     )
     ball = standard_object("ball", BALL)
@@ -349,7 +349,7 @@ def test_subset_preposition_behind_learner():
 
 
 def test_subset_preposition_in_front_learner():
-    learner = PrepositionSubsetLearner(
+    learner = SubsetPrepositionLearner(
         object_recognizer=OBJECT_RECOGNIZER, ontology=GAILA_PHASE_1_ONTOLOGY
     )
     ball = standard_object("ball", BALL)

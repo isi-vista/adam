@@ -34,6 +34,7 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    Container,
 )
 from uuid import uuid4
 
@@ -775,6 +776,9 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
 
     def __len__(self) -> int:
         return len(self._graph)
+
+    def __contains__(self, item) -> bool:
+        return item in self._graph
 
     def copy_with_temporal_scopes(
         self, required_temporal_scopes: Union[TemporalScope, Iterable[TemporalScope]]

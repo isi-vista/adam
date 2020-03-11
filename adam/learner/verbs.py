@@ -1,13 +1,13 @@
 import logging
-from typing import Generic, Optional, Iterable, Tuple, List
+from typing import Optional, Iterable, Tuple, List
 
 from networkx import DiGraph
 
-from adam.language import LinguisticDescriptionT, LinguisticDescription
+from adam.language import LinguisticDescription
 from adam.learner import LearningExample, get_largest_matching_pattern
 from adam.learner.object_recognizer import ObjectRecognizer
 from adam.learner.pursuit import AbstractPursuitLearner
-from adam.learner.verb_pattern import VerbSurfaceTemplate, VerbPattern, _AGENT, _PATIENT
+from adam.learner.verb_pattern import _AGENT, _PATIENT, VerbPattern
 from adam.perception import PerceptionT
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -22,10 +22,7 @@ from attr.validators import optional, instance_of
 from immutablecollections import immutableset
 
 
-class VerbPursuitLearner(
-    Generic[PerceptionT, LinguisticDescriptionT],
-    AbstractPursuitLearner[PerceptionT, LinguisticDescriptionT],
-):
+class VerbPursuitLearner(AbstractPursuitLearner):
     """
     An implementation of pursuit learner for learning verb semantics
     """
