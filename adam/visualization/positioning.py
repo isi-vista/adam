@@ -202,7 +202,7 @@ def run_model(
             in_region_relations=in_region_map,
             scale_map=object_scales,
         )
-
+    patience=10
     # we will start with an aggressive learning rate
     optimizer = optim.SGD(positioning_model.parameters(), lr=1.5)
     # but will decrease it whenever the loss plateaus
