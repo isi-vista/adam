@@ -163,7 +163,7 @@ def preposition_hypothesis_from_perception(
     )
 
     return PerceptionGraphTemplate.from_graph(
-        preposition_sub_graph, template_variables_to_object_match_nodes.items()
+        preposition_sub_graph, template_variables_to_object_match_nodes
     )
 
 

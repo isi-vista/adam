@@ -21,6 +21,7 @@ from adam.perception.perception_graph import (
     PerceptionGraphPattern,
     PerceptionGraphPatternMatch,
     RelationTypeIsPredicate,
+    ENTIRE_SCENE,
 )
 from attr import attrib, attrs
 from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
@@ -83,11 +84,22 @@ class ObjectRecognizer:
     """
     The ObjectRecognizer finds object matches in the scene pattern and adds a `MatchedObjectPerceptionPredicate`
     which can be used to learn additional semantics which relate objects to other objects
+
+    If applied to a dynamic situation, this will only recognize objects
+    which are present in both the BEFORE and AFTER frames.
     """
 
-    object_names_to_patterns: Mapping[str, PerceptionGraphPattern] = attrib(
-        validator=deep_mapping(instance_of(str), instance_of(PerceptionGraphPattern))
+    # Because static patterns must be applied to static perceptions
+    # and dynamic patterns to dynamic situations,
+    # we need to store our patterns both ways.
+    _object_names_to_static_patterns: ImmutableDict[str, PerceptionGraphPattern] = attrib(
+        validator=deep_mapping(instance_of(str), instance_of(PerceptionGraphPattern)),
+        converter=_to_immutabledict,
     )
+    # We derive these from the static patterns.
+    _object_names_to_dynamic_patterns: ImmutableDict[
+        str, PerceptionGraphPattern
+    ] = attrib(init=False)
     determiners: ImmutableSet[str] = attrib(
         converter=_to_immutableset, validator=deep_iterable(instance_of(str))
     )
@@ -139,23 +151,25 @@ class ObjectRecognizer:
         before prepositional and verbal learning experiments.
         """
         matched_object_nodes: List[Tuple[Tuple[str, ...], MatchedObjectNode]] = []
-        graph_to_return = perception_graph.copy_as_digraph()
+        graph_to_return = perception_graph
         is_dynamic = perception_graph.dynamic
-        for (description, pattern) in self.object_names_to_patterns.items():
-            matcher = pattern.matcher(
-                PerceptionGraph(graph_to_return, is_dynamic), matching_objects=True
-            )
+
+        if is_dynamic:
+            object_names_to_patterns = self._object_names_to_dynamic_patterns
+        else:
+            object_names_to_patterns = self._object_names_to_static_patterns
+
+        for (description, pattern) in object_names_to_patterns.items():
+            matcher = pattern.matcher(graph_to_return, matching_objects=True)
             pattern_match = first(matcher.matches(use_lookahead_pruning=True), None)
             # It's important not to simply iterate over pattern matches
             # because they might overlap, or be variants of the same match
             # (e.g. permutations of how table legs match)
             while pattern_match:
-                self._replace_match_with_object_graph_node(
+                graph_to_return = self._replace_match_with_object_graph_node(
                     graph_to_return, pattern_match, matched_object_nodes, description
                 )
-                matcher = pattern.matcher(
-                    PerceptionGraph(graph_to_return, is_dynamic), matching_objects=True
-                )
+                matcher = pattern.matcher(graph_to_return, matching_objects=True)
                 pattern_match = first(matcher.matches(use_lookahead_pruning=True), None)
                 # TODO: we currently match each object type only once!
                 # https://github.com/isi-vista/adam/issues/627
@@ -165,10 +179,7 @@ class ObjectRecognizer:
                 "Object recognizer recognized: %s",
                 [description for (description, _) in matched_object_nodes],
             )
-        return PerceptionGraphFromObjectRecognizer(
-            PerceptionGraph(graph=graph_to_return, dynamic=perception_graph.dynamic),
-            matched_object_nodes,
-        )
+        return PerceptionGraphFromObjectRecognizer(graph_to_return, matched_object_nodes)
 
     def match_objects_with_language(
         self, language_aligned_perception: LanguageAlignedPerception
@@ -198,11 +209,11 @@ class ObjectRecognizer:
 
     def _replace_match_with_object_graph_node(
         self,
-        networkx_graph_to_modify_in_place: DiGraph,
+        current_perception: PerceptionGraph,
         pattern_match: PerceptionGraphPatternMatch,
         matched_object_nodes: List[Tuple[Tuple[str, ...], MatchedObjectNode]],
         description: str,
-    ):
+    ) -> PerceptionGraph:
         """
         Internal function to copy existing relationships from the matched object pattern onto a
         `MatchedObjectPerceptionPredicate`
@@ -212,7 +223,8 @@ class ObjectRecognizer:
         # We wrap the description in a tuple because it could in theory be multiple tokens,
         # even though currently it never is.
         matched_object_nodes.append(((description,), matched_object_node))
-        networkx_graph_to_modify_in_place.add_node(matched_object_node)
+        perception_digraph = current_perception.copy_as_digraph()
+        perception_digraph.add_node(matched_object_node)
 
         matched_subgraph_nodes: ImmutableSet[PerceptionGraphNode] = immutableset(
             pattern_match.matched_sub_graph._graph.nodes,  # pylint:disable=protected-access
@@ -232,12 +244,12 @@ class ObjectRecognizer:
 
             # If there is an edge from the matched sub-graph to a node outside it,
             # also add an edge from the object match node to that node.
-            for (
-                matched_subgraph_node_successor
-            ) in networkx_graph_to_modify_in_place.successors(matched_subgraph_node):
+            for matched_subgraph_node_successor in perception_digraph.successors(
+                matched_subgraph_node
+            ):
                 # don't want to add edges which are internal to the matched sub-graph
                 if matched_subgraph_node_successor not in matched_subgraph_nodes:
-                    edge_data = networkx_graph_to_modify_in_place.get_edge_data(
+                    edge_data = perception_digraph.get_edge_data(
                         matched_subgraph_node, matched_subgraph_node_successor
                     )
                     label = edge_data["label"]
@@ -250,18 +262,18 @@ class ObjectRecognizer:
                             f"{matched_subgraph_node}, "
                             f"{matched_subgraph_node_successor}"
                         )
-                    networkx_graph_to_modify_in_place.add_edge(
+                    perception_digraph.add_edge(
                         matched_object_node, matched_subgraph_node_successor, **edge_data
                     )
 
             # If there is an edge to the matched sub-graph from a node outside it,
             # also add an edge to the object match node from that node.
-            for (
-                matched_subgraph_node_predecessor
-            ) in networkx_graph_to_modify_in_place.predecessors(matched_subgraph_node):
+            for matched_subgraph_node_predecessor in perception_digraph.predecessors(
+                matched_subgraph_node
+            ):
                 # don't want to add edges which are internal to the matched sub-graph
                 if matched_subgraph_node_predecessor not in matched_subgraph_nodes:
-                    edge_data = networkx_graph_to_modify_in_place.get_edge_data(
+                    edge_data = perception_digraph.get_edge_data(
                         matched_subgraph_node_predecessor, matched_subgraph_node
                     )
                     label = edge_data["label"]
@@ -275,7 +287,7 @@ class ObjectRecognizer:
                             f"{matched_subgraph_node_predecessor}"
                         )
 
-                    networkx_graph_to_modify_in_place.add_edge(
+                    perception_digraph.add_edge(
                         matched_subgraph_node_predecessor,
                         matched_object_node,
                         **edge_data,
@@ -288,11 +300,12 @@ class ObjectRecognizer:
             #     matched_object_node,
             #     label=MATCHED_OBJECT_PATTERN_LABEL,
             # )
-        networkx_graph_to_modify_in_place.remove_nodes_from(
+        perception_digraph.remove_nodes_from(
             matched_node
             for matched_node in matched_subgraph_nodes
             if matched_node not in SHARED_WORLD_ITEMS
         )
+        return PerceptionGraph(perception_digraph, dynamic=current_perception.dynamic)
 
     def _align_objects_to_tokens(
         self,
@@ -343,3 +356,15 @@ class ObjectRecognizer:
                 )
             )
         return immutabledict(result)
+
+    @_object_names_to_dynamic_patterns.default
+    def _init_object_names_to_dynamic_patterns(
+        self
+    ) -> ImmutableDict[str, PerceptionGraphPattern]:
+        return immutabledict(
+            (description, static_pattern.copy_with_temporal_scopes(ENTIRE_SCENE))
+            for (
+                description,
+                static_pattern,
+            ) in self._object_names_to_static_patterns.items()
+        )

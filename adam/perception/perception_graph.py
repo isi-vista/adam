@@ -163,6 +163,9 @@ class TemporalScope(Enum):
     """
 
 
+ENTIRE_SCENE = immutableset([TemporalScope.BEFORE, TemporalScope.AFTER])
+
+
 @attrs(slots=True, frozen=True)
 class TemporallyScopedEdgeLabel:
     r"""
@@ -727,7 +730,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
         perception = perception_generator.generate_perception(
             situation, chooser=RandomChooser.for_seed(0), include_ground=False
         )
-        perception_graph = PerceptionGraph.from_frame(
+        perception_graph_as_digraph = PerceptionGraph.from_frame(
             first(perception.frames)
         ).copy_as_digraph()
 
@@ -735,7 +738,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
         # but are not in schemas.
         nodes_to_remove = [
             node
-            for node in perception_graph
+            for node in perception_graph_as_digraph
             # Perception generation wraps properties in tuples, so we need to unwrap them.
             if isinstance(node, tuple)
             and (
@@ -743,33 +746,30 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
                 or isinstance(node[0], OntologyNode)
             )
         ]
-        perception_graph.remove_nodes_from(nodes_to_remove)
+        perception_graph_as_digraph.remove_nodes_from(nodes_to_remove)
 
         # Finally, we convert the PerceptionGraph DiGraph representation to a PerceptionGraphPattern
         return PerceptionGraphPattern.from_graph(
-            perception_graph=perception_graph
+            perception_graph=PerceptionGraph(perception_graph_as_digraph)
         ).perception_graph_pattern
 
     @staticmethod
     def from_graph(
-        perception_graph: Union[DiGraph, PerceptionGraph], dynamic: bool = False
+        perception_graph: PerceptionGraph
     ) -> "PerceptionGraphPatternFromGraph":
         """
         Creates a pattern for recognizing an object based on its *perception_graph*.
         """
-        if isinstance(perception_graph, PerceptionGraph):
-            perception_graph = perception_graph._graph  # pylint:disable=protected-access
-
         pattern_graph = DiGraph()
         perception_node_to_pattern_node: Dict[PerceptionGraphNode, NodePredicate] = {}
         PerceptionGraphPattern._translate_graph(
-            perception_graph=perception_graph,
+            perception_graph=perception_graph.copy_as_digraph(),
             pattern_graph=pattern_graph,
             perception_node_to_pattern_node=perception_node_to_pattern_node,
         )
         return PerceptionGraphPatternFromGraph(
             perception_graph_pattern=PerceptionGraphPattern(
-                pattern_graph, dynamic=dynamic
+                pattern_graph, dynamic=perception_graph.dynamic
             ),
             perception_graph_node_to_pattern_node=perception_node_to_pattern_node,
         )
@@ -1549,7 +1549,9 @@ class PatternMatching:
                     )
                     pattern_as_digraph.remove_nodes_from(component)
 
-        return PerceptionGraphPattern(pattern_as_digraph.copy())
+        return PerceptionGraphPattern(
+            pattern_as_digraph.copy(), dynamic=match_failure.pattern.dynamic
+        )
 
     @matching_pattern_against_pattern.default
     def _matching_pattern_against_pattern_default(self) -> bool:

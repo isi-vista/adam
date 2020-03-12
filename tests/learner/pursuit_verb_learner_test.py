@@ -1,40 +1,36 @@
 import random
 from itertools import chain
 
-from more_itertools import first
+import pytest
 
-from adam.curriculum.curriculum_utils import (
-    standard_object,
-    phase1_instances,
-    PHASE1_CHOOSER,
-)
+from adam.curriculum.curriculum_utils import (PHASE1_CHOOSER, phase1_instances, standard_object)
 from adam.learner import LearningExample
-from adam.learner.object_recognizer import ObjectRecognizer
-from adam.learner.verbs import VerbPursuitLearner
-from adam.ontology.phase1_ontology import (
-    GAILA_PHASE_1_ONTOLOGY,
-    EAT,
-    AGENT,
-    PATIENT,
-    MOM,
-    COOKIE,
-)
-from adam.perception.perception_graph import PerceptionGraphPattern, TemporalScope
+from adam.learner.verbs import SubsetVerbLearner
+from adam.ontology.phase1_ontology import (AGENT, COOKIE, EAT, GAILA_PHASE_1_ONTOLOGY, MOM, PATIENT)
 from adam.situation import Action
-from adam.situation.templates.phase1_templates import sampled, Phase1SituationTemplate
+from adam.situation.templates.phase1_templates import Phase1SituationTemplate, sampled
+from learner import TEST_OBJECT_RECOGNIZER
+
+LEARNERS = [
+    SubsetVerbLearner(
+        object_recognizer=TEST_OBJECT_RECOGNIZER, ontology=GAILA_PHASE_1_ONTOLOGY
+    )
+]
+
+# VerbPursuitLearner(
+#         learning_factor=0.5,
+#         graph_match_confirmation_threshold=0.7,
+#         lexicon_entry_threshold=0.7,
+#         rng=rng,
+#         smoothing_parameter=0.001,
+#         ontology=GAILA_PHASE_1_ONTOLOGY,
+#     )  # type: ignore
 
 
-def test_pursuit_verb_eat_learner():
+@pytest.mark.parametrize("learner", LEARNERS)
+def test_eat(learner):
     rng = random.Random()
     rng.seed(0)
-    learner = VerbPursuitLearner(
-        learning_factor=0.5,
-        graph_match_confirmation_threshold=0.7,
-        lexicon_entry_threshold=0.7,
-        rng=rng,
-        smoothing_parameter=0.001,
-        ontology=GAILA_PHASE_1_ONTOLOGY,
-    )  # type: ignore
 
     mom = standard_object("mom", MOM)
     cookie = standard_object("cookie", COOKIE)
@@ -75,18 +71,6 @@ def test_pursuit_verb_eat_learner():
         ),
     )
 
-    # Set up object recognizer, given the two objects we 'already' recognize
-    object_recognizer = ObjectRecognizer(
-        {
-            node.handle: PerceptionGraphPattern.from_schema(
-                first(GAILA_PHASE_1_ONTOLOGY.structural_schemata(node))
-            ).copy_with_temporal_scopes(
-                required_temporal_scopes=[TemporalScope.BEFORE, TemporalScope.AFTER]
-            )
-            for node in [MOM, COOKIE]
-        }
-    )
-
     for (
         _,
         linguistic_description,
@@ -94,8 +78,7 @@ def test_pursuit_verb_eat_learner():
     ) in eat_train_curriculum.instances():
         # Get the object matches first - preposition learner can't learn without already recognized objects
         learner.observe(
-            LearningExample(perceptual_representation, linguistic_description),
-            object_recognizer=object_recognizer,
+            LearningExample(perceptual_representation, linguistic_description)
         )
 
     for (
@@ -103,9 +86,7 @@ def test_pursuit_verb_eat_learner():
         test_lingustics_description,
         test_perceptual_representation,
     ) in eat_test_curriculum.instances():
-        descriptions_from_learner = learner.describe(
-            test_perceptual_representation, object_recognizer
-        )
+        descriptions_from_learner = learner.describe(test_perceptual_representation)
         gold = test_lingustics_description.as_token_sequence()
         assert descriptions_from_learner
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold

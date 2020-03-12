@@ -288,7 +288,7 @@ class SubsetObjectLearner(AbstractSubsetLearner, AbstractObjectTemplateLearner):
         self, preprocessed_input: LanguageAlignedPerception
     ) -> PerceptionGraphTemplate:
         new_hypothesis = PerceptionGraphPattern.from_graph(
-            preprocessed_input.perception_graph.copy_as_digraph()
+            preprocessed_input.perception_graph
         ).perception_graph_pattern
         return PerceptionGraphTemplate(
             graph_pattern=new_hypothesis,

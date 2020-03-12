@@ -1,5 +1,5 @@
 from logging import INFO
-from typing import Any, Iterable, List, Optional, Tuple, Callable
+from typing import Any, Iterable, List, Optional, Tuple, Callable, Mapping
 
 from attr.validators import deep_mapping, instance_of
 
@@ -40,15 +40,35 @@ class PerceptionGraphTemplate:
     @staticmethod
     def from_graph(
         perception_graph: PerceptionGraph,
-        template_variable_to_matched_object_node: Iterable[
-            Tuple[SurfaceTemplateVariable, MatchedObjectNode]
+        template_variable_to_matched_object_node: Mapping[
+            SurfaceTemplateVariable, MatchedObjectNode
         ],
     ) -> "PerceptionGraphTemplate":
-        template_variable_to_matched_object_node = immutableset(
-            template_variable_to_matched_object_node
+        # It is possible the perception graph has additional recognized objects
+        # which are not aligned to surface template slots.
+        # We assume these are not arguments of the verb and remove them from the perception
+        # before creating a pattern.
+
+        matched_object_nodes_aligned_to_template_slots = immutableset(
+            template_variable_to_matched_object_node.values()
         )
+
+        perception_digraph_without_irrelevant_objects = perception_graph.copy_as_digraph()
+        nodes_to_remove = immutableset(
+            node
+            for node in perception_digraph_without_irrelevant_objects.nodes
+            if isinstance(node, MatchedObjectNode)
+            and node not in matched_object_nodes_aligned_to_template_slots
+        )
+        for node_to_remove in nodes_to_remove:
+            perception_digraph_without_irrelevant_objects.remove_node(node_to_remove)
+        perception_without_irrelevant_objects = PerceptionGraph(
+            perception_digraph_without_irrelevant_objects,
+            dynamic=perception_graph.dynamic,
+        )
+
         pattern_from_graph = PerceptionGraphPattern.from_graph(
-            perception_graph.copy_as_digraph()
+            perception_without_irrelevant_objects
         )
         pattern_graph = pattern_from_graph.perception_graph_pattern
         matched_object_to_matched_predicate = (
@@ -57,7 +77,10 @@ class PerceptionGraphTemplate:
 
         template_variable_to_pattern_node: List[Any] = []
 
-        for template_variable, object_node in template_variable_to_matched_object_node:
+        for (
+            template_variable,
+            object_node,
+        ) in template_variable_to_matched_object_node.items():
             if object_node in matched_object_to_matched_predicate:
                 template_variable_to_pattern_node.append(
                     (template_variable, matched_object_to_matched_predicate[object_node])
@@ -96,12 +119,21 @@ class PerceptionGraphTemplate:
 
         If this intersection is an empty graph or would not contain all `SurfaceTemplateVariables`\ s
         """
+        if self.graph_pattern.dynamic != pattern.graph_pattern.dynamic:
+            raise RuntimeError("Can only intersection patterns of the same dynamic-ness")
 
         # First we just intersect the pattern graph.
         intersected_pattern = self.graph_pattern.intersection(
             pattern.graph_pattern, graph_logger=graph_logger, ontology=ontology, debug_callback=debug_callback
         )
+
         if intersected_pattern:
+            if self.graph_pattern.dynamic != intersected_pattern.dynamic:
+                raise RuntimeError(
+                    "Something is wrong - pattern dynamic-ness should not change "
+                    "after intersection"
+                )
+
             # If we get a successful intersection,
             # we then need to make sure we have the correct SurfaceTemplateVariables.
 

@@ -42,24 +42,28 @@ def pattern_match_to_description(
             f"{matched_object_nodes_without_names}"
         )
 
-    return surface_template.instantiate(
-        template_variable_to_filler=immutabledict(
-            (
-                pattern.pattern_node_to_template_variable[pattern_node],
-                matched_objects_to_names[
-                    # We know, but the type system does not,
-                    # that if a MatchedObjectPerceptionPredicate matched,
-                    # the graph node must be a MatchedObjectNode
-                    cast(MatchedObjectNode, matched_graph_node)
-                ],
+    try:
+        return surface_template.instantiate(
+            template_variable_to_filler=immutabledict(
+                (
+                    pattern.pattern_node_to_template_variable[pattern_node],
+                    matched_objects_to_names[
+                        # We know, but the type system does not,
+                        # that if a MatchedObjectPerceptionPredicate matched,
+                        # the graph node must be a MatchedObjectNode
+                        cast(MatchedObjectNode, matched_graph_node)
+                    ],
+                )
+                for (
+                    pattern_node,
+                    matched_graph_node,
+                ) in match.pattern_node_to_matched_graph_node.items()
+                if isinstance(pattern_node, MatchedObjectPerceptionPredicate)
             )
-            for (
-                pattern_node,
-                matched_graph_node,
-            ) in match.pattern_node_to_matched_graph_node.items()
-            if isinstance(pattern_node, MatchedObjectPerceptionPredicate)
         )
-    )
+    except KeyError:
+        print("foo")
+        raise
 
 
 def assert_static_situation(

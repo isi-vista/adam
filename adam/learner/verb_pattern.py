@@ -58,9 +58,7 @@ class VerbPattern:
             )
 
         # Create a dynamic pattern from the digraph
-        pattern_from_graph = PerceptionGraphPattern.from_graph(
-            perception_graph, dynamic=True
-        )
+        pattern_from_graph = PerceptionGraphPattern.from_graph(perception_graph)
         pattern_graph = pattern_from_graph.perception_graph_pattern
 
         matched_object_to_matched_predicate = (
