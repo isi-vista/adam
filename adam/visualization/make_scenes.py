@@ -15,6 +15,7 @@ from typing import (
     Any,
     Generator,
     Mapping,
+    Dict,
 )
 from functools import partial
 
@@ -25,7 +26,9 @@ import numpy as np
 import logging
 
 # currently useful for positioning multiple objects:
-from adam.curriculum.phase1_curriculum import _make_take_curriculum as make_curriculum
+from adam.curriculum.verbs_with_dynamic_prepositions_curriculum import (
+    _make_go_with_prepositions as make_curriculum,
+)
 
 
 import attr
@@ -53,7 +56,9 @@ from adam.perception.developmental_primitive_perception import (
     Relation,
 )
 from adam.ontology import OntologyNode
+from adam.ontology.phase1_ontology import GO
 from adam.relation import IN_REGION
+from adam.situation import SituationObject
 
 from adam.visualization.panda3d_interface import SituationVisualizer
 from adam.visualization.utils import (
@@ -216,6 +221,16 @@ def main(params: Parameters) -> None:
         if command:
             viz.screenshot(command)
 
+        handle_to_in_region_map = {
+            object_perception.debug_handle: region_list
+            for object_perception, region_list in inter_object_in_region_map.items()
+        }
+        frozen_objects = objects_to_freeze(
+            handle_to_in_region_map,
+            scene_elements.situation,
+            scene_elements.situation_object_to_handle,
+        )
+
         # now that every object has been instantiated into the scene,
         # they need to be re-positioned.
 
@@ -232,6 +247,7 @@ def main(params: Parameters) -> None:
             sub_object_offsets=sub_object_offsets,
             in_region_map=inter_object_in_region_map,
             model_scales=model_scales,
+            frozen_objects=frozen_objects,
             iterations=num_iterations,
             yield_steps=steps_before_vis,
             previous_positions=previous_model_positions,
@@ -369,6 +385,8 @@ class SceneElements:
     in_region_map: DefaultDict[
         ObjectPerception, List[Region[ObjectPerception]]
     ] = attr.ib()
+    situation: Optional[HighLevelSemanticsSituation] = attr.ib()
+    situation_object_to_handle: Dict[SituationObject, str] = attr.ib()
     # scene nodes arranged in a tree structure
     object_graph: List[SceneNode] = attr.ib()
     # utterance related to the scene
@@ -398,7 +416,7 @@ class SceneCreator:
             instance_group
         ) in instance_groups:  # each InstanceGroup a page related to a curriculum topic
             for (
-                _,  # situation
+                semantics_situation,  # situation
                 dependency_tree,  # dependency_tree
                 perception,
             ) in instance_group.instances():  # each instance is a scene
@@ -407,7 +425,26 @@ class SceneCreator:
                     ObjectPerception,
                     List[Optional[Union[RgbColorPerception, OntologyNode]]],
                 ] = defaultdict(list)
-                # we only care about the perception at the moment
+
+                # TODO: change HighLevelSemanticsSituation to keep track of objects with a full (disambiguating) handle
+                seen_handles_to_next_index: Dict[str, int] = {}
+                situation_obj_to_handle: Dict[SituationObject, str] = {}
+                if semantics_situation is not None:
+                    for obj in semantics_situation.all_objects:
+                        handle: str
+                        if obj.ontology_node.handle in seen_handles_to_next_index:
+                            handle = (
+                                obj.ontology_node.handle
+                                + "_"
+                                + str(
+                                    seen_handles_to_next_index[obj.ontology_node.handle]
+                                )
+                            )
+                            seen_handles_to_next_index[obj.ontology_node.handle] += 1
+                        else:
+                            handle = obj.ontology_node.handle + "_0"
+                            seen_handles_to_next_index[obj.ontology_node.handle] = 1
+                        situation_obj_to_handle[obj] = handle
 
                 for frame_number, frame in enumerate(
                     perception.frames
@@ -444,14 +481,16 @@ class SceneCreator:
 
                     # in the event that an object has no properties, we add it anyway
                     # in case it has a geon that can be rendered
-                    for obj in frame.perceived_objects:
-                        if obj not in property_map:
-                            property_map[obj].append(None)
+                    for perceived_obj in frame.perceived_objects:
+                        if perceived_obj not in property_map:
+                            property_map[perceived_obj].append(None)
 
                     # TODO: indicate whether this is a continuation of the same scene (next frame) or a new scene)
                     yield SceneElements(
                         property_map,
                         in_region_map,
+                        semantics_situation,
+                        situation_obj_to_handle,
                         nested_objects,
                         dependency_tree.as_token_sequence(),
                         frame_number,
@@ -585,6 +624,56 @@ class SceneCreator:
         return x, y, z
 
 
+def objects_to_freeze(
+    in_region_map: Dict[str, List[Region[ObjectPerception]]],
+    semantics_situation: Optional[HighLevelSemanticsSituation],
+    situation_obj_to_handle: Dict[SituationObject, str],
+) -> ImmutableSet[str]:
+    """situation_obj_to_handle[obj] = handle
+    Return set of object handles that should not be positioned due to an action currently taking place
+    Args:
+        in_region_map:
+        semantics_situation:
+        situation_obj_to_handle:
+
+    Returns: ImmutableSet of object handles which are to be frozen in place by positioning model
+
+    """
+    if semantics_situation is None:
+        return immutableset([])
+    frozen_objects = []
+    for action in semantics_situation.actions:
+        if action.action_type == GO:
+            agent: Optional[SituationObject] = None
+            goal: Optional[Union[SituationObject, Region[SituationObject]]] = None
+            for (
+                ontology_node,
+                object_or_region,
+            ) in action.argument_roles_to_fillers.items():
+
+                if ontology_node.handle == "goal":
+                    goal = object_or_region
+                elif ontology_node.handle == "agent":
+                    agent = object_or_region
+
+            if (
+                agent
+                and goal
+                and isinstance(agent, SituationObject)
+                and isinstance(goal, Region)
+            ):
+                for region_relation in in_region_map[situation_obj_to_handle[agent]]:
+                    if (
+                        region_relation.reference_object.debug_handle
+                        == situation_obj_to_handle[goal.reference_object]
+                    ):
+                        frozen_objects.append(
+                            situation_obj_to_handle[goal.reference_object]
+                        )
+
+    return immutableset(frozen_objects)
+
+
 # TODO: scale of top-level bounding boxes is weird because it needs to encompass all sub-objects
 def _solve_top_level_positions(
     *,
@@ -592,6 +681,7 @@ def _solve_top_level_positions(
     sub_object_offsets: Mapping[str, Mapping[str, LPoint3f]],
     in_region_map: DefaultDict[ObjectPerception, List[Region[ObjectPerception]]],
     model_scales: Mapping[str, Tuple[float, float, float]],
+    frozen_objects: ImmutableSet[str],
     iterations: int = 200,
     yield_steps: Optional[int] = None,
     previous_positions: Optional[PositionsMap] = None,
@@ -613,6 +703,7 @@ def _solve_top_level_positions(
         sub_object_offsets,
         in_region_map,
         model_scales,
+        frozen_objects=frozen_objects,
         num_iterations=iterations,
         yield_steps=yield_steps,
         previous_positions=previous_positions,
