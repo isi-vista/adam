@@ -427,6 +427,7 @@ class SceneCreator:
                 ] = defaultdict(list)
 
                 # TODO: change HighLevelSemanticsSituation to keep track of objects with a full (disambiguating) handle
+                #       See https://github.com/isi-vista/adam/issues/631
                 seen_handles_to_next_index: Dict[str, int] = {}
                 situation_obj_to_handle: Dict[SituationObject, str] = {}
                 if semantics_situation is not None:
