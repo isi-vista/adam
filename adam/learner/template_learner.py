@@ -103,6 +103,7 @@ class AbstractTemplateLearner(
                         score,
                     )
                 )
+                # A template only has to match once; we don't care about finding additional matches.
                 return
 
         # For each template whose semantics we are certain of (=have been added to the lexicon)
