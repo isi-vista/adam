@@ -90,7 +90,7 @@ class AbstractTemplateLearner(
                 preprocessed_perception_graph, matching_objects=False, debug_callback=self._debug_callback
             )
             for match in matcher.matches(use_lookahead_pruning=True):
-                # if it is, use that preposition to describe the situation.
+                # if there is a match, use that match to describe the situation.
                 match_to_score.append(
                     (
                         pattern_match_to_description(
@@ -103,6 +103,7 @@ class AbstractTemplateLearner(
                         score,
                     )
                 )
+                return
 
         # For each template whose semantics we are certain of (=have been added to the lexicon)
         for (surface_template, graph_pattern, score) in self._primary_templates():
