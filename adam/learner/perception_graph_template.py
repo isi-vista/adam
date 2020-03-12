@@ -131,4 +131,5 @@ class PerceptionGraphTemplate:
     def _init_pattern_node_to_template_variable(
         self
     ) -> ImmutableDict[MatchedObjectPerceptionPredicate, SurfaceTemplateVariable]:
-        return self.template_variable_to_pattern_node.inverse()
+        return immutabledict({v: k for k, v in self.template_variable_to_pattern_node.items()})
+

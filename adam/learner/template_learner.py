@@ -67,8 +67,8 @@ class AbstractTemplateLearner(
         )
 
         preprocessed_perception_graph = preprocessing_result.perception_graph
-        matched_objects_to_names = (
-            preprocessing_result.description_to_matched_object_node.inverse()
+        matched_objects_to_names = immutabledict(
+            {v: k for k, v in preprocessing_result.description_to_matched_object_node.items()}
         )
 
         # This accumulates our output.
