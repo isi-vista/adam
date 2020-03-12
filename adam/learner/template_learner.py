@@ -1,6 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import Mapping, List, Tuple, Union, Iterable, Sequence
+from typing import Mapping, List, Tuple, Union, Iterable, Sequence, Optional
 
 from adam.language import TokenSequenceLinguisticDescription, LinguisticDescription
 from adam.learner import LanguageLearner, LearningExample
@@ -12,7 +12,7 @@ from adam.perception import PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
-from adam.perception.perception_graph import LanguageAlignedPerception, PerceptionGraph
+from adam.perception.perception_graph import LanguageAlignedPerception, PerceptionGraph, DebugCallableType
 from attr import attrib, attrs
 from immutablecollections import immutabledict
 
@@ -87,7 +87,7 @@ class AbstractTemplateLearner(
         ) -> None:
             # try to see if (our model of) its semantics is present in the situation.
             matcher = pattern.graph_pattern.matcher(
-                preprocessed_perception_graph, matching_objects=False
+                preprocessed_perception_graph, matching_objects=False, debug_callback=self._debug_callback
             )
             for match in matcher.matches(use_lookahead_pruning=True):
                 # if it is, use that preposition to describe the situation.

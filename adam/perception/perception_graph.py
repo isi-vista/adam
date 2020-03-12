@@ -1006,7 +1006,7 @@ class DumpPartialMatchCallback:
     def __init__(
         self,
         render_path,
-        seconds_to_wait_before_rendering: int = 60,
+        seconds_to_wait_before_rendering: int = 0,
         dump_every_x_calls: int = 100,
     ) -> None:
         self.render_path = render_path
@@ -1249,7 +1249,7 @@ class PatternMatching:
                 self._internal_matches(
                     graph_to_match_against=self.graph_to_match_against,
                     pattern=cur_pattern,
-                    debug_callback=None,
+                    debug_callback=self.debug_callback,
                     # Using lookahead pruning would make our guess at the "cause"
                     # of the match failure be too "early" in the pattern graph search.
                     use_lookahead_pruning=False,

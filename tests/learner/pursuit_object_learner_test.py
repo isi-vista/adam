@@ -53,7 +53,7 @@ def run_subset_learner_for_object(
         ),
     )
 
-    learner = SubsetObjectLearner(ontology=GAILA_PHASE_1_ONTOLOGY)
+    learner = SubsetObjectLearner(ontology=GAILA_PHASE_1_ONTOLOGY, debug_callback=debug_callback)
     for training_stage in [obj_curriculum]:
         for (
             _,
@@ -84,7 +84,7 @@ def test_subset_learner_ball():
 def test_subset_learner_dog():
     debug_callback = DumpPartialMatchCallback(render_path="../renders/")
     # We pass this callback into the learner; it is executed if the learning takes too long, i.e after 60 seconds.
-    run_subset_learner_for_object(DOG, debug_callback)
+    run_subset_learner_for_object(DOG)
 
 
 def test_pursuit_object_learner():
@@ -93,10 +93,11 @@ def test_pursuit_object_learner():
         # PERSON,
         # CHAIR,
         # TABLE,
-        # DOG,
+        DOG,
         BIRD,
         BOX,
     ]
+    debug_callback = DumpPartialMatchCallback(render_path="../renders/")
 
     target_train_templates = []
     target_test_templates = []
@@ -159,6 +160,7 @@ def test_pursuit_object_learner():
         rng=rng,
         smoothing_parameter=0.001,
         ontology=GAILA_PHASE_1_ONTOLOGY,
+        debug_callback=debug_callback
     )  # type: ignore
     for training_stage in [train_curriculum]:
         for (

@@ -1,5 +1,5 @@
 from logging import INFO
-from typing import Any, Iterable, List, Optional, Tuple
+from typing import Any, Iterable, List, Optional, Tuple, Callable
 
 from attr.validators import deep_mapping, instance_of
 
@@ -88,6 +88,7 @@ class PerceptionGraphTemplate:
         *,
         graph_logger: Optional[GraphLogger] = None,
         ontology: Ontology,
+        debug_callback: Optional[Callable[[Any, Any], None]] = None,
     ) -> Optional["PerceptionGraphTemplate"]:
         r"""
         Gets the `PerceptionGraphTemplate` which contains all aspects of a pattern
@@ -98,7 +99,7 @@ class PerceptionGraphTemplate:
 
         # First we just intersect the pattern graph.
         intersected_pattern = self.graph_pattern.intersection(
-            pattern.graph_pattern, graph_logger=graph_logger, ontology=ontology
+            pattern.graph_pattern, graph_logger=graph_logger, ontology=ontology, debug_callback=debug_callback
         )
         if intersected_pattern:
             # If we get a successful intersection,
