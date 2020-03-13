@@ -167,6 +167,7 @@ def run_model(
     in_region_map: Mapping[ObjectPerception, List[Region[ObjectPerception]]],
     object_scales: Mapping[str, Tuple[float, float, float]],
     *,
+    frozen_objects: ImmutableSet[str],
     num_iterations: int = 200,
     yield_steps: Optional[int] = None,
     previous_positions: Optional[PositionsMap] = None,
@@ -194,6 +195,7 @@ def run_model(
             in_region_relations=in_region_map,
             scale_map=object_scales,
             positions_map=previous_positions,
+            frozen_objects=frozen_objects,
         )
     else:
         positioning_model = PositioningModel.for_scaled_objects_random_positions(
@@ -353,17 +355,19 @@ class AxisAlignedBoundingBox:
         is_parameter: bool,
         offset: Optional[np.array] = None,
     ):
-        if is_parameter:
+        # if this AABB does not have an offset, it is a top-level object
+        if offset is None:
             return AxisAlignedBoundingBox(
                 Parameter(
                     torch.tensor(  # pylint: disable=not-callable
                         center, dtype=torch.float
                     ),
-                    requires_grad=True,
+                    requires_grad=is_parameter,
                 ),
                 torch.diag(object_scale),
                 offset,
             )
+        # otherwise: this is a sub-object. It isn't a parameter and does have an offset from its parent object
         return AxisAlignedBoundingBox(
             torch.tensor(center, dtype=torch.float),  # pylint: disable=not-callable
             torch.diag(object_scale),
@@ -613,6 +617,7 @@ class PositioningModel(torch.nn.Module):  # type: ignore
         in_region_relations: Mapping[ObjectPerception, List[Region[ObjectPerception]]],
         scale_map: Mapping[str, Tuple[float, float, float]],
         positions_map: PositionsMap,
+        frozen_objects: ImmutableSet[str],
     ) -> "PositioningModel":
 
         return PositioningModel._scaled_objects_helper(
@@ -621,6 +626,7 @@ class PositioningModel(torch.nn.Module):  # type: ignore
             in_region_relations=in_region_relations,
             scale_map=scale_map,
             positions_map=positions_map,
+            frozen_objects=frozen_objects,
         )
 
     @staticmethod
@@ -631,6 +637,7 @@ class PositioningModel(torch.nn.Module):  # type: ignore
         in_region_relations: Mapping[ObjectPerception, List[Region[ObjectPerception]]],
         scale_map: Mapping[str, Tuple[float, float, float]],
         positions_map: Optional[PositionsMap],
+        frozen_objects: Optional[ImmutableSet[str]] = None,
     ) -> "PositioningModel":
 
         dict_items: List[Tuple[ObjectPerception, AxisAlignedBoundingBox]] = []
@@ -647,12 +654,19 @@ class PositioningModel(torch.nn.Module):  # type: ignore
                 scale = (1.0, 1.0, 1.0)
 
             if positions_map:
+                is_parameter = True
+                # selectively freeze particular objects from positioning model
+                if frozen_objects and object_perception.debug_handle in frozen_objects:
+                    is_parameter = False
+                print(
+                    f"Creating AABB as parameter: {is_parameter}\ncenter: {positions_map.name_to_position[object_perception.debug_handle]}\nscale: {scale}"
+                )
                 bounding_box = AxisAlignedBoundingBox.create_at_center_point_scaled(
                     center=positions_map.name_to_position[object_perception.debug_handle],
                     object_scale=torch.tensor(  # pylint: disable=not-callable
                         [scale[0], scale[1], scale[2]]
                     ),
-                    is_parameter=True,
+                    is_parameter=is_parameter,
                 )
             else:
                 bounding_box = AxisAlignedBoundingBox.create_at_random_position_scaled(
