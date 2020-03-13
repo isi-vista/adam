@@ -31,6 +31,7 @@ from adam.ontology.phase1_ontology import (
     SIT_GOAL,
     SIT_THING_SAT_ON,
     GOAL,
+    DOG,
 )
 from adam.ontology.phase1_spatial_relations import (
     Region,
@@ -156,7 +157,7 @@ def test_eat_simple(learner_factory):
 def test_sit(learner_factory):
     learner = learner_factory()
 
-    sitter = standard_object("sitter_0", THING, required_properties=[ANIMATE])
+    sitter = standard_object("sitter_0", DOG, required_properties=[ANIMATE])
     sit_surface = standard_object(
         "surface", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
     )
