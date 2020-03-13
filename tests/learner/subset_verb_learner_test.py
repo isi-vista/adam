@@ -95,7 +95,6 @@ def run_verb_test(learner, situation_template):
         learner.observe(
             LearningExample(perceptual_representation, linguistic_description)
         )
-
     for (
         _,
         test_lingustics_description,
@@ -155,7 +154,6 @@ def test_eat_simple(learner_factory):
 
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_sit(learner_factory):
-    learner = learner_factory()
 
     sitter = standard_object("sitter_0", DOG, required_properties=[ANIMATE])
     sit_surface = standard_object(
@@ -234,4 +232,5 @@ def test_sit(learner_factory):
                 )
 
     for situation_template in make_templates():
+        learner = learner_factory()
         run_verb_test(learner, situation_template)
