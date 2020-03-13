@@ -124,7 +124,10 @@ class PerceptionGraphTemplate:
 
         # First we just intersect the pattern graph.
         intersected_pattern = self.graph_pattern.intersection(
-            pattern.graph_pattern, graph_logger=graph_logger, ontology=ontology, debug_callback=debug_callback
+            pattern.graph_pattern,
+            graph_logger=graph_logger,
+            ontology=ontology,
+            debug_callback=debug_callback,
         )
 
         if intersected_pattern:
@@ -164,5 +167,6 @@ class PerceptionGraphTemplate:
     def _init_pattern_node_to_template_variable(
         self
     ) -> ImmutableDict[MatchedObjectPerceptionPredicate, SurfaceTemplateVariable]:
-        return immutabledict({v: k for k, v in self.template_variable_to_pattern_node.items()})
-
+        return immutabledict(
+            {v: k for k, v in self.template_variable_to_pattern_node.items()}
+        )

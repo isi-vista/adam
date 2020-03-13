@@ -3,16 +3,27 @@ from itertools import chain
 
 import pytest
 
-from adam.curriculum.curriculum_utils import (PHASE1_CHOOSER, phase1_instances, standard_object)
+from adam.curriculum.curriculum_utils import (
+    PHASE1_CHOOSER,
+    phase1_instances,
+    standard_object,
+)
 from adam.learner import LearningExample
 from adam.learner.verbs import SubsetVerbLearner
-from adam.ontology.phase1_ontology import (AGENT, COOKIE, EAT, GAILA_PHASE_1_ONTOLOGY, MOM, PATIENT)
+from adam.ontology.phase1_ontology import (
+    AGENT,
+    COOKIE,
+    EAT,
+    GAILA_PHASE_1_ONTOLOGY,
+    MOM,
+    PATIENT,
+)
 from adam.situation import Action
 from adam.situation.templates.phase1_templates import Phase1SituationTemplate, sampled
 from learner import TEST_OBJECT_RECOGNIZER
 
-LEARNERS = [
-    SubsetVerbLearner(
+LEARNER_FACTORIES = [
+    lambda: SubsetVerbLearner(
         object_recognizer=TEST_OBJECT_RECOGNIZER, ontology=GAILA_PHASE_1_ONTOLOGY
     )
 ]
@@ -27,8 +38,9 @@ LEARNERS = [
 #     )  # type: ignore
 
 
-@pytest.mark.parametrize("learner", LEARNERS)
-def test_eat(learner):
+@pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
+def test_eat(learner_factory):
+    learner = learner_factory()
     rng = random.Random()
     rng.seed(0)
 

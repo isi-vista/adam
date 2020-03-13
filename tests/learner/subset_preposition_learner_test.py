@@ -31,7 +31,7 @@ from adam.ontology.phase1_ontology import (
 from adam.situation.templates.phase1_templates import sampled, object_variable
 from learner import TEST_OBJECT_RECOGNIZER
 
-SUBSET_PREPOSITION_LEARNER = SubsetPrepositionLearner(
+SUBSET_PREPOSITION_LEARNER_FACTORY = lambda: SubsetPrepositionLearner(
     object_recognizer=TEST_OBJECT_RECOGNIZER, ontology=GAILA_PHASE_1_ONTOLOGY
 )
 
@@ -58,12 +58,13 @@ def test_subset_preposition_on_learner():
         ),
     )
 
+    learner = SUBSET_PREPOSITION_LEARNER_FACTORY()
     for (
         _,
         linguistic_description,
         perceptual_representation,
     ) in on_train_curriculum.instances():
-        SUBSET_PREPOSITION_LEARNER.observe(
+        learner.observe(
             LearningExample(perceptual_representation, linguistic_description)
         )
 
@@ -72,9 +73,7 @@ def test_subset_preposition_on_learner():
         test_lingustics_description,
         test_perceptual_representation,
     ) in on_test_curriculum.instances():
-        descriptions_from_learner = SUBSET_PREPOSITION_LEARNER.describe(
-            test_perceptual_representation
-        )
+        descriptions_from_learner = learner.describe(test_perceptual_representation)
         gold = test_lingustics_description.as_token_sequence()
         assert descriptions_from_learner
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
@@ -106,12 +105,13 @@ def test_subset_preposition_beside_learner():
         ),
     )
 
+    learner = SUBSET_PREPOSITION_LEARNER_FACTORY()
     for (
         _,
         linguistic_description,
         perceptual_representation,
     ) in beside_train_curriculum.instances():
-        SUBSET_PREPOSITION_LEARNER.observe(
+        learner.observe(
             LearningExample(perceptual_representation, linguistic_description)
         )
 
@@ -120,9 +120,7 @@ def test_subset_preposition_beside_learner():
         test_linguistic_description,
         test_perceptual_representation,
     ) in beside_test_curriculum.instances():
-        descriptions_from_learner = SUBSET_PREPOSITION_LEARNER.describe(
-            test_perceptual_representation
-        )
+        descriptions_from_learner = learner.describe(test_perceptual_representation)
         gold = test_linguistic_description.as_token_sequence()
         assert descriptions_from_learner
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
@@ -154,12 +152,13 @@ def test_subset_preposition_under_learner():
         ),
     )
 
+    learner = SUBSET_PREPOSITION_LEARNER_FACTORY()
     for (
         _,
         linguistic_description,
         perceptual_representation,
     ) in under_train_curriculum.instances():
-        SUBSET_PREPOSITION_LEARNER.observe(
+        learner.observe(
             LearningExample(perceptual_representation, linguistic_description)
         )
 
@@ -168,9 +167,7 @@ def test_subset_preposition_under_learner():
         test_linguistic_description,
         test_perceptual_representation,
     ) in under_test_curriculum.instances():
-        descriptions_from_learner = SUBSET_PREPOSITION_LEARNER.describe(
-            test_perceptual_representation
-        )
+        descriptions_from_learner = learner.describe(test_perceptual_representation)
         gold = test_linguistic_description.as_token_sequence()
         assert descriptions_from_learner
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
@@ -200,12 +197,13 @@ def test_subset_preposition_over_learner():
         ),
     )
 
+    learner = SUBSET_PREPOSITION_LEARNER_FACTORY()
     for (
         _,
         linguistic_description,
         perceptual_representation,
     ) in over_train_curriculum.instances():
-        SUBSET_PREPOSITION_LEARNER.observe(
+        learner.observe(
             LearningExample(perceptual_representation, linguistic_description)
         )
 
@@ -214,9 +212,7 @@ def test_subset_preposition_over_learner():
         test_linguistic_description,
         test_perceptual_representation,
     ) in over_test_curriculum.instances():
-        descriptions_from_learner = SUBSET_PREPOSITION_LEARNER.describe(
-            test_perceptual_representation
-        )
+        descriptions_from_learner = learner.describe(test_perceptual_representation)
         gold = test_linguistic_description.as_token_sequence()
         assert descriptions_from_learner
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
@@ -246,12 +242,14 @@ def test_subset_preposition_in_learner():
         ),
     )
 
+    learner = SUBSET_PREPOSITION_LEARNER_FACTORY()
+
     for (
         _,
         linguistic_description,
         perceptual_representation,
     ) in in_train_curriculum.instances():
-        SUBSET_PREPOSITION_LEARNER.observe(
+        learner.observe(
             LearningExample(perceptual_representation, linguistic_description)
         )
 
@@ -260,9 +258,7 @@ def test_subset_preposition_in_learner():
         test_linguistic_description,
         test_perceptual_representation,
     ) in in_test_curriculum.instances():
-        descriptions_from_learner = SUBSET_PREPOSITION_LEARNER.describe(
-            test_perceptual_representation
-        )
+        descriptions_from_learner = learner.describe(test_perceptual_representation)
         gold = test_linguistic_description.as_token_sequence()
         assert descriptions_from_learner
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
@@ -304,12 +300,13 @@ def test_subset_preposition_behind_learner():
         ),
     )
 
+    learner = SUBSET_PREPOSITION_LEARNER_FACTORY()
     for (
         _,
         linguistic_description,
         perceptual_representation,
     ) in behind_train_curriculum.instances():
-        SUBSET_PREPOSITION_LEARNER.observe(
+        learner.observe(
             LearningExample(perceptual_representation, linguistic_description)
         )
 
@@ -318,9 +315,7 @@ def test_subset_preposition_behind_learner():
         test_linguistic_description,
         test_perceptual_representation,
     ) in behind_test_curriculum.instances():
-        descriptions_from_learner = SUBSET_PREPOSITION_LEARNER.describe(
-            test_perceptual_representation
-        )
+        descriptions_from_learner = learner.describe(test_perceptual_representation)
         gold = test_linguistic_description.as_token_sequence()
         assert descriptions_from_learner
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
@@ -362,12 +357,13 @@ def test_subset_preposition_in_front_learner():
         ),
     )
 
+    learner = SUBSET_PREPOSITION_LEARNER_FACTORY()
     for (
         _,
         linguistic_description,
         perceptual_representation,
     ) in in_front_train_curriculum.instances():
-        SUBSET_PREPOSITION_LEARNER.observe(
+        learner.observe(
             LearningExample(perceptual_representation, linguistic_description)
         )
 
@@ -376,9 +372,7 @@ def test_subset_preposition_in_front_learner():
         test_linguistic_description,
         test_perceptual_representation,
     ) in in_front_test_curriculum.instances():
-        descriptions_from_learner = SUBSET_PREPOSITION_LEARNER.describe(
-            test_perceptual_representation
-        )
+        descriptions_from_learner = learner.describe(test_perceptual_representation)
         gold = test_linguistic_description.as_token_sequence()
         assert descriptions_from_learner
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold

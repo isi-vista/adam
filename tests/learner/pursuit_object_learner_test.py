@@ -15,7 +15,8 @@ from adam.ontology.phase1_ontology import (
     BOX,
     DOG,
     GAILA_PHASE_1_ONTOLOGY,
-    LEARNER)
+    LEARNER,
+)
 from adam.perception.perception_graph import DebugCallableType, DumpPartialMatchCallback
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
@@ -52,7 +53,9 @@ def run_subset_learner_for_object(
         ),
     )
 
-    learner = SubsetObjectLearner(ontology=GAILA_PHASE_1_ONTOLOGY, debug_callback=debug_callback)
+    learner = SubsetObjectLearner(
+        ontology=GAILA_PHASE_1_ONTOLOGY, debug_callback=debug_callback
+    )
     for training_stage in [obj_curriculum]:
         for (
             _,
@@ -159,7 +162,7 @@ def test_pursuit_object_learner():
         rng=rng,
         smoothing_parameter=0.001,
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        debug_callback=debug_callback
+        debug_callback=debug_callback,
     )  # type: ignore
     for training_stage in [train_curriculum]:
         for (

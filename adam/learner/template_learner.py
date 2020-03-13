@@ -12,9 +12,13 @@ from adam.perception import PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
-from adam.perception.perception_graph import LanguageAlignedPerception, PerceptionGraph, DebugCallableType
+from adam.perception.perception_graph import (
+    LanguageAlignedPerception,
+    PerceptionGraph,
+    DebugCallableType,
+)
 from attr import attrib, attrs
-from immutablecollections import immutabledict
+from immutablecollections import immutabledict, ImmutableDict
 
 
 @attrs
@@ -67,10 +71,9 @@ class AbstractTemplateLearner(
         )
 
         preprocessed_perception_graph = preprocessing_result.perception_graph
-        matched_objects_to_names = immutabledict(
-            {v: k for k, v in preprocessing_result.description_to_matched_object_node.items()}
+        matched_objects_to_names = (
+            preprocessing_result.description_to_matched_object_node.inverse()
         )
-
         # This accumulates our output.
         match_to_score: List[
             Tuple[TokenSequenceLinguisticDescription, PerceptionGraphTemplate, float]
@@ -87,7 +90,9 @@ class AbstractTemplateLearner(
         ) -> None:
             # try to see if (our model of) its semantics is present in the situation.
             matcher = pattern.graph_pattern.matcher(
-                preprocessed_perception_graph, matching_objects=False, debug_callback=self._debug_callback
+                preprocessed_perception_graph,
+                matching_objects=False,
+                # debug_callback=self._debug_callback,
             )
             for match in matcher.matches(use_lookahead_pruning=True):
                 # if there is a match, use that match to describe the situation.
