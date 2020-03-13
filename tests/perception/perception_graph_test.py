@@ -647,7 +647,7 @@ def test_matching_static_vs_dynamic_graphs():
     ).perception_graph_pattern
 
     temporal_perception_pattern = perception_pattern.copy_with_temporal_scopes(
-        required_temporal_scope=TemporalScope.AFTER
+        required_temporal_scopes=[TemporalScope.AFTER]
     )
 
     # Test runtime error for matching static pattern against dynamic graph and vice versa
