@@ -1,6 +1,9 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import Mapping, List, Tuple, Union, Iterable, Sequence, Optional
+from typing import Mapping, List, Tuple, Union, Iterable, Sequence
+
+from attr import attrib, attrs
+from immutablecollections import immutabledict
 
 from adam.language import TokenSequenceLinguisticDescription, LinguisticDescription
 from adam.learner import LanguageLearner, LearningExample
@@ -12,13 +15,7 @@ from adam.perception import PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
-from adam.perception.perception_graph import (
-    LanguageAlignedPerception,
-    PerceptionGraph,
-    DebugCallableType,
-)
-from attr import attrib, attrs
-from immutablecollections import immutabledict, ImmutableDict
+from adam.perception.perception_graph import LanguageAlignedPerception, PerceptionGraph
 
 
 @attrs
@@ -186,7 +183,6 @@ class AbstractTemplateLearner(
         for this particular training example.
         """
 
-    @abstractmethod
     def _learning_step(
         self,
         preprocessed_input: LanguageAlignedPerception,
@@ -194,13 +190,11 @@ class AbstractTemplateLearner(
     ) -> None:
         pass
 
-    @abstractmethod
     def _primary_templates(
         self
     ) -> Iterable[Tuple[SurfaceTemplate, PerceptionGraphTemplate, float]]:
         pass
 
-    @abstractmethod
     def _fallback_templates(
         self
     ) -> Iterable[Tuple[SurfaceTemplate, PerceptionGraphTemplate, float]]:

@@ -2,9 +2,12 @@ import logging
 from itertools import chain
 from typing import Iterable, List, Mapping, Set, Tuple
 
+from attr import attrib, attrs
 from attr.validators import deep_iterable, deep_mapping, instance_of
+from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
+from immutablecollections.converter_utils import _to_immutabledict, _to_immutableset
 from more_itertools import first
-from networkx import DiGraph
+from vistautils.span import Span
 
 from adam.axes import GRAVITATIONAL_DOWN_TO_UP_AXIS, LEARNER_AXES, WORLD_AXES
 from adam.language import LinguisticDescription
@@ -23,10 +26,6 @@ from adam.perception.perception_graph import (
     RelationTypeIsPredicate,
     ENTIRE_SCENE,
 )
-from attr import attrib, attrs
-from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
-from immutablecollections.converter_utils import _to_immutabledict, _to_immutableset
-from vistautils.span import Span
 
 _LIST_OF_PERCEIVED_PATTERNS = immutableset(
     (

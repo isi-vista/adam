@@ -1,6 +1,6 @@
 import random
-from typing import Iterable
 from itertools import chain
+from typing import Iterable
 
 import pytest
 
@@ -22,13 +22,6 @@ from adam.ontology.phase1_ontology import (
     GAILA_PHASE_1_ONTOLOGY,
     MOM,
     PATIENT,
-    MILK,
-    DRINK,
-    LIQUID,
-    DRINK_CONTAINER_AUX,
-    HOLLOW,
-    PERSON,
-    THEME,
     ANIMATE,
     CAN_HAVE_THINGS_RESTING_ON_THEM,
     INANIMATE_OBJECT,
@@ -45,11 +38,7 @@ from adam.ontology.phase1_spatial_relations import (
     EXTERIOR_BUT_IN_CONTACT,
 )
 from adam.situation import Action
-from adam.situation.templates.phase1_templates import (
-    Phase1SituationTemplate,
-    sampled,
-    object_variable,
-)
+from adam.situation.templates.phase1_templates import Phase1SituationTemplate, sampled
 from tests.learner import TEST_OBJECT_RECOGNIZER
 
 LEARNER_FACTORIES = [

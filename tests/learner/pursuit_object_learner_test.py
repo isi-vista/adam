@@ -84,7 +84,7 @@ def test_subset_learner_ball():
 
 
 def test_subset_learner_dog():
-    debug_callback = DumpPartialMatchCallback(render_path="../renders/")
+    # debug_callback = DumpPartialMatchCallback(render_path="../renders/")
     # We pass this callback into the learner; it is executed if the learning takes too long, i.e after 60 seconds.
     run_subset_learner_for_object(DOG)
 

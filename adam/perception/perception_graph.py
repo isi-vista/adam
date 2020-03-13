@@ -34,20 +34,30 @@ from typing import (
     TypeVar,
     Union,
     cast,
-    Container,
 )
 from uuid import uuid4
 
 import graphviz
+from attr import attrib, attrs
 from attr.validators import deep_iterable, instance_of, optional
+from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
+from immutablecollections.converter_utils import (
+    _to_immutabledict,
+    _to_immutableset,
+    _to_tuple,
+)
 from more_itertools import first, pairwise
 from networkx import DiGraph, connected_components, is_isomorphic, set_node_attributes
 from typing_extensions import Protocol
+from vistautils.misc_utils import str_list_limited
+from vistautils.preconditions import check_arg
+from vistautils.range import Range
+from vistautils.span import Span
 
 from adam.axes import AxesInfo, HasAxes
 from adam.axis import GeonAxis
 from adam.geon import Geon, MaybeHasGeon
-from adam.language import TokenSequenceLinguisticDescription, LinguisticDescription
+from adam.language import LinguisticDescription
 from adam.ontology import OntologyNode
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import COLOR, GAILA_PHASE_1_ONTOLOGY, PART_OF
@@ -68,17 +78,6 @@ from adam.random_utils import RandomChooser
 from adam.situation import SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.utils.networkx_utils import copy_digraph, digraph_with_nodes_sorted_by, subgraph
-from attr import attrib, attrs
-from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
-from immutablecollections.converter_utils import (
-    _to_immutabledict,
-    _to_immutableset,
-    _to_tuple,
-)
-from vistautils.misc_utils import str_list_limited
-from vistautils.preconditions import check_arg
-from vistautils.range import Range
-from vistautils.span import Span
 
 
 class Incrementer:

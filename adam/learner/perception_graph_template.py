@@ -1,7 +1,10 @@
 from logging import INFO
-from typing import Any, Iterable, List, Optional, Tuple, Callable, Mapping
+from typing import Any, List, Optional, Callable, Mapping
 
+from attr import attrib, attrs
 from attr.validators import deep_mapping, instance_of
+from immutablecollections import ImmutableDict, immutabledict, immutableset
+from immutablecollections.converter_utils import _to_immutabledict
 
 from adam.learner.surface_templates import SurfaceTemplateVariable
 from adam.ontology.ontology import Ontology
@@ -12,9 +15,6 @@ from adam.perception.perception_graph import (
     PerceptionGraph,
     PerceptionGraphPattern,
 )
-from attr import attrib, attrs
-from immutablecollections import ImmutableDict, immutabledict, immutableset
-from immutablecollections.converter_utils import _to_immutabledict
 
 
 @attrs(frozen=True, slots=True, eq=False)
