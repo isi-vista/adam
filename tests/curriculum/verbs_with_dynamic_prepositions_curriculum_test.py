@@ -1,6 +1,7 @@
 from adam.curriculum.verbs_with_dynamic_prepositions_curriculum import (
     _make_push_with_prepositions,
     _make_go_with_prepositions,
+    _make_throw_with_prepositions,
     _make_roll_with_prepositions,
     _make_sit_with_prepositions,
     _make_take_with_prepositions,
@@ -19,6 +20,10 @@ def test_make_push():
 
 def test_make_go():
     curriculum_test(_make_go_with_prepositions())
+
+
+def test_make_throw():
+    curriculum_test(_make_throw_with_prepositions())
 
 
 def test_make_roll():
