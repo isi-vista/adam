@@ -15,8 +15,7 @@ from adam.ontology.phase1_ontology import (
     BOX,
     DOG,
     GAILA_PHASE_1_ONTOLOGY,
-    LEARNER,
-    PERSON, CHAIR, TABLE)
+    LEARNER)
 from adam.perception.perception_graph import DebugCallableType, DumpPartialMatchCallback
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
@@ -93,7 +92,7 @@ def test_pursuit_object_learner():
         # PERSON,
         # CHAIR,
         # TABLE,
-        # DOG,
+        DOG,
         BIRD,
         BOX,
     ]
