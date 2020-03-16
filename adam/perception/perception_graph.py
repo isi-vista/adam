@@ -60,7 +60,13 @@ from adam.geon import Geon, MaybeHasGeon
 from adam.language import LinguisticDescription
 from adam.ontology import OntologyNode
 from adam.ontology.ontology import Ontology
-from adam.ontology.phase1_ontology import COLOR, GAILA_PHASE_1_ONTOLOGY, PART_OF
+from adam.ontology.phase1_ontology import (
+    COLOR,
+    GAILA_PHASE_1_ONTOLOGY,
+    PART_OF,
+    LIQUID,
+    RECOGNIZED_PARTICULAR_PROPERTY,
+)
 from adam.ontology.phase1_spatial_relations import Direction, Distance, Region
 from adam.ontology.structural_schema import ObjectStructuralSchema
 from adam.perception import ObjectPerception, PerceptualRepresentation
@@ -808,6 +814,19 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
         perception_graph_as_digraph = PerceptionGraph.from_frame(
             first(perception.frames)
         ).copy_as_digraph()
+
+        nodes_to_remove = [
+            node
+            for node in perception_graph_as_digraph
+            # Perception generation wraps properties in tuples, so we need to unwrap them.
+            if isinstance(node, tuple)
+            and isinstance(node[0], OntologyNode)
+            and not (
+                ontology.is_subtype_of(node[0], RECOGNIZED_PARTICULAR_PROPERTY)
+                or node[0] is LIQUID
+            )
+        ]
+        perception_graph_as_digraph.remove_nodes_from(nodes_to_remove)
 
         # We then turn this DiGraph representation into a PerceptionGraphPattern
         return PerceptionGraphPattern.from_graph(
