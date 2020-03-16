@@ -29,7 +29,7 @@ from adam.ontology.phase1_ontology import (
     MOM,
 )
 from adam.situation.templates.phase1_templates import sampled, object_variable
-from learner import TEST_OBJECT_RECOGNIZER
+from tests.learner import TEST_OBJECT_RECOGNIZER
 
 SUBSET_PREPOSITION_LEARNER_FACTORY = lambda: SubsetPrepositionLearner(
     object_recognizer=TEST_OBJECT_RECOGNIZER, ontology=GAILA_PHASE_1_ONTOLOGY
