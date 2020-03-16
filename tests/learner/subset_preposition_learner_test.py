@@ -1,7 +1,4 @@
-from typing import Mapping
-
-from immutablecollections import immutableset, immutabledict
-from more_itertools import first
+from immutablecollections import immutableset
 
 from adam.curriculum.curriculum_utils import (
     standard_object,
@@ -18,8 +15,7 @@ from adam.curriculum.preposition_curriculum import (
     _in_front_template,
 )
 from adam.learner import LearningExample
-from adam.learner.object_recognizer import ObjectRecognizer
-from adam.learner.preposition_subset import PrepositionSubsetLanguageLearner
+from adam.learner.prepositions import SubsetPrepositionLearner
 import pytest
 
 from adam.ontology import IS_ADDRESSEE, IS_SPEAKER
@@ -31,30 +27,16 @@ from adam.ontology.phase1_ontology import (
     CUP,
     LEARNER,
     MOM,
-    PHASE_1_CURRICULUM_OBJECTS,
 )
-from adam.perception.perception_graph import PerceptionGraphPattern
 from adam.situation.templates.phase1_templates import sampled, object_variable
+from learner import TEST_OBJECT_RECOGNIZER
 
-_TEST_OBJECTS: Mapping[str, PerceptionGraphPattern] = immutabledict(
-    (
-        node.handle,
-        PerceptionGraphPattern.from_schema(
-            first(GAILA_PHASE_1_ONTOLOGY.structural_schemata(node))
-        ),
-    )
-    for node in PHASE_1_CURRICULUM_OBJECTS
-    if node
-    in GAILA_PHASE_1_ONTOLOGY._structural_schemata.keys()  # pylint:disable=protected-access
+SUBSET_PREPOSITION_LEARNER_FACTORY = lambda: SubsetPrepositionLearner(
+    object_recognizer=TEST_OBJECT_RECOGNIZER, ontology=GAILA_PHASE_1_ONTOLOGY
 )
-
-OBJECT_RECOGNIZER = ObjectRecognizer(_TEST_OBJECTS)
 
 
 def test_subset_preposition_on_learner():
-    learner = PrepositionSubsetLanguageLearner(
-        object_recognizer=OBJECT_RECOGNIZER, ontology=GAILA_PHASE_1_ONTOLOGY
-    )
     ball = standard_object("ball", BALL)
     table = standard_object("table", TABLE)
     on_train_curriculum = phase1_instances(
@@ -76,6 +58,7 @@ def test_subset_preposition_on_learner():
         ),
     )
 
+    learner = SUBSET_PREPOSITION_LEARNER_FACTORY()
     for (
         _,
         linguistic_description,
@@ -97,9 +80,6 @@ def test_subset_preposition_on_learner():
 
 
 def test_subset_preposition_beside_learner():
-    learner = PrepositionSubsetLanguageLearner(
-        object_recognizer=OBJECT_RECOGNIZER, ontology=GAILA_PHASE_1_ONTOLOGY
-    )
     ball = standard_object("ball", BALL)
     table = standard_object("table", TABLE)
     beside_train_curriculum = phase1_instances(
@@ -125,6 +105,7 @@ def test_subset_preposition_beside_learner():
         ),
     )
 
+    learner = SUBSET_PREPOSITION_LEARNER_FACTORY()
     for (
         _,
         linguistic_description,
@@ -146,9 +127,6 @@ def test_subset_preposition_beside_learner():
 
 
 def test_subset_preposition_under_learner():
-    learner = PrepositionSubsetLanguageLearner(
-        object_recognizer=OBJECT_RECOGNIZER, ontology=GAILA_PHASE_1_ONTOLOGY
-    )
     ball = standard_object("ball", BALL)
     table = standard_object("table", TABLE)
     under_train_curriculum = phase1_instances(
@@ -174,6 +152,7 @@ def test_subset_preposition_under_learner():
         ),
     )
 
+    learner = SUBSET_PREPOSITION_LEARNER_FACTORY()
     for (
         _,
         linguistic_description,
@@ -195,9 +174,6 @@ def test_subset_preposition_under_learner():
 
 
 def test_subset_preposition_over_learner():
-    learner = PrepositionSubsetLanguageLearner(
-        object_recognizer=OBJECT_RECOGNIZER, ontology=GAILA_PHASE_1_ONTOLOGY
-    )
     ball = standard_object("ball", BALL)
     table = standard_object("table", TABLE)
     over_train_curriculum = phase1_instances(
@@ -221,6 +197,7 @@ def test_subset_preposition_over_learner():
         ),
     )
 
+    learner = SUBSET_PREPOSITION_LEARNER_FACTORY()
     for (
         _,
         linguistic_description,
@@ -244,9 +221,6 @@ def test_subset_preposition_over_learner():
 # See https://github.com/isi-vista/adam/issues/422
 @pytest.mark.skip(msg="In Preposition Test Temporarily Disabled")
 def test_subset_preposition_in_learner():
-    learner = PrepositionSubsetLanguageLearner(
-        object_recognizer=OBJECT_RECOGNIZER, ontology=GAILA_PHASE_1_ONTOLOGY
-    )
     water = object_variable("water", WATER)
     cup = standard_object("cup", CUP)
     in_train_curriculum = phase1_instances(
@@ -267,6 +241,8 @@ def test_subset_preposition_in_learner():
             max_to_sample=1,
         ),
     )
+
+    learner = SUBSET_PREPOSITION_LEARNER_FACTORY()
 
     for (
         _,
@@ -289,9 +265,6 @@ def test_subset_preposition_in_learner():
 
 
 def test_subset_preposition_behind_learner():
-    learner = PrepositionSubsetLanguageLearner(
-        object_recognizer=OBJECT_RECOGNIZER, ontology=GAILA_PHASE_1_ONTOLOGY
-    )
     ball = standard_object("ball", BALL)
     table = standard_object("table", TABLE)
     learner_object = standard_object("learner", LEARNER, added_properties=[IS_ADDRESSEE])
@@ -327,6 +300,7 @@ def test_subset_preposition_behind_learner():
         ),
     )
 
+    learner = SUBSET_PREPOSITION_LEARNER_FACTORY()
     for (
         _,
         linguistic_description,
@@ -348,9 +322,6 @@ def test_subset_preposition_behind_learner():
 
 
 def test_subset_preposition_in_front_learner():
-    learner = PrepositionSubsetLanguageLearner(
-        object_recognizer=OBJECT_RECOGNIZER, ontology=GAILA_PHASE_1_ONTOLOGY
-    )
     ball = standard_object("ball", BALL)
     table = standard_object("table", TABLE)
     learner_object = standard_object("learner", LEARNER, added_properties=[IS_ADDRESSEE])
@@ -386,6 +357,7 @@ def test_subset_preposition_in_front_learner():
         ),
     )
 
+    learner = SUBSET_PREPOSITION_LEARNER_FACTORY()
     for (
         _,
         linguistic_description,

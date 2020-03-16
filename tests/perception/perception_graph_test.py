@@ -10,7 +10,7 @@ from adam.curriculum.curriculum_utils import (
     phase1_instances,
     standard_object,
 )
-from adam.learner.subset import graph_without_learner
+from adam.learner import graph_without_learner
 from adam.ontology import IN_REGION, OntologyNode
 from adam.ontology.phase1_ontology import (
     BIRD,
@@ -242,14 +242,12 @@ def test_last_failed_pattern_node():
     for (_, _, perceptual_representation) in train_curriculum.instances():
         # Original perception graph
         perception = graph_without_learner(
-            PerceptionGraph.from_frame(
-                perceptual_representation.frames[0]
-            ).copy_as_digraph()
+            PerceptionGraph.from_frame(perceptual_representation.frames[0])
         )
 
         # Original perception pattern
         whole_perception_pattern = PerceptionGraphPattern.from_graph(
-            perception.copy_as_digraph()
+            perception
         ).perception_graph_pattern
         # Create an altered perception graph we replace the color node
         altered_perception_digraph = perception.copy_as_digraph()
@@ -316,7 +314,7 @@ def test_successfully_extending_partial_match():
     # Create a perception pattern for the whole thing
     # and also a perception pattern for a subset of the whole pattern
     whole_perception_pattern = PerceptionGraphPattern.from_graph(
-        perception.copy_as_digraph()
+        perception
     ).perception_graph_pattern
 
     partial_digraph = whole_perception_pattern.copy_as_digraph()
@@ -366,10 +364,10 @@ def test_semantically_infeasible_partial_match():
     perceptual_representation = only(train_curriculum.instances())[2]
     # Original perception graph
     perception = graph_without_learner(
-        PerceptionGraph.from_frame(perceptual_representation.frames[0]).copy_as_digraph()
+        PerceptionGraph.from_frame(perceptual_representation.frames[0])
     )
     whole_perception_pattern = PerceptionGraphPattern.from_graph(
-        perception.copy_as_digraph()
+        perception
     ).perception_graph_pattern
 
     # Create an altered perception graph we remove the color node
@@ -403,7 +401,7 @@ def test_semantically_infeasible_partial_match():
             altered_perception_digraph[edge[0]][edge[1]][k] = v
 
     altered_perception_pattern = PerceptionGraphPattern.from_graph(
-        altered_perception_digraph
+        PerceptionGraph(altered_perception_digraph)
     ).perception_graph_pattern
 
     partial_digraph = altered_perception_pattern.copy_as_digraph()
@@ -455,10 +453,10 @@ def test_syntactically_infeasible_partial_match():
 
     # Original perception graph
     perception = graph_without_learner(
-        PerceptionGraph.from_frame(perceptual_representation.frames[0]).copy_as_digraph()
+        PerceptionGraph.from_frame(perceptual_representation.frames[0])
     )
     whole_perception_pattern = PerceptionGraphPattern.from_graph(
-        perception.copy_as_digraph()
+        perception
     ).perception_graph_pattern
 
     # Create an altered perception graph we remove the color node
@@ -554,7 +552,7 @@ def test_copy_with_temporal_scopes_content():
     perceptual_representation = only(train_curriculum.instances())[2]
 
     perception_graph = graph_without_learner(
-        PerceptionGraph.from_frame(perceptual_representation.frames[0]).copy_as_digraph()
+        PerceptionGraph.from_frame(perceptual_representation.frames[0])
     )
     temporal_perception_graph = perception_graph.copy_with_temporal_scopes(
         temporal_scopes=[TemporalScope.AFTER]
@@ -588,7 +586,7 @@ def test_perception_graph_post_init_edge_cases():
     train_curriculum = phase1_instances("all obj situations", situations=template)
     perceptual_representation = only(train_curriculum.instances())[2]
     perception_graph = graph_without_learner(
-        PerceptionGraph.from_frame(perceptual_representation.frames[0]).copy_as_digraph()
+        PerceptionGraph.from_frame(perceptual_representation.frames[0])
     )
     temporal_perception_graph = perception_graph.copy_with_temporal_scopes(
         temporal_scopes=[TemporalScope.AFTER]
@@ -638,18 +636,18 @@ def test_matching_static_vs_dynamic_graphs():
     perceptual_representation = only(train_curriculum.instances())[2]
 
     perception_graph = graph_without_learner(
-        PerceptionGraph.from_frame(perceptual_representation.frames[0]).copy_as_digraph()
+        PerceptionGraph.from_frame(perceptual_representation.frames[0])
     )
     temporal_perception_graph = perception_graph.copy_with_temporal_scopes(
         temporal_scopes=[TemporalScope.AFTER]
     )
 
     perception_pattern = PerceptionGraphPattern.from_graph(
-        perception_graph.copy_as_digraph()
+        perception_graph
     ).perception_graph_pattern
 
-    temporal_perception_pattern = perception_pattern.copy_with_temporal_scope(
-        required_temporal_scope=TemporalScope.AFTER
+    temporal_perception_pattern = perception_pattern.copy_with_temporal_scopes(
+        required_temporal_scopes=[TemporalScope.AFTER]
     )
 
     # Test runtime error for matching static pattern against dynamic graph and vice versa
@@ -682,24 +680,24 @@ def test_copy_with_temporal_scope_pattern_content():
     perceptual_representation = only(train_curriculum.instances())[2]
 
     perception_graph = graph_without_learner(
-        PerceptionGraph.from_frame(perceptual_representation.frames[0]).copy_as_digraph()
+        PerceptionGraph.from_frame(perceptual_representation.frames[0])
     )
 
     perception_pattern = PerceptionGraphPattern.from_graph(
-        perception_graph.copy_as_digraph()
+        perception_graph
     ).perception_graph_pattern
 
     temporal_perception_graph = perception_graph.copy_with_temporal_scopes(
         temporal_scopes=[TemporalScope.AFTER]
     )
-    temporal_perception_pattern = perception_pattern.copy_with_temporal_scope(
-        required_temporal_scope=TemporalScope.AFTER
+    temporal_perception_pattern = perception_pattern.copy_with_temporal_scopes(
+        required_temporal_scopes=TemporalScope.AFTER
     )
 
     # Exception while applying to dynamic pattern
     with pytest.raises(RuntimeError):
-        temporal_perception_pattern.copy_with_temporal_scope(
-            required_temporal_scope=TemporalScope.AFTER
+        temporal_perception_pattern.copy_with_temporal_scopes(
+            required_temporal_scopes=TemporalScope.AFTER
         )
 
     for (source, target) in perception_pattern.copy_as_digraph().edges():
@@ -716,12 +714,12 @@ def test_copy_with_temporal_scope_pattern_content():
         assert isinstance(predicate.dot_label(), str)
         assert predicate.matches_predicate(
             HoldsAtTemporalScopePredicate(
-                predicate.wrapped_edge_predicate, predicate.temporal_scope
+                predicate.wrapped_edge_predicate, predicate.temporal_scopes
             )
         )
         assert not predicate.matches_predicate(
             HoldsAtTemporalScopePredicate(
-                predicate.wrapped_edge_predicate, TemporalScope.BEFORE
+                predicate.wrapped_edge_predicate, [TemporalScope.BEFORE]
             )
         )
         assert isinstance(predicate, HoldsAtTemporalScopePredicate)
@@ -729,7 +727,8 @@ def test_copy_with_temporal_scope_pattern_content():
             predicate.wrapped_edge_predicate
             == perception_pattern.copy_as_digraph()[source][target]["predicate"]
         )
-        assert predicate.temporal_scope == TemporalScope.AFTER
+        assert len(predicate.temporal_scopes) == 1
+        assert only(predicate.temporal_scopes) == TemporalScope.AFTER
 
     # Test normal matching behavior
     temporal_matcher = temporal_perception_pattern.matcher(
@@ -742,7 +741,7 @@ def test_copy_with_temporal_scope_pattern_content():
         label = "test edge label"
         edge_predicate = AnyEdgePredicate()
         temporal_predicate = HoldsAtTemporalScopePredicate(
-            edge_predicate, TemporalScope.AFTER
+            edge_predicate, [TemporalScope.AFTER]
         )
 
         temporal_edge_label = TemporallyScopedEdgeLabel(label, [TemporalScope.AFTER])

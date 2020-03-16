@@ -109,6 +109,7 @@ class LinearizedDependencyTree(LinguisticDescription):
     surface_token_order: Tuple["DependencyTreeToken", ...] = attrib(
         converter=_to_tuple, default=()
     )
+    surface_token_strings: Tuple[str, ...] = attrib(init=False)
 
     def as_token_sequence(self) -> Tuple[str, ...]:
         return tuple(node.token for node in self.surface_token_order)
@@ -122,6 +123,16 @@ class LinearizedDependencyTree(LinguisticDescription):
                 f"Tree tokens: {self.dependency_tree.tokens}, "
                 f"surface tokens: {surface_tokens}"
             )
+
+    def __getitem__(self, item) -> str:
+        return self.surface_token_strings[item]
+
+    def __len__(self) -> int:
+        return len(self.surface_token_strings)
+
+    @surface_token_strings.default
+    def _init_surface_token_strings(self) -> Tuple[str, ...]:
+        return tuple(node.token for node in self.surface_token_order)
 
 
 @attrs(frozen=True, slots=True, repr=False)

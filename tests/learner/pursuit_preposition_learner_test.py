@@ -1,6 +1,8 @@
 import random
 
 import pytest
+
+from adam.language_specific.english import ENGLISH_DETERMINERS
 from immutablecollections import immutableset
 from more_itertools import first
 
@@ -20,7 +22,7 @@ from adam.curriculum.preposition_curriculum import (
 )
 from adam.learner import LearningExample
 from adam.learner.object_recognizer import ObjectRecognizer
-from adam.learner.pursuit import PrepositionPursuitLearner
+from adam.learner.prepositions import PrepositionPursuitLearner
 from adam.ontology import IS_ADDRESSEE, IS_SPEAKER
 from adam.ontology.phase1_ontology import (
     BALL,
@@ -35,6 +37,17 @@ from adam.perception.perception_graph import PerceptionGraphPattern
 from adam.situation.templates.phase1_templates import sampled, object_variable
 
 
+BALL_TABLE_OBJECT_RECOGNIZER = ObjectRecognizer(
+    {
+        node.handle: PerceptionGraphPattern.from_schema(
+            first(GAILA_PHASE_1_ONTOLOGY.structural_schemata(node))
+        )
+        for node in [BALL, TABLE]
+    },
+    determiners=ENGLISH_DETERMINERS,
+)
+
+
 def test_pursuit_preposition_on_learner():
     rng = random.Random()
     rng.seed(0)
@@ -45,6 +58,7 @@ def test_pursuit_preposition_on_learner():
         rng=rng,
         smoothing_parameter=0.001,
         ontology=GAILA_PHASE_1_ONTOLOGY,
+        object_recognizer=BALL_TABLE_OBJECT_RECOGNIZER,
     )  # type: ignore
     ball = standard_object("ball", BALL)
     table = standard_object("table", TABLE)
@@ -67,16 +81,6 @@ def test_pursuit_preposition_on_learner():
         ),
     )
 
-    # Set up object recognizer, given the two objects we 'already' recognize
-    object_recognizer = ObjectRecognizer(
-        {
-            node.handle: PerceptionGraphPattern.from_schema(
-                first(GAILA_PHASE_1_ONTOLOGY.structural_schemata(node))
-            )
-            for node in [BALL, TABLE]
-        }
-    )
-
     for (
         _,
         linguistic_description,
@@ -84,8 +88,7 @@ def test_pursuit_preposition_on_learner():
     ) in on_train_curriculum.instances():
         # Get the object matches first - preposition learner can't learn without already recognized objects
         learner.observe(
-            LearningExample(perceptual_representation, linguistic_description),
-            object_recognizer=object_recognizer,
+            LearningExample(perceptual_representation, linguistic_description)
         )
 
     for (
@@ -93,9 +96,7 @@ def test_pursuit_preposition_on_learner():
         test_lingustics_description,
         test_perceptual_representation,
     ) in on_test_curriculum.instances():
-        descriptions_from_learner = learner.describe(
-            test_perceptual_representation, object_recognizer
-        )
+        descriptions_from_learner = learner.describe(test_perceptual_representation)
         gold = test_lingustics_description.as_token_sequence()
         assert descriptions_from_learner
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
@@ -111,6 +112,7 @@ def test_subset_preposition_beside_learner():
         rng=rng,
         smoothing_parameter=0.001,
         ontology=GAILA_PHASE_1_ONTOLOGY,
+        object_recognizer=BALL_TABLE_OBJECT_RECOGNIZER,
     )  # type: ignore
     ball = standard_object("ball", BALL)
     table = standard_object("table", TABLE)
@@ -137,24 +139,13 @@ def test_subset_preposition_beside_learner():
         ),
     )
 
-    # Set up object recognizer, given the two objects we 'already' recognize
-    object_recognizer = ObjectRecognizer(
-        {
-            node.handle: PerceptionGraphPattern.from_schema(
-                first(GAILA_PHASE_1_ONTOLOGY.structural_schemata(node))
-            )
-            for node in [BALL, TABLE]
-        }
-    )
-
     for (
         _,
         linguistic_description,
         perceptual_representation,
     ) in beside_train_curriculum.instances():
         learner.observe(
-            LearningExample(perceptual_representation, linguistic_description),
-            object_recognizer=object_recognizer,
+            LearningExample(perceptual_representation, linguistic_description)
         )
 
     for (
@@ -162,9 +153,7 @@ def test_subset_preposition_beside_learner():
         test_linguistic_description,
         test_perceptual_representation,
     ) in beside_test_curriculum.instances():
-        descriptions_from_learner = learner.describe(
-            test_perceptual_representation, object_recognizer
-        )
+        descriptions_from_learner = learner.describe(test_perceptual_representation)
         gold = test_linguistic_description.as_token_sequence()
         assert descriptions_from_learner
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
@@ -180,6 +169,7 @@ def test_subset_preposition_under_learner():
         rng=rng,
         smoothing_parameter=0.001,
         ontology=GAILA_PHASE_1_ONTOLOGY,
+        object_recognizer=BALL_TABLE_OBJECT_RECOGNIZER,
     )  # type: ignore
     ball = standard_object("ball", BALL)
     table = standard_object("table", TABLE)
@@ -205,23 +195,14 @@ def test_subset_preposition_under_learner():
             max_to_sample=1,
         ),
     )
-    # Set up object recognizer, given the two objects we 'already' recognize
-    object_recognizer = ObjectRecognizer(
-        {
-            node.handle: PerceptionGraphPattern.from_schema(
-                first(GAILA_PHASE_1_ONTOLOGY.structural_schemata(node))
-            )
-            for node in [BALL, TABLE]
-        }
-    )
+
     for (
         _,
         linguistic_description,
         perceptual_representation,
     ) in under_train_curriculum.instances():
         learner.observe(
-            LearningExample(perceptual_representation, linguistic_description),
-            object_recognizer=object_recognizer,
+            LearningExample(perceptual_representation, linguistic_description)
         )
 
     for (
@@ -229,9 +210,7 @@ def test_subset_preposition_under_learner():
         test_linguistic_description,
         test_perceptual_representation,
     ) in under_test_curriculum.instances():
-        descriptions_from_learner = learner.describe(
-            test_perceptual_representation, object_recognizer=object_recognizer
-        )
+        descriptions_from_learner = learner.describe(test_perceptual_representation)
         gold = test_linguistic_description.as_token_sequence()
         assert descriptions_from_learner
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
@@ -247,6 +226,7 @@ def test_subset_preposition_over_learner():
         rng=rng,
         smoothing_parameter=0.001,
         ontology=GAILA_PHASE_1_ONTOLOGY,
+        object_recognizer=BALL_TABLE_OBJECT_RECOGNIZER,
     )  # type: ignore
     ball = standard_object("ball", BALL)
     table = standard_object("table", TABLE)
@@ -270,23 +250,14 @@ def test_subset_preposition_over_learner():
             max_to_sample=1,
         ),
     )
-    # Set up object recognizer, given the two objects we 'already' recognize
-    object_recognizer = ObjectRecognizer(
-        {
-            node.handle: PerceptionGraphPattern.from_schema(
-                first(GAILA_PHASE_1_ONTOLOGY.structural_schemata(node))
-            )
-            for node in [BALL, TABLE]
-        }
-    )
+
     for (
         _,
         linguistic_description,
         perceptual_representation,
     ) in over_train_curriculum.instances():
         learner.observe(
-            LearningExample(perceptual_representation, linguistic_description),
-            object_recognizer=object_recognizer,
+            LearningExample(perceptual_representation, linguistic_description)
         )
 
     for (
@@ -294,9 +265,7 @@ def test_subset_preposition_over_learner():
         test_linguistic_description,
         test_perceptual_representation,
     ) in over_test_curriculum.instances():
-        descriptions_from_learner = learner.describe(
-            test_perceptual_representation, object_recognizer=object_recognizer
-        )
+        descriptions_from_learner = learner.describe(test_perceptual_representation)
         gold = test_linguistic_description.as_token_sequence()
         assert descriptions_from_learner
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
@@ -314,6 +283,15 @@ def test_subset_preposition_in_learner():
         rng=rng,
         smoothing_parameter=0.001,
         ontology=GAILA_PHASE_1_ONTOLOGY,
+        object_recognizer=ObjectRecognizer(
+            {
+                node.handle: PerceptionGraphPattern.from_schema(
+                    first(GAILA_PHASE_1_ONTOLOGY.structural_schemata(node))
+                )
+                for node in [WATER, CUP]
+            },
+            determiners=ENGLISH_DETERMINERS,
+        ),
     )  # type: ignore
     water = object_variable("water", WATER)
     cup = standard_object("cup", CUP)
@@ -335,23 +313,13 @@ def test_subset_preposition_in_learner():
             max_to_sample=1,
         ),
     )
-    # Set up object recognizer, given the two objects we 'already' recognize
-    object_recognizer = ObjectRecognizer(
-        {
-            node.handle: PerceptionGraphPattern.from_schema(
-                first(GAILA_PHASE_1_ONTOLOGY.structural_schemata(node))
-            )
-            for node in [WATER, CUP]
-        }
-    )
     for (
         _,
         linguistic_description,
         perceptual_representation,
     ) in in_train_curriculum.instances():
         learner.observe(
-            LearningExample(perceptual_representation, linguistic_description),
-            object_recognizer=object_recognizer,
+            LearningExample(perceptual_representation, linguistic_description)
         )
 
     for (
@@ -359,9 +327,7 @@ def test_subset_preposition_in_learner():
         test_linguistic_description,
         test_perceptual_representation,
     ) in in_test_curriculum.instances():
-        descriptions_from_learner = learner.describe(
-            test_perceptual_representation, object_recognizer=object_recognizer
-        )
+        descriptions_from_learner = learner.describe(test_perceptual_representation)
         gold = test_linguistic_description.as_token_sequence()
         assert descriptions_from_learner
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
@@ -377,6 +343,7 @@ def test_subset_preposition_behind_learner():
         rng=rng,
         smoothing_parameter=0.001,
         ontology=GAILA_PHASE_1_ONTOLOGY,
+        object_recognizer=BALL_TABLE_OBJECT_RECOGNIZER,
     )  # type: ignore
     ball = standard_object("ball", BALL)
     table = standard_object("table", TABLE)
@@ -412,23 +379,13 @@ def test_subset_preposition_behind_learner():
             max_to_sample=1,
         ),
     )
-    # Set up object recognizer, given the two objects we 'already' recognize
-    object_recognizer = ObjectRecognizer(
-        {
-            node.handle: PerceptionGraphPattern.from_schema(
-                first(GAILA_PHASE_1_ONTOLOGY.structural_schemata(node))
-            )
-            for node in [BALL, TABLE]
-        }
-    )
     for (
         _,
         linguistic_description,
         perceptual_representation,
     ) in behind_train_curriculum.instances():
         learner.observe(
-            LearningExample(perceptual_representation, linguistic_description),
-            object_recognizer=object_recognizer,
+            LearningExample(perceptual_representation, linguistic_description)
         )
 
     for (
@@ -436,9 +393,7 @@ def test_subset_preposition_behind_learner():
         test_linguistic_description,
         test_perceptual_representation,
     ) in behind_test_curriculum.instances():
-        descriptions_from_learner = learner.describe(
-            test_perceptual_representation, object_recognizer=object_recognizer
-        )
+        descriptions_from_learner = learner.describe(test_perceptual_representation)
         gold = test_linguistic_description.as_token_sequence()
         assert descriptions_from_learner
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
@@ -454,6 +409,7 @@ def test_subset_preposition_in_front_learner():
         rng=rng,
         smoothing_parameter=0.001,
         ontology=GAILA_PHASE_1_ONTOLOGY,
+        object_recognizer=BALL_TABLE_OBJECT_RECOGNIZER,
     )  # type: ignore
     ball = standard_object("ball", BALL)
     table = standard_object("table", TABLE)
@@ -489,23 +445,14 @@ def test_subset_preposition_in_front_learner():
             max_to_sample=1,
         ),
     )
-    # Set up object recognizer, given the two objects we 'already' recognize
-    object_recognizer = ObjectRecognizer(
-        {
-            node.handle: PerceptionGraphPattern.from_schema(
-                first(GAILA_PHASE_1_ONTOLOGY.structural_schemata(node))
-            )
-            for node in [BALL, TABLE]
-        }
-    )
+
     for (
         _,
         linguistic_description,
         perceptual_representation,
     ) in in_front_train_curriculum.instances():
         learner.observe(
-            LearningExample(perceptual_representation, linguistic_description),
-            object_recognizer=object_recognizer,
+            LearningExample(perceptual_representation, linguistic_description)
         )
 
     for (
@@ -513,9 +460,7 @@ def test_subset_preposition_in_front_learner():
         test_linguistic_description,
         test_perceptual_representation,
     ) in in_front_test_curriculum.instances():
-        descriptions_from_learner = learner.describe(
-            test_perceptual_representation, object_recognizer=object_recognizer
-        )
+        descriptions_from_learner = learner.describe(test_perceptual_representation)
         gold = test_linguistic_description.as_token_sequence()
         assert descriptions_from_learner
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold

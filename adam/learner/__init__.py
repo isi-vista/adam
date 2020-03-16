@@ -136,9 +136,10 @@ def get_largest_matching_pattern(
     )
 
 
-def graph_without_learner(graph: DiGraph) -> PerceptionGraph:
+def graph_without_learner(perception_graph: PerceptionGraph) -> PerceptionGraph:
     """ Helper function to return a `PerceptionGraph`
     without a ground object and its related nodes."""
+    graph = perception_graph.copy_as_digraph()
     # Get the learner node
     learner_node_candidates = [
         node

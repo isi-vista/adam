@@ -2,6 +2,7 @@ import logging
 from itertools import repeat
 from typing import Callable, Optional
 
+from adam.language_specific.english import ENGLISH_DETERMINERS
 from vistautils.parameters import Parameters
 from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 
@@ -18,8 +19,9 @@ from adam.experiment import Experiment, execute_experiment
 from adam.experiment.observer import LearningProgressHtmlLogger, CandidateAccuracyObserver
 from adam.learner import LanguageLearner
 from adam.learner.object_recognizer import ObjectRecognizer
-from adam.learner.preposition_subset import PrepositionSubsetLanguageLearner
-from adam.learner.pursuit import ObjectPursuitLearner, HypothesisLogger
+from adam.learner.prepositions import SubsetPrepositionLearner
+from adam.learner.pursuit import HypothesisLogger
+from adam.learner.objects import ObjectPursuitLearner
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     GAILA_M6_PERCEPTION_GENERATOR,
@@ -71,11 +73,11 @@ def learner_factory_from_params(
             params.namespace("pursuit"), graph_logger=graph_logger
         )
     elif learner_type == "preposition-subset":
-        return lambda: PrepositionSubsetLanguageLearner(
+        return lambda: SubsetPrepositionLearner(
             graph_logger=graph_logger,
             # Eval hack! This is specific to the M6 ontology
             object_recognizer=ObjectRecognizer.for_ontology_types(
-                M6_PREPOSITION_CURRICULUM_OBJECTS
+                M6_PREPOSITION_CURRICULUM_OBJECTS, determiners=ENGLISH_DETERMINERS
             ),
             ontology=GAILA_PHASE_1_ONTOLOGY,
         )

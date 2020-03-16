@@ -38,14 +38,26 @@ from typing import (
 from uuid import uuid4
 
 import graphviz
+from attr import attrib, attrs
 from attr.validators import deep_iterable, instance_of, optional
-from more_itertools import first
+from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
+from immutablecollections.converter_utils import (
+    _to_immutabledict,
+    _to_immutableset,
+    _to_tuple,
+)
+from more_itertools import first, pairwise
 from networkx import DiGraph, connected_components, is_isomorphic, set_node_attributes
 from typing_extensions import Protocol
+from vistautils.misc_utils import str_list_limited
+from vistautils.preconditions import check_arg
+from vistautils.range import Range
+from vistautils.span import Span
 
 from adam.axes import AxesInfo, HasAxes
 from adam.axis import GeonAxis
 from adam.geon import Geon, MaybeHasGeon
+from adam.language import LinguisticDescription
 from adam.ontology import OntologyNode
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import COLOR, GAILA_PHASE_1_ONTOLOGY, PART_OF
@@ -66,16 +78,6 @@ from adam.random_utils import RandomChooser
 from adam.situation import SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.utils.networkx_utils import copy_digraph, digraph_with_nodes_sorted_by, subgraph
-from attr import attrib, attrs
-from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
-from immutablecollections.converter_utils import (
-    _to_immutabledict,
-    _to_immutableset,
-    _to_tuple,
-)
-from vistautils.misc_utils import str_list_limited
-from vistautils.preconditions import check_arg
-from vistautils.range import Range
 
 
 class Incrementer:
@@ -158,6 +160,9 @@ class TemporalScope(Enum):
     """
     Indicates a relationship holds in the interval between frames.
     """
+
+
+ENTIRE_SCENE = immutableset([TemporalScope.BEFORE, TemporalScope.AFTER])
 
 
 @attrs(slots=True, frozen=True)
@@ -440,7 +445,7 @@ class PerceptionGraph(PerceptionGraphProtocol):
         return PerceptionGraph(graph=_dynamic_digraph, dynamic=True)
 
     def copy_with_temporal_scopes(
-        self, temporal_scopes: Iterable[TemporalScope]
+        self, temporal_scopes: Union[TemporalScope, Iterable[TemporalScope]]
     ) -> "PerceptionGraph":
         r"""
         Produces a copy of this perception graph with the given `TemporalScope`\ s
@@ -453,8 +458,6 @@ class PerceptionGraph(PerceptionGraphProtocol):
                 "Cannot use dynamic_copy_with_temporal_scopes on a graph which is "
                 "already dynamic"
             )
-
-        temporal_scopes = immutableset(temporal_scopes)
 
         wrapped_graph = self.copy_as_digraph()
 
@@ -726,7 +729,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
         perception = perception_generator.generate_perception(
             situation, chooser=RandomChooser.for_seed(0), include_ground=False
         )
-        perception_graph = PerceptionGraph.from_frame(
+        perception_graph_as_digraph = PerceptionGraph.from_frame(
             first(perception.frames)
         ).copy_as_digraph()
 
@@ -734,7 +737,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
         # but are not in schemas.
         nodes_to_remove = [
             node
-            for node in perception_graph
+            for node in perception_graph_as_digraph
             # Perception generation wraps properties in tuples, so we need to unwrap them.
             if isinstance(node, tuple)
             and (
@@ -742,45 +745,47 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
                 or isinstance(node[0], OntologyNode)
             )
         ]
-        perception_graph.remove_nodes_from(nodes_to_remove)
+        perception_graph_as_digraph.remove_nodes_from(nodes_to_remove)
 
         # Finally, we convert the PerceptionGraph DiGraph representation to a PerceptionGraphPattern
         return PerceptionGraphPattern.from_graph(
-            perception_graph=perception_graph
+            perception_graph=PerceptionGraph(perception_graph_as_digraph)
         ).perception_graph_pattern
 
     @staticmethod
     def from_graph(
-        perception_graph: Union[DiGraph, PerceptionGraph]
+        perception_graph: PerceptionGraph
     ) -> "PerceptionGraphPatternFromGraph":
         """
         Creates a pattern for recognizing an object based on its *perception_graph*.
         """
-        if isinstance(perception_graph, PerceptionGraph):
-            perception_graph = perception_graph._graph  # pylint:disable=protected-access
-
         pattern_graph = DiGraph()
         perception_node_to_pattern_node: Dict[PerceptionGraphNode, NodePredicate] = {}
         PerceptionGraphPattern._translate_graph(
-            perception_graph=perception_graph,
+            perception_graph=perception_graph.copy_as_digraph(),
             pattern_graph=pattern_graph,
             perception_node_to_pattern_node=perception_node_to_pattern_node,
         )
         return PerceptionGraphPatternFromGraph(
-            perception_graph_pattern=PerceptionGraphPattern(pattern_graph),
+            perception_graph_pattern=PerceptionGraphPattern(
+                pattern_graph, dynamic=perception_graph.dynamic
+            ),
             perception_graph_node_to_pattern_node=perception_node_to_pattern_node,
         )
 
     def __len__(self) -> int:
         return len(self._graph)
 
-    def copy_with_temporal_scope(
-        self, required_temporal_scope: TemporalScope
+    def __contains__(self, item) -> bool:
+        return item in self._graph
+
+    def copy_with_temporal_scopes(
+        self, required_temporal_scopes: Union[TemporalScope, Iterable[TemporalScope]]
     ) -> "PerceptionGraphPattern":
         r"""
         Produces a copy of this perception graph pattern
         where all edge predicates now require that the edge in the target graph being matched
-        hold at *required_temporal_scope*.
+        hold at all of the *required_temporal_scopes*.
 
         The new pattern will be dynamic.
 
@@ -793,10 +798,15 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
 
         wrapped_graph = self.copy_as_digraph()
 
+        # For convenience we allow the user to specify only a single temporal scope
+        # instead of a collection.
+        if isinstance(required_temporal_scopes, TemporalScope):
+            required_temporal_scopes = [required_temporal_scopes]
+
         for (source, target) in wrapped_graph.edges():
             unwrapped_predicate = wrapped_graph.edges[source, target]["predicate"]
             temporally_scoped_predicate = HoldsAtTemporalScopePredicate(
-                unwrapped_predicate, required_temporal_scope
+                unwrapped_predicate, required_temporal_scopes
             )
             wrapped_graph.edges[source, target]["predicate"] = temporally_scoped_predicate
 
@@ -850,6 +860,15 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
                 return {"predicate": RelationTypeIsPredicate(label)}
             elif isinstance(label, Direction):
                 return {"predicate": DirectionPredicate.exactly_matching(label)}
+            elif isinstance(label, TemporallyScopedEdgeLabel):
+                scopes = label.temporal_specifiers
+                non_temporal_predicate = map_edge(label.attribute)["predicate"]
+                return {
+                    "predicate": HoldsAtTemporalScopePredicate(
+                        wrapped_edge_predicate=non_temporal_predicate,
+                        temporal_scopes=scopes,
+                    )
+                }
             else:
                 raise RuntimeError(f"Cannot map edge {label}")
 
@@ -986,7 +1005,7 @@ class DumpPartialMatchCallback:
     def __init__(
         self,
         render_path,
-        seconds_to_wait_before_rendering: int = 60,
+        seconds_to_wait_before_rendering: int = 0,
         dump_every_x_calls: int = 100,
     ) -> None:
         self.render_path = render_path
@@ -1229,7 +1248,7 @@ class PatternMatching:
                 self._internal_matches(
                     graph_to_match_against=self.graph_to_match_against,
                     pattern=cur_pattern,
-                    debug_callback=None,
+                    debug_callback=self.debug_callback,
                     # Using lookahead pruning would make our guess at the "cause"
                     # of the match failure be too "early" in the pattern graph search.
                     use_lookahead_pruning=False,
@@ -1529,7 +1548,9 @@ class PatternMatching:
                     )
                     pattern_as_digraph.remove_nodes_from(component)
 
-        return PerceptionGraphPattern(pattern_as_digraph.copy())
+        return PerceptionGraphPattern(
+            pattern_as_digraph.copy(), dynamic=match_failure.pattern.dynamic
+        )
 
     @matching_pattern_against_pattern.default
     def _matching_pattern_against_pattern_default(self) -> bool:
@@ -1983,7 +2004,7 @@ class HoldsAtTemporalScopePredicate(EdgePredicate):
     """
 
     wrapped_edge_predicate: EdgePredicate = attrib(validator=instance_of(EdgePredicate))
-    temporal_scope: TemporalScope = attrib(validator=instance_of(TemporalScope))
+    temporal_scopes: ImmutableSet[TemporalScope] = attrib(converter=_to_immutableset)
 
     def __call__(
         self,
@@ -1993,7 +2014,10 @@ class HoldsAtTemporalScopePredicate(EdgePredicate):
     ) -> bool:
         if isinstance(edge_label, TemporallyScopedEdgeLabel):
             return (
-                self.temporal_scope in edge_label.temporal_specifiers
+                all(
+                    scope in edge_label.temporal_specifiers
+                    for scope in self.temporal_scopes
+                )
                 # This is callable. I don't know why pylint doesn't understand that.
                 and self.wrapped_edge_predicate(  # pylint:disable=not-callable
                     source_object_perception, edge_label.attribute, dest_object_percption
@@ -2010,12 +2034,12 @@ class HoldsAtTemporalScopePredicate(EdgePredicate):
             )
 
     def dot_label(self) -> str:
-        return f"{self.wrapped_edge_predicate}@{self.temporal_scope}"
+        return f"{self.wrapped_edge_predicate}@{self.temporal_scopes}"
 
     def matches_predicate(self, edge_predicate: "EdgePredicate") -> bool:
         return (
             isinstance(edge_predicate, HoldsAtTemporalScopePredicate)
-            and self.temporal_scope == edge_predicate.temporal_scope
+            and self.temporal_scopes == edge_predicate.temporal_scopes
             and self.wrapped_edge_predicate.matches_predicate(
                 edge_predicate.wrapped_edge_predicate
             )
@@ -2416,3 +2440,57 @@ class GraphLogger:
             )
         else:
             logging.log(level, msg, *args)
+
+
+# Used by LanguageAlignedPerception below.
+def _sort_mapping_by_token_spans(pairs) -> ImmutableDict[MatchedObjectNode, Span]:
+    # we type: ignore because the proper typing of pairs is huge and mypy is going to screw it up
+    # anyway.
+    unsorted = immutabledict(pairs)  # type: ignore
+    return immutabledict(
+        (matched_node, token_span)
+        for (matched_node, token_span) in sorted(
+            unsorted.items(),
+            key=lambda item: Span.earliest_then_longest_first_key(item[1]),
+        )
+    )
+
+
+@attrs(frozen=True)
+class LanguageAlignedPerception:
+    """
+    Represents an alignment between a `PerceptionGraph` and a `TokensSequenceLinguisticDescription`.
+
+    This can be generified in the future.
+
+    *node_to_language_span* and *language_span_to_node* are both guaranteed to be sorted by
+    the token spans.
+
+    Aligned token spans may not overlap.
+    """
+
+    language: LinguisticDescription = attrib(validator=instance_of(LinguisticDescription))
+    perception_graph: PerceptionGraph = attrib(validator=instance_of(PerceptionGraph))
+    node_to_language_span: ImmutableDict[MatchedObjectNode, Span] = attrib(
+        converter=_sort_mapping_by_token_spans, default=immutabledict()
+    )
+    language_span_to_node: ImmutableDict[Span, PerceptionGraphNode] = attrib(init=False)
+    aligned_nodes: ImmutableSet[MatchedObjectNode] = attrib(init=False)
+
+    @language_span_to_node.default
+    def _init_language_span_to_node(self) -> ImmutableDict[PerceptionGraphNode, Span]:
+        return immutabledict((v, k) for (k, v) in self.node_to_language_span.items())
+
+    @aligned_nodes.default
+    def _init_aligned_nodes(self) -> ImmutableSet[MatchedObjectNode]:
+        return immutableset(self.node_to_language_span.keys())
+
+    def __attrs_post_init__(self) -> None:
+        # In the converter, we guarantee that node_to_language_span is sorted by
+        # token indices.
+        for (span1, span2) in pairwise(self.node_to_language_span.values()):
+            if not span1.precedes(span2):
+                raise RuntimeError(
+                    f"Aligned spans in a LanguageAlignedPerception must be "
+                    f"disjoint but got {span1} and {span2}"
+                )
