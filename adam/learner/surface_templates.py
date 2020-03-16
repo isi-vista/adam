@@ -1,14 +1,15 @@
 """
 Representations of template-with-slots-like patterns over token strings.
 """
-from typing import Tuple, Union, Mapping, List
+from typing import Tuple, Union, Mapping, List, Iterable
 
 from adam.language import TokenSequenceLinguisticDescription
 from adam.perception.perception_graph import LanguageAlignedPerception, MatchedObjectNode
 from attr import attrs, attrib
 from attr.validators import instance_of, deep_iterable
 
-from immutablecollections.converter_utils import _to_tuple
+from immutablecollections import ImmutableSet, immutableset
+from immutablecollections.converter_utils import _to_tuple, _to_immutableset
 
 
 @attrs(frozen=True, slots=True)
@@ -31,6 +32,11 @@ class SurfaceTemplate:
         converter=_to_tuple,
         validator=deep_iterable(instance_of((str, SurfaceTemplateVariable))),
     )
+    _determiner_prefix_slots: ImmutableSet[SurfaceTemplateVariable] = attrib(
+        converter=_to_immutableset,
+        validator=deep_iterable(instance_of(SurfaceTemplateVariable)),
+        default=immutableset(),
+    )
 
     @staticmethod
     def from_language_aligned_perception(
@@ -38,6 +44,8 @@ class SurfaceTemplate:
         object_node_to_template_variable: Mapping[
             MatchedObjectNode, SurfaceTemplateVariable
         ],
+        *,
+        determiner_prefix_slots: Iterable[SurfaceTemplateVariable] = immutableset()
     ) -> "SurfaceTemplate":
         if len(object_node_to_template_variable) != len(
             language_aligned_perception.node_to_language_span
@@ -88,7 +96,9 @@ class SurfaceTemplate:
                 aligned_token_span.start
             ] = object_node_to_template_variable[matched_object_node]
 
-        return SurfaceTemplate(template_elements)
+        return SurfaceTemplate(
+            template_elements, determiner_prefix_slots=determiner_prefix_slots
+        )
 
     def instantiate(
         self, template_variable_to_filler: Mapping[SurfaceTemplateVariable, Tuple[str]]
@@ -103,7 +113,11 @@ class SurfaceTemplate:
                 # English-specific hack to deal with us not understanding determiners:
                 # https://github.com/isi-vista/adam/issues/498
                 # The "is lower" check is a hack to block adding a determiner to proper names.
-                if len(filler_words) == 1 and filler_words[0][0].islower():
+                if (
+                    element in self._determiner_prefix_slots
+                    and len(filler_words) == 1
+                    and filler_words[0][0].islower()
+                ):
                     output_tokens.append("a")
                 output_tokens.extend(filler_words)
             else:
