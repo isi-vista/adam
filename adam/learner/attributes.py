@@ -20,7 +20,7 @@ from attr import attrs, attrib
 
 from adam.learner.subset import AbstractSubsetLearner
 from attr.validators import instance_of
-from immutablecollections import immutabledict
+from immutablecollections import immutabledict, immutableset
 
 
 @attrs
@@ -69,6 +69,10 @@ class AbstractAttributeTemplateLearner(AbstractTemplateLearner, ABC):
             object_node_to_template_variable=immutabledict(
                 zip(preprocessed_input.aligned_nodes, STANDARD_SLOT_VARIABLES)
             ),
+            # This is a hack to handle determiners.
+            # For attributes at the moment we learn the determiner together with the
+            # attribute, which is not ideal.
+            determiner_prefix_slots=immutableset(),
         )
 
 

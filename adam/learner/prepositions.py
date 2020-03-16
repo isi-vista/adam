@@ -93,6 +93,7 @@ class AbstractPrepositionTemplateLearner(AbstractTemplateLearner, ABC):
                     (preprocessed_input.aligned_nodes[1], SLOT2),
                 ]
             ),
+            determiner_prefix_slots=[SLOT1, SLOT2],
         )
 
 

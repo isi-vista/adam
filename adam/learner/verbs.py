@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Union
+from typing import Union, Mapping
 
 from attr.validators import instance_of
 
@@ -11,13 +11,21 @@ from adam.learner.object_recognizer import (
 )
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
 from adam.learner.subset import AbstractSubsetLearner
-from adam.learner.surface_templates import STANDARD_SLOT_VARIABLES, SurfaceTemplate
+from adam.learner.surface_templates import (
+    STANDARD_SLOT_VARIABLES,
+    SurfaceTemplate,
+    SurfaceTemplateVariable,
+)
 from adam.learner.template_learner import AbstractTemplateLearner
 from adam.perception import PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
-from adam.perception.perception_graph import LanguageAlignedPerception, PerceptionGraph
+from adam.perception.perception_graph import (
+    LanguageAlignedPerception,
+    PerceptionGraph,
+    MatchedObjectNode,
+)
 from attr import attrib, attrs
 from immutablecollections import immutabledict
 
@@ -70,11 +78,13 @@ class AbstractVerbTemplateLearner(AbstractTemplateLearner, ABC):
         if len(preprocessed_input.aligned_nodes) > len(STANDARD_SLOT_VARIABLES):
             raise RuntimeError("Input has too many aligned nodes for us to handle.")
 
+        object_node_to_template_variable: Mapping[
+            MatchedObjectNode, SurfaceTemplateVariable
+        ] = immutabledict(zip(preprocessed_input.aligned_nodes, STANDARD_SLOT_VARIABLES))
         return SurfaceTemplate.from_language_aligned_perception(
             preprocessed_input,
-            object_node_to_template_variable=immutabledict(
-                zip(preprocessed_input.aligned_nodes, STANDARD_SLOT_VARIABLES)
-            ),
+            object_node_to_template_variable=object_node_to_template_variable,
+            determiner_prefix_slots=object_node_to_template_variable.values(),
         )
 
 
