@@ -1,5 +1,6 @@
 from itertools import chain
 
+import pytest
 from more_itertools import flatten
 
 from adam.curriculum.curriculum_utils import (
@@ -12,8 +13,6 @@ from adam.learner import LearningExample
 from adam.learner.attributes import SubsetAttributeLearner
 from adam.ontology.phase1_ontology import (
     RED,
-    LIGHT_BROWN,
-    DARK_BROWN,
     WHITE,
     BLACK,
     GREEN,
@@ -21,6 +20,7 @@ from adam.ontology.phase1_ontology import (
     BALL,
     BOOK,
     GAILA_PHASE_1_ONTOLOGY,
+    CAR,
 )
 from adam.situation.templates.phase1_templates import property_variable, sampled
 from tests.learner import TEST_OBJECT_RECOGNIZER
@@ -30,17 +30,31 @@ SUBSET_ATTRIBUTE_LEARNER_FACTORY = lambda: SubsetAttributeLearner(
 )
 
 
-def test_subset_red_color_learner():
-    red = property_variable("red", RED)
-    ball = standard_object("ball", BALL, added_properties=[red])
-    book = standard_object("book", BOOK, added_properties=[red])
+@pytest.mark.parametrize(
+    "color_node,object_0_node,object_1_node",
+    [
+        (RED, BALL, BOOK),
+        (BLUE, BALL, BOOK),
+        (GREEN, BALL, BOOK),
+        (BLACK, BALL, CAR),
+        (WHITE, BALL, CAR),
+    ],
+)
+def test_subset_color_attribute_learner(color_node, object_0_node, object_1_node):
+    color = property_variable(f"{color_node.handle}", color_node)
+    object_0 = standard_object(
+        f"{object_0_node.handle}", object_0_node, added_properties=[color]
+    )
+    object_1 = standard_object(
+        f"{object_1_node.handle}", object_1_node, added_properties=[color]
+    )
 
-    color_ball_template = _object_with_color_template(ball)
+    color_object_template = _object_with_color_template(object_0)
 
-    templates = [color_ball_template, _object_with_color_template(book)]
+    templates = [color_object_template, _object_with_color_template(object_1)]
 
-    red_train_curriculum = phase1_instances(
-        "Red Color Train",
+    color_train_curriculum = phase1_instances(
+        f"{color.handle} Color Train",
         situations=chain(
             *[
                 flatten(
@@ -58,10 +72,10 @@ def test_subset_red_color_learner():
         ),
     )
 
-    red_test_curriculum = phase1_instances(
-        "Red Color Test",
+    color_test_curriculum = phase1_instances(
+        f"{color.handle} Color Test",
         situations=sampled(
-            color_ball_template,
+            color_object_template,
             chooser=PHASE1_CHOOSER,
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
@@ -74,7 +88,7 @@ def test_subset_red_color_learner():
         _,
         linguistic_description,
         perceptual_representation,
-    ) in red_train_curriculum.instances():
+    ) in color_train_curriculum.instances():
         learner.observe(
             LearningExample(perceptual_representation, linguistic_description)
         )
@@ -83,148 +97,8 @@ def test_subset_red_color_learner():
         _,
         test_lingustics_description,
         test_perceptual_representation,
-    ) in red_test_curriculum.instances():
+    ) in color_test_curriculum.instances():
         descriptions_from_learner = learner.describe(test_perceptual_representation)
         gold = test_lingustics_description.as_token_sequence()
         assert descriptions_from_learner
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
-
-
-def test_subset_blue_color_learner():
-    blue = property_variable("blue", BLUE)
-    ball = standard_object("ball", BALL, added_properties=[blue])
-    book = standard_object("book", BOOK, added_properties=[blue])
-
-    color_ball_template = _object_with_color_template(ball)
-
-    templates = [color_ball_template, _object_with_color_template(book)]
-
-    blue_train_curriculum = phase1_instances(
-        "Blue Color Train",
-        situations=chain(
-            *[
-                flatten(
-                    [
-                        sampled(
-                            template,
-                            chooser=PHASE1_CHOOSER,
-                            ontology=GAILA_PHASE_1_ONTOLOGY,
-                            max_to_sample=2,
-                        )
-                        for template in templates
-                    ]
-                )
-            ]
-        ),
-    )
-
-    blue_test_curriculum = phase1_instances(
-        "Blue Color Test",
-        situations=sampled(
-            color_ball_template,
-            chooser=PHASE1_CHOOSER,
-            ontology=GAILA_PHASE_1_ONTOLOGY,
-            max_to_sample=1,
-        ),
-    )
-
-    learner = SUBSET_ATTRIBUTE_LEARNER_FACTORY()
-
-    for (
-        _,
-        linguistic_description,
-        perceptual_representation,
-    ) in blue_train_curriculum.instances():
-        learner.observe(
-            LearningExample(perceptual_representation, linguistic_description)
-        )
-
-    for (
-        _,
-        test_lingustics_description,
-        test_perceptual_representation,
-    ) in blue_test_curriculum.instances():
-        descriptions_from_learner = learner.describe(test_perceptual_representation)
-        gold = test_lingustics_description.as_token_sequence()
-        assert descriptions_from_learner
-        assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
-
-
-def test_subset_green_color_learner():
-    green = property_variable("green", GREEN)
-    ball = standard_object("ball", BALL, added_properties=[green])
-    book = standard_object("book", BOOK, added_properties=[green])
-
-    color_ball_template = _object_with_color_template(ball)
-
-    templates = [color_ball_template, _object_with_color_template(book)]
-
-    green_train_curriculum = phase1_instances(
-        "Green Color Train",
-        situations=chain(
-            *[
-                flatten(
-                    [
-                        sampled(
-                            template,
-                            chooser=PHASE1_CHOOSER,
-                            ontology=GAILA_PHASE_1_ONTOLOGY,
-                            max_to_sample=2,
-                        )
-                        for template in templates
-                    ]
-                )
-            ]
-        ),
-    )
-
-    green_test_curriculum = phase1_instances(
-        "Green Color Test",
-        situations=sampled(
-            color_ball_template,
-            chooser=PHASE1_CHOOSER,
-            ontology=GAILA_PHASE_1_ONTOLOGY,
-            max_to_sample=1,
-        ),
-    )
-
-    learner = SUBSET_ATTRIBUTE_LEARNER_FACTORY()
-
-    for (
-        _,
-        linguistic_description,
-        perceptual_representation,
-    ) in green_train_curriculum.instances():
-        learner.observe(
-            LearningExample(perceptual_representation, linguistic_description)
-        )
-
-    for (
-        _,
-        test_lingustics_description,
-        test_perceptual_representation,
-    ) in green_test_curriculum.instances():
-        descriptions_from_learner = learner.describe(test_perceptual_representation)
-        gold = test_lingustics_description.as_token_sequence()
-        assert descriptions_from_learner
-        assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
-
-
-def test_subset_black_color_learner():
-    black = property_variable("black", BLACK)
-    pass
-
-
-def test_subset_white_color_learner():
-    white = property_variable("white", WHITE)
-    pass
-
-
-def test_subset_light_brown_color_learner():
-    light_brown = property_variable("light-brown", LIGHT_BROWN)
-    pass
-
-
-def test_subset_dark_brown_color_learner():
-    dark_brown = property_variable("dark-brown", DARK_BROWN)
-    pass

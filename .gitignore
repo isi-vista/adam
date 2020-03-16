@@ -110,3 +110,6 @@ venv.bak/
 .DS_Store
 
 parameters/root.params
+
+# byproduct of visualization tests
+tests/renders
