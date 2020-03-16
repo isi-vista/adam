@@ -12,6 +12,7 @@ from vistautils.span import Span
 from adam.axes import GRAVITATIONAL_DOWN_TO_UP_AXIS, LEARNER_AXES, WORLD_AXES
 from adam.language import LinguisticDescription
 from adam.ontology import OntologyNode
+from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
     GAILA_PHASE_1_ONTOLOGY,
     PHASE_1_CURRICULUM_OBJECTS,
@@ -121,15 +122,15 @@ class ObjectRecognizer:
 
     @staticmethod
     def for_ontology_types(
-        ontology_types: Iterable[OntologyNode], determiners: Iterable[str]
+        ontology_types: Iterable[OntologyNode],
+        determiners: Iterable[str],
+        ontology: Ontology,
     ) -> "ObjectRecognizer":
         return ObjectRecognizer(
-            object_names_to_patterns=immutabledict(
+            object_names_to_static_patterns=immutabledict(
                 (
                     obj_type.handle,
-                    PerceptionGraphPattern.from_schema(
-                        first(GAILA_PHASE_1_ONTOLOGY.structural_schemata(obj_type))
-                    ),
+                    PerceptionGraphPattern.from_ontology_node(obj_type, ontology),
                 )
                 for obj_type in ontology_types
             ),
