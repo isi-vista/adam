@@ -521,7 +521,6 @@ class SceneCreator:
                                 isinstance(relation.second_slot, Relation)
                                 and relation.relation_type == IN_REGION
                             ):
-                                print(f"*****\n*****ADDING: {relation}\n*****\*****")
                                 in_region_map[relation.first_slot] = [
                                     relation.second_slot
                                 ]
