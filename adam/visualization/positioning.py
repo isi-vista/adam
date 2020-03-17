@@ -249,7 +249,7 @@ def run_model(
     return positioning_model.get_objects_positions()
 
 
-@attrs(slots=True)
+@attrs(slots=True, eq=False)
 class AxisAlignedBoundingBox:
     """
     Defines a 3D Box that is oriented to world axes.
@@ -530,6 +530,9 @@ class PositioningModel(torch.nn.Module):  # type: ignore
         object_perception_to_bounding_box: Mapping[
             ObjectPerception, AxisAlignedBoundingBox
         ],
+        object_perception_to_excluded_bounding_box: Mapping[
+            ObjectPerception, AxisAlignedBoundingBox
+        ],
         object_to_sub_object_to_bounding_box: Mapping[
             str, Mapping[str, AxisAlignedBoundingBox]
         ],
@@ -537,9 +540,20 @@ class PositioningModel(torch.nn.Module):  # type: ignore
     ) -> None:
         super().__init__()
         self.object_perception_to_bounding_box = object_perception_to_bounding_box
+        self.object_perception_to_excluded_bounding_box = (
+            object_perception_to_excluded_bounding_box
+        )
         self.object_to_sub_object_to_bounding_box = object_to_sub_object_to_bounding_box
         self.in_region_relations = in_region_relations
-        self.object_bounding_boxes = object_perception_to_bounding_box.values()
+        self.object_bounding_boxes = immutableset(
+            object_perception_to_bounding_box.values()
+        )
+        self.excluded_bounding_boxes = immutableset(
+            object_perception_to_excluded_bounding_box.values()
+        )
+        self.included_and_excluded_boxes = self.object_bounding_boxes.union(
+            self.excluded_bounding_boxes
+        )
         sub_object_to_bounding_box = {}
         for sub_obj_dict in self.object_to_sub_object_to_bounding_box.values():
             for sub_obj_handle, aabb in sub_obj_dict.items():
@@ -561,6 +575,7 @@ class PositioningModel(torch.nn.Module):  # type: ignore
 
         self.in_region_penalty = InRegionPenalty(
             object_perception_to_bounding_box,
+            object_perception_to_excluded_bounding_box,
             sub_object_to_bounding_box,
             in_region_relations,
         )
@@ -589,7 +604,7 @@ class PositioningModel(torch.nn.Module):  # type: ignore
         )
 
         return PositioningModel(
-            objects_to_bounding_boxes, sub_object_mapping, in_region_relations
+            objects_to_bounding_boxes, {}, sub_object_mapping, in_region_relations
         )
 
     @staticmethod
@@ -640,7 +655,13 @@ class PositioningModel(torch.nn.Module):  # type: ignore
         frozen_objects: Optional[ImmutableSet[str]] = None,
     ) -> "PositioningModel":
 
+        sub_object_mapping = PositioningModel._create_sub_objs_to_bounding_boxes(
+            sub_objects
+        )
+
         dict_items: List[Tuple[ObjectPerception, AxisAlignedBoundingBox]] = []
+
+        excluded_main_objects: List[Tuple[ObjectPerception, AxisAlignedBoundingBox]] = []
 
         for object_perception in object_perceptions:
 
@@ -653,8 +674,8 @@ class PositioningModel(torch.nn.Module):  # type: ignore
                 print(f"couldn't find scale for {object_perception.debug_handle}")
                 scale = (1.0, 1.0, 1.0)
 
+            is_parameter = True
             if positions_map:
-                is_parameter = True
                 # selectively freeze particular objects from positioning model
                 if frozen_objects and object_perception.debug_handle in frozen_objects:
                     is_parameter = False
@@ -676,14 +697,16 @@ class PositioningModel(torch.nn.Module):  # type: ignore
                         [scale[0], scale[1], scale[2]]
                     ),
                 )
-            dict_items.append((object_perception, bounding_box))
-
-        sub_object_mapping = PositioningModel._create_sub_objs_to_bounding_boxes(
-            sub_objects
-        )
+            if is_parameter:
+                dict_items.append((object_perception, bounding_box))
+            else:
+                excluded_main_objects.append((object_perception, bounding_box))
 
         return PositioningModel(
-            immutabledict(dict_items), sub_object_mapping, in_region_relations
+            immutabledict(dict_items),
+            immutabledict(excluded_main_objects),
+            sub_object_mapping,
+            in_region_relations,
         )
 
     @staticmethod
@@ -717,7 +740,7 @@ class PositioningModel(torch.nn.Module):  # type: ignore
 
         collision_penalty = sum(
             self.collision_penalty(box1, box2)
-            for (box1, box2) in combinations(self.object_bounding_boxes, 2)
+            for (box1, box2) in combinations(self.included_and_excluded_boxes, 2)
         )
         below_ground_penalty = sum(
             self.below_ground_penalty(box) for box in self.object_bounding_boxes
@@ -758,16 +781,16 @@ class PositioningModel(torch.nn.Module):  # type: ignore
             print(
                 f"{prefix}{object_perception.debug_handle} = {bounding_box.center.data}\n{prefix}scale:{bounding_box.scale.data}"
             )
-        print("Sub-object bounding box positions:")
-        for (
-            main_object,
-            sub_object_to_bounding_box,
-        ) in self.object_to_sub_object_to_bounding_box.items():
-            print(main_object)
-            for (sub_object, bounding_box) in sub_object_to_bounding_box.items():
-                print(
-                    f"\t{sub_object} = {bounding_box.center.data}\n\t{prefix}scale:{bounding_box.scale.data}"
-                )
+        # print("Sub-object bounding box positions:")
+        # for (
+        #     main_object,
+        #     sub_object_to_bounding_box,
+        # ) in self.object_to_sub_object_to_bounding_box.items():
+        #     print(main_object)
+        #     for (sub_object, bounding_box) in sub_object_to_bounding_box.items():
+        #         print(
+        #             f"\t{sub_object} = {bounding_box.center.data}\n\t{prefix}scale:{bounding_box.scale.data}"
+        #         )
 
     def get_object_position(self, obj: ObjectPerception) -> torch.Tensor:
         """
@@ -1000,6 +1023,9 @@ class InRegionPenalty(nn.Module):  # type: ignore
         object_perception_to_bounding_box: Mapping[
             ObjectPerception, AxisAlignedBoundingBox
         ],
+        object_perception_to_excluded_bounding_box: Mapping[
+            ObjectPerception, AxisAlignedBoundingBox
+        ],
         sub_object_to_bounding_box: Mapping[str, AxisAlignedBoundingBox],
         in_region_relations: Mapping[ObjectPerception, List[Region[ObjectPerception]]],
     ) -> None:  # pylint: disable=useless-super-delegation
@@ -1007,6 +1033,11 @@ class InRegionPenalty(nn.Module):  # type: ignore
         self.handle_to_bounding_box: Mapping[str, AxisAlignedBoundingBox] = {}
         for object_perception, aabb in object_perception_to_bounding_box.items():
             self.handle_to_bounding_box[object_perception.debug_handle] = aabb
+        for (
+            object_perception,
+            excluded_aabb,
+        ) in object_perception_to_excluded_bounding_box.items():
+            self.handle_to_bounding_box[object_perception.debug_handle] = excluded_aabb
         for sub_object, aabb in sub_object_to_bounding_box.items():
             self.handle_to_bounding_box[sub_object] = aabb
         self.in_region_relations = in_region_relations
