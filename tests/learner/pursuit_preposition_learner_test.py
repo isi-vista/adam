@@ -2,6 +2,7 @@ import random
 
 import pytest
 
+from adam.curriculum.phase1_curriculum import _x_has_y_template
 from adam.language_specific.english import ENGLISH_DETERMINERS
 from immutablecollections import immutableset
 from more_itertools import first
@@ -32,10 +33,13 @@ from adam.ontology.phase1_ontology import (
     CUP,
     LEARNER,
     MOM,
+    PERSON,
+    INANIMATE_OBJECT,
+    PERSON_CAN_HAVE,
 )
 from adam.perception.perception_graph import PerceptionGraphPattern
 from adam.situation.templates.phase1_templates import sampled, object_variable
-
+from tests.learner import TEST_OBJECT_RECOGNIZER
 
 BALL_TABLE_OBJECT_RECOGNIZER = ObjectRecognizer(
     {
@@ -462,5 +466,64 @@ def test_subset_preposition_in_front_learner():
     ) in in_front_test_curriculum.instances():
         descriptions_from_learner = learner.describe(test_perceptual_representation)
         gold = test_linguistic_description.as_token_sequence()
+        assert descriptions_from_learner
+        assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
+
+
+def test_pursuit_preposition_has_learner():
+    person = standard_object("person", PERSON)
+    inanimate_object = standard_object(
+        "inanimate-object", INANIMATE_OBJECT, required_properties=[PERSON_CAN_HAVE]
+    )
+    ball = standard_object("ball", BALL)
+
+    has_train_curriculum = phase1_instances(
+        "Has Unit Train",
+        situations=sampled(
+            _x_has_y_template(person, inanimate_object),
+            chooser=PHASE1_CHOOSER,
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+            max_to_sample=2,
+        ),
+    )
+
+    has_test_curriculum = phase1_instances(
+        "Has Unit Test",
+        situations=sampled(
+            _x_has_y_template(person, ball),
+            chooser=PHASE1_CHOOSER,
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+            max_to_sample=1,
+        ),
+    )
+
+    rng = random.Random()
+    rng.seed(0)
+    learner = PrepositionPursuitLearner(
+        learning_factor=0.5,
+        graph_match_confirmation_threshold=0.7,
+        lexicon_entry_threshold=0.7,
+        rng=rng,
+        smoothing_parameter=0.001,
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        object_recognizer=TEST_OBJECT_RECOGNIZER,
+    )  # type: ignore
+
+    for (
+        _,
+        linguistic_description,
+        perceptual_representation,
+    ) in has_train_curriculum.instances():
+        learner.observe(
+            LearningExample(perceptual_representation, linguistic_description)
+        )
+
+    for (
+        _,
+        test_lingustics_description,
+        test_perceptual_representation,
+    ) in has_test_curriculum.instances():
+        descriptions_from_learner = learner.describe(test_perceptual_representation)
+        gold = test_lingustics_description.as_token_sequence()
         assert descriptions_from_learner
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
