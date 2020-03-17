@@ -80,6 +80,7 @@ SHARED_WORLD_ITEMS = set(
 
 
 # Used by ObjectRecognizer below.
+# See: https://github.com/isi-vista/adam/issues/648
 def _sort_mapping_by_pattern_complexity(
     pairs
 ) -> ImmutableDict[str, PerceptionGraphPattern]:
@@ -91,6 +92,7 @@ def _sort_mapping_by_pattern_complexity(
         for (string, pattern) in sorted(
             unsorted.items(),
             key=lambda item: len(item[1]._graph.nodes),  # pylint:disable=protected-access
+            reverse=True,
         )
     )
 
