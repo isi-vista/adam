@@ -56,6 +56,7 @@ from adam.perception.developmental_primitive_perception import (
     Relation,
 )
 from adam.ontology import OntologyNode
+from adam.ontology.phase1_ontology import AGENT, THEME, GOAL
 from adam.relation import IN_REGION
 from adam.situation import SituationObject
 
@@ -647,12 +648,12 @@ def objects_to_freeze(
         theme: Optional[SituationObject] = None
         goal: Optional[Union[SituationObject, Region[SituationObject]]] = None
         for (ontology_node, object_or_region) in action.argument_roles_to_fillers.items():
-
-            if ontology_node.handle == "goal":
+            print(ontology_node)
+            if ontology_node == GOAL:
                 goal = object_or_region
-            elif ontology_node.handle == "agent":
+            elif ontology_node == AGENT:
                 agent = object_or_region
-            elif ontology_node.handle == "theme":
+            elif ontology_node == THEME:
                 theme = object_or_region
     if goal and isinstance(goal, Region):
         # the SituationObjects are always present if there is a verb that calls for them, so we want to see
