@@ -810,16 +810,26 @@ class PositioningModel(torch.nn.Module):  # type: ignore
         Returns: PositionsList
 
         """
-        return PositionsMap(
-            immutabledict(
+        position_pairs: List[Tuple[str, torch.Tensor]] = []
+        scale_pairs: List[Tuple[str, torch.Tensor]] = []
+        for (
+            object_perception,
+            bounding_box,
+        ) in self.object_perception_to_bounding_box.items():
+            position_pairs.append(
                 (object_perception.debug_handle, bounding_box.center.data)
-                for object_perception, bounding_box in self.object_perception_to_bounding_box.items()
-            ),
-            immutabledict(
-                (object_perception.debug_handle, bounding_box.scale.data)
-                for object_perception, bounding_box in self.object_perception_to_bounding_box.items()
-            ),
-        )
+            )
+            scale_pairs.append((object_perception.debug_handle, bounding_box.scale.data))
+        for (
+            object_perception,
+            bounding_box,
+        ) in self.object_perception_to_excluded_bounding_box.items():
+            position_pairs.append(
+                (object_perception.debug_handle, bounding_box.center.data)
+            )
+            scale_pairs.append((object_perception.debug_handle, bounding_box.scale.data))
+
+        return PositionsMap(immutabledict(position_pairs), immutabledict(scale_pairs))
 
     def _update_subobject_positions(self) -> None:
         for main_object, main_aabb in self.object_perception_to_bounding_box.items():
@@ -873,16 +883,33 @@ class WeakGravityPenalty(nn.Module):  # type: ignore
         bounding_box: AxisAlignedBoundingBox,
         designated_regions: ImmutableSet[Region[ObjectPerception]],
     ):  # pylint: disable=arguments-differ
+
+        ground_region = None
+        for region in designated_regions:
+            if region.reference_object.debug_handle == "the ground":
+                ground_region = region
         # if this object is not supposed to be on the ground, don't apply the gravity constraint.
-        if self.ground_region not in designated_regions:
+        if not ground_region:
             return 0.0
 
         distance_above_ground = bounding_box.z_coordinate_of_lowest_corner()
-        if distance_above_ground <= 0:
-            return 0.0
-        else:
-            # a linear penalty leads to a constant gradient, just like real gravity
-            return GRAVITY_PENALTY * distance_above_ground
+        if ground_region.distance == EXTERIOR_BUT_IN_CONTACT:
+            if distance_above_ground <= 0:
+                return 0.0
+            else:
+                # a linear penalty leads to a constant gradient, just like real gravity
+                return GRAVITY_PENALTY * distance_above_ground
+        elif ground_region.distance == DISTAL:
+            if distance_above_ground < DISTAL_MIN_DISTANCE:
+                return GRAVITY_PENALTY * DISTAL_MIN_DISTANCE - distance_above_ground
+        elif ground_region.distance == PROXIMAL:
+            if PROXIMAL_MIN_DISTANCE <= distance_above_ground <= PROXIMAL_MAX_DISTANCE:
+                return 0.0
+            elif distance_above_ground < PROXIMAL_MIN_DISTANCE:
+                return GRAVITY_PENALTY * PROXIMAL_MIN_DISTANCE - distance_above_ground
+            else:
+                return GRAVITY_PENALTY * distance_above_ground - PROXIMAL_MAX_DISTANCE
+        return 0.0
 
 
 class CollisionPenalty(nn.Module):  # type: ignore
@@ -1048,11 +1075,11 @@ class InRegionPenalty(nn.Module):  # type: ignore
         designated_region: ImmutableSet[Region[ObjectPerception]],
     ):  # pylint: disable=arguments-differ
 
-        # print(f"{target_object.debug_handle} positioned w/r/t {designated_region}")
+        print(f"{target_object.debug_handle} positioned w/r/t {designated_region}")
 
         # return 0 if object has no relative positions to apply
         if not designated_region:
-            # print(f"{target_object.debug_handle} has no relative positioning constraints")
+            print(f"{target_object.debug_handle} has no relative positioning constraints")
             return torch.zeros(1)
 
         return sum(
@@ -1084,9 +1111,9 @@ class InRegionPenalty(nn.Module):  # type: ignore
         Returns: Tensor(1,) with penalty
 
         """
-        # print(
-        #     f"TARGET: {target_box.center} REFERENCE: {reference_box.center} REGION:{region}"
-        # )
+        print(
+            f"TARGET: {target_box.center} REFERENCE: {reference_box.center} REGION:{region}"
+        )
         assert region.distance is not None
         # get direction that box 1 should be in w/r/t box 2
         # TODO: allow for addressee directions

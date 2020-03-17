@@ -159,7 +159,6 @@ def main(params: Parameters) -> None:
         )
 
         # render each object in graph
-
         SceneCreator.graph_for_each_top_level(
             scene_elements.object_graph, bound_render_obj, bound_render_nested_obj
         )
@@ -225,11 +224,23 @@ def main(params: Parameters) -> None:
             object_perception.debug_handle: region_list
             for object_perception, region_list in inter_object_in_region_map.items()
         }
+
+        print(scene_elements.in_region_map)
+
         frozen_objects = objects_to_freeze(
             handle_to_in_region_map,
             scene_elements.situation,
             scene_elements.situation_object_to_handle,
         )
+
+        if scene_elements.bonus_scene_items:
+            # freeze everything not included in the bonus scene
+            frozen_objects = (
+                immutableset(
+                    [key.debug_handle for key in scene_elements.in_region_map.keys()]
+                )
+                - scene_elements.bonus_scene_items
+            )
 
         # now that every object has been instantiated into the scene,
         # they need to be re-positioned.
@@ -393,6 +404,7 @@ class SceneElements:
     tokens: Tuple[str, ...] = attr.ib()
     current_frame: int = attr.ib(validator=attr.validators.instance_of(int))
     total_frames: int = attr.ib(validator=attr.validators.instance_of(int))
+    bonus_scene_items: Optional[ImmutableSet[str]] = attr.ib()
 
 
 @attrs(frozen=True, slots=True)
@@ -496,7 +508,39 @@ class SceneCreator:
                         dependency_tree.as_token_sequence(),
                         frame_number,
                         len(perception.frames),
+                        None,
                     )
+                    print("*****ATTEMPTING MIDDLE FRAME*****")
+                    if (
+                        frame_number == 0
+                        and perception.during
+                        and not perception.during.at_some_point.empty()
+                    ):
+                        for relation in perception.during.at_some_point:
+                            if (
+                                isinstance(relation.second_slot, Relation)
+                                and relation.relation_type == IN_REGION
+                            ):
+                                print(f"*****\n*****ADDING: {relation}\n*****\*****")
+                                in_region_map[relation.first_slot] = [
+                                    relation.second_slot
+                                ]
+                        yield SceneElements(
+                            property_map,
+                            in_region_map,
+                            semantics_situation,
+                            situation_obj_to_handle,
+                            nested_objects,
+                            dependency_tree.as_token_sequence(),
+                            frame_number + 1,
+                            len(perception.frames) + 1,
+                            immutableset(
+                                [
+                                    relation.first_slot.debug_handle
+                                    for relation in perception.during.at_some_point
+                                ]
+                            ),
+                        )
 
     @staticmethod
     def _nest_objects(
