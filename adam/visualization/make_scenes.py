@@ -56,7 +56,6 @@ from adam.perception.developmental_primitive_perception import (
     Relation,
 )
 from adam.ontology import OntologyNode
-from adam.ontology.phase1_ontology import GO
 from adam.relation import IN_REGION
 from adam.situation import SituationObject
 
