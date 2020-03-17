@@ -27,7 +27,7 @@ import logging
 
 # currently useful for positioning multiple objects:
 from adam.curriculum.verbs_with_dynamic_prepositions_curriculum import (
-    _make_go_with_prepositions as make_curriculum,
+    _make_throw_with_prepositions as make_curriculum,
 )
 
 
@@ -644,33 +644,45 @@ def objects_to_freeze(
         return immutableset([])
     frozen_objects = []
     for action in semantics_situation.actions:
-        if action.action_type == GO:
-            agent: Optional[SituationObject] = None
-            goal: Optional[Union[SituationObject, Region[SituationObject]]] = None
-            for (
-                ontology_node,
-                object_or_region,
-            ) in action.argument_roles_to_fillers.items():
+        agent: Optional[SituationObject] = None
+        theme: Optional[SituationObject] = None
+        goal: Optional[Union[SituationObject, Region[SituationObject]]] = None
+        for (ontology_node, object_or_region) in action.argument_roles_to_fillers.items():
 
-                if ontology_node.handle == "goal":
-                    goal = object_or_region
-                elif ontology_node.handle == "agent":
-                    agent = object_or_region
+            if ontology_node.handle == "goal":
+                goal = object_or_region
+            elif ontology_node.handle == "agent":
+                agent = object_or_region
+            elif ontology_node.handle == "theme":
+                theme = object_or_region
+    if goal and isinstance(goal, Region):
+        # the SituationObjects are always present if there is a verb that calls for them, so we want to see
+        # if in the current frame, an ObjectPerception referring to the goal and either our agent or theme
+        # (via in_region_map) is present
+        verbal_argument_in_region = None
+        if agent:
+            for region_relation in in_region_map[situation_obj_to_handle[agent]]:
+                if (
+                    situation_obj_to_handle[goal.reference_object]
+                    == region_relation.reference_object.debug_handle
+                ):
+                    frozen_objects.append(situation_obj_to_handle[goal.reference_object])
+                    verbal_argument_in_region = agent
 
-            if (
-                agent
-                and goal
-                and isinstance(agent, SituationObject)
-                and isinstance(goal, Region)
-            ):
-                for region_relation in in_region_map[situation_obj_to_handle[agent]]:
-                    if (
-                        region_relation.reference_object.debug_handle
-                        == situation_obj_to_handle[goal.reference_object]
-                    ):
-                        frozen_objects.append(
-                            situation_obj_to_handle[goal.reference_object]
-                        )
+        if theme:
+            for region_relation in in_region_map[situation_obj_to_handle[theme]]:
+                if (
+                    situation_obj_to_handle[goal.reference_object]
+                    == region_relation.reference_object.debug_handle
+                ):
+                    frozen_objects.append(situation_obj_to_handle[goal.reference_object])
+                    verbal_argument_in_region = theme
+
+        if verbal_argument_in_region:
+            if agent and agent != verbal_argument_in_region:
+                frozen_objects.append(situation_obj_to_handle[agent])
+            if theme and theme != verbal_argument_in_region:
+                frozen_objects.append(situation_obj_to_handle[theme])
 
     return immutableset(frozen_objects)
 
