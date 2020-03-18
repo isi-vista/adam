@@ -5,7 +5,7 @@ from typing import Iterable
 import pytest
 
 from adam.curriculum.curriculum_utils import (
-    PHASE1_CHOOSER,
+    PHASE1_CHOOSER_FACTORY,
     phase1_instances,
     standard_object,
 )
@@ -65,9 +65,9 @@ def run_verb_test(learner, situation_template):
             *[
                 sampled(
                     situation_template,
-                    max_to_sample=25,
+                    max_to_sample=10,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER,
+                    chooser=PHASE1_CHOOSER_FACTORY(),
                 )
             ]
         ),
@@ -80,7 +80,7 @@ def run_verb_test(learner, situation_template):
                     situation_template,
                     max_to_sample=1,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER,
+                    chooser=PHASE1_CHOOSER_FACTORY(),
                 )
             ]
         ),

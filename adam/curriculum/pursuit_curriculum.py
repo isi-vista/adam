@@ -7,7 +7,7 @@ Paper: The Pursuit of Word Meanings (Stevens et al., 2017)
 from adam.curriculum import ExplicitWithSituationInstanceGroup
 from adam.curriculum.curriculum_utils import (
     phase1_instances,
-    PHASE1_CHOOSER,
+    PHASE1_CHOOSER_FACTORY,
     Phase1InstanceGroup,
     standard_object,
 )
@@ -83,7 +83,7 @@ def make_simple_pursuit_curriculum(
                 sampled(
                     object_is_present_template,
                     max_to_sample=num_instances - num_noise_instances,
-                    chooser=PHASE1_CHOOSER,
+                    chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                 ),
                 perception_generator=perception_generator,
@@ -105,7 +105,7 @@ def make_simple_pursuit_curriculum(
             sampled(
                 noise_template,
                 max_to_sample=num_noise_instances,
-                chooser=PHASE1_CHOOSER,
+                chooser=PHASE1_CHOOSER_FACTORY(),
                 ontology=GAILA_PHASE_1_ONTOLOGY,
             ),
             perception_generator=perception_generator,
