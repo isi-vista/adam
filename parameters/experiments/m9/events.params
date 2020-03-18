@@ -1,0 +1,7 @@
+_includes:
+   - "../../root.params"
+   - "m9.params"
+
+experiment: 'm9-verbs-subset'
+curriculum: 'm9-verbs'
+learner: 'verb-subset'

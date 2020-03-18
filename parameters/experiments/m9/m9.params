@@ -1,0 +1,4 @@
+_includes:
+   - "../../root.params"
+
+experiment_group_dir: '%adam_experiment_root%/m9/'
