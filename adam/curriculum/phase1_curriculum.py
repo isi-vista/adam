@@ -1517,22 +1517,45 @@ def _make_behind_in_front_curriculum() -> Phase1InstanceGroup:
     )
 
 
-def build_gaila_phase_1_curriculum() -> Sequence[Phase1InstanceGroup]:
+def build_gaila_phase1_object_curriculum() -> Sequence[Phase1InstanceGroup]:
     """
-    One particular instantiation of the curriculum for GAILA Phase 1.
+    One particular instantiation of the object-learning parts of the curriculum for GAILA Phase 1.
     """
     return [
         _make_each_object_by_itself_curriculum(),
-        _make_objects_with_colors_curriculum(),
         _make_multiple_objects_curriculum(),
         _make_object_on_ground_curriculum(),
+    ]
+
+
+def build_gaila_phase1_attribute_curriculum() -> Sequence[Phase1InstanceGroup]:
+    """
+    One particular instantiation of the object-learning parts of the curriculum for GAILA Phase 1.
+    """
+    return [_make_objects_with_colors_curriculum()]
+
+
+def build_gaila_phase1_relation_curriculum() -> Sequence[Phase1InstanceGroup]:
+    """
+    One particular instantiation of the object-learning parts of the curriculum for GAILA Phase 1.
+    """
+    return [
         _make_person_has_object_curriculum(),
-        _make_fall_curriculum(),
-        _make_transfer_of_possession_curriculum(),
         _make_object_on_object_curriculum(),
         _make_object_beside_object_curriculum(),
         _make_object_under_or_over_object_curriculum(),
         _make_object_in_other_object_curriculum(),
+        _make_behind_in_front_curriculum(),
+    ]
+
+
+def build_gaila_phase1_verb_curriculum() -> Sequence[Phase1InstanceGroup]:
+    """
+    One particular instantiation of the object-learning parts of the curriculum for GAILA Phase 1.
+    """
+    return [
+        _make_fall_curriculum(),
+        _make_transfer_of_possession_curriculum(),
         _make_fly_curriculum(),
         _make_roll_curriculum(),
         _make_speaker_addressee_curriculum(),
@@ -1549,5 +1572,18 @@ def build_gaila_phase_1_curriculum() -> Sequence[Phase1InstanceGroup]:
         _make_throw_curriculum(),
         _make_put_on_speaker_addressee_body_part_curriculum(),
         _make_come_curriculum(),
-        _make_behind_in_front_curriculum(),
     ]
+
+
+def build_gaila_phase_1_curriculum() -> Sequence[Phase1InstanceGroup]:
+    """
+    One particular instantiation of the curriculum for GAILA Phase 1.
+    """
+    return list(
+        chain(
+            build_gaila_phase1_object_curriculum(),
+            build_gaila_phase1_attribute_curriculum(),
+            build_gaila_phase1_relation_curriculum(),
+            build_gaila_phase1_verb_curriculum(),
+        )
+    )
