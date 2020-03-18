@@ -695,10 +695,10 @@ def objects_to_freeze(
     if semantics_situation is None:
         return immutableset([])
     frozen_objects = []
+    agent: Optional[SituationObject] = None
+    theme: Optional[SituationObject] = None
+    goal: Optional[Union[SituationObject, Region[SituationObject]]] = None
     for action in semantics_situation.actions:
-        agent: Optional[SituationObject] = None
-        theme: Optional[SituationObject] = None
-        goal: Optional[Union[SituationObject, Region[SituationObject]]] = None
         for (ontology_node, object_or_region) in action.argument_roles_to_fillers.items():
             print(ontology_node)
             if ontology_node == GOAL:
