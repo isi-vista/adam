@@ -295,6 +295,9 @@ class SituationVisualizer(ShowBase):
                 print(f"No geometry found for {model_type}")
                 raise
 
+        if name.startswith("hat"):
+            new_model.set_two_sided(True)
+
         if position:
             new_model.setPos(position[0], position[1], position[2])
 
