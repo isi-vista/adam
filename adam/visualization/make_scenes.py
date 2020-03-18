@@ -233,13 +233,13 @@ def main(params: Parameters) -> None:
             scene_elements.situation_object_to_handle,
         )
 
-        if scene_elements.bonus_scene_items:
-            # freeze everything not included in the bonus scene
+        if scene_elements.interpolated_scene_moving_items:
+            # freeze everything not included in the interpolated scene
             frozen_objects = (
                 immutableset(
                     [key.debug_handle for key in scene_elements.in_region_map.keys()]
                 )
-                - scene_elements.bonus_scene_items
+                - scene_elements.interpolated_scene_moving_items
             )
 
         # now that every object has been instantiated into the scene,
@@ -341,7 +341,6 @@ def render_obj_nested(
 
     """
     model_name = model_lookup(obj, parent)
-    print(f"MODEL NAME: {model_name}")
 
     if not parent and prev_positions:
         position_tensor = prev_positions.name_to_position[obj.debug_handle]
@@ -404,7 +403,8 @@ class SceneElements:
     tokens: Tuple[str, ...] = attr.ib()
     current_frame: int = attr.ib(validator=attr.validators.instance_of(int))
     total_frames: int = attr.ib(validator=attr.validators.instance_of(int))
-    bonus_scene_items: Optional[ImmutableSet[str]] = attr.ib()
+    # items moving in an interpolated frame (between start and end), if any
+    interpolated_scene_moving_items: Optional[ImmutableSet[str]] = attr.ib()
 
 
 @attrs(frozen=True, slots=True)
@@ -498,7 +498,15 @@ class SceneCreator:
                         if perceived_obj not in property_map:
                             property_map[perceived_obj].append(None)
 
-                    # TODO: indicate whether this is a continuation of the same scene (next frame) or a new scene)
+                    # if there is going to be an interpolated frame (not in the official frame list)
+                    # we need to up the total by one
+                    total_frames = len(perception.frames)
+                    if perception.during and not perception.during.at_some_point.empty():
+                        total_frames += 1
+                        # add to the frame count if we are past the interpolated frame
+                        if frame_number == 1:
+                            frame_number += 1
+
                     yield SceneElements(
                         property_map,
                         in_region_map,
@@ -507,10 +515,9 @@ class SceneCreator:
                         nested_objects,
                         dependency_tree.as_token_sequence(),
                         frame_number,
-                        len(perception.frames),
+                        total_frames,
                         None,
                     )
-                    print("*****ATTEMPTING MIDDLE FRAME*****")
                     if (
                         frame_number == 0
                         and perception.during
@@ -518,12 +525,14 @@ class SceneCreator:
                     ):
                         for relation in perception.during.at_some_point:
                             if (
-                                isinstance(relation.second_slot, Relation)
+                                isinstance(relation.second_slot, Region)
                                 and relation.relation_type == IN_REGION
                             ):
+                                print(relation)
                                 in_region_map[relation.first_slot] = [
                                     relation.second_slot
                                 ]
+
                         yield SceneElements(
                             property_map,
                             in_region_map,
@@ -532,7 +541,7 @@ class SceneCreator:
                             nested_objects,
                             dependency_tree.as_token_sequence(),
                             frame_number + 1,
-                            len(perception.frames) + 1,
+                            total_frames,
                             immutableset(
                                 [
                                     relation.first_slot.debug_handle
