@@ -6,7 +6,7 @@ from more_itertools import flatten
 from adam.curriculum.curriculum_utils import (
     standard_object,
     phase1_instances,
-    PHASE1_CHOOSER,
+    PHASE1_CHOOSER_FACTORY,
 )
 from adam.curriculum.phase1_curriculum import _object_with_color_template
 from adam.learner import LearningExample
@@ -61,7 +61,7 @@ def test_subset_color_attribute_learner(color_node, object_0_node, object_1_node
                     [
                         sampled(
                             template,
-                            chooser=PHASE1_CHOOSER,
+                            chooser=PHASE1_CHOOSER_FACTORY(),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
                             max_to_sample=2,
                         )
@@ -76,7 +76,7 @@ def test_subset_color_attribute_learner(color_node, object_0_node, object_1_node
         f"{color.handle} Color Test",
         situations=sampled(
             color_object_template,
-            chooser=PHASE1_CHOOSER,
+            chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
         ),
