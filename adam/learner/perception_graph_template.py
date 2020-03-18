@@ -5,6 +5,7 @@ from attr import attrib, attrs
 from attr.validators import deep_mapping, instance_of
 from immutablecollections import ImmutableDict, immutabledict, immutableset
 from immutablecollections.converter_utils import _to_immutabledict
+from networkx import number_weakly_connected_components
 
 from adam.learner.surface_templates import SurfaceTemplateVariable
 from adam.ontology.ontology import Ontology
@@ -121,6 +122,26 @@ class PerceptionGraphTemplate:
         """
         if self.graph_pattern.dynamic != pattern.graph_pattern.dynamic:
             raise RuntimeError("Can only intersection patterns of the same dynamic-ness")
+
+        num_self_weakly_connected = number_weakly_connected_components(
+            self.graph_pattern._graph  # pylint:disable=protected-access
+        )
+        if num_self_weakly_connected > 1:
+            raise RuntimeError(
+                f"Graph pattern contains multiple ( {num_self_weakly_connected} ) "
+                f"weakly connected components heading into intersection. "
+                f"Violating pattern: {self}"
+            )
+
+        num_pattern_weakly_connected = number_weakly_connected_components(
+            pattern.graph_pattern._graph  # pylint:disable=protected-access
+        )
+        if num_pattern_weakly_connected > 1:
+            raise RuntimeError(
+                f"Graph pattern contains multiple ( {num_pattern_weakly_connected} ) "
+                f"weakly connected components heading into intersection. "
+                f"Violating pattern: {pattern}"
+            )
 
         # First we just intersect the pattern graph.
         intersected_pattern = self.graph_pattern.intersection(
