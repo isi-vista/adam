@@ -14,7 +14,7 @@ from immutablecollections import immutableset
 
 from adam.curriculum import ExplicitWithSituationInstanceGroup
 from adam.curriculum.curriculum_utils import (
-    PHASE1_CHOOSER,
+    PHASE1_CHOOSER_FACTORY,
     Phase1InstanceGroup,
     phase1_instances,
     standard_object,
@@ -116,7 +116,7 @@ def _make_m6_on_curriculum() -> Phase1InstanceGroup:
             *[
                 sampled(
                     _on_template(object_1, object_2, immutableset(), is_training=True),
-                    chooser=PHASE1_CHOOSER,
+                    chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     max_to_sample=1,
                 )
@@ -141,7 +141,7 @@ def _make_m6_beside_curriculum() -> Phase1InstanceGroup:
                         is_training=True,
                         is_right=True,
                     ),
-                    chooser=PHASE1_CHOOSER,
+                    chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     max_to_sample=1,
                 )
@@ -166,7 +166,7 @@ def _make_m6_under_curriculum() -> Phase1InstanceGroup:
                         is_training=True,
                         is_distal=True,
                     ),
-                    chooser=PHASE1_CHOOSER,
+                    chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     max_to_sample=1,
                 )
@@ -191,7 +191,7 @@ def _make_m6_over_curriculum() -> Phase1InstanceGroup:
                         is_training=True,
                         is_distal=True,
                     ),
-                    chooser=PHASE1_CHOOSER,
+                    chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     max_to_sample=1,
                 )
@@ -219,7 +219,7 @@ def _make_m6_behind_curriculum() -> Phase1InstanceGroup:
                         is_training=True,
                         is_near=True,
                     ),
-                    chooser=PHASE1_CHOOSER,
+                    chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     max_to_sample=1,
                 )
@@ -247,7 +247,7 @@ def _make_m6_in_front_curriculum() -> Phase1InstanceGroup:
                         is_training=True,
                         is_near=True,
                     ),
-                    chooser=PHASE1_CHOOSER,
+                    chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     max_to_sample=1,
                 )

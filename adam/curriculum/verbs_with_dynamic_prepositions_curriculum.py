@@ -12,7 +12,7 @@ from adam.axes import (
 from adam.curriculum.curriculum_utils import (
     standard_object,
     phase1_instances,
-    PHASE1_CHOOSER,
+    PHASE1_CHOOSER_FACTORY,
     Phase1InstanceGroup,
     make_background,
     body_part_object,
@@ -1832,7 +1832,7 @@ def _make_push_with_prepositions(
                     sampled(
                         template,
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                     for template in to_in_templates
@@ -1851,7 +1851,7 @@ def _make_push_with_prepositions(
                             is_right=is_right,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                     for is_right in BOOL_SET
@@ -1870,7 +1870,7 @@ def _make_push_with_prepositions(
                             is_distal=is_distal,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                     for is_distal in BOOL_SET
@@ -1890,7 +1890,7 @@ def _make_push_with_prepositions(
                             is_in_front=is_in_front,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                     for is_distal in BOOL_SET
@@ -1927,7 +1927,7 @@ def _make_go_with_prepositions(num_samples: int = 5, *, noise_objects: int = 0):
                     sampled(
                         _go_to_template(agent, goal_object, background),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                 ]
@@ -1938,7 +1938,7 @@ def _make_go_with_prepositions(num_samples: int = 5, *, noise_objects: int = 0):
                     sampled(
                         _go_in_template(agent, goal_object_hollow, background),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                 ]
@@ -1951,7 +1951,7 @@ def _make_go_with_prepositions(num_samples: int = 5, *, noise_objects: int = 0):
                             agent, goal_object, background, is_right=is_right
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                     for is_right in BOOL_SET
@@ -1969,7 +1969,7 @@ def _make_go_with_prepositions(num_samples: int = 5, *, noise_objects: int = 0):
                             is_behind=is_behind,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                     for is_distal in BOOL_SET
@@ -1984,7 +1984,7 @@ def _make_go_with_prepositions(num_samples: int = 5, *, noise_objects: int = 0):
                             agent, goal_object, background, is_distal=is_distal
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                     for is_distal in BOOL_SET
@@ -2001,7 +2001,7 @@ def _make_go_with_prepositions(num_samples: int = 5, *, noise_objects: int = 0):
                             is_distal=is_distal,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                     for is_distal in BOOL_SET
@@ -2019,7 +2019,7 @@ def _make_go_with_prepositions(num_samples: int = 5, *, noise_objects: int = 0):
                             is_behind=is_behind,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                     for is_behind in BOOL_SET
@@ -2033,7 +2033,7 @@ def _make_go_with_prepositions(num_samples: int = 5, *, noise_objects: int = 0):
                             agent, goal_object, path_object, background, is_over=is_over
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                     for is_over in BOOL_SET
@@ -2070,7 +2070,7 @@ def _make_sit_with_prepositions(
                             agent, seat, surface, background, syntax_hints=syntax_hints
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                     for syntax_hints in syntax_hints_options
@@ -2084,7 +2084,7 @@ def _make_sit_with_prepositions(
                             agent, seat_in, surface, background, syntax_hints=syntax_hints
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                     for syntax_hints in syntax_hints_options
@@ -2128,7 +2128,7 @@ def _make_roll_with_prepositions(num_samples: int = 5, *, noise_objects: int = 0
                             is_right=is_right,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                     for is_right in BOOL_SET
@@ -2147,7 +2147,7 @@ def _make_roll_with_prepositions(num_samples: int = 5, *, noise_objects: int = 0
                             is_behind=is_behind,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                     for is_distal in BOOL_SET
@@ -2165,7 +2165,7 @@ def _make_roll_with_prepositions(num_samples: int = 5, *, noise_objects: int = 0
                             ground,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                 ]
@@ -2182,7 +2182,7 @@ def _make_roll_with_prepositions(num_samples: int = 5, *, noise_objects: int = 0
                             make_background([roll_surface], all_object),
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                 ]
@@ -2200,7 +2200,7 @@ def _make_roll_with_prepositions(num_samples: int = 5, *, noise_objects: int = 0
                             is_right=is_right,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                     for is_right in BOOL_SET
@@ -2220,7 +2220,7 @@ def _make_roll_with_prepositions(num_samples: int = 5, *, noise_objects: int = 0
                             is_behind=is_behind,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                     for is_distal in BOOL_SET
@@ -2240,7 +2240,7 @@ def _make_roll_with_prepositions(num_samples: int = 5, *, noise_objects: int = 0
                             is_over=is_over,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                     for is_over in BOOL_SET
@@ -2259,7 +2259,7 @@ def _make_roll_with_prepositions(num_samples: int = 5, *, noise_objects: int = 0
                             is_over=is_over,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                     for is_over in BOOL_SET
@@ -2287,7 +2287,7 @@ def _make_take_with_prepositions(
                 sampled(
                     _take_to_template(agent, theme, goal_reference, background),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER,
+                    chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples,
                 )
             ]
@@ -2319,7 +2319,7 @@ def _make_fall_with_prepositions(
                             theme, goal_on, background, syntax_hints=syntax_hints
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                     for syntax_hints in syntax_hints_options
@@ -2333,7 +2333,7 @@ def _make_fall_with_prepositions(
                             theme, goal_in, background, syntax_hints=syntax_hints
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                     for syntax_hints in syntax_hints_options
@@ -2351,7 +2351,7 @@ def _make_fall_with_prepositions(
                             is_right=is_right,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                     for syntax_hints in syntax_hints_options
@@ -2371,7 +2371,7 @@ def _make_fall_with_prepositions(
                             is_in_front=is_in_front,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                     for syntax_hints in syntax_hints_options
@@ -2426,7 +2426,7 @@ def _make_put_with_prepositions(
                     sampled(
                         template,
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                     for template in on_in_templates
@@ -2440,7 +2440,7 @@ def _make_put_with_prepositions(
                             speaker_addressee, theme, body_part_goal, background
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                     for speaker_addressee in special_agents
@@ -2454,7 +2454,7 @@ def _make_put_with_prepositions(
                             agent, theme, goal_reference, background, is_right=is_right
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                     for is_right in BOOL_SET
@@ -2468,7 +2468,7 @@ def _make_put_with_prepositions(
                             agent, theme, goal_under, background, is_distal=is_distal
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                     for is_distal in BOOL_SET
@@ -2487,7 +2487,7 @@ def _make_put_with_prepositions(
                             is_in_front=is_in_front,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                     for is_distal in BOOL_SET
@@ -2533,7 +2533,7 @@ def _make_move_with_prepositions(
                             agent, goal_reference, background, is_right=is_right
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                     for is_right in BOOL_SET
@@ -2551,7 +2551,7 @@ def _make_move_with_prepositions(
                             is_in_front=is_in_front,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                     for is_distal in BOOL_SET
@@ -2566,7 +2566,7 @@ def _make_move_with_prepositions(
                             agent, goal_under, background, is_distal=is_distal
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                     for is_distal in BOOL_SET
@@ -2578,7 +2578,7 @@ def _make_move_with_prepositions(
                     sampled(
                         template,
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                     for template in situation_templates
@@ -2596,7 +2596,7 @@ def _make_move_with_prepositions(
                             is_distal=is_distal,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                     for is_distal in BOOL_SET
@@ -2614,7 +2614,7 @@ def _make_move_with_prepositions(
                             is_right=is_right,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                     for is_right in BOOL_SET
@@ -2633,7 +2633,7 @@ def _make_move_with_prepositions(
                             is_in_front=is_in_front,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                     for is_distal in BOOL_SET
@@ -2676,7 +2676,7 @@ def _make_throw_with_prepositions(
                     sampled(
                         template,
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                     for template in situation_templates
@@ -2690,7 +2690,7 @@ def _make_throw_with_prepositions(
                             agent, theme, goal_reference, background, is_right=is_right
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                     for is_right in BOOL_SET
@@ -2709,7 +2709,7 @@ def _make_throw_with_prepositions(
                             is_in_front=is_in_front,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                     for is_distal in BOOL_SET
@@ -2724,7 +2724,7 @@ def _make_throw_with_prepositions(
                             agent, theme, goal_under, background, is_distal=is_distal
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                     for is_distal in BOOL_SET
@@ -2742,7 +2742,7 @@ def _make_throw_with_prepositions(
                             background,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                 ]
@@ -2760,7 +2760,7 @@ def _make_throw_with_prepositions(
                             is_distal=is_distal,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                     for is_distal in BOOL_SET
@@ -2797,7 +2797,7 @@ def _make_jump_with_prepositions(
                     sampled(
                         template,
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                     for template in templates
@@ -2811,7 +2811,7 @@ def _make_jump_with_prepositions(
                             agent, goal_reference, background, is_right=is_right
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                     for is_right in BOOL_SET
@@ -2829,7 +2829,7 @@ def _make_jump_with_prepositions(
                             is_in_front=is_in_front,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                     for is_distal in BOOL_SET
@@ -2861,7 +2861,7 @@ def _make_fly_with_prepositions(
                     sampled(
                         _fly_in_template(agent, goal_in, background),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                 ]
@@ -2874,7 +2874,7 @@ def _make_fly_with_prepositions(
                             agent, goal_reference, background, is_right=is_right
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                     for is_right in BOOL_SET
@@ -2892,7 +2892,7 @@ def _make_fly_with_prepositions(
                             is_in_front=is_in_front,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                     for is_distal in BOOL_SET
@@ -2905,7 +2905,7 @@ def _make_fly_with_prepositions(
                     sampled(
                         _fly_over_template(agent, goal_reference, background),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                 ]
@@ -2916,7 +2916,7 @@ def _make_fly_with_prepositions(
                     sampled(
                         _fly_under_template(agent, goal_under, background),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
                 ]

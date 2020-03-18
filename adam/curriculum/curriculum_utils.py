@@ -25,7 +25,7 @@ from adam.situation.templates.phase1_templates import (
 )
 
 GROUND_OBJECT_TEMPLATE = object_variable("ground", GROUND)
-PHASE1_CHOOSER = RandomChooser.for_seed(0)
+PHASE1_CHOOSER_FACTORY = lambda: RandomChooser.for_seed(0)  # noqa: E731
 Phase1InstanceGroup = InstanceGroup[  # pylint:disable=invalid-name
     HighLevelSemanticsSituation,
     LinearizedDependencyTree,
@@ -96,7 +96,7 @@ def phase1_instances(
         situations=situations,
         language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
         perception_generator=perception_generator,
-        chooser=PHASE1_CHOOSER,
+        chooser=PHASE1_CHOOSER_FACTORY(),
     )
 
 
