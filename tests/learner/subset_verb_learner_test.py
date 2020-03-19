@@ -1,44 +1,55 @@
-import random
 from itertools import chain
-from typing import Iterable
 
 import pytest
+from immutablecollections import immutableset
 
 from adam.curriculum.curriculum_utils import (
     PHASE1_CHOOSER_FACTORY,
     phase1_instances,
     standard_object,
 )
-from adam.language_specific.english.english_language_generator import (
-    USE_ADVERBIAL_PATH_MODIFIER,
+from adam.curriculum.phase1_curriculum import (
+    _make_come_down_template,
+    make_eat_template,
+    make_drink_template,
+    make_sit_templates,
+    make_take_template,
+    make_put_templates,
+    make_push_templates,
+    make_go_templates,
+    make_spin_templates,
+    make_fall_templates,
+    make_throw_templates,
+    make_move_templates,
+    make_jump_templates,
+    make_fly_templates,
+    make_roll_templates,
 )
 from adam.learner import LearningExample
 from adam.learner.verbs import SubsetVerbLearner
-from adam.ontology import THING
+from adam.ontology import THING, IS_SPEAKER
 from adam.ontology.phase1_ontology import (
     AGENT,
-    COOKIE,
-    EAT,
     GAILA_PHASE_1_ONTOLOGY,
-    MOM,
-    PATIENT,
     ANIMATE,
-    CAN_HAVE_THINGS_RESTING_ON_THEM,
-    INANIMATE_OBJECT,
-    CAN_BE_SAT_ON_BY_PEOPLE,
     bigger_than,
-    SIT,
-    SIT_GOAL,
-    SIT_THING_SAT_ON,
     GOAL,
-    DOG,
-)
-from adam.ontology.phase1_spatial_relations import (
-    Region,
-    GRAVITATIONAL_UP,
-    EXTERIOR_BUT_IN_CONTACT,
+    INANIMATE,
+    THEME,
+    HAS_SPACE_UNDER,
+    SELF_MOVING,
+    LEARNER,
+    PERSON,
+    GROUND,
+    COME,
+    GIVE,
+    CAN_JUMP,
 )
 from adam.situation import Action
+from adam.situation.templates.phase1_situation_templates import (
+    _go_under_template,
+    _jump_over_template,
+)
 from adam.situation.templates.phase1_templates import Phase1SituationTemplate, sampled
 from tests.learner import TEST_OBJECT_RECOGNIZER
 
@@ -109,128 +120,185 @@ def run_verb_test(learner, situation_template):
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_eat_simple(learner_factory):
     learner = learner_factory()
-    rng = random.Random()
-    rng.seed(0)
-
-    mom = standard_object("mom", MOM)
-    cookie = standard_object("cookie", COOKIE)
-
-    # "Mom eats a cookie"
-    eat_template = Phase1SituationTemplate(
-        "eat-object",
-        salient_object_variables=[cookie, mom],
-        actions=[
-            Action(EAT, argument_roles_to_fillers=[(AGENT, mom), (PATIENT, cookie)])
-        ],
-    )
-    run_verb_test(learner, eat_template)
+    run_verb_test(learner, make_eat_template())
 
 
-# Infinite loop
-# @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
-# def test_drink(learner_factory):
-#     learner = learner_factory()
-#     rng = random.Random()
-#     rng.seed(0)
-#
-#     object_0 = standard_object("object_0", required_properties=[HOLLOW])
-#     liquid_0 = object_variable("liquid_0", required_properties=[LIQUID])
-#     person_0 = standard_object("person_0", PERSON)
-#
-#     drink_template = Phase1SituationTemplate(
-#         "drink",
-#         salient_object_variables=[liquid_0, person_0],
-#         actions=[
-#             Action(
-#                 DRINK,
-#                 argument_roles_to_fillers=[(AGENT, person_0), (THEME, liquid_0)],
-#                 auxiliary_variable_bindings=[(DRINK_CONTAINER_AUX, object_0)],
-#             )
-#         ],
-#     )
-#
-#     run_verb_test(learner, drink_template)
+# DRINK
+@pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
+def test_drink(learner_factory):
+    learner = learner_factory()
+    run_verb_test(learner, make_drink_template())
 
 
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_sit(learner_factory):
+    for situation_template in make_sit_templates():
+        learner = learner_factory()
+        run_verb_test(learner, situation_template)
 
-    sitter = standard_object("sitter_0", DOG, required_properties=[ANIMATE])
-    sit_surface = standard_object(
-        "surface", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
+
+# PUT
+@pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
+def test_put(learner_factory):
+    for situation_template in make_put_templates():
+        learner = learner_factory()
+        run_verb_test(learner, situation_template)
+
+
+# PUSH
+@pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
+def test_push(learner_factory):
+    for situation_template in make_push_templates():
+        learner = learner_factory()
+        run_verb_test(learner, situation_template)
+
+
+# GO
+@pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
+def test_go(learner_factory):
+    goer = standard_object("goer", THING, required_properties=[ANIMATE])
+    under_goal_reference = standard_object(
+        "go-under-goal", THING, required_properties=[HAS_SPACE_UNDER]
     )
-    seat = standard_object(
-        "sitting-surface", INANIMATE_OBJECT, required_properties=[CAN_BE_SAT_ON_BY_PEOPLE]
+
+    under_templates = [
+        _go_under_template(goer, under_goal_reference, [], is_distal=is_distal)
+        for is_distal in (True, False)
+    ]
+
+    for situation_template in make_go_templates():
+        learner = learner_factory()
+        run_verb_test(learner, situation_template)
+
+    for situation_template in under_templates:
+        learner = learner_factory()
+        run_verb_test(learner, situation_template)
+
+
+# COME
+@pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
+def test_come(learner_factory):
+    movee = standard_object("movee", required_properties=[SELF_MOVING])
+    learner = standard_object("leaner_0", LEARNER)
+    speaker = standard_object("speaker", PERSON, added_properties=[IS_SPEAKER])
+    object_ = standard_object("object_0", THING)
+    ground = standard_object("ground", root_node=GROUND)
+
+    come_to_speaker = Phase1SituationTemplate(
+        "come-to-speaker",
+        salient_object_variables=[movee, speaker],
+        actions=[
+            Action(COME, argument_roles_to_fillers=[(AGENT, movee), (GOAL, speaker)])
+        ],
     )
+    come_to_learner = Phase1SituationTemplate(
+        "come-to-leaner",
+        salient_object_variables=[movee],
+        actions=[
+            Action(COME, argument_roles_to_fillers=[(AGENT, movee), (GOAL, learner)])
+        ],
+    )
+    come_to_object = Phase1SituationTemplate(
+        "come-to-object",
+        salient_object_variables=[movee, object_],
+        actions=[
+            Action(COME, argument_roles_to_fillers=[(AGENT, movee), (GOAL, object_)])
+        ],
+    )
+    for situation_template in [
+        _make_come_down_template(movee, object_, speaker, ground, immutableset()),
+        come_to_speaker,
+        come_to_learner,
+        come_to_object,
+    ]:
+        learner = learner_factory()
+        run_verb_test(learner, situation_template)
 
-    def make_templates() -> Iterable[Phase1SituationTemplate]:
-        # we need two groups of templates because in general something can sit on
-        # anything bigger than itself which has a surface,
-        # but people also sit in chairs, etc., which are smaller than them.
-        sittee_to_contraints = (
-            (  # type: ignore
-                "-on-big-thing",
-                sit_surface,
-                [bigger_than(sit_surface, sitter)],
-            ),
-            ("-on-seat", seat, []),
-        )
 
-        syntax_hints_options = (
-            ("default", []),  # type: ignore
-            ("adverbial-mod", [USE_ADVERBIAL_PATH_MODIFIER]),
-        )
+# TAKE
+@pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
+def test_take(learner_factory):
+    learner = learner_factory()
+    run_verb_test(learner, make_take_template())
 
-        for (name, sittee, constraints) in sittee_to_contraints:
-            for (syntax_name, syntax_hints) in syntax_hints_options:
-                yield Phase1SituationTemplate(
-                    f"sit-intransitive-{name}-{syntax_name}",
-                    salient_object_variables=[sitter],
-                    actions=[
-                        Action(
-                            SIT,
-                            argument_roles_to_fillers=[(AGENT, sitter)],
-                            auxiliary_variable_bindings=[
-                                (
-                                    SIT_GOAL,
-                                    Region(
-                                        sittee,
-                                        direction=GRAVITATIONAL_UP,
-                                        distance=EXTERIOR_BUT_IN_CONTACT,
-                                    ),
-                                ),
-                                (SIT_THING_SAT_ON, sittee),
-                            ],
-                        )
-                    ],
-                    constraining_relations=constraints,
-                    syntax_hints=syntax_hints,
-                )
 
-                yield Phase1SituationTemplate(
-                    f"sit-transitive-{name}-{syntax_name}",
-                    salient_object_variables=[sitter, sittee],
-                    actions=[
-                        Action(
-                            SIT,
-                            argument_roles_to_fillers=[
-                                (AGENT, sitter),
-                                (
-                                    GOAL,
-                                    Region(
-                                        sittee,
-                                        direction=GRAVITATIONAL_UP,
-                                        distance=EXTERIOR_BUT_IN_CONTACT,
-                                    ),
-                                ),
-                            ],
-                            auxiliary_variable_bindings=[(SIT_THING_SAT_ON, sittee)],
-                        )
-                    ],
-                    constraining_relations=constraints,
-                    syntax_hints=syntax_hints,
-                )
+# GIVE
+@pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
+def test_give(learner_factory):
+    giver = standard_object("giver_0", THING, required_properties=[ANIMATE])
+    object_given = standard_object("object_given_0", required_properties=[INANIMATE])
 
-    for situation_template in make_templates():
+    # X puts Y on Z
+    give_template = Phase1SituationTemplate(
+        "give",
+        salient_object_variables=[giver, object_given],
+        actions=[
+            Action(
+                GIVE, argument_roles_to_fillers=[(AGENT, giver), (THEME, object_given)]
+            )
+        ],
+        constraining_relations=[bigger_than(giver, object_given)],
+    )
+    learner = learner_factory()
+    run_verb_test(learner, give_template)
+
+
+# SPIN
+@pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
+def test_spin(learner_factory):
+    for situation_template in make_spin_templates():
+        learner = learner_factory()
+        run_verb_test(learner, situation_template)
+
+
+# FALL
+@pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
+def test_fall(learner_factory):
+    for situation_template in make_fall_templates():
+        learner = learner_factory()
+        run_verb_test(learner, situation_template)
+
+
+# THROW
+@pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
+def test_throw(learner_factory):
+    for situation_template in make_throw_templates():
+        learner = learner_factory()
+        run_verb_test(learner, situation_template)
+
+
+# MOVE
+@pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
+def test_move(learner_factory):
+    for situation_template in make_move_templates():
+        learner = learner_factory()
+        run_verb_test(learner, situation_template)
+
+
+# JUMP
+@pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
+def test_jump(learner_factory):
+    jumper = standard_object("jumper_0", THING, required_properties=[CAN_JUMP])
+    jumped_over = standard_object("jumped_over")
+    for situation_template in make_jump_templates():
+        learner = learner_factory()
+        run_verb_test(learner, situation_template)
+    for situation_template in [_jump_over_template(jumper, jumped_over, [])]:
+        learner = learner_factory()
+        run_verb_test(learner, situation_template)
+
+
+# ROLL
+@pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
+def test_roll(learner_factory):
+    for situation_template in make_roll_templates():
+        learner = learner_factory()
+        run_verb_test(learner, situation_template)
+
+
+# FLY
+@pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
+def test_fly(learner_factory):
+    for situation_template in make_fly_templates():
         learner = learner_factory()
         run_verb_test(learner, situation_template)
