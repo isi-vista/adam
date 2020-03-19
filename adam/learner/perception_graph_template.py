@@ -3,9 +3,9 @@ from typing import Any, List, Optional, Callable, Mapping
 
 from attr import attrib, attrs
 from attr.validators import deep_mapping, instance_of
-from immutablecollections import ImmutableDict, immutabledict, immutableset
+from immutablecollections import ImmutableDict, immutabledict, immutableset, ImmutableSet
 from immutablecollections.converter_utils import _to_immutabledict
-from networkx import number_weakly_connected_components
+from networkx import number_weakly_connected_components, weakly_connected_components
 
 from adam.learner.surface_templates import SurfaceTemplateVariable
 from adam.ontology.ontology import Ontology
@@ -15,6 +15,7 @@ from adam.perception.perception_graph import (
     MatchedObjectPerceptionPredicate,
     PerceptionGraph,
     PerceptionGraphPattern,
+    NodePredicate,
 )
 
 
@@ -63,10 +64,40 @@ class PerceptionGraphTemplate:
         )
         for node_to_remove in nodes_to_remove:
             perception_digraph_without_irrelevant_objects.remove_node(node_to_remove)
+
+        # Removing this irrelevant objects may sometimes leave behind
+        # Weakly connected components which were linked to those objects
+        # So we remove any weakly connected components which don't have
+        # a relevant matched_object_node in them
+        components_to_remove: ImmutableSet[ImmutableSet[NodePredicate]] = immutableset(
+            immutableset(weakly_connected_component, disable_order_check=True)
+            for weakly_connected_component in weakly_connected_components(
+                perception_digraph_without_irrelevant_objects
+            )
+            for node in matched_object_nodes_aligned_to_template_slots
+            if node not in weakly_connected_component
+        )
+
+        for component in components_to_remove:
+            perception_digraph_without_irrelevant_objects.remove_nodes_from(component)
+
         perception_without_irrelevant_objects = PerceptionGraph(
             perception_digraph_without_irrelevant_objects,
             dynamic=perception_graph.dynamic,
         )
+
+        # Check to make sure we don't have mulitple weakly connected components after filtering by
+        # the required nodes in a pattern
+        if (
+            number_weakly_connected_components(
+                perception_digraph_without_irrelevant_objects
+            )
+            > 1
+        ):
+            raise RuntimeError(
+                f"Generated perception graph has multiple weakly connected components."
+                f"Violating graph: {perception_without_irrelevant_objects}"
+            )
 
         pattern_from_graph = PerceptionGraphPattern.from_graph(
             perception_without_irrelevant_objects
