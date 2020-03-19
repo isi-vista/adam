@@ -1439,6 +1439,12 @@ class PatternMatching:
 
         gather_nodes_to_excise(last_failed_node)
 
+        # Put a breakpoint at the `if` below this statement and then run through with the debugger
+        # Rename the output file each time you hit the breakpoint to grab the state during each run
+        with open("/home/jacobl/Documents/ISI-Projects/adam-root/outputs/graph/graph_nodes.txt", "w") as file:
+            file.writelines(f"{node}\n" for node in match_failure.largest_match_pattern_subgraph._graph.nodes)
+            file.write(f"{last_failed_node}\n")
+
         same_color_nodes: List[NodePredicate]
 
         if isinstance(last_failed_node, IsColorNodePredicate):
@@ -1505,7 +1511,9 @@ class PatternMatching:
 
             to_delete_due_to_disconnection: List[NodePredicate] = []
             connected_components_containing_successful_pattern_matches = 0
-            for connected_component in connected_components(pattern_as_undirected_graph):
+            for (num, connected_component) in enumerate(connected_components(pattern_as_undirected_graph)):
+                #with open(f"/home/jacobl/Documents/ISI-Projects/adam-root/outputs/graph/component-{num}.txt", "w") as file:
+                #    file.writelines(f"{node}\n" for node in connected_component)
                 if probe_node not in connected_component:
                     # this is a component which is now disconnected from the successful partial match
                     to_delete_due_to_disconnection.extend(connected_component)
@@ -1517,11 +1525,15 @@ class PatternMatching:
                     graph_logger.log_match_failure(
                         match_failure, logging.INFO, "Pattern match component failure"
                     )
+                #graph = PerceptionGraphPattern(pattern_as_digraph.copy(), dynamic=match_failure.pattern.dynamic)
+                #graph.render_to_file("components", "/home/jacobl/Documents/ISI-Projects/adam-root/outputs/graph/components")
                 raise RuntimeError(
                     f"Expected the successfully matching portion of the pattern"
                     f" to belong to a single connected component, but it was in "
                     f"{connected_components_containing_successful_pattern_matches}"
                 )
+            #graph = PerceptionGraphPattern(pattern_as_digraph.copy(), dynamic=match_failure.pattern.dynamic)
+            #graph.render_to_file("success", "/home/jacobl/Documents/ISI-Projects/adam-root/outputs/graph/success")
 
             logging.info(
                 "Relaxation: deleted due to disconnection: %s",
