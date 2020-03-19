@@ -1140,15 +1140,17 @@ class PatternMatching:
         @largest_match_pattern_subgraph.default  # noqa: F821
         def _matched_pattern_subgraph_default(self) -> DiGraph:
             return PerceptionGraphPattern(
-                self.pattern._graph.subgraph(  # pylint:disable=protected-access
-                    self.pattern_node_to_graph_node_for_largest_match.keys()
+                subgraph(
+                    self.pattern._graph,  # pylint:disable=protected-access
+                    self.pattern_node_to_graph_node_for_largest_match.keys(),
                 )
             )
 
         @largest_match_graph_subgraph.default  # noqa: F821
         def _matched_graph_subgraph_default(self) -> DiGraph:
-            return self.graph._graph.subgraph(  # pylint:disable=protected-access
-                immutableset(self.pattern_node_to_graph_node_for_largest_match.values())
+            return subgraph(
+                self.graph._graph,  # pylint:disable=protected-access
+                immutableset(self.pattern_node_to_graph_node_for_largest_match.values()),
             )
 
     def matches(
