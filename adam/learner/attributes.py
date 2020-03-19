@@ -1,37 +1,30 @@
 from abc import ABC
-from typing import Union, Mapping
-
-from attr.validators import instance_of
+from typing import Union
 
 from adam.language import LinguisticDescription
 from adam.learner import LearningExample
+from adam.learner.learner_utils import assert_static_situation
 from adam.learner.object_recognizer import (
     ObjectRecognizer,
     PerceptionGraphFromObjectRecognizer,
 )
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
-from adam.learner.subset import AbstractSubsetLearner
-from adam.learner.surface_templates import (
-    STANDARD_SLOT_VARIABLES,
-    SurfaceTemplate,
-    SurfaceTemplateVariable,
-)
+from adam.learner.surface_templates import STANDARD_SLOT_VARIABLES, SurfaceTemplate
 from adam.learner.template_learner import AbstractTemplateLearner
 from adam.perception import PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
-from adam.perception.perception_graph import (
-    LanguageAlignedPerception,
-    PerceptionGraph,
-    MatchedObjectNode,
-)
-from attr import attrib, attrs
-from immutablecollections import immutabledict
+from adam.perception.perception_graph import LanguageAlignedPerception, PerceptionGraph
+from attr import attrs, attrib
+
+from adam.learner.subset import AbstractSubsetLearner
+from attr.validators import instance_of
+from immutablecollections import immutabledict, immutableset
 
 
 @attrs
-class AbstractVerbTemplateLearner(AbstractTemplateLearner, ABC):
+class AbstractAttributeTemplateLearner(AbstractTemplateLearner, ABC):
     # mypy doesn't realize that fields without defaults can come after those with defaults
     # if they are keyword-only.
     _object_recognizer: ObjectRecognizer = attrib(  # type: ignore
@@ -45,19 +38,12 @@ class AbstractVerbTemplateLearner(AbstractTemplateLearner, ABC):
             LearningExample[DevelopmentalPrimitivePerceptionFrame, LinguisticDescription],
         ],
     ) -> None:
-        if isinstance(to_check, LearningExample):
-            perception = to_check.perception
-        else:
-            perception = to_check
-        if len(perception.frames) != 2:
-            raise RuntimeError(
-                "Expected exactly two frames in a perception for verb learning"
-            )
+        assert_static_situation(to_check)
 
     def _extract_perception_graph(
         self, perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]
     ) -> PerceptionGraph:
-        return PerceptionGraph.from_dynamic_perceptual_representation(perception)
+        return PerceptionGraph.from_frame(perception.frames[0])
 
     def _preprocess_scene_for_learning(
         self, language_aligned_perception: LanguageAlignedPerception
@@ -75,24 +61,31 @@ class AbstractVerbTemplateLearner(AbstractTemplateLearner, ABC):
     def _extract_surface_template(
         self, preprocessed_input: LanguageAlignedPerception
     ) -> SurfaceTemplate:
-        if len(preprocessed_input.aligned_nodes) > len(STANDARD_SLOT_VARIABLES):
+        if len(preprocessed_input.aligned_nodes) > 1:
             raise RuntimeError("Input has too many aligned nodes for us to handle.")
 
-        object_node_to_template_variable: Mapping[
-            MatchedObjectNode, SurfaceTemplateVariable
-        ] = immutabledict(zip(preprocessed_input.aligned_nodes, STANDARD_SLOT_VARIABLES))
         return SurfaceTemplate.from_language_aligned_perception(
             preprocessed_input,
-            object_node_to_template_variable=object_node_to_template_variable,
-            determiner_prefix_slots=object_node_to_template_variable.values(),
+            object_node_to_template_variable=immutabledict(
+                zip(preprocessed_input.aligned_nodes, STANDARD_SLOT_VARIABLES)
+            ),
+            # This is a hack to handle determiners.
+            # For attributes at the moment we learn the determiner together with the
+            # attribute, which is not ideal.
+            determiner_prefix_slots=immutableset(),
         )
 
 
 @attrs
-class SubsetVerbLearner(AbstractSubsetLearner, AbstractVerbTemplateLearner):
+class SubsetAttributeLearner(AbstractSubsetLearner, AbstractAttributeTemplateLearner):
     def _hypothesis_from_perception(
         self, preprocessed_input: LanguageAlignedPerception
     ) -> PerceptionGraphTemplate:
+        if len(preprocessed_input.aligned_nodes) != 1:
+            raise RuntimeError(
+                "Attribute learner can work only with a single aligned node"
+            )
+
         return PerceptionGraphTemplate.from_graph(
             preprocessed_input.perception_graph,
             template_variable_to_matched_object_node=immutabledict(

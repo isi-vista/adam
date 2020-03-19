@@ -124,7 +124,7 @@ class ObjectRecognizer:
         ontology_types: Iterable[OntologyNode], determiners: Iterable[str]
     ) -> "ObjectRecognizer":
         return ObjectRecognizer(
-            object_names_to_patterns=immutabledict(
+            object_names_to_static_patterns=immutabledict(
                 (
                     obj_type.handle,
                     PerceptionGraphPattern.from_schema(
@@ -241,6 +241,9 @@ class ObjectRecognizer:
             if matched_subgraph_node in SHARED_WORLD_ITEMS:
                 continue
 
+            # We don't want to make multiple links to property nodes from the root node
+            linked_property_nodes: Set[OntologyNode] = set()
+
             # If there is an edge from the matched sub-graph to a node outside it,
             # also add an edge from the object match node to that node.
             for matched_subgraph_node_successor in perception_digraph.successors(
@@ -252,15 +255,26 @@ class ObjectRecognizer:
                         matched_subgraph_node, matched_subgraph_node_successor
                     )
                     label = edge_data["label"]
-                    if (
-                        isinstance(label, RelationTypeIsPredicate)
-                        and label.dot_label == "rel(" "has-matched-object-pattern)"
-                    ):
-                        raise RuntimeError(
-                            f"Overlapping nodes in object recognition: "
-                            f"{matched_subgraph_node}, "
-                            f"{matched_subgraph_node_successor}"
-                        )
+                    if isinstance(label, RelationTypeIsPredicate):
+                        if label.dot_label == "rel(" "has-matched-object-pattern)":
+                            raise RuntimeError(
+                                f"Overlapping nodes in object recognition: "
+                                f"{matched_subgraph_node}, "
+                                f"{matched_subgraph_node_successor}"
+                            )
+                        # Prevent multiple `has-property` assertions to the same color node
+                        # On a recognized object
+                        elif label.dot_label == "rel(" "has-property)":
+                            if (
+                                matched_subgraph_node_successor[0]
+                                in linked_property_nodes
+                            ):
+                                continue
+                            else:
+                                linked_property_nodes.add(
+                                    matched_subgraph_node_successor[0]
+                                )
+
                     perception_digraph.add_edge(
                         matched_object_node, matched_subgraph_node_successor, **edge_data
                     )
@@ -276,15 +290,25 @@ class ObjectRecognizer:
                         matched_subgraph_node_predecessor, matched_subgraph_node
                     )
                     label = edge_data["label"]
-                    if (
-                        isinstance(label, RelationTypeIsPredicate)
-                        and label.dot_label == "rel(" "has-matched-object-pattern)"
-                    ):
-                        raise RuntimeError(
-                            f"Overlapping nodes in object recognition: "
-                            f"{matched_subgraph_node}, "
-                            f"{matched_subgraph_node_predecessor}"
-                        )
+                    if isinstance(label, RelationTypeIsPredicate):
+                        if label.dot_label == "rel(" "has-matched-object-pattern)":
+                            raise RuntimeError(
+                                f"Overlapping nodes in object recognition: "
+                                f"{matched_subgraph_node}, "
+                                f"{matched_subgraph_node_predecessor}"
+                            )
+                        # Prevent multiple `has-property` assertions to the same color node
+                        # On a recognized object
+                        elif label.dot_label == "rel(" "has-property)":
+                            if (
+                                matched_subgraph_node_predecessor[0]
+                                in linked_property_nodes
+                            ):
+                                continue
+                            else:
+                                linked_property_nodes.add(
+                                    matched_subgraph_node_predecessor[0]
+                                )
 
                     perception_digraph.add_edge(
                         matched_subgraph_node_predecessor,

@@ -151,20 +151,24 @@ def _make_each_object_by_itself_curriculum(
 # Show each object in 20 different colors
 
 
+def _object_with_color_template(
+    object_with_color: TemplateObjectVariable,
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        "object-with-color", salient_object_variables=[object_with_color]
+    )
+
+
 def _make_objects_with_colors_curriculum() -> Phase1InstanceGroup:
     color = color_variable("color")
     object_with_color = standard_object("object", added_properties=[color])
-
-    object_with_color_template = Phase1SituationTemplate(
-        "object-with-color", salient_object_variables=[object_with_color]
-    )
 
     return phase1_instances(
         "objects with colors",
         chain(
             *[
                 sampled(
-                    object_with_color_template,
+                    _object_with_color_template(object_with_color),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=20,
