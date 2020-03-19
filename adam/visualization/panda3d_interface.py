@@ -295,7 +295,7 @@ class SituationVisualizer(ShowBase):
                 print(f"No geometry found for {model_type}")
                 raise
 
-        if name.startswith("hat"):
+        if name.startswith("hat") or name.startswith("juice") or name.startswith("milk") or name.startswith("water"):
             new_model.set_two_sided(True)
 
         if position:
