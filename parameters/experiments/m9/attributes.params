@@ -1,0 +1,7 @@
+_includes:
+   - "../../root.params"
+   - "m9.params"
+
+experiment: 'm9-attributes-subset'
+curriculum: 'm9-attributes'
+learner: 'attribute-subset'

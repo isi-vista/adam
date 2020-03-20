@@ -81,9 +81,11 @@ class SubsetAttributeLearner(AbstractSubsetLearner, AbstractAttributeTemplateLea
     def _hypothesis_from_perception(
         self, preprocessed_input: LanguageAlignedPerception
     ) -> PerceptionGraphTemplate:
-        if len(preprocessed_input.aligned_nodes) != 1:
+        num_nodes_aligned_to_language = len(preprocessed_input.aligned_nodes)
+        if num_nodes_aligned_to_language != 1:
             raise RuntimeError(
-                "Attribute learner can work only with a single aligned node"
+                f"Attribute learner can work only with a single aligned node,"
+                f"but got {num_nodes_aligned_to_language}"
             )
 
         return PerceptionGraphTemplate.from_graph(

@@ -3,17 +3,24 @@ from itertools import repeat
 from typing import Callable, Optional
 
 from adam.language_specific.english import ENGLISH_DETERMINERS
+from adam.learner.attributes import SubsetAttributeLearner
+from adam.learner.verbs import SubsetVerbLearner
 from vistautils.parameters import Parameters
 from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 
 from adam.curriculum.m6_curriculum import (
-    M6_PREPOSITION_CURRICULUM_OBJECTS,
     M6_PREPOSITION_SUBCURRICULUM_GENERATORS,
     instantiate_subcurricula,
     make_m6_curriculum,
     M6_CURRICULUM_ALL_OBJECTS,
 )
-from adam.curriculum.phase1_curriculum import _make_each_object_by_itself_curriculum
+from adam.curriculum.phase1_curriculum import (
+    _make_each_object_by_itself_curriculum,
+    build_gaila_phase1_object_curriculum,
+    build_gaila_phase1_attribute_curriculum,
+    build_gaila_phase1_relation_curriculum,
+    build_gaila_phase1_verb_curriculum,
+)
 from adam.curriculum.pursuit_curriculum import make_simple_pursuit_curriculum
 from adam.experiment import Experiment, execute_experiment
 from adam.experiment.observer import LearningProgressHtmlLogger, CandidateAccuracyObserver
@@ -21,8 +28,11 @@ from adam.learner import LanguageLearner
 from adam.learner.object_recognizer import ObjectRecognizer
 from adam.learner.prepositions import SubsetPrepositionLearner
 from adam.learner.pursuit import HypothesisLogger
-from adam.learner.objects import ObjectPursuitLearner
-from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
+from adam.learner.objects import ObjectPursuitLearner, SubsetObjectLearner
+from adam.ontology.phase1_ontology import (
+    GAILA_PHASE_1_ONTOLOGY,
+    PHASE_1_CURRICULUM_OBJECTS,
+)
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     GAILA_M6_PERCEPTION_GENERATOR,
 )
@@ -67,21 +77,43 @@ def log_experiment_entry_point(params: Parameters) -> None:
 def learner_factory_from_params(
     params: Parameters, graph_logger: Optional[HypothesisLogger]
 ) -> Callable[[], LanguageLearner]:  # type: ignore
-    learner_type = params.string("learner", ["pursuit", "preposition-subset"])
+    learner_type = params.string(
+        "learner",
+        [
+            "pursuit",
+            "object-subset",
+            "preposition-subset",
+            "attribute-subset",
+            "verb-subset",
+        ],
+    )
+
+    # Eval hack! This is specific to the Phase 1 ontology
+    object_recognizer = ObjectRecognizer.for_ontology_types(
+        PHASE_1_CURRICULUM_OBJECTS,
+        determiners=ENGLISH_DETERMINERS,
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+    )
+
     if learner_type == "pursuit":
         return lambda: ObjectPursuitLearner.from_parameters(
             params.namespace("pursuit"), graph_logger=graph_logger
         )
+    elif learner_type == "object-subset":
+        return lambda: SubsetObjectLearner(ontology=GAILA_PHASE_1_ONTOLOGY)
+    elif learner_type == "attribute-subset":
+        return lambda: SubsetAttributeLearner(
+            ontology=GAILA_PHASE_1_ONTOLOGY, object_recognizer=object_recognizer
+        )
     elif learner_type == "preposition-subset":
         return lambda: SubsetPrepositionLearner(
-            graph_logger=graph_logger,
-            # Eval hack! This is specific to the M6 ontology
-            object_recognizer=ObjectRecognizer.for_ontology_types(
-                M6_PREPOSITION_CURRICULUM_OBJECTS,
-                determiners=ENGLISH_DETERMINERS,
-                ontology=GAILA_PHASE_1_ONTOLOGY,
-            ),
+            # graph_logger=graph_logger,
+            object_recognizer=object_recognizer,
             ontology=GAILA_PHASE_1_ONTOLOGY,
+        )
+    elif learner_type == "verb-subset":
+        return lambda: SubsetVerbLearner(
+            ontology=GAILA_PHASE_1_ONTOLOGY, object_recognizer=object_recognizer
         )
     else:
         raise RuntimeError("can't happen")
@@ -89,7 +121,17 @@ def learner_factory_from_params(
 
 def curriculum_from_params(params: Parameters):
     curriculum_name = params.string(
-        "curriculum", ["m6-deniz", "each-object-by-itself", "pursuit", "m6-preposition"]
+        "curriculum",
+        [
+            "m6-deniz",
+            "each-object-by-itself",
+            "pursuit",
+            "m6-preposition",
+            "m9-objects",
+            "m9-attributes",
+            "m9-relations",
+            "m9-events",
+        ],
     )
     if curriculum_name == "m6-deniz":
         return (make_m6_curriculum(), [])
@@ -136,6 +178,14 @@ def curriculum_from_params(params: Parameters):
         )
     elif curriculum_name == "m6-preposition":
         return (instantiate_subcurricula(M6_PREPOSITION_SUBCURRICULUM_GENERATORS), [])
+    elif curriculum_name == "m9-objects":
+        return (build_gaila_phase1_object_curriculum(), [])
+    elif curriculum_name == "m9-attributes":
+        return (build_gaila_phase1_attribute_curriculum(), [])
+    elif curriculum_name == "m9-relations":
+        return (build_gaila_phase1_relation_curriculum(), [])
+    elif curriculum_name == "m9-events":
+        return (build_gaila_phase1_verb_curriculum(), [])
     else:
         raise RuntimeError("Can't happen")
 
