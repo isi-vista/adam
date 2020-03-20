@@ -159,7 +159,6 @@ def main(params: Parameters) -> None:
         )
 
         # render each object in graph
-
         SceneCreator.graph_for_each_top_level(
             scene_elements.object_graph, bound_render_obj, bound_render_nested_obj
         )
@@ -225,11 +224,23 @@ def main(params: Parameters) -> None:
             object_perception.debug_handle: region_list
             for object_perception, region_list in inter_object_in_region_map.items()
         }
+
+        print(scene_elements.in_region_map)
+
         frozen_objects = objects_to_freeze(
             handle_to_in_region_map,
             scene_elements.situation,
             scene_elements.situation_object_to_handle,
         )
+
+        if scene_elements.interpolated_scene_moving_items:
+            # freeze everything not included in the interpolated scene
+            frozen_objects = (
+                immutableset(
+                    [key.debug_handle for key in scene_elements.in_region_map.keys()]
+                )
+                - scene_elements.interpolated_scene_moving_items
+            )
 
         # now that every object has been instantiated into the scene,
         # they need to be re-positioned.
@@ -330,7 +341,6 @@ def render_obj_nested(
 
     """
     model_name = model_lookup(obj, parent)
-    print(f"MODEL NAME: {model_name}")
 
     if not parent and prev_positions:
         position_tensor = prev_positions.name_to_position[obj.debug_handle]
@@ -393,6 +403,8 @@ class SceneElements:
     tokens: Tuple[str, ...] = attr.ib()
     current_frame: int = attr.ib(validator=attr.validators.instance_of(int))
     total_frames: int = attr.ib(validator=attr.validators.instance_of(int))
+    # items moving in an interpolated frame (between start and end), if any
+    interpolated_scene_moving_items: Optional[ImmutableSet[str]] = attr.ib()
 
 
 @attrs(frozen=True, slots=True)
@@ -486,7 +498,15 @@ class SceneCreator:
                         if perceived_obj not in property_map:
                             property_map[perceived_obj].append(None)
 
-                    # TODO: indicate whether this is a continuation of the same scene (next frame) or a new scene)
+                    # if there is going to be an interpolated frame (not in the official frame list)
+                    # we need to up the total by one
+                    total_frames = len(perception.frames)
+                    if perception.during and not perception.during.at_some_point.empty():
+                        total_frames += 1
+                        # add to the frame count if we are past the interpolated frame
+                        if frame_number == 1:
+                            frame_number += 1
+
                     yield SceneElements(
                         property_map,
                         in_region_map,
@@ -495,8 +515,40 @@ class SceneCreator:
                         nested_objects,
                         dependency_tree.as_token_sequence(),
                         frame_number,
-                        len(perception.frames),
+                        total_frames,
+                        None,
                     )
+                    if (
+                        frame_number == 0
+                        and perception.during
+                        and not perception.during.at_some_point.empty()
+                    ):
+                        for relation in perception.during.at_some_point:
+                            if (
+                                isinstance(relation.second_slot, Region)
+                                and relation.relation_type == IN_REGION
+                            ):
+                                print(relation)
+                                in_region_map[relation.first_slot] = [
+                                    relation.second_slot
+                                ]
+
+                        yield SceneElements(
+                            property_map,
+                            in_region_map,
+                            semantics_situation,
+                            situation_obj_to_handle,
+                            nested_objects,
+                            dependency_tree.as_token_sequence(),
+                            frame_number + 1,
+                            total_frames,
+                            immutableset(
+                                [
+                                    relation.first_slot.debug_handle
+                                    for relation in perception.during.at_some_point
+                                ]
+                            ),
+                        )
 
     @staticmethod
     def _nest_objects(
@@ -643,10 +695,10 @@ def objects_to_freeze(
     if semantics_situation is None:
         return immutableset([])
     frozen_objects = []
+    agent: Optional[SituationObject] = None
+    theme: Optional[SituationObject] = None
+    goal: Optional[Union[SituationObject, Region[SituationObject]]] = None
     for action in semantics_situation.actions:
-        agent: Optional[SituationObject] = None
-        theme: Optional[SituationObject] = None
-        goal: Optional[Union[SituationObject, Region[SituationObject]]] = None
         for (ontology_node, object_or_region) in action.argument_roles_to_fillers.items():
             print(ontology_node)
             if ontology_node == GOAL:
