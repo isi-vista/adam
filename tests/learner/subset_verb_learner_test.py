@@ -24,7 +24,8 @@ from adam.curriculum.phase1_curriculum import (
     make_jump_templates,
     make_fly_templates,
     make_roll_templates,
-    make_give_templates)
+    make_give_templates,
+)
 from adam.learner import LearningExample
 from adam.learner.verbs import SubsetVerbLearner
 from adam.ontology import THING, IS_SPEAKER
@@ -32,17 +33,13 @@ from adam.ontology.phase1_ontology import (
     AGENT,
     GAILA_PHASE_1_ONTOLOGY,
     ANIMATE,
-    bigger_than,
     GOAL,
-    INANIMATE,
-    THEME,
     HAS_SPACE_UNDER,
     SELF_MOVING,
     LEARNER,
     PERSON,
     GROUND,
     COME,
-    GIVE,
     CAN_JUMP,
 )
 from adam.situation import Action

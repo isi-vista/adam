@@ -393,18 +393,17 @@ def make_give_templates() -> Iterable[Phase1SituationTemplate]:
 
 def _make_transfer_of_possession_curriculum() -> Phase1InstanceGroup:
 
-
     return phase1_instances(
         "transfer-of-possession",
         chain(
             *[
                 sampled(
-                    make_give_template(),
+                    template,
                     max_to_sample=100,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                 )
-
+                for template in make_give_templates()
             ]
         ),
     )
