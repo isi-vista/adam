@@ -128,8 +128,8 @@ MODEL_NAMES = [
     "house",
     "truck",
     "baby",
-    "dad",
-    "mom",
+    "Dad",
+    "Mom",
 ]
 
 
@@ -178,7 +178,7 @@ _PART_CARDINALITY: ImmutableDict[str, ImmutableDict[str, int]] = immutabledict(
             ),
         ),
         (
-            "mom",
+            "Mom",
             immutabledict(
                 [
                     ("head", 1),
@@ -191,7 +191,7 @@ _PART_CARDINALITY: ImmutableDict[str, ImmutableDict[str, int]] = immutabledict(
             ),
         ),
         (
-            "dad",
+            "Dad",
             immutabledict(
                 [
                     ("head", 1),
