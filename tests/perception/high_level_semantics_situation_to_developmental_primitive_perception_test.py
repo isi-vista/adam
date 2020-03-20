@@ -667,7 +667,7 @@ def test_gaze_default():
     )
     frame = perception.frames[0]
     cookie_perception = perception_with_handle(frame, "cookie_0")
-    dad_perception = perception_with_handle(frame, "dad_0")
+    dad_perception = perception_with_handle(frame, "Dad_0")
     table_perception = perception_with_handle(frame, "table_0")
     assert HasBinaryProperty(cookie_perception, GAZED_AT) in frame.property_assertions
     assert HasBinaryProperty(dad_perception, GAZED_AT) in frame.property_assertions
@@ -692,7 +692,7 @@ def test_gaze_specified():
     )
     frame = perception.frames[0]
     cookie_perception = perception_with_handle(frame, "cookie_0")
-    dad_perception = perception_with_handle(frame, "dad_0")
+    dad_perception = perception_with_handle(frame, "Dad_0")
     table_perception = perception_with_handle(frame, "table_0")
     # only the cookie is gazed at, because the user said so.
     assert HasBinaryProperty(cookie_perception, GAZED_AT) in frame.property_assertions

@@ -106,6 +106,7 @@ def run_verb_test(learner, situation_template):
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
 
 
+@pytest.mark.skip("too slow")
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_eat_simple(learner_factory):
     learner = learner_factory()
@@ -152,6 +153,7 @@ def test_eat_simple(learner_factory):
 #     run_verb_test(learner, drink_template)
 
 
+@pytest.mark.skip("too slow")
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_sit(learner_factory):
 

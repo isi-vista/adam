@@ -60,7 +60,13 @@ from adam.geon import Geon, MaybeHasGeon
 from adam.language import LinguisticDescription
 from adam.ontology import OntologyNode
 from adam.ontology.ontology import Ontology
-from adam.ontology.phase1_ontology import COLOR, GAILA_PHASE_1_ONTOLOGY, PART_OF
+from adam.ontology.phase1_ontology import (
+    COLOR,
+    GAILA_PHASE_1_ONTOLOGY,
+    PART_OF,
+    LIQUID,
+    RECOGNIZED_PARTICULAR_PROPERTY,
+)
 from adam.ontology.phase1_spatial_relations import Direction, Distance, Region
 from adam.ontology.structural_schema import ObjectStructuralSchema
 from adam.perception import ObjectPerception, PerceptualRepresentation
@@ -724,7 +730,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
         perception_generator = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
             GAILA_PHASE_1_ONTOLOGY
         )
-        # We explicitly exclude ground and learner in perception generation, which were not
+        # We explicitly exclude groundin perception generation, which were not
         # specified in the schema
         perception = perception_generator.generate_perception(
             situation, chooser=RandomChooser.for_seed(0), include_ground=False
@@ -772,6 +778,60 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
             ),
             perception_graph_node_to_pattern_node=perception_node_to_pattern_node,
         )
+
+    @staticmethod
+    def from_ontology_node(
+        node: OntologyNode, ontology: Ontology
+    ) -> "PerceptionGraphPattern":
+        """
+        Creates a pattern for recognizing an obect based on its *ontology_node*
+        """
+        # First, we check to see if the ontology node has a corresponding
+        # schema in the ontology. If so we just use `from_schema`
+        if (
+            node
+            in ontology._structural_schemata.keys()  # pylint:disable=protected-access
+        ):
+            return PerceptionGraphPattern.from_schema(
+                first(ontology.structural_schemata(node))
+            )
+
+        # If the node doesn't have a corresponding structural schemata we see if it can be
+        # created as a single object scene
+        schema_situation_object = SituationObject.instantiate_ontology_node(
+            ontology_node=node, ontology=ontology
+        )
+        situation = HighLevelSemanticsSituation(
+            ontology=ontology, salient_objects=[schema_situation_object]
+        )
+        perception_generator = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
+            ontology
+        )
+        # We explicitly exclude ground in perception generation
+        perception = perception_generator.generate_perception(
+            situation, chooser=RandomChooser.for_seed(0), include_ground=False
+        )
+        perception_graph_as_digraph = PerceptionGraph.from_frame(
+            first(perception.frames)
+        ).copy_as_digraph()
+
+        nodes_to_remove = [
+            node
+            for node in perception_graph_as_digraph
+            # Perception generation wraps properties in tuples, so we need to unwrap them.
+            if isinstance(node, tuple)
+            and isinstance(node[0], OntologyNode)
+            and not (
+                ontology.is_subtype_of(node[0], RECOGNIZED_PARTICULAR_PROPERTY)
+                or node[0] is LIQUID
+            )
+        ]
+        perception_graph_as_digraph.remove_nodes_from(nodes_to_remove)
+
+        # We then turn this DiGraph representation into a PerceptionGraphPattern
+        return PerceptionGraphPattern.from_graph(
+            perception_graph=PerceptionGraph(perception_graph_as_digraph)
+        ).perception_graph_pattern
 
     def __len__(self) -> int:
         return len(self._graph)
