@@ -179,6 +179,11 @@ def _make_objects_with_colors_curriculum() -> Phase1InstanceGroup:
 
 
 def _make_multiple_objects_curriculum() -> Phase1InstanceGroup:
+    """
+    We are deferring handling numeric quantifiers until Phase 2,
+    so this curriculum is not actually executed in Phase 1.
+    """
+
     def build_object_multiples_situations(
         ontology: Ontology, *, samples_per_object: int = 3, chooser: RandomChooser
     ) -> Iterable[HighLevelSemanticsSituation]:
@@ -1523,7 +1528,9 @@ def build_gaila_phase1_object_curriculum() -> Sequence[Phase1InstanceGroup]:
     """
     return [
         _make_each_object_by_itself_curriculum(),
-        _make_multiple_objects_curriculum(),
+        #     We are deferring handling numeric quantifiers until Phase 2,
+        #     so this curriculum is not actually executed in Phase 1.
+        # _make_multiple_objects_curriculum(),
         _make_object_on_ground_curriculum(),
     ]
 
