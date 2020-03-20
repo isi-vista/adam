@@ -244,15 +244,20 @@ def _make_object_on_ground_curriculum() -> Phase1InstanceGroup:
     )
 
 
+def _x_has_y_template(
+    person: TemplateObjectVariable, has_object: TemplateObjectVariable
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        f"{person.handle}-has-{has_object.handle}",
+        salient_object_variables=[person, has_object],
+        asserted_always_relations=flatten_relations(has(person, has_object)),
+    )
+
+
 def _make_person_has_object_curriculum() -> Phase1InstanceGroup:
     person_0 = object_variable("person", PERSON)
     inanimate_object_0 = standard_object(
         "inanimate-object", INANIMATE_OBJECT, required_properties=[PERSON_CAN_HAVE]
-    )
-    person_has_object_template = Phase1SituationTemplate(
-        "person-has-object",
-        salient_object_variables=[person_0, inanimate_object_0],
-        asserted_always_relations=[has(person_0, inanimate_object_0)],
     )
 
     return phase1_instances(
@@ -260,7 +265,7 @@ def _make_person_has_object_curriculum() -> Phase1InstanceGroup:
         chain(
             *[
                 sampled(
-                    person_has_object_template,
+                    _x_has_y_template(person_0, inanimate_object_0),
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     max_to_sample=100,
