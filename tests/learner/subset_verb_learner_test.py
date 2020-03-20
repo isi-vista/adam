@@ -124,12 +124,15 @@ def test_eat_simple(learner_factory):
 
 
 # DRINK
+@pytest.mark.skip
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_drink(learner_factory):
     learner = learner_factory()
     run_verb_test(learner, make_drink_template())
 
 
+# SIT
+@pytest.mark.skip
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_sit(learner_factory):
     for situation_template in make_sit_templates():
@@ -138,6 +141,7 @@ def test_sit(learner_factory):
 
 
 # PUT
+@pytest.mark.skip
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_put(learner_factory):
     for situation_template in make_put_templates():
@@ -146,6 +150,7 @@ def test_put(learner_factory):
 
 
 # PUSH
+@pytest.mark.skip
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_push(learner_factory):
     for situation_template in make_push_templates():
@@ -154,6 +159,7 @@ def test_push(learner_factory):
 
 
 # GO
+@pytest.mark.skip
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_go(learner_factory):
     goer = standard_object("goer", THING, required_properties=[ANIMATE])
@@ -176,6 +182,7 @@ def test_go(learner_factory):
 
 
 # COME
+@pytest.mark.skip
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_come(learner_factory):
     movee = standard_object("movee", required_properties=[SELF_MOVING])
@@ -216,6 +223,7 @@ def test_come(learner_factory):
 
 
 # TAKE
+@pytest.mark.skip
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_take(learner_factory):
     learner = learner_factory()
@@ -223,6 +231,7 @@ def test_take(learner_factory):
 
 
 # GIVE
+@pytest.mark.skip
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_give(learner_factory):
     giver = standard_object("giver_0", THING, required_properties=[ANIMATE])
@@ -244,6 +253,7 @@ def test_give(learner_factory):
 
 
 # SPIN
+@pytest.mark.skip
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_spin(learner_factory):
     for situation_template in make_spin_templates():
@@ -252,6 +262,7 @@ def test_spin(learner_factory):
 
 
 # FALL
+@pytest.mark.skip
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_fall(learner_factory):
     for situation_template in make_fall_templates():
@@ -260,6 +271,7 @@ def test_fall(learner_factory):
 
 
 # THROW
+@pytest.mark.skip
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_throw(learner_factory):
     for situation_template in make_throw_templates():
@@ -268,6 +280,7 @@ def test_throw(learner_factory):
 
 
 # MOVE
+@pytest.mark.skip
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_move(learner_factory):
     for situation_template in make_move_templates():
@@ -276,6 +289,7 @@ def test_move(learner_factory):
 
 
 # JUMP
+@pytest.mark.skip
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_jump(learner_factory):
     jumper = standard_object("jumper_0", THING, required_properties=[CAN_JUMP])
@@ -289,6 +303,7 @@ def test_jump(learner_factory):
 
 
 # ROLL
+@pytest.mark.skip
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_roll(learner_factory):
     for situation_template in make_roll_templates():
@@ -297,6 +312,7 @@ def test_roll(learner_factory):
 
 
 # FLY
+@pytest.mark.skip
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_fly(learner_factory):
     for situation_template in make_fly_templates():
