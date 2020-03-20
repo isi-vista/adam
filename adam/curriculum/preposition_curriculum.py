@@ -6,7 +6,7 @@ from more_itertools import flatten
 
 from adam.axes import HorizontalAxisOfObject, FacingAddresseeAxis
 from adam.curriculum.curriculum_utils import (
-    PHASE1_CHOOSER,
+    PHASE1_CHOOSER_FACTORY,
     make_background,
     standard_object,
     Phase1InstanceGroup,
@@ -229,7 +229,7 @@ def _make_on_training(
                                 else immutableset(),
                                 is_training=True,
                             ),
-                            chooser=PHASE1_CHOOSER,
+                            chooser=PHASE1_CHOOSER_FACTORY(),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
                             max_to_sample=num_samples,
                         )
@@ -275,7 +275,7 @@ def _make_beside_training(
                                 is_training=True,
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
-                            chooser=PHASE1_CHOOSER,
+                            chooser=PHASE1_CHOOSER_FACTORY(),
                             max_to_sample=num_samples,
                         )
                         for figure in figures
@@ -314,7 +314,7 @@ def _make_under_training(
                         is_distal=distance,
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER,
+                    chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples,
                 )
                 for figure in figures
@@ -352,7 +352,7 @@ def _make_over_training(
                         is_distal=distance,
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER,
+                    chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples,
                 )
                 for figure in figures
@@ -390,7 +390,7 @@ def _make_in_training(
                         is_training=True,
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER,
+                    chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples,
                 )
                 for figure in figures
@@ -437,7 +437,7 @@ def _make_behind_training(
                                 is_near=close,
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
-                            chooser=PHASE1_CHOOSER,
+                            chooser=PHASE1_CHOOSER_FACTORY(),
                             max_to_sample=num_samples,
                         )
                         for figure in figures
@@ -487,7 +487,7 @@ def _make_in_front_training(
                                 is_near=close,
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
-                            chooser=PHASE1_CHOOSER,
+                            chooser=PHASE1_CHOOSER_FACTORY(),
                             max_to_sample=num_samples,
                         )
                         for figure in figures
@@ -539,7 +539,7 @@ def _make_on_tests(
                                 else immutableset(),
                                 is_training=False,
                             ),
-                            chooser=PHASE1_CHOOSER,
+                            chooser=PHASE1_CHOOSER_FACTORY(),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
                             max_to_sample=num_samples,
                         )
@@ -583,7 +583,7 @@ def _make_beside_tests(
                                 is_training=False,
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
-                            chooser=PHASE1_CHOOSER,
+                            chooser=PHASE1_CHOOSER_FACTORY(),
                             max_to_sample=num_samples,
                         )
                         for figure in figures
@@ -626,7 +626,7 @@ def _make_under_tests(
                         is_distal=distance,
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER,
+                    chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples,
                 )
                 for figure in figures
@@ -663,7 +663,7 @@ def _make_over_tests(
                         is_distal=distance,
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER,
+                    chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples,
                 )
                 for figure in figures
@@ -701,7 +701,7 @@ def _make_in_tests(
                         is_training=False,
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER,
+                    chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples,
                 )
                 for figure in figures
@@ -747,7 +747,7 @@ def _make_behind_tests(
                                 is_near=close,
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
-                            chooser=PHASE1_CHOOSER,
+                            chooser=PHASE1_CHOOSER_FACTORY(),
                             max_to_sample=num_samples,
                         )
                         for figure in figures
@@ -796,7 +796,7 @@ def _make_in_front_tests(
                                 is_near=close,
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
-                            chooser=PHASE1_CHOOSER,
+                            chooser=PHASE1_CHOOSER_FACTORY(),
                             max_to_sample=num_samples,
                         )
                         for figure in figures

@@ -3,7 +3,7 @@ import random
 from itertools import chain
 from typing import Optional
 
-from adam.curriculum.phase1_curriculum import PHASE1_CHOOSER, phase1_instances
+from adam.curriculum.phase1_curriculum import PHASE1_CHOOSER_FACTORY, phase1_instances
 from adam.curriculum.pursuit_curriculum import make_simple_pursuit_curriculum
 from adam.language_specific.english.english_language_generator import IGNORE_COLORS
 from adam.learner import LearningExample
@@ -43,13 +43,17 @@ def run_subset_learner_for_object(
     obj_curriculum = phase1_instances(
         "all obj situations",
         situations=all_possible(
-            obj_template, chooser=PHASE1_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY
+            obj_template,
+            chooser=PHASE1_CHOOSER_FACTORY(),
+            ontology=GAILA_PHASE_1_ONTOLOGY,
         ),
     )
     test_obj_curriculum = phase1_instances(
         "obj test",
         situations=all_possible(
-            obj_template, chooser=PHASE1_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY
+            obj_template,
+            chooser=PHASE1_CHOOSER_FACTORY(),
+            ontology=GAILA_PHASE_1_ONTOLOGY,
         ),
     )
 
@@ -114,7 +118,7 @@ def test_pursuit_object_learner():
                 *[
                     all_possible(
                         obj_template,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                     )
                     for _ in range(50)
@@ -130,7 +134,9 @@ def test_pursuit_object_learner():
         )
         target_test_templates.extend(
             all_possible(
-                test_template, chooser=PHASE1_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY
+                test_template,
+                chooser=PHASE1_CHOOSER_FACTORY(),
+                ontology=GAILA_PHASE_1_ONTOLOGY,
             )
         )
     rng = random.Random()

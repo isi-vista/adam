@@ -5,7 +5,7 @@ from typing import Iterable
 import pytest
 
 from adam.curriculum.curriculum_utils import (
-    PHASE1_CHOOSER,
+    PHASE1_CHOOSER_FACTORY,
     phase1_instances,
     standard_object,
 )
@@ -65,9 +65,9 @@ def run_verb_test(learner, situation_template):
             *[
                 sampled(
                     situation_template,
-                    max_to_sample=25,
+                    max_to_sample=10,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER,
+                    chooser=PHASE1_CHOOSER_FACTORY(),
                 )
             ]
         ),
@@ -80,7 +80,7 @@ def run_verb_test(learner, situation_template):
                     situation_template,
                     max_to_sample=1,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER,
+                    chooser=PHASE1_CHOOSER_FACTORY(),
                 )
             ]
         ),
@@ -106,6 +106,7 @@ def run_verb_test(learner, situation_template):
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
 
 
+@pytest.mark.skip("too slow")
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_eat_simple(learner_factory):
     learner = learner_factory()
@@ -152,6 +153,7 @@ def test_eat_simple(learner_factory):
 #     run_verb_test(learner, drink_template)
 
 
+@pytest.mark.skip("too slow")
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_sit(learner_factory):
 

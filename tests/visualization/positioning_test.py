@@ -199,7 +199,7 @@ def test_in_region_constraint() -> None:
 
     in_region_relations = {box: [region]}
 
-    in_region_penalty = InRegionPenalty(obj_percept_to_aabb, {}, in_region_relations)
+    in_region_penalty = InRegionPenalty(obj_percept_to_aabb, {}, {}, in_region_relations)
 
     box_penalty = in_region_penalty(box, immutableset([region]))
     assert box_penalty > 0
@@ -221,7 +221,7 @@ def test_in_region_constraint() -> None:
 
     in_region_relations = {box2: [region]}
 
-    in_region_penalty = InRegionPenalty(obj_percept_to_aabb, {}, in_region_relations)
+    in_region_penalty = InRegionPenalty(obj_percept_to_aabb, {}, {}, in_region_relations)
 
     box_penalty = in_region_penalty(box2, immutableset([region]))
 
