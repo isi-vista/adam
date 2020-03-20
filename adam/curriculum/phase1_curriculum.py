@@ -275,39 +275,40 @@ def _make_person_has_object_curriculum() -> Phase1InstanceGroup:
     )
 
 
-def _make_fall_curriculum() -> Phase1InstanceGroup:
+def make_fall_templates() -> Iterable[Phase1SituationTemplate]:
     arbitary_object = object_variable("object_0", THING)
     ground = object_variable("ground_0", GROUND)
 
-    def _make_templates() -> Iterable[Phase1SituationTemplate]:
-        # Any Object Falling
-        for use_adverbial_path_modifier in (True, False):
-            yield Phase1SituationTemplate(
-                "object-falls",
-                salient_object_variables=[arbitary_object],
-                actions=[
-                    Action(
-                        action_type=FALL,
-                        argument_roles_to_fillers=[(THEME, arbitary_object)],
-                    )
-                ],
-                syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER]
-                if use_adverbial_path_modifier
-                else [],
-            )
-
-        # "ball fell on the ground"
+    # Any Object Falling
+    for use_adverbial_path_modifier in (True, False):
         yield Phase1SituationTemplate(
-            "falls-to-ground",
-            salient_object_variables=[arbitary_object, ground],
+            "object-falls",
+            salient_object_variables=[arbitary_object],
             actions=[
                 Action(
-                    action_type=FALL,
-                    argument_roles_to_fillers=[(THEME, arbitary_object)],
-                    during=DuringAction(at_some_point=[on(arbitary_object, ground)]),
+                    action_type=FALL, argument_roles_to_fillers=[(THEME, arbitary_object)]
                 )
             ],
+            syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER]
+            if use_adverbial_path_modifier
+            else [],
         )
+
+    # "ball fell on the ground"
+    yield Phase1SituationTemplate(
+        "falls-to-ground",
+        salient_object_variables=[arbitary_object, ground],
+        actions=[
+            Action(
+                action_type=FALL,
+                argument_roles_to_fillers=[(THEME, arbitary_object)],
+                during=DuringAction(at_some_point=[on(arbitary_object, ground)]),
+            )
+        ],
+    )
+
+
+def _make_fall_curriculum() -> Phase1InstanceGroup:
 
     return phase1_instances(
         "falling objects",
@@ -318,7 +319,7 @@ def _make_fall_curriculum() -> Phase1InstanceGroup:
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                 )
-                for template in _make_templates()
+                for template in make_fall_templates()
             ]
         ),
     )
@@ -496,7 +497,7 @@ def _make_object_in_other_object_curriculum() -> Phase1InstanceGroup:
     )
 
 
-def _make_fly_curriculum() -> Phase1InstanceGroup:
+def make_fly_templates() -> Iterable[Phase1SituationTemplate]:
     bird = standard_object("bird_0", BIRD)
     object_0 = standard_object("object_0", THING)
     object_with_space_under = standard_object(
@@ -530,7 +531,13 @@ def _make_fly_curriculum() -> Phase1InstanceGroup:
         for up in (True, False)
         for syntax_hints in syntax_hints_options
     ]
+    return bare_fly + [
+        _fly_under_template(bird, object_with_space_under, []),
+        _fly_over_template(bird, object_0, []),
+    ]
 
+
+def _make_fly_curriculum() -> Phase1InstanceGroup:
     return phase1_instances(
         "flying",
         chain(
@@ -541,33 +548,14 @@ def _make_fly_curriculum() -> Phase1InstanceGroup:
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                     )
-                    for template in bare_fly
+                    for template in make_fly_templates()
                 ]
-            ),
-            flatten(
-                [
-                    all_possible(
-                        _fly_under_template(bird, object_with_space_under, []),
-                        ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER_FACTORY(),
-                    )
-                ]
-            ),
-            flatten(
-                [
-                    sampled(
-                        _fly_over_template(bird, object_0, []),
-                        max_to_sample=25,
-                        ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER_FACTORY(),
-                    )
-                ]
-            ),
+            )
         ),
     )
 
 
-def _make_roll_curriculum() -> Phase1InstanceGroup:
+def make_roll_templates() -> Iterable[Phase1SituationTemplate]:
     animate_0 = standard_object("object_0", THING, required_properties=[ANIMATE])
     rollable_0 = standard_object(
         "object_1", INANIMATE_OBJECT, required_properties=[ROLLABLE]
@@ -623,7 +611,10 @@ def _make_roll_curriculum() -> Phase1InstanceGroup:
             bigger_than(animate_0, rollable_0),
         ],
     )
+    return [intransitive_roll, transitive_roll, transitive_roll_with_surface]
 
+
+def _make_roll_curriculum() -> Phase1InstanceGroup:
     return phase1_instances(
         "rolling",
         chain(
@@ -634,11 +625,7 @@ def _make_roll_curriculum() -> Phase1InstanceGroup:
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                 )
-                for situation in (
-                    intransitive_roll,
-                    transitive_roll,
-                    transitive_roll_with_surface,
-                )
+                for situation in make_roll_templates()
             ]
         ),
     )
@@ -703,29 +690,33 @@ def _make_speaker_addressee_curriculum() -> Phase1InstanceGroup:
     )
 
 
+def make_jump_templates() -> Iterable[Phase1SituationTemplate]:
+    jumper = standard_object("jumper_0", THING, required_properties=[CAN_JUMP])
+
+    # "A person jumps"
+    for use_adverbial_path_modifier in (True, False):
+        yield Phase1SituationTemplate(
+            "jump-on-ground",
+            salient_object_variables=[jumper],
+            actions=[
+                Action(
+                    JUMP,
+                    argument_roles_to_fillers=[(AGENT, jumper)],
+                    auxiliary_variable_bindings=[
+                        (JUMP_INITIAL_SUPPORTER_AUX, GROUND_OBJECT_TEMPLATE)
+                    ],
+                )
+            ],
+            syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER]
+            if use_adverbial_path_modifier
+            else [],
+        )
+
+
 def _make_jump_curriculum() -> Phase1InstanceGroup:
+
     jumper = standard_object("jumper_0", THING, required_properties=[CAN_JUMP])
     jumped_over = standard_object("jumped_over")
-
-    def _make_templates() -> Iterable[Phase1SituationTemplate]:
-        # "A person jumps"
-        for use_adverbial_path_modifier in (True, False):
-            yield Phase1SituationTemplate(
-                "jump-on-ground",
-                salient_object_variables=[jumper],
-                actions=[
-                    Action(
-                        JUMP,
-                        argument_roles_to_fillers=[(AGENT, jumper)],
-                        auxiliary_variable_bindings=[
-                            (JUMP_INITIAL_SUPPORTER_AUX, GROUND_OBJECT_TEMPLATE)
-                        ],
-                    )
-                ],
-                syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER]
-                if use_adverbial_path_modifier
-                else [],
-            )
 
     return phase1_instances(
         "jumping",
@@ -737,7 +728,7 @@ def _make_jump_curriculum() -> Phase1InstanceGroup:
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                     )
-                    for template in _make_templates()
+                    for template in make_jump_templates()
                 ]
             ),
             flatten(
@@ -754,17 +745,20 @@ def _make_jump_curriculum() -> Phase1InstanceGroup:
     )
 
 
-def _make_put_curriculum() -> Phase1InstanceGroup:
+def make_put_templates() -> Iterable[Phase1SituationTemplate]:
     putter = standard_object("putter_0", THING, required_properties=[ANIMATE])
     object_put = standard_object("object_0", required_properties=[INANIMATE])
     on_region_object = standard_object(
         "on_region_object", required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
     )
     in_region_object = standard_object("in_region_object", required_properties=[HOLLOW])
-    put_templates = [
+    return [
         _put_on_template(putter, object_put, on_region_object, []),
         _put_in_template(putter, object_put, in_region_object, []),
     ]
+
+
+def _make_put_curriculum() -> Phase1InstanceGroup:
 
     return phase1_instances(
         "putting",
@@ -777,7 +771,7 @@ def _make_put_curriculum() -> Phase1InstanceGroup:
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=25,
                     )
-                    for template in put_templates
+                    for template in make_put_templates()
                 ]
             )
         ),
@@ -824,12 +818,12 @@ def _make_put_on_speaker_addressee_body_part_curriculum() -> Phase1InstanceGroup
     )
 
 
-def _make_drink_curriculum() -> Phase1InstanceGroup:
+def make_drink_template() -> Phase1SituationTemplate:
     object_0 = standard_object("object_0", required_properties=[HOLLOW])
     liquid_0 = object_variable("liquid_0", required_properties=[LIQUID])
     person_0 = standard_object("person_0", PERSON)
 
-    drink_liquid = Phase1SituationTemplate(
+    return Phase1SituationTemplate(
         "drink",
         salient_object_variables=[liquid_0, person_0],
         actions=[
@@ -841,12 +835,15 @@ def _make_drink_curriculum() -> Phase1InstanceGroup:
         ],
     )
 
+
+def _make_drink_curriculum() -> Phase1InstanceGroup:
+
     return phase1_instances(
         "drinking",
         chain(
             *[
                 all_possible(
-                    drink_liquid,
+                    make_drink_template(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                 )
@@ -855,12 +852,12 @@ def _make_drink_curriculum() -> Phase1InstanceGroup:
     )
 
 
-def _make_eat_curriculum() -> Phase1InstanceGroup:
+def make_eat_template() -> Phase1SituationTemplate:
     object_to_eat = standard_object("object_0", required_properties=[EDIBLE])
     eater = standard_object("eater_0", THING, required_properties=[ANIMATE])
 
     # "Mom eats a cookie"
-    eat_object = Phase1SituationTemplate(
+    return Phase1SituationTemplate(
         "eat-object",
         salient_object_variables=[object_to_eat, eater],
         actions=[
@@ -870,6 +867,8 @@ def _make_eat_curriculum() -> Phase1InstanceGroup:
         ],
     )
 
+
+def _make_eat_curriculum() -> Phase1InstanceGroup:
     # TODO: "eat it up"
     # https://github.com/isi-vista/adam/issues/267
 
@@ -878,7 +877,7 @@ def _make_eat_curriculum() -> Phase1InstanceGroup:
         chain(
             *[
                 sampled(
-                    eat_object,
+                    make_eat_template(),
                     max_to_sample=25,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
@@ -888,7 +887,7 @@ def _make_eat_curriculum() -> Phase1InstanceGroup:
     )
 
 
-def _make_sit_curriculum() -> Phase1InstanceGroup:
+def make_sit_templates() -> Iterable[Phase1SituationTemplate]:
     sitter = standard_object("sitter_0", THING, required_properties=[ANIMATE])
     sit_surface = standard_object(
         "surface", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
@@ -897,73 +896,75 @@ def _make_sit_curriculum() -> Phase1InstanceGroup:
         "sitting-surface", INANIMATE_OBJECT, required_properties=[CAN_BE_SAT_ON_BY_PEOPLE]
     )
 
-    def _make_templates() -> Iterable[Phase1SituationTemplate]:
-        # we need two groups of templates because in general something can sit on
-        # anything bigger than itself which has a surface,
-        # but people also sit in chairs, etc., which are smaller than them.
-        sittee_to_contraints = (
-            (  # type: ignore
-                "-on-big-thing",
-                sit_surface,
-                [bigger_than(sit_surface, sitter)],
-            ),
-            ("-on-seat", seat, []),
-        )
+    # we need two groups of templates because in general something can sit on
+    # anything bigger than itself which has a surface,
+    # but people also sit in chairs, etc., which are smaller than them.
+    sittee_to_contraints = (
+        (  # type: ignore
+            "-on-big-thing",
+            sit_surface,
+            [bigger_than(sit_surface, sitter)],
+        ),
+        ("-on-seat", seat, []),
+    )
 
-        syntax_hints_options = (
-            ("default", []),  # type: ignore
-            ("adverbial-mod", [USE_ADVERBIAL_PATH_MODIFIER]),
-        )
+    syntax_hints_options = (
+        ("default", []),  # type: ignore
+        ("adverbial-mod", [USE_ADVERBIAL_PATH_MODIFIER]),
+    )
 
-        for (name, sittee, constraints) in sittee_to_contraints:
-            for (syntax_name, syntax_hints) in syntax_hints_options:
-                yield Phase1SituationTemplate(
-                    f"sit-intransitive-{name}-{syntax_name}",
-                    salient_object_variables=[sitter],
-                    actions=[
-                        Action(
-                            SIT,
-                            argument_roles_to_fillers=[(AGENT, sitter)],
-                            auxiliary_variable_bindings=[
-                                (
-                                    SIT_GOAL,
-                                    Region(
-                                        sittee,
-                                        direction=GRAVITATIONAL_UP,
-                                        distance=EXTERIOR_BUT_IN_CONTACT,
-                                    ),
+    for (name, sittee, constraints) in sittee_to_contraints:
+        for (syntax_name, syntax_hints) in syntax_hints_options:
+            yield Phase1SituationTemplate(
+                f"sit-intransitive-{name}-{syntax_name}",
+                salient_object_variables=[sitter],
+                actions=[
+                    Action(
+                        SIT,
+                        argument_roles_to_fillers=[(AGENT, sitter)],
+                        auxiliary_variable_bindings=[
+                            (
+                                SIT_GOAL,
+                                Region(
+                                    sittee,
+                                    direction=GRAVITATIONAL_UP,
+                                    distance=EXTERIOR_BUT_IN_CONTACT,
                                 ),
-                                (SIT_THING_SAT_ON, sittee),
-                            ],
-                        )
-                    ],
-                    constraining_relations=constraints,
-                    syntax_hints=syntax_hints,
-                )
+                            ),
+                            (SIT_THING_SAT_ON, sittee),
+                        ],
+                    )
+                ],
+                constraining_relations=constraints,
+                syntax_hints=syntax_hints,
+            )
 
-                yield Phase1SituationTemplate(
-                    f"sit-transitive-{name}-{syntax_name}",
-                    salient_object_variables=[sitter, sittee],
-                    actions=[
-                        Action(
-                            SIT,
-                            argument_roles_to_fillers=[
-                                (AGENT, sitter),
-                                (
-                                    GOAL,
-                                    Region(
-                                        sittee,
-                                        direction=GRAVITATIONAL_UP,
-                                        distance=EXTERIOR_BUT_IN_CONTACT,
-                                    ),
+            yield Phase1SituationTemplate(
+                f"sit-transitive-{name}-{syntax_name}",
+                salient_object_variables=[sitter, sittee],
+                actions=[
+                    Action(
+                        SIT,
+                        argument_roles_to_fillers=[
+                            (AGENT, sitter),
+                            (
+                                GOAL,
+                                Region(
+                                    sittee,
+                                    direction=GRAVITATIONAL_UP,
+                                    distance=EXTERIOR_BUT_IN_CONTACT,
                                 ),
-                            ],
-                            auxiliary_variable_bindings=[(SIT_THING_SAT_ON, sittee)],
-                        )
-                    ],
-                    constraining_relations=constraints,
-                    syntax_hints=syntax_hints,
-                )
+                            ),
+                        ],
+                        auxiliary_variable_bindings=[(SIT_THING_SAT_ON, sittee)],
+                    )
+                ],
+                constraining_relations=constraints,
+                syntax_hints=syntax_hints,
+            )
+
+
+def _make_sit_curriculum() -> Phase1InstanceGroup:
 
     return phase1_instances(
         "sitting",
@@ -974,18 +975,18 @@ def _make_sit_curriculum() -> Phase1InstanceGroup:
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                 )
-                for situation_templates in _make_templates()
+                for situation_templates in make_sit_templates()
             ]
         ),
     )
 
 
-def _make_take_curriculum() -> Phase1InstanceGroup:
+def make_take_template() -> Phase1SituationTemplate:
     taker = standard_object("taker_0", THING, required_properties=[ANIMATE])
     object_taken = standard_object("object_taken_0", required_properties=[INANIMATE])
 
     # X puts Y on Z
-    take_template = Phase1SituationTemplate(
+    return Phase1SituationTemplate(
         "take",
         salient_object_variables=[taker, object_taken],
         actions=[
@@ -996,12 +997,15 @@ def _make_take_curriculum() -> Phase1InstanceGroup:
         constraining_relations=[bigger_than(taker, object_taken)],
     )
 
+
+def _make_take_curriculum() -> Phase1InstanceGroup:
+
     return phase1_instances(
         "taking",
         chain(
             *[
                 sampled(
-                    take_template,
+                    make_take_template(),
                     max_to_sample=25,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -1011,7 +1015,7 @@ def _make_take_curriculum() -> Phase1InstanceGroup:
     )
 
 
-def _make_move_curriculum() -> Phase1InstanceGroup:
+def make_move_templates() -> Iterable[Phase1SituationTemplate]:
     self_mover_0 = standard_object(
         "self-mover_0", THING, required_properties=[SELF_MOVING]
     )
@@ -1051,6 +1055,10 @@ def _make_move_curriculum() -> Phase1InstanceGroup:
         ],
         constraining_relations=[bigger_than(other_mover_0, movee_0)],
     )
+    return [bare_move_template, transitive_move_template]
+
+
+def _make_move_curriculum() -> Phase1InstanceGroup:
 
     return phase1_instances(
         "move",
@@ -1062,13 +1070,13 @@ def _make_move_curriculum() -> Phase1InstanceGroup:
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                 )
-                for situation in (bare_move_template, transitive_move_template)
+                for situation in make_move_templates()
             ]
         ),
     )
 
 
-def _make_spin_curriculum() -> Phase1InstanceGroup:
+def make_spin_templates() -> Iterable[Phase1SituationTemplate]:
     self_turner = standard_object("self-spinner_0", THING, required_properties=[ANIMATE])
 
     other_spinner = standard_object("spinner_0", THING, required_properties=[ANIMATE])
@@ -1090,7 +1098,10 @@ def _make_spin_curriculum() -> Phase1InstanceGroup:
         ],
         constraining_relations=[bigger_than(other_spinner, spinee)],
     )
+    return [bare_spin_template, transitive_spin_template]
 
+
+def _make_spin_curriculum() -> Phase1InstanceGroup:
     return phase1_instances(
         "spin",
         chain(
@@ -1101,20 +1112,16 @@ def _make_spin_curriculum() -> Phase1InstanceGroup:
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                 )
-                for situation in (bare_spin_template, transitive_spin_template)
+                for situation in make_spin_templates()
             ]
         ),
     )
 
 
-def _make_go_curriculum() -> Phase1InstanceGroup:
+def make_go_templates() -> Iterable[Phase1SituationTemplate]:
     goer = standard_object("goer", THING, required_properties=[ANIMATE])
     goal_reference = standard_object("go-goal", THING)
     in_goal_reference = standard_object("go-in-goal", THING, required_properties=[HOLLOW])
-    under_goal_reference = standard_object(
-        "go-under-goal", THING, required_properties=[HAS_SPACE_UNDER]
-    )
-
     bare_go = Phase1SituationTemplate(
         "bare-go",
         salient_object_variables=[goer],
@@ -1130,6 +1137,14 @@ def _make_go_curriculum() -> Phase1InstanceGroup:
     )
 
     go_in = _go_in_template(goer, in_goal_reference, [])
+    return [bare_go, go_in]
+
+
+def _make_go_curriculum() -> Phase1InstanceGroup:
+    goer = standard_object("goer", THING, required_properties=[ANIMATE])
+    under_goal_reference = standard_object(
+        "go-under-goal", THING, required_properties=[HAS_SPACE_UNDER]
+    )
 
     return phase1_instances(
         "go",
@@ -1142,7 +1157,7 @@ def _make_go_curriculum() -> Phase1InstanceGroup:
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                     )
-                    for situation in (bare_go, go_in)
+                    for situation in make_go_templates()
                 ]
             ),
             flatten(
@@ -1162,7 +1177,7 @@ def _make_go_curriculum() -> Phase1InstanceGroup:
     )
 
 
-def _make_push_curriculum() -> Phase1InstanceGroup:
+def make_push_templates() -> Iterable[Phase1SituationTemplate]:
     pusher = standard_object("pusher", THING, required_properties=[ANIMATE])
     pushee = standard_object("pushee", INANIMATE_OBJECT)
     push_surface = standard_object(
@@ -1212,6 +1227,10 @@ def _make_push_curriculum() -> Phase1InstanceGroup:
         ],
         constraining_relations=[bigger_than(push_surface, pusher)],
     )
+    return [push_unexpressed_goal, push_unexpressed_goal_expressed_surface]
+
+
+def _make_push_curriculum() -> Phase1InstanceGroup:
 
     return phase1_instances(
         "pushing",
@@ -1223,16 +1242,13 @@ def _make_push_curriculum() -> Phase1InstanceGroup:
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                 )
-                for situation in (
-                    push_unexpressed_goal,
-                    push_unexpressed_goal_expressed_surface,
-                )
+                for situation in make_push_templates()
             ]
         ),
     )
 
 
-def _make_throw_curriculum() -> Phase1InstanceGroup:
+def make_throw_templates() -> Iterable[Phase1SituationTemplate]:
     thrower = standard_object("thrower_0", THING, required_properties=[ANIMATE])
     object_thrown = standard_object("object_0", required_properties=[INANIMATE])
     implicit_goal_reference = standard_object("implicit_throw_goal_object", BOX)
@@ -1315,31 +1331,14 @@ def _make_throw_curriculum() -> Phase1InstanceGroup:
         )
         for is_up in (True, False)
     ]
+    return throw_up_down_templates + [throw_template] + [throw_on_ground_template]
+
+
+def _make_throw_curriculum() -> Phase1InstanceGroup:
 
     return phase1_instances(
         "throwing",
         chain(
-            flatten(
-                [
-                    sampled(
-                        throw_on_ground_template,
-                        max_to_sample=25,
-                        chooser=PHASE1_CHOOSER_FACTORY(),
-                        ontology=GAILA_PHASE_1_ONTOLOGY,
-                    )
-                ]
-            ),
-            flatten(
-                [
-                    sampled(
-                        throw_template,
-                        max_to_sample=25,
-                        chooser=PHASE1_CHOOSER_FACTORY(),
-                        ontology=GAILA_PHASE_1_ONTOLOGY,
-                    )
-                ]
-            ),
-            # up, down
             flatten(
                 [
                     sampled(
@@ -1348,9 +1347,9 @@ def _make_throw_curriculum() -> Phase1InstanceGroup:
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                     )
-                    for template in throw_up_down_templates
+                    for template in make_throw_templates()
                 ]
-            ),
+            )
         ),
     )
 
