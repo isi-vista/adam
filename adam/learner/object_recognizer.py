@@ -2,6 +2,8 @@ import logging
 from itertools import chain
 from typing import Iterable, List, Mapping, Set, Tuple
 
+from contexttimer import Timer
+
 from attr import attrib, attrs
 from attr.validators import deep_iterable, deep_mapping, instance_of
 from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
@@ -97,6 +99,9 @@ def _sort_mapping_by_pattern_complexity(
     )
 
 
+cumulative_millis_in_successful_matches_ms = 0
+cumulative_millis_in_failed_matches_ms = 0
+
 @attrs(frozen=True)
 class ObjectRecognizer:
     """
@@ -170,6 +175,9 @@ class ObjectRecognizer:
         This is useful as a pre-processing step
         before prepositional and verbal learning experiments.
         """
+        global cumulative_millis_in_successful_matches_ms
+        global cumulative_millis_in_failed_matches_ms
+
         matched_object_nodes: List[Tuple[Tuple[str, ...], MatchedObjectNode]] = []
         graph_to_return = perception_graph
         is_dynamic = perception_graph.dynamic
@@ -180,8 +188,14 @@ class ObjectRecognizer:
             object_names_to_patterns = self._object_names_to_static_patterns
 
         for (description, pattern) in object_names_to_patterns.items():
-            matcher = pattern.matcher(graph_to_return, matching_objects=True)
-            pattern_match = first(matcher.matches(use_lookahead_pruning=True), None)
+            with Timer(factor=1000) as t:
+                matcher = pattern.matcher(graph_to_return, matching_objects=True)
+                pattern_match = first(matcher.matches(use_lookahead_pruning=True), None)
+            if pattern_match:
+                cumulative_millis_in_successful_matches_ms += t.elapsed
+            else:
+                cumulative_millis_in_failed_matches_ms += t.elapsed
+
             # It's important not to simply iterate over pattern matches
             # because they might overlap, or be variants of the same match
             # (e.g. permutations of how table legs match)
@@ -199,6 +213,9 @@ class ObjectRecognizer:
                 "Object recognizer recognized: %s",
                 [description for (description, _) in matched_object_nodes],
             )
+        logging.info("object matching: ms in success: %s, ms in failed: %s",
+                     cumulative_millis_in_successful_matches_ms,
+                     cumulative_millis_in_failed_matches_ms)
         return PerceptionGraphFromObjectRecognizer(graph_to_return, matched_object_nodes)
 
     def match_objects_with_language(
