@@ -393,7 +393,7 @@ def test_subset_preposition_has_learner():
         "Has Unit Train",
         situations=sampled(
             _x_has_y_template(person, inanimate_object),
-            chooser=PHASE1_CHOOSER,
+            chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=2,
         ),
@@ -403,7 +403,7 @@ def test_subset_preposition_has_learner():
         "Has Unit Test",
         situations=sampled(
             _x_has_y_template(person, ball),
-            chooser=PHASE1_CHOOSER,
+            chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
         ),
