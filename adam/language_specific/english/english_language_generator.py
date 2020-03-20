@@ -402,7 +402,12 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     pass
                 else:
                     # otherwise, we realize it as the verb "has"
-                    self._translate_relation_to_verb(relation)
+                    if IGNORE_HAS_AS_VERB in self.situation.syntax_hints:
+                        # If the user explicitly states not to translate `has`
+                        # to a verb, we don't want to do this
+                        pass
+                    else:
+                        self._translate_relation_to_verb(relation)
             elif relation.relation_type == IN_REGION:
                 prepositional_modifier = self.relation_to_prepositional_modifier(
                     action, relation
@@ -929,3 +934,4 @@ GAILA_PHASE_1_LANGUAGE_GENERATOR = SimpleRuleBasedEnglishLanguageGenerator(
 USE_ADVERBIAL_PATH_MODIFIER = "USE_ADVERBIAL_PATH_MODIFIER"
 PREFER_DITRANSITIVE = "PREFER_DITRANSITIVE"
 IGNORE_COLORS = "IGNORE_COLORS"
+IGNORE_HAS_AS_VERB = "IGNORE_HAS_AS_VERB"
