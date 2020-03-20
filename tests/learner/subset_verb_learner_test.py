@@ -24,7 +24,7 @@ from adam.curriculum.phase1_curriculum import (
     make_jump_templates,
     make_fly_templates,
     make_roll_templates,
-)
+    make_give_templates)
 from adam.learner import LearningExample
 from adam.learner.verbs import SubsetVerbLearner
 from adam.ontology import THING, IS_SPEAKER
@@ -231,25 +231,12 @@ def test_take(learner_factory):
 
 
 # GIVE
-@pytest.mark.skip
+# @pytest.mark.skip
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_give(learner_factory):
-    giver = standard_object("giver_0", THING, required_properties=[ANIMATE])
-    object_given = standard_object("object_given_0", required_properties=[INANIMATE])
-
-    # X puts Y on Z
-    give_template = Phase1SituationTemplate(
-        "give",
-        salient_object_variables=[giver, object_given],
-        actions=[
-            Action(
-                GIVE, argument_roles_to_fillers=[(AGENT, giver), (THEME, object_given)]
-            )
-        ],
-        constraining_relations=[bigger_than(giver, object_given)],
-    )
-    learner = learner_factory()
-    run_verb_test(learner, give_template)
+    for situation_template in make_give_templates():
+        learner = learner_factory()
+        run_verb_test(learner, situation_template)
 
 
 # SPIN
