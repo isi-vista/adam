@@ -185,7 +185,7 @@ def curriculum_from_params(params: Parameters):
         return (build_gaila_phase1_attribute_curriculum(), [])
     elif curriculum_name == "m9-relations":
         return (build_gaila_phase1_relation_curriculum(), [])
-    elif curriculum_name == "m9-verbs":
+    elif curriculum_name == "m9-events":
         return (build_gaila_phase1_verb_curriculum(), [])
     else:
         raise RuntimeError("Can't happen")
