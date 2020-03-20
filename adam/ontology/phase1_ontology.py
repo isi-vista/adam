@@ -412,14 +412,16 @@ PERSON = OntologyNode(
 subtype(PERSON, THING)
 IS_MOM = OntologyNode("is-mom")
 subtype(IS_MOM, RECOGNIZED_PARTICULAR_PROPERTY)
-MOM = OntologyNode("mom", non_inheritable_properties=[IS_MOM, CAN_FILL_TEMPLATE_SLOT])
+MOM = OntologyNode("Mom", non_inheritable_properties=[IS_MOM, CAN_FILL_TEMPLATE_SLOT])
 subtype(MOM, PERSON)
 
 IS_DAD = OntologyNode("is-dad")
 subtype(IS_DAD, RECOGNIZED_PARTICULAR_PROPERTY)
-DAD = OntologyNode("dad", non_inheritable_properties=[IS_DAD, CAN_FILL_TEMPLATE_SLOT])
+DAD = OntologyNode("Dad", non_inheritable_properties=[IS_DAD, CAN_FILL_TEMPLATE_SLOT])
 subtype(DAD, PERSON)
 
+IS_BABY = OntologyNode("is-baby")
+subtype(IS_BABY, RECOGNIZED_PARTICULAR_PROPERTY)
 BABY = OntologyNode("baby", non_inheritable_properties=[CAN_FILL_TEMPLATE_SLOT])
 subtype(BABY, PERSON)
 

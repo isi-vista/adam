@@ -77,7 +77,9 @@ def learner_factory_from_params(
             graph_logger=graph_logger,
             # Eval hack! This is specific to the M6 ontology
             object_recognizer=ObjectRecognizer.for_ontology_types(
-                M6_PREPOSITION_CURRICULUM_OBJECTS, determiners=ENGLISH_DETERMINERS
+                M6_PREPOSITION_CURRICULUM_OBJECTS,
+                determiners=ENGLISH_DETERMINERS,
+                ontology=GAILA_PHASE_1_ONTOLOGY,
             ),
             ontology=GAILA_PHASE_1_ONTOLOGY,
         )

@@ -12,6 +12,7 @@ from vistautils.span import Span
 from adam.axes import GRAVITATIONAL_DOWN_TO_UP_AXIS, LEARNER_AXES, WORLD_AXES
 from adam.language import LinguisticDescription
 from adam.ontology import OntologyNode
+from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
     GAILA_PHASE_1_ONTOLOGY,
     PHASE_1_CURRICULUM_OBJECTS,
@@ -78,6 +79,24 @@ SHARED_WORLD_ITEMS = set(
 )
 
 
+# Used by ObjectRecognizer below.
+# See: https://github.com/isi-vista/adam/issues/648
+def _sort_mapping_by_pattern_complexity(
+    pairs
+) -> ImmutableDict[str, PerceptionGraphPattern]:
+    # we type: ignore because the proper typing of pairs is huge and mypy is going to screw it up
+    # anyway.
+    unsorted = immutabledict(pairs)  # type: ignore
+    return immutabledict(
+        (string, pattern)
+        for (string, pattern) in sorted(
+            unsorted.items(),
+            key=lambda item: len(item[1]._graph.nodes),  # pylint:disable=protected-access
+            reverse=True,
+        )
+    )
+
+
 @attrs(frozen=True)
 class ObjectRecognizer:
     """
@@ -121,17 +140,19 @@ class ObjectRecognizer:
 
     @staticmethod
     def for_ontology_types(
-        ontology_types: Iterable[OntologyNode], determiners: Iterable[str]
+        ontology_types: Iterable[OntologyNode],
+        determiners: Iterable[str],
+        ontology: Ontology,
     ) -> "ObjectRecognizer":
         return ObjectRecognizer(
-            object_names_to_static_patterns=immutabledict(
-                (
-                    obj_type.handle,
-                    PerceptionGraphPattern.from_schema(
-                        first(GAILA_PHASE_1_ONTOLOGY.structural_schemata(obj_type))
-                    ),
+            object_names_to_static_patterns=_sort_mapping_by_pattern_complexity(
+                immutabledict(
+                    (
+                        obj_type.handle,
+                        PerceptionGraphPattern.from_ontology_node(obj_type, ontology),
+                    )
+                    for obj_type in ontology_types
                 )
-                for obj_type in ontology_types
             ),
             determiners=determiners,
         )
