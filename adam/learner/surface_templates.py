@@ -117,6 +117,7 @@ class SurfaceTemplate:
                     element in self._determiner_prefix_slots
                     and len(filler_words) == 1
                     and filler_words[0][0].islower()
+                    and filler_words[0] not in MASS_NOUNS
                 ):
                     output_tokens.append("a")
                 output_tokens.extend(filler_words)
@@ -134,3 +135,7 @@ SLOT5 = SurfaceTemplateVariable("slot5")
 SLOT6 = SurfaceTemplateVariable("slot6")
 
 STANDARD_SLOT_VARIABLES = (SLOT1, SLOT2, SLOT3, SLOT4, SLOT5, SLOT6)
+
+# These nouns are hard-coded not to receive determiners
+# See https://github.com/isi-vista/adam/issues/498
+MASS_NOUNS = ["juice", "water"]

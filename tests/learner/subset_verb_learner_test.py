@@ -125,7 +125,6 @@ def test_eat_simple(learner_factory):
 
 
 # DRINK
-@pytest.mark.skip
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_drink(learner_factory):
     learner = learner_factory()
