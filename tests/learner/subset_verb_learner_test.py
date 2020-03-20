@@ -117,7 +117,7 @@ def run_verb_test(learner, situation_template):
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
 
 
-@pytest.mark.skip("too slow")
+#@pytest.mark.skip("too slow")
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_eat_simple(learner_factory):
     learner = learner_factory()
@@ -289,7 +289,7 @@ def test_move(learner_factory):
 
 
 # JUMP
-@pytest.mark.skip
+#@pytest.mark.skip
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_jump(learner_factory):
     jumper = standard_object("jumper_0", THING, required_properties=[CAN_JUMP])
