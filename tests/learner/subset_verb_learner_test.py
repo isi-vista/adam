@@ -132,7 +132,7 @@ def test_drink(learner_factory):
 
 
 # SIT
-@pytest.mark.skip
+# @pytest.mark.skip
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_sit(learner_factory):
     for situation_template in make_sit_templates():
