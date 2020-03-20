@@ -19,6 +19,7 @@ from adam.curriculum.curriculum_utils import (
 from adam.language_specific.english.english_language_generator import (
     PREFER_DITRANSITIVE,
     USE_ADVERBIAL_PATH_MODIFIER,
+    IGNORE_HAS_AS_VERB,
 )
 from adam.ontology import THING, IS_SPEAKER, IS_ADDRESSEE
 from adam.ontology.during import DuringAction
@@ -250,12 +251,18 @@ def _make_object_on_ground_curriculum() -> Phase1InstanceGroup:
 
 
 def _x_has_y_template(
-    person: TemplateObjectVariable, has_object: TemplateObjectVariable
+    person: TemplateObjectVariable,
+    has_object: TemplateObjectVariable,
+    *,
+    background: Iterable[TemplateObjectVariable] = immutableset(),
+    syntax_hints: Iterable[str] = immutableset(),
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
         f"{person.handle}-has-{has_object.handle}",
         salient_object_variables=[person, has_object],
         asserted_always_relations=flatten_relations(has(person, has_object)),
+        background_object_variables=background,
+        syntax_hints=syntax_hints,
     )
 
 
@@ -275,6 +282,36 @@ def _make_person_has_object_curriculum() -> Phase1InstanceGroup:
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     max_to_sample=100,
                 )
+            ]
+        ),
+    )
+
+
+def _make_my_your_object_curriculum(num_to_sample: int = 5) -> Phase1InstanceGroup:
+    person_0 = standard_object("speaker", PERSON, added_properties=[IS_SPEAKER])
+    person_1 = standard_object("addressee", PERSON, added_properties=[IS_ADDRESSEE])
+    inanimate_object = standard_object(
+        "object", INANIMATE_OBJECT, required_properties=[PERSON_CAN_HAVE]
+    )
+
+    owners = (person_0, person_1)
+
+    return phase1_instances(
+        "my-your-object",
+        chain(
+            *[
+                sampled(
+                    _x_has_y_template(
+                        person,
+                        inanimate_object,
+                        background=[person_0] if person == person_1 else [],
+                        syntax_hints=[IGNORE_HAS_AS_VERB],
+                    ),
+                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                    max_to_sample=num_to_sample,
+                )
+                for person in owners
             ]
         ),
     )
@@ -1539,7 +1576,7 @@ def build_gaila_phase1_attribute_curriculum() -> Sequence[Phase1InstanceGroup]:
     """
     One particular instantiation of the object-learning parts of the curriculum for GAILA Phase 1.
     """
-    return [_make_objects_with_colors_curriculum()]
+    return [_make_objects_with_colors_curriculum(), _make_my_your_object_curriculum()]
 
 
 def build_gaila_phase1_relation_curriculum() -> Sequence[Phase1InstanceGroup]:
