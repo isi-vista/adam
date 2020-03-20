@@ -30,7 +30,10 @@ from adam.learner.object_recognizer import ObjectRecognizer
 from adam.learner.prepositions import SubsetPrepositionLearner
 from adam.learner.pursuit import HypothesisLogger
 from adam.learner.objects import ObjectPursuitLearner, SubsetObjectLearner
-from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
+from adam.ontology.phase1_ontology import (
+    GAILA_PHASE_1_ONTOLOGY,
+    PHASE_1_CURRICULUM_OBJECTS,
+)
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     GAILA_M6_PERCEPTION_GENERATOR,
 )
@@ -88,7 +91,7 @@ def learner_factory_from_params(
 
     # Eval hack! This is specific to the Phase 1 ontology
     object_recognizer = ObjectRecognizer.for_ontology_types(
-        M6_PREPOSITION_CURRICULUM_OBJECTS,
+        PHASE_1_CURRICULUM_OBJECTS,
         determiners=ENGLISH_DETERMINERS,
         ontology=GAILA_PHASE_1_ONTOLOGY,
     )
@@ -105,7 +108,7 @@ def learner_factory_from_params(
         )
     elif learner_type == "preposition-subset":
         return lambda: SubsetPrepositionLearner(
-            graph_logger=graph_logger,
+            # graph_logger=graph_logger,
             object_recognizer=object_recognizer,
             ontology=GAILA_PHASE_1_ONTOLOGY,
         )
