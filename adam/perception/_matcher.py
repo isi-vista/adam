@@ -883,85 +883,104 @@ class GraphMatchingState(object):
             # Now we must update the other four vectors.
             # We will add only if it is not in there already!
             self.depth = len(GM.graph_node_to_pattern_node)
+            self_depth = self.depth
 
             # First we add the new nodes...
+            GM_graph = GM.graph
+            GM_graph_node_to_pattern_node = GM.graph_node_to_pattern_node
+            GM_graph_nodes_in_or_preceding_match = GM.graph_nodes_in_or_preceding_match
+
             for vector in (
-                GM.graph_nodes_in_or_preceding_match,
+                GM_graph_nodes_in_or_preceding_match,
                 GM.graph_nodes_in_or_succeeding_match,
             ):
                 if graph_node not in vector:
-                    vector[graph_node] = self.depth
+                    vector[graph_node] = self_depth
             for vector in (
                 GM.pattern_nodes_in_or_preceding_match,
                 GM.pattern_nodes_in_or_succeeding_match,
             ):
                 if pattern_node not in vector:
-                    vector[pattern_node] = self.depth
+                    vector[pattern_node] = self_depth
 
             # Now we add every other node...
 
             # Updates for T_1^{in}
             # we use immutableset to guarantee deterministic iteration
+            GM_graph_predecessors = GM_graph.predecessors
             new_nodes_0: ImmutableSet[Any] = immutableset(
                 flatten(
                     [
                         predecessor
-                        for predecessor in GM.graph.predecessors(node)
-                        if predecessor not in GM.graph_node_to_pattern_node
+                        for predecessor in GM_graph_predecessors(node)
+                        if predecessor not in GM_graph_node_to_pattern_node
                     ]
-                    for node in GM.graph_node_to_pattern_node
+                    for node in GM_graph_node_to_pattern_node
                 )
             )
             for node in new_nodes_0:
-                if node not in GM.graph_nodes_in_or_preceding_match:
-                    GM.graph_nodes_in_or_preceding_match[node] = self.depth
+                if node not in GM_graph_nodes_in_or_preceding_match:
+                    GM_graph_nodes_in_or_preceding_match[node] = self_depth
 
             # Updates for T_2^{in}
+            GM_pattern_predecessors = GM.pattern.predecessors
+            GM_pattern_node_to_graph_node = GM.pattern_node_to_graph_node
             new_nodes_1: ImmutableSet[Any] = immutableset(
                 flatten(
                     [
                         predecessor
-                        for predecessor in GM.pattern.predecessors(node)
-                        if predecessor not in GM.pattern_node_to_graph_node
+                        for predecessor in GM_pattern_predecessors(node)
+                        if predecessor not in GM_pattern_node_to_graph_node
                     ]
-                    for node in GM.pattern_node_to_graph_node
+                    for node in GM_pattern_node_to_graph_node
                 )
             )
+            GM_pattern_nodes_in_or_preceding_match = (
+                GM.pattern_nodes_in_or_preceding_match
+            )
             for node in new_nodes_1:
-                if node not in GM.pattern_nodes_in_or_preceding_match:
-                    GM.pattern_nodes_in_or_preceding_match[node] = self.depth
+                if node not in GM_pattern_nodes_in_or_preceding_match:
+                    GM_pattern_nodes_in_or_preceding_match[node] = self_depth
 
             # Updates for T_1^{out}
+            GM_graph = GM.graph
+            GM_graph_node_to_pattern_node = GM.graph_node_to_pattern_node
             new_nodes_2: ImmutableSet[Any] = immutableset(
                 flatten(
                     [
                         successor
-                        for successor in GM.graph.successors(node)
-                        if successor not in GM.graph_node_to_pattern_node
+                        for successor in GM_graph.successors(node)
+                        if successor not in GM_graph_node_to_pattern_node
                     ]
-                    for node in GM.graph_node_to_pattern_node
+                    for node in GM_graph_node_to_pattern_node
                 )
             )
 
+            GM_graph_nodes_in_or_succeeding_match = GM.graph_nodes_in_or_succeeding_match
             for node in new_nodes_2:
-                if node not in GM.graph_nodes_in_or_succeeding_match:
-                    GM.graph_nodes_in_or_succeeding_match[node] = self.depth
+                if node not in GM_graph_nodes_in_or_succeeding_match:
+                    GM_graph_nodes_in_or_succeeding_match[node] = self_depth
 
             # Updates for T_2^{out}
+            GM_pattern_successors = GM.pattern.successors
+            GM_pattern_node_to_graph_node = GM.pattern_node_to_graph_node
             new_nodes_3: ImmutableSet[Any] = immutableset(
                 flatten(
                     [
                         successor
-                        for successor in GM.pattern.successors(node)
-                        if successor not in GM.pattern_node_to_graph_node
+                        for successor in GM_pattern_successors(node)
+                        if successor not in GM_pattern_node_to_graph_node
                     ]
-                    for node in GM.pattern_node_to_graph_node
+                    for node in GM_pattern_node_to_graph_node
                 )
             )
 
+            GM_pattern_nodes_in_or_succeeding_match = (
+                GM.pattern_nodes_in_or_succeeding_match
+            )
             for node in new_nodes_3:
-                if node not in GM.pattern_nodes_in_or_succeeding_match:
-                    GM.pattern_nodes_in_or_succeeding_match[node] = self.depth
+                if node not in GM_pattern_nodes_in_or_succeeding_match:
+                    GM_pattern_nodes_in_or_succeeding_match[node] = self_depth
 
     def restore(self):
         """Deletes the DiGMState object and restores the class variables."""
