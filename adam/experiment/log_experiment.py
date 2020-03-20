@@ -3,6 +3,7 @@ from itertools import repeat
 from typing import Callable, Optional
 
 from adam.language_specific.english import ENGLISH_DETERMINERS
+from adam.learner.attributes import SubsetAttributeLearner
 from adam.learner.verbs import SubsetVerbLearner
 from vistautils.parameters import Parameters
 from vistautils.parameters_only_entrypoint import parameters_only_entry_point
@@ -75,7 +76,14 @@ def learner_factory_from_params(
     params: Parameters, graph_logger: Optional[HypothesisLogger]
 ) -> Callable[[], LanguageLearner]:  # type: ignore
     learner_type = params.string(
-        "learner", ["pursuit", "object-subset", "preposition-subset"]
+        "learner",
+        [
+            "pursuit",
+            "object-subset",
+            "preposition-subset",
+            "attribute-subset",
+            "verb-subset",
+        ],
     )
 
     # Eval hack! This is specific to the Phase 1 ontology
@@ -92,9 +100,9 @@ def learner_factory_from_params(
     elif learner_type == "object-subset":
         return lambda: SubsetObjectLearner(ontology=GAILA_PHASE_1_ONTOLOGY)
     elif learner_type == "attribute-subset":
-        raise RuntimeError("Add this after attribute learner is merged")
-        # return lambda: SubsetAttributeLearner(ontology=GAILA_PHASE_1_ONTOLOGY,
-        #                                      object_recognizer=object_recognizer)
+        return lambda: SubsetAttributeLearner(
+            ontology=GAILA_PHASE_1_ONTOLOGY, object_recognizer=object_recognizer
+        )
     elif learner_type == "preposition-subset":
         return lambda: SubsetPrepositionLearner(
             graph_logger=graph_logger,
