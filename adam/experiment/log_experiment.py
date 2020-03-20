@@ -9,7 +9,6 @@ from vistautils.parameters import Parameters
 from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 
 from adam.curriculum.m6_curriculum import (
-    M6_PREPOSITION_CURRICULUM_OBJECTS,
     M6_PREPOSITION_SUBCURRICULUM_GENERATORS,
     instantiate_subcurricula,
     make_m6_curriculum,
