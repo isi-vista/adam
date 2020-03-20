@@ -367,37 +367,43 @@ def _make_fall_curriculum() -> Phase1InstanceGroup:
     )
 
 
-def _make_transfer_of_possession_curriculum() -> Phase1InstanceGroup:
+def make_give_templates() -> Iterable[Phase1SituationTemplate]:
     action_variable("transfer-verb", with_properties=[TRANSFER_OF_POSSESSION])
     giver = object_variable("person_0", PERSON)
     recipient = object_variable("person_1", PERSON)
     given_object = standard_object("give_object_0")
+
+    for prefer_ditransitive in (True, False):
+        yield Phase1SituationTemplate(
+            "transfer-of-possession",
+            salient_object_variables=[giver, recipient, given_object],
+            actions=[
+                Action(
+                    GIVE,
+                    argument_roles_to_fillers=[
+                        (AGENT, giver),
+                        (GOAL, recipient),
+                        (THEME, given_object),
+                    ],
+                )
+            ],
+            syntax_hints=[PREFER_DITRANSITIVE] if prefer_ditransitive else [],
+        )
+
+
+def _make_transfer_of_possession_curriculum() -> Phase1InstanceGroup:
 
     return phase1_instances(
         "transfer-of-possession",
         chain(
             *[
                 sampled(
-                    Phase1SituationTemplate(
-                        "transfer-of-possession",
-                        salient_object_variables=[giver, recipient, given_object],
-                        actions=[
-                            Action(
-                                GIVE,
-                                argument_roles_to_fillers=[
-                                    (AGENT, giver),
-                                    (GOAL, recipient),
-                                    (THEME, given_object),
-                                ],
-                            )
-                        ],
-                        syntax_hints=[PREFER_DITRANSITIVE] if prefer_ditransitive else [],
-                    ),
+                    template,
                     max_to_sample=100,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                 )
-                for prefer_ditransitive in (True, False)
+                for template in make_give_templates()
             ]
         ),
     )
