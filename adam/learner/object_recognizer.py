@@ -189,8 +189,8 @@ class ObjectRecognizer:
                 graph_to_return = self._replace_match_with_object_graph_node(
                     graph_to_return, pattern_match, matched_object_nodes, description
                 )
-                matcher = pattern.matcher(graph_to_return, matching_objects=True)
-                pattern_match = first(matcher.matches(use_lookahead_pruning=True), None)
+                # matcher = pattern.matcher(graph_to_return, matching_objects=True)
+                # pattern_match = first(matcher.matches(use_lookahead_pruning=True), None)
                 # TODO: we currently match each object type only once!
                 # https://github.com/isi-vista/adam/issues/627
                 break

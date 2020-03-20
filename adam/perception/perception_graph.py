@@ -436,12 +436,20 @@ class PerceptionGraph(PerceptionGraphProtocol):
                         ),
                     )
                 else:
-                    raise RuntimeError(
+                    _dynamic_digraph.edges[source, target][
+                        "label"
+                    ] = TemporallyScopedEdgeLabel(
+                        after_label.attribute,
+                        temporal_specifiers=chain(after_label.temporal_specifiers),
+                    )
+                    logging.warning(
                         f"We currently don't know how to handle a change in label "
                         f"on an edge between the before frame and the after frame."
                         f"Source={source}; Target={target}; "
                         f"before label={before_label.attribute}; "
-                        f"after label={after_label.attribute}"
+                        f"after label={after_label.attribute}."
+                        f"As a hack, we delete the 'before' and preserve the 'after'."
+                        f"See https://github.com/isi-vista/adam/issues/666"
                     )
             else:
                 # This edge does not also appear in the first frame,
