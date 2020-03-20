@@ -113,3 +113,4 @@ parameters/root.params
 
 # byproduct of visualization tests
 tests/renders
+renders
