@@ -47,7 +47,7 @@ from immutablecollections.converter_utils import (
     _to_immutableset,
     _to_tuple,
 )
-from more_itertools import first, pairwise
+from more_itertools import first, pairwise, ilen
 from networkx import DiGraph, connected_components, is_isomorphic, set_node_attributes
 from typing_extensions import Protocol
 from vistautils.misc_utils import str_list_limited
@@ -490,6 +490,11 @@ class PerceptionGraph(PerceptionGraphProtocol):
     ) -> "PerceptionGraph":
         return PerceptionGraph(subgraph(self._graph, nodes_to_keep), dynamic=self.dynamic)
 
+    def count_nodes_matching(
+        self, node_predicate: Callable[["PerceptionGraphNode"], bool]
+    ):
+        return ilen(filter(node_predicate, self._graph.nodes))
+
     def render_to_file(  # pragma: no cover
         self,
         graph_name: str,
@@ -885,6 +890,11 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
             wrapped_graph.edges[source, target]["predicate"] = temporally_scoped_predicate
 
         return PerceptionGraphPattern(dynamic=True, graph=wrapped_graph)
+
+    def count_nodes_matching(
+        self, node_predicate: Callable[["NodePredicate"], bool]
+    ) -> int:
+        return ilen(filter(node_predicate, self._graph.nodes))
 
     @staticmethod
     def _translate_graph(
