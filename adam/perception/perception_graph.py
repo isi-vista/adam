@@ -34,6 +34,7 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    AbstractSet,
 )
 from uuid import uuid4
 
@@ -483,6 +484,11 @@ class PerceptionGraph(PerceptionGraphProtocol):
             wrapped_graph.edges[source, target]["label"] = temporally_scoped_label
 
         return PerceptionGraph(dynamic=True, graph=wrapped_graph)
+
+    def subgraph_by_nodes(
+        self, nodes_to_keep: AbstractSet[PerceptionGraphNode]
+    ) -> "PerceptionGraph":
+        return PerceptionGraph(subgraph(self._graph, nodes_to_keep), dynamic=self.dynamic)
 
     def render_to_file(  # pragma: no cover
         self,
