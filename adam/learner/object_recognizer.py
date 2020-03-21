@@ -31,6 +31,7 @@ from adam.perception.perception_graph import (
     RelationTypeIsPredicate,
     ENTIRE_SCENE,
     TemporallyScopedEdgeLabel,
+    AnyObjectPerception,
 )
 
 _LIST_OF_PERCEIVED_PATTERNS = immutableset(
@@ -135,6 +136,10 @@ class ObjectRecognizer:
     This is a hack to handle determiners.
     See https://github.com/isi-vista/adam/issues/498
     """
+    _object_name_to_num_subobjects: ImmutableDict[str, int] = attrib(init=False)
+    """
+    Used for a performance optimization in match_objects.
+    """
 
     def __attrs_post_init__(self) -> None:
         non_lowercase_determiners = [
@@ -196,7 +201,17 @@ class ObjectRecognizer:
         candidate_object_subgraphs = self.extract_candidate_objects(perception_graph)
 
         for candidate_object_graph in candidate_object_subgraphs:
+            num_object_nodes = candidate_object_graph.count_nodes_matching(
+                lambda node: isinstance(node, ObjectPerception)
+            )
             for (description, pattern) in object_names_to_patterns.items():
+                # As an optimization, we count how many sub-object nodes
+                # are in the graph and the pattern.
+                # If they aren't the same, the match is impossible
+                # and we can bail out early.
+                if num_object_nodes != self._object_name_to_num_subobjects[description]:
+                    continue
+
                 with Timer(factor=1000) as t:
                     matcher = pattern.matcher(
                         candidate_object_graph, matching_objects=True
@@ -528,4 +543,16 @@ class ObjectRecognizer:
                 description,
                 static_pattern,
             ) in self._object_names_to_static_patterns.items()
+        )
+
+    @_object_name_to_num_subobjects.default
+    def _init_patterns_to_num_subobjects(self) -> ImmutableDict[str, int]:
+        return immutabledict(
+            (
+                object_name,
+                pattern.count_nodes_matching(
+                    lambda node: isinstance(node, AnyObjectPerception)
+                ),
+            )
+            for (object_name, pattern) in self._object_names_to_static_patterns.items()
         )
