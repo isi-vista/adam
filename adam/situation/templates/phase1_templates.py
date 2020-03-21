@@ -373,6 +373,9 @@ class _Phase1SituationTemplateGenerator(
     _variable_assigner: "_VariableAssigner" = attrib(kw_only=True)
     # can be set to something besides GAILA_PHASE_1_ONTOLOGY for testing purposes
     ontology: Ontology = attrib(default=GAILA_PHASE_1_ONTOLOGY, kw_only=True)
+    block_multiple_objects_of_the_same_type = attrib(
+        default=True, validator=instance_of(bool), kw_only=True
+    )
 
     def generate_situations(
         self,
@@ -421,6 +424,17 @@ class _Phase1SituationTemplateGenerator(
                     object_var_to_instantiations
                 ):
                     continue
+
+                if self.block_multiple_objects_of_the_same_type:
+                    object_instantiations_ontology_nodes = [
+                        object_instantiation.ontology_node
+                        for object_instantiation in object_var_to_instantiations.values()
+                    ]
+                    if len(set(object_instantiations_ontology_nodes)) != len(
+                        object_instantiations_ontology_nodes
+                    ):
+                        # There must be two objects of the same ontology type.
+                        continue
 
                 # use them to instantiate the entire situation
                 situation = self._instantiate_situation(
