@@ -1,9 +1,10 @@
 import logging
 from itertools import chain
-from typing import Iterable, List, Mapping, Set, Tuple
+from typing import Iterable, List, Mapping, Set, Tuple, Sequence
 
 from contexttimer import Timer
 
+from adam.perception import ObjectPerception, GROUND_PERCEPTION, LEARNER_PERCEPTION
 from attr import attrib, attrs
 from attr.validators import deep_iterable, deep_mapping, instance_of
 from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
@@ -18,6 +19,7 @@ from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
     GAILA_PHASE_1_ONTOLOGY,
     PHASE_1_CURRICULUM_OBJECTS,
+    PART_OF,
 )
 from adam.perception.perception_graph import (
     LanguageAlignedPerception,
@@ -28,6 +30,7 @@ from adam.perception.perception_graph import (
     PerceptionGraphPatternMatch,
     RelationTypeIsPredicate,
     ENTIRE_SCENE,
+    TemporallyScopedEdgeLabel,
 )
 
 _LIST_OF_PERCEIVED_PATTERNS = immutableset(
@@ -67,8 +70,9 @@ class PerceptionGraphFromObjectRecognizer:
         )
         if matched_object_nodes != described_matched_object_nodes:
             raise RuntimeError(
-                "A matched object node should be present in the graph"
-                "if and only if it is described"
+                f"A matched object node should be present in the graph"
+                f"if and only if it is described. Got matches objects "
+                f"{matched_object_nodes} but those described were {described_matched_object_nodes}"
             )
 
 
@@ -99,8 +103,9 @@ def _sort_mapping_by_pattern_complexity(
     )
 
 
-cumulative_millis_in_successful_matches_ms = 0
-cumulative_millis_in_failed_matches_ms = 0
+cumulative_millis_in_successful_matches_ms = 0  # pylint: disable=invalid-name
+cumulative_millis_in_failed_matches_ms = 0  # pylint: disable=invalid-name
+
 
 @attrs(frozen=True)
 class ObjectRecognizer:
@@ -175,6 +180,7 @@ class ObjectRecognizer:
         This is useful as a pre-processing step
         before prepositional and verbal learning experiments.
         """
+        # pylint: disable=global-statement,invalid-name
         global cumulative_millis_in_successful_matches_ms
         global cumulative_millis_in_failed_matches_ms
 
@@ -187,36 +193,130 @@ class ObjectRecognizer:
         else:
             object_names_to_patterns = self._object_names_to_static_patterns
 
-        for (description, pattern) in object_names_to_patterns.items():
-            with Timer(factor=1000) as t:
-                matcher = pattern.matcher(graph_to_return, matching_objects=True)
-                pattern_match = first(matcher.matches(use_lookahead_pruning=True), None)
-            if pattern_match:
-                cumulative_millis_in_successful_matches_ms += t.elapsed
-            else:
-                cumulative_millis_in_failed_matches_ms += t.elapsed
+        candidate_object_subgraphs = self.extract_candidate_objects(perception_graph)
 
-            # It's important not to simply iterate over pattern matches
-            # because they might overlap, or be variants of the same match
-            # (e.g. permutations of how table legs match)
-            while pattern_match:
-                graph_to_return = self._replace_match_with_object_graph_node(
-                    graph_to_return, pattern_match, matched_object_nodes, description
-                )
-                # matcher = pattern.matcher(graph_to_return, matching_objects=True)
-                # pattern_match = first(matcher.matches(use_lookahead_pruning=True), None)
-                # TODO: we currently match each object type only once!
-                # https://github.com/isi-vista/adam/issues/627
-                break
+        for candidate_object_graph in candidate_object_subgraphs:
+            for (description, pattern) in object_names_to_patterns.items():
+                with Timer(factor=1000) as t:
+                    matcher = pattern.matcher(
+                        candidate_object_graph, matching_objects=True
+                    )
+                    pattern_match = first(
+                        matcher.matches(use_lookahead_pruning=True), None
+                    )
+                if pattern_match:
+                    cumulative_millis_in_successful_matches_ms += t.elapsed
+                    graph_to_return = self._replace_match_with_object_graph_node(
+                        graph_to_return, pattern_match, matched_object_nodes, description
+                    )
+                    # We match each candidate objects against only one object type.
+                    # See https://github.com/isi-vista/adam/issues/627
+                    break
+                else:
+                    cumulative_millis_in_failed_matches_ms += t.elapsed
         if matched_object_nodes:
             logging.info(
                 "Object recognizer recognized: %s",
                 [description for (description, _) in matched_object_nodes],
             )
-        logging.info("object matching: ms in success: %s, ms in failed: %s",
-                     cumulative_millis_in_successful_matches_ms,
-                     cumulative_millis_in_failed_matches_ms)
+        logging.info(
+            "object matching: ms in success: %s, ms in failed: %s",
+            cumulative_millis_in_successful_matches_ms,
+            cumulative_millis_in_failed_matches_ms,
+        )
         return PerceptionGraphFromObjectRecognizer(graph_to_return, matched_object_nodes)
+
+    def extract_candidate_objects(
+        self, whole_scene_perception_graph: PerceptionGraph
+    ) -> Sequence[PerceptionGraph]:
+        """
+        Pulls out distinct objects from a scene.
+
+        We will attempt to recognize only these and will ignore other parts of the scene.
+        """
+        scene_digraph = whole_scene_perception_graph.copy_as_digraph()
+
+        def is_part_of_label(label) -> bool:
+            return label == PART_OF or (
+                isinstance(label, TemporallyScopedEdgeLabel)
+                and label.attribute == PART_OF
+            )
+
+        # We first identify root object nodes, which are object nodes with no part-of
+        # relationship with other object nodes.
+        def is_root_object_node(node) -> bool:
+            if isinstance(node, ObjectPerception):
+                for (_, _, edge_label) in scene_digraph.out_edges(node, data="label"):
+                    if is_part_of_label(edge_label):
+                        # This object node is part of another object and cannot be a root.
+                        return False
+                return True
+            return False
+
+        candidate_object_root_nodes = [
+            node
+            for node in scene_digraph.nodes
+            if is_root_object_node(node)
+            and node not in (GROUND_PERCEPTION, LEARNER_PERCEPTION)
+        ]
+
+        candidate_objects: List[PerceptionGraph] = []
+        for root_object_node in candidate_object_root_nodes:
+            # Having identified the root nodes of the candidate objects,
+            # we now gather all sub-object nodes.
+            object_nodes_in_object_list = []
+            nodes_to_examine = [root_object_node]
+
+            # This would be clearer recursively
+            # but I'm betting this implementation is a bit faster in Python.
+
+            nodes_visited: Set[PerceptionGraphNode] = set()
+            while nodes_to_examine:
+                node_to_examine = nodes_to_examine.pop()
+                if node_to_examine in nodes_visited:
+                    continue
+                nodes_visited.add(node_to_examine)
+                object_nodes_in_object_list.append(node_to_examine)
+                for (next_node, _, edge_label) in scene_digraph.in_edges(
+                    node_to_examine, data="label"
+                ):
+                    if is_part_of_label(edge_label):
+                        nodes_to_examine.append(next_node)
+            object_nodes_in_object = immutableset(object_nodes_in_object_list)
+
+            # Now we know all object nodes for this candidate object.
+            # Finally, we find the sub-graph to match against which could possibly correspond
+            # to this candidate object
+            # by performing a BFS over the graph
+            # but *stopping whenever we encounter an object node
+            # which is not part of this candidate object*.
+            # This is a little more generous than we need to be, but it's simple.
+            nodes_to_examine = [root_object_node]
+            candidate_subgraph_nodes = []
+            nodes_visited.clear()
+            while nodes_to_examine:
+                node_to_examine = nodes_to_examine.pop()
+                is_allowable_node = (
+                    not isinstance(node_to_examine, ObjectPerception)
+                    or node_to_examine in object_nodes_in_object
+                )
+                if node_to_examine not in nodes_visited and is_allowable_node:
+                    nodes_visited.add(node_to_examine)
+                    candidate_subgraph_nodes.append(node_to_examine)
+                    nodes_to_examine.extend(
+                        out_neighbor
+                        for (_, out_neighbor) in scene_digraph.out_edges(node_to_examine)
+                    )
+                    nodes_to_examine.extend(
+                        in_neighbor
+                        for (in_neighbor, _) in scene_digraph.in_edges(node_to_examine)
+                    )
+            candidate_objects.append(
+                whole_scene_perception_graph.subgraph_by_nodes(
+                    immutableset(candidate_subgraph_nodes)
+                )
+            )
+        return candidate_objects
 
     def match_objects_with_language(
         self, language_aligned_perception: LanguageAlignedPerception
