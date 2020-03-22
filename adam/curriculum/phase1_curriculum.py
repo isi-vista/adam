@@ -1620,7 +1620,7 @@ def build_gaila_phase1_verb_curriculum() -> Sequence[Phase1InstanceGroup]:
         _make_go_curriculum(),
         _make_push_curriculum(),
         _make_throw_curriculum(),
-        _make_put_on_speaker_addressee_body_part_curriculum(),
+        # _make_put_on_speaker_addressee_body_part_curriculum(),
         _make_come_curriculum(),
     ]
 
