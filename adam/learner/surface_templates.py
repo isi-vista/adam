@@ -138,4 +138,4 @@ STANDARD_SLOT_VARIABLES = (SLOT1, SLOT2, SLOT3, SLOT4, SLOT5, SLOT6)
 
 # These nouns are hard-coded not to receive determiners
 # See https://github.com/isi-vista/adam/issues/498
-MASS_NOUNS = ["juice", "water"]
+MASS_NOUNS = ["juice", "water", "milk"]
