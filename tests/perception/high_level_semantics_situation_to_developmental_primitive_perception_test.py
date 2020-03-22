@@ -27,7 +27,6 @@ from adam.ontology.phase1_ontology import (
     LEARNER,
     LIQUID,
     MOM,
-    PART_OF,
     PATIENT,
     PERSON,
     PUT,
