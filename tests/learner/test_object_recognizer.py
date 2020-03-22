@@ -3,14 +3,12 @@ from more_itertools import first
 from adam.curriculum.curriculum_utils import PHASE1_CHOOSER_FACTORY, phase1_instances
 from adam.language_specific.english.english_language_generator import PREFER_DITRANSITIVE
 from adam.ontology.phase1_ontology import (
-    DAD,
-    GAILA_PHASE_1_ONTOLOGY,
-    TRANSFER_OF_POSSESSION,
-    PERSON,
+    AGENT,
     BABY,
     CHAIR,
+    DAD,
+    GAILA_PHASE_1_ONTOLOGY,
     GIVE,
-    AGENT,
     GOAL,
     THEME,
 )
@@ -20,7 +18,7 @@ from adam.perception.high_level_semantics_situation_to_developmental_primitive_p
 )
 from adam.perception.perception_graph import PerceptionGraph
 from adam.random_utils import RandomChooser
-from adam.situation import SituationObject, Action
+from adam.situation import Action, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
@@ -61,7 +59,7 @@ def test_trivial_dynamic_situation_with_schemaless_object():
     assert ("Dad",) in match_result.description_to_matched_object_node
 
 
-def test_true_dynamic_situation():
+def test_recognize_in_transfer_of_possession():
     dad = object_variable("person_0", DAD)
     baby = object_variable("person_1", BABY)
     chair = object_variable("give_object_0", CHAIR)
@@ -92,5 +90,5 @@ def test_true_dynamic_situation():
 
     perception_graph = PerceptionGraph.from_dynamic_perceptual_representation(perception)
     match_result = TEST_OBJECT_RECOGNIZER.match_objects(perception_graph)
-    assert len(match_result.description_to_matched_object_node) == 1
+    assert len(match_result.description_to_matched_object_node) == 3
     assert ("Dad",) in match_result.description_to_matched_object_node
