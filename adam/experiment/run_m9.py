@@ -25,6 +25,11 @@ def main(params: Parameters):
     if params.boolean("include_events", default=True):
         param_files.append(m9_experiments_dir / "events.params")
 
+    # This activates a special "debug" curriculum,
+    # which is meant to be edited in the code by a developer to do fine-grained debugging.
+    if params.boolean("include_debug", default=False):
+        param_files.append(m9_experiments_dir / "debug.params")
+
     # If any of the param files don't exist, bail out earlier instead of making the user
     # wait for the error.
     for param_file in param_files:
