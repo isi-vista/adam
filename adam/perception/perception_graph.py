@@ -172,7 +172,7 @@ class TemporalScope(Enum):
 ENTIRE_SCENE = immutableset([TemporalScope.BEFORE, TemporalScope.AFTER])
 
 
-@attrs(slots=True, frozen=True)
+@attrs(slots=True, frozen=True, repr=False)
 class TemporallyScopedEdgeLabel:
     r"""
     An edge attribute in a `PerceptionGraph` which is annotated for what times it holds true.
@@ -201,6 +201,12 @@ class TemporallyScopedEdgeLabel:
         if isinstance(when, TemporalScope):
             when = [when]
         return TemporallyScopedEdgeLabel(attribute, when)
+
+    def __repr__(self) -> str:
+        temporal_scope_names = [
+            temporal_specifier.name for temporal_specifier in self.temporal_specifiers
+        ]
+        return f"{self.attribute!r}@{temporal_scope_names}"
 
 
 # certain constant edges used by PerceptionGraphs
