@@ -1623,11 +1623,12 @@ class PatternMatching:
                     f"{connected_components_containing_successful_pattern_matches}"
                 )
 
-            logging.info(
-                "Relaxation: deleted due to disconnection: %s",
-                to_delete_due_to_disconnection,
-            )
-            pattern_as_digraph.remove_nodes_from(to_delete_due_to_disconnection)
+            if to_delete_due_to_disconnection:
+                logging.info(
+                    "Relaxation: deleted due to disconnection: %s",
+                    to_delete_due_to_disconnection,
+                )
+                pattern_as_digraph.remove_nodes_from(to_delete_due_to_disconnection)
         else:
             # If nothing was successfully matched, it is less clear how to choose what portion
             # of the pattern to keep. For now, we are going to keep the largest connected component.
