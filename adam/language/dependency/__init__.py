@@ -99,7 +99,7 @@ class DependencyTree:
             )
 
 
-@attrs(frozen=True, slots=True)
+@attrs(frozen=True, slots=True, repr=False)
 class LinearizedDependencyTree(LinguisticDescription):
     """
     A `DependencyTree` paired with a surface word order.
@@ -129,6 +129,9 @@ class LinearizedDependencyTree(LinguisticDescription):
 
     def __len__(self) -> int:
         return len(self.surface_token_strings)
+
+    def __repr__(self) -> str:
+        return f"[{self.surface_token_order}, tree={self.dependency_tree}]"
 
     @surface_token_strings.default
     def _init_surface_token_strings(self) -> Tuple[str, ...]:
