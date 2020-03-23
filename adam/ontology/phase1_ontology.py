@@ -2046,7 +2046,7 @@ def _make_throw_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription
     )
     # We don't appropriately handle multiple manipulators so
     # Current that relationship is not asserted see
-    # https://github.com/isi-vista/adam/issues/318
+    # https://github.com/isi-vista/adam/issues/687
     postconditions_manipulator = flatten_relations(
         [
             Relation(IN_REGION, _THROW_THEME, THROW_GOAL),
