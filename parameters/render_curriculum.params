@@ -1,0 +1,9 @@
+_includes:
+   - "root.params"
+
+iterations: 1000
+steps_before_vis: 1000
+seed: 2020
+debug_bounding_boxes: "off"
+automatically_save_renderings: True
+screenshot_directory: "%adam_experiment_root%/outputs/renderings"
