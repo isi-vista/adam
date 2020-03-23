@@ -2,3 +2,7 @@ _includes:
    - "../../root.params"
 
 experiment_group_dir: '%adam_experiment_root%/m9/'
+include_objects: true
+include_attributes: true
+include_relations: true
+include_events: true

@@ -24,6 +24,7 @@ from adam.curriculum.phase1_curriculum import (
     make_jump_templates,
     make_fly_templates,
     make_roll_templates,
+    make_give_templates,
 )
 from adam.learner import LearningExample
 from adam.learner.verbs import SubsetVerbLearner
@@ -32,17 +33,13 @@ from adam.ontology.phase1_ontology import (
     AGENT,
     GAILA_PHASE_1_ONTOLOGY,
     ANIMATE,
-    bigger_than,
     GOAL,
-    INANIMATE,
-    THEME,
     HAS_SPACE_UNDER,
     SELF_MOVING,
     LEARNER,
     PERSON,
     GROUND,
     COME,
-    GIVE,
     CAN_JUMP,
 )
 from adam.situation import Action
@@ -117,23 +114,18 @@ def run_verb_test(learner, situation_template):
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
 
 
-@pytest.mark.skip("too slow")
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_eat_simple(learner_factory):
     learner = learner_factory()
     run_verb_test(learner, make_eat_template())
 
 
-# DRINK
-@pytest.mark.skip
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_drink(learner_factory):
     learner = learner_factory()
     run_verb_test(learner, make_drink_template())
 
 
-# SIT
-@pytest.mark.skip
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_sit(learner_factory):
     for situation_template in make_sit_templates():
@@ -141,8 +133,6 @@ def test_sit(learner_factory):
         run_verb_test(learner, situation_template)
 
 
-# PUT
-@pytest.mark.skip
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_put(learner_factory):
     for situation_template in make_put_templates():
@@ -150,8 +140,6 @@ def test_put(learner_factory):
         run_verb_test(learner, situation_template)
 
 
-# PUSH
-@pytest.mark.skip
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_push(learner_factory):
     for situation_template in make_push_templates():
@@ -160,7 +148,7 @@ def test_push(learner_factory):
 
 
 # GO
-@pytest.mark.skip
+@pytest.mark.skip("too slow")
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_go(learner_factory):
     goer = standard_object("goer", THING, required_properties=[ANIMATE])
@@ -183,7 +171,7 @@ def test_go(learner_factory):
 
 
 # COME
-@pytest.mark.skip
+@pytest.mark.skip("too slow")
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_come(learner_factory):
     movee = standard_object("movee", required_properties=[SELF_MOVING])
@@ -223,38 +211,19 @@ def test_come(learner_factory):
         run_verb_test(learner, situation_template)
 
 
-# TAKE
-@pytest.mark.skip
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_take(learner_factory):
     learner = learner_factory()
     run_verb_test(learner, make_take_template())
 
 
-# GIVE
-@pytest.mark.skip
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_give(learner_factory):
-    giver = standard_object("giver_0", THING, required_properties=[ANIMATE])
-    object_given = standard_object("object_given_0", required_properties=[INANIMATE])
-
-    # X puts Y on Z
-    give_template = Phase1SituationTemplate(
-        "give",
-        salient_object_variables=[giver, object_given],
-        actions=[
-            Action(
-                GIVE, argument_roles_to_fillers=[(AGENT, giver), (THEME, object_given)]
-            )
-        ],
-        constraining_relations=[bigger_than(giver, object_given)],
-    )
-    learner = learner_factory()
-    run_verb_test(learner, give_template)
+    for situation_template in make_give_templates():
+        learner = learner_factory()
+        run_verb_test(learner, situation_template)
 
 
-# SPIN
-@pytest.mark.skip
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_spin(learner_factory):
     for situation_template in make_spin_templates():
@@ -262,8 +231,6 @@ def test_spin(learner_factory):
         run_verb_test(learner, situation_template)
 
 
-# FALL
-@pytest.mark.skip
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_fall(learner_factory):
     for situation_template in make_fall_templates():
@@ -271,8 +238,6 @@ def test_fall(learner_factory):
         run_verb_test(learner, situation_template)
 
 
-# THROW
-@pytest.mark.skip
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_throw(learner_factory):
     for situation_template in make_throw_templates():
@@ -280,8 +245,6 @@ def test_throw(learner_factory):
         run_verb_test(learner, situation_template)
 
 
-# MOVE
-@pytest.mark.skip
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_move(learner_factory):
     for situation_template in make_move_templates():
@@ -289,8 +252,6 @@ def test_move(learner_factory):
         run_verb_test(learner, situation_template)
 
 
-# JUMP
-@pytest.mark.skip
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_jump(learner_factory):
     jumper = standard_object("jumper_0", THING, required_properties=[CAN_JUMP])
@@ -303,8 +264,6 @@ def test_jump(learner_factory):
         run_verb_test(learner, situation_template)
 
 
-# ROLL
-@pytest.mark.skip
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_roll(learner_factory):
     for situation_template in make_roll_templates():
@@ -313,7 +272,7 @@ def test_roll(learner_factory):
 
 
 # FLY
-@pytest.mark.skip
+@pytest.mark.skip("does not complete in a reasonable time")
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_fly(learner_factory):
     for situation_template in make_fly_templates():

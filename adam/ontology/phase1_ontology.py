@@ -107,6 +107,8 @@ THEME = OntologyNode("theme")
 subtype(THEME, SEMANTIC_ROLE)
 GOAL = OntologyNode("goal")
 subtype(GOAL, SEMANTIC_ROLE)
+GOAL_MANIPULATOR = OntologyNode("goal-manipulator")
+subtype(GOAL_MANIPULATOR, GOAL)
 
 
 # these are "properties of properties" (e.g. whether a property is perceivable by the learner)
@@ -1699,7 +1701,7 @@ _PUT_ACTION_DESCRIPTION = ActionDescription(
     ),
     enduring_conditions=[
         Relation(SMALLER_THAN, _PUT_THEME, _PUT_AGENT),
-        Relation(PART_OF, _PUT_MANIPULATOR, _PUT_AGENT),
+        # Relation(PART_OF, _PUT_MANIPULATOR, _PUT_AGENT),
     ],
     preconditions=[
         Relation(IN_REGION, _PUT_THEME, _CONTACTING_MANIPULATOR),
@@ -1736,7 +1738,7 @@ def _make_push_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
         objects_to_paths=[(_PUSH_THEME, SpatialPath(TO, PUSH_GOAL))]
     )
     enduring = [
-        partOf(_PUSH_MANIPULATOR, _PUSH_AGENT),
+        # partOf(_PUSH_MANIPULATOR, _PUSH_AGENT),
         bigger_than(_PUSH_AGENT, _PUSH_THEME),
         bigger_than(PUSH_SURFACE_AUX, _PUSH_THEME),
         contacts(_PUSH_MANIPULATOR, _PUSH_THEME),
@@ -1776,18 +1778,11 @@ _GO_GOAL = ActionDescriptionVariable(THING)
 
 
 def _make_go_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
-    # bare go
     postconditions = [Relation(IN_REGION, _GO_AGENT, _GO_GOAL)]
     during: DuringAction[ActionDescriptionVariable] = DuringAction(
         objects_to_paths=[(_GO_AGENT, SpatialPath(TO, _GO_GOAL))]
     )
     asserted_properties = [(_GO_AGENT, VOLITIONALLY_INVOLVED), (_GO_AGENT, MOVES)]
-    yield GO, ActionDescription(
-        frame=ActionDescriptionFrame({AGENT: _GO_AGENT}),
-        during=during,
-        postconditions=postconditions,
-        asserted_properties=asserted_properties,
-    )
 
     # goes to goal
     yield GO, ActionDescription(
@@ -1823,7 +1818,7 @@ _TAKE_ACTION_DESCRIPTION = ActionDescription(
     frame=ActionDescriptionFrame({AGENT: _TAKE_AGENT, THEME: _TAKE_THEME}),
     enduring_conditions=[
         bigger_than(_TAKE_AGENT, _TAKE_THEME),
-        partOf(_TAKE_MANIPULATOR, _TAKE_AGENT),
+        # partOf(_TAKE_MANIPULATOR, _TAKE_AGENT),
     ],
     preconditions=[negate(has(_TAKE_AGENT, _TAKE_THEME))],
     postconditions=[
@@ -1873,8 +1868,8 @@ _GIVE_ACTION_DESCRIPTION = ActionDescription(
     enduring_conditions=[
         bigger_than(_GIVE_AGENT, _GIVE_THEME),
         bigger_than(_GIVE_GOAL, _GIVE_THEME),
-        partOf(_GIVE_AGENT_MANIPULATOR, _GIVE_AGENT),
-        partOf(_GIVE_GOAL_MANIPULATOR, _GIVE_GOAL),
+        # partOf(_GIVE_AGENT_MANIPULATOR, _GIVE_AGENT),
+        # partOf(_GIVE_GOAL_MANIPULATOR, _GIVE_GOAL),
     ],
     preconditions=[
         has(_GIVE_AGENT, _GIVE_THEME),
@@ -2006,6 +2001,9 @@ _THROW_AGENT = ActionDescriptionVariable(THING, properties=[ANIMATE])
 _THROW_THEME = ActionDescriptionVariable(INANIMATE_OBJECT)
 THROW_GOAL = ActionDescriptionVariable(THING)
 _THROW_MANIPULATOR = ActionDescriptionVariable(THING, properties=[CAN_MANIPULATE_OBJECTS])
+_THROW_MANIPULATOR_1 = ActionDescriptionVariable(
+    THING, properties=[CAN_MANIPULATE_OBJECTS]
+)
 _THROW_GROUND = ActionDescriptionVariable(GROUND)
 
 
@@ -2026,8 +2024,8 @@ def _make_throw_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription
         ],
     )
     enduring = [
-        partOf(_THROW_MANIPULATOR, _THROW_AGENT),
-        bigger_than(_THROW_AGENT, _THROW_THEME),
+        # partOf(_THROW_MANIPULATOR, _THROW_AGENT),
+        bigger_than(_THROW_AGENT, _THROW_THEME)
     ]
     preconditions = [
         has(_THROW_AGENT, _THROW_THEME),
@@ -2039,11 +2037,33 @@ def _make_throw_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription
             negate(contacts(_THROW_MANIPULATOR, _THROW_THEME)),
         ]
     )
+    # We don't appropriately handle multiple manipulators so
+    # Current that relationship is not asserted see
+    # https://github.com/isi-vista/adam/issues/687
+    postconditions_manipulator = flatten_relations(
+        [
+            Relation(IN_REGION, _THROW_THEME, THROW_GOAL),
+            negate(contacts(_THROW_MANIPULATOR, _THROW_THEME)),
+            # contacts(_THROW_MANIPULATOR_1, _THROW_THEME),
+            has(THROW_GOAL, _THROW_THEME),
+        ]
+    )
     asserted_properties = [
         (_THROW_AGENT, VOLITIONALLY_INVOLVED),
         (_THROW_AGENT, CAUSES_CHANGE),
         (_THROW_THEME, UNDERGOES_CHANGE),
     ]
+    # explicit goal is manipulator
+    yield THROW, ActionDescription(
+        frame=ActionDescriptionFrame(
+            {AGENT: _THROW_AGENT, THEME: _THROW_THEME, GOAL_MANIPULATOR: THROW_GOAL}
+        ),
+        during=during,
+        enduring_conditions=enduring,
+        preconditions=preconditions,
+        postconditions=postconditions_manipulator,
+        asserted_properties=asserted_properties,
+    )
     # explicit goal
     yield THROW, ActionDescription(
         frame=ActionDescriptionFrame(
@@ -2083,8 +2103,8 @@ def _make_move_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
         ]
     )
     enduring = [
-        partOf(_MOVE_MANIPULATOR, _MOVE_AGENT),
-        contacts(_MOVE_MANIPULATOR, _MOVE_THEME),
+        # partOf(_MOVE_MANIPULATOR, _MOVE_AGENT),
+        contacts(_MOVE_MANIPULATOR, _MOVE_THEME)
     ]
 
     # bare move - "X moves (of its own accord)"

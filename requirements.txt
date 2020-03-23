@@ -4,6 +4,7 @@ vistautils==0.20.0
 immutablecollections==0.11.0
 networkx==2.3
 more-itertools==7.2.0
+contexttimer==0.3.3
 
 # for visualizing perception graphs and patterns
 graphviz==0.13

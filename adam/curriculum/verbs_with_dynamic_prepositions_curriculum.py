@@ -40,7 +40,6 @@ from adam.ontology.phase1_ontology import (
     CAN_HAVE_THINGS_RESTING_ON_THEM,
     GO,
     ROLL,
-    _GO_GOAL,
     ROLL_SURFACE_AUXILIARY,
     ROLLABLE,
     GROUND,
@@ -64,6 +63,7 @@ from adam.ontology.phase1_ontology import (
     JUMP,
     FLY,
     CAN_FLY,
+    GOAL_MANIPULATOR,
 )
 from adam.ontology import THING, IS_SPEAKER, IS_ADDRESSEE, IN_REGION
 from adam.ontology.phase1_spatial_relations import (
@@ -89,6 +89,7 @@ from adam.situation.templates.phase1_situation_templates import (
     _put_on_body_part_template,
     _go_in_template,
     _go_under_template,
+    _go_to_template,
 )
 from adam.situation.templates.phase1_templates import (
     TemplateObjectVariable,
@@ -289,28 +290,6 @@ def _push_in_front_of_behind_template(
     )
 
 
-def _go_to_template(
-    agent: TemplateObjectVariable,
-    goal_object: TemplateObjectVariable,
-    background: Iterable[TemplateObjectVariable],
-) -> Phase1SituationTemplate:
-    return Phase1SituationTemplate(
-        f"go_to-{agent.handle}-to-{goal_object.handle}",
-        salient_object_variables=[agent, goal_object],
-        background_object_variables=background,
-        actions=[
-            Action(
-                GO,
-                argument_roles_to_fillers=[
-                    (AGENT, agent),
-                    (GOAL, Region(goal_object, distance=PROXIMAL)),
-                ],
-            )
-        ],
-        gazed_objects=[agent],
-    )
-
-
 def _go_beside_template(
     agent: TemplateObjectVariable,
     goal_object: TemplateObjectVariable,
@@ -429,8 +408,7 @@ def _go_behind_in_front_path_template(
         actions=[
             Action(
                 GO,
-                argument_roles_to_fillers=[(AGENT, agent)],
-                auxiliary_variable_bindings=[(_GO_GOAL, goal_object)],
+                argument_roles_to_fillers=[(AGENT, agent), (GOAL, goal_object)],
                 during=DuringAction(
                     objects_to_paths=[
                         (
@@ -444,7 +422,7 @@ def _go_behind_in_front_path_template(
                         )
                     ],
                     # TODO: ADD 'at_some_point' condition for in_front or behind regional conditions
-                    # See: https://github.com/isi-vista/adam/issues/583
+                    # See: https://github.com/isi-vista/adam/issmues/583
                 ),
             )
         ],
@@ -471,8 +449,7 @@ def _go_over_under_path_template(
         actions=[
             Action(
                 GO,
-                argument_roles_to_fillers=[(AGENT, agent)],
-                auxiliary_variable_bindings=[(_GO_GOAL, goal_object)],
+                argument_roles_to_fillers=[(AGENT, agent), (GOAL, goal_object)],
                 during=DuringAction(
                     objects_to_paths=[
                         (
@@ -764,6 +741,31 @@ def _throw_path_under_template(
             bigger_than([agent, object_in_path], theme)
         ),
         gazed_objects=[agent, theme, object_in_path],
+    )
+
+
+def _x_throws_y_to_z_template(
+    agent: TemplateObjectVariable,
+    theme: TemplateObjectVariable,
+    recipient: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        f"{agent.handle}-throws-{theme.handle}-to-{recipient.handle}",
+        salient_object_variables=[agent, theme, recipient],
+        background_object_variables=background,
+        actions=[
+            Action(
+                THROW,
+                argument_roles_to_fillers=[
+                    (AGENT, agent),
+                    (THEME, theme),
+                    (GOAL_MANIPULATOR, recipient),
+                ],
+            )
+        ],
+        constraining_relations=flatten_relations(bigger_than([agent, recipient], theme)),
+        gazed_objects=[theme],
     )
 
 
@@ -1922,17 +1924,16 @@ def _make_go_with_prepositions(num_samples: int = 5, *, noise_objects: int = 0):
         "Go + PP",
         chain(
             # To
-            # Disabled - See https://github.com/isi-vista/adam/issues/569
-            # flatten(
-            #    [
-            #        sampled(
-            #            _go_to_template(agent, goal_object, background),
-            #            ontology=GAILA_PHASE_1_ONTOLOGY,
-            #            chooser=PHASE1_CHOOSER_FACTORY(),
-            #            max_to_sample=num_samples,
-            #        )
-            #    ]
-            # ),
+            flatten(
+                [
+                    sampled(
+                        _go_to_template(agent, goal_object, background),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        max_to_sample=num_samples,
+                    )
+                ]
+            ),
             # In
             flatten(
                 [
@@ -2650,6 +2651,8 @@ def _make_throw_with_prepositions(
 ) -> Phase1InstanceGroup:
     agent = standard_object("agent", THING, required_properties=[ANIMATE])
     theme = standard_object("theme", INANIMATE_OBJECT)
+    thrower = standard_object("thrower", PERSON)
+    recipient = standard_object("recipient", PERSON)
     goal_reference = standard_object("goal_reference", INANIMATE_OBJECT)
     goal_in = standard_object("goal_in", THING, required_properties=[HOLLOW])
     goal_on = standard_object(
@@ -2666,12 +2669,13 @@ def _make_throw_with_prepositions(
         _throw_to_template(agent, theme, goal_reference, background),
         _throw_in_template(agent, theme, goal_in, background),
         _throw_on_template(agent, theme, goal_on, background),
+        _x_throws_y_to_z_template(thrower, theme, recipient, background),
     ]
 
     return phase1_instances(
         "Throw + PP",
         chain(
-            # to, in, on
+            # to, in, on, to recipient
             flatten(
                 [
                     sampled(

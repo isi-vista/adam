@@ -41,7 +41,6 @@ from adam.ontology.phase1_ontology import (
     FLY,
     GAILA_PHASE_1_ONTOLOGY,
     GIVE,
-    GO,
     GOAL,
     GROUND,
     HAS_SPACE_UNDER,
@@ -74,7 +73,6 @@ from adam.ontology.phase1_ontology import (
     THROW,
     THROW_GOAL,
     TRANSFER_OF_POSSESSION,
-    _GO_GOAL,
     bigger_than,
     contacts,
     inside,
@@ -114,6 +112,7 @@ from adam.situation.templates.phase1_situation_templates import (
     _put_on_body_part_template,
     _go_in_template,
     _go_under_template,
+    _go_to_template,
 )
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
@@ -367,37 +366,43 @@ def _make_fall_curriculum() -> Phase1InstanceGroup:
     )
 
 
-def _make_transfer_of_possession_curriculum() -> Phase1InstanceGroup:
+def make_give_templates() -> Iterable[Phase1SituationTemplate]:
     action_variable("transfer-verb", with_properties=[TRANSFER_OF_POSSESSION])
     giver = object_variable("person_0", PERSON)
     recipient = object_variable("person_1", PERSON)
     given_object = standard_object("give_object_0")
+
+    for prefer_ditransitive in (True, False):
+        yield Phase1SituationTemplate(
+            "transfer-of-possession",
+            salient_object_variables=[giver, recipient, given_object],
+            actions=[
+                Action(
+                    GIVE,
+                    argument_roles_to_fillers=[
+                        (AGENT, giver),
+                        (GOAL, recipient),
+                        (THEME, given_object),
+                    ],
+                )
+            ],
+            syntax_hints=[PREFER_DITRANSITIVE] if prefer_ditransitive else [],
+        )
+
+
+def _make_transfer_of_possession_curriculum() -> Phase1InstanceGroup:
 
     return phase1_instances(
         "transfer-of-possession",
         chain(
             *[
                 sampled(
-                    Phase1SituationTemplate(
-                        "transfer-of-possession",
-                        salient_object_variables=[giver, recipient, given_object],
-                        actions=[
-                            Action(
-                                GIVE,
-                                argument_roles_to_fillers=[
-                                    (AGENT, giver),
-                                    (GOAL, recipient),
-                                    (THEME, given_object),
-                                ],
-                            )
-                        ],
-                        syntax_hints=[PREFER_DITRANSITIVE] if prefer_ditransitive else [],
-                    ),
+                    template,
                     max_to_sample=100,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                 )
-                for prefer_ditransitive in (True, False)
+                for template in make_give_templates()
             ]
         ),
     )
@@ -1164,22 +1169,10 @@ def make_go_templates() -> Iterable[Phase1SituationTemplate]:
     goer = standard_object("goer", THING, required_properties=[ANIMATE])
     goal_reference = standard_object("go-goal", THING)
     in_goal_reference = standard_object("go-in-goal", THING, required_properties=[HOLLOW])
-    bare_go = Phase1SituationTemplate(
-        "bare-go",
-        salient_object_variables=[goer],
-        actions=[
-            Action(
-                GO,
-                argument_roles_to_fillers=[(AGENT, goer)],
-                auxiliary_variable_bindings=[
-                    (_GO_GOAL, Region(goal_reference, distance=PROXIMAL))
-                ],
-            )
-        ],
-    )
 
+    go_to = _go_to_template(goer, goal_reference, [])
     go_in = _go_in_template(goer, in_goal_reference, [])
-    return [bare_go, go_in]
+    return [go_to, go_in]
 
 
 def _make_go_curriculum() -> Phase1InstanceGroup:
@@ -1600,7 +1593,7 @@ def build_gaila_phase1_verb_curriculum() -> Sequence[Phase1InstanceGroup]:
     return [
         _make_fall_curriculum(),
         _make_transfer_of_possession_curriculum(),
-        _make_fly_curriculum(),
+        # _make_fly_curriculum(),
         _make_roll_curriculum(),
         _make_speaker_addressee_curriculum(),
         _make_jump_curriculum(),
@@ -1614,7 +1607,7 @@ def build_gaila_phase1_verb_curriculum() -> Sequence[Phase1InstanceGroup]:
         _make_go_curriculum(),
         _make_push_curriculum(),
         _make_throw_curriculum(),
-        _make_put_on_speaker_addressee_body_part_curriculum(),
+        # _make_put_on_speaker_addressee_body_part_curriculum(),
         _make_come_curriculum(),
     ]
 
