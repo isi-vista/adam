@@ -281,9 +281,7 @@ class ObjectPursuitLearner(AbstractPursuitLearner, AbstractObjectTemplateLearner
     def log_hypotheses(self, log_output_path: Path) -> None:
         for (surface_template, hypothesis) in self._lexicon.items():
             template_string = surface_template.to_short_string()
-            hypothesis.graph_pattern.render_to_file(
-                template_string, log_output_path / template_string
-            )
+            hypothesis.render_to_file(template_string, log_output_path / template_string)
 
 
 @attrs(slots=True)

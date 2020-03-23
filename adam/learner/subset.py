@@ -114,6 +114,4 @@ class AbstractTemplateSubsetLearner(AbstractSubsetLearner, AbstractTemplateLearn
             hypothesis,
         ) in self._surface_template_to_hypothesis.items():
             template_string = surface_template.to_short_string()
-            hypothesis.graph_pattern.render_to_file(
-                template_string, log_output_path / template_string
-            )
+            hypothesis.render_to_file(template_string, log_output_path / template_string)

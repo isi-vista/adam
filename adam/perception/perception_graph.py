@@ -282,6 +282,7 @@ class PerceptionGraphProtocol(Protocol):
         *,
         match_correspondence_ids: Mapping[Any, str] = immutabledict(),
         robust=True,
+        replace_node_labels: Mapping[Any, str] = immutabledict(),
     ) -> None:
         """
         Debugging tool to render the graph to PDF using *dot*.
@@ -595,6 +596,7 @@ class PerceptionGraph(PerceptionGraphProtocol):
         *,
         match_correspondence_ids: Mapping[Any, str] = immutabledict(),
         robust=True,
+        replace_node_labels: Mapping[Any, str] = immutabledict(),
     ) -> None:
         """
         Debugging tool to render the graph to PDF using *dot*.
@@ -617,7 +619,11 @@ class PerceptionGraph(PerceptionGraphProtocol):
         # add all nodes to the graph
         perception_nodes_to_dot_node_ids = {
             perception_node: self._to_dot_node(
-                dot_graph, perception_node, next_node_id, match_correspondence_ids
+                dot_graph,
+                perception_node,
+                next_node_id,
+                match_correspondence_ids,
+                replace_node_labels=replace_node_labels,
             )
             for perception_node in self._graph.nodes
         }
@@ -672,17 +678,21 @@ class PerceptionGraph(PerceptionGraphProtocol):
         perception_node: PerceptionGraphNode,
         next_node_id: Incrementer,
         match_correspondence_ids: Mapping[Any, str],
+        *,
+        replace_node_labels: Mapping[Any, str] = immutabledict(),
     ) -> str:
         if isinstance(perception_node, tuple):
             unwrapped_perception_node = perception_node[0]
         else:
             unwrapped_perception_node = perception_node
 
-        # object perceptions have no content, so they are blank nodes
-        if isinstance(unwrapped_perception_node, ObjectPerception):
+        if perception_node in replace_node_labels:
+            label = replace_node_labels[perception_node]
+        elif isinstance(unwrapped_perception_node, ObjectPerception):
+            # object perceptions have no content, so they are blank nodes
             label = unwrapped_perception_node.debug_handle
-        # regions do have content but we express those as edges to other nodes
         elif isinstance(unwrapped_perception_node, Region):
+            # regions do have content but we express those as edges to other nodes
             label = f"reg:{unwrapped_perception_node}"
         elif isinstance(unwrapped_perception_node, GeonAxis):
             label = f"axis:{unwrapped_perception_node.debug_name}"
@@ -1088,6 +1098,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
         *,
         match_correspondence_ids: Mapping[Any, str] = immutabledict(),
         robust=True,
+        replace_node_labels: Mapping[Any, str] = immutabledict(),
     ) -> None:
         """
         Debugging tool to render the pattern to PDF using *dot*.
@@ -1107,7 +1118,10 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
         def to_dot_node(pattern_node: "NodePredicate") -> str:
             node_id = f"node-{next_node_id.value()}"
             next_node_id.increment()
-            base_label = pattern_node.dot_label()
+            if pattern_node in replace_node_labels:
+                base_label = replace_node_labels[pattern_node]
+            else:
+                base_label = pattern_node.dot_label()
 
             # if we are rendering a match against another graph,
             # we show IDs that align the nodes between the graphs
