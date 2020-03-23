@@ -57,6 +57,28 @@ def _go_in_template(
     )
 
 
+def _go_to_template(
+    agent: TemplateObjectVariable,
+    goal_object: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        f"go_to-{agent.handle}-to-{goal_object.handle}",
+        salient_object_variables=[agent, goal_object],
+        background_object_variables=background,
+        actions=[
+            Action(
+                GO,
+                argument_roles_to_fillers=[
+                    (AGENT, agent),
+                    (GOAL, Region(goal_object, distance=PROXIMAL)),
+                ],
+            )
+        ],
+        gazed_objects=[agent],
+    )
+
+
 def _go_under_template(
     agent: TemplateObjectVariable,
     goal_object: TemplateObjectVariable,

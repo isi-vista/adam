@@ -40,7 +40,6 @@ from adam.ontology.phase1_ontology import (
     CAN_HAVE_THINGS_RESTING_ON_THEM,
     GO,
     ROLL,
-    _GO_GOAL,
     ROLL_SURFACE_AUXILIARY,
     ROLLABLE,
     GROUND,
@@ -89,6 +88,7 @@ from adam.situation.templates.phase1_situation_templates import (
     _put_on_body_part_template,
     _go_in_template,
     _go_under_template,
+    _go_to_template,
 )
 from adam.situation.templates.phase1_templates import (
     TemplateObjectVariable,
@@ -289,28 +289,6 @@ def _push_in_front_of_behind_template(
     )
 
 
-def _go_to_template(
-    agent: TemplateObjectVariable,
-    goal_object: TemplateObjectVariable,
-    background: Iterable[TemplateObjectVariable],
-) -> Phase1SituationTemplate:
-    return Phase1SituationTemplate(
-        f"go_to-{agent.handle}-to-{goal_object.handle}",
-        salient_object_variables=[agent, goal_object],
-        background_object_variables=background,
-        actions=[
-            Action(
-                GO,
-                argument_roles_to_fillers=[
-                    (AGENT, agent),
-                    (GOAL, Region(goal_object, distance=PROXIMAL)),
-                ],
-            )
-        ],
-        gazed_objects=[agent],
-    )
-
-
 def _go_beside_template(
     agent: TemplateObjectVariable,
     goal_object: TemplateObjectVariable,
@@ -429,8 +407,7 @@ def _go_behind_in_front_path_template(
         actions=[
             Action(
                 GO,
-                argument_roles_to_fillers=[(AGENT, agent)],
-                auxiliary_variable_bindings=[(_GO_GOAL, goal_object)],
+                argument_roles_to_fillers=[(AGENT, agent), (GOAL, goal_object)],
                 during=DuringAction(
                     objects_to_paths=[
                         (
@@ -444,7 +421,7 @@ def _go_behind_in_front_path_template(
                         )
                     ],
                     # TODO: ADD 'at_some_point' condition for in_front or behind regional conditions
-                    # See: https://github.com/isi-vista/adam/issues/583
+                    # See: https://github.com/isi-vista/adam/issmues/583
                 ),
             )
         ],
@@ -471,8 +448,7 @@ def _go_over_under_path_template(
         actions=[
             Action(
                 GO,
-                argument_roles_to_fillers=[(AGENT, agent)],
-                auxiliary_variable_bindings=[(_GO_GOAL, goal_object)],
+                argument_roles_to_fillers=[(AGENT, agent), (GOAL, goal_object)],
                 during=DuringAction(
                     objects_to_paths=[
                         (
