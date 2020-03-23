@@ -43,6 +43,7 @@ from panda3d.core import NodePath  # pylint: disable=no-name-in-module
 from panda3d.core import LPoint3f  # pylint: disable=no-name-in-module
 
 from adam.math_3d import Point
+from math import isnan
 from adam.language.dependency import LinearizedDependencyTree
 
 from adam.experiment import InstanceGroup
@@ -836,6 +837,17 @@ def screenshot(
         )
         if command:
             viz.screenshot(command)
+
+
+def nan_in_positions(pos_map: PositionsMap) -> bool:
+    for name, position in pos_map.name_to_position.items():
+        if (
+            isnan(position.data[0].item())
+            or isnan(position.data[1].item())
+            or isnan(position.data[2].item())
+        ):
+            return True
+    return False
 
 
 if __name__ == "__main__":
