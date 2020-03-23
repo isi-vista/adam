@@ -320,7 +320,11 @@ class PerceptionGraph(PerceptionGraphProtocol):
             graph.add_node(perceived_object)
             # And so are each of its axes.
             _translate_axes(
-                graph, perceived_object, perceived_object, PerceptionGraph.map_node, map_edge=PerceptionGraph.map_edge
+                graph,
+                perceived_object,
+                perceived_object,
+                PerceptionGraph.map_node,
+                map_edge=PerceptionGraph.map_edge,
             )
             _translate_geon(
                 graph,
@@ -364,7 +368,9 @@ class PerceptionGraph(PerceptionGraphProtocol):
                     property_.binary_property, force_unique_counter=property_index
                 )
             elif isinstance(property_, HasColor):
-                dest_node = PerceptionGraph.map_node(property_.color, force_unique_counter=property_index)
+                dest_node = PerceptionGraph.map_node(
+                    property_.color, force_unique_counter=property_index
+                )
             else:
                 raise RuntimeError(f"Don't know how to translate property {property_}")
             graph.add_edge(source_node, dest_node, label=HAS_PROPERTY_LABEL)
@@ -501,7 +507,7 @@ class PerceptionGraph(PerceptionGraphProtocol):
                         path_info,
                         next_path_item_uniqueness_index=next_path_item_uniqueness_index,
                         axes_info=perceptual_representation.frames[0].axis_info,
-                        map_node=PerceptionGraph.map_node
+                        map_node=PerceptionGraph.map_node,
                     )
 
         return PerceptionGraph(graph=_dynamic_digraph, dynamic=True)
@@ -518,7 +524,9 @@ class PerceptionGraph(PerceptionGraphProtocol):
     ) -> None:
         edges_to_add: List[Tuple[Any, Any, Any]] = []
         edges_to_add.append((moving_object, path, HAS_PATH_LABEL))
-        edges_to_add.append((path, map_node(path.reference_object), REFERENCE_OBJECT_LABEL))
+        edges_to_add.append(
+            (path, map_node(path.reference_object), REFERENCE_OBJECT_LABEL)
+        )
         if path.reference_axis:
             edges_to_add.append(
                 (
