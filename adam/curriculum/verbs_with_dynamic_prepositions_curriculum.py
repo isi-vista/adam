@@ -1922,17 +1922,16 @@ def _make_go_with_prepositions(num_samples: int = 5, *, noise_objects: int = 0):
         "Go + PP",
         chain(
             # To
-            # Disabled - See https://github.com/isi-vista/adam/issues/569
-            # flatten(
-            #    [
-            #        sampled(
-            #            _go_to_template(agent, goal_object, background),
-            #            ontology=GAILA_PHASE_1_ONTOLOGY,
-            #            chooser=PHASE1_CHOOSER_FACTORY(),
-            #            max_to_sample=num_samples,
-            #        )
-            #    ]
-            # ),
+            flatten(
+                [
+                    sampled(
+                        _go_to_template(agent, goal_object, background),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        max_to_sample=num_samples,
+                    )
+                ]
+            ),
             # In
             flatten(
                 [
