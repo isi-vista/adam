@@ -30,7 +30,6 @@ from typing import (
     Set,
     Sized,
     Tuple,
-    Type,
     TypeVar,
     Union,
     cast,
@@ -68,7 +67,13 @@ from adam.ontology.phase1_ontology import (
     LIQUID,
     RECOGNIZED_PARTICULAR_PROPERTY,
 )
-from adam.ontology.phase1_spatial_relations import Direction, Distance, Region
+from adam.ontology.phase1_spatial_relations import (
+    Direction,
+    Distance,
+    Region,
+    SpatialPath,
+    PathOperator,
+)
 from adam.ontology.structural_schema import ObjectStructuralSchema
 from adam.perception import ObjectPerception, PerceptualRepresentation
 from adam.perception._matcher import GraphMatching
@@ -240,6 +245,26 @@ FACING_OBJECT_LABEL = OntologyNode("facing-axis")
 """
 Edge label in a `PerceptionGraph` linking an `Axis` to a `ObjectPerception` it is facing
 """
+REFERENCE_AXIS_LABEL = OntologyNode("reference-axis")
+"""
+Edge label in a `PerceptionGraph` linking a `SpatialPath` to its reference axis.
+"""
+HAS_PATH_LABEL = OntologyNode("has-path")
+"""
+Edge label in a `PerceptionGraph` linking an object to the `SpatialPath`
+which it takes in a dynamic situation.
+"""
+HAS_PATH_OPERATOR = OntologyNode("has-path-operator")
+"""
+Edge label in a `PerceptionGraph` linking a `SpatialPath`
+to its `PathOperator`
+"""
+
+ORIENTATION_CHANGED_PROPERTY = OntologyNode("orientation-changed")
+"""
+Property used in perception graphs to indicate an orientation change
+while an object traverses a path.
+"""
 
 
 class PerceptionGraphProtocol(Protocol):
@@ -383,9 +408,6 @@ class PerceptionGraph(PerceptionGraphProtocol):
             (len(perceptual_representation.frames),),
         )
 
-        # TODO: handle "during" field of PerceptualRepresentation
-        # https://github.com/isi-vista/adam/issues/593
-
         # First, we translate each of the two frames into PerceptionGraphs independently.
         # The edges of each graph are marked with the appropriate "temporal specifier"
         # which tells whether they belong to the "before" frame or the "after" frame.
@@ -463,7 +485,71 @@ class PerceptionGraph(PerceptionGraphProtocol):
                 # so no merging is needed.
                 _dynamic_digraph.add_edge(source, target, label=after_label)
 
+        # Translate path information
+        if perceptual_representation.during:
+            if perceptual_representation.during.objects_to_paths:
+                next_path_item_uniqueness_index = Incrementer()
+                for (
+                    moving_object,
+                    path_info,
+                ) in perceptual_representation.during.objects_to_paths.items():
+                    PerceptionGraph._add_path_node(
+                        _dynamic_digraph,
+                        moving_object,
+                        path_info,
+                        next_path_item_uniqueness_index=next_path_item_uniqueness_index,
+                        axes_info=perceptual_representation.frames[0].axis_info,
+                    )
+
         return PerceptionGraph(graph=_dynamic_digraph, dynamic=True)
+
+    @staticmethod
+    def _add_path_node(
+        perception_digraph: DiGraph,
+        moving_object: ObjectPerception,
+        path: SpatialPath[ObjectPerception],
+        *,
+        axes_info: Optional[AxesInfo[Any]] = None,
+        next_path_item_uniqueness_index: Incrementer,
+    ) -> None:
+        edges_to_add: List[Tuple[Any, Any, Any]] = []
+        edges_to_add.append((moving_object, path, HAS_PATH_LABEL))
+        edges_to_add.append((path, path.reference_object, REFERENCE_OBJECT_LABEL))
+        if path.reference_axis:
+            edges_to_add.append(
+                (
+                    path,
+                    path.reference_axis.to_concrete_axis(axes_info),
+                    REFERENCE_AXIS_LABEL,
+                )
+            )
+        if path.operator:
+            edges_to_add.append(
+                (
+                    path,
+                    _uniquify(path.operator, next_path_item_uniqueness_index),
+                    HAS_PATH_OPERATOR,
+                )
+            )
+        # link path object to orientation_changed boolean if it did as a has-property
+        if path.orientation_changed:
+            edges_to_add.append(
+                (
+                    path,
+                    _uniquify(
+                        ORIENTATION_CHANGED_PROPERTY, next_path_item_uniqueness_index
+                    ),
+                    HAS_PROPERTY_LABEL,
+                )
+            )
+        for (source, target, label) in edges_to_add:
+            perception_digraph.add_edge(
+                source,
+                target,
+                label=TemporallyScopedEdgeLabel.for_dynamic_perception(
+                    label, TemporalScope.DURING
+                ),
+            )
 
     def copy_with_temporal_scopes(
         self, temporal_scopes: Union[TemporalScope, Iterable[TemporalScope]]
@@ -949,6 +1035,10 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
                     perception_node_to_pattern_node[
                         key
                     ] = MatchedObjectPerceptionPredicate()
+                elif isinstance(node, SpatialPath):
+                    perception_node_to_pattern_node[key] = IsPathPredicate()
+                elif isinstance(node, PathOperator):
+                    perception_node_to_pattern_node[key] = PathOperatorPredicate(node)
                 else:
                     raise RuntimeError(f"Don't know how to map node {node}")
             return perception_node_to_pattern_node[key]
@@ -2058,6 +2148,55 @@ class MatchedObjectPerceptionPredicate(NodePredicate):
         return isinstance(other, MatchedObjectPerceptionPredicate)
 
 
+@attrs(frozen=True, slots=True, eq=False)
+class IsPathPredicate(NodePredicate):
+    """
+    Matches any `SpatialPath` node.
+    """
+
+    def __call__(self, graph_node: PerceptionGraphNode) -> bool:
+        return isinstance(graph_node, SpatialPath)
+
+    def dot_label(self) -> str:
+        return "* [path]"
+
+    def is_equivalent(self, other) -> bool:
+        return isinstance(other, IsPathPredicate)
+
+    def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
+        return isinstance(predicate_node, IsPathPredicate)
+
+
+@attrs(frozen=True, slots=True, eq=False)
+class PathOperatorPredicate(NodePredicate):
+    r"""
+    Predicate to match against `PathOperator`\ s
+    """
+    reference_path_operator: PathOperator = attrib(validator=instance_of(PathOperator))
+
+    def __call__(self, graph_node: PerceptionGraphNode) -> bool:
+        # path operator nodes might be wrapped in tuples with their id()
+        # in order to simulate comparison by object ID.
+        if isinstance(graph_node, tuple):
+            graph_node = graph_node[0]
+        return graph_node == self.reference_path_operator
+
+    def dot_label(self) -> str:
+        return self.reference_path_operator.name
+
+    def is_equivalent(self, other) -> bool:
+        return (
+            isinstance(other, PathOperatorPredicate)
+            and other.reference_path_operator == self.reference_path_operator
+        )
+
+    def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
+        return (
+            isinstance(predicate_node, PathOperatorPredicate)
+            and predicate_node.reference_path_operator == self.reference_path_operator
+        )
+
+
 class EdgePredicate(ABC):
     r"""
     Super-class for pattern graph edges.
@@ -2346,6 +2485,9 @@ def _translate_region(
 _PATTERN_PREDICATE_NODE_ORDER = [
     # If we have matchedObjects in the pattern we want to try and find these first.
     MatchedObjectPerceptionPredicate,
+    # Paths are rare, match them next
+    IsPathPredicate,
+    PathOperatorPredicate,
     # properties and colors tend to be highlight restrictive, so let's match them first
     IsOntologyNodePredicate,
     IsColorNodePredicate,
@@ -2366,20 +2508,10 @@ def _pattern_matching_node_order(node_node_data_tuple) -> int:
 # This is used to control the order in which pattern nodes are matched,
 # which can have a significant impact on match speed.
 # This should match _PATTERN_PREDICATE_NODE_ORDER above.
-_GRAPH_NODE_ORDER: List[  # type: ignore
-    Type[
-        Union[
-            MatchedObjectNode,
-            OntologyNode,
-            RgbColorPerception,
-            ObjectPerception,
-            Geon,
-            Region,
-            GeonAxis,
-        ]
-    ]
-] = [
+_GRAPH_NODE_ORDER = [  # type: ignore
     MatchedObjectNode,
+    SpatialPath,
+    PathOperator,
     OntologyNode,
     RgbColorPerception,
     ObjectPerception,
@@ -2595,3 +2727,16 @@ class LanguageAlignedPerception:
                     f"Aligned spans in a LanguageAlignedPerception must be "
                     f"disjoint but got {span1} and {span2}"
                 )
+
+
+_T = TypeVar("_T")
+
+
+def _uniquify(item: _T, id_incrementer: Incrementer) -> Tuple[_T, int]:
+    """
+    Utility method to force object which would otherwise compare as equal
+    to be distinct when used as nodes in a digraph.
+    """
+    ret = (item, id_incrementer.value())
+    id_incrementer.increment(1)
+    return ret
