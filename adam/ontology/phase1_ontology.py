@@ -1776,18 +1776,11 @@ _GO_GOAL = ActionDescriptionVariable(THING)
 
 
 def _make_go_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
-    # bare go
     postconditions = [Relation(IN_REGION, _GO_AGENT, _GO_GOAL)]
     during: DuringAction[ActionDescriptionVariable] = DuringAction(
         objects_to_paths=[(_GO_AGENT, SpatialPath(TO, _GO_GOAL))]
     )
     asserted_properties = [(_GO_AGENT, VOLITIONALLY_INVOLVED), (_GO_AGENT, MOVES)]
-    yield GO, ActionDescription(
-        frame=ActionDescriptionFrame({AGENT: _GO_AGENT}),
-        during=during,
-        postconditions=postconditions,
-        asserted_properties=asserted_properties,
-    )
 
     # goes to goal
     yield GO, ActionDescription(

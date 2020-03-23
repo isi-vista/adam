@@ -41,7 +41,6 @@ from adam.ontology.phase1_ontology import (
     FLY,
     GAILA_PHASE_1_ONTOLOGY,
     GIVE,
-    GO,
     GOAL,
     GROUND,
     HAS_SPACE_UNDER,
@@ -74,7 +73,6 @@ from adam.ontology.phase1_ontology import (
     THROW,
     THROW_GOAL,
     TRANSFER_OF_POSSESSION,
-    _GO_GOAL,
     bigger_than,
     contacts,
     inside,
@@ -114,6 +112,7 @@ from adam.situation.templates.phase1_situation_templates import (
     _put_on_body_part_template,
     _go_in_template,
     _go_under_template,
+    _go_to_template,
 )
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
@@ -1170,22 +1169,10 @@ def make_go_templates() -> Iterable[Phase1SituationTemplate]:
     goer = standard_object("goer", THING, required_properties=[ANIMATE])
     goal_reference = standard_object("go-goal", THING)
     in_goal_reference = standard_object("go-in-goal", THING, required_properties=[HOLLOW])
-    bare_go = Phase1SituationTemplate(
-        "bare-go",
-        salient_object_variables=[goer],
-        actions=[
-            Action(
-                GO,
-                argument_roles_to_fillers=[(AGENT, goer)],
-                auxiliary_variable_bindings=[
-                    (_GO_GOAL, Region(goal_reference, distance=PROXIMAL))
-                ],
-            )
-        ],
-    )
 
+    go_to = _go_to_template(goer, goal_reference, [])
     go_in = _go_in_template(goer, in_goal_reference, [])
-    return [bare_go, go_in]
+    return [go_to, go_in]
 
 
 def _make_go_curriculum() -> Phase1InstanceGroup:
