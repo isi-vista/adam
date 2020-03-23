@@ -286,6 +286,14 @@ class PerceptionGraphProtocol(Protocol):
         Debugging tool to render the graph to PDF using *dot*.
         """
 
+    def text_dump(self) -> str:
+        lines = []
+        lines.append("Nodes:")
+        lines.extend(f"\t{node}" for node in self._graph.nodes)
+        lines.append("\nEdges:")
+        lines.extend(f"\t{edge}" for edge in self._graph.edges(data="label"))
+        return "\n".join(lines)
+
 
 @attrs(frozen=True, repr=False)
 class PerceptionGraph(PerceptionGraphProtocol):
@@ -726,14 +734,6 @@ class PerceptionGraph(PerceptionGraphProtocol):
             f"PerceptionGraph(nodes={str_list_limited(self._graph.nodes, 10)}, edges="
             f"{str_list_limited(self._graph.edges(data='label'), 15)})"
         )
-
-    def text_dump(self) -> str:
-        lines = []
-        lines.append("Nodes:")
-        lines.extend(f"\t{node}" for node in self._graph.nodes)
-        lines.append("\nEdges:")
-        lines.extend(f"\t{edge}" for edge in self._graph.edges(data="label"))
-        return "\n".join(lines)
 
     def __attrs_post_init__(self) -> None:
         # Every edge must have a label
