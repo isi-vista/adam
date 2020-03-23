@@ -30,7 +30,6 @@ from typing import (
     Set,
     Sized,
     Tuple,
-    Type,
     TypeVar,
     Union,
     cast,
