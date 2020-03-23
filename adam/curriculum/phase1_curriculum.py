@@ -133,6 +133,18 @@ def _make_each_object_by_itself_curriculum(
     single_object_template = Phase1SituationTemplate(
         "single-object", salient_object_variables=[object_variable("object")]
     )
+    single_speaker_template = Phase1SituationTemplate(
+        "single-speaker",
+        salient_object_variables=[
+            standard_object("speaker", PERSON, added_properties=[IS_SPEAKER])
+        ],
+    )
+    single_addressee_template = Phase1SituationTemplate(
+        "single-addressee",
+        salient_object_variables=[
+            standard_object("addressee", PERSON, added_properties=[IS_ADDRESSEE])
+        ],
+    )
 
     return phase1_instances(
         "each object by itself",
@@ -142,7 +154,17 @@ def _make_each_object_by_itself_curriculum(
                     single_object_template,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                )
+                ),
+                all_possible(
+                    single_speaker_template,
+                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                ),
+                all_possible(
+                    single_addressee_template,
+                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                ),
             ]
         ),
         perception_generator=perception_generator,
