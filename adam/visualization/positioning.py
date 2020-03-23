@@ -71,10 +71,10 @@ PROXIMAL_MIN_DISTANCE = torch.tensor(  # pylint: disable=not-callable
     [1], dtype=torch.float
 )
 PROXIMAL_MAX_DISTANCE = torch.tensor(  # pylint: disable=not-callable
-    [4], dtype=torch.float
+    [2.5], dtype=torch.float
 )
 
-DISTAL_MIN_DISTANCE = torch.tensor([5], dtype=torch.float)  # pylint: disable=not-callable
+DISTAL_MIN_DISTANCE = torch.tensor([3], dtype=torch.float)  # pylint: disable=not-callable
 
 EXTERIOR_BUT_IN_CONTACT_EPS = torch.tensor(  # pylint: disable=not-callable
     [1e-2], dtype=torch.float
@@ -222,19 +222,19 @@ def run_model(
     prev_loss = 0.0
     epochs_without_improvement = 0
     for i in range(iterations):
-        print(f"====== Iteration {i} =======")
+        # print(f"====== Iteration {i} =======")
         loss = positioning_model()
         # if we lose any substantial gradient, stop the search
         if loss < LOSS_EPSILON:
             break
-        if prev_loss - loss < loss_eps:
+        if loss == float("nan") or prev_loss - loss < loss_eps:
             epochs_without_improvement += 1
         else:
             epochs_without_improvement = 0
         if epochs_without_improvement >= quit_patience:
             break
         prev_loss = loss
-        print(f"\tLoss: {loss.item()} bad: {epochs_without_improvement}")
+        # print(f"\tLoss: {loss.item()} bad: {epochs_without_improvement}")
         loss.backward()
 
         optimizer.step()
@@ -242,10 +242,12 @@ def run_model(
 
         learning_rate_schedule.step(loss)
 
-        positioning_model.dump_object_positions(prefix="\t")
+        # positioning_model.dump_object_positions(prefix="\t")
         if yield_steps and i % yield_steps == 0:
             yield positioning_model.get_objects_positions()
 
+    # this *looks* redundant, but it helps to ensure that the final positions are rendered
+    yield positioning_model.get_objects_positions()
     return positioning_model.get_objects_positions()
 
 
@@ -665,7 +667,7 @@ class PositioningModel(torch.nn.Module):  # type: ignore
 
         for object_perception in object_perceptions:
 
-            print(f"Adding {object_perception.debug_handle} to model")
+            # print(f"Adding {object_perception.debug_handle} to model")
 
             model_lookup = object_perception.debug_handle.split("_")[0]
             try:
@@ -679,9 +681,9 @@ class PositioningModel(torch.nn.Module):  # type: ignore
                 # selectively freeze particular objects from positioning model
                 if frozen_objects and object_perception.debug_handle in frozen_objects:
                     is_parameter = False
-                print(
-                    f"Creating AABB as parameter: {is_parameter}\ncenter: {positions_map.name_to_position[object_perception.debug_handle]}\nscale: {scale}"
-                )
+                # print(
+                #     f"Creating AABB as parameter: {is_parameter}\ncenter: {positions_map.name_to_position[object_perception.debug_handle]}\nscale: {scale}"
+                # )
                 bounding_box = AxisAlignedBoundingBox.create_at_center_point_scaled(
                     center=positions_map.name_to_position[object_perception.debug_handle],
                     object_scale=torch.tensor(  # pylint: disable=not-callable
@@ -760,12 +762,12 @@ class PositioningModel(torch.nn.Module):  # type: ignore
             for object_perception in self.object_perception_to_bounding_box
             if object_perception in self.in_region_relations
         )
-        print(
-            f"collision penalty: {collision_penalty}"
-            f"\nout of bounds penalty: {below_ground_penalty}"
-            f"\ngravity penalty: {weak_gravity_penalty}"
-            f"\nin-region penalty: {in_region_penalty}"
-        )
+        # print(
+        #     f"collision penalty: {collision_penalty}"
+        #     f"\nout of bounds penalty: {below_ground_penalty}"
+        #     f"\ngravity penalty: {weak_gravity_penalty}"
+        #     f"\nin-region penalty: {in_region_penalty}"
+        # )
         return (
             collision_penalty
             + below_ground_penalty
@@ -1075,7 +1077,7 @@ class InRegionPenalty(nn.Module):  # type: ignore
         designated_region: ImmutableSet[Region[ObjectPerception]],
     ):  # pylint: disable=arguments-differ
 
-        print(f"{target_object.debug_handle} positioned w/r/t {designated_region}")
+        # print(f"{target_object.debug_handle} positioned w/r/t {designated_region}")
 
         # return 0 if object has no relative positions to apply
         if not designated_region:
@@ -1111,9 +1113,9 @@ class InRegionPenalty(nn.Module):  # type: ignore
         Returns: Tensor(1,) with penalty
 
         """
-        print(
-            f"TARGET: {target_box.center} REFERENCE: {reference_box.center} REGION:{region}"
-        )
+        # print(
+        #     f"TARGET: {target_box.center} REFERENCE: {reference_box.center} REGION:{region}"
+        # )
         assert region.distance is not None
         # get direction that box 1 should be in w/r/t box 2
         # TODO: allow for addressee directions

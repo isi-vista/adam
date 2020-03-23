@@ -262,7 +262,7 @@ def model_lookup(
             parent = parent.parent
 
         parent_name = parent.name.split("_")[0]
-        print(f"parent name: {parent_name}")
+        # print(f"parent name: {parent_name}")
         # convert unique sub-object index into a prototypical index
         if parent_name in _PART_CARDINALITY:
             sub_object_cardinality = (
