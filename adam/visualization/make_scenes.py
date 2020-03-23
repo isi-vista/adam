@@ -44,13 +44,10 @@ from panda3d.core import LPoint3f  # pylint: disable=no-name-in-module
 
 from adam.math_3d import Point
 from math import isnan
-from adam.language.dependency import LinearizedDependencyTree
 
-from adam.experiment import InstanceGroup
 
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.perception.developmental_primitive_perception import (
-    DevelopmentalPrimitivePerceptionFrame,
     RgbColorPerception,
     HasColor,
     HasBinaryProperty,
@@ -301,7 +298,8 @@ def main(
 
                 try:
                     viz.set_positions(repositioned_map)
-                except AssertionError:
+                except AssertionError as e:
+                    print(e)
                     raise
                 if debug_bounding_boxes:
                     for name in repositioned_map.name_to_position:
@@ -840,7 +838,7 @@ def screenshot(
 
 
 def nan_in_positions(pos_map: PositionsMap) -> bool:
-    for name, position in pos_map.name_to_position.items():
+    for _, position in pos_map.name_to_position.items():
         if (
             isnan(position.data[0].item())
             or isnan(position.data[1].item())
