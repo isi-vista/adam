@@ -1606,7 +1606,7 @@ def build_gaila_phase1_verb_curriculum() -> Sequence[Phase1InstanceGroup]:
     return [
         _make_fall_curriculum(),
         _make_transfer_of_possession_curriculum(),
-        _make_fly_curriculum(),
+        # _make_fly_curriculum(),
         _make_roll_curriculum(),
         _make_speaker_addressee_curriculum(),
         _make_jump_curriculum(),
@@ -1620,7 +1620,7 @@ def build_gaila_phase1_verb_curriculum() -> Sequence[Phase1InstanceGroup]:
         _make_go_curriculum(),
         _make_push_curriculum(),
         _make_throw_curriculum(),
-        _make_put_on_speaker_addressee_body_part_curriculum(),
+        # _make_put_on_speaker_addressee_body_part_curriculum(),
         _make_come_curriculum(),
     ]
 

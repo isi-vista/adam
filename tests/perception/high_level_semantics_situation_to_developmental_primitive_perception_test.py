@@ -27,7 +27,6 @@ from adam.ontology.phase1_ontology import (
     LEARNER,
     LIQUID,
     MOM,
-    PART_OF,
     PATIENT,
     PERSON,
     PUT,
@@ -227,7 +226,8 @@ def test_person_put_ball_on_table():
         Relation(SMALLER_THAN, ball_perception, person_perception)
         in first_frame_relations
     )
-    assert Relation(PART_OF, hand_perception, person_perception) in first_frame_relations
+    # Disabled because of https://github.com/isi-vista/adam/issues/673
+    # assert Relation(PART_OF, hand_perception, person_perception) in first_frame_relations
     assert (
         Relation(
             IN_REGION,

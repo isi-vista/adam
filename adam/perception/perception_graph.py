@@ -172,7 +172,7 @@ class TemporalScope(Enum):
 ENTIRE_SCENE = immutableset([TemporalScope.BEFORE, TemporalScope.AFTER])
 
 
-@attrs(slots=True, frozen=True)
+@attrs(slots=True, frozen=True, repr=False)
 class TemporallyScopedEdgeLabel:
     r"""
     An edge attribute in a `PerceptionGraph` which is annotated for what times it holds true.
@@ -201,6 +201,12 @@ class TemporallyScopedEdgeLabel:
         if isinstance(when, TemporalScope):
             when = [when]
         return TemporallyScopedEdgeLabel(attribute, when)
+
+    def __repr__(self) -> str:
+        temporal_scope_names = [
+            temporal_specifier.name for temporal_specifier in self.temporal_specifiers
+        ]
+        return f"{self.attribute!r}@{temporal_scope_names}"
 
 
 # certain constant edges used by PerceptionGraphs
@@ -634,6 +640,14 @@ class PerceptionGraph(PerceptionGraphProtocol):
             f"PerceptionGraph(nodes={str_list_limited(self._graph.nodes, 10)}, edges="
             f"{str_list_limited(self._graph.edges(data='label'), 15)})"
         )
+
+    def text_dump(self) -> str:
+        lines = []
+        lines.append("Nodes:")
+        lines.extend(f"\t{node}" for node in self._graph.nodes)
+        lines.append("\nEdges:")
+        lines.extend(f"\t{edge}" for edge in self._graph.edges(data="label"))
+        return "\n".join(lines)
 
     def __attrs_post_init__(self) -> None:
         # Every edge must have a label
@@ -1609,11 +1623,12 @@ class PatternMatching:
                     f"{connected_components_containing_successful_pattern_matches}"
                 )
 
-            logging.info(
-                "Relaxation: deleted due to disconnection: %s",
-                to_delete_due_to_disconnection,
-            )
-            pattern_as_digraph.remove_nodes_from(to_delete_due_to_disconnection)
+            if to_delete_due_to_disconnection:
+                logging.info(
+                    "Relaxation: deleted due to disconnection: %s",
+                    to_delete_due_to_disconnection,
+                )
+                pattern_as_digraph.remove_nodes_from(to_delete_due_to_disconnection)
         else:
             # If nothing was successfully matched, it is less clear how to choose what portion
             # of the pattern to keep. For now, we are going to keep the largest connected component.

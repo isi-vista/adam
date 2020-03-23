@@ -33,7 +33,11 @@ class AbstractTemplateLearner(
             DevelopmentalPrimitivePerceptionFrame, LinguisticDescription
         ],
     ) -> None:
-        logging.info("Observation %s", self._observation_num)
+        logging.info(
+            "Observation %s: %s",
+            self._observation_num,
+            learning_example.linguistic_description.as_token_string(),
+        )
         self._observation_num += 1
 
         self._assert_valid_input(learning_example)
