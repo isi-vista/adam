@@ -71,7 +71,11 @@ def log_experiment_entry_point(params: Parameters) -> None:
             test_instance_groups=test_instance_groups,
             test_observers=[logger.test_observer()],
             sequence_chooser=RandomChooser.for_seed(0),
-        )
+        ),
+        log_path=params.optional_creatable_directory("hypothesis_log_dir"),
+        log_hypotheses_every_n_examples=params.integer(
+            "log_hypothesis_every_n_steps", default=250
+        ),
     )
 
 

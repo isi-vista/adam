@@ -3,6 +3,7 @@ Interfaces for language learning code.
 """
 
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import Dict, Generic, Mapping, Optional, Any
 
 from adam.ontology.ontology import Ontology
@@ -77,6 +78,13 @@ class LanguageLearner(ABC, Generic[PerceptionT, LinguisticDescriptionT]):
 
         It is possible that the learner cannot produce a description, in which case an empty
         mapping is returned.
+        """
+
+    @abstractmethod
+    def log_hypotheses(self, log_output_path: Path) -> None:
+        """
+        Log some representation of the learner's current hypothesized semantics for words/phrases
+        to *log_output_path*
         """
 
 

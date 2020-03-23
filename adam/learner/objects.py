@@ -1,5 +1,6 @@
 import logging
 from abc import ABC
+from pathlib import Path
 from random import Random
 from typing import Union, Sequence, List, Optional, Iterable
 
@@ -13,7 +14,7 @@ from adam.learner.learner_utils import assert_static_situation
 from adam.learner.object_recognizer import PerceptionGraphFromObjectRecognizer
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
 from adam.learner.pursuit import AbstractPursuitLearner, HypothesisLogger
-from adam.learner.subset import AbstractSubsetLearner
+from adam.learner.subset import AbstractTemplateSubsetLearner
 from adam.learner.surface_templates import SurfaceTemplate
 from adam.learner.template_learner import AbstractTemplateLearner
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
@@ -277,9 +278,16 @@ class ObjectPursuitLearner(AbstractPursuitLearner, AbstractObjectTemplateLearner
             ontology=GAILA_PHASE_1_ONTOLOGY,
         )
 
+    def log_hypotheses(self, log_output_path: Path) -> None:
+        for (surface_template, hypothesis) in self._lexicon.items():
+            template_string = surface_template.to_short_string()
+            hypothesis.graph_pattern.render_to_file(
+                template_string, log_output_path / template_string
+            )
+
 
 @attrs(slots=True)
-class SubsetObjectLearner(AbstractSubsetLearner, AbstractObjectTemplateLearner):
+class SubsetObjectLearner(AbstractTemplateSubsetLearner, AbstractObjectTemplateLearner):
     """
     An implementation of `LanguageLearner` for subset learning based approach for single object detection.
     """

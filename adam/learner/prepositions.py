@@ -1,41 +1,41 @@
 from abc import ABC
-from typing import Mapping, Union, Sequence, Optional, Iterable
+from typing import Iterable, Mapping, Optional, Sequence, Union
+
+from attr.validators import instance_of, optional
+from more_itertools import flatten
+from networkx import all_shortest_paths, subgraph
 
 from adam.language import LinguisticDescription
 from adam.learner import LearningExample, get_largest_matching_pattern
 from adam.learner.learner_utils import assert_static_situation
-from adam.learner.pursuit import AbstractPursuitLearner
-from adam.learner.subset import AbstractSubsetLearner
-from adam.perception.developmental_primitive_perception import (
-    DevelopmentalPrimitivePerceptionFrame,
-)
-from attr import attrib, attrs
-from more_itertools import flatten
-from networkx import all_shortest_paths, subgraph
-
 from adam.learner.object_recognizer import (
     ObjectRecognizer,
     PerceptionGraphFromObjectRecognizer,
 )
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
+from adam.learner.pursuit import AbstractPursuitLearner
+from adam.learner.subset import AbstractTemplateSubsetLearner
 from adam.learner.surface_templates import (
-    SurfaceTemplateVariable,
     SLOT1,
     SLOT2,
     SurfaceTemplate,
+    SurfaceTemplateVariable,
 )
 from adam.learner.template_learner import AbstractTemplateLearner
 from adam.perception import ObjectPerception, PerceptualRepresentation
+from adam.perception.developmental_primitive_perception import (
+    DevelopmentalPrimitivePerceptionFrame,
+)
 from adam.perception.perception_graph import (
-    MatchedObjectNode,
     LanguageAlignedPerception,
+    MatchedObjectNode,
+    PerceptionGraph,
     PerceptionGraphNode,
     _graph_node_order,
-    PerceptionGraph,
 )
 from adam.utils.networkx_utils import digraph_with_nodes_sorted_by
-from attr.validators import instance_of, optional
-from immutablecollections import ImmutableSet, immutableset, immutabledict, ImmutableDict
+from attr import attrib, attrs
+from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
 
 
 @attrs
@@ -278,7 +278,9 @@ class PrepositionPursuitLearner(
 
 
 @attrs
-class SubsetPrepositionLearner(AbstractSubsetLearner, AbstractPrepositionTemplateLearner):
+class SubsetPrepositionLearner(
+    AbstractTemplateSubsetLearner, AbstractPrepositionTemplateLearner
+):
     def _hypothesis_from_perception(
         self, preprocessed_input: LanguageAlignedPerception
     ) -> PerceptionGraphTemplate:

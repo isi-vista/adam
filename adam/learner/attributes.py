@@ -1,6 +1,8 @@
 from abc import ABC
 from typing import Union
 
+from attr.validators import instance_of
+
 from adam.language import LinguisticDescription
 from adam.learner import LearningExample
 from adam.learner.learner_utils import assert_static_situation
@@ -9,6 +11,7 @@ from adam.learner.object_recognizer import (
     PerceptionGraphFromObjectRecognizer,
 )
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
+from adam.learner.subset import AbstractTemplateSubsetLearner
 from adam.learner.surface_templates import STANDARD_SLOT_VARIABLES, SurfaceTemplate
 from adam.learner.template_learner import AbstractTemplateLearner
 from adam.perception import PerceptualRepresentation
@@ -16,10 +19,7 @@ from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
 from adam.perception.perception_graph import LanguageAlignedPerception, PerceptionGraph
-from attr import attrs, attrib
-
-from adam.learner.subset import AbstractSubsetLearner
-from attr.validators import instance_of
+from attr import attrib, attrs
 from immutablecollections import immutabledict, immutableset
 
 
@@ -77,7 +77,9 @@ class AbstractAttributeTemplateLearner(AbstractTemplateLearner, ABC):
 
 
 @attrs
-class SubsetAttributeLearner(AbstractSubsetLearner, AbstractAttributeTemplateLearner):
+class SubsetAttributeLearner(
+    AbstractTemplateSubsetLearner, AbstractAttributeTemplateLearner
+):
     def _hypothesis_from_perception(
         self, preprocessed_input: LanguageAlignedPerception
     ) -> PerceptionGraphTemplate:

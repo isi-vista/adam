@@ -1,5 +1,6 @@
 import logging
 from abc import abstractmethod, ABC
+from pathlib import Path
 from typing import Dict, Mapping, Optional, Tuple, Iterable, Sequence
 
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
@@ -98,3 +99,21 @@ class AbstractSubsetLearner(AbstractTemplateLearner, ABC):
             (description, len(template.graph_pattern) / largest_pattern_num_nodes)
             for (description, template, score) in match_results
         )
+
+
+@attrs  # pylint:disable=abstract-method
+class AbstractTemplateSubsetLearner(AbstractSubsetLearner, AbstractTemplateLearner, ABC):
+    def log_hypotheses(self, log_output_path: Path) -> None:
+        logging.info(
+            "Logging %s hypotheses to %s",
+            len(self._surface_template_to_hypothesis),
+            log_output_path,
+        )
+        for (
+            surface_template,
+            hypothesis,
+        ) in self._surface_template_to_hypothesis.items():
+            template_string = surface_template.to_short_string()
+            hypothesis.graph_pattern.render_to_file(
+                template_string, log_output_path / template_string
+            )
