@@ -282,11 +282,9 @@ class SituationVisualizer(ShowBase):
                 SituationVisualizer.specific_model_to_file[lookup_name]
             )
             new_model.name = name
-            print(f"adding: {name}")
         # back off: attempt to find a model for the object's geon
         else:
             try:
-                print(f"adding geon: {model_type}")
                 new_model = self._load_model(
                     SituationVisualizer.model_to_file[model_type]
                 )

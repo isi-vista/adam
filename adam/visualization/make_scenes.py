@@ -26,9 +26,10 @@ import numpy as np
 import logging
 
 # currently useful for positioning multiple objects:
-from adam.curriculum.verbs_with_dynamic_prepositions_curriculum import (
-    _make_throw_with_prepositions as make_curriculum,
+from adam.curriculum.phase1_curriculum import (
+    _make_each_object_by_itself_curriculum as make_curriculum,
 )
+from adam.curriculum.phase1_curriculum import Phase1InstanceGroup
 
 
 import attr
@@ -78,6 +79,10 @@ USAGE_MESSAGE = """make_scenes.py param_file
                 \t\tseed: int: random seed for picking initial object positions
                 """
 
+# TODO: remove this or log its use as an error
+#       https://github.com/isi-vista/adam/issues/689
+EXCLUDED_VOCAB = {"in"}
+
 
 @attrs(slots=True)
 class SceneNode:
@@ -94,11 +99,28 @@ class SceneNode:
     position: Point = attr.ib(default=Point(0, 0, 0))
 
 
-def main(params: Parameters) -> None:
+def main(
+    params: Parameters,
+    scenes_iterable_input: Optional[Iterable[Phase1InstanceGroup]] = None,
+    output_directory: Optional[str] = None,
+    visualizer: Optional[SituationVisualizer] = None,
+) -> None:
+
+    if scenes_iterable_input is None:
+        scenes_iterable: Iterable[Phase1InstanceGroup] = [make_curriculum()]
+    else:
+        scenes_iterable = scenes_iterable_input
+
     num_iterations = params.positive_integer("iterations")
     steps_before_vis = params.positive_integer("steps_before_vis")
 
     specific_scene = params.optional_positive_integer("scene")
+
+    automatically_save_renderings = params.optional_boolean_with_default(
+        "automatically_save_renderings", default_value=False
+    )
+
+    screenshot_dir = output_directory
 
     random.seed(params.integer("seed"))
     np.random.seed(params.integer("seed"))
@@ -109,8 +131,10 @@ def main(params: Parameters) -> None:
         debug_bounding_boxes = False
 
     # go through curriculum scenes and output geometry types
-    print("scene generation test")
-    viz = SituationVisualizer()
+    if visualizer is None:
+        viz = SituationVisualizer()
+    else:
+        viz = visualizer
     model_scales = viz.get_model_scales()
     for object_type, multiplier in OBJECT_SCALE_MULTIPLIER_MAP.items():
         if object_type in model_scales:
@@ -126,13 +150,15 @@ def main(params: Parameters) -> None:
     # used to start a frame from where the previous one left off
     previous_model_positions: Optional[PositionsMap] = None
 
-    for i, scene_elements in enumerate(SceneCreator.create_scenes([make_curriculum()])):
+    for scene_number, scene_elements in enumerate(
+        SceneCreator.create_scenes(scenes_iterable)
+    ):
         # If a scene number is provided in the params file, only render that scene
-        if specific_scene and i < specific_scene:
+        if specific_scene and scene_number < specific_scene:
             continue
-        if specific_scene and i > specific_scene:
+        if specific_scene and scene_number > specific_scene:
             break
-        print(f"SCENE {i}")
+        print(f"SCENE {scene_number}")
         viz.set_title(
             " ".join(token for token in scene_elements.tokens)
             + " ("
@@ -146,8 +172,17 @@ def main(params: Parameters) -> None:
         if scene_elements.current_frame == 0:
             previous_model_positions = None
 
+        if automatically_save_renderings:
+            # if in auto mode and scene contains an excluded vocab word, skip it
+            skip_scene = False
+            for token in scene_elements.tokens:
+                if token in EXCLUDED_VOCAB:
+                    skip_scene = True
+            if skip_scene:
+                continue
+
         # for debugging purposes:
-        SceneCreator.graph_for_each(scene_elements.object_graph, print_obj_names)
+        # SceneCreator.graph_for_each(scene_elements.object_graph, print_obj_names)
 
         # bind visualizer and properties to top level rendering function:
         bound_render_obj = partial(
@@ -207,25 +242,19 @@ def main(params: Parameters) -> None:
 
             sub_object_offsets[node_name] = child_node_to_offset
 
-        # for debugging purposes to view the results before positioning:
-        viz.run_for_seconds(1)
-        command = input(
-            "Press ENTER to run the positioning system or enter name to save a screenshot\n"
-            "Or type 's' for (step or for skip) to skip this scene > "
-        )
-        if command == "s":
-            viz.clear_scene()
-            viz.run_for_seconds(0.25)
-            continue
-        if command:
-            viz.screenshot(command)
+        # handle skipping scene
+        if not automatically_save_renderings:
+            viz.run_for_seconds(1)
+            skip_command = input("type 's' and hit ENTER to skip this scene")
+            if skip_command == "s":
+                viz.clear_scene()
+                viz.run_for_seconds(0.25)
+                continue
 
         handle_to_in_region_map = {
             object_perception.debug_handle: region_list
             for object_perception, region_list in inter_object_in_region_map.items()
         }
-
-        print(scene_elements.in_region_map)
 
         frozen_objects = objects_to_freeze(
             handle_to_in_region_map,
@@ -245,50 +274,64 @@ def main(params: Parameters) -> None:
         # now that every object has been instantiated into the scene,
         # they need to be re-positioned.
 
-        repositioned_map = None
+        try:
 
-        for repositioned_map in _solve_top_level_positions(
-            top_level_objects=immutableset(
-                [
-                    node.perceived_obj
-                    for node in scene_elements.object_graph
-                    if node.name not in OBJECT_NAMES_TO_EXCLUDE
-                ]
-            ),
-            sub_object_offsets=sub_object_offsets,
-            in_region_map=inter_object_in_region_map,
-            model_scales=model_scales,
-            frozen_objects=frozen_objects,
-            iterations=num_iterations,
-            yield_steps=steps_before_vis,
-            previous_positions=previous_model_positions,
-        ):
-            viz.clear_debug_nodes()
+            repositioned_map = None
+
+            for repositioned_map in _solve_top_level_positions(
+                top_level_objects=immutableset(
+                    [
+                        node.perceived_obj
+                        for node in scene_elements.object_graph
+                        if node.name not in OBJECT_NAMES_TO_EXCLUDE
+                    ]
+                ),
+                sub_object_offsets=sub_object_offsets,
+                in_region_map=inter_object_in_region_map,
+                model_scales=model_scales,
+                frozen_objects=frozen_objects,
+                iterations=num_iterations,
+                yield_steps=steps_before_vis,
+                previous_positions=previous_model_positions,
+            ):
+                viz.clear_debug_nodes()
+                if not automatically_save_renderings:
+                    viz.run_for_seconds(0.25)
+
+                try:
+                    viz.set_positions(repositioned_map)
+                except AssertionError:
+                    raise
+                if debug_bounding_boxes:
+                    for name in repositioned_map.name_to_position:
+                        viz.add_debug_bounding_box(
+                            name,
+                            repositioned_map.name_to_position[name],
+                            repositioned_map.name_to_scale[name],
+                        )
+
+                # the visualizer seems to need about a second to render an update
+                if not automatically_save_renderings:
+                    viz.run_for_seconds(1)
+                    viz.print_scene_graph()
+                previous_model_positions = None
+        except AssertionError:
+            # TODO: log error here. This catches nan exceptions https://github.com/isi-vista/adam/issues/688
+            viz.clear_scene()
             viz.run_for_seconds(0.25)
-
-            viz.set_positions(repositioned_map)
-            if debug_bounding_boxes:
-                for name in repositioned_map.name_to_position:
-                    viz.add_debug_bounding_box(
-                        name,
-                        repositioned_map.name_to_position[name],
-                        repositioned_map.name_to_scale[name],
-                    )
-
-            # the visualizer seems to need about a second to render an update
-            viz.run_for_seconds(1)
-            # viz.print_scene_graph()
-            previous_model_positions = None
-
+            continue
         # only store previous positions when continuing to next frame / scene
         previous_model_positions = repositioned_map
         viz.run_for_seconds(1)
 
-        screenshot_name = input(
-            "Press ENTER to continue to the next scene, or the name of a file to save a screenshot to: "
+        screenshot(
+            scene_elements=scene_elements,
+            automatically_save_renderings=automatically_save_renderings,
+            scene_number=scene_number,
+            screenshot_dir=screenshot_dir,
+            viz=viz,
         )
-        if screenshot_name:
-            viz.screenshot(screenshot_name)
+
         viz.clear_scene()
         viz.run_for_seconds(0.25)
 
@@ -387,6 +430,7 @@ def print_obj_names(obj: ObjectPerception) -> None:
 class SceneElements:
     """ Convenience wrapper for the various sub-objects returned by SceneCreator """
 
+    instance_group_name: str = attr.ib()
     # Objects -> their properties
     property_map: DefaultDict[
         ObjectPerception, List[Optional[Union[RgbColorPerception, OntologyNode]]]
@@ -416,13 +460,7 @@ class SceneCreator:
 
     @staticmethod
     def create_scenes(
-        instance_groups: Iterable[
-            InstanceGroup[
-                HighLevelSemanticsSituation,
-                LinearizedDependencyTree,
-                DevelopmentalPrimitivePerceptionFrame,
-            ]
-        ],
+        instance_groups: Iterable[Phase1InstanceGroup],
     ) -> Generator[SceneElements, None, None]:
         for (
             instance_group
@@ -508,6 +546,7 @@ class SceneCreator:
                             frame_number += 1
 
                     yield SceneElements(
+                        instance_group.name(),
                         property_map,
                         in_region_map,
                         semantics_situation,
@@ -528,12 +567,13 @@ class SceneCreator:
                                 isinstance(relation.second_slot, Region)
                                 and relation.relation_type == IN_REGION
                             ):
-                                print(relation)
+                                # print(relation)
                                 in_region_map[relation.first_slot] = [
                                     relation.second_slot
                                 ]
 
                         yield SceneElements(
+                            instance_group.name(),
                             property_map,
                             in_region_map,
                             semantics_situation,
@@ -700,7 +740,6 @@ def objects_to_freeze(
     goal: Optional[Union[SituationObject, Region[SituationObject]]] = None
     for action in semantics_situation.actions:
         for (ontology_node, object_or_region) in action.argument_roles_to_fillers.items():
-            print(ontology_node)
             if ontology_node == GOAL:
                 goal = object_or_region
             elif ontology_node == AGENT:
@@ -773,6 +812,30 @@ def _solve_top_level_positions(
         yield_steps=yield_steps,
         previous_positions=previous_positions,
     )
+
+
+def screenshot(
+    *,
+    scene_elements: SceneElements,
+    automatically_save_renderings: bool,
+    scene_number: int,
+    screenshot_dir: Optional[str],
+    viz: SituationVisualizer,
+):
+    if automatically_save_renderings and screenshot_dir is not None:
+        print(
+            f"SAVING TO: {screenshot_dir}/{scene_number:03}-{'_'.join(scene_elements.tokens)}-{scene_elements.current_frame}.jpg"
+        )
+        viz.screenshot(
+            f"{screenshot_dir}/{scene_number:03}-{'_'.join(scene_elements.tokens)}-{scene_elements.current_frame}.jpg",
+            0,
+        )
+    else:
+        command = input(
+            "Press ENTER to run the positioning system or enter name to save a screenshot\n"
+        )
+        if command:
+            viz.screenshot(command)
 
 
 if __name__ == "__main__":
