@@ -312,27 +312,7 @@ class PerceptionGraph(PerceptionGraphProtocol):
         """
         graph = DiGraph()
 
-        def map_node(obj: Any, *, force_unique_counter: Optional[int] = None):
-            # in some cases, a special index will be given to force
-            # otherwise identical objects to be treated separately.
-            # We do this for properties, for example, so that if two things
-            # are both animate, they end up with distinct animacy nodes in the graph
-            # which could be e.g. treated differently during pattern relaxation.
-            if force_unique_counter is not None:
-                return (obj, force_unique_counter)
-            # Regions and Geons are normally treated as value objects,
-            # but we want to maintain their distinctness in the perceptual graph
-            # for the purpose of matching patterns, so we make their corresponding
-            # graph nods compare by identity.
-            elif isinstance(obj, (Region, Geon)):
-                return (obj, id(obj))
-            else:
-                return obj
-
-        def map_edge(label: Any):
-            return {"label": label}
-
-        # see force_unique_counter in map_node above
+        # see force_unique_counter in map_node
         property_index = 0
 
         for perceived_object in frame.perceived_objects:
@@ -340,15 +320,15 @@ class PerceptionGraph(PerceptionGraphProtocol):
             graph.add_node(perceived_object)
             # And so are each of its axes.
             _translate_axes(
-                graph, perceived_object, perceived_object, map_node, map_edge=map_edge
+                graph, perceived_object, perceived_object, PerceptionGraph.map_node, map_edge=PerceptionGraph.map_edge
             )
             _translate_geon(
                 graph,
                 perceived_object,
                 mapped_owner=perceived_object,
-                map_geon=map_node,
-                map_axis=map_node,
-                map_edge=map_edge,
+                map_geon=PerceptionGraph.map_node,
+                map_axis=PerceptionGraph.map_node,
+                map_edge=PerceptionGraph.map_edge,
             )
 
         regions = immutableset(
@@ -361,8 +341,8 @@ class PerceptionGraph(PerceptionGraphProtocol):
             _translate_region(
                 graph,
                 region,
-                map_node=map_node,
-                map_edge=map_edge,
+                map_node=PerceptionGraph.map_node,
+                map_edge=PerceptionGraph.map_edge,
                 axes_info=frame.axis_info,
             )
 
@@ -370,21 +350,21 @@ class PerceptionGraph(PerceptionGraphProtocol):
         # from the first argument to the second
         for relation in frame.relations:
             graph.add_edge(
-                map_node(relation.first_slot),
-                map_node(relation.second_slot),
+                PerceptionGraph.map_node(relation.first_slot),
+                PerceptionGraph.map_node(relation.second_slot),
                 label=relation.relation_type,
             )
 
         dest_node: Any
         for property_ in frame.property_assertions:
             property_index += 1
-            source_node = map_node(property_.perceived_object)
+            source_node = PerceptionGraph.map_node(property_.perceived_object)
             if isinstance(property_, HasBinaryProperty):
-                dest_node = map_node(
+                dest_node = PerceptionGraph.map_node(
                     property_.binary_property, force_unique_counter=property_index
                 )
             elif isinstance(property_, HasColor):
-                dest_node = map_node(property_.color, force_unique_counter=property_index)
+                dest_node = PerceptionGraph.map_node(property_.color, force_unique_counter=property_index)
             else:
                 raise RuntimeError(f"Don't know how to translate property {property_}")
             graph.add_edge(source_node, dest_node, label=HAS_PROPERTY_LABEL)
@@ -394,6 +374,28 @@ class PerceptionGraph(PerceptionGraphProtocol):
                 graph.add_edge(axis, object_, label=FACING_OBJECT_LABEL)
 
         return PerceptionGraph(graph)
+
+    @staticmethod
+    def map_node(obj: Any, *, force_unique_counter: Optional[int] = None):
+        # in some cases, a special index will be given to force
+        # otherwise identical objects to be treated separately.
+        # We do this for properties, for example, so that if two things
+        # are both animate, they end up with distinct animacy nodes in the graph
+        # which could be e.g. treated differently during pattern relaxation.
+        if force_unique_counter is not None:
+            return (obj, force_unique_counter)
+        # Regions and Geons are normally treated as value objects,
+        # but we want to maintain their distinctness in the perceptual graph
+        # for the purpose of matching patterns, so we make their corresponding
+        # graph nods compare by identity.
+        elif isinstance(obj, (Region, Geon)):
+            return (obj, id(obj))
+        else:
+            return obj
+
+    @staticmethod
+    def map_edge(label: Any):
+        return {"label": label}
 
     @staticmethod
     def from_dynamic_perceptual_representation(
@@ -499,6 +501,7 @@ class PerceptionGraph(PerceptionGraphProtocol):
                         path_info,
                         next_path_item_uniqueness_index=next_path_item_uniqueness_index,
                         axes_info=perceptual_representation.frames[0].axis_info,
+                        map_node=PerceptionGraph.map_node
                     )
 
         return PerceptionGraph(graph=_dynamic_digraph, dynamic=True)
@@ -509,12 +512,13 @@ class PerceptionGraph(PerceptionGraphProtocol):
         moving_object: ObjectPerception,
         path: SpatialPath[ObjectPerception],
         *,
+        map_node: Callable[[Any], Any],
         axes_info: Optional[AxesInfo[Any]] = None,
         next_path_item_uniqueness_index: Incrementer,
     ) -> None:
         edges_to_add: List[Tuple[Any, Any, Any]] = []
         edges_to_add.append((moving_object, path, HAS_PATH_LABEL))
-        edges_to_add.append((path, path.reference_object, REFERENCE_OBJECT_LABEL))
+        edges_to_add.append((path, map_node(path.reference_object), REFERENCE_OBJECT_LABEL))
         if path.reference_axis:
             edges_to_add.append(
                 (
