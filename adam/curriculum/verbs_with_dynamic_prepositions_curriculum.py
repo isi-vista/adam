@@ -64,6 +64,7 @@ from adam.ontology.phase1_ontology import (
     JUMP,
     FLY,
     CAN_FLY,
+    GOAL_MANIPULATOR,
 )
 from adam.ontology import THING, IS_SPEAKER, IS_ADDRESSEE, IN_REGION
 from adam.ontology.phase1_spatial_relations import (
@@ -764,6 +765,31 @@ def _throw_path_under_template(
             bigger_than([agent, object_in_path], theme)
         ),
         gazed_objects=[agent, theme, object_in_path],
+    )
+
+
+def _x_throws_y_to_z_template(
+    agent: TemplateObjectVariable,
+    theme: TemplateObjectVariable,
+    recipient: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        f"{agent.handle}-throws-{theme.handle}-to-{recipient.handle}",
+        salient_object_variables=[agent, theme, recipient],
+        background_object_variables=background,
+        actions=[
+            Action(
+                THROW,
+                argument_roles_to_fillers=[
+                    (AGENT, agent),
+                    (THEME, theme),
+                    (GOAL_MANIPULATOR, recipient),
+                ],
+            )
+        ],
+        constraining_relations=flatten_relations(bigger_than([agent, recipient], theme)),
+        gazed_objects=[theme],
     )
 
 
@@ -2650,6 +2676,8 @@ def _make_throw_with_prepositions(
 ) -> Phase1InstanceGroup:
     agent = standard_object("agent", THING, required_properties=[ANIMATE])
     theme = standard_object("theme", INANIMATE_OBJECT)
+    thrower = standard_object("thrower", PERSON)
+    recipient = standard_object("recipient", PERSON)
     goal_reference = standard_object("goal_reference", INANIMATE_OBJECT)
     goal_in = standard_object("goal_in", THING, required_properties=[HOLLOW])
     goal_on = standard_object(
@@ -2666,12 +2694,13 @@ def _make_throw_with_prepositions(
         _throw_to_template(agent, theme, goal_reference, background),
         _throw_in_template(agent, theme, goal_in, background),
         _throw_on_template(agent, theme, goal_on, background),
+        _x_throws_y_to_z_template(thrower, theme, recipient, background),
     ]
 
     return phase1_instances(
         "Throw + PP",
         chain(
-            # to, in, on
+            # to, in, on, to recipient
             flatten(
                 [
                     sampled(
