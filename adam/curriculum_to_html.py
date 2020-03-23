@@ -172,8 +172,8 @@ class CurriculumToHtmlDumper:
     Class to turn an `InstanceGroup` into an html document
     """
 
+    @staticmethod
     def dump_to_html_as_sorted_by_utterance_length(
-        self,
         instance_groups: Iterable[
             InstanceGroup[
                 HighLevelSemanticsSituation,
@@ -209,8 +209,12 @@ class CurriculumToHtmlDumper:
                         f"Expected the Perceptual Representation to contain DevelopmentalPrimitivePerceptionFrame got "
                         f"{type(perception.frames)}"
                     )
-                (_, speaker) = self.situation_text(situation)
-                length = len(self._linguistic_text(dependency_tree, speaker).split())
+                (_, speaker) = CurriculumToHtmlDumper.situation_text(situation)
+                length = len(
+                    CurriculumToHtmlDumper._linguistic_text(
+                        dependency_tree, speaker
+                    ).split()
+                )
                 all_instances.append((situation, dependency_tree, perception, length))
 
         # shuffle
@@ -221,12 +225,14 @@ class CurriculumToHtmlDumper:
 
         rendered_instances = []
         for (situation, dependency_tree, perception, _) in all_instances:
-            (situation_text, speaker) = self.situation_text(situation)
+            (situation_text, speaker) = CurriculumToHtmlDumper.situation_text(situation)
             rendered_instances.append(
                 InstanceHolder(
                     situation=situation_text,
-                    lingustics=self._linguistic_text(dependency_tree, speaker),
-                    perception=self.perception_text(perception),
+                    lingustics=CurriculumToHtmlDumper._linguistic_text(
+                        dependency_tree, speaker
+                    ),
+                    perception=CurriculumToHtmlDumper.perception_text(perception),
                 )
             )
 
@@ -289,8 +295,8 @@ class CurriculumToHtmlDumper:
             index_out.write("</ul>")
             index_out.write("</body>")
 
+    @staticmethod
     def dump_to_html(
-        self,
         instance_groups: Iterable[
             InstanceGroup[
                 HighLevelSemanticsSituation,
@@ -330,7 +336,6 @@ class CurriculumToHtmlDumper:
             relative_filename = f"{instance_group_header}.html"
             files_written.append((instance_group_header, relative_filename))
             CurriculumToHtmlDumper._dump_instance_group(
-                self,
                 instance_group=instance_group,
                 output_destination=output_directory / relative_filename,
                 title=f"{instance_group_header} - {title}",
@@ -351,8 +356,8 @@ class CurriculumToHtmlDumper:
             index_out.write("</ul>")
             index_out.write("</body>")
 
+    @staticmethod
     def _dump_instance_group(
-        self,
         instance_group: InstanceGroup[
             HighLevelSemanticsSituation,
             LinearizedDependencyTree,
@@ -391,12 +396,14 @@ class CurriculumToHtmlDumper:
                     f"Expected the Perceptual Representation to contain DevelopmentalPrimitivePerceptionFrame got "
                     f"{type(perception.frames)}"
                 )
-            (situation_text, speaker) = self.situation_text(situation)
+            (situation_text, speaker) = CurriculumToHtmlDumper.situation_text(situation)
             rendered_instances.append(
                 InstanceHolder(
                     situation=situation_text,
-                    lingustics=self._linguistic_text(dependency_tree, speaker),
-                    perception=self.perception_text(perception),
+                    lingustics=CurriculumToHtmlDumper._linguistic_text(
+                        dependency_tree, speaker
+                    ),
+                    perception=CurriculumToHtmlDumper.perception_text(perception),
                 )
             )
 
@@ -438,8 +445,9 @@ class CurriculumToHtmlDumper:
             html_out.write(f"\t<a href='index.html'>" f"Back to Index</a>")
             html_out.write("\n</body>")
 
+    @staticmethod
     def situation_text(
-        self, situation: HighLevelSemanticsSituation
+        situation: HighLevelSemanticsSituation
     ) -> Tuple[str, Optional[SituationObject]]:
         """
         Converts a situation description into its sub-parts as a table entry
@@ -482,11 +490,11 @@ class CurriculumToHtmlDumper:
                 for mapping in acts.argument_roles_to_fillers.keys():
                     for object_ in acts.argument_roles_to_fillers[mapping]:
                         output_text.append(
-                            f"\t\t\t\t\t\t<li>{mapping.handle} is {self._situation_object_or_region_text(object_, situation_obj_to_handle)}</li>"
+                            f"\t\t\t\t\t\t<li>{mapping.handle} is {CurriculumToHtmlDumper._situation_object_or_region_text(object_, situation_obj_to_handle)}</li>"
                         )
                 for mapping in acts.auxiliary_variable_bindings.keys():
                     output_text.append(
-                        f"\t\t\t\t\t\t<li>{mapping.debug_handle} is {self._situation_object_or_region_text(acts.auxiliary_variable_bindings[mapping], situation_obj_to_handle)}"
+                        f"\t\t\t\t\t\t<li>{mapping.debug_handle} is {CurriculumToHtmlDumper._situation_object_or_region_text(acts.auxiliary_variable_bindings[mapping], situation_obj_to_handle)}"
                     )
             output_text.append("\t\t\t\t\t</ul>")
         if situation.always_relations:
@@ -494,13 +502,13 @@ class CurriculumToHtmlDumper:
             for rel in situation.always_relations:
                 output_text.append(
                     f"\t\t\t\t\t\t<li>{rel.relation_type.handle}({situation_obj_to_handle[rel.first_slot]},"
-                    f"{self._situation_object_or_region_text(rel.second_slot, situation_obj_to_handle)})</li>"
+                    f"{CurriculumToHtmlDumper._situation_object_or_region_text(rel.second_slot, situation_obj_to_handle)})</li>"
                 )
             output_text.append("\t\t\t\t\t</ul>")
         return ("\n".join(output_text), speaker)
 
+    @staticmethod
     def _situation_object_or_region_text(
-        self,
         obj_or_region: Union[SituationObject, SituationRegion],
         obj_to_handle: Dict[SituationObject, str],
     ) -> str:
@@ -538,16 +546,18 @@ class CurriculumToHtmlDumper:
 
     # Collapse pairs of size relations (biggerThan/smallerThan) into
     # a single relation
+    @staticmethod
     def _get_single_size_relation(
-        self,
         relation: Relation[ObjectPerception],
         relation_set: ImmutableSet[Relation[ObjectPerception]],
     ):
         single_size_relation: Optional[Tuple[Any, str, Any]] = None
-        if relation.relation_type in self._opposite_size_relations:
+        if relation.relation_type in CurriculumToHtmlDumper._opposite_size_relations:
             if (
                 Relation(
-                    self._opposite_size_relations[relation.relation_type],
+                    CurriculumToHtmlDumper._opposite_size_relations[
+                        relation.relation_type
+                    ],
                     relation.second_slot,
                     relation.first_slot,
                 )
@@ -579,8 +589,9 @@ class CurriculumToHtmlDumper:
                     )
         return single_size_relation
 
+    @staticmethod
     def perception_text(
-        self, perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]
+        perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]
     ) -> str:
         """
         Turns a perception into a list of items in the perceptions frames.
@@ -744,7 +755,7 @@ class CurriculumToHtmlDumper:
                 )
                 if node.geon:
                     output_text.append(
-                        f"\t\t\t\t\t\t<li>Geon: {self._render_geon(node.geon, indent_dept=7)}</li>"
+                        f"\t\t\t\t\t\t<li>Geon: {CurriculumToHtmlDumper._render_geon(node.geon, indent_dept=7)}</li>"
                     )
                 # Handle Region Relations
                 for region_relation in region_relations:
@@ -752,7 +763,9 @@ class CurriculumToHtmlDumper:
                         (relation_prefix, relation_suffix) = compute_arrow(
                             region_relation, static_relations, first_frame_relations
                         )
-                        relation_str = self._render_relation(axis_info, region_relation)
+                        relation_str = CurriculumToHtmlDumper._render_relation(
+                            axis_info, region_relation
+                        )
                         output_text.append(
                             f"\t\t\t\t\t\t<li>{relation_prefix}"
                             f"{relation_str}{relation_suffix}</li>"
@@ -780,7 +793,9 @@ class CurriculumToHtmlDumper:
                 )
                 single_size_relation: Optional[
                     Tuple[Any, str, Any]
-                ] = self._get_single_size_relation(relation, all_relations)
+                ] = CurriculumToHtmlDumper._get_single_size_relation(
+                    relation, all_relations
+                )
                 if single_size_relation:
                     relation_text = f"{single_size_relation[0]} {single_size_relation[1]} {single_size_relation[2]}"
                     size_output = f"\t\t\t\t\t\t<li>{relation_prefix}{relation_text}{relation_suffix}</li>"
@@ -794,7 +809,9 @@ class CurriculumToHtmlDumper:
 
         if perception.during:
             output_text.append("\t\t\t\t\t<h5>During the action</h5>")
-            output_text.append(self._render_during(perception.during, indent_depth=5))
+            output_text.append(
+                CurriculumToHtmlDumper._render_during(perception.during, indent_depth=5)
+            )
 
         if axis_info and axis_info.axes_facing:
             output_text.append(("\t\t\t\t\t<h5>Axis Facings</h5>"))
@@ -812,8 +829,9 @@ class CurriculumToHtmlDumper:
 
         return "\n".join(output_text)
 
+    @staticmethod
     def _render_relation(
-        self, axis_info: AxesInfo[ObjectPerception], relation: Relation[ObjectPerception]
+        axis_info: AxesInfo[ObjectPerception], relation: Relation[ObjectPerception]
     ) -> str:
         second_slot_str: str
         filler2 = relation.second_slot
@@ -831,8 +849,9 @@ class CurriculumToHtmlDumper:
             second_slot_str = str(filler2)
         return f"{relation.relation_type}({relation.first_slot}, {second_slot_str})"
 
+    @staticmethod
     def _render_during(
-        self, during: DuringAction[ObjectPerception], *, indent_depth: int = 0
+        during: DuringAction[ObjectPerception], *, indent_depth: int = 0
     ) -> str:
         indent = "\t" * indent_depth
         lines = [f"{indent}<ul>"]
@@ -840,7 +859,9 @@ class CurriculumToHtmlDumper:
             lines.append(f"{indent}\t<li><b>Paths:</b>")
             lines.append(f"{indent}\t<ul>")
             for (object_, path) in during.objects_to_paths.items():
-                path_rendering = self._render_path(path, indent_depth=indent_depth + 2)
+                path_rendering = CurriculumToHtmlDumper._render_path(
+                    path, indent_depth=indent_depth + 2
+                )
                 lines.append(f"{indent}\t\t<li>{object_}: {path_rendering}</li></ul>")
             lines.append(f"{indent}</ul></li>")
         if during.continuously:
@@ -859,8 +880,9 @@ class CurriculumToHtmlDumper:
 
         return "\n".join(lines)
 
+    @staticmethod
     def _render_path(
-        self, path: SpatialPath[ObjectPerception], *, indent_depth: int = 0
+        path: SpatialPath[ObjectPerception], *, indent_depth: int = 0
     ) -> str:
         indent = "\t" * indent_depth
         lines = [f"{indent}<ul>"]
@@ -869,8 +891,9 @@ class CurriculumToHtmlDumper:
         lines.append(f"{indent}\t</li>")
         return "\n".join(lines)
 
+    @staticmethod
     def _linguistic_text(
-        self, linguistic: LinearizedDependencyTree, speaker: Optional[SituationObject]
+        linguistic: LinearizedDependencyTree, speaker: Optional[SituationObject]
     ) -> str:
         """
         Parses the Linguistic Description of a Linearized Dependency Tree into a table entry
@@ -887,7 +910,8 @@ class CurriculumToHtmlDumper:
         else:
             return " ".join(linguistic.as_token_sequence())
 
-    def _render_geon(self, geon: Geon, *, indent_dept: int = 0) -> str:
+    @staticmethod
+    def _render_geon(geon: Geon, *, indent_dept: int = 0) -> str:
         indent = "\t" * indent_dept
         lines = [f"{indent}<ul>"]
         lines.append(
@@ -915,7 +939,7 @@ class CurriculumToHtmlDumper:
             for axis_relation in geon.axes.axis_relations:
                 single_size_relation: Optional[
                     Tuple[Any, str, Any]
-                ] = self._get_single_size_relation(
+                ] = CurriculumToHtmlDumper._get_single_size_relation(
                     axis_relation, geon.axes.axis_relations
                 )
                 if single_size_relation:

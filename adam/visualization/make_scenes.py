@@ -70,6 +70,9 @@ from adam.visualization.utils import (
 from adam.visualization.positioning import run_model, PositionsMap
 from adam.ontology.phase1_spatial_relations import Region
 
+
+from adam.curriculum_to_html import CurriculumToHtmlDumper
+
 USAGE_MESSAGE = """make_scenes.py param_file
                 \twhere param_file has the following parameters:
                 \t\titerations: int: total number of iterations to run positioning model over
@@ -117,6 +120,11 @@ def main(
     automatically_save_renderings = params.optional_boolean_with_default(
         "automatically_save_renderings", default_value=False
     )
+
+    if "experiment_group_dir" in params:
+        rendering_filename_generator = from_experiment_filename_generator
+    else:
+        rendering_filename_generator = default_filename_generator
 
     screenshot_dir = output_directory
 
@@ -327,6 +335,7 @@ def main(
             scene_elements=scene_elements,
             automatically_save_renderings=automatically_save_renderings,
             scene_number=scene_number,
+            filename_generator=rendering_filename_generator,
             screenshot_dir=screenshot_dir,
             viz=viz,
         )
@@ -818,16 +827,16 @@ def screenshot(
     scene_elements: SceneElements,
     automatically_save_renderings: bool,
     scene_number: int,
+    filename_generator: Callable[[int, SceneElements], str],
     screenshot_dir: Optional[str],
     viz: SituationVisualizer,
 ):
     if automatically_save_renderings and screenshot_dir is not None:
         print(
-            f"SAVING TO: {screenshot_dir}/{scene_number:03}-{'_'.join(scene_elements.tokens)}-{scene_elements.current_frame}.jpg"
+            f"SAVING TO: {screenshot_dir}/{filename_generator(scene_number, scene_elements)}"
         )
         viz.screenshot(
-            f"{screenshot_dir}/{scene_number:03}-{'_'.join(scene_elements.tokens)}-{scene_elements.current_frame}.jpg",
-            0,
+            f"{screenshot_dir}/{filename_generator(scene_number, scene_elements)}", 0
         )
     else:
         command = input(
@@ -846,6 +855,19 @@ def nan_in_positions(pos_map: PositionsMap) -> bool:
         ):
             return True
     return False
+
+
+def default_filename_generator(scene_number: int, scene_elements: SceneElements) -> str:
+    return f"{scene_number:03}-{'_'.join(scene_elements.tokens)}-{scene_elements.current_frame}.jpg"
+
+
+def from_experiment_filename_generator(
+    scene_number: int, scene_elements: SceneElements
+) -> str:
+    assert scene_elements.situation is not None
+    filename = f"{scene_number}{CurriculumToHtmlDumper.situation_text(scene_elements.situation)[0]}{scene_elements.current_frame}"
+    hashed = hash(filename)
+    return str(hashed) + ".jpg"
 
 
 if __name__ == "__main__":
