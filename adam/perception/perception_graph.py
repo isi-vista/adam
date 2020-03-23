@@ -90,6 +90,7 @@ from adam.random_utils import RandomChooser
 from adam.situation import SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.utils.networkx_utils import copy_digraph, digraph_with_nodes_sorted_by, subgraph
+from adam.utilities import sign
 
 
 class Incrementer:
@@ -1902,12 +1903,13 @@ class AxisPredicate(NodePredicate):
 
     def dot_label(self) -> str:
         constraints = []
+
         if self.curved is not None:
-            constraints.append(f"curved={self.curved}")
+            constraints.append(f"{sign(self.curved)}curved")
         if self.directed is not None:
-            constraints.append(f"directed={self.directed}")
+            constraints.append(f"{sign(self.directed)}directed")
         if self.aligned_to_gravitational is not None:
-            constraints.append(f"aligned_to_grav={self.aligned_to_gravitational}")
+            constraints.append(f"{sign(self.aligned_to_gravitational)}grav_aligned")
 
         return f"axis({', '.join(constraints)})"
 
@@ -2050,7 +2052,7 @@ class IsOntologyNodePredicate(NodePredicate):
         return graph_node == self.property_value
 
     def dot_label(self) -> str:
-        return f"prop({self.property_value.handle})"
+        return f"{self.property_value.handle}"
 
     def is_equivalent(self, other) -> bool:
         if isinstance(other, IsOntologyNodePredicate):
@@ -2091,7 +2093,7 @@ class IsColorNodePredicate(NodePredicate):
         return False
 
     def dot_label(self) -> str:
-        return f"prop({self.color.hex})"
+        return f"{self.color.hex}"
 
     def is_equivalent(self, other) -> bool:
         if isinstance(other, IsColorNodePredicate):
@@ -2139,7 +2141,7 @@ class MatchedObjectPerceptionPredicate(NodePredicate):
         return isinstance(graph_node, MatchedObjectNode)
 
     def dot_label(self) -> str:
-        return "matched-object-perception"
+        return "*[matched-obj]"
 
     def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
         return isinstance(predicate_node, MatchedObjectPerceptionPredicate)
@@ -2234,6 +2236,9 @@ class EdgePredicate(ABC):
         """
 
 
+_BEFORE_AND_AFTER = immutableset([TemporalScope.BEFORE, TemporalScope.AFTER])
+
+
 @attrs(frozen=True, slots=True)
 class HoldsAtTemporalScopePredicate(EdgePredicate):
     """
@@ -2274,7 +2279,12 @@ class HoldsAtTemporalScopePredicate(EdgePredicate):
             )
 
     def dot_label(self) -> str:
-        return f"{self.wrapped_edge_predicate}@{self.temporal_scopes}"
+        # To reduce clutter, we only render temporal information for edges which are not
+        # both before and after.
+        if self.temporal_scopes == _BEFORE_AND_AFTER:
+            return self.wrapped_edge_predicate.dot_label()
+        else:
+            return f"{self.wrapped_edge_predicate.dot_label()}@{','.join(scope.name for scope in self.temporal_scopes)}"
 
     def matches_predicate(self, edge_predicate: "EdgePredicate") -> bool:
         return (
@@ -2324,7 +2334,7 @@ class RelationTypeIsPredicate(EdgePredicate):
         return edge_label == self.relation_type
 
     def dot_label(self) -> str:
-        return f"rel({self.relation_type})"
+        return str(self.relation_type)
 
     def reverse_in_dot_graph(self) -> bool:
         return self.relation_type == PART_OF
@@ -2357,7 +2367,7 @@ class DirectionPredicate(EdgePredicate):
         )
 
     def dot_label(self) -> str:
-        return f"dir(positive={self.reference_direction.positive})"
+        return f"dir({sign(self.reference_direction.positive)})"
 
     @staticmethod
     def exactly_matching(direction: Direction[Any]) -> "DirectionPredicate":
