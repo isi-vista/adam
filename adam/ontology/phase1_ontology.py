@@ -2044,11 +2044,14 @@ def _make_throw_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription
             negate(contacts(_THROW_MANIPULATOR, _THROW_THEME)),
         ]
     )
+    # We don't appropriately handle multiple manipulators so
+    # Current that relationship is not asserted see
+    # https://github.com/isi-vista/adam/issues/318
     postconditions_manipulator = flatten_relations(
         [
             Relation(IN_REGION, _THROW_THEME, THROW_GOAL),
             negate(contacts(_THROW_MANIPULATOR, _THROW_THEME)),
-            contacts(_THROW_MANIPULATOR_1, _THROW_THEME),
+            # contacts(_THROW_MANIPULATOR_1, _THROW_THEME),
             has(THROW_GOAL, _THROW_THEME),
         ]
     )
