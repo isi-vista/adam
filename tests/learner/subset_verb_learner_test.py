@@ -114,22 +114,18 @@ def run_verb_test(learner, situation_template):
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
 
 
-# @pytest.mark.skip("too slow")
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_eat_simple(learner_factory):
     learner = learner_factory()
     run_verb_test(learner, make_eat_template())
 
 
-# DRINK
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_drink(learner_factory):
     learner = learner_factory()
     run_verb_test(learner, make_drink_template())
 
 
-# SIT
-# @pytest.mark.skip
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_sit(learner_factory):
     for situation_template in make_sit_templates():
@@ -137,8 +133,6 @@ def test_sit(learner_factory):
         run_verb_test(learner, situation_template)
 
 
-# PUT
-@pytest.mark.skip
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_put(learner_factory):
     for situation_template in make_put_templates():
@@ -146,8 +140,6 @@ def test_put(learner_factory):
         run_verb_test(learner, situation_template)
 
 
-# PUSH
-@pytest.mark.skip("slow")
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_push(learner_factory):
     for situation_template in make_push_templates():
@@ -219,16 +211,12 @@ def test_come(learner_factory):
         run_verb_test(learner, situation_template)
 
 
-# TAKE
-@pytest.mark.skip
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_take(learner_factory):
     learner = learner_factory()
     run_verb_test(learner, make_take_template())
 
 
-# GIVE
-# @pytest.mark.skip
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_give(learner_factory):
     for situation_template in make_give_templates():
@@ -236,8 +224,6 @@ def test_give(learner_factory):
         run_verb_test(learner, situation_template)
 
 
-# SPIN
-# @pytest.mark.skip
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_spin(learner_factory):
     for situation_template in make_spin_templates():
@@ -245,8 +231,6 @@ def test_spin(learner_factory):
         run_verb_test(learner, situation_template)
 
 
-# FALL
-# @pytest.mark.skip
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_fall(learner_factory):
     for situation_template in make_fall_templates():
@@ -254,8 +238,6 @@ def test_fall(learner_factory):
         run_verb_test(learner, situation_template)
 
 
-# THROW
-@pytest.mark.skip
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_throw(learner_factory):
     for situation_template in make_throw_templates():
@@ -263,8 +245,6 @@ def test_throw(learner_factory):
         run_verb_test(learner, situation_template)
 
 
-# MOVE
-# @pytest.mark.skip
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_move(learner_factory):
     for situation_template in make_move_templates():
@@ -272,8 +252,6 @@ def test_move(learner_factory):
         run_verb_test(learner, situation_template)
 
 
-# JUMP
-# @pytest.mark.skip
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_jump(learner_factory):
     jumper = standard_object("jumper_0", THING, required_properties=[CAN_JUMP])
@@ -286,8 +264,6 @@ def test_jump(learner_factory):
         run_verb_test(learner, situation_template)
 
 
-# ROLL
-# @pytest.mark.skip
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_roll(learner_factory):
     for situation_template in make_roll_templates():
