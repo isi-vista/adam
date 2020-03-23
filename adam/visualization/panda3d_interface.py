@@ -298,6 +298,7 @@ class SituationVisualizer(ShowBase):
             or name.startswith("juice")
             or name.startswith("milk")
             or name.startswith("water")
+            or name.startswith("chair")
         ):
             new_model.set_two_sided(True)
 
@@ -332,9 +333,7 @@ class SituationVisualizer(ShowBase):
         scale_multiplier: Optional[float] = 1.0,
     ) -> NodePath:
         # TODO: name 'dummy_node' isn't totally accurate now
-        print(f"lookup name for dummy node: {lookup_name}")
         if lookup_name in SituationVisualizer.specific_model_to_file:
-            print(f"\nADDING SPECIFIC MODEL")
             new_node = self._load_model(
                 SituationVisualizer.specific_model_to_file[lookup_name]
             )
@@ -377,7 +376,6 @@ class SituationVisualizer(ShowBase):
             node.remove_node()
         self.geo_nodes = {}
         self.clear_debug_nodes()
-        self.print_scene_graph()
 
     def clear_debug_nodes(self) -> None:
         for node in self.debug_bounding_boxes:
