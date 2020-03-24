@@ -1000,7 +1000,7 @@ class _PerceptionGeneration:
         action_object_variables_to_object_perceptions: Mapping[
             ActionDescriptionVariable, Union[ObjectPerception, RegionPerception]
         ],
-    ) -> ImmutableSet[Relation]:
+    ) -> ImmutableSet[Relation[ObjectPerception]]:
         """
 
         Args:
