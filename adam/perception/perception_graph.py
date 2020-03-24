@@ -507,7 +507,6 @@ class PerceptionGraph(PerceptionGraphProtocol):
                         path_info,
                         next_path_item_uniqueness_index=next_path_item_uniqueness_index,
                         axes_info=perceptual_representation.frames[0].axis_info,
-                        map_node=PerceptionGraph.map_node,
                     )
 
         return PerceptionGraph(graph=_dynamic_digraph, dynamic=True)
@@ -518,15 +517,21 @@ class PerceptionGraph(PerceptionGraphProtocol):
         moving_object: ObjectPerception,
         path: SpatialPath[ObjectPerception],
         *,
-        map_node: Callable[[Any], Any],
         axes_info: Optional[AxesInfo[Any]] = None,
         next_path_item_uniqueness_index: Incrementer,
     ) -> None:
         edges_to_add: List[Tuple[Any, Any, Any]] = []
         edges_to_add.append((moving_object, path, HAS_PATH_LABEL))
-        edges_to_add.append(
-            (path, map_node(path.reference_object), REFERENCE_OBJECT_LABEL)
-        )
+        if isinstance(path.reference_object, Region):
+            region = _translate_region(
+                perception_digraph,
+                path.reference_object,
+                map_node=PerceptionGraph.map_node,
+                map_edge=PerceptionGraph.map_edge,
+            )
+            edges_to_add.append((path, region, REFERENCE_OBJECT_LABEL))
+        else:
+            edges_to_add.append((path, path.reference_object, REFERENCE_OBJECT_LABEL))
         if path.reference_axis:
             edges_to_add.append(
                 (
@@ -2469,7 +2474,7 @@ def _translate_region(
     map_node: Callable[[Any], Any],
     map_edge: _EdgeMapper,
     axes_info: Optional[AxesInfo[Any]] = None,
-) -> None:
+) -> Any:
     mapped_region = map_node(region)
     mapped_reference_object = map_node(region.reference_object)
     _add_labelled_edge(
@@ -2489,6 +2494,7 @@ def _translate_region(
             region.direction,
             map_edge=map_edge,
         )
+    return mapped_region
 
 
 # This is used to control the order in which pattern nodes are matched,
