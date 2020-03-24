@@ -1599,9 +1599,11 @@ def build_gaila_phase1_attribute_curriculum() -> Sequence[Phase1InstanceGroup]:
     """
     One particular instantiation of the object-learning parts of the curriculum for GAILA Phase 1.
     """
-    return [_make_objects_with_colors_curriculum(),
-            _make_objects_with_colors_is_curriculum(),
-            _make_my_your_object_curriculum()]
+    return [
+        _make_objects_with_colors_curriculum(),
+        _make_objects_with_colors_is_curriculum(),
+        _make_my_your_object_curriculum(),
+    ]
 
 
 def build_gaila_phase1_relation_curriculum() -> Sequence[Phase1InstanceGroup]:
