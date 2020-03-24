@@ -21,6 +21,7 @@ from typing import (
 from functools import partial
 
 import random
+from pathlib import Path
 from collections import defaultdict
 import numpy as np
 
@@ -106,7 +107,7 @@ class SceneNode:
 def main(
     params: Parameters,
     scenes_iterable_input: Optional[Iterable[Phase1InstanceGroup]] = None,
-    output_directory: Optional[str] = None,
+    output_directory: Optional[Path] = None,
     visualizer: Optional[SituationVisualizer] = None,
 ) -> None:
 
@@ -834,11 +835,11 @@ def screenshot(
     *,
     automatically_save_renderings: bool,
     filename: str,
-    screenshot_dir: Optional[str],
+    screenshot_dir: Optional[Path],
     viz: SituationVisualizer,
 ):
     if automatically_save_renderings and screenshot_dir is not None:
-        path = f"{screenshot_dir}/{filename}"
+        path = f"{str(screenshot_dir)}/{filename}"
         print(f"SAVING TO: {path}")
         viz.screenshot(path, 0)
     else:
@@ -875,7 +876,9 @@ def from_experiment_filename_generator(
 def situation_to_filename(
     situation: HighLevelSemanticsSituation, frame_number: int
 ) -> str:
-    situation_str = f"{CurriculumToHtmlDumper.situation_text(situation)[0]}{frame_number}"
+    situation_str = (
+        f"{CurriculumToHtmlDumper().situation_text(situation)[0]}{frame_number}"
+    )
     hash_algo = md5()
     hash_algo.update(situation_str.encode("utf-8"))
     return str(hash_algo.hexdigest()) + ".jpg"

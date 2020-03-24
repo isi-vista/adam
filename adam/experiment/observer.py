@@ -163,15 +163,21 @@ class LearningProgressHtmlLogger:  # pragma: no cover
     html_dumper: CurriculumToHtmlDumper = attrib(
         validator=instance_of(CurriculumToHtmlDumper)
     )
+    include_links_to_images: bool = attrib(
+        validator=instance_of(bool), kw_only=True, default=False
+    )
     pre_observed_description: Optional[str] = attrib(init=False, default=None)
 
     @staticmethod
     def create_logger(
-        *, output_dir: Path, experiment_name: str
+        *, output_dir: Path, experiment_name: str, include_links_to_images: Optional[bool]
     ) -> "LearningProgressHtmlLogger":
         logging_dir = output_dir / experiment_name
         logging_dir.mkdir(parents=True, exist_ok=True)
         output_html_path = str(logging_dir / "index.html")
+
+        if include_links_to_images is None:
+            include_links_to_images = False
 
         logging.info("Experiment will be logged to %s", output_html_path)
 
@@ -196,7 +202,9 @@ class LearningProgressHtmlLogger:  # pragma: no cover
                 """
             )
         return LearningProgressHtmlLogger(
-            outfile_dir=output_html_path, html_dumper=html_dumper
+            outfile_dir=output_html_path,
+            html_dumper=html_dumper,
+            include_links_to_images=include_links_to_images,
         )
 
     def pre_observer(self) -> "DescriptionObserver":  # type: ignore
@@ -312,9 +320,14 @@ class LearningProgressHtmlLogger:  # pragma: no cover
                 f"\t\t\t\t<td>\n"
                 f'\t\t\t\t\t<h3 id="perception-{instance_number}">Learner Perception</h3>\n'
                 f"\t\t\t\t</td>\n"
-                f"\t\t\t\t\t<td>\n"
-                f"\t\t\t\t\t<h3>Scene Renderings</h3>\n"
-                f"\t\t\t\t\t</td>\n"
+            )
+            if self.include_links_to_images:
+                outfile.write(
+                    f"\t\t\t\t\t<td>\n"
+                    f"\t\t\t\t\t<h3>Scene Renderings</h3>\n"
+                    f"\t\t\t\t\t</td>\n"
+                )
+            outfile.write(
                 f"\t\t\t</tr>\n"
                 f"\t\t\t<tr>\n"
                 f'\t\t\t\t<td valign="top">{situation_text}\n\t\t\t\t</td>\n'
@@ -337,22 +350,26 @@ class LearningProgressHtmlLogger:  # pragma: no cover
 
             outfile.write(
                 f'\t\t\t\t<td valign="top">{clickable_perception_string}\n\t\t\t\t</td>\n'
-                f"\t\t\t\t<td valign='top'>{render_buttons_text}</td>"
-                f"\t\t\t</tr>\n\t\t</tbody>\n\t</table>"
             )
+            if self.include_links_to_images:
+                outfile.write(f"\t\t\t\t<td valign='top'>{render_buttons_text}</td>")
+            outfile.write(f"\t\t\t</tr>\n\t\t</tbody>\n\t</table>")
             outfile.write("\n</body>")
 
     def render_buttons_html(self, situation: HighLevelSemanticsSituation) -> str:
-        # for now every item is going to have 3 buttons for three frames and later we might corral that
-        buttons = [
-            f"""
-                <button onclick="myFunction('render{situation_to_filename(situation, frame)}')">View Rendering {frame + 1}</button>
-                <div id="render{situation_to_filename(situation, frame)}" style="display: none">
-                <img src="renders/{situation_to_filename(situation, frame)}">
+        buttons = []
+        for frame in range(3):
+            filename = situation_to_filename(situation, frame)
+            buttons.append(
+                f"""
+                <button onclick="myFunction('render{filename}')">View Rendering {frame + 1}</button>
+                <div id="render{filename}" style="display: none">
+                <img src="renders/{filename}">
                 </div>
                 """
-            for frame in range(3)
-        ]
+            )
+        if not situation.is_dynamic:
+            return buttons[0]
         return "".join(buttons)
 
 
