@@ -2613,7 +2613,10 @@ class _FrameTranslation:
         # Every relation is handled as a directed graph edge
         # from the first argument to the second
         for relation in frame.relations:
-            self._map_relation(graph, relation)
+            if not relation.negated:
+                # We currently ignore negated relations.
+                # See https://github.com/isi-vista/adam/issues/707
+                self._map_relation(graph, relation)
 
         dest_node: Any
         for property_ in frame.property_assertions:
@@ -2747,15 +2750,21 @@ class _FrameTranslation:
             # are correctly translated.
             relations = []
             for relation in perceptual_representation.during.at_some_point:
-                self._map_relation(
-                    _dynamic_digraph, relation, temporal_scopes=_AT_SOME_POINT_ONLY
-                )
-                relations.append(relation)
+                if not relation.negated:
+                    # We currently ignore negated relations.
+                    # See https://github.com/isi-vista/adam/issues/707
+                    self._map_relation(
+                        _dynamic_digraph, relation, temporal_scopes=_AT_SOME_POINT_ONLY
+                    )
+                    relations.append(relation)
             for relation in perceptual_representation.during.continuously:
-                self._map_relation(
-                    _dynamic_digraph, relation, temporal_scopes=_DURING_ONLY
-                )
-                relations.append(relation)
+                if not relation.negated:
+                    # We currently ignore negated relations.
+                    # See https://github.com/isi-vista/adam/issues/707
+                    self._map_relation(
+                        _dynamic_digraph, relation, temporal_scopes=_DURING_ONLY
+                    )
+                    relations.append(relation)
             for relation in relations:
                 if isinstance(relation.second_slot, Region):
                     regions.append(relation.second_slot)
