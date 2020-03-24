@@ -281,6 +281,10 @@ def test_person_put_ball_on_table():
     )
 
 
+@pytest.mark.skip(
+    "Need to rewrite and re-enable "
+    "after fixing https://github.com/isi-vista/adam/issues/597"
+)
 def test_relations_between_objects_and_ground():
     # person_put_ball_on_table
     person = situation_object(ontology_node=PERSON)
