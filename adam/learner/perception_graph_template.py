@@ -1,4 +1,5 @@
 from logging import INFO
+from pathlib import Path
 from typing import Any, List, Optional, Callable, Mapping
 
 from attr import attrib, attrs
@@ -221,4 +222,26 @@ class PerceptionGraphTemplate:
     ) -> ImmutableDict[MatchedObjectPerceptionPredicate, SurfaceTemplateVariable]:
         return immutabledict(
             {v: k for k, v in self.template_variable_to_pattern_node.items()}
+        )
+
+    def render_to_file(  # pragma: no cover
+        self,
+        graph_name: str,
+        output_file: Path,
+        *,
+        match_correspondence_ids: Mapping[Any, str] = immutabledict(),
+        robust=True,
+    ):
+        self.graph_pattern.render_to_file(
+            graph_name,
+            output_file,
+            match_correspondence_ids=match_correspondence_ids,
+            robust=robust,
+            replace_node_labels=immutabledict(
+                (pattern_node, template_variable.name)
+                for (
+                    pattern_node,
+                    template_variable,
+                ) in self.pattern_node_to_template_variable.items()
+            ),
         )

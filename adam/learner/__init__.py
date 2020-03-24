@@ -3,6 +3,7 @@ Interfaces for language learning code.
 """
 
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import Dict, Generic, Mapping, Optional, Any
 
 from adam.ontology.ontology import Ontology
@@ -79,6 +80,13 @@ class LanguageLearner(ABC, Generic[PerceptionT, LinguisticDescriptionT]):
         mapping is returned.
         """
 
+    @abstractmethod
+    def log_hypotheses(self, log_output_path: Path) -> None:
+        """
+        Log some representation of the learner's current hypothesized semantics for words/phrases
+        to *log_output_path*
+        """
+
 
 @attrs
 class MemorizingLanguageLearner(
@@ -114,6 +122,9 @@ class MemorizingLanguageLearner(
             return immutabledict(((memorized_description, 1.0),))
         else:
             return immutabledict()
+
+    def log_hypotheses(self, log_output_path: Path) -> None:
+        pass
 
 
 def get_largest_matching_pattern(

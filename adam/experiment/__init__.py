@@ -5,7 +5,15 @@ import logging
 from itertools import chain
 
 # for some reason, pylint doesn't recognize the types used in quoted type annotations
-from typing import Any, Callable, Generic, Sequence, Tuple  # pylint:disable=unused-import
+from pathlib import Path
+from typing import (
+    Any,
+    Callable,
+    Generic,
+    Sequence,
+    Tuple,
+    Optional,
+)  # pylint:disable=unused-import
 
 from attr import attrib, attrs
 from attr.validators import instance_of
@@ -114,7 +122,10 @@ class Experiment(Generic[SituationT, LinguisticDescriptionT, PerceptionT]):
 
 
 def execute_experiment(
-    experiment: Experiment[SituationT, LinguisticDescriptionT, PerceptionT]
+    experiment: Experiment[SituationT, LinguisticDescriptionT, PerceptionT],
+    *,
+    log_path: Optional[Path] = None,
+    log_hypotheses_every_n_examples: int = 250
 ) -> None:
     """
     Runs an `Experiment`.
@@ -124,6 +135,8 @@ def execute_experiment(
     learner = experiment.learner_factory()
     logging.info("Instantiated learner %s", learner)
 
+    num_observations = 0
+
     for training_stage in experiment.training_stages:
         logging.info("Beginning training stage %s", training_stage.name())
         for (
@@ -131,6 +144,10 @@ def execute_experiment(
             linguistic_description,
             perceptual_representation,
         ) in training_stage.instances():
+            num_observations += 1
+            if log_path and num_observations % log_hypotheses_every_n_examples == 0:
+                learner.log_hypotheses(log_path / str(num_observations))
+
             if experiment.pre_example_training_observers:
                 learner_descriptions_before_seeing_example = learner.describe(
                     perceptual_representation
@@ -170,6 +187,9 @@ def execute_experiment(
         experiment.post_example_training_observers,
     ):
         training_observer.report()
+
+    if log_path:
+        learner.log_hypotheses(log_path / "final")
 
     logging.info("Warming up for tests")
     for warm_up_instance_group in experiment.warm_up_test_instance_groups:

@@ -90,6 +90,7 @@ from adam.random_utils import RandomChooser
 from adam.situation import SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.utils.networkx_utils import copy_digraph, digraph_with_nodes_sorted_by, subgraph
+from adam.utilities import sign
 
 
 class Incrementer:
@@ -281,6 +282,7 @@ class PerceptionGraphProtocol(Protocol):
         *,
         match_correspondence_ids: Mapping[Any, str] = immutabledict(),
         robust=True,
+        replace_node_labels: Mapping[Any, str] = immutabledict(),
     ) -> None:
         """
         Debugging tool to render the graph to PDF using *dot*.
@@ -602,6 +604,7 @@ class PerceptionGraph(PerceptionGraphProtocol):
         *,
         match_correspondence_ids: Mapping[Any, str] = immutabledict(),
         robust=True,
+        replace_node_labels: Mapping[Any, str] = immutabledict(),
     ) -> None:
         """
         Debugging tool to render the graph to PDF using *dot*.
@@ -624,7 +627,11 @@ class PerceptionGraph(PerceptionGraphProtocol):
         # add all nodes to the graph
         perception_nodes_to_dot_node_ids = {
             perception_node: self._to_dot_node(
-                dot_graph, perception_node, next_node_id, match_correspondence_ids
+                dot_graph,
+                perception_node,
+                next_node_id,
+                match_correspondence_ids,
+                replace_node_labels=replace_node_labels,
             )
             for perception_node in self._graph.nodes
         }
@@ -679,17 +686,21 @@ class PerceptionGraph(PerceptionGraphProtocol):
         perception_node: PerceptionGraphNode,
         next_node_id: Incrementer,
         match_correspondence_ids: Mapping[Any, str],
+        *,
+        replace_node_labels: Mapping[Any, str] = immutabledict(),
     ) -> str:
         if isinstance(perception_node, tuple):
             unwrapped_perception_node = perception_node[0]
         else:
             unwrapped_perception_node = perception_node
 
-        # object perceptions have no content, so they are blank nodes
-        if isinstance(unwrapped_perception_node, ObjectPerception):
+        if perception_node in replace_node_labels:
+            label = replace_node_labels[perception_node]
+        elif isinstance(unwrapped_perception_node, ObjectPerception):
+            # object perceptions have no content, so they are blank nodes
             label = unwrapped_perception_node.debug_handle
-        # regions do have content but we express those as edges to other nodes
         elif isinstance(unwrapped_perception_node, Region):
+            # regions do have content but we express those as edges to other nodes
             label = f"reg:{unwrapped_perception_node}"
         elif isinstance(unwrapped_perception_node, GeonAxis):
             label = f"axis:{unwrapped_perception_node.debug_name}"
@@ -1087,6 +1098,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
         *,
         match_correspondence_ids: Mapping[Any, str] = immutabledict(),
         robust=True,
+        replace_node_labels: Mapping[Any, str] = immutabledict(),
     ) -> None:
         """
         Debugging tool to render the pattern to PDF using *dot*.
@@ -1106,7 +1118,10 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
         def to_dot_node(pattern_node: "NodePredicate") -> str:
             node_id = f"node-{next_node_id.value()}"
             next_node_id.increment()
-            base_label = pattern_node.dot_label()
+            if pattern_node in replace_node_labels:
+                base_label = replace_node_labels[pattern_node]
+            else:
+                base_label = pattern_node.dot_label()
 
             # if we are rendering a match against another graph,
             # we show IDs that align the nodes between the graphs
@@ -1902,12 +1917,13 @@ class AxisPredicate(NodePredicate):
 
     def dot_label(self) -> str:
         constraints = []
+
         if self.curved is not None:
-            constraints.append(f"curved={self.curved}")
+            constraints.append(f"{sign(self.curved)}curved")
         if self.directed is not None:
-            constraints.append(f"directed={self.directed}")
+            constraints.append(f"{sign(self.directed)}directed")
         if self.aligned_to_gravitational is not None:
-            constraints.append(f"aligned_to_grav={self.aligned_to_gravitational}")
+            constraints.append(f"{sign(self.aligned_to_gravitational)}grav_aligned")
 
         return f"axis({', '.join(constraints)})"
 
@@ -2050,7 +2066,7 @@ class IsOntologyNodePredicate(NodePredicate):
         return graph_node == self.property_value
 
     def dot_label(self) -> str:
-        return f"prop({self.property_value.handle})"
+        return f"{self.property_value.handle}"
 
     def is_equivalent(self, other) -> bool:
         if isinstance(other, IsOntologyNodePredicate):
@@ -2091,7 +2107,7 @@ class IsColorNodePredicate(NodePredicate):
         return False
 
     def dot_label(self) -> str:
-        return f"prop({self.color.hex})"
+        return f"{self.color.hex}"
 
     def is_equivalent(self, other) -> bool:
         if isinstance(other, IsColorNodePredicate):
@@ -2139,7 +2155,7 @@ class MatchedObjectPerceptionPredicate(NodePredicate):
         return isinstance(graph_node, MatchedObjectNode)
 
     def dot_label(self) -> str:
-        return "matched-object-perception"
+        return "*[matched-obj]"
 
     def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
         return isinstance(predicate_node, MatchedObjectPerceptionPredicate)
@@ -2234,6 +2250,9 @@ class EdgePredicate(ABC):
         """
 
 
+_BEFORE_AND_AFTER = immutableset([TemporalScope.BEFORE, TemporalScope.AFTER])
+
+
 @attrs(frozen=True, slots=True)
 class HoldsAtTemporalScopePredicate(EdgePredicate):
     """
@@ -2274,7 +2293,12 @@ class HoldsAtTemporalScopePredicate(EdgePredicate):
             )
 
     def dot_label(self) -> str:
-        return f"{self.wrapped_edge_predicate}@{self.temporal_scopes}"
+        # To reduce clutter, we only render temporal information for edges which are not
+        # both before and after.
+        if self.temporal_scopes == _BEFORE_AND_AFTER:
+            return self.wrapped_edge_predicate.dot_label()
+        else:
+            return f"{self.wrapped_edge_predicate.dot_label()}@{','.join(scope.name for scope in self.temporal_scopes)}"
 
     def matches_predicate(self, edge_predicate: "EdgePredicate") -> bool:
         return (
@@ -2324,7 +2348,7 @@ class RelationTypeIsPredicate(EdgePredicate):
         return edge_label == self.relation_type
 
     def dot_label(self) -> str:
-        return f"rel({self.relation_type})"
+        return str(self.relation_type)
 
     def reverse_in_dot_graph(self) -> bool:
         return self.relation_type == PART_OF
@@ -2357,7 +2381,7 @@ class DirectionPredicate(EdgePredicate):
         )
 
     def dot_label(self) -> str:
-        return f"dir(positive={self.reference_direction.positive})"
+        return f"dir({sign(self.reference_direction.positive)})"
 
     @staticmethod
     def exactly_matching(direction: Direction[Any]) -> "DirectionPredicate":

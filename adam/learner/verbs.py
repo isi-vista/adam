@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Union, Mapping
+from typing import Mapping, Union
 
 from attr.validators import instance_of
 
@@ -10,7 +10,7 @@ from adam.learner.object_recognizer import (
     PerceptionGraphFromObjectRecognizer,
 )
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
-from adam.learner.subset import AbstractSubsetLearner
+from adam.learner.subset import AbstractTemplateSubsetLearner
 from adam.learner.surface_templates import (
     STANDARD_SLOT_VARIABLES,
     SurfaceTemplate,
@@ -23,8 +23,8 @@ from adam.perception.developmental_primitive_perception import (
 )
 from adam.perception.perception_graph import (
     LanguageAlignedPerception,
-    PerceptionGraph,
     MatchedObjectNode,
+    PerceptionGraph,
 )
 from attr import attrib, attrs
 from immutablecollections import immutabledict
@@ -89,7 +89,7 @@ class AbstractVerbTemplateLearner(AbstractTemplateLearner, ABC):
 
 
 @attrs
-class SubsetVerbLearner(AbstractSubsetLearner, AbstractVerbTemplateLearner):
+class SubsetVerbLearner(AbstractTemplateSubsetLearner, AbstractVerbTemplateLearner):
     def _hypothesis_from_perception(
         self, preprocessed_input: LanguageAlignedPerception
     ) -> PerceptionGraphTemplate:

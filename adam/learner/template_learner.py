@@ -1,11 +1,8 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import Mapping, List, Tuple, Union, Iterable, Sequence
+from typing import Iterable, List, Mapping, Sequence, Tuple, Union
 
-from attr import attrib, attrs
-from immutablecollections import immutabledict
-
-from adam.language import TokenSequenceLinguisticDescription, LinguisticDescription
+from adam.language import LinguisticDescription, TokenSequenceLinguisticDescription
 from adam.learner import LanguageLearner, LearningExample
 from adam.learner.learner_utils import pattern_match_to_description
 from adam.learner.object_recognizer import PerceptionGraphFromObjectRecognizer
@@ -16,6 +13,8 @@ from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
 from adam.perception.perception_graph import LanguageAlignedPerception, PerceptionGraph
+from attr import attrib, attrs
+from immutablecollections import immutabledict
 
 
 @attrs
@@ -38,6 +37,7 @@ class AbstractTemplateLearner(
             self._observation_num,
             learning_example.linguistic_description.as_token_string(),
         )
+
         self._observation_num += 1
 
         self._assert_valid_input(learning_example)
