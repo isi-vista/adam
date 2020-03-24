@@ -2234,37 +2234,31 @@ def _make_roll_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
     roll_agent = ActionDescriptionVariable(THING, properties=[ANIMATE])
     roll_theme = ActionDescriptionVariable(INANIMATE_OBJECT, properties=[ROLLABLE])
 
-    def make_during(
-        rollee: ActionDescriptionVariable
-    ) -> DuringAction[ActionDescriptionVariable]:
-        return DuringAction(
-            continuously=[on(rollee, ROLL_SURFACE_AUXILIARY)],
-            objects_to_paths=[
-                (
-                    rollee,
-                    SpatialPath(
-                        operator=None,
-                        reference_object=rollee,
-                        # TODO: not quite right - this should be orthogonal
-                        # to the axis of motion
-                        reference_axis=HorizontalAxisOfObject(rollee, index=0),
-                        orientation_changed=True,
-                    ),
-                )
-            ],
-        )
-
     # transitive roll
     yield (
         ROLL,
         ActionDescription(
             frame=ActionDescriptionFrame({AGENT: roll_agent, THEME: roll_theme}),
-            during=make_during(roll_theme),
+            during=DuringAction(
+                continuously=[on(roll_theme, ROLL_SURFACE_AUXILIARY)],
+                objects_to_paths=[
+                    (
+                        roll_theme,
+                        SpatialPath(
+                            operator=AWAY_FROM,
+                            reference_object=roll_agent,
+                            reference_axis=HorizontalAxisOfObject(roll_theme, index=0),
+                            orientation_changed=True,
+                        ),
+                    )
+                ],
+            ),
             preconditions=[contacts(roll_agent, roll_theme)],
             asserted_properties=[
                 (roll_agent, VOLITIONALLY_INVOLVED),
                 (roll_agent, CAUSES_CHANGE),
                 (roll_theme, UNDERGOES_CHANGE),
+                (roll_theme, MOVES),
             ],
         ),
     )
@@ -2274,7 +2268,20 @@ def _make_roll_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
         ROLL,
         ActionDescription(
             frame=ActionDescriptionFrame({AGENT: roll_agent}),
-            during=make_during(roll_agent),
+            during=DuringAction(
+                continuously=[on(roll_agent, ROLL_SURFACE_AUXILIARY)],
+                objects_to_paths=[
+                    (
+                        roll_agent,
+                        SpatialPath(
+                            operator=AWAY_FROM,
+                            reference_object=roll_agent,
+                            reference_axis=HorizontalAxisOfObject(roll_agent, index=0),
+                            orientation_changed=True,
+                        ),
+                    )
+                ],
+            ),
             asserted_properties=[(roll_agent, MOVES)],
         ),
     )
