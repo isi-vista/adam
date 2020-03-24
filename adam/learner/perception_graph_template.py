@@ -17,6 +17,7 @@ from adam.perception.perception_graph import (
     PerceptionGraph,
     PerceptionGraphPattern,
     NodePredicate,
+    raise_graph_exception,
 )
 
 
@@ -87,7 +88,7 @@ class PerceptionGraphTemplate:
             dynamic=perception_graph.dynamic,
         )
 
-        # Check to make sure we don't have mulitple weakly connected components after filtering by
+        # Check to make sure we don't have multiple weakly connected components after filtering by
         # the required nodes in a pattern
         if (
             number_weakly_connected_components(
@@ -95,9 +96,9 @@ class PerceptionGraphTemplate:
             )
             > 1
         ):
-            raise RuntimeError(
-                f"Generated perception graph has multiple weakly connected components."
-                f"Violating graph: {perception_without_irrelevant_objects}"
+            raise_graph_exception(
+                "Generated perception graph has multiple weakly connected components.",
+                perception_without_irrelevant_objects,
             )
 
         pattern_from_graph = PerceptionGraphPattern.from_graph(

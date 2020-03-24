@@ -424,7 +424,7 @@ subtype(DAD, PERSON)
 
 IS_BABY = OntologyNode("is-baby")
 subtype(IS_BABY, RECOGNIZED_PARTICULAR_PROPERTY)
-BABY = OntologyNode("baby", non_inheritable_properties=[CAN_FILL_TEMPLATE_SLOT])
+BABY = OntologyNode("baby", non_inheritable_properties=[IS_BABY, CAN_FILL_TEMPLATE_SLOT])
 subtype(BABY, PERSON)
 
 IS_LEARNER = OntologyNode("is-learner")

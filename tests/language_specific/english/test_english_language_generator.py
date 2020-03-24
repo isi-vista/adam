@@ -696,6 +696,10 @@ def test_take_to_car():
     )
 
 
+@pytest.mark.skip(
+    "Disabling because BABY is now a recognized particular, "
+    "and you can't have multiple recognized particulars in a situation"
+)
 def test_arguments_same_ontology_type():
     baby_0 = situation_object(BABY)
     baby_1 = situation_object(BABY)
