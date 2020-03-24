@@ -638,7 +638,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 else:
                     # the ball falls.
                     return NOMINAL_SUBJECT
-            elif argument_role == GOAL:
+            elif self.situation.ontology.is_subtype_of(argument_role, GOAL):
                 if (
                     PREFER_DITRANSITIVE in self.situation.syntax_hints
                     and ALLOWS_DITRANSITIVE in verb_lexical_entry.properties

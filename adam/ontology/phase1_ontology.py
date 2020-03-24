@@ -107,6 +107,8 @@ THEME = OntologyNode("theme")
 subtype(THEME, SEMANTIC_ROLE)
 GOAL = OntologyNode("goal")
 subtype(GOAL, SEMANTIC_ROLE)
+GOAL_MANIPULATOR = OntologyNode("goal-manipulator")
+subtype(GOAL_MANIPULATOR, GOAL)
 
 
 # these are "properties of properties" (e.g. whether a property is perceivable by the learner)
@@ -422,7 +424,7 @@ subtype(DAD, PERSON)
 
 IS_BABY = OntologyNode("is-baby")
 subtype(IS_BABY, RECOGNIZED_PARTICULAR_PROPERTY)
-BABY = OntologyNode("baby", non_inheritable_properties=[CAN_FILL_TEMPLATE_SLOT])
+BABY = OntologyNode("baby", non_inheritable_properties=[IS_BABY, CAN_FILL_TEMPLATE_SLOT])
 subtype(BABY, PERSON)
 
 IS_LEARNER = OntologyNode("is-learner")
@@ -1999,6 +2001,9 @@ _THROW_AGENT = ActionDescriptionVariable(THING, properties=[ANIMATE])
 _THROW_THEME = ActionDescriptionVariable(INANIMATE_OBJECT)
 THROW_GOAL = ActionDescriptionVariable(THING)
 _THROW_MANIPULATOR = ActionDescriptionVariable(THING, properties=[CAN_MANIPULATE_OBJECTS])
+_THROW_MANIPULATOR_1 = ActionDescriptionVariable(
+    THING, properties=[CAN_MANIPULATE_OBJECTS]
+)
 _THROW_GROUND = ActionDescriptionVariable(GROUND)
 
 
@@ -2032,11 +2037,33 @@ def _make_throw_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription
             negate(contacts(_THROW_MANIPULATOR, _THROW_THEME)),
         ]
     )
+    # We don't appropriately handle multiple manipulators so
+    # Current that relationship is not asserted see
+    # https://github.com/isi-vista/adam/issues/687
+    postconditions_manipulator = flatten_relations(
+        [
+            Relation(IN_REGION, _THROW_THEME, THROW_GOAL),
+            negate(contacts(_THROW_MANIPULATOR, _THROW_THEME)),
+            # contacts(_THROW_MANIPULATOR_1, _THROW_THEME),
+            has(THROW_GOAL, _THROW_THEME),
+        ]
+    )
     asserted_properties = [
         (_THROW_AGENT, VOLITIONALLY_INVOLVED),
         (_THROW_AGENT, CAUSES_CHANGE),
         (_THROW_THEME, UNDERGOES_CHANGE),
     ]
+    # explicit goal is manipulator
+    yield THROW, ActionDescription(
+        frame=ActionDescriptionFrame(
+            {AGENT: _THROW_AGENT, THEME: _THROW_THEME, GOAL_MANIPULATOR: THROW_GOAL}
+        ),
+        during=during,
+        enduring_conditions=enduring,
+        preconditions=preconditions,
+        postconditions=postconditions_manipulator,
+        asserted_properties=asserted_properties,
+    )
     # explicit goal
     yield THROW, ActionDescription(
         frame=ActionDescriptionFrame(
