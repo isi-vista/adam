@@ -33,6 +33,7 @@ ADJECTIVAL_MODIFIER = DependencyRole("amod")
 APPOSITIONAL_MODIFIER = DependencyRole("appos")
 AUXILIARY = DependencyRole("aux")
 CASE_MARKING = DependencyRole("case")
+IS_ATTRIBUTE = DependencyRole("isattr")
 # hack
 CASE_POSSESSIVE = DependencyRole("case:poss")
 CASE_SPATIAL = DependencyRole("case:sptial")

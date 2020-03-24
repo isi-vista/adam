@@ -34,6 +34,8 @@ from adam.language.dependency.universal_dependencies import (
     OBJECT,
     OBLIQUE_NOMINAL,
     PROPER_NOUN,
+    VERB,
+    IS_ATTRIBUTE,
 )
 from adam.language.language_generator import LanguageGenerator
 from adam.language.lexicon import LexiconEntry
@@ -282,7 +284,44 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 _object, count, dependency_node, noun_lexicon_entry=noun_lexicon_entry
             )
 
-            if IGNORE_COLORS not in self.situation.syntax_hints:
+            if ATTRIBUTES_AS_X_IS_Y in self.situation.syntax_hints:
+                # We can use this only in static situations
+                if self.situation.is_dynamic:
+                    raise RuntimeError(
+                        "Cannot produce X is Y language in dynamic situations"
+                    )
+                # If we want x is y language, first get the attributes
+                if IGNORE_COLORS in self.situation.syntax_hints:
+                    properties = [
+                        property_
+                        for property_ in _object.properties
+                        if not self.situation.ontology.is_subtype_of(property_, COLOR)
+                    ]
+                else:
+                    properties = [property_ for property_ in _object.properties]
+                if len(properties) > 1:
+                    raise RuntimeError(
+                        "Cannot handle X is Y language with multiple attributes"
+                    )
+                elif not properties:
+                    raise RuntimeError(
+                        "No available attributes (Y) for the X is Y language"
+                    )
+
+                attribute_lexicon_entry = self._unique_lexicon_entry(first(properties))
+                node = DependencyTreeToken(
+                    attribute_lexicon_entry.base_form,
+                    attribute_lexicon_entry.part_of_speech,
+                    attribute_lexicon_entry.intrinsic_morphosyntactic_properties,
+                )
+                is_node = DependencyTreeToken("is", VERB, {})
+                self.dependency_graph.add_edge(
+                    is_node, dependency_node, role=IS_ATTRIBUTE
+                )
+                self.dependency_graph.add_edge(
+                    node, dependency_node, role=NOMINAL_MODIFIER
+                )
+            elif IGNORE_COLORS not in self.situation.syntax_hints:
                 # Begin work on translating modifiers of Nouns with Color
                 for property_ in _object.properties:
                     if self.situation.ontology.is_subtype_of(property_, COLOR):
@@ -935,3 +974,4 @@ USE_ADVERBIAL_PATH_MODIFIER = "USE_ADVERBIAL_PATH_MODIFIER"
 PREFER_DITRANSITIVE = "PREFER_DITRANSITIVE"
 IGNORE_COLORS = "IGNORE_COLORS"
 IGNORE_HAS_AS_VERB = "IGNORE_HAS_AS_VERB"
+ATTRIBUTES_AS_X_IS_Y = "ATTRIBUTES_AS_X_IS_Y"

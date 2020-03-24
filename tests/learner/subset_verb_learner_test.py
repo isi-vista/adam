@@ -272,7 +272,6 @@ def test_roll(learner_factory):
 
 
 # FLY
-@pytest.mark.skip("does not complete in a reasonable time")
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_fly(learner_factory):
     for situation_template in make_fly_templates():

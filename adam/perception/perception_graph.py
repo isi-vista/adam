@@ -20,6 +20,7 @@ from itertools import chain
 from pathlib import Path
 from time import process_time
 from typing import (
+    AbstractSet,
     Any,
     Callable,
     Dict,
@@ -33,26 +34,15 @@ from typing import (
     TypeVar,
     Union,
     cast,
-    AbstractSet,
+    MutableMapping,
 )
 from uuid import uuid4
 
 import graphviz
-from attr import attrib, attrs
 from attr.validators import deep_iterable, instance_of, optional
-from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
-from immutablecollections.converter_utils import (
-    _to_immutabledict,
-    _to_immutableset,
-    _to_tuple,
-)
-from more_itertools import first, pairwise, ilen
+from more_itertools import first, ilen, pairwise
 from networkx import DiGraph, connected_components, is_isomorphic, set_node_attributes
 from typing_extensions import Protocol
-from vistautils.misc_utils import str_list_limited
-from vistautils.preconditions import check_arg
-from vistautils.range import Range
-from vistautils.span import Span
 
 from adam.axes import AxesInfo, HasAxes
 from adam.axis import GeonAxis
@@ -63,16 +53,16 @@ from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
     COLOR,
     GAILA_PHASE_1_ONTOLOGY,
-    PART_OF,
     LIQUID,
+    PART_OF,
     RECOGNIZED_PARTICULAR_PROPERTY,
 )
 from adam.ontology.phase1_spatial_relations import (
     Direction,
     Distance,
+    PathOperator,
     Region,
     SpatialPath,
-    PathOperator,
 )
 from adam.ontology.structural_schema import ObjectStructuralSchema
 from adam.perception import ObjectPerception, PerceptualRepresentation
@@ -87,9 +77,22 @@ from adam.perception.high_level_semantics_situation_to_developmental_primitive_p
     HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
 )
 from adam.random_utils import RandomChooser
+from adam.relation import Relation
 from adam.situation import SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
+from adam.utilities import sign
 from adam.utils.networkx_utils import copy_digraph, digraph_with_nodes_sorted_by, subgraph
+from attr import attrib, attrs
+from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
+from immutablecollections.converter_utils import (
+    _to_immutabledict,
+    _to_immutableset,
+    _to_tuple,
+)
+from vistautils.misc_utils import str_list_limited
+from vistautils.preconditions import check_arg
+from vistautils.range import Range
+from vistautils.span import Span
 
 
 class Incrementer:
@@ -123,6 +126,8 @@ PerceptionGraphNode = Union[
     Tuple[Geon, int],
     GeonAxis,
     MatchedObjectNode,
+    SpatialPath[ObjectPerception],
+    PathOperator,
 ]
 
 # If this is changed, assert_valid_edge_label below needs to be updated.
@@ -170,7 +175,11 @@ class TemporalScope(Enum):
     """
     DURING = "during"
     """
-    Indicates a relationship holds in the interval between frames.
+    Indicates a relationship continuously holds in the interval between frames.
+    """
+    AT_SOME_POINT = "at-some-point"
+    """
+    Indicates a relationship holds at some point in the interval between frames.
     """
 
 
@@ -208,10 +217,15 @@ class TemporallyScopedEdgeLabel:
         return TemporallyScopedEdgeLabel(attribute, when)
 
     def __repr__(self) -> str:
-        temporal_scope_names = [
-            temporal_specifier.name for temporal_specifier in self.temporal_specifiers
-        ]
-        return f"{self.attribute!r}@{temporal_scope_names}"
+        if self.temporal_specifiers == _BEFORE_AND_AFTER:
+            # To reduce clutter, we omit temporal scopes for things
+            # which hold both before and after an action
+            return repr(self.attribute)
+        else:
+            temporal_scope_names = [
+                temporal_specifier.name for temporal_specifier in self.temporal_specifiers
+            ]
+            return f"{self.attribute!r}@{temporal_scope_names}"
 
 
 # certain constant edges used by PerceptionGraphs
@@ -281,10 +295,19 @@ class PerceptionGraphProtocol(Protocol):
         *,
         match_correspondence_ids: Mapping[Any, str] = immutabledict(),
         robust=True,
+        replace_node_labels: Mapping[Any, str] = immutabledict(),
     ) -> None:
         """
         Debugging tool to render the graph to PDF using *dot*.
         """
+
+    def text_dump(self) -> str:
+        lines = []
+        lines.append("Nodes:")
+        lines.extend(f"\t{node}" for node in self._graph.nodes)
+        lines.append("\nEdges:")
+        lines.extend(f"\t{edge}" for edge in self._graph.edges(data="label"))
+        return "\n".join(lines)
 
 
 @attrs(frozen=True, repr=False)
@@ -310,90 +333,7 @@ class PerceptionGraph(PerceptionGraphProtocol):
         """
         Gets the `PerceptionGraph` corresponding to a `DevelopmentalPrimitivePerceptionFrame`.
         """
-        graph = DiGraph()
-
-        def map_node(obj: Any, *, force_unique_counter: Optional[int] = None):
-            # in some cases, a special index will be given to force
-            # otherwise identical objects to be treated separately.
-            # We do this for properties, for example, so that if two things
-            # are both animate, they end up with distinct animacy nodes in the graph
-            # which could be e.g. treated differently during pattern relaxation.
-            if force_unique_counter is not None:
-                return (obj, force_unique_counter)
-            # Regions and Geons are normally treated as value objects,
-            # but we want to maintain their distinctness in the perceptual graph
-            # for the purpose of matching patterns, so we make their corresponding
-            # graph nods compare by identity.
-            elif isinstance(obj, (Region, Geon)):
-                return (obj, id(obj))
-            else:
-                return obj
-
-        def map_edge(label: Any):
-            return {"label": label}
-
-        # see force_unique_counter in map_node above
-        property_index = 0
-
-        for perceived_object in frame.perceived_objects:
-            # Every perceived object is a node in the graph.
-            graph.add_node(perceived_object)
-            # And so are each of its axes.
-            _translate_axes(
-                graph, perceived_object, perceived_object, map_node, map_edge=map_edge
-            )
-            _translate_geon(
-                graph,
-                perceived_object,
-                mapped_owner=perceived_object,
-                map_geon=map_node,
-                map_axis=map_node,
-                map_edge=map_edge,
-            )
-
-        regions = immutableset(
-            relation.second_slot
-            for relation in frame.relations
-            if isinstance(relation.second_slot, Region)
-        )
-
-        for region in regions:
-            _translate_region(
-                graph,
-                region,
-                map_node=map_node,
-                map_edge=map_edge,
-                axes_info=frame.axis_info,
-            )
-
-        # Every relation is handled as a directed graph edge
-        # from the first argument to the second
-        for relation in frame.relations:
-            graph.add_edge(
-                map_node(relation.first_slot),
-                map_node(relation.second_slot),
-                label=relation.relation_type,
-            )
-
-        dest_node: Any
-        for property_ in frame.property_assertions:
-            property_index += 1
-            source_node = map_node(property_.perceived_object)
-            if isinstance(property_, HasBinaryProperty):
-                dest_node = map_node(
-                    property_.binary_property, force_unique_counter=property_index
-                )
-            elif isinstance(property_, HasColor):
-                dest_node = map_node(property_.color, force_unique_counter=property_index)
-            else:
-                raise RuntimeError(f"Don't know how to translate property {property_}")
-            graph.add_edge(source_node, dest_node, label=HAS_PROPERTY_LABEL)
-
-        if frame.axis_info:
-            for (object_, axis) in frame.axis_info.axes_facing.items():
-                graph.add_edge(axis, object_, label=FACING_OBJECT_LABEL)
-
-        return PerceptionGraph(graph)
+        return _FrameTranslation().translate_frame(frame)
 
     @staticmethod
     def from_dynamic_perceptual_representation(
@@ -401,155 +341,7 @@ class PerceptionGraph(PerceptionGraphProtocol):
             DevelopmentalPrimitivePerceptionFrame
         ]
     ) -> "PerceptionGraph":
-        check_arg(
-            len(perceptual_representation.frames) == 2,
-            "Can only create a DynamicPerceptionGraph from exactly two frames, "
-            "but got %s",
-            (len(perceptual_representation.frames),),
-        )
-
-        # First, we translate each of the two frames into PerceptionGraphs independently.
-        # The edges of each graph are marked with the appropriate "temporal specifier"
-        # which tells whether they belong to the "before" frame or the "after" frame.
-        before_frame_graph = (
-            PerceptionGraph.from_frame(perceptual_representation.frames[0])
-            .copy_with_temporal_scopes([TemporalScope.BEFORE])
-            .copy_as_digraph()
-        )
-
-        after_frame_graph = (
-            PerceptionGraph.from_frame(perceptual_representation.frames[1])
-            .copy_with_temporal_scopes([TemporalScope.AFTER])
-            .copy_as_digraph()
-        )
-
-        # This will be what the PerceptionGraph we are building will wrap.
-        _dynamic_digraph = DiGraph()
-        # Start with everything which is in the first frame's PerceptionGraph.
-        _dynamic_digraph.update(before_frame_graph)
-
-        # We have to be more careful adding things from the second frame's PerceptionGraph.
-        # We can freely add all the nodes because they don't contain temporal information
-        # and adding the same node twice is harmless.
-        _dynamic_digraph.add_nodes_from(after_frame_graph.nodes)
-
-        # But now we need to walk edge-by-edge through the second graph,
-        # adding edges which don't collide with our current edges,
-        # but merging together edges which do (because we aren't using hypergraphs).
-        # Note that because of the way perception graphs are constructed,
-        # nodes representing objects will be reference-identical
-        # between the two frame --> graph translations,
-        # so we can use that to merge them below.
-        for (source, target, after_label) in after_frame_graph.edges.data("label"):
-            if _dynamic_digraph.has_edge(source, target):
-                # This edge also appears in the first frame,
-                # so we need to merge the edge metadata between the frames.
-
-                # We know the edges in these graphs are wrapped with temporal scopes
-                # because we applied the temporal scopes above.
-                after_label = cast(TemporallyScopedEdgeLabel, after_label)
-                before_label: TemporallyScopedEdgeLabel = _dynamic_digraph.edges[
-                    source, target
-                ]["label"]
-
-                # We don't know how to merge edges which differ in anything
-                # except temporal specifiers
-                if before_label.attribute == after_label.attribute:
-                    _dynamic_digraph.edges[source, target][
-                        "label"
-                    ] = TemporallyScopedEdgeLabel(
-                        before_label.attribute,
-                        temporal_specifiers=chain(
-                            before_label.temporal_specifiers,
-                            after_label.temporal_specifiers,
-                        ),
-                    )
-                else:
-                    _dynamic_digraph.edges[source, target][
-                        "label"
-                    ] = TemporallyScopedEdgeLabel(
-                        after_label.attribute,
-                        temporal_specifiers=chain(after_label.temporal_specifiers),
-                    )
-                    logging.warning(
-                        f"We currently don't know how to handle a change in label "
-                        f"on an edge between the before frame and the after frame."
-                        f"Source={source}; Target={target}; "
-                        f"before label={before_label.attribute}; "
-                        f"after label={after_label.attribute}."
-                        f"As a hack, we delete the 'before' and preserve the 'after'."
-                        f"See https://github.com/isi-vista/adam/issues/666"
-                    )
-            else:
-                # This edge does not also appear in the first frame,
-                # so no merging is needed.
-                _dynamic_digraph.add_edge(source, target, label=after_label)
-
-        # Translate path information
-        if perceptual_representation.during:
-            if perceptual_representation.during.objects_to_paths:
-                next_path_item_uniqueness_index = Incrementer()
-                for (
-                    moving_object,
-                    path_info,
-                ) in perceptual_representation.during.objects_to_paths.items():
-                    PerceptionGraph._add_path_node(
-                        _dynamic_digraph,
-                        moving_object,
-                        path_info,
-                        next_path_item_uniqueness_index=next_path_item_uniqueness_index,
-                        axes_info=perceptual_representation.frames[0].axis_info,
-                    )
-
-        return PerceptionGraph(graph=_dynamic_digraph, dynamic=True)
-
-    @staticmethod
-    def _add_path_node(
-        perception_digraph: DiGraph,
-        moving_object: ObjectPerception,
-        path: SpatialPath[ObjectPerception],
-        *,
-        axes_info: Optional[AxesInfo[Any]] = None,
-        next_path_item_uniqueness_index: Incrementer,
-    ) -> None:
-        edges_to_add: List[Tuple[Any, Any, Any]] = []
-        edges_to_add.append((moving_object, path, HAS_PATH_LABEL))
-        edges_to_add.append((path, path.reference_object, REFERENCE_OBJECT_LABEL))
-        if path.reference_axis:
-            edges_to_add.append(
-                (
-                    path,
-                    path.reference_axis.to_concrete_axis(axes_info),
-                    REFERENCE_AXIS_LABEL,
-                )
-            )
-        if path.operator:
-            edges_to_add.append(
-                (
-                    path,
-                    _uniquify(path.operator, next_path_item_uniqueness_index),
-                    HAS_PATH_OPERATOR,
-                )
-            )
-        # link path object to orientation_changed boolean if it did as a has-property
-        if path.orientation_changed:
-            edges_to_add.append(
-                (
-                    path,
-                    _uniquify(
-                        ORIENTATION_CHANGED_PROPERTY, next_path_item_uniqueness_index
-                    ),
-                    HAS_PROPERTY_LABEL,
-                )
-            )
-        for (source, target, label) in edges_to_add:
-            perception_digraph.add_edge(
-                source,
-                target,
-                label=TemporallyScopedEdgeLabel.for_dynamic_perception(
-                    label, TemporalScope.DURING
-                ),
-            )
+        return _FrameTranslation().translate_frames(perceptual_representation)
 
     def copy_with_temporal_scopes(
         self, temporal_scopes: Union[TemporalScope, Iterable[TemporalScope]]
@@ -594,6 +386,7 @@ class PerceptionGraph(PerceptionGraphProtocol):
         *,
         match_correspondence_ids: Mapping[Any, str] = immutabledict(),
         robust=True,
+        replace_node_labels: Mapping[Any, str] = immutabledict(),
     ) -> None:
         """
         Debugging tool to render the graph to PDF using *dot*.
@@ -616,7 +409,11 @@ class PerceptionGraph(PerceptionGraphProtocol):
         # add all nodes to the graph
         perception_nodes_to_dot_node_ids = {
             perception_node: self._to_dot_node(
-                dot_graph, perception_node, next_node_id, match_correspondence_ids
+                dot_graph,
+                perception_node,
+                next_node_id,
+                match_correspondence_ids,
+                replace_node_labels=replace_node_labels,
             )
             for perception_node in self._graph.nodes
         }
@@ -671,17 +468,21 @@ class PerceptionGraph(PerceptionGraphProtocol):
         perception_node: PerceptionGraphNode,
         next_node_id: Incrementer,
         match_correspondence_ids: Mapping[Any, str],
+        *,
+        replace_node_labels: Mapping[Any, str] = immutabledict(),
     ) -> str:
         if isinstance(perception_node, tuple):
             unwrapped_perception_node = perception_node[0]
         else:
             unwrapped_perception_node = perception_node
 
-        # object perceptions have no content, so they are blank nodes
-        if isinstance(unwrapped_perception_node, ObjectPerception):
+        if perception_node in replace_node_labels:
+            label = replace_node_labels[perception_node]
+        elif isinstance(unwrapped_perception_node, ObjectPerception):
+            # object perceptions have no content, so they are blank nodes
             label = unwrapped_perception_node.debug_handle
-        # regions do have content but we express those as edges to other nodes
         elif isinstance(unwrapped_perception_node, Region):
+            # regions do have content but we express those as edges to other nodes
             label = f"reg:{unwrapped_perception_node}"
         elif isinstance(unwrapped_perception_node, GeonAxis):
             label = f"axis:{unwrapped_perception_node.debug_name}"
@@ -695,6 +496,10 @@ class PerceptionGraph(PerceptionGraphProtocol):
             )
         elif isinstance(unwrapped_perception_node, MatchedObjectNode):
             label = " ".join(unwrapped_perception_node.name)
+        elif isinstance(unwrapped_perception_node, SpatialPath):
+            label = "path"
+        elif isinstance(unwrapped_perception_node, PathOperator):
+            label = unwrapped_perception_node.name
         else:
             raise RuntimeError(
                 f"Do not know how to perception node render node "
@@ -726,14 +531,6 @@ class PerceptionGraph(PerceptionGraphProtocol):
             f"PerceptionGraph(nodes={str_list_limited(self._graph.nodes, 10)}, edges="
             f"{str_list_limited(self._graph.edges(data='label'), 15)})"
         )
-
-    def text_dump(self) -> str:
-        lines = []
-        lines.append("Nodes:")
-        lines.extend(f"\t{node}" for node in self._graph.nodes)
-        lines.append("\nEdges:")
-        lines.extend(f"\t{edge}" for edge in self._graph.edges(data="label"))
-        return "\n".join(lines)
 
     def __attrs_post_init__(self) -> None:
         # Every edge must have a label
@@ -1087,6 +884,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
         *,
         match_correspondence_ids: Mapping[Any, str] = immutabledict(),
         robust=True,
+        replace_node_labels: Mapping[Any, str] = immutabledict(),
     ) -> None:
         """
         Debugging tool to render the pattern to PDF using *dot*.
@@ -1106,7 +904,10 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
         def to_dot_node(pattern_node: "NodePredicate") -> str:
             node_id = f"node-{next_node_id.value()}"
             next_node_id.increment()
-            base_label = pattern_node.dot_label()
+            if pattern_node in replace_node_labels:
+                base_label = replace_node_labels[pattern_node]
+            else:
+                base_label = pattern_node.dot_label()
 
             # if we are rendering a match against another graph,
             # we show IDs that align the nodes between the graphs
@@ -1902,12 +1703,13 @@ class AxisPredicate(NodePredicate):
 
     def dot_label(self) -> str:
         constraints = []
+
         if self.curved is not None:
-            constraints.append(f"curved={self.curved}")
+            constraints.append(f"{sign(self.curved)}curved")
         if self.directed is not None:
-            constraints.append(f"directed={self.directed}")
+            constraints.append(f"{sign(self.directed)}directed")
         if self.aligned_to_gravitational is not None:
-            constraints.append(f"aligned_to_grav={self.aligned_to_gravitational}")
+            constraints.append(f"{sign(self.aligned_to_gravitational)}grav_aligned")
 
         return f"axis({', '.join(constraints)})"
 
@@ -2050,7 +1852,7 @@ class IsOntologyNodePredicate(NodePredicate):
         return graph_node == self.property_value
 
     def dot_label(self) -> str:
-        return f"prop({self.property_value.handle})"
+        return f"{self.property_value.handle}"
 
     def is_equivalent(self, other) -> bool:
         if isinstance(other, IsOntologyNodePredicate):
@@ -2091,7 +1893,7 @@ class IsColorNodePredicate(NodePredicate):
         return False
 
     def dot_label(self) -> str:
-        return f"prop({self.color.hex})"
+        return f"{self.color.hex}"
 
     def is_equivalent(self, other) -> bool:
         if isinstance(other, IsColorNodePredicate):
@@ -2139,7 +1941,7 @@ class MatchedObjectPerceptionPredicate(NodePredicate):
         return isinstance(graph_node, MatchedObjectNode)
 
     def dot_label(self) -> str:
-        return "matched-object-perception"
+        return "*[matched-obj]"
 
     def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
         return isinstance(predicate_node, MatchedObjectPerceptionPredicate)
@@ -2234,6 +2036,11 @@ class EdgePredicate(ABC):
         """
 
 
+_BEFORE_AND_AFTER = immutableset([TemporalScope.BEFORE, TemporalScope.AFTER])
+_DURING_ONLY = immutableset([TemporalScope.DURING])
+_AT_SOME_POINT_ONLY = immutableset([TemporalScope.AT_SOME_POINT])
+
+
 @attrs(frozen=True, slots=True)
 class HoldsAtTemporalScopePredicate(EdgePredicate):
     """
@@ -2274,7 +2081,12 @@ class HoldsAtTemporalScopePredicate(EdgePredicate):
             )
 
     def dot_label(self) -> str:
-        return f"{self.wrapped_edge_predicate}@{self.temporal_scopes}"
+        # To reduce clutter, we only render temporal information for edges which are not
+        # both before and after.
+        if self.temporal_scopes == _BEFORE_AND_AFTER:
+            return self.wrapped_edge_predicate.dot_label()
+        else:
+            return f"{self.wrapped_edge_predicate.dot_label()}@{','.join(scope.name for scope in self.temporal_scopes)}"
 
     def matches_predicate(self, edge_predicate: "EdgePredicate") -> bool:
         return (
@@ -2324,7 +2136,7 @@ class RelationTypeIsPredicate(EdgePredicate):
         return edge_label == self.relation_type
 
     def dot_label(self) -> str:
-        return f"rel({self.relation_type})"
+        return str(self.relation_type)
 
     def reverse_in_dot_graph(self) -> bool:
         return self.relation_type == PART_OF
@@ -2357,7 +2169,7 @@ class DirectionPredicate(EdgePredicate):
         )
 
     def dot_label(self) -> str:
-        return f"dir(positive={self.reference_direction.positive})"
+        return f"dir({sign(self.reference_direction.positive)})"
 
     @staticmethod
     def exactly_matching(direction: Direction[Any]) -> "DirectionPredicate":
@@ -2374,7 +2186,7 @@ class DirectionPredicate(EdgePredicate):
 # and pattern construction
 
 _AxisMapper = Callable[[GeonAxis], Any]
-_EdgeMapper = Callable[[Any], Mapping[str, Any]]
+_EdgeMapper = Callable[[Any], MutableMapping[str, Any]]
 
 
 def _add_labelled_edge(
@@ -2384,9 +2196,14 @@ def _add_labelled_edge(
     unmapped_label: Any,
     *,
     map_edge: _EdgeMapper,
+    temporal_scopes: AbstractSet[TemporalScope] = immutableset(),
 ):
     graph.add_edge(source, target)
     mapped_edge = map_edge(unmapped_label)
+    if temporal_scopes:
+        mapped_edge["label"] = TemporallyScopedEdgeLabel.for_dynamic_perception(
+            mapped_edge["label"], when=temporal_scopes
+        )
     graph.edges[source, target].update(mapped_edge)
 
 
@@ -2457,6 +2274,7 @@ def _translate_region(
     map_node: Callable[[Any], Any],
     map_edge: _EdgeMapper,
     axes_info: Optional[AxesInfo[Any]] = None,
+    temporal_scopes: AbstractSet[TemporalScope] = immutableset(),
 ) -> None:
     mapped_region = map_node(region)
     mapped_reference_object = map_node(region.reference_object)
@@ -2466,6 +2284,7 @@ def _translate_region(
         mapped_reference_object,
         REFERENCE_OBJECT_LABEL,
         map_edge=map_edge,
+        temporal_scopes=temporal_scopes,
     )
     if region.direction:
         axis_relative_to = region.direction.relative_to_axis.to_concrete_axis(axes_info)
@@ -2476,6 +2295,7 @@ def _translate_region(
             mapped_axis_relative_to,
             region.direction,
             map_edge=map_edge,
+            temporal_scopes=temporal_scopes,
         )
 
 
@@ -2729,14 +2549,324 @@ class LanguageAlignedPerception:
                 )
 
 
-_T = TypeVar("_T")
-
-
-def _uniquify(item: _T, id_incrementer: Incrementer) -> Tuple[_T, int]:
+def _uniquify(
+    item: PerceptionGraphNode, referring_node: PerceptionGraphNode
+) -> Tuple[PerceptionGraphNode, PerceptionGraphNode]:
     """
     Utility method to force object which would otherwise compare as equal
     to be distinct when used as nodes in a digraph.
     """
-    ret = (item, id_incrementer.value())
-    id_incrementer.increment(1)
-    return ret
+    return (item, referring_node)
+
+
+@attrs
+class _FrameTranslation:
+    unique_counter: Incrementer = attrib(init=False, default=Incrementer(0))
+
+    def translate_frame(
+        self, frame: DevelopmentalPrimitivePerceptionFrame
+    ) -> "PerceptionGraph":
+        """
+                Gets the `PerceptionGraph` corresponding to a
+                `DevelopmentalPrimitivePerceptionFrame`.
+                """
+        graph = DiGraph()
+
+        # see force_unique_counter in map_node above
+        property_index = 0
+
+        for perceived_object in frame.perceived_objects:
+            # Every perceived object is a node in the graph.
+            graph.add_node(perceived_object)
+            # And so are each of its axes.
+            _translate_axes(
+                graph,
+                perceived_object,
+                perceived_object,
+                self._map_node,
+                map_edge=self._map_edge,
+            )
+            _translate_geon(
+                graph,
+                perceived_object,
+                mapped_owner=perceived_object,
+                map_geon=self._map_node,
+                map_axis=self._map_node,
+                map_edge=self._map_edge,
+            )
+
+        regions = [
+            relation.second_slot
+            for relation in frame.relations
+            if isinstance(relation.second_slot, Region)
+        ]
+
+        for region in regions:
+            _translate_region(
+                graph,
+                region,
+                map_node=self._map_node,
+                map_edge=self._map_edge,
+                axes_info=frame.axis_info,
+            )
+
+        # Every relation is handled as a directed graph edge
+        # from the first argument to the second
+        for relation in frame.relations:
+            self._map_relation(graph, relation)
+
+        dest_node: Any
+        for property_ in frame.property_assertions:
+            property_index += 1
+            source_node = self._map_node(property_.perceived_object)
+            if isinstance(property_, HasBinaryProperty):
+                dest_node = self._map_node(
+                    property_.binary_property,
+                    referring_node_to_enforce_uniqueness=source_node,
+                )
+            elif isinstance(property_, HasColor):
+                dest_node = self._map_node(
+                    property_.color, referring_node_to_enforce_uniqueness=source_node
+                )
+            else:
+                raise RuntimeError(f"Don't know how to translate property {property_}")
+            graph.add_edge(source_node, dest_node, label=HAS_PROPERTY_LABEL)
+
+        if frame.axis_info:
+            for (object_, axis) in frame.axis_info.axes_facing.items():
+                graph.add_edge(axis, object_, label=FACING_OBJECT_LABEL)
+
+        return PerceptionGraph(graph)
+
+    def translate_frames(
+        self,
+        perceptual_representation: PerceptualRepresentation[
+            DevelopmentalPrimitivePerceptionFrame
+        ],
+    ) -> PerceptionGraph:
+        check_arg(
+            len(perceptual_representation.frames) == 2,
+            "Can only create a DynamicPerceptionGraph from exactly two frames, "
+            "but got %s",
+            (len(perceptual_representation.frames),),
+        )
+
+        # First, we translate each of the two frames into PerceptionGraphs independently.
+        # The edges of each graph are marked with the appropriate "temporal specifier"
+        # which tells whether they belong to the "before" frame or the "after" frame.
+        before_frame_graph = (
+            self.translate_frame(perceptual_representation.frames[0])
+            .copy_with_temporal_scopes([TemporalScope.BEFORE])
+            .copy_as_digraph()
+        )
+
+        after_frame_graph = (
+            self.translate_frame(perceptual_representation.frames[1])
+            .copy_with_temporal_scopes([TemporalScope.AFTER])
+            .copy_as_digraph()
+        )
+
+        # This will be what the PerceptionGraph we are building will wrap.
+        _dynamic_digraph = DiGraph()
+        # Start with everything which is in the first frame's PerceptionGraph.
+        _dynamic_digraph.update(before_frame_graph)
+
+        # We have to be more careful adding things from the second frame's PerceptionGraph.
+        # We can freely add all the nodes because they don't contain temporal information
+        # and adding the same node twice is harmless.
+        _dynamic_digraph.add_nodes_from(after_frame_graph.nodes)
+
+        # But now we need to walk edge-by-edge through the second graph,
+        # adding edges which don't collide with our current edges,
+        # but merging together edges which do (because we aren't using hypergraphs).
+        # Note that because of the way perception graphs are constructed,
+        # nodes representing objects will be reference-identical
+        # between the two frame --> graph translations,
+        # so we can use that to merge them below.
+        for (source, target, after_label) in after_frame_graph.edges.data("label"):
+            if _dynamic_digraph.has_edge(source, target):
+                # This edge also appears in the first frame,
+                # so we need to merge the edge metadata between the frames.
+
+                # We know the edges in these graphs are wrapped with temporal scopes
+                # because we applied the temporal scopes above.
+                after_label = cast(TemporallyScopedEdgeLabel, after_label)
+                before_label: TemporallyScopedEdgeLabel = _dynamic_digraph.edges[
+                    source, target
+                ]["label"]
+
+                # We don't know how to merge edges which differ in anything
+                # except temporal specifiers
+                if before_label.attribute == after_label.attribute:
+                    _dynamic_digraph.edges[source, target][
+                        "label"
+                    ] = TemporallyScopedEdgeLabel(
+                        before_label.attribute,
+                        temporal_specifiers=chain(
+                            before_label.temporal_specifiers,
+                            after_label.temporal_specifiers,
+                        ),
+                    )
+                else:
+                    _dynamic_digraph.edges[source, target][
+                        "label"
+                    ] = TemporallyScopedEdgeLabel(
+                        after_label.attribute,
+                        temporal_specifiers=chain(after_label.temporal_specifiers),
+                    )
+                    logging.warning(
+                        f"We currently don't know how to handle a change in label "
+                        f"on an edge between the before frame and the after frame."
+                        f"Source={source}; Target={target}; "
+                        f"before label={before_label.attribute}; "
+                        f"after label={after_label.attribute}."
+                        f"As a hack, we delete the 'before' and preserve the 'after'."
+                        f"See https://github.com/isi-vista/adam/issues/666"
+                    )
+            else:
+                # This edge does not also appear in the first frame,
+                # so no merging is needed.
+                _dynamic_digraph.add_edge(source, target, label=after_label)
+
+        # Translate path information
+        if perceptual_representation.during:
+            regions = []
+            axes_info = perceptual_representation.frames[0].axis_info
+            if perceptual_representation.during.objects_to_paths:
+                for (
+                    moving_object,
+                    path_info,
+                ) in perceptual_representation.during.objects_to_paths.items():
+                    self._add_path_node(
+                        _dynamic_digraph, moving_object, path_info, axes_info=axes_info
+                    )
+                    if isinstance(path_info.reference_object, Region):
+                        regions.append(path_info.reference_object)
+
+            # Below we ensure all regions appearing as relation and path arguments
+            # are correctly translated.
+            relations = []
+            for relation in perceptual_representation.during.at_some_point:
+                self._map_relation(
+                    _dynamic_digraph, relation, temporal_scopes=_AT_SOME_POINT_ONLY
+                )
+                relations.append(relation)
+            for relation in perceptual_representation.during.continuously:
+                self._map_relation(
+                    _dynamic_digraph, relation, temporal_scopes=_DURING_ONLY
+                )
+                relations.append(relation)
+            for relation in relations:
+                if isinstance(relation.second_slot, Region):
+                    regions.append(relation.second_slot)
+            for region in regions:
+                _translate_region(
+                    _dynamic_digraph,
+                    region,
+                    map_node=self._map_node,
+                    map_edge=self._map_edge,
+                    axes_info=axes_info,
+                    temporal_scopes=_DURING_ONLY,
+                )
+
+        return PerceptionGraph(graph=_dynamic_digraph, dynamic=True)
+
+    def _add_path_node(
+        self,
+        perception_digraph: DiGraph,
+        moving_object: ObjectPerception,
+        path: SpatialPath[ObjectPerception],
+        *,
+        axes_info: Optional[AxesInfo[Any]] = None,
+    ) -> None:
+        edges_to_add: List[Tuple[Any, Any, Any]] = []
+        edges_to_add.append((moving_object, path, HAS_PATH_LABEL))
+        edges_to_add.append((path, path.reference_object, REFERENCE_OBJECT_LABEL))
+        if path.reference_axis:
+            edges_to_add.append(
+                (
+                    path,
+                    path.reference_axis.to_concrete_axis(axes_info),
+                    REFERENCE_AXIS_LABEL,
+                )
+            )
+        if path.operator:
+            edges_to_add.append(
+                (path, _uniquify(path.operator, referring_node=path), HAS_PATH_OPERATOR)
+            )
+        # link path object to orientation_changed boolean if it did as a has-property
+        if path.orientation_changed:
+            edges_to_add.append(
+                (
+                    path,
+                    _uniquify(ORIENTATION_CHANGED_PROPERTY, referring_node=path),
+                    HAS_PROPERTY_LABEL,
+                )
+            )
+        for (source, target, label) in edges_to_add:
+            perception_digraph.add_edge(
+                source,
+                target,
+                label=TemporallyScopedEdgeLabel.for_dynamic_perception(
+                    label, TemporalScope.DURING
+                ),
+            )
+
+    def _map_node(
+        self,
+        obj: Any,
+        *,
+        referring_node_to_enforce_uniqueness: Optional[PerceptionGraphNode] = None,
+    ):
+        # in some cases, a node will be combined with its referring node
+        # to force otherwise identical objects to be treated separately.
+        # We do this for properties, for example, so that if two things
+        # are both animate, they end up with distinct animacy nodes in the graph
+        # which could be e.g. treated differently during pattern relaxation.
+        if referring_node_to_enforce_uniqueness:
+            return _uniquify(obj, referring_node_to_enforce_uniqueness)
+        # Regions and Geons are normally treated as value objects,
+        # but we want to maintain their distinctness in the perceptual graph
+        # for the purpose of matching patterns, so we make their corresponding
+        # graph nods compare by identity.
+        elif isinstance(obj, (Region, Geon)):
+            return (obj, id(obj))
+        else:
+            return obj
+
+    def _map_edge(self, label: Any):
+        return {"label": label}
+
+    def _map_relation(
+        self,
+        graph: DiGraph,
+        relation: Relation[ObjectPerception],
+        *,
+        temporal_scopes: Iterable[TemporalScope] = tuple(),
+    ) -> None:
+        label: Any
+        if temporal_scopes:
+            label = TemporallyScopedEdgeLabel.for_dynamic_perception(
+                relation.relation_type, when=temporal_scopes
+            )
+        else:
+            label = relation.relation_type
+
+        graph.add_edge(
+            self._map_node(relation.first_slot),
+            self._map_node(relation.second_slot),
+            label=label,
+        )
+
+
+def raise_graph_exception(exception_message: str, graph: PerceptionGraphProtocol):
+    error_path = Path("error").absolute()
+    try:
+        graph.render_to_file("error", error_path)
+    except RuntimeError:
+        logging.info("Attempt to render offending graph failed")
+    raise RuntimeError(
+        f"{exception_message}\n"
+        f"Violating graph: {graph}.\n"
+        f"Offending graph was written to {error_path}.pdf"
+    )

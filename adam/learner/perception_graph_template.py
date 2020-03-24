@@ -1,4 +1,5 @@
 from logging import INFO
+from pathlib import Path
 from typing import Any, List, Optional, Callable, Mapping
 
 from attr import attrib, attrs
@@ -16,6 +17,7 @@ from adam.perception.perception_graph import (
     PerceptionGraph,
     PerceptionGraphPattern,
     NodePredicate,
+    raise_graph_exception,
 )
 
 
@@ -86,7 +88,7 @@ class PerceptionGraphTemplate:
             dynamic=perception_graph.dynamic,
         )
 
-        # Check to make sure we don't have mulitple weakly connected components after filtering by
+        # Check to make sure we don't have multiple weakly connected components after filtering by
         # the required nodes in a pattern
         if (
             number_weakly_connected_components(
@@ -94,9 +96,9 @@ class PerceptionGraphTemplate:
             )
             > 1
         ):
-            raise RuntimeError(
-                f"Generated perception graph has multiple weakly connected components."
-                f"Violating graph: {perception_without_irrelevant_objects}"
+            raise_graph_exception(
+                "Generated perception graph has multiple weakly connected components.",
+                perception_without_irrelevant_objects,
             )
 
         pattern_from_graph = PerceptionGraphPattern.from_graph(
@@ -221,4 +223,26 @@ class PerceptionGraphTemplate:
     ) -> ImmutableDict[MatchedObjectPerceptionPredicate, SurfaceTemplateVariable]:
         return immutabledict(
             {v: k for k, v in self.template_variable_to_pattern_node.items()}
+        )
+
+    def render_to_file(  # pragma: no cover
+        self,
+        graph_name: str,
+        output_file: Path,
+        *,
+        match_correspondence_ids: Mapping[Any, str] = immutabledict(),
+        robust=True,
+    ):
+        self.graph_pattern.render_to_file(
+            graph_name,
+            output_file,
+            match_correspondence_ids=match_correspondence_ids,
+            robust=robust,
+            replace_node_labels=immutabledict(
+                (pattern_node, template_variable.name)
+                for (
+                    pattern_node,
+                    template_variable,
+                ) in self.pattern_node_to_template_variable.items()
+            ),
         )

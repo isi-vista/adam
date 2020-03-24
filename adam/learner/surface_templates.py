@@ -126,6 +126,12 @@ class SurfaceTemplate:
                 output_tokens.append(element)
         return TokenSequenceLinguisticDescription(output_tokens)
 
+    def to_short_string(self) -> str:
+        return "_".join(
+            element.name if isinstance(element, SurfaceTemplateVariable) else element
+            for element in self.elements
+        )
+
 
 SLOT1 = SurfaceTemplateVariable("slot1")
 SLOT2 = SurfaceTemplateVariable("slot2")
