@@ -377,6 +377,8 @@ class ObjectRecognizer:
         matched_object_nodes.append(((description,), matched_object_node))
         perception_digraph = current_perception.copy_as_digraph()
         perception_digraph.add_node(matched_object_node)
+        # We don't want to remove internal property nodes connected to the Object's root
+        internal_property_nodes_to_keep: Set[OntologyNode] = set()
 
         matched_subgraph_nodes: ImmutableSet[PerceptionGraphNode] = immutableset(
             pattern_match.matched_sub_graph._graph.nodes,  # pylint:disable=protected-access
@@ -402,12 +404,30 @@ class ObjectRecognizer:
             for matched_subgraph_node_successor in perception_digraph.successors(
                 matched_subgraph_node
             ):
+                edge_data = perception_digraph.get_edge_data(
+                    matched_subgraph_node, matched_subgraph_node_successor
+                )
+                label = edge_data["label"]
+                # This is the root node of the object
+                # We want to keep properties about it that may be internal to
+                # to definition of the object. Example: water is a liquid
+                if (
+                    isinstance(matched_subgraph_node, ObjectPerception)
+                    and matched_subgraph_node_successor in matched_subgraph_nodes
+                ):
+                    if isinstance(label, RelationTypeIsPredicate):
+                        if label.dot_label == "rel(" "has-property)":
+                            internal_property_nodes_to_keep.add(
+                                matched_subgraph_node_successor
+                            )
+                            perception_digraph.add_edge(
+                                matched_object_node,
+                                matched_subgraph_node_successor,
+                                **edge_data,
+                            )
+
                 # don't want to add edges which are internal to the matched sub-graph
                 if matched_subgraph_node_successor not in matched_subgraph_nodes:
-                    edge_data = perception_digraph.get_edge_data(
-                        matched_subgraph_node, matched_subgraph_node_successor
-                    )
-                    label = edge_data["label"]
                     if isinstance(label, RelationTypeIsPredicate):
                         if label.dot_label == "rel(" "has-matched-object-pattern)":
                             raise RuntimeError(
@@ -437,12 +457,30 @@ class ObjectRecognizer:
             for matched_subgraph_node_predecessor in perception_digraph.predecessors(
                 matched_subgraph_node
             ):
+                edge_data = perception_digraph.get_edge_data(
+                    matched_subgraph_node_predecessor, matched_subgraph_node
+                )
+                label = edge_data["label"]
+                # This is the root node of the object
+                # We want to keep properties about it that may be internal to
+                # to definition of the object. Example: water is a liquid
+                if (
+                    isinstance(matched_subgraph_node, ObjectPerception)
+                    and matched_subgraph_node_predecessor in matched_subgraph_nodes
+                ):
+                    if isinstance(label, RelationTypeIsPredicate):
+                        if label.dot_label == "rel(" "has-property)":
+                            internal_property_nodes_to_keep.add(
+                                matched_subgraph_node_predecessor
+                            )
+                            perception_digraph.add_edge(
+                                matched_object_node,
+                                matched_subgraph_node_predecessor,
+                                **edge_data,
+                            )
+
                 # don't want to add edges which are internal to the matched sub-graph
                 if matched_subgraph_node_predecessor not in matched_subgraph_nodes:
-                    edge_data = perception_digraph.get_edge_data(
-                        matched_subgraph_node_predecessor, matched_subgraph_node
-                    )
-                    label = edge_data["label"]
                     if isinstance(label, RelationTypeIsPredicate):
                         if label.dot_label == "rel(" "has-matched-object-pattern)":
                             raise RuntimeError(
@@ -480,6 +518,7 @@ class ObjectRecognizer:
             matched_node
             for matched_node in matched_subgraph_nodes
             if matched_node not in SHARED_WORLD_ITEMS
+            or matched_node not in internal_property_nodes_to_keep
         )
         return PerceptionGraph(perception_digraph, dynamic=current_perception.dynamic)
 
