@@ -1,15 +1,15 @@
 <CoordinateSystem> { Z-up } 
-  <Group> Cube.009 {
+  <Group> Cube.000 {
     <Transform> {
       <Matrix4> {
         0.14749956130981445 0.0 0.0 0.0 
         0.0 0.14749956130981445 0.0 0.0 
         0.0 0.0 0.14749956130981445 0.0 
-        0.0 0.0 0.0 1.0 
+        -0.11660027503967285 -0.2494385689496994 0.4441492259502411 1.0 
       }
     }
     
-    <VertexPool> Cube.009 {
+    <VertexPool> Cube.000 {
     
       <Vertex> 0 {-0.294364 0.560629 0.766573
         <UV>  {
@@ -715,7 +715,7 @@
           0.783118 0.618264 
         }
       }
-      <Vertex> 88 {-0.904704 -0.327131 0.268784
+      <Vertex> 88 {-0.904705 -0.327131 0.268784
         <UV>  {
           0.912498 0.899135 
         }
@@ -867,7 +867,7 @@
           0.790623 0.572062 
         }
       }
-      <Vertex> 107 {-0.904704 -0.327131 0.268784
+      <Vertex> 107 {-0.904705 -0.327131 0.268784
         <UV>  {
           0.912498 0.899135 
         }
@@ -1059,7 +1059,7 @@
           0.429385 0.093851 
         }
       }
-      <Vertex> 131 {-0.904704 -0.327131 0.268784
+      <Vertex> 131 {-0.904705 -0.327131 0.268784
         <UV>  {
           0.854770 0.833139 
         }
@@ -1259,7 +1259,7 @@
           0.484870 0.102460 
         }
       }
-      <Vertex> 156 {-0.904704 -0.327131 0.268784
+      <Vertex> 156 {-0.904705 -0.327131 0.268784
         <UV>  {
           0.854770 0.833139 
         }
@@ -1403,7 +1403,7 @@
           0.538793 0.540040 
         }
       }
-      <Vertex> 174 {0.148135 -0.545618 0.396323
+      <Vertex> 174 {0.148134 -0.545618 0.396323
         <UV>  {
           0.856345 0.886101 
         }
@@ -3107,7 +3107,7 @@
           0.498359 0.602637 
         }
       }
-      <Vertex> 387 {0.148135 -0.545618 0.396323
+      <Vertex> 387 {0.148134 -0.545618 0.396323
         <UV>  {
           0.856345 0.886101 
         }
@@ -3147,7 +3147,7 @@
           0.484809 0.543853 
         }
       }
-      <Vertex> 392 {0.148135 -0.545618 0.396323
+      <Vertex> 392 {0.148134 -0.545618 0.396323
         <UV>  {
           0.856345 0.886101 
         }
@@ -3187,7 +3187,7 @@
           0.498256 0.481258 
         }
       }
-      <Vertex> 397 {0.148135 -0.545618 0.396323
+      <Vertex> 397 {0.148134 -0.545618 0.396323
         <UV>  {
           0.856345 0.886101 
         }
@@ -3774,443 +3774,443 @@
     
     
     <Polygon> {
-      <Normal> {0.614316 0.130851 0.778135}
-      <VertexRef> { 0 1 2 3 4 5 6 <Ref> { Cube.009 }} 
+      <Normal> {0.614316 0.130852 0.778135}
+      <VertexRef> { 0 1 2 3 4 5 6 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {-0.606115 -0.082176 0.791121}
-      <VertexRef> { 7 8 9 10 11 12 13 <Ref> { Cube.009 }} 
+      <VertexRef> { 7 8 9 10 11 12 13 <Ref> { Cube.000 }} 
     }
     <Polygon> {
-      <Normal> {0.194986 0.184545 0.963288}
-      <VertexRef> { 14 15 16 17 18 19 20 <Ref> { Cube.009 }} 
+      <Normal> {0.194986 0.184544 0.963288}
+      <VertexRef> { 14 15 16 17 18 19 20 <Ref> { Cube.000 }} 
     }
     <Polygon> {
-      <Normal> {-0.531260 0.506068 0.679454}
-      <VertexRef> { 21 22 23 24 25 26 27 <Ref> { Cube.009 }} 
+      <Normal> {-0.531260 0.506069 0.679453}
+      <VertexRef> { 21 22 23 24 25 26 27 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.599016 -0.000000 -0.800737}
-      <VertexRef> { 28 29 30 31 <Ref> { Cube.009 }} 
+      <VertexRef> { 28 29 30 31 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {-0.675652 -0.078487 0.733031}
-      <VertexRef> { 32 33 34 35 <Ref> { Cube.009 }} 
+      <VertexRef> { 32 33 34 35 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.292925 -0.094212 0.951483}
-      <VertexRef> { 36 37 38 39 <Ref> { Cube.009 }} 
+      <VertexRef> { 36 37 38 39 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {-0.710648 0.039991 0.702410}
-      <VertexRef> { 40 41 42 43 <Ref> { Cube.009 }} 
+      <VertexRef> { 40 41 42 43 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.592621 0.098604 0.799424}
-      <VertexRef> { 44 45 46 47 <Ref> { Cube.009 }} 
+      <VertexRef> { 44 45 46 47 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.573923 -0.038409 0.818008}
-      <VertexRef> { 48 49 50 51 <Ref> { Cube.009 }} 
+      <VertexRef> { 48 49 50 51 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.189122 -0.376057 0.907091}
-      <VertexRef> { 52 53 54 55 56 57 58 <Ref> { Cube.009 }} 
+      <VertexRef> { 52 53 54 55 56 57 58 <Ref> { Cube.000 }} 
     }
     <Polygon> {
-      <Normal> {0.626303 -0.000000 0.779580}
-      <VertexRef> { 59 60 61 62 63 64 65 <Ref> { Cube.009 }} 
+      <Normal> {0.626302 -0.000000 0.779580}
+      <VertexRef> { 59 60 61 62 63 64 65 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.605531 -0.003425 -0.795814}
-      <VertexRef> { 66 67 68 69 <Ref> { Cube.009 }} 
+      <VertexRef> { 66 67 68 69 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.699880 -0.015696 0.714088}
-      <VertexRef> { 70 71 72 73 74 75 76 <Ref> { Cube.009 }} 
+      <VertexRef> { 70 71 72 73 74 75 76 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {-0.189434 -0.011391 -0.981827}
-      <VertexRef> { 77 78 79 80 <Ref> { Cube.009 }} 
+      <VertexRef> { 77 78 79 80 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {-0.000001 -1.000000 0.000000}
-      <VertexRef> { 81 82 83 84 <Ref> { Cube.009 }} 
+      <VertexRef> { 81 82 83 84 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {-0.998566 0.000000 0.053530}
-      <VertexRef> { 85 86 87 88 <Ref> { Cube.009 }} 
+      <VertexRef> { 85 86 87 88 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {-0.000001 -1.000000 0.000000}
-      <VertexRef> { 89 90 91 92 <Ref> { Cube.009 }} 
+      <VertexRef> { 89 90 91 92 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {-0.000000 -1.000000 0.000000}
-      <VertexRef> { 93 94 95 96 <Ref> { Cube.009 }} 
+      <VertexRef> { 93 94 95 96 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.000000 1.000000 -0.000000}
-      <VertexRef> { 97 98 99 100 <Ref> { Cube.009 }} 
+      <VertexRef> { 97 98 99 100 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.000000 1.000000 -0.000000}
-      <VertexRef> { 101 102 103 104 <Ref> { Cube.009 }} 
+      <VertexRef> { 101 102 103 104 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {-0.998566 0.000000 0.053529}
-      <VertexRef> { 105 106 107 108 <Ref> { Cube.009 }} 
+      <VertexRef> { 105 106 107 108 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.999464 -0.003302 0.032572}
-      <VertexRef> { 109 110 111 112 <Ref> { Cube.009 }} 
+      <VertexRef> { 109 110 111 112 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.974363 -0.013211 -0.224595}
-      <VertexRef> { 113 114 115 116 <Ref> { Cube.009 }} 
+      <VertexRef> { 113 114 115 116 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.000000 1.000000 0.000000}
-      <VertexRef> { 117 118 119 120 <Ref> { Cube.009 }} 
+      <VertexRef> { 117 118 119 120 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.599016 -0.000000 -0.800737}
-      <VertexRef> { 121 122 123 124 <Ref> { Cube.009 }} 
+      <VertexRef> { 121 122 123 124 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {-0.724922 -0.010052 0.688758}
-      <VertexRef> { 125 126 127 128 129 130 131 <Ref> { Cube.009 }} 
+      <VertexRef> { 125 126 127 128 129 130 131 <Ref> { Cube.000 }} 
     }
     <Polygon> {
-      <Normal> {0.604324 -0.043603 0.795544}
-      <VertexRef> { 132 133 134 135 136 137 138 <Ref> { Cube.009 }} 
+      <Normal> {0.604324 -0.043603 0.795545}
+      <VertexRef> { 132 133 134 135 136 137 138 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {-0.612099 0.000000 -0.790781}
-      <VertexRef> { 139 140 141 142 <Ref> { Cube.009 }} 
+      <VertexRef> { 139 140 141 142 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {-0.213049 0.000161 -0.977041}
-      <VertexRef> { 143 144 145 146 <Ref> { Cube.009 }} 
+      <VertexRef> { 143 144 145 146 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {-0.606118 0.017228 -0.795188}
-      <VertexRef> { 147 148 149 150 <Ref> { Cube.009 }} 
+      <VertexRef> { 147 148 149 150 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {-0.801565 0.000000 0.597907}
-      <VertexRef> { 151 152 153 154 155 156 157 <Ref> { Cube.009 }} 
+      <VertexRef> { 151 152 153 154 155 156 157 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {-0.448813 -0.000061 -0.893626}
-      <VertexRef> { 158 159 160 161 <Ref> { Cube.009 }} 
+      <VertexRef> { 158 159 160 161 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {-0.189422 0.010825 -0.981836}
-      <VertexRef> { 162 163 164 165 <Ref> { Cube.009 }} 
+      <VertexRef> { 162 163 164 165 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.605529 0.004185 -0.795812}
-      <VertexRef> { 166 167 168 169 <Ref> { Cube.009 }} 
+      <VertexRef> { 166 167 168 169 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.602061 -0.108652 0.791023}
-      <VertexRef> { 170 171 172 173 <Ref> { Cube.009 }} 
+      <VertexRef> { 170 171 172 173 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.654303 0.053441 0.754342}
-      <VertexRef> { 174 175 176 177 <Ref> { Cube.009 }} 
+      <VertexRef> { 174 175 176 177 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.592621 -0.098604 0.799424}
-      <VertexRef> { 178 179 180 181 <Ref> { Cube.009 }} 
+      <VertexRef> { 178 179 180 181 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.605646 0.000000 0.795734}
-      <VertexRef> { 182 183 184 185 <Ref> { Cube.009 }} 
+      <VertexRef> { 182 183 184 185 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.605646 -0.000000 0.795734}
-      <VertexRef> { 186 187 188 189 <Ref> { Cube.009 }} 
+      <VertexRef> { 186 187 188 189 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.657241 -0.056823 0.751536}
-      <VertexRef> { 190 191 192 193 <Ref> { Cube.009 }} 
+      <VertexRef> { 190 191 192 193 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {-0.574190 0.032312 0.818085}
-      <VertexRef> { 194 195 196 197 <Ref> { Cube.009 }} 
+      <VertexRef> { 194 195 196 197 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {-0.657241 -0.056823 0.751536}
-      <VertexRef> { 198 199 200 201 <Ref> { Cube.009 }} 
+      <VertexRef> { 198 199 200 201 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {-0.621488 0.008791 0.783374}
-      <VertexRef> { 202 203 204 205 <Ref> { Cube.009 }} 
+      <VertexRef> { 202 203 204 205 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.214122 0.079357 0.973578}
-      <VertexRef> { 206 207 208 209 <Ref> { Cube.009 }} 
+      <VertexRef> { 206 207 208 209 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.214799 -0.000000 0.976658}
-      <VertexRef> { 210 211 212 213 <Ref> { Cube.009 }} 
+      <VertexRef> { 210 211 212 213 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.171333 -0.021846 0.984971}
-      <VertexRef> { 214 215 216 217 <Ref> { Cube.009 }} 
+      <VertexRef> { 214 215 216 217 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {-0.601654 -0.122969 0.789234}
-      <VertexRef> { 218 219 220 221 <Ref> { Cube.009 }} 
+      <VertexRef> { 218 219 220 221 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {-0.542111 0.003955 0.840297}
-      <VertexRef> { 222 223 224 225 <Ref> { Cube.009 }} 
+      <VertexRef> { 222 223 224 225 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {-0.675504 0.000166 0.737357}
-      <VertexRef> { 226 227 228 229 <Ref> { Cube.009 }} 
+      <VertexRef> { 226 227 228 229 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {-0.605641 0.004438 0.795726}
-      <VertexRef> { 230 231 232 233 <Ref> { Cube.009 }} 
+      <VertexRef> { 230 231 232 233 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {-0.623017 -0.018556 0.781988}
-      <VertexRef> { 234 235 236 237 <Ref> { Cube.009 }} 
+      <VertexRef> { 234 235 236 237 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {-0.711851 0.038619 0.701268}
-      <VertexRef> { 238 239 240 241 <Ref> { Cube.009 }} 
+      <VertexRef> { 238 239 240 241 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {-0.560885 -0.045523 0.826641}
-      <VertexRef> { 242 243 244 245 <Ref> { Cube.009 }} 
+      <VertexRef> { 242 243 244 245 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {-0.587137 -0.019202 0.809260}
-      <VertexRef> { 246 247 248 249 <Ref> { Cube.009 }} 
+      <VertexRef> { 246 247 248 249 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {-0.545254 -0.039737 0.837329}
-      <VertexRef> { 250 251 252 253 <Ref> { Cube.009 }} 
+      <VertexRef> { 250 251 252 253 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {-0.558706 -0.060752 0.827138}
-      <VertexRef> { 254 255 256 257 <Ref> { Cube.009 }} 
+      <VertexRef> { 254 255 256 257 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {-0.518307 0.045972 0.853958}
-      <VertexRef> { 258 259 260 261 <Ref> { Cube.009 }} 
+      <VertexRef> { 258 259 260 261 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {-0.556499 0.019302 0.830624}
-      <VertexRef> { 262 263 264 265 <Ref> { Cube.009 }} 
+      <VertexRef> { 262 263 264 265 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.214773 0.015781 0.976537}
-      <VertexRef> { 266 267 268 269 <Ref> { Cube.009 }} 
+      <VertexRef> { 266 267 268 269 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.180342 -0.047966 0.982434}
-      <VertexRef> { 270 271 272 273 <Ref> { Cube.009 }} 
+      <VertexRef> { 270 271 272 273 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.134544 -0.028914 0.990486}
-      <VertexRef> { 274 275 276 277 <Ref> { Cube.009 }} 
+      <VertexRef> { 274 275 276 277 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.214209 0.074113 0.973972}
-      <VertexRef> { 278 279 280 281 <Ref> { Cube.009 }} 
+      <VertexRef> { 278 279 280 281 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.238571 0.093031 0.966659}
-      <VertexRef> { 282 283 284 285 <Ref> { Cube.009 }} 
+      <VertexRef> { 282 283 284 285 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.265344 -0.000000 0.964154}
-      <VertexRef> { 286 287 288 289 <Ref> { Cube.009 }} 
+      <VertexRef> { 286 287 288 289 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.233907 -0.015072 0.972142}
-      <VertexRef> { 290 291 292 293 <Ref> { Cube.009 }} 
+      <VertexRef> { 290 291 292 293 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.174424 0.025764 0.984334}
-      <VertexRef> { 294 295 296 297 <Ref> { Cube.009 }} 
+      <VertexRef> { 294 295 296 297 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.185963 0.040011 0.981742}
-      <VertexRef> { 298 299 300 301 <Ref> { Cube.009 }} 
+      <VertexRef> { 298 299 300 301 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {-0.622222 0.017695 0.782641}
-      <VertexRef> { 302 303 304 305 <Ref> { Cube.009 }} 
+      <VertexRef> { 302 303 304 305 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {-0.638187 0.000000 0.769881}
-      <VertexRef> { 306 307 308 309 <Ref> { Cube.009 }} 
+      <VertexRef> { 306 307 308 309 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {-0.599508 0.006431 0.800343}
-      <VertexRef> { 310 311 312 313 <Ref> { Cube.009 }} 
+      <VertexRef> { 310 311 312 313 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {-0.507643 -0.128820 0.851883}
-      <VertexRef> { 314 315 316 317 <Ref> { Cube.009 }} 
+      <VertexRef> { 314 315 316 317 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {-0.530347 0.016832 0.847614}
-      <VertexRef> { 318 319 320 321 <Ref> { Cube.009 }} 
+      <VertexRef> { 318 319 320 321 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {-0.691768 0.014337 0.721978}
-      <VertexRef> { 322 323 324 325 <Ref> { Cube.009 }} 
+      <VertexRef> { 322 323 324 325 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {-0.518518 0.047017 0.853773}
-      <VertexRef> { 326 327 328 329 <Ref> { Cube.009 }} 
+      <VertexRef> { 326 327 328 329 <Ref> { Cube.000 }} 
     }
     <Polygon> {
-      <Normal> {-0.488707 0.020696 0.872202}
-      <VertexRef> { 330 331 332 333 <Ref> { Cube.009 }} 
+      <Normal> {-0.488707 0.020696 0.872203}
+      <VertexRef> { 330 331 332 333 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {-0.605215 0.037737 0.795167}
-      <VertexRef> { 334 335 336 337 <Ref> { Cube.009 }} 
+      <VertexRef> { 334 335 336 337 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.493204 0.000000 0.869914}
-      <VertexRef> { 338 339 340 341 <Ref> { Cube.009 }} 
+      <VertexRef> { 338 339 340 341 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.550664 0.055503 0.832880}
-      <VertexRef> { 342 343 344 345 <Ref> { Cube.009 }} 
+      <VertexRef> { 342 343 344 345 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.702806 -0.000000 0.711382}
-      <VertexRef> { 346 347 348 349 <Ref> { Cube.009 }} 
+      <VertexRef> { 346 347 348 349 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.605646 -0.000000 0.795734}
-      <VertexRef> { 350 351 352 353 <Ref> { Cube.009 }} 
+      <VertexRef> { 350 351 352 353 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.602061 0.108652 0.791023}
-      <VertexRef> { 354 355 356 357 <Ref> { Cube.009 }} 
+      <VertexRef> { 354 355 356 357 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.602061 0.108652 0.791023}
-      <VertexRef> { 358 359 360 361 <Ref> { Cube.009 }} 
+      <VertexRef> { 358 359 360 361 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.700137 -0.000000 0.714008}
-      <VertexRef> { 362 363 364 365 <Ref> { Cube.009 }} 
+      <VertexRef> { 362 363 364 365 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.654303 -0.053441 0.754342}
-      <VertexRef> { 366 367 368 369 <Ref> { Cube.009 }} 
+      <VertexRef> { 366 367 368 369 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.605646 -0.000000 0.795734}
-      <VertexRef> { 370 371 372 373 <Ref> { Cube.009 }} 
+      <VertexRef> { 370 371 372 373 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.550664 -0.055503 0.832880}
-      <VertexRef> { 374 375 376 377 <Ref> { Cube.009 }} 
+      <VertexRef> { 374 375 376 377 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.605646 -0.000000 0.795734}
-      <VertexRef> { 378 379 380 381 <Ref> { Cube.009 }} 
+      <VertexRef> { 378 379 380 381 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.585716 -0.000000 0.810517}
-      <VertexRef> { 382 383 384 385 <Ref> { Cube.009 }} 
+      <VertexRef> { 382 383 384 385 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.654303 0.053441 0.754342}
-      <VertexRef> { 386 387 388 389 <Ref> { Cube.009 }} 
+      <VertexRef> { 386 387 388 389 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.654303 -0.053441 0.754341}
-      <VertexRef> { 390 391 392 393 <Ref> { Cube.009 }} 
+      <VertexRef> { 390 391 392 393 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.654303 -0.053441 0.754342}
-      <VertexRef> { 394 395 396 397 <Ref> { Cube.009 }} 
+      <VertexRef> { 394 395 396 397 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.654303 -0.053441 0.754342}
-      <VertexRef> { 398 399 400 401 <Ref> { Cube.009 }} 
+      <VertexRef> { 398 399 400 401 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.700137 -0.000000 0.714008}
-      <VertexRef> { 402 403 404 405 <Ref> { Cube.009 }} 
+      <VertexRef> { 402 403 404 405 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.605646 -0.000000 0.795734}
-      <VertexRef> { 406 407 408 409 <Ref> { Cube.009 }} 
+      <VertexRef> { 406 407 408 409 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.588655 -0.080557 0.804360}
-      <VertexRef> { 410 411 412 413 <Ref> { Cube.009 }} 
+      <VertexRef> { 410 411 412 413 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.527935 0.033102 0.848640}
-      <VertexRef> { 414 415 416 417 <Ref> { Cube.009 }} 
+      <VertexRef> { 414 415 416 417 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.585300 0.044506 0.809595}
-      <VertexRef> { 418 419 420 421 <Ref> { Cube.009 }} 
+      <VertexRef> { 418 419 420 421 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.550664 0.055503 0.832880}
-      <VertexRef> { 422 423 424 425 <Ref> { Cube.009 }} 
+      <VertexRef> { 422 423 424 425 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.493204 -0.000000 0.869914}
-      <VertexRef> { 426 427 428 429 <Ref> { Cube.009 }} 
+      <VertexRef> { 426 427 428 429 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.605646 -0.000000 0.795734}
-      <VertexRef> { 430 431 432 433 <Ref> { Cube.009 }} 
+      <VertexRef> { 430 431 432 433 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {-0.638065 0.071813 0.766626}
-      <VertexRef> { 434 435 436 437 <Ref> { Cube.009 }} 
+      <VertexRef> { 434 435 436 437 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {-0.623017 0.018556 0.781988}
-      <VertexRef> { 438 439 440 441 <Ref> { Cube.009 }} 
+      <VertexRef> { 438 439 440 441 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {-0.667073 -0.015259 0.744836}
-      <VertexRef> { 442 443 444 445 <Ref> { Cube.009 }} 
+      <VertexRef> { 442 443 444 445 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.250989 0.028637 0.967566}
-      <VertexRef> { 446 447 448 449 <Ref> { Cube.009 }} 
+      <VertexRef> { 446 447 448 449 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.105707 0.037439 0.993692}
-      <VertexRef> { 450 451 452 453 <Ref> { Cube.009 }} 
+      <VertexRef> { 450 451 452 453 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {0.136370 -0.033772 0.990082}
-      <VertexRef> { 454 455 456 457 <Ref> { Cube.009 }} 
+      <VertexRef> { 454 455 456 457 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {-0.598017 -0.158226 0.785710}
-      <VertexRef> { 458 459 460 461 <Ref> { Cube.009 }} 
+      <VertexRef> { 458 459 460 461 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {-0.605647 0.000000 0.795734}
-      <VertexRef> { 462 463 464 465 <Ref> { Cube.009 }} 
+      <VertexRef> { 462 463 464 465 <Ref> { Cube.000 }} 
     }
     <Polygon> {
       <Normal> {-0.710182 -0.038711 0.702953}
-      <VertexRef> { 466 467 468 469 <Ref> { Cube.009 }} 
+      <VertexRef> { 466 467 468 469 <Ref> { Cube.000 }} 
     }
   }
