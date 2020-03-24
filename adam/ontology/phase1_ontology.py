@@ -2237,7 +2237,7 @@ def _make_roll_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
         rollee: ActionDescriptionVariable
     ) -> DuringAction[ActionDescriptionVariable]:
         return DuringAction(
-            continuously=[contacts(rollee, ROLL_SURFACE_AUXILIARY)],
+            continuously=[on(rollee, ROLL_SURFACE_AUXILIARY)],
             objects_to_paths=[
                 (
                     rollee,

@@ -675,7 +675,6 @@ def make_roll_templates() -> Iterable[Phase1SituationTemplate]:
                 ROLL,
                 argument_roles_to_fillers=[(AGENT, animate_0)],
                 auxiliary_variable_bindings=[(ROLL_SURFACE_AUXILIARY, rolling_surface)],
-                during=DuringAction(continuously=[on(animate_0, rolling_surface)]),
             )
         ],
         constraining_relations=[bigger_than(rolling_surface, animate_0)],
@@ -688,7 +687,6 @@ def make_roll_templates() -> Iterable[Phase1SituationTemplate]:
             Action(
                 ROLL,
                 argument_roles_to_fillers=[(AGENT, animate_0), (THEME, rollable_0)],
-                during=DuringAction(continuously=[on(rollable_0, rolling_surface)]),
                 auxiliary_variable_bindings=[(ROLL_SURFACE_AUXILIARY, rolling_surface)],
             )
         ],
@@ -702,7 +700,6 @@ def make_roll_templates() -> Iterable[Phase1SituationTemplate]:
             Action(
                 ROLL,
                 argument_roles_to_fillers=[(AGENT, animate_0), (THEME, rollable_0)],
-                during=DuringAction(continuously=[on(rollable_0, rolling_surface)]),
                 auxiliary_variable_bindings=[(ROLL_SURFACE_AUXILIARY, rolling_surface)],
             )
         ],
