@@ -669,7 +669,7 @@ def make_roll_templates() -> Iterable[Phase1SituationTemplate]:
     # rolls on a surface
     intransitive_roll = Phase1SituationTemplate(
         "roll-intransitive",
-        salient_object_variables=[animate_0, rolling_surface],
+        salient_object_variables=[animate_0],
         actions=[
             Action(
                 ROLL,
@@ -703,6 +703,7 @@ def make_roll_templates() -> Iterable[Phase1SituationTemplate]:
                 auxiliary_variable_bindings=[(ROLL_SURFACE_AUXILIARY, rolling_surface)],
             )
         ],
+        asserted_always_relations=[on(rollable_0, rolling_surface)],
         constraining_relations=[
             bigger_than(rolling_surface, rollable_0),
             bigger_than(animate_0, rollable_0),
