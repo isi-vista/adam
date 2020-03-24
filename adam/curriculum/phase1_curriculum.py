@@ -19,7 +19,6 @@ from adam.language_specific.english.english_language_generator import (
     IGNORE_HAS_AS_VERB,
     PREFER_DITRANSITIVE,
     USE_ADVERBIAL_PATH_MODIFIER,
-    IGNORE_HAS_AS_VERB,
     ATTRIBUTES_AS_X_IS_Y,
 )
 from adam.ontology import IS_ADDRESSEE, IS_SPEAKER, THING
