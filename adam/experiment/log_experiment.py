@@ -44,6 +44,7 @@ def log_experiment_entry_point(params: Parameters) -> None:
     experiment_group_dir = params.creatable_directory("experiment_group_dir")
     experiment_name = params.string("experiment")
     debug_log_dir = params.optional_creatable_directory("debug_log_directory")
+    include_images = params.optional_boolean("include_image_links")
 
     graph_logger: Optional[HypothesisLogger]
     if debug_log_dir:
@@ -53,7 +54,9 @@ def log_experiment_entry_point(params: Parameters) -> None:
         graph_logger = None
 
     logger = LearningProgressHtmlLogger.create_logger(
-        output_dir=experiment_group_dir, experiment_name=experiment_name
+        output_dir=experiment_group_dir,
+        experiment_name=experiment_name,
+        include_links_to_images=include_images,
     )
 
     (training_instance_groups, test_instance_groups) = curriculum_from_params(params)
