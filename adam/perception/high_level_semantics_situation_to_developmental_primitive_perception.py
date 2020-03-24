@@ -1,29 +1,10 @@
-from enum import auto, Enum
+from enum import Enum, auto
 from itertools import chain
-from typing import (
-    AbstractSet,
-    Dict,
-    List,
-    Mapping,
-    Optional,
-    Union,
-    cast,
-    MutableMapping,
-    Iterable,
-)
+from typing import Dict, Iterable, List, Mapping, MutableMapping, Optional, Union, cast
 
 from attr.validators import instance_of
-from immutablecollections import (
-    ImmutableDict,
-    ImmutableSet,
-    ImmutableSetMultiDict,
-    immutabledict,
-    immutableset,
-    immutablesetmultidict,
-)
 from more_itertools import only, quantify
 from networkx import DiGraph
-from vistautils.preconditions import check_arg
 
 from adam.axes import AxesInfo, WORLD_AXES
 from adam.geon import Geon
@@ -39,6 +20,8 @@ from adam.ontology.action_description import ActionDescription, ActionDescriptio
 from adam.ontology.during import DuringAction
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
+    ABOUT_THE_SAME_SIZE_AS_LEARNER,
+    BABY,
     COLOR,
     COLORS_TO_RGBS,
     GAILA_PHASE_1_ONTOLOGY,
@@ -48,18 +31,15 @@ from adam.ontology.phase1_ontology import (
     LEARNER,
     LIQUID,
     PART_OF,
+    SIZE_RELATIONS,
     TWO_DIMENSIONAL,
     on,
-    SIZE_RELATIONS,
-    ABOUT_THE_SAME_SIZE_AS_LEARNER,
-    BABY,
 )
 from adam.ontology.phase1_spatial_relations import (
+    EXTERIOR_BUT_IN_CONTACT,
     INTERIOR,
     Region,
     SpatialPath,
-    EXTERIOR_BUT_IN_CONTACT,
-    GRAVITATIONAL_UP,
 )
 from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
 from adam.perception import (
@@ -82,6 +62,15 @@ from adam.relation import Relation
 from adam.situation import Action, SituationObject, SituationRegion
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from attr import Factory, attrib, attrs
+from immutablecollections import (
+    ImmutableDict,
+    ImmutableSet,
+    ImmutableSetMultiDict,
+    immutabledict,
+    immutableset,
+    immutablesetmultidict,
+)
+from vistautils.preconditions import check_arg
 
 
 class ColorPerceptionMode(Enum):
@@ -317,23 +306,31 @@ class _PerceptionGeneration:
 
         first_frame = DevelopmentalPrimitivePerceptionFrame(
             perceived_objects=self._object_perceptions,
-            relations=chain(
-                self._relation_perceptions,
-                explicit_before_relations,
-                _action_perception.before_relations,
-                before_ground,
-            ),
+            relations=[
+                rel
+                for rel in chain(
+                    self._relation_perceptions,
+                    explicit_before_relations,
+                    _action_perception.before_relations,
+                    before_ground,
+                )
+                if not rel.negated
+            ],
             property_assertions=self._property_assertion_perceptions,
             axis_info=axis_info,
         )
         second_frame = DevelopmentalPrimitivePerceptionFrame(
             perceived_objects=self._object_perceptions,
-            relations=chain(
-                self._relation_perceptions,
-                explicit_after_relations,
-                _action_perception.after_relations,
-                after_ground,
-            ),
+            relations=[
+                rel
+                for rel in chain(
+                    self._relation_perceptions,
+                    explicit_after_relations,
+                    _action_perception.after_relations,
+                    after_ground,
+                )
+                if not rel.negated
+            ],
             property_assertions=self._property_assertion_perceptions,
             axis_info=axis_info,
         )
@@ -760,37 +757,42 @@ class _PerceptionGeneration:
             if self._object_perceptions_to_ontology_nodes[object_] == GROUND:
                 perceived_ground = object_
                 break
+        if not perceived_ground:
+            raise RuntimeError("Couldn't find the ground.")
+
         for situation_object in self._situation.all_objects:
             if situation_object.ontology_node != GROUND:
-                if self._objects_to_perceptions[situation_object] in objects_to_relations:
-                    # If this object is not on anything else, it should be on the ground
-                    object_is_on_or_in_something = False
-                    for relation in objects_to_relations[
-                        self._objects_to_perceptions[situation_object]
-                    ]:
+                object_perception = self._objects_to_perceptions[situation_object]
+
+                add_on_ground = True
+
+                if object_perception in objects_to_relations:
+                    # If this object is not on anything else, it should be on the ground,
+                    # unless it's explicitly specified to be unsupported
+                    for relation in objects_to_relations[object_perception]:
                         if relation.relation_type == IN_REGION and isinstance(
                             relation.second_slot, Region
                         ):
                             region = relation.second_slot
                             if (
+                                relation.negated
+                                and region.distance == EXTERIOR_BUT_IN_CONTACT
+                                and region.reference_object == perceived_ground
+                            ):
+                                # Don't make something in contact with the ground
+                                # if the situation explicitly says it isn't.
+                                add_on_ground = False
+                            elif (
                                 region.distance == EXTERIOR_BUT_IN_CONTACT
-                                and region.direction == GRAVITATIONAL_UP
-                            ) or region.distance == INTERIOR:
-                                object_is_on_or_in_something = True
-                    if not object_is_on_or_in_something:
-                        ground_relations.extend(
-                            on(
-                                self._objects_to_perceptions[situation_object],
-                                perceived_ground,
-                            )
-                        )
-                else:
-                    ground_relations.extend(
-                        on(
-                            self._objects_to_perceptions[situation_object],
-                            perceived_ground,
-                        )
-                    )
+                                or region.distance == INTERIOR
+                            ) and not relation.negated:
+                                # Anything else in contact with anything else is not on the ground.
+                                # TODO: This is too lax:
+                                # see https://github.com/isi-vista/adam/issues/597
+                                add_on_ground = False
+
+                if add_on_ground:
+                    ground_relations.extend(on(object_perception, perceived_ground))
 
         return immutableset(ground_relations)
 
@@ -998,7 +1000,7 @@ class _PerceptionGeneration:
         action_object_variables_to_object_perceptions: Mapping[
             ActionDescriptionVariable, Union[ObjectPerception, RegionPerception]
         ],
-    ) -> AbstractSet[Relation[ObjectPerception]]:
+    ) -> ImmutableSet[Relation[ObjectPerception]]:
         """
 
         Args:
@@ -1021,26 +1023,14 @@ class _PerceptionGeneration:
                 action_object_variables_to_object_perceptions=action_object_variables_to_object_perceptions,
             )
 
-            relation_perception = Relation(
-                relation_type=condition.relation_type,
-                first_slot=perception_1,
-                second_slot=perception_2,
+            relations.append(
+                Relation(
+                    relation_type=condition.relation_type,
+                    first_slot=perception_1,
+                    second_slot=perception_2,
+                    negated=condition.negated,
+                )
             )
-
-            if not condition.negated:
-                relations.append(relation_perception)
-            else:
-                # Remove the relation from already known relations
-                relations = [
-                    relation
-                    for relation in relations
-                    if not (
-                        relation.relation_type == condition.relation_type
-                        and relation.first_slot == perception_1
-                        and relation.second_slot == perception_2
-                    )
-                ]
-
         return immutableset(relations)
 
     def _perceive_object_or_region_relation_filler(

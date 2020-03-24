@@ -5,24 +5,23 @@ Curricula for DARPA GAILA Phase 1
 from itertools import chain
 from typing import Iterable, Sequence
 
-from immutablecollections import immutableset
 from more_itertools import flatten
 
-from adam.axes import HorizontalAxisOfObject, FacingAddresseeAxis, AxesInfo
+from adam.axes import AxesInfo, FacingAddresseeAxis, HorizontalAxisOfObject
 from adam.curriculum.curriculum_utils import (
-    phase1_instances,
+    GROUND_OBJECT_TEMPLATE,
     PHASE1_CHOOSER_FACTORY,
     Phase1InstanceGroup,
+    phase1_instances,
     standard_object,
-    GROUND_OBJECT_TEMPLATE,
 )
 from adam.language_specific.english.english_language_generator import (
+    IGNORE_HAS_AS_VERB,
     PREFER_DITRANSITIVE,
     USE_ADVERBIAL_PATH_MODIFIER,
-    IGNORE_HAS_AS_VERB,
     ATTRIBUTES_AS_X_IS_Y,
 )
-from adam.ontology import THING, IS_SPEAKER, IS_ADDRESSEE
+from adam.ontology import IS_ADDRESSEE, IS_SPEAKER, THING
 from adam.ontology.during import DuringAction
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
@@ -58,6 +57,7 @@ from adam.ontology.phase1_ontology import (
     PATIENT,
     PERSON,
     PERSON_CAN_HAVE,
+    PHASE_1_CURRICULUM_OBJECTS,
     PUSH,
     PUSH_GOAL,
     PUSH_SURFACE_AUX,
@@ -76,53 +76,53 @@ from adam.ontology.phase1_ontology import (
     TRANSFER_OF_POSSESSION,
     bigger_than,
     contacts,
-    inside,
-    on,
-    strictly_above,
-    PHASE_1_CURRICULUM_OBJECTS,
-    is_recognized_particular,
-    near,
     far,
     has,
+    inside,
+    is_recognized_particular,
+    near,
+    on,
+    strictly_above,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
+    Direction,
     EXTERIOR_BUT_IN_CONTACT,
     GRAVITATIONAL_UP,
     PROXIMAL,
     Region,
     SpatialPath,
-    TOWARD,
-    Direction,
     TO,
+    TOWARD,
 )
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     GAILA_PHASE_1_PERCEPTION_GENERATOR,
     HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
 )
 from adam.random_utils import RandomChooser
-from adam.relation import flatten_relations
+from adam.relation import flatten_relations, negate
 from adam.situation import Action, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.situation.templates.phase1_situation_templates import (
     _fly_over_template,
+    _go_in_template,
+    _go_to_template,
+    _go_under_template,
     _jump_over_template,
     _put_in_template,
-    _put_on_template,
     _put_on_body_part_template,
-    _go_in_template,
-    _go_under_template,
-    _go_to_template,
+    _put_on_template,
 )
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
+    TemplateObjectVariable,
     action_variable,
     all_possible,
     color_variable,
     object_variable,
     sampled,
-    TemplateObjectVariable,
 )
+from immutablecollections import immutableset
 
 
 # Show each object once by itself
@@ -372,31 +372,40 @@ def make_fall_templates() -> Iterable[Phase1SituationTemplate]:
     ground = object_variable("ground_0", GROUND)
 
     # Any Object Falling
-    for use_adverbial_path_modifier in (True, False):
-        yield Phase1SituationTemplate(
-            "object-falls",
-            salient_object_variables=[arbitary_object],
-            actions=[
-                Action(
-                    action_type=FALL, argument_roles_to_fillers=[(THEME, arbitary_object)]
-                )
-            ],
-            syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER]
-            if use_adverbial_path_modifier
-            else [],
-        )
+    for object_ends_up_on_ground in (True, False):
+        if object_ends_up_on_ground:
+            after_action_relations = flatten_relations([on(arbitary_object, ground)])
+        else:
+            after_action_relations = flatten_relations(
+                [negate(contacts(arbitary_object, ground))]
+            )
+
+        for use_adverbial_path_modifier in (True, False):
+            yield Phase1SituationTemplate(
+                "object-falls",
+                salient_object_variables=[arbitary_object],
+                background_object_variables=[ground],
+                actions=[
+                    Action(
+                        action_type=FALL,
+                        argument_roles_to_fillers=[(THEME, arbitary_object)],
+                    )
+                ],
+                syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER]
+                if use_adverbial_path_modifier
+                else [],
+                before_action_relations=[negate(contacts(arbitary_object, ground))],
+                after_action_relations=after_action_relations,
+            )
 
     # "ball fell on the ground"
     yield Phase1SituationTemplate(
         "falls-to-ground",
         salient_object_variables=[arbitary_object, ground],
         actions=[
-            Action(
-                action_type=FALL,
-                argument_roles_to_fillers=[(THEME, arbitary_object)],
-                during=DuringAction(at_some_point=[on(arbitary_object, ground)]),
-            )
+            Action(action_type=FALL, argument_roles_to_fillers=[(THEME, arbitary_object)])
         ],
+        after_action_relations=[on(arbitary_object, ground)],
     )
 
 

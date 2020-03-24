@@ -1,0 +1,12 @@
+_includes:
+   - "../../root.params"
+
+experiment_group_dir: '%adam_experiment_root%/m9/'
+
+include_objects: false
+include_relations: false
+include_attributes: false
+include_events: false
+include_debug: true
+
+hypothesis_log_dir: "%experiment_group_dir%/hypotheses"
