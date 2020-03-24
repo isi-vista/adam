@@ -80,6 +80,7 @@ from immutablecollections import (
     immutableset,
     immutablesetmultidict,
 )
+from immutablecollections.converter_utils import _to_immutableset
 from vistautils.preconditions import check_arg
 
 
@@ -1010,7 +1011,7 @@ class _PerceptionGeneration:
         action_object_variables_to_object_perceptions: Mapping[
             ActionDescriptionVariable, Union[ObjectPerception, RegionPerception]
         ],
-    ) -> AbstractSet[Relation[ObjectPerception]]:
+    ) -> ImmutableSet[Relation]:
         """
 
         Args:
@@ -1033,26 +1034,14 @@ class _PerceptionGeneration:
                 action_object_variables_to_object_perceptions=action_object_variables_to_object_perceptions,
             )
 
-            relation_perception = Relation(
-                relation_type=condition.relation_type,
-                first_slot=perception_1,
-                second_slot=perception_2,
+            relations.append(
+                Relation(
+                    relation_type=condition.relation_type,
+                    first_slot=perception_1,
+                    second_slot=perception_2,
+                    negated=condition.negated,
+                )
             )
-
-            if not condition.negated:
-                relations.append(relation_perception)
-            else:
-                # Remove the relation from already known relations
-                relations = [
-                    relation
-                    for relation in relations
-                    if not (
-                        relation.relation_type == condition.relation_type
-                        and relation.first_slot == perception_1
-                        and relation.second_slot == perception_2
-                    )
-                ]
-
         return immutableset(relations)
 
     def _perceive_object_or_region_relation_filler(
