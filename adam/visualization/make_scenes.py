@@ -16,6 +16,7 @@ from typing import (
     Generator,
     Mapping,
     Dict,
+    Set,
 )
 from functools import partial
 
@@ -84,6 +85,8 @@ USAGE_MESSAGE = """make_scenes.py param_file
 #       https://github.com/isi-vista/adam/issues/689
 EXCLUDED_VOCAB = {"in"}
 
+_FILENAMES_USED: Set[str] = set()
+
 
 @attrs(slots=True)
 class SceneNode:
@@ -141,6 +144,7 @@ def main(
         viz = SituationVisualizer()
     else:
         viz = visualizer
+        viz.clear_scene()
     model_scales = viz.get_model_scales()
     for object_type, multiplier in OBJECT_SCALE_MULTIPLIER_MAP.items():
         if object_type in model_scales:
@@ -164,6 +168,12 @@ def main(
             continue
         if specific_scene and scene_number > specific_scene:
             break
+
+        scene_filename = rendering_filename_generator(scene_number, scene_elements)
+        if scene_filename in _FILENAMES_USED:
+            continue
+        _FILENAMES_USED.add(scene_filename)
+
         print(f"SCENE {scene_number}")
         viz.set_title(
             " ".join(token for token in scene_elements.tokens)
@@ -332,10 +342,8 @@ def main(
         viz.run_for_seconds(1)
 
         screenshot(
-            scene_elements=scene_elements,
             automatically_save_renderings=automatically_save_renderings,
-            scene_number=scene_number,
-            filename_generator=rendering_filename_generator,
+            filename=scene_filename,
             screenshot_dir=screenshot_dir,
             viz=viz,
         )
@@ -824,20 +832,15 @@ def _solve_top_level_positions(
 
 def screenshot(
     *,
-    scene_elements: SceneElements,
     automatically_save_renderings: bool,
-    scene_number: int,
-    filename_generator: Callable[[int, SceneElements], str],
+    filename: str,
     screenshot_dir: Optional[str],
     viz: SituationVisualizer,
 ):
     if automatically_save_renderings and screenshot_dir is not None:
-        print(
-            f"SAVING TO: {screenshot_dir}/{filename_generator(scene_number, scene_elements)}"
-        )
-        viz.screenshot(
-            f"{screenshot_dir}/{filename_generator(scene_number, scene_elements)}", 0
-        )
+        path = f"{screenshot_dir}/{filename}"
+        print(f"SAVING TO: {path}")
+        viz.screenshot(path, 0)
     else:
         command = input(
             "Press ENTER to run the positioning system or enter name to save a screenshot\n"
@@ -865,7 +868,8 @@ def from_experiment_filename_generator(
     scene_number: int, scene_elements: SceneElements
 ) -> str:
     assert scene_elements.situation is not None
-    filename = f"{scene_number}{CurriculumToHtmlDumper.situation_text(scene_elements.situation)[0]}{scene_elements.current_frame}"
+    assert scene_number >= 0  # just to avoid complaints from mypy
+    filename = f"{CurriculumToHtmlDumper.situation_text(scene_elements.situation)[0]}{scene_elements.current_frame}"
     hashed = hash(filename)
     return str(hashed) + ".jpg"
 

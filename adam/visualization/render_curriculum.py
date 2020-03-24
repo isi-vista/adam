@@ -42,6 +42,8 @@ def main(params: Parameters):
     try:
         curriculum = curriculum_from_params(params)[0]
         directory_name = params.string("experiment") + "/renders"
+        print(root_output_directory)
+        print(directory_name)
         if not os.path.isdir(root_output_directory + directory_name):
             os.mkdir(root_output_directory + directory_name)
         for instance_group in curriculum:
@@ -51,8 +53,9 @@ def main(params: Parameters):
 
         return
 
-    except RuntimeError:
-        pass
+    except RuntimeError as err:
+        print(f"uncaught exception: {err}")
+        return
 
     if not os.path.isdir(root_output_directory):
         os.mkdir(root_output_directory)

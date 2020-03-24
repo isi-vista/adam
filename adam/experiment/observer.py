@@ -271,6 +271,13 @@ class LearningProgressHtmlLogger:  # pragma: no cover
             </div>
             """
 
+        # clickable_render_string = f"""
+        #     <button onclick="viewRenderFn({render_hash})">View Render {frame}</button>
+        #     <div id="render{render_hash}" style="display: none">
+        #     {render_link}
+        #     </div>
+        #     """
+
         # Log into html file
         # We want to log the true description, the learners guess, the perception, and situation
         with open(self.outfile_dir, "a+") as outfile:

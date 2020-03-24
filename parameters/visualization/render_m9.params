@@ -1,7 +1,3 @@
-_includes:
-   - "../root.params"
-   - "../experiments/m9/debug.params"
-
 iterations: 1000
 steps_before_vis: 1000
 seed: 2020
