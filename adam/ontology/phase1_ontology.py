@@ -1994,6 +1994,8 @@ _FALL_ACTION_DESCRIPTION = ActionDescription(
             (_FALL_THEME, SpatialPath(operator=TOWARD, reference_object=_FALL_GROUND))
         ]
     ),
+    # You can't fall if you start on the ground.
+    preconditions=[negate(on(_FALL_THEME, _FALL_GROUND))],
     asserted_properties=[(_FALL_THEME, MOVES)],
 )
 
