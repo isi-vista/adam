@@ -2038,6 +2038,7 @@ class EdgePredicate(ABC):
 
 _BEFORE_AND_AFTER = immutableset([TemporalScope.BEFORE, TemporalScope.AFTER])
 _DURING_ONLY = immutableset([TemporalScope.DURING])
+_AT_SOME_POINT_ONLY = immutableset([TemporalScope.AT_SOME_POINT])
 
 
 @attrs(frozen=True, slots=True)
@@ -2747,7 +2748,7 @@ class _FrameTranslation:
             relations = []
             for relation in perceptual_representation.during.at_some_point:
                 self._map_relation(
-                    _dynamic_digraph, relation, temporal_scopes=_DURING_ONLY
+                    _dynamic_digraph, relation, temporal_scopes=_AT_SOME_POINT_ONLY
                 )
                 relations.append(relation)
             for relation in perceptual_representation.during.continuously:
