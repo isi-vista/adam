@@ -20,6 +20,7 @@ from adam.language_specific.english.english_language_generator import (
     PREFER_DITRANSITIVE,
     USE_ADVERBIAL_PATH_MODIFIER,
     IGNORE_HAS_AS_VERB,
+    ATTRIBUTES_AS_X_IS_Y,
 )
 from adam.ontology import THING, IS_SPEAKER, IS_ADDRESSEE
 from adam.ontology.during import DuringAction
@@ -190,6 +191,35 @@ def _make_objects_with_colors_curriculum() -> Phase1InstanceGroup:
             *[
                 sampled(
                     _object_with_color_template(object_with_color),
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    max_to_sample=20,
+                )
+            ]
+        ),
+    )
+
+
+def _object_with_color_is_template(
+    object_with_color: TemplateObjectVariable,
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        "object-with-color",
+        salient_object_variables=[object_with_color],
+        syntax_hints=[ATTRIBUTES_AS_X_IS_Y],
+    )
+
+
+def _make_objects_with_colors_is_curriculum() -> Phase1InstanceGroup:
+    color = color_variable("color")
+    object_with_color = standard_object("object", added_properties=[color])
+
+    return phase1_instances(
+        "objects with colors",
+        chain(
+            *[
+                sampled(
+                    _object_with_color_is_template(object_with_color),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=20,
@@ -1592,7 +1622,11 @@ def build_gaila_phase1_attribute_curriculum() -> Sequence[Phase1InstanceGroup]:
     """
     One particular instantiation of the object-learning parts of the curriculum for GAILA Phase 1.
     """
-    return [_make_objects_with_colors_curriculum(), _make_my_your_object_curriculum()]
+    return [
+        _make_objects_with_colors_curriculum(),
+        _make_objects_with_colors_is_curriculum(),
+        _make_my_your_object_curriculum(),
+    ]
 
 
 def build_gaila_phase1_relation_curriculum() -> Sequence[Phase1InstanceGroup]:
