@@ -328,7 +328,7 @@ class LearningProgressHtmlLogger:  # pragma: no cover
                 )
 
             if situation and isinstance(situation, HighLevelSemanticsSituation):
-                render_buttons_text, _ = self.render_buttons_html(situation)
+                render_buttons_text = self.render_buttons_html(situation)
             else:
                 render_buttons_text = ""
 
