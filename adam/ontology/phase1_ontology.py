@@ -1916,6 +1916,7 @@ def _make_spin_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
         during=DuringAction(
             objects_to_paths=[(spin_theme, spin_around_primary_axis(spin_theme))]
         ),
+        preconditions=[contacts(_SPIN_AGENT, spin_theme)],
         asserted_properties=[
             (_SPIN_AGENT, VOLITIONALLY_INVOLVED),
             (_SPIN_AGENT, CAUSES_CHANGE),
@@ -2259,6 +2260,7 @@ def _make_roll_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
         ActionDescription(
             frame=ActionDescriptionFrame({AGENT: roll_agent, THEME: roll_theme}),
             during=make_during(roll_theme),
+            preconditions=[contacts(roll_agent, roll_theme)],
             asserted_properties=[
                 (roll_agent, VOLITIONALLY_INVOLVED),
                 (roll_agent, CAUSES_CHANGE),
