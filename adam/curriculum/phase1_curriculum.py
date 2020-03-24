@@ -355,9 +355,7 @@ def make_fall_templates() -> Iterable[Phase1SituationTemplate]:
             syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER]
             if use_adverbial_path_modifier
             else [],
-            before_action_relations=[
-                negate(on(arbitary_object, ground))
-            ],
+            before_action_relations=[negate(on(arbitary_object, ground))],
         )
 
     # "ball fell on the ground"
