@@ -317,23 +317,31 @@ class _PerceptionGeneration:
 
         first_frame = DevelopmentalPrimitivePerceptionFrame(
             perceived_objects=self._object_perceptions,
-            relations=chain(
-                self._relation_perceptions,
-                explicit_before_relations,
-                _action_perception.before_relations,
-                before_ground,
-            ),
+            relations=[
+                rel
+                for rel in chain(
+                    self._relation_perceptions,
+                    explicit_before_relations,
+                    _action_perception.before_relations,
+                    before_ground,
+                )
+                if not rel.negated
+            ],
             property_assertions=self._property_assertion_perceptions,
             axis_info=axis_info,
         )
         second_frame = DevelopmentalPrimitivePerceptionFrame(
             perceived_objects=self._object_perceptions,
-            relations=chain(
-                self._relation_perceptions,
-                explicit_after_relations,
-                _action_perception.after_relations,
-                after_ground,
-            ),
+            relations=[
+                rel
+                for rel in chain(
+                    self._relation_perceptions,
+                    explicit_after_relations,
+                    _action_perception.after_relations,
+                    after_ground,
+                )
+                if not rel.negated
+            ],
             property_assertions=self._property_assertion_perceptions,
             axis_info=axis_info,
         )
@@ -763,8 +771,10 @@ class _PerceptionGeneration:
         for situation_object in self._situation.all_objects:
             if situation_object.ontology_node != GROUND:
                 if self._objects_to_perceptions[situation_object] in objects_to_relations:
-                    # If this object is not on anything else, it should be on the ground
+                    # If this object is not on anything else, it should be on the ground, unless it's explicitly
+                    # specified to be unsupported
                     object_is_on_or_in_something = False
+                    supported = True
                     for relation in objects_to_relations[
                         self._objects_to_perceptions[situation_object]
                     ]:
@@ -777,7 +787,14 @@ class _PerceptionGeneration:
                                 and region.direction == GRAVITATIONAL_UP
                             ) or region.distance == INTERIOR:
                                 object_is_on_or_in_something = True
-                    if not object_is_on_or_in_something:
+                            if (
+                                region.distance == EXTERIOR_BUT_IN_CONTACT
+                                and region.direction == GRAVITATIONAL_UP
+                                and region.reference_object == perceived_ground
+                                and relation.negated
+                            ):
+                                supported = False
+                    if not object_is_on_or_in_something and supported:
                         ground_relations.extend(
                             on(
                                 self._objects_to_perceptions[situation_object],

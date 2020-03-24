@@ -346,6 +346,7 @@ def make_fall_templates() -> Iterable[Phase1SituationTemplate]:
         yield Phase1SituationTemplate(
             "object-falls",
             salient_object_variables=[arbitary_object],
+            background_object_variables=[ground],
             actions=[
                 Action(
                     action_type=FALL, argument_roles_to_fillers=[(THEME, arbitary_object)]
@@ -354,6 +355,9 @@ def make_fall_templates() -> Iterable[Phase1SituationTemplate]:
             syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER]
             if use_adverbial_path_modifier
             else [],
+            before_action_relations=[
+                rel.negated_copy() for rel in on(arbitary_object, ground)
+            ],
         )
 
     # "ball fell on the ground"

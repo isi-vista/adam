@@ -209,7 +209,7 @@ class Phase1SituationTemplate(SituationTemplate):
     Defaults to all semantic role fillers of situation actions.
     """
     before_action_relations: ImmutableSet[Relation[TemplateObjectVariable]] = attrib(
-        converter=_to_immutableset, kw_only=True, default=immutableset()
+        converter=flatten_relations, kw_only=True, default=immutableset()
     )
     """
     The relations which hold in this `SituationTemplate`,
@@ -223,7 +223,7 @@ class Phase1SituationTemplate(SituationTemplate):
     Those are handled automatically. 
     """
     after_action_relations: ImmutableSet[Relation[TemplateObjectVariable]] = attrib(
-        converter=_to_immutableset, kw_only=True, default=immutableset()
+        converter=flatten_relations, kw_only=True, default=immutableset()
     )
     """
     The relations which hold in this `SituationTemplate`,
