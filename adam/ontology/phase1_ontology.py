@@ -1874,14 +1874,18 @@ _GIVE_ACTION_DESCRIPTION = ActionDescription(
     preconditions=[
         has(_GIVE_AGENT, _GIVE_THEME),
         negate(has(_GIVE_GOAL, _GIVE_THEME)),
-        contacts(_GIVE_AGENT_MANIPULATOR, _GIVE_THEME),
-        negate(contacts(_GIVE_GOAL_MANIPULATOR, _GIVE_THEME)),
+        # contacts(_GIVE_AGENT_MANIPULATOR, _GIVE_THEME),
+        # negate(contacts(_GIVE_GOAL_MANIPULATOR, _GIVE_THEME)),
+        contacts(_GIVE_AGENT, _GIVE_THEME),
+        negate(contacts(_GIVE_GOAL, _GIVE_THEME)),
     ],
     postconditions=[
         negate(has(_GIVE_AGENT, _GIVE_THEME)),
         has(_GIVE_GOAL, _GIVE_THEME),
-        negate(contacts(_GIVE_AGENT_MANIPULATOR, _GIVE_THEME)),
-        contacts(_GIVE_GOAL_MANIPULATOR, _GIVE_THEME),
+        # negate(contacts(_GIVE_AGENT_MANIPULATOR, _GIVE_THEME)),
+        # contacts(_GIVE_GOAL_MANIPULATOR, _GIVE_THEME),
+        negate(contacts(_GIVE_AGENT, _GIVE_THEME)),
+        contacts(_GIVE_GOAL, _GIVE_THEME),
     ],
     asserted_properties=[
         (_GIVE_AGENT, VOLITIONALLY_INVOLVED),
