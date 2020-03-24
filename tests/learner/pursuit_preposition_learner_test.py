@@ -1,7 +1,5 @@
 import random
 
-import pytest
-
 from adam.curriculum.phase1_curriculum import _x_has_y_template
 from adam.language_specific.english import ENGLISH_DETERMINERS
 from immutablecollections import immutableset
@@ -106,7 +104,7 @@ def test_pursuit_preposition_on_learner():
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
 
 
-def test_subset_preposition_beside_learner():
+def test_pursuit_preposition_beside_learner():
     rng = random.Random()
     rng.seed(0)
     learner = PrepositionPursuitLearner(
@@ -163,7 +161,7 @@ def test_subset_preposition_beside_learner():
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
 
 
-def test_subset_preposition_under_learner():
+def test_pursuit_preposition_under_learner():
     rng = random.Random()
     rng.seed(0)
     learner = PrepositionPursuitLearner(
@@ -220,7 +218,7 @@ def test_subset_preposition_under_learner():
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
 
 
-def test_subset_preposition_over_learner():
+def test_pursuit_preposition_over_learner():
     rng = random.Random()
     rng.seed(0)
     learner = PrepositionPursuitLearner(
@@ -275,7 +273,7 @@ def test_subset_preposition_over_learner():
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
 
 
-def test_subset_preposition_in_learner():
+def test_pursuit_preposition_in_learner():
     rng = random.Random()
     rng.seed(0)
     learner = PrepositionPursuitLearner(
@@ -327,7 +325,7 @@ def test_subset_preposition_in_learner():
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
 
 
-def test_subset_preposition_behind_learner():
+def test_pursuit_preposition_behind_learner():
     rng = random.Random()
     rng.seed(0)
     learner = PrepositionPursuitLearner(
@@ -393,7 +391,7 @@ def test_subset_preposition_behind_learner():
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
 
 
-def test_subset_preposition_in_front_learner():
+def test_pursuit_preposition_in_front_learner():
     rng = random.Random()
     rng.seed(0)
     learner = PrepositionPursuitLearner(
