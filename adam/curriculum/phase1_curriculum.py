@@ -373,12 +373,9 @@ def make_fall_templates() -> Iterable[Phase1SituationTemplate]:
         "falls-to-ground",
         salient_object_variables=[arbitary_object, ground],
         actions=[
-            Action(
-                action_type=FALL,
-                argument_roles_to_fillers=[(THEME, arbitary_object)],
-                after_action_relations=[on(arbitary_object, ground)],
-            )
+            Action(action_type=FALL, argument_roles_to_fillers=[(THEME, arbitary_object)])
         ],
+        after_action_relations=[on(arbitary_object, ground)],
     )
 
 

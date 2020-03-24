@@ -1,16 +1,6 @@
 from enum import Enum, auto
 from itertools import chain
-from typing import (
-    AbstractSet,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
-    MutableMapping,
-    Optional,
-    Union,
-    cast,
-)
+from typing import Dict, Iterable, List, Mapping, MutableMapping, Optional, Union, cast
 
 from attr.validators import instance_of
 from more_itertools import only, quantify
@@ -80,7 +70,6 @@ from immutablecollections import (
     immutableset,
     immutablesetmultidict,
 )
-from immutablecollections.converter_utils import _to_immutableset
 from vistautils.preconditions import check_arg
 
 
