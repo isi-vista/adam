@@ -34,6 +34,7 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    MutableMapping,
 )
 from uuid import uuid4
 
@@ -2036,6 +2037,7 @@ class EdgePredicate(ABC):
 
 
 _BEFORE_AND_AFTER = immutableset([TemporalScope.BEFORE, TemporalScope.AFTER])
+_DURING_ONLY = immutableset([TemporalScope.DURING])
 
 
 @attrs(frozen=True, slots=True)
@@ -2183,7 +2185,7 @@ class DirectionPredicate(EdgePredicate):
 # and pattern construction
 
 _AxisMapper = Callable[[GeonAxis], Any]
-_EdgeMapper = Callable[[Any], Mapping[str, Any]]
+_EdgeMapper = Callable[[Any], MutableMapping[str, Any]]
 
 
 def _add_labelled_edge(
@@ -2193,9 +2195,14 @@ def _add_labelled_edge(
     unmapped_label: Any,
     *,
     map_edge: _EdgeMapper,
+    temporal_scopes: AbstractSet[TemporalScope] = immutableset(),
 ):
     graph.add_edge(source, target)
     mapped_edge = map_edge(unmapped_label)
+    if temporal_scopes:
+        mapped_edge["label"] = TemporallyScopedEdgeLabel.for_dynamic_perception(
+            mapped_edge["label"], when=temporal_scopes
+        )
     graph.edges[source, target].update(mapped_edge)
 
 
@@ -2266,6 +2273,7 @@ def _translate_region(
     map_node: Callable[[Any], Any],
     map_edge: _EdgeMapper,
     axes_info: Optional[AxesInfo[Any]] = None,
+    temporal_scopes: AbstractSet[TemporalScope] = immutableset(),
 ) -> None:
     mapped_region = map_node(region)
     mapped_reference_object = map_node(region.reference_object)
@@ -2275,6 +2283,7 @@ def _translate_region(
         mapped_reference_object,
         REFERENCE_OBJECT_LABEL,
         map_edge=map_edge,
+        temporal_scopes=temporal_scopes,
     )
     if region.direction:
         axis_relative_to = region.direction.relative_to_axis.to_concrete_axis(axes_info)
@@ -2285,6 +2294,7 @@ def _translate_region(
             mapped_axis_relative_to,
             region.direction,
             map_edge=map_edge,
+            temporal_scopes=temporal_scopes,
         )
 
 
@@ -2584,11 +2594,11 @@ class _FrameTranslation:
                 map_edge=self._map_edge,
             )
 
-        regions = immutableset(
+        regions = [
             relation.second_slot
             for relation in frame.relations
             if isinstance(relation.second_slot, Region)
-        )
+        ]
 
         for region in regions:
             _translate_region(
@@ -2719,24 +2729,43 @@ class _FrameTranslation:
 
         # Translate path information
         if perceptual_representation.during:
+            regions = []
+            axes_info = perceptual_representation.frames[0].axis_info
             if perceptual_representation.during.objects_to_paths:
                 for (
                     moving_object,
                     path_info,
                 ) in perceptual_representation.during.objects_to_paths.items():
                     self._add_path_node(
-                        _dynamic_digraph,
-                        moving_object,
-                        path_info,
-                        axes_info=perceptual_representation.frames[0].axis_info,
+                        _dynamic_digraph, moving_object, path_info, axes_info=axes_info
                     )
+                    if isinstance(path_info.reference_object, Region):
+                        regions.append(path_info.reference_object)
+
+            # Below we ensure all regions appearing as relation and path arguments
+            # are correctly translated.
+            relations = []
             for relation in perceptual_representation.during.at_some_point:
                 self._map_relation(
-                    _dynamic_digraph, relation, temporal_scopes=[TemporalScope.DURING]
+                    _dynamic_digraph, relation, temporal_scopes=_DURING_ONLY
                 )
+                relations.append(relation)
             for relation in perceptual_representation.during.continuously:
                 self._map_relation(
-                    _dynamic_digraph, relation, temporal_scopes=[TemporalScope.DURING]
+                    _dynamic_digraph, relation, temporal_scopes=_DURING_ONLY
+                )
+                relations.append(relation)
+            for relation in relations:
+                if isinstance(relation.second_slot, Region):
+                    regions.append(relation.second_slot)
+            for region in regions:
+                _translate_region(
+                    _dynamic_digraph,
+                    region,
+                    map_node=self._map_node,
+                    map_edge=self._map_edge,
+                    axes_info=axes_info,
+                    temporal_scopes=_DURING_ONLY,
                 )
 
         return PerceptionGraph(graph=_dynamic_digraph, dynamic=True)
