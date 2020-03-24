@@ -16,11 +16,11 @@ import logging
 import pickle
 from abc import ABC, abstractmethod
 from enum import Enum
-from functools import partial
 from itertools import chain
 from pathlib import Path
 from time import process_time
 from typing import (
+    AbstractSet,
     Any,
     Callable,
     Dict,
@@ -34,28 +34,14 @@ from typing import (
     TypeVar,
     Union,
     cast,
-    AbstractSet,
 )
 from uuid import uuid4
 
 import graphviz
-
-from adam.relation import Relation
-from attr import attrib, attrs
 from attr.validators import deep_iterable, instance_of, optional
-from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
-from immutablecollections.converter_utils import (
-    _to_immutabledict,
-    _to_immutableset,
-    _to_tuple,
-)
-from more_itertools import first, pairwise, ilen
+from more_itertools import first, ilen, pairwise
 from networkx import DiGraph, connected_components, is_isomorphic, set_node_attributes
 from typing_extensions import Protocol
-from vistautils.misc_utils import str_list_limited
-from vistautils.preconditions import check_arg
-from vistautils.range import Range
-from vistautils.span import Span
 
 from adam.axes import AxesInfo, HasAxes
 from adam.axis import GeonAxis
@@ -66,16 +52,16 @@ from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
     COLOR,
     GAILA_PHASE_1_ONTOLOGY,
-    PART_OF,
     LIQUID,
+    PART_OF,
     RECOGNIZED_PARTICULAR_PROPERTY,
 )
 from adam.ontology.phase1_spatial_relations import (
     Direction,
     Distance,
+    PathOperator,
     Region,
     SpatialPath,
-    PathOperator,
 )
 from adam.ontology.structural_schema import ObjectStructuralSchema
 from adam.perception import ObjectPerception, PerceptualRepresentation
@@ -90,10 +76,22 @@ from adam.perception.high_level_semantics_situation_to_developmental_primitive_p
     HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
 )
 from adam.random_utils import RandomChooser
+from adam.relation import Relation
 from adam.situation import SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
-from adam.utils.networkx_utils import copy_digraph, digraph_with_nodes_sorted_by, subgraph
 from adam.utilities import sign
+from adam.utils.networkx_utils import copy_digraph, digraph_with_nodes_sorted_by, subgraph
+from attr import attrib, attrs
+from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
+from immutablecollections.converter_utils import (
+    _to_immutabledict,
+    _to_immutableset,
+    _to_tuple,
+)
+from vistautils.misc_utils import str_list_limited
+from vistautils.preconditions import check_arg
+from vistautils.range import Range
+from vistautils.span import Span
 
 
 class Incrementer:
@@ -127,6 +125,8 @@ PerceptionGraphNode = Union[
     Tuple[Geon, int],
     GeonAxis,
     MatchedObjectNode,
+    SpatialPath[ObjectPerception],
+    PathOperator,
 ]
 
 # If this is changed, assert_valid_edge_label below needs to be updated.
@@ -216,10 +216,15 @@ class TemporallyScopedEdgeLabel:
         return TemporallyScopedEdgeLabel(attribute, when)
 
     def __repr__(self) -> str:
-        temporal_scope_names = [
-            temporal_specifier.name for temporal_specifier in self.temporal_specifiers
-        ]
-        return f"{self.attribute!r}@{temporal_scope_names}"
+        if self.temporal_specifiers == _BEFORE_AND_AFTER:
+            # To reduce clutter, we omit temporal scopes for things
+            # which hold both before and after an action
+            return repr(self.attribute)
+        else:
+            temporal_scope_names = [
+                temporal_specifier.name for temporal_specifier in self.temporal_specifiers
+            ]
+            return f"{self.attribute!r}@{temporal_scope_names}"
 
 
 # certain constant edges used by PerceptionGraphs
@@ -2533,17 +2538,14 @@ class LanguageAlignedPerception:
                 )
 
 
-_T = TypeVar("_T")
-
-
-def _uniquify(item: _T, id_incrementer: Incrementer) -> Tuple[_T, int]:
+def _uniquify(
+    item: PerceptionGraphNode, referring_node: PerceptionGraphNode
+) -> Tuple[PerceptionGraphNode, PerceptionGraphNode]:
     """
     Utility method to force object which would otherwise compare as equal
     to be distinct when used as nodes in a digraph.
     """
-    ret = (item, id_incrementer.value())
-    id_incrementer.increment(1)
-    return ret
+    return (item, referring_node)
 
 
 @attrs
@@ -2607,9 +2609,14 @@ class _FrameTranslation:
             property_index += 1
             source_node = self._map_node(property_.perceived_object)
             if isinstance(property_, HasBinaryProperty):
-                dest_node = self._map_node(property_.binary_property, force_unique=True)
+                dest_node = self._map_node(
+                    property_.binary_property,
+                    referring_node_to_enforce_uniqueness=source_node,
+                )
             elif isinstance(property_, HasColor):
-                dest_node = self._map_node(property_.color, force_unique=True)
+                dest_node = self._map_node(
+                    property_.color, referring_node_to_enforce_uniqueness=source_node
+                )
             else:
                 raise RuntimeError(f"Don't know how to translate property {property_}")
             graph.add_edge(source_node, dest_node, label=HAS_PROPERTY_LABEL)
@@ -2755,14 +2762,14 @@ class _FrameTranslation:
             )
         if path.operator:
             edges_to_add.append(
-                (path, _uniquify(path.operator, self.unique_counter), HAS_PATH_OPERATOR)
+                (path, _uniquify(path.operator, referring_node=path), HAS_PATH_OPERATOR)
             )
         # link path object to orientation_changed boolean if it did as a has-property
         if path.orientation_changed:
             edges_to_add.append(
                 (
                     path,
-                    _uniquify(ORIENTATION_CHANGED_PROPERTY, self.unique_counter),
+                    _uniquify(ORIENTATION_CHANGED_PROPERTY, referring_node=path),
                     HAS_PROPERTY_LABEL,
                 )
             )
@@ -2775,14 +2782,19 @@ class _FrameTranslation:
                 ),
             )
 
-    def _map_node(self, obj: Any, *, force_unique: bool = False):
-        # in some cases, a special index will be given to force
-        # otherwise identical objects to be treated separately.
+    def _map_node(
+        self,
+        obj: Any,
+        *,
+        referring_node_to_enforce_uniqueness: Optional[PerceptionGraphNode] = None,
+    ):
+        # in some cases, a node will be combined with its referring node
+        # to force otherwise identical objects to be treated separately.
         # We do this for properties, for example, so that if two things
         # are both animate, they end up with distinct animacy nodes in the graph
         # which could be e.g. treated differently during pattern relaxation.
-        if force_unique:
-            return _uniquify(obj, self.unique_counter)
+        if referring_node_to_enforce_uniqueness:
+            return _uniquify(obj, referring_node_to_enforce_uniqueness)
         # Regions and Geons are normally treated as value objects,
         # but we want to maintain their distinctness in the perceptual graph
         # for the purpose of matching patterns, so we make their corresponding
