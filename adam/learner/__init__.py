@@ -123,6 +123,9 @@ class MemorizingLanguageLearner(
         else:
             return immutabledict()
 
+    def log_hypotheses(self, log_output_path: Path) -> None:
+        pass
+
 
 def get_largest_matching_pattern(
     pattern: PerceptionGraphPattern,

@@ -1,4 +1,5 @@
 from abc import ABC
+from pathlib import Path
 from typing import Iterable, Mapping, Optional, Sequence, Union
 
 from attr.validators import instance_of, optional
@@ -275,6 +276,11 @@ class PrepositionPursuitLearner(
         return are_equal_mappings and h.graph_pattern.check_isomorphism(
             hypothesis.graph_pattern
         )
+
+    def log_hypotheses(self, log_output_path: Path) -> None:
+        for (surface_template, hypothesis) in self._lexicon.items():
+            template_string = surface_template.to_short_string()
+            hypothesis.render_to_file(template_string, log_output_path / template_string)
 
 
 @attrs
