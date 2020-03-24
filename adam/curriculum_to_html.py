@@ -329,8 +329,7 @@ class CurriculumToHtmlDumper:
             # we don't want them to break if the user moves the directory.
             relative_filename = f"{instance_group_header}.html"
             files_written.append((instance_group_header, relative_filename))
-            CurriculumToHtmlDumper._dump_instance_group(
-                self,
+            self._dump_instance_group(
                 instance_group=instance_group,
                 output_destination=output_directory / relative_filename,
                 title=f"{instance_group_header} - {title}",

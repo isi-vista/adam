@@ -57,6 +57,7 @@ from adam.ontology.phase1_ontology import (
     near,
     TAKE,
     CAR,
+    ROLL_SURFACE_AUXILIARY,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -563,6 +564,28 @@ def test_path_modifier_on():
     assert only(
         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
     ).as_token_sequence() == ("Mom", "rolls", "a", "ball", "on", "a", "table")
+
+
+def test_roll():
+    agent = situation_object(BABY)
+    theme = situation_object(COOKIE)
+    surface = situation_object(BOX)
+
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[agent, theme, surface],
+        actions=[
+            Action(
+                ROLL,
+                argument_roles_to_fillers=[(AGENT, agent), (THEME, theme)],
+                auxiliary_variable_bindings=[(ROLL_SURFACE_AUXILIARY, surface)],
+            )
+        ],
+        always_relations=[on(theme, surface)],
+    )
+    assert only(
+        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
+    ).as_token_sequence() == ("a", "baby", "rolls", "a", "cookie", "on", "a", "box")
 
 
 def test_noun_with_modifier():

@@ -16,10 +16,12 @@ from typing import (
     Generator,
     Mapping,
     Dict,
+    Set,
 )
 from functools import partial
 
 import random
+from pathlib import Path
 from collections import defaultdict
 import numpy as np
 
@@ -44,7 +46,7 @@ from panda3d.core import LPoint3f  # pylint: disable=no-name-in-module
 
 from adam.math_3d import Point
 from math import isnan
-
+from hashlib import md5
 
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.perception.developmental_primitive_perception import (
@@ -70,6 +72,9 @@ from adam.visualization.utils import (
 from adam.visualization.positioning import run_model, PositionsMap
 from adam.ontology.phase1_spatial_relations import Region
 
+
+from adam.curriculum_to_html import CurriculumToHtmlDumper
+
 USAGE_MESSAGE = """make_scenes.py param_file
                 \twhere param_file has the following parameters:
                 \t\titerations: int: total number of iterations to run positioning model over
@@ -80,6 +85,8 @@ USAGE_MESSAGE = """make_scenes.py param_file
 # TODO: remove this or log its use as an error
 #       https://github.com/isi-vista/adam/issues/689
 EXCLUDED_VOCAB = {"in"}
+
+_FILENAMES_USED: Set[str] = set()
 
 
 @attrs(slots=True)
@@ -100,7 +107,7 @@ class SceneNode:
 def main(
     params: Parameters,
     scenes_iterable_input: Optional[Iterable[Phase1InstanceGroup]] = None,
-    output_directory: Optional[str] = None,
+    output_directory: Optional[Path] = None,
     visualizer: Optional[SituationVisualizer] = None,
 ) -> None:
 
@@ -118,6 +125,11 @@ def main(
         "automatically_save_renderings", default_value=False
     )
 
+    if "experiment_group_dir" in params:
+        rendering_filename_generator = from_experiment_filename_generator
+    else:
+        rendering_filename_generator = default_filename_generator
+
     screenshot_dir = output_directory
 
     random.seed(params.integer("seed"))
@@ -133,6 +145,7 @@ def main(
         viz = SituationVisualizer()
     else:
         viz = visualizer
+        viz.clear_scene()
     model_scales = viz.get_model_scales()
     for object_type, multiplier in OBJECT_SCALE_MULTIPLIER_MAP.items():
         if object_type in model_scales:
@@ -156,6 +169,12 @@ def main(
             continue
         if specific_scene and scene_number > specific_scene:
             break
+
+        scene_filename = rendering_filename_generator(scene_number, scene_elements)
+        if scene_filename in _FILENAMES_USED:
+            continue
+        _FILENAMES_USED.add(scene_filename)
+
         print(f"SCENE {scene_number}")
         viz.set_title(
             " ".join(token for token in scene_elements.tokens)
@@ -324,9 +343,8 @@ def main(
         viz.run_for_seconds(1)
 
         screenshot(
-            scene_elements=scene_elements,
             automatically_save_renderings=automatically_save_renderings,
-            scene_number=scene_number,
+            filename=scene_filename,
             screenshot_dir=screenshot_dir,
             viz=viz,
         )
@@ -815,20 +833,15 @@ def _solve_top_level_positions(
 
 def screenshot(
     *,
-    scene_elements: SceneElements,
     automatically_save_renderings: bool,
-    scene_number: int,
-    screenshot_dir: Optional[str],
+    filename: str,
+    screenshot_dir: Optional[Path],
     viz: SituationVisualizer,
 ):
     if automatically_save_renderings and screenshot_dir is not None:
-        print(
-            f"SAVING TO: {screenshot_dir}/{scene_number:03}-{'_'.join(scene_elements.tokens)}-{scene_elements.current_frame}.jpg"
-        )
-        viz.screenshot(
-            f"{screenshot_dir}/{scene_number:03}-{'_'.join(scene_elements.tokens)}-{scene_elements.current_frame}.jpg",
-            0,
-        )
+        path = f"{str(screenshot_dir)}/{filename}"
+        print(f"SAVING TO: {path}")
+        viz.screenshot(path, 0)
     else:
         command = input(
             "Press ENTER to run the positioning system or enter name to save a screenshot\n"
@@ -846,6 +859,29 @@ def nan_in_positions(pos_map: PositionsMap) -> bool:
         ):
             return True
     return False
+
+
+def default_filename_generator(scene_number: int, scene_elements: SceneElements) -> str:
+    return f"{scene_number:03}-{'_'.join(scene_elements.tokens)}-{scene_elements.current_frame}.jpg"
+
+
+def from_experiment_filename_generator(
+    scene_number: int, scene_elements: SceneElements
+) -> str:
+    assert scene_elements.situation is not None
+    assert scene_number >= 0  # just to avoid complaints from mypy
+    return situation_to_filename(scene_elements.situation, scene_elements.current_frame)
+
+
+def situation_to_filename(
+    situation: HighLevelSemanticsSituation, frame_number: int
+) -> str:
+    situation_str = (
+        f"{CurriculumToHtmlDumper().situation_text(situation)[0]}{frame_number}"
+    )
+    hash_algo = md5()
+    hash_algo.update(situation_str.encode("utf-8"))
+    return str(hash_algo.hexdigest()) + ".jpg"
 
 
 if __name__ == "__main__":

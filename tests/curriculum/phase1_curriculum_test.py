@@ -28,6 +28,7 @@ from adam.curriculum.phase1_curriculum import (
     _make_take_curriculum,
     _make_throw_curriculum,
     _make_transfer_of_possession_curriculum,
+    _make_objects_with_colors_is_curriculum,
 )
 
 
@@ -45,6 +46,13 @@ def test_each_object_by_itself_curriculum():
 
 def test_objects_with_colors_curriculum():
     curriculum_test(_make_objects_with_colors_curriculum())
+
+
+def test_objects_with_colors_is_curriculum():
+    cur = _make_objects_with_colors_is_curriculum().instances()
+    for c in cur:
+        assert c[1].as_token_sequence()[2] == "is"
+    curriculum_test(_make_objects_with_colors_is_curriculum())
 
 
 def test_instantiate_fly_curriculum():

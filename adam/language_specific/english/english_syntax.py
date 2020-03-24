@@ -25,6 +25,7 @@ from adam.language.dependency.universal_dependencies import (
     OBLIQUE_NOMINAL,
     PROPER_NOUN,
     VERB,
+    IS_ATTRIBUTE,
 )
 
 _ENGLISH_HEAD_TO_ROLE_ORDER: ImmutableDict[
@@ -58,6 +59,7 @@ _ENGLISH_HEAD_TO_ROLE_ORDER: ImmutableDict[
                 # so this works, but we will need something more
                 # sophisticated than this map eventually to handle
                 # distinctions between noun modifier types.
+                IS_ATTRIBUTE,
                 NOMINAL_MODIFIER,
                 CASE_POSSESSIVE,
             ),

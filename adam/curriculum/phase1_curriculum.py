@@ -19,6 +19,8 @@ from adam.language_specific.english.english_language_generator import (
     IGNORE_HAS_AS_VERB,
     PREFER_DITRANSITIVE,
     USE_ADVERBIAL_PATH_MODIFIER,
+    IGNORE_HAS_AS_VERB,
+    ATTRIBUTES_AS_X_IS_Y,
 )
 from adam.ontology import IS_ADDRESSEE, IS_SPEAKER, THING
 from adam.ontology.during import DuringAction
@@ -190,6 +192,35 @@ def _make_objects_with_colors_curriculum() -> Phase1InstanceGroup:
             *[
                 sampled(
                     _object_with_color_template(object_with_color),
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    max_to_sample=20,
+                )
+            ]
+        ),
+    )
+
+
+def _object_with_color_is_template(
+    object_with_color: TemplateObjectVariable,
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        "object-with-color",
+        salient_object_variables=[object_with_color],
+        syntax_hints=[ATTRIBUTES_AS_X_IS_Y],
+    )
+
+
+def _make_objects_with_colors_is_curriculum() -> Phase1InstanceGroup:
+    color = color_variable("color")
+    object_with_color = standard_object("object", added_properties=[color])
+
+    return phase1_instances(
+        "objects with colors",
+        chain(
+            *[
+                sampled(
+                    _object_with_color_is_template(object_with_color),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=20,
@@ -648,13 +679,12 @@ def make_roll_templates() -> Iterable[Phase1SituationTemplate]:
     # rolls on a surface
     intransitive_roll = Phase1SituationTemplate(
         "roll-intransitive",
-        salient_object_variables=[animate_0, rolling_surface],
+        salient_object_variables=[animate_0],
         actions=[
             Action(
                 ROLL,
                 argument_roles_to_fillers=[(AGENT, animate_0)],
                 auxiliary_variable_bindings=[(ROLL_SURFACE_AUXILIARY, rolling_surface)],
-                during=DuringAction(continuously=[on(animate_0, rolling_surface)]),
             )
         ],
         constraining_relations=[bigger_than(rolling_surface, animate_0)],
@@ -667,7 +697,6 @@ def make_roll_templates() -> Iterable[Phase1SituationTemplate]:
             Action(
                 ROLL,
                 argument_roles_to_fillers=[(AGENT, animate_0), (THEME, rollable_0)],
-                during=DuringAction(continuously=[on(rollable_0, rolling_surface)]),
                 auxiliary_variable_bindings=[(ROLL_SURFACE_AUXILIARY, rolling_surface)],
             )
         ],
@@ -681,10 +710,10 @@ def make_roll_templates() -> Iterable[Phase1SituationTemplate]:
             Action(
                 ROLL,
                 argument_roles_to_fillers=[(AGENT, animate_0), (THEME, rollable_0)],
-                during=DuringAction(continuously=[on(rollable_0, rolling_surface)]),
                 auxiliary_variable_bindings=[(ROLL_SURFACE_AUXILIARY, rolling_surface)],
             )
         ],
+        asserted_always_relations=[on(rollable_0, rolling_surface)],
         constraining_relations=[
             bigger_than(rolling_surface, rollable_0),
             bigger_than(animate_0, rollable_0),
@@ -1601,7 +1630,11 @@ def build_gaila_phase1_attribute_curriculum() -> Sequence[Phase1InstanceGroup]:
     """
     One particular instantiation of the object-learning parts of the curriculum for GAILA Phase 1.
     """
-    return [_make_objects_with_colors_curriculum(), _make_my_your_object_curriculum()]
+    return [
+        _make_objects_with_colors_curriculum(),
+        _make_objects_with_colors_is_curriculum(),
+        _make_my_your_object_curriculum(),
+    ]
 
 
 def build_gaila_phase1_relation_curriculum() -> Sequence[Phase1InstanceGroup]:
