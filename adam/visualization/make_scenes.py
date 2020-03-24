@@ -869,9 +869,16 @@ def from_experiment_filename_generator(
 ) -> str:
     assert scene_elements.situation is not None
     assert scene_number >= 0  # just to avoid complaints from mypy
-    filename = f"{CurriculumToHtmlDumper.situation_text(scene_elements.situation)[0]}{scene_elements.current_frame}"
-    hashed = hash(filename)
-    return str(hashed) + ".jpg"
+    return situation_to_filename(scene_elements.situation, scene_elements.current_frame)
+
+
+def situation_to_filename(
+    situation: HighLevelSemanticsSituation, frame_number: int
+) -> str:
+    return (
+        str(hash(f"{CurriculumToHtmlDumper.situation_text(situation)[0]}{frame_number}"))
+        + ".jpg"
+    )
 
 
 if __name__ == "__main__":

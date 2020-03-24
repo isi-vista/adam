@@ -13,6 +13,7 @@ from adam.language import LinguisticDescription, LinguisticDescriptionT
 from adam.language.language_generator import SituationT
 from adam.perception import PerceptionT, PerceptualRepresentation
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
+from adam.visualization.make_scenes import situation_to_filename
 
 
 class DescriptionObserver(Generic[SituationT, LinguisticDescriptionT, PerceptionT], ABC):
@@ -271,13 +272,6 @@ class LearningProgressHtmlLogger:  # pragma: no cover
             </div>
             """
 
-        # clickable_render_string = f"""
-        #     <button onclick="viewRenderFn({render_hash})">View Render {frame}</button>
-        #     <div id="render{render_hash}" style="display: none">
-        #     {render_link}
-        #     </div>
-        #     """
-
         # Log into html file
         # We want to log the true description, the learners guess, the perception, and situation
         with open(self.outfile_dir, "a+") as outfile:
@@ -333,11 +327,30 @@ class LearningProgressHtmlLogger:  # pragma: no cover
                     f'\t\t\t\t<td valign="top">{learner_description}<br/>Accuracy: {accuracy:2.2f}</td>\n'
                 )
 
+            if situation and isinstance(situation, HighLevelSemanticsSituation):
+                render_buttons_text, _ = self.render_buttons_html(situation)
+            else:
+                render_buttons_text = ""
+
             outfile.write(
                 f'\t\t\t\t<td valign="top">{clickable_perception_string}\n\t\t\t\t</td>\n'
+                f"\t\t\t\t<td>{render_buttons_text}</td>"
                 f"\t\t\t</tr>\n\t\t</tbody>\n\t</table>"
             )
             outfile.write("\n</body>")
+
+    def render_buttons_html(self, situation: HighLevelSemanticsSituation) -> str:
+        # for now every item is going to have 3 buttons for three frames and later we might corral that
+        buttons = [
+            f"""
+                <button onclick="myFunction('render{situation_to_filename(situation, frame)}')">View Rendering {frame + 1}</button>
+                <div id="render{situation_to_filename(situation, frame)}" style="display: none">
+                <img src="/renders/{situation_to_filename(situation, frame)}">
+                </div>
+                """
+            for frame in range(3)
+        ]
+        return "".join(buttons)
 
 
 @attrs(slots=True)
