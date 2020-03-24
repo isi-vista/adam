@@ -275,8 +275,6 @@ def test_subset_preposition_over_learner():
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
 
 
-# See https://github.com/isi-vista/adam/issues/422
-@pytest.mark.skip(msg="In Preposition Test Temporarily Disabled")
 def test_subset_preposition_in_learner():
     rng = random.Random()
     rng.seed(0)
@@ -287,15 +285,7 @@ def test_subset_preposition_in_learner():
         rng=rng,
         smoothing_parameter=0.001,
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        object_recognizer=ObjectRecognizer(
-            {
-                node.handle: PerceptionGraphPattern.from_schema(
-                    first(GAILA_PHASE_1_ONTOLOGY.structural_schemata(node))
-                )
-                for node in [WATER, CUP]
-            },
-            determiners=ENGLISH_DETERMINERS,
-        ),
+        object_recognizer=TEST_OBJECT_RECOGNIZER,
     )  # type: ignore
     water = object_variable("water", WATER)
     cup = standard_object("cup", CUP)
