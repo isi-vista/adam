@@ -45,7 +45,7 @@ from panda3d.core import LPoint3f  # pylint: disable=no-name-in-module
 
 from adam.math_3d import Point
 from math import isnan
-
+from hashlib import md5
 
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.perception.developmental_primitive_perception import (
@@ -875,10 +875,10 @@ def from_experiment_filename_generator(
 def situation_to_filename(
     situation: HighLevelSemanticsSituation, frame_number: int
 ) -> str:
-    return (
-        str(hash(f"{CurriculumToHtmlDumper.situation_text(situation)[0]}{frame_number}"))
-        + ".jpg"
-    )
+    situation_str = f"{CurriculumToHtmlDumper.situation_text(situation)[0]}{frame_number}"
+    hash_algo = md5()
+    hash_algo.update(situation_str.encode("utf-8"))
+    return str(hash_algo.hexdigest()) + ".jpg"
 
 
 if __name__ == "__main__":

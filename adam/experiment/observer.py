@@ -312,6 +312,9 @@ class LearningProgressHtmlLogger:  # pragma: no cover
                 f"\t\t\t\t<td>\n"
                 f'\t\t\t\t\t<h3 id="perception-{instance_number}">Learner Perception</h3>\n'
                 f"\t\t\t\t</td>\n"
+                f"\t\t\t\t\t<td>\n"
+                f"\t\t\t\t\t<h3>Scene Renderings</h3>\n"
+                f"\t\t\t\t\t</td>\n"
                 f"\t\t\t</tr>\n"
                 f"\t\t\t<tr>\n"
                 f'\t\t\t\t<td valign="top">{situation_text}\n\t\t\t\t</td>\n'
@@ -334,7 +337,7 @@ class LearningProgressHtmlLogger:  # pragma: no cover
 
             outfile.write(
                 f'\t\t\t\t<td valign="top">{clickable_perception_string}\n\t\t\t\t</td>\n'
-                f"\t\t\t\t<td>{render_buttons_text}</td>"
+                f"\t\t\t\t<td valign='top'>{render_buttons_text}</td>"
                 f"\t\t\t</tr>\n\t\t</tbody>\n\t</table>"
             )
             outfile.write("\n</body>")
@@ -345,7 +348,7 @@ class LearningProgressHtmlLogger:  # pragma: no cover
             f"""
                 <button onclick="myFunction('render{situation_to_filename(situation, frame)}')">View Rendering {frame + 1}</button>
                 <div id="render{situation_to_filename(situation, frame)}" style="display: none">
-                <img src="/renders/{situation_to_filename(situation, frame)}">
+                <img src="renders/{situation_to_filename(situation, frame)}">
                 </div>
                 """
             for frame in range(3)
