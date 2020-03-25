@@ -110,10 +110,13 @@ class SurfaceTemplate:
         for element in self.elements:
             if isinstance(element, SurfaceTemplateVariable):
                 filler_words = template_variable_to_filler[element]
+                # Ground is a specific thing so we special case this to be assigned
+                if filler_words[0] == "ground":
+                    output_tokens.append("the")
                 # English-specific hack to deal with us not understanding determiners:
                 # https://github.com/isi-vista/adam/issues/498
                 # The "is lower" check is a hack to block adding a determiner to proper names.
-                if (
+                elif (
                     element in self._determiner_prefix_slots
                     and len(filler_words) == 1
                     and filler_words[0][0].islower()
