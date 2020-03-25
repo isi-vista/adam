@@ -368,7 +368,7 @@ def _make_my_your_object_curriculum(num_to_sample: int = 5) -> Phase1InstanceGro
 
 
 def make_fall_templates() -> Iterable[Phase1SituationTemplate]:
-    arbitary_object = object_variable("object_0", THING)
+    arbitary_object = standard_object("object_0", THING)
     ground = object_variable("ground_0", GROUND)
 
     # Any Object Falling

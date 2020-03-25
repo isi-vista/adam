@@ -202,7 +202,8 @@ class ObjectRecognizer:
 
         # We special case handling the ground perception
         # Because we don't want to remove it from the graph, we just want to use it's
-        # Object node as a recognized object
+        # Object node as a recognized object. The situation "a box on the ground"
+        # Prompted the need to recognize the ground
         for node in graph_to_return._graph.nodes:  # pylint:disable=protected-access
             if node == GROUND_PERCEPTION:
                 matched_object_node = MatchedObjectNode(name=("ground",))
