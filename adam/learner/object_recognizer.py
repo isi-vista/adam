@@ -36,6 +36,7 @@ from adam.perception.perception_graph import (
     EdgeLabel,
     edge_equals_ignoring_temporal_scope,
 )
+from adam.utils.networkx_utils import subgraph
 
 _LIST_OF_PERCEIVED_PATTERNS = immutableset(
     (
@@ -199,9 +200,34 @@ class ObjectRecognizer:
         else:
             object_names_to_patterns = self._object_names_to_static_patterns
 
+        # We special case handling the ground perception
+        # Because we don't want to remove it from the graph, we just want to use it's
+        # Object node as a recognized object. The situation "a box on the ground"
+        # Prompted the need to recognize the ground
+        for node in graph_to_return._graph.nodes:  # pylint:disable=protected-access
+            if node == GROUND_PERCEPTION:
+                matched_object_node = MatchedObjectNode(name=("ground",))
+                matched_object_nodes.append((("ground",), matched_object_node))
+                # We construct a fake match which is only the ground perception node
+                subgraph_of_root = subgraph(perception_graph.copy_as_digraph(), [node])
+                pattern_match = PerceptionGraphPatternMatch(
+                    matched_pattern=PerceptionGraphPattern(
+                        graph=subgraph_of_root, dynamic=perception_graph.dynamic
+                    ),
+                    graph_matched_against=perception_graph,
+                    matched_sub_graph=PerceptionGraph(
+                        graph=subgraph_of_root, dynamic=perception_graph.dynamic
+                    ),
+                    pattern_node_to_matched_graph_node=immutabledict(),
+                )
+                graph_to_return = self._replace_match_with_object_graph_node(
+                    matched_object_node, graph_to_return, pattern_match
+                )
+
         candidate_object_subgraphs = self.extract_candidate_objects(perception_graph)
 
         for candidate_object_graph in candidate_object_subgraphs:
+
             num_object_nodes = candidate_object_graph.count_nodes_matching(
                 lambda node: isinstance(node, ObjectPerception)
             )

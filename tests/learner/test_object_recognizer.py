@@ -90,5 +90,5 @@ def test_recognize_in_transfer_of_possession():
 
     perception_graph = PerceptionGraph.from_dynamic_perceptual_representation(perception)
     match_result = TEST_OBJECT_RECOGNIZER.match_objects(perception_graph)
-    assert len(match_result.description_to_matched_object_node) == 3
+    assert len(match_result.description_to_matched_object_node) == 4
     assert ("Dad",) in match_result.description_to_matched_object_node
