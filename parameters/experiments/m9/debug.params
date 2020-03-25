@@ -4,4 +4,4 @@ _includes:
 
 experiment: 'm9-debug'
 curriculum: 'm9-debug'
-learner: 'preposition-subset'
+learner: 'verb-subset'
