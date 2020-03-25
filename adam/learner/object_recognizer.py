@@ -200,23 +200,15 @@ class ObjectRecognizer:
         else:
             object_names_to_patterns = self._object_names_to_static_patterns
 
-        candidate_object_subgraphs = self.extract_candidate_objects(perception_graph)
-
-        for candidate_object_graph in candidate_object_subgraphs:
-            root_node = self._get_root_object_perception(
-                perception_graph.copy_as_digraph(),
-                candidate_object_graph._graph.nodes,  # pylint:disable=protected-access
-            )
-            # We special case handling the ground perception
-            # Because we don't want to remove it from the graph, we just want to use it's
-            # Object node as a recognized object
-            if root_node == GROUND_PERCEPTION:
+        # We special case handling the ground perception
+        # Because we don't want to remove it from the graph, we just want to use it's
+        # Object node as a recognized object
+        for node in graph_to_return._graph.nodes:  # pylint:disable=protected-access
+            if node == GROUND_PERCEPTION:
                 matched_object_node = MatchedObjectNode(name=("ground",))
                 matched_object_nodes.append((("ground",), matched_object_node))
                 # We construct a fake match which is only the ground perception node
-                subgraph_of_root = subgraph(
-                    perception_graph.copy_as_digraph(), [root_node]
-                )
+                subgraph_of_root = subgraph(perception_graph.copy_as_digraph(), [node])
                 pattern_match = PerceptionGraphPatternMatch(
                     matched_pattern=PerceptionGraphPattern(
                         graph=subgraph_of_root, dynamic=perception_graph.dynamic
@@ -230,7 +222,11 @@ class ObjectRecognizer:
                 graph_to_return = self._replace_match_with_object_graph_node(
                     matched_object_node, graph_to_return, pattern_match
                 )
-                continue
+
+        candidate_object_subgraphs = self.extract_candidate_objects(perception_graph)
+
+        for candidate_object_graph in candidate_object_subgraphs:
+
             num_object_nodes = candidate_object_graph.count_nodes_matching(
                 lambda node: isinstance(node, ObjectPerception)
             )
@@ -309,7 +305,8 @@ class ObjectRecognizer:
         candidate_object_root_nodes = [
             node
             for node in scene_digraph.nodes
-            if is_root_object_node(node) and node not in (LEARNER_PERCEPTION,)
+            if is_root_object_node(node)
+            and node not in (GROUND_PERCEPTION, LEARNER_PERCEPTION)
         ]
 
         candidate_objects: List[PerceptionGraph] = []
