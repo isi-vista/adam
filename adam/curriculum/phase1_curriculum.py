@@ -20,6 +20,7 @@ from adam.language_specific.english.english_language_generator import (
     PREFER_DITRANSITIVE,
     USE_ADVERBIAL_PATH_MODIFIER,
     ATTRIBUTES_AS_X_IS_Y,
+    IGNORE_COLORS,
 )
 from adam.ontology import IS_ADDRESSEE, IS_SPEAKER, THING
 from adam.ontology.during import DuringAction
@@ -129,8 +130,11 @@ from immutablecollections import immutableset
 def _make_each_object_by_itself_curriculum(
     perception_generator: HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator = GAILA_PHASE_1_PERCEPTION_GENERATOR
 ) -> Phase1InstanceGroup:
+    color = color_variable("color")
     single_object_template = Phase1SituationTemplate(
-        "single-object", salient_object_variables=[object_variable("object")]
+        "single-object",
+        salient_object_variables=[object_variable("object", added_properties=[color])],
+        syntax_hints=[IGNORE_COLORS],
     )
     single_speaker_template = Phase1SituationTemplate(
         "single-speaker",
