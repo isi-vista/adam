@@ -2036,12 +2036,14 @@ def _make_throw_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription
     ]
     preconditions = [
         has(_THROW_AGENT, _THROW_THEME),
-        contacts(_THROW_MANIPULATOR, _THROW_THEME),
+        # contacts(_THROW_MANIPULATOR, _THROW_THEME),
+        contacts(_THROW_AGENT, _THROW_THEME),
     ]
     postconditions = flatten_relations(
         [
             Relation(IN_REGION, _THROW_THEME, THROW_GOAL),
-            negate(contacts(_THROW_MANIPULATOR, _THROW_THEME)),
+            # negate(contacts(_THROW_MANIPULATOR, _THROW_THEME)),
+            negate(contacts(_THROW_AGENT, _THROW_THEME)),
         ]
     )
     # We don't appropriately handle multiple manipulators so
@@ -2050,9 +2052,10 @@ def _make_throw_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription
     postconditions_manipulator = flatten_relations(
         [
             Relation(IN_REGION, _THROW_THEME, THROW_GOAL),
-            negate(contacts(_THROW_MANIPULATOR, _THROW_THEME)),
+            # negate(contacts(_THROW_MANIPULATOR, _THROW_THEME)),
+            negate(contacts(_THROW_AGENT, _THROW_THEME)),
             # contacts(_THROW_MANIPULATOR_1, _THROW_THEME),
-            has(THROW_GOAL, _THROW_THEME),
+            # has(THROW_GOAL, _THROW_THEME),
         ]
     )
     asserted_properties = [
