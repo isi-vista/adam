@@ -2,6 +2,9 @@ import logging
 from itertools import repeat
 from typing import Callable, Optional
 
+from adam.language_specific.english import ENGLISH_DETERMINERS
+from adam.learner.attributes import SubsetAttributeLearner
+from adam.learner.verbs import SubsetVerbLearner
 from vistautils.parameters import Parameters
 from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 
@@ -17,19 +20,16 @@ from adam.curriculum.phase1_curriculum import (
     build_gaila_phase1_attribute_curriculum,
     build_gaila_phase1_relation_curriculum,
     build_gaila_phase1_verb_curriculum,
-    _make_objects_with_colors_curriculum,
+    _make_put_on_speaker_addressee_body_part_curriculum,
 )
 from adam.curriculum.pursuit_curriculum import make_simple_pursuit_curriculum
 from adam.experiment import Experiment, execute_experiment
 from adam.experiment.observer import LearningProgressHtmlLogger, CandidateAccuracyObserver
-from adam.language_specific.english import ENGLISH_DETERMINERS
 from adam.learner import LanguageLearner
-from adam.learner.attributes import SubsetAttributeLearner
 from adam.learner.object_recognizer import ObjectRecognizer
-from adam.learner.objects import ObjectPursuitLearner, SubsetObjectLearner
 from adam.learner.prepositions import SubsetPrepositionLearner
 from adam.learner.pursuit import HypothesisLogger
-from adam.learner.verbs import SubsetVerbLearner
+from adam.learner.objects import ObjectPursuitLearner, SubsetObjectLearner
 from adam.ontology.phase1_ontology import (
     GAILA_PHASE_1_ONTOLOGY,
     PHASE_1_CURRICULUM_OBJECTS,
@@ -196,7 +196,7 @@ def curriculum_from_params(params: Parameters):
     elif curriculum_name == "m9-events":
         return (build_gaila_phase1_verb_curriculum(), [])
     elif curriculum_name == "m9-debug":
-        return ([_make_objects_with_colors_curriculum()], [])
+        return ([_make_put_on_speaker_addressee_body_part_curriculum()], [])
     else:
         raise RuntimeError("Can't happen")
 

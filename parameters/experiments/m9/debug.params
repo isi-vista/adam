@@ -4,9 +4,4 @@ _includes:
 
 experiment: 'm9-debug'
 curriculum: 'm9-debug'
-learner: 'attribute-subset'
-pursuit:
-   learning_factor: 0.05
-   graph_match_confirmation_threshold: 0.7
-   lexicon_entry_threshold: 0.7
-   smoothing_parameter: .001
+learner: 'verb-subset'
