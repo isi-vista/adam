@@ -1345,6 +1345,7 @@ def _make_push_curriculum() -> Phase1InstanceGroup:
 
 def make_throw_templates() -> Iterable[Phase1SituationTemplate]:
     thrower = standard_object("thrower_0", THING, required_properties=[ANIMATE])
+    catcher = standard_object("catcher_0", THING, required_properties=[ANIMATE])
     object_thrown = standard_object("object_0", required_properties=[INANIMATE])
     implicit_goal_reference = standard_object("implicit_throw_goal_object", BOX)
 
@@ -1426,7 +1427,28 @@ def make_throw_templates() -> Iterable[Phase1SituationTemplate]:
         )
         for is_up in (True, False)
     ]
-    return throw_up_down_templates + [throw_template] + [throw_on_ground_template]
+
+    throw_to_template = Phase1SituationTemplate(
+        "throw-to",
+        salient_object_variables=[thrower, object_thrown, catcher],
+        actions=[
+            Action(
+                THROW,
+                argument_roles_to_fillers=[
+                    (AGENT, thrower),
+                    (THEME, object_thrown),
+                    (GOAL, Region(catcher, distance=PROXIMAL)),
+                ],
+            )
+        ],
+        constraining_relations=[bigger_than(thrower, object_thrown)],
+    )
+
+    return throw_up_down_templates + [
+        throw_template,
+        throw_on_ground_template,
+        throw_to_template,
+    ]
 
 
 def _make_throw_curriculum() -> Phase1InstanceGroup:
