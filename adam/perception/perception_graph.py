@@ -2741,7 +2741,12 @@ class _FrameTranslation:
                     path_info,
                 ) in perceptual_representation.during.objects_to_paths.items():
                     self._add_path_node(
-                        _dynamic_digraph, moving_object, path_info, axes_info=axes_info
+                        _dynamic_digraph,
+                        moving_object,
+                        path_info,
+                        axes_info=axes_info,
+                        map_edge=self._map_edge,
+                        map_node=self._map_node,
                     )
                     if isinstance(path_info.reference_object, Region):
                         regions.append(path_info.reference_object)
@@ -2786,11 +2791,24 @@ class _FrameTranslation:
         moving_object: ObjectPerception,
         path: SpatialPath[ObjectPerception],
         *,
+        map_node: Callable[[Any], Any],
+        map_edge: _EdgeMapper,
         axes_info: Optional[AxesInfo[Any]] = None,
     ) -> None:
         edges_to_add: List[Tuple[Any, Any, Any]] = []
         edges_to_add.append((moving_object, path, HAS_PATH_LABEL))
-        edges_to_add.append((path, path.reference_object, REFERENCE_OBJECT_LABEL))
+        edges_to_add.append(
+            (path, map_node(path.reference_object), REFERENCE_OBJECT_LABEL)
+        )
+        if isinstance(path.reference_object, Region):
+            _translate_region(
+                perception_digraph,
+                path.reference_object,
+                map_node=map_node,
+                map_edge=map_edge,
+                axes_info=axes_info,
+                temporal_scopes=_DURING_ONLY,
+            )
         if path.reference_axis:
             edges_to_add.append(
                 (
