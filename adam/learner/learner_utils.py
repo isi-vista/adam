@@ -59,6 +59,9 @@ def pattern_match_to_description(
                     matched_graph_node,
                 ) in match.pattern_node_to_matched_graph_node.items()
                 if isinstance(pattern_node, MatchedObjectPerceptionPredicate)
+                # There can sometimes be relevant matched object nodes which are not themselves
+                # slots, like the addressed possessor for "your X".
+                and pattern_node in pattern.pattern_node_to_template_variable
             )
         )
     except KeyError:
