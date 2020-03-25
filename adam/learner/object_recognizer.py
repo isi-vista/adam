@@ -1,8 +1,9 @@
 import logging
 from itertools import chain
-from typing import Iterable, List, Mapping, Set, Tuple, Sequence
+from typing import Iterable, List, Mapping, Set, Tuple, Sequence, AbstractSet
 
 from contexttimer import Timer
+from networkx import DiGraph
 
 from adam.perception import ObjectPerception, GROUND_PERCEPTION, LEARNER_PERCEPTION
 from attr import attrib, attrs
@@ -28,10 +29,12 @@ from adam.perception.perception_graph import (
     PerceptionGraphNode,
     PerceptionGraphPattern,
     PerceptionGraphPatternMatch,
-    RelationTypeIsPredicate,
     ENTIRE_SCENE,
     TemporallyScopedEdgeLabel,
     AnyObjectPerception,
+    HAS_PROPERTY_LABEL,
+    EdgeLabel,
+    edge_equals_ignoring_temporal_scope,
 )
 
 _LIST_OF_PERCEIVED_PATTERNS = immutableset(
@@ -45,8 +48,6 @@ _LIST_OF_PERCEIVED_PATTERNS = immutableset(
     if node
     in GAILA_PHASE_1_ONTOLOGY._structural_schemata.keys()  # pylint:disable=protected-access
 )
-
-MATCHED_OBJECT_PATTERN_LABEL = OntologyNode("has-matched-object-pattern")
 
 
 @attrs(frozen=True, slots=True, auto_attribs=True)
@@ -221,8 +222,16 @@ class ObjectRecognizer:
                     )
                 if pattern_match:
                     cumulative_millis_in_successful_matches_ms += t.elapsed
+
+                    matched_object_node = MatchedObjectNode(name=(description,))
+
+                    # We wrap the description in a tuple because it could in theory be multiple
+                    # tokens,
+                    # even though currently it never is.
+                    matched_object_nodes.append(((description,), matched_object_node))
+
                     graph_to_return = self._replace_match_with_object_graph_node(
-                        graph_to_return, pattern_match, matched_object_nodes, description
+                        matched_object_node, graph_to_return, pattern_match
                     )
                     # We match each candidate objects against only one object type.
                     # See https://github.com/isi-vista/adam/issues/627
@@ -361,20 +370,16 @@ class ObjectRecognizer:
 
     def _replace_match_with_object_graph_node(
         self,
+        matched_object_node: MatchedObjectNode,
         current_perception: PerceptionGraph,
         pattern_match: PerceptionGraphPatternMatch,
-        matched_object_nodes: List[Tuple[Tuple[str, ...], MatchedObjectNode]],
-        description: str,
     ) -> PerceptionGraph:
         """
-        Internal function to copy existing relationships from the matched object pattern onto a
-        `MatchedObjectPerceptionPredicate`
-        """
-        matched_object_node = MatchedObjectNode(name=(description,))
+        Internal function to replace the nodes of the perception matched by the object pattern
+        with a MatchedObjectNode.
 
-        # We wrap the description in a tuple because it could in theory be multiple tokens,
-        # even though currently it never is.
-        matched_object_nodes.append(((description,), matched_object_node))
+        Any external relationships those nodes had is inherited by the MatchedObjectNode.
+        """
         perception_digraph = current_perception.copy_as_digraph()
         perception_digraph.add_node(matched_object_node)
 
@@ -391,45 +396,43 @@ class ObjectRecognizer:
                     f"{pattern_match.matched_sub_graph}"
                 )
 
+            # A pattern might refer to shared parts of the world like the learner
+            # or the ground, but we don't want to replace those with the matched object node.
             if matched_subgraph_node in SHARED_WORLD_ITEMS:
                 continue
 
-            # We don't want to make multiple links to property nodes from the root node
-            linked_property_nodes: Set[OntologyNode] = set()
+            # Multiple sub-objects of a matched object may link to the same property
+            # (for example, to a color shared by all the parts).
+            # In this case, we want the shared object node to link to this property only once.
+            external_properties: Set[OntologyNode] = set()
 
             # If there is an edge from the matched sub-graph to a node outside it,
             # also add an edge from the object match node to that node.
             for matched_subgraph_node_successor in perception_digraph.successors(
                 matched_subgraph_node
             ):
+                edge_label = _get_edge_label(
+                    perception_digraph,
+                    matched_subgraph_node,
+                    matched_subgraph_node_successor,
+                )
+
                 # don't want to add edges which are internal to the matched sub-graph
                 if matched_subgraph_node_successor not in matched_subgraph_nodes:
-                    edge_data = perception_digraph.get_edge_data(
-                        matched_subgraph_node, matched_subgraph_node_successor
-                    )
-                    label = edge_data["label"]
-                    if isinstance(label, RelationTypeIsPredicate):
-                        if label.dot_label == "rel(" "has-matched-object-pattern)":
-                            raise RuntimeError(
-                                f"Overlapping nodes in object recognition: "
-                                f"{matched_subgraph_node}, "
-                                f"{matched_subgraph_node_successor}"
-                            )
+                    if edge_equals_ignoring_temporal_scope(
+                        edge_label, HAS_PROPERTY_LABEL
+                    ):
                         # Prevent multiple `has-property` assertions to the same color node
                         # On a recognized object
-                        elif label.dot_label == "rel(" "has-property)":
-                            if (
-                                matched_subgraph_node_successor[0]
-                                in linked_property_nodes
-                            ):
-                                continue
-                            else:
-                                linked_property_nodes.add(
-                                    matched_subgraph_node_successor[0]
-                                )
+                        if matched_subgraph_node_successor[0] in external_properties:
+                            continue
+                        else:
+                            external_properties.add(matched_subgraph_node_successor[0])
 
                     perception_digraph.add_edge(
-                        matched_object_node, matched_subgraph_node_successor, **edge_data
+                        matched_object_node,
+                        matched_subgraph_node_successor,
+                        label=edge_label,
                     )
 
             # If there is an edge to the matched sub-graph from a node outside it,
@@ -437,50 +440,48 @@ class ObjectRecognizer:
             for matched_subgraph_node_predecessor in perception_digraph.predecessors(
                 matched_subgraph_node
             ):
+                edge_label = _get_edge_label(
+                    perception_digraph,
+                    matched_subgraph_node_predecessor,
+                    matched_subgraph_node,
+                )
+
                 # don't want to add edges which are internal to the matched sub-graph
                 if matched_subgraph_node_predecessor not in matched_subgraph_nodes:
-                    edge_data = perception_digraph.get_edge_data(
-                        matched_subgraph_node_predecessor, matched_subgraph_node
-                    )
-                    label = edge_data["label"]
-                    if isinstance(label, RelationTypeIsPredicate):
-                        if label.dot_label == "rel(" "has-matched-object-pattern)":
-                            raise RuntimeError(
-                                f"Overlapping nodes in object recognition: "
-                                f"{matched_subgraph_node}, "
-                                f"{matched_subgraph_node_predecessor}"
-                            )
+                    if edge_equals_ignoring_temporal_scope(
+                        edge_label, HAS_PROPERTY_LABEL
+                    ):
                         # Prevent multiple `has-property` assertions to the same color node
                         # On a recognized object
-                        elif label.dot_label == "rel(" "has-property)":
-                            if (
-                                matched_subgraph_node_predecessor[0]
-                                in linked_property_nodes
-                            ):
-                                continue
-                            else:
-                                linked_property_nodes.add(
-                                    matched_subgraph_node_predecessor[0]
-                                )
+                        if matched_subgraph_node_predecessor[0] in external_properties:
+                            continue
+                        else:
+                            external_properties.add(matched_subgraph_node_predecessor[0])
 
                     perception_digraph.add_edge(
                         matched_subgraph_node_predecessor,
                         matched_object_node,
-                        **edge_data,
+                        label=edge_label,
                     )
 
-            # we also link every node in the matched sub-graph to the newly introduced node
-            # representing the object match.
-            # networkx_graph_to_modify_in_place.add_edge(
-            #     matched_subgraph_node,
-            #     matched_object_node,
-            #     label=MATCHED_OBJECT_PATTERN_LABEL,
-            # )
+        # Remove all matched nodes which are not shared world items (e.g. gravity, the learner)
         perception_digraph.remove_nodes_from(
             matched_node
             for matched_node in matched_subgraph_nodes
             if matched_node not in SHARED_WORLD_ITEMS
         )
+
+        # We want to re-add any properties linked directly to the root node of an object.
+        # Example: water is a liquid
+        # These may be relevant to learning verb semantics
+        # (e.g. you can only drink a liquid)
+        self._add_properties_linked_to_root_object_perception(
+            original_graph=current_perception.copy_as_digraph(),
+            output_graph=perception_digraph,
+            matched_nodes=matched_subgraph_nodes,
+            matched_object_node=matched_object_node,
+        )
+
         return PerceptionGraph(perception_digraph, dynamic=current_perception.dynamic)
 
     def _align_objects_to_tokens(
@@ -533,6 +534,50 @@ class ObjectRecognizer:
             )
         return immutabledict(result)
 
+    def _get_root_object_perception(
+        self, graph: DiGraph, matched_subgraph_nodes: AbstractSet[PerceptionGraphNode]
+    ) -> PerceptionGraphNode:
+        matched_object_perceptions = immutableset(
+            node for node in matched_subgraph_nodes if isinstance(node, ObjectPerception)
+        )
+        roots = [
+            node
+            for node in matched_object_perceptions
+            if not (
+                any(succ in matched_object_perceptions for succ in graph.successors(node))
+            )
+        ]
+        if len(roots) == 1:
+            return roots[0]
+        elif roots:
+            raise RuntimeError(f"Got multiple roots for object match: {roots}")
+        else:
+            raise RuntimeError(
+                f"Could not find a root for object match: {matched_subgraph_nodes}"
+            )
+
+    def _add_properties_linked_to_root_object_perception(
+        self,
+        *,
+        original_graph: DiGraph,
+        output_graph: DiGraph,
+        matched_nodes: AbstractSet[PerceptionGraphNode],
+        matched_object_node: MatchedObjectNode,
+    ) -> None:
+        # We take two graphs as input because we are assuming object-internal properties
+        # have already been deleted from the output_graph, so we have to look for them
+        # in the original, unaltered graph
+        linked_properties_and_labels: List[Tuple[PerceptionGraphNode, EdgeLabel]] = []
+        root_node = self._get_root_object_perception(original_graph, matched_nodes)
+        for succ in original_graph.successors(root_node):
+            edge_label = _get_edge_label(original_graph, root_node, succ)
+            if edge_equals_ignoring_temporal_scope(edge_label, HAS_PROPERTY_LABEL):
+                linked_properties_and_labels.append((succ, edge_label))
+        for (linked_property_node, edge_label) in linked_properties_and_labels:
+            output_graph.add_edge(
+                matched_object_node, linked_property_node, label=edge_label
+            )
+
     @_object_names_to_dynamic_patterns.default
     def _init_object_names_to_dynamic_patterns(
         self
@@ -556,3 +601,9 @@ class ObjectRecognizer:
             )
             for (object_name, pattern) in self._object_names_to_static_patterns.items()
         )
+
+
+def _get_edge_label(
+    graph: DiGraph, source: PerceptionGraphNode, target: PerceptionGraphNode
+) -> EdgeLabel:
+    return graph.get_edge_data(source, target)["label"]

@@ -1,11 +1,7 @@
 import random
 
-import pytest
-
 from adam.curriculum.phase1_curriculum import _x_has_y_template
-from adam.language_specific.english import ENGLISH_DETERMINERS
 from immutablecollections import immutableset
-from more_itertools import first
 
 from adam.curriculum.curriculum_utils import (
     standard_object,
@@ -22,7 +18,6 @@ from adam.curriculum.preposition_curriculum import (
     _in_front_template,
 )
 from adam.learner import LearningExample
-from adam.learner.object_recognizer import ObjectRecognizer
 from adam.learner.prepositions import PrepositionPursuitLearner
 from adam.ontology import IS_ADDRESSEE, IS_SPEAKER
 from adam.ontology.phase1_ontology import (
@@ -37,19 +32,8 @@ from adam.ontology.phase1_ontology import (
     INANIMATE_OBJECT,
     PERSON_CAN_HAVE,
 )
-from adam.perception.perception_graph import PerceptionGraphPattern
 from adam.situation.templates.phase1_templates import sampled, object_variable
 from tests.learner import TEST_OBJECT_RECOGNIZER
-
-BALL_TABLE_OBJECT_RECOGNIZER = ObjectRecognizer(
-    {
-        node.handle: PerceptionGraphPattern.from_schema(
-            first(GAILA_PHASE_1_ONTOLOGY.structural_schemata(node))
-        )
-        for node in [BALL, TABLE]
-    },
-    determiners=ENGLISH_DETERMINERS,
-)
 
 
 def test_pursuit_preposition_on_learner():
@@ -62,7 +46,7 @@ def test_pursuit_preposition_on_learner():
         rng=rng,
         smoothing_parameter=0.001,
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        object_recognizer=BALL_TABLE_OBJECT_RECOGNIZER,
+        object_recognizer=TEST_OBJECT_RECOGNIZER,
     )  # type: ignore
     ball = standard_object("ball", BALL)
     table = standard_object("table", TABLE)
@@ -106,7 +90,7 @@ def test_pursuit_preposition_on_learner():
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
 
 
-def test_subset_preposition_beside_learner():
+def test_pursuit_preposition_beside_learner():
     rng = random.Random()
     rng.seed(0)
     learner = PrepositionPursuitLearner(
@@ -116,7 +100,7 @@ def test_subset_preposition_beside_learner():
         rng=rng,
         smoothing_parameter=0.001,
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        object_recognizer=BALL_TABLE_OBJECT_RECOGNIZER,
+        object_recognizer=TEST_OBJECT_RECOGNIZER,
     )  # type: ignore
     ball = standard_object("ball", BALL)
     table = standard_object("table", TABLE)
@@ -163,7 +147,7 @@ def test_subset_preposition_beside_learner():
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
 
 
-def test_subset_preposition_under_learner():
+def test_pursuit_preposition_under_learner():
     rng = random.Random()
     rng.seed(0)
     learner = PrepositionPursuitLearner(
@@ -173,7 +157,7 @@ def test_subset_preposition_under_learner():
         rng=rng,
         smoothing_parameter=0.001,
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        object_recognizer=BALL_TABLE_OBJECT_RECOGNIZER,
+        object_recognizer=TEST_OBJECT_RECOGNIZER,
     )  # type: ignore
     ball = standard_object("ball", BALL)
     table = standard_object("table", TABLE)
@@ -220,7 +204,7 @@ def test_subset_preposition_under_learner():
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
 
 
-def test_subset_preposition_over_learner():
+def test_pursuit_preposition_over_learner():
     rng = random.Random()
     rng.seed(0)
     learner = PrepositionPursuitLearner(
@@ -230,7 +214,7 @@ def test_subset_preposition_over_learner():
         rng=rng,
         smoothing_parameter=0.001,
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        object_recognizer=BALL_TABLE_OBJECT_RECOGNIZER,
+        object_recognizer=TEST_OBJECT_RECOGNIZER,
     )  # type: ignore
     ball = standard_object("ball", BALL)
     table = standard_object("table", TABLE)
@@ -275,9 +259,7 @@ def test_subset_preposition_over_learner():
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
 
 
-# See https://github.com/isi-vista/adam/issues/422
-@pytest.mark.skip(msg="In Preposition Test Temporarily Disabled")
-def test_subset_preposition_in_learner():
+def test_pursuit_preposition_in_learner():
     rng = random.Random()
     rng.seed(0)
     learner = PrepositionPursuitLearner(
@@ -287,15 +269,7 @@ def test_subset_preposition_in_learner():
         rng=rng,
         smoothing_parameter=0.001,
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        object_recognizer=ObjectRecognizer(
-            {
-                node.handle: PerceptionGraphPattern.from_schema(
-                    first(GAILA_PHASE_1_ONTOLOGY.structural_schemata(node))
-                )
-                for node in [WATER, CUP]
-            },
-            determiners=ENGLISH_DETERMINERS,
-        ),
+        object_recognizer=TEST_OBJECT_RECOGNIZER,
     )  # type: ignore
     water = object_variable("water", WATER)
     cup = standard_object("cup", CUP)
@@ -337,7 +311,7 @@ def test_subset_preposition_in_learner():
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
 
 
-def test_subset_preposition_behind_learner():
+def test_pursuit_preposition_behind_learner():
     rng = random.Random()
     rng.seed(0)
     learner = PrepositionPursuitLearner(
@@ -347,7 +321,7 @@ def test_subset_preposition_behind_learner():
         rng=rng,
         smoothing_parameter=0.001,
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        object_recognizer=BALL_TABLE_OBJECT_RECOGNIZER,
+        object_recognizer=TEST_OBJECT_RECOGNIZER,
     )  # type: ignore
     ball = standard_object("ball", BALL)
     table = standard_object("table", TABLE)
@@ -403,7 +377,7 @@ def test_subset_preposition_behind_learner():
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
 
 
-def test_subset_preposition_in_front_learner():
+def test_pursuit_preposition_in_front_learner():
     rng = random.Random()
     rng.seed(0)
     learner = PrepositionPursuitLearner(
@@ -413,7 +387,7 @@ def test_subset_preposition_in_front_learner():
         rng=rng,
         smoothing_parameter=0.001,
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        object_recognizer=BALL_TABLE_OBJECT_RECOGNIZER,
+        object_recognizer=TEST_OBJECT_RECOGNIZER,
     )  # type: ignore
     ball = standard_object("ball", BALL)
     table = standard_object("table", TABLE)

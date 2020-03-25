@@ -17,7 +17,6 @@ from adam.curriculum.preposition_curriculum import (
 )
 from adam.learner import LearningExample
 from adam.learner.prepositions import SubsetPrepositionLearner
-import pytest
 
 from adam.ontology import IS_ADDRESSEE, IS_SPEAKER
 from adam.ontology.phase1_ontology import (
@@ -222,8 +221,6 @@ def test_subset_preposition_over_learner():
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
 
 
-# See https://github.com/isi-vista/adam/issues/422
-@pytest.mark.skip(msg="In Preposition Test Temporarily Disabled")
 def test_subset_preposition_in_learner():
     water = object_variable("water", WATER)
     cup = standard_object("cup", CUP)

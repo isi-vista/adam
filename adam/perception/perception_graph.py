@@ -2879,3 +2879,12 @@ def raise_graph_exception(exception_message: str, graph: PerceptionGraphProtocol
         f"Violating graph: {graph}.\n"
         f"Offending graph was written to {error_path}.pdf"
     )
+
+
+def edge_equals_ignoring_temporal_scope(edge_label: EdgeLabel, query: EdgeLabel) -> bool:
+    if (
+        isinstance(edge_label, TemporallyScopedEdgeLabel)
+        and edge_label.attribute == query
+    ):
+        return True
+    return edge_label == query
