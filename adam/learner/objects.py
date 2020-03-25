@@ -272,8 +272,8 @@ class ObjectPursuitLearner(AbstractPursuitLearner, AbstractObjectTemplateLearner
             ),
             lexicon_entry_threshold=params.floating_point("lexicon_entry_threshold"),
             smoothing_parameter=params.floating_point("smoothing_parameter"),
-            graph_logger=graph_logger,
-            log_word_hypotheses_to=log_word_hypotheses_dir,
+            hypothesis_logger=graph_logger,
+            log_learned_item_hypotheses_to=log_word_hypotheses_dir,
             rng=rng,
             ontology=GAILA_PHASE_1_ONTOLOGY,
         )

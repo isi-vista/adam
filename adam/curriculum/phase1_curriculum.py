@@ -193,7 +193,7 @@ def _make_objects_with_colors_curriculum() -> Phase1InstanceGroup:
                     _object_with_color_template(object_with_color),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
-                    max_to_sample=20,
+                    max_to_sample=80,
                 )
             ]
         ),
@@ -204,7 +204,7 @@ def _object_with_color_is_template(
     object_with_color: TemplateObjectVariable,
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
-        "object-with-color",
+        "object-with-color-is",
         salient_object_variables=[object_with_color],
         syntax_hints=[ATTRIBUTES_AS_X_IS_Y],
     )
@@ -215,14 +215,14 @@ def _make_objects_with_colors_is_curriculum() -> Phase1InstanceGroup:
     object_with_color = standard_object("object", added_properties=[color])
 
     return phase1_instances(
-        "objects with colors",
+        "objects with colors-is",
         chain(
             *[
                 sampled(
                     _object_with_color_is_template(object_with_color),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
-                    max_to_sample=20,
+                    max_to_sample=80,
                 )
             ]
         ),
