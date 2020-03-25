@@ -337,7 +337,7 @@ def _make_person_has_object_curriculum() -> Phase1InstanceGroup:
     )
 
 
-def _make_my_your_object_curriculum(num_to_sample: int = 5) -> Phase1InstanceGroup:
+def _make_my_your_object_curriculum(num_to_sample: int = 20) -> Phase1InstanceGroup:
     person_0 = standard_object("speaker", PERSON, added_properties=[IS_SPEAKER])
     person_1 = standard_object("addressee", PERSON, added_properties=[IS_ADDRESSEE])
     inanimate_object = standard_object(
