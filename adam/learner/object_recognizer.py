@@ -1,17 +1,11 @@
 import logging
 from itertools import chain
-from typing import Iterable, List, Mapping, Set, Tuple, Sequence, AbstractSet
+from typing import AbstractSet, Iterable, List, Mapping, Sequence, Set, Tuple
 
-from contexttimer import Timer
-from networkx import DiGraph
-
-from adam.perception import ObjectPerception, GROUND_PERCEPTION, LEARNER_PERCEPTION
-from attr import attrib, attrs
 from attr.validators import deep_iterable, deep_mapping, instance_of
-from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
-from immutablecollections.converter_utils import _to_immutabledict, _to_immutableset
+from contexttimer import Timer
 from more_itertools import first
-from vistautils.span import Span
+from networkx import DiGraph
 
 from adam.axes import GRAVITATIONAL_DOWN_TO_UP_AXIS, LEARNER_AXES, WORLD_AXES
 from adam.language import LinguisticDescription
@@ -19,24 +13,30 @@ from adam.ontology import OntologyNode
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
     GAILA_PHASE_1_ONTOLOGY,
-    PHASE_1_CURRICULUM_OBJECTS,
     PART_OF,
+    PHASE_1_CURRICULUM_OBJECTS,
 )
+from adam.perception import GROUND_PERCEPTION, LEARNER_PERCEPTION, ObjectPerception
 from adam.perception.perception_graph import (
+    AnyObjectPerception,
+    ENTIRE_SCENE,
+    EdgeLabel,
+    HAS_PROPERTY_LABEL,
     LanguageAlignedPerception,
     MatchedObjectNode,
     PerceptionGraph,
     PerceptionGraphNode,
     PerceptionGraphPattern,
     PerceptionGraphPatternMatch,
-    ENTIRE_SCENE,
     TemporallyScopedEdgeLabel,
-    AnyObjectPerception,
-    HAS_PROPERTY_LABEL,
-    EdgeLabel,
     edge_equals_ignoring_temporal_scope,
+    raise_graph_exception,
 )
 from adam.utils.networkx_utils import subgraph
+from attr import attrib, attrs
+from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
+from immutablecollections.converter_utils import _to_immutabledict, _to_immutableset
+from vistautils.span import Span
 
 _LIST_OF_PERCEIVED_PATTERNS = immutableset(
     (
@@ -414,6 +414,12 @@ class ObjectRecognizer:
             disable_order_check=True,
         )
 
+        # Multiple sub-objects of a matched object may link to the same property
+        # (for example, to a color shared by all the parts).
+        # In this case, we want the shared object node to link to this property only once.
+        external_properties: Set[OntologyNode] = set()
+        duplicate_nodes_to_remove: List[PerceptionGraphNode] = []
+
         for matched_subgraph_node in matched_subgraph_nodes:
             if isinstance(matched_subgraph_node, MatchedObjectNode):
                 raise RuntimeError(
@@ -426,11 +432,6 @@ class ObjectRecognizer:
             # or the ground, but we don't want to replace those with the matched object node.
             if matched_subgraph_node in SHARED_WORLD_ITEMS:
                 continue
-
-            # Multiple sub-objects of a matched object may link to the same property
-            # (for example, to a color shared by all the parts).
-            # In this case, we want the shared object node to link to this property only once.
-            external_properties: Set[OntologyNode] = set()
 
             # If there is an edge from the matched sub-graph to a node outside it,
             # also add an edge from the object match node to that node.
@@ -451,6 +452,19 @@ class ObjectRecognizer:
                         # Prevent multiple `has-property` assertions to the same color node
                         # On a recognized object
                         if matched_subgraph_node_successor[0] in external_properties:
+                            if (
+                                perception_digraph.degree(matched_subgraph_node_successor)
+                                != 1
+                            ):
+                                raise_graph_exception(
+                                    f"Node {matched_subgraph_node_successor} "
+                                    f"appears to be a duplicate property node, "
+                                    f"but has degree != 1",
+                                    current_perception,
+                                )
+                            duplicate_nodes_to_remove.append(
+                                matched_subgraph_node_successor
+                            )
                             continue
                         else:
                             external_properties.add(matched_subgraph_node_successor[0])
@@ -480,6 +494,21 @@ class ObjectRecognizer:
                         # Prevent multiple `has-property` assertions to the same color node
                         # On a recognized object
                         if matched_subgraph_node_predecessor[0] in external_properties:
+                            if (
+                                perception_digraph.degree(
+                                    matched_subgraph_node_predecessor
+                                )
+                                != 1
+                            ):
+                                raise_graph_exception(
+                                    f"Node {matched_subgraph_node_predecessor} "
+                                    f"appears to be a duplicate property node, "
+                                    f"but has degree != 1",
+                                    current_perception,
+                                )
+                            duplicate_nodes_to_remove.append(
+                                matched_subgraph_node_predecessor
+                            )
                             continue
                         else:
                             external_properties.add(matched_subgraph_node_predecessor[0])
@@ -496,6 +525,7 @@ class ObjectRecognizer:
             for matched_node in matched_subgraph_nodes
             if matched_node not in SHARED_WORLD_ITEMS
         )
+        perception_digraph.remove_nodes_from(duplicate_nodes_to_remove)
 
         # We want to re-add any properties linked directly to the root node of an object.
         # Example: water is a liquid
