@@ -56,7 +56,7 @@ class AbstractTemplateLearner(
             original_language_aligned_perception
         )
 
-        logging.info(f"Pursuit learner observing {preprocessed_input}")
+        logging.info(f"Learner observing {preprocessed_input}")
 
         surface_template = self._extract_surface_template(preprocessed_input)
         self._learning_step(preprocessed_input, surface_template)

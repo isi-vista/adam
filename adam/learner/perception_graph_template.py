@@ -13,6 +13,7 @@ from adam.perception.perception_graph import (
     MatchedObjectPerceptionPredicate,
     PerceptionGraph,
     PerceptionGraphPattern,
+    raise_graph_exception,
 )
 from attr import attrib, attrs
 from immutablecollections import ImmutableDict, immutabledict
@@ -107,20 +108,20 @@ class PerceptionGraphTemplate:
             self.graph_pattern._graph  # pylint:disable=protected-access
         )
         if num_self_weakly_connected > 1:
-            raise RuntimeError(
+            raise_graph_exception(
                 f"Graph pattern contains multiple ( {num_self_weakly_connected} ) "
-                f"weakly connected components heading into intersection. "
-                f"Violating pattern: {self}"
+                f"weakly connected components heading into intersection. ",
+                self.graph_pattern,
             )
 
         num_pattern_weakly_connected = number_weakly_connected_components(
             pattern.graph_pattern._graph  # pylint:disable=protected-access
         )
         if num_pattern_weakly_connected > 1:
-            raise RuntimeError(
+            raise_graph_exception(
                 f"Graph pattern contains multiple ( {num_pattern_weakly_connected} ) "
-                f"weakly connected components heading into intersection. "
-                f"Violating pattern: {pattern}"
+                f"weakly connected components heading into intersection. ",
+                self.graph_pattern,
             )
 
         # First we just intersect the pattern graph.

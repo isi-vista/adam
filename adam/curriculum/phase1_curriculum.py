@@ -113,6 +113,7 @@ from adam.situation.templates.phase1_situation_templates import (
     _put_in_template,
     _put_on_body_part_template,
     _put_on_template,
+    _fly_under_template,
 )
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
@@ -611,9 +612,9 @@ def _make_object_in_other_object_curriculum() -> Phase1InstanceGroup:
 def make_fly_templates() -> Iterable[Phase1SituationTemplate]:
     bird = standard_object("bird_0", BIRD)
     object_0 = standard_object("object_0", THING)
-    # object_with_space_under = standard_object(
-    #    "object_with_space_under", THING, required_properties=[HAS_SPACE_UNDER]
-    # )
+    object_with_space_under = standard_object(
+        "object_with_space_under", THING, required_properties=[HAS_SPACE_UNDER]
+    )
     syntax_hints_options = ([], [USE_ADVERBIAL_PATH_MODIFIER])  # type: ignore
 
     bare_fly = [
@@ -645,8 +646,8 @@ def make_fly_templates() -> Iterable[Phase1SituationTemplate]:
     # We have fly under disabled due to long run times
     # See https://github.com/isi-vista/adam/issues/672
     return bare_fly + [
-        # _fly_under_template(bird, object_with_space_under, []),
-        _fly_over_template(bird, object_0, [])
+        _fly_under_template(bird, object_with_space_under, []),
+        _fly_over_template(bird, object_0, []),
     ]
 
 
