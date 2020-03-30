@@ -168,6 +168,8 @@ class LearningProgressHtmlLogger:  # pragma: no cover
     )
     pre_observed_description: Optional[str] = attrib(init=False, default=None)
 
+    _button_id_suffix: int = attrib(init=False, default=0)
+
     @staticmethod
     def create_logger(
         *, output_dir: Path, experiment_name: str, include_links_to_images: Optional[bool]
@@ -360,10 +362,11 @@ class LearningProgressHtmlLogger:  # pragma: no cover
         buttons = []
         for frame in range(3):
             filename = situation_to_filename(situation, frame)
+            button_suffix = self._get_button_suffix()
             buttons.append(
                 f"""
-                <button onclick="myFunction('render{filename}')">View Rendering {frame + 1}</button>
-                <div id="render{filename}" style="display: none">
+                <button onclick="myFunction('render{filename}-{button_suffix}')">View Rendering {frame + 1}</button>
+                <div id="render{filename}-{button_suffix}" style="display: none">
                 <img src="renders/{filename}">
                 </div>
                 """
@@ -371,6 +374,11 @@ class LearningProgressHtmlLogger:  # pragma: no cover
         if not situation.is_dynamic:
             return buttons[0]
         return "".join(buttons)
+
+    def _get_button_suffix(self) -> str:
+        suffix = str(self._button_id_suffix)
+        self._button_id_suffix += 1
+        return suffix
 
 
 @attrs(slots=True)

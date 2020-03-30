@@ -1,3 +1,11 @@
+_includes:
+   - "../experiments/m9/m9.params"
+
+include_objects: True
+include_attributes: True
+include_relations: True
+include_events: True
+
 iterations: 1000
 steps_before_vis: 1000
 seed: 2020
