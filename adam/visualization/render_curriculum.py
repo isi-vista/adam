@@ -34,30 +34,28 @@ def main(params: Parameters):
     viz = SituationVisualizer()
     # try to get the directory for rendering for an experiment
     root_output_directory = params.optional_creatable_directory("experiment_group_dir")
-    if root_output_directory is None:
-        # otherwise look for this other parameter for setting the root directory
-        root_output_directory = params.optional_creatable_directory(
-            "screenshot_directory"
-        )
+    if root_output_directory is not None:
 
-    # get the experiment curriculum list (if there is one)
-    try:
-        assert root_output_directory is not None
+
+        # get the experiment curriculum list (if there is one)
         curriculum = curriculum_from_params(params)[0]
         directory_name = params.string("experiment") + "/renders"
         if not os.path.isdir(root_output_directory / directory_name):
             os.mkdir(root_output_directory / directory_name)
         for instance_group in curriculum:
-            make_scenes(
-                params, [instance_group], root_output_directory / directory_name, viz
-            )
+            try:
+                make_scenes(
+                    params, [instance_group], root_output_directory / directory_name, viz
+                )
+            except NotImplementedError as err:
+                print(f"Caught not implemented error: {err}\nContinuing")
 
         return
 
-    except RuntimeError as err:
-        print(f"uncaught exception: {err}")
-        return
-
+    # otherwise look for this other parameter for setting the root directory
+    root_output_directory = params.optional_creatable_directory(
+        "screenshot_directory"
+    )
     if not os.path.isdir(root_output_directory):
         os.mkdir(root_output_directory)
     for idx, instance_group in enumerate(build_curriculum()):

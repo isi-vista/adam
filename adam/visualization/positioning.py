@@ -11,6 +11,7 @@ from itertools import combinations
 from typing import Mapping, AbstractSet, Optional, List, Iterable, Tuple, DefaultDict
 from attr import attrs, attrib
 from collections import defaultdict
+from math import isnan
 
 import numpy as np
 import torch
@@ -206,7 +207,7 @@ def run_model(
         )
     patience = 10
     # we will start with an aggressive learning rate
-    optimizer = optim.SGD(positioning_model.parameters(), lr=1.5)
+    optimizer = optim.SGD(positioning_model.parameters(), lr=0.5)
     # but will decrease it whenever the loss plateaus
     learning_rate_schedule = ReduceLROnPlateau(
         optimizer,
@@ -227,7 +228,7 @@ def run_model(
         # if we lose any substantial gradient, stop the search
         if loss < LOSS_EPSILON:
             break
-        if loss == float("nan") or prev_loss - loss < loss_eps:
+        if isnan(loss) or prev_loss - loss < loss_eps:
             epochs_without_improvement += 1
         else:
             epochs_without_improvement = 0
