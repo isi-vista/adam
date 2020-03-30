@@ -36,7 +36,6 @@ def main(params: Parameters):
     root_output_directory = params.optional_creatable_directory("experiment_group_dir")
     if root_output_directory is not None:
 
-
         # get the experiment curriculum list (if there is one)
         curriculum = curriculum_from_params(params)[0]
         directory_name = params.string("experiment") + "/renders"
@@ -53,9 +52,7 @@ def main(params: Parameters):
         return
 
     # otherwise look for this other parameter for setting the root directory
-    root_output_directory = params.optional_creatable_directory(
-        "screenshot_directory"
-    )
+    root_output_directory = params.optional_creatable_directory("screenshot_directory")
     if not os.path.isdir(root_output_directory):
         os.mkdir(root_output_directory)
     for idx, instance_group in enumerate(build_curriculum()):
