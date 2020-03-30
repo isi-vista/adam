@@ -1,3 +1,8 @@
 _includes:
-   - "../experiments/m9/debug.params"
    - "render_m9.params"
+
+include_objects: False
+include_attributes: False
+include_relations: False
+include_events: False
+include_debug: True
