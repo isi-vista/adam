@@ -57,7 +57,7 @@ from adam.perception.developmental_primitive_perception import (
     Relation,
 )
 from adam.ontology import OntologyNode
-from adam.ontology.phase1_ontology import AGENT, THEME, GOAL
+from adam.ontology.phase1_ontology import AGENT, THEME, GOAL, PUSH_GOAL, PUSH_SURFACE_AUX, ROLL_SURFACE_AUXILIARY
 from adam.relation import IN_REGION
 from adam.situation import SituationObject
 
@@ -740,12 +740,16 @@ def objects_to_freeze(
     Returns: ImmutableSet of object handles which are to be frozen in place by positioning model
 
     """
+
     if semantics_situation is None:
         return immutableset([])
     frozen_objects = []
     agent: Optional[SituationObject] = None
     theme: Optional[SituationObject] = None
     goal: Optional[Union[SituationObject, Region[SituationObject]]] = None
+    push_goal: Optional[Union[SituationObject, Region[SituationObject]]] = None
+    push_surface: Optional[SituationObject] = None
+    roll_surface: Optional[SituationObject] = None
     for action in semantics_situation.actions:
         for (ontology_node, object_or_region) in action.argument_roles_to_fillers.items():
             if ontology_node == GOAL:
@@ -754,6 +758,31 @@ def objects_to_freeze(
                 agent = object_or_region
             elif ontology_node == THEME:
                 theme = object_or_region
+        for action_description_var, obj in action.auxiliary_variable_bindings.items():
+            if action_description_var == PUSH_GOAL:
+                push_goal = obj
+            elif action_description_var == PUSH_SURFACE_AUX:
+                push_surface = obj
+            elif action_description_var == ROLL_SURFACE_AUXILIARY:
+                roll_surface = obj
+
+    if push_goal and isinstance(push_goal, Region) and push_surface and theme:
+        for region_relation in in_region_map[situation_obj_to_handle[theme]]:
+            if (
+                situation_obj_to_handle[push_surface] == region_relation.reference_object.debug_handle
+            ):
+                frozen_objects.append(situation_obj_to_handle[push_surface])
+                # TODO: double check freezing the push goal in this manner
+                frozen_objects.append(situation_obj_to_handle[push_goal.reference_object])
+
+    if roll_surface and theme:
+        for region_relation in in_region_map[situation_obj_to_handle[theme]]:
+            if situation_obj_to_handle[roll_surface] == region_relation.reference_object.debug_handle:
+                frozen_objects.append(situation_obj_to_handle[roll_surface])
+                # The *position* of the rolled object doesn't change, so much as its orientation
+                frozen_objects.append(situation_obj_to_handle[theme])
+
+
     if goal and isinstance(goal, Region):
         # the SituationObjects are always present if there is a verb that calls for them, so we want to see
         # if in the current frame, an ObjectPerception referring to the goal and either our agent or theme
