@@ -346,7 +346,7 @@ class LearningProgressHtmlLogger:  # pragma: no cover
                 )
 
             if situation and isinstance(situation, HighLevelSemanticsSituation):
-                render_buttons_text = self.render_buttons_html(situation)
+                render_buttons_text = self.render_buttons_html(situation, perceptual_representation)
             else:
                 render_buttons_text = ""
 
@@ -358,7 +358,7 @@ class LearningProgressHtmlLogger:  # pragma: no cover
             outfile.write(f"\t\t\t</tr>\n\t\t</tbody>\n\t</table>")
             outfile.write("\n</body>")
 
-    def render_buttons_html(self, situation: HighLevelSemanticsSituation) -> str:
+    def render_buttons_html(self, situation: HighLevelSemanticsSituation, perception: PerceptualRepresentation) -> str:
         buttons = []
         for frame in range(3):
             filename = situation_to_filename(situation, frame)
@@ -373,7 +373,9 @@ class LearningProgressHtmlLogger:  # pragma: no cover
             )
         if not situation.is_dynamic:
             return buttons[0]
-        return "".join(buttons)
+        if perception.during and perception.during.at_some_point:
+            return "".join(buttons)
+        return "".join(buttons[0:2])
 
     def _get_button_suffix(self) -> str:
         suffix = str(self._button_id_suffix)
