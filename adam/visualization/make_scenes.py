@@ -57,7 +57,14 @@ from adam.perception.developmental_primitive_perception import (
     Relation,
 )
 from adam.ontology import OntologyNode
-from adam.ontology.phase1_ontology import AGENT, THEME, GOAL, PUSH_GOAL, PUSH_SURFACE_AUX, ROLL_SURFACE_AUXILIARY
+from adam.ontology.phase1_ontology import (
+    AGENT,
+    THEME,
+    GOAL,
+    PUSH_GOAL,
+    PUSH_SURFACE_AUX,
+    ROLL_SURFACE_AUXILIARY,
+)
 from adam.relation import IN_REGION
 from adam.situation import SituationObject
 
@@ -769,7 +776,8 @@ def objects_to_freeze(
     if push_goal and isinstance(push_goal, Region) and push_surface and theme:
         for region_relation in in_region_map[situation_obj_to_handle[theme]]:
             if (
-                situation_obj_to_handle[push_surface] == region_relation.reference_object.debug_handle
+                situation_obj_to_handle[push_surface]
+                == region_relation.reference_object.debug_handle
             ):
                 frozen_objects.append(situation_obj_to_handle[push_surface])
                 # TODO: double check freezing the push goal in this manner
@@ -777,11 +785,13 @@ def objects_to_freeze(
 
     if roll_surface and theme:
         for region_relation in in_region_map[situation_obj_to_handle[theme]]:
-            if situation_obj_to_handle[roll_surface] == region_relation.reference_object.debug_handle:
+            if (
+                situation_obj_to_handle[roll_surface]
+                == region_relation.reference_object.debug_handle
+            ):
                 frozen_objects.append(situation_obj_to_handle[roll_surface])
                 # The *position* of the rolled object doesn't change, so much as its orientation
                 frozen_objects.append(situation_obj_to_handle[theme])
-
 
     if goal and isinstance(goal, Region):
         # the SituationObjects are always present if there is a verb that calls for them, so we want to see

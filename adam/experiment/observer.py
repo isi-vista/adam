@@ -346,7 +346,9 @@ class LearningProgressHtmlLogger:  # pragma: no cover
                 )
 
             if situation and isinstance(situation, HighLevelSemanticsSituation):
-                render_buttons_text = self.render_buttons_html(situation, perceptual_representation)
+                render_buttons_text = self.render_buttons_html(
+                    situation, perceptual_representation
+                )
             else:
                 render_buttons_text = ""
 
@@ -358,7 +360,11 @@ class LearningProgressHtmlLogger:  # pragma: no cover
             outfile.write(f"\t\t\t</tr>\n\t\t</tbody>\n\t</table>")
             outfile.write("\n</body>")
 
-    def render_buttons_html(self, situation: HighLevelSemanticsSituation, perception: PerceptualRepresentation) -> str:
+    def render_buttons_html(
+        self,
+        situation: HighLevelSemanticsSituation,
+        perception: PerceptualRepresentation[PerceptionT],
+    ) -> str:
         buttons = []
         for frame in range(3):
             filename = situation_to_filename(situation, frame)
