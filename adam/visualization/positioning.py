@@ -11,6 +11,7 @@ from itertools import combinations
 from typing import Mapping, AbstractSet, Optional, List, Iterable, Tuple, DefaultDict
 from attr import attrs, attrib
 from collections import defaultdict
+from math import isnan, pi
 
 import numpy as np
 import torch
@@ -62,7 +63,7 @@ COLLISION_PENALTY = 5 * GRAVITY_PENALTY
 LOSS_EPSILON = 1.0e-04
 
 # penalty weighting for adjusting the angle between relatively-positioned objects
-ANGLE_PENALTY = torch.tensor([5], dtype=torch.float)  # pylint: disable=not-callable
+ANGLE_PENALTY = torch.tensor([1.5], dtype=torch.float)  # pylint: disable=not-callable
 # penalty weighting for adjusting the separation of relatively-positioned objects
 DISTANCE_PENALTY = torch.tensor([1], dtype=torch.float)  # pylint: disable=not-callable
 
@@ -79,6 +80,7 @@ DISTAL_MIN_DISTANCE = torch.tensor([3], dtype=torch.float)  # pylint: disable=no
 EXTERIOR_BUT_IN_CONTACT_EPS = torch.tensor(  # pylint: disable=not-callable
     [1e-2], dtype=torch.float
 )
+PI = torch.tensor([pi], dtype=torch.float)  # pylint: disable=not-callable
 
 
 def main() -> None:
@@ -206,7 +208,7 @@ def run_model(
         )
     patience = 10
     # we will start with an aggressive learning rate
-    optimizer = optim.SGD(positioning_model.parameters(), lr=1.5)
+    optimizer = optim.SGD(positioning_model.parameters(), lr=0.25)
     # but will decrease it whenever the loss plateaus
     learning_rate_schedule = ReduceLROnPlateau(
         optimizer,
@@ -227,7 +229,7 @@ def run_model(
         # if we lose any substantial gradient, stop the search
         if loss < LOSS_EPSILON:
             break
-        if loss == float("nan") or prev_loss - loss < loss_eps:
+        if isnan(loss) or prev_loss - loss < loss_eps:
             epochs_without_improvement += 1
         else:
             epochs_without_improvement = 0
@@ -1081,7 +1083,7 @@ class InRegionPenalty(nn.Module):  # type: ignore
 
         # return 0 if object has no relative positions to apply
         if not designated_region:
-            print(f"{target_object.debug_handle} has no relative positioning constraints")
+            # print(f"{target_object.debug_handle} has no relative positioning constraints")
             return torch.zeros(1)
 
         return sum(
@@ -1156,13 +1158,18 @@ class InRegionPenalty(nn.Module):  # type: ignore
         # assuming that collisions are handled elsewhere
         elif region.distance == EXTERIOR_BUT_IN_CONTACT:
             if distance > EXTERIOR_BUT_IN_CONTACT_EPS:
-                distance_penalty = distance * 4
+                distance_penalty = distance * 1.5
             else:
                 distance_penalty = torch.zeros(1)
         else:
             raise RuntimeError(
                 "Currently unable to support Interior distances w/ positioning solver"
             )
+
+        if angle and angle.allclose(PI):
+            return distance_penalty * DISTANCE_PENALTY
+
+        # print(f"ANGLE: {angle}, DISTANCE: {distance}")
 
         return angle * ANGLE_PENALTY + distance_penalty * DISTANCE_PENALTY
 

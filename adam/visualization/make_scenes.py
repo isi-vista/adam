@@ -57,7 +57,14 @@ from adam.perception.developmental_primitive_perception import (
     Relation,
 )
 from adam.ontology import OntologyNode
-from adam.ontology.phase1_ontology import AGENT, THEME, GOAL
+from adam.ontology.phase1_ontology import (
+    AGENT,
+    THEME,
+    GOAL,
+    PUSH_GOAL,
+    PUSH_SURFACE_AUX,
+    ROLL_SURFACE_AUXILIARY,
+)
 from adam.relation import IN_REGION
 from adam.situation import SituationObject
 
@@ -291,53 +298,44 @@ def main(
         # now that every object has been instantiated into the scene,
         # they need to be re-positioned.
 
-        try:
+        repositioned_map = None
 
-            repositioned_map = None
+        for repositioned_map in _solve_top_level_positions(
+            top_level_objects=immutableset(
+                [
+                    node.perceived_obj
+                    for node in scene_elements.object_graph
+                    if node.name not in OBJECT_NAMES_TO_EXCLUDE
+                ]
+            ),
+            sub_object_offsets=sub_object_offsets,
+            in_region_map=inter_object_in_region_map,
+            model_scales=model_scales,
+            frozen_objects=frozen_objects,
+            iterations=num_iterations,
+            yield_steps=steps_before_vis,
+            previous_positions=previous_model_positions,
+        ):
+            viz.clear_debug_nodes()
+            if not automatically_save_renderings:
+                viz.run_for_seconds(0.25)
 
-            for repositioned_map in _solve_top_level_positions(
-                top_level_objects=immutableset(
-                    [
-                        node.perceived_obj
-                        for node in scene_elements.object_graph
-                        if node.name not in OBJECT_NAMES_TO_EXCLUDE
-                    ]
-                ),
-                sub_object_offsets=sub_object_offsets,
-                in_region_map=inter_object_in_region_map,
-                model_scales=model_scales,
-                frozen_objects=frozen_objects,
-                iterations=num_iterations,
-                yield_steps=steps_before_vis,
-                previous_positions=previous_model_positions,
-            ):
-                viz.clear_debug_nodes()
-                if not automatically_save_renderings:
-                    viz.run_for_seconds(0.25)
+            viz.set_positions(repositioned_map)
 
-                try:
-                    viz.set_positions(repositioned_map)
-                except AssertionError as e:
-                    print(e)
-                    raise
-                if debug_bounding_boxes:
-                    for name in repositioned_map.name_to_position:
-                        viz.add_debug_bounding_box(
-                            name,
-                            repositioned_map.name_to_position[name],
-                            repositioned_map.name_to_scale[name],
-                        )
+            if debug_bounding_boxes:
+                for name in repositioned_map.name_to_position:
+                    viz.add_debug_bounding_box(
+                        name,
+                        repositioned_map.name_to_position[name],
+                        repositioned_map.name_to_scale[name],
+                    )
 
-                # the visualizer seems to need about a second to render an update
-                if not automatically_save_renderings:
-                    viz.run_for_seconds(1)
-                    viz.print_scene_graph()
-                previous_model_positions = None
-        except AssertionError:
-            # TODO: log error here. This catches nan exceptions https://github.com/isi-vista/adam/issues/688
-            viz.clear_scene()
-            viz.run_for_seconds(0.25)
-            continue
+            # the visualizer seems to need about a second to render an update
+            if not automatically_save_renderings:
+                viz.run_for_seconds(1)
+                # viz.print_scene_graph()
+            previous_model_positions = None
+
         # only store previous positions when continuing to next frame / scene
         previous_model_positions = repositioned_map
         viz.run_for_seconds(1)
@@ -556,7 +554,7 @@ class SceneCreator:
                     # if there is going to be an interpolated frame (not in the official frame list)
                     # we need to up the total by one
                     total_frames = len(perception.frames)
-                    if perception.during and not perception.during.at_some_point.empty():
+                    if perception.during and perception.during.at_some_point:
                         total_frames += 1
                         # add to the frame count if we are past the interpolated frame
                         if frame_number == 1:
@@ -574,17 +572,17 @@ class SceneCreator:
                         total_frames,
                         None,
                     )
+
                     if (
                         frame_number == 0
                         and perception.during
-                        and not perception.during.at_some_point.empty()
+                        and perception.during.at_some_point
                     ):
                         for relation in perception.during.at_some_point:
                             if (
                                 isinstance(relation.second_slot, Region)
                                 and relation.relation_type == IN_REGION
                             ):
-                                # print(relation)
                                 in_region_map[relation.first_slot] = [
                                     relation.second_slot
                                 ]
@@ -749,12 +747,16 @@ def objects_to_freeze(
     Returns: ImmutableSet of object handles which are to be frozen in place by positioning model
 
     """
+
     if semantics_situation is None:
         return immutableset([])
     frozen_objects = []
     agent: Optional[SituationObject] = None
     theme: Optional[SituationObject] = None
     goal: Optional[Union[SituationObject, Region[SituationObject]]] = None
+    push_goal: Optional[Union[SituationObject, Region[SituationObject]]] = None
+    push_surface: Optional[SituationObject] = None
+    roll_surface: Optional[SituationObject] = None
     for action in semantics_situation.actions:
         for (ontology_node, object_or_region) in action.argument_roles_to_fillers.items():
             if ontology_node == GOAL:
@@ -763,6 +765,34 @@ def objects_to_freeze(
                 agent = object_or_region
             elif ontology_node == THEME:
                 theme = object_or_region
+        for action_description_var, obj in action.auxiliary_variable_bindings.items():
+            if action_description_var == PUSH_GOAL:
+                push_goal = obj
+            elif action_description_var == PUSH_SURFACE_AUX:
+                push_surface = obj
+            elif action_description_var == ROLL_SURFACE_AUXILIARY:
+                roll_surface = obj
+
+    if push_goal and isinstance(push_goal, Region) and push_surface and theme:
+        for region_relation in in_region_map[situation_obj_to_handle[theme]]:
+            if (
+                situation_obj_to_handle[push_surface]
+                == region_relation.reference_object.debug_handle
+            ):
+                frozen_objects.append(situation_obj_to_handle[push_surface])
+                # TODO: double check freezing the push goal in this manner
+                frozen_objects.append(situation_obj_to_handle[push_goal.reference_object])
+
+    if roll_surface and theme:
+        for region_relation in in_region_map[situation_obj_to_handle[theme]]:
+            if (
+                situation_obj_to_handle[roll_surface]
+                == region_relation.reference_object.debug_handle
+            ):
+                frozen_objects.append(situation_obj_to_handle[roll_surface])
+                # The *position* of the rolled object doesn't change, so much as its orientation
+                frozen_objects.append(situation_obj_to_handle[theme])
+
     if goal and isinstance(goal, Region):
         # the SituationObjects are always present if there is a verb that calls for them, so we want to see
         # if in the current frame, an ObjectPerception referring to the goal and either our agent or theme
