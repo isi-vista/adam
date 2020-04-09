@@ -7,13 +7,7 @@ from adam.curriculum.phase1_curriculum import PHASE1_CHOOSER_FACTORY, phase1_ins
 from adam.curriculum.pursuit_curriculum import make_simple_pursuit_curriculum
 from adam.language_specific.english.english_language_generator import IGNORE_COLORS
 from adam.learner import LearningExample
-<<<<<<< HEAD:tests/learner/pursuit_object_learner_test.py
 from adam.learner.objects import ObjectPursuitLearner, SubsetObjectLearner
-=======
-from adam.learner.pursuit import PursuitLanguageLearner
-from adam.learner.cross_situational import CrossSituationalLanguageLearner
-from adam.learner.subset import SubsetLanguageLearner
->>>>>>> 6e2ffd3... Added testing and made corrections based off testing:tests/learner/learner_test.py
 from adam.ontology import OntologyNode
 from adam.ontology.phase1_ontology import (
     BALL,
