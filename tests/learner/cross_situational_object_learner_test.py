@@ -1,30 +1,18 @@
 import logging
 import random
 from itertools import chain
-from typing import Optional
 
 from adam.curriculum.phase1_curriculum import PHASE1_CHOOSER_FACTORY, phase1_instances
 from adam.curriculum.pursuit_curriculum import make_simple_pursuit_curriculum
 from adam.language_specific.english.english_language_generator import IGNORE_COLORS
 from adam.learner import LearningExample
 from adam.learner.cross_situational import CrossSituationalLanguageLearner
-from adam.ontology import OntologyNode
-from adam.ontology.phase1_ontology import (
-    BALL,
-    BIRD,
-    BOX,
-    DOG,
-    GAILA_PHASE_1_ONTOLOGY,
-    LEARNER,
-)
-from adam.perception.perception_graph import DebugCallableType, DumpPartialMatchCallback
+from adam.ontology.phase1_ontology import BALL, BIRD, BOX, GAILA_PHASE_1_ONTOLOGY
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
     all_possible,
-    color_variable,
     object_variable,
 )
-from adam.learner.cross_situational import CrossSituationalLanguageLearner
 
 
 def test_cross_situational_learner():
@@ -51,7 +39,7 @@ def test_cross_situational_learner():
                 *[
                     all_possible(
                         obj_template,
-                        chooser=PHASE1_CHOOSER,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                     )
                     for _ in range(50)
@@ -67,7 +55,9 @@ def test_cross_situational_learner():
         )
         target_test_templates.extend(
             all_possible(
-                test_template, chooser=PHASE1_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY
+                test_template,
+                chooser=PHASE1_CHOOSER_FACTORY(),
+                ontology=GAILA_PHASE_1_ONTOLOGY,
             )
         )
     rng = random.Random()

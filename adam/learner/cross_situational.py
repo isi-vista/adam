@@ -1,6 +1,5 @@
 import logging
 from pathlib import Path
-from random import Random
 from typing import Dict, Generic, Iterable, List, Mapping, Optional, Set, Tuple
 from collections import defaultdict
 
@@ -150,9 +149,7 @@ class CrossSituationalLanguageLearner(
                 "Cross-situational learner can only handle single frames for now"
             )
         if isinstance(perception.frames[0], DevelopmentalPrimitivePerceptionFrame):
-            original_perception_graph = PerceptionGraph.from_frame(
-                perception.frames[0]
-            ).copy_as_digraph()
+            original_perception_graph = PerceptionGraph.from_frame(perception.frames[0])
         else:
             raise RuntimeError("Cannot process perception type.")
         # Remove learner from the perception
@@ -489,9 +486,7 @@ class CrossSituationalLanguageLearner(
         if len(perception.frames) != 1:
             raise RuntimeError("Subset learner can only handle single frames for now")
         if isinstance(perception.frames[0], DevelopmentalPrimitivePerceptionFrame):
-            original_perception_graph = PerceptionGraph.from_frame(
-                perception.frames[0]
-            ).copy_as_digraph()
+            original_perception_graph = PerceptionGraph.from_frame(perception.frames[0])
         else:
             raise RuntimeError("Cannot process perception type.")
         observed_perception_graph = graph_without_learner(original_perception_graph)
@@ -552,6 +547,9 @@ class CrossSituationalLanguageLearner(
             else:
                 return leading
         return None
+
+    def log_hypotheses(self, log_output_path: Path) -> None:
+        pass
 
     def _log_hypotheses(self, word: str) -> None:
         assert self._log_word_hypotheses_to
