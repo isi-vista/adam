@@ -1476,6 +1476,38 @@ def _make_throw_curriculum() -> Phase1InstanceGroup:
     )
 
 
+def _make_pass_curriculum() -> Phase1InstanceGroup:
+    passer = standard_object("thrower_0", THING, required_properties=[ANIMATE])
+    catcher = standard_object("catcher_0", THING, required_properties=[ANIMATE])
+    object_thrown = standard_object("object_0", required_properties=[INANIMATE])
+
+    pass_template = Phase1SituationTemplate(
+        "throw-to",
+        salient_object_variables=[passer, object_thrown, catcher],
+        actions=[
+            Action(
+                THROW,
+                argument_roles_to_fillers=[
+                    (AGENT, passer),
+                    (THEME, object_thrown),
+                    (GOAL, Region(catcher, distance=PROXIMAL)),
+                ],
+            )
+        ],
+        constraining_relations=[bigger_than(passer, object_thrown)],
+    )
+
+    return phase1_instances(
+        "throwing",
+        sampled(
+            pass_template,
+            max_to_sample=25,
+            chooser=PHASE1_CHOOSER_FACTORY(),
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+        ),
+    )
+
+
 def _make_come_down_template(
     agent: TemplateObjectVariable,
     goal_reference: TemplateObjectVariable,
@@ -1698,6 +1730,7 @@ def build_gaila_phase1_verb_curriculum() -> Sequence[Phase1InstanceGroup]:
         _make_go_curriculum(),
         _make_push_curriculum(),
         _make_throw_curriculum(),
+        _make_pass_curriculum(),
         # _make_put_on_speaker_addressee_body_part_curriculum(),
         _make_come_curriculum(),
     ]

@@ -548,6 +548,8 @@ FALL = OntologyNode("fall")
 subtype(FALL, ACTION)  # ?
 THROW = OntologyNode("throw", [TRANSFER_OF_POSSESSION])
 subtype(THROW, ACTION)
+PASS = OntologyNode("pass", [TRANSFER_OF_POSSESSION])
+subtype(PASS, ACTION)
 MOVE = OntologyNode("move")
 subtype(MOVE, ACTION)
 JUMP = OntologyNode("jump")
@@ -2096,6 +2098,98 @@ def _make_throw_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription
     )
 
 
+_PASS_AGENT = ActionDescriptionVariable(THING, properties=[ANIMATE])
+_PASS_THEME = ActionDescriptionVariable(INANIMATE_OBJECT)
+PASS_GOAL = ActionDescriptionVariable(THING)
+_PASS_MANIPULATOR = ActionDescriptionVariable(THING, properties=[CAN_MANIPULATE_OBJECTS])
+_PASS_MANIPULATOR_1 = ActionDescriptionVariable(
+    THING, properties=[CAN_MANIPULATE_OBJECTS]
+)
+_PASS_GROUND = ActionDescriptionVariable(GROUND)
+
+
+def _make_pass_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
+    during: DuringAction[ActionDescriptionVariable] = DuringAction(
+        objects_to_paths=[(_PASS_THEME, SpatialPath(TO, PASS_GOAL))],
+        # must be above the ground at some point during the action
+        at_some_point=[
+            Relation(
+                IN_REGION,
+                _PASS_THEME,
+                Region(
+                    reference_object=_PASS_GROUND,
+                    distance=DISTAL,
+                    direction=GRAVITATIONAL_UP,
+                ),
+            )
+        ],
+    )
+    enduring = [
+        # partOf(_PASS_MANIPULATOR, _PASS_AGENT),
+        bigger_than(_PASS_AGENT, _PASS_THEME)
+    ]
+    preconditions = [
+        has(_PASS_AGENT, _PASS_THEME),
+        # contacts(_PASS_MANIPULATOR, _PASS_THEME),
+        contacts(_PASS_AGENT, _PASS_THEME),
+    ]
+    postconditions = flatten_relations(
+        [
+            Relation(IN_REGION, _PASS_THEME, PASS_GOAL),
+            # negate(contacts(_PASS_MANIPULATOR, _PASS_THEME)),
+            negate(contacts(_PASS_AGENT, _PASS_THEME)),
+        ]
+    )
+    # We don't appropriately handle multiple manipulators so
+    # Current that relationship is not asserted see
+    # https://github.com/isi-vista/adam/issues/687
+    postconditions_manipulator = flatten_relations(
+        [
+            Relation(IN_REGION, _PASS_THEME, PASS_GOAL),
+            # negate(contacts(_PASS_MANIPULATOR, _PASS_THEME)),
+            negate(contacts(_PASS_AGENT, _PASS_THEME)),
+            # contacts(_PASS_MANIPULATOR_1, _PASS_THEME),
+            # has(PASS_GOAL, _PASS_THEME),
+        ]
+    )
+    asserted_properties = [
+        (_PASS_AGENT, VOLITIONALLY_INVOLVED),
+        (_PASS_AGENT, CAUSES_CHANGE),
+        (_PASS_THEME, UNDERGOES_CHANGE),
+    ]
+    # explicit goal is manipulator
+    yield PASS, ActionDescription(
+        frame=ActionDescriptionFrame(
+            {AGENT: _PASS_AGENT, THEME: _PASS_THEME, GOAL_MANIPULATOR: PASS_GOAL}
+        ),
+        during=during,
+        enduring_conditions=enduring,
+        preconditions=preconditions,
+        postconditions=postconditions_manipulator,
+        asserted_properties=asserted_properties,
+    )
+    # explicit goal
+    yield PASS, ActionDescription(
+        frame=ActionDescriptionFrame(
+            {AGENT: _PASS_AGENT, THEME: _PASS_THEME, GOAL: PASS_GOAL}
+        ),
+        during=during,
+        enduring_conditions=enduring,
+        preconditions=preconditions,
+        postconditions=postconditions,
+        asserted_properties=asserted_properties,
+    )
+    # implicit goal
+    yield PASS, ActionDescription(
+        frame=ActionDescriptionFrame({AGENT: _PASS_AGENT, THEME: _PASS_THEME}),
+        during=during,
+        enduring_conditions=enduring,
+        preconditions=preconditions,
+        postconditions=postconditions,
+        asserted_properties=asserted_properties,
+    )
+
+
 _MOVE_AGENT = ActionDescriptionVariable(THING, properties=[ANIMATE])
 _MOVE_THEME = ActionDescriptionVariable(THING)
 MOVE_GOAL = ActionDescriptionVariable(THING)
@@ -2336,6 +2430,7 @@ _ACTIONS_TO_DESCRIPTIONS.extend(_make_spin_descriptions())
 _ACTIONS_TO_DESCRIPTIONS.extend(_make_go_description())
 _ACTIONS_TO_DESCRIPTIONS.extend(_make_push_descriptions())
 _ACTIONS_TO_DESCRIPTIONS.extend(_make_throw_descriptions())
+_ACTIONS_TO_DESCRIPTIONS.extend(_make_pass_descriptions())
 
 
 GAILA_PHASE_1_SIZE_GRADES: Tuple[Tuple[OntologyNode, ...], ...] = (
