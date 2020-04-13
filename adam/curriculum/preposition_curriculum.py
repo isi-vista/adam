@@ -199,6 +199,26 @@ def _in_front_template(
     )
 
 
+def _near_template(
+    figure: TemplateObjectVariable,
+    ground: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+    *,
+    is_training: bool,
+    is_near: bool = True,
+) -> Phase1SituationTemplate:
+    handle = "training" if is_training else "testing"
+    if not is_near:
+        raise RuntimeError("Near template cannot have is_near set to False")
+    return Phase1SituationTemplate(
+        f"preposition-{handle}-{figure.handle}-behind-{ground.handle}",
+        salient_object_variables=[figure, ground],
+        background_object_variables=background,
+        asserted_always_relations=[near(figure, ground)],
+        gazed_objects=[figure],
+    )
+
+
 def _make_on_training(
     num_samples: int = 5, *, noise_objects: bool = True
 ) -> Phase1InstanceGroup:
@@ -493,6 +513,54 @@ def _make_in_front_training(
                         for figure in figures
                         for ground in grounds
                         for close in BOOL_SET
+                    ]
+                )
+            ]
+        ),
+    )
+
+
+def _make_near_training(
+    num_samples: int = 5, *, noise_objects: bool = True
+) -> Phase1InstanceGroup:
+    figure_0 = standard_object("ball", BALL)
+    figure_1 = standard_object("book", BOOK)
+    figure_2 = standard_object("dad", DAD)
+    ground_0 = standard_object("cookie", COOKIE)
+    ground_1 = standard_object("table", TABLE)
+    ground_2 = standard_object("person", PERSON)
+    speaker = standard_object("speaker", MOM, added_properties=[IS_SPEAKER])
+    addressee = standard_object("addressee", LEARNER, added_properties=[IS_ADDRESSEE])
+
+    figures = immutableset([figure_0, figure_1, figure_2])
+    grounds = immutableset([ground_0, ground_1, ground_2])
+
+    return phase1_instances(
+        "Preposition Training Near",
+        chain(
+            *[
+                flatten(
+                    [
+                        sampled(
+                            _near_template(
+                                figure,
+                                ground,
+                                make_background(
+                                    [figure, ground],
+                                    all_objects=flatten(
+                                        [figures, grounds, [speaker, addressee]]
+                                    ),
+                                )
+                                if noise_objects
+                                else immutableset([speaker, addressee]),
+                                is_training=True,
+                            ),
+                            ontology=GAILA_PHASE_1_ONTOLOGY,
+                            chooser=PHASE1_CHOOSER_FACTORY(),
+                            max_to_sample=num_samples,
+                        )
+                        for figure in figures
+                        for ground in grounds
                     ]
                 )
             ]
@@ -809,6 +877,53 @@ def _make_in_front_tests(
     )
 
 
+def _make_near_tests(
+    num_samples: int = 5, *, noise_objects: bool = True
+) -> Phase1InstanceGroup:
+    figure_0 = standard_object("figure_0", THING, banned_properties=[HOLLOW])
+    figure_1 = standard_object("figure_1", THING, banned_properties=[HOLLOW])
+    ground_0 = standard_object("ground_0", THING, banned_properties=[HOLLOW])
+    ground_1 = standard_object("ground_1", THING, banned_properties=[HOLLOW])
+
+    speaker = standard_object("speaker", MOM, added_properties=[IS_SPEAKER])
+    addressee = standard_object("addressee", LEARNER, added_properties=[IS_ADDRESSEE])
+
+    figures = immutableset([figure_0, figure_1])
+    grounds = immutableset([ground_0, ground_1])
+
+    return phase1_instances(
+        "Preposition Testing Near",
+        chain(
+            *[
+                flatten(
+                    [
+                        sampled(
+                            _near_template(
+                                figure,
+                                ground,
+                                make_background(
+                                    [figure, ground],
+                                    all_objects=flatten(
+                                        [figures, grounds, [speaker, addressee]]
+                                    ),
+                                )
+                                if noise_objects
+                                else immutableset([speaker, addressee]),
+                                is_training=False,
+                            ),
+                            ontology=GAILA_PHASE_1_ONTOLOGY,
+                            chooser=PHASE1_CHOOSER_FACTORY(),
+                            max_to_sample=num_samples,
+                        )
+                        for figure in figures
+                        for ground in grounds
+                    ]
+                )
+            ]
+        ),
+    )
+
+
 def make_prepositions_curriculum_training(
     num_samples: int = 5, *, noise_objects: bool = True
 ):
@@ -820,6 +935,7 @@ def make_prepositions_curriculum_training(
         _make_in_training(num_samples, noise_objects=noise_objects),
         _make_behind_training(num_samples, noise_objects=noise_objects),
         _make_in_front_training(num_samples, noise_objects=noise_objects),
+        _make_near_training(num_samples, noise_objects=noise_objects),
     ]
 
 
@@ -834,6 +950,7 @@ def make_prepositions_curriculum_testing(
         _make_in_tests(num_samples, noise_objects=noise_objects),
         _make_behind_tests(num_samples, noise_objects=noise_objects),
         _make_in_front_tests(num_samples, noise_objects=noise_objects),
+        _make_near_tests(num_samples, noise_objects=noise_objects),
     ]
 
 
