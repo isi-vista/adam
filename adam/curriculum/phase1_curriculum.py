@@ -1479,22 +1479,22 @@ def _make_throw_curriculum() -> Phase1InstanceGroup:
 def _make_pass_curriculum() -> Phase1InstanceGroup:
     passer = standard_object("thrower_0", THING, required_properties=[ANIMATE])
     catcher = standard_object("catcher_0", THING, required_properties=[ANIMATE])
-    object_thrown = standard_object("object_0", required_properties=[INANIMATE])
+    object_passed = standard_object("object_0", required_properties=[INANIMATE])
 
     pass_template = Phase1SituationTemplate(
         "throw-to",
-        salient_object_variables=[passer, object_thrown, catcher],
+        salient_object_variables=[passer, object_passed, catcher],
         actions=[
             Action(
                 THROW,
                 argument_roles_to_fillers=[
                     (AGENT, passer),
-                    (THEME, object_thrown),
+                    (THEME, object_passed),
                     (GOAL, Region(catcher, distance=PROXIMAL)),
                 ],
             )
         ],
-        constraining_relations=[bigger_than(passer, object_thrown)],
+        constraining_relations=[bigger_than(passer, object_passed)],
     )
 
     return phase1_instances(
