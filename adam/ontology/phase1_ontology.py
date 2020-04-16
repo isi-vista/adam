@@ -39,7 +39,8 @@ from adam.geon import (
     RECTANGULAR,
     SMALL_TO_LARGE,
     SMALL_TO_LARGE_TO_SMALL,
-    SQUARE)
+    SQUARE,
+)
 from adam.ontology import (
     ACTION,
     BINARY,
@@ -1474,11 +1475,7 @@ _CHAIR_LEGS = [
     _CHAIR_SCHEMA_LEG_3,
     _CHAIR_SCHEMA_LEG_4,
 ]
-_CHAIR_THREE_LEGS = [
-    _CHAIR_SCHEMA_LEG_1,
-    _CHAIR_SCHEMA_LEG_2,
-    _CHAIR_SCHEMA_LEG_3,
-]
+_CHAIR_THREE_LEGS = [_CHAIR_SCHEMA_LEG_1, _CHAIR_SCHEMA_LEG_2, _CHAIR_SCHEMA_LEG_3]
 
 _CHAIR_SCHEMA = ObjectStructuralSchema(
     CHAIR,
