@@ -84,6 +84,11 @@ from adam.ontology.phase1_ontology import (
     near,
     on,
     strictly_above,
+    CHAIR_5,
+    CHAIR_4,
+    CHAIR_3,
+    CHAIR_2,
+    CHAIR,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -302,6 +307,37 @@ def _make_object_on_ground_curriculum() -> Phase1InstanceGroup:
                 ),
             ]
         ),
+    )
+
+
+def _make_chairs_curriculum(
+    perception_generator: HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator = GAILA_PHASE_1_PERCEPTION_GENERATOR
+) -> Phase1InstanceGroup:
+    color = color_variable("color")
+    chair_templates = [
+        Phase1SituationTemplate(
+            "chair-object",
+            salient_object_variables=[
+                standard_object("speaker", chair_type, added_properties=[color])
+            ],
+            syntax_hints=[IGNORE_COLORS],
+        )
+        for chair_type in [CHAIR, CHAIR_2, CHAIR_3, CHAIR_4, CHAIR_5]
+    ]
+
+    return phase1_instances(
+        "each object by itself",
+        chain(
+            *[
+                all_possible(
+                    chair_template,
+                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                )
+                for chair_template in chair_templates
+            ]
+        ),
+        perception_generator=perception_generator,
     )
 
 
