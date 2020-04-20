@@ -1,4 +1,20 @@
 <CoordinateSystem> { Z-up } 
+<Material> Material {
+  <Scalar> diffr { 0.005018 }
+  <Scalar> diffg { 0.640000 }
+  <Scalar> diffb { 0.640000 }
+  <Scalar> specr { 0.001544 }
+  <Scalar> specg { 0.485640 }
+  <Scalar> specb { 0.500000 }
+  <Scalar> shininess { 12.5 }
+  <Scalar> ambr { 1.000000 }
+  <Scalar> ambg { 1.000000 }
+  <Scalar> ambb { 1.000000 }
+  <Scalar> emitr { 0.000000 }
+  <Scalar> emitg { 0.000000 }
+  <Scalar> emitb { 0.000000 }
+}
+
   <Group> Cone {
     <Transform> {
       <Matrix4> {
@@ -366,154 +382,192 @@
     
     
     <Polygon> {
+      <MRef> { Material }
       <Normal> {0.666667 -0.666667 -0.333333}
       <VertexRef> { 0 1 2 <Ref> { Cone }} 
     }
     <Polygon> {
+      <MRef> { Material }
       <Normal> {0.666667 0.666667 -0.333333}
       <VertexRef> { 3 4 5 <Ref> { Cone }} 
     }
     <Polygon> {
+      <MRef> { Material }
       <Normal> {-0.666667 0.666666 -0.333333}
       <VertexRef> { 6 7 8 <Ref> { Cone }} 
     }
     <Polygon> {
+      <MRef> { Material }
       <Normal> {-0.666666 -0.666667 -0.333333}
       <VertexRef> { 9 10 11 <Ref> { Cone }} 
     }
     <Polygon> {
+      <MRef> { Material }
       <Normal> {0.000000 -0.000000 1.000000}
       <VertexRef> { 12 13 14 15 <Ref> { Cone }} 
     }
     <Polygon> {
+      <MRef> { Material }
       <Normal> {0.000000 0.000001 -1.000000}
       <VertexRef> { 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 <Ref> { Cone }} 
     }
     <Polygon> {
+      <MRef> { Material }
       <Normal> {0.290283 0.956941 0.000001}
       <VertexRef> { 48 49 50 51 <Ref> { Cone }} 
     }
     <Polygon> {
+      <MRef> { Material }
       <Normal> {0.098012 0.995185 0.000000}
       <VertexRef> { 52 53 54 55 <Ref> { Cone }} 
     }
     <Polygon> {
+      <MRef> { Material }
       <Normal> {-0.098017 0.995185 0.000000}
       <VertexRef> { 56 57 58 59 <Ref> { Cone }} 
     }
     <Polygon> {
+      <MRef> { Material }
       <Normal> {-0.290283 0.956941 0.000000}
       <VertexRef> { 60 61 62 63 <Ref> { Cone }} 
     }
     <Polygon> {
+      <MRef> { Material }
       <Normal> {-0.471400 0.881919 0.000000}
       <VertexRef> { 64 65 66 67 <Ref> { Cone }} 
     }
     <Polygon> {
+      <MRef> { Material }
       <Normal> {-0.634389 0.773014 0.000000}
       <VertexRef> { 68 69 70 71 <Ref> { Cone }} 
     }
     <Polygon> {
+      <MRef> { Material }
       <Normal> {-0.773014 0.634389 -0.000000}
       <VertexRef> { 72 73 74 75 <Ref> { Cone }} 
     }
     <Polygon> {
+      <MRef> { Material }
       <Normal> {-0.881919 0.471400 -0.000000}
       <VertexRef> { 76 77 78 79 <Ref> { Cone }} 
     }
     <Polygon> {
+      <MRef> { Material }
       <Normal> {-0.956941 0.290283 -0.000000}
       <VertexRef> { 80 81 82 83 <Ref> { Cone }} 
     }
     <Polygon> {
+      <MRef> { Material }
       <Normal> {-0.995185 0.098014 -0.000000}
       <VertexRef> { 84 85 86 87 <Ref> { Cone }} 
     }
     <Polygon> {
+      <MRef> { Material }
       <Normal> {-0.995185 -0.098014 -0.000000}
       <VertexRef> { 88 89 90 91 <Ref> { Cone }} 
     }
     <Polygon> {
+      <MRef> { Material }
       <Normal> {-0.956941 -0.290282 -0.000001}
       <VertexRef> { 92 93 94 95 <Ref> { Cone }} 
     }
     <Polygon> {
+      <MRef> { Material }
       <Normal> {-0.881919 -0.471401 -0.000001}
       <VertexRef> { 96 97 98 99 <Ref> { Cone }} 
     }
     <Polygon> {
+      <MRef> { Material }
       <Normal> {-0.773011 -0.634392 -0.000001}
       <VertexRef> { 100 101 102 103 <Ref> { Cone }} 
     }
     <Polygon> {
+      <MRef> { Material }
       <Normal> {-0.634391 -0.773012 -0.000001}
       <VertexRef> { 104 105 106 107 <Ref> { Cone }} 
     }
     <Polygon> {
+      <MRef> { Material }
       <Normal> {-0.471401 -0.881919 -0.000001}
       <VertexRef> { 108 109 110 111 <Ref> { Cone }} 
     }
     <Polygon> {
+      <MRef> { Material }
       <Normal> {-0.290283 -0.956941 -0.000000}
       <VertexRef> { 112 113 114 115 <Ref> { Cone }} 
     }
     <Polygon> {
+      <MRef> { Material }
       <Normal> {-0.098021 -0.995184 -0.000000}
       <VertexRef> { 116 117 118 119 <Ref> { Cone }} 
     }
     <Polygon> {
+      <MRef> { Material }
       <Normal> {0.098019 -0.995185 -0.000000}
       <VertexRef> { 120 121 122 123 <Ref> { Cone }} 
     }
     <Polygon> {
+      <MRef> { Material }
       <Normal> {0.290286 -0.956940 -0.000000}
       <VertexRef> { 124 125 126 127 <Ref> { Cone }} 
     }
     <Polygon> {
+      <MRef> { Material }
       <Normal> {0.471395 -0.881922 -0.000000}
       <VertexRef> { 128 129 130 131 <Ref> { Cone }} 
     }
     <Polygon> {
+      <MRef> { Material }
       <Normal> {0.634395 -0.773009 0.000000}
       <VertexRef> { 132 133 134 135 <Ref> { Cone }} 
     }
     <Polygon> {
+      <MRef> { Material }
       <Normal> {0.773008 -0.634397 0.000000}
       <VertexRef> { 136 137 138 139 <Ref> { Cone }} 
     }
     <Polygon> {
+      <MRef> { Material }
       <Normal> {0.881921 -0.471396 0.000000}
       <VertexRef> { 140 141 142 143 <Ref> { Cone }} 
     }
     <Polygon> {
+      <MRef> { Material }
       <Normal> {0.956941 -0.290282 0.000000}
       <VertexRef> { 144 145 146 147 <Ref> { Cone }} 
     }
     <Polygon> {
+      <MRef> { Material }
       <Normal> {0.995185 -0.098017 0.000000}
       <VertexRef> { 148 149 150 151 <Ref> { Cone }} 
     }
     <Polygon> {
+      <MRef> { Material }
       <Normal> {0.995185 0.098019 0.000000}
       <VertexRef> { 152 153 154 155 <Ref> { Cone }} 
     }
     <Polygon> {
+      <MRef> { Material }
       <Normal> {0.956939 0.290289 0.000001}
       <VertexRef> { 156 157 158 159 <Ref> { Cone }} 
     }
     <Polygon> {
+      <MRef> { Material }
       <Normal> {0.881922 0.471395 0.000001}
       <VertexRef> { 160 161 162 163 <Ref> { Cone }} 
     }
     <Polygon> {
+      <MRef> { Material }
       <Normal> {0.773010 0.634394 0.000001}
       <VertexRef> { 164 165 166 167 <Ref> { Cone }} 
     }
     <Polygon> {
+      <MRef> { Material }
       <Normal> {0.634394 0.773009 0.000001}
       <VertexRef> { 168 169 170 171 <Ref> { Cone }} 
     }
     <Polygon> {
+      <MRef> { Material }
       <Normal> {0.471393 0.881923 0.000001}
       <VertexRef> { 172 173 174 175 <Ref> { Cone }} 
     }

@@ -29,7 +29,7 @@ import logging
 
 # currently useful for positioning multiple objects:
 from adam.curriculum.phase1_curriculum import (
-    _make_each_object_by_itself_curriculum as make_curriculum,
+    _make_speaker_addressee_curriculum as make_curriculum,
 )
 from adam.curriculum.phase1_curriculum import Phase1InstanceGroup
 
@@ -337,7 +337,7 @@ def main(
                     )
 
             if gaze_arrows:
-                for handle in scene_elements.situation_object_to_handle:
+                for _, handle in scene_elements.situation_object_to_handle.items():
                     viz.add_gaze_arrow(
                         handle,
                         repositioned_map.name_to_position[handle],
