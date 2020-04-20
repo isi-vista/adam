@@ -147,6 +147,11 @@ def main(
     else:
         debug_bounding_boxes = False
 
+    if params.string("gaze_arrows", default="off") == "on":
+        gaze_arrows = True
+    else:
+        gaze_arrows = False
+
     # go through curriculum scenes and output geometry types
     if visualizer is None:
         viz = SituationVisualizer()
@@ -317,6 +322,7 @@ def main(
             previous_positions=previous_model_positions,
         ):
             viz.clear_debug_nodes()
+            viz.clear_gaze_arrows()
             if not automatically_save_renderings:
                 viz.run_for_seconds(0.25)
 
@@ -328,6 +334,14 @@ def main(
                         name,
                         repositioned_map.name_to_position[name],
                         repositioned_map.name_to_scale[name],
+                    )
+
+            if gaze_arrows:
+                for handle in scene_elements.situation_object_to_handle:
+                    viz.add_gaze_arrow(
+                        handle,
+                        repositioned_map.name_to_position[handle],
+                        repositioned_map.name_to_scale[handle],
                     )
 
             # the visualizer seems to need about a second to render an update

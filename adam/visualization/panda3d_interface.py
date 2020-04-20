@@ -223,6 +223,9 @@ class SituationVisualizer(ShowBase):
         # list of debug bounding boxes
         self.debug_bounding_boxes: List[NodePath] = []
 
+        # list of gaze arrows
+        self.gaze_arrows: List[NodePath] = []
+
         # set default camera position/orientation:
         # default mouse controls have to be disabled to set a position manually
         self.disableMouse()
@@ -370,6 +373,14 @@ class SituationVisualizer(ShowBase):
         new_node.reparentTo(self.render)
         self.debug_bounding_boxes.append(new_node)
 
+    def add_gaze_arrow(self, name: str, position: Tensor, scale: Tensor):
+        new_node = self._load_model("gaze_arrow.egg")
+        new_node.name = name
+        new_node.setPos(position.data[0], position.data[1], position.data[2])
+        new_node.setScale(scale.data[0][0], scale.data[1][1], scale.data[2][2])
+        new_node.reparentTo(self.render)
+        self.gaze_arrows.append(new_node)
+
     def clear_scene(self) -> None:
         """Clears out all added objects (other than ground plane, camera, lights)"""
         for node in self.geo_nodes.values():
@@ -381,6 +392,11 @@ class SituationVisualizer(ShowBase):
         for node in self.debug_bounding_boxes:
             node.remove_node()
         self.debug_bounding_boxes = []
+
+    def clear_gaze_arrows(self) -> None:
+        for node in self.gaze_arrows:
+            node.remove_node()
+        self.gaze_arrows = []
 
     def top_level_positions(self) -> Dict[str, Tuple[float, float, float]]:
         """Returns a Map of name -> position of all nodes of geometry objects
