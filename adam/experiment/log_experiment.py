@@ -21,7 +21,7 @@ from adam.curriculum.phase1_curriculum import (
     build_gaila_phase1_relation_curriculum,
     build_gaila_phase1_verb_curriculum,
     _make_put_on_speaker_addressee_body_part_curriculum,
-)
+    build_gaila_generics_curriculum)
 from adam.curriculum.pursuit_curriculum import make_simple_pursuit_curriculum
 from adam.experiment import Experiment, execute_experiment
 from adam.experiment.observer import LearningProgressHtmlLogger, CandidateAccuracyObserver
@@ -134,6 +134,7 @@ def curriculum_from_params(params: Parameters):
             "m6-deniz",
             "each-object-by-itself",
             "pursuit",
+            "generics",
             "m6-preposition",
             "m9-objects",
             "m9-attributes",
@@ -197,6 +198,8 @@ def curriculum_from_params(params: Parameters):
         return (build_gaila_phase1_verb_curriculum(), [])
     elif curriculum_name == "m9-debug":
         return ([_make_put_on_speaker_addressee_body_part_curriculum()], [])
+    elif curriculum_name == "generics":
+        return (build_gaila_generics_curriculum(), [])
     else:
         raise RuntimeError("Can't happen")
 

@@ -18,12 +18,11 @@ This code should not be used by anything except the perception_graph module.
 import logging
 import sys
 from collections import defaultdict
-from itertools import chain
 from typing import Mapping, Any, Dict, Callable, Optional
 
 from immutablecollections import immutableset, ImmutableSet, immutabledict
 from more_itertools import flatten
-from networkx import DiGraph
+from networkx import DiGraph, is_weakly_connected
 
 from adam.ontology.phase1_ontology import PART_OF
 from adam.perception import ObjectPerception

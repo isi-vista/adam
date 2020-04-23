@@ -1,0 +1,12 @@
+_includes:
+   - "../../root.params"
+   - "m9.params"
+
+experiment: 'generics-pursuit'
+curriculum: 'generics'
+learner: 'object-subset'
+
+include_objects: false
+include_relations: false
+include_attributes: false
+include_events: false
