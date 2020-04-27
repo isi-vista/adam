@@ -40,7 +40,7 @@ from adam.geon import (
     SMALL_TO_LARGE,
     SMALL_TO_LARGE_TO_SMALL,
     SQUARE,
-)
+    CrossSectionSize)
 from adam.ontology import (
     ACTION,
     BINARY,
@@ -350,6 +350,21 @@ CUP = OntologyNode(
     [HOLLOW, CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, RED, BLUE, GREEN, TRANSPARENT],
 )
 subtype(CUP, INANIMATE_OBJECT)
+CUP_2 = OntologyNode(
+    "cup-2",
+    [HOLLOW, CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, RED, BLUE, GREEN, TRANSPARENT],
+)
+subtype(CUP_2, INANIMATE_OBJECT)
+CUP_3 = OntologyNode(
+    "cup-2",
+    [HOLLOW, CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, RED, BLUE, GREEN, TRANSPARENT],
+)
+subtype(CUP_3, INANIMATE_OBJECT)
+CUP_4 = OntologyNode(
+    "cup-4",
+    [HOLLOW, CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, RED, BLUE, GREEN, TRANSPARENT],
+)
+subtype(CUP_4, INANIMATE_OBJECT)
 BOX = OntologyNode(
     "box",
     [
@@ -890,7 +905,7 @@ def _make_cookie_schema() -> ObjectStructuralSchema:
     )
 
 
-def _make_cup_schema() -> ObjectStructuralSchema:
+def _make_cup_schema(cross_section_size: CrossSectionSize = SMALL_TO_LARGE) -> ObjectStructuralSchema:
     bottom_to_top = straight_up("bottom-to-top")
     side_to_side_0 = symmetric("side-to-side-0")
     side_to_side_1 = symmetric("side-to-side-1")
@@ -899,7 +914,7 @@ def _make_cup_schema() -> ObjectStructuralSchema:
         ontology_node=CUP,
         geon=Geon(
             cross_section=CIRCULAR,
-            cross_section_size=SMALL_TO_LARGE,
+            cross_section_size=cross_section_size,
             axes=Axes(
                 primary_axis=bottom_to_top,
                 orienting_axes=[side_to_side_0, side_to_side_1],
@@ -1368,7 +1383,10 @@ _BALL_SCHEMA = _make_ball_schema()
 _BOX_SCHEMA = _make_box_schema()
 _HAT_SCHEMA = _make_hat_schema()
 _COOKIE_SCHEMA = _make_cookie_schema()
-_CUP_SCHEMA = _make_cup_schema()
+_CUP_SCHEMA = _make_cup_schema(cross_section_size=SMALL_TO_LARGE)
+_CUP_2_SCHEMA = _make_cup_schema(cross_section_size=CONSTANT)
+_CUP_3_SCHEMA = _make_cup_schema(cross_section_size=LARGE_TO_SMALL)
+_CUP_4_SCHEMA = _make_cup_schema(cross_section_size=SMALL_TO_LARGE_TO_SMALL)
 _BOOK_SCHEMA = _make_book_schema()
 _HAND_SCHEMA = _make_hand_schema()
 _HEAD_SCHEMA = _make_head_schema()
@@ -2524,6 +2542,9 @@ GAILA_PHASE_1_ONTOLOGY = Ontology(
         (COOKIE, _COOKIE_SCHEMA),
         (HEAD, _HEAD_SCHEMA),
         (CUP, _CUP_SCHEMA),
+        (CUP_2, _CUP_2_SCHEMA),
+        (CUP_3, _CUP_3_SCHEMA),
+        (CUP_4, _CUP_4_SCHEMA),
         (BOX, _BOX_SCHEMA),
         (BOOK, _BOOK_SCHEMA),
         (HOUSE, _HOUSE_SCHEMA),
