@@ -10,7 +10,7 @@ from adam.curriculum.phase1_curriculum import (
     _make_go_curriculum,
     _make_jump_curriculum,
     _make_move_curriculum,
-    _make_multiple_objects_curriculum,
+    _make_plural_objects_curriculum,
     _make_object_beside_object_curriculum,
     _make_object_in_other_object_curriculum,
     _make_object_on_ground_curriculum,
@@ -60,7 +60,7 @@ def test_instantiate_fly_curriculum():
 
 
 def test_multiple_objects_curriculum():
-    curriculum_test(_make_multiple_objects_curriculum())
+    curriculum_test(_make_plural_objects_curriculum())
 
 
 def test_object_on_ground_curriculum():

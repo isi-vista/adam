@@ -234,7 +234,7 @@ def _make_objects_with_colors_is_curriculum() -> Phase1InstanceGroup:
     )
 
 
-def _make_multiple_objects_curriculum() -> Phase1InstanceGroup:
+def _make_plural_objects_curriculum() -> Phase1InstanceGroup:
     """
     We are deferring handling numeric quantifiers until Phase 2,
     so this curriculum is not actually executed in Phase 1.
@@ -1654,7 +1654,7 @@ def build_gaila_phase1_object_curriculum() -> Sequence[Phase1InstanceGroup]:
 
 def build_gaila_generics_curriculum() -> Sequence[Phase1InstanceGroup]:
     return [
-        _make_multiple_objects_curriculum()
+        _make_plural_objects_curriculum()
     ]
 
 
