@@ -66,6 +66,9 @@ from adam.ontology.phase1_ontology import (
     CHAIR_3,
     CHAIR_4,
     CHAIR_5,
+    CUP_4,
+    CUP_3,
+    CUP_2,
 )
 
 MASS_NOUN = LexiconProperty("mass-noun")
@@ -103,6 +106,9 @@ GAILA_PHASE_1_ENGLISH_LEXICON = OntologyLexicon(
         (WATER, LexiconEntry("water", NOUN, [MASS_NOUN])),
         (JUICE, LexiconEntry("juice", NOUN, [MASS_NOUN])),
         (CUP, LexiconEntry("cup", NOUN, plural_form="cups")),
+        (CUP_2, LexiconEntry("cup", NOUN, plural_form="cups")),
+        (CUP_3, LexiconEntry("cup", NOUN, plural_form="cups")),
+        (CUP_4, LexiconEntry("cup", NOUN, plural_form="cups")),
         (BOX, LexiconEntry("box", NOUN, plural_form="boxes")),
         (CHAIR, LexiconEntry("chair", NOUN, plural_form="chairs")),
         (CHAIR_2, LexiconEntry("chair", NOUN, plural_form="chairs")),

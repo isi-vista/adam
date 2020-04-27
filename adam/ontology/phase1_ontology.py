@@ -40,7 +40,8 @@ from adam.geon import (
     SMALL_TO_LARGE,
     SMALL_TO_LARGE_TO_SMALL,
     SQUARE,
-    CrossSectionSize)
+    CrossSectionSize,
+)
 from adam.ontology import (
     ACTION,
     BINARY,
@@ -356,7 +357,7 @@ CUP_2 = OntologyNode(
 )
 subtype(CUP_2, INANIMATE_OBJECT)
 CUP_3 = OntologyNode(
-    "cup-2",
+    "cup-3",
     [HOLLOW, CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, RED, BLUE, GREEN, TRANSPARENT],
 )
 subtype(CUP_3, INANIMATE_OBJECT)
@@ -905,7 +906,9 @@ def _make_cookie_schema() -> ObjectStructuralSchema:
     )
 
 
-def _make_cup_schema(cross_section_size: CrossSectionSize = SMALL_TO_LARGE) -> ObjectStructuralSchema:
+def _make_cup_schema(
+    cross_section_size: CrossSectionSize = SMALL_TO_LARGE
+) -> ObjectStructuralSchema:
     bottom_to_top = straight_up("bottom-to-top")
     side_to_side_0 = symmetric("side-to-side-0")
     side_to_side_1 = symmetric("side-to-side-1")

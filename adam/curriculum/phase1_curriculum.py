@@ -89,6 +89,10 @@ from adam.ontology.phase1_ontology import (
     CHAIR_3,
     CHAIR_2,
     CHAIR,
+    CUP,
+    CUP_2,
+    CUP_3,
+    CUP_4,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -335,6 +339,37 @@ def _make_chairs_curriculum(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                 )
                 for chair_template in chair_templates
+            ]
+        ),
+        perception_generator=perception_generator,
+    )
+
+
+def _make_cups_curriculum(
+    perception_generator: HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator = GAILA_PHASE_1_PERCEPTION_GENERATOR
+) -> Phase1InstanceGroup:
+    color = color_variable("color")
+    cup_templates = [
+        Phase1SituationTemplate(
+            "chair-object",
+            salient_object_variables=[
+                standard_object("speaker", cup, added_properties=[color])
+            ],
+            syntax_hints=[IGNORE_COLORS],
+        )
+        for cup in [CUP, CUP_2, CUP_3, CUP_4]
+    ]
+
+    return phase1_instances(
+        "each cup by itself",
+        chain(
+            *[
+                all_possible(
+                    cup_template,
+                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                )
+                for cup_template in cup_templates
             ]
         ),
         perception_generator=perception_generator,

@@ -30,6 +30,7 @@ from adam.curriculum.phase1_curriculum import (
     _make_transfer_of_possession_curriculum,
     _make_objects_with_colors_is_curriculum,
     _make_chairs_curriculum,
+    _make_cups_curriculum,
 )
 
 
@@ -70,6 +71,10 @@ def test_object_on_ground_curriculum():
 
 def test_chairs_curriculum():
     curriculum_test(_make_chairs_curriculum())
+
+
+def test_cups_curriculum():
+    curriculum_test(_make_cups_curriculum())
 
 
 def test_person_has_object_curriculum():
