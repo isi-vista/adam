@@ -823,7 +823,7 @@ class CurriculumToHtmlDumper:
             if filler2.direction:
                 parts.append(
                     f"direction={sign(filler2.direction.positive)}"
-                    f"{filler2.direction.relative_to_axis.to_concrete_axis(axis_info)}"
+                    f"{filler2.direction.relative_to_concrete_axis(axis_info)}"
                 )
             second_slot_str = f"Region({','.join(parts)})"
         else:

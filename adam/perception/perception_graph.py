@@ -2287,7 +2287,7 @@ def _translate_region(
         temporal_scopes=temporal_scopes,
     )
     if region.direction:
-        axis_relative_to = region.direction.relative_to_axis.to_concrete_axis(axes_info)
+        axis_relative_to = region.direction.relative_to_concrete_axis(axes_info)
         mapped_axis_relative_to = map_node(axis_relative_to)
         _add_labelled_edge(
             graph,
@@ -2813,7 +2813,9 @@ class _FrameTranslation:
             edges_to_add.append(
                 (
                     path,
-                    path.reference_axis.to_concrete_axis(axes_info),
+                    path.reference_axis
+                    if isinstance(path.reference_axis, GeonAxis)
+                    else path.reference_axis.to_concrete_axis(axes_info),
                     REFERENCE_AXIS_LABEL,
                 )
             )

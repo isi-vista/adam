@@ -1,10 +1,11 @@
 from typing import Generic, List, Mapping, Optional, TypeVar, Union
 
+from adam.axis import GeonAxis
 from attr import attrib, attrs
 from attr.validators import in_, instance_of, optional
 from vistautils.preconditions import check_arg
 
-from adam.axes import AxisFunction, GRAVITATIONAL_AXIS_FUNCTION
+from adam.axes import AxesInfo, AxisFunction, GRAVITATIONAL_AXIS_FUNCTION
 
 
 @attrs(frozen=True, slots=True, repr=False)
@@ -93,19 +94,35 @@ class Direction(Generic[ReferenceObjectT]):
     We need to standardize on what "positive" direction means. 
     It is clear for vertical axes but less clear for other things. 
     """
-    relative_to_axis: AxisFunction[ReferenceObjectT] = attrib()
+    relative_to_axis: Union[GeonAxis, AxisFunction[ReferenceObjectT]] = attrib()
 
     def copy_remapping_objects(
         self, object_map: Mapping[ReferenceObjectT, NewObjectT]
     ) -> "Direction[NewObjectT]":
-        return Direction(
-            positive=self.positive,
-            relative_to_axis=self.relative_to_axis.copy_remapping_objects(object_map),
-        )
+        new_relative_to_axis: Union[GeonAxis, AxisFunction[NewObjectT]]
+        if isinstance(self.relative_to_axis, AxisFunction):
+            new_relative_to_axis = self.relative_to_axis.copy_remapping_objects(
+                object_map
+            )
+        else:
+            new_relative_to_axis = self.relative_to_axis
+
+        return Direction(positive=self.positive, relative_to_axis=new_relative_to_axis)
+
+    def relative_to_concrete_axis(
+        self, axes_info: Optional[AxesInfo[ReferenceObjectT]]
+    ) -> GeonAxis:
+        if isinstance(self.relative_to_axis, GeonAxis):
+            return self.relative_to_axis
+        else:
+            return self.relative_to_axis.to_concrete_axis(axes_info)
 
     def __repr__(self) -> str:
         polarity = "+" if self.positive else "-"
         return f"{polarity}{self.relative_to_axis}"
+
+    def __attrs_post_init__(self) -> None:
+        check_arg(isinstance(self.relative_to_axis, (GeonAxis, AxisFunction)))
 
 
 GRAVITATIONAL_UP = Direction(positive=True, relative_to_axis=GRAVITATIONAL_AXIS_FUNCTION)
@@ -157,9 +174,10 @@ class Region(Generic[ReferenceObjectT]):
         """
         object_accumulator.append(self.reference_object)
         if self.direction:
-            self.direction.relative_to_axis.accumulate_referenced_objects(
-                object_accumulator
-            )
+            if isinstance(self.direction.relative_to_axis, AxisFunction):
+                self.direction.relative_to_axis.accumulate_referenced_objects(
+                    object_accumulator
+                )
 
     def __attrs_post_init__(self) -> None:
         check_arg(
@@ -194,7 +212,7 @@ class SpatialPath(Generic[ReferenceObjectT]):
         validator=optional(instance_of(PathOperator))
     )
     reference_object: Union[ReferenceObjectT, Region[ReferenceObjectT]] = attrib()
-    reference_axis: Optional[AxisFunction[ReferenceObjectT]] = attrib(
+    reference_axis: Optional[Union[GeonAxis, AxisFunction[ReferenceObjectT]]] = attrib(
         validator=optional(instance_of(AxisFunction)), default=None, kw_only=True
     )
     orientation_changed: bool = attrib(
@@ -215,18 +233,28 @@ class SpatialPath(Generic[ReferenceObjectT]):
                 "A path must have at least one of a reference objects, "
                 "a reference axis, or an orientation change"
             )
+        if self.reference_axis:
+            check_arg(isinstance(self.reference_axis, (GeonAxis, AxisFunction)))
 
     def copy_remapping_objects(
         self, object_mapping: Mapping[ReferenceObjectT, NewObjectT]
     ) -> "SpatialPath[NewObjectT]":
+        new_reference_axis: Optional[Union[GeonAxis, AxisFunction[NewObjectT]]]
+        if isinstance(self.reference_axis, AxisFunction):
+            new_reference_axis = self.reference_axis.copy_remapping_objects(
+                object_mapping
+            )
+        elif self.reference_axis:
+            new_reference_axis = self.reference_axis
+        else:
+            new_reference_axis = None
+
         return SpatialPath(
             self.operator,
             self.reference_object.copy_remapping_objects(object_mapping)
             if isinstance(self.reference_object, Region)
             else object_mapping[self.reference_object],
-            reference_axis=self.reference_axis.copy_remapping_objects(object_mapping)
-            if self.reference_axis
-            else None,
+            reference_axis=new_reference_axis,
             orientation_changed=self.orientation_changed,
         )
 
@@ -240,5 +268,5 @@ class SpatialPath(Generic[ReferenceObjectT]):
             self.reference_object.accumulate_referenced_objects(object_accumulator)
         else:
             object_accumulator.append(self.reference_object)
-        if self.reference_axis:
+        if self.reference_axis and not isinstance(self.reference_axis, GeonAxis):
             self.reference_axis.accumulate_referenced_objects(object_accumulator)
