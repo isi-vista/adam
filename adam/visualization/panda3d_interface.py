@@ -377,9 +377,10 @@ class SituationVisualizer(ShowBase):
         new_node = self._load_model("gaze_arrow.egg")
         new_node.name = name
         new_node.setPos(
-            position.data[0], position.data[1], position.data[2] + (scale.data[2][2] * 2)
+            position.data[0],
+            position.data[1],
+            position.data[2] + (scale.data[2][2] + 0.5),
         )
-        new_node.setScale(scale.data[0][0], scale.data[1][1], scale.data[2][2])
         new_node.reparentTo(self.render)
         self.gaze_arrows.append(new_node)
 
