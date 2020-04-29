@@ -389,6 +389,7 @@ class SituationVisualizer(ShowBase):
             node.remove_node()
         self.geo_nodes = {}
         self.clear_debug_nodes()
+        self.clear_gaze_arrows()
 
     def clear_debug_nodes(self) -> None:
         for node in self.debug_bounding_boxes:
