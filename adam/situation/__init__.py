@@ -129,6 +129,13 @@ class SituationObject(HasAxes):
                 )
         for concrete_axis in self.schema_axis_to_object_axis.values():
             check_arg(concrete_axis in self.axes.all_axes)
+        # Every object should either have axes mapped to the axes of a schema object,
+        # or should have WORLD_AXES, which is what we use by default for things
+        # like substances which have no particular shape.
+        check_arg(
+            self.schema_axis_to_object_axis or self.axes == WORLD_AXES,
+            "Axes must be aligned to a scheme or else be WORLD_AXES",
+        )
 
     @debug_handle.default
     def _default_debug_handle(self) -> str:
