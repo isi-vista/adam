@@ -28,8 +28,8 @@ import numpy as np
 import logging
 
 # currently useful for positioning multiple objects:
-from adam.curriculum.phase1_curriculum import (
-    _make_each_object_by_itself_curriculum as make_curriculum,
+from adam.curriculum.verbs_with_dynamic_prepositions_curriculum import (
+    _make_take_with_prepositions as make_curriculum,
 )
 from adam.curriculum.phase1_curriculum import Phase1InstanceGroup
 
@@ -146,6 +146,11 @@ def main(
         debug_bounding_boxes = True
     else:
         debug_bounding_boxes = False
+
+    if params.string("gaze_arrows", default="off") == "on":
+        gaze_arrows = True
+    else:
+        gaze_arrows = False
 
     # go through curriculum scenes and output geometry types
     if visualizer is None:
@@ -317,6 +322,7 @@ def main(
             previous_positions=previous_model_positions,
         ):
             viz.clear_debug_nodes()
+            viz.clear_gaze_arrows()
             if not automatically_save_renderings:
                 viz.run_for_seconds(0.25)
 
@@ -330,6 +336,15 @@ def main(
                         repositioned_map.name_to_scale[name],
                     )
 
+            if gaze_arrows:
+                for handle, props in scene_elements.property_map.items():
+                    for prop in props:
+                        if isinstance(prop, OntologyNode) and prop.handle == "gazed-at":
+                            viz.add_gaze_arrow(
+                                handle,
+                                repositioned_map.name_to_position[handle],
+                                repositioned_map.name_to_scale[handle],
+                            )
             # the visualizer seems to need about a second to render an update
             if not automatically_save_renderings:
                 viz.run_for_seconds(1)
@@ -448,7 +463,7 @@ class SceneElements:
     instance_group_name: str = attr.ib()
     # Objects -> their properties
     property_map: DefaultDict[
-        ObjectPerception, List[Optional[Union[RgbColorPerception, OntologyNode]]]
+        str, List[Optional[Union[RgbColorPerception, OntologyNode]]]
     ] = attr.ib()
     # objects -> in_region relations
     in_region_map: DefaultDict[
@@ -487,8 +502,7 @@ class SceneCreator:
             ) in instance_group.instances():  # each instance is a scene
                 # scene_objects = []
                 property_map: DefaultDict[
-                    ObjectPerception,
-                    List[Optional[Union[RgbColorPerception, OntologyNode]]],
+                    str, List[Optional[Union[RgbColorPerception, OntologyNode]]]
                 ] = defaultdict(list)
 
                 # TODO: change HighLevelSemanticsSituation to keep track of objects with a full (disambiguating) handle
@@ -524,10 +538,12 @@ class SceneCreator:
                     for prop in frame.property_assertions:
                         if isinstance(prop, HasColor):
                             # append RgbColorPerception
-                            property_map[prop.perceived_object].append(prop.color)
+                            property_map[prop.perceived_object.debug_handle].append(
+                                prop.color
+                            )
                         elif isinstance(prop, HasBinaryProperty):
                             # append OntologyNode
-                            property_map[prop.perceived_object].append(
+                            property_map[prop.perceived_object.debug_handle].append(
                                 prop.binary_property
                             )
 
@@ -548,8 +564,8 @@ class SceneCreator:
                     # in the event that an object has no properties, we add it anyway
                     # in case it has a geon that can be rendered
                     for perceived_obj in frame.perceived_objects:
-                        if perceived_obj not in property_map:
-                            property_map[perceived_obj].append(None)
+                        if perceived_obj.debug_handle not in property_map:
+                            property_map[perceived_obj.debug_handle].append(None)
 
                     # if there is going to be an interpolated frame (not in the official frame list)
                     # we need to up the total by one
