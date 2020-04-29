@@ -5,23 +5,23 @@ from typing import (
     Iterable,
     List,
     Mapping,
+    TYPE_CHECKING,
     Tuple,
     TypeVar,
     Union,
-    TYPE_CHECKING,
 )
 
-from attr import attrib, attrs, evolve
-from attr.validators import instance_of
-from immutablecollections import ImmutableSet, immutableset
 from more_itertools import flatten
-from vistautils.preconditions import check_arg
 
 from adam.ontology import IN_REGION, OntologyNode
 from adam.remappable import CanRemapObjects
+from attr import attrib, attrs, evolve
+from attr.validators import instance_of
+from immutablecollections import ImmutableSet, immutableset
+from vistautils.preconditions import check_arg
 
 if TYPE_CHECKING:
-    from adam.ontology.phase1_spatial_relations import Region
+    from adam.ontology.phase1_spatial_relations import Direction, Distance, Region
 
 _ObjectT = TypeVar("_ObjectT")
 _NewObjectT = TypeVar("_NewObjectT")
@@ -337,6 +337,49 @@ def make_opposite_dsl_region_relation(
         )
 
     return dsl_relation_function
+
+
+def located(
+    arg1s: Union[_ObjectT, Iterable[_ObjectT]],
+    arg2s: Union[_ObjectT, Iterable[_ObjectT]],
+    *,
+    distance: Distance,
+    # We need to do `Direction[Any]` because we can't infer the generic type
+    # when a GeonAxis is used as the relative_to_axis.
+    # Using Any here let's use isolate the type:ignores to this function.
+    direction: Direction[Any],
+) -> Tuple[Relation[_ObjectT]]:
+    """
+    All *arg1s* are located with at the given `Distance` and `Direction`
+    with respect to *args2*.
+
+    It is usually better to use more specialized relations derived using
+    `make_opposite_dsl_region_relation`, etc.,
+    but then can be useful when you need, for example, to refer to particular concrete axes.
+    """
+    arg1s = _ensure_iterable(arg1s)
+    arg2s = _ensure_iterable(arg2s)
+
+    return flatten(
+        [
+            tuple(
+                Relation(
+                    IN_REGION, arg1, Region(arg2, distance=distance, direction=direction)
+                )
+                for arg1 in arg1s
+                for arg2 in arg2s
+            ),
+            tuple(
+                Relation(
+                    IN_REGION,
+                    arg2,
+                    Region(arg1, distance=distance, direction=direction.opposite()),
+                )
+                for arg1 in arg1s
+                for arg2 in arg2s
+            ),
+        ]
+    )
 
 
 def negate(relations: Iterable[Relation[_ObjectT]]) -> Iterable[Relation[_ObjectT]]:

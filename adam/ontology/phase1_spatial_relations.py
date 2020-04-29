@@ -117,6 +117,11 @@ class Direction(Generic[ReferenceObjectT]):
         else:
             return self.relative_to_axis.to_concrete_axis(axes_info)
 
+    def opposite(self) -> "Direction[ReferenceObjectT]":
+        return Direction(
+            relative_to_axis=self.relative_to_axis, positive=not self.positive
+        )
+
     def __repr__(self) -> str:
         polarity = "+" if self.positive else "-"
         return f"{polarity}{self.relative_to_axis}"
