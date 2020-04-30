@@ -21,7 +21,8 @@ from adam.curriculum.phase1_curriculum import (
     build_gaila_phase1_relation_curriculum,
     build_gaila_phase1_verb_curriculum,
     _make_put_on_speaker_addressee_body_part_curriculum,
-    build_gaila_generics_curriculum)
+    build_gaila_generics_curriculum,
+)
 from adam.curriculum.pursuit_curriculum import make_simple_pursuit_curriculum
 from adam.experiment import Experiment, execute_experiment
 from adam.experiment.observer import LearningProgressHtmlLogger, CandidateAccuracyObserver

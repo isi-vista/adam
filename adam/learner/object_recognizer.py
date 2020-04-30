@@ -62,21 +62,23 @@ class PerceptionGraphFromObjectRecognizer:
         Tuple[str, ...], MatchedObjectNode
     ] = attrib(converter=_to_immutabledict)
 
-    def __attrs_post_init__(self) -> None:
-        matched_object_nodes = set(
-            node
-            for node in self.perception_graph.copy_as_digraph()
-            if isinstance(node, MatchedObjectNode)
-        )
-        described_matched_object_nodes = set(
-            self.description_to_matched_object_node.values()
-        )
-        if matched_object_nodes != described_matched_object_nodes:
-            raise RuntimeError(
-                f"A matched object node should be present in the graph"
-                f"if and only if it is described. Got matches objects "
-                f"{matched_object_nodes} but those described were {described_matched_object_nodes}"
-            )
+    # Commented out to allow multiple matches with same names for plurals:
+    # Check note: https://github.com/isi-vista/adam/issues/761
+    # def __attrs_post_init__(self) -> None:
+    #     matched_object_nodes = set(
+    #         node
+    #         for node in self.perception_graph.copy_as_digraph()
+    #         if isinstance(node, MatchedObjectNode)
+    #     )
+    #     described_matched_object_nodeHs = set(
+    #         self.description_to_matched_object_node.values()
+    #     )
+    #     if matched_object_nodes != described_matched_object_nodes:
+    #         raise RuntimeError(
+    #             f"A matched object node should be present in the graph"
+    #             f"if and only if it is described. Got matches objects "
+    #             f"{matched_object_nodes} but those described were {described_matched_object_nodes}"
+    #         )
 
 
 # these are shared aspects of the world which, although they might be referenced by

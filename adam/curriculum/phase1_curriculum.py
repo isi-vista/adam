@@ -245,7 +245,7 @@ def _make_plural_objects_curriculum() -> Phase1InstanceGroup:
     ) -> Iterable[HighLevelSemanticsSituation]:
         for object_type in PHASE_1_CURRICULUM_OBJECTS:
             # Exclude slow objects for now
-            if object_type.handle in ['bird', 'dog', 'truck']:
+            if object_type.handle in ["bird", "dog", "truck"]:
                 continue
             is_liquid = ontology.has_all_properties(object_type, [LIQUID])
             # don't want multiples of named people
@@ -1656,10 +1656,7 @@ def build_gaila_phase1_object_curriculum() -> Sequence[Phase1InstanceGroup]:
 
 
 def build_gaila_generics_curriculum() -> Sequence[Phase1InstanceGroup]:
-    return [
-        _make_each_object_by_itself_curriculum(),
-        _make_plural_objects_curriculum()
-    ]
+    return [_make_each_object_by_itself_curriculum(), _make_plural_objects_curriculum()]
 
 
 def build_gaila_phase1_attribute_curriculum() -> Sequence[Phase1InstanceGroup]:
