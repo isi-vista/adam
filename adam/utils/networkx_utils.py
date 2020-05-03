@@ -1,14 +1,14 @@
-from typing import Any, Callable, Iterable
+from typing import Any, Callable, Iterable, Optional
 
 from attr import attrs, attrib
 from immutablecollections import immutableset, ImmutableSet
 from immutablecollections.converter_utils import _to_immutableset
-from networkx import DiGraph, nx
+from networkx import MultiDiGraph, nx
 
 
 def digraph_with_nodes_sorted_by(
-    graph: DiGraph, sort_key: Callable[[Any], Any]
-) -> DiGraph:
+    graph: MultiDiGraph, sort_key: Callable[[Any], Any]
+) -> MultiDiGraph:
     """
     Get a `DiGraph` identical to `graph` except that the iteration order of its nodes
     is according to *sort_key*.
@@ -18,7 +18,7 @@ def digraph_with_nodes_sorted_by(
     and should return a value to sort by,
     just like a regular Python sort key function.
     """
-    new_graph = DiGraph()
+    new_graph = MultiDiGraph()
 
     # add edges from the old graph to the new graph,
     # in the order specified by sort_key
@@ -32,7 +32,7 @@ def digraph_with_nodes_sorted_by(
     return new_graph
 
 
-def subgraph(graph: DiGraph, nodes: Iterable[Any]) -> DiGraph:
+def subgraph(graph: MultiDiGraph, nodes: Iterable[Any]) -> MultiDiGraph:
     """
     Get a Subgraph view of a a Digraph with node iteration order in a deterministic fashion
 
@@ -66,8 +66,37 @@ class ShowNodes:
         return node in self.nodes
 
 
-def copy_digraph(digraph: DiGraph) -> DiGraph:
+def copy_digraph(digraph: MultiDiGraph) -> MultiDiGraph:
     """
     We need this for use as an attrs converter.
     """
     return digraph.copy()
+
+
+@attrs(frozen=True, slots=True)
+class EdgeWrapper:
+    """
+    Used as a helper class to wrap the return of a complete edge marker for
+    a multidigraph edge
+    """
+
+    source: Any = attrib()
+    target: Any = attrib()
+    key: Any = attrib()
+    data: Any = attrib()
+
+
+def get_edges(
+    graph: MultiDiGraph,
+    nodes: Optional[Iterable[Any]] = None,
+    label: Optional[Any] = True,
+) -> ImmutableSet[EdgeWrapper]:
+    """
+    Helper method to return an iterable of edges in a multidigraph
+
+    See `EdgeWrapper`
+    """
+    return immutableset(
+        EdgeWrapper(source=s, target=t, key=k, data=d)
+        for (s, t, k, d) in graph.edges(nodes, keys=True, data=label)
+    )

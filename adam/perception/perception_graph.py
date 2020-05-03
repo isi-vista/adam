@@ -40,7 +40,14 @@ from uuid import uuid4
 
 import graphviz
 from more_itertools import first, ilen
-from networkx import DiGraph, connected_components, is_isomorphic, set_node_attributes
+from attr.validators import deep_iterable, instance_of, optional
+from more_itertools import first, ilen, pairwise
+from networkx import (
+    MultiDiGraph,
+    connected_components,
+    is_isomorphic,
+    set_node_attributes,
+)
 from typing_extensions import Protocol
 
 from adam.axes import AxesInfo, HasAxes
@@ -81,7 +88,13 @@ from adam.semantics import ObjectSemanticNode
 from adam.situation import SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.utilities import sign
-from adam.utils.networkx_utils import copy_digraph, digraph_with_nodes_sorted_by, subgraph
+from adam.utils.networkx_utils import (
+    copy_digraph,
+    digraph_with_nodes_sorted_by,
+    subgraph,
+    get_edges,
+    EdgeWrapper,
+)
 from attr import attrib, attrs
 from attr.validators import deep_iterable, instance_of, optional
 from immutablecollections import (
@@ -113,7 +126,7 @@ class Incrementer:
         self._value += amount
 
 
-DebugCallableType = Callable[[DiGraph, Dict[Any, Any]], None]
+DebugCallableType = Callable[[MultiDiGraph, Dict[Any, Any]], None]
 
 PerceptionGraphNode = Union[
     ObjectPerception,
@@ -294,10 +307,10 @@ while an object traverses a path.
 
 
 class PerceptionGraphProtocol(Protocol):
-    _graph: DiGraph
+    _graph: MultiDiGraph
     dynamic: bool
 
-    def copy_as_digraph(self) -> DiGraph:
+    def copy_as_digraph(self) -> MultiDiGraph:
         return self._graph.copy()
 
     def render_to_file(
@@ -337,7 +350,9 @@ class PerceptionGraph(PerceptionGraphProtocol):
 
     These can be matched against by `PerceptionGraphPattern`\ s.
     """
-    _graph: DiGraph = attrib(validator=instance_of(DiGraph), converter=copy_digraph)
+    _graph: MultiDiGraph = attrib(
+        validator=instance_of(MultiDiGraph), converter=copy_digraph
+    )
     dynamic: bool = attrib(validator=instance_of(bool), default=False)
 
     @staticmethod
@@ -400,6 +415,22 @@ class PerceptionGraph(PerceptionGraphProtocol):
         wrapped_graph = self.add_temporal_scopes_to_edges(
             self._graph.copy(), temporal_scopes
         )
+
+        edges_to_remove = immutableset(
+            EdgeWrapper(
+                e.source,
+                e.target,
+                e.key,
+                TemporallyScopedEdgeLabel.for_dynamic_perception(
+                    e.data, when=temporal_scopes
+                ),
+            )
+            for e in get_edges(wrapped_graph, label="label")
+        )
+
+        for edge in edges_to_remove:
+            wrapped_graph.remove_edge(edge.source, edge.target, key=edge.key)
+            wrapped_graph.add_edge(edge.source, edge.target, label=edge.data)
 
         return PerceptionGraph(dynamic=True, graph=wrapped_graph)
 
@@ -612,7 +643,9 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
     knowledge of an object for object recognition.
     """
 
-    _graph: DiGraph = attrib(validator=instance_of(DiGraph), converter=copy_digraph)
+    _graph: MultiDiGraph = attrib(
+        validator=instance_of(MultiDiGraph), converter=copy_digraph
+    )
     dynamic: bool = attrib(validator=instance_of(bool), default=False)
 
     def _node_match(
@@ -720,7 +753,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
         """
         Creates a pattern for recognizing an object based on its *perception_graph*.
         """
-        pattern_graph = DiGraph()
+        pattern_graph = MultiDiGraph()
         perception_node_to_pattern_node: Dict[PerceptionGraphNode, NodePredicate] = {}
         PerceptionGraphPattern._translate_graph(
             perception_graph=perception_graph.copy_as_digraph(),
@@ -832,12 +865,23 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
         if isinstance(required_temporal_scopes, TemporalScope):
             required_temporal_scopes = [required_temporal_scopes]
 
-        for (source, target) in wrapped_graph.edges():
-            unwrapped_predicate = wrapped_graph.edges[source, target]["predicate"]
+        edges_to_remove: Set[
+            Tuple[AnyNodePredicate, AnyNodePredicate, int, HoldsAtTemporalScopePredicate]
+        ] = set()
+
+        for (source, target, key, unwrapped_predicate) in wrapped_graph.edges(
+            data="predicate", keys=True
+        ):
             temporally_scoped_predicate = HoldsAtTemporalScopePredicate(
                 unwrapped_predicate, required_temporal_scopes
             )
-            wrapped_graph.edges[source, target]["predicate"] = temporally_scoped_predicate
+            edges_to_remove.add((source, target, key, temporally_scoped_predicate))
+
+        for (source, target, k, new_predicate) in immutableset(
+            edges_to_remove, disable_order_check=True
+        ):
+            wrapped_graph.remove_edge(source, target, key=k)
+            wrapped_graph.add_edge(source, target, predicate=new_predicate)
 
         return PerceptionGraphPattern(dynamic=True, graph=wrapped_graph)
 
@@ -848,8 +892,8 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
 
     @staticmethod
     def _translate_graph(
-        perception_graph: DiGraph,
-        pattern_graph: DiGraph,
+        perception_graph: MultiDiGraph,
+        pattern_graph: MultiDiGraph,
         *,
         perception_node_to_pattern_node: Dict[Any, "NodePredicate"],
     ) -> None:
@@ -923,14 +967,13 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
         # Once all nodes are translated, we add all edges from the source graph by iterating over each node and
         # extracting its edges.
         for original_node in perception_graph.nodes:
-            edges_from_node = perception_graph.edges(original_node, data=True)
+            edges_from_node = perception_graph.edges(original_node, data="label")
             for (_, original_dest_node, original_edge_data) in edges_from_node:
                 pattern_from_node = perception_node_to_pattern_node[original_node]
                 pattern_to_node = perception_node_to_pattern_node[original_dest_node]
-                pattern_graph.add_edge(pattern_from_node, pattern_to_node)
-                mapped_edge = map_edge(original_edge_data["label"])
-                pattern_graph.edges[pattern_from_node, pattern_to_node].update(
-                    mapped_edge
+                mapped_edge = map_edge(original_edge_data)
+                pattern_graph.add_edge(
+                    pattern_from_node, pattern_to_node, predicate=mapped_edge["predicate"]
                 )
 
     def render_to_file(  # pragma: no cover
@@ -1068,7 +1111,7 @@ class DumpPartialMatchCallback:
         self.dump_every_x_calls = dump_every_x_calls
 
     def __call__(
-        self, graph: DiGraph, graph_node_to_pattern_node: Dict[Any, Any]
+        self, graph: MultiDiGraph, graph_node_to_pattern_node: Dict[Any, Any]
     ) -> None:
         self.calls_to_match_counter += 1
         current_time = process_time()
@@ -1168,7 +1211,7 @@ class PatternMatching:
         # and pattern-pattern matches.
         # It can be made a PerceptionGraph or PerceptionGraphPattern pending
         # https://github.com/isi-vista/adam/issues/489
-        largest_match_graph_subgraph: DiGraph = attrib()
+        largest_match_graph_subgraph: MultiDiGraph = attrib()
 
         def __attrs_post_init__(self) -> None:
             if (
@@ -1197,7 +1240,7 @@ class PatternMatching:
                 )
 
         @largest_match_pattern_subgraph.default  # noqa: F821
-        def _matched_pattern_subgraph_default(self) -> DiGraph:
+        def _matched_pattern_subgraph_default(self) -> MultiDiGraph:
             return PerceptionGraphPattern(
                 subgraph(
                     self.pattern._graph,  # pylint:disable=protected-access
@@ -1206,7 +1249,7 @@ class PatternMatching:
             )
 
         @largest_match_graph_subgraph.default  # noqa: F821
-        def _matched_graph_subgraph_default(self) -> DiGraph:
+        def _matched_graph_subgraph_default(self) -> MultiDiGraph:
             return subgraph(
                 self.graph._graph,  # pylint:disable=protected-access
                 immutableset(self.pattern_node_to_graph_node_for_largest_match.values()),
@@ -2363,7 +2406,7 @@ _EdgeMapper = Callable[[Any], MutableMapping[str, Any]]
 
 
 def _add_labelled_edge(
-    graph: DiGraph,
+    graph: MultiDiGraph,
     source: Any,
     target: Any,
     unmapped_label: Any,
@@ -2371,17 +2414,17 @@ def _add_labelled_edge(
     map_edge: _EdgeMapper,
     temporal_scopes: AbstractSet[TemporalScope] = immutableset(),
 ):
-    graph.add_edge(source, target)
+
     mapped_edge = map_edge(unmapped_label)
     if temporal_scopes:
         mapped_edge["label"] = TemporallyScopedEdgeLabel.for_dynamic_perception(
             mapped_edge["label"], when=temporal_scopes
         )
-    graph.edges[source, target].update(mapped_edge)
+    graph.add_edge(source, target, label=mapped_edge["label"])
 
 
 def _translate_axes(
-    graph: DiGraph,
+    graph: MultiDiGraph,
     owner: HasAxes,
     mapped_owner: Any,
     map_axis: _AxisMapper,
@@ -2415,7 +2458,7 @@ def _translate_axes(
 
 
 def _translate_geon(
-    graph: DiGraph,
+    graph: MultiDiGraph,
     owner: MaybeHasGeon,
     *,
     mapped_owner: Any,
@@ -2449,7 +2492,7 @@ def _translate_geon(
 
 
 def _translate_region(
-    graph: DiGraph,
+    graph: MultiDiGraph,
     region: Region[Any],
     *,
     map_node: Callable[[Any], Any],
@@ -2697,7 +2740,7 @@ class _FrameTranslation:
         Gets the `DiGraph` corresponding to a
         `DevelopmentalPrimitivePerceptionFrame`.
         """
-        graph = DiGraph()
+        graph = MultiDiGraph()
 
         # see force_unique_counter in map_node above
         property_index = 0
@@ -2830,10 +2873,16 @@ class _FrameTranslation:
         # It starts with everything which is in the first frame's PerceptionGraph.
         _dynamic_digraph = before_frame_graph
 
+        # The change to MuliDiGraphs means we can just freely combine both the before
+        # and after graphs into one. The below is left commented from the original
+        # digraph implementation for comparison
+
+        _dynamic_digraph.update(after_frame_graph)
+
         # We have to be more careful adding things from the second frame's PerceptionGraph.
         # We can freely add all the nodes because they don't contain temporal information
         # and adding the same node twice is harmless.
-        _dynamic_digraph.add_nodes_from(after_frame_graph.nodes)
+        # _dynamic_digraph.add_nodes_from(after_frame_graph.nodes)
 
         # But now we need to walk edge-by-edge through the second graph,
         # adding edges which don't collide with our current edges,
@@ -2842,50 +2891,50 @@ class _FrameTranslation:
         # nodes representing objects will be reference-identical
         # between the two frame --> graph translations,
         # so we can use that to merge them below.
-        for (source, target, after_label) in after_frame_graph.edges.data("label"):
-            if _dynamic_digraph.has_edge(source, target):
-                # This edge also appears in the first frame,
-                # so we need to merge the edge metadata between the frames.
+        # for (source, target, after_label) in after_frame_graph.edges.data("label"):
+        #    if _dynamic_digraph.has_edge(source, target):
+        # This edge also appears in the first frame,
+        # so we need to merge the edge metadata between the frames.
 
-                # We know the edges in these graphs are wrapped with temporal scopes
-                # because we applied the temporal scopes above.
-                after_label = cast(TemporallyScopedEdgeLabel, after_label)
-                before_label: TemporallyScopedEdgeLabel = _dynamic_digraph.edges[
-                    source, target
-                ]["label"]
+        # We know the edges in these graphs are wrapped with temporal scopes
+        # because we applied the temporal scopes above.
+        #        after_label = cast(TemporallyScopedEdgeLabel, after_label)
+        #        before_label: TemporallyScopedEdgeLabel = _dynamic_digraph.edges[
+        #            source, target
+        #        ]["label"]
 
-                # We don't know how to merge edges which differ in anything
-                # except temporal specifiers
-                if before_label.attribute == after_label.attribute:
-                    _dynamic_digraph.edges[source, target][
-                        "label"
-                    ] = TemporallyScopedEdgeLabel(
-                        before_label.attribute,
-                        temporal_specifiers=chain(
-                            before_label.temporal_specifiers,
-                            after_label.temporal_specifiers,
-                        ),
-                    )
-                else:
-                    _dynamic_digraph.edges[source, target][
-                        "label"
-                    ] = TemporallyScopedEdgeLabel(
-                        after_label.attribute,
-                        temporal_specifiers=chain(after_label.temporal_specifiers),
-                    )
-                    logging.warning(
-                        f"We currently don't know how to handle a change in label "
-                        f"on an edge between the before frame and the after frame."
-                        f"Source={source}; Target={target}; "
-                        f"before label={before_label.attribute}; "
-                        f"after label={after_label.attribute}."
-                        f"As a hack, we delete the 'before' and preserve the 'after'."
-                        f"See https://github.com/isi-vista/adam/issues/666"
-                    )
-            else:
-                # This edge does not also appear in the first frame,
-                # so no merging is needed.
-                _dynamic_digraph.add_edge(source, target, label=after_label)
+        # We don't know how to merge edges which differ in anything
+        # except temporal specifiers
+        #        if before_label.attribute == after_label.attribute:
+        #            _dynamic_digraph.edges[source, target][
+        #                "label"
+        #            ] = TemporallyScopedEdgeLabel(
+        #                before_label.attribute,
+        #                temporal_specifiers=chain(
+        #                    before_label.temporal_specifiers,
+        #                    after_label.temporal_specifiers,
+        #                ),
+        #            )
+        #        else:
+        #            _dynamic_digraph.edges[source, target][
+        #                "label"
+        #            ] = TemporallyScopedEdgeLabel(
+        #                after_label.attribute,
+        #                temporal_specifiers=chain(after_label.temporal_specifiers),
+        #            )
+        #            logging.warning(
+        #                f"We currently don't know how to handle a change in label "
+        #                f"on an edge between the before frame and the after frame."
+        #                f"Source={source}; Target={target}; "
+        #                f"before label={before_label.attribute}; "
+        #                f"after label={after_label.attribute}."
+        #                f"As a hack, we delete the 'before' and preserve the 'after'."
+        #                f"See https://github.com/isi-vista/adam/issues/666"
+        #            )
+        #    else:
+        # This edge does not also appear in the first frame,
+        # so no merging is needed.
+        #        _dynamic_digraph.add_edge(source, target, label=after_label)
 
         # Translate path information
         if perceptual_representation.during:
@@ -2949,7 +2998,7 @@ class _FrameTranslation:
 
     def _add_path_node(
         self,
-        perception_digraph: DiGraph,
+        perception_digraph: MultiDiGraph,
         moving_object: ObjectPerception,
         path: SpatialPath[ObjectPerception],
         *,
@@ -3034,7 +3083,7 @@ class _FrameTranslation:
 
     def _map_relation(
         self,
-        graph: DiGraph,
+        graph: MultiDiGraph,
         relation: Relation[ObjectPerception],
         *,
         temporal_scopes: Iterable[TemporalScope] = tuple(),
