@@ -128,8 +128,8 @@ def main(
 
     specific_scene = params.optional_positive_integer("scene")
 
-    automatically_save_renderings = params.optional_boolean_with_default(
-        "automatically_save_renderings", default_value=False
+    automatically_save_renderings = params.boolean(
+        "automatically_save_renderings", default=False
     )
 
     if "experiment_group_dir" in params:
