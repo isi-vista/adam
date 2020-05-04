@@ -118,3 +118,6 @@ renders
 # VS Code
 .vscode
 adam/adam.code-workspace
+
+
+pip-wheel-metadata/
