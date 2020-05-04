@@ -28,12 +28,11 @@ from immutablecollections.converter_utils import (
 )
 from more_itertools import take
 
-from adam.language.language_generator import SituationT
 from adam.math_3d import Point
 from adam.ontology import OntologyNode
 from adam.ontology.ontology import Ontology
 from adam.random_utils import RandomChooser, SequenceChooser
-from adam.situation import LocatedObjectSituation, SituationObject
+from adam.situation import LocatedObjectSituation, SituationObject, SituationT
 
 
 class SituationTemplate(ABC):

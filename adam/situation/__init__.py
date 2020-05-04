@@ -277,3 +277,6 @@ class Action(Generic[_ActionTypeT, _ObjectT]):
                 f"auxiliary_variable_bindings={self.auxiliary_variable_bindings}"
             )
         return f"{self.action_type}({', '.join(parts)})"
+
+
+SituationT = TypeVar("SituationT", bound=Situation)

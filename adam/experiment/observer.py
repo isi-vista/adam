@@ -10,7 +10,7 @@ from attr.validators import instance_of
 
 from adam.curriculum_to_html import CurriculumToHtmlDumper
 from adam.language import LinguisticDescription, LinguisticDescriptionT
-from adam.language.language_generator import SituationT
+from adam.situation import SituationT
 from adam.perception import PerceptionT, PerceptualRepresentation
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.visualization.make_scenes import situation_to_filename

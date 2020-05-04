@@ -9,7 +9,8 @@ from attr.validators import instance_of
 from immutablecollections.converter_utils import _to_tuple
 
 from adam.language import LinguisticDescriptionT
-from adam.language.language_generator import LanguageGenerator, SituationT
+from adam.language.language_generator import LanguageGenerator
+from adam.situation import SituationT
 from adam.perception import (
     PerceptionT,
     PerceptualRepresentation,
