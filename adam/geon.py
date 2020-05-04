@@ -1,4 +1,4 @@
-from typing import Optional, Mapping
+from typing import Dict, Optional, Mapping
 
 from typing_extensions import Protocol
 
@@ -48,10 +48,32 @@ class Geon(HasAxes):
     generating_axis: GeonAxis = attrib(validator=instance_of(GeonAxis), kw_only=True)
 
     def copy(
-        self, *, axis_mapping: Optional[Mapping[GeonAxis, GeonAxis]] = None
+        self,
+        *,
+        axis_mapping: Optional[Mapping[GeonAxis, GeonAxis]] = None,
+        output_axis_mapping: Optional[Dict[GeonAxis, GeonAxis]] = None,
     ) -> "Geon":
+        """
+        Makes an independent copy of this geon.
+
+        This will also have its own axes.
+        This geon's axes will be mapped using *axis_mapping* if specified.
+        Otherwise, each axis will be copied.
+        If *output_axis_mapping* is specified, it will be populated
+        with the mapping between original and copied axes.
+        This is somewhat of a hack,
+        but the information is needed when instantiating
+        perceivable sub-object relations from object schemata.
+        """
         if axis_mapping is None:
             axis_mapping = {axis: axis.copy() for axis in self.axes.all_axes}
+            if output_axis_mapping is not None:
+                if output_axis_mapping:
+                    raise RuntimeError(
+                        f"output_axis_mapping must always be empty but got "
+                        f"{output_axis_mapping}"
+                    )
+                output_axis_mapping.update(axis_mapping)
         return Geon(
             cross_section=self.cross_section,
             cross_section_size=self.cross_section_size,

@@ -101,7 +101,8 @@ from adam.perception.high_level_semantics_situation_to_developmental_primitive_p
     HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
 )
 from adam.random_utils import RandomChooser
-from adam.relation import flatten_relations, negate
+from adam.relation import flatten_relations
+from adam.relation_dsl import negate
 from adam.situation import Action, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.situation.templates.phase1_situation_templates import (

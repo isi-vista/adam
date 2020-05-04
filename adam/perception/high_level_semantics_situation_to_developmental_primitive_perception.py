@@ -1,8 +1,19 @@
 from enum import Enum, auto
 from itertools import chain
-from typing import Dict, Iterable, List, Mapping, MutableMapping, Optional, Union, cast
+from typing import (
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    MutableMapping,
+    Optional,
+    Tuple,
+    Union,
+    cast,
+)
 
-from attr.validators import instance_of
+from adam.axis import GeonAxis
+from attr.validators import deep_mapping, instance_of
 from more_itertools import only, quantify
 from networkx import DiGraph
 
@@ -70,6 +81,7 @@ from immutablecollections import (
     immutableset,
     immutablesetmultidict,
 )
+from immutablecollections.converter_utils import _to_immutabledict
 from vistautils.preconditions import check_arg
 
 
@@ -403,7 +415,7 @@ class _PerceptionGeneration:
                 # which we will recursively instantiate.
                 perceived_object = self._instantiate_object_schema(
                     only(object_schemata), situation_object=situation_object
-                )
+                ).instantiated_object
             else:
                 if self._generator.ontology.has_property(
                     situation_object.ontology_node, IS_SUBSTANCE
@@ -1048,8 +1060,8 @@ class _PerceptionGeneration:
             # regions are not a real possibility for lookup,
             # so mypy's complaints here are irrelevant
             object_mapping.update(self._objects_to_perceptions)  # type: ignore
-            object_mapping.update(  # type: ignore
-                action_object_variables_to_object_perceptions
+            object_mapping.update(
+                action_object_variables_to_object_perceptions  # type: ignore
             )
 
             return slot_filler.copy_remapping_objects(
@@ -1058,6 +1070,16 @@ class _PerceptionGeneration:
         else:
             return action_object_variables_to_object_perceptions[slot_filler]
 
+    @attrs(frozen=True, slots=True)
+    class _InstantiateObjectSchemaReturn:
+        instantiated_object: ObjectPerception = attrib(
+            validator=instance_of(ObjectPerception)
+        )
+        schema_axes_to_perceivable_axes: Mapping[GeonAxis, GeonAxis] = attrib(
+            converter=_to_immutabledict,
+            validator=deep_mapping(instance_of(GeonAxis), instance_of(GeonAxis)),
+        )
+
     def _instantiate_object_schema(
         self,
         schema: ObjectStructuralSchema,
@@ -1065,9 +1087,24 @@ class _PerceptionGeneration:
         # if the object being instantiated corresponds to an object
         # in the situation description, then this will track that object
         situation_object: Optional[SituationObject] = None,
-    ) -> ObjectPerception:
+    ) -> "_PerceptionGeneration._InstantiateObjectSchemaReturn":
+        """
+        Creates an `ObjectPerception` (and other associated structures) according to
+        *schema*.
 
-        # use the debug handle from the situation object if it is available, as it is more
+        Recall that an `ObjectStructuralSchema` is an abstract description of the shape
+        of a general category of object (e.g. a chair in general).
+
+        If we know this object corresponds to a top-level object in a `Situation`,
+        the *situation_object* should be provided so we can give it special handling.
+
+        This returns not only the created `ObjectPerception`,
+        but also a mapping from the abstract axes of this object's schema
+        to the concrete axes associated with the object itself.
+        """
+
+        # Compute a human-readable handle for this object, for debugging.
+        # Use the debug handle from the situation object if it is available, as it is more
         # specific in the case of people (e.g. mom, dad, baby) than the debug handle
         # generated from the ObjectStructuralSchema
         if situation_object:
@@ -1079,52 +1116,92 @@ class _PerceptionGeneration:
                 schema.ontology_node
             )
 
-        # find a geon for the object, if possible
+        # In the if-block below we are going to try to determine two things:
+        #  (a) whether there is a perceivable geon (=shape) associated with this object
+        #  (b) what the perceivable axes associated with this object are.
+        #  (c) what the mapping between perceivable axes and schema axes is
+        #
+        # (c) requires a little explanation.
+        # Abstract relations between objects specified by an object schema
+        # (e.g. front chair legs are in front of back chair legs relative
+        # to the front-back axis of a chair)
+        # need to be translated to perceivable relations between object perceptions
+        # (we do this towards the end of this method).
+        # However, these relations may be specified in terms of abstract axes
+        # used in the schema of this object or any of its immediate sub-objects.
+        # We need to learn a mapping from these schema axes to perceivable axes
+        # in order to translate relations later.
+        top_level_schema_axes_to_perceivable_axes: Mapping[GeonAxis, GeonAxis]
         concrete_geon: Optional[Geon]
-        if schema.geon:
-            # if there is a situation object, we need to keep its axes in sync with its geon's axes
-            if situation_object:
+
+        if situation_object:
+            # This object corresponds to a top-level object refered to by a situation
+            # (e.g. a person, a table).
+            if schema.geon:
+                # This is an object with a known shape.
+                # We copy that "abstract shape" to use as our "perceivable shape"
+                # (they are currently the same type of object,
+                # though it would be clearer if we distinguished them in the type system).
+                # Normally when we copy a geon, its axes are copied to,
+                # but in this case we want to make sure it inherit the axes
+                # of the situation object itself in case the users referes to them
+                # in the situation definition.
                 concrete_geon = schema.geon.copy(
                     axis_mapping=situation_object.schema_axis_to_object_axis
                 )
+                top_level_schema_axes_to_perceivable_axes = (
+                    situation_object.schema_axis_to_object_axis
+                )
             else:
-                concrete_geon = schema.geon.copy()
-        else:
-            concrete_geon = None
-
-        # find axes for the object
-        if situation_object:
-            # This is a top-level object which has already been assigned axes
-            # by the situation. We should not change or copy them
-            # or else references to them by the situation
-            # (e.g. which axes face which objects)
-            # will be out-of-sync.
-            # See https://github.com/isi-vista/adam/issues/420
+                # This is a top-level object, but it lacks a shape
+                # (e.g. it is a substance like "water")
+                concrete_geon = None
+                # These also shouldn't have any axis relations,
+                # so we don't track an axis mapping.
+                top_level_schema_axes_to_perceivable_axes = immutabledict()
             axes = situation_object.axes
         else:
-            if concrete_geon:
-                # when the geon was copied, its axes were already copied,
-                # which is why we don't do it again on this branch
+            # This object corresponds to a sub-object of some other situation object
+            # (e.g. a person's arm, a table surface).
+            if schema.geon:
+                top_level_schema_axes_to_perceivable_axes = {}
+                concrete_geon = schema.geon.copy(
+                    output_axis_mapping=top_level_schema_axes_to_perceivable_axes
+                )
+                # When the geon was copied, its axes were already copied,
+                # which is why we don't do it again.
                 axes = concrete_geon.axes
             else:
-                axes = schema.axes.copy()
+                raise RuntimeError(
+                    f"Objects without geons should only be substances,"
+                    f" which do not make sense as sub-objects: {schema}"
+                )
 
+        # This is the actual perception of the object which we will return.
         root_object_perception = ObjectPerception(
             debug_handle=debug_handle, geon=concrete_geon, axes=axes
         )
 
-        # for object perceptions which correspond to SituationObjects
-        # (that is, typically, for objects which are not components of other objects)
-        # we track the correspondence
-        # to assist in translating SituationRelations and SituationActions.
-
-        # recursively instantiate sub-components of this object
-        sub_object_to_object_perception: ImmutableDict[
-            SubObject, ObjectPerception
-        ] = immutabledict(
-            (sub_object, self._instantiate_object_schema(sub_object.schema))
-            for sub_object in schema.sub_objects
+        # Recursively instantiate sub-components of this object.
+        # Because sub-object relations can refer to the axes of *immediate* sub-objects,
+        # we need to track the relation between their schema and perceived axes
+        # as well for sub-object relation translation.
+        top_level_and_subobject_schema_axes_to_perceivable_axes: Dict[
+            GeonAxis, GeonAxis
+        ] = {}
+        top_level_and_subobject_schema_axes_to_perceivable_axes.update(
+            top_level_schema_axes_to_perceivable_axes
         )
+
+        sub_object_to_object_perception: Dict[SubObject, ObjectPerception] = {}
+        for sub_object in schema.sub_objects:
+            instantiation_result = self._instantiate_object_schema(sub_object.schema)
+            sub_object_to_object_perception[
+                sub_object
+            ] = instantiation_result.instantiated_object
+            top_level_and_subobject_schema_axes_to_perceivable_axes.update(
+                instantiation_result.schema_axes_to_perceivable_axes
+            )
 
         for sub_object in schema.sub_objects:
             sub_object_perception = sub_object_to_object_perception[sub_object]
@@ -1137,7 +1214,7 @@ class _PerceptionGeneration:
                 Relation(PART_OF, sub_object_perception, root_object_perception)
             )
 
-        # translate sub-object relations specified by the object's structural schema
+        # Translate sub-object relations specified by the object's structural schema.
         for sub_object_relation in schema.sub_object_relations:
             # TODO: right now we translate all situation relations directly to perceptual
             # relations without modification. This is not always the right thing.
@@ -1153,14 +1230,20 @@ class _PerceptionGeneration:
             else:
                 arg2 = sub_object_relation.second_slot
                 arg2_perception = arg2.copy_remapping_objects(
-                    sub_object_to_object_perception
+                    sub_object_to_object_perception,
+                    axis_mapping=top_level_and_subobject_schema_axes_to_perceivable_axes,
                 )
             self._relation_perceptions.append(
                 Relation(
                     sub_object_relation.relation_type, arg1_perception, arg2_perception
                 )
             )
-        return root_object_perception
+        return _PerceptionGeneration._InstantiateObjectSchemaReturn(
+            instantiated_object=root_object_perception,
+            # Axes are only "visible" for relations one layer down,
+            # which is why we return only the top-level axis mapping.
+            schema_axes_to_perceivable_axes=top_level_schema_axes_to_perceivable_axes,
+        )
 
     def _compute_during(
         self, during_from_action_description: Optional[DuringAction[ObjectPerception]]

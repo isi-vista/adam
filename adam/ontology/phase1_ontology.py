@@ -78,9 +78,8 @@ from adam.ontology.phase1_spatial_relations import (
     Direction,
 )
 from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
-from adam.relation import (
-    Relation,
-    flatten_relations,
+from adam.relation import Relation, flatten_relations
+from adam.relation_dsl import (
     located,
     make_dsl_region_relation,
     make_dsl_relation,
@@ -1429,17 +1428,29 @@ _CHAIR_SCHEMA = ObjectStructuralSchema(
             above(_CHAIR_SCHEMA_SEAT, _CHAIR_LEGS),
             contacts(_CHAIR_SCHEMA_BACK, _CHAIR_SCHEMA_SEAT),
             above(_CHAIR_SCHEMA_BACK, _CHAIR_SCHEMA_SEAT),
-            located(  # type: ignore
-                [_CHAIR_SCHEMA_FRONT_LEFT_LEG, _CHAIR_SCHEMA_FRONT_RIGHT_LEG],
-                [_CHAIR_SCHEMA_BACK_LEFT_LEG, _CHAIR_SCHEMA_BACK_RIGHT_LEG],
+            located(
+                [
+                    _CHAIR_SCHEMA_FRONT_LEFT_LEG,
+                    _CHAIR_SCHEMA_FRONT_RIGHT_LEG,
+                ],  # type: ignore
+                [
+                    _CHAIR_SCHEMA_BACK_LEFT_LEG,
+                    _CHAIR_SCHEMA_BACK_RIGHT_LEG,
+                ],  # type: ignore
                 distance=PROXIMAL,
                 direction=Direction(
                     relative_to_axis=_CHAIR_FRONT_TO_BACK_AXIS, positive=True
                 ),
             ),
             located(  # type: ignore
-                [_CHAIR_SCHEMA_FRONT_LEFT_LEG, _CHAIR_SCHEMA_BACK_LEFT_LEG],
-                [_CHAIR_SCHEMA_FRONT_RIGHT_LEG, _CHAIR_SCHEMA_BACK_RIGHT_LEG],
+                [
+                    _CHAIR_SCHEMA_FRONT_LEFT_LEG,
+                    _CHAIR_SCHEMA_BACK_LEFT_LEG,
+                ],  # type: ignore
+                [
+                    _CHAIR_SCHEMA_FRONT_RIGHT_LEG,
+                    _CHAIR_SCHEMA_BACK_RIGHT_LEG,
+                ],  # type: ignore
                 distance=PROXIMAL,
                 direction=Direction(
                     relative_to_axis=_CHAIR_LEFT_TO_RIGHT_AXIS, positive=True

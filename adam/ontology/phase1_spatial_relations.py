@@ -3,6 +3,7 @@ from typing import Generic, List, Mapping, Optional, TypeVar, Union
 from adam.axis import GeonAxis
 from attr import attrib, attrs
 from attr.validators import in_, instance_of, optional
+from immutablecollections import immutabledict
 from vistautils.preconditions import check_arg
 
 from adam.axes import AxesInfo, AxisFunction, GRAVITATIONAL_AXIS_FUNCTION
@@ -97,7 +98,10 @@ class Direction(Generic[ReferenceObjectT]):
     relative_to_axis: Union[GeonAxis, AxisFunction[ReferenceObjectT]] = attrib()
 
     def copy_remapping_objects(
-        self, object_map: Mapping[ReferenceObjectT, NewObjectT]
+        self,
+        object_map: Mapping[ReferenceObjectT, NewObjectT],
+        *,
+        axis_mapping: Mapping[GeonAxis, GeonAxis],
     ) -> "Direction[NewObjectT]":
         new_relative_to_axis: Union[GeonAxis, AxisFunction[NewObjectT]]
         if isinstance(self.relative_to_axis, AxisFunction):
@@ -105,7 +109,9 @@ class Direction(Generic[ReferenceObjectT]):
                 object_map
             )
         else:
-            new_relative_to_axis = self.relative_to_axis
+            new_relative_to_axis = axis_mapping.get(
+                self.relative_to_axis, self.relative_to_axis
+            )
 
         return Direction(positive=self.positive, relative_to_axis=new_relative_to_axis)
 
@@ -161,12 +167,17 @@ class Region(Generic[ReferenceObjectT]):
     )
 
     def copy_remapping_objects(
-        self, object_map: Mapping[ReferenceObjectT, NewObjectT]
+        self,
+        object_map: Mapping[ReferenceObjectT, NewObjectT],
+        *,
+        axis_mapping: Mapping[GeonAxis, GeonAxis] = immutabledict(),
     ) -> "Region[NewObjectT]":
         return Region(
             reference_object=object_map[self.reference_object],
             distance=self.distance,
-            direction=self.direction.copy_remapping_objects(object_map)
+            direction=self.direction.copy_remapping_objects(
+                object_map, axis_mapping=axis_mapping
+            )
             if self.direction
             else None,
         )
