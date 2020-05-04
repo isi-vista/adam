@@ -1161,10 +1161,14 @@ class _PerceptionGeneration:
                 # which is why we don't do it again.
                 axes = concrete_geon.axes
             else:
-                raise RuntimeError(
-                    f"Objects without geons should only be substances,"
-                    f" which do not make sense as sub-objects: {schema}"
-                )
+                concrete_geon = None
+                # There is no geon or situation object we need to match up with
+                # so we just copy the axes directly.
+                top_level_schema_axes_to_perceivable_axes = {
+                    schema_axis: schema_axis.copy()
+                    for schema_axis in schema.axes.all_axes
+                }
+                axes = schema.axes.remap_axes(top_level_schema_axes_to_perceivable_axes)
 
         # This is the actual perception of the object which we will return.
         root_object_perception = ObjectPerception(
