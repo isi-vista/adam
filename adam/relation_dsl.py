@@ -7,7 +7,10 @@ from more_itertools import flatten
 
 from adam.ontology import IN_REGION, OntologyNode
 from adam.ontology.phase1_spatial_relations import Direction, Distance, Region
-from adam.relation import Relation, _ObjectT, _ensure_iterable
+from adam.relation import Relation, _ensure_iterable
+
+
+_ObjectT = TypeVar("_ObjectT")
 
 
 def make_dsl_relation(
@@ -128,10 +131,8 @@ def make_opposite_dsl_relation(
 
 
 def make_dsl_region_relation(
-    region_factory: Callable[[Any], "Region[Any]"]
-) -> Callable[
-    [Union[Any, Iterable[Any]], Union[Any, Iterable[Any]]], Tuple[Relation[Any], ...]
-]:
+    region_factory: Callable[..., "Region[Any]"]
+) -> Callable[..., Tuple[Relation[Any], ...]]:
     def dsl_relation_function(
         arg1s: Union[_ObjectT, Iterable[_ObjectT]],
         arg2s: Union[_ObjectT, Iterable[_ObjectT]],
@@ -157,10 +158,8 @@ def make_dsl_region_relation(
 
 
 def make_symmetric_dsl_region_relation(
-    region_factory: Callable[[_ObjectT], "Region[_ObjectT]"]
-) -> Callable[
-    [Union[Any, Iterable[Any]], Union[Any, Iterable[Any]]], Tuple[Relation[Any], ...]
-]:
+    region_factory: Callable[..., "Region[_ObjectT]"]
+) -> Callable[..., Tuple[Relation[Any], ...]]:
     def dsl_relation_function(
         arg1s: Union[_ObjectT, Iterable[_ObjectT]],
         arg2s: Union[_ObjectT, Iterable[_ObjectT]],
@@ -198,11 +197,9 @@ def make_symmetric_dsl_region_relation(
 
 
 def make_opposite_dsl_region_relation(
-    region_factory: Callable[[Any], "Region[Any]"],
-    opposite_region_factory: Callable[[Any], "Region[Any]"],
-) -> Callable[
-    [Union[Any, Iterable[Any]], Union[Any, Iterable[Any]]], Tuple[Relation[Any], ...]
-]:
+    region_factory: Callable[..., "Region[Any]"],
+    opposite_region_factory: Callable[..., "Region[Any]"],
+) -> Callable[..., Tuple[Relation[Any], ...]]:
     def dsl_relation_function(
         arg1s: Union[_ObjectT, Iterable[_ObjectT]],
         arg2s: Union[_ObjectT, Iterable[_ObjectT]],
@@ -273,7 +270,3 @@ def located(
 
 def negate(relations: Iterable[Relation[_ObjectT]]) -> Iterable[Relation[_ObjectT]]:
     return (relation.negated_copy() for relation in relations)
-
-
-_T = TypeVar("_T")
-_OneOrMoreObjects = Union[_ObjectT, Iterable[_ObjectT]]

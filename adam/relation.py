@@ -3,7 +3,6 @@ from typing import Any, Generic, Iterable, List, Mapping, TYPE_CHECKING, TypeVar
 from more_itertools import flatten
 
 from adam.ontology import IN_REGION, OntologyNode
-from adam.relation_dsl import _T
 from adam.remappable import CanRemapObjects
 from attr import attrib, attrs, evolve
 from attr.validators import instance_of
@@ -12,6 +11,7 @@ from vistautils.preconditions import check_arg
 
 if TYPE_CHECKING:
     from adam.ontology.phase1_spatial_relations import Region
+
 
 _ObjectT = TypeVar("_ObjectT")
 _NewObjectT = TypeVar("_NewObjectT")
@@ -103,6 +103,9 @@ def flatten_relations(
     Please see adam.ontology.phase1_ontology.PERSON_SCHEMA for an example of how this is useful.
     """
     return immutableset(flatten(_ensure_iterable(x) for x in relation_collections))
+
+
+_T = TypeVar("_T")
 
 
 def _ensure_iterable(x: Union[_T, Iterable[_T]]) -> Iterable[_T]:

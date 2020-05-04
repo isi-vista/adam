@@ -130,6 +130,20 @@ PerceptionGraphNode = Union[
     PathOperator,
 ]
 
+# Some perception graph nodes are wrapped in tuples with counters
+# to avoid them be treated as equal in NetworkX graphs.
+# This type is the same as PerceptionGraphNode, except with such wrapping removed.
+UnwrappedPerceptionGraphNode = Union[
+    ObjectPerception,
+    OntologyNode,
+    Region[Any],
+    Geon,
+    GeonAxis,
+    MatchedObjectNode,
+    SpatialPath[ObjectPerception],
+    PathOperator,
+]
+
 # If this is changed, assert_valid_edge_label below needs to be updated.
 EdgeLabel = Union[OntologyNode, str, Direction[Any]]
 """
@@ -471,6 +485,7 @@ class PerceptionGraph(PerceptionGraphProtocol):
         *,
         replace_node_labels: Mapping[Any, str] = immutabledict(),
     ) -> str:
+        unwrapped_perception_node: UnwrappedPerceptionGraphNode
         if isinstance(perception_node, tuple):
             unwrapped_perception_node = perception_node[0]
         else:
@@ -1090,7 +1105,7 @@ class PatternMatching:
 
         pattern: PerceptionGraphPattern
         graph: PerceptionGraphProtocol
-        pattern_node_to_graph_node_for_largest_match: Dict[Any, Any]
+        pattern_node_to_graph_node_for_largest_match: Mapping[Any, Any]
         last_failed_pattern_node: "NodePredicate"
         largest_match_pattern_subgraph: PerceptionGraphPattern = attrib()
         # TODO: the below is just a DiGraph because these is currently overloaded
@@ -1661,6 +1676,18 @@ class AnyObjectPerception(NodePredicate):
         return isinstance(predicate_node, AnyObjectPerception)
 
 
+def unwrap_if_necessary(graph_node: PerceptionGraphNode) -> UnwrappedPerceptionGraphNode:
+    """
+    Some nodes might be wrapped in tuples together with IDs to prevent them
+    from being compared equal and collapsed in perception graphs.
+    This method removes that wrapping.
+    """
+    if isinstance(graph_node, tuple):
+        return graph_node[0]
+    else:
+        return graph_node
+
+
 @attrs(frozen=True, slots=True, eq=False)
 class AxisPredicate(NodePredicate):
     """
@@ -1674,19 +1701,20 @@ class AxisPredicate(NodePredicate):
     )
 
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
-        # axes might be wrapped in tuples with their id()
-        # in order to simulate comparison by object ID.
-        if isinstance(graph_node, tuple):
-            graph_node = graph_node[0]
+        unwrapped_graph_node = unwrap_if_necessary(graph_node)
 
-        if isinstance(graph_node, GeonAxis):
-            if self.curved is not None and self.curved != graph_node.curved:
+        if isinstance(unwrapped_graph_node, GeonAxis):
+            if self.curved is not None and self.curved != unwrapped_graph_node.curved:
                 return False
-            if self.directed is not None and self.directed != graph_node.directed:
+            if (
+                self.directed is not None
+                and self.directed != unwrapped_graph_node.directed
+            ):
                 return False
             if (
                 self.aligned_to_gravitational is not None
-                and self.aligned_to_gravitational != graph_node.aligned_to_gravitational
+                and self.aligned_to_gravitational
+                != unwrapped_graph_node.aligned_to_gravitational
             ):
                 return False
             return True
@@ -1747,13 +1775,13 @@ class GeonPredicate(NodePredicate):
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
         # geons might be wrapped in tuples with their id()
         # in order to simulate comparison by object ID.
-        if isinstance(graph_node, tuple):
-            graph_node = graph_node[0]
+        unwrapped_graph_node = unwrap_if_necessary(graph_node)
 
-        if isinstance(graph_node, Geon):
+        if isinstance(unwrapped_graph_node, Geon):
             return (
-                self.template_geon.cross_section == graph_node.cross_section
-                and self.template_geon.cross_section_size == graph_node.cross_section_size
+                self.template_geon.cross_section == unwrapped_graph_node.cross_section
+                and self.template_geon.cross_section_size
+                == unwrapped_graph_node.cross_section_size
             )
         else:
             return False
@@ -1814,9 +1842,11 @@ class RegionPredicate(NodePredicate):
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
         # regions might be wrapped in tuples with their id()
         # in order to simulate comparison by object ID.
-        if isinstance(graph_node, tuple):
-            graph_node = graph_node[0]
-        return isinstance(graph_node, Region) and self.distance == graph_node.distance
+        unwrapped_graph_node = unwrap_if_necessary(graph_node)
+        return (
+            isinstance(unwrapped_graph_node, Region)
+            and self.distance == unwrapped_graph_node.distance
+        )
 
     def dot_label(self) -> str:
         return f"dist({self.distance})"
@@ -1845,11 +1875,8 @@ class IsOntologyNodePredicate(NodePredicate):
     property_value: OntologyNode = attrib(validator=instance_of(OntologyNode))
 
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
-        # ontology nodes might be wrapped in tuples with their id()
-        # in order to simulate comparison by object ID.
-        if isinstance(graph_node, tuple):
-            graph_node = graph_node[0]
-        return graph_node == self.property_value
+        unwrapped_graph_node = unwrap_if_necessary(graph_node)
+        return unwrapped_graph_node == self.property_value
 
     def dot_label(self) -> str:
         return f"{self.property_value.handle}"
@@ -1870,16 +1897,12 @@ class IsColorNodePredicate(NodePredicate):
     color: RgbColorPerception = attrib(validator=instance_of(RgbColorPerception))
 
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
-        # color nodes might be wrapped in tuples with their id()
-        # in order to simulate comparison by object ID.
-        if isinstance(graph_node, tuple):
-            graph_node = graph_node[0]
-
-        if isinstance(graph_node, RgbColorPerception):
+        unwrapped_graph_node = unwrap_if_necessary(graph_node)
+        if isinstance(unwrapped_graph_node, RgbColorPerception):
             return (
-                (graph_node.red == self.color.red)
-                and (graph_node.blue == self.color.blue)
-                and (graph_node.green == self.color.green)
+                (unwrapped_graph_node.red == self.color.red)
+                and (unwrapped_graph_node.blue == self.color.blue)
+                and (unwrapped_graph_node.green == self.color.green)
             )
         return False
 
@@ -1977,11 +2000,8 @@ class PathOperatorPredicate(NodePredicate):
     reference_path_operator: PathOperator = attrib(validator=instance_of(PathOperator))
 
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
-        # path operator nodes might be wrapped in tuples with their id()
-        # in order to simulate comparison by object ID.
-        if isinstance(graph_node, tuple):
-            graph_node = graph_node[0]
-        return graph_node == self.reference_path_operator
+
+        return unwrap_if_necessary(graph_node) == self.reference_path_operator
 
     def dot_label(self) -> str:
         return self.reference_path_operator.name
@@ -2231,7 +2251,7 @@ def _translate_axes(
     # the relations between those axes becomes edges
     for axis_relation in owner.axes.axis_relations:
         mapped_arg1 = map_axis(axis_relation.first_slot)
-        mapped_arg2 = map_axis(axis_relation.second_slot)
+        mapped_arg2 = map_axis(cast(GeonAxis, axis_relation.second_slot))
         _add_labelled_edge(
             graph,
             mapped_arg1,

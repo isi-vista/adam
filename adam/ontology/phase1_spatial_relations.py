@@ -229,7 +229,10 @@ class SpatialPath(Generic[ReferenceObjectT]):
     )
     reference_object: Union[ReferenceObjectT, Region[ReferenceObjectT]] = attrib()
     reference_axis: Optional[Union[GeonAxis, AxisFunction[ReferenceObjectT]]] = attrib(
-        validator=optional(instance_of(AxisFunction)), default=None, kw_only=True
+        # Ignored due to https://github.com/python/mypy/issues/5374
+        validator=optional(instance_of(AxisFunction)),
+        default=None,
+        kw_only=True,  # type: ignore
     )
     orientation_changed: bool = attrib(
         validator=instance_of(bool), default=False, kw_only=True

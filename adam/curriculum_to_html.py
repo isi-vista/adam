@@ -538,9 +538,7 @@ class CurriculumToHtmlDumper:
     # Collapse pairs of size relations (biggerThan/smallerThan) into
     # a single relation
     def _get_single_size_relation(
-        self,
-        relation: Relation[ObjectPerception],
-        relation_set: ImmutableSet[Relation[ObjectPerception]],
+        self, relation: Relation[Any], relation_set: ImmutableSet[Relation[Any]]
     ):
         single_size_relation: Optional[Tuple[Any, str, Any]] = None
         if relation.relation_type in self._opposite_size_relations:

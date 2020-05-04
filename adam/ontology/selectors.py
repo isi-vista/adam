@@ -58,7 +58,8 @@ class Is(OntologyNodeSelector):
 @attrs(frozen=True, slots=True)
 class FilterOut(OntologyNodeSelector):
     _inner_selector: OntologyNodeSelector = attrib(
-        validator=instance_of(OntologyNodeSelector)
+        # Ignored due to https://github.com/python/mypy/issues/5374
+        validator=instance_of(OntologyNodeSelector)  # type: ignore
     )
     _bad_values: ImmutableSet[OntologyNode] = attrib(
         converter=_to_immutableset, kw_only=True

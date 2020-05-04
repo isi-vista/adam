@@ -1428,12 +1428,12 @@ _CHAIR_SCHEMA = ObjectStructuralSchema(
             above(_CHAIR_SCHEMA_SEAT, _CHAIR_LEGS),
             contacts(_CHAIR_SCHEMA_BACK, _CHAIR_SCHEMA_SEAT),
             above(_CHAIR_SCHEMA_BACK, _CHAIR_SCHEMA_SEAT),
-            located(
-                [
+            located(  # type: ignore
+                [  # type: ignore
                     _CHAIR_SCHEMA_FRONT_LEFT_LEG,
                     _CHAIR_SCHEMA_FRONT_RIGHT_LEG,
                 ],  # type: ignore
-                [
+                [  # type: ignore
                     _CHAIR_SCHEMA_BACK_LEFT_LEG,
                     _CHAIR_SCHEMA_BACK_RIGHT_LEG,
                 ],  # type: ignore
@@ -1443,11 +1443,11 @@ _CHAIR_SCHEMA = ObjectStructuralSchema(
                 ),
             ),
             located(  # type: ignore
-                [
+                [  # type: ignore
                     _CHAIR_SCHEMA_FRONT_LEFT_LEG,
                     _CHAIR_SCHEMA_BACK_LEFT_LEG,
                 ],  # type: ignore
-                [
+                [  # type: ignore
                     _CHAIR_SCHEMA_FRONT_RIGHT_LEG,
                     _CHAIR_SCHEMA_BACK_RIGHT_LEG,
                 ],  # type: ignore

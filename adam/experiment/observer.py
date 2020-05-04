@@ -270,7 +270,7 @@ class LearningProgressHtmlLogger:  # pragma: no cover
             situation_text = ""
 
         perception_text = self.html_dumper.perception_text(  # type: ignore
-            perceptual_representation
+            perceptual_representation  # type: ignore
         )
 
         true_description_text = " ".join(true_description.as_token_sequence())

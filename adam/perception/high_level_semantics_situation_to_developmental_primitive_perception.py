@@ -1,23 +1,12 @@
 from enum import Enum, auto
 from itertools import chain
-from typing import (
-    Dict,
-    Iterable,
-    List,
-    Mapping,
-    MutableMapping,
-    Optional,
-    Tuple,
-    Union,
-    cast,
-)
+from typing import Dict, Iterable, List, Mapping, MutableMapping, Optional, Union, cast
 
-from adam.axis import GeonAxis
-from attr.validators import deep_mapping, instance_of
 from more_itertools import only, quantify
 from networkx import DiGraph
 
 from adam.axes import AxesInfo, WORLD_AXES
+from adam.axis import GeonAxis
 from adam.geon import Geon
 from adam.ontology import (
     BINARY,
@@ -73,8 +62,8 @@ from adam.relation import Relation
 from adam.situation import Action, SituationObject, SituationRegion
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from attr import Factory, attrib, attrs
+from attr.validators import deep_mapping, instance_of
 from immutablecollections import (
-    ImmutableDict,
     ImmutableSet,
     ImmutableSetMultiDict,
     immutabledict,
@@ -1060,7 +1049,7 @@ class _PerceptionGeneration:
             # regions are not a real possibility for lookup,
             # so mypy's complaints here are irrelevant
             object_mapping.update(self._objects_to_perceptions)  # type: ignore
-            object_mapping.update(
+            object_mapping.update(  # type: ignore
                 action_object_variables_to_object_perceptions  # type: ignore
             )
 
