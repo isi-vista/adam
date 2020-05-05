@@ -25,7 +25,7 @@ from vistautils.preconditions import check_arg
 from adam.curriculum import InstanceGroup
 from adam.experiment.observer import DescriptionObserver
 from adam.language import LinguisticDescriptionT
-from adam.language.language_generator import SituationT
+from adam.situation import SituationT
 from adam.learner import LanguageLearner, LearningExample
 from adam.perception import PerceptionT
 from adam.random_utils import SequenceChooser

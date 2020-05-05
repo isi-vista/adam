@@ -1,6 +1,6 @@
 from immutablecollections import immutableset, ImmutableSet
 from itertools import chain
-from typing import Iterable
+from typing import Iterable, Sequence
 
 from more_itertools import flatten
 
@@ -778,7 +778,7 @@ def _sit_on_template(
     seat: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
     *,
-    syntax_hints: ImmutableSet[str],
+    syntax_hints: Iterable[str],
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
         f"{agent.handle}-sits-on-{seat.handle}",
@@ -814,7 +814,7 @@ def _sit_in_template(
     seat: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
     *,
-    syntax_hints: ImmutableSet[str],
+    syntax_hints: Iterable[str],
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
         f"{agent.handle}-sits-(down)-in-{seat.handle}",
@@ -1078,7 +1078,7 @@ def _fall_on_template(
     goal_reference: TemplateObjectVariable,
     background: ImmutableSet[TemplateObjectVariable],
     *,
-    syntax_hints: ImmutableSet[str],
+    syntax_hints: Iterable[str],
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
         f"{theme.handle}-falls-(down)-on-{goal_reference.handle}",
@@ -1096,7 +1096,7 @@ def _fall_in_template(
     goal_reference: TemplateObjectVariable,
     background: ImmutableSet[TemplateObjectVariable],
     *,
-    syntax_hints: ImmutableSet[str],
+    syntax_hints: Iterable[str],
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
         f"{theme.handle}-falls-(down)-in-{goal_reference.handle}",
@@ -1114,7 +1114,7 @@ def _fall_beside_template(
     goal_reference: TemplateObjectVariable,
     background: ImmutableSet[TemplateObjectVariable],
     *,
-    syntax_hints: ImmutableSet[str],
+    syntax_hints: Iterable[str],
     is_right: bool,
 ) -> Phase1SituationTemplate:
     direction = Direction(
@@ -1138,7 +1138,7 @@ def _fall_in_front_of_behind_template(
     goal_reference: TemplateObjectVariable,
     background: ImmutableSet[TemplateObjectVariable],
     *,
-    syntax_hints: ImmutableSet[str],
+    syntax_hints: Iterable[str],
     is_distal: bool,
     is_in_front: bool,
 ) -> Phase1SituationTemplate:
@@ -2059,7 +2059,7 @@ def _make_sit_with_prepositions(
     background = immutableset(
         standard_object(f"noise_object_{x}") for x in range(noise_objects)
     )
-    syntax_hints_options = ([], [USE_ADVERBIAL_PATH_MODIFIER])  # type: ignore
+    syntax_hints_options: Sequence[Sequence[str]] = [[], [USE_ADVERBIAL_PATH_MODIFIER]]
 
     return phase1_instances(
         "Sit + PP",
@@ -2309,7 +2309,8 @@ def _make_fall_with_prepositions(
     background = immutableset(
         standard_object(f"noise_object_{x}") for x in range(noise_objects)
     )
-    syntax_hints_options = ([], [USE_ADVERBIAL_PATH_MODIFIER])  # type: ignore
+    syntax_hints_options: Sequence[Sequence[str]] = [[], [USE_ADVERBIAL_PATH_MODIFIER]]
+
     return phase1_instances(
         "Fall + PP",
         chain(

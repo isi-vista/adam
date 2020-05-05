@@ -838,10 +838,10 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 preposition = "to"
 
             elif region.direction:
-
-                direction_axis = region.direction.relative_to_axis.to_concrete_axis(
+                direction_axis = region.direction.relative_to_concrete_axis(
                     self.situation.axis_info
                 )
+
                 if region.distance == EXTERIOR_BUT_IN_CONTACT:
                     if region.direction.positive:
                         preposition = "on"

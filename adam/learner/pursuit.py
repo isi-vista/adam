@@ -77,8 +77,8 @@ class AbstractPursuitLearner(AbstractTemplateLearner, ABC):
     """
     _ontology: Ontology = attrib(validator=instance_of(Ontology), kw_only=True)
 
-    _rng: Random = attrib(validator=instance_of(Random))
-    _debug_callback: Optional[DebugCallableType] = attrib(default=None)
+    _rng: Random = attrib(validator=instance_of(Random), kw_only=True)
+    _debug_callback: Optional[DebugCallableType] = attrib(default=None, kw_only=True)
 
     # Learning factor (gamma) is the factor with which we update the hypotheses scores during
     # reinforcement.
@@ -93,14 +93,14 @@ class AbstractPursuitLearner(AbstractTemplateLearner, ABC):
         init=False, default=Factory(lambda: defaultdict(int))
     )
     _hypothesis_logger: Optional[HypothesisLogger] = attrib(
-        validator=optional(instance_of(HypothesisLogger)), default=None
+        validator=optional(instance_of(HypothesisLogger)), default=None, kw_only=True
     )
     debug_counter = 0
 
     # the following two fields are used if the user wishes the hypotheses for word meanings
     # to be logged at each step of learning for detailed debugging.
     _log_learned_item_hypotheses_to: Optional[Path] = attrib(
-        validator=optional(instance_of(Path)), default=None
+        validator=optional(instance_of(Path)), default=None, kw_only=True
     )
     _learned_item_to_logger: Dict[SurfaceTemplate, HypothesisLogger] = attrib(
         init=False, default=Factory(dict)

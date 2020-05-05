@@ -538,9 +538,7 @@ class CurriculumToHtmlDumper:
     # Collapse pairs of size relations (biggerThan/smallerThan) into
     # a single relation
     def _get_single_size_relation(
-        self,
-        relation: Relation[ObjectPerception],
-        relation_set: ImmutableSet[Relation[ObjectPerception]],
+        self, relation: Relation[Any], relation_set: ImmutableSet[Relation[Any]]
     ):
         single_size_relation: Optional[Tuple[Any, str, Any]] = None
         if relation.relation_type in self._opposite_size_relations:
@@ -823,7 +821,7 @@ class CurriculumToHtmlDumper:
             if filler2.direction:
                 parts.append(
                     f"direction={sign(filler2.direction.positive)}"
-                    f"{filler2.direction.relative_to_axis.to_concrete_axis(axis_info)}"
+                    f"{filler2.direction.relative_to_concrete_axis(axis_info)}"
                 )
             second_slot_str = f"Region({','.join(parts)})"
         else:
