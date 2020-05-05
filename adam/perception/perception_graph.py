@@ -118,6 +118,9 @@ class MatchedObjectNode:
 
     name: Tuple[str] = attrib()
 
+    def same_as(self, other):
+        return isinstance(other, MatchedObjectNode) and self.name == other.name
+
 
 PerceptionGraphNode = Union[
     ObjectPerception,
@@ -1340,7 +1343,6 @@ class PatternMatching:
                         f"PerceptionGraphPatterns but got a "
                         f"{type(graph_to_match_against)}"
                     )
-
                 yield PerceptionGraphPatternMatch(
                     graph_matched_against=graph_to_match_against,
                     matched_pattern=pattern,

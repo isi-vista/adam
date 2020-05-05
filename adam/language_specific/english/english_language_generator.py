@@ -36,7 +36,9 @@ from adam.language.dependency.universal_dependencies import (
     PROPER_NOUN,
     VERB,
     IS_ATTRIBUTE,
-    OTHER, MARKER)
+    OTHER,
+    MARKER,
+)
 from adam.language.language_generator import LanguageGenerator
 from adam.language.lexicon import LexiconEntry
 from adam.language.ontology_dictionary import OntologyLexicon
@@ -281,10 +283,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 and len(self.object_counts) == 1
             ):
                 # If plural
-                plural_marker_node = DependencyTreeToken(
-                    's',
-                    OTHER,  # PoS tag
-                )
+                plural_marker_node = DependencyTreeToken("s", OTHER)  # PoS tag
                 self.dependency_graph.add_node(plural_marker_node)
                 self.dependency_graph.add_edge(
                     plural_marker_node, dependency_node, role=MARKER

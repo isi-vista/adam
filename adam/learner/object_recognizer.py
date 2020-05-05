@@ -2,10 +2,14 @@ import logging
 from itertools import chain
 from typing import AbstractSet, Iterable, List, Mapping, Sequence, Set, Tuple
 
+from attr import attrib, attrs
 from attr.validators import deep_iterable, deep_mapping, instance_of
 from contexttimer import Timer
+from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
+from immutablecollections.converter_utils import _to_immutabledict, _to_immutableset
 from more_itertools import first
 from networkx import DiGraph
+from vistautils.span import Span
 
 from adam.axes import GRAVITATIONAL_DOWN_TO_UP_AXIS, LEARNER_AXES, WORLD_AXES
 from adam.language import LinguisticDescription
@@ -33,10 +37,6 @@ from adam.perception.perception_graph import (
     raise_graph_exception,
 )
 from adam.utils.networkx_utils import subgraph
-from attr import attrib, attrs
-from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
-from immutablecollections.converter_utils import _to_immutabledict, _to_immutableset
-from vistautils.span import Span
 
 _LIST_OF_PERCEIVED_PATTERNS = immutableset(
     (
@@ -70,7 +70,7 @@ class PerceptionGraphFromObjectRecognizer:
     #         for node in self.perception_graph.copy_as_digraph()
     #         if isinstance(node, MatchedObjectNode)
     #     )
-    #     described_matched_object_nodeHs = set(
+    #     described_matched_object_nodes = set(
     #         self.description_to_matched_object_node.values()
     #     )
     #     if matched_object_nodes != described_matched_object_nodes:

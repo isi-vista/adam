@@ -26,7 +26,8 @@ from adam.language.dependency.universal_dependencies import (
     PROPER_NOUN,
     VERB,
     IS_ATTRIBUTE,
-    MARKER)
+    MARKER,
+)
 
 _ENGLISH_HEAD_TO_ROLE_ORDER: ImmutableDict[
     PartOfSpeechTag, Tuple[DependencyRole, ...]

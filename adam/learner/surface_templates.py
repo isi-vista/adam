@@ -107,7 +107,7 @@ class SurfaceTemplate:
         Turns a template into a `TokenSequenceLinguisticDescription` by filling in its variables.
         """
         output_tokens: List[str] = []
-        for element in self.elements:
+        for i, element in enumerate(self.elements):
             if isinstance(element, SurfaceTemplateVariable):
                 filler_words = template_variable_to_filler[element]
                 # Ground is a specific thing so we special case this to be assigned
@@ -122,7 +122,9 @@ class SurfaceTemplate:
                     and filler_words[0][0].islower()
                     and filler_words[0] not in MASS_NOUNS
                 ):
-                    output_tokens.append("a")
+                    # If the element is plural, skip 'a'
+                    if not (i + 1 < len(self.elements) and self.elements[i + 1] == "s"):
+                        output_tokens.append("a")
                 output_tokens.extend(filler_words)
             else:
                 # element must be a single token str due to object validity checks.

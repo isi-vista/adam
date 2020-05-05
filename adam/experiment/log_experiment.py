@@ -4,6 +4,7 @@ from typing import Callable, Optional
 
 from adam.language_specific.english import ENGLISH_DETERMINERS
 from adam.learner.attributes import SubsetAttributeLearner
+from adam.learner.plurals import SubsetPluralLearner
 from adam.learner.verbs import SubsetVerbLearner
 from vistautils.parameters import Parameters
 from vistautils.parameters_only_entrypoint import parameters_only_entry_point
@@ -94,6 +95,7 @@ def learner_factory_from_params(
             "preposition-subset",
             "attribute-subset",
             "verb-subset",
+            "plural-subset",
         ],
     )
 
@@ -110,6 +112,10 @@ def learner_factory_from_params(
         )
     elif learner_type == "object-subset":
         return lambda: SubsetObjectLearner(ontology=GAILA_PHASE_1_ONTOLOGY)
+    elif learner_type == "plural-subset":
+        return lambda: SubsetPluralLearner(
+            ontology=GAILA_PHASE_1_ONTOLOGY, object_recognizer=object_recognizer
+        )
     elif learner_type == "attribute-subset":
         return lambda: SubsetAttributeLearner(
             ontology=GAILA_PHASE_1_ONTOLOGY, object_recognizer=object_recognizer

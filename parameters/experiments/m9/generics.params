@@ -4,7 +4,7 @@ _includes:
 
 experiment: 'generics-pursuit'
 curriculum: 'generics'
-learner: 'object-subset'
+learner: 'plural-subset'
 
 include_objects: false
 include_relations: false

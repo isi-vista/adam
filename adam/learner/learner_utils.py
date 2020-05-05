@@ -1,5 +1,7 @@
 from typing import Mapping, Tuple, Union, cast
 
+from immutablecollections import immutabledict, immutableset
+
 from adam.language import LinguisticDescription, TokenSequenceLinguisticDescription
 from adam.learner import LearningExample
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
@@ -13,7 +15,6 @@ from adam.perception.perception_graph import (
     MatchedObjectPerceptionPredicate,
     PerceptionGraphPatternMatch,
 )
-from immutablecollections import immutabledict, immutableset
 
 
 def pattern_match_to_description(
@@ -28,19 +29,29 @@ def pattern_match_to_description(
     This requires a mapping from matched object nodes in the perception
     to the strings which should be used to name them.
     """
+
     matched_object_nodes = immutableset(
         perception_node
         for perception_node in match.pattern_node_to_matched_graph_node.values()
         if isinstance(perception_node, MatchedObjectNode)
     )
+    uniques = {node.name: node for node in matched_object_nodes}
     matched_object_nodes_without_names = matched_object_nodes - immutableset(
         matched_objects_to_names.keys()
     )
     if matched_object_nodes_without_names:
-        raise RuntimeError(
-            f"The following matched object nodes lack descriptions: "
-            f"{matched_object_nodes_without_names}"
-        )
+        if all(
+            node.name in uniques.keys() for node in matched_object_nodes_without_names
+        ):
+            # For plurals, there is an exception when the match.match_node is not in matched_objects_to_names
+            # This happens because the matcher in parent function returns the first match, while there could
+            # multiple objects of the same kind
+            matched_objects_to_names = {v: k for k, v in uniques.items()}
+        else:
+            raise RuntimeError(
+                f"The following matched object nodes lack descriptions: "
+                f"{matched_object_nodes_without_names}"
+            )
 
     try:
         return surface_template.instantiate(
