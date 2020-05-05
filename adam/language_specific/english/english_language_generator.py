@@ -36,7 +36,7 @@ from adam.language.dependency.universal_dependencies import (
     PROPER_NOUN,
     VERB,
     IS_ATTRIBUTE,
-)
+    OTHER, MARKER)
 from adam.language.language_generator import LanguageGenerator
 from adam.language.lexicon import LexiconEntry
 from adam.language.ontology_dictionary import OntologyLexicon
@@ -263,26 +263,32 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     _object.ontology_node  # pylint:disable=protected-access
                 )
 
-            if (
-                count > 1
-                and noun_lexicon_entry.plural_form
-                and len(self.object_counts) == 1
-            ):
-                word_form = noun_lexicon_entry.plural_form
-            else:
-                word_form = noun_lexicon_entry.base_form
-
+            word_form = noun_lexicon_entry.base_form
             dependency_node = DependencyTreeToken(
                 word_form,
                 noun_lexicon_entry.part_of_speech,
                 morphosyntactic_properties=noun_lexicon_entry.intrinsic_morphosyntactic_properties,
             )
-
             self.dependency_graph.add_node(dependency_node)
-
             self.add_determiner(
                 _object, count, dependency_node, noun_lexicon_entry=noun_lexicon_entry
             )
+
+            # IF plural, add a separate +s marker token
+            if (
+                count > 1
+                and noun_lexicon_entry.plural_form
+                and len(self.object_counts) == 1
+            ):
+                # If plural
+                plural_marker_node = DependencyTreeToken(
+                    's',
+                    OTHER,  # PoS tag
+                )
+                self.dependency_graph.add_node(plural_marker_node)
+                self.dependency_graph.add_edge(
+                    plural_marker_node, dependency_node, role=MARKER
+                )
 
             if ATTRIBUTES_AS_X_IS_Y in self.situation.syntax_hints:
                 # We can use this only in static situations

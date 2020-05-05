@@ -26,7 +26,7 @@ from adam.language.dependency.universal_dependencies import (
     PROPER_NOUN,
     VERB,
     IS_ATTRIBUTE,
-)
+    MARKER)
 
 _ENGLISH_HEAD_TO_ROLE_ORDER: ImmutableDict[
     PartOfSpeechTag, Tuple[DependencyRole, ...]
@@ -55,6 +55,7 @@ _ENGLISH_HEAD_TO_ROLE_ORDER: ImmutableDict[
                 NUMERIC_MODIFIER,
                 ADJECTIVAL_MODIFIER,
                 HEAD,
+                MARKER,
                 # Right now all our nmods are prepositional phrases,
                 # so this works, but we will need something more
                 # sophisticated than this map eventually to handle

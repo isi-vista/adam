@@ -1656,7 +1656,8 @@ def build_gaila_phase1_object_curriculum() -> Sequence[Phase1InstanceGroup]:
 
 
 def build_gaila_generics_curriculum() -> Sequence[Phase1InstanceGroup]:
-    return [_make_each_object_by_itself_curriculum(), _make_plural_objects_curriculum()]
+    return [#_make_each_object_by_itself_curriculum(),
+            _make_plural_objects_curriculum()]
 
 
 def build_gaila_phase1_attribute_curriculum() -> Sequence[Phase1InstanceGroup]:
