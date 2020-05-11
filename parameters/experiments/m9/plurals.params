@@ -2,11 +2,12 @@ _includes:
    - "../../root.params"
    - "m9.params"
 
-experiment: 'generics'
-curriculum: 'generics'
-learner: 'verb-subset'
+experiment: 'plurals'
+curriculum: 'plurals'
+learner: 'plural-subset'
 
 include_objects: false
 include_relations: false
 include_attributes: false
 include_events: false
+include_generics: false

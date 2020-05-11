@@ -8,6 +8,7 @@ from typing import Iterable, Sequence
 from more_itertools import flatten
 
 from adam.axes import AxesInfo, FacingAddresseeAxis, HorizontalAxisOfObject
+from adam.curriculum import ExplicitWithSituationInstanceGroup
 from adam.curriculum.curriculum_utils import (
     GROUND_OBJECT_TEMPLATE,
     PHASE1_CHOOSER_FACTORY,
@@ -15,6 +16,7 @@ from adam.curriculum.curriculum_utils import (
     phase1_instances,
     standard_object,
 )
+from adam.language import TokenSequenceLinguisticDescription
 from adam.language_specific.english.english_language_generator import (
     IGNORE_HAS_AS_VERB,
     PREFER_DITRANSITIVE,
@@ -84,7 +86,7 @@ from adam.ontology.phase1_ontology import (
     near,
     on,
     strictly_above,
-)
+    BABY)
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
     Direction,
@@ -271,6 +273,86 @@ def _make_plural_objects_curriculum() -> Phase1InstanceGroup:
             ontology=GAILA_PHASE_1_ONTOLOGY, chooser=PHASE1_CHOOSER_FACTORY()
         ),
     )
+
+
+def _make_generic_statements_curriculum() -> Phase1InstanceGroup:
+    # Hard-coded examples: we create dynamic instances and replace the linguistic description
+    all_instances = []
+
+    # Babies eat
+    object_to_eat = standard_object("object_0", required_properties=[EDIBLE])
+    eater = standard_object("eater_0", BABY, required_properties=[ANIMATE])
+    baby_eats_template = Phase1SituationTemplate(
+        "eat-object",
+        salient_object_variables=[object_to_eat, eater],
+        actions=[
+            Action(
+                EAT, argument_roles_to_fillers=[(AGENT, eater), (PATIENT, object_to_eat)]
+            )
+        ],
+    )
+    baby_eats_instances = phase1_instances(
+        "eating",
+        chain(
+            *[
+                sampled(
+                    baby_eats_template,
+                    max_to_sample=10,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                    chooser=PHASE1_CHOOSER_FACTORY(),
+                )
+            ]
+        ),
+    ).instances()
+    for (situation, _, perception) in baby_eats_instances:
+        all_instances.append(
+            (situation, TokenSequenceLinguisticDescription(('baby','s','eat')), perception)
+        )
+    return ExplicitWithSituationInstanceGroup(
+        'generics instances', all_instances
+    )
+    # Babies drink
+    # Babies sit
+    #
+    # Dogs walk
+    # Dogs jump
+    #
+    # Birds fly
+    #
+    # Balls roll
+
+    # def build_object_multiples_situations(
+    #     ontology: Ontology, *, samples_per_object: int = 3, chooser: RandomChooser
+    # ) -> Iterable[HighLevelSemanticsSituation]:
+    #     for object_type in PHASE_1_CURRICULUM_OBJECTS:
+    #         # Exclude slow objects for now
+    #         if object_type.handle in ["bird", "dog", "truck"]:
+    #             continue
+    #         is_liquid = ontology.has_all_properties(object_type, [LIQUID])
+    #         # don't want multiples of named people
+    #         if not is_recognized_particular(ontology, object_type) and not is_liquid:
+    #             for _ in range(samples_per_object):
+    #                 num_objects = chooser.choice(range(2, 4))
+    #                 yield HighLevelSemanticsSituation(
+    #                     ontology=GAILA_PHASE_1_ONTOLOGY,
+    #                     salient_objects=[
+    #                         SituationObject.instantiate_ontology_node(
+    #                             ontology_node=object_type,
+    #                             debug_handle=object_type.handle + f"_{idx}",
+    #                             ontology=GAILA_PHASE_1_ONTOLOGY,
+    #                         )
+    #                         for idx in range(num_objects)
+    #                     ],
+    #                     axis_info=AxesInfo(),
+    #                 )
+    #
+    # return phase1_instances(
+    #     "multiples of the same object",
+    #     build_object_multiples_situations(
+    #         ontology=GAILA_PHASE_1_ONTOLOGY, chooser=PHASE1_CHOOSER_FACTORY()
+    #     ),
+    # )
+
 
 
 def _make_object_on_ground_curriculum() -> Phase1InstanceGroup:
@@ -1655,9 +1737,13 @@ def build_gaila_phase1_object_curriculum() -> Sequence[Phase1InstanceGroup]:
     ]
 
 
+def build_gaila_plurals_curriculum() -> Sequence[Phase1InstanceGroup]:
+    return [_make_plural_objects_curriculum()]
+
+
 def build_gaila_generics_curriculum() -> Sequence[Phase1InstanceGroup]:
-    return [  # _make_each_object_by_itself_curriculum(),
-        _make_plural_objects_curriculum()
+    return [
+        _make_generic_statements_curriculum()
     ]
 
 

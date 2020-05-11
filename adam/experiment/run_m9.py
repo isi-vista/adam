@@ -28,6 +28,9 @@ def main(params: Parameters):
     if params.boolean("include_generics", default=True):
         param_files.append(m9_experiments_dir / "generics.params")
 
+    if params.boolean("include_plurals", default=True):
+        param_files.append(m9_experiments_dir / "plurals.params")
+
     # This activates a special "debug" curriculum,
     # which is meant to be edited in the code by a developer to do fine-grained debugging.
     if params.boolean("include_debug", default=False):
