@@ -29,7 +29,8 @@ from adam.curriculum.phase1_curriculum import (
     _make_throw_curriculum,
     _make_transfer_of_possession_curriculum,
     _make_objects_with_colors_is_curriculum,
-    _make_generic_statements_curriculum)
+    _make_generic_statements_curriculum,
+)
 
 
 def curriculum_test(curriculum: Phase1InstanceGroup) -> None:

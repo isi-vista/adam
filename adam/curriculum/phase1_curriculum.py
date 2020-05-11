@@ -86,7 +86,9 @@ from adam.ontology.phase1_ontology import (
     near,
     on,
     strictly_above,
-    BABY)
+    BABY,
+    DOG,
+)
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
     Direction,
@@ -281,13 +283,13 @@ def _make_generic_statements_curriculum() -> Phase1InstanceGroup:
 
     # Babies eat
     object_to_eat = standard_object("object_0", required_properties=[EDIBLE])
-    eater = standard_object("eater_0", BABY, required_properties=[ANIMATE])
+    baby = standard_object("eater_0", BABY)
     baby_eats_template = Phase1SituationTemplate(
         "eat-object",
-        salient_object_variables=[object_to_eat, eater],
+        salient_object_variables=[object_to_eat, baby],
         actions=[
             Action(
-                EAT, argument_roles_to_fillers=[(AGENT, eater), (PATIENT, object_to_eat)]
+                EAT, argument_roles_to_fillers=[(AGENT, baby), (PATIENT, object_to_eat)]
             )
         ],
     )
@@ -306,53 +308,201 @@ def _make_generic_statements_curriculum() -> Phase1InstanceGroup:
     ).instances()
     for (situation, _, perception) in baby_eats_instances:
         all_instances.append(
-            (situation, TokenSequenceLinguisticDescription(('baby','s','eat')), perception)
+            (
+                situation,
+                TokenSequenceLinguisticDescription(("baby", "s", "eat")),
+                perception,
+            )
         )
-    return ExplicitWithSituationInstanceGroup(
-        'generics instances', all_instances
-    )
+
     # Babies drink
+    object_0 = standard_object("object_0", required_properties=[HOLLOW])
+    liquid_0 = object_variable("liquid_0", required_properties=[LIQUID])
+    baby_drinks_template = Phase1SituationTemplate(
+        "drink",
+        salient_object_variables=[liquid_0, baby],
+        actions=[
+            Action(
+                DRINK,
+                argument_roles_to_fillers=[(AGENT, baby), (THEME, liquid_0)],
+                auxiliary_variable_bindings=[(DRINK_CONTAINER_AUX, object_0)],
+            )
+        ],
+    )
+    baby_drinks_instances = phase1_instances(
+        "drinking",
+        chain(
+            *[
+                sampled(
+                    baby_drinks_template,
+                    max_to_sample=10,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                    chooser=PHASE1_CHOOSER_FACTORY(),
+                )
+            ]
+        ),
+    ).instances()
+    for (situation, _, perception) in baby_drinks_instances:
+        all_instances.append(
+            (
+                situation,
+                TokenSequenceLinguisticDescription(("baby", "s", "drink")),
+                perception,
+            )
+        )
+
     # Babies sit
-    #
-    # Dogs walk
+    sit_surface = standard_object(
+        "surface", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
+    )
+    seat = standard_object(
+        "sitting-surface", INANIMATE_OBJECT, required_properties=[CAN_BE_SAT_ON_BY_PEOPLE]
+    )
+    sittee_to_contraints = (
+        ("-on-big-thing", sit_surface, [bigger_than(sit_surface, baby)]),  # type: ignore
+        ("-on-seat", seat, []),
+    )
+    syntax_hints_options = (
+        ("default", []),  # type: ignore
+        ("adverbial-mod", [USE_ADVERBIAL_PATH_MODIFIER]),
+    )
+    for (name, sittee, constraints) in sittee_to_contraints:
+        for (syntax_name, syntax_hints) in syntax_hints_options:
+            template = Phase1SituationTemplate(
+                f"sit-intransitive-{name}-{syntax_name}",
+                salient_object_variables=[baby],
+                actions=[
+                    Action(
+                        SIT,
+                        argument_roles_to_fillers=[(AGENT, baby)],
+                        auxiliary_variable_bindings=[
+                            (
+                                SIT_GOAL,
+                                Region(
+                                    sittee,
+                                    direction=GRAVITATIONAL_UP,
+                                    distance=EXTERIOR_BUT_IN_CONTACT,
+                                ),
+                            ),
+                            (SIT_THING_SAT_ON, sittee),
+                        ],
+                    )
+                ],
+                constraining_relations=constraints,
+                syntax_hints=syntax_hints,
+            )
+            instances = phase1_instances(
+                "sitting",
+                chain(
+                    *[
+                        sampled(
+                            template,
+                            max_to_sample=10,
+                            ontology=GAILA_PHASE_1_ONTOLOGY,
+                            chooser=PHASE1_CHOOSER_FACTORY(),
+                        )
+                    ]
+                ),
+            ).instances()
+            for (situation, _, perception) in instances:
+                all_instances.append(
+                    (
+                        situation,
+                        TokenSequenceLinguisticDescription(("baby", "s", "sit")),
+                        perception,
+                    )
+                )
+
+    # Dogs eat
+    object_to_eat = standard_object("object_0", required_properties=[EDIBLE])
+    dog = standard_object("eater_0", DOG)
+    dog_eats_template = Phase1SituationTemplate(
+        "eat-object",
+        salient_object_variables=[object_to_eat, dog],
+        actions=[
+            Action(
+                EAT, argument_roles_to_fillers=[(AGENT, dog), (PATIENT, object_to_eat)]
+            )
+        ],
+    )
+    dog_eats_instances = phase1_instances(
+        "eating",
+        chain(
+            *[
+                sampled(
+                    dog_eats_template,
+                    max_to_sample=10,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                    chooser=PHASE1_CHOOSER_FACTORY(),
+                )
+            ]
+        ),
+    ).instances()
+    for (situation, _, perception) in dog_eats_instances:
+        all_instances.append(
+            (
+                situation,
+                TokenSequenceLinguisticDescription(("dog", "s", "eat")),
+                perception,
+            )
+        )
+
     # Dogs jump
-    #
-    # Birds fly
-    #
-    # Balls roll
+    for use_adverbial_path_modifier in (True, False):
+        template = Phase1SituationTemplate(
+            "jump-on-ground",
+            salient_object_variables=[dog],
+            actions=[
+                Action(
+                    JUMP,
+                    argument_roles_to_fillers=[(AGENT, dog)],
+                    auxiliary_variable_bindings=[
+                        (JUMP_INITIAL_SUPPORTER_AUX, GROUND_OBJECT_TEMPLATE)
+                    ],
+                )
+            ],
+            syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER]
+            if use_adverbial_path_modifier
+            else [],
+        )
 
-    # def build_object_multiples_situations(
-    #     ontology: Ontology, *, samples_per_object: int = 3, chooser: RandomChooser
-    # ) -> Iterable[HighLevelSemanticsSituation]:
-    #     for object_type in PHASE_1_CURRICULUM_OBJECTS:
-    #         # Exclude slow objects for now
-    #         if object_type.handle in ["bird", "dog", "truck"]:
-    #             continue
-    #         is_liquid = ontology.has_all_properties(object_type, [LIQUID])
-    #         # don't want multiples of named people
-    #         if not is_recognized_particular(ontology, object_type) and not is_liquid:
-    #             for _ in range(samples_per_object):
-    #                 num_objects = chooser.choice(range(2, 4))
-    #                 yield HighLevelSemanticsSituation(
-    #                     ontology=GAILA_PHASE_1_ONTOLOGY,
-    #                     salient_objects=[
-    #                         SituationObject.instantiate_ontology_node(
-    #                             ontology_node=object_type,
-    #                             debug_handle=object_type.handle + f"_{idx}",
-    #                             ontology=GAILA_PHASE_1_ONTOLOGY,
-    #                         )
-    #                         for idx in range(num_objects)
-    #                     ],
-    #                     axis_info=AxesInfo(),
-    #                 )
-    #
-    # return phase1_instances(
-    #     "multiples of the same object",
-    #     build_object_multiples_situations(
-    #         ontology=GAILA_PHASE_1_ONTOLOGY, chooser=PHASE1_CHOOSER_FACTORY()
-    #     ),
-    # )
+        jumped_over = standard_object("jumped_over")
+        instances = phase1_instances(
+            "jumping",
+            chain(
+                all_possible(
+                    template,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                    chooser=PHASE1_CHOOSER_FACTORY(),
+                ),
+                sampled(
+                    _jump_over_template(dog, jumped_over, []),
+                    max_to_sample=25,
+                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                ),
+            ),
+        ).instances()
+        for (situation, _, perception) in instances:
+            all_instances.append(
+                (
+                    situation,
+                    TokenSequenceLinguisticDescription(("dog", "s", "jump")),
+                    perception,
+                )
+            )
 
+    # Birds fly, only birds can fly so we can use the existing curriculum
+    for (situation, _, perception) in _make_fly_curriculum().instances():
+        all_instances.append(
+            (
+                situation,
+                TokenSequenceLinguisticDescription(("bird", "s", "fly")),
+                perception,
+            )
+        )
+
+    return ExplicitWithSituationInstanceGroup("generics instances", all_instances)
 
 
 def _make_object_on_ground_curriculum() -> Phase1InstanceGroup:
@@ -500,7 +650,6 @@ def make_fall_templates() -> Iterable[Phase1SituationTemplate]:
 
 
 def _make_fall_curriculum() -> Phase1InstanceGroup:
-
     return phase1_instances(
         "falling objects",
         chain(
@@ -541,7 +690,6 @@ def make_give_templates() -> Iterable[Phase1SituationTemplate]:
 
 
 def _make_transfer_of_possession_curriculum() -> Phase1InstanceGroup:
-
     return phase1_instances(
         "transfer-of-possession",
         chain(
@@ -911,7 +1059,6 @@ def make_jump_templates() -> Iterable[Phase1SituationTemplate]:
 
 
 def _make_jump_curriculum() -> Phase1InstanceGroup:
-
     jumper = standard_object("jumper_0", THING, required_properties=[CAN_JUMP])
     jumped_over = standard_object("jumped_over")
 
@@ -956,7 +1103,6 @@ def make_put_templates() -> Iterable[Phase1SituationTemplate]:
 
 
 def _make_put_curriculum() -> Phase1InstanceGroup:
-
     return phase1_instances(
         "putting",
         chain(
@@ -1034,7 +1180,6 @@ def make_drink_template() -> Phase1SituationTemplate:
 
 
 def _make_drink_curriculum() -> Phase1InstanceGroup:
-
     return phase1_instances(
         "drinking",
         chain(
@@ -1162,7 +1307,6 @@ def make_sit_templates() -> Iterable[Phase1SituationTemplate]:
 
 
 def _make_sit_curriculum() -> Phase1InstanceGroup:
-
     return phase1_instances(
         "sitting",
         chain(
@@ -1196,7 +1340,6 @@ def make_take_template() -> Phase1SituationTemplate:
 
 
 def _make_take_curriculum() -> Phase1InstanceGroup:
-
     return phase1_instances(
         "taking",
         chain(
@@ -1256,7 +1399,6 @@ def make_move_templates() -> Iterable[Phase1SituationTemplate]:
 
 
 def _make_move_curriculum() -> Phase1InstanceGroup:
-
     return phase1_instances(
         "move",
         chain(
@@ -1416,7 +1558,6 @@ def make_push_templates() -> Iterable[Phase1SituationTemplate]:
 
 
 def _make_push_curriculum() -> Phase1InstanceGroup:
-
     return phase1_instances(
         "pushing",
         chain(
@@ -1542,7 +1683,6 @@ def make_throw_templates() -> Iterable[Phase1SituationTemplate]:
 
 
 def _make_throw_curriculum() -> Phase1InstanceGroup:
-
     return phase1_instances(
         "throwing",
         chain(
@@ -1742,9 +1882,7 @@ def build_gaila_plurals_curriculum() -> Sequence[Phase1InstanceGroup]:
 
 
 def build_gaila_generics_curriculum() -> Sequence[Phase1InstanceGroup]:
-    return [
-        _make_generic_statements_curriculum()
-    ]
+    return [_make_generic_statements_curriculum()]
 
 
 def build_gaila_phase1_attribute_curriculum() -> Sequence[Phase1InstanceGroup]:
