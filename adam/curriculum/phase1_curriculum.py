@@ -5,6 +5,7 @@ Curricula for DARPA GAILA Phase 1
 from itertools import chain
 from typing import Iterable, Sequence
 
+from immutablecollections import immutableset
 from more_itertools import flatten
 
 from adam.axes import AxesInfo, FacingAddresseeAxis, HorizontalAxisOfObject
@@ -86,8 +87,6 @@ from adam.ontology.phase1_ontology import (
     near,
     on,
     strictly_above,
-    BABY,
-    DOG,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -128,7 +127,6 @@ from adam.situation.templates.phase1_templates import (
     object_variable,
     sampled,
 )
-from immutablecollections import immutableset
 
 
 # Show each object once by itself
@@ -280,228 +278,27 @@ def _make_plural_objects_curriculum() -> Phase1InstanceGroup:
 def _make_generic_statements_curriculum() -> Phase1InstanceGroup:
     # Hard-coded examples: we create dynamic instances and replace the linguistic description
     all_instances = []
-
-    # Babies eat
-    object_to_eat = standard_object("object_0", required_properties=[EDIBLE])
-    baby = standard_object("eater_0", BABY)
-    baby_eats_template = Phase1SituationTemplate(
-        "eat-object",
-        salient_object_variables=[object_to_eat, baby],
-        actions=[
-            Action(
-                EAT, argument_roles_to_fillers=[(AGENT, baby), (PATIENT, object_to_eat)]
-            )
-        ],
-    )
-    baby_eats_instances = phase1_instances(
-        "eating",
-        chain(
-            *[
-                sampled(
-                    baby_eats_template,
-                    max_to_sample=10,
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER_FACTORY(),
-                )
-            ]
-        ),
-    ).instances()
-    for (situation, _, perception) in baby_eats_instances:
-        all_instances.append(
-            (
-                situation,
-                TokenSequenceLinguisticDescription(("baby", "s", "eat")),
-                perception,
-            )
-        )
-
-    # Babies drink
-    object_0 = standard_object("object_0", required_properties=[HOLLOW])
-    liquid_0 = object_variable("liquid_0", required_properties=[LIQUID])
-    baby_drinks_template = Phase1SituationTemplate(
-        "drink",
-        salient_object_variables=[liquid_0, baby],
-        actions=[
-            Action(
-                DRINK,
-                argument_roles_to_fillers=[(AGENT, baby), (THEME, liquid_0)],
-                auxiliary_variable_bindings=[(DRINK_CONTAINER_AUX, object_0)],
-            )
-        ],
-    )
-    baby_drinks_instances = phase1_instances(
-        "drinking",
-        chain(
-            *[
-                sampled(
-                    baby_drinks_template,
-                    max_to_sample=10,
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER_FACTORY(),
-                )
-            ]
-        ),
-    ).instances()
-    for (situation, _, perception) in baby_drinks_instances:
-        all_instances.append(
-            (
-                situation,
-                TokenSequenceLinguisticDescription(("baby", "s", "drink")),
-                perception,
-            )
-        )
-
-    # Babies sit
-    sit_surface = standard_object(
-        "surface", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
-    )
-    seat = standard_object(
-        "sitting-surface", INANIMATE_OBJECT, required_properties=[CAN_BE_SAT_ON_BY_PEOPLE]
-    )
-    sittee_to_contraints = (
-        ("-on-big-thing", sit_surface, [bigger_than(sit_surface, baby)]),  # type: ignore
-        ("-on-seat", seat, []),
-    )
-    syntax_hints_options = (
-        ("default", []),  # type: ignore
-        ("adverbial-mod", [USE_ADVERBIAL_PATH_MODIFIER]),
-    )
-    for (name, sittee, constraints) in sittee_to_contraints:
-        for (syntax_name, syntax_hints) in syntax_hints_options:
-            template = Phase1SituationTemplate(
-                f"sit-intransitive-{name}-{syntax_name}",
-                salient_object_variables=[baby],
-                actions=[
-                    Action(
-                        SIT,
-                        argument_roles_to_fillers=[(AGENT, baby)],
-                        auxiliary_variable_bindings=[
-                            (
-                                SIT_GOAL,
-                                Region(
-                                    sittee,
-                                    direction=GRAVITATIONAL_UP,
-                                    distance=EXTERIOR_BUT_IN_CONTACT,
-                                ),
-                            ),
-                            (SIT_THING_SAT_ON, sittee),
-                        ],
-                    )
-                ],
-                constraining_relations=constraints,
-                syntax_hints=syntax_hints,
-            )
-            instances = phase1_instances(
-                "sitting",
-                chain(
-                    *[
-                        sampled(
-                            template,
-                            max_to_sample=10,
-                            ontology=GAILA_PHASE_1_ONTOLOGY,
-                            chooser=PHASE1_CHOOSER_FACTORY(),
-                        )
-                    ]
-                ),
-            ).instances()
-            for (situation, _, perception) in instances:
-                all_instances.append(
-                    (
-                        situation,
-                        TokenSequenceLinguisticDescription(("baby", "s", "sit")),
-                        perception,
-                    )
-                )
-
-    # Dogs eat
-    object_to_eat = standard_object("object_0", required_properties=[EDIBLE])
-    dog = standard_object("eater_0", DOG)
-    dog_eats_template = Phase1SituationTemplate(
-        "eat-object",
-        salient_object_variables=[object_to_eat, dog],
-        actions=[
-            Action(
-                EAT, argument_roles_to_fillers=[(AGENT, dog), (PATIENT, object_to_eat)]
-            )
-        ],
-    )
-    dog_eats_instances = phase1_instances(
-        "eating",
-        chain(
-            *[
-                sampled(
-                    dog_eats_template,
-                    max_to_sample=10,
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER_FACTORY(),
-                )
-            ]
-        ),
-    ).instances()
-    for (situation, _, perception) in dog_eats_instances:
-        all_instances.append(
-            (
-                situation,
-                TokenSequenceLinguisticDescription(("dog", "s", "eat")),
-                perception,
-            )
-        )
-
-    # Dogs jump
-    for use_adverbial_path_modifier in (True, False):
-        template = Phase1SituationTemplate(
-            "jump-on-ground",
-            salient_object_variables=[dog],
-            actions=[
-                Action(
-                    JUMP,
-                    argument_roles_to_fillers=[(AGENT, dog)],
-                    auxiliary_variable_bindings=[
-                        (JUMP_INITIAL_SUPPORTER_AUX, GROUND_OBJECT_TEMPLATE)
-                    ],
-                )
-            ],
-            syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER]
-            if use_adverbial_path_modifier
-            else [],
-        )
-
-        jumped_over = standard_object("jumped_over")
-        instances = phase1_instances(
-            "jumping",
-            chain(
-                all_possible(
-                    template,
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER_FACTORY(),
-                ),
-                sampled(
-                    _jump_over_template(dog, jumped_over, []),
-                    max_to_sample=25,
-                    chooser=PHASE1_CHOOSER_FACTORY(),
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                ),
-            ),
-        ).instances()
-        for (situation, _, perception) in instances:
+    verbs_to_instances = {
+        "eat": _make_eat_curriculum().instances(),  # E.g babies eat
+        "drink": _make_drink_curriculum().instances(),
+        "sit": _make_sit_curriculum().instances(),
+        "jump": _make_jump_curriculum().instances(),
+        "fly": _make_fly_curriculum().instances(),
+    }
+    for verb, instances in verbs_to_instances.items():
+        for (situation, description, perception) in instances:
+            subject = [
+                token
+                for token in description.as_token_sequence()
+                if token not in ["a", "the"]
+            ][0]
             all_instances.append(
                 (
                     situation,
-                    TokenSequenceLinguisticDescription(("dog", "s", "jump")),
+                    TokenSequenceLinguisticDescription((subject, "s", verb)),
                     perception,
                 )
             )
-
-    # Birds fly, only birds can fly so we can use the existing curriculum
-    for (situation, _, perception) in _make_fly_curriculum().instances():
-        all_instances.append(
-            (
-                situation,
-                TokenSequenceLinguisticDescription(("bird", "s", "fly")),
-                perception,
-            )
-        )
-
     return ExplicitWithSituationInstanceGroup("generics instances", all_instances)
 
 
