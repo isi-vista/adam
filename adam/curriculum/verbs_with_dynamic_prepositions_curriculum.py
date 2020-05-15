@@ -64,6 +64,7 @@ from adam.ontology.phase1_ontology import (
     FLY,
     CAN_FLY,
     GOAL_MANIPULATOR,
+    PUSH_GOAL,
 )
 from adam.ontology import THING, IS_SPEAKER, IS_ADDRESSEE, IN_REGION
 from adam.ontology.phase1_spatial_relations import (
@@ -77,6 +78,8 @@ from adam.ontology.phase1_spatial_relations import (
     SpatialPath,
     VIA,
     EXTERIOR_BUT_IN_CONTACT,
+    TOWARD,
+    AWAY_FROM,
 )
 from adam.relation import flatten_relations, Relation
 from adam.situation import Action
@@ -290,6 +293,61 @@ def _push_in_front_of_behind_template(
     )
 
 
+def _push_towards_away_template(
+    agent: TemplateObjectVariable,
+    theme: TemplateObjectVariable,
+    spatial_reference: TemplateObjectVariable,
+    surface: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+    *,
+    is_ending_proximal: bool,
+    is_towards: bool,
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        f"{agent.handle}-pushes-{theme.handle}-toward/away-{spatial_reference.handle}",
+        salient_object_variables=[agent, theme, spatial_reference],
+        background_object_variables=background,
+        actions=[
+            Action(
+                PUSH,
+                argument_roles_to_fillers=[(AGENT, agent), (THEME, theme)],
+                auxiliary_variable_bindings=[
+                    (PUSH_SURFACE_AUX, surface),
+                    (
+                        PUSH_GOAL,
+                        Region(
+                            spatial_reference,
+                            distance=PROXIMAL if is_ending_proximal else DISTAL,
+                        ),
+                    ),
+                ],
+                during=DuringAction(
+                    continuously=[on(theme, surface)],
+                    objects_to_paths=[
+                        (
+                            theme,
+                            SpatialPath(
+                                operator=TOWARD if is_towards else AWAY_FROM,
+                                reference_object=spatial_reference,
+                                # The reference axis should explicitly be the axis
+                                # on which movement is occuring. Implying this axis
+                                # May not always be 100% correct because a person
+                                # doesn't always face the way they are walking
+                                reference_axis=HorizontalAxisOfObject(agent, 1),
+                            ),
+                        )
+                    ],
+                ),
+            )
+        ],
+        before_action_relations=[
+            far([agent, theme], spatial_reference)
+            if is_ending_proximal
+            else near([agent, theme], spatial_reference)
+        ],
+    )
+
+
 def _go_beside_template(
     agent: TemplateObjectVariable,
     goal_object: TemplateObjectVariable,
@@ -470,6 +528,41 @@ def _go_over_under_path_template(
             )
         ],
         gazed_objects=[agent],
+    )
+
+
+def _go_towards_away_template(
+    agent: TemplateObjectVariable,
+    spatial_reference: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+    *,
+    is_toward: bool,
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        f"{agent.handle}-go-toward_away-{spatial_reference.handle}",
+        salient_object_variables=[agent, spatial_reference],
+        background_object_variables=background,
+        actions=[
+            Action(
+                GO,
+                argument_roles_to_fillers=[(AGENT, agent), (GOAL, spatial_reference)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            agent,
+                            SpatialPath(
+                                operator=TOWARD if is_toward else AWAY_FROM,
+                                reference_object=spatial_reference,
+                                reference_axis=HorizontalAxisOfObject(agent, 1),
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+        before_action_relations=[
+            far(agent, spatial_reference) if is_toward else near(agent, spatial_reference)
+        ],
     )
 
 
@@ -769,6 +862,49 @@ def _x_throws_y_to_z_template(
     )
 
 
+def _throw_towards_away_template(
+    agent: TemplateObjectVariable,
+    theme: TemplateObjectVariable,
+    spatial_reference: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+    *,
+    is_towards: bool,
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        f"{agent.handle}-throws-{theme.handle}-toward/away_from-{spatial_reference.handle}",
+        salient_object_variables=[agent, theme, spatial_reference],
+        background_object_variables=background,
+        actions=[
+            Action(
+                THROW,
+                argument_roles_to_fillers=[(AGENT, agent), (THEME, theme)],
+                auxiliary_variable_bindings=[
+                    (
+                        THROW_GOAL,
+                        Region(
+                            spatial_reference, distance=PROXIMAL if is_towards else DISTAL
+                        ),
+                    )
+                ],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            theme,
+                            SpatialPath(
+                                operator=TOWARD if is_towards else AWAY_FROM,
+                                reference_object=spatial_reference,
+                                reference_axis=HorizontalAxisOfObject(theme, 1),
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+        constraining_relations=flatten_relations(bigger_than(agent, theme)),
+        gazed_objects=[theme],
+    )
+
+
 # SIT templates
 
 
@@ -1049,6 +1185,93 @@ def _x_rolls_y_over_under_z_template(
     )
 
 
+def _x_rolls_towards_away_from_y_template(
+    agent: TemplateObjectVariable,
+    spatial_reference: TemplateObjectVariable,
+    surface: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+    *,
+    is_toward: bool,
+) -> Phase1SituationTemplate:
+    value = "towards" if is_toward else "away from"
+    return Phase1SituationTemplate(
+        f"{agent.handle}-rolls-{value}-{spatial_reference.handle}",
+        salient_object_variables=[agent, spatial_reference],
+        background_object_variables=background,
+        actions=[
+            Action(
+                ROLL,
+                argument_roles_to_fillers=[(AGENT, agent)],
+                auxiliary_variable_bindings=[(ROLL_SURFACE_AUXILIARY, surface)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            agent,
+                            SpatialPath(
+                                operator=TOWARD if is_toward else AWAY_FROM,
+                                reference_object=spatial_reference,
+                                reference_axis=HorizontalAxisOfObject(agent, 1),
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+        before_action_relations=flatten_relations(
+            far(agent, spatial_reference) if is_toward else near(agent, spatial_reference)
+        ),
+        after_action_relations=flatten_relations(
+            near(agent, spatial_reference) if is_toward else immutableset()
+        ),
+    )
+
+
+def _x_rolls_y_towards_away_from_z_template(
+    agent: TemplateObjectVariable,
+    theme: TemplateObjectVariable,
+    spatial_reference: TemplateObjectVariable,
+    surface: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+    *,
+    is_toward: bool,
+) -> Phase1SituationTemplate:
+    value = "towards" if is_toward else "away from"
+    return Phase1SituationTemplate(
+        f"{agent.handle}-rolls-{theme.handle}-{value}-{spatial_reference.handle}",
+        salient_object_variables=[agent, spatial_reference],
+        background_object_variables=background,
+        actions=[
+            Action(
+                ROLL,
+                argument_roles_to_fillers=[(AGENT, agent), (THEME, theme)],
+                auxiliary_variable_bindings=[(ROLL_SURFACE_AUXILIARY, surface)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            agent,
+                            SpatialPath(
+                                operator=TOWARD if is_toward else AWAY_FROM,
+                                reference_object=spatial_reference,
+                                reference_axis=HorizontalAxisOfObject(agent, 1),
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+        constraining_relations=flatten_relations(bigger_than(agent, theme)),
+        before_action_relations=flatten_relations(
+            far([agent, theme], spatial_reference)
+            if is_toward
+            else near([agent, theme], spatial_reference)
+        ),
+        after_action_relations=flatten_relations(
+            near([agent, theme], spatial_reference) if is_toward else immutableset()
+        ),
+        gazed_objects=[theme],
+    )
+
+
 # TAKE templates
 
 
@@ -1154,6 +1377,46 @@ def _fall_in_front_of_behind_template(
             far(theme, goal_reference, direction=direction)
             if is_distal
             else near(theme, goal_reference, direction=direction)
+        ),
+        syntax_hints=syntax_hints,
+    )
+
+
+def _fall_toward_away_from_template(
+    theme: TemplateObjectVariable,
+    spatial_reference: TemplateObjectVariable,
+    background: ImmutableSet[TemplateObjectVariable],
+    *,
+    syntax_hints: Iterable[str],
+    is_toward: bool,
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        f"{theme.handle}-falls-towards-away_from-{spatial_reference.handle}",
+        salient_object_variables=[theme, spatial_reference],
+        background_object_variables=background,
+        actions=[
+            Action(
+                FALL,
+                argument_roles_to_fillers=[(THEME, theme)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            theme,
+                            SpatialPath(
+                                operator=TOWARD if is_toward else AWAY_FROM,
+                                reference_object=spatial_reference,
+                                reference_axis=HorizontalAxisOfObject(theme, 1),
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+        before_action_relations=flatten_relations(
+            far(theme, spatial_reference) if is_toward else near(theme, spatial_reference)
+        ),
+        after_action_relations=flatten_relations(
+            near(theme, spatial_reference) if is_toward else immutableset()
         ),
         syntax_hints=syntax_hints,
     )
@@ -1556,6 +1819,84 @@ def _x_move_y_in_front_of_behind_z_template(
     )
 
 
+def _x_moves_towards_away_from_z_template(
+    agent: TemplateObjectVariable,
+    spatial_reference: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+    *,
+    is_toward: bool,
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        f"{agent.handle}-moves-towards-away-{spatial_reference.handle}",
+        salient_object_variables=[agent, spatial_reference],
+        background_object_variables=background,
+        actions=[
+            Action(
+                MOVE,
+                argument_roles_to_fillers=[(AGENT, agent), (GOAL, spatial_reference)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            agent,
+                            SpatialPath(
+                                operator=TOWARD if is_toward else AWAY_FROM,
+                                reference_object=spatial_reference,
+                                reference_axis=HorizontalAxisOfObject(agent, 1),
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+    )
+
+
+def _x_moves_y_towards_away_from_z_template(
+    agent: TemplateObjectVariable,
+    theme: TemplateObjectVariable,
+    spatial_reference: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+    *,
+    is_toward: bool,
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        f"{agent.handle}-moves-{theme.handle}-towards-away-{spatial_reference.handle}",
+        salient_object_variables=[agent, theme, spatial_reference],
+        background_object_variables=background,
+        actions=[
+            Action(
+                MOVE,
+                argument_roles_to_fillers=[
+                    (AGENT, agent),
+                    (THEME, theme),
+                    (GOAL, spatial_reference),
+                ],
+                during=DuringAction(
+                    continuously=flatten_relations(contacts(agent, theme)),
+                    objects_to_paths=[
+                        (
+                            theme,
+                            SpatialPath(
+                                operator=TOWARD if is_toward else AWAY_FROM,
+                                reference_object=spatial_reference,
+                                reference_axis=HorizontalAxisOfObject(theme, 1),
+                            ),
+                        ),
+                        (
+                            agent,
+                            SpatialPath(
+                                operator=TOWARD if is_toward else AWAY_FROM,
+                                reference_object=spatial_reference,
+                                reference_axis=HorizontalAxisOfObject(agent, 1),
+                            ),
+                        ),
+                    ],
+                ),
+            )
+        ],
+    )
+
+
 # JUMP templates
 
 
@@ -1804,6 +2145,41 @@ def _fly_in_front_of_behind_template(
     )
 
 
+def _fly_towards_away_template(
+    agent: TemplateObjectVariable,
+    spatial_reference: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+    *,
+    is_toward: bool,
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        f"{agent.handle}-flies-towards-away-from-{spatial_reference.handle}",
+        salient_object_variables=[agent, spatial_reference],
+        background_object_variables=background,
+        actions=[
+            Action(
+                FLY,
+                argument_roles_to_fillers=[(AGENT, agent)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            agent,
+                            SpatialPath(
+                                operator=TOWARD if is_toward else AWAY_FROM,
+                                reference_object=spatial_reference,
+                                reference_axis=HorizontalAxisOfObject(agent, 1),
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+    )
+
+
+# Push
+
+
 def _make_push_with_prepositions(
     num_samples: int = 5, *, noise_objects: int = 0
 ) -> Phase1InstanceGroup:
@@ -1897,6 +2273,27 @@ def _make_push_with_prepositions(
                     )
                     for is_distal in BOOL_SET
                     for is_in_front in BOOL_SET
+                ]
+            ),
+            # Towards, Away
+            flatten(
+                [
+                    sampled(
+                        _push_towards_away_template(
+                            agent,
+                            theme,
+                            goal_reference,
+                            surface,
+                            background,
+                            is_ending_proximal=is_ending_proximal,
+                            is_towards=is_towards,
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        max_to_sample=num_samples,
+                    )
+                    for is_ending_proximal in BOOL_SET
+                    for is_towards in BOOL_SET
                 ]
             ),
         ),
@@ -2039,6 +2436,20 @@ def _make_go_with_prepositions(num_samples: int = 5, *, noise_objects: int = 0):
                         max_to_sample=num_samples,
                     )
                     for is_over in BOOL_SET
+                ]
+            ),
+            # Toward & Away Paths
+            flatten(
+                [
+                    sampled(
+                        _go_towards_away_template(
+                            agent, goal_object, background, is_toward=is_toward
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        max_to_sample=num_samples,
+                    )
+                    for is_toward in BOOL_SET
                 ]
             ),
         ),
@@ -2268,6 +2679,45 @@ def _make_roll_with_prepositions(num_samples: int = 5, *, noise_objects: int = 0
                     for surface in surfaces
                 ]
             ),
+            # X rolls toward/away from Z
+            flatten(
+                [
+                    sampled(
+                        _x_rolls_towards_away_from_y_template(
+                            agent,
+                            goal_object,
+                            surface,
+                            noise_objects_immutable,
+                            is_toward=is_toward,
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        max_to_sample=num_samples,
+                    )
+                    for is_toward in BOOL_SET
+                    for surface in surfaces
+                ]
+            ),
+            # X rolls y toward/away from Z
+            flatten(
+                [
+                    sampled(
+                        _x_rolls_y_towards_away_from_z_template(
+                            agent,
+                            theme,
+                            goal_object,
+                            surface,
+                            noise_objects_immutable,
+                            is_toward=is_toward,
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        max_to_sample=num_samples,
+                    )
+                    for is_toward in BOOL_SET
+                    for surface in surfaces
+                ]
+            ),
         ),
     )
 
@@ -2284,6 +2734,7 @@ def _make_take_with_prepositions(
 
     return phase1_instances(
         "Take + PP",
+        # To
         flatten(
             [
                 sampled(
@@ -2380,6 +2831,25 @@ def _make_fall_with_prepositions(
                     for syntax_hints in syntax_hints_options
                     for is_distal in BOOL_SET
                     for is_in_front in BOOL_SET
+                ]
+            ),
+            # Toward, Away from
+            flatten(
+                [
+                    sampled(
+                        _fall_toward_away_from_template(
+                            theme,
+                            goal_reference,
+                            background,
+                            syntax_hints=syntax_hints,
+                            is_toward=is_toward,
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        max_to_sample=num_samples,
+                    )
+                    for syntax_hints in syntax_hints_options
+                    for is_toward in BOOL_SET
                 ]
             ),
         ),
@@ -2575,6 +3045,20 @@ def _make_move_with_prepositions(
                     for is_distal in BOOL_SET
                 ]
             ),
+            # move toward or away from
+            flatten(
+                [
+                    sampled(
+                        _x_moves_towards_away_from_z_template(
+                            agent, goal_reference, background, is_toward=is_toward
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        max_to_sample=num_samples,
+                    )
+                    for is_toward in BOOL_SET
+                ]
+            ),
             # move something in, on
             flatten(
                 [
@@ -2641,6 +3125,24 @@ def _make_move_with_prepositions(
                     )
                     for is_distal in BOOL_SET
                     for is_in_front in BOOL_SET
+                ]
+            ),
+            # move something toward, away_from
+            flatten(
+                [
+                    sampled(
+                        _x_moves_y_towards_away_from_z_template(
+                            manipulating_agent,
+                            theme,
+                            goal_reference,
+                            background,
+                            is_toward=is_toward,
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        max_to_sample=num_samples,
+                    )
+                    for is_toward in BOOL_SET
                 ]
             ),
         ),
@@ -2770,6 +3272,24 @@ def _make_throw_with_prepositions(
                         max_to_sample=num_samples,
                     )
                     for is_distal in BOOL_SET
+                ]
+            ),
+            # Towards & Away
+            flatten(
+                [
+                    sampled(
+                        _throw_towards_away_template(
+                            agent,
+                            theme,
+                            goal_reference,
+                            background,
+                            is_towards=is_towards,
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        max_to_sample=num_samples,
+                    )
+                    for is_towards in BOOL_SET
                 ]
             ),
         ),
@@ -2925,6 +3445,20 @@ def _make_fly_with_prepositions(
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
+                ]
+            ),
+            # toward or away from
+            flatten(
+                [
+                    sampled(
+                        _fly_towards_away_template(
+                            agent, goal_reference, background, is_toward=is_toward
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        max_to_sample=num_samples,
+                    )
+                    for is_toward in BOOL_SET
                 ]
             ),
         ),

@@ -75,6 +75,9 @@ from adam.ontology.phase1_spatial_relations import (
     Region,
     TOWARD,
     GRAVITATIONAL_UP,
+    SpatialPath,
+    AWAY_FROM,
+    TO,
 )
 from adam.random_utils import SequenceChooser
 from adam.relation import Relation
@@ -729,6 +732,18 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     self._translate_relation_to_action_modifier(
                         action, relation, modifiers
                     )
+                if action.during.objects_to_paths:
+                    for (
+                        path_object,
+                        spatial_path,
+                    ) in action.during.objects_to_paths.items():
+                        spatial_prepositonal_modifier = self._translate_spatial_path_to_action_modifier(
+                            action, path_object, spatial_path
+                        )
+                        if spatial_prepositonal_modifier:
+                            modifiers.append(
+                                (OBLIQUE_NOMINAL, spatial_prepositonal_modifier)
+                            )
 
             for relation in self.situation.after_action_relations:
                 self._translate_relation_to_action_modifier(action, relation, modifiers)
@@ -870,6 +885,77 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 )
 
             reference_object_node = self._noun_for_object(region.reference_object)
+
+            if self.dependency_graph.out_degree[reference_object_node]:
+                # the reference node already has a syntactic connection to the tree,
+                # so don't add another one
+                return None
+            else:
+                self.dependency_graph.add_edge(
+                    DependencyTreeToken(preposition, ADPOSITION),
+                    reference_object_node,
+                    role=CASE_SPATIAL,
+                )
+                return reference_object_node
+
+        def _translate_spatial_path_to_action_modifier(
+            self,
+            action: Optional[Action[OntologyNode, SituationObject]],
+            path_object: SituationObject,
+            spatial_path: SpatialPath[SituationObject],
+        ):
+            # don't talk about spatial paths to non-salient objects
+            if (
+                spatial_path.reference_object
+                and spatial_path.reference_object not in self.situation.salient_objects
+            ):
+                return None
+
+            # Only derive spatial path if path object is salient
+            if path_object not in self.situation.salient_objects:
+                return None
+
+            if action:
+                # If both arguments of the relation are core argument roles,
+                # we assume the verb takes care of expressing their relationship.
+                core_argument_fillers = immutableset(
+                    chain(
+                        action.argument_roles_to_fillers[AGENT],
+                        action.argument_roles_to_fillers[PATIENT],
+                        action.argument_roles_to_fillers[THEME],
+                    )
+                )
+
+                if (
+                    path_object in core_argument_fillers
+                    and spatial_path.reference_object in core_argument_fillers
+                ):
+                    return None
+
+            preposition: Optional[str] = None
+
+            if spatial_path.operator == TOWARD:
+                preposition = "toward"
+            elif spatial_path.operator == AWAY_FROM:
+                preposition = "away_from"
+            # TO is the default spatial path in most actions
+            # so we let the preposition be handled by the GOAL
+            elif spatial_path.operator == TO:
+                return None
+
+            if not preposition:
+                raise RuntimeError(
+                    f"Don't know how to translate spatial path {spatial_path}"
+                )
+
+            if isinstance(spatial_path.reference_object, Region):
+                reference_object_node = self._noun_for_object(
+                    spatial_path.reference_object.reference_object
+                )
+            else:
+                reference_object_node = self._noun_for_object(
+                    spatial_path.reference_object
+                )
 
             if self.dependency_graph.out_degree[reference_object_node]:
                 # the reference node already has a syntactic connection to the tree,
