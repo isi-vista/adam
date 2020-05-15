@@ -480,6 +480,9 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     isinstance(filler, SituationObject)
                     and filler.ontology_node == LEARNER
                 )
+                and not (
+                    argument_role == GOAL and IGNORE_GOAL in self.situation.syntax_hints
+                )
                 # Explicitly ignore relationships which are LEARNER objects from language generation
             )
 
@@ -846,7 +849,10 @@ class SimpleRuleBasedEnglishLanguageGenerator(
 
             preposition: Optional[str] = None
 
-            if region.distance == INTERIOR:
+            if region.distance == INTERIOR and relation.negated:
+                preposition = "out_of"
+
+            elif region.distance == INTERIOR:
                 preposition = "in"
 
             elif region.distance == PROXIMAL and not region.direction:
@@ -1061,3 +1067,4 @@ PREFER_DITRANSITIVE = "PREFER_DITRANSITIVE"
 IGNORE_COLORS = "IGNORE_COLORS"
 IGNORE_HAS_AS_VERB = "IGNORE_HAS_AS_VERB"
 ATTRIBUTES_AS_X_IS_Y = "ATTRIBUTES_AS_X_IS_Y"
+IGNORE_GOAL = "IGNORE_GOAL"

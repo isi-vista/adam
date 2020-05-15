@@ -20,6 +20,7 @@ from adam.curriculum.curriculum_utils import (
 )
 from adam.language_specific.english.english_language_generator import (
     USE_ADVERBIAL_PATH_MODIFIER,
+    IGNORE_GOAL,
 )
 from adam.ontology.during import DuringAction
 from adam.ontology.phase1_ontology import (
@@ -348,6 +349,47 @@ def _push_towards_away_template(
     )
 
 
+def _push_out_template(
+    agent: TemplateObjectVariable,
+    theme: TemplateObjectVariable,
+    spatial_reference: TemplateObjectVariable,
+    goal_reference: TemplateObjectVariable,
+    surface: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+    *,
+    is_distal: bool,
+) -> Phase1SituationTemplate:
+    inside_relation = inside([agent, theme], spatial_reference)
+    return Phase1SituationTemplate(
+        f"{agent.handle}-push-{theme.handle}-out-of-{spatial_reference.handle}",
+        salient_object_variables=[agent, theme, spatial_reference],
+        background_object_variables=background,
+        actions=[
+            Action(
+                PUSH,
+                argument_roles_to_fillers=[(AGENT, agent), (THEME, theme)],
+                auxiliary_variable_bindings=[
+                    (
+                        PUSH_GOAL,
+                        Region(
+                            goal_reference, distance=DISTAL if is_distal else PROXIMAL
+                        ),
+                    ),
+                    (PUSH_SURFACE_AUX, surface),
+                ],
+            )
+        ],
+        before_action_relations=flatten_relations(inside_relation),
+        after_action_relations=flatten_relations(
+            [relation.negated_copy() for relation in inside_relation]
+        ),
+        constraining_relations=flatten_relations(
+            [bigger_than(spatial_reference, [theme, agent]), bigger_than(agent, theme)]
+        ),
+        syntax_hints=[IGNORE_GOAL],
+    )
+
+
 def _go_beside_template(
     agent: TemplateObjectVariable,
     goal_object: TemplateObjectVariable,
@@ -563,6 +605,44 @@ def _go_towards_away_template(
         before_action_relations=[
             far(agent, spatial_reference) if is_toward else near(agent, spatial_reference)
         ],
+    )
+
+
+def _x_go_out_y_template(
+    agent: TemplateObjectVariable,
+    spatial_reference: TemplateObjectVariable,
+    goal_reference: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+    *,
+    is_distal: bool,
+) -> Phase1SituationTemplate:
+    computed_background = [goal_reference]
+    computed_background.extend(background)
+    inside_relation = inside(agent, spatial_reference)
+    return Phase1SituationTemplate(
+        f"{agent.handle}-go-out-of-{spatial_reference.handle}",
+        salient_object_variables=[agent, spatial_reference],
+        background_object_variables=computed_background,
+        actions=[
+            Action(
+                GO,
+                argument_roles_to_fillers=[
+                    (AGENT, agent),
+                    (
+                        GOAL,
+                        Region(
+                            goal_reference, distance=DISTAL if is_distal else PROXIMAL
+                        ),
+                    ),
+                ],
+            )
+        ],
+        before_action_relations=flatten_relations(inside_relation),
+        after_action_relations=flatten_relations(
+            relation.negated_copy() for relation in inside_relation
+        ),
+        constraining_relations=flatten_relations(bigger_than(spatial_reference, agent)),
+        syntax_hints=[IGNORE_GOAL],
     )
 
 
@@ -1272,6 +1352,78 @@ def _x_rolls_y_towards_away_from_z_template(
     )
 
 
+def _x_rolls_out_z_template(
+    agent: TemplateObjectVariable,
+    spatial_reference: TemplateObjectVariable,
+    surface: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+    *,
+    is_distal: bool,
+) -> Phase1SituationTemplate:
+    inside_relation = inside(agent, spatial_reference)
+    return Phase1SituationTemplate(
+        f"{agent.handle}-rolls-out-of-{spatial_reference.handle}",
+        salient_object_variables=[agent, spatial_reference],
+        background_object_variables=background,
+        actions=[
+            Action(
+                ROLL,
+                argument_roles_to_fillers=[
+                    (AGENT, agent),
+                ],
+                auxiliary_variable_bindings=[(ROLL_SURFACE_AUXILIARY, surface)],
+            )
+        ],
+        before_action_relations=flatten_relations(inside_relation),
+        after_action_relations=flatten_relations(
+            [relation.negated_copy() for relation in inside_relation]
+        ),
+        constraining_relations=flatten_relations(bigger_than(spatial_reference, agent)),
+    )
+
+
+def _x_rolls_y_out_of_z_template(
+    agent: TemplateObjectVariable,
+    theme: TemplateObjectVariable,
+    spatial_reference: TemplateObjectVariable,
+    goal_reference: TemplateObjectVariable,
+    surface: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+    *,
+    is_distal: bool,
+) -> Phase1SituationTemplate:
+    inside_relation = inside([agent, theme], spatial_reference)
+    return Phase1SituationTemplate(
+        f"{agent.handle}-rolls-{theme.handle}-out-of-{spatial_reference.handle}",
+        salient_object_variables=[agent, theme, spatial_reference, goal_reference],
+        background_object_variables=background,
+        actions=[
+            Action(
+                ROLL,
+                argument_roles_to_fillers=[
+                    (AGENT, agent),
+                    (THEME, theme),
+                    (
+                        GOAL,
+                        Region(
+                            goal_reference, distance=DISTAL if is_distal else PROXIMAL
+                        ),
+                    ),
+                ],
+                auxiliary_variable_bindings=[(ROLL_SURFACE_AUXILIARY, surface)],
+            )
+        ],
+        before_action_relations=flatten_relations(inside_relation),
+        after_action_relations=flatten_relations(
+            [relation.negated_copy() for relation in inside_relation]
+        ),
+        constraining_relations=flatten_relations(
+            bigger_than(spatial_reference, [agent, theme])
+        ),
+        syntax_hints=[IGNORE_GOAL],
+    )
+
+
 # TAKE templates
 
 
@@ -1897,6 +2049,82 @@ def _x_moves_y_towards_away_from_z_template(
     )
 
 
+def _x_moves_out_of_z_template(
+    agent: TemplateObjectVariable,
+    spatial_reference: TemplateObjectVariable,
+    goal_reference: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+    *,
+    is_distal: bool,
+) -> Phase1SituationTemplate:
+    inside_relation = inside(agent, spatial_reference)
+    return Phase1SituationTemplate(
+        f"{agent.handle}-moves-out-of-{spatial_reference.handle}",
+        salient_object_variables=[agent, spatial_reference],
+        background_object_variables=background,
+        actions=[
+            Action(
+                MOVE,
+                argument_roles_to_fillers=[
+                    (AGENT, agent),
+                    (
+                        GOAL,
+                        Region(
+                            goal_reference, distance=DISTAL if is_distal else PROXIMAL
+                        ),
+                    ),
+                ],
+            )
+        ],
+        before_action_relations=flatten_relations(inside_relation),
+        after_action_relations=flatten_relations(
+            [relation.negated_copy() for relation in inside_relation]
+        ),
+        constraining_relations=flatten_relations(bigger_than(spatial_reference, agent)),
+        syntax_hints=[IGNORE_GOAL],
+    )
+
+
+def _x_moves_y_out_of_z_template(
+    agent: TemplateObjectVariable,
+    theme: TemplateObjectVariable,
+    spatial_reference: TemplateObjectVariable,
+    goal_reference: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+    *,
+    is_distal: bool,
+) -> Phase1SituationTemplate:
+    inside_relations = inside([agent, theme], spatial_reference)
+    return Phase1SituationTemplate(
+        f"{agent.handle}-moves-{theme.handle}-out-of-{spatial_reference.handle}",
+        salient_object_variables=[agent, theme, spatial_reference],
+        background_object_variables=background,
+        actions=[
+            Action(
+                MOVE,
+                argument_roles_to_fillers=[
+                    (AGENT, agent),
+                    (THEME, theme),
+                    (
+                        GOAL,
+                        Region(
+                            goal_reference, distance=DISTAL if is_distal else PROXIMAL
+                        ),
+                    ),
+                ],
+            )
+        ],
+        before_action_relations=flatten_relations(inside_relations),
+        after_action_relations=flatten_relations(
+            [relation.negated_copy() for relation in inside_relations]
+        ),
+        constraining_relations=flatten_relations(
+            [bigger_than(spatial_reference, [agent, theme]), bigger_than(agent, theme)]
+        ),
+        syntax_hints=[IGNORE_GOAL],
+    )
+
+
 # JUMP templates
 
 
@@ -2177,6 +2405,25 @@ def _fly_towards_away_template(
     )
 
 
+def _fly_out_template(
+    agent: TemplateObjectVariable,
+    spatial_reference: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+) -> Phase1SituationTemplate:
+    inside_relation = inside(agent, spatial_reference)
+    return Phase1SituationTemplate(
+        f"{agent.handle}-fly-out-of-{spatial_reference.handle}",
+        salient_object_variables=[agent, spatial_reference],
+        background_object_variables=background,
+        actions=[Action(FLY, argument_roles_to_fillers=[(AGENT, agent)])],
+        before_action_relations=flatten_relations(inside_relation),
+        after_action_relations=flatten_relations(
+            [relation.negated_copy() for relation in inside_relation]
+        ),
+        constraining_relations=flatten_relations(bigger_than(spatial_reference, agent)),
+    )
+
+
 # Push
 
 
@@ -2294,6 +2541,26 @@ def _make_push_with_prepositions(
                     )
                     for is_ending_proximal in BOOL_SET
                     for is_towards in BOOL_SET
+                ]
+            ),
+            # Out
+            flatten(
+                [
+                    sampled(
+                        _push_out_template(
+                            agent,
+                            theme,
+                            goal_in,
+                            goal_reference,
+                            surface,
+                            background,
+                            is_distal=is_distal,
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        max_to_sample=num_samples,
+                    )
+                    for is_distal in BOOL_SET
                 ]
             ),
         ),
@@ -2450,6 +2717,24 @@ def _make_go_with_prepositions(num_samples: int = 5, *, noise_objects: int = 0):
                         max_to_sample=num_samples,
                     )
                     for is_toward in BOOL_SET
+                ]
+            ),
+            # Out
+            flatten(
+                [
+                    sampled(
+                        _x_go_out_y_template(
+                            agent,
+                            goal_object_hollow,
+                            goal_object,
+                            background,
+                            is_distal=is_distal,
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        max_to_sample=num_samples,
+                    )
+                    for is_distal in BOOL_SET
                 ]
             ),
         ),
@@ -2715,6 +3000,46 @@ def _make_roll_with_prepositions(num_samples: int = 5, *, noise_objects: int = 0
                         max_to_sample=num_samples,
                     )
                     for is_toward in BOOL_SET
+                    for surface in surfaces
+                ]
+            ),
+            # X rolls out of Z
+            flatten(
+                [
+                    sampled(
+                        _x_rolls_out_z_template(
+                            agent,
+                            goal_object_hollow,
+                            surface,
+                            noise_objects_immutable,
+                            is_distal=is_distal,
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        max_to_sample=num_samples,
+                    )
+                    for is_distal in BOOL_SET
+                    for surface in surfaces
+                ]
+            ),
+            # X rolls Y out of Z
+            flatten(
+                [
+                    sampled(
+                        _x_rolls_y_out_of_z_template(
+                            agent,
+                            theme,
+                            goal_object_hollow,
+                            goal_object,
+                            surface,
+                            noise_objects_immutable,
+                            is_distal=is_distal,
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        max_to_sample=num_samples,
+                    )
+                    for is_distal in BOOL_SET
                     for surface in surfaces
                 ]
             ),
@@ -3145,6 +3470,43 @@ def _make_move_with_prepositions(
                     for is_toward in BOOL_SET
                 ]
             ),
+            # x moves out of z
+            flatten(
+                [
+                    sampled(
+                        _x_moves_out_of_z_template(
+                            agent,
+                            goal_in,
+                            goal_reference,
+                            background,
+                            is_distal=is_distal,
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        max_to_sample=num_samples,
+                    )
+                    for is_distal in BOOL_SET
+                ]
+            ),
+            # x moves y out of z
+            flatten(
+                [
+                    sampled(
+                        _x_moves_y_out_of_z_template(
+                            manipulating_agent,
+                            theme,
+                            goal_in,
+                            goal_reference,
+                            background,
+                            is_distal=is_distal,
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        max_to_sample=num_samples,
+                    )
+                    for is_distal in BOOL_SET
+                ]
+            ),
         ),
     )
 
@@ -3459,6 +3821,17 @@ def _make_fly_with_prepositions(
                         max_to_sample=num_samples,
                     )
                     for is_toward in BOOL_SET
+                ]
+            ),
+            # out
+            flatten(
+                [
+                    sampled(
+                        _fly_out_template(agent, goal_in, background),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        max_to_sample=num_samples,
+                    )
                 ]
             ),
         ),
