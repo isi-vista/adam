@@ -5,9 +5,11 @@ Curricula for DARPA GAILA Phase 1
 from itertools import chain
 from typing import Iterable, Sequence
 
-from more_itertools import flatten
+from immutablecollections import immutableset
+from more_itertools import flatten, first
 
 from adam.axes import AxesInfo, FacingAddresseeAxis, HorizontalAxisOfObject
+from adam.curriculum import ExplicitWithSituationInstanceGroup
 from adam.curriculum.curriculum_utils import (
     GROUND_OBJECT_TEMPLATE,
     PHASE1_CHOOSER_FACTORY,
@@ -15,6 +17,7 @@ from adam.curriculum.curriculum_utils import (
     phase1_instances,
     standard_object,
 )
+from adam.language import TokenSequenceLinguisticDescription
 from adam.language_specific.english.english_language_generator import (
     IGNORE_HAS_AS_VERB,
     PREFER_DITRANSITIVE,
@@ -84,6 +87,14 @@ from adam.ontology.phase1_ontology import (
     near,
     on,
     strictly_above,
+    BABY,
+    TRUCK,
+    CAR,
+    DOG,
+    MOM,
+    DAD,
+    HOUSE,
+    BALL,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -125,7 +136,6 @@ from adam.situation.templates.phase1_templates import (
     object_variable,
     sampled,
 )
-from immutablecollections import immutableset
 
 
 # Show each object once by itself
@@ -343,6 +353,58 @@ def _make_person_has_object_curriculum() -> Phase1InstanceGroup:
     )
 
 
+def _make_part_whole_curriculum() -> Phase1InstanceGroup:
+    whole_object_to_parts = {
+        BABY: ["head", "hand", "arm"],
+        BIRD: ["head", "wing"],
+        TRUCK: ["tire"],
+        CAR: ["tire", "trailer"],
+        DAD: ["head", "hand", "arm"],
+        MOM: ["head", "hand", "arm"],
+        DOG: ["head", "leg"],
+        HOUSE: ["wall", "roof"],
+    }
+    all_instances = []
+    for whole_object, parts in whole_object_to_parts.items():
+        whole = object_variable("whole", whole_object)
+
+        # Get the description sequence for "[whole] has a [part]" Using a part directly causes issues.
+        seq = first(
+            phase1_instances(
+                "desc",
+                situations=sampled(
+                    _x_has_y_template(whole, object_variable("filler", BALL)),
+                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                    max_to_sample=1,
+                ),
+            ).instances()
+        )[1].as_token_sequence()
+
+        for part in parts:
+            # Replace the filler object with the part object description
+            description = TokenSequenceLinguisticDescription(
+                tuple([w if w != "ball" else part for w in seq])
+            )
+
+            # Get the situation and perception from just the [whole] object
+            instances = phase1_instances(
+                "desc",
+                situations=sampled(
+                    Phase1SituationTemplate(
+                        f"{whole.handle}", salient_object_variables=[whole]
+                    ),
+                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                    max_to_sample=3,
+                ),
+            ).instances()
+            for situation, _, perception in instances:
+                all_instances.append((situation, description, perception))
+
+    return ExplicitWithSituationInstanceGroup("part of instances", all_instances)
+
+
 def _make_my_your_object_curriculum(num_to_sample: int = 20) -> Phase1InstanceGroup:
     person_0 = standard_object("speaker", PERSON, added_properties=[IS_SPEAKER])
     person_1 = standard_object("addressee", PERSON, added_properties=[IS_ADDRESSEE])
@@ -416,7 +478,6 @@ def make_fall_templates() -> Iterable[Phase1SituationTemplate]:
 
 
 def _make_fall_curriculum() -> Phase1InstanceGroup:
-
     return phase1_instances(
         "falling objects",
         chain(
@@ -457,7 +518,6 @@ def make_give_templates() -> Iterable[Phase1SituationTemplate]:
 
 
 def _make_transfer_of_possession_curriculum() -> Phase1InstanceGroup:
-
     return phase1_instances(
         "transfer-of-possession",
         chain(
@@ -827,7 +887,6 @@ def make_jump_templates() -> Iterable[Phase1SituationTemplate]:
 
 
 def _make_jump_curriculum() -> Phase1InstanceGroup:
-
     jumper = standard_object("jumper_0", THING, required_properties=[CAN_JUMP])
     jumped_over = standard_object("jumped_over")
 
@@ -872,7 +931,6 @@ def make_put_templates() -> Iterable[Phase1SituationTemplate]:
 
 
 def _make_put_curriculum() -> Phase1InstanceGroup:
-
     return phase1_instances(
         "putting",
         chain(
@@ -950,7 +1008,6 @@ def make_drink_template() -> Phase1SituationTemplate:
 
 
 def _make_drink_curriculum() -> Phase1InstanceGroup:
-
     return phase1_instances(
         "drinking",
         chain(
@@ -1078,7 +1135,6 @@ def make_sit_templates() -> Iterable[Phase1SituationTemplate]:
 
 
 def _make_sit_curriculum() -> Phase1InstanceGroup:
-
     return phase1_instances(
         "sitting",
         chain(
@@ -1112,7 +1168,6 @@ def make_take_template() -> Phase1SituationTemplate:
 
 
 def _make_take_curriculum() -> Phase1InstanceGroup:
-
     return phase1_instances(
         "taking",
         chain(
@@ -1172,7 +1227,6 @@ def make_move_templates() -> Iterable[Phase1SituationTemplate]:
 
 
 def _make_move_curriculum() -> Phase1InstanceGroup:
-
     return phase1_instances(
         "move",
         chain(
@@ -1332,7 +1386,6 @@ def make_push_templates() -> Iterable[Phase1SituationTemplate]:
 
 
 def _make_push_curriculum() -> Phase1InstanceGroup:
-
     return phase1_instances(
         "pushing",
         chain(
@@ -1458,7 +1511,6 @@ def make_throw_templates() -> Iterable[Phase1SituationTemplate]:
 
 
 def _make_throw_curriculum() -> Phase1InstanceGroup:
-
     return phase1_instances(
         "throwing",
         chain(
