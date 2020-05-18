@@ -121,7 +121,7 @@ STR_TO_CURRICULUM: Mapping[str, Callable[[], Iterable[Phase1InstanceGroup]]] = {
 
 def main(params: Parameters) -> None:
     root_output_directory = params.creatable_directory("output_directory")
-    curriculum_string = params.optional_string(
+    curriculum_string = params.string(
         "curriculum", valid_options=STR_TO_CURRICULUM.keys(), default="phase1"
     )
     phase1_curriculum_dir = root_output_directory / curriculum_string
@@ -130,11 +130,9 @@ def main(params: Parameters) -> None:
     # about any of them we don't actually use.
     curriculum_to_render = STR_TO_CURRICULUM[curriculum_string]()
 
-    sort_by_utterance_length_flag = params.optional_boolean(
-        "sort_by_utterance", default=False
-    )
+    sort_by_utterance_length_flag = params.boolean("sort_by_utterance", default=False)
     if sort_by_utterance_length_flag:
-        random_seed = params.optional_integer("random_seed", default=1)
+        random_seed = params.integer("random_seed", default=1)
         CurriculumToHtmlDumper().dump_to_html_as_sorted_by_utterance_length(
             curriculum_to_render,
             output_directory=phase1_curriculum_dir,
