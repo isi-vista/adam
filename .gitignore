@@ -114,3 +114,11 @@ parameters/root.params
 # byproduct of visualization tests
 tests/renders
 renders
+
+# VSCode files
+.vscode/
+*.code-workspace
+
+# pip files
+pip-wheel-metadata/
+
