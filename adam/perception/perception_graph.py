@@ -39,6 +39,8 @@ from typing import (
 from uuid import uuid4
 
 import graphviz
+
+from adam.semantics import ObjectSemanticNode
 from attr.validators import deep_iterable, instance_of, optional
 from more_itertools import first, ilen, pairwise
 from networkx import DiGraph, connected_components, is_isomorphic, set_node_attributes
@@ -108,24 +110,13 @@ class Incrementer:
 
 DebugCallableType = Callable[[DiGraph, Dict[Any, Any]], None]
 
-
-@attrs(frozen=True, eq=False, slots=True)
-class MatchedObjectNode:
-    """
-    A `MatchedObjectNode` is the PerceptionGraph node to indicate an object which
-    has been identified in the graph
-    """
-
-    name: Tuple[str] = attrib()
-
-
 PerceptionGraphNode = Union[
     ObjectPerception,
     OntologyNode,
     Tuple[Region[Any], int],
     Tuple[Geon, int],
     GeonAxis,
-    MatchedObjectNode,
+    ObjectSemanticNode,
     SpatialPath[ObjectPerception],
     PathOperator,
 ]
@@ -148,7 +139,7 @@ UnwrappedPerceptionGraphNode = Union[
 EdgeLabel = Union[OntologyNode, str, Direction[Any]]
 """
 This is the core information stored on a perception graph edge.
-This is wrapped in `TemporallyScopdPerceptionGraphEdgeAttribute`
+This is wrapped in `TemporallyScopedPerceptionGraphEdgeAttribute`
 before actually being applied to a `DiGraph` edge.
 """
 
@@ -509,8 +500,8 @@ class PerceptionGraph(PerceptionGraphProtocol):
             label = str(unwrapped_perception_node.cross_section) + str(
                 unwrapped_perception_node.cross_section_size
             )
-        elif isinstance(unwrapped_perception_node, MatchedObjectNode):
-            label = " ".join(unwrapped_perception_node.name)
+        elif isinstance(unwrapped_perception_node, ObjectSemanticNode):
+            label = " ".join(unwrapped_perception_node.concept.debug_string)
         elif isinstance(unwrapped_perception_node, SpatialPath):
             label = "path"
         elif isinstance(unwrapped_perception_node, PathOperator):
@@ -843,7 +834,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
                     perception_node_to_pattern_node[key] = IsOntologyNodePredicate(node)
                 elif isinstance(node, RgbColorPerception):
                     perception_node_to_pattern_node[key] = IsColorNodePredicate(node)
-                elif isinstance(node, MatchedObjectNode):
+                elif isinstance(node, ObjectSemanticNode):
                     perception_node_to_pattern_node[
                         key
                     ] = MatchedObjectPerceptionPredicate()
@@ -1961,7 +1952,7 @@ class MatchedObjectPerceptionPredicate(NodePredicate):
     """
 
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
-        return isinstance(graph_node, MatchedObjectNode)
+        return isinstance(graph_node, ObjectSemanticNode)
 
     def dot_label(self) -> str:
         return "*[matched-obj]"
@@ -2349,7 +2340,7 @@ def _pattern_matching_node_order(node_node_data_tuple) -> int:
 # which can have a significant impact on match speed.
 # This should match _PATTERN_PREDICATE_NODE_ORDER above.
 _GRAPH_NODE_ORDER = [  # type: ignore
-    MatchedObjectNode,
+    ObjectSemanticNode,
     SpatialPath,
     PathOperator,
     OntologyNode,
@@ -2516,7 +2507,7 @@ class GraphLogger:
 
 
 # Used by LanguageAlignedPerception below.
-def _sort_mapping_by_token_spans(pairs) -> ImmutableDict[MatchedObjectNode, Span]:
+def _sort_mapping_by_token_spans(pairs) -> ImmutableDict[ObjectSemanticNode, Span]:
     # we type: ignore because the proper typing of pairs is huge and mypy is going to screw it up
     # anyway.
     unsorted = immutabledict(pairs)  # type: ignore
@@ -2544,18 +2535,18 @@ class LanguageAlignedPerception:
 
     language: LinguisticDescription = attrib(validator=instance_of(LinguisticDescription))
     perception_graph: PerceptionGraph = attrib(validator=instance_of(PerceptionGraph))
-    node_to_language_span: ImmutableDict[MatchedObjectNode, Span] = attrib(
+    node_to_language_span: ImmutableDict[ObjectSemanticNode, Span] = attrib(
         converter=_sort_mapping_by_token_spans, default=immutabledict()
     )
     language_span_to_node: ImmutableDict[Span, PerceptionGraphNode] = attrib(init=False)
-    aligned_nodes: ImmutableSet[MatchedObjectNode] = attrib(init=False)
+    aligned_nodes: ImmutableSet[ObjectSemanticNode] = attrib(init=False)
 
     @language_span_to_node.default
     def _init_language_span_to_node(self) -> ImmutableDict[PerceptionGraphNode, Span]:
         return immutabledict((v, k) for (k, v) in self.node_to_language_span.items())
 
     @aligned_nodes.default
-    def _init_aligned_nodes(self) -> ImmutableSet[MatchedObjectNode]:
+    def _init_aligned_nodes(self) -> ImmutableSet[ObjectSemanticNode]:
         return immutableset(self.node_to_language_span.keys())
 
     def __attrs_post_init__(self) -> None:

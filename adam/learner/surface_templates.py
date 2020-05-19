@@ -3,8 +3,11 @@ Representations of template-with-slots-like patterns over token strings.
 """
 from typing import Tuple, Union, Mapping, List, Iterable
 
+from more_itertools import quantify
+
 from adam.language import TokenSequenceLinguisticDescription
-from adam.perception.perception_graph import LanguageAlignedPerception, MatchedObjectNode
+from adam.perception.perception_graph import LanguageAlignedPerception
+from adam.semantics import ObjectSemanticNode
 from attr import attrs, attrib
 from attr.validators import instance_of, deep_iterable
 
@@ -37,12 +40,13 @@ class SurfaceTemplate:
         validator=deep_iterable(instance_of(SurfaceTemplateVariable)),
         default=immutableset(),
     )
+    num_slots: int = attrib(init=False)
 
     @staticmethod
     def from_language_aligned_perception(
         language_aligned_perception: LanguageAlignedPerception,
         object_node_to_template_variable: Mapping[
-            MatchedObjectNode, SurfaceTemplateVariable
+            ObjectSemanticNode, SurfaceTemplateVariable
         ],
         *,
         determiner_prefix_slots: Iterable[SurfaceTemplateVariable] = immutableset()
@@ -133,6 +137,14 @@ class SurfaceTemplate:
         return "_".join(
             element.name if isinstance(element, SurfaceTemplateVariable) else element
             for element in self.elements
+        )
+
+    @num_slots.default
+    def _init_num_slots(self) -> int:
+        return quantify(
+            element
+            for element in self.elements
+            if isinstance(element, SurfaceTemplateVariable)
         )
 
 

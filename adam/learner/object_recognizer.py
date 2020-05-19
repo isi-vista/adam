@@ -23,7 +23,6 @@ from adam.perception.perception_graph import (
     EdgeLabel,
     HAS_PROPERTY_LABEL,
     LanguageAlignedPerception,
-    MatchedObjectNode,
     PerceptionGraph,
     PerceptionGraphNode,
     PerceptionGraphPattern,
@@ -32,6 +31,7 @@ from adam.perception.perception_graph import (
     edge_equals_ignoring_temporal_scope,
     raise_graph_exception,
 )
+from adam.semantics import ObjectSemanticNode
 from adam.utils.networkx_utils import subgraph
 from attr import attrib, attrs
 from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
@@ -59,14 +59,14 @@ class PerceptionGraphFromObjectRecognizer:
 
     perception_graph: PerceptionGraph
     description_to_matched_object_node: ImmutableDict[
-        Tuple[str, ...], MatchedObjectNode
+        Tuple[str, ...], ObjectSemanticNode
     ] = attrib(converter=_to_immutabledict)
 
     def __attrs_post_init__(self) -> None:
         matched_object_nodes = set(
             node
             for node in self.perception_graph.copy_as_digraph()
-            if isinstance(node, MatchedObjectNode)
+            if isinstance(node, ObjectSemanticNode)
         )
         described_matched_object_nodes = set(
             self.description_to_matched_object_node.values()
@@ -191,7 +191,7 @@ class ObjectRecognizer:
         global cumulative_millis_in_successful_matches_ms
         global cumulative_millis_in_failed_matches_ms
 
-        matched_object_nodes: List[Tuple[Tuple[str, ...], MatchedObjectNode]] = []
+        matched_object_nodes: List[Tuple[Tuple[str, ...], ObjectSemanticNode]] = []
         graph_to_return = perception_graph
         is_dynamic = perception_graph.dynamic
 
@@ -206,7 +206,7 @@ class ObjectRecognizer:
         # Prompted the need to recognize the ground
         for node in graph_to_return._graph.nodes:  # pylint:disable=protected-access
             if node == GROUND_PERCEPTION:
-                matched_object_node = MatchedObjectNode(name=("ground",))
+                matched_object_node = ObjectSemanticNode(name=("ground",))
                 matched_object_nodes.append((("ground",), matched_object_node))
                 # We construct a fake match which is only the ground perception node
                 subgraph_of_root = subgraph(perception_graph.copy_as_digraph(), [node])
@@ -249,7 +249,7 @@ class ObjectRecognizer:
                 if pattern_match:
                     cumulative_millis_in_successful_matches_ms += t.elapsed
 
-                    matched_object_node = MatchedObjectNode(name=(description,))
+                    matched_object_node = ObjectSemanticNode(name=(description,))
 
                     # We wrap the description in a tuple because it could in theory be multiple
                     # tokens,
@@ -396,7 +396,7 @@ class ObjectRecognizer:
 
     def _replace_match_with_object_graph_node(
         self,
-        matched_object_node: MatchedObjectNode,
+        matched_object_node: ObjectSemanticNode,
         current_perception: PerceptionGraph,
         pattern_match: PerceptionGraphPatternMatch,
     ) -> PerceptionGraph:
@@ -421,7 +421,7 @@ class ObjectRecognizer:
         duplicate_nodes_to_remove: List[PerceptionGraphNode] = []
 
         for matched_subgraph_node in matched_subgraph_nodes:
-            if isinstance(matched_subgraph_node, MatchedObjectNode):
+            if isinstance(matched_subgraph_node, ObjectSemanticNode):
                 raise RuntimeError(
                     f"We do not currently allow object recognitions to themselves "
                     f"operate over other object recognitions, but got match "
@@ -542,10 +542,10 @@ class ObjectRecognizer:
 
     def _align_objects_to_tokens(
         self,
-        description_to_object_node: Mapping[Tuple[str, ...], MatchedObjectNode],
+        description_to_object_node: Mapping[Tuple[str, ...], ObjectSemanticNode],
         language: LinguisticDescription,
-    ) -> Mapping[MatchedObjectNode, Span]:
-        result: List[Tuple[MatchedObjectNode, Span]] = []
+    ) -> Mapping[ObjectSemanticNode, Span]:
+        result: List[Tuple[ObjectSemanticNode, Span]] = []
 
         # We want to ban the same token index from being aligned twice.
         matched_token_indices: Set[int] = set()
@@ -618,7 +618,7 @@ class ObjectRecognizer:
         original_graph: DiGraph,
         output_graph: DiGraph,
         matched_nodes: AbstractSet[PerceptionGraphNode],
-        matched_object_node: MatchedObjectNode,
+        matched_object_node: ObjectSemanticNode,
     ) -> None:
         # We take two graphs as input because we are assuming object-internal properties
         # have already been deleted from the output_graph, so we have to look for them

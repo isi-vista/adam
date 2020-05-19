@@ -21,11 +21,8 @@ from adam.perception import PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
-from adam.perception.perception_graph import (
-    LanguageAlignedPerception,
-    MatchedObjectNode,
-    PerceptionGraph,
-)
+from adam.perception.perception_graph import LanguageAlignedPerception, PerceptionGraph
+from adam.semantics import ObjectSemanticNode
 from attr import attrib, attrs
 from immutablecollections import immutabledict
 
@@ -79,7 +76,7 @@ class AbstractVerbTemplateLearner(AbstractTemplateLearner, ABC):
             raise RuntimeError("Input has too many aligned nodes for us to handle.")
 
         object_node_to_template_variable: Mapping[
-            MatchedObjectNode, SurfaceTemplateVariable
+            ObjectSemanticNode, SurfaceTemplateVariable
         ] = immutabledict(zip(preprocessed_input.aligned_nodes, STANDARD_SLOT_VARIABLES))
         return SurfaceTemplate.from_language_aligned_perception(
             preprocessed_input,
