@@ -382,7 +382,7 @@ class CurriculumToHtmlDumper:
                 or isinstance(dependency_tree, TokenSequenceLinguisticDescription)
             ):
                 raise RuntimeError(
-                    f"Expected the Lingustics to be LinearizedDependencyTree got {type(dependency_tree)}"
+                    f"Expected the Lingustics to be LinearizedDependencyTree or TokenSequenceLinguisticDescription got {type(dependency_tree)}"
                 )
             if not (
                 isinstance(perception, PerceptualRepresentation)
