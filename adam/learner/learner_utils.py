@@ -9,10 +9,10 @@ from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
 from adam.perception.perception_graph import (
-    MatchedObjectNode,
     MatchedObjectPerceptionPredicate,
     PerceptionGraphPatternMatch,
 )
+from adam.semantics import ObjectSemanticNode
 from immutablecollections import immutabledict, immutableset
 
 
@@ -21,7 +21,7 @@ def pattern_match_to_description(
     surface_template: SurfaceTemplate,
     pattern: PerceptionGraphTemplate,
     match: PerceptionGraphPatternMatch,
-    matched_objects_to_names: Mapping[MatchedObjectNode, Tuple[str, ...]],
+    matched_objects_to_names: Mapping[ObjectSemanticNode, Tuple[str, ...]],
 ) -> TokenSequenceLinguisticDescription:
     """
     Given a `SurfaceTemplate`, will fill it in using a *match* for a *pattern*.
@@ -31,7 +31,7 @@ def pattern_match_to_description(
     matched_object_nodes = immutableset(
         perception_node
         for perception_node in match.pattern_node_to_matched_graph_node.values()
-        if isinstance(perception_node, MatchedObjectNode)
+        if isinstance(perception_node, ObjectSemanticNode)
     )
     matched_object_nodes_without_names = matched_object_nodes - immutableset(
         matched_objects_to_names.keys()
@@ -51,7 +51,7 @@ def pattern_match_to_description(
                         # We know, but the type system does not,
                         # that if a MatchedObjectPerceptionPredicate matched,
                         # the graph node must be a MatchedObjectNode
-                        cast(MatchedObjectNode, matched_graph_node)
+                        cast(ObjectSemanticNode, matched_graph_node)
                     ],
                 )
                 for (

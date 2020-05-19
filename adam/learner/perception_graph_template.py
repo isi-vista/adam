@@ -9,12 +9,12 @@ from adam.learner.surface_templates import SurfaceTemplateVariable
 from adam.ontology.ontology import Ontology
 from adam.perception.perception_graph import (
     GraphLogger,
-    MatchedObjectNode,
     MatchedObjectPerceptionPredicate,
     PerceptionGraph,
     PerceptionGraphPattern,
     raise_graph_exception,
 )
+from adam.semantics import ObjectSemanticNode
 from attr import attrib, attrs
 from immutablecollections import ImmutableDict, immutabledict
 from immutablecollections.converter_utils import _to_immutabledict
@@ -44,7 +44,7 @@ class PerceptionGraphTemplate:
     def from_graph(
         perception_graph: PerceptionGraph,
         template_variable_to_matched_object_node: Mapping[
-            SurfaceTemplateVariable, MatchedObjectNode
+            SurfaceTemplateVariable, ObjectSemanticNode
         ],
     ) -> "PerceptionGraphTemplate":
         # It is possible the perception graph has additional recognized objects

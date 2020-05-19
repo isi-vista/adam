@@ -29,11 +29,11 @@ from adam.perception.developmental_primitive_perception import (
 )
 from adam.perception.perception_graph import (
     LanguageAlignedPerception,
-    MatchedObjectNode,
     PerceptionGraph,
     PerceptionGraphNode,
     _graph_node_order,
 )
+from adam.semantics import ObjectSemanticNode
 from adam.utils.networkx_utils import digraph_with_nodes_sorted_by
 from attr import attrib, attrs
 from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
@@ -101,7 +101,7 @@ class AbstractPrepositionTemplateLearner(AbstractTemplateLearner, ABC):
 def preposition_hypothesis_from_perception(
     scene_aligned_perception: LanguageAlignedPerception,
     template_variables_to_object_match_nodes: Mapping[
-        SurfaceTemplateVariable, MatchedObjectNode
+        SurfaceTemplateVariable, ObjectSemanticNode
     ],
 ) -> PerceptionGraphTemplate:
     """
@@ -184,7 +184,7 @@ class PrepositionPursuitLearner(
         # As an English-specific hack, the leftmost recognized object
         # is always taken to be the object modified, and the right one the ground.
         template_variables_to_object_match_nodes: ImmutableDict[
-            SurfaceTemplateVariable, MatchedObjectNode
+            SurfaceTemplateVariable, ObjectSemanticNode
         ] = immutabledict(
             [
                 (SLOT1, language_aligned_perception.aligned_nodes[0]),
@@ -294,7 +294,7 @@ class SubsetPrepositionLearner(
         # As an English-specific hack, the leftmost recognized object
         # is always taken to be the object modified, and the right one the ground.
         template_variables_to_object_match_nodes: ImmutableDict[
-            SurfaceTemplateVariable, MatchedObjectNode
+            SurfaceTemplateVariable, ObjectSemanticNode
         ] = immutabledict(
             [
                 (SLOT1, preprocessed_input.aligned_nodes[0]),
