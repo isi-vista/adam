@@ -9,7 +9,7 @@ from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
 from adam.perception.perception_graph import (
-    MatchedObjectPerceptionPredicate,
+    ObjectSemanticNodePerceptionPredicate,
     PerceptionGraphPatternMatch,
 )
 from adam.semantics import ObjectSemanticNode
@@ -58,7 +58,7 @@ def pattern_match_to_description(
                     pattern_node,
                     matched_graph_node,
                 ) in match.pattern_node_to_matched_graph_node.items()
-                if isinstance(pattern_node, MatchedObjectPerceptionPredicate)
+                if isinstance(pattern_node, ObjectSemanticNodePerceptionPredicate)
                 # There can sometimes be relevant matched object nodes which are not themselves
                 # slots, like the addressed possessor for "your X".
                 and pattern_node in pattern.pattern_node_to_template_variable

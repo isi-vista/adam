@@ -2,7 +2,7 @@ import logging
 from abc import ABC
 from pathlib import Path
 from random import Random
-from typing import Union, Sequence, List, Optional, Iterable
+from typing import AbstractSet, Union, Sequence, List, Optional, Iterable
 
 from adam.language import LinguisticDescription
 from adam.learner import (
@@ -11,12 +11,22 @@ from adam.learner import (
     get_largest_matching_pattern,
 )
 from adam.learner.learner_utils import assert_static_situation
-from adam.learner.object_recognizer import PerceptionGraphFromObjectRecognizer
+from adam.learner.object_recognizer import (
+    ObjectRecognizer,
+    PerceptionGraphFromObjectRecognizer,
+)
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
 from adam.learner.pursuit import AbstractPursuitLearner, HypothesisLogger
 from adam.learner.subset import AbstractTemplateSubsetLearner
 from adam.learner.surface_templates import SurfaceTemplate
-from adam.learner.template_learner import AbstractTemplateLearner
+from adam.learner.template_learner import (
+    AbstractNewStyleTemplateLearner,
+    AbstractTemplateLearner,
+)
+from adam.learner.alignments import (
+    LanguagePerceptionSemanticAlignment,
+    PerceptionSemanticAlignment,
+)
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
 from adam.ontology.phase1_spatial_relations import Region
 from adam.perception import PerceptualRepresentation, ObjectPerception
@@ -24,19 +34,31 @@ from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
     RgbColorPerception,
 )
-from adam.perception.perception_graph import (
-    PerceptionGraph,
-    LanguageAlignedPerception,
-    PerceptionGraphPattern,
-)
+from adam.perception.perception_graph import PerceptionGraph, PerceptionGraphPattern
+from adam.learner.alignments import LanguageConceptAlignment
+from adam.semantics import Concept
 from adam.utils import networkx_utils
 from attr import evolve, attrs, attrib
 from attr.validators import optional, instance_of
-from immutablecollections import immutabledict
+from immutablecollections import (
+    ImmutableDict,
+    ImmutableSet,
+    ImmutableSetMultiDict,
+    immutabledict,
+    immutableset,
+    immutablesetmultidict,
+)
 from vistautils.parameters import Parameters
 
 
-class AbstractObjectTemplateLearner(AbstractTemplateLearner, ABC):
+@attrs
+class AbstractNewStyleObjectTemplateLearner(AbstractNewStyleTemplateLearner):
+    pass
+
+
+class AbstractObjectTemplateLearner(
+    AbstractTemplateLearner, AbstractNewStyleTemplateLearner, ABC
+):
     def _assert_valid_input(
         self,
         to_check: Union[
@@ -52,12 +74,12 @@ class AbstractObjectTemplateLearner(AbstractTemplateLearner, ABC):
         return PerceptionGraph.from_frame(perception.frames[0])
 
     def _preprocess_scene_for_learning(
-        self, language_aligned_perception: LanguageAlignedPerception
-    ) -> LanguageAlignedPerception:
+        self, language_concept_alignment: LanguageConceptAlignment
+    ) -> LanguageConceptAlignment:
         return evolve(
-            language_aligned_perception,
+            language_concept_alignment,
             perception_graph=self._common_preprocessing(
-                language_aligned_perception.perception_graph
+                language_concept_alignment.perception_graph
             ),
         )
 
@@ -73,9 +95,9 @@ class AbstractObjectTemplateLearner(AbstractTemplateLearner, ABC):
         return graph_without_learner(perception_graph)
 
     def _extract_surface_template(
-        self, preprocessed_input: LanguageAlignedPerception
+        self, language_concept_alignment: LanguageConceptAlignment
     ) -> SurfaceTemplate:
-        return SurfaceTemplate(preprocessed_input.language.as_token_sequence())
+        return SurfaceTemplate(language_concept_alignment.language.as_token_sequence())
 
 
 @attrs
@@ -84,8 +106,29 @@ class ObjectPursuitLearner(AbstractPursuitLearner, AbstractObjectTemplateLearner
     An implementation of pursuit learner for object recognition
     """
 
+    def templates_for_concept(self, concept: Concept) -> AbstractSet[SurfaceTemplate]:
+        raise NotImplementedError()
+
+    def learn_from(
+        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
+    ) -> None:
+        raise NotImplementedError()
+
+    def enrich_during_learning(
+        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
+    ) -> LanguagePerceptionSemanticAlignment:
+        raise NotImplementedError()
+
+    def enrich_during_description(
+        self, perception_semantic_alignment: PerceptionSemanticAlignment
+    ) -> PerceptionSemanticAlignment:
+        raise NotImplementedError()
+
+    def log_hypotheses(self, log_output_path: Path) -> None:
+        raise NotImplementedError()
+
     def _candidate_hypotheses(
-        self, language_aligned_perception: LanguageAlignedPerception
+        self, language_aligned_perception: LanguageConceptAlignment
     ) -> Sequence[PerceptionGraphTemplate]:
         """
         Given a learning input, returns all possible meaning hypotheses.
@@ -290,8 +333,29 @@ class SubsetObjectLearner(AbstractTemplateSubsetLearner, AbstractObjectTemplateL
     An implementation of `LanguageLearner` for subset learning based approach for single object detection.
     """
 
+    def templates_for_concept(self, concept: Concept) -> AbstractSet[SurfaceTemplate]:
+        raise NotImplementedError()
+
+    def learn_from(
+        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
+    ) -> None:
+        raise NotImplementedError()
+
+    def enrich_during_learning(
+        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
+    ) -> LanguagePerceptionSemanticAlignment:
+        raise NotImplementedError()
+
+    def enrich_during_description(
+        self, perception_semantic_alignment: PerceptionSemanticAlignment
+    ) -> PerceptionSemanticAlignment:
+        raise NotImplementedError()
+
+    def log_hypotheses(self, log_output_path: Path) -> None:
+        raise NotImplementedError()
+
     def _hypothesis_from_perception(
-        self, preprocessed_input: LanguageAlignedPerception
+        self, preprocessed_input: LanguageConceptAlignment
     ) -> PerceptionGraphTemplate:
         new_hypothesis = PerceptionGraphPattern.from_graph(
             preprocessed_input.perception_graph
@@ -299,4 +363,49 @@ class SubsetObjectLearner(AbstractTemplateSubsetLearner, AbstractObjectTemplateL
         return PerceptionGraphTemplate(
             graph_pattern=new_hypothesis,
             template_variable_to_pattern_node=immutabledict(),
+        )
+
+
+@attrs(frozen=True, kw_only=True)
+class ObjectRecognizerAsTemplateLearner(AbstractNewStyleObjectTemplateLearner):
+    _object_recognizer: ObjectRecognizer = attrib(validator=instance_of(ObjectRecognizer))
+    _concepts_to_templates: ImmutableSetMultiDict[Concept, SurfaceTemplate] = attrib(
+        init=False
+    )
+
+    def learn_from(
+        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
+    ) -> None:
+        # The object recognizer doesn't learn anything.
+        # It just recognizes predefined object patterns.
+        pass
+
+    def enrich_during_learning(
+        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
+    ) -> LanguagePerceptionSemanticAlignment:
+        return self._object_recognizer.match_objects_with_language(
+            language_perception_semantic_alignment
+        )
+
+    def enrich_during_description(
+        self, perception_semantic_alignment: PerceptionSemanticAlignment
+    ) -> PerceptionSemanticAlignment:
+        (new_perception_semantic_alignment, _) = self._object_recognizer.match_objects(
+            perception_semantic_alignment
+        )
+        return new_perception_semantic_alignment
+
+    def templates_for_concept(self, concept: Concept) -> ImmutableSet[SurfaceTemplate]:
+        return self._concepts_to_templates[concept]
+
+    def log_hypotheses(self, log_output_path: Path) -> None:
+        pass
+
+    @_concepts_to_templates.default
+    def _init_concepts_to_templates(
+        self
+    ) -> ImmutableSetMultiDict[Concept, SurfaceTemplate]:
+        return immutablesetmultidict(
+            (concept, SurfaceTemplate.for_object_name(name))
+            for (concept, name) in self._object_recognizer._concepts_to_names.items()
         )

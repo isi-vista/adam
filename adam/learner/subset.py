@@ -10,7 +10,8 @@ from immutablecollections import immutabledict
 
 from adam.language import TokenSequenceLinguisticDescription
 from adam.ontology.ontology import Ontology
-from adam.perception.perception_graph import DebugCallableType, LanguageAlignedPerception
+from adam.perception.perception_graph import DebugCallableType
+from adam.learner.alignments import LanguageConceptAlignment
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
 
@@ -25,7 +26,7 @@ class AbstractSubsetLearner(AbstractTemplateLearner, ABC):
 
     def _learning_step(
         self,
-        preprocessed_input: LanguageAlignedPerception,
+        language_concept_alignment: LanguageConceptAlignment,
         surface_template: SurfaceTemplate,
     ) -> None:
         if surface_template in self._surface_template_to_hypothesis:
@@ -38,7 +39,7 @@ class AbstractSubsetLearner(AbstractTemplateLearner, ABC):
             ]
 
             updated_hypothesis = previous_pattern_hypothesis.intersection(
-                self._hypothesis_from_perception(preprocessed_input),
+                self._hypothesis_from_perception(language_concept_alignment),
                 ontology=self._ontology,
             )
 
@@ -58,11 +59,11 @@ class AbstractSubsetLearner(AbstractTemplateLearner, ABC):
             # perception graph.
             self._surface_template_to_hypothesis[
                 surface_template
-            ] = self._hypothesis_from_perception(preprocessed_input)
+            ] = self._hypothesis_from_perception(language_concept_alignment)
 
     @abstractmethod
     def _hypothesis_from_perception(
-        self, preprocessed_input: LanguageAlignedPerception
+        self, preprocessed_input: LanguageConceptAlignment
     ) -> PerceptionGraphTemplate:
         pass
 

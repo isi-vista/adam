@@ -1,9 +1,15 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import Iterable, List, Mapping, Sequence, Tuple, Union
+from pathlib import Path
+from typing import AbstractSet, Iterable, List, Mapping, Sequence, Tuple, Union
 
 from adam.language import LinguisticDescription, TokenSequenceLinguisticDescription
 from adam.learner import LanguageLearner, LearningExample
+from adam.learner.alignments import (
+    LanguageConceptAlignment,
+    LanguagePerceptionSemanticAlignment,
+    PerceptionSemanticAlignment,
+)
 from adam.learner.learner_utils import pattern_match_to_description
 from adam.learner.object_recognizer import PerceptionGraphFromObjectRecognizer
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
@@ -12,9 +18,39 @@ from adam.perception import PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
-from adam.perception.perception_graph import LanguageAlignedPerception, PerceptionGraph
+from adam.perception.perception_graph import PerceptionGraph
+from adam.semantics import Concept
 from attr import attrib, attrs
 from immutablecollections import immutabledict
+
+
+@attrs
+class AbstractNewStyleTemplateLearner(ABC):
+    @abstractmethod
+    def templates_for_concept(self, concept: Concept) -> AbstractSet[SurfaceTemplate]:
+        pass
+
+    @abstractmethod
+    def learn_from(
+        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
+    ) -> None:
+        pass
+
+    @abstractmethod
+    def enrich_during_learning(
+        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
+    ) -> LanguagePerceptionSemanticAlignment:
+        pass
+
+    @abstractmethod
+    def enrich_during_description(
+        self, perception_semantic_alignment: PerceptionSemanticAlignment
+    ) -> PerceptionSemanticAlignment:
+        pass
+
+    @abstractmethod
+    def log_hypotheses(self, log_output_path: Path) -> None:
+        pass
 
 
 @attrs
@@ -42,24 +78,23 @@ class AbstractTemplateLearner(
 
         self._assert_valid_input(learning_example)
 
-        # Some learners need to track the alignment between perceived objects
-        # and portions of the input language, so internally we operate over
-        # LanguageAlignedPerceptions.
-        original_language_aligned_perception = LanguageAlignedPerception(
-            language=learning_example.linguistic_description,
-            perception_graph=self._extract_perception_graph(learning_example.perception),
-        )
-
         # Pre-processing steps will be different depending on
         # what sort of structures we are running.
         preprocessed_input = self._preprocess_scene_for_learning(
-            original_language_aligned_perception
+            learning_example.linguistic_description,
+            self._extract_perception_graph(learning_example.perception),
         )
 
         logging.info(f"Learner observing {preprocessed_input}")
 
-        surface_template = self._extract_surface_template(preprocessed_input)
-        self._learning_step(preprocessed_input, surface_template)
+        surface_template = self._extract_surface_template(
+            preprocessed_input.language_concept_alignment
+        )
+        self._learning_step(
+            preprocessed_input.perception_semantic_alignment,
+            preprocessed_input.language_concept_alignment,
+            surface_template,
+        )
 
     def describe(
         self, perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]
@@ -157,8 +192,8 @@ class AbstractTemplateLearner(
 
     @abstractmethod
     def _preprocess_scene_for_learning(
-        self, language_aligned_perception: LanguageAlignedPerception
-    ) -> LanguageAlignedPerception:
+        self, language: LinguisticDescription, perception: PerceptionGraph
+    ) -> LanguagePerceptionSemanticAlignment:
         """
         Does any preprocessing necessary before the learning process begins.
 
@@ -177,7 +212,7 @@ class AbstractTemplateLearner(
 
     @abstractmethod
     def _extract_surface_template(
-        self, preprocessed_input: LanguageAlignedPerception
+        self, language_concept_alignment: LanguageConceptAlignment
     ) -> SurfaceTemplate:
         r"""
         We treat learning as acquiring an association between "templates"
@@ -189,7 +224,8 @@ class AbstractTemplateLearner(
 
     def _learning_step(
         self,
-        preprocessed_input: LanguageAlignedPerception,
+        perception_graph: PerceptionSemanticAlignment,
+        language_concept_alignment: LanguageConceptAlignment,
         surface_template: SurfaceTemplate,
     ) -> None:
         pass
