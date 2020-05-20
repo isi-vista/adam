@@ -68,6 +68,11 @@ from adam.ontology.phase1_ontology import (
     SIT,
     THEME,
     JUMP,
+    SIZE_RELATION,
+    BIGGER_THAN,
+    MUCH_BIGGER_THAN,
+    SMALLER_THAN,
+    MUCH_SMALLER_THAN,
 )
 from adam.ontology.phase1_spatial_relations import (
     EXTERIOR_BUT_IN_CONTACT,
@@ -285,55 +290,9 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             )
 
             if ATTRIBUTES_AS_X_IS_Y in self.situation.syntax_hints:
-                # We can use this only in static situations
-                if self.situation.is_dynamic:
-                    raise RuntimeError(
-                        "Cannot produce X is Y language in dynamic situations"
-                    )
-                # If we want x is y language, first get the attributes
-                if IGNORE_COLORS in self.situation.syntax_hints:
-                    properties = [
-                        property_
-                        for property_ in _object.properties
-                        if not self.situation.ontology.is_subtype_of(property_, COLOR)
-                    ]
-                else:
-                    properties = [property_ for property_ in _object.properties]
-                if len(properties) > 1:
-                    raise RuntimeError(
-                        "Cannot handle X is Y language with multiple attributes"
-                    )
-                elif not properties:
-                    raise RuntimeError(
-                        "No available attributes (Y) for the X is Y language"
-                    )
-
-                attribute_lexicon_entry = self._unique_lexicon_entry(first(properties))
-                node = DependencyTreeToken(
-                    attribute_lexicon_entry.base_form,
-                    attribute_lexicon_entry.part_of_speech,
-                    attribute_lexicon_entry.intrinsic_morphosyntactic_properties,
-                )
-                is_node = DependencyTreeToken("is", VERB, {})
-                self.dependency_graph.add_edge(
-                    is_node, dependency_node, role=IS_ATTRIBUTE
-                )
-                self.dependency_graph.add_edge(
-                    node, dependency_node, role=NOMINAL_MODIFIER
-                )
-            elif IGNORE_COLORS not in self.situation.syntax_hints:
-                # Begin work on translating modifiers of Nouns with Color
-                for property_ in _object.properties:
-                    if self.situation.ontology.is_subtype_of(property_, COLOR):
-                        color_lexicon_entry = self._unique_lexicon_entry(property_)
-                        color_node = DependencyTreeToken(
-                            color_lexicon_entry.base_form,
-                            color_lexicon_entry.part_of_speech,
-                            color_lexicon_entry.intrinsic_morphosyntactic_properties,
-                        )
-                        self.dependency_graph.add_edge(
-                            color_node, dependency_node, role=ADJECTIVAL_MODIFIER
-                        )
+                self._translate_attribute_as_verb(_object, dependency_node)
+            else:
+                self._add_attributes(_object, dependency_node)
 
             self.objects_to_dependency_nodes[_object] = dependency_node
             return dependency_node
@@ -429,6 +388,60 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     determiner_node, noun_dependency_node, role=determiner_role
                 )
 
+        def _add_attributes(
+            self, _object: SituationObject, noun_dependency_node: DependencyTreeToken
+        ) -> None:
+            if IGNORE_COLORS not in self.situation.syntax_hints:
+                # Begin work on translating modifiers of Nouns with Color
+                for property_ in _object.properties:
+                    if self.situation.ontology.is_subtype_of(property_, COLOR):
+                        color_lexicon_entry = self._unique_lexicon_entry(property_)
+                        color_node = DependencyTreeToken(
+                            color_lexicon_entry.base_form,
+                            color_lexicon_entry.part_of_speech,
+                            color_lexicon_entry.intrinsic_morphosyntactic_properties,
+                        )
+                        self.dependency_graph.add_edge(
+                            color_node, noun_dependency_node, role=ADJECTIVAL_MODIFIER
+                        )
+
+        def _translate_attribute_as_verb(
+            self, _object: SituationObject, noun_dependency_node: DependencyTreeToken
+        ) -> None:
+            # We can use this only in static situations
+            if self.situation.is_dynamic:
+                raise RuntimeError("Cannot produce X is Y language in dynamic situations")
+            # If we want x is y language, first get the attributes
+            if IGNORE_COLORS in self.situation.syntax_hints:
+                properties = [
+                    property_
+                    for property_ in _object.properties
+                    if not self.situation.ontology.is_subtype_of(property_, COLOR)
+                ]
+            else:
+                properties = [property_ for property_ in _object.properties]
+
+            if len(properties) > 1:
+                raise RuntimeError(
+                    "Cannot handle X is Y language with multiple attributes"
+                )
+            elif not properties:
+                raise RuntimeError("No available attributes (Y) for the X is Y language")
+
+            attribute_lexicon_entry = self._unique_lexicon_entry(first(properties))
+            node = DependencyTreeToken(
+                attribute_lexicon_entry.base_form,
+                attribute_lexicon_entry.part_of_speech,
+                attribute_lexicon_entry.intrinsic_morphosyntactic_properties,
+            )
+            is_node = DependencyTreeToken("is", VERB, {})
+            self.dependency_graph.add_edge(
+                is_node, noun_dependency_node, role=IS_ATTRIBUTE
+            )
+            self.dependency_graph.add_edge(
+                node, noun_dependency_node, role=NOMINAL_MODIFIER
+            )
+
         def _translate_relation(
             self,
             action: Optional[Action[OntologyNode, SituationObject]],
@@ -456,6 +469,40 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                         prepositional_modifier,
                         self._noun_for_object(relation.first_slot),
                         role=NOMINAL_MODIFIER,
+                    )
+            elif (
+                self.situation.ontology.is_subtype_of(
+                    relation.relation_type, SIZE_RELATION
+                )
+                and not isinstance(relation.second_slot, Region)
+                and IS_ADDRESSEE in relation.second_slot.properties
+                and IGNORE_SIZE_ATTRIBUTE not in self.situation.syntax_hints
+            ):
+                # We only want to assert size relations relative to the addressee, default learner
+                # Handling more situation relevant uses of 'big' and 'small' is a future issue
+                # See: https://github.com/isi-vista/adam/issues/772
+                # Currently we enforce that the addressee should be in the second spot of the relationship
+                # for ease of translation. We might need to support either option in the future
+
+                if (
+                    relation.relation_type == BIGGER_THAN
+                    or relation.relation_type == MUCH_BIGGER_THAN
+                ):
+                    attribute = "big"
+                elif (
+                    relation.relation_type == SMALLER_THAN
+                    or relation == MUCH_SMALLER_THAN
+                ):
+                    attribute = "small"
+                else:
+                    raise RuntimeError(
+                        f"Do not know how to handle size relation of type {relation.relation_type}"
+                    )
+
+                    self.dependency_graph.add_edge(
+                        attribute,
+                        self._noun_for_object(relation.first_slot),
+                        role=ADJECTIVAL_MODIFIER,
                     )
             else:
                 raise RuntimeError(
@@ -1062,4 +1109,5 @@ PREFER_DITRANSITIVE = "PREFER_DITRANSITIVE"
 IGNORE_COLORS = "IGNORE_COLORS"
 IGNORE_HAS_AS_VERB = "IGNORE_HAS_AS_VERB"
 ATTRIBUTES_AS_X_IS_Y = "ATTRIBUTES_AS_X_IS_Y"
+IGNORE_SIZE_ATTRIBUTE = "IGNORE_SIZE_ATTRIBUTE"
 IGNORE_GOAL = "IGNORE_GOAL"
