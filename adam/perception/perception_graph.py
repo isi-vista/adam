@@ -42,14 +42,13 @@ import graphviz
 
 from adam.semantics import ObjectSemanticNode
 from attr.validators import deep_iterable, instance_of, optional
-from more_itertools import first, ilen, pairwise
+from more_itertools import first, ilen
 from networkx import DiGraph, connected_components, is_isomorphic, set_node_attributes
 from typing_extensions import Protocol
 
 from adam.axes import AxesInfo, HasAxes
 from adam.axis import GeonAxis
 from adam.geon import Geon, MaybeHasGeon
-from adam.language import LinguisticDescription
 from adam.ontology import OntologyNode
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
@@ -822,7 +821,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
                 elif isinstance(node, ObjectSemanticNode):
                     perception_node_to_pattern_node[
                         key
-                    ] = MatchedObjectPerceptionPredicate()
+                    ] = ObjectSemanticNodePerceptionPredicate()
                 elif isinstance(node, SpatialPath):
                     perception_node_to_pattern_node[key] = IsPathPredicate()
                 elif isinstance(node, PathOperator):
@@ -1923,7 +1922,7 @@ class AndNodePredicate(NodePredicate):
 
 
 @attrs(frozen=True, slots=True, eq=False)
-class MatchedObjectPerceptionPredicate(NodePredicate):
+class ObjectSemanticNodePerceptionPredicate(NodePredicate):
     """
     `NodePredicate` which matches if the node is of this type
     """
@@ -1935,10 +1934,10 @@ class MatchedObjectPerceptionPredicate(NodePredicate):
         return "*[matched-obj]"
 
     def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
-        return isinstance(predicate_node, MatchedObjectPerceptionPredicate)
+        return isinstance(predicate_node, ObjectSemanticNodePerceptionPredicate)
 
     def is_equivalent(self, other) -> bool:
-        return isinstance(other, MatchedObjectPerceptionPredicate)
+        return isinstance(other, ObjectSemanticNodePerceptionPredicate)
 
 
 @attrs(frozen=True, slots=True, eq=False)
@@ -2295,7 +2294,7 @@ def _translate_region(
 # We try to match the most restrictive nodes first.
 _PATTERN_PREDICATE_NODE_ORDER = [
     # If we have matchedObjects in the pattern we want to try and find these first.
-    MatchedObjectPerceptionPredicate,
+    ObjectSemanticNodePerceptionPredicate,
     # Paths are rare, match them next
     IsPathPredicate,
     PathOperatorPredicate,
@@ -2484,60 +2483,6 @@ class GraphLogger:
             )
         else:
             logging.log(level, msg, *args)
-
-
-# Used by LanguageAlignedPerception below.
-def _sort_mapping_by_token_spans(pairs) -> ImmutableDict[ObjectSemanticNode, Span]:
-    # we type: ignore because the proper typing of pairs is huge and mypy is going to screw it up
-    # anyway.
-    unsorted = immutabledict(pairs)  # type: ignore
-    return immutabledict(
-        (matched_node, token_span)
-        for (matched_node, token_span) in sorted(
-            unsorted.items(),
-            key=lambda item: Span.earliest_then_longest_first_key(item[1]),
-        )
-    )
-
-
-@attrs(frozen=True)
-class LanguageAlignedPerception:
-    """
-    Represents an alignment between a `PerceptionGraph` and a `TokensSequenceLinguisticDescription`.
-
-    This can be generified in the future.
-
-    *node_to_language_span* and *language_span_to_node* are both guaranteed to be sorted by
-    the token spans.
-
-    Aligned token spans may not overlap.
-    """
-
-    language: LinguisticDescription = attrib(validator=instance_of(LinguisticDescription))
-    perception_graph: PerceptionGraph = attrib(validator=instance_of(PerceptionGraph))
-    node_to_language_span: ImmutableDict[ObjectSemanticNode, Span] = attrib(
-        converter=_sort_mapping_by_token_spans, default=immutabledict()
-    )
-    language_span_to_node: ImmutableDict[Span, PerceptionGraphNode] = attrib(init=False)
-    aligned_nodes: ImmutableSet[ObjectSemanticNode] = attrib(init=False)
-
-    @language_span_to_node.default
-    def _init_language_span_to_node(self) -> ImmutableDict[PerceptionGraphNode, Span]:
-        return immutabledict((v, k) for (k, v) in self.node_to_language_span.items())
-
-    @aligned_nodes.default
-    def _init_aligned_nodes(self) -> ImmutableSet[ObjectSemanticNode]:
-        return immutableset(self.node_to_language_span.keys())
-
-    def __attrs_post_init__(self) -> None:
-        # In the converter, we guarantee that node_to_language_span is sorted by
-        # token indices.
-        for (span1, span2) in pairwise(self.node_to_language_span.values()):
-            if not span1.precedes(span2):
-                raise RuntimeError(
-                    f"Aligned spans in a LanguageAlignedPerception must be "
-                    f"disjoint but got {span1} and {span2}"
-                )
 
 
 def _uniquify(

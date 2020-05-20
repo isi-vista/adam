@@ -6,22 +6,13 @@ from typing import Tuple, Union, Mapping, List, Iterable
 from more_itertools import quantify
 
 from adam.language import TokenSequenceLinguisticDescription
-from adam.perception.perception_graph import LanguageAlignedPerception
-from adam.semantics import ObjectSemanticNode
+from adam.learner.alignments import LanguageConceptAlignment
+from adam.semantics import ObjectSemanticNode, SyntaxSemanticsVariable
 from attr import attrs, attrib
 from attr.validators import instance_of, deep_iterable
 
 from immutablecollections import ImmutableSet, immutableset
 from immutablecollections.converter_utils import _to_tuple, _to_immutableset
-
-
-@attrs(frozen=True, slots=True)
-class SurfaceTemplateVariable:
-    """
-    A variable portion of a a `SurfaceTemplate`
-    """
-
-    name: str = attrib(validator=instance_of(str))
 
 
 @attrs(frozen=True, slots=True)
@@ -31,25 +22,25 @@ class SurfaceTemplate:
 
     Such a pattern consists of a sequence of token strings and `SurfaceTemplateVariable`\ s.
     """
-    elements: Tuple[Union[str, SurfaceTemplateVariable], ...] = attrib(  # type: ignore
+    elements: Tuple[Union[str, SyntaxSemanticsVariable], ...] = attrib(  # type: ignore
         converter=_to_tuple,
-        validator=deep_iterable(instance_of((str, SurfaceTemplateVariable))),
+        validator=deep_iterable(instance_of((str, SyntaxSemanticsVariable))),
     )
-    _determiner_prefix_slots: ImmutableSet[SurfaceTemplateVariable] = attrib(
+    _determiner_prefix_slots: ImmutableSet[SyntaxSemanticsVariable] = attrib(
         converter=_to_immutableset,
-        validator=deep_iterable(instance_of(SurfaceTemplateVariable)),
+        validator=deep_iterable(instance_of(SyntaxSemanticsVariable)),
         default=immutableset(),
     )
     num_slots: int = attrib(init=False)
 
     @staticmethod
     def from_language_aligned_perception(
-        language_aligned_perception: LanguageAlignedPerception,
+        language_aligned_perception: LanguageConceptAlignment,
         object_node_to_template_variable: Mapping[
-            ObjectSemanticNode, SurfaceTemplateVariable
+            ObjectSemanticNode, SyntaxSemanticsVariable
         ],
         *,
-        determiner_prefix_slots: Iterable[SurfaceTemplateVariable] = immutableset()
+        determiner_prefix_slots: Iterable[SyntaxSemanticsVariable] = immutableset()
     ) -> "SurfaceTemplate":
         if len(object_node_to_template_variable) != len(
             language_aligned_perception.node_to_language_span
@@ -61,7 +52,7 @@ class SurfaceTemplate:
 
         # This will be used to build the returned SurfaceTemplate.
         # We start from the full surface string...
-        template_elements: List[Union[SurfaceTemplateVariable, str]] = list(
+        template_elements: List[Union[SyntaxSemanticsVariable, str]] = list(
             language_aligned_perception.language
         )
 
@@ -105,14 +96,14 @@ class SurfaceTemplate:
         )
 
     def instantiate(
-        self, template_variable_to_filler: Mapping[SurfaceTemplateVariable, Tuple[str]]
+        self, template_variable_to_filler: Mapping[SyntaxSemanticsVariable, Tuple[str]]
     ) -> TokenSequenceLinguisticDescription:
         """
         Turns a template into a `TokenSequenceLinguisticDescription` by filling in its variables.
         """
         output_tokens: List[str] = []
         for element in self.elements:
-            if isinstance(element, SurfaceTemplateVariable):
+            if isinstance(element, SyntaxSemanticsVariable):
                 filler_words = template_variable_to_filler[element]
                 # Ground is a specific thing so we special case this to be assigned
                 if filler_words[0] == "ground":
@@ -135,7 +126,7 @@ class SurfaceTemplate:
 
     def to_short_string(self) -> str:
         return "_".join(
-            element.name if isinstance(element, SurfaceTemplateVariable) else element
+            element.name if isinstance(element, SyntaxSemanticsVariable) else element
             for element in self.elements
         )
 
@@ -144,16 +135,20 @@ class SurfaceTemplate:
         return quantify(
             element
             for element in self.elements
-            if isinstance(element, SurfaceTemplateVariable)
+            if isinstance(element, SyntaxSemanticsVariable)
         )
 
+    @staticmethod
+    def for_object_name(object_name: str) -> "SurfaceTemplate":
+        return SurfaceTemplate(elements=(object_name,), determiner_prefix_slots=[])
 
-SLOT1 = SurfaceTemplateVariable("slot1")
-SLOT2 = SurfaceTemplateVariable("slot2")
-SLOT3 = SurfaceTemplateVariable("slot3")
-SLOT4 = SurfaceTemplateVariable("slot4")
-SLOT5 = SurfaceTemplateVariable("slot5")
-SLOT6 = SurfaceTemplateVariable("slot6")
+
+SLOT1 = SyntaxSemanticsVariable("slot1")
+SLOT2 = SyntaxSemanticsVariable("slot2")
+SLOT3 = SyntaxSemanticsVariable("slot3")
+SLOT4 = SyntaxSemanticsVariable("slot4")
+SLOT5 = SyntaxSemanticsVariable("slot5")
+SLOT6 = SyntaxSemanticsVariable("slot6")
 
 STANDARD_SLOT_VARIABLES = (SLOT1, SLOT2, SLOT3, SLOT4, SLOT5, SLOT6)
 

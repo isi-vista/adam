@@ -15,9 +15,9 @@ from adam.ontology.ontology import Ontology
 from adam.perception.perception_graph import (
     DebugCallableType,
     GraphLogger,
-    LanguageAlignedPerception,
     PerceptionGraph,
 )
+from adam.learner.alignments import LanguageConceptAlignment
 from attr import Factory, attrib, attrs
 from immutablecollections import immutabledict
 from vistautils.range import Range
@@ -114,7 +114,7 @@ class AbstractPursuitLearner(AbstractTemplateLearner, ABC):
 
     def _learning_step(
         self,
-        preprocessed_input: LanguageAlignedPerception,
+        language_concept_alignment: LanguageConceptAlignment,
         surface_template: SurfaceTemplate,
     ) -> None:
         # We track this to prevent overly aggressive lexicalization.
@@ -125,11 +125,11 @@ class AbstractPursuitLearner(AbstractTemplateLearner, ABC):
             logging.info(f"Considering '{surface_template}'")
             if surface_template not in self._learned_item_to_hypotheses_and_scores:
                 # This is the first time we have seen this word/phrase.
-                self.initialization_step(surface_template, preprocessed_input)
+                self.initialization_step(surface_template, language_concept_alignment)
             else:
                 # We have seen this word/phrase before, so run the learning reinforcement step
                 is_hypothesis_confirmed = self.learning_step(
-                    surface_template, preprocessed_input
+                    surface_template, language_concept_alignment
                 )
                 if is_hypothesis_confirmed:
                     self.maybe_lexicalize(surface_template)
@@ -158,7 +158,7 @@ class AbstractPursuitLearner(AbstractTemplateLearner, ABC):
     def initialization_step(
         self,
         surface_template: SurfaceTemplate,
-        aligned_perception: LanguageAlignedPerception,
+        aligned_perception: LanguageConceptAlignment,
     ):
         # If it's a novel word, learn a new hypothesis/pattern,
         # generated as a pattern graph from the perception.
@@ -203,7 +203,7 @@ class AbstractPursuitLearner(AbstractTemplateLearner, ABC):
     def learning_step(
         self,
         surface_template: SurfaceTemplate,
-        language_aligned_perception: LanguageAlignedPerception,
+        language_aligned_perception: LanguageConceptAlignment,
     ) -> bool:
         # Select the most probable meaning h for w
         # I.e., if we already have hypotheses, get the leading hypothesis and compare it with the
@@ -498,7 +498,7 @@ class AbstractPursuitLearner(AbstractTemplateLearner, ABC):
 
     @abstractmethod
     def _candidate_hypotheses(
-        self, language_aligned_perception: LanguageAlignedPerception
+        self, language_aligned_perception: LanguageConceptAlignment
     ) -> Sequence[PerceptionGraphTemplate]:
         """
         Given a learning input, returns all possible meaning hypotheses.

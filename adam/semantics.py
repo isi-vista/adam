@@ -4,17 +4,28 @@ Classes to represent semantics from the learner's point-of-view.
 Really this and `HighLevelSemanticsSituation` should somehow be refactored together,
 but it's not worth the trouble at this point.
 """
-from typing import Protocol, Tuple
+from typing import Tuple
 
-from adam.learner.surface_templates import SurfaceTemplateVariable
+from typing_extensions import Protocol, runtime
+
 from attr import attrib, attrs
 from attr.validators import deep_mapping, instance_of
-from immutablecollections import ImmutableDict
+from immutablecollections import ImmutableDict, immutabledict
 from immutablecollections.converter_utils import _to_immutabledict
 
 
-class Concept:
-    pass
+@runtime
+class Concept(Protocol):
+    debug_string: str
+
+
+@attrs(frozen=True, slots=True)
+class SyntaxSemanticsVariable:
+    """
+    A variable portion of a a `SurfaceTemplate` or of a learner semantic structure.
+    """
+
+    name: str = attrib(validator=instance_of(str))
 
 
 @attrs(frozen=True, eq=False)
@@ -37,16 +48,17 @@ class ActionConcept(Concept):
     debug_string: str = attrib(validator=instance_of(str))
 
 
-class LearnerSemanticNode(Protocol):
+@runtime
+class SemanticNode(Protocol):
     concept: Concept
-    slot_fillings: ImmutableDict[SurfaceTemplateVariable, "ObjectSemanticNode"]
+    slot_fillings: ImmutableDict[SyntaxSemanticsVariable, "ObjectSemanticNode"]
 
 
 @attrs(frozen=True, eq=False)
-class ObjectSemanticNode(LearnerSemanticNode):
+class ObjectSemanticNode(SemanticNode):
     concept: ObjectConcept = attrib(validator=instance_of(ObjectConcept))
-    slot_fillings: ImmutableDict[SurfaceTemplateVariable, "ObjectSemanticNode"] = attrib(
-        converter=_to_immutabledict
+    slot_fillings: ImmutableDict[SyntaxSemanticsVariable, "ObjectSemanticNode"] = attrib(
+        init=False, default=immutabledict()
     )
 
     # def __attrs_post_init__(self) -> None:
@@ -55,12 +67,12 @@ class ObjectSemanticNode(LearnerSemanticNode):
 
 
 @attrs(frozen=True, eq=False)
-class AttributeSemanticNode(LearnerSemanticNode):
+class AttributeSemanticNode(SemanticNode):
     concept: AttributeConcept = attrib(validator=instance_of(AttributeConcept))
-    slot_fillings: ImmutableDict[SurfaceTemplateVariable, "ObjectSemanticNode"] = attrib(
+    slot_fillings: ImmutableDict[SyntaxSemanticsVariable, "ObjectSemanticNode"] = attrib(
         converter=_to_immutabledict,
         validator=deep_mapping(
-            instance_of(SurfaceTemplateVariable), instance_of(ObjectSemanticNode)
+            instance_of(SyntaxSemanticsVariable), instance_of(ObjectSemanticNode)
         ),
     )
 
@@ -70,12 +82,12 @@ class AttributeSemanticNode(LearnerSemanticNode):
 
 
 @attrs(frozen=True, eq=False)
-class RelationSemanticNode(LearnerSemanticNode):
+class RelationSemanticNode(SemanticNode):
     concept: RelationConcept = attrib(validator=instance_of(RelationConcept))
-    slot_fillings: ImmutableDict[SurfaceTemplateVariable, "ObjectSemanticNode"] = attrib(
+    slot_fillings: ImmutableDict[SyntaxSemanticsVariable, "ObjectSemanticNode"] = attrib(
         converter=_to_immutabledict,
         validator=deep_mapping(
-            instance_of(SurfaceTemplateVariable), instance_of(ObjectSemanticNode)
+            instance_of(SyntaxSemanticsVariable), instance_of(ObjectSemanticNode)
         ),
     )
 
@@ -85,12 +97,12 @@ class RelationSemanticNode(LearnerSemanticNode):
 
 
 @attrs(frozen=True, eq=False)
-class ActionSemanticNode(LearnerSemanticNode):
+class ActionSemanticNode(SemanticNode):
     concept: ActionConcept = attrib(validator=instance_of(ActionConcept))
-    slot_fillings: ImmutableDict[SurfaceTemplateVariable, "ObjectSemanticNode"] = attrib(
+    slot_fillings: ImmutableDict[SyntaxSemanticsVariable, "ObjectSemanticNode"] = attrib(
         converter=_to_immutabledict,
         validator=deep_mapping(
-            instance_of(SurfaceTemplateVariable), instance_of(ObjectSemanticNode)
+            instance_of(SyntaxSemanticsVariable), instance_of(ObjectSemanticNode)
         ),
     )
 

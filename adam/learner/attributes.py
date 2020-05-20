@@ -1,6 +1,8 @@
 from abc import ABC
-from typing import Union
+from pathlib import Path
+from typing import AbstractSet, Union
 
+from adam.semantics import Concept
 from attr.validators import instance_of
 
 from adam.language import LinguisticDescription
@@ -13,18 +15,28 @@ from adam.learner.object_recognizer import (
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
 from adam.learner.subset import AbstractTemplateSubsetLearner
 from adam.learner.surface_templates import STANDARD_SLOT_VARIABLES, SurfaceTemplate
-from adam.learner.template_learner import AbstractTemplateLearner
+from adam.learner.template_learner import (
+    AbstractNewStyleTemplateLearner,
+    AbstractTemplateLearner,
+)
 from adam.perception import PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
-from adam.perception.perception_graph import LanguageAlignedPerception, PerceptionGraph
+from adam.perception.perception_graph import PerceptionGraph
+from adam.learner.alignments import (
+    LanguageConceptAlignment,
+    LanguagePerceptionSemanticAlignment,
+    PerceptionSemanticAlignment,
+)
 from attr import attrib, attrs
 from immutablecollections import immutabledict, immutableset
 
 
 @attrs
-class AbstractAttributeTemplateLearner(AbstractTemplateLearner, ABC):
+class AbstractAttributeTemplateLearner(
+    AbstractTemplateLearner, AbstractNewStyleTemplateLearner, ABC
+):
     # mypy doesn't realize that fields without defaults can come after those with defaults
     # if they are keyword-only.
     _object_recognizer: ObjectRecognizer = attrib(  # type: ignore
@@ -46,10 +58,10 @@ class AbstractAttributeTemplateLearner(AbstractTemplateLearner, ABC):
         return PerceptionGraph.from_frame(perception.frames[0])
 
     def _preprocess_scene_for_learning(
-        self, language_aligned_perception: LanguageAlignedPerception
-    ) -> LanguageAlignedPerception:
+        self, language_concept_alignment: LanguageConceptAlignment
+    ) -> LanguageConceptAlignment:
         post_recognition_object_perception_alignment = self._object_recognizer.match_objects_with_language(
-            language_aligned_perception
+            language_concept_alignment
         )
         return post_recognition_object_perception_alignment
 
@@ -59,15 +71,15 @@ class AbstractAttributeTemplateLearner(AbstractTemplateLearner, ABC):
         return self._object_recognizer.match_objects(perception_graph)
 
     def _extract_surface_template(
-        self, preprocessed_input: LanguageAlignedPerception
+        self, language_concept_alignment: LanguageConceptAlignment
     ) -> SurfaceTemplate:
-        if len(preprocessed_input.aligned_nodes) > 1:
+        if len(language_concept_alignment.aligned_nodes) > 1:
             raise RuntimeError("Input has too many aligned nodes for us to handle.")
 
         return SurfaceTemplate.from_language_aligned_perception(
-            preprocessed_input,
+            language_concept_alignment,
             object_node_to_template_variable=immutabledict(
-                zip(preprocessed_input.aligned_nodes, STANDARD_SLOT_VARIABLES)
+                zip(language_concept_alignment.aligned_nodes, STANDARD_SLOT_VARIABLES)
             ),
             # This is a hack to handle determiners.
             # For attributes at the moment we learn the determiner together with the
@@ -80,8 +92,29 @@ class AbstractAttributeTemplateLearner(AbstractTemplateLearner, ABC):
 class SubsetAttributeLearner(
     AbstractTemplateSubsetLearner, AbstractAttributeTemplateLearner
 ):
+    def templates_for_concept(self, concept: Concept) -> AbstractSet[SurfaceTemplate]:
+        raise NotImplementedError()
+
+    def learn_from(
+        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
+    ) -> None:
+        raise NotImplementedError()
+
+    def enrich_during_learning(
+        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
+    ) -> LanguagePerceptionSemanticAlignment:
+        raise NotImplementedError()
+
+    def enrich_during_description(
+        self, perception_semantic_alignment: PerceptionSemanticAlignment
+    ) -> PerceptionSemanticAlignment:
+        raise NotImplementedError()
+
+    def log_hypotheses(self, log_output_path: Path) -> None:
+        raise NotImplementedError()
+
     def _hypothesis_from_perception(
-        self, preprocessed_input: LanguageAlignedPerception
+        self, preprocessed_input: LanguageConceptAlignment
     ) -> PerceptionGraphTemplate:
         num_nodes_aligned_to_language = len(preprocessed_input.aligned_nodes)
         if num_nodes_aligned_to_language != 1:

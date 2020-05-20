@@ -2,13 +2,16 @@ import logging
 from itertools import chain
 from typing import AbstractSet, Iterable, List, Mapping, Sequence, Set, Tuple
 
-from attr.validators import deep_iterable, deep_mapping, instance_of
 from contexttimer import Timer
 from more_itertools import first
 from networkx import DiGraph
 
 from adam.axes import GRAVITATIONAL_DOWN_TO_UP_AXIS, LEARNER_AXES, WORLD_AXES
 from adam.language import LinguisticDescription
+from adam.learner.alignments import (
+    LanguagePerceptionSemanticAlignment,
+    PerceptionSemanticAlignment,
+)
 from adam.ontology import OntologyNode
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
@@ -22,7 +25,6 @@ from adam.perception.perception_graph import (
     ENTIRE_SCENE,
     EdgeLabel,
     HAS_PROPERTY_LABEL,
-    LanguageAlignedPerception,
     PerceptionGraph,
     PerceptionGraphNode,
     PerceptionGraphPattern,
@@ -31,9 +33,10 @@ from adam.perception.perception_graph import (
     edge_equals_ignoring_temporal_scope,
     raise_graph_exception,
 )
-from adam.semantics import ObjectSemanticNode
+from adam.semantics import Concept, ObjectConcept, ObjectSemanticNode
 from adam.utils.networkx_utils import subgraph
 from attr import attrib, attrs
+from attr.validators import deep_iterable, deep_mapping, instance_of
 from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
 from immutablecollections.converter_utils import _to_immutabledict, _to_immutableset
 from vistautils.span import Span
@@ -113,7 +116,7 @@ cumulative_millis_in_failed_matches_ms = 0  # pylint: disable=invalid-name
 @attrs(frozen=True)
 class ObjectRecognizer:
     """
-    The ObjectRecognizer finds object matches in the scene pattern and adds a `MatchedObjectPerceptionPredicate`
+    The ObjectRecognizer finds object matches in the scene pattern and adds a `ObjectSemanticNodePerceptionPredicate`
     which can be used to learn additional semantics which relate objects to other objects
 
     If applied to a dynamic situation, this will only recognize objects
@@ -123,13 +126,22 @@ class ObjectRecognizer:
     # Because static patterns must be applied to static perceptions
     # and dynamic patterns to dynamic situations,
     # we need to store our patterns both ways.
-    _object_names_to_static_patterns: ImmutableDict[str, PerceptionGraphPattern] = attrib(
-        validator=deep_mapping(instance_of(str), instance_of(PerceptionGraphPattern)),
+    _concepts_to_static_patterns: ImmutableDict[
+        ObjectConcept, PerceptionGraphPattern
+    ] = attrib(
+        validator=deep_mapping(
+            instance_of(ObjectConcept), instance_of(PerceptionGraphPattern)
+        ),
         converter=_to_immutabledict,
     )
+    _concepts_to_names: ImmutableDict[ObjectConcept, str] = attrib(
+        validator=deep_mapping(instance_of(ObjectConcept), instance_of(str)),
+        converter=_to_immutabledict,
+    )
+
     # We derive these from the static patterns.
-    _object_names_to_dynamic_patterns: ImmutableDict[
-        str, PerceptionGraphPattern
+    _concepts_to_dynamic_patterns: ImmutableDict[
+        ObjectConcept, PerceptionGraphPattern
     ] = attrib(init=False)
     determiners: ImmutableSet[str] = attrib(
         converter=_to_immutableset, validator=deep_iterable(instance_of(str))
@@ -138,7 +150,7 @@ class ObjectRecognizer:
     This is a hack to handle determiners.
     See https://github.com/isi-vista/adam/issues/498
     """
-    _object_name_to_num_subobjects: ImmutableDict[str, int] = attrib(init=False)
+    _concept_to_num_subobjects: ImmutableDict[Concept, int] = attrib(init=False)
     """
     Used for a performance optimization in match_objects.
     """
@@ -161,26 +173,34 @@ class ObjectRecognizer:
         determiners: Iterable[str],
         ontology: Ontology,
     ) -> "ObjectRecognizer":
+        ontology_types_to_concepts = {
+            obj_type: ObjectConcept(obj_type.handle) for obj_type in ontology_types
+        }
+
         return ObjectRecognizer(
-            object_names_to_static_patterns=_sort_mapping_by_pattern_complexity(
+            concepts_to_static_patterns=_sort_mapping_by_pattern_complexity(
                 immutabledict(
                     (
-                        obj_type.handle,
+                        concept,
                         PerceptionGraphPattern.from_ontology_node(obj_type, ontology),
                     )
-                    for obj_type in ontology_types
+                    for (obj_type, concept) in ontology_types_to_concepts.items()
                 )
             ),
             determiners=determiners,
+            concepts_to_names={
+                concept: obj_type.handle
+                for obj_type, concept in ontology_types_to_concepts.items()
+            },
         )
 
     def match_objects(
-        self, perception_graph: PerceptionGraph
-    ) -> PerceptionGraphFromObjectRecognizer:
+        self, perception_semantic_alignment: PerceptionSemanticAlignment
+    ) -> Tuple[PerceptionSemanticAlignment, Mapping[Tuple[str, ...], ObjectSemanticNode]]:
         """
         Recognize known objects in a `PerceptionGraph`.
 
-        The matched portion of the graph will be replaced with an `MatchedObjectNode`
+        The matched portion of the graph will be replaced with an `ObjectSemanticNode`\ s
         which will inherit all relationships of any nodes internal to the matched portion
         with any external nodes.
 
@@ -191,23 +211,24 @@ class ObjectRecognizer:
         global cumulative_millis_in_successful_matches_ms
         global cumulative_millis_in_failed_matches_ms
 
-        matched_object_nodes: List[Tuple[Tuple[str, ...], ObjectSemanticNode]] = []
-        graph_to_return = perception_graph
-        is_dynamic = perception_graph.dynamic
+        object_nodes: List[Tuple[Tuple[str, ...], ObjectSemanticNode]] = []
+        perception_graph = perception_semantic_alignment.perception_graph
+        is_dynamic = perception_semantic_alignment.perception_graph.dynamic
 
         if is_dynamic:
-            object_names_to_patterns = self._object_names_to_dynamic_patterns
+            concepts_to_patterns = self._concepts_to_dynamic_patterns
         else:
-            object_names_to_patterns = self._object_names_to_static_patterns
+            concepts_to_patterns = self._concepts_to_static_patterns
 
         # We special case handling the ground perception
         # Because we don't want to remove it from the graph, we just want to use it's
         # Object node as a recognized object. The situation "a box on the ground"
         # Prompted the need to recognize the ground
+        graph_to_return = perception_graph
         for node in graph_to_return._graph.nodes:  # pylint:disable=protected-access
             if node == GROUND_PERCEPTION:
-                matched_object_node = ObjectSemanticNode(name=("ground",))
-                matched_object_nodes.append((("ground",), matched_object_node))
+                matched_object_node = ObjectSemanticNode(concept=ObjectConcept("ground"))
+                object_nodes.append((("ground",), matched_object_node))
                 # We construct a fake match which is only the ground perception node
                 subgraph_of_root = subgraph(perception_graph.copy_as_digraph(), [node])
                 pattern_match = PerceptionGraphPatternMatch(
@@ -231,12 +252,12 @@ class ObjectRecognizer:
             num_object_nodes = candidate_object_graph.count_nodes_matching(
                 lambda node: isinstance(node, ObjectPerception)
             )
-            for (description, pattern) in object_names_to_patterns.items():
+            for (concept, pattern) in concepts_to_patterns.items():
                 # As an optimization, we count how many sub-object nodes
                 # are in the graph and the pattern.
                 # If they aren't the same, the match is impossible
                 # and we can bail out early.
-                if num_object_nodes != self._object_name_to_num_subobjects[description]:
+                if num_object_nodes != self._concept_to_num_subobjects[concept]:
                     continue
 
                 with Timer(factor=1000) as t:
@@ -249,12 +270,12 @@ class ObjectRecognizer:
                 if pattern_match:
                     cumulative_millis_in_successful_matches_ms += t.elapsed
 
-                    matched_object_node = ObjectSemanticNode(name=(description,))
+                    matched_object_node = ObjectSemanticNode(concept)
 
-                    # We wrap the description in a tuple because it could in theory be multiple
+                    # We wrap the concept in a tuple because it could in theory be multiple
                     # tokens,
                     # even though currently it never is.
-                    matched_object_nodes.append(((description,), matched_object_node))
+                    object_nodes.append(((concept.debug_string,), matched_object_node))
 
                     graph_to_return = self._replace_match_with_object_graph_node(
                         matched_object_node, graph_to_return, pattern_match
@@ -264,17 +285,25 @@ class ObjectRecognizer:
                     break
                 else:
                     cumulative_millis_in_failed_matches_ms += t.elapsed
-        if matched_object_nodes:
+        if object_nodes:
             logging.info(
                 "Object recognizer recognized: %s",
-                [description for (description, _) in matched_object_nodes],
+                [concept for (concept, _) in object_nodes],
             )
         logging.info(
             "object matching: ms in success: %s, ms in failed: %s",
             cumulative_millis_in_successful_matches_ms,
             cumulative_millis_in_failed_matches_ms,
         )
-        return PerceptionGraphFromObjectRecognizer(graph_to_return, matched_object_nodes)
+        object_nodes_dict: Mapping[Tuple[str, ...], ObjectSemanticNode] = immutabledict(
+            object_nodes
+        )
+        return (
+            perception_semantic_alignment.copy_with_updated_graph_and_added_nodes(
+                new_graph=graph_to_return, new_nodes=object_nodes_dict.values()
+            ),
+            object_nodes_dict,
+        )
 
     def extract_candidate_objects(
         self, whole_scene_perception_graph: PerceptionGraph
@@ -369,29 +398,42 @@ class ObjectRecognizer:
         return candidate_objects
 
     def match_objects_with_language(
-        self, language_aligned_perception: LanguageAlignedPerception
-    ) -> LanguageAlignedPerception:
+        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
+    ) -> LanguagePerceptionSemanticAlignment:
         """
-        Recognize known objects in a `LanguageAlignedPerception`.
+        Recognize known objects in a `LanguagePerceptionSemanticAlignment`.
 
         For each node matched, this will identify the relevant portion of the linguistic input
         and record the correspondence.
 
-        The matched portion of the graph will be replaced with an `MatchedObjectNode`
+        The matched portion of the graph will be replaced with an `ObjectSemanticNode`
         which will inherit all relationships of any nodes internal to the matched portion
         with any external nodes.
 
         This is useful as a pre-processing step
         before prepositional and verbal learning experiments.
         """
-        match_result = self.match_objects(language_aligned_perception.perception_graph)
-        return LanguageAlignedPerception(
-            language=language_aligned_perception.language,
-            perception_graph=match_result.perception_graph,
-            node_to_language_span=self._align_objects_to_tokens(
-                match_result.description_to_matched_object_node,
-                language_aligned_perception.language,
+        if (
+            language_perception_semantic_alignment.perception_semantic_alignment.semantic_nodes
+        ):
+            raise RuntimeError(
+                "We assume ObjectRecognizer is run first, with no previous " "alignments"
+            )
+
+        (
+            post_match_perception_semantic_alignment,
+            tokens_to_object_nodes,
+        ) = self.match_objects(
+            language_perception_semantic_alignment.perception_semantic_alignment
+        )
+        return LanguagePerceptionSemanticAlignment(
+            language_concept_alignment=language_perception_semantic_alignment.language_concept_alignment.copy_with_added_token_alignments(
+                self._align_objects_to_tokens(
+                    tokens_to_object_nodes,
+                    language_perception_semantic_alignment.language_concept_alignment.language,
+                )
             ),
+            perception_semantic_alignment=post_match_perception_semantic_alignment,
         )
 
     def _replace_match_with_object_graph_node(
@@ -402,9 +444,9 @@ class ObjectRecognizer:
     ) -> PerceptionGraph:
         """
         Internal function to replace the nodes of the perception matched by the object pattern
-        with a MatchedObjectNode.
+        with an `ObjectSemantcNode`.
 
-        Any external relationships those nodes had is inherited by the MatchedObjectNode.
+        Any external relationships those nodes had is inherited by the `ObjectSemanticNode`.
         """
         perception_digraph = current_perception.copy_as_digraph()
         perception_digraph.add_node(matched_object_node)
@@ -634,28 +676,25 @@ class ObjectRecognizer:
                 matched_object_node, linked_property_node, label=edge_label
             )
 
-    @_object_names_to_dynamic_patterns.default
-    def _init_object_names_to_dynamic_patterns(
+    @_concepts_to_dynamic_patterns.default
+    def _init_concepts_to_dynamic_patterns(
         self
-    ) -> ImmutableDict[str, PerceptionGraphPattern]:
+    ) -> ImmutableDict[ObjectConcept, PerceptionGraphPattern]:
         return immutabledict(
-            (description, static_pattern.copy_with_temporal_scopes(ENTIRE_SCENE))
-            for (
-                description,
-                static_pattern,
-            ) in self._object_names_to_static_patterns.items()
+            (concept, static_pattern.copy_with_temporal_scopes(ENTIRE_SCENE))
+            for (concept, static_pattern) in self._concepts_to_static_patterns.items()
         )
 
-    @_object_name_to_num_subobjects.default
-    def _init_patterns_to_num_subobjects(self) -> ImmutableDict[str, int]:
+    @_concept_to_num_subobjects.default
+    def _init_patterns_to_num_subobjects(self) -> ImmutableDict[ObjectConcept, int]:
         return immutabledict(
             (
-                object_name,
+                concept,
                 pattern.count_nodes_matching(
                     lambda node: isinstance(node, AnyObjectPerception)
                 ),
             )
-            for (object_name, pattern) in self._object_names_to_static_patterns.items()
+            for (concept, pattern) in self._concepts_to_static_patterns.items()
         )
 
 
