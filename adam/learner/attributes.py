@@ -16,8 +16,8 @@ from adam.learner.perception_graph_template import PerceptionGraphTemplate
 from adam.learner.subset import AbstractTemplateSubsetLearner
 from adam.learner.surface_templates import STANDARD_SLOT_VARIABLES, SurfaceTemplate
 from adam.learner.template_learner import (
-    AbstractNewStyleTemplateLearner,
     AbstractTemplateLearner,
+    AbstractTemplateLearnerNew,
 )
 from adam.perception import PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
@@ -35,7 +35,7 @@ from immutablecollections import immutabledict, immutableset
 
 @attrs
 class AbstractAttributeTemplateLearner(
-    AbstractTemplateLearner, AbstractNewStyleTemplateLearner, ABC
+    AbstractTemplateLearner, AbstractTemplateLearnerNew, ABC
 ):
     # mypy doesn't realize that fields without defaults can come after those with defaults
     # if they are keyword-only.
@@ -76,8 +76,7 @@ class AbstractAttributeTemplateLearner(
         if len(language_concept_alignment.aligned_nodes) > 1:
             raise RuntimeError("Input has too many aligned nodes for us to handle.")
 
-        return SurfaceTemplate.from_language_aligned_perception(
-            language_concept_alignment,
+        return language_concept_alignment.to_surface_template(
             object_node_to_template_variable=immutabledict(
                 zip(language_concept_alignment.aligned_nodes, STANDARD_SLOT_VARIABLES)
             ),

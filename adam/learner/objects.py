@@ -17,11 +17,14 @@ from adam.learner.object_recognizer import (
 )
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
 from adam.learner.pursuit import AbstractPursuitLearner, HypothesisLogger
-from adam.learner.subset import AbstractTemplateSubsetLearner
+from adam.learner.subset import (
+    AbstractTemplateSubsetLearner,
+    AbstractTemplateSubsetLearnerNew,
+)
 from adam.learner.surface_templates import SurfaceTemplate
 from adam.learner.template_learner import (
-    AbstractNewStyleTemplateLearner,
     AbstractTemplateLearner,
+    AbstractTemplateLearnerNew,
 )
 from adam.learner.alignments import (
     LanguagePerceptionSemanticAlignment,
@@ -36,7 +39,7 @@ from adam.perception.developmental_primitive_perception import (
 )
 from adam.perception.perception_graph import PerceptionGraph, PerceptionGraphPattern
 from adam.learner.alignments import LanguageConceptAlignment
-from adam.semantics import Concept
+from adam.semantics import Concept, ObjectConcept
 from adam.utils import networkx_utils
 from attr import evolve, attrs, attrib
 from attr.validators import optional, instance_of
@@ -51,14 +54,47 @@ from immutablecollections import (
 from vistautils.parameters import Parameters
 
 
-@attrs
-class AbstractNewStyleObjectTemplateLearner(AbstractNewStyleTemplateLearner):
-    pass
+class AbstractObjectTemplateLearnerNew(AbstractTemplateLearnerNew):
+    def _can_learn_from(
+        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
+    ) -> None:
+        # We can try to learn objects from anything, as long as the scene isn't already
+        # completely understood.
+        return (
+            not language_perception_semantic_alignment.language_concept_alignment.is_entirely_aligned
+        )
+
+    def _preprocess_scene(
+        self, perception_semantic_alignment: PerceptionSemanticAlignment
+    ) -> PerceptionSemanticAlignment:
+        # Avoid accidentally identifying a word with the learner itself.
+        return perception_semantic_alignment.copy_with_updated_graph_and_added_nodes(
+            new_graph=graph_without_learner(
+                perception_semantic_alignment.perception_graph
+            ),
+            new_nodes=[],
+        )
+
+    def _extract_surface_templates(
+        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
+    ) -> AbstractSet[SurfaceTemplate]:
+        # TODO: make an issue to track that we can only learn single words for objects
+        # at the moment
+
+        # Attempt to align every unaligned token to some object in the scene.
+        language_alignment = (
+            language_perception_semantic_alignment.language_concept_alignment
+        )
+        return immutableset(
+            SurfaceTemplate.for_object_name(token)
+            for (tok_idx, token) in enumerate(
+                language_alignment.language.as_token_sequence()
+            )
+            if not language_alignment.token_index_is_aligned(tok_idx)
+        )
 
 
-class AbstractObjectTemplateLearner(
-    AbstractTemplateLearner, AbstractNewStyleTemplateLearner, ABC
-):
+class AbstractObjectTemplateLearner(AbstractTemplateLearner, ABC):
     def _assert_valid_input(
         self,
         to_check: Union[
@@ -105,27 +141,6 @@ class ObjectPursuitLearner(AbstractPursuitLearner, AbstractObjectTemplateLearner
     """
     An implementation of pursuit learner for object recognition
     """
-
-    def templates_for_concept(self, concept: Concept) -> AbstractSet[SurfaceTemplate]:
-        raise NotImplementedError()
-
-    def learn_from(
-        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
-    ) -> None:
-        raise NotImplementedError()
-
-    def enrich_during_learning(
-        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
-    ) -> LanguagePerceptionSemanticAlignment:
-        raise NotImplementedError()
-
-    def enrich_during_description(
-        self, perception_semantic_alignment: PerceptionSemanticAlignment
-    ) -> PerceptionSemanticAlignment:
-        raise NotImplementedError()
-
-    def log_hypotheses(self, log_output_path: Path) -> None:
-        raise NotImplementedError()
 
     def _candidate_hypotheses(
         self, language_aligned_perception: LanguageConceptAlignment
@@ -328,37 +343,43 @@ class ObjectPursuitLearner(AbstractPursuitLearner, AbstractObjectTemplateLearner
 
 
 @attrs(slots=True)
-class SubsetObjectLearner(AbstractTemplateSubsetLearner, AbstractObjectTemplateLearner):
+class SubsetObjectLearner(
+    AbstractTemplateSubsetLearnerNew, AbstractObjectTemplateLearnerNew
+):
     """
     An implementation of `LanguageLearner` for subset learning based approach for single object detection.
     """
 
-    def templates_for_concept(self, concept: Concept) -> AbstractSet[SurfaceTemplate]:
-        raise NotImplementedError()
-
-    def learn_from(
-        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
-    ) -> None:
-        raise NotImplementedError()
-
-    def enrich_during_learning(
-        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
-    ) -> LanguagePerceptionSemanticAlignment:
-        raise NotImplementedError()
-
-    def enrich_during_description(
-        self, perception_semantic_alignment: PerceptionSemanticAlignment
-    ) -> PerceptionSemanticAlignment:
-        raise NotImplementedError()
-
-    def log_hypotheses(self, log_output_path: Path) -> None:
-        raise NotImplementedError()
-
     def _hypothesis_from_perception(
-        self, preprocessed_input: LanguageConceptAlignment
+        self, learning_state: LanguageConceptAlignment
     ) -> PerceptionGraphTemplate:
         new_hypothesis = PerceptionGraphPattern.from_graph(
-            preprocessed_input.perception_graph
+            learning_state.perception_graph
+        ).perception_graph_pattern
+        return PerceptionGraphTemplate(
+            graph_pattern=new_hypothesis,
+            template_variable_to_pattern_node=immutabledict(),
+        )
+
+
+@attrs(slots=True)
+class SubsetObjectLearnerNew(
+    AbstractObjectTemplateLearnerNew, AbstractTemplateSubsetLearnerNew
+):
+    """
+    An implementation of `LanguageLearner` for subset learning based approach for single object detection.
+    """
+
+    def _new_concept(self, debug_string: str) -> ObjectConcept:
+        return ObjectConcept(debug_string)
+
+    def _hypothesis_from_perception(
+        self,
+        learning_state: LanguagePerceptionSemanticAlignment,
+        surface_template: SurfaceTemplate,
+    ) -> PerceptionGraphTemplate:
+        new_hypothesis = PerceptionGraphPattern.from_graph(
+            learning_state.perception_semantic_alignment.perception_graph
         ).perception_graph_pattern
         return PerceptionGraphTemplate(
             graph_pattern=new_hypothesis,
@@ -367,7 +388,7 @@ class SubsetObjectLearner(AbstractTemplateSubsetLearner, AbstractObjectTemplateL
 
 
 @attrs(frozen=True, kw_only=True)
-class ObjectRecognizerAsTemplateLearner(AbstractNewStyleObjectTemplateLearner):
+class ObjectRecognizerAsTemplateLearner(AbstractObjectTemplateLearnerNew):
     _object_recognizer: ObjectRecognizer = attrib(validator=instance_of(ObjectRecognizer))
     _concepts_to_templates: ImmutableSetMultiDict[Concept, SurfaceTemplate] = attrib(
         init=False

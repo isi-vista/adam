@@ -6,6 +6,11 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Dict, Generic, Mapping, Optional, Any
 
+from adam.learner.alignments import (
+    LanguagePerceptionSemanticAlignment,
+    PerceptionSemanticAlignment,
+)
+
 from adam.ontology.ontology import Ontology
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
@@ -167,3 +172,27 @@ def graph_without_learner(perception_graph: PerceptionGraph) -> PerceptionGraph:
         islands = list(isolates(graph))
         graph.remove_nodes_from(islands)
     return PerceptionGraph(graph)
+
+
+class NewStyleLearner(ABC):
+    @abstractmethod
+    def learn_from(
+        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
+    ) -> None:
+        pass
+
+    @abstractmethod
+    def enrich_during_learning(
+        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
+    ) -> LanguagePerceptionSemanticAlignment:
+        pass
+
+    @abstractmethod
+    def enrich_during_description(
+        self, perception_semantic_alignment: PerceptionSemanticAlignment
+    ) -> PerceptionSemanticAlignment:
+        pass
+
+    @abstractmethod
+    def log_hypotheses(self, log_output_path: Path) -> None:
+        pass

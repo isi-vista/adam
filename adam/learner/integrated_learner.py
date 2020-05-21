@@ -1,4 +1,5 @@
 import logging
+from itertools import chain
 from pathlib import Path
 from typing import AbstractSet, Iterable, Mapping, Optional
 
@@ -10,6 +11,7 @@ from adam.learner.alignments import (
     LanguagePerceptionSemanticAlignment,
     PerceptionSemanticAlignment,
 )
+from adam.learner.surface_templates import MASS_NOUNS
 from adam.learner.verbs import AbstractVerbTemplateLearner
 from adam.perception import PerceptionT, PerceptualRepresentation
 from adam.perception.perception_graph import PerceptionGraph
@@ -26,7 +28,7 @@ from attr.validators import instance_of, optional
 from adam.language import LinguisticDescription, TokenSequenceLinguisticDescription
 from adam.learner import LanguageLearner, LearningExample
 from adam.learner.objects import (
-    AbstractNewStyleObjectTemplateLearner,
+    AbstractObjectTemplateLearnerNew,
     AbstractObjectTemplateLearner,
 )
 from adam.perception.developmental_primitive_perception import (
@@ -42,6 +44,16 @@ from immutablecollections import (
 from immutablecollections.converter_utils import _to_immutableset
 
 
+class LanguageLearnerNew:
+    def observe(
+        self,
+        learning_example: LearningExample[
+            DevelopmentalPrimitivePerceptionFrame, LinguisticDescription
+        ],
+    ) -> None:
+        pass
+
+
 @attrs
 class IntegratedTemplateLearner(
     LanguageLearner[
@@ -53,17 +65,19 @@ class IntegratedTemplateLearner(
     and actions all at once.
     """
 
-    object_learner: AbstractNewStyleObjectTemplateLearner = attrib(
-        validator=instance_of(AbstractNewStyleObjectTemplateLearner)
+    object_learner: AbstractObjectTemplateLearnerNew = attrib(
+        validator=instance_of(AbstractObjectTemplateLearnerNew)
     )
     attribute_learner: Optional[AbstractAttributeTemplateLearner] = attrib(
-        validator=optional(instance_of(AbstractAttributeTemplateLearner))
+        validator=optional(instance_of(AbstractAttributeTemplateLearner)), default=None
     )
+
     relation_learner: Optional[AbstractPrepositionTemplateLearner] = attrib(
-        validator=optional(instance_of(AbstractPrepositionTemplateLearner))
+        validator=optional(instance_of(AbstractPrepositionTemplateLearner)), default=None
     )
+
     action_learner: Optional[AbstractVerbTemplateLearner] = attrib(
-        validator=optional(instance_of(AbstractVerbTemplateLearner))
+        validator=optional(instance_of(AbstractVerbTemplateLearner)), default=None
     )
 
     _observation_num: int = attrib(init=False, default=0)
@@ -89,7 +103,12 @@ class IntegratedTemplateLearner(
             language_concept_alignment=LanguageConceptAlignment.create_unaligned(
                 language=learning_example.linguistic_description
             ),
-            perception_graph=self._extract_perception_graph(learning_example.perception),
+            perception_semantic_alignment=PerceptionSemanticAlignment(
+                perception_graph=self._extract_perception_graph(
+                    learning_example.perception
+                ),
+                semantic_nodes=[],
+            ),
         )
 
         # We iteratively let each "layer" of semantic analysis attempt
@@ -154,11 +173,27 @@ class IntegratedTemplateLearner(
             or learner_semantics.actions
         ):
             raise RuntimeError("Currently we can only handle objects")
-        return {
-            template.instantiate(template_variable_to_filler=immutabledict()): 1.0
-            for object_node in learner_semantics.objects
-            for template in self.object_learner.templates_for_concept(object_node.concept)
-        }
+
+        ret = []
+        for object_node in learner_semantics.objects:
+            for template in self.object_learner.templates_for_concept(
+                object_node.concept
+            ):
+                instantiated_object_string = template.instantiate(
+                    template_variable_to_filler=immutabledict()
+                )
+                # English-specific hack to deal with us not understanding determiners:
+                # https://github.com/isi-vista/adam/issues/498
+                # The "is lower" check is a hack to block adding a determiner to proper names.
+                if (
+                    object_node.concept.debug_string not in MASS_NOUNS
+                    and object_node.concept.debug_string.islower()
+                ):
+                    output_tokens = tuple(chain(("a",), instantiated_object_string))
+                else:
+                    output_tokens = instantiated_object_string
+                ret.append((output_tokens, 1.0))
+        return immutabledict(ret)
 
     def log_hypotheses(self, log_output_path: Path) -> None:
         raise NotImplementedError("implement me")
