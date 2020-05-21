@@ -1,12 +1,15 @@
 from typing import Generic, List, Mapping, Optional, TypeVar, Union
 
+from immutablecollections.converter_utils import _to_immutableset
+
 from adam.axis import GeonAxis
 from attr import attrib, attrs
 from attr.validators import in_, instance_of, optional
-from immutablecollections import immutabledict
+from immutablecollections import immutabledict, ImmutableSet, immutableset
 from vistautils.preconditions import check_arg
 
 from adam.axes import AxesInfo, AxisFunction, GRAVITATIONAL_AXIS_FUNCTION
+from adam.ontology import OntologyNode
 
 
 @attrs(frozen=True, slots=True, repr=False)
@@ -237,6 +240,9 @@ class SpatialPath(Generic[ReferenceObjectT]):
     orientation_changed: bool = attrib(
         validator=instance_of(bool), default=False, kw_only=True
     )
+    properties: ImmutableSet[OntologyNode] = attrib(
+        default=immutableset(), kw_only=True, converter=_to_immutableset
+    )
 
     def __attrs_post_init__(self) -> None:
         # you either need a path operator
@@ -275,6 +281,7 @@ class SpatialPath(Generic[ReferenceObjectT]):
             else object_mapping[self.reference_object],
             reference_axis=new_reference_axis,
             orientation_changed=self.orientation_changed,
+            properties=self.properties,
         )
 
     def accumulate_referenced_objects(

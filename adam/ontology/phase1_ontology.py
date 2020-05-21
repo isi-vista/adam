@@ -207,6 +207,10 @@ EDIBLE = OntologyNode("edible")
 subtype(EDIBLE, PROPERTY)
 CAN_BE_SAT_ON_BY_PEOPLE = OntologyNode("can-be-sat-on")
 subtype(CAN_BE_SAT_ON_BY_PEOPLE, PROPERTY)
+FAST = OntologyNode("fast")
+subtype(FAST, PROPERTY)
+SLOW = OntologyNode("slow")
+subtype(SLOW, PROPERTY)
 
 COLOR = OntologyNode("color")
 subtype(COLOR, PERCEIVABLE_PROPERTY)
@@ -525,8 +529,8 @@ STATE = OntologyNode("state")
 CONSUME = OntologyNode("consume")
 subtype(CONSUME, ACTION)
 PUT = OntologyNode("put")
-PUSH = OntologyNode("push")
 subtype(PUT, ACTION)
+PUSH = OntologyNode("push")
 subtype(PUSH, ACTION)
 GO = OntologyNode("go")
 subtype(GO, ACTION)
@@ -1774,7 +1778,7 @@ def _make_push_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
         bigger_than(_PUSH_AGENT, _PUSH_THEME),
         bigger_than(PUSH_SURFACE_AUX, _PUSH_THEME),
         contacts(_PUSH_MANIPULATOR, _PUSH_THEME),
-        on(_PUSH_THEME, PUSH_SURFACE_AUX),
+        on([_PUSH_THEME, _PUSH_AGENT], PUSH_SURFACE_AUX),
     ]
     preconditions = [Relation(IN_REGION, _PUSH_THEME, PUSH_GOAL, negated=True)]
     postconditions = [Relation(IN_REGION, _PUSH_THEME, PUSH_GOAL)]
