@@ -18,8 +18,8 @@ from adam.learner.pursuit import AbstractPursuitLearner
 from adam.learner.subset import AbstractTemplateSubsetLearner
 from adam.learner.surface_templates import SLOT1, SLOT2, SurfaceTemplate
 from adam.learner.template_learner import (
-    AbstractNewStyleTemplateLearner,
     AbstractTemplateLearner,
+    AbstractTemplateLearnerNew,
 )
 from adam.perception import ObjectPerception, PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
@@ -43,7 +43,7 @@ from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, imm
 
 @attrs
 class AbstractPrepositionTemplateLearner(
-    AbstractTemplateLearner, AbstractNewStyleTemplateLearner, ABC
+    AbstractTemplateLearner, AbstractTemplateLearnerNew, ABC
 ):
     # mypy doesn't realize that fields without defaults can come after those with defaults
     # if they are keyword-only.
@@ -90,8 +90,7 @@ class AbstractPrepositionTemplateLearner(
     def _extract_surface_template(
         self, language_concept_alignment: LanguageConceptAlignment
     ) -> SurfaceTemplate:
-        return SurfaceTemplate.from_language_aligned_perception(
-            language_concept_alignment,
+        return language_concept_alignment.to_surface_template(
             object_node_to_template_variable=immutabledict(
                 [
                     (language_concept_alignment.aligned_nodes[0], SLOT1),

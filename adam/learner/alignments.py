@@ -1,11 +1,12 @@
 from itertools import chain
-from typing import Iterable, Mapping
+from typing import Iterable, List, Mapping, Tuple, Union
 
 from more_itertools import pairwise
 
 from adam.language import LinguisticDescription
+from adam.learner.surface_templates import SurfaceTemplate
 from adam.perception.perception_graph import PerceptionGraph
-from adam.semantics import ObjectSemanticNode, SemanticNode
+from adam.semantics import ObjectSemanticNode, SemanticNode, SyntaxSemanticsVariable
 from attr import attrib, attrs
 from attr.validators import deep_iterable, instance_of
 from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
@@ -41,11 +42,13 @@ class LanguageConceptAlignment:
     """
 
     language: LinguisticDescription = attrib(validator=instance_of(LinguisticDescription))
-    node_to_language_span: ImmutableDict[ObjectSemanticNode, Span] = attrib(
+    node_to_language_span: ImmutableDict[SemanticNode, Span] = attrib(
         converter=_sort_mapping_by_token_spans, default=immutabledict()
     )
-    language_span_to_node: ImmutableDict[Span, ObjectSemanticNode] = attrib(init=False)
-    aligned_nodes: ImmutableSet[ObjectSemanticNode] = attrib(init=False)
+    language_span_to_node: ImmutableDict[Span, SemanticNode] = attrib(init=False)
+    aligned_nodes: ImmutableSet[SemanticNode] = attrib(init=False)
+    aligned_token_indices: ImmutableSet[int] = attrib(init=False)
+    is_entirely_aligned: bool = attrib(init=False)
 
     @staticmethod
     def create_unaligned(language: LinguisticDescription) -> "LanguageConceptAlignment":
@@ -61,6 +64,9 @@ class LanguageConceptAlignment:
             ),
         )
 
+    def token_index_is_aligned(self, token_index: int) -> bool:
+        return token_index in self.aligned_token_indices
+
     @language_span_to_node.default
     def _init_language_span_to_node(self) -> ImmutableDict[ObjectSemanticNode, Span]:
         return immutabledict((v, k) for (k, v) in self.node_to_language_span.items())
@@ -68,6 +74,21 @@ class LanguageConceptAlignment:
     @aligned_nodes.default
     def _init_aligned_nodes(self) -> ImmutableSet[ObjectSemanticNode]:
         return immutableset(self.node_to_language_span.keys())
+
+    @aligned_token_indices.default
+    def _init_aligned_token_indices(self) -> ImmutableSet[int]:
+        token_indices_aligned = []
+        for aligned_span in self.node_to_language_span.values():
+            for aligned_token_index in range(aligned_span.start, aligned_span.end):
+                token_indices_aligned.append(aligned_token_index)
+        return immutableset(token_indices_aligned)
+
+    @is_entirely_aligned.default
+    def _init_is_entirely_aligned(self) -> bool:
+        for token_index in range(len(self.language.as_token_sequence())):
+            if token_index not in self.aligned_token_indices:
+                return False
+        return True
 
     def __attrs_post_init__(self) -> None:
         # In the converter, we guarantee that node_to_language_span is sorted by
@@ -78,6 +99,99 @@ class LanguageConceptAlignment:
                     f"Aligned spans in a LanguageAlignedPerception must be "
                     f"disjoint but got {span1} and {span2}"
                 )
+
+    def copy_with_new_nodes(
+        self,
+        new_semantic_nodes_to_surface_templates: Mapping[SemanticNode, SurfaceTemplate],
+    ) -> "LanguageConceptAlignment":
+        new_node_to_language_span = list(self.node_to_language_span.items())
+        for (
+            new_node,
+            surface_template,
+        ) in new_semantic_nodes_to_surface_templates.items():
+            slots_to_spans: List[Tuple[SyntaxSemanticsVariable, Span]] = []
+            for (slot, filler) in new_node.slot_fillings.items():
+                filler_tokens = self.node_to_language_span[filler]
+                if filler_tokens:
+                    slots_to_spans.append((slot, filler_tokens))
+                else:
+                    raise RuntimeError(
+                        f"For semantic node {new_node}, its slot {slot} is "
+                        f"occupied by {filler}, but we don't know how to align "
+                        f"that filler to tokens. Known alignments are: "
+                        f"{self.node_to_language_span}"
+                    )
+
+            covered_token_span = surface_template.match_against_tokens(
+                self.language.as_token_sequence(),
+                slots_to_filler_spans=immutabledict(slots_to_spans),
+            )
+
+            if covered_token_span:
+                new_node_to_language_span.append((new_node, covered_token_span))
+            else:
+                raise RuntimeError(
+                    f"Could not match surface template {surface_template} "
+                    f"with fillers {slots_to_spans} against "
+                    f"{self.language.as_token_sequence()}"
+                )
+
+        return LanguageConceptAlignment(
+            self.language, node_to_language_span=new_node_to_language_span
+        )
+
+    def to_surface_template(
+        self,
+        object_node_to_template_variable: Mapping[
+            ObjectSemanticNode, SyntaxSemanticsVariable
+        ],
+        *,
+        determiner_prefix_slots: Iterable[SyntaxSemanticsVariable] = immutableset(),
+    ) -> SurfaceTemplate:
+        if len(object_node_to_template_variable) != len(self.node_to_language_span):
+            raise RuntimeError(
+                "We currently only allow for the situation "
+                "where every matched object corresponds to a template node."
+            )
+
+        # This will be used to build the returned SurfaceTemplate.
+        # We start from the full surface string...
+        template_elements: List[Union[SyntaxSemanticsVariable, str]] = list(self.language)
+
+        # and the we will walk through it backwards
+        # replacing any spans of text which are aligned to objects with variables.
+        # We iterate backwards so we the indices don't get invalidated
+        # as we replace parts of the token sequence with template variables.
+
+        object_nodes_sorted_by_reversed_aligned_token_position = tuple(
+            reversed(
+                sorted(
+                    self.node_to_language_span.keys(),
+                    key=lambda match_node: self.node_to_language_span[match_node],
+                )
+            )
+        )
+
+        for matched_object_node in object_nodes_sorted_by_reversed_aligned_token_position:
+            aligned_token_span = self.node_to_language_span[matched_object_node]
+            # If an object is aligned to multiple tokens,
+            # we just delete all but the first.
+            if len(aligned_token_span) > 1:
+                for non_initial_aligned_index in range(
+                    # -1 because the end index is exclusive
+                    aligned_token_span.end - 1,
+                    aligned_token_span.start,
+                    -1,
+                ):
+                    del template_elements[non_initial_aligned_index]
+            # Regardless, the first token is replaced by a variable.
+            template_elements[
+                aligned_token_span.start
+            ] = object_node_to_template_variable[matched_object_node]
+
+        return SurfaceTemplate(
+            template_elements, determiner_prefix_slots=determiner_prefix_slots
+        )
 
 
 @attrs(frozen=True)

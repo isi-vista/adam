@@ -114,7 +114,7 @@ class AbstractPursuitLearner(AbstractTemplateLearner, ABC):
 
     def _learning_step(
         self,
-        language_concept_alignment: LanguageConceptAlignment,
+        preprocessed_input: LanguageConceptAlignment,
         surface_template: SurfaceTemplate,
     ) -> None:
         # We track this to prevent overly aggressive lexicalization.
@@ -125,11 +125,11 @@ class AbstractPursuitLearner(AbstractTemplateLearner, ABC):
             logging.info(f"Considering '{surface_template}'")
             if surface_template not in self._learned_item_to_hypotheses_and_scores:
                 # This is the first time we have seen this word/phrase.
-                self.initialization_step(surface_template, language_concept_alignment)
+                self.initialization_step(surface_template, preprocessed_input)
             else:
                 # We have seen this word/phrase before, so run the learning reinforcement step
                 is_hypothesis_confirmed = self.learning_step(
-                    surface_template, language_concept_alignment
+                    surface_template, preprocessed_input
                 )
                 if is_hypothesis_confirmed:
                     self.maybe_lexicalize(surface_template)

@@ -1,18 +1,17 @@
 """
 Representations of template-with-slots-like patterns over token strings.
 """
-from typing import Tuple, Union, Mapping, List, Iterable
+from typing import List, Mapping, Optional, Tuple, Union
 
 from more_itertools import quantify
 
 from adam.language import TokenSequenceLinguisticDescription
-from adam.learner.alignments import LanguageConceptAlignment
-from adam.semantics import ObjectSemanticNode, SyntaxSemanticsVariable
-from attr import attrs, attrib
-from attr.validators import instance_of, deep_iterable
-
+from adam.semantics import SyntaxSemanticsVariable
+from attr import attrib, attrs
+from attr.validators import deep_iterable, instance_of
 from immutablecollections import ImmutableSet, immutableset
-from immutablecollections.converter_utils import _to_tuple, _to_immutableset
+from immutablecollections.converter_utils import _to_immutableset, _to_tuple
+from vistautils.span import Span
 
 
 @attrs(frozen=True, slots=True)
@@ -32,68 +31,6 @@ class SurfaceTemplate:
         default=immutableset(),
     )
     num_slots: int = attrib(init=False)
-
-    @staticmethod
-    def from_language_aligned_perception(
-        language_aligned_perception: LanguageConceptAlignment,
-        object_node_to_template_variable: Mapping[
-            ObjectSemanticNode, SyntaxSemanticsVariable
-        ],
-        *,
-        determiner_prefix_slots: Iterable[SyntaxSemanticsVariable] = immutableset()
-    ) -> "SurfaceTemplate":
-        if len(object_node_to_template_variable) != len(
-            language_aligned_perception.node_to_language_span
-        ):
-            raise RuntimeError(
-                "We currently only allow for the situation "
-                "where every matched object corresponds to a template node."
-            )
-
-        # This will be used to build the returned SurfaceTemplate.
-        # We start from the full surface string...
-        template_elements: List[Union[SyntaxSemanticsVariable, str]] = list(
-            language_aligned_perception.language
-        )
-
-        # and the we will walk through it backwards
-        # replacing any spans of text which are aligned to objects with variables.
-        # We iterate backwards so we the indices don't get invalidated
-        # as we replace parts of the token sequence with template variables.
-
-        object_nodes_sorted_by_reversed_aligned_token_position = tuple(
-            reversed(
-                sorted(
-                    language_aligned_perception.node_to_language_span.keys(),
-                    key=lambda match_node: language_aligned_perception.node_to_language_span[
-                        match_node
-                    ],
-                )
-            )
-        )
-
-        for matched_object_node in object_nodes_sorted_by_reversed_aligned_token_position:
-            aligned_token_span = language_aligned_perception.node_to_language_span[
-                matched_object_node
-            ]
-            # If an object is aligned to multiple tokens,
-            # we just delete all but the first.
-            if len(aligned_token_span) > 1:
-                for non_initial_aligned_index in range(
-                    # -1 because the end index is exclusive
-                    aligned_token_span.end - 1,
-                    aligned_token_span.start,
-                    -1,
-                ):
-                    del template_elements[non_initial_aligned_index]
-            # Regardless, the first token is replaced by a variable.
-            template_elements[
-                aligned_token_span.start
-            ] = object_node_to_template_variable[matched_object_node]
-
-        return SurfaceTemplate(
-            template_elements, determiner_prefix_slots=determiner_prefix_slots
-        )
 
     def instantiate(
         self, template_variable_to_filler: Mapping[SyntaxSemanticsVariable, Tuple[str]]
@@ -141,6 +78,70 @@ class SurfaceTemplate:
     @staticmethod
     def for_object_name(object_name: str) -> "SurfaceTemplate":
         return SurfaceTemplate(elements=(object_name,), determiner_prefix_slots=[])
+
+    def match_against_tokens(
+        self,
+        token_sequence_to_match_against: Tuple[str, ...],
+        *,
+        slots_to_filler_spans: Mapping[SyntaxSemanticsVariable, Span],
+    ) -> Optional[Span]:
+        """
+        Gets the token indices, if any, for the first match of this template against
+        *token_sequence_to_match_against*, assuming any slots are filled by the tokens given by
+        *slots_to_fillers_spans*.
+        """
+        # First, we turn the template into a token sequence to search for
+        # by filling in all the slots form the provided token span mapping.
+        tokens_to_match = []
+        for element in self.elements:
+            if isinstance(element, str):
+                tokens_to_match.append(element)
+            else:
+                slot_filler_span = slots_to_filler_spans.get(element)
+                if slot_filler_span:
+                    # endpoints are exclusive
+                    tokens_to_match.extend(
+                        token_sequence_to_match_against[
+                            slot_filler_span.start : slot_filler_span.end
+                        ]
+                    )
+                else:
+                    raise RuntimeError(
+                        f"Template contained variable {element}, "
+                        f"but it was not found in the mapping of slots to spans: "
+                        f"{slots_to_filler_spans}"
+                    )
+
+        # Now we need to check if the tokens to match occur in the given token sequence to
+        # match against.  We don't expect these sequences to be long, so an inefficient solution
+        # is okay.
+        if not tokens_to_match:
+            raise RuntimeError("Don't know how to match any empty token sequence")
+        next_idx_to_search_from = 0
+        while next_idx_to_search_from < len(token_sequence_to_match_against):
+            try:
+                index_of_first_token = token_sequence_to_match_against.index(
+                    tokens_to_match[0], next_idx_to_search_from
+                )
+                candidate_match_exclusive_end = index_of_first_token + len(
+                    tokens_to_match
+                )
+                if candidate_match_exclusive_end <= len(token_sequence_to_match_against):
+                    if tokens_to_match == list(
+                        token_sequence_to_match_against[
+                            index_of_first_token:candidate_match_exclusive_end
+                        ]
+                    ):
+                        # span endpoints are exclusive
+                        return Span(index_of_first_token, candidate_match_exclusive_end)
+                # False alarm - the first token matched, but not the whole sequence.
+                next_idx_to_search_from = index_of_first_token + 1
+            except ValueError:
+                # If we can't even find the first token of what we are searching for,
+                # we definitely have no match.
+                return None
+        # We got all the way to the end without finding a match
+        return None
 
 
 SLOT1 = SyntaxSemanticsVariable("slot1")
