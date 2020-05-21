@@ -1778,7 +1778,7 @@ def _make_push_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
         bigger_than(_PUSH_AGENT, _PUSH_THEME),
         bigger_than(PUSH_SURFACE_AUX, _PUSH_THEME),
         contacts(_PUSH_MANIPULATOR, _PUSH_THEME),
-        on([_PUSH_THEME, _PUSH_AGENT], PUSH_SURFACE_AUX),
+        on(_PUSH_THEME, PUSH_SURFACE_AUX),
     ]
     preconditions = [Relation(IN_REGION, _PUSH_THEME, PUSH_GOAL, negated=True)]
     postconditions = [Relation(IN_REGION, _PUSH_THEME, PUSH_GOAL)]

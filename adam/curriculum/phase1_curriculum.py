@@ -84,7 +84,6 @@ from adam.ontology.phase1_ontology import (
     near,
     on,
     strictly_above,
-    FAST,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,

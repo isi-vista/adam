@@ -73,6 +73,8 @@ from adam.ontology.phase1_ontology import (
     MUCH_BIGGER_THAN,
     SMALLER_THAN,
     MUCH_SMALLER_THAN,
+    FAST,
+    SLOW,
 )
 from adam.ontology.phase1_spatial_relations import (
     EXTERIOR_BUT_IN_CONTACT,
@@ -499,11 +501,11 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                         f"Do not know how to handle size relation of type {relation.relation_type}"
                     )
 
-                    self.dependency_graph.add_edge(
-                        attribute,
-                        self._noun_for_object(relation.first_slot),
-                        role=ADJECTIVAL_MODIFIER,
-                    )
+                self.dependency_graph.add_edge(
+                    attribute,
+                    self._noun_for_object(relation.first_slot),
+                    role=ADJECTIVAL_MODIFIER,
+                )
             else:
                 raise RuntimeError(
                     f"Don't know how to translate relation " f"{relation} to English"
@@ -789,6 +791,16 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                             modifiers.append(
                                 (OBLIQUE_NOMINAL, spatial_prepositonal_modifier)
                             )
+
+                for (_, path) in action.during.objects_to_paths.items():
+                    if FAST in path.properties:
+                        modifiers.append(
+                            (ADVERBIAL_MODIFIER, DependencyTreeToken("fast", ADVERB))
+                        )
+                    elif SLOW in path.properties:
+                        modifiers.append(
+                            (ADVERBIAL_MODIFIER, DependencyTreeToken("fast", ADVERB))
+                        )
 
             for relation in self.situation.after_action_relations:
                 self._translate_relation_to_action_modifier(action, relation, modifiers)
