@@ -20,7 +20,7 @@ from adam.learner.object_recognizer import (
     replace_match_with_object_graph_node,
 )
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
-from adam.learner.surface_templates import SurfaceTemplate
+from adam.learner.surface_templates import BoundSurfaceTemplate, SurfaceTemplate
 from adam.perception import PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -29,6 +29,7 @@ from adam.perception.perception_graph import PerceptionGraph, PerceptionGraphPat
 from adam.semantics import Concept, ObjectConcept, ObjectSemanticNode, SemanticNode
 from attr import attrib, attrs, evolve
 from immutablecollections import immutabledict, immutableset
+from vistautils.preconditions import check_state
 
 
 @attrs
@@ -226,8 +227,14 @@ class AbstractTemplateLearner(
         )
 
 
+class TemplateLearner(NewStyleLearner, ABC):
+    @abstractmethod
+    def templates_for_concept(self, concept: Concept) -> AbstractSet[SurfaceTemplate]:
+        pass
+
+
 @attrs
-class AbstractTemplateLearnerNew(NewStyleLearner, ABC):
+class AbstractTemplateLearnerNew(TemplateLearner, ABC):
     """
     Super-class for learners using template-based syntax-semantics mappings.
     """
@@ -257,9 +264,10 @@ class AbstractTemplateLearnerNew(NewStyleLearner, ABC):
             ),
         )
 
-        self._learning_step(
-            preprocessed_input, self._extract_surface_templates(preprocessed_input)
-        )
+        for thing_whose_meaning_to_learn in self._candidate_templates(
+            language_perception_semantic_alignment
+        ):
+            self._learning_step(preprocessed_input, thing_whose_meaning_to_learn)
 
     def enrich_during_learning(
         self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
@@ -283,7 +291,8 @@ class AbstractTemplateLearnerNew(NewStyleLearner, ABC):
                         one(self.templates_for_concept(semantic_node.concept)),
                     )
                     for semantic_node in newly_recognized_semantic_nodes
-                )
+                ),
+                filter_out_duplicate_alignments=True,
             ),
             perception_semantic_alignment=perception_post_enrichment,
         )
@@ -341,6 +350,7 @@ class AbstractTemplateLearnerNew(NewStyleLearner, ABC):
 
         # For each template whose semantics we are certain of (=have been added to the lexicon)
         for (concept, graph_pattern, score) in self._primary_templates():
+            check_state(isinstance(graph_pattern, PerceptionGraphTemplate))
             match_template(concept=concept, pattern=graph_pattern, score=score)
 
         if not match_to_score:
@@ -369,14 +379,10 @@ class AbstractTemplateLearnerNew(NewStyleLearner, ABC):
         )
 
     @abstractmethod
-    def templates_for_concept(self, concept: Concept) -> AbstractSet[SurfaceTemplate]:
-        pass
-
-    @abstractmethod
     def _learning_step(
         self,
         language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
-        surface_templates: Iterable[SurfaceTemplate],
+        bound_surface_template: BoundSurfaceTemplate,
     ) -> None:
         """
         Perform the actual learning logic.
@@ -400,9 +406,9 @@ class AbstractTemplateLearnerNew(NewStyleLearner, ABC):
         """
 
     @abstractmethod
-    def _extract_surface_templates(
+    def _candidate_templates(
         self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
-    ) -> AbstractSet[SurfaceTemplate]:
+    ) -> AbstractSet[BoundSurfaceTemplate]:
         r"""
         We treat learning as acquiring an association between "templates"
         over the token sequence and `PerceptionGraphTemplate`\ s.

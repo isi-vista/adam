@@ -6,11 +6,15 @@ from typing import List, Mapping, Optional, Tuple, Union
 from more_itertools import quantify
 
 from adam.language import TokenSequenceLinguisticDescription
-from adam.semantics import SyntaxSemanticsVariable
+from adam.semantics import ObjectSemanticNode, SemanticNode, SyntaxSemanticsVariable
 from attr import attrib, attrs
 from attr.validators import deep_iterable, instance_of
-from immutablecollections import ImmutableSet, immutableset
-from immutablecollections.converter_utils import _to_immutableset, _to_tuple
+from immutablecollections import ImmutableDict, ImmutableSet, immutableset
+from immutablecollections.converter_utils import (
+    _to_immutabledict,
+    _to_immutableset,
+    _to_tuple,
+)
 from vistautils.span import Span
 
 
@@ -33,7 +37,8 @@ class SurfaceTemplate:
     num_slots: int = attrib(init=False)
 
     def instantiate(
-        self, template_variable_to_filler: Mapping[SyntaxSemanticsVariable, Tuple[str]]
+        self,
+        template_variable_to_filler: Mapping[SyntaxSemanticsVariable, Tuple[str, ...]],
     ) -> TokenSequenceLinguisticDescription:
         """
         Turns a template into a `TokenSequenceLinguisticDescription` by filling in its variables.
@@ -142,6 +147,22 @@ class SurfaceTemplate:
                 return None
         # We got all the way to the end without finding a match
         return None
+
+
+@attrs(frozen=True)
+class BoundSurfaceTemplate:
+    """
+    A surface template together with a mapping from its slots to particular semantic roles.
+
+    This is used to specify what the thing we are trying to learn the meaning of in
+    a template learner is.  For example, "what does 'X eats Y' mean, given that
+    we know X is this thing and Y is that other thing in this particular situation.
+    """
+
+    surface_template: SurfaceTemplate = attrib(validator=instance_of(SurfaceTemplate))
+    slot_to_semantic_node: ImmutableDict[
+        SyntaxSemanticsVariable, ObjectSemanticNode
+    ] = attrib(converter=_to_immutabledict)
 
 
 SLOT1 = SyntaxSemanticsVariable("slot1")

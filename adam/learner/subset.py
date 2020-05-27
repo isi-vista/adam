@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import AbstractSet, Dict, Mapping, Optional, Set, Tuple, Iterable, Sequence
 
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
-from adam.learner.surface_templates import SurfaceTemplate
+from adam.learner.surface_templates import BoundSurfaceTemplate, SurfaceTemplate
 from adam.learner.template_learner import (
     AbstractTemplateLearner,
     AbstractTemplateLearnerNew,
@@ -111,7 +111,8 @@ class AbstractSubsetLearner(AbstractTemplateLearner, ABC):
 
 @attrs
 class AbstractSubsetLearnerNew(AbstractTemplateLearnerNew, ABC):
-    _concept_to_hypothesis: Dict[Concept, PerceptionGraphTemplate] = attrib(
+    _beam_size: int = attrib(validator=instance_of(int), kw_only=True)
+    _concept_to_hypotheses: Dict[Concept, AbstractSet[PerceptionGraphTemplate]] = attrib(
         init=False, default=Factory(dict)
     )
     _concept_to_surface_template: Dict[Concept, SurfaceTemplate] = attrib(
@@ -128,56 +129,107 @@ class AbstractSubsetLearnerNew(AbstractTemplateLearnerNew, ABC):
     def _learning_step(
         self,
         language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
-        surface_templates: Iterable[SurfaceTemplate],
+        bound_surface_template: BoundSurfaceTemplate,
     ) -> None:
-        for surface_template in surface_templates:
-            if surface_template in self._known_bad_patterns:
-                # We tried to learn an alignment for this surface template previously
-                # and it didn't work out.
-                continue
+        """
+        Try to learn the semantics of a `SurfaceTemplate` given the assumption
+        that its argument slots (if any) are bound to objects according to
+        *bound_surface_template*.
 
-            if surface_template in self._surface_template_to_concept:
-                # If already observed, get the largest matching subgraph of the pattern in the
-                # current observation and
-                # previous pattern hypothesis
-                # TODO: We should relax this requirement for learning: issue #361
-                concept_for_surface_template = self._surface_template_to_concept[
-                    surface_template
-                ]
-                previous_pattern_hypothesis = self._concept_to_hypothesis[
-                    concept_for_surface_template
-                ]
+        For example, "try to learn the meaning of 'red' given the language 'red car'
+        and an alignment of 'car' to particular perceptions in the perception graph.
+        """
+        if bound_surface_template.surface_template in self._known_bad_patterns:
+            # We tried to learn an alignment for this surface template previously
+            # and it didn't work out.
+            # For example, early on, we might think 'the' could be an object,
+            # but eventually we will become quite sure it isn't one.
+            return
 
-                updated_hypothesis = previous_pattern_hypothesis.intersection(
-                    self._hypothesis_from_perception(
-                        language_perception_semantic_alignment,
-                        surface_template=surface_template,
-                    ),
-                    ontology=self._ontology,
+        if bound_surface_template.surface_template in self._surface_template_to_concept:
+            # We've seen this template before and already have some hypothesis about what it means
+            # which we need to confirm or refine.
+            # If already observed, get the largest matching subgraph of the pattern in the
+            # current observation and
+            # previous pattern hypothesis
+
+            # We don't directly associate surface templates with perceptions.
+            # Instead we mediate the relationship with "concept" objects.
+            # These don't matter now, but the split might be helpful in the future
+            # when we might have multiple ways of expressing the same idea.
+            concept_for_surface_template = self._surface_template_to_concept[
+                bound_surface_template.surface_template
+            ]
+            # What is our current hypotheses about what this template might mean?
+            previous_pattern_hypotheses = self._concept_to_hypotheses[
+                concept_for_surface_template
+            ]
+
+            # If we tracked only a single hypothesis for each template, things would be simple:
+            # our new hypotheses would simply be what remains consistent
+            # between our previous belief and our current observation.
+            # But since we can track multiple hypotheses
+            # (and can generate multiple hypotheses from a single observation),
+            # we need to try to match what is in common between each of our existing hypotheses
+            # and each hypothesis we might generate form the current perception alone.
+            # Storing the results of all these intersections as new hypotheses could
+            # lead to an explosion in our number of hypotheses over time,
+            # so we use a beam search to consider only the best possibilities,
+            # which we defined as those having the most nodes.
+
+            hypotheses_from_current_perception = self._hypotheses_from_perception(
+                language_perception_semantic_alignment,
+                bound_surface_template=bound_surface_template,
+            )
+            updated_hypotheses = [
+                previous_pattern_hypothesis.intersection(
+                    hypothesis_from_current_perception, ontology=self._ontology
                 )
+                for previous_pattern_hypothesis in previous_pattern_hypotheses
+                for hypothesis_from_current_perception in hypotheses_from_current_perception
+            ]
+            # Remove all Nones resulting from empty intersections,
+            # as well as any hypotheses which fail learner-specific conditions.
+            updated_hypotheses = [
+                hypothesis
+                for hypothesis in updated_hypotheses
+                if hypothesis and self._keep_hypothesis(hypothesis)
+            ]
+            # Sort hypotheses by decreasing order of size
+            updated_hypotheses.sort(key=lambda x: len(x.graph_pattern), reverse=True)
+            # Confine our search by beam size
+            if len(updated_hypotheses) > self._beam_size:
+                updated_hypotheses = updated_hypotheses[: self._beam_size]
 
-                if updated_hypothesis:
-                    # Update the leading hypothesis
-                    self._concept_to_hypothesis[
-                        concept_for_surface_template
-                    ] = updated_hypothesis
-                else:
-                    logging.debug(
-                        "Intersection of graphs had empty result; assuming surface template %s "
-                        "is not of the target type",
-                        surface_template,
-                    )
-                    self._known_bad_patterns.add(surface_template)
-            else:
-                # If it's a new description, learn a new hypothesis/pattern, generated as a pattern
-                # graph frm the perception graph.
-                concept = self._new_concept(surface_template.to_short_string())
-                hypothesis = self._hypothesis_from_perception(
-                    language_perception_semantic_alignment, surface_template
+            # Update the leading hypotheses
+            self._concept_to_hypotheses[concept_for_surface_template] = immutableset(
+                updated_hypotheses
+            )
+
+            if not updated_hypotheses:
+                logging.debug(
+                    "All hypotheses failed for surface template %s for learner "
+                    "%s; assuming template is not of the target type",
+                    type(self),
+                    bound_surface_template.surface_template,
                 )
-                self._surface_template_to_concept[surface_template] = concept
-                self._concept_to_surface_template[concept] = surface_template
-                self._concept_to_hypothesis[concept] = hypothesis
+                self._known_bad_patterns.add(bound_surface_template.surface_template)
+        else:
+            # If it's a new template, learn a new hypothesis/pattern, generated as a pattern
+            # graph from the perception graph.
+            concept = self._new_concept(
+                debug_string=bound_surface_template.surface_template.to_short_string()
+            )
+            self._surface_template_to_concept[
+                bound_surface_template.surface_template
+            ] = concept
+            self._concept_to_surface_template[
+                concept
+            ] = bound_surface_template.surface_template
+
+            self._concept_to_hypotheses[concept] = self._hypotheses_from_perception(
+                language_perception_semantic_alignment, bound_surface_template
+            )
 
     def templates_for_concept(self, concept: Concept) -> AbstractSet[SurfaceTemplate]:
         if concept in self._concept_to_surface_template:
@@ -192,11 +244,18 @@ class AbstractSubsetLearnerNew(AbstractTemplateLearnerNew, ABC):
         """
 
     @abstractmethod
-    def _hypothesis_from_perception(
+    def _keep_hypothesis(self, hypothesis: PerceptionGraphTemplate) -> bool:
+        """
+        Should a candidate hypothesis be kept, or should it be discarded
+        (e.g. for being too small).
+        """
+
+    @abstractmethod
+    def _hypotheses_from_perception(
         self,
         learning_state: LanguagePerceptionSemanticAlignment,
-        surface_template: SurfaceTemplate,
-    ) -> PerceptionGraphTemplate:
+        bound_surface_template: BoundSurfaceTemplate,
+    ) -> AbstractSet[PerceptionGraphTemplate]:
         """
         Get a hypothesis for the meaning of *surface_template* from a given *learning_state*.
         """
@@ -205,14 +264,22 @@ class AbstractSubsetLearnerNew(AbstractTemplateLearnerNew, ABC):
         self
     ) -> Iterable[Tuple[Concept, PerceptionGraphTemplate, float]]:
         return (
-            (concept, hypothesis, 1.0)
-            for (concept, hypothesis) in self._concept_to_hypothesis.items()
+            (concept, hypotheses[0], 1.0)
+            for (concept, hypotheses) in self._concept_to_hypotheses.items()
+            # We are confident in a hypothesis if we don't have any alternatives.
+            if len(hypotheses) == 1
         )
 
     def _fallback_templates(
         self
     ) -> Iterable[Tuple[Concept, PerceptionGraphTemplate, float]]:
-        return tuple()
+        # Alternate hypotheses stored in the beam.
+        return (
+            (concept, hypothesis, 1.0)
+            for (concept, hypotheses) in self._concept_to_hypotheses.items()
+            for hypothesis in hypotheses[1:]
+            if len(hypotheses) > 1
+        )
 
 
 @attrs  # pylint:disable=abstract-method
@@ -237,10 +304,10 @@ class AbstractTemplateSubsetLearnerNew(
     def log_hypotheses(self, log_output_path: Path) -> None:
         logging.info(
             "Logging %s hypotheses to %s",
-            len(self._concept_to_hypothesis),
+            len(self._concept_to_hypotheses),
             log_output_path,
         )
-        for (concept, hypothesis) in self._concept_to_hypothesis.items():
+        for (concept, hypothesis) in self._concept_to_hypotheses.items():
             hypothesis.render_to_file(
                 concept.debug_string, log_output_path / concept.debug_string
             )

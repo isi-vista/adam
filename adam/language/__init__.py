@@ -2,7 +2,7 @@ r"""
 Representations of the linguistic input and outputs of a `LanguageLearner`\ .
 """
 from abc import ABC, abstractmethod
-from typing import Tuple, TypeVar, Sequence, Sized
+from typing import Optional, Tuple, TypeVar, Sequence, Sized
 
 from attr import attrib, attrs
 from attr.validators import instance_of, deep_iterable
@@ -36,8 +36,11 @@ class LinguisticDescription(ABC, Sequence[str]):
         """
         return tuple(self)
 
-    def as_token_string(self) -> str:
-        return " ".join(self.as_token_sequence())
+    def as_token_string(self, *, span: Optional[Span] = None) -> str:
+        if span is not None:
+            return " ".join(self.as_token_sequence()[span.start : span.end])
+        else:
+            return " ".join(self.as_token_sequence())
 
 
 LinguisticDescriptionT = TypeVar("LinguisticDescriptionT", bound=LinguisticDescription)

@@ -2,7 +2,7 @@ import logging
 from abc import ABC
 from pathlib import Path
 from random import Random
-from typing import AbstractSet, Union, Sequence, List, Optional, Iterable
+from typing import AbstractSet, Tuple, Union, Sequence, List, Optional, Iterable
 
 from adam.language import LinguisticDescription
 from adam.learner import (
@@ -14,6 +14,7 @@ from adam.learner.learner_utils import assert_static_situation
 from adam.learner.object_recognizer import (
     ObjectRecognizer,
     PerceptionGraphFromObjectRecognizer,
+    extract_candidate_objects,
 )
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
 from adam.learner.pursuit import AbstractPursuitLearner, HypothesisLogger
@@ -21,10 +22,11 @@ from adam.learner.subset import (
     AbstractTemplateSubsetLearner,
     AbstractTemplateSubsetLearnerNew,
 )
-from adam.learner.surface_templates import SurfaceTemplate
+from adam.learner.surface_templates import BoundSurfaceTemplate, SurfaceTemplate
 from adam.learner.template_learner import (
     AbstractTemplateLearner,
     AbstractTemplateLearnerNew,
+    TemplateLearner,
 )
 from adam.learner.alignments import (
     LanguagePerceptionSemanticAlignment,
@@ -75,9 +77,9 @@ class AbstractObjectTemplateLearnerNew(AbstractTemplateLearnerNew):
             new_nodes=[],
         )
 
-    def _extract_surface_templates(
+    def _candidate_templates(
         self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
-    ) -> AbstractSet[SurfaceTemplate]:
+    ) -> AbstractSet[BoundSurfaceTemplate]:
         # TODO: make an issue to track that we can only learn single words for objects
         # at the moment
 
@@ -86,7 +88,9 @@ class AbstractObjectTemplateLearnerNew(AbstractTemplateLearnerNew):
             language_perception_semantic_alignment.language_concept_alignment
         )
         return immutableset(
-            SurfaceTemplate.for_object_name(token)
+            BoundSurfaceTemplate(
+                SurfaceTemplate.for_object_name(token), slot_to_semantic_node={}
+            )
             for (tok_idx, token) in enumerate(
                 language_alignment.language.as_token_sequence()
             )
@@ -350,7 +354,7 @@ class SubsetObjectLearner(
     An implementation of `LanguageLearner` for subset learning based approach for single object detection.
     """
 
-    def _hypothesis_from_perception(
+    def _hypotheses_from_perception(
         self, learning_state: LanguageConceptAlignment
     ) -> PerceptionGraphTemplate:
         new_hypothesis = PerceptionGraphPattern.from_graph(
@@ -373,22 +377,41 @@ class SubsetObjectLearnerNew(
     def _new_concept(self, debug_string: str) -> ObjectConcept:
         return ObjectConcept(debug_string)
 
-    def _hypothesis_from_perception(
+    def _hypotheses_from_perception(
         self,
         learning_state: LanguagePerceptionSemanticAlignment,
-        surface_template: SurfaceTemplate,
-    ) -> PerceptionGraphTemplate:
-        new_hypothesis = PerceptionGraphPattern.from_graph(
-            learning_state.perception_semantic_alignment.perception_graph
-        ).perception_graph_pattern
-        return PerceptionGraphTemplate(
-            graph_pattern=new_hypothesis,
-            template_variable_to_pattern_node=immutabledict(),
+        bound_surface_template: BoundSurfaceTemplate,
+    ) -> AbstractSet[PerceptionGraphTemplate]:
+        if bound_surface_template.slot_to_semantic_node:
+            raise RuntimeError(
+                "Object learner should not have slot to semantic node alignments!"
+            )
+
+        return immutableset(
+            PerceptionGraphTemplate(
+                graph_pattern=PerceptionGraphPattern.from_graph(
+                    candidate_object
+                ).perception_graph_pattern,
+                template_variable_to_pattern_node=immutabledict(),
+            )
+            for candidate_object in extract_candidate_objects(
+                learning_state.perception_semantic_alignment.perception_graph
+            )
         )
+
+    def _keep_hypothesis(self, hypothesis: PerceptionGraphTemplate) -> bool:
+        if len(hypothesis.graph_pattern) < 2:
+            # A one node graph is to small to meaningfully describe an object
+            return False
+        if all(isinstance(node, ObjectPerception) for node in hypothesis.graph_pattern):
+            # A hypothesis which consists of just sub-object structure
+            # with no other content is insufficiently distinctive.
+            return False
+        return True
 
 
 @attrs(frozen=True, kw_only=True)
-class ObjectRecognizerAsTemplateLearner(AbstractObjectTemplateLearnerNew):
+class ObjectRecognizerAsTemplateLearner(TemplateLearner):
     _object_recognizer: ObjectRecognizer = attrib(validator=instance_of(ObjectRecognizer))
     _concepts_to_templates: ImmutableSetMultiDict[Concept, SurfaceTemplate] = attrib(
         init=False
