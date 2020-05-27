@@ -2,7 +2,7 @@ from abc import ABC
 from pathlib import Path
 from typing import AbstractSet, Union
 
-from adam.semantics import Concept
+from adam.semantics import AttributeConcept, Concept, ObjectSemanticNode
 from attr.validators import instance_of
 
 from adam.language import LinguisticDescription
@@ -13,8 +13,16 @@ from adam.learner.object_recognizer import (
     PerceptionGraphFromObjectRecognizer,
 )
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
-from adam.learner.subset import AbstractTemplateSubsetLearner
-from adam.learner.surface_templates import STANDARD_SLOT_VARIABLES, SurfaceTemplate
+from adam.learner.subset import (
+    AbstractTemplateSubsetLearner,
+    AbstractTemplateSubsetLearnerNew,
+)
+from adam.learner.surface_templates import (
+    BoundSurfaceTemplate,
+    SLOT1,
+    STANDARD_SLOT_VARIABLES,
+    SurfaceTemplate,
+)
 from adam.learner.template_learner import (
     AbstractTemplateLearner,
     AbstractTemplateLearnerNew,
@@ -31,12 +39,67 @@ from adam.learner.alignments import (
 )
 from attr import attrib, attrs
 from immutablecollections import immutabledict, immutableset
+from vistautils.span import Span
 
 
 @attrs
-class AbstractAttributeTemplateLearner(
-    AbstractTemplateLearner, AbstractTemplateLearnerNew, ABC
-):
+class AbstractAttributeTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
+    def _candidate_templates(
+        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
+    ) -> AbstractSet[BoundSurfaceTemplate]:
+        ret = []
+        language_concept_alignment = (
+            language_perception_semantic_alignment.language_concept_alignment
+        )
+        # Find all objects we have recognized...
+        for (
+            object_node,
+            span_for_object,
+        ) in language_concept_alignment.node_to_language_span.items():
+            if isinstance(object_node, ObjectSemanticNode):
+                # Any words immediately before them or after them are candidate attributes.
+                # TODO: make issue to track this somewhat English-specific assumption
+                preceding_token_index = span_for_object.start - 1
+                if (
+                    preceding_token_index >= 0
+                    and not language_concept_alignment.token_index_is_aligned(
+                        preceding_token_index
+                    )
+                ):
+                    ret.append(
+                        BoundSurfaceTemplate(
+                            language_concept_alignment.to_surface_template(
+                                {object_node: SLOT1},
+                                restrict_to_span=Span(
+                                    preceding_token_index, span_for_object.end
+                                ),
+                            ),
+                            {SLOT1: object_node},
+                        )
+                    )
+                following_token_index = span_for_object.end + 1
+                if following_token_index < len(
+                    language_concept_alignment.language.as_token_sequence()
+                ) and not language_concept_alignment.token_index_is_aligned(
+                    following_token_index
+                ):
+                    ret.append(
+                        BoundSurfaceTemplate(
+                            language_concept_alignment.to_surface_template(
+                                {object_node: SLOT1},
+                                restrict_to_span=Span(
+                                    span_for_object.start, following_token_index
+                                ),
+                            ),
+                            {SLOT1: object_node},
+                        )
+                    )
+
+        return immutableset(ret)
+
+
+@attrs
+class AbstractAttributeTemplateLearner(AbstractTemplateLearner, ABC):
     # mypy doesn't realize that fields without defaults can come after those with defaults
     # if they are keyword-only.
     _object_recognizer: ObjectRecognizer = attrib(  # type: ignore
@@ -91,27 +154,6 @@ class AbstractAttributeTemplateLearner(
 class SubsetAttributeLearner(
     AbstractTemplateSubsetLearner, AbstractAttributeTemplateLearner
 ):
-    def templates_for_concept(self, concept: Concept) -> AbstractSet[SurfaceTemplate]:
-        raise NotImplementedError()
-
-    def learn_from(
-        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
-    ) -> None:
-        raise NotImplementedError()
-
-    def enrich_during_learning(
-        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
-    ) -> LanguagePerceptionSemanticAlignment:
-        raise NotImplementedError()
-
-    def enrich_during_description(
-        self, perception_semantic_alignment: PerceptionSemanticAlignment
-    ) -> PerceptionSemanticAlignment:
-        raise NotImplementedError()
-
-    def log_hypotheses(self, log_output_path: Path) -> None:
-        raise NotImplementedError()
-
     def _hypothesis_from_perception(
         self, preprocessed_input: LanguageConceptAlignment
     ) -> PerceptionGraphTemplate:
@@ -129,3 +171,52 @@ class SubsetAttributeLearner(
                 zip(STANDARD_SLOT_VARIABLES, preprocessed_input.aligned_nodes)
             ),
         )
+
+
+@attrs
+class SubsetAttributeLearnerNew(
+    AbstractTemplateSubsetLearnerNew, AbstractAttributeTemplateLearnerNew
+):
+    def _can_learn_from(
+        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
+    ) -> bool:
+        return (
+            len(
+                language_perception_semantic_alignment.perception_semantic_alignment.semantic_nodes
+            )
+            > 1
+        )
+
+    def _preprocess_scene(
+        self, perception_semantic_alignment: PerceptionSemanticAlignment
+    ) -> PerceptionSemanticAlignment:
+        return perception_semantic_alignment
+
+    def _new_concept(self, debug_string: str) -> AttributeConcept:
+        return AttributeConcept(debug_string)
+
+    def _hypotheses_from_perception(
+        self,
+        learning_state: LanguagePerceptionSemanticAlignment,
+        bound_surface_template: BoundSurfaceTemplate,
+    ) -> AbstractSet[PerceptionGraphTemplate]:
+        # This makes a hypothesis for the whole graph, with the wildcard slot
+        # at each recognized object.
+        return immutableset(
+            [
+                PerceptionGraphTemplate.from_graph(
+                    learning_state.perception_semantic_alignment.perception_graph,
+                    template_variable_to_matched_object_node=bound_surface_template.slot_to_semantic_node,
+                )
+            ]
+        )
+
+    def _keep_hypothesis(self, hypothesis: PerceptionGraphTemplate) -> bool:
+        if len(hypothesis.graph_pattern) < 2:
+            # We need at least two nodes - a wildcard and a property -
+            # for meaningful attribute semantics.
+            return False
+        if len(hypothesis.template_variable_to_pattern_node) != 1:
+            # We've managed to lose our wildcard slot somehow.
+            return False
+        return True

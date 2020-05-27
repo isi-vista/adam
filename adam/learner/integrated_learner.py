@@ -1,17 +1,22 @@
 import logging
-from itertools import chain
+from itertools import chain, combinations
 from pathlib import Path
-from typing import AbstractSet, Iterable, Mapping, Optional
+from typing import AbstractSet, Iterable, Iterator, Mapping, Optional, Tuple
 
 from more_itertools import flatten, one
 
-from adam.learner.attributes import AbstractAttributeTemplateLearner
+from adam.language_specific.english import ENGLISH_BLOCK_DETERMINERS, ENGLISH_DETERMINERS
+from adam.learner.attributes import (
+    AbstractAttributeTemplateLearner,
+    AbstractAttributeTemplateLearnerNew,
+)
 from adam.learner.prepositions import AbstractPrepositionTemplateLearner
 from adam.learner.alignments import (
     LanguagePerceptionSemanticAlignment,
     PerceptionSemanticAlignment,
 )
-from adam.learner.surface_templates import MASS_NOUNS
+from adam.learner.surface_templates import MASS_NOUNS, SLOT1
+from adam.learner.template_learner import TemplateLearner
 from adam.learner.verbs import AbstractVerbTemplateLearner
 from adam.perception import PerceptionT, PerceptualRepresentation
 from adam.perception.perception_graph import PerceptionGraph
@@ -65,20 +70,20 @@ class IntegratedTemplateLearner(
     and actions all at once.
     """
 
-    object_learner: AbstractObjectTemplateLearnerNew = attrib(
-        validator=instance_of(AbstractObjectTemplateLearnerNew)
-    )
-    attribute_learner: Optional[AbstractAttributeTemplateLearner] = attrib(
-        validator=optional(instance_of(AbstractAttributeTemplateLearner)), default=None
+    object_learner: TemplateLearner = attrib(validator=instance_of(TemplateLearner))
+    attribute_learner: Optional[TemplateLearner] = attrib(
+        validator=optional(instance_of(TemplateLearner)), default=None
     )
 
-    relation_learner: Optional[AbstractPrepositionTemplateLearner] = attrib(
-        validator=optional(instance_of(AbstractPrepositionTemplateLearner)), default=None
+    relation_learner: Optional[TemplateLearner] = attrib(
+        validator=optional(instance_of(TemplateLearner)), default=None
     )
 
-    action_learner: Optional[AbstractVerbTemplateLearner] = attrib(
-        validator=optional(instance_of(AbstractVerbTemplateLearner)), default=None
+    action_learner: Optional[TemplateLearner] = attrib(
+        validator=optional(instance_of(TemplateLearner)), default=None
     )
+
+    _max_attributes_per_word: int = attrib(validator=instance_of(int), default=3)
 
     _observation_num: int = attrib(init=False, default=0)
 
@@ -167,33 +172,93 @@ class IntegratedTemplateLearner(
         self, semantic_nodes: AbstractSet[SemanticNode]
     ) -> Mapping[LinguisticDescription, float]:
         learner_semantics = LearnerSemantics.from_nodes(semantic_nodes)
-        if (
-            learner_semantics.attributes
-            or learner_semantics.relations
-            or learner_semantics.actions
-        ):
-            raise RuntimeError("Currently we can only handle objects")
+        if learner_semantics.relations or learner_semantics.actions:
+            raise RuntimeError("Currently we can only handle objects and attributes")
 
         ret = []
-        for object_node in learner_semantics.objects:
-            for template in self.object_learner.templates_for_concept(
-                object_node.concept
+        if self.action_learner:
+            ret.extend(
+                [
+                    (action_tokens, 1.0)
+                    for action in learner_semantics.actions
+                    for action_tokens in self._instantiate_action(
+                        action, learner_semantics
+                    )
+                    # ensure we have some way of expressing this action
+                    if self.action_learner.templates_for_concept(action.concept)
+                ]
+            )
+
+        ret.extend(
+            [
+                (object_tokens, 1.0)
+                for object_ in learner_semantics.objects
+                for object_tokens in self._instantiate_object(object_, learner_semantics)
+                # ensure we have some way of expressing this object
+                if self.object_learner.templates_for_concept(object_.concept)
+            ]
+        )
+
+        return immutabledict(
+            (TokenSequenceLinguisticDescription(tokens), score) for (tokens, score) in ret
+        )
+
+    def _instantiate_object(
+        self, object_node: ObjectSemanticNode, learner_semantics: "LearnerSemantics"
+    ) -> Iterator[Tuple[str, ...]]:
+        # For now, we assume the order in which modifiers is expressed is arbitrary.
+        attributes_we_can_express = (
+            [
+                attribute
+                for attribute in learner_semantics.objects_to_attributes[object_node]
+                if self.attribute_learner.templates_for_concept(attribute.concept)
+            ]
+            if self.attribute_learner
+            else []
+        )
+        # TODO: deal with relations
+        # relations_for_object = learner_semantics.objects_to_relation_in_slot1[object_node]
+
+        for template in self.object_learner.templates_for_concept(object_node.concept):
+            cur_string = template.instantiate(
+                template_variable_to_filler=immutabledict()
+            ).as_token_sequence()
+
+            for num_attributes in range(
+                min(len(attributes_we_can_express), self._max_attributes_per_word)
             ):
-                instantiated_object_string = template.instantiate(
-                    template_variable_to_filler=immutabledict()
-                )
-                # English-specific hack to deal with us not understanding determiners:
-                # https://github.com/isi-vista/adam/issues/498
-                # The "is lower" check is a hack to block adding a determiner to proper names.
-                if (
-                    object_node.concept.debug_string not in MASS_NOUNS
-                    and object_node.concept.debug_string.islower()
+                for attribute_combinations in combinations(
+                    attributes_we_can_express,
+                    # +1 because the range starts at 0
+                    num_attributes + 1,
                 ):
-                    output_tokens = tuple(chain(("a",), instantiated_object_string))
-                else:
-                    output_tokens = instantiated_object_string
-                ret.append((output_tokens, 1.0))
-        return immutabledict(ret)
+                    for attribute in attribute_combinations:
+                        # we know, but mypy does not, that self.attribute_learner is not None
+                        for (
+                            attribute_template
+                        ) in self.attribute_learner.templates_for_concept(  # type: ignore
+                            attribute.concept
+                        ):
+                            cur_string = attribute_template.instantiate(
+                                template_variable_to_filler={SLOT1: cur_string}
+                            ).as_token_sequence()
+
+            # English-specific hack to deal with us not understanding determiners:
+            # https://github.com/isi-vista/adam/issues/498
+            # The "is lower" check is a hack to block adding a determiner to proper names.
+            if (
+                object_node.concept.debug_string not in MASS_NOUNS
+                and object_node.concept.debug_string.islower()
+                and not cur_string[0] in ENGLISH_BLOCK_DETERMINERS
+            ):
+                yield tuple(chain(("a",), cur_string))
+            else:
+                yield cur_string
+
+    def _instantiate_action(
+        self, action_node: ActionSemanticNode, learner_semantics: "LearnerSemantics"
+    ) -> Iterator[Tuple[str, ...]]:
+        raise NotImplementedError()
 
     def log_hypotheses(self, log_output_path: Path) -> None:
         raise NotImplementedError("implement me")
@@ -224,7 +289,7 @@ class LearnerSemantics:
     objects_to_attributes: ImmutableSetMultiDict[
         ObjectSemanticNode, AttributeSemanticNode
     ] = attrib(init=False)
-    objects_to_relations: ImmutableSetMultiDict[
+    objects_to_relation_in_slot1: ImmutableSetMultiDict[
         ObjectSemanticNode, RelationSemanticNode
     ] = attrib(init=False)
     objects_to_actions: ImmutableSetMultiDict[
@@ -257,7 +322,7 @@ class LearnerSemantics:
             for attribute in self.attributes
         )
 
-    @objects_to_relations.default
+    @objects_to_relation_in_slot1.default
     def _init_objects_to_relations(
         self
     ) -> ImmutableSetMultiDict[ObjectSemanticNode, AttributeSemanticNode]:

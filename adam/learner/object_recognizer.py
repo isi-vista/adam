@@ -197,7 +197,7 @@ class ObjectRecognizer:
     def match_objects(
         self, perception_semantic_alignment: PerceptionSemanticAlignment
     ) -> Tuple[PerceptionSemanticAlignment, Mapping[Tuple[str, ...], ObjectSemanticNode]]:
-        """
+        r"""
         Recognize known objects in a `PerceptionGraph`.
 
         The matched portion of the graph will be replaced with an `ObjectSemanticNode`\ s
@@ -245,7 +245,7 @@ class ObjectRecognizer:
                     matched_object_node, graph_to_return, pattern_match
                 )
 
-        candidate_object_subgraphs = self.extract_candidate_objects(perception_graph)
+        candidate_object_subgraphs = extract_candidate_objects(perception_graph)
 
         for candidate_object_graph in candidate_object_subgraphs:
 
@@ -304,98 +304,6 @@ class ObjectRecognizer:
             ),
             object_nodes_dict,
         )
-
-    def extract_candidate_objects(
-        self, whole_scene_perception_graph: PerceptionGraph
-    ) -> Sequence[PerceptionGraph]:
-        """
-        Pulls out distinct objects from a scene.
-
-        We will attempt to recognize only these and will ignore other parts of the scene.
-        """
-        scene_digraph = whole_scene_perception_graph.copy_as_digraph()
-
-        def is_part_of_label(label) -> bool:
-            return label == PART_OF or (
-                isinstance(label, TemporallyScopedEdgeLabel)
-                and label.attribute == PART_OF
-            )
-
-        # We first identify root object nodes, which are object nodes with no part-of
-        # relationship with other object nodes.
-        def is_root_object_node(node) -> bool:
-            if isinstance(node, ObjectPerception):
-                for (_, _, edge_label) in scene_digraph.out_edges(node, data="label"):
-                    if is_part_of_label(edge_label):
-                        # This object node is part of another object and cannot be a root.
-                        return False
-                return True
-            return False
-
-        candidate_object_root_nodes = [
-            node
-            for node in scene_digraph.nodes
-            if is_root_object_node(node)
-            and node not in (GROUND_PERCEPTION, LEARNER_PERCEPTION)
-        ]
-
-        candidate_objects: List[PerceptionGraph] = []
-        for root_object_node in candidate_object_root_nodes:
-            # Having identified the root nodes of the candidate objects,
-            # we now gather all sub-object nodes.
-            object_nodes_in_object_list = []
-            nodes_to_examine = [root_object_node]
-
-            # This would be clearer recursively
-            # but I'm betting this implementation is a bit faster in Python.
-
-            nodes_visited: Set[PerceptionGraphNode] = set()
-            while nodes_to_examine:
-                node_to_examine = nodes_to_examine.pop()
-                if node_to_examine in nodes_visited:
-                    continue
-                nodes_visited.add(node_to_examine)
-                object_nodes_in_object_list.append(node_to_examine)
-                for (next_node, _, edge_label) in scene_digraph.in_edges(
-                    node_to_examine, data="label"
-                ):
-                    if is_part_of_label(edge_label):
-                        nodes_to_examine.append(next_node)
-            object_nodes_in_object = immutableset(object_nodes_in_object_list)
-
-            # Now we know all object nodes for this candidate object.
-            # Finally, we find the sub-graph to match against which could possibly correspond
-            # to this candidate object
-            # by performing a BFS over the graph
-            # but *stopping whenever we encounter an object node
-            # which is not part of this candidate object*.
-            # This is a little more generous than we need to be, but it's simple.
-            nodes_to_examine = [root_object_node]
-            candidate_subgraph_nodes = []
-            nodes_visited.clear()
-            while nodes_to_examine:
-                node_to_examine = nodes_to_examine.pop()
-                is_allowable_node = (
-                    not isinstance(node_to_examine, ObjectPerception)
-                    or node_to_examine in object_nodes_in_object
-                )
-                if node_to_examine not in nodes_visited and is_allowable_node:
-                    nodes_visited.add(node_to_examine)
-                    candidate_subgraph_nodes.append(node_to_examine)
-                    nodes_to_examine.extend(
-                        out_neighbor
-                        for (_, out_neighbor) in scene_digraph.out_edges(node_to_examine)
-                    )
-                    nodes_to_examine.extend(
-                        in_neighbor
-                        for (in_neighbor, _) in scene_digraph.in_edges(node_to_examine)
-                    )
-            candidate_objects.append(
-                whole_scene_perception_graph.subgraph_by_nodes(
-                    immutableset(candidate_subgraph_nodes)
-                )
-            )
-        return candidate_objects
 
     def match_objects_with_language(
         self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
@@ -506,6 +414,98 @@ class ObjectRecognizer:
             )
             for (concept, pattern) in self._concepts_to_static_patterns.items()
         )
+
+
+def extract_candidate_objects(
+    whole_scene_perception_graph: PerceptionGraph
+) -> Sequence[PerceptionGraph]:
+    """
+    Pulls out distinct objects from a scene.
+
+    We will attempt to recognize only these and will ignore other parts of the scene.
+    """
+    scene_digraph = whole_scene_perception_graph.copy_as_digraph()
+
+    def is_part_of_label(label) -> bool:
+        return label == PART_OF or (
+            isinstance(label, TemporallyScopedEdgeLabel) and label.attribute == PART_OF
+        )
+
+    # We first identify root object nodes, which are object nodes with no part-of
+    # relationship with other object nodes.
+    def is_root_object_node(node) -> bool:
+        if isinstance(node, ObjectPerception):
+            for (_, _, edge_label) in scene_digraph.out_edges(node, data="label"):
+                if is_part_of_label(edge_label):
+                    # This object node is part of another object and cannot be a root.
+                    return False
+            return True
+        return False
+
+    candidate_object_root_nodes = [
+        node
+        for node in scene_digraph.nodes
+        if is_root_object_node(node)
+        and node not in (GROUND_PERCEPTION, LEARNER_PERCEPTION)
+    ]
+
+    candidate_objects: List[PerceptionGraph] = []
+    for root_object_node in candidate_object_root_nodes:
+        # Having identified the root nodes of the candidate objects,
+        # we now gather all sub-object nodes.
+        object_nodes_in_object_list = []
+        nodes_to_examine = [root_object_node]
+
+        # This would be clearer recursively
+        # but I'm betting this implementation is a bit faster in Python.
+
+        nodes_visited: Set[PerceptionGraphNode] = set()
+        while nodes_to_examine:
+            node_to_examine = nodes_to_examine.pop()
+            if node_to_examine in nodes_visited:
+                continue
+            nodes_visited.add(node_to_examine)
+            object_nodes_in_object_list.append(node_to_examine)
+            for (next_node, _, edge_label) in scene_digraph.in_edges(
+                node_to_examine, data="label"
+            ):
+                if is_part_of_label(edge_label):
+                    nodes_to_examine.append(next_node)
+        object_nodes_in_object = immutableset(object_nodes_in_object_list)
+
+        # Now we know all object nodes for this candidate object.
+        # Finally, we find the sub-graph to match against which could possibly correspond
+        # to this candidate object
+        # by performing a BFS over the graph
+        # but *stopping whenever we encounter an object node
+        # which is not part of this candidate object*.
+        # This is a little more generous than we need to be, but it's simple.
+        nodes_to_examine = [root_object_node]
+        candidate_subgraph_nodes = []
+        nodes_visited.clear()
+        while nodes_to_examine:
+            node_to_examine = nodes_to_examine.pop()
+            is_allowable_node = (
+                not isinstance(node_to_examine, ObjectPerception)
+                or node_to_examine in object_nodes_in_object
+            )
+            if node_to_examine not in nodes_visited and is_allowable_node:
+                nodes_visited.add(node_to_examine)
+                candidate_subgraph_nodes.append(node_to_examine)
+                nodes_to_examine.extend(
+                    out_neighbor
+                    for (_, out_neighbor) in scene_digraph.out_edges(node_to_examine)
+                )
+                nodes_to_examine.extend(
+                    in_neighbor
+                    for (in_neighbor, _) in scene_digraph.in_edges(node_to_examine)
+                )
+        candidate_objects.append(
+            whole_scene_perception_graph.subgraph_by_nodes(
+                immutableset(candidate_subgraph_nodes)
+            )
+        )
+    return candidate_objects
 
 
 def _get_edge_label(

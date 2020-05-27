@@ -1,7 +1,10 @@
-from more_itertools import first
+import pytest
+from more_itertools import first, one
 
 from adam.curriculum.curriculum_utils import PHASE1_CHOOSER_FACTORY, phase1_instances
 from adam.language_specific.english.english_language_generator import PREFER_DITRANSITIVE
+from adam.learner.integrated_learner import IntegratedTemplateLearner
+from adam.learner.objects import ObjectRecognizerAsTemplateLearner
 from adam.ontology.phase1_ontology import (
     AGENT,
     BABY,
@@ -10,6 +13,7 @@ from adam.ontology.phase1_ontology import (
     GAILA_PHASE_1_ONTOLOGY,
     GIVE,
     GOAL,
+    PHASE_1_CURRICULUM_OBJECTS,
     THEME,
 )
 from adam.perception import PerceptualRepresentation
@@ -26,6 +30,35 @@ from adam.situation.templates.phase1_templates import (
     sampled,
 )
 from learner import TEST_OBJECT_RECOGNIZER
+
+NEW_STYLE_OBJECT_RECOGNIZER = ObjectRecognizerAsTemplateLearner(
+    object_recognizer=TEST_OBJECT_RECOGNIZER
+)
+INTEGRATED_LEARNER = IntegratedTemplateLearner(object_learner=NEW_STYLE_OBJECT_RECOGNIZER)
+
+
+@pytest.mark.parametrize("object_type", PHASE_1_CURRICULUM_OBJECTS)
+def test_recognizes_ontology_objects(object_type):
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[
+            SituationObject.instantiate_ontology_node(
+                ontology_node=object_type, ontology=GAILA_PHASE_1_ONTOLOGY
+            )
+        ],
+    )
+
+    perception_generator = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
+        GAILA_PHASE_1_ONTOLOGY
+    )
+
+    perception = perception_generator.generate_perception(
+        situation, chooser=RandomChooser.for_seed(0), include_ground=False
+    )
+
+    descriptions = INTEGRATED_LEARNER.describe(perception)
+    assert descriptions
+    assert object_type.handle in one(descriptions.items())[0].as_token_sequence()
 
 
 def test_trivial_dynamic_situation_with_schemaless_object():

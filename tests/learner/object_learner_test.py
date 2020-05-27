@@ -64,7 +64,7 @@ def run_subset_learner_for_object(
 
     learner = IntegratedTemplateLearner(
         object_learner=SubsetObjectLearnerNew(
-            ontology=GAILA_PHASE_1_ONTOLOGY, debug_callback=debug_callback
+            ontology=GAILA_PHASE_1_ONTOLOGY, debug_callback=debug_callback, beam_size=5
         )
     )
 
