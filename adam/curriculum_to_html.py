@@ -1,3 +1,4 @@
+from datetime import date
 import shutil
 from pathlib import Path
 from typing import (
@@ -109,6 +110,7 @@ EXPLANATION_HEADER = (
     "<li>The colors provided in the background of a phrase reading 'color=#XXXXXX' is the color indicated by the hex code</li>"
     "<li>The Axis Facing section, if included, lists which axes of the objects in the scene face a given object. "
     "In most cases, this information is only provided for the addressee in a scene.</li>"
+    "\n\t Generated On: {date}"
     "</ul>"
 )
 STR_TO_CURRICULUM: Mapping[str, Callable[[], Iterable[Phase1InstanceGroup]]] = {
@@ -243,7 +245,7 @@ class CurriculumToHtmlDumper:
                 html_out.write(f"<head>\n\t<style>{CSS}\n\t</style>\n</head>")
                 html_out.write(f"\n<body>\n\t<h1>{title} - {curriculum_string}</h1>")
                 html_out.write(f"\t<a href='index.html'>" f"Back to Index</a>")
-                html_out.write(EXPLANATION_HEADER)
+                html_out.write(EXPLANATION_HEADER.format(date=date.today()))
                 for (instance_number, instance_holder) in enumerate(immutableset(chunk)):
                     # By using the immutable set we guaruntee iteration order and remove duplicates
                     html_out.write(
@@ -403,7 +405,7 @@ class CurriculumToHtmlDumper:
             html_out.write(f"<head>\n\t<style>{CSS}\n\t</style>\n</head>")
             html_out.write(f"\n<body>\n\t<h1>{title}</h1>")
             html_out.write(f"\t<a href='index.html'>" f"Back to Index</a>")
-            html_out.write(EXPLANATION_HEADER)
+            html_out.write(EXPLANATION_HEADER.format(date=date.today()))
             # By using the immutable set we guarantee iteration order and remove duplicates
             for (instance_number, instance_holder) in enumerate(
                 immutableset(rendered_instances)
@@ -495,6 +497,11 @@ class CurriculumToHtmlDumper:
                     f"\t\t\t\t\t\t<li>{rel.relation_type.handle}({situation_obj_to_handle[rel.first_slot]},"
                     f"{self._situation_object_or_region_text(rel.second_slot, situation_obj_to_handle)})</li>"
                 )
+            output_text.append("\t\t\t\t\t</ul>")
+        if situation.syntax_hints:
+            output_text.append("\t\t\t\t\t<h4>Syntax Hints</h4>\n\t\t\t\t\t<ul>")
+            for hint in situation.syntax_hints:
+                output_text.append(f"\t\t\t\t\t\t<li>{hint}</li>")
             output_text.append("\t\t\t\t\t</ul>")
         return ("\n".join(output_text), speaker)
 
