@@ -30,6 +30,7 @@ from vistautils.parameters import Parameters
 from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 from vistautils.preconditions import check_state
 
+from adam.curriculum.attribute_constraining_action_curriculum import make_german_complete
 from adam.curriculum.m6_curriculum import make_m6_curriculum
 from adam.curriculum.preposition_curriculum import make_prepositions_curriculum
 from adam.curriculum.pursuit_curriculum import make_pursuit_curriculum
@@ -116,6 +117,7 @@ STR_TO_CURRICULUM: Mapping[str, Callable[[], Iterable[Phase1InstanceGroup]]] = {
     "pursuit": make_pursuit_curriculum,
     "m6-curriculum": make_m6_curriculum,
     "verbs-with-dynamic-prepositions": make_verb_with_dynamic_prepositions_curriculum,
+    "essen-fressen-distinction": make_german_complete,
 }
 
 

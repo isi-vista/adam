@@ -965,33 +965,42 @@ def _make_drink_curriculum() -> Phase1InstanceGroup:
     )
 
 
-def make_eat_template() -> Phase1SituationTemplate:
-    object_to_eat = standard_object("object_0", required_properties=[EDIBLE])
-    eater = standard_object("eater_0", THING, required_properties=[ANIMATE])
+def make_eat_template(
+    agent: TemplateObjectVariable,
+    patient: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable] = immutableset(),
+) -> Phase1SituationTemplate:
 
     # "Mom eats a cookie"
     return Phase1SituationTemplate(
         "eat-object",
-        salient_object_variables=[object_to_eat, eater],
+        salient_object_variables=[patient, agent],
+        background_object_variables=background,
         actions=[
-            Action(
-                EAT, argument_roles_to_fillers=[(AGENT, eater), (PATIENT, object_to_eat)]
-            )
+            Action(EAT, argument_roles_to_fillers=[(AGENT, agent), (PATIENT, patient)])
         ],
     )
 
 
-def _make_eat_curriculum() -> Phase1InstanceGroup:
+def _make_eat_curriculum(
+    num_to_sample: int = 25, *, noise_objects: int = 0
+) -> Phase1InstanceGroup:
     # TODO: "eat it up"
     # https://github.com/isi-vista/adam/issues/267
+
+    object_to_eat = standard_object("object_0", required_properties=[EDIBLE])
+    eater = standard_object("eater_0", THING, required_properties=[ANIMATE])
+    background = immutableset(
+        standard_object(f"noise_object_{x}") for x in range(noise_objects)
+    )
 
     return phase1_instances(
         "eating",
         chain(
             *[
                 sampled(
-                    make_eat_template(),
-                    max_to_sample=25,
+                    make_eat_template(eater, object_to_eat, background),
+                    max_to_sample=num_to_sample,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                 )

@@ -41,6 +41,7 @@ from adam.ontology.phase1_ontology import (
     GROUND,
     COME,
     CAN_JUMP,
+    EDIBLE,
 )
 from adam.situation import Action
 from adam.situation.templates.phase1_situation_templates import (
@@ -117,7 +118,9 @@ def run_verb_test(learner, situation_template):
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_eat_simple(learner_factory):
     learner = learner_factory()
-    run_verb_test(learner, make_eat_template())
+    object_to_eat = standard_object("object_0", required_properties=[EDIBLE])
+    eater = standard_object("eater_0", THING, required_properties=[ANIMATE])
+    run_verb_test(learner, make_eat_template(eater, object_to_eat))
 
 
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
