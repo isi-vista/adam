@@ -8,6 +8,7 @@ from adam.language_specific.english.english_language_generator import (
     PREFER_DITRANSITIVE,
     SimpleRuleBasedEnglishLanguageGenerator,
     USE_ADVERBIAL_PATH_MODIFIER,
+    ATTRIBUTES_AS_X_IS_Y,
 )
 from adam.language_specific.english.english_phase_1_lexicon import (
     GAILA_PHASE_1_ENGLISH_LEXICON,
@@ -60,6 +61,8 @@ from adam.ontology.phase1_ontology import (
     ROLL_SURFACE_AUXILIARY,
     has,
     bigger_than,
+    RED,
+    BLACK,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -1474,6 +1477,47 @@ def test_beside_distal():
 
     with pytest.raises(RuntimeError):
         generated_tokens(basic_distal)
+
+
+def test_action_attribute_request():
+    box = situation_object(BOX, properties=[RED])
+    mom = situation_object(MOM)
+
+    mom_go_to_red_box = HighLevelSemanticsSituation(
+        salient_objects=[mom, box],
+        actions=[Action(GO, argument_roles_to_fillers=[(AGENT, mom), (GOAL, box)])],
+        syntax_hints=[ATTRIBUTES_AS_X_IS_Y],
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+    )
+
+    with pytest.raises(RuntimeError):
+        generated_tokens(mom_go_to_red_box)
+
+
+def test_red_black_attribute():
+    box = situation_object(BOX, properties=[BLACK, RED])
+
+    red_black_box = HighLevelSemanticsSituation(
+        salient_objects=[box],
+        syntax_hints=[ATTRIBUTES_AS_X_IS_Y],
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+    )
+
+    with pytest.raises(RuntimeError):
+        generated_tokens(red_black_box)
+
+
+def test_box_without_attribute():
+    box = situation_object(BOX)
+
+    box_without_attribute = HighLevelSemanticsSituation(
+        salient_objects=[box],
+        syntax_hints=[ATTRIBUTES_AS_X_IS_Y],
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+    )
+
+    with pytest.raises(RuntimeError):
+        generated_tokens(box_without_attribute)
 
 
 def generated_tokens(situation):
