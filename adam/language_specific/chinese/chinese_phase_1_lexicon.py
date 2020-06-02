@@ -97,7 +97,7 @@ YOU = LexiconEntry(
 )
 
 #define the main lexicon
-#TODO: do plural forms need to be specified or can they be left? Do proper nouns not get plurals?
+#TODO: do plural forms need to be specified or can they be left?
 #TODO: do we want to keep the mass noun / non-mass noun distinction even though Chinese doesn't make it morphologically?
 GAILA_PHASE_1_CHINESE_LEXICON = OntologyLexicon(
     ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -114,8 +114,11 @@ GAILA_PHASE_1_CHINESE_LEXICON = OntologyLexicon(
         (WATER, LexiconEntry("shwei3", NOUN, [MASS_NOUN])),
         (JUICE, LexiconEntry("gwo3 jr1", NOUN, [MASS_NOUN])),
         (CUP, LexiconEntry("bei1 dz", NOUN)),
-        (BOX, LexiconEntry("", NOUN)),
-        (CHAIR, LexiconEntry("", NOUN)),
-
+        (BOX, LexiconEntry("syang1", NOUN)),
+        (CHAIR, LexiconEntry("yi3 dz", NOUN)),
+        (HEAD, LexiconEntry("tou2", NOUN)),
+        (MILK, LexiconEntry("nyou2 nai3", NOUN, [MASS_NOUN])),
+        (HAND, LexiconEntry("shou3", NOUN))
     )
 )
+
