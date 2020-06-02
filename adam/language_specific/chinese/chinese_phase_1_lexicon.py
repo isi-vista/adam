@@ -1,31 +1,21 @@
-"""Outstanding questions:
-handling of mass nouns in Chinese?
-can we have spaces in our Chinese transcriptions?
-should we specify plurals even though they aren't morphologically salient?"""
+"""We use Yale romanization in this code to maintain UTF-8 encoding;
+spaces indicate borders between Chinese characters.
 
-# import universal dependencies
+Currently, mass nouns are specified despite this not being realised in
+the same way in Chinese as in English.
+
+We don't provide plural specifications for nouns since this isn't a
+morphologically-realized feature in Chinese.
+"""
+from adam.language_specific.chinese.chinese_syntax import FIRST_PERSON, SECOND_PERSON
 from adam.language.dependency.universal_dependencies import (
     ADJECTIVE,
     NOUN,
     PROPER_NOUN,
     VERB,
 )
-
-# import lexicon classes
 from adam.language.lexicon import LexiconEntry, LexiconProperty
-
-# import OntologyLexicon class
 from adam.language.ontology_dictionary import OntologyLexicon
-
-# TODO: update this when Chinese syntax file ready
-from adam.language_specific.english.english_syntax import (
-    FIRST_PERSON,
-    SECOND_PERSON,
-    NOMINATIVE,
-    ACCUSATIVE,
-)
-
-# import ontology items
 from adam.ontology.phase1_ontology import (
     BABY,
     BALL,
@@ -79,30 +69,19 @@ from adam.ontology.phase1_ontology import (
 )
 
 MASS_NOUN = LexiconProperty("mass-noun")
-# ditransitive property for verbs
 ALLOWS_DITRANSITIVE = LexiconProperty("allows-ditransitive")
-
-
-"""Chinese transcriptions use Yale romanization here since this allows us to maintain UTF-8 encoding 
-(v.s. Pinyin, Simplified Chinese, etc.)"""
-
-# first person nominative & accusative pronoun lexicon entry
 ME = LexiconEntry(
     "wo3",
     NOUN,
     plural_form="wo3 men",
     intrinsic_morphosyntactic_properties=[FIRST_PERSON],
 )
-
-# second person nominative & accusative pronoun lexicon entry
 YOU = LexiconEntry(
     "ni3",
     NOUN,
     plural_form="ni3 men",
     intrinsic_morphosyntactic_properties=[SECOND_PERSON],
 )
-
-# define the main lexicon
 GAILA_PHASE_1_CHINESE_LEXICON = OntologyLexicon(
     ontology=GAILA_PHASE_1_ONTOLOGY,
     ontology_node_to_word=(
