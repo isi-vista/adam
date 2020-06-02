@@ -1,7 +1,7 @@
-'''Outstanding questions:
+"""Outstanding questions:
 handling of mass nouns in Chinese?
 can we have spaces in our Chinese transcriptions?
-should we specify plurals even though they aren't morphologically salient?'''
+should we specify plurals even though they aren't morphologically salient?"""
 
 # import universal dependencies
 from adam.language.dependency.universal_dependencies import (
@@ -87,7 +87,7 @@ ALLOWS_DITRANSITIVE = LexiconProperty("allows-ditransitive")
 (v.s. Pinyin, Simplified Chinese, etc.)"""
 
 # first person nominative & accusative pronoun lexicon entry
-I = LexiconEntry(
+ME = LexiconEntry(
     "wo3",
     NOUN,
     plural_form="wo3 men",
@@ -135,6 +135,24 @@ GAILA_PHASE_1_CHINESE_LEXICON = OntologyLexicon(
         (COME, LexiconEntry("lái", VERB)),
         (TAKE, LexiconEntry("na2", VERB)),
         (EAT, LexiconEntry("chr1", VERB)),
+        (GIVE, LexiconEntry("gei3", VERB, properties=[ALLOWS_DITRANSITIVE])),
+        (SPIN, LexiconEntry("sywan2 jwan3", VERB)),
+        (SIT, LexiconEntry("dzwo4", VERB)),
+        (DRINK, LexiconEntry("he1", VERB)),
+        (FALL, LexiconEntry("dye2 dau3", VERB)),
+        (THROW, LexiconEntry("reng1", VERB, properties=[ALLOWS_DITRANSITIVE])),
+        (MOVE, LexiconEntry("dung4", VERB)),
+        (JUMP, LexiconEntry("tyau4", VERB)),
+        (HAS, LexiconEntry("you3", VERB)),
+        (ROLL, LexiconEntry("gwun3", VERB)),
+        (FLY, LexiconEntry("fei1", VERB)),
+        (RED, LexiconEntry("hung2 se4", ADJECTIVE)),
+        (BLUE, LexiconEntry("lan2 se4", ADJECTIVE)),
+        (GREEN, LexiconEntry("lyu4 se4", ADJECTIVE)),
+        (BLACK, LexiconEntry("hei1 se4", ADJECTIVE)),
+        (WHITE, LexiconEntry("bai2 se4", ADJECTIVE)),
+        (TRANSPARENT, LexiconEntry("tou4 ming2", ADJECTIVE)),
+        (LIGHT_BROWN, LexiconEntry("chyan3 he2 se4", ADJECTIVE)),
+        (DARK_BROWN, LexiconEntry("shen1 dzung1 se4", ADJECTIVE)),
     ),
 )
-
