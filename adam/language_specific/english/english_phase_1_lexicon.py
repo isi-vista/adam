@@ -6,12 +6,7 @@ from adam.language.dependency.universal_dependencies import (
 )
 from adam.language.lexicon import LexiconEntry, LexiconProperty
 from adam.language.ontology_dictionary import OntologyLexicon
-from adam.language_specific.english.english_syntax import (
-    FIRST_PERSON,
-    SECOND_PERSON,
-    NOMINATIVE,
-    ACCUSATIVE,
-)
+from adam.language_specific import FIRST_PERSON, SECOND_PERSON, NOMINATIVE, ACCUSATIVE
 from adam.ontology.phase1_ontology import (
     BABY,
     BALL,

@@ -7,7 +7,7 @@ the same way in Chinese as in English.
 We don't provide plural specifications for nouns since this isn't a
 morphologically-realized feature in Chinese.
 """
-from adam.language_specific.chinese.chinese_syntax import FIRST_PERSON, SECOND_PERSON
+from adam.language_specific import FIRST_PERSON, SECOND_PERSON
 from adam.language.dependency.universal_dependencies import (
     ADJECTIVE,
     NOUN,
