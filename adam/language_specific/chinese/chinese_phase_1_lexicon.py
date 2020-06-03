@@ -73,18 +73,8 @@ from adam.ontology.phase1_ontology import (
     DARK_BROWN,
 )
 
-ME = LexiconEntry(
-    "wo3",
-    NOUN,
-    plural_form="wo3 men",
-    intrinsic_morphosyntactic_properties=[FIRST_PERSON],
-)
-YOU = LexiconEntry(
-    "ni3",
-    NOUN,
-    plural_form="ni3 men",
-    intrinsic_morphosyntactic_properties=[SECOND_PERSON],
-)
+ME = LexiconEntry("wo3", NOUN, intrinsic_morphosyntactic_properties=[FIRST_PERSON])
+YOU = LexiconEntry("ni3", NOUN, intrinsic_morphosyntactic_properties=[SECOND_PERSON])
 GAILA_PHASE_1_CHINESE_LEXICON = OntologyLexicon(
     ontology=GAILA_PHASE_1_ONTOLOGY,
     ontology_node_to_word=(
