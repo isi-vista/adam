@@ -48,9 +48,8 @@ from adam.language_specific.english.english_phase_1_lexicon import (
     ME,
     YOU,
 )
+from adam.language_specific import FIRST_PERSON, SECOND_PERSON
 from adam.language_specific.english.english_syntax import (
-    FIRST_PERSON,
-    SECOND_PERSON,
     SIMPLE_ENGLISH_DEPENDENCY_TREE_LINEARIZER,
 )
 from adam.ontology import IN_REGION, IS_ADDRESSEE, IS_SPEAKER, OntologyNode

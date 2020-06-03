@@ -5,7 +5,6 @@ from immutablecollections import ImmutableDict, immutabledict
 from adam.language.dependency import (
     DependencyRole,
     HEAD,
-    MorphosyntacticProperty,
     PartOfSpeechTag,
     RoleOrderDependencyTreeLinearizer,
 )
@@ -75,9 +74,3 @@ _ENGLISH_HEAD_TO_ROLE_ORDER: ImmutableDict[
 SIMPLE_ENGLISH_DEPENDENCY_TREE_LINEARIZER = RoleOrderDependencyTreeLinearizer(
     _ENGLISH_HEAD_TO_ROLE_ORDER
 )
-
-FIRST_PERSON = MorphosyntacticProperty("1p")
-SECOND_PERSON = MorphosyntacticProperty("2p")
-THIRD_PERSON = MorphosyntacticProperty("3p")
-NOMINATIVE = MorphosyntacticProperty("nom")
-ACCUSATIVE = MorphosyntacticProperty("acc")
