@@ -7,14 +7,19 @@ the same way in Chinese as in English.
 We don't provide plural specifications for nouns since this isn't a
 morphologically-realized feature in Chinese.
 """
-from adam.language_specific import FIRST_PERSON, SECOND_PERSON
+from adam.language_specific import (
+    FIRST_PERSON,
+    SECOND_PERSON,
+    MASS_NOUN,
+    ALLOWS_DITRANSITIVE,
+)
 from adam.language.dependency.universal_dependencies import (
     ADJECTIVE,
     NOUN,
     PROPER_NOUN,
     VERB,
 )
-from adam.language.lexicon import LexiconEntry, LexiconProperty
+from adam.language.lexicon import LexiconEntry
 from adam.language.ontology_dictionary import OntologyLexicon
 from adam.ontology.phase1_ontology import (
     BABY,
@@ -68,8 +73,6 @@ from adam.ontology.phase1_ontology import (
     DARK_BROWN,
 )
 
-MASS_NOUN = LexiconProperty("mass-noun")
-ALLOWS_DITRANSITIVE = LexiconProperty("allows-ditransitive")
 ME = LexiconEntry(
     "wo3",
     NOUN,
