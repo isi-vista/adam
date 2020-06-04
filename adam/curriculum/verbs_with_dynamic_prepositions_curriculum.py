@@ -1384,32 +1384,18 @@ def _x_rolls_y_out_of_z_template(
     agent: TemplateObjectVariable,
     theme: TemplateObjectVariable,
     spatial_reference: TemplateObjectVariable,
-    goal_reference: TemplateObjectVariable,
     surface: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
-    *,
-    is_distal: bool,
 ) -> Phase1SituationTemplate:
     inside_relation = inside([agent, theme], spatial_reference)
-    background_objects = [goal_reference]
-    background_objects.extend(background)
     return Phase1SituationTemplate(
         f"{agent.handle}-rolls-{theme.handle}-out-of-{spatial_reference.handle}",
         salient_object_variables=[agent, theme, spatial_reference],
-        background_object_variables=background_objects,
+        background_object_variables=background,
         actions=[
             Action(
                 ROLL,
-                argument_roles_to_fillers=[
-                    (AGENT, agent),
-                    (THEME, theme),
-                    (
-                        GOAL,
-                        Region(
-                            goal_reference, distance=DISTAL if is_distal else PROXIMAL
-                        ),
-                    ),
-                ],
+                argument_roles_to_fillers=[(AGENT, agent), (THEME, theme)],
                 auxiliary_variable_bindings=[(ROLL_SURFACE_AUXILIARY, surface)],
             )
         ],
@@ -3055,16 +3041,13 @@ def _make_roll_with_prepositions(num_samples: int = 5, *, noise_objects: int = 0
                             agent,
                             theme,
                             goal_object_hollow,
-                            goal_object,
                             surface,
                             noise_objects_immutable,
-                            is_distal=is_distal,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
-                    for is_distal in BOOL_SET
                     for surface in surfaces
                 ]
             ),
