@@ -211,12 +211,14 @@ class SubsetAttributeLearnerNew(
             ]
         )
 
-    def _keep_hypothesis(self, hypothesis: PerceptionGraphTemplate) -> bool:
+    def _keep_hypothesis(
+        self,
+        *,
+        hypothesis: PerceptionGraphTemplate,
+        bound_surface_template: BoundSurfaceTemplate,
+    ) -> bool:
         if len(hypothesis.graph_pattern) < 2:
             # We need at least two nodes - a wildcard and a property -
             # for meaningful attribute semantics.
-            return False
-        if len(hypothesis.template_variable_to_pattern_node) != 1:
-            # We've managed to lose our wildcard slot somehow.
             return False
         return True

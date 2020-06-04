@@ -188,12 +188,23 @@ class AbstractSubsetLearnerNew(AbstractTemplateLearnerNew, ABC):
                 for previous_pattern_hypothesis in previous_pattern_hypotheses
                 for hypothesis_from_current_perception in hypotheses_from_current_perception
             ]
+
+            def should_keep_hypothesis(hypothesis: PerceptionGraphTemplate) -> bool:
+                if len(hypothesis.template_variable_to_pattern_node) != len(
+                    bound_surface_template.slot_to_semantic_node
+                ):
+                    # We've managed to lose our wildcard slot somehow.
+                    return False
+                return self._keep_hypothesis(
+                    hypothesis=hypothesis, bound_surface_template=bound_surface_template
+                )
+
             # Remove all Nones resulting from empty intersections,
             # as well as any hypotheses which fail learner-specific conditions.
             updated_hypotheses = [
                 hypothesis
                 for hypothesis in updated_hypotheses
-                if hypothesis and self._keep_hypothesis(hypothesis)
+                if hypothesis and should_keep_hypothesis(hypothesis=hypothesis)
             ]
             # Sort hypotheses by decreasing order of size
             updated_hypotheses.sort(key=lambda x: len(x.graph_pattern), reverse=True)
@@ -244,10 +255,22 @@ class AbstractSubsetLearnerNew(AbstractTemplateLearnerNew, ABC):
         """
 
     @abstractmethod
-    def _keep_hypothesis(self, hypothesis: PerceptionGraphTemplate) -> bool:
+    def _keep_hypothesis(
+        self,
+        *,
+        hypothesis: PerceptionGraphTemplate,
+        bound_surface_template: BoundSurfaceTemplate
+    ) -> bool:
         """
-        Should a candidate hypothesis be kept, or should it be discarded
-        (e.g. for being too small).
+        Should a candidate hypothesis for the meaning of *bound_surface_template* be kept,
+        or should it be discarded.
+
+        Typically this is checking things like whether the hypothesis has gotten too small
+        to plausibly encode the semantics of the template.
+
+        This method may assume that the slots of *hypothesis* match
+        the slots of the *bound_surface_template*;
+        if not, the hypothesis would be automatically rejected.
         """
 
     @abstractmethod
