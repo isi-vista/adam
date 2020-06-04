@@ -93,7 +93,10 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
         # First, we handle intransitive verbs.
         # Let's take the example "Bob falls over".
         # For these, we need one recognized object, e.g. "Bob"
-        for (object_node, span_for_object) in language_concept_alignment.items():
+        for (
+            object_node,
+            span_for_object,
+        ) in language_concept_alignment.node_to_language_span.items():
             # Two possible hypotheses: the subject follows the verb
             # or the verb follows the subject.
             # In our example, only the "right" direction ends up being interesting.
@@ -298,6 +301,19 @@ class AbstractVerbTemplateLearner(
         return language_concept_alignment.to_surface_template(
             object_node_to_template_variable=object_node_to_template_variable,
             determiner_prefix_slots=object_node_to_template_variable.values(),
+        )
+
+
+@attrs
+class SubsetVerbLearner(AbstractTemplateSubsetLearner, AbstractVerbTemplateLearner):
+    def _hypothesis_from_perception(
+        self, preprocessed_input: LanguageConceptAlignment
+    ) -> PerceptionGraphTemplate:
+        return PerceptionGraphTemplate.from_graph(
+            preprocessed_input.perception_graph,
+            template_variable_to_matched_object_node=immutabledict(
+                zip(STANDARD_SLOT_VARIABLES, preprocessed_input.aligned_nodes)
+            ),
         )
 
 
