@@ -1,3 +1,4 @@
+import itertools
 import logging
 from itertools import chain, combinations
 from pathlib import Path
@@ -172,8 +173,10 @@ class IntegratedTemplateLearner(
         self, semantic_nodes: AbstractSet[SemanticNode]
     ) -> Mapping[LinguisticDescription, float]:
         learner_semantics = LearnerSemantics.from_nodes(semantic_nodes)
-        if learner_semantics.relations or learner_semantics.actions:
-            raise RuntimeError("Currently we can only handle objects and attributes")
+        if learner_semantics.relations:
+            raise RuntimeError(
+                "Currently we can only handle objects, attributes, and actions."
+            )
 
         ret = []
         if self.action_learner:
@@ -258,7 +261,22 @@ class IntegratedTemplateLearner(
     def _instantiate_action(
         self, action_node: ActionSemanticNode, learner_semantics: "LearnerSemantics"
     ) -> Iterator[Tuple[str, ...]]:
-        raise NotImplementedError()
+        slots_to_instantiations = {
+            slot: list(self._instantiate_object(slot_filler, learner_semantics))
+            for (slot, slot_filler) in action_node.slot_fillings.items()
+        }
+        slot_order = tuple(slots_to_instantiations.keys())
+
+        for action_template in self.action_learner.templates_for_concept(
+            action_node.concept
+        ):
+            all_possible_slot_fillings = itertools.product(
+                *slots_to_instantiations.values()
+            )
+            for possible_slot_filling in all_possible_slot_fillings:
+                yield action_template.instantiate(
+                    immutabledict(zip(slot_order, possible_slot_filling))
+                ).as_token_sequence()
 
     def log_hypotheses(self, log_output_path: Path) -> None:
         raise NotImplementedError("implement me")
