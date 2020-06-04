@@ -14,6 +14,8 @@ from adam.language.dependency.universal_dependencies import (
     OBLIQUE_NOMINAL,
     VERB,
     INDIRECT_OBJECT,
+    ADVERBIAL_MODIFIER,
+    ADVERB,
 )
 from adam.language_specific.chinese.chinese_syntax import (
     SIMPLE_CHINESE_DEPENDENCY_TREE_LINEARIZER,
@@ -90,3 +92,23 @@ def test_indirect_object():
         ).surface_token_order
     )
     assert predicted_token_order == ("wo3", "gei3", "ni3", "shu1")
+
+
+"""Tests Chinese adverbial modifiers, which typically occur before the verb 
+unless they are temporal modifiers"""
+
+
+def test_adverb_mods():
+    me = DependencyTreeToken("wo3", NOUN)
+    drink = DependencyTreeToken("he1", VERB)
+    slowly = DependencyTreeToken("man4 man de", ADVERB)
+    tree = DiGraph()
+    tree.add_edge(me, drink, role=NOMINAL_SUBJECT)
+    tree.add_edge(slowly, drink, role=ADVERBIAL_MODIFIER)
+    predicted_token_order = tuple(
+        node.token
+        for node in SIMPLE_CHINESE_DEPENDENCY_TREE_LINEARIZER.linearize(
+            DependencyTree(tree)
+        ).surface_token_order
+    )
+    assert predicted_token_order == ("wo3", "man4 man de", "he1")

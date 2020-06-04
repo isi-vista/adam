@@ -36,8 +36,9 @@ from adam.language.dependency.universal_dependencies import (
 _CHINESE_HEAD_TO_ROLE_ORDER: ImmutableDict[
     PartOfSpeechTag, Tuple[DependencyRole, ...]
 ] = [
-    (VERB, (NOMINAL_SUBJECT, HEAD, INDIRECT_OBJECT, OBJECT)),
-    (NOUN, (HEAD,)),
+    # TODO: handle the types of obl in Chinese
+    (VERB, (NOMINAL_SUBJECT, ADVERBIAL_MODIFIER, HEAD, INDIRECT_OBJECT, OBJECT)),
+    (NOUN, (ADJECTIVAL_MODIFIER, HEAD)),
     (PROPER_NOUN, (HEAD,)),
 ]
 
