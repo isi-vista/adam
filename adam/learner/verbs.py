@@ -21,6 +21,7 @@ from adam.learner.surface_templates import (
     SLOT2,
     STANDARD_SLOT_VARIABLES,
     SurfaceTemplate,
+    SLOT3,
 )
 from adam.learner.template_learner import (
     AbstractTemplateLearner,
@@ -147,9 +148,7 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
 
         # Handle transitive verbs.
         # Our example here will be "Mom eats the cookie."
-        # For a transitive verb, we need *two* recognized objects.
-        # TODO: handle cases of more than two arguments:
-        #  https://github.com/isi-vista/adam/issues/787
+        # For a transitive verb, we need at least *two* recognized objects.
         for (
             left_object_node,
             span_for_left_object,
@@ -241,6 +240,134 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                                     ],
                                 )
                             )
+
+        # Handle transitive verbs with an expressed preposition
+        # We don't currently learn the relations separate from the verbs
+        # and appropriately combine the syntax later so this helps
+        # Us learn for example "Mom throws me a ball"
+        # This currently can't handle prepositional tokens
+        # in the language (e.g. "Mom throws a ball to me"
+        # TODO: https://github.com/isi-vista/adam/issues/787
+        for (
+            left_object_node,
+            span_for_left_object,
+        ) in language_concept_alignment.node_to_language_span.items():
+            for (
+                middle_object_node,
+                span_for_middle_object,
+            ) in language_concept_alignment.node_to_language_span.items():
+                # Our code will be simpler if we can assume an ordering of the object aligned
+                # tokens.
+                if span_for_left_object.precedes(middle_object_node):
+                    for (
+                        right_object_node,
+                        span_for_right_object,
+                    ) in language_concept_alignment.node_to_language_span.items():
+                        # Our code will be simpler if we can assume an ordering
+                        # of the object aligned tokens.
+                        if not span_for_middle_object.precedes(right_object_node):
+                            continue
+
+                        # Our templates don't distinguish between the roles of the nouns
+                        # just "leftmost slot" (=SLOT1), "middle slot" (=SLOT2), "rightmost slot" (=SLOT3),
+                        # so we really just need to handle (using "A" for argument)
+                        # AAAV, AAVA, AVAA, VAAA
+                        # This currently doesn't account for learning prepositional information on a verb
+
+                        # Let's handle AVAA and AAVA first
+                        # We can only do this if the three candidate argument spans are not adjacent
+                        if (
+                            span_for_left_object.end != span_for_middle_object.start
+                            and span_for_middle_object.end != span_for_right_object.start
+                        ):
+                            # Now we need to determine between which arguments the verb template is.
+                            if span_for_left_object.end == span_for_middle_object.start:
+                                candidate_verb_token_span = Span(
+                                    span_for_middle_object.end,
+                                    span_for_right_object.start,
+                                )
+                                middle_prior = True
+                            else:
+                                candidate_verb_token_span = Span(
+                                    span_for_left_object.end, span_for_middle_object.start
+                                )
+                                middle_prior = False
+                            if is_legal_template_span(candidate_verb_token_span):
+                                template_elements = [SLOT1]
+                                if middle_prior:
+                                    template_elements.append(SLOT2)
+                                template_elements.extend(
+                                    sentence_tokens[
+                                        candidate_verb_token_span.start : candidate_verb_token_span.end
+                                    ]
+                                )
+                                if not middle_prior:
+                                    template_elements.append(SLOT2)
+                                template_elements.append(SLOT3)
+
+                                ret.append(
+                                    BoundSurfaceTemplate(
+                                        surface_template=SurfaceTemplate(
+                                            elements=template_elements,
+                                            determiner_prefix_slots=[SLOT1, SLOT2, SLOT3],
+                                        ),
+                                        slot_to_semantic_node=[
+                                            (SLOT1, left_object_node),
+                                            (SLOT2, middle_object_node),
+                                            (SLOT3, right_object_node),
+                                        ],
+                                    )
+                                )
+
+                        # Now AAAV and VAAA
+                        for verb_direction in (_LEFT, _RIGHT):
+                            # We can handle these cases if the three argument slot alignments
+                            # are adjacent
+                            for token_length_for_template in range(
+                                1, _MAXIMUM_ACTION_TEMPLATE_TOKEN_LENGTH
+                            ):
+                                if verb_direction == _LEFT:
+                                    candidate_verb_token_span = Span(
+                                        span_for_left_object.start
+                                        - token_length_for_template,
+                                        span_for_left_object.start,
+                                    )
+                                else:
+                                    candidate_verb_token_span = Span(
+                                        span_for_right_object.end + 1,
+                                        span_for_right_object.end
+                                        + token_length_for_template
+                                        + 1,
+                                    )
+
+                                if is_legal_template_span(candidate_verb_token_span):
+                                    template_elements = []
+                                    if verb_direction == _RIGHT:
+                                        template_elements.extend([SLOT1, SLOT2, SLOT3])
+                                    template_elements.extend(
+                                        sentence_tokens[
+                                            candidate_verb_token_span.start : candidate_verb_token_span.end
+                                        ]
+                                    )
+                                    if verb_direction == _LEFT:
+                                        template_elements.extend([SLOT1, SLOT2, SLOT3])
+                                    ret.append(
+                                        BoundSurfaceTemplate(
+                                            surface_template=SurfaceTemplate(
+                                                elements=template_elements,
+                                                determiner_prefix_slots=[
+                                                    SLOT1,
+                                                    SLOT2,
+                                                    SLOT3,
+                                                ],
+                                            ),
+                                            slot_to_semantic_node=[
+                                                (SLOT1, left_object_node),
+                                                (SLOT2, middle_object_node),
+                                                (SLOT3, right_object_node),
+                                            ],
+                                        )
+                                    )
 
         def covers_entire_utterance(bound_surface_template: BoundSurfaceTemplate) -> bool:
             num_covered_tokens = 0
