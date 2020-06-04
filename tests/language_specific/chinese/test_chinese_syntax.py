@@ -55,7 +55,6 @@ def test_basic_noun_verb():
 """Tests basic SVO order in Chinese"""
 
 
-@pytest.mark.skip(reason="no object in syntax yet")
 def test_direct_object():
     me = DependencyTreeToken("wo3", NOUN)
     drink = DependencyTreeToken("he1", VERB)
@@ -75,7 +74,6 @@ def test_direct_object():
 """Tests Chinese indirect objects with ditransitive verbs"""
 
 
-@pytest.mark.skip(reason="no indirect object in syntax yet")
 def test_indirect_object():
     me = DependencyTreeToken("wo3", NOUN)
     give = DependencyTreeToken("gei3", VERB)

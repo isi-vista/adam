@@ -35,7 +35,11 @@ from adam.language.dependency.universal_dependencies import (
 
 _CHINESE_HEAD_TO_ROLE_ORDER: ImmutableDict[
     PartOfSpeechTag, Tuple[DependencyRole, ...]
-] = [(VERB, (NOMINAL_SUBJECT, HEAD)), (NOUN, (HEAD,)), (PROPER_NOUN, (HEAD,))]
+] = [
+    (VERB, (NOMINAL_SUBJECT, HEAD, INDIRECT_OBJECT, OBJECT)),
+    (NOUN, (HEAD,)),
+    (PROPER_NOUN, (HEAD,)),
+]
 
 SIMPLE_CHINESE_DEPENDENCY_TREE_LINEARIZER = RoleOrderDependencyTreeLinearizer(
     _CHINESE_HEAD_TO_ROLE_ORDER
