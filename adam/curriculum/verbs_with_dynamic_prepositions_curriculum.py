@@ -66,6 +66,7 @@ from adam.ontology.phase1_ontology import (
     CAN_FLY,
     GOAL_MANIPULATOR,
     PUSH_GOAL,
+    COME,
 )
 from adam.ontology import THING, IS_SPEAKER, IS_ADDRESSEE, IN_REGION
 from adam.ontology.phase1_spatial_relations import (
@@ -83,6 +84,7 @@ from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
 )
 from adam.relation import flatten_relations, Relation
+from adam.relation_dsl import negate
 from adam.situation import Action
 from adam.situation.templates.phase1_situation_templates import (
     _fly_over_template,
@@ -1357,8 +1359,6 @@ def _x_rolls_out_z_template(
     spatial_reference: TemplateObjectVariable,
     surface: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
-    *,
-    is_distal: bool,
 ) -> Phase1SituationTemplate:
     inside_relation = inside(agent, spatial_reference)
     return Phase1SituationTemplate(
@@ -1368,9 +1368,7 @@ def _x_rolls_out_z_template(
         actions=[
             Action(
                 ROLL,
-                argument_roles_to_fillers=[
-                    (AGENT, agent),
-                ],
+                argument_roles_to_fillers=[(AGENT, agent)],
                 auxiliary_variable_bindings=[(ROLL_SURFACE_AUXILIARY, surface)],
             )
         ],
@@ -1393,10 +1391,12 @@ def _x_rolls_y_out_of_z_template(
     is_distal: bool,
 ) -> Phase1SituationTemplate:
     inside_relation = inside([agent, theme], spatial_reference)
+    background_objects = [goal_reference]
+    background_objects.extend(background)
     return Phase1SituationTemplate(
         f"{agent.handle}-rolls-{theme.handle}-out-of-{spatial_reference.handle}",
-        salient_object_variables=[agent, theme, spatial_reference, goal_reference],
-        background_object_variables=background,
+        salient_object_variables=[agent, theme, spatial_reference],
+        background_object_variables=background_objects,
         actions=[
             Action(
                 ROLL,
@@ -2424,6 +2424,36 @@ def _fly_out_template(
     )
 
 
+# Come Templates
+
+
+def _make_come_out_of_template(
+    agent: TemplateObjectVariable,
+    object_containing_agent: TemplateObjectVariable,
+    goal_reference: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+) -> Phase1SituationTemplate:
+    backgrounds_objects = [goal_reference]
+    backgrounds_objects.extend(background)
+    return Phase1SituationTemplate(
+        f"{agent.handle}-come-out-of-{object_containing_agent.handle}",
+        salient_object_variables=[agent, object_containing_agent],
+        background_object_variables=backgrounds_objects,
+        actions=[
+            Action(
+                COME, argument_roles_to_fillers=[(AGENT, agent), (GOAL, goal_reference)]
+            )
+        ],
+        before_action_relations=flatten_relations(inside(agent, object_containing_agent)),
+        after_action_relations=flatten_relations(
+            [negate(inside(agent, object_containing_agent))]
+        ),
+        constraining_relations=flatten_relations(
+            bigger_than(object_containing_agent, agent)
+        ),
+    )
+
+
 # Push
 
 
@@ -3008,17 +3038,12 @@ def _make_roll_with_prepositions(num_samples: int = 5, *, noise_objects: int = 0
                 [
                     sampled(
                         _x_rolls_out_z_template(
-                            agent,
-                            goal_object_hollow,
-                            surface,
-                            noise_objects_immutable,
-                            is_distal=is_distal,
+                            agent, goal_object_hollow, surface, noise_objects_immutable
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
-                    for is_distal in BOOL_SET
                     for surface in surfaces
                 ]
             ),
@@ -3838,6 +3863,41 @@ def _make_fly_with_prepositions(
     )
 
 
+# Come
+
+
+def _make_come_with_prepositions(
+    num_samples: int = 5, *, noise_objects: int = 0
+) -> Phase1InstanceGroup:
+    agent = standard_object("agent", required_properties=[SELF_MOVING])
+    object_with_agent_inside = standard_object(
+        "object-agent-inside", required_properties=[HOLLOW]
+    )
+    goal_object = standard_object("goal")
+    background = immutableset(
+        standard_object(f"noise_object_{x}") for x in range(noise_objects)
+    )
+
+    return phase1_instances(
+        "Come + PP",
+        chain(
+            # Come Out Of
+            flatten(
+                [
+                    sampled(
+                        _make_come_out_of_template(
+                            agent, object_with_agent_inside, goal_object, background
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        max_to_sample=num_samples,
+                    )
+                ]
+            )
+        ),
+    )
+
+
 def make_verb_with_dynamic_prepositions_curriculum(
     num_samples: int = 5, *, num_noise_objects: int = 0
 ):
@@ -3853,4 +3913,5 @@ def make_verb_with_dynamic_prepositions_curriculum(
         _make_move_with_prepositions(num_samples, noise_objects=num_noise_objects),
         _make_jump_with_prepositions(num_samples, noise_objects=num_noise_objects),
         _make_fly_with_prepositions(num_samples, noise_objects=num_noise_objects),
+        _make_come_with_prepositions(num_samples, noise_objects=num_noise_objects),
     ]

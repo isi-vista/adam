@@ -10,6 +10,7 @@ from adam.curriculum.verbs_with_dynamic_prepositions_curriculum import (
     _make_move_with_prepositions,
     _make_jump_with_prepositions,
     _make_fly_with_prepositions,
+    _make_come_with_prepositions,
 )
 from tests.curriculum.phase1_curriculum_test import curriculum_test
 
@@ -56,3 +57,7 @@ def test_make_jump():
 
 def test_make_fly():
     curriculum_test(_make_fly_with_prepositions())
+
+
+def test_make_come():
+    curriculum_test(_make_come_with_prepositions())
