@@ -81,6 +81,7 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
             # or be bigger than our maximum template size...
             if len(candidate_verb_token_span) > _MAXIMUM_ACTION_TEMPLATE_TOKEN_LENGTH:
                 return False
+
             # or we have already aligned any of the tokens in between the objects
             # to some other meaning.
             for token_index in range(
@@ -240,7 +241,30 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                                     ],
                                 )
                             )
-        return immutableset(ret)
+
+        def covers_entire_utterance(bound_surface_template: BoundSurfaceTemplate) -> bool:
+            num_covered_tokens = 0
+            for element in bound_surface_template.surface_template.elements:
+                if isinstance(element, str):
+                    num_covered_tokens += 1
+                else:
+                    num_covered_tokens += len(
+                        language_concept_alignment.node_to_language_span[
+                            bound_surface_template.slot_to_semantic_node[element]
+                        ]
+                    )
+            # This assumes the slots and the non-slot elements are non-overlapping,
+            # which is true for how we construct them.
+            return num_covered_tokens == len(sentence_tokens)
+
+        return immutableset(
+            bound_surface_template
+            for bound_surface_template in ret
+            # For now, we require action templates to account for the entire
+            # utterance.
+            # See https://github.com/isi-vista/adam/issues/789
+            if covers_entire_utterance(bound_surface_template)
+        )
 
 
 @attrs
