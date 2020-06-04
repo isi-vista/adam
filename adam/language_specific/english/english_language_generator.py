@@ -41,16 +41,18 @@ from adam.language.language_generator import LanguageGenerator
 from adam.language.lexicon import LexiconEntry
 from adam.language.ontology_dictionary import OntologyLexicon
 from adam.language_specific.english.english_phase_1_lexicon import (
-    ALLOWS_DITRANSITIVE,
     GAILA_PHASE_1_ENGLISH_LEXICON,
     I,
-    MASS_NOUN,
     ME,
     YOU,
 )
-from adam.language_specific.english.english_syntax import (
+from adam.language_specific import (
     FIRST_PERSON,
     SECOND_PERSON,
+    ALLOWS_DITRANSITIVE,
+    MASS_NOUN,
+)
+from adam.language_specific.english.english_syntax import (
     SIMPLE_ENGLISH_DEPENDENCY_TREE_LINEARIZER,
 )
 from adam.ontology import IN_REGION, IS_ADDRESSEE, IS_SPEAKER, OntologyNode

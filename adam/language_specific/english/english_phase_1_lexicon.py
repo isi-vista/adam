@@ -4,13 +4,15 @@ from adam.language.dependency.universal_dependencies import (
     PROPER_NOUN,
     VERB,
 )
-from adam.language.lexicon import LexiconEntry, LexiconProperty
+from adam.language.lexicon import LexiconEntry
 from adam.language.ontology_dictionary import OntologyLexicon
-from adam.language_specific.english.english_syntax import (
+from adam.language_specific import (
     FIRST_PERSON,
     SECOND_PERSON,
     NOMINATIVE,
     ACCUSATIVE,
+    MASS_NOUN,
+    ALLOWS_DITRANSITIVE,
 )
 from adam.ontology.phase1_ontology import (
     BABY,
@@ -63,9 +65,6 @@ from adam.ontology.phase1_ontology import (
     LIGHT_BROWN,
     DARK_BROWN,
 )
-
-MASS_NOUN = LexiconProperty("mass-noun")
-ALLOWS_DITRANSITIVE = LexiconProperty("allows-ditransitive")
 
 I = LexiconEntry(  # noqa: E741
     "I",
