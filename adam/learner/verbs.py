@@ -11,7 +11,10 @@ from adam.learner.object_recognizer import (
     PerceptionGraphFromObjectRecognizer,
 )
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
-from adam.learner.subset import AbstractTemplateSubsetLearner
+from adam.learner.subset import (
+    AbstractTemplateSubsetLearner,
+    AbstractTemplateSubsetLearnerNew,
+)
 from adam.learner.surface_templates import (
     BoundSurfaceTemplate,
     SLOT1,
@@ -33,7 +36,12 @@ from adam.learner.alignments import (
     LanguagePerceptionSemanticAlignment,
     PerceptionSemanticAlignment,
 )
-from adam.semantics import Concept, ObjectSemanticNode, SyntaxSemanticsVariable
+from adam.semantics import (
+    ActionConcept,
+    Concept,
+    ObjectSemanticNode,
+    SyntaxSemanticsVariable,
+)
 from attr import attrib, attrs
 from immutablecollections import immutabledict, immutableset
 from vistautils.span import Span
@@ -294,34 +302,47 @@ class AbstractVerbTemplateLearner(
 
 
 @attrs
-class SubsetVerbLearner(AbstractTemplateSubsetLearner, AbstractVerbTemplateLearner):
-    def templates_for_concept(self, concept: Concept) -> AbstractSet[SurfaceTemplate]:
-        raise NotImplementedError()
-
-    def learn_from(
+class SubsetVerbLearnerNew(
+    AbstractTemplateSubsetLearnerNew, AbstractVerbTemplateLearnerNew
+):
+    def _can_learn_from(
         self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
-    ) -> None:
-        raise NotImplementedError()
+    ) -> bool:
+        return (
+            len(
+                language_perception_semantic_alignment.perception_semantic_alignment.semantic_nodes
+            )
+            > 1
+        )
 
-    def enrich_during_learning(
-        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
-    ) -> LanguagePerceptionSemanticAlignment:
-        raise NotImplementedError()
+    def _new_concept(self, debug_string: str) -> ActionConcept:
+        return ActionConcept(debug_string)
 
-    def enrich_during_description(
+    def _keep_hypothesis(
+        self,
+        *,
+        hypothesis: PerceptionGraphTemplate,
+        bound_surface_template: BoundSurfaceTemplate
+    ) -> bool:
+        num_template_arguments = len(bound_surface_template.slot_to_semantic_node)
+        return len(hypothesis.graph_pattern) >= 2 * num_template_arguments
+
+    def _hypotheses_from_perception(
+        self,
+        learning_state: LanguagePerceptionSemanticAlignment,
+        bound_surface_template: BoundSurfaceTemplate,
+    ) -> AbstractSet[PerceptionGraphTemplate]:
+        # For the subset learner, our hypothesis is the entire graph.
+        return immutableset(
+            [
+                PerceptionGraphTemplate.from_graph(
+                    learning_state.perception_semantic_alignment.perception_graph,
+                    template_variable_to_matched_object_node=bound_surface_template.slot_to_semantic_node,
+                )
+            ]
+        )
+
+    def _preprocess_scene(
         self, perception_semantic_alignment: PerceptionSemanticAlignment
     ) -> PerceptionSemanticAlignment:
-        raise NotImplementedError()
-
-    def log_hypotheses(self, log_output_path: Path) -> None:
-        raise NotImplementedError()
-
-    def _hypothesis_from_perception(
-        self, preprocessed_input: LanguageConceptAlignment
-    ) -> PerceptionGraphTemplate:
-        return PerceptionGraphTemplate.from_graph(
-            preprocessed_input.perception_graph,
-            template_variable_to_matched_object_node=immutabledict(
-                zip(STANDARD_SLOT_VARIABLES, preprocessed_input.aligned_nodes)
-            ),
-        )
+        return perception_semantic_alignment

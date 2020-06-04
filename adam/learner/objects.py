@@ -399,7 +399,11 @@ class SubsetObjectLearnerNew(
             )
         )
 
-    def _keep_hypothesis(self, hypothesis: PerceptionGraphTemplate) -> bool:
+    def _keep_hypothesis(
+        self,
+        hypothesis: PerceptionGraphTemplate,
+        bound_surface_template: BoundSurfaceTemplate,
+    ) -> bool:
         if len(hypothesis.graph_pattern) < 2:
             # A one node graph is to small to meaningfully describe an object
             return False
