@@ -135,6 +135,44 @@ def test_my_3_red_trucks():
     )
 
 
+"""Test a prepositional phrase with everything: next to tall mom's three red trucks"""
+
+
+def test_long_prepositional_phrase():
+    de = DependencyTreeToken("de", PARTICLE)
+    truck = DependencyTreeToken("ka3 che1", NOUN)
+    red = DependencyTreeToken("hung2 se4", ADJECTIVE)
+    three = DependencyTreeToken("san1", NUMERAL)
+    clf = DependencyTreeToken("lyang4", PARTICLE)
+    near = DependencyTreeToken("jin4", ADPOSITION)
+    tall = DependencyTreeToken("gau1", ADJECTIVE)
+    ma = DependencyTreeToken("ma1", PROPER_NOUN)
+    tree = DiGraph()
+    tree.add_edge(near, truck, role=CASE_SPATIAL)
+    tree.add_edge(clf, truck, role=CLASSIFIER)
+    tree.add_edge(three, truck, role=NUMERIC_MODIFIER)
+    tree.add_edge(tall, ma, role=ADJECTIVAL_MODIFIER)
+    tree.add_edge(de, ma, role=CASE_POSSESSIVE)
+    tree.add_edge(red, truck, role=ADJECTIVAL_MODIFIER)
+    tree.add_edge(ma, truck, role=NOMINAL_MODIFIER_POSSESSIVE)
+    predicted_token_order = tuple(
+        node.token
+        for node in SIMPLE_CHINESE_DEPENDENCY_TREE_LINEARIZER.linearize(
+            DependencyTree(tree)
+        ).surface_token_order
+    )
+    assert predicted_token_order == (
+        "jin4",
+        "gau1",
+        "ma1",
+        "de",
+        "san1",
+        "lyang4",
+        "hung2 se4",
+        "ka3 che1",
+    )
+
+
 """Testing for proper Nouns"""
 
 
@@ -142,16 +180,37 @@ def test_proper_noun_possessive():
     ma = DependencyTreeToken("ma1", PROPER_NOUN)
     de = DependencyTreeToken("de", PARTICLE)
     dog = DependencyTreeToken("gou3", NOUN)
+    tall = DependencyTreeToken("gau1", ADJECTIVE)
     tree = DiGraph()
     tree.add_edge(de, ma, role=CASE_POSSESSIVE)
     tree.add_edge(ma, dog, role=NOMINAL_MODIFIER_POSSESSIVE)
+    tree.add_edge(tall, ma, role=ADJECTIVAL_MODIFIER)
     predicted_token_order = tuple(
         node.token
         for node in SIMPLE_CHINESE_DEPENDENCY_TREE_LINEARIZER.linearize(
             DependencyTree(tree)
         ).surface_token_order
     )
-    assert predicted_token_order == ("ma1", "de", "gou3")
+    assert predicted_token_order == ("gau1", "ma1", "de", "gou3")
+
+
+"""Deals with preposition and adjective for proper nouns"""
+
+
+def test_proper_noun_modified():
+    near = DependencyTreeToken("jin4", ADPOSITION)
+    tall = DependencyTreeToken("gau1", ADJECTIVE)
+    ma = DependencyTreeToken("ma1", PROPER_NOUN)
+    tree = DiGraph()
+    tree.add_edge(near, ma, role=CASE_SPATIAL)
+    tree.add_edge(tall, ma, role=ADJECTIVAL_MODIFIER)
+    predicted_token_order = tuple(
+        node.token
+        for node in SIMPLE_CHINESE_DEPENDENCY_TREE_LINEARIZER.linearize(
+            DependencyTree(tree)
+        ).surface_token_order
+    )
+    assert predicted_token_order == ("jin4", "gau1", "ma1")
 
 
 """Tests simple noun-verb to make sure that is in the correct order"""
