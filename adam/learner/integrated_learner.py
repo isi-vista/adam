@@ -228,7 +228,9 @@ class IntegratedTemplateLearner(
             if self.attribute_learner
             else []
         )
-        # TODO: deal with relations
+
+        # We currently cannot deal with relations that modify objects embedded in other expressions.
+        # See https://github.com/isi-vista/adam/issues/794 .
         # relations_for_object = learner_semantics.objects_to_relation_in_slot1[object_node]
 
         for template in self.object_learner.templates_for_concept(object_node.concept):
