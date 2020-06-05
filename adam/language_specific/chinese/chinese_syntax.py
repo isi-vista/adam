@@ -45,7 +45,8 @@ _CHINESE_HEAD_TO_ROLE_ORDER: ImmutableDict[
     # the basic structure of a non-"de" NP is possessive, demonstrative, quantities, adjectives, nouns
     # classifiers only occur when an item is being counted. "De", the possessive particle, occurs at the end of
     # possessive NPs.
-    # TODO: check correctness of de construction
+    # TODO: currently, we have CASE_SPATIAL slot and NOMINAL_MODIFIER slot for prepositions and localizers, respectively.
+    #  This should probably be handled in a better way
     (
         NOUN,
         (
@@ -59,7 +60,7 @@ _CHINESE_HEAD_TO_ROLE_ORDER: ImmutableDict[
             NOMINAL_MODIFIER,
         ),
     ),
-    # a similar structure applies for proper nouns
+    # a similar structure applies for proper nouns, with the same localizer/preposition issue
     (
         PROPER_NOUN,
         (CASE_SPATIAL, ADJECTIVAL_MODIFIER, HEAD, CASE_POSSESSIVE, NOMINAL_MODIFIER),

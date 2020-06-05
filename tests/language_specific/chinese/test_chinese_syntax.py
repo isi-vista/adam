@@ -21,6 +21,7 @@ from adam.language.dependency.universal_dependencies import (
     PARTICLE,
     CASE_POSSESSIVE,
     NOMINAL_MODIFIER_POSSESSIVE,
+    NOMINAL_MODIFIER,
     NUMERAL,
     CLASSIFIER,
     NUMERIC_MODIFIER,
@@ -84,7 +85,7 @@ def test_possessives():
     assert predicted_token_order == ("wo3", "de", "hung2 se4", "ka3 che1")
 
 
-"""Counting and classifiers in Chinese"""
+"""Counting and classifiers in Chinese with '3 dogs'"""
 
 
 def test_counting():
@@ -135,20 +136,22 @@ def test_my_3_red_trucks():
     )
 
 
-"""Test a prepositional phrase with everything: next to tall mom's three red trucks"""
+"""Test a localizer phrase with everything: next to tall mom's three red trucks"""
 
 
-def test_long_prepositional_phrase():
+def test_long_localizer_phrase():
     de = DependencyTreeToken("de", PARTICLE)
     truck = DependencyTreeToken("ka3 che1", NOUN)
     red = DependencyTreeToken("hung2 se4", ADJECTIVE)
     three = DependencyTreeToken("san1", NUMERAL)
     clf = DependencyTreeToken("lyang4", PARTICLE)
-    near = DependencyTreeToken("jin4", ADPOSITION)
+    near = DependencyTreeToken("fu4, jin4", NOUN)
+    at = DependencyTreeToken("dzai4", ADPOSITION)
     tall = DependencyTreeToken("gau1", ADJECTIVE)
-    ma = DependencyTreeToken("ma1", PROPER_NOUN)
+    ma = DependencyTreeToken("ma1ma1", PROPER_NOUN)
     tree = DiGraph()
-    tree.add_edge(near, truck, role=CASE_SPATIAL)
+    tree.add_edge(at, truck, role=CASE_SPATIAL)
+    tree.add_edge(near, truck, role=NOMINAL_MODIFIER)
     tree.add_edge(clf, truck, role=CLASSIFIER)
     tree.add_edge(three, truck, role=NUMERIC_MODIFIER)
     tree.add_edge(tall, ma, role=ADJECTIVAL_MODIFIER)
@@ -162,18 +165,19 @@ def test_long_prepositional_phrase():
         ).surface_token_order
     )
     assert predicted_token_order == (
-        "jin4",
+        "dzai4",
         "gau1",
-        "ma1",
+        "ma1ma1",
         "de",
         "san1",
         "lyang4",
         "hung2 se4",
         "ka3 che1",
+        "fu4, jin4",
     )
 
 
-"""Testing for proper Nouns"""
+"""Testing for proper Nouns: 'tall mom's dog"""
 
 
 def test_proper_noun_possessive():
@@ -194,15 +198,17 @@ def test_proper_noun_possessive():
     assert predicted_token_order == ("gau1", "ma1", "de", "gou3")
 
 
-"""Deals with preposition and adjective for proper nouns"""
+"""tests localizers and adjective for proper nouns: near tall mom"""
 
 
 def test_proper_noun_modified():
-    near = DependencyTreeToken("jin4", ADPOSITION)
+    near = DependencyTreeToken("fu4, jin4", NOUN)
+    at = DependencyTreeToken("dzai4", ADPOSITION)
     tall = DependencyTreeToken("gau1", ADJECTIVE)
     ma = DependencyTreeToken("ma1", PROPER_NOUN)
     tree = DiGraph()
-    tree.add_edge(near, ma, role=CASE_SPATIAL)
+    tree.add_edge(at, ma, role=CASE_SPATIAL)
+    tree.add_edge(near, ma, role=NOMINAL_MODIFIER)
     tree.add_edge(tall, ma, role=ADJECTIVAL_MODIFIER)
     predicted_token_order = tuple(
         node.token
@@ -210,7 +216,7 @@ def test_proper_noun_modified():
             DependencyTree(tree)
         ).surface_token_order
     )
-    assert predicted_token_order == ("jin4", "gau1", "ma1")
+    assert predicted_token_order == ("dzai4", "gau1", "ma1", "fu4, jin4")
 
 
 """Tests simple noun-verb to make sure that is in the correct order"""
@@ -279,7 +285,7 @@ def test_adverb_mods():
     give = DependencyTreeToken("gei3", VERB)
     you = DependencyTreeToken("ni3", NOUN)
     book = DependencyTreeToken("shu1", NOUN)
-    slowly = DependencyTreeToken("man4 man de", ADVERB)
+    slowly = DependencyTreeToken("man4 man", ADVERB)
     tree = DiGraph()
     tree.add_edge(me, give, role=NOMINAL_SUBJECT)
     tree.add_edge(book, give, role=OBJECT)
@@ -291,4 +297,4 @@ def test_adverb_mods():
             DependencyTree(tree)
         ).surface_token_order
     )
-    assert predicted_token_order == ("wo3", "man4 man de", "gei3", "ni3", "shu1")
+    assert predicted_token_order == ("wo3", "man4 man", "gei3", "ni3", "shu1")
