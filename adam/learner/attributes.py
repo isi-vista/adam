@@ -58,7 +58,7 @@ class AbstractAttributeTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
         ) in language_concept_alignment.node_to_language_span.items():
             if isinstance(object_node, ObjectSemanticNode):
                 # Any words immediately before them or after them are candidate attributes.
-                # TODO: make issue to track this somewhat English-specific assumption
+                # See https://github.com/isi-vista/adam/issues/791 .
                 preceding_token_index = span_for_object.start - 1
                 if (
                     preceding_token_index >= 0
