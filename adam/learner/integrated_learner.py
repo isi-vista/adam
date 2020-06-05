@@ -173,10 +173,6 @@ class IntegratedTemplateLearner(
         self, semantic_nodes: AbstractSet[SemanticNode]
     ) -> Mapping[LinguisticDescription, float]:
         learner_semantics = LearnerSemantics.from_nodes(semantic_nodes)
-        if learner_semantics.relations:
-            raise RuntimeError(
-                "Currently we can only handle objects, attributes, and actions."
-            )
 
         ret = []
         if self.action_learner:
@@ -189,6 +185,19 @@ class IntegratedTemplateLearner(
                     )
                     # ensure we have some way of expressing this action
                     if self.action_learner.templates_for_concept(action.concept)
+                ]
+            )
+
+        if self.relation_learner:
+            ret.extend(
+                [
+                    (relation_tokens, 1.0)
+                    for relation in learner_semantics.relations
+                    for relation_tokens in self._instantiate_relation(
+                        relation, learner_semantics
+                    )
+                    # ensure we have some way of expressing this relation
+                    if self.relation_learner.templates_for_concept(relation.concept)
                 ]
             )
 
@@ -257,6 +266,26 @@ class IntegratedTemplateLearner(
                 yield tuple(chain(("a",), cur_string))
             else:
                 yield cur_string
+
+    def _instantiate_relation(
+        self, relation_node: RelationSemanticNode, learner_semantics: "LearnerSemantics"
+    ) -> Iterator[Tuple[str, ...]]:
+        slots_to_instantiations = {
+            slot: list(self._instantiate_object(slot_filler, learner_semantics))
+            for (slot, slot_filler) in relation_node.slot_fillings.items()
+        }
+        slot_order = tuple(slots_to_instantiations.keys())
+
+        for relation_template in self.relation_learner.templates_for_concept(
+            relation_node.concept
+        ):
+            all_possible_slot_fillings = itertools.product(
+                *slots_to_instantiations.values()
+            )
+            for possible_slot_filling in all_possible_slot_fillings:
+                yield relation_template.instantiate(
+                    immutabledict(zip(slot_order, possible_slot_filling))
+                ).as_token_sequence()
 
     def _instantiate_action(
         self, action_node: ActionSemanticNode, learner_semantics: "LearnerSemantics"
