@@ -472,40 +472,6 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                         self._noun_for_object(relation.first_slot),
                         role=NOMINAL_MODIFIER,
                     )
-            elif (
-                self.situation.ontology.is_subtype_of(
-                    relation.relation_type, SIZE_RELATION
-                )
-                and not isinstance(relation.second_slot, Region)
-                and IS_ADDRESSEE in relation.second_slot.properties
-                and IGNORE_SIZE_ATTRIBUTE not in self.situation.syntax_hints
-            ):
-                # We only want to assert size relations relative to the addressee, default learner
-                # Handling more situation relevant uses of 'big' and 'small' is a future issue
-                # See: https://github.com/isi-vista/adam/issues/772
-                # Currently we enforce that the addressee should be in the second spot of the relationship
-                # for ease of translation. We might need to support either option in the future
-
-                if (
-                    relation.relation_type == BIGGER_THAN
-                    or relation.relation_type == MUCH_BIGGER_THAN
-                ):
-                    attribute = "big"
-                elif (
-                    relation.relation_type == SMALLER_THAN
-                    or relation == MUCH_SMALLER_THAN
-                ):
-                    attribute = "small"
-                else:
-                    raise RuntimeError(
-                        f"Do not know how to handle size relation of type {relation.relation_type}"
-                    )
-
-                self.dependency_graph.add_edge(
-                    attribute,
-                    self._noun_for_object(relation.first_slot),
-                    role=ADJECTIVAL_MODIFIER,
-                )
             else:
                 raise RuntimeError(
                     f"Don't know how to translate relation " f"{relation} to English"
