@@ -1,25 +1,17 @@
-"""Draft Chinese syntax file; not all structures currently implemented.
-Should be checked by a native speaker"""
+"""Draft Chinese syntax file; still needs to be checked by a native speaker"""
 from typing import Tuple
-
-# import immutable dictionaries
 from immutablecollections import ImmutableDict, immutabledict
-
-# import some dependencies
 from adam.language.dependency import (
     DependencyRole,
     HEAD,
     PartOfSpeechTag,
     RoleOrderDependencyTreeLinearizer,
 )
-
-# import some universal dependencies
 from adam.language.dependency.universal_dependencies import (
     ADJECTIVAL_MODIFIER,
     ADVERBIAL_MODIFIER,
     CASE_POSSESSIVE,
     CASE_SPATIAL,
-    DETERMINER_ROLE,
     INDIRECT_OBJECT,
     NOMINAL_MODIFIER,
     NOMINAL_MODIFIER_POSSESSIVE,
@@ -37,7 +29,7 @@ from adam.language.dependency.universal_dependencies import (
 _CHINESE_HEAD_TO_ROLE_ORDER: ImmutableDict[
     PartOfSpeechTag, Tuple[DependencyRole, ...]
 ] = [
-    # TODO: handle the cases of oblique and ba construction in Chinese
+    # TODO: check correctness of ba construction
     (
         VERB,
         (
@@ -53,20 +45,23 @@ _CHINESE_HEAD_TO_ROLE_ORDER: ImmutableDict[
     # the basic structure of a non-"de" NP is possessive, demonstrative, quantities, adjectives, nouns
     # classifiers only occur when an item is being counted. "De", the possessive particle, occurs at the end of
     # possessive NPs.
-    #TODO: de implementation
+    #TODO: check correctness of de construction
     (
         NOUN,
         (
+            CASE_SPATIAL,
             NOMINAL_MODIFIER_POSSESSIVE,
             NUMERIC_MODIFIER,
             CLASSIFIER,
             ADJECTIVAL_MODIFIER,
             HEAD,
+            IS_ATTRIBUTE,
+            NOMINAL_MODIFIER,
             CASE_POSSESSIVE,
         ),
     ),
     #a similar structure applies for proper nouns
-    (PROPER_NOUN, (ADJECTIVAL_MODIFIER, HEAD, CASE_POSSESSIVE)),
+    (PROPER_NOUN, (CASE_SPATIAL, ADJECTIVAL_MODIFIER, HEAD, NOMINAL_MODIFIER, CASE_POSSESSIVE)),
 ]
 
 SIMPLE_CHINESE_DEPENDENCY_TREE_LINEARIZER = RoleOrderDependencyTreeLinearizer(
