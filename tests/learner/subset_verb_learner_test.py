@@ -2,10 +2,6 @@ from itertools import chain
 
 import pytest
 
-from adam.learner.integrated_learner import IntegratedTemplateLearner
-from adam.learner.objects import ObjectRecognizerAsTemplateLearner
-from immutablecollections import immutableset
-
 from adam.curriculum.curriculum_utils import (
     PHASE1_CHOOSER_FACTORY,
     phase1_instances,
@@ -13,42 +9,43 @@ from adam.curriculum.curriculum_utils import (
 )
 from adam.curriculum.phase1_curriculum import (
     _make_come_down_template,
-    make_eat_template,
     make_drink_template,
-    make_sit_templates,
-    make_take_template,
-    make_put_templates,
-    make_push_templates,
-    make_go_templates,
-    make_spin_templates,
+    make_eat_template,
     make_fall_templates,
-    make_throw_templates,
-    make_move_templates,
-    make_jump_templates,
     make_fly_templates,
-    make_roll_templates,
     make_give_templates,
+    make_go_templates,
+    make_jump_templates,
+    make_move_templates,
+    make_push_templates,
+    make_put_templates,
+    make_roll_templates,
+    make_sit_templates,
+    make_spin_templates,
+    make_take_template,
+    make_throw_templates,
 )
 from adam.learner import LearningExample
-from adam.learner.verbs import (
-    SubsetVerbLearner,
-    SubsetVerbLearnerNew,
-    SubsetVerbLearnerNew,
-)
-from adam.ontology import THING, IS_SPEAKER
+from adam.learner.integrated_learner import IntegratedTemplateLearner
+from adam.learner.objects import ObjectRecognizerAsTemplateLearner
+from adam.learner.verbs import SubsetVerbLearnerNew
+from adam.ontology import IS_SPEAKER, THING
 from adam.ontology.phase1_ontology import (
     AGENT,
-    GAILA_PHASE_1_ONTOLOGY,
     ANIMATE,
+    CAN_JUMP,
+    COME,
+    GAILA_PHASE_1_ONTOLOGY,
     GOAL,
+    GROUND,
     HAS_SPACE_UNDER,
-    SELF_MOVING,
     LEARNER,
     PERSON,
     GROUND,
     COME,
     CAN_JUMP,
     EDIBLE,
+    SELF_MOVING,
 )
 from adam.situation import Action
 from adam.situation.templates.phase1_situation_templates import (
@@ -56,6 +53,7 @@ from adam.situation.templates.phase1_situation_templates import (
     _jump_over_template,
 )
 from adam.situation.templates.phase1_templates import Phase1SituationTemplate, sampled
+from immutablecollections import immutableset
 from tests.learner import TEST_OBJECT_RECOGNIZER
 
 LEARNER_FACTORIES = [
