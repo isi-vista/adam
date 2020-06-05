@@ -56,10 +56,14 @@ _CHINESE_HEAD_TO_ROLE_ORDER: ImmutableDict[
             ADJECTIVAL_MODIFIER,
             HEAD,
             CASE_POSSESSIVE,
+            NOMINAL_MODIFIER,
         ),
     ),
     # a similar structure applies for proper nouns
-    (PROPER_NOUN, (CASE_SPATIAL, ADJECTIVAL_MODIFIER, HEAD, CASE_POSSESSIVE)),
+    (
+        PROPER_NOUN,
+        (CASE_SPATIAL, ADJECTIVAL_MODIFIER, HEAD, CASE_POSSESSIVE, NOMINAL_MODIFIER),
+    ),
 ]
 
 SIMPLE_CHINESE_DEPENDENCY_TREE_LINEARIZER = RoleOrderDependencyTreeLinearizer(

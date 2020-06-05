@@ -276,15 +276,19 @@ unless they are temporal modifiers"""
 
 def test_adverb_mods():
     me = DependencyTreeToken("wo3", NOUN)
-    drink = DependencyTreeToken("he1", VERB)
+    give = DependencyTreeToken("gei3", VERB)
+    you = DependencyTreeToken("ni3", NOUN)
+    book = DependencyTreeToken("shu1", NOUN)
     slowly = DependencyTreeToken("man4 man de", ADVERB)
     tree = DiGraph()
-    tree.add_edge(me, drink, role=NOMINAL_SUBJECT)
-    tree.add_edge(slowly, drink, role=ADVERBIAL_MODIFIER)
+    tree.add_edge(me, give, role=NOMINAL_SUBJECT)
+    tree.add_edge(book, give, role=OBJECT)
+    tree.add_edge(you, give, role=INDIRECT_OBJECT)
+    tree.add_edge(slowly, give, role=ADVERBIAL_MODIFIER)
     predicted_token_order = tuple(
         node.token
         for node in SIMPLE_CHINESE_DEPENDENCY_TREE_LINEARIZER.linearize(
             DependencyTree(tree)
         ).surface_token_order
     )
-    assert predicted_token_order == ("wo3", "man4 man de", "he1")
+    assert predicted_token_order == ("wo3", "man4 man de", "gei3", "ni3", "shu1")
