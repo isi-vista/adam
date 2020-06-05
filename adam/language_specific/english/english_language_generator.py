@@ -68,11 +68,6 @@ from adam.ontology.phase1_ontology import (
     SIT,
     THEME,
     JUMP,
-    SIZE_RELATION,
-    BIGGER_THAN,
-    MUCH_BIGGER_THAN,
-    SMALLER_THAN,
-    MUCH_SMALLER_THAN,
     FAST,
     SLOW,
 )
@@ -966,7 +961,10 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 preposition = "away_from"
             # TO is the default spatial path in most actions
             # so we let the preposition be handled by the GOAL
-            elif spatial_path.operator == TO:
+            # We also explicitly ignore the None operator
+            # as spatial paths may just have properties
+            # we are interested in asserting
+            elif spatial_path.operator in [TO, None]:
                 return None
 
             if not preposition:

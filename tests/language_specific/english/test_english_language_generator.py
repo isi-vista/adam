@@ -9,6 +9,7 @@ from adam.language_specific.english.english_language_generator import (
     SimpleRuleBasedEnglishLanguageGenerator,
     USE_ADVERBIAL_PATH_MODIFIER,
     ATTRIBUTES_AS_X_IS_Y,
+    IGNORE_COLORS,
 )
 from adam.language_specific.english.english_phase_1_lexicon import (
     GAILA_PHASE_1_ENGLISH_LEXICON,
@@ -1237,6 +1238,50 @@ def test_region_with_out_addressee():
                         ],
                     )
                 ],
+            )
+        )
+
+
+def test_is_color_when_dynamic():
+    agent = situation_object(BALL, properties=[RED])
+    ground = situation_object(GROUND)
+    with pytest.raises(RuntimeError):
+        generated_tokens(
+            HighLevelSemanticsSituation(
+                ontology=GAILA_PHASE_1_ONTOLOGY,
+                salient_objects=[agent],
+                actions=[
+                    Action(
+                        ROLL,
+                        argument_roles_to_fillers=[(AGENT, agent)],
+                        auxiliary_variable_bindings=[(ROLL_SURFACE_AUXILIARY, ground)],
+                    )
+                ],
+                syntax_hints=[ATTRIBUTES_AS_X_IS_Y],
+            )
+        )
+
+
+def test_is_property_none():
+    agent = situation_object(BALL, properties=[RED])
+    with pytest.raises(RuntimeError):
+        generated_tokens(
+            HighLevelSemanticsSituation(
+                ontology=GAILA_PHASE_1_ONTOLOGY,
+                salient_objects=[agent],
+                syntax_hints=[ATTRIBUTES_AS_X_IS_Y, IGNORE_COLORS],
+            )
+        )
+
+
+def test_multiple_colors():
+    agent = situation_object(BALL, properties=[RED, BLACK])
+    with pytest.raises(RuntimeError):
+        generated_tokens(
+            HighLevelSemanticsSituation(
+                ontology=GAILA_PHASE_1_ONTOLOGY,
+                salient_objects=[agent],
+                syntax_hints=[ATTRIBUTES_AS_X_IS_Y],
             )
         )
 

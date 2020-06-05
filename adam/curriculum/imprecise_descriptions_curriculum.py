@@ -1,12 +1,11 @@
 from itertools import chain
-from typing import Sequence, Iterable
+from typing import Sequence
 
 from immutablecollections import immutableset
 from more_itertools import flatten
 
 from adam.curriculum.curriculum_utils import (
     Phase1InstanceGroup,
-    learner_template_factory,
     PHASE1_CHOOSER_FACTORY,
     phase1_instances,
     standard_object,
@@ -31,7 +30,6 @@ from adam.language_specific.english.english_language_generator import (
 )
 from adam.ontology import THING
 from adam.ontology.phase1_ontology import (
-    bigger_than,
     GAILA_PHASE_1_ONTOLOGY,
     ANIMATE,
     INANIMATE,

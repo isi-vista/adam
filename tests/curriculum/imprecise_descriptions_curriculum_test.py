@@ -1,5 +1,3 @@
-import pytest
-
 from adam.curriculum.imprecise_descriptions_curriculum import (
     make_move_imprecise_temporal_descriptions,
     make_throw_imprecise_temporal_descriptions,
