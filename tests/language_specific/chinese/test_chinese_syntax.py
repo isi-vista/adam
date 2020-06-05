@@ -1,5 +1,5 @@
 """This file checks our Chinese syntax file to ensure that the generated word order is correct
-Once complete, this should be checked by a native speaker"""
+This should still be verified by a native speaker."""
 from networkx import DiGraph
 import pytest
 from adam.language.dependency import DependencyTree, DependencyTreeToken
@@ -24,6 +24,7 @@ from adam.language.dependency.universal_dependencies import (
     NUMERAL,
     CLASSIFIER,
     NUMERIC_MODIFIER,
+    PROPER_NOUN,
 )
 from adam.language_specific.chinese.chinese_syntax import (
     SIMPLE_CHINESE_DEPENDENCY_TREE_LINEARIZER,
@@ -132,6 +133,25 @@ def test_my_3_red_trucks():
         "hung2 se4",
         "ka3 che1",
     )
+
+
+"""Testing for proper Nouns"""
+
+
+def test_proper_noun_possessive():
+    ma = DependencyTreeToken("ma1", PROPER_NOUN)
+    de = DependencyTreeToken("de", PARTICLE)
+    dog = DependencyTreeToken("gou3", NOUN)
+    tree = DiGraph()
+    tree.add_edge(de, ma, role=CASE_POSSESSIVE)
+    tree.add_edge(ma, dog, role=NOMINAL_MODIFIER_POSSESSIVE)
+    predicted_token_order = tuple(
+        node.token
+        for node in SIMPLE_CHINESE_DEPENDENCY_TREE_LINEARIZER.linearize(
+            DependencyTree(tree)
+        ).surface_token_order
+    )
+    assert predicted_token_order == ("ma1", "de", "gou3")
 
 
 """Tests simple noun-verb to make sure that is in the correct order"""
