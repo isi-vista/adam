@@ -268,6 +268,13 @@ class LanguageConceptAlignment:
 
 @attrs(frozen=True)
 class PerceptionSemanticAlignment:
+    """
+    Represents an alignment between a perception graph and a set of semantic nodes representing
+    concepts.
+
+    This is used to represent intermediate semantic data passed between new-style learners when
+    describing a perception.
+    """
     perception_graph: PerceptionGraph = attrib(validator=instance_of(PerceptionGraph))
     semantic_nodes: ImmutableSet[SemanticNode] = attrib(
         converter=_to_immutableset, validator=deep_iterable(instance_of(SemanticNode))
@@ -302,6 +309,13 @@ class PerceptionSemanticAlignment:
 
 @attrs(frozen=True, kw_only=True)
 class LanguagePerceptionSemanticAlignment:
+    """
+    Represents an alignment of both language and perception with some semantic nodes representing
+    concepts.
+
+    This is used to represent intermediate semantic data passed between new-style learners when
+    learning from an example.
+    """
     language_concept_alignment: LanguageConceptAlignment = attrib(
         validator=instance_of(LanguageConceptAlignment)
     )

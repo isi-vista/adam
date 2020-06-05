@@ -179,20 +179,38 @@ class NewStyleLearner(ABC):
     def learn_from(
         self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
     ) -> None:
-        pass
+        """
+        Learn from a `LanguagePerceptionSemanticAlignment` describing a situation. This may update
+        some internal state.
+        """
 
     @abstractmethod
     def enrich_during_learning(
         self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
     ) -> LanguagePerceptionSemanticAlignment:
-        pass
+        """
+        Given a `LanguagePerceptionSemanticAlignment` wrapping a learning example, return such
+        an updated alignment enriched with some extra semantic alignment information.
+
+        The learner may have no information to add, in which case it can simply return the alignment
+        it was passed.
+        """
 
     @abstractmethod
     def enrich_during_description(
         self, perception_semantic_alignment: PerceptionSemanticAlignment
     ) -> PerceptionSemanticAlignment:
-        pass
+        """
+        Given a `PerceptionSemanticAlignment` wrapping a perception to be described, return an
+        updated alignment enriched with some extra semantic alignment information.
+
+        The learner may have no information to add, in which case it can simply return the alignment
+        it was passed.
+        """
 
     @abstractmethod
     def log_hypotheses(self, log_output_path: Path) -> None:
-        pass
+        """
+        Log some representation of the learner's current hypothesized semantics for words/phrases to
+        *log_output_path*.
+        """
