@@ -36,10 +36,20 @@ from adam.language.dependency.universal_dependencies import (
 _CHINESE_HEAD_TO_ROLE_ORDER: ImmutableDict[
     PartOfSpeechTag, Tuple[DependencyRole, ...]
 ] = [
-    # TODO: handle the types of obl in Chinese
-    (VERB, (NOMINAL_SUBJECT, ADVERBIAL_MODIFIER, HEAD, INDIRECT_OBJECT, OBJECT)),
+    # TODO: handle the cases of oblique and ba construction in Chinese
+    (
+        VERB,
+        (
+            NOMINAL_SUBJECT,
+            OBLIQUE_NOMINAL,
+            ADVERBIAL_MODIFIER,
+            HEAD,
+            INDIRECT_OBJECT,
+            OBJECT,
+        ),
+    ),
     (NOUN, (ADJECTIVAL_MODIFIER, HEAD)),
-    (PROPER_NOUN, (HEAD,)),
+    (PROPER_NOUN, (ADJECTIVAL_MODIFIER, HEAD)),
 ]
 
 SIMPLE_CHINESE_DEPENDENCY_TREE_LINEARIZER = RoleOrderDependencyTreeLinearizer(
