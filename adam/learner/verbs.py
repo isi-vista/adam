@@ -369,7 +369,9 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                                         )
                                     )
 
-        def covers_entire_utterance(bound_surface_template: SurfaceTemplateBoundToSemanticNodes) -> bool:
+        def covers_entire_utterance(
+            bound_surface_template: SurfaceTemplateBoundToSemanticNodes
+        ) -> bool:
             num_covered_tokens = 0
             for element in bound_surface_template.surface_template.elements:
                 if isinstance(element, str):
