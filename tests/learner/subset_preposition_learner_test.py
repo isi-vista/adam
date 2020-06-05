@@ -26,6 +26,7 @@ from adam.learner.prepositions import SubsetPrepositionLearner
 from adam.ontology import IS_ADDRESSEE, IS_SPEAKER
 from adam.ontology.phase1_ontology import (
     BALL,
+    BOOK,
     TABLE,
     GAILA_PHASE_1_ONTOLOGY,
     WATER,
@@ -39,9 +40,9 @@ from adam.ontology.phase1_ontology import (
 from adam.situation.templates.phase1_templates import sampled, object_variable
 from tests.learner import TEST_OBJECT_RECOGNIZER
 
-OLD_SUBSET_PREPOSITION_LEARNER_FACTORY = lambda: SubsetPrepositionLearner(
-    object_recognizer=TEST_OBJECT_RECOGNIZER, ontology=GAILA_PHASE_1_ONTOLOGY
-)
+# OLD_SUBSET_PREPOSITION_LEARNER_FACTORY = lambda: SubsetPrepositionLearner(
+#     object_recognizer=TEST_OBJECT_RECOGNIZER, ontology=GAILA_PHASE_1_ONTOLOGY
+# )
 NEW_SUBSET_RELATION_LEARNER_FACTORY = lambda: IntegratedTemplateLearner(
     object_learner=ObjectRecognizerAsTemplateLearner(
         object_recognizer=TEST_OBJECT_RECOGNIZER
@@ -95,7 +96,7 @@ def test_subset_preposition_on_learner(learner_factory):
         descriptions_from_learner = learner.describe(test_perceptual_representation)
         gold = test_lingustics_description.as_token_sequence()
         assert descriptions_from_learner
-        assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
+        assert gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
 
 
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
@@ -143,7 +144,7 @@ def test_subset_preposition_beside_learner(learner_factory):
         descriptions_from_learner = learner.describe(test_perceptual_representation)
         gold = test_linguistic_description.as_token_sequence()
         assert descriptions_from_learner
-        assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
+        assert gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
 
 
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
@@ -191,7 +192,7 @@ def test_subset_preposition_under_learner(learner_factory):
         descriptions_from_learner = learner.describe(test_perceptual_representation)
         gold = test_linguistic_description.as_token_sequence()
         assert descriptions_from_learner
-        assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
+        assert gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
 
 
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
@@ -237,7 +238,7 @@ def test_subset_preposition_over_learner(learner_factory):
         descriptions_from_learner = learner.describe(test_perceptual_representation)
         gold = test_linguistic_description.as_token_sequence()
         assert descriptions_from_learner
-        assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
+        assert gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
 
 
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
@@ -282,7 +283,7 @@ def test_subset_preposition_in_learner(learner_factory):
         descriptions_from_learner = learner.describe(test_perceptual_representation)
         gold = test_linguistic_description.as_token_sequence()
         assert descriptions_from_learner
-        assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
+        gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
 
 
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
@@ -340,7 +341,7 @@ def test_subset_preposition_behind_learner(learner_factory):
         descriptions_from_learner = learner.describe(test_perceptual_representation)
         gold = test_linguistic_description.as_token_sequence()
         assert descriptions_from_learner
-        assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
+        assert gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
 
 
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
@@ -398,25 +399,38 @@ def test_subset_preposition_in_front_learner(learner_factory):
         descriptions_from_learner = learner.describe(test_perceptual_representation)
         gold = test_linguistic_description.as_token_sequence()
         assert descriptions_from_learner
-        assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
+        assert gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
 
 
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_subset_preposition_has_learner(learner_factory):
     person = standard_object("person", PERSON)
-    inanimate_object = standard_object(
-        "inanimate-object", INANIMATE_OBJECT, required_properties=[PERSON_CAN_HAVE]
-    )
+    cup = standard_object("cup", CUP)
+    book = standard_object("book", BOOK)
     ball = standard_object("ball", BALL)
 
-    has_train_curriculum = phase1_instances(
-        "Has Unit Train",
-        situations=sampled(
-            _x_has_y_template(person, inanimate_object),
-            chooser=PHASE1_CHOOSER_FACTORY(),
-            ontology=GAILA_PHASE_1_ONTOLOGY,
-            max_to_sample=2,
-        ),
+    has_train_curriculum = []
+    has_train_curriculum.extend(
+        phase1_instances(
+            "Has Unit Train",
+            situations=sampled(
+                _x_has_y_template(person, cup),
+                chooser=PHASE1_CHOOSER_FACTORY(),
+                ontology=GAILA_PHASE_1_ONTOLOGY,
+                max_to_sample=1,
+            ),
+        ).instances()
+    )
+    has_train_curriculum.extend(
+        phase1_instances(
+            "Has Unit Train",
+            situations=sampled(
+                _x_has_y_template(person, book),
+                chooser=PHASE1_CHOOSER_FACTORY(),
+                ontology=GAILA_PHASE_1_ONTOLOGY,
+                max_to_sample=1,
+            ),
+        ).instances()
     )
 
     has_test_curriculum = phase1_instances(
@@ -429,12 +443,8 @@ def test_subset_preposition_has_learner(learner_factory):
         ),
     )
 
-    learner = OLD_SUBSET_PREPOSITION_LEARNER_FACTORY()
-    for (
-        _,
-        linguistic_description,
-        perceptual_representation,
-    ) in has_train_curriculum.instances():
+    learner = learner_factory()
+    for (_, linguistic_description, perceptual_representation) in has_train_curriculum:
         learner.observe(
             LearningExample(perceptual_representation, linguistic_description)
         )
@@ -447,4 +457,4 @@ def test_subset_preposition_has_learner(learner_factory):
         descriptions_from_learner = learner.describe(test_perceptual_representation)
         gold = test_lingustics_description.as_token_sequence()
         assert descriptions_from_learner
-        assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
+        assert gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
