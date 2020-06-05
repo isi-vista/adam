@@ -15,7 +15,15 @@ from adam.language.dependency.universal_dependencies import (
     VERB,
     INDIRECT_OBJECT,
     ADVERBIAL_MODIFIER,
+    ADJECTIVAL_MODIFIER,
+    ADJECTIVE,
     ADVERB,
+    PARTICLE,
+    CASE_POSSESSIVE,
+    NOMINAL_MODIFIER_POSSESSIVE,
+    NUMERAL,
+    CLASSIFIER,
+    NUMERIC_MODIFIER,
 )
 from adam.language_specific.chinese.chinese_syntax import (
     SIMPLE_CHINESE_DEPENDENCY_TREE_LINEARIZER,
@@ -35,6 +43,95 @@ def test_basic_noun():
         ).surface_token_order
     )
     assert predicted_token_order == ("ka3 che1",)
+
+
+"""Noun-adjective pair"""
+
+
+def test_adj_noun():
+    truck = DependencyTreeToken("ka3 che1", NOUN)
+    red = DependencyTreeToken("hung2 se4", ADJECTIVE)
+    tree = DiGraph()
+    tree.add_edge(red, truck, role=ADJECTIVAL_MODIFIER)
+    predicted_token_order = tuple(
+        node.token
+        for node in SIMPLE_CHINESE_DEPENDENCY_TREE_LINEARIZER.linearize(
+            DependencyTree(tree)
+        ).surface_token_order
+    )
+    assert predicted_token_order == ("hung2 se4", "ka3 che1")
+
+
+"""Possessives: testing 'my red truck"""
+
+
+def test_possessives():
+    me = DependencyTreeToken("wo3", NOUN)
+    de = DependencyTreeToken("de", PARTICLE)
+    truck = DependencyTreeToken("ka3 che1", NOUN)
+    red = DependencyTreeToken("hung2 se4", ADJECTIVE)
+    tree = DiGraph()
+    tree.add_edge(de, me, role=CASE_POSSESSIVE)
+    tree.add_edge(red, truck, role=ADJECTIVAL_MODIFIER)
+    tree.add_edge(me, truck, role=NOMINAL_MODIFIER_POSSESSIVE)
+    predicted_token_order = tuple(
+        node.token
+        for node in SIMPLE_CHINESE_DEPENDENCY_TREE_LINEARIZER.linearize(
+            DependencyTree(tree)
+        ).surface_token_order
+    )
+    assert predicted_token_order == ("wo3", "de", "hung2 se4", "ka3 che1")
+
+
+"""Counting and classifiers in Chinese"""
+
+
+def test_counting():
+    three = DependencyTreeToken("san1", NUMERAL)
+    clf = DependencyTreeToken("jr1", PARTICLE)
+    dog = DependencyTreeToken("gou3", NOUN)
+    tree = DiGraph()
+    tree.add_edge(clf, dog, role=CLASSIFIER)
+    tree.add_edge(three, dog, role=NUMERIC_MODIFIER)
+    predicted_token_order = tuple(
+        node.token
+        for node in SIMPLE_CHINESE_DEPENDENCY_TREE_LINEARIZER.linearize(
+            DependencyTree(tree)
+        ).surface_token_order
+    )
+    assert predicted_token_order == ("san1", "jr1", "gou3")
+
+
+"""More complex noun phrase: my three red trucks"""
+
+
+def test_my_3_red_trucks():
+    me = DependencyTreeToken("wo3", NOUN)
+    de = DependencyTreeToken("de", PARTICLE)
+    truck = DependencyTreeToken("ka3 che1", NOUN)
+    red = DependencyTreeToken("hung2 se4", ADJECTIVE)
+    three = DependencyTreeToken("san1", NUMERAL)
+    clf = DependencyTreeToken("lyang4", PARTICLE)
+    tree = DiGraph()
+    tree.add_edge(clf, truck, role=CLASSIFIER)
+    tree.add_edge(three, truck, role=NUMERIC_MODIFIER)
+    tree.add_edge(de, me, role=CASE_POSSESSIVE)
+    tree.add_edge(red, truck, role=ADJECTIVAL_MODIFIER)
+    tree.add_edge(me, truck, role=NOMINAL_MODIFIER_POSSESSIVE)
+    predicted_token_order = tuple(
+        node.token
+        for node in SIMPLE_CHINESE_DEPENDENCY_TREE_LINEARIZER.linearize(
+            DependencyTree(tree)
+        ).surface_token_order
+    )
+    assert predicted_token_order == (
+        "wo3",
+        "de",
+        "san1",
+        "lyang4",
+        "hung2 se4",
+        "ka3 che1",
+    )
 
 
 """Tests simple noun-verb to make sure that is in the correct order"""
