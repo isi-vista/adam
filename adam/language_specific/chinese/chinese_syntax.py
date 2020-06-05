@@ -31,6 +31,7 @@ from adam.language.dependency.universal_dependencies import (
     PROPER_NOUN,
     VERB,
     IS_ATTRIBUTE,
+    CLASSIFIER,
 )
 
 _CHINESE_HEAD_TO_ROLE_ORDER: ImmutableDict[
@@ -48,7 +49,19 @@ _CHINESE_HEAD_TO_ROLE_ORDER: ImmutableDict[
             OBJECT,
         ),
     ),
-    (NOUN, (ADJECTIVAL_MODIFIER, HEAD)),
+    # according to https://web.stanford.edu/group/cslipublications/cslipublications/HPSG/2007/wang-liu.pdf,
+    # the basic structure of a non-"de" NP is possessive, demonstrative, quantities, adjectives, nouns
+    # classifiers only occur when an item is being counted
+    (
+        NOUN,
+        (
+            NOMINAL_MODIFIER_POSSESSIVE,
+            NUMERIC_MODIFIER,
+            CLASSIFIER,
+            ADJECTIVAL_MODIFIER,
+            HEAD,
+        ),
+    ),
     (PROPER_NOUN, (ADJECTIVAL_MODIFIER, HEAD)),
 ]
 
