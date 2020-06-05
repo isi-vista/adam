@@ -51,7 +51,9 @@ _CHINESE_HEAD_TO_ROLE_ORDER: ImmutableDict[
     ),
     # according to https://web.stanford.edu/group/cslipublications/cslipublications/HPSG/2007/wang-liu.pdf,
     # the basic structure of a non-"de" NP is possessive, demonstrative, quantities, adjectives, nouns
-    # classifiers only occur when an item is being counted
+    # classifiers only occur when an item is being counted. "De", the possessive particle, occurs at the end of
+    # possessive NPs.
+    #TODO: de implementation
     (
         NOUN,
         (
@@ -60,9 +62,11 @@ _CHINESE_HEAD_TO_ROLE_ORDER: ImmutableDict[
             CLASSIFIER,
             ADJECTIVAL_MODIFIER,
             HEAD,
+            CASE_POSSESSIVE,
         ),
     ),
-    (PROPER_NOUN, (ADJECTIVAL_MODIFIER, HEAD)),
+    #a similar structure applies for proper nouns
+    (PROPER_NOUN, (ADJECTIVAL_MODIFIER, HEAD, CASE_POSSESSIVE)),
 ]
 
 SIMPLE_CHINESE_DEPENDENCY_TREE_LINEARIZER = RoleOrderDependencyTreeLinearizer(
