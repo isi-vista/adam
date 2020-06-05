@@ -1,5 +1,5 @@
 from itertools import chain
-from typing import AbstractSet, Any, Iterable, List
+from typing import AbstractSet, Any, Iterable, List, Union
 
 from attr import attrib, attrs
 from attr.validators import instance_of
@@ -122,22 +122,28 @@ class Ontology:
         required_properties: Iterable["OntologyNode"] = immutableset(),
         *,
         banned_properties: AbstractSet["OntologyNode"] = immutableset(),
+        banned_ontology_types: AbstractSet["OntologyNode"] = immutableset(),
     ) -> ImmutableSet["OntologyNode"]:
         r"""
         Get all `OntologyNode`\ s which are a dominated by *root_node* (or are *root_node*
-        itself) which possess all the *required_properties* and none of the *banned_properties*,
-        either directly or by inheritance from a dominating node.
+        itself) which (a) possess all the *required_properties*,
+        (b) possess none of the *banned_properties*,
+        either directly or by inheritance from a dominating node,
+        and (c) are not identical to or descendants of any of *banned_ontology_types*.
 
         Args:
             root_node: the node to search the ontology tree at and under
             required_properties: the properties (as `OntologyNode`\ s) every returned node must have
             banned_properties: the properties (as `OntologyNode`\ s) which no returned node may
                                have
+            banned_ontology_types: nodes in the ontology which (together with the descendants)
+                                   should never be returned.
 
         Returns:
              All `OntologyNode`\ s which are a dominated by *root_node* (or are *root_node*
              itself) which possess all the *required_properties* and none of the
-             *banned_properties*, either directly or by inheritance from a dominating node.
+             *banned_properties*, either directly or by inheritance from a dominating node,
+             and are not contained in or dominated by any of *banned_ontology_types*.
         """
 
         if root_node not in self._graph:
@@ -152,7 +158,35 @@ class Ontology:
             if self.has_all_properties(
                 node, required_properties, banned_properties=banned_properties
             )
+            and node not in banned_ontology_types
+            and not self.descends_from(node, banned_ontology_types)
         )
+
+    def descends_from(
+        self,
+        node: "OntologyNode",
+        query_ancestors: Union["OntologyNode", AbstractSet["OntologyNode"]],
+    ) -> bool:
+        if isinstance(query_ancestors, OntologyNode):
+            query_ancestors_set = {query_ancestors}
+        else:
+            query_ancestors_set = query_ancestors
+
+        nodes_to_check = []
+        visited_nodes = {node}
+        nodes_to_check.extend(self._graph.successors(node))
+        while nodes_to_check:
+            node_to_check = nodes_to_check.pop()
+            visited_nodes.add(node_to_check)
+
+            if node_to_check in query_ancestors_set:
+                return True
+            nodes_to_check.extend(
+                parent
+                for parent in self._graph.successors(node_to_check)
+                if parent not in visited_nodes
+            )
+        return False
 
     def has_property(self, node: "OntologyNode", query_property: "OntologyNode") -> bool:
         r"""
