@@ -18,7 +18,7 @@ from adam.learner.subset import (
     AbstractTemplateSubsetLearnerNew,
 )
 from adam.learner.surface_templates import (
-    BoundSurfaceTemplate,
+    SurfaceTemplateBoundToSemanticNodes,
     SLOT1,
     STANDARD_SLOT_VARIABLES,
     SurfaceTemplate,
@@ -46,7 +46,7 @@ from vistautils.span import Span
 class AbstractAttributeTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
     def _candidate_templates(
         self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
-    ) -> AbstractSet[BoundSurfaceTemplate]:
+    ) -> AbstractSet[SurfaceTemplateBoundToSemanticNodes]:
         ret = []
         language_concept_alignment = (
             language_perception_semantic_alignment.language_concept_alignment
@@ -67,7 +67,7 @@ class AbstractAttributeTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                     )
                 ):
                     ret.append(
-                        BoundSurfaceTemplate(
+                        SurfaceTemplateBoundToSemanticNodes(
                             language_concept_alignment.to_surface_template(
                                 {object_node: SLOT1},
                                 restrict_to_span=Span(
@@ -84,7 +84,7 @@ class AbstractAttributeTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                     following_token_index
                 ):
                     ret.append(
-                        BoundSurfaceTemplate(
+                        SurfaceTemplateBoundToSemanticNodes(
                             language_concept_alignment.to_surface_template(
                                 {object_node: SLOT1},
                                 restrict_to_span=Span(
@@ -198,7 +198,7 @@ class SubsetAttributeLearnerNew(
     def _hypotheses_from_perception(
         self,
         learning_state: LanguagePerceptionSemanticAlignment,
-        bound_surface_template: BoundSurfaceTemplate,
+        bound_surface_template: SurfaceTemplateBoundToSemanticNodes,
     ) -> AbstractSet[PerceptionGraphTemplate]:
         # This makes a hypothesis for the whole graph, with the wildcard slot
         # at each recognized object.
@@ -215,7 +215,7 @@ class SubsetAttributeLearnerNew(
         self,
         *,
         hypothesis: PerceptionGraphTemplate,
-        bound_surface_template: BoundSurfaceTemplate,
+        bound_surface_template: SurfaceTemplateBoundToSemanticNodes,
     ) -> bool:
         if len(hypothesis.graph_pattern) < 2:
             # We need at least two nodes - a wildcard and a property -
