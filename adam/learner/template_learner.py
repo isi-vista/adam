@@ -20,7 +20,10 @@ from adam.learner.object_recognizer import (
     replace_match_with_object_graph_node,
 )
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
-from adam.learner.surface_templates import SurfaceTemplateBoundToSemanticNodes, SurfaceTemplate
+from adam.learner.surface_templates import (
+    SurfaceTemplateBoundToSemanticNodes,
+    SurfaceTemplate,
+)
 from adam.perception import PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,

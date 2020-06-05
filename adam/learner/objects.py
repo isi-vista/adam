@@ -22,7 +22,10 @@ from adam.learner.subset import (
     AbstractTemplateSubsetLearner,
     AbstractTemplateSubsetLearnerNew,
 )
-from adam.learner.surface_templates import SurfaceTemplateBoundToSemanticNodes, SurfaceTemplate
+from adam.learner.surface_templates import (
+    SurfaceTemplateBoundToSemanticNodes,
+    SurfaceTemplate,
+)
 from adam.learner.template_learner import (
     AbstractTemplateLearner,
     AbstractTemplateLearnerNew,

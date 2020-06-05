@@ -4,7 +4,10 @@ from pathlib import Path
 from typing import AbstractSet, Dict, Mapping, Optional, Set, Tuple, Iterable, Sequence
 
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
-from adam.learner.surface_templates import SurfaceTemplateBoundToSemanticNodes, SurfaceTemplate
+from adam.learner.surface_templates import (
+    SurfaceTemplateBoundToSemanticNodes,
+    SurfaceTemplate,
+)
 from adam.learner.template_learner import (
     AbstractTemplateLearner,
     AbstractTemplateLearnerNew,
