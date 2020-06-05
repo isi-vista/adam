@@ -129,7 +129,7 @@ class IntegratedTemplateLearner(
                 # Currently we do not attempt to learn static things from dynamic situations
                 # because the static learners do not know how to deal with the temporal
                 # perception graph edge wrappers.
-                # @Reviewers: do not let me merge without making an issue for this.
+                # See https://github.com/isi-vista/adam/issues/792 .
                 if not learning_example.perception.is_dynamic():
                     sub_learner.learn_from(current_learner_state)
 
