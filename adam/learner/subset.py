@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import AbstractSet, Dict, Mapping, Optional, Set, Tuple, Iterable, Sequence
 
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
-from adam.learner.surface_templates import BoundSurfaceTemplate, SurfaceTemplate
+from adam.learner.surface_templates import SurfaceTemplateBoundToSemanticNodes, SurfaceTemplate
 from adam.learner.template_learner import (
     AbstractTemplateLearner,
     AbstractTemplateLearnerNew,
@@ -129,7 +129,7 @@ class AbstractSubsetLearnerNew(AbstractTemplateLearnerNew, ABC):
     def _learning_step(
         self,
         language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
-        bound_surface_template: BoundSurfaceTemplate,
+        bound_surface_template: SurfaceTemplateBoundToSemanticNodes,
     ) -> None:
         """
         Try to learn the semantics of a `SurfaceTemplate` given the assumption
@@ -259,7 +259,7 @@ class AbstractSubsetLearnerNew(AbstractTemplateLearnerNew, ABC):
         self,
         *,
         hypothesis: PerceptionGraphTemplate,
-        bound_surface_template: BoundSurfaceTemplate
+        bound_surface_template: SurfaceTemplateBoundToSemanticNodes
     ) -> bool:
         """
         Should a candidate hypothesis for the meaning of *bound_surface_template* be kept,
@@ -277,7 +277,7 @@ class AbstractSubsetLearnerNew(AbstractTemplateLearnerNew, ABC):
     def _hypotheses_from_perception(
         self,
         learning_state: LanguagePerceptionSemanticAlignment,
-        bound_surface_template: BoundSurfaceTemplate,
+        bound_surface_template: SurfaceTemplateBoundToSemanticNodes,
     ) -> AbstractSet[PerceptionGraphTemplate]:
         """
         Get a hypothesis for the meaning of *surface_template* from a given *learning_state*.

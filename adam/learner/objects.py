@@ -22,7 +22,7 @@ from adam.learner.subset import (
     AbstractTemplateSubsetLearner,
     AbstractTemplateSubsetLearnerNew,
 )
-from adam.learner.surface_templates import BoundSurfaceTemplate, SurfaceTemplate
+from adam.learner.surface_templates import SurfaceTemplateBoundToSemanticNodes, SurfaceTemplate
 from adam.learner.template_learner import (
     AbstractTemplateLearner,
     AbstractTemplateLearnerNew,
@@ -79,7 +79,7 @@ class AbstractObjectTemplateLearnerNew(AbstractTemplateLearnerNew):
 
     def _candidate_templates(
         self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
-    ) -> AbstractSet[BoundSurfaceTemplate]:
+    ) -> AbstractSet[SurfaceTemplateBoundToSemanticNodes]:
         # TODO: make an issue to track that we can only learn single words for objects
         # at the moment
 
@@ -88,7 +88,7 @@ class AbstractObjectTemplateLearnerNew(AbstractTemplateLearnerNew):
             language_perception_semantic_alignment.language_concept_alignment
         )
         return immutableset(
-            BoundSurfaceTemplate(
+            SurfaceTemplateBoundToSemanticNodes(
                 SurfaceTemplate.for_object_name(token), slot_to_semantic_node={}
             )
             for (tok_idx, token) in enumerate(
@@ -380,7 +380,7 @@ class SubsetObjectLearnerNew(
     def _hypotheses_from_perception(
         self,
         learning_state: LanguagePerceptionSemanticAlignment,
-        bound_surface_template: BoundSurfaceTemplate,
+        bound_surface_template: SurfaceTemplateBoundToSemanticNodes,
     ) -> AbstractSet[PerceptionGraphTemplate]:
         if bound_surface_template.slot_to_semantic_node:
             raise RuntimeError(
@@ -402,7 +402,7 @@ class SubsetObjectLearnerNew(
     def _keep_hypothesis(
         self,
         hypothesis: PerceptionGraphTemplate,
-        bound_surface_template: BoundSurfaceTemplate,
+        bound_surface_template: SurfaceTemplateBoundToSemanticNodes,
     ) -> bool:
         if len(hypothesis.graph_pattern) < 2:
             # A one node graph is to small to meaningfully describe an object

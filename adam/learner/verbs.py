@@ -16,7 +16,7 @@ from adam.learner.subset import (
     AbstractTemplateSubsetLearnerNew,
 )
 from adam.learner.surface_templates import (
-    BoundSurfaceTemplate,
+    SurfaceTemplateBoundToSemanticNodes,
     SLOT1,
     SLOT2,
     STANDARD_SLOT_VARIABLES,
@@ -58,7 +58,7 @@ _RIGHT = 1
 class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
     def _candidate_templates(
         self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
-    ) -> AbstractSet[BoundSurfaceTemplate]:
+    ) -> AbstractSet[SurfaceTemplateBoundToSemanticNodes]:
         ret = []
         language_concept_alignment = (
             language_perception_semantic_alignment.language_concept_alignment
@@ -137,7 +137,7 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                             template_elements.insert(0, SLOT1)
 
                         ret.append(
-                            BoundSurfaceTemplate(
+                            SurfaceTemplateBoundToSemanticNodes(
                                 surface_template=SurfaceTemplate(
                                     elements=template_elements,
                                     determiner_prefix_slots=[SLOT1],
@@ -186,7 +186,7 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                         )
                         template_elements.append(SLOT2)
                         ret.append(
-                            BoundSurfaceTemplate(
+                            SurfaceTemplateBoundToSemanticNodes(
                                 surface_template=SurfaceTemplate(
                                     elements=template_elements,
                                     determiner_prefix_slots=[SLOT1, SLOT2],
@@ -229,7 +229,7 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                             if verb_direction == _LEFT:
                                 template_elements.extend([SLOT1, SLOT2])
                             ret.append(
-                                BoundSurfaceTemplate(
+                                SurfaceTemplateBoundToSemanticNodes(
                                     surface_template=SurfaceTemplate(
                                         elements=template_elements,
                                         determiner_prefix_slots=[SLOT1, SLOT2],
@@ -306,7 +306,7 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                                 template_elements.append(SLOT3)
 
                                 ret.append(
-                                    BoundSurfaceTemplate(
+                                    SurfaceTemplateBoundToSemanticNodes(
                                         surface_template=SurfaceTemplate(
                                             elements=template_elements,
                                             determiner_prefix_slots=[SLOT1, SLOT2, SLOT3],
@@ -352,7 +352,7 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                                     if verb_direction == _LEFT:
                                         template_elements.extend([SLOT1, SLOT2, SLOT3])
                                     ret.append(
-                                        BoundSurfaceTemplate(
+                                        SurfaceTemplateBoundToSemanticNodes(
                                             surface_template=SurfaceTemplate(
                                                 elements=template_elements,
                                                 determiner_prefix_slots=[
@@ -369,7 +369,7 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                                         )
                                     )
 
-        def covers_entire_utterance(bound_surface_template: BoundSurfaceTemplate) -> bool:
+        def covers_entire_utterance(bound_surface_template: SurfaceTemplateBoundToSemanticNodes) -> bool:
             num_covered_tokens = 0
             for element in bound_surface_template.surface_template.elements:
                 if isinstance(element, str):
@@ -489,7 +489,7 @@ class SubsetVerbLearnerNew(
         self,
         *,
         hypothesis: PerceptionGraphTemplate,
-        bound_surface_template: BoundSurfaceTemplate
+        bound_surface_template: SurfaceTemplateBoundToSemanticNodes
     ) -> bool:
         num_template_arguments = len(bound_surface_template.slot_to_semantic_node)
         return len(hypothesis.graph_pattern) >= 2 * num_template_arguments
@@ -497,7 +497,7 @@ class SubsetVerbLearnerNew(
     def _hypotheses_from_perception(
         self,
         learning_state: LanguagePerceptionSemanticAlignment,
-        bound_surface_template: BoundSurfaceTemplate,
+        bound_surface_template: SurfaceTemplateBoundToSemanticNodes,
     ) -> AbstractSet[PerceptionGraphTemplate]:
         # For the subset learner, our hypothesis is the entire graph.
         return immutableset(

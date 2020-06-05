@@ -20,7 +20,7 @@ from adam.learner.object_recognizer import (
     replace_match_with_object_graph_node,
 )
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
-from adam.learner.surface_templates import BoundSurfaceTemplate, SurfaceTemplate
+from adam.learner.surface_templates import SurfaceTemplateBoundToSemanticNodes, SurfaceTemplate
 from adam.perception import PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -382,7 +382,7 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
     def _learning_step(
         self,
         language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
-        bound_surface_template: BoundSurfaceTemplate,
+        bound_surface_template: SurfaceTemplateBoundToSemanticNodes,
     ) -> None:
         """
         Perform the actual learning logic.
@@ -408,7 +408,7 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
     @abstractmethod
     def _candidate_templates(
         self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
-    ) -> AbstractSet[BoundSurfaceTemplate]:
+    ) -> AbstractSet[SurfaceTemplateBoundToSemanticNodes]:
         r"""
         We treat learning as acquiring an association between "templates"
         over the token sequence and `PerceptionGraphTemplate`\ s.

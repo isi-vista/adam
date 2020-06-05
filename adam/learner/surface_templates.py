@@ -150,7 +150,7 @@ class SurfaceTemplate:
 
 
 @attrs(frozen=True)
-class BoundSurfaceTemplate:
+class SurfaceTemplateBoundToSemanticNodes:
     """
     A surface template together with a mapping from its slots to particular semantic roles.
 
