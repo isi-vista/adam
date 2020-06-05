@@ -83,8 +83,8 @@ class AbstractObjectTemplateLearnerNew(AbstractTemplateLearnerNew):
     def _candidate_templates(
         self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
     ) -> AbstractSet[SurfaceTemplateBoundToSemanticNodes]:
-        # TODO: make an issue to track that we can only learn single words for objects
-        # at the moment
+        # We can only learn single words for objects at the moment.
+        # See https://github.com/isi-vista/adam/issues/793 .
 
         # Attempt to align every unaligned token to some object in the scene.
         language_alignment = (
