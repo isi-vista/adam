@@ -5,6 +5,7 @@ from pathlib import Path
 from random import Random
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set, Tuple
 
+from adam.perception.deprecated import LanguageAlignedPerception
 from attr.validators import in_, instance_of, optional
 from more_itertools import first
 
@@ -114,7 +115,7 @@ class AbstractPursuitLearner(AbstractTemplateLearner, ABC):
 
     def _learning_step(
         self,
-        preprocessed_input: LanguageConceptAlignment,
+        preprocessed_input: LanguageAlignedPerception,
         surface_template: SurfaceTemplate,
     ) -> None:
         # We track this to prevent overly aggressive lexicalization.
@@ -158,7 +159,7 @@ class AbstractPursuitLearner(AbstractTemplateLearner, ABC):
     def initialization_step(
         self,
         surface_template: SurfaceTemplate,
-        aligned_perception: LanguageConceptAlignment,
+        aligned_perception: LanguageAlignedPerception,
     ):
         # If it's a novel word, learn a new hypothesis/pattern,
         # generated as a pattern graph from the perception.
@@ -203,7 +204,7 @@ class AbstractPursuitLearner(AbstractTemplateLearner, ABC):
     def learning_step(
         self,
         surface_template: SurfaceTemplate,
-        language_aligned_perception: LanguageConceptAlignment,
+        language_aligned_perception: LanguageAlignedPerception,
     ) -> bool:
         # Select the most probable meaning h for w
         # I.e., if we already have hypotheses, get the leading hypothesis and compare it with the
@@ -498,7 +499,7 @@ class AbstractPursuitLearner(AbstractTemplateLearner, ABC):
 
     @abstractmethod
     def _candidate_hypotheses(
-        self, language_aligned_perception: LanguageConceptAlignment
+        self, language_aligned_perception: LanguageAlignedPerception
     ) -> Sequence[PerceptionGraphTemplate]:
         """
         Given a learning input, returns all possible meaning hypotheses.

@@ -1,7 +1,17 @@
 import logging
 from abc import abstractmethod, ABC
 from pathlib import Path
-from typing import AbstractSet, Dict, Mapping, Optional, Set, Tuple, Iterable, Sequence
+from typing import (
+    AbstractSet,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Set,
+    Tuple,
+    Iterable,
+    Sequence,
+)
 
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
 from adam.learner.surface_templates import (
@@ -12,8 +22,9 @@ from adam.learner.template_learner import (
     AbstractTemplateLearner,
     AbstractTemplateLearnerNew,
 )
+from adam.perception.deprecated import LanguageAlignedPerception
 from adam.semantics import Concept
-from immutablecollections import immutabledict, immutableset
+from immutablecollections import ImmutableSet, immutabledict, immutableset
 
 from adam.language import TokenSequenceLinguisticDescription
 from adam.ontology.ontology import Ontology
@@ -36,7 +47,7 @@ class AbstractSubsetLearner(AbstractTemplateLearner, ABC):
 
     def _learning_step(
         self,
-        language_concept_alignment: LanguageConceptAlignment,
+        language_concept_alignment: LanguageAlignedPerception,
         surface_template: SurfaceTemplate,
     ) -> None:
         if surface_template in self._surface_template_to_hypothesis:
@@ -73,7 +84,7 @@ class AbstractSubsetLearner(AbstractTemplateLearner, ABC):
 
     @abstractmethod
     def _hypothesis_from_perception(
-        self, preprocessed_input: LanguageConceptAlignment
+        self, preprocessed_input: LanguageAlignedPerception
     ) -> PerceptionGraphTemplate:
         pass
 
@@ -115,7 +126,7 @@ class AbstractSubsetLearner(AbstractTemplateLearner, ABC):
 @attrs
 class AbstractSubsetLearnerNew(AbstractTemplateLearnerNew, ABC):
     _beam_size: int = attrib(validator=instance_of(int), kw_only=True)
-    _concept_to_hypotheses: Dict[Concept, AbstractSet[PerceptionGraphTemplate]] = attrib(
+    _concept_to_hypotheses: Dict[Concept, ImmutableSet[PerceptionGraphTemplate]] = attrib(
         init=False, default=Factory(dict)
     )
     _concept_to_surface_template: Dict[Concept, SurfaceTemplate] = attrib(
@@ -184,7 +195,7 @@ class AbstractSubsetLearnerNew(AbstractTemplateLearnerNew, ABC):
                 language_perception_semantic_alignment,
                 bound_surface_template=bound_surface_template,
             )
-            updated_hypotheses = [
+            updated_hypotheses_maybe_null = [
                 previous_pattern_hypothesis.intersection(
                     hypothesis_from_current_perception, ontology=self._ontology
                 )
@@ -206,7 +217,7 @@ class AbstractSubsetLearnerNew(AbstractTemplateLearnerNew, ABC):
             # as well as any hypotheses which fail learner-specific conditions.
             updated_hypotheses = [
                 hypothesis
-                for hypothesis in updated_hypotheses
+                for hypothesis in updated_hypotheses_maybe_null
                 if hypothesis and should_keep_hypothesis(hypothesis=hypothesis)
             ]
             # Sort hypotheses by decreasing order of size
@@ -241,8 +252,10 @@ class AbstractSubsetLearnerNew(AbstractTemplateLearnerNew, ABC):
                 concept
             ] = bound_surface_template.surface_template
 
-            self._concept_to_hypotheses[concept] = self._hypotheses_from_perception(
-                language_perception_semantic_alignment, bound_surface_template
+            self._concept_to_hypotheses[concept] = immutableset(
+                self._hypotheses_from_perception(
+                    language_perception_semantic_alignment, bound_surface_template
+                )
             )
 
     def templates_for_concept(self, concept: Concept) -> AbstractSet[SurfaceTemplate]:
@@ -333,7 +346,8 @@ class AbstractTemplateSubsetLearnerNew(
             len(self._concept_to_hypotheses),
             log_output_path,
         )
-        for (concept, hypothesis) in self._concept_to_hypotheses.items():
-            hypothesis.render_to_file(
-                concept.debug_string, log_output_path / concept.debug_string
-            )
+        for (concept, hypotheses) in self._concept_to_hypotheses.items():
+            for (i, hypothesis) in enumerate(hypotheses):
+                hypothesis.render_to_file(
+                    concept.debug_string, log_output_path / concept.debug_string
+                )

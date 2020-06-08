@@ -1,17 +1,17 @@
 from abc import ABC
-from typing import AbstractSet
+from typing import AbstractSet, List, Union
 
 from adam.learner import LanguagePerceptionSemanticAlignment, PerceptionSemanticAlignment
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
 from adam.learner.subset import AbstractTemplateSubsetLearnerNew
 from adam.learner.surface_templates import (
-    BoundSurfaceTemplate,
     SLOT1,
     SLOT2,
     SurfaceTemplate,
+    SurfaceTemplateBoundToSemanticNodes,
 )
 from adam.learner.template_learner import AbstractTemplateLearnerNew
-from adam.semantics import RelationConcept
+from adam.semantics import RelationConcept, SyntaxSemanticsVariable
 from attr import attrs
 from immutablecollections import immutableset
 from vistautils.span import Span
@@ -23,7 +23,7 @@ _MAXIMUM_RELATION_TEMPLATE_TOKEN_LENGTH = 3
 class AbstractRelationTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
     def _candidate_templates(
         self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
-    ) -> AbstractSet[BoundSurfaceTemplate]:
+    ) -> AbstractSet[SurfaceTemplateBoundToSemanticNodes]:
         ret = []
         language_concept_alignment = (
             language_perception_semantic_alignment.language_concept_alignment
@@ -80,7 +80,9 @@ class AbstractRelationTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                     )
 
                     if is_legal_template_span(candidate_relation_token_span):
-                        template_elements = [SLOT1]
+                        template_elements: List[Union[SyntaxSemanticsVariable, str]] = [
+                            SLOT1
+                        ]
                         template_elements.extend(
                             sentence_tokens[
                                 candidate_relation_token_span.start : candidate_relation_token_span.end
@@ -88,7 +90,7 @@ class AbstractRelationTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                         )
                         template_elements.append(SLOT2)
                         ret.append(
-                            BoundSurfaceTemplate(
+                            SurfaceTemplateBoundToSemanticNodes(
                                 surface_template=SurfaceTemplate(
                                     elements=template_elements,
                                     determiner_prefix_slots=[SLOT1, SLOT2],
@@ -124,14 +126,14 @@ class SubsetRelationLearnerNew(
         self,
         *,
         hypothesis: PerceptionGraphTemplate,
-        bound_surface_template: BoundSurfaceTemplate
+        bound_surface_template: SurfaceTemplateBoundToSemanticNodes
     ) -> bool:
         return len(hypothesis.graph_pattern) >= 2
 
     def _hypotheses_from_perception(
         self,
         learning_state: LanguagePerceptionSemanticAlignment,
-        bound_surface_template: BoundSurfaceTemplate,
+        bound_surface_template: SurfaceTemplateBoundToSemanticNodes,
     ) -> AbstractSet[PerceptionGraphTemplate]:
         # For the subset learner, our hypothesis is the entire graph.
         return immutableset(

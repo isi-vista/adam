@@ -272,6 +272,9 @@ class IntegratedTemplateLearner(
     def _instantiate_relation(
         self, relation_node: RelationSemanticNode, learner_semantics: "LearnerSemantics"
     ) -> Iterator[Tuple[str, ...]]:
+        if not self.relation_learner:
+            raise RuntimeError("Cannot instantiate relations without a relation learner")
+
         slots_to_instantiations = {
             slot: list(self._instantiate_object(slot_filler, learner_semantics))
             for (slot, slot_filler) in relation_node.slot_fillings.items()
@@ -292,6 +295,8 @@ class IntegratedTemplateLearner(
     def _instantiate_action(
         self, action_node: ActionSemanticNode, learner_semantics: "LearnerSemantics"
     ) -> Iterator[Tuple[str, ...]]:
+        if not self.action_learner:
+            raise RuntimeError("Cannot instantiate an action without an action learner")
         slots_to_instantiations = {
             slot: list(self._instantiate_object(slot_filler, learner_semantics))
             for (slot, slot_filler) in action_node.slot_fillings.items()

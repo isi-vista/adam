@@ -38,6 +38,7 @@ from adam.learner.alignments import (
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
 from adam.ontology.phase1_spatial_relations import Region
 from adam.perception import PerceptualRepresentation, ObjectPerception
+from adam.perception.deprecated import LanguageAlignedPerception
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
     RgbColorPerception,
@@ -62,7 +63,7 @@ from vistautils.parameters import Parameters
 class AbstractObjectTemplateLearnerNew(AbstractTemplateLearnerNew):
     def _can_learn_from(
         self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
-    ) -> None:
+    ) -> bool:
         # We can try to learn objects from anything, as long as the scene isn't already
         # completely understood.
         return (
@@ -117,8 +118,8 @@ class AbstractObjectTemplateLearner(AbstractTemplateLearner, ABC):
         return PerceptionGraph.from_frame(perception.frames[0])
 
     def _preprocess_scene_for_learning(
-        self, language_concept_alignment: LanguageConceptAlignment
-    ) -> LanguageConceptAlignment:
+        self, language_concept_alignment: LanguageAlignedPerception
+    ) -> LanguageAlignedPerception:
         return evolve(
             language_concept_alignment,
             perception_graph=self._common_preprocessing(
@@ -138,7 +139,7 @@ class AbstractObjectTemplateLearner(AbstractTemplateLearner, ABC):
         return graph_without_learner(perception_graph)
 
     def _extract_surface_template(
-        self, language_concept_alignment: LanguageConceptAlignment
+        self, language_concept_alignment: LanguageAlignedPerception
     ) -> SurfaceTemplate:
         return SurfaceTemplate(language_concept_alignment.language.as_token_sequence())
 
