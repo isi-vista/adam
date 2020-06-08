@@ -1,4 +1,6 @@
-"""Draft Chinese syntax file; still needs to be checked by a native speaker"""
+"""Current implementation of Chinese syntax file; has been checked
+by native speaker asked for grammaticality judgments."""
+
 from typing import Tuple
 from immutablecollections import ImmutableDict, immutabledict
 from adam.language.dependency import (
@@ -29,7 +31,9 @@ from adam.language.dependency.universal_dependencies import (
 _CHINESE_HEAD_TO_ROLE_ORDER: ImmutableDict[
     PartOfSpeechTag, Tuple[DependencyRole, ...]
 ] = [
-    # TODO: check correctness of ba construction
+    # Currently we treat locations associated with verbs as IO's since obliques occur before the verb.
+    # For example, "on the table" is preverbal in "I eat on the table" but post-verbal in "move the book to the table"
+    # TODO: find a better way to handle the above
     (
         VERB,
         (
@@ -45,8 +49,6 @@ _CHINESE_HEAD_TO_ROLE_ORDER: ImmutableDict[
     # the basic structure of a non-"de" NP is possessive, demonstrative, quantities, adjectives, nouns
     # classifiers only occur when an item is being counted. "De", the possessive particle, occurs at the end of
     # possessive NPs.
-    # TODO: currently, we have CASE_SPATIAL slot and NOMINAL_MODIFIER slot for prepositions and localizers, respectively.
-    #  This should probably be handled in a better way
     (
         NOUN,
         (

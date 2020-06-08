@@ -1,5 +1,6 @@
 """This file checks our Chinese syntax file to ensure that the generated word order is correct
-This should still be verified by a native speaker."""
+The structure and vocab have been verified separately by Chinese native speaker."""
+
 from networkx import DiGraph
 import pytest
 from adam.language.dependency import DependencyTree, DependencyTreeToken
@@ -136,7 +137,7 @@ def test_my_3_red_trucks():
     )
 
 
-"""Test a localizer phrase with everything: next to tall mom's three red trucks"""
+"""Test a localizer phrase with everything: next to mom's three red trucks"""
 
 
 def test_long_localizer_phrase():
@@ -147,14 +148,12 @@ def test_long_localizer_phrase():
     clf = DependencyTreeToken("lyang4", PARTICLE)
     near = DependencyTreeToken("fu4, jin4", NOUN)
     at = DependencyTreeToken("dzai4", ADPOSITION)
-    tall = DependencyTreeToken("gau1", ADJECTIVE)
     ma = DependencyTreeToken("ma1ma1", PROPER_NOUN)
     tree = DiGraph()
     tree.add_edge(at, truck, role=CASE_SPATIAL)
     tree.add_edge(near, truck, role=NOMINAL_MODIFIER)
     tree.add_edge(clf, truck, role=CLASSIFIER)
     tree.add_edge(three, truck, role=NUMERIC_MODIFIER)
-    tree.add_edge(tall, ma, role=ADJECTIVAL_MODIFIER)
     tree.add_edge(de, ma, role=CASE_POSSESSIVE)
     tree.add_edge(red, truck, role=ADJECTIVAL_MODIFIER)
     tree.add_edge(ma, truck, role=NOMINAL_MODIFIER_POSSESSIVE)
@@ -166,7 +165,6 @@ def test_long_localizer_phrase():
     )
     assert predicted_token_order == (
         "dzai4",
-        "gau1",
         "ma1ma1",
         "de",
         "san1",
@@ -177,46 +175,44 @@ def test_long_localizer_phrase():
     )
 
 
-"""Testing for proper Nouns: 'tall mom's dog"""
+"""Testing for proper Nouns: 'mom's black dog"""
 
 
 def test_proper_noun_possessive():
     ma = DependencyTreeToken("ma1", PROPER_NOUN)
     de = DependencyTreeToken("de", PARTICLE)
     dog = DependencyTreeToken("gou3", NOUN)
-    tall = DependencyTreeToken("gau1", ADJECTIVE)
+    black = DependencyTreeToken("hei1 se4", ADJECTIVE)
     tree = DiGraph()
     tree.add_edge(de, ma, role=CASE_POSSESSIVE)
     tree.add_edge(ma, dog, role=NOMINAL_MODIFIER_POSSESSIVE)
-    tree.add_edge(tall, ma, role=ADJECTIVAL_MODIFIER)
+    tree.add_edge(black, dog, role=ADJECTIVAL_MODIFIER)
     predicted_token_order = tuple(
         node.token
         for node in SIMPLE_CHINESE_DEPENDENCY_TREE_LINEARIZER.linearize(
             DependencyTree(tree)
         ).surface_token_order
     )
-    assert predicted_token_order == ("gau1", "ma1", "de", "gou3")
+    assert predicted_token_order == ("ma1", "de", "hei1 se4", "gou3")
 
 
-"""tests localizers and adjective for proper nouns: near tall mom"""
+"""tests localizers and adjective for proper nouns: near mom"""
 
 
 def test_proper_noun_modified():
     near = DependencyTreeToken("fu4, jin4", NOUN)
     at = DependencyTreeToken("dzai4", ADPOSITION)
-    tall = DependencyTreeToken("gau1", ADJECTIVE)
     ma = DependencyTreeToken("ma1", PROPER_NOUN)
     tree = DiGraph()
     tree.add_edge(at, ma, role=CASE_SPATIAL)
     tree.add_edge(near, ma, role=NOMINAL_MODIFIER)
-    tree.add_edge(tall, ma, role=ADJECTIVAL_MODIFIER)
     predicted_token_order = tuple(
         node.token
         for node in SIMPLE_CHINESE_DEPENDENCY_TREE_LINEARIZER.linearize(
             DependencyTree(tree)
         ).surface_token_order
     )
-    assert predicted_token_order == ("dzai4", "gau1", "ma1", "fu4, jin4")
+    assert predicted_token_order == ("dzai4", "ma1", "fu4, jin4")
 
 
 """Tests simple noun-verb to make sure that is in the correct order"""
@@ -341,6 +337,7 @@ def test_I_put_the_book_on_the_table():
     tree.add_edge(at, table, role=CASE_SPATIAL)
     tree.add_edge(on, table, role=NOMINAL_MODIFIER)
     # TODO: this is a bit of a hack since I'm not sure this really counts as an IO, but I'm not sure what to classify it as
+    #  since PP's occur before the verb in Chinese
     tree.add_edge(table, put, role=INDIRECT_OBJECT)
     predicted_token_order = tuple(
         node.token
