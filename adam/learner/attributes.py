@@ -2,6 +2,7 @@ from abc import ABC
 from pathlib import Path
 from typing import AbstractSet, Union
 
+from adam.perception.deprecated import LanguageAlignedPerception
 from adam.semantics import AttributeConcept, Concept, ObjectSemanticNode
 from attr.validators import instance_of
 
@@ -121,8 +122,8 @@ class AbstractAttributeTemplateLearner(AbstractTemplateLearner, ABC):
         return PerceptionGraph.from_frame(perception.frames[0])
 
     def _preprocess_scene_for_learning(
-        self, language_concept_alignment: LanguageConceptAlignment
-    ) -> LanguageConceptAlignment:
+        self, language_concept_alignment: LanguageAlignedPerception
+    ) -> LanguageAlignedPerception:
         post_recognition_object_perception_alignment = self._object_recognizer.match_objects_with_language(
             language_concept_alignment
         )
@@ -134,7 +135,7 @@ class AbstractAttributeTemplateLearner(AbstractTemplateLearner, ABC):
         return self._object_recognizer.match_objects(perception_graph)
 
     def _extract_surface_template(
-        self, language_concept_alignment: LanguageConceptAlignment
+        self, language_concept_alignment: LanguageAlignedPerception
     ) -> SurfaceTemplate:
         if len(language_concept_alignment.aligned_nodes) > 1:
             raise RuntimeError("Input has too many aligned nodes for us to handle.")
@@ -155,7 +156,7 @@ class SubsetAttributeLearner(
     AbstractTemplateSubsetLearner, AbstractAttributeTemplateLearner
 ):
     def _hypothesis_from_perception(
-        self, preprocessed_input: LanguageConceptAlignment
+        self, preprocessed_input: LanguageAlignedPerception
     ) -> PerceptionGraphTemplate:
         num_nodes_aligned_to_language = len(preprocessed_input.aligned_nodes)
         if num_nodes_aligned_to_language != 1:

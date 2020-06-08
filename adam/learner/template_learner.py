@@ -25,6 +25,7 @@ from adam.learner.surface_templates import (
     SurfaceTemplate,
 )
 from adam.perception import PerceptualRepresentation
+from adam.perception.deprecated import LanguageAlignedPerception
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
@@ -69,12 +70,8 @@ class AbstractTemplateLearner(
 
         logging.info(f"Learner observing {preprocessed_input}")
 
-        surface_template = self._extract_surface_template(
-            preprocessed_input.language_concept_alignment
-        )
-        self._learning_step(
-            preprocessed_input.language_concept_alignment, surface_template
-        )
+        surface_template = self._extract_surface_template(preprocessed_input)
+        self._learning_step(preprocessed_input, surface_template)
 
     def describe(
         self, perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]
@@ -173,7 +170,7 @@ class AbstractTemplateLearner(
     @abstractmethod
     def _preprocess_scene_for_learning(
         self, language: LinguisticDescription, perception: PerceptionGraph
-    ) -> LanguagePerceptionSemanticAlignment:
+    ) -> LanguageAlignedPerception:
         """
         Does any preprocessing necessary before the learning process begins.
 
@@ -192,7 +189,7 @@ class AbstractTemplateLearner(
 
     @abstractmethod
     def _extract_surface_template(
-        self, language_concept_alignment: LanguageConceptAlignment
+        self, language_concept_alignment: LanguageAlignedPerception
     ) -> SurfaceTemplate:
         r"""
         We treat learning as acquiring an association between "templates"
@@ -204,7 +201,7 @@ class AbstractTemplateLearner(
 
     def _learning_step(
         self,
-        preprocessed_input: LanguageConceptAlignment,
+        preprocessed_input: LanguageAlignedPerception,
         surface_template: SurfaceTemplate,
     ) -> None:
         pass

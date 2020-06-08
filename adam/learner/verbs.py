@@ -1,7 +1,8 @@
 from abc import ABC
 from pathlib import Path
-from typing import AbstractSet, Mapping, Union
+from typing import AbstractSet, List, Mapping, Union
 
+from adam.perception.deprecated import LanguageAlignedPerception
 from attr.validators import instance_of
 
 from adam.language import LinguisticDescription
@@ -124,7 +125,9 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                         )
 
                     if is_legal_template_span(candidate_verb_token_span):
-                        template_elements = list(
+                        template_elements: List[
+                            Union[str, SyntaxSemanticsVariable]
+                        ] = list(
                             sentence_tokens[
                                 candidate_verb_token_span.start : candidate_verb_token_span.end
                             ]
@@ -397,9 +400,7 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
 
 
 @attrs
-class AbstractVerbTemplateLearner(
-    AbstractTemplateLearner, AbstractTemplateLearnerNew, ABC
-):
+class AbstractVerbTemplateLearner(AbstractTemplateLearner, ABC):
     # mypy doesn't realize that fields without defaults can come after those with defaults
     # if they are keyword-only.
     _object_recognizer: ObjectRecognizer = attrib(  # type: ignore
@@ -428,8 +429,8 @@ class AbstractVerbTemplateLearner(
         return PerceptionGraph.from_dynamic_perceptual_representation(perception)
 
     def _preprocess_scene_for_learning(
-        self, language_concept_alignment: LanguageConceptAlignment
-    ) -> LanguageConceptAlignment:
+        self, language_concept_alignment: LanguageAlignedPerception
+    ) -> LanguageAlignedPerception:
         post_recognition_object_perception_alignment = self._object_recognizer.match_objects_with_language(
             language_concept_alignment
         )
@@ -441,7 +442,7 @@ class AbstractVerbTemplateLearner(
         return self._object_recognizer.match_objects(perception_graph)
 
     def _extract_surface_template(
-        self, language_concept_alignment: LanguageConceptAlignment
+        self, language_concept_alignment: LanguageAlignedPerception
     ) -> SurfaceTemplate:
         if len(language_concept_alignment.aligned_nodes) > len(STANDARD_SLOT_VARIABLES):
             raise RuntimeError("Input has too many aligned nodes for us to handle.")
@@ -460,7 +461,7 @@ class AbstractVerbTemplateLearner(
 @attrs
 class SubsetVerbLearner(AbstractTemplateSubsetLearner, AbstractVerbTemplateLearner):
     def _hypothesis_from_perception(
-        self, preprocessed_input: LanguageConceptAlignment
+        self, preprocessed_input: LanguageAlignedPerception
     ) -> PerceptionGraphTemplate:
         return PerceptionGraphTemplate.from_graph(
             preprocessed_input.perception_graph,

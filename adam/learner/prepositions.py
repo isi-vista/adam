@@ -2,6 +2,7 @@ from abc import ABC
 from pathlib import Path
 from typing import AbstractSet, Iterable, Mapping, Optional, Sequence, Union
 
+from adam.perception.deprecated import LanguageAlignedPerception
 from attr.validators import instance_of, optional
 from more_itertools import flatten
 from networkx import all_shortest_paths, subgraph
@@ -17,10 +18,7 @@ from adam.learner.perception_graph_template import PerceptionGraphTemplate
 from adam.learner.pursuit import AbstractPursuitLearner
 from adam.learner.subset import AbstractTemplateSubsetLearner
 from adam.learner.surface_templates import SLOT1, SLOT2, SurfaceTemplate
-from adam.learner.template_learner import (
-    AbstractTemplateLearner,
-    AbstractTemplateLearnerNew,
-)
+from adam.learner.template_learner import AbstractTemplateLearner
 from adam.perception import ObjectPerception, PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -42,9 +40,7 @@ from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, imm
 
 
 @attrs
-class AbstractPrepositionTemplateLearner(
-    AbstractTemplateLearner, AbstractTemplateLearnerNew, ABC
-):
+class AbstractPrepositionTemplateLearner(AbstractTemplateLearner, ABC):
     # mypy doesn't realize that fields without defaults can come after those with defaults
     # if they are keyword-only.
     _object_recognizer: ObjectRecognizer = attrib(  # type: ignore
@@ -66,8 +62,8 @@ class AbstractPrepositionTemplateLearner(
         return PerceptionGraph.from_frame(perception.frames[0])
 
     def _preprocess_scene_for_learning(
-        self, language_concept_alignment: LanguageConceptAlignment
-    ) -> LanguageConceptAlignment:
+        self, language_concept_alignment: LanguageAlignedPerception
+    ) -> LanguageAlignedPerception:
         post_recognition_object_perception_alignment = self._object_recognizer.match_objects_with_language(
             language_concept_alignment
         )
@@ -88,7 +84,7 @@ class AbstractPrepositionTemplateLearner(
         return self._object_recognizer.match_objects(perception_graph)
 
     def _extract_surface_template(
-        self, language_concept_alignment: LanguageConceptAlignment
+        self, language_concept_alignment: LanguageAlignedPerception
     ) -> SurfaceTemplate:
         return language_concept_alignment.to_surface_template(
             object_node_to_template_variable=immutabledict(
@@ -102,7 +98,7 @@ class AbstractPrepositionTemplateLearner(
 
 
 def preposition_hypothesis_from_perception(
-    scene_aligned_perception: LanguageConceptAlignment,
+    scene_aligned_perception: LanguageAlignedPerception,
     template_variables_to_object_match_nodes: Mapping[
         SyntaxSemanticsVariable, ObjectSemanticNode
     ],
@@ -180,29 +176,8 @@ class PrepositionPursuitLearner(
     An implementation of pursuit learner for preposition leaning
     """
 
-    def templates_for_concept(self, concept: Concept) -> AbstractSet[SurfaceTemplate]:
-        raise NotImplementedError()
-
-    def learn_from(
-        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
-    ) -> None:
-        raise NotImplementedError()
-
-    def enrich_during_learning(
-        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
-    ) -> LanguagePerceptionSemanticAlignment:
-        raise NotImplementedError()
-
-    def enrich_during_description(
-        self, perception_semantic_alignment: PerceptionSemanticAlignment
-    ) -> PerceptionSemanticAlignment:
-        raise NotImplementedError()
-
-    def log_hypotheses(self, log_output_path: Path) -> None:
-        raise NotImplementedError()
-
     def _candidate_hypotheses(
-        self, language_aligned_perception: LanguageConceptAlignment
+        self, language_aligned_perception: LanguageAlignedPerception
     ) -> Sequence[PerceptionGraphTemplate]:
         # We represent prepositions as regex-like templates over the surface strings.
         # As an English-specific hack, the leftmost recognized object
@@ -311,29 +286,8 @@ class PrepositionPursuitLearner(
 class SubsetPrepositionLearner(
     AbstractTemplateSubsetLearner, AbstractPrepositionTemplateLearner
 ):
-    def templates_for_concept(self, concept: Concept) -> AbstractSet[SurfaceTemplate]:
-        raise NotImplementedError()
-
-    def learn_from(
-        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
-    ) -> None:
-        raise NotImplementedError()
-
-    def enrich_during_learning(
-        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
-    ) -> LanguagePerceptionSemanticAlignment:
-        raise NotImplementedError()
-
-    def enrich_during_description(
-        self, perception_semantic_alignment: PerceptionSemanticAlignment
-    ) -> PerceptionSemanticAlignment:
-        raise NotImplementedError()
-
-    def log_hypotheses(self, log_output_path: Path) -> None:
-        raise NotImplementedError()
-
     def _hypothesis_from_perception(
-        self, preprocessed_input: LanguageConceptAlignment
+        self, preprocessed_input: LanguageAlignedPerception
     ) -> PerceptionGraphTemplate:
         # We represent prepositions as regex-like templates over the surface strings.
         # As an English-specific hack, the leftmost recognized object
