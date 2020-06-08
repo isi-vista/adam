@@ -276,6 +276,7 @@ class PerceptionSemanticAlignment:
     This is used to represent intermediate semantic data passed between new-style learners when
     describing a perception.
     """
+
     perception_graph: PerceptionGraph = attrib(validator=instance_of(PerceptionGraph))
     semantic_nodes: ImmutableSet[SemanticNode] = attrib(
         converter=_to_immutableset, validator=deep_iterable(instance_of(SemanticNode))
@@ -317,6 +318,7 @@ class LanguagePerceptionSemanticAlignment:
     This is used to represent intermediate semantic data passed between new-style learners when
     learning from an example.
     """
+
     language_concept_alignment: LanguageConceptAlignment = attrib(
         validator=instance_of(LanguageConceptAlignment)
     )

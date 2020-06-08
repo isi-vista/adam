@@ -32,7 +32,9 @@ def test_descends_from():
 
 
 def test_nodes_with_banned_ontology_types():
-    nodes = GAILA_PHASE_1_ONTOLOGY.nodes_with_properties(THING, [IS_HUMAN], banned_ontology_types=[DAD])
+    nodes = GAILA_PHASE_1_ONTOLOGY.nodes_with_properties(
+        THING, [IS_HUMAN], banned_ontology_types=[DAD]
+    )
     assert DAD not in nodes
     assert MOM in nodes
     assert BABY in nodes
