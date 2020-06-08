@@ -44,7 +44,7 @@ class LanguageConceptAlignment:
     """
 
     language: LinguisticDescription = attrib(validator=instance_of(LinguisticDescription))
-    node_to_language_span: ImmutableDict[SemanticNode, Span] = attrib(
+    node_to_language_span: ImmutableDict[ObjectSemanticNode, Span] = attrib(
         converter=_sort_mapping_by_token_spans, default=immutabledict()
     )
     language_span_to_node: ImmutableDict[Span, SemanticNode] = attrib(init=False)
@@ -104,7 +104,9 @@ class LanguageConceptAlignment:
 
     def copy_with_new_nodes(
         self,
-        new_semantic_nodes_to_surface_templates: Mapping[SemanticNode, SurfaceTemplate],
+        new_semantic_nodes_to_surface_templates: Mapping[
+            ObjectSemanticNode, SurfaceTemplate
+        ],
         *,
         filter_out_duplicate_alignments: bool,
     ) -> "LanguageConceptAlignment":
@@ -203,12 +205,14 @@ class LanguageConceptAlignment:
             target_span = restrict_to_span
             # If we are restricting to a certain span, we shift all alignment spans to be
             # relative to the restricted span.
-            node_to_language_span_restricted = immutabledict(
+            node_to_language_span_restricted: Mapping[
+                ObjectSemanticNode, Span
+            ] = immutabledict(
                 (node, aligned_span.shift(-target_span.start))
                 for (node, aligned_span) in self.node_to_language_span.items()
                 if aligned_span in target_span
             )
-            tokens_in_target_span = list(self.language.as_token_sequence())[
+            tokens_in_target_span = tuple(self.language.as_token_sequence())[
                 target_span.start : target_span.end
             ]
         else:
