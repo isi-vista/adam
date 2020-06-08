@@ -32,7 +32,8 @@ def _sort_mapping_by_token_spans(pairs) -> ImmutableDict[ObjectSemanticNode, Spa
 @attrs(frozen=True)
 class LanguageConceptAlignment:
     """
-    Represents an alignment between a `PerceptionGraph` and a `TokensSequenceLinguisticDescription`.
+    Represents an alignment between a `LinguisticDescription` and an `ImmutableSet[SemanticNode]` where
+    the nodes represent concepts.
 
     This can be generified in the future.
 
