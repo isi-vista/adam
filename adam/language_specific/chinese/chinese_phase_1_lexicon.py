@@ -112,7 +112,8 @@ GAILA_PHASE_1_CHINESE_LEXICON = OntologyLexicon(
         (SIT, LexiconEntry("dzwo4", VERB)),
         (DRINK, LexiconEntry("he1", VERB)),
         (FALL, LexiconEntry("dye2 dau3", VERB)),
-        (THROW, LexiconEntry("reng1", VERB, properties=[ALLOWS_DITRANSITIVE])),
+        # throw isn't ditransitive in Chinese
+        (THROW, LexiconEntry("reng1", VERB)),
         (MOVE, LexiconEntry("dung4", VERB)),
         (JUMP, LexiconEntry("tyau4", VERB)),
         (HAS, LexiconEntry("you3", VERB)),

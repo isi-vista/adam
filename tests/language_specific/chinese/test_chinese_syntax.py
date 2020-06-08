@@ -298,3 +298,26 @@ def test_adverb_mods():
         ).surface_token_order
     )
     assert predicted_token_order == ("wo3", "man4 man", "gei3", "ni3", "shu1")
+
+
+"""Tests Chinese prepositional phrase occurring pre-verb (indicates place where verbal action took place)"""
+
+
+def test_preverbial_prep():
+    me = DependencyTreeToken("wo3", NOUN)
+    at = DependencyTreeToken("dzai4", ADPOSITION)
+    table = DependencyTreeToken("jwo1 dz", NOUN)
+    on = DependencyTreeToken("shang4", NOUN)
+    eat = DependencyTreeToken("chr1", VERB)
+    tree = DiGraph()
+    tree.add_edge(at, table, role=CASE_SPATIAL)
+    tree.add_edge(on, table, role=NOMINAL_MODIFIER)
+    tree.add_edge(me, eat, role=NOMINAL_SUBJECT)
+    tree.add_edge(table, eat, role=OBLIQUE_NOMINAL)
+    predicted_token_order = tuple(
+        node.token
+        for node in SIMPLE_CHINESE_DEPENDENCY_TREE_LINEARIZER.linearize(
+            DependencyTree(tree)
+        ).surface_token_order
+    )
+    assert predicted_token_order == ("wo3", "dzai4", "jwo1 dz", "shang4", "chr1")
