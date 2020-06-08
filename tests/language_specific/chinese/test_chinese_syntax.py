@@ -321,3 +321,39 @@ def test_preverbial_prep():
         ).surface_token_order
     )
     assert predicted_token_order == ("wo3", "dzai4", "jwo1 dz", "shang4", "chr1")
+
+
+"""Tests Chinese coverbial phrase occuring after the verb (indicating something about the action)"""
+
+
+def test_I_put_the_book_on_the_table():
+    me = DependencyTreeToken("wo3", NOUN)
+    book = DependencyTreeToken("shu1", NOUN)
+    ba = DependencyTreeToken("ba3", PARTICLE)
+    put = DependencyTreeToken("fang4", VERB)
+    at = DependencyTreeToken("dzai4", ADPOSITION)
+    table = DependencyTreeToken("jwo1 dz", NOUN)
+    on = DependencyTreeToken("shang4", NOUN)
+    tree = DiGraph()
+    tree.add_edge(ba, book, role=CASE_SPATIAL)
+    tree.add_edge(book, put, role=OBLIQUE_NOMINAL)
+    tree.add_edge(me, put, role=NOMINAL_SUBJECT)
+    tree.add_edge(at, table, role=CASE_SPATIAL)
+    tree.add_edge(on, table, role=NOMINAL_MODIFIER)
+    # TODO: this is a bit of a hack since I'm not sure this really counts as an IO
+    tree.add_edge(table, put, role=INDIRECT_OBJECT)
+    predicted_token_order = tuple(
+        node.token
+        for node in SIMPLE_CHINESE_DEPENDENCY_TREE_LINEARIZER.linearize(
+            DependencyTree(tree)
+        ).surface_token_order
+    )
+    assert predicted_token_order == (
+        "wo3",
+        "ba3",
+        "shu1",
+        "fang4",
+        "dzai4",
+        "jwo1 dz",
+        "shang4",
+    )
