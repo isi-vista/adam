@@ -340,7 +340,7 @@ def test_I_put_the_book_on_the_table():
     tree.add_edge(me, put, role=NOMINAL_SUBJECT)
     tree.add_edge(at, table, role=CASE_SPATIAL)
     tree.add_edge(on, table, role=NOMINAL_MODIFIER)
-    # TODO: this is a bit of a hack since I'm not sure this really counts as an IO
+    # TODO: this is a bit of a hack since I'm not sure this really counts as an IO, but I'm not sure what to classify it as
     tree.add_edge(table, put, role=INDIRECT_OBJECT)
     predicted_token_order = tuple(
         node.token
@@ -354,6 +354,42 @@ def test_I_put_the_book_on_the_table():
         "shu1",
         "fang4",
         "dzai4",
+        "jwo1 dz",
+        "shang4",
+    )
+
+
+"""This test isn't too different from the one above but will be at the language generation stage"""
+
+
+def test_I_push_the_book_along_the_table():
+    me = DependencyTreeToken("wo3", NOUN)
+    book = DependencyTreeToken("shu1", NOUN)
+    ba = DependencyTreeToken("ba3", PARTICLE)
+    push = DependencyTreeToken("twei1", VERB)
+    at = DependencyTreeToken("dau4", ADPOSITION)
+    table = DependencyTreeToken("jwo1 dz", NOUN)
+    on = DependencyTreeToken("shang4", NOUN)
+    tree = DiGraph()
+    tree.add_edge(ba, book, role=CASE_SPATIAL)
+    tree.add_edge(book, push, role=OBLIQUE_NOMINAL)
+    tree.add_edge(me, push, role=NOMINAL_SUBJECT)
+    tree.add_edge(at, table, role=CASE_SPATIAL)
+    tree.add_edge(on, table, role=NOMINAL_MODIFIER)
+    # TODO: this is a bit of a hack since I'm not sure this really counts as an IO, but I'm not sure what to classify it as
+    tree.add_edge(table, push, role=INDIRECT_OBJECT)
+    predicted_token_order = tuple(
+        node.token
+        for node in SIMPLE_CHINESE_DEPENDENCY_TREE_LINEARIZER.linearize(
+            DependencyTree(tree)
+        ).surface_token_order
+    )
+    assert predicted_token_order == (
+        "wo3",
+        "ba3",
+        "shu1",
+        "twei1",
+        "dau4",
         "jwo1 dz",
         "shang4",
     )
