@@ -258,14 +258,14 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
             ) in language_concept_alignment.node_to_language_span.items():
                 # Our code will be simpler if we can assume an ordering of the object aligned
                 # tokens.
-                if span_for_left_object.precedes(middle_object_node):
+                if span_for_left_object.precedes(span_for_middle_object):
                     for (
                         right_object_node,
                         span_for_right_object,
                     ) in language_concept_alignment.node_to_language_span.items():
                         # Our code will be simpler if we can assume an ordering
                         # of the object aligned tokens.
-                        if not span_for_middle_object.precedes(right_object_node):
+                        if not span_for_middle_object.precedes(span_for_right_object):
                             continue
 
                         # Our templates don't distinguish between the roles of the nouns
