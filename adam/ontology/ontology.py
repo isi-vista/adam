@@ -170,9 +170,9 @@ class Ontology:
         if isinstance(query_ancestors, OntologyNode):
             query_ancestors_set = {query_ancestors}
         else:
-            query_ancestors_set = query_ancestors
+            query_ancestors_set = query_ancestors  # type: ignore
 
-        nodes_to_check = []
+        nodes_to_check: List["OntologyNode"] = []
         visited_nodes = {node}
         nodes_to_check.extend(self._graph.successors(node))
         while nodes_to_check:
