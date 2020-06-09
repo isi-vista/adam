@@ -82,12 +82,9 @@ def run_subset_learner_for_object(
         ) in test_instance_group.instances():
             descriptions_from_learner = learner.describe(test_instance_perception)
             gold = test_instance_language.as_token_sequence()
-            assert [
-                desc
-                for desc in descriptions_from_learner
-                # TODO: temporary hack waiting for a better test
-                if desc != ("a", "a")
-            ][0] == gold
+            assert gold in [
+                desc.as_token_sequence() for desc in descriptions_from_learner
+            ]
 
 
 def test_subset_learner_ball():
