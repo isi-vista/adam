@@ -900,3 +900,39 @@ def test_speaker_owner_of_box():
         "syang1",
         "li3",
     )
+
+
+# test the third person possessive, expressed by a separate speaker
+@pytest.mark.skip("we don't handle possessives or localisers yet")
+def test_speaker_not_owner_of_box():
+    dad = situation_object(DAD)
+    cookie = situation_object(COOKIE)
+    box = situation_object(BOX)
+    mum = situation_object(MOM, properties=[IS_SPEAKER])
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[dad, cookie, box],
+        always_relations=[Relation(HAS, dad, box)],
+        actions=[
+            Action(
+                action_type=PUT,
+                argument_roles_to_fillers=[
+                    (AGENT, mum),
+                    (THEME, cookie),
+                    (GOAL, Region(reference_object=box, distance=INTERIOR)),
+                ],
+            )
+        ],
+    )
+    # TODO: have native speaker check whether baba de or baba is preferred here
+    assert generated_tokens(situation) == (
+        "wo3",
+        "ba3",
+        "chyu1 chi2 bing3",
+        "fang4",
+        "dzai4",
+        "ba4 ba4",
+        "de",
+        "syang1",
+        "li3",
+    )
