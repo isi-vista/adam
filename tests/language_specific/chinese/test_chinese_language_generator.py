@@ -760,3 +760,72 @@ def test_you_put_cookie_in_box_zai():
         "syang1",
         "li3",
     )
+
+
+"""TESTS POSSESSIVE: WO DE AND NI DE"""
+
+# tests the use of the first person possessive, 'wo de'
+@pytest.mark.skip("we don't handle possessives or localisers yet")
+def test_i_put_cookie_in_my_box():
+    dad = situation_object(DAD, properties=[IS_SPEAKER])
+    cookie = situation_object(COOKIE)
+    box = situation_object(BOX)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[dad, cookie, box],
+        always_relations=[Relation(HAS, dad, box)],
+        actions=[
+            Action(
+                action_type=PUT,
+                argument_roles_to_fillers=[
+                    (AGENT, dad),
+                    (THEME, cookie),
+                    (GOAL, Region(reference_object=box, distance=INTERIOR)),
+                ],
+            )
+        ],
+    )
+    # TODO: have native speaker check whether wo de or wo is preferred here
+    assert generated_tokens(situation) == (
+        "wo3",
+        "ba3",
+        "chyu1 chi2 bing3",
+        "fang4",
+        "dzai4",
+        "wo3",
+        "de",
+        "syang1",
+        "li3",
+    )
+
+
+# this is where another person in the interaction has a box, but we don't note this in our langauge
+@pytest.mark.skip("we don't handle possessives or localisers yet")
+def test_third_person_cookie_in_his_box():
+    dad = situation_object(DAD)
+    cookie = situation_object(COOKIE)
+    box = situation_object(BOX)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[dad, cookie, box],
+        always_relations=[Relation(HAS, dad, box)],
+        actions=[
+            Action(
+                action_type=PUT,
+                argument_roles_to_fillers=[
+                    (AGENT, dad),
+                    (THEME, cookie),
+                    (GOAL, Region(reference_object=box, distance=INTERIOR)),
+                ],
+            )
+        ],
+    )
+    assert generated_tokens(situation) == (
+        "ba4 ba4",
+        "ba3",
+        "chyu1 chi2 bing3",
+        "fang4",
+        "dzai4",
+        "syang1",
+        "li3",
+    )
