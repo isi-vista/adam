@@ -33,7 +33,7 @@ _CHINESE_HEAD_TO_ROLE_ORDER: ImmutableDict[
 ] = [
     # Currently we treat locations associated with verbs as IO's since obliques occur before the verb.
     # For example, "on the table" is preverbal in "I eat on the table" but post-verbal in "move the book to the table"
-    # TODO: find a better way to handle the above
+    # TODO: find a better way to handle the above and add X_IS_Y syntax
     (
         VERB,
         (
