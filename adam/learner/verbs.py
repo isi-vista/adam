@@ -2,7 +2,6 @@ import itertools
 from abc import ABC
 from enum import Enum
 from typing import AbstractSet, Mapping, Union, List, Iterable, Optional, Dict, Tuple
-from pathlib import Path
 
 from adam.language import LinguisticDescription
 from adam.learner import LearningExample
@@ -20,9 +19,6 @@ from adam.learner.subset import (
     AbstractTemplateSubsetLearnerNew,
 )
 from adam.learner.surface_templates import (
-    SLOT1,
-    SLOT2,
-    SLOT3,
     STANDARD_SLOT_VARIABLES,
     SurfaceTemplate,
     SurfaceTemplateBoundToSemanticNodes,
@@ -37,7 +33,12 @@ from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
 from adam.perception.perception_graph import PerceptionGraph
-from adam.semantics import ActionConcept, ObjectSemanticNode, SyntaxSemanticsVariable
+from adam.semantics import (
+    ActionConcept,
+    ObjectSemanticNode,
+    SyntaxSemanticsVariable,
+    SemanticNode,
+)
 from attr import attrib, attrs
 from immutablecollections import immutabledict, immutableset, ImmutableSet
 from attr.validators import instance_of
@@ -55,7 +56,7 @@ class VerbAlignmentSlots(Enum):
     FixedString = "FixedString"
 
 
-@attrs(frozen=True)
+@attrs(frozen=True, slots=True)
 class SemanticNodeWithSpan:
     node: SemanticNode = attrib(validator=instance_of(SemanticNode))
     span: Span = attrib(validator=instance_of(Span))
@@ -72,7 +73,7 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
             language_perception_semantic_alignment.language_concept_alignment
         )
         num_arguments_to_alignments_sets: Dict[
-            int, ImmutableSet[List[SemanticNodeWithSpan]]
+            int, ImmutableSet[Tuple[SemanticNodeWithSpan, ...]]
         ] = {}
         sentence_tokens = language_concept_alignment.language.as_token_sequence()
 
@@ -103,34 +104,45 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                     return False
             return True
 
-        def candidate_verb_templates() -> Iterable[List[VerbAlignmentSlots]]:
+        def candidate_verb_templates() -> Iterable[Tuple[VerbAlignmentSlots, ...]]:
             # First let's handle only one argument - Intransitive Verbs
-            yield itertools.combinations(
-                [VerbAlignmentSlots.Argument, VerbAlignmentSlots.FixedString], 2
-            )
+
+            for output in immutableset(
+                itertools.permutations(
+                    [VerbAlignmentSlots.Argument, VerbAlignmentSlots.FixedString], 2
+                )
+            ):
+                yield output
             # Now we want to handle two arguments - Ditransitive Verbs
-            yield itertools.combinations(
-                [
-                    VerbAlignmentSlots.Argument,
-                    VerbAlignmentSlots.Argument,
-                    VerbAlignmentSlots.FixedString,
-                ],
-                3,
-            )
+            for output in immutableset(
+                itertools.permutations(
+                    [
+                        VerbAlignmentSlots.Argument,
+                        VerbAlignmentSlots.Argument,
+                        VerbAlignmentSlots.FixedString,
+                        VerbAlignmentSlots.FixedString,
+                    ],
+                    4,
+                )
+            ):
+                yield output
             # Now we want to handle three arguments, which can either have one or two fixed strings
-            yield itertools.combinations(
-                [
-                    VerbAlignmentSlots.Argument,
-                    VerbAlignmentSlots.Argument,
-                    VerbAlignmentSlots.Argument,
-                    VerbAlignmentSlots.FixedString,
-                    VerbAlignmentSlots.FixedString,
-                ],
-                5,
-            )
+            for output in immutableset(
+                itertools.permutations(
+                    [
+                        VerbAlignmentSlots.Argument,
+                        VerbAlignmentSlots.Argument,
+                        VerbAlignmentSlots.Argument,
+                        VerbAlignmentSlots.FixedString,
+                        VerbAlignmentSlots.FixedString,
+                    ],
+                    5,
+                )
+            ):
+                yield output
 
         def is_valid_aligned_object_nodes(
-            semantic_nodes: Tuple[SemanticNodeWithSpan]
+            semantic_nodes: Tuple[SemanticNodeWithSpan, ...]
         ) -> bool:
             previous_node = semantic_nodes[0]
             for i in range(1, len(semantic_nodes)):
@@ -141,7 +153,7 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
 
         def aligned_object_nodes(
             num_arguments: int
-        ) -> Iterable[Tuple[SemanticNodeWithSpan]]:
+        ) -> ImmutableSet[Tuple[SemanticNodeWithSpan, ...]]:
             # We guarantee the return order is in order of sentence appearance from left to right
             if num_arguments not in num_arguments_to_alignments_sets.keys():
                 semantic_nodes_with_spans = immutableset(
@@ -163,13 +175,14 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
             return num_arguments_to_alignments_sets[num_arguments]
 
         def process_aligned_objects_with_template(
-            verb_template: List[VerbAlignmentSlots],
-            aligned_nodes: Tuple[SemanticNodeWithSpan],
+            verb_template: Tuple[VerbAlignmentSlots, ...],
+            aligned_nodes: Tuple[SemanticNodeWithSpan, ...],
         ) -> Iterable[Optional[SurfaceTemplateBoundToSemanticNodes]]:
             aligned_node_index = 0
-            template_elements = []
-            slot_to_semantic_node = []
-
+            template_elements: List[Union[str, SyntaxSemanticsVariable]] = []
+            slot_to_semantic_node: List[Tuple[SyntaxSemanticsVariable, SemanticNode]] = []
+            prefix_string_end = None
+            postfix_string_start = None
             for token in verb_template:
                 if token == VerbAlignmentSlots.Argument:
                     slot_semantic_variable = STANDARD_SLOT_VARIABLES[aligned_node_index]
@@ -179,34 +192,129 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                     )
                     aligned_node_index += 1
                 else:
-                    # We need to handle searching before or after the aligned token
-                    # And we could generate multiple options of different lengths
-                    # between 1 and _MAXIMUM_ACTION_TEMPLATE_TOKEN_LENGTH
                     if aligned_node_index == 0:
-                        raise NotImplementedError()
+                        prefix_string_end = aligned_nodes[aligned_node_index].span.start
                     elif aligned_node_index == len(aligned_nodes):
-                        raise NotImplementedError()
+                        postfix_string_start = aligned_nodes[
+                            aligned_node_index - 1
+                        ].span.end
                     else:
-                        candidate_verb_token_span = Span(
-                            aligned_nodes[aligned_node_index - 1].span.end,
-                            aligned_nodes[aligned_node_index].span.start,
-                        )
-                        if not is_legal_template_span(candidate_verb_token_span):
-                            yield None
-
-                        template_elements.extend(
+                        if (
+                            aligned_nodes[aligned_node_index - 1].span.end
+                            != aligned_nodes[aligned_node_index].span.start
+                        ):
+                            candidate_verb_token_span = Span(
+                                aligned_nodes[aligned_node_index - 1].span.end,
+                                aligned_nodes[aligned_node_index].span.start,
+                            )
+                            if not is_legal_template_span(candidate_verb_token_span):
+                                yield None
+                            template_elements.extend(
+                                sentence_tokens[
+                                    candidate_verb_token_span.start : candidate_verb_token_span.end
+                                ]
+                            )
+            # We need to handle searching before or after the aligned token
+            # And we could generate multiple options of different lengths
+            # between 1 and _MAXIMUM_ACTION_TEMPLATE_TOKEN_LENGTH
+            if prefix_string_end and postfix_string_start:
+                for max_token_length_for_template_prefix in range(
+                    1, _MAXIMUM_ACTION_TEMPLATE_TOKEN_LENGTH + 1
+                ):
+                    prefix_candidate_verb_token_span = Span(
+                        prefix_string_end - max_token_length_for_template_prefix,
+                        prefix_string_end,
+                    )
+                    if is_legal_template_span(prefix_candidate_verb_token_span):
+                        for max_token_length_for_template_postfix in range(
+                            1, _MAXIMUM_ACTION_TEMPLATE_TOKEN_LENGTH + 1
+                        ):
+                            postfix_candidate_verb_token_span = Span(
+                                postfix_string_start,
+                                postfix_string_start
+                                + max_token_length_for_template_postfix,
+                            )
+                            if is_legal_template_span(postfix_candidate_verb_token_span):
+                                final_template_elements: List[
+                                    Union[str, SyntaxSemanticsVariable]
+                                ] = list(
+                                    sentence_tokens[
+                                        prefix_candidate_verb_token_span.start : prefix_candidate_verb_token_span.end
+                                    ]
+                                )
+                                final_template_elements.extend(template_elements)
+                                final_template_elements.extend(
+                                    sentence_tokens[
+                                        postfix_candidate_verb_token_span.start : postfix_candidate_verb_token_span.end
+                                    ]
+                                )
+                                yield SurfaceTemplateBoundToSemanticNodes(
+                                    surface_template=SurfaceTemplate(
+                                        elements=final_template_elements,
+                                        determiner_prefix_slots=[
+                                            SLOT for (SLOT, _) in slot_to_semantic_node
+                                        ],
+                                    ),
+                                    slot_to_semantic_node=slot_to_semantic_node,
+                                )
+            elif prefix_string_end:
+                for max_token_length_for_template_prefix in range(
+                    1, _MAXIMUM_ACTION_TEMPLATE_TOKEN_LENGTH + 1
+                ):
+                    prefix_candidate_verb_token_span = Span(
+                        prefix_string_end - max_token_length_for_template_prefix,
+                        prefix_string_end,
+                    )
+                    if is_legal_template_span(prefix_candidate_verb_token_span):
+                        final_template_elements = list(
                             sentence_tokens[
-                                candidate_verb_token_span.start : candidate_verb_token_span.end
+                                prefix_candidate_verb_token_span.start : prefix_candidate_verb_token_span.end
                             ]
                         )
-
-            yield SurfaceTemplateBoundToSemanticNodes(
-                surface_template=SurfaceTemplate(
-                    elements=template_elements,
-                    determiner_prefix_slots=[SLOT for (SLOT, _) in slot_to_semantic_node],
-                ),
-                slot_to_semantic_node=slot_to_semantic_node,
-            )
+                        final_template_elements.extend(template_elements)
+                        yield SurfaceTemplateBoundToSemanticNodes(
+                            surface_template=SurfaceTemplate(
+                                elements=final_template_elements,
+                                determiner_prefix_slots=[
+                                    SLOT for (SLOT, _) in slot_to_semantic_node
+                                ],
+                            ),
+                            slot_to_semantic_node=slot_to_semantic_node,
+                        )
+            elif postfix_string_start:
+                for max_token_length_for_template_postfix in range(
+                    1, _MAXIMUM_ACTION_TEMPLATE_TOKEN_LENGTH + 1
+                ):
+                    postfix_candidate_verb_token_span = Span(
+                        postfix_string_start,
+                        postfix_string_start + max_token_length_for_template_postfix,
+                    )
+                    if is_legal_template_span(postfix_candidate_verb_token_span):
+                        final_template_elements = list(template_elements)
+                        final_template_elements.extend(
+                            sentence_tokens[
+                                postfix_candidate_verb_token_span.start : postfix_candidate_verb_token_span.end
+                            ]
+                        )
+                        yield SurfaceTemplateBoundToSemanticNodes(
+                            surface_template=SurfaceTemplate(
+                                elements=final_template_elements,
+                                determiner_prefix_slots=[
+                                    SLOT for (SLOT, _) in slot_to_semantic_node
+                                ],
+                            ),
+                            slot_to_semantic_node=slot_to_semantic_node,
+                        )
+            else:
+                yield SurfaceTemplateBoundToSemanticNodes(
+                    surface_template=SurfaceTemplate(
+                        elements=template_elements,
+                        determiner_prefix_slots=[
+                            SLOT for (SLOT, _) in slot_to_semantic_node
+                        ],
+                    ),
+                    slot_to_semantic_node=slot_to_semantic_node,
+                )
 
         # Generate all the possible verb template alignments
         for verb_template in candidate_verb_templates():
@@ -220,285 +328,6 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                 ) in process_aligned_objects_with_template(verb_template, aligned_nodes):
                     if surface_template_bound_to_semantic_nodes:
                         ret.append(surface_template_bound_to_semantic_nodes)
-
-        # First, we handle intransitive verbs.
-        # Let's take the example "Bob falls over".
-        # For these, we need one recognized object, e.g. "Bob"
-        for (
-            object_node,
-            span_for_object,
-        ) in language_concept_alignment.node_to_language_span.items():
-            # Two possible hypotheses: the subject follows the verb
-            # or the verb follows the subject.
-            # In our example, only the "right" direction ends up being interesting.
-            for direction_to_look_for_verb in (_LEFT, _RIGHT):
-                # The template for the verb itself could be multiple tokens
-                # (e.g. "falls over").
-                # We are going to run through the loop below twice, once for a verb template
-                # size of 1 ("falls"),
-                # and once for a verb template size of 2 ("falls over").
-                for max_token_length_for_template in range(
-                    1, _MAXIMUM_ACTION_TEMPLATE_TOKEN_LENGTH + 1
-                ):
-                    # First, determine the tokens in the candidate template.
-                    if direction_to_look_for_verb == _LEFT:
-                        candidate_verb_token_span = Span(
-                            span_for_object.start - max_token_length_for_template,
-                            span_for_object.start,
-                        )
-                    else:
-                        candidate_verb_token_span = Span(
-                            span_for_object.end,
-                            span_for_object.end + max_token_length_for_template,
-                        )
-
-                    if is_legal_template_span(candidate_verb_token_span):
-                        template_elements: List[
-                            Union[str, SyntaxSemanticsVariable]
-                        ] = list(
-                            sentence_tokens[
-                                candidate_verb_token_span.start : candidate_verb_token_span.end
-                            ]
-                        )
-                        if direction_to_look_for_verb == _LEFT:
-                            # Subject is on the right
-                            template_elements.append(SLOT1)
-                        else:
-                            # Subject is on the left
-                            template_elements.insert(0, SLOT1)
-
-                        ret.append(
-                            SurfaceTemplateBoundToSemanticNodes(
-                                surface_template=SurfaceTemplate(
-                                    elements=template_elements,
-                                    determiner_prefix_slots=[SLOT1],
-                                ),
-                                slot_to_semantic_node=[(SLOT1, object_node)],
-                            )
-                        )
-
-        # Handle transitive verbs.
-        # Our example here will be "Mom eats the cookie."
-        # For a transitive verb, we need at least *two* recognized objects.
-        for (
-            left_object_node,
-            span_for_left_object,
-        ) in language_concept_alignment.node_to_language_span.items():
-            for (
-                right_object_node,
-                span_for_right_object,
-            ) in language_concept_alignment.node_to_language_span.items():
-                # Our code will be simpler if we can assume an ordering of the object aligned
-                # tokens.
-                if not span_for_left_object.precedes(span_for_right_object):
-                    continue
-
-                # We want to handle following verb syntaxes:
-                # SOV, SVO, VSO, VOS, OVS, OSV
-                # However, currently our templates don't distinguish subject and object,
-                # just "leftmost slot" (=SLOT1) and "rightmost slot" (=SLOT2),
-                # so we really just need to handle (using "A" for argument):
-                # AAV, AVA, VAA
-
-                # Let's handle AVA first.
-                # We can only do this if the two candidate argument spans are not adjacent
-                # - otherwise there is nothing in-between to use as a verb template!
-                if span_for_left_object.end != span_for_right_object.start:
-                    candidate_verb_token_span = Span(
-                        span_for_left_object.end, span_for_right_object.start
-                    )
-
-                    if is_legal_template_span(candidate_verb_token_span):
-                        template_elements = [SLOT1]
-                        template_elements.extend(
-                            sentence_tokens[
-                                candidate_verb_token_span.start : candidate_verb_token_span.end
-                            ]
-                        )
-                        template_elements.append(SLOT2)
-                        ret.append(
-                            SurfaceTemplateBoundToSemanticNodes(
-                                surface_template=SurfaceTemplate(
-                                    elements=template_elements,
-                                    determiner_prefix_slots=[SLOT1, SLOT2],
-                                ),
-                                slot_to_semantic_node=[
-                                    (SLOT1, left_object_node),
-                                    (SLOT2, right_object_node),
-                                ],
-                            )
-                        )
-
-                # Handle AAV and VAA cases.
-                # e.g. "Mom cookie eats" or "Eats Mom cookie".
-                for verb_direction in (_LEFT, _RIGHT):
-                    # We can only handle these cases if the two argument slot alignments
-                    # are adjacent
-                    for token_length_for_template in range(
-                        1, _MAXIMUM_ACTION_TEMPLATE_TOKEN_LENGTH
-                    ):
-                        if verb_direction == _LEFT:
-                            candidate_verb_token_span = Span(
-                                span_for_left_object.start - token_length_for_template,
-                                span_for_left_object.start,
-                            )
-                        else:
-                            candidate_verb_token_span = Span(
-                                span_for_right_object.end + 1,
-                                span_for_right_object.end + token_length_for_template + 1,
-                            )
-
-                        if is_legal_template_span(candidate_verb_token_span):
-                            template_elements = []
-                            if verb_direction == _RIGHT:
-                                template_elements.extend([SLOT1, SLOT2])
-                            template_elements.extend(
-                                sentence_tokens[
-                                    candidate_verb_token_span.start : candidate_verb_token_span.end
-                                ]
-                            )
-                            if verb_direction == _LEFT:
-                                template_elements.extend([SLOT1, SLOT2])
-                            ret.append(
-                                SurfaceTemplateBoundToSemanticNodes(
-                                    surface_template=SurfaceTemplate(
-                                        elements=template_elements,
-                                        determiner_prefix_slots=[SLOT1, SLOT2],
-                                    ),
-                                    slot_to_semantic_node=[
-                                        (SLOT1, left_object_node),
-                                        (SLOT2, right_object_node),
-                                    ],
-                                )
-                            )
-
-        # Handle transitive verbs with an expressed preposition
-        # We don't currently learn the relations separate from the verbs
-        # and appropriately combine the syntax later so this helps
-        # Us learn for example "Mom throws me a ball"
-        # This currently can't handle prepositional tokens
-        # in the language (e.g. "Mom throws a ball to me"
-        # TODO: https://github.com/isi-vista/adam/issues/787
-        for (
-            left_object_node,
-            span_for_left_object,
-        ) in language_concept_alignment.node_to_language_span.items():
-            for (
-                middle_object_node,
-                span_for_middle_object,
-            ) in language_concept_alignment.node_to_language_span.items():
-                # Our code will be simpler if we can assume an ordering of the object aligned
-                # tokens.
-                if span_for_left_object.precedes(span_for_middle_object):
-                    for (
-                        right_object_node,
-                        span_for_right_object,
-                    ) in language_concept_alignment.node_to_language_span.items():
-                        # Our code will be simpler if we can assume an ordering
-                        # of the object aligned tokens.
-                        if not span_for_middle_object.precedes(span_for_right_object):
-                            continue
-
-                        # Our templates don't distinguish between the roles of the nouns
-                        # just "leftmost slot" (=SLOT1), "middle slot" (=SLOT2), "rightmost slot" (=SLOT3),
-                        # so we really just need to handle (using "A" for argument)
-                        # AAAV, AAVA, AVAA, VAAA
-                        # This currently doesn't account for learning prepositional information on a verb
-
-                        # Let's handle AVAA and AAVA first
-                        # We can only do this if the three candidate argument spans are not adjacent
-                        if (
-                            span_for_left_object.end != span_for_middle_object.start
-                            and span_for_middle_object.end != span_for_right_object.start
-                        ):
-                            # Now we need to determine between which arguments the verb template is.
-                            if span_for_left_object.end == span_for_middle_object.start:
-                                candidate_verb_token_span = Span(
-                                    span_for_middle_object.end,
-                                    span_for_right_object.start,
-                                )
-                                middle_prior = True
-                            else:
-                                candidate_verb_token_span = Span(
-                                    span_for_left_object.end, span_for_middle_object.start
-                                )
-                                middle_prior = False
-                            if is_legal_template_span(candidate_verb_token_span):
-                                template_elements = [SLOT1]
-                                if middle_prior:
-                                    template_elements.append(SLOT2)
-                                template_elements.extend(
-                                    sentence_tokens[
-                                        candidate_verb_token_span.start : candidate_verb_token_span.end
-                                    ]
-                                )
-                                if not middle_prior:
-                                    template_elements.append(SLOT2)
-                                template_elements.append(SLOT3)
-
-                                ret.append(
-                                    SurfaceTemplateBoundToSemanticNodes(
-                                        surface_template=SurfaceTemplate(
-                                            elements=template_elements,
-                                            determiner_prefix_slots=[SLOT1, SLOT2, SLOT3],
-                                        ),
-                                        slot_to_semantic_node=[
-                                            (SLOT1, left_object_node),
-                                            (SLOT2, middle_object_node),
-                                            (SLOT3, right_object_node),
-                                        ],
-                                    )
-                                )
-
-                        # Now AAAV and VAAA
-                        for verb_direction in (_LEFT, _RIGHT):
-                            # We can handle these cases if the three argument slot alignments
-                            # are adjacent
-                            for token_length_for_template in range(
-                                1, _MAXIMUM_ACTION_TEMPLATE_TOKEN_LENGTH
-                            ):
-                                if verb_direction == _LEFT:
-                                    candidate_verb_token_span = Span(
-                                        span_for_left_object.start
-                                        - token_length_for_template,
-                                        span_for_left_object.start,
-                                    )
-                                else:
-                                    candidate_verb_token_span = Span(
-                                        span_for_right_object.end + 1,
-                                        span_for_right_object.end
-                                        + token_length_for_template
-                                        + 1,
-                                    )
-
-                                if is_legal_template_span(candidate_verb_token_span):
-                                    template_elements = []
-                                    if verb_direction == _RIGHT:
-                                        template_elements.extend([SLOT1, SLOT2, SLOT3])
-                                    template_elements.extend(
-                                        sentence_tokens[
-                                            candidate_verb_token_span.start : candidate_verb_token_span.end
-                                        ]
-                                    )
-                                    if verb_direction == _LEFT:
-                                        template_elements.extend([SLOT1, SLOT2, SLOT3])
-                                    ret.append(
-                                        SurfaceTemplateBoundToSemanticNodes(
-                                            surface_template=SurfaceTemplate(
-                                                elements=template_elements,
-                                                determiner_prefix_slots=[
-                                                    SLOT1,
-                                                    SLOT2,
-                                                    SLOT3,
-                                                ],
-                                            ),
-                                            slot_to_semantic_node=[
-                                                (SLOT1, left_object_node),
-                                                (SLOT2, middle_object_node),
-                                                (SLOT3, right_object_node),
-                                            ],
-                                        )
-                                    )
 
         def covers_entire_utterance(
             bound_surface_template: SurfaceTemplateBoundToSemanticNodes

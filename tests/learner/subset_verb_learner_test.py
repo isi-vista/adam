@@ -162,7 +162,6 @@ def test_push(learner_factory):
 
 
 # GO
-@pytest.mark.skip("too slow")
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_go(learner_factory):
     goer = standard_object("goer", THING, required_properties=[ANIMATE])
@@ -185,7 +184,6 @@ def test_go(learner_factory):
 
 
 # COME
-@pytest.mark.skip("too slow")
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_come(learner_factory):
     movee = standard_object("movee", required_properties=[SELF_MOVING])
