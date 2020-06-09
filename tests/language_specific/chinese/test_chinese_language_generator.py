@@ -634,3 +634,129 @@ def test_you_put_a_ball_on_a_table_dao():
         "jwo1 dz",
         "shang4",
     )
+
+
+# an additional test for localizers using a different localizer
+@pytest.mark.skip(reason="localizers aren't yet handled")
+def test_dad_put_a_cookie_in_a_box_zai():
+    dad = situation_object(DAD)
+    cookie = situation_object(COOKIE)
+    box = situation_object(BOX)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[dad, cookie, box],
+        actions=[
+            Action(
+                action_type=PUT,
+                argument_roles_to_fillers=[
+                    (AGENT, dad),
+                    (THEME, cookie),
+                    (GOAL, Region(reference_object=box, distance=INTERIOR)),
+                ],
+            )
+        ],
+    )
+    assert generated_tokens(situation) == (
+        "ba4 ba4",
+        "ba3",
+        "chyu1 chi2 bing3",
+        "fang4",
+        "dzai4",
+        "syang1",
+        "li3",
+    )
+
+
+# an additional test for localizers using a different localizer. This one specifies
+# a change in location, so we use dao instead of zai to indicate this change
+@pytest.mark.skip(reason="localizers aren't yet handled")
+def test_dad_put_a_cookie_in_a_box_dao():
+    dad = situation_object(DAD)
+    cookie = situation_object(COOKIE)
+    box = situation_object(BOX)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[dad, cookie, box],
+        actions=[
+            Action(
+                action_type=PUT,
+                argument_roles_to_fillers=[
+                    (AGENT, dad),
+                    (THEME, cookie),
+                    (GOAL, Region(reference_object=box, distance=INTERIOR)),
+                ],
+            )
+        ],
+        after_action_relations=[on(cookie, box)],
+    )
+    assert generated_tokens(situation) == (
+        "ba4 ba4",
+        "ba3",
+        "chyu1 chi2 bing3",
+        "fang4",
+        "dau4",
+        "syang1",
+        "li3",
+    )
+
+
+# test with another localiser and first person
+@pytest.mark.skip(reason="we haven't implemented pronouns or localisers yet")
+def test_i_put_cookie_in_box_zai():
+    dad = situation_object(DAD, properties=[IS_SPEAKER])
+    cookie = situation_object(COOKIE)
+    box = situation_object(BOX)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[dad, cookie, box],
+        actions=[
+            Action(
+                action_type=PUT,
+                argument_roles_to_fillers=[
+                    (AGENT, dad),
+                    (THEME, cookie),
+                    (GOAL, Region(reference_object=box, distance=INTERIOR)),
+                ],
+            )
+        ],
+    )
+    assert generated_tokens(situation) == (
+        "wo3",
+        "ba3",
+        "chyu1 chi2 bing3",
+        "fang4",
+        "dzai4",
+        "syang1",
+        "li3",
+    )
+
+
+# test with another localiser and second person
+@pytest.mark.skip(reason="we haven't implemented pronouns or localisers yet")
+def test_you_put_cookie_in_box_zai():
+    dad = situation_object(DAD, properties=[IS_ADDRESSEE])
+    cookie = situation_object(COOKIE)
+    box = situation_object(BOX)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[dad, cookie, box],
+        actions=[
+            Action(
+                action_type=PUT,
+                argument_roles_to_fillers=[
+                    (AGENT, dad),
+                    (THEME, cookie),
+                    (GOAL, Region(reference_object=box, distance=INTERIOR)),
+                ],
+            )
+        ],
+    )
+    assert generated_tokens(situation) == (
+        "ni3",
+        "ba3",
+        "chyu1 chi2 bing3",
+        "fang4",
+        "dzai4",
+        "syang1",
+        "li3",
+    )
