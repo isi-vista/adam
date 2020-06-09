@@ -86,3 +86,26 @@ from tests.situation.situation_test import make_mom_put_ball_on_table
 _SIMPLE_GENERATOR = SimpleRuleBasedChineseLanguageGenerator(
     ontology_lexicon=GAILA_PHASE_1_CHINESE_LEXICON
 )
+
+
+"""NOUN PHRASE TESTS"""
+
+
+@pytest.mark.skip(reason="NPs aren't yet supported by our Chinese language generator")
+def test_common_noun():
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[situation_object(BALL)]
+    )
+    assert only(
+        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
+    ).as_token_sequence() == ("chyou2")
+
+
+@pytest.mark.skip(reason="NP's aren't yet supported by our Chinese language generator")
+def test_mass_noun():
+    situtation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[situation_object(WATER)]
+    )
+    assert only(
+        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
+    ).as_token_sequence() == ("shwei3")

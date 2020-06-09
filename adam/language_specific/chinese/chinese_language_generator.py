@@ -1,4 +1,4 @@
-'''Dummy generator for test writing right now'''
+"""Dummy generator for test writing right now"""
 import collections
 from itertools import chain
 from typing import Iterable, List, Mapping, MutableMapping, Optional, Tuple, Union, cast
