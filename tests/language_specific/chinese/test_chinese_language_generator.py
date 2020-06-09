@@ -183,7 +183,7 @@ def test_one_salient_object():
     ).as_token_sequence() == ("ka3 che1")
 
 
-# many objects, onlytwo are salient
+# many objects, only two are salient
 @pytest.mark.skip(reason="saliency and classifiers aren't yet supported")
 def test_two_salient_objects():
     dog1 = situation_object(DOG, debug_handle="dog1")
@@ -199,3 +199,35 @@ def test_two_salient_objects():
     assert only(
         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
     ).as_token_sequence() == ("lyang3", "jr3", "gou3")
+
+
+"""NOUN PHRASES WITH LOCALISER NOMINAL MODIFIERS"""
+
+# tests mum being next to an object, a relation that is represented with a localiser phrase
+@pytest.mark.skip(reason="localisers and NP's aren't yet supported")
+def test_two_objects_with_mum():
+    bird1 = situation_object(BIRD, debug_handle="bird1")
+    bird2 = situation_object(BIRD, debug_handle="bird2")
+    mum = situation_object(MOM, debug_handle="mum")
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[bird1, mum],
+        other_objects=[bird2],
+        always_relations=[
+            Relation(
+                IN_REGION,
+                mum,
+                Region(
+                    bird1,
+                    distance=PROXIMAL,
+                    direction=Direction(
+                        positive=True,
+                        relative_to_axis=HorizontalAxisOfObject(bird1, index=0),
+                    ),
+                ),
+            )
+        ],
+    )
+    assert only(
+        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
+    ).as_token_sequence() == ("ma1 ma1", "dzai4", "nyau3", "pang2 byan1")
