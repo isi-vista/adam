@@ -28,7 +28,7 @@ from adam.curriculum.phase1_curriculum import (
 from adam.learner import LearningExample
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.objects import ObjectRecognizerAsTemplateLearner
-from adam.learner.verbs import SubsetVerbLearnerNew
+from adam.learner.verbs import SubsetVerbLearner, SubsetVerbLearnerNew
 from adam.ontology import IS_SPEAKER, THING
 from adam.ontology.phase1_ontology import (
     AGENT,
@@ -53,15 +53,15 @@ from immutablecollections import immutableset
 from tests.learner import TEST_OBJECT_RECOGNIZER
 
 LEARNER_FACTORIES = [
-    # lambda: SubsetVerbLearner(
-    #     object_recognizer=TEST_OBJECT_RECOGNIZER, ontology=GAILA_PHASE_1_ONTOLOGY
-    # ),
+    lambda: SubsetVerbLearner(
+        object_recognizer=TEST_OBJECT_RECOGNIZER, ontology=GAILA_PHASE_1_ONTOLOGY
+    ),
     lambda: IntegratedTemplateLearner(
         object_learner=ObjectRecognizerAsTemplateLearner(
             object_recognizer=TEST_OBJECT_RECOGNIZER
         ),
         action_learner=SubsetVerbLearnerNew(ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5),
-    )
+    ),
 ]
 
 # VerbPursuitLearner(

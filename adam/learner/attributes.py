@@ -1,13 +1,12 @@
 from abc import ABC
-from pathlib import Path
 from typing import AbstractSet, Union
-
-from adam.perception.deprecated import LanguageAlignedPerception
-from adam.semantics import AttributeConcept, Concept, ObjectSemanticNode
-from attr.validators import instance_of
 
 from adam.language import LinguisticDescription
 from adam.learner import LearningExample
+from adam.learner.alignments import (
+    LanguagePerceptionSemanticAlignment,
+    PerceptionSemanticAlignment,
+)
 from adam.learner.learner_utils import assert_static_situation
 from adam.learner.object_recognizer import (
     ObjectRecognizer,
@@ -19,32 +18,31 @@ from adam.learner.subset import (
     AbstractTemplateSubsetLearnerNew,
 )
 from adam.learner.surface_templates import (
-    SurfaceTemplateBoundToSemanticNodes,
     SLOT1,
     STANDARD_SLOT_VARIABLES,
     SurfaceTemplate,
+    SurfaceTemplateBoundToSemanticNodes,
 )
 from adam.learner.template_learner import (
     AbstractTemplateLearner,
     AbstractTemplateLearnerNew,
 )
 from adam.perception import PerceptualRepresentation
+from adam.perception.deprecated import LanguageAlignedPerception
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
 from adam.perception.perception_graph import PerceptionGraph
-from adam.learner.alignments import (
-    LanguageConceptAlignment,
-    LanguagePerceptionSemanticAlignment,
-    PerceptionSemanticAlignment,
-)
+from adam.semantics import AttributeConcept, ObjectSemanticNode
 from attr import attrib, attrs
+from attr.validators import instance_of
 from immutablecollections import immutabledict, immutableset
 from vistautils.span import Span
 
 
 @attrs
 class AbstractAttributeTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
+    # pylint:disable=abstract-method
     def _candidate_templates(
         self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
     ) -> AbstractSet[SurfaceTemplateBoundToSemanticNodes]:
@@ -216,7 +214,7 @@ class SubsetAttributeLearnerNew(
         self,
         *,
         hypothesis: PerceptionGraphTemplate,
-        bound_surface_template: SurfaceTemplateBoundToSemanticNodes,
+        bound_surface_template: SurfaceTemplateBoundToSemanticNodes,  # pylint:disable=unused-argument
     ) -> bool:
         if len(hypothesis.graph_pattern) < 2:
             # We need at least two nodes - a wildcard and a property -

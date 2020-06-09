@@ -1,9 +1,7 @@
 from abc import ABC
 from pathlib import Path
-from typing import AbstractSet, Iterable, Mapping, Optional, Sequence, Union
+from typing import Iterable, Mapping, Optional, Sequence, Union
 
-from adam.perception.deprecated import LanguageAlignedPerception
-from attr.validators import instance_of, optional
 from more_itertools import flatten
 from networkx import all_shortest_paths, subgraph
 
@@ -20,6 +18,7 @@ from adam.learner.subset import AbstractTemplateSubsetLearner
 from adam.learner.surface_templates import SLOT1, SLOT2, SurfaceTemplate
 from adam.learner.template_learner import AbstractTemplateLearner
 from adam.perception import ObjectPerception, PerceptualRepresentation
+from adam.perception.deprecated import LanguageAlignedPerception
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
@@ -28,14 +27,10 @@ from adam.perception.perception_graph import (
     PerceptionGraphNode,
     _graph_node_order,
 )
-from adam.learner.alignments import (
-    LanguageConceptAlignment,
-    LanguagePerceptionSemanticAlignment,
-    PerceptionSemanticAlignment,
-)
-from adam.semantics import Concept, ObjectSemanticNode, SyntaxSemanticsVariable
+from adam.semantics import ObjectSemanticNode, SyntaxSemanticsVariable
 from adam.utils.networkx_utils import digraph_with_nodes_sorted_by
 from attr import attrib, attrs
+from attr.validators import instance_of, optional
 from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
 
 

@@ -5,9 +5,8 @@ from typing import AbstractSet, Iterable, List, Mapping, Sequence, Tuple, Union,
 from more_itertools import one
 
 from adam.language import LinguisticDescription, TokenSequenceLinguisticDescription
-from adam.learner import LanguageLearner, LearningExample, NewStyleLearner
+from adam.learner import ComposableLearner, LearningExample, TopLevelLanguageLearner
 from adam.learner.alignments import (
-    LanguageConceptAlignment,
     LanguagePerceptionSemanticAlignment,
     PerceptionSemanticAlignment,
 )
@@ -21,8 +20,8 @@ from adam.learner.object_recognizer import (
 )
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
 from adam.learner.surface_templates import (
-    SurfaceTemplateBoundToSemanticNodes,
     SurfaceTemplate,
+    SurfaceTemplateBoundToSemanticNodes,
 )
 from adam.perception import PerceptualRepresentation
 from adam.perception.deprecated import LanguageAlignedPerception
@@ -38,7 +37,7 @@ from vistautils.preconditions import check_state
 
 @attrs
 class AbstractTemplateLearner(
-    LanguageLearner[
+    TopLevelLanguageLearner[
         DevelopmentalPrimitivePerceptionFrame, TokenSequenceLinguisticDescription
     ],
     ABC,
@@ -232,7 +231,7 @@ class AbstractTemplateLearner(
         )
 
 
-class TemplateLearner(NewStyleLearner, ABC):
+class TemplateLearner(ComposableLearner, ABC):
     @abstractmethod
     def templates_for_concept(self, concept: Concept) -> AbstractSet[SurfaceTemplate]:
         pass

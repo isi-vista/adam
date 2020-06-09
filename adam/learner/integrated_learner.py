@@ -6,22 +6,21 @@ from typing import AbstractSet, Iterable, Iterator, Mapping, Optional, Tuple
 
 from more_itertools import flatten, one
 
-from adam.language_specific.english import ENGLISH_BLOCK_DETERMINERS, ENGLISH_DETERMINERS
-from adam.learner.attributes import (
-    AbstractAttributeTemplateLearner,
-    AbstractAttributeTemplateLearnerNew,
-)
-from adam.learner.prepositions import AbstractPrepositionTemplateLearner
+from adam.language import LinguisticDescription, TokenSequenceLinguisticDescription
+from adam.language_specific.english import ENGLISH_BLOCK_DETERMINERS
+from adam.learner import LearningExample, TopLevelLanguageLearner
 from adam.learner.alignments import (
+    LanguageConceptAlignment,
     LanguagePerceptionSemanticAlignment,
     PerceptionSemanticAlignment,
 )
 from adam.learner.surface_templates import MASS_NOUNS, SLOT1
 from adam.learner.template_learner import TemplateLearner
-from adam.learner.verbs import AbstractVerbTemplateLearner
-from adam.perception import PerceptionT, PerceptualRepresentation
+from adam.perception import PerceptualRepresentation
+from adam.perception.developmental_primitive_perception import (
+    DevelopmentalPrimitivePerceptionFrame,
+)
 from adam.perception.perception_graph import PerceptionGraph
-from adam.learner.alignments import LanguageConceptAlignment
 from adam.semantics import (
     ActionSemanticNode,
     AttributeSemanticNode,
@@ -29,18 +28,8 @@ from adam.semantics import (
     RelationSemanticNode,
     SemanticNode,
 )
-from attr.validators import instance_of, optional
-
-from adam.language import LinguisticDescription, TokenSequenceLinguisticDescription
-from adam.learner import LanguageLearner, LearningExample
-from adam.learner.objects import (
-    AbstractObjectTemplateLearnerNew,
-    AbstractObjectTemplateLearner,
-)
-from adam.perception.developmental_primitive_perception import (
-    DevelopmentalPrimitivePerceptionFrame,
-)
 from attr import attrib, attrs
+from attr.validators import instance_of, optional
 from immutablecollections import (
     ImmutableSet,
     ImmutableSetMultiDict,
@@ -62,7 +51,7 @@ class LanguageLearnerNew:
 
 @attrs
 class IntegratedTemplateLearner(
-    LanguageLearner[
+    TopLevelLanguageLearner[
         DevelopmentalPrimitivePerceptionFrame, TokenSequenceLinguisticDescription
     ]
 ):

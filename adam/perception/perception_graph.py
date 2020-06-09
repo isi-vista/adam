@@ -27,6 +27,7 @@ from typing import (
     Iterable,
     List,
     Mapping,
+    MutableMapping,
     Optional,
     Set,
     Sized,
@@ -34,14 +35,10 @@ from typing import (
     TypeVar,
     Union,
     cast,
-    MutableMapping,
 )
 from uuid import uuid4
 
 import graphviz
-
-from adam.semantics import ObjectSemanticNode
-from attr.validators import deep_iterable, instance_of, optional
 from more_itertools import first, ilen
 from networkx import DiGraph, connected_components, is_isomorphic, set_node_attributes
 from typing_extensions import Protocol
@@ -79,11 +76,13 @@ from adam.perception.high_level_semantics_situation_to_developmental_primitive_p
 )
 from adam.random_utils import RandomChooser
 from adam.relation import Relation
+from adam.semantics import ObjectSemanticNode
 from adam.situation import SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.utilities import sign
 from adam.utils.networkx_utils import copy_digraph, digraph_with_nodes_sorted_by, subgraph
 from attr import attrib, attrs
+from attr.validators import deep_iterable, instance_of, optional
 from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
 from immutablecollections.converter_utils import (
     _to_immutabledict,
@@ -93,7 +92,6 @@ from immutablecollections.converter_utils import (
 from vistautils.misc_utils import str_list_limited
 from vistautils.preconditions import check_arg
 from vistautils.range import Range
-from vistautils.span import Span
 
 
 class Incrementer:
@@ -557,7 +555,7 @@ class PerceptionGraph(PerceptionGraphProtocol):
 
 
 @attrs(frozen=True, slots=True, repr=False)
-class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
+class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredicate"]):
     r"""
     A pattern which can match `PerceptionGraph`\ s.
 
@@ -744,6 +742,9 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
 
     def __contains__(self, item) -> bool:
         return item in self._graph
+
+    def __iter__(self):
+        return iter(self._graph)
 
     def copy_with_temporal_scopes(
         self, required_temporal_scopes: Union[TemporalScope, Iterable[TemporalScope]]

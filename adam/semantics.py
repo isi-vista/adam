@@ -4,7 +4,7 @@ Classes to represent semantics from the learner's point-of-view.
 Really this and `HighLevelSemanticsSituation` should somehow be refactored together,
 but it's not worth the trouble at this point.
 """
-from typing import Mapping, Tuple
+from typing import Mapping
 
 from typing_extensions import Protocol, runtime
 

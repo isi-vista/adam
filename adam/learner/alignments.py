@@ -304,9 +304,9 @@ class PerceptionSemanticAlignment:
             )
 
     def __attrs_post_init__(self) -> None:
-        for node in self.perception_graph._graph:
+        for node in self.perception_graph._graph:  # pylint:disable=protected-access
             if isinstance(node, SemanticNode):
-                if not node in self.semantic_nodes:
+                if node not in self.semantic_nodes:
                     raise RuntimeError(
                         "All semantic nodes appearing in the perception graph must "
                         "also be in semantic_nodes"

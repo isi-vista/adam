@@ -11,6 +11,7 @@ from attr import attrib, attrs
 from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
 from vistautils.span import Span
 
+
 # Used by LanguageAlignedPerception below.
 def _sort_mapping_by_token_spans(pairs) -> ImmutableDict[ObjectSemanticNode, Span]:
     # we type: ignore because the proper typing of pairs is huge and mypy is going to screw it up

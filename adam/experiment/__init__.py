@@ -26,7 +26,7 @@ from adam.curriculum import InstanceGroup
 from adam.experiment.observer import DescriptionObserver
 from adam.language import LinguisticDescriptionT
 from adam.language.language_generator import SituationT
-from adam.learner import LanguageLearner, LearningExample
+from adam.learner import TopLevelLanguageLearner, LearningExample
 from adam.perception import PerceptionT
 from adam.random_utils import SequenceChooser
 
@@ -67,7 +67,7 @@ class Experiment(Generic[SituationT, LinguisticDescriptionT, PerceptionT]):
     to a complex rule-governed process (e.g. `GeneratedFromSituationsInstanceGroup`).
     """
     learner_factory: Callable[
-        [], LanguageLearner[PerceptionT, LinguisticDescriptionT]
+        [], TopLevelLanguageLearner[PerceptionT, LinguisticDescriptionT]
     ] = attrib(kw_only=True)
     """ A no-argument function which will return the `LanguageLearner` which should be trained."""
     sequence_chooser: SequenceChooser = attrib(

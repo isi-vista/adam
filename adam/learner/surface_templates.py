@@ -6,7 +6,7 @@ from typing import List, Mapping, Optional, Tuple, Union
 from more_itertools import quantify
 
 from adam.language import TokenSequenceLinguisticDescription
-from adam.semantics import ObjectSemanticNode, SemanticNode, SyntaxSemanticsVariable
+from adam.semantics import ObjectSemanticNode, SyntaxSemanticsVariable
 from attr import attrib, attrs
 from attr.validators import deep_iterable, instance_of
 from immutablecollections import ImmutableDict, ImmutableSet, immutableset
