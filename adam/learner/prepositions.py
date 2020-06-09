@@ -64,7 +64,7 @@ class AbstractPrepositionTemplateLearner(AbstractTemplateLearner, ABC):
     def _preprocess_scene_for_learning(
         self, language_concept_alignment: LanguageAlignedPerception
     ) -> LanguageAlignedPerception:
-        post_recognition_object_perception_alignment = self._object_recognizer.match_objects_with_language(
+        post_recognition_object_perception_alignment = self._object_recognizer.match_objects_with_language_old(
             language_concept_alignment
         )
         num_matched_objects = len(
@@ -81,7 +81,7 @@ class AbstractPrepositionTemplateLearner(AbstractTemplateLearner, ABC):
     def _preprocess_scene_for_description(
         self, perception_graph: PerceptionGraph
     ) -> PerceptionGraphFromObjectRecognizer:
-        return self._object_recognizer.match_objects(perception_graph)
+        return self._object_recognizer.match_objects_old(perception_graph)
 
     def _extract_surface_template(
         self, language_concept_alignment: LanguageAlignedPerception
