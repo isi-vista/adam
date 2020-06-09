@@ -276,3 +276,75 @@ def test_mum_above_object():
     assert only(
         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
     ).as_token_sequence() == ("ma1 ma1", "dzai4", "nyau3", "shang4")
+
+
+"""BASIC VP TESTING: SV, SVO, and SVIO"""
+
+# test the simple subject-verb phrase "mum eats"
+@pytest.mark.skip(reason="VP's aren't yet supported")
+def test_simple_subject_verb():
+    mum = situation_object(MOM, debug_handle="mum")
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mum],
+        actions=[Action(action_type=EAT, argument_roles_to_fillers=[(AGENT, mum)])],
+    )
+    assert only(
+        _SIMPLE_GENERATOR.generate_language(
+            situation, FixedIndexChooser(0)
+        ).as_token_sequence()
+        == ("ma1 ma1", "chr1")
+    )
+
+
+# test more complex SVO phrase "mum eats a cookie"
+@pytest.mark.skip(reason="SVO structure isn't yet supported")
+def test_simple_SVO():
+    mum = situation_object(MOM, debug_handle="mum")
+    cookie = situation_object(COOKIE, debug_handle="cookie")
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mum, cookie],
+        actions=[
+            Action(
+                action_type=EAT, argument_roles_to_fillers=[(AGENT, mum), (THEME, cookie)]
+            )
+        ],
+    )
+    assert only(
+        _SIMPLE_GENERATOR.generate_language(
+            situation, FixedIndexChooser(0)
+        ).as_token_sequence()
+        == ("ma1 ma1", "chr1", "chyu1 chi2 bing3")
+    )
+
+
+# test SVIO transfer of possession
+@pytest.mark.skip(reason="SVIO structure isn't yet supported")
+def test_simple_SVIO_transfer():
+    mum = situation_object(MOM, debug_handle="mum_subject")
+    baby = situation_object(BABY, debug_handle="babyIO")
+    cookie = situation_object(COOKIE, debug_handle="cookieDO")
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mum, baby, cookie],
+        actions=[
+            Action(
+                action_type=GIVE,
+                argument_roles_to_fillers=[(AGENT, mom), (GOAL, baby), (THEME, cookie)],
+            )
+        ],
+    )
+    assert only(
+        _SIMPLE_GENERATOR.generate_language(
+            situation, FixedIndexChooser(0)
+        ).as_token_sequence()
+        == ("ma1 ma1", "chr1", "bau3 bau3", "chyu1 chi2 bing3")
+    )
+
+
+# method to generate tokens from a given situation
+def generated_tokens(situation):
+    return only(
+        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
+    ).as_token_sequence()
