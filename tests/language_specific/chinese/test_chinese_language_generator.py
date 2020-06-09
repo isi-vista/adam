@@ -820,7 +820,7 @@ def test_you_put_cookie_in_box_zai():
 
 
 # another meaning to test with localisers
-@pytest.skip(reason="we haven't implemented pronouns or localisers yet")
+@pytest.mark.skip(reason="we haven't implemented pronouns or localisers yet")
 def test_take_to_car():
     baby = situation_object(BABY)
     ball = situation_object(BALL)
@@ -1201,7 +1201,6 @@ def test_bird_flies_path_beside():
             )
         ],
     )
-
     assert generated_tokens(situation) == (
         "nyau3",
         "fei1",
@@ -1214,6 +1213,7 @@ def test_bird_flies_path_beside():
 """ADV MODIFICATION"""
 # TODO: check if adverb path modifiers are salient and should be implemented in Chinese
 # it appears that there is a distinction for fall/fall down but not sit/sit down
+# if there is such a distinction, it needs to be checked by a native speaker
 
 
 # fall down testing -- this does translate but I'm not sure how much it's used
@@ -1227,6 +1227,51 @@ def test_falling_down():
         syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
     )
     assert generated_tokens(situation) == ("chyou2", "dye2 dau3", "sya4lai2")
+
+
+# direction of flight
+@pytest.mark.skip("advmods not yet implemented")
+def test_bird_flies_up():
+    bird = situation_object(BIRD)
+    ground = situation_object(GROUND)
+
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[bird],
+        actions=[
+            Action(
+                FLY,
+                argument_roles_to_fillers=[(AGENT, bird)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (bird, SpatialPath(operator=AWAY_FROM, reference_object=ground))
+                    ]
+                ),
+            )
+        ],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
+    )
+    assert generated_tokens(situation) == ("nyau3", "chi3", "fei1")
+
+
+# direction of jumping
+@pytest.mark.skip("advmods not yet implemented")
+def test_jump_up():
+    dad = situation_object(DAD)
+    ground = situation_object(GROUND)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[dad],
+        actions=[
+            Action(
+                JUMP,
+                argument_roles_to_fillers=[(AGENT, dad)],
+                auxiliary_variable_bindings=[(JUMP_INITIAL_SUPPORTER_AUX, ground)],
+            )
+        ],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
+    )
+    assert generated_tokens(situation) == ("ba4 ba4", "chi3", "tyau4")
 
 
 """MISC TESTS REPLICATED FROM ENGLISH TESTING FILE"""
