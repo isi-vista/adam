@@ -242,6 +242,20 @@ def test_two_salient_objects():
 """NOUN PHRASES WITH LOCALISER NOMINAL MODIFIERS"""
 # TODO: native speaker should check the localisers once they are implemented
 
+# test two inanimte objects
+@pytest.mark.skip(reason="localisers and NP's aren't yet supported")
+def test_noun_with_spatial_modifier():
+    table = situation_object(TABLE)
+    ground = situation_object(GROUND)
+
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[table, ground],
+        always_relations=[on(table, ground)],
+    )
+    assert generated_tokens(situation) == ("jwo1 dz", "dzai4", "di4 myan4", "shang4")
+
+
 # tests mum being next to an object, a relation that is represented with a localiser phrase
 @pytest.mark.skip(reason="localisers and NP's aren't yet supported")
 def test_two_objects_with_mum():
@@ -311,6 +325,19 @@ def test_mum_above_object():
 
 
 """BASIC VP TESTING: SV, SVO, and SVIO"""
+
+
+# basic intransitive verb testing
+@pytest.mark.skip("Intransitive VP's not yet implemented")
+def test_falling():
+    ball = situation_object(BALL)
+    situation_without_modifier = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[ball],
+        actions=[Action(FALL, argument_roles_to_fillers=[(THEME, ball)])],
+    )
+    assert generated_tokens(situation) == ("chyou2", "dye2 dau3")
+
 
 # test the simple subject-verb phrase "mum eats"
 @pytest.mark.skip(reason="VP's aren't yet supported")
@@ -1000,7 +1027,8 @@ def test_dad_has_cookie():
 
 
 """PATH MODIFIERS"""
-# TODO: deal with doa/zai distinction for path modifiers and deal with guo
+# TODO: deal with doa/zai distinction for path modifiers and deal with guo. It may be
+# possible to handle this differently than elsewhere to reflect the different distinctions
 
 # this tests over, which is a special case since it doesn't use zai/dao
 @pytest.mark.skip(reason="path modifiers have not been implemented yet")
@@ -1067,3 +1095,88 @@ def test_path_modifier_under():
         after_action_relations=[near(bird, table)],
     )
     assert generated_tokens(situation) == ("nyau3", "fei1", "dau4", "jwo1 dz", "di3 sya")
+
+
+# this is a different case for Chinese since there's no change in location so the PP is preverbal
+@pytest.mark.skip(reason="path modifiers have not been implemented yet")
+def test_path_modifier_on():
+    mom = situation_object(MOM)
+    ball = situation_object(BALL)
+    table = situation_object(TABLE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom, ball, table],
+        actions=[
+            Action(
+                ROLL,
+                argument_roles_to_fillers=[(AGENT, mom), (THEME, ball)],
+                during=DuringAction(
+                    at_some_point=[
+                        Relation(
+                            IN_REGION,
+                            ball,
+                            Region(
+                                reference_object=table,
+                                distance=EXTERIOR_BUT_IN_CONTACT,
+                                direction=GRAVITATIONAL_UP,
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+    )
+    assert generated_tokens(situation) == (
+        "ma1 ma1",
+        "dzai4",
+        "jwo1 dz",
+        "shang4",
+        "gwun3",
+        "chyou2",
+    )
+
+
+"""ADV MODIFICATION"""
+
+# TODO: check if adverb path modifiers are salient and should be implemented in Chinese
+@pytest.mark.skip("advmods not yet implemented")
+def test_falling_down():
+    ball = situation_object(BALL)
+    situation_without_modifier = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[ball],
+        actions=[Action(FALL, argument_roles_to_fillers=[(THEME, ball)])],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
+    )
+    assert generated_tokens(situation) == ("chyou2", "dye2 dau3", "sya4lai2")
+
+
+"""MISC TESTS REPLICATED FROM ENGLISH TESTING FILE"""
+
+
+@pytest.mark.skip(reason="VP with localisers not implemented yet")
+def test_roll():
+    agent = situation_object(BABY)
+    theme = situation_object(COOKIE)
+    surface = situation_object(BOX)
+
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[agent, theme, surface],
+        actions=[
+            Action(
+                ROLL,
+                argument_roles_to_fillers=[(AGENT, agent), (THEME, theme)],
+                auxiliary_variable_bindings=[(ROLL_SURFACE_AUXILIARY, surface)],
+            )
+        ],
+        always_relations=[on(theme, surface)],
+    )
+    assert generated_tokens(situation) == (
+        "bau3 bau3",
+        "dzai4",
+        "syang1",
+        "shang4",
+        "gwun3",
+        "chyu1 chi2 bing3",
+    )
