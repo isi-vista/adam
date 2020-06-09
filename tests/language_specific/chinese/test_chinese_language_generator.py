@@ -333,3 +333,103 @@ def test_simple_SVIO_transfer():
         "bau3 bau3",
         "chyu1 chi2 bing3",
     )
+
+
+# test SVO with action/movement verb
+@pytest.mark.skip(reason="SVO structure isn't supported yet")
+def test_simple_SVO_movement():
+    dad = situation_object(DAD)
+    chair = situation_object(CHAIR)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[dad, chair],
+        actions=[
+            Action(
+                action_type=PUSH, argument_roles_to_fillers=[(AGENT, dad), (THEME, chair)]
+            )
+        ],
+    )
+    assert generated_tokens(situation) == ("ba4 ba4", "twei1", "yi3 dz")
+
+
+"""VP's WITH LOCALIZERS"""
+# TODO: handle zai/dao distinction in generator
+# use zai by default and dao with after-action relations based on https://github.com/isi-vista/adam/issues/796
+# a list of verbs that currently don't accept goals is at https://github.com/isi-vista/adam/issues/582
+
+# this situation doesn't have any after-action relations so it uses zai, which is valid
+@pytest.mark.skip(reason="Localisers aren't yet implemented")
+def test_mom_put_a_ball_on_a_table_zai():
+    mum = situation_object(MOM)
+    ball = situation_object(BALL)
+    table = situation_object(TABLE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mum, ball, table],
+        actions=[
+            Action(
+                action_type=PUT,
+                argument_roles_to_fillers=[
+                    (AGENT, mom),
+                    (THEME, ball),
+                    (
+                        GOAL,
+                        Region(
+                            reference_object=table,
+                            distance=EXTERIOR_BUT_IN_CONTACT,
+                            direction=GRAVITATIONAL_UP,
+                        ),
+                    ),
+                ],
+            )
+        ],
+    )
+    assert generated_tokens(situation) == (
+        "ma1 ma1",
+        "ba3",
+        "chyou2",
+        "fang4",
+        "dzai4",
+        "jwo1 dz",
+        "shang4",
+    )
+
+
+# this situation specifies the after_action_relations and so dao should be used
+# since there was an explicit change in location
+@pytest.mark.skip(reason="Localisers and dao aren't yet implemented")
+def test_mom_put_a_ball_on_a_table_dao():
+    mum = situation_object(MOM)
+    ball = situation_object(BALL)
+    table = situation_object(TABLE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mum, ball, table],
+        actions=[
+            Action(
+                action_type=PUT,
+                argument_roles_to_fillers=[
+                    (AGENT, mom),
+                    (THEME, ball),
+                    (
+                        GOAL,
+                        Region(
+                            reference_object=table,
+                            distance=EXTERIOR_BUT_IN_CONTACT,
+                            direction=GRAVITATIONAL_UP,
+                        ),
+                    ),
+                ],
+            )
+        ],
+        after_action_relations=[on(ball, table)],
+    )
+    assert generated_tokens(situation) == (
+        "ma1 ma1",
+        "ba3",
+        "chyou2",
+        "fang4",
+        "dau4",
+        "jwo1 dz",
+        "shang4",
+    )
