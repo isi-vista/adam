@@ -8,11 +8,7 @@ from adam.curriculum.pursuit_curriculum import make_simple_pursuit_curriculum
 from adam.language_specific.english.english_language_generator import IGNORE_COLORS
 from adam.learner import LearningExample
 from adam.learner.integrated_learner import IntegratedTemplateLearner
-from adam.learner.objects import (
-    ObjectPursuitLearner,
-    SubsetObjectLearner,
-    SubsetObjectLearnerNew,
-)
+from adam.learner.objects import ObjectPursuitLearner, SubsetObjectLearnerNew
 from adam.ontology import OntologyNode
 from adam.ontology.phase1_ontology import (
     BALL,

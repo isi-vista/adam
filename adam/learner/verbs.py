@@ -1,12 +1,12 @@
 from abc import ABC
-from pathlib import Path
 from typing import AbstractSet, List, Mapping, Union
-
-from adam.perception.deprecated import LanguageAlignedPerception
-from attr.validators import instance_of
 
 from adam.language import LinguisticDescription
 from adam.learner import LearningExample
+from adam.learner.alignments import (
+    LanguagePerceptionSemanticAlignment,
+    PerceptionSemanticAlignment,
+)
 from adam.learner.object_recognizer import (
     ObjectRecognizer,
     PerceptionGraphFromObjectRecognizer,
@@ -17,34 +17,26 @@ from adam.learner.subset import (
     AbstractTemplateSubsetLearnerNew,
 )
 from adam.learner.surface_templates import (
-    SurfaceTemplateBoundToSemanticNodes,
     SLOT1,
     SLOT2,
+    SLOT3,
     STANDARD_SLOT_VARIABLES,
     SurfaceTemplate,
-    SLOT3,
+    SurfaceTemplateBoundToSemanticNodes,
 )
 from adam.learner.template_learner import (
     AbstractTemplateLearner,
     AbstractTemplateLearnerNew,
 )
 from adam.perception import PerceptualRepresentation
+from adam.perception.deprecated import LanguageAlignedPerception
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
 from adam.perception.perception_graph import PerceptionGraph
-from adam.learner.alignments import (
-    LanguageConceptAlignment,
-    LanguagePerceptionSemanticAlignment,
-    PerceptionSemanticAlignment,
-)
-from adam.semantics import (
-    ActionConcept,
-    Concept,
-    ObjectSemanticNode,
-    SyntaxSemanticsVariable,
-)
+from adam.semantics import ActionConcept, ObjectSemanticNode, SyntaxSemanticsVariable
 from attr import attrib, attrs
+from attr.validators import instance_of
 from immutablecollections import immutabledict, immutableset
 from vistautils.span import Span
 
@@ -57,6 +49,7 @@ _RIGHT = 1
 
 @attrs
 class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
+    # pylint:disable=abstract-method
     def _candidate_templates(
         self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
     ) -> AbstractSet[SurfaceTemplateBoundToSemanticNodes]:

@@ -53,7 +53,7 @@ class LearningExample(Generic[PerceptionT, LinguisticDescriptionT]):
     """
 
 
-class LanguageLearner(ABC, Generic[PerceptionT, LinguisticDescriptionT]):
+class TopLevelLanguageLearner(ABC, Generic[PerceptionT, LinguisticDescriptionT]):
     r"""
     Models an infant learning language.
 
@@ -96,7 +96,7 @@ class LanguageLearner(ABC, Generic[PerceptionT, LinguisticDescriptionT]):
 @attrs
 class MemorizingLanguageLearner(
     Generic[PerceptionT, LinguisticDescriptionT],
-    LanguageLearner[PerceptionT, LinguisticDescription],
+    TopLevelLanguageLearner[PerceptionT, LinguisticDescription],
 ):
     """
     A trivial implementation of `LanguageLearner` which just memorizes situations it has seen before
@@ -174,7 +174,7 @@ def graph_without_learner(perception_graph: PerceptionGraph) -> PerceptionGraph:
     return PerceptionGraph(graph)
 
 
-class NewStyleLearner(ABC):
+class ComposableLearner(ABC):
     @abstractmethod
     def learn_from(
         self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment

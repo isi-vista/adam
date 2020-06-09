@@ -2,13 +2,17 @@ import logging
 from abc import ABC
 from pathlib import Path
 from random import Random
-from typing import AbstractSet, Tuple, Union, Sequence, List, Optional, Iterable
+from typing import AbstractSet, Iterable, List, Optional, Sequence, Union
 
 from adam.language import LinguisticDescription
 from adam.learner import (
     LearningExample,
-    graph_without_learner,
     get_largest_matching_pattern,
+    graph_without_learner,
+)
+from adam.learner.alignments import (
+    LanguagePerceptionSemanticAlignment,
+    PerceptionSemanticAlignment,
 )
 from adam.learner.learner_utils import assert_static_situation
 from adam.learner.object_recognizer import (
@@ -23,34 +27,28 @@ from adam.learner.subset import (
     AbstractTemplateSubsetLearnerNew,
 )
 from adam.learner.surface_templates import (
-    SurfaceTemplateBoundToSemanticNodes,
     SurfaceTemplate,
+    SurfaceTemplateBoundToSemanticNodes,
 )
 from adam.learner.template_learner import (
     AbstractTemplateLearner,
     AbstractTemplateLearnerNew,
     TemplateLearner,
 )
-from adam.learner.alignments import (
-    LanguagePerceptionSemanticAlignment,
-    PerceptionSemanticAlignment,
-)
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
 from adam.ontology.phase1_spatial_relations import Region
-from adam.perception import PerceptualRepresentation, ObjectPerception
+from adam.perception import ObjectPerception, PerceptualRepresentation
 from adam.perception.deprecated import LanguageAlignedPerception
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
     RgbColorPerception,
 )
 from adam.perception.perception_graph import PerceptionGraph, PerceptionGraphPattern
-from adam.learner.alignments import LanguageConceptAlignment
 from adam.semantics import Concept, ObjectConcept
 from adam.utils import networkx_utils
-from attr import evolve, attrs, attrib
-from attr.validators import optional, instance_of
+from attr import attrib, attrs, evolve
+from attr.validators import instance_of, optional
 from immutablecollections import (
-    ImmutableDict,
     ImmutableSet,
     ImmutableSetMultiDict,
     immutabledict,
@@ -61,6 +59,7 @@ from vistautils.parameters import Parameters
 
 
 class AbstractObjectTemplateLearnerNew(AbstractTemplateLearnerNew):
+    # pylint:disable=abstract-method
     def _can_learn_from(
         self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
     ) -> bool:
@@ -151,7 +150,7 @@ class ObjectPursuitLearner(AbstractPursuitLearner, AbstractObjectTemplateLearner
     """
 
     def _candidate_hypotheses(
-        self, language_aligned_perception: LanguageConceptAlignment
+        self, language_aligned_perception: LanguageAlignedPerception
     ) -> Sequence[PerceptionGraphTemplate]:
         """
         Given a learning input, returns all possible meaning hypotheses.
@@ -351,18 +350,16 @@ class ObjectPursuitLearner(AbstractPursuitLearner, AbstractObjectTemplateLearner
 
 
 @attrs(slots=True)
-class SubsetObjectLearner(
-    AbstractTemplateSubsetLearnerNew, AbstractObjectTemplateLearnerNew
-):
+class SubsetObjectLearner(AbstractTemplateSubsetLearner, AbstractObjectTemplateLearner):
     """
     An implementation of `LanguageLearner` for subset learning based approach for single object detection.
     """
 
-    def _hypotheses_from_perception(
-        self, learning_state: LanguageConceptAlignment
+    def _hypothesis_from_perception(
+        self, preprocessed_input: LanguageAlignedPerception
     ) -> PerceptionGraphTemplate:
         new_hypothesis = PerceptionGraphPattern.from_graph(
-            learning_state.perception_graph
+            preprocessed_input.perception_graph
         ).perception_graph_pattern
         return PerceptionGraphTemplate(
             graph_pattern=new_hypothesis,
@@ -403,10 +400,11 @@ class SubsetObjectLearnerNew(
             )
         )
 
-    def _keep_hypothesis(
+    # I can't spot the difference in arguments pylint claims?
+    def _keep_hypothesis(  # pylint: disable=arguments-differ
         self,
         hypothesis: PerceptionGraphTemplate,
-        bound_surface_template: SurfaceTemplateBoundToSemanticNodes,
+        bound_surface_template: SurfaceTemplateBoundToSemanticNodes,  # pylint:disable=unused-argument
     ) -> bool:
         if len(hypothesis.graph_pattern) < 2:
             # A one node graph is to small to meaningfully describe an object
@@ -459,5 +457,8 @@ class ObjectRecognizerAsTemplateLearner(TemplateLearner):
     ) -> ImmutableSetMultiDict[Concept, SurfaceTemplate]:
         return immutablesetmultidict(
             (concept, SurfaceTemplate.for_object_name(name))
-            for (concept, name) in self._object_recognizer._concepts_to_names.items()
+            for (
+                concept,
+                name,
+            ) in self._object_recognizer._concepts_to_names.items()  # pylint:disable=protected-access
         )

@@ -21,6 +21,7 @@ _MAXIMUM_RELATION_TEMPLATE_TOKEN_LENGTH = 3
 
 @attrs
 class AbstractRelationTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
+    # pylint:disable=abstract-method
     def _candidate_templates(
         self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
     ) -> AbstractSet[SurfaceTemplateBoundToSemanticNodes]:
@@ -126,7 +127,7 @@ class SubsetRelationLearnerNew(
         self,
         *,
         hypothesis: PerceptionGraphTemplate,
-        bound_surface_template: SurfaceTemplateBoundToSemanticNodes
+        bound_surface_template: SurfaceTemplateBoundToSemanticNodes  # pylint: disable=unused-argument
     ) -> bool:
         return len(hypothesis.graph_pattern) >= 2
 

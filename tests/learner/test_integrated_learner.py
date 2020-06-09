@@ -7,7 +7,6 @@ from adam.perception import PerceptualRepresentation
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
 )
-from adam.perception.perception_graph import PerceptionGraph
 from adam.random_utils import RandomChooser
 from adam.situation import SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation

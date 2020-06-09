@@ -1,40 +1,26 @@
 import logging
-from abc import abstractmethod, ABC
+from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import (
-    AbstractSet,
-    Dict,
-    List,
-    Mapping,
-    Optional,
-    Set,
-    Tuple,
-    Iterable,
-    Sequence,
-)
+from typing import AbstractSet, Dict, Iterable, Mapping, Optional, Sequence, Set, Tuple
 
+from adam.language import TokenSequenceLinguisticDescription
+from adam.learner.alignments import LanguagePerceptionSemanticAlignment
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
 from adam.learner.surface_templates import (
-    SurfaceTemplateBoundToSemanticNodes,
     SurfaceTemplate,
+    SurfaceTemplateBoundToSemanticNodes,
 )
 from adam.learner.template_learner import (
     AbstractTemplateLearner,
     AbstractTemplateLearnerNew,
 )
-from adam.perception.deprecated import LanguageAlignedPerception
-from adam.semantics import Concept
-from immutablecollections import ImmutableSet, immutabledict, immutableset
-
-from adam.language import TokenSequenceLinguisticDescription
 from adam.ontology.ontology import Ontology
+from adam.perception.deprecated import LanguageAlignedPerception
 from adam.perception.perception_graph import DebugCallableType
-from adam.learner.alignments import (
-    LanguageConceptAlignment,
-    LanguagePerceptionSemanticAlignment,
-)
+from adam.semantics import Concept
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
+from immutablecollections import ImmutableSet, immutabledict, immutableset
 
 
 @attrs
@@ -47,7 +33,7 @@ class AbstractSubsetLearner(AbstractTemplateLearner, ABC):
 
     def _learning_step(
         self,
-        language_concept_alignment: LanguageAlignedPerception,
+        preprocessed_input: LanguageAlignedPerception,
         surface_template: SurfaceTemplate,
     ) -> None:
         if surface_template in self._surface_template_to_hypothesis:
@@ -60,7 +46,7 @@ class AbstractSubsetLearner(AbstractTemplateLearner, ABC):
             ]
 
             updated_hypothesis = previous_pattern_hypothesis.intersection(
-                self._hypothesis_from_perception(language_concept_alignment),
+                self._hypothesis_from_perception(preprocessed_input),
                 ontology=self._ontology,
             )
 
@@ -80,7 +66,7 @@ class AbstractSubsetLearner(AbstractTemplateLearner, ABC):
             # perception graph.
             self._surface_template_to_hypothesis[
                 surface_template
-            ] = self._hypothesis_from_perception(language_concept_alignment)
+            ] = self._hypothesis_from_perception(preprocessed_input)
 
     @abstractmethod
     def _hypothesis_from_perception(
@@ -275,7 +261,7 @@ class AbstractSubsetLearnerNew(AbstractTemplateLearnerNew, ABC):
         self,
         *,
         hypothesis: PerceptionGraphTemplate,
-        bound_surface_template: SurfaceTemplateBoundToSemanticNodes
+        bound_surface_template: SurfaceTemplateBoundToSemanticNodes,
     ) -> bool:
         """
         Should a candidate hypothesis for the meaning of *bound_surface_template* be kept,
@@ -340,6 +326,7 @@ class AbstractTemplateSubsetLearner(AbstractSubsetLearner, AbstractTemplateLearn
 class AbstractTemplateSubsetLearnerNew(
     AbstractSubsetLearnerNew, AbstractTemplateLearnerNew, ABC
 ):
+    # pylint:disable=abstract-method
     def log_hypotheses(self, log_output_path: Path) -> None:
         logging.info(
             "Logging %s hypotheses to %s",
@@ -349,5 +336,5 @@ class AbstractTemplateSubsetLearnerNew(
         for (concept, hypotheses) in self._concept_to_hypotheses.items():
             for (i, hypothesis) in enumerate(hypotheses):
                 hypothesis.render_to_file(
-                    concept.debug_string, log_output_path / concept.debug_string
+                    concept.debug_string, log_output_path / f"concept.debug_string.{i}"
                 )

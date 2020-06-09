@@ -1,48 +1,44 @@
 import pytest
 
-from adam.learner.integrated_learner import IntegratedTemplateLearner
-from adam.learner.objects import ObjectRecognizerAsTemplateLearner
-from adam.learner.relations import SubsetRelationLearnerNew
-from immutablecollections import immutableset
-
 from adam.curriculum.curriculum_utils import (
-    standard_object,
-    phase1_instances,
     PHASE1_CHOOSER_FACTORY,
+    phase1_instances,
+    standard_object,
 )
 from adam.curriculum.phase1_curriculum import _x_has_y_template
 from adam.curriculum.preposition_curriculum import (
-    _on_template,
-    _beside_template,
-    _under_template,
-    _over_template,
-    _in_template,
     _behind_template,
+    _beside_template,
     _in_front_template,
+    _in_template,
+    _on_template,
+    _over_template,
+    _under_template,
 )
 from adam.learner import LearningExample
+from adam.learner.integrated_learner import IntegratedTemplateLearner
+from adam.learner.objects import ObjectRecognizerAsTemplateLearner
 from adam.learner.prepositions import SubsetPrepositionLearner
-
+from adam.learner.relations import SubsetRelationLearnerNew
 from adam.ontology import IS_ADDRESSEE, IS_SPEAKER
 from adam.ontology.phase1_ontology import (
     BALL,
     BOOK,
-    TABLE,
-    GAILA_PHASE_1_ONTOLOGY,
-    WATER,
     CUP,
+    GAILA_PHASE_1_ONTOLOGY,
     LEARNER,
     MOM,
     PERSON,
-    PERSON_CAN_HAVE,
-    INANIMATE_OBJECT,
+    TABLE,
+    WATER,
 )
-from adam.situation.templates.phase1_templates import sampled, object_variable
+from adam.situation.templates.phase1_templates import object_variable, sampled
+from immutablecollections import immutableset
 from tests.learner import TEST_OBJECT_RECOGNIZER
 
-# OLD_SUBSET_PREPOSITION_LEARNER_FACTORY = lambda: SubsetPrepositionLearner(
-#     object_recognizer=TEST_OBJECT_RECOGNIZER, ontology=GAILA_PHASE_1_ONTOLOGY
-# )
+OLD_SUBSET_PREPOSITION_LEARNER_FACTORY = lambda: SubsetPrepositionLearner(
+    object_recognizer=TEST_OBJECT_RECOGNIZER, ontology=GAILA_PHASE_1_ONTOLOGY
+)
 NEW_SUBSET_RELATION_LEARNER_FACTORY = lambda: IntegratedTemplateLearner(
     object_learner=ObjectRecognizerAsTemplateLearner(
         object_recognizer=TEST_OBJECT_RECOGNIZER
@@ -52,7 +48,10 @@ NEW_SUBSET_RELATION_LEARNER_FACTORY = lambda: IntegratedTemplateLearner(
     ),
 )
 
-LEARNER_FACTORIES = [NEW_SUBSET_RELATION_LEARNER_FACTORY]
+LEARNER_FACTORIES = [
+    OLD_SUBSET_PREPOSITION_LEARNER_FACTORY,
+    NEW_SUBSET_RELATION_LEARNER_FACTORY,
+]
 
 
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
@@ -283,7 +282,7 @@ def test_subset_preposition_in_learner(learner_factory):
         descriptions_from_learner = learner.describe(test_perceptual_representation)
         gold = test_linguistic_description.as_token_sequence()
         assert descriptions_from_learner
-        gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
+        assert gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
 
 
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
