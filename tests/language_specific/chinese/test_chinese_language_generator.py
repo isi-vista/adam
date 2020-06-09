@@ -329,10 +329,55 @@ def test_simple_SVIO_transfer():
     )
     assert generated_tokens(situation) == (
         "ma1 ma1",
-        "chr1",
+        "gei3",
         "bau3 bau3",
         "chyu1 chi2 bing3",
     )
+
+
+"""VP's WITH PERSONAL PRONOUNS"""
+
+# test the simple subject-verb phrase "mum eats" with first person
+@pytest.mark.skip(reason="pronouns and VP's aren't yet supported")
+def test_simple_subject_verb_me():
+    mum = situation_object(MOM, debug_handle="mum", properties=[IS_SPEAKER])
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mum],
+        actions=[Action(action_type=EAT, argument_roles_to_fillers=[(AGENT, mum)])],
+    )
+    assert generated_tokens(situation) == ("wo3", "chr1")
+
+
+# test the simple subject-verb phrase "mum eats" with second person
+@pytest.mark.skip(reason="pronouns and VP's aren't yet supported")
+def test_simple_subject_verb_you():
+    mum = situation_object(MOM, debug_handle="mum", properties=[IS_ADDRESSEE])
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mum],
+        actions=[Action(action_type=EAT, argument_roles_to_fillers=[(AGENT, mum)])],
+    )
+    assert generated_tokens(situation) == ("ni3", "chr1")
+
+
+# test SVIO transfer of possession with personal pronouns
+@pytest.mark.skip(reason="SVIO structure isn't yet supported")
+def test_simple_SVIO_transfer():
+    mum = situation_object(MOM, debug_handle="mum_subject", properties=[IS_SPEAKER])
+    baby = situation_object(BABY, debug_handle="babyIO", properties=[IS_ADDRESSEE])
+    cookie = situation_object(COOKIE, debug_handle="cookieDO")
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mum, baby, cookie],
+        actions=[
+            Action(
+                action_type=GIVE,
+                argument_roles_to_fillers=[(AGENT, mom), (GOAL, baby), (THEME, cookie)],
+            )
+        ],
+    )
+    assert generated_tokens(situation) == ("wo3", "gei3", "ni3", "chyu1 chi2 bing3")
 
 
 # test SVO with action/movement verb
