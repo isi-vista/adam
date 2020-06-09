@@ -829,3 +829,74 @@ def test_third_person_cookie_in_his_box():
         "syang1",
         "li3",
     )
+
+
+# tests the use of the second person possessive, 'ni de'
+@pytest.mark.skip("we don't handle possessives or localisers yet")
+def test_you_put_cookie_in_your_box():
+    dad = situation_object(DAD, properties=[IS_ADDRESSEE])
+    cookie = situation_object(COOKIE)
+    box = situation_object(BOX)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[dad, cookie, box],
+        always_relations=[Relation(HAS, dad, box)],
+        actions=[
+            Action(
+                action_type=PUT,
+                argument_roles_to_fillers=[
+                    (AGENT, dad),
+                    (THEME, cookie),
+                    (GOAL, Region(reference_object=box, distance=INTERIOR)),
+                ],
+            )
+        ],
+    )
+    # TODO: have native speaker check whether ni de or ni is preferred here
+    assert generated_tokens(situation) == (
+        "ni3",
+        "ba3",
+        "chyu1 chi2 bing3",
+        "fang4",
+        "dzai4",
+        "ni3",
+        "de",
+        "syang1",
+        "li3",
+    )
+
+
+# tests use of first person possessive 'wo de' when the speaker isn't the agent
+@pytest.mark.skip("we don't handle possessives or localisers yet")
+def test_speaker_owner_of_box():
+    dad = situation_object(DAD)
+    cookie = situation_object(COOKIE)
+    box = situation_object(BOX)
+    mum = situation_object(MOM, properties=[IS_SPEAKER])
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[dad, cookie, box],
+        always_relations=[Relation(HAS, mum, box)],
+        actions=[
+            Action(
+                action_type=PUT,
+                argument_roles_to_fillers=[
+                    (AGENT, dad),
+                    (THEME, cookie),
+                    (GOAL, Region(reference_object=box, distance=INTERIOR)),
+                ],
+            )
+        ],
+    )
+    # TODO: have native speaker check whether wo de or wo is preferred here
+    assert generated_tokens(situation) == (
+        "ba4 ba4",
+        "ba3",
+        "chyu1 chi2 bing3",
+        "fang4",
+        "dzai4",
+        "wo3",
+        "de",
+        "syang1",
+        "li3",
+    )
