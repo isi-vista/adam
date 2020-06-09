@@ -4,7 +4,12 @@ which is still under development"""
 from typing import Tuple
 import pytest
 from more_itertools import only
-from adam.axes import HorizontalAxisOfObject, FacingAddresseeAxis, AxesInfo
+from adam.axes import (
+    HorizontalAxisOfObject,
+    FacingAddresseeAxis,
+    AxesInfo,
+    GRAVITATIONAL_AXIS_FUNCTION,
+)
 
 # TODO: update imports once Chinese syntactic info is updated
 from adam.language_specific.chinese.chinese_language_generator import (
@@ -992,3 +997,73 @@ def test_dad_has_cookie():
         actions=[],
     )
     assert generated_tokens(situation) == ("ba4 ba4", "you3", "chyu1 chi2 bing3")
+
+
+"""PATH MODIFIERS"""
+# TODO: deal with doa/zai distinction for path modifiers and deal with guo
+
+# this tests over, which is a special case since it doesn't use zai/dao
+@pytest.mark.skip(reason="path modifiers have not been implemented yet")
+def test_path_modifier():
+    bird = situation_object(BIRD)
+    house = situation_object(HOUSE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[bird, house],
+        actions=[
+            Action(
+                FLY,
+                argument_roles_to_fillers=[(AGENT, bird)],
+                during=DuringAction(
+                    at_some_point=[
+                        Relation(
+                            IN_REGION,
+                            bird,
+                            Region(
+                                reference_object=house,
+                                distance=DISTAL,
+                                direction=Direction(
+                                    positive=True,
+                                    relative_to_axis=GRAVITATIONAL_AXIS_FUNCTION,
+                                ),
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+    )
+    assert generated_tokens(situation) == ("nyau3", "fei1", "gwo4", "wu1")
+
+
+# this tests under, which is a regular case using 'dao'
+@pytest.mark.skip(reason="path modifiers have not been implemented yet")
+def test_path_modifier_under():
+    bird = situation_object(BIRD)
+    table = situation_object(TABLE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[bird, table],
+        actions=[
+            Action(
+                FLY,
+                argument_roles_to_fillers=[(AGENT, bird)],
+                during=DuringAction(
+                    at_some_point=[
+                        Relation(
+                            IN_REGION,
+                            bird,
+                            Region(
+                                reference_object=table,
+                                distance=DISTAL,
+                                direction=GRAVITATIONAL_DOWN,
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+        # TODO: must include these in order to use dao; is this the best way to handle this?
+        after_action_relations=[near(bird, table)],
+    )
+    assert generated_tokens(situation) == ("nyau3", "fei1", "dau4", "jwo1 dz", "di3 sya")
