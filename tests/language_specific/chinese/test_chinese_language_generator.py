@@ -61,6 +61,7 @@ from adam.ontology.phase1_ontology import (
     TAKE,
     CAR,
     ROLL_SURFACE_AUXILIARY,
+    TRUCK,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -165,3 +166,36 @@ def test_many_items():
     assert only(
         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
     ).as_token_sequence() == ("hen3dwo1", "chyou2")
+
+
+"""SALIENT VS. NOT SALIENT OBJECTS"""
+
+# two trucks, only one is salient
+@pytest.mark.skip(reason="saliency not yet supported")
+def test_one_salient_object():
+    truck1 = situation_object(TRUCK, debug_handle="truck1")
+    truck2 = situation_object(TRUCK, debug_handle="truck2")
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[truck1], other_objects=[truck2]
+    )
+    assert only(
+        _SIMPLE_GENERATOR.generate_language((situation, FixedIndexChooser(0)))
+    ).as_token_sequence() == ("ka3 che1")
+
+
+# many objects, onlytwo are salient
+@pytest.mark.skip(reason="saliency and classifiers aren't yet supported")
+def test_two_salient_objects():
+    dog1 = situation_object(DOG, debug_handle="dog1")
+    dog2 = situation_object(DOG, debug_handle="dog2")
+    dog3 = situation_object(DOG, debug_handle="dog3")
+    truck1 = situation_object(TRUCK, debug_handle="truck1")
+    truck2 = situation_object(TRUCK, debug_handle="truck2")
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[dog1, dog2],
+        other_objects=[dog3, truck1, truck2],
+    )
+    assert only(
+        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
+    ).as_token_sequence() == ("lyang3", "jr3", "gou3")
