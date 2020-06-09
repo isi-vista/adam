@@ -6,6 +6,8 @@ the same way in Chinese as in English.
 
 We don't provide plural specifications for nouns since this isn't a
 morphologically-realized feature in Chinese.
+
+This vocabulary has been verified by a native speaker.
 """
 from adam.language_specific import (
     FIRST_PERSON,
@@ -79,9 +81,9 @@ GAILA_PHASE_1_CHINESE_LEXICON = OntologyLexicon(
     ontology=GAILA_PHASE_1_ONTOLOGY,
     ontology_node_to_word=(
         (GROUND, LexiconEntry("di4 myan4", NOUN)),
-        (MOM, LexiconEntry("ma1", PROPER_NOUN)),
+        (MOM, LexiconEntry("ma1ma1", PROPER_NOUN)),
         (BALL, LexiconEntry("chyou2", NOUN)),
-        (TABLE, LexiconEntry("jwo1", NOUN)),
+        (TABLE, LexiconEntry("jwo1 dz", NOUN)),
         (PUT, LexiconEntry("fang4", VERB)),
         (PUSH, LexiconEntry("twei1", VERB)),
         (BOOK, LexiconEntry("shu1", NOUN)),
@@ -99,11 +101,11 @@ GAILA_PHASE_1_CHINESE_LEXICON = OntologyLexicon(
         (DOOR, LexiconEntry("men2", NOUN)),
         (HAT, LexiconEntry("mau4 dz", NOUN)),
         (COOKIE, LexiconEntry("chyu1 chi2 bing3", NOUN)),
-        (DAD, LexiconEntry("ba4", PROPER_NOUN)),
+        (DAD, LexiconEntry("ba4ba4", PROPER_NOUN)),
         (BABY, LexiconEntry("bau3 bau3", NOUN)),
         (DOG, LexiconEntry("gou3", NOUN)),
         (BIRD, LexiconEntry("nyau3", NOUN)),
-        (GO, LexiconEntry("dzou3", VERB)),
+        (GO, LexiconEntry("chyu4", VERB)),
         (COME, LexiconEntry("lái", VERB)),
         (TAKE, LexiconEntry("na2", VERB)),
         (EAT, LexiconEntry("chr1", VERB)),
@@ -112,8 +114,9 @@ GAILA_PHASE_1_CHINESE_LEXICON = OntologyLexicon(
         (SIT, LexiconEntry("dzwo4", VERB)),
         (DRINK, LexiconEntry("he1", VERB)),
         (FALL, LexiconEntry("dye2 dau3", VERB)),
-        (THROW, LexiconEntry("reng1", VERB, properties=[ALLOWS_DITRANSITIVE])),
-        (MOVE, LexiconEntry("dung4", VERB)),
+        # throw isn't ditransitive in Chinese
+        (THROW, LexiconEntry("reng1", VERB)),
+        (MOVE, LexiconEntry("yi2 dung4", VERB)),
         (JUMP, LexiconEntry("tyau4", VERB)),
         (HAS, LexiconEntry("you3", VERB)),
         (ROLL, LexiconEntry("gwun3", VERB)),
