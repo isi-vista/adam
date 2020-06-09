@@ -819,6 +819,35 @@ def test_you_put_cookie_in_box_zai():
     )
 
 
+# another meaning to test with localisers
+@pytest.skip(reason="we haven't implemented pronouns or localisers yet")
+def test_take_to_car():
+    baby = situation_object(BABY)
+    ball = situation_object(BALL)
+    car = situation_object(CAR)
+
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[baby, ball, car],
+        actions=[
+            Action(
+                action_type=TAKE, argument_roles_to_fillers=[(AGENT, baby), (THEME, ball)]
+            )
+        ],
+        after_action_relations=[near(ball, car)],
+    )
+
+    assert generated_tokens(situation) == (
+        "bau3 bau3",
+        "ba",
+        "chyou2",
+        "na2",
+        "dau4",
+        "chi4 che1",
+        "shang4",
+    )
+
+
 """TESTS POSSESSIVE: WO DE AND NI DE"""
 
 # tests the use of the first person possessive, 'wo de'
@@ -1136,9 +1165,58 @@ def test_path_modifier_on():
     )
 
 
-"""ADV MODIFICATION"""
+# test besides for path of flight
+@pytest.mark.skip(reason="path modifiers have not been implemented yet")
+def test_bird_flies_path_beside():
+    bird = situation_object(BIRD)
+    car = situation_object(CAR)
+    car_region = Region(
+        car,
+        distance=PROXIMAL,
+        direction=Direction(
+            positive=True, relative_to_axis=HorizontalAxisOfObject(car, index=0)
+        ),
+    )
 
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[bird, car],
+        actions=[
+            Action(
+                FLY,
+                argument_roles_to_fillers=[(AGENT, bird)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            bird,
+                            SpatialPath(
+                                VIA,
+                                reference_object=car_region,
+                                reference_axis=HorizontalAxisOfObject(car, index=0),
+                            ),
+                        )
+                    ],
+                    at_some_point=[Relation(IN_REGION, bird, car_region)],
+                ),
+            )
+        ],
+    )
+
+    assert generated_tokens(situation) == (
+        "nyau3",
+        "fei1",
+        "dau4",
+        "chi4 che1",
+        "pang2 byan1",
+    )
+
+
+"""ADV MODIFICATION"""
 # TODO: check if adverb path modifiers are salient and should be implemented in Chinese
+# it appears that there is a distinction for fall/fall down but not sit/sit down
+
+
+# fall down testing -- this does translate but I'm not sure how much it's used
 @pytest.mark.skip("advmods not yet implemented")
 def test_falling_down():
     ball = situation_object(BALL)
