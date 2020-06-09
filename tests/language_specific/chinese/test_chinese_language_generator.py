@@ -352,7 +352,7 @@ def test_simple_SVO_movement():
     assert generated_tokens(situation) == ("ba4 ba4", "twei1", "yi3 dz")
 
 
-"""VP's WITH LOCALIZERS"""
+"""VP's WITH LOCALIZERS AND VARIOUS SPEAKERS"""
 # TODO: handle zai/dao distinction in generator
 # use zai by default and dao with after-action relations based on https://github.com/isi-vista/adam/issues/796
 # a list of verbs that currently don't accept goals is at https://github.com/isi-vista/adam/issues/582
@@ -426,6 +426,162 @@ def test_mom_put_a_ball_on_a_table_dao():
     )
     assert generated_tokens(situation) == (
         "ma1 ma1",
+        "ba3",
+        "chyou2",
+        "fang4",
+        "dau4",
+        "jwo1 dz",
+        "shang4",
+    )
+
+
+# this situation doesn't have any after-action relations so it uses zai, which is valid
+# the mum is the speaker here, so we expect the first person 'wo'
+@pytest.mark.skip(reason="pronouns and localisers aren't yet implemented")
+def test_I_put_a_ball_on_a_table_zai():
+    mum = situation_object(MOM, properties=[IS_SPEAKER])
+    ball = situation_object(BALL)
+    table = situation_object(TABLE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mum, ball, table],
+        actions=[
+            Action(
+                action_type=PUT,
+                argument_roles_to_fillers=[
+                    (AGENT, mom),
+                    (THEME, ball),
+                    (
+                        GOAL,
+                        Region(
+                            reference_object=table,
+                            distance=EXTERIOR_BUT_IN_CONTACT,
+                            direction=GRAVITATIONAL_UP,
+                        ),
+                    ),
+                ],
+            )
+        ],
+    )
+    assert generated_tokens(situation) == (
+        "wo3",
+        "ba3",
+        "chyou2",
+        "fang4",
+        "dzai4",
+        "jwo1 dz",
+        "shang4",
+    )
+
+
+# the speaker is putting the ball on the table here, using dao since we have after-action relations
+@pytest.mark.skip(reason="We don't handle speaker or localisers yet")
+def test_i_put_a_ball_on_a_table_dao():
+    mum = situation_object(MOM, properties=[IS_SPEAKER])
+    ball = situation_object(BALL)
+    table = situation_object(TABLE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mum, ball, table],
+        actions=[
+            Action(
+                action_type=PUT,
+                argument_roles_to_fillers=[
+                    (AGENT, mom),
+                    (THEME, ball),
+                    (
+                        GOAL,
+                        Region(
+                            reference_object=table,
+                            distance=EXTERIOR_BUT_IN_CONTACT,
+                            direction=GRAVITATIONAL_UP,
+                        ),
+                    ),
+                ],
+            )
+        ],
+        after_action_relations=[on(ball, table)],
+    )
+    assert generated_tokens(situation) == (
+        "wo3",
+        "ba3",
+        "chyou2",
+        "fang4",
+        "dau4",
+        "jwo1 dz",
+        "shang4",
+    )
+
+
+# this situation doesn't have any after-action relations so it uses zai, which is valid
+# the mum is the speaker here, so we expect the first person 'wo'
+@pytest.mark.skip(reason="pronouns and localisers aren't yet implemented")
+def test_you_put_a_ball_on_a_table_zai():
+    mum = situation_object(MOM, properties=[IS_ADDRESSEE])
+    ball = situation_object(BALL)
+    table = situation_object(TABLE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mum, ball, table],
+        actions=[
+            Action(
+                action_type=PUT,
+                argument_roles_to_fillers=[
+                    (AGENT, mom),
+                    (THEME, ball),
+                    (
+                        GOAL,
+                        Region(
+                            reference_object=table,
+                            distance=EXTERIOR_BUT_IN_CONTACT,
+                            direction=GRAVITATIONAL_UP,
+                        ),
+                    ),
+                ],
+            )
+        ],
+    )
+    assert generated_tokens(situation) == (
+        "ni3",
+        "ba3",
+        "chyou2",
+        "fang4",
+        "dzai4",
+        "jwo1 dz",
+        "shang4",
+    )
+
+
+# the speaker is putting the ball on the table here, using dao since we have after-action relations
+@pytest.mark.skip(reason="We don't handle speaker or localisers yet")
+def test_you_put_a_ball_on_a_table_dao():
+    mum = situation_object(MOM, properties=[IS_ADDRESSEE])
+    ball = situation_object(BALL)
+    table = situation_object(TABLE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mum, ball, table],
+        actions=[
+            Action(
+                action_type=PUT,
+                argument_roles_to_fillers=[
+                    (AGENT, mom),
+                    (THEME, ball),
+                    (
+                        GOAL,
+                        Region(
+                            reference_object=table,
+                            distance=EXTERIOR_BUT_IN_CONTACT,
+                            direction=GRAVITATIONAL_UP,
+                        ),
+                    ),
+                ],
+            )
+        ],
+        after_action_relations=[on(ball, table)],
+    )
+    assert generated_tokens(situation) == (
+        "ni3",
         "ba3",
         "chyou2",
         "fang4",
