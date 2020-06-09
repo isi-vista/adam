@@ -324,6 +324,109 @@ def test_mum_above_object():
     assert generated_tokens(situation) == ("ma1 ma1", "dzai4", "nyau3", "shang4")
 
 
+# tests an object beside another object
+@pytest.mark.skip(reason="localisers and NP's aren't supported yet")
+def test_object_beside_object():
+    # HACK FOR AXES - See https://github.com/isi-vista/adam/issues/316
+    ball = situation_object(BALL)
+    table = situation_object(TABLE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[ball, table],
+        always_relations=[
+            Relation(
+                IN_REGION,
+                ball,
+                Region(
+                    table,
+                    distance=PROXIMAL,
+                    direction=Direction(
+                        positive=True,
+                        relative_to_axis=HorizontalAxisOfObject(table, index=0),
+                    ),
+                ),
+            )
+        ],
+    )
+    assert generated_tokens(situation) == ("chyou2", "dzai4", "jwo1 dz", "pang2 byan1")
+
+
+def test_object_behind_in_front_object():
+    # HACK FOR AXES - See https://github.com/isi-vista/adam/issues/316
+    box = situation_object(BOX)
+    table = situation_object(TABLE)
+    speaker = situation_object(MOM, properties=[IS_SPEAKER])
+    addressee = situation_object(DAD, properties=[IS_ADDRESSEE])
+
+    front_situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[box, table],
+        other_objects=[speaker, addressee],
+        always_relations=[
+            Relation(
+                IN_REGION,
+                box,
+                Region(
+                    table,
+                    distance=PROXIMAL,
+                    direction=Direction(
+                        positive=True, relative_to_axis=FacingAddresseeAxis(table)
+                    ),
+                ),
+            )
+        ],
+        axis_info=AxesInfo(
+            addressee=addressee,
+            axes_facing=[
+                (
+                    addressee,
+                    # TODO: fix this hack
+                    HorizontalAxisOfObject(obj, index=1).to_concrete_axis(  # type: ignore
+                        None
+                    ),
+                )
+                for obj in [box, table, speaker, addressee]
+                if obj.axes
+            ],
+        ),
+    )
+    assert generated_tokens(front_situation) == ("a", "box", "in front of", "a", "table")
+
+    behind_situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[box, table],
+        other_objects=[speaker, addressee],
+        always_relations=[
+            Relation(
+                IN_REGION,
+                box,
+                Region(
+                    table,
+                    distance=PROXIMAL,
+                    direction=Direction(
+                        positive=False, relative_to_axis=FacingAddresseeAxis(table)
+                    ),
+                ),
+            )
+        ],
+        axis_info=AxesInfo(
+            addressee=addressee,
+            axes_facing=[
+                (
+                    addressee,
+                    # TODO: fix this hack
+                    HorizontalAxisOfObject(obj, index=1).to_concrete_axis(  # type: ignore
+                        None
+                    ),
+                )
+                for obj in [box, table, speaker, addressee]
+                if obj.axes
+            ],
+        ),
+    )
+    assert generated_tokens(behind_situation) == ("a", "box", "behind", "a", "table")
+
+
 """BASIC VP TESTING: SV, SVO, and SVIO"""
 
 
@@ -452,6 +555,31 @@ def test_simple_SVO_movement():
         ],
     )
     assert generated_tokens(situation) == ("ba4 ba4", "twei1", "yi3 dz")
+
+
+# SVIO with pronouns
+@pytest.mark.skip(reason="SVO structure isn't supported yet")
+def test_you_give_me_a_cookie():
+    you = situation_object(DAD, properties=[IS_ADDRESSEE])
+    baby = situation_object(BABY, properties=[IS_SPEAKER])
+    cookie = situation_object(COOKIE)
+    situation_ditransitive = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[you, baby, cookie],
+        actions=[
+            Action(
+                GIVE,
+                argument_roles_to_fillers=[(AGENT, you), (GOAL, baby), (THEME, cookie)],
+            )
+        ],
+        syntax_hints=[PREFER_DITRANSITIVE],
+    )
+    assert generated_tokens(situation_ditransitive) == (
+        "ni3",
+        "gei3",
+        "wo3",
+        "chyu1 chi2 bing3",
+    )
 
 
 """VP's WITH LOCALIZERS AND VARIOUS SPEAKERS"""
@@ -1057,7 +1185,7 @@ def test_dad_has_cookie():
 
 """PATH MODIFIERS"""
 # TODO: deal with doa/zai distinction for path modifiers and deal with guo. It may be
-# possible to handle this differently than elsewhere to reflect the different distinctions
+
 
 # this tests over, which is a special case since it doesn't use zai/dao
 @pytest.mark.skip(reason="path modifiers have not been implemented yet")
@@ -1091,6 +1219,27 @@ def test_path_modifier():
         ],
     )
     assert generated_tokens(situation) == ("nyau3", "fei1", "gwo4", "wu1")
+
+
+# a slightly different test for over
+@pytest.mark.skip(reason="path modifiers haven't been implemented yet")
+def test_jumps_over():
+    dad = situation_object(DAD)
+    chair = situation_object(CHAIR)
+    ground = situation_object(GROUND)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[dad, chair],
+        actions=[
+            Action(
+                JUMP,
+                argument_roles_to_fillers=[(AGENT, dad)],
+                during=DuringAction(at_some_point=[strictly_above(dad, chair)]),
+                auxiliary_variable_bindings=[(JUMP_INITIAL_SUPPORTER_AUX, ground)],
+            )
+        ],
+    )
+    assert generated_tokens(situation) == ("ba4 ba4", "tyau4", "gwo4", "yi3 dz")
 
 
 # this tests under, which is a regular case using 'dao'
@@ -1207,6 +1356,54 @@ def test_bird_flies_path_beside():
         "dau4",
         "chi4 che1",
         "pang2 byan1",
+    )
+
+
+# test path modifiers with intransitive verbs
+@pytest.mark.skip(reason="path modifiers have not been implemented yet")
+def test_ball_fell_on_ground():
+    ball = situation_object(BALL)
+    ground = situation_object(GROUND)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[ball, ground],
+        actions=[Action(FALL, argument_roles_to_fillers=[(THEME, ball)])],
+        after_action_relations=[on(ball, ground)],
+    )
+    assert generated_tokens(situation) == ("chyou2", "dye2 dau3", "di4 myan4", "shang4")
+
+
+# another intransitive verb
+@pytest.mark.skip(reason="path modifiers have not been implemented yet")
+def test_mom_sits_on_a_table():
+    mom = situation_object(MOM)
+    table = situation_object(TABLE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom, table],
+        actions=[
+            Action(
+                SIT,
+                argument_roles_to_fillers=[
+                    (AGENT, mom),
+                    (
+                        GOAL,
+                        Region(
+                            table,
+                            direction=GRAVITATIONAL_UP,
+                            distance=EXTERIOR_BUT_IN_CONTACT,
+                        ),
+                    ),
+                ],
+            )
+        ],
+    )
+    assert generated_tokens(situation) == (
+        "ma1ma1",
+        "dzwo4",
+        "dzai4",
+        "jwo1 dz",
+        "shang4",
     )
 
 
