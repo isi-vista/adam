@@ -202,6 +202,7 @@ def test_two_salient_objects():
 
 
 """NOUN PHRASES WITH LOCALISER NOMINAL MODIFIERS"""
+# TODO: native speaker should check the localisers once they are implemented
 
 # tests mum being next to an object, a relation that is represented with a localiser phrase
 @pytest.mark.skip(reason="localisers and NP's aren't yet supported")
@@ -231,3 +232,47 @@ def test_two_objects_with_mum():
     assert only(
         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
     ).as_token_sequence() == ("ma1 ma1", "dzai4", "nyau3", "pang2 byan1")
+
+
+# tests mum being under a bird
+@pytest.mark.skip(reason="localisers and NP's aren't supported yet")
+def test_mum_under_object():
+    bird1 = situation_object(BIRD, debug_handle="bird1")
+    bird2 = situation_object(BIRD, debug_handle="bird2")
+    mum = situation_object(MOM, debug_handle="mum")
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[bird1, mum],
+        other_objects=[bird2],
+        always_relations=[
+            Relation(
+                IN_REGION,
+                mum,
+                Region(bird1, distance=DISTAL, direction=GRAVITATIONAL_DOWN),
+            )
+        ],
+    )
+    assert only(
+        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
+    ).as_token_sequence() == ("ma1 ma1", "dzai4", "nyau3", "sya4")
+
+
+# tests mum being above an object
+@pytest.mark.skip(reason="localisers and NP's aren't supported yet")
+def test_mum_above_object():
+    bird1 = situation_object(BIRD, debug_handle="bird1")
+    bird2 = situation_object(BIRD, debug_handle="bird2")
+    mum = situation_object(MOM, debug_handle="mum")
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[bird1, mum],
+        other_objects=[bird2],
+        always_relations=[
+            Relation(
+                IN_REGION, mum, Region(bird1, distance=DISTAL, direction=GRAVITATIONAL_UP)
+            )
+        ],
+    )
+    assert only(
+        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
+    ).as_token_sequence() == ("ma1 ma1", "dzai4", "nyau3", "shang4")
