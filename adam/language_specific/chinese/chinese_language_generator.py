@@ -86,7 +86,25 @@ from adam.situation.high_level_semantics_situation import HighLevelSemanticsSitu
 class SimpleRuleBasedChineseLanguageGenerator(
     LanguageGenerator[HighLevelSemanticsSituation, LinearizedDependencyTree]
 ):
-    raise NotImplementedError
+    # mapping from nodes in the concept ontology to Chinese words
+    _ontology_lexicon: OntologyLexicon = attrib(
+        validator=instance_of(OntologyLexicon), kw_only=True
+    )
+
+    # how to assign word order to the dependency trees
+    _dependency_tree_linearizer: DependencyTreeLinearizer = attrib(
+        init=False, default=SIMPLE_CHINESE_DEPENDENCY_TREE_LINEARIZER, kw_only=True
+    )
+
+    # the function that actually generates the language
+    def generate_language(
+        self, situation: HighLevelSemanticsSituation, chooser: SequenceChooser
+    ) -> ImmutableSet[LinearizedDependencyTree]:
+        # we haven't implemented this yet
+        raise NotImplementedError
+        return SimpleRuleBasedChineseLanguageGenerator._Generation(
+            self, situation
+        ).generate()
 
 
 GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR = SimpleRuleBasedChineseLanguageGenerator(
