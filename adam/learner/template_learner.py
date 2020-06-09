@@ -64,8 +64,13 @@ class AbstractTemplateLearner(
         # Pre-processing steps will be different depending on
         # what sort of structures we are running.
         preprocessed_input = self._preprocess_scene_for_learning(
-            learning_example.linguistic_description,
-            self._extract_perception_graph(learning_example.perception),
+            LanguageAlignedPerception(
+                language=learning_example.linguistic_description,
+                perception_graph=self._extract_perception_graph(
+                    learning_example.perception
+                ),
+                node_to_language_span=immutabledict(),
+            )
         )
 
         logging.info(f"Learner observing {preprocessed_input}")
@@ -169,7 +174,7 @@ class AbstractTemplateLearner(
 
     @abstractmethod
     def _preprocess_scene_for_learning(
-        self, language: LinguisticDescription, perception: PerceptionGraph
+        self, language_concept_alignment: LanguageAlignedPerception
     ) -> LanguageAlignedPerception:
         """
         Does any preprocessing necessary before the learning process begins.

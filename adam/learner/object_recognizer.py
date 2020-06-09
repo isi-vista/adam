@@ -9,6 +9,7 @@ from networkx import DiGraph
 from adam.axes import GRAVITATIONAL_DOWN_TO_UP_AXIS, LEARNER_AXES, WORLD_AXES
 from adam.language import LinguisticDescription
 from adam.learner.alignments import (
+    LanguageConceptAlignment,
     LanguagePerceptionSemanticAlignment,
     PerceptionSemanticAlignment,
 )
@@ -20,6 +21,7 @@ from adam.ontology.phase1_ontology import (
     PHASE_1_CURRICULUM_OBJECTS,
 )
 from adam.perception import GROUND_PERCEPTION, LEARNER_PERCEPTION, ObjectPerception
+from adam.perception.deprecated import LanguageAlignedPerception
 from adam.perception.perception_graph import (
     AnyObjectPerception,
     ENTIRE_SCENE,
@@ -194,6 +196,18 @@ class ObjectRecognizer:
             },
         )
 
+    def match_objects_old(
+        self, perception_graph: PerceptionGraph
+    ) -> PerceptionGraphFromObjectRecognizer:
+        new_style_input = PerceptionSemanticAlignment(
+            perception_graph=perception_graph, semantic_nodes=[]
+        )
+        new_style_output = self.match_objects(new_style_input)
+        return PerceptionGraphFromObjectRecognizer(
+            perception_graph=new_style_output[0].perception_graph,
+            description_to_matched_object_node=new_style_output[1],
+        )
+
     def match_objects(
         self, perception_semantic_alignment: PerceptionSemanticAlignment
     ) -> Tuple[PerceptionSemanticAlignment, Mapping[Tuple[str, ...], ObjectSemanticNode]]:
@@ -303,6 +317,29 @@ class ObjectRecognizer:
                 new_graph=graph_to_return, new_nodes=object_nodes_dict.values()
             ),
             object_nodes_dict,
+        )
+
+    def match_objects_with_language_old(
+        self, language_aligned_perception: LanguageAlignedPerception
+    ) -> LanguageAlignedPerception:
+        if language_aligned_perception.node_to_language_span:
+            raise RuntimeError(
+                "Don't know how to handle a non-empty node-to-language-span"
+            )
+        new_style_input = LanguagePerceptionSemanticAlignment(
+            language_concept_alignment=LanguageConceptAlignment(
+                language_aligned_perception.language, node_to_language_span=[]
+            ),
+            perception_semantic_alignment=PerceptionSemanticAlignment(
+                perception_graph=language_aligned_perception.perception_graph,
+                semantic_nodes=[],
+            ),
+        )
+        new_style_output = self.match_objects_with_language(new_style_input)
+        return LanguageAlignedPerception(
+            language=new_style_output.language_concept_alignment.language,
+            perception_graph=new_style_output.perception_semantic_alignment.perception_graph,
+            node_to_language_span=new_style_output.language_concept_alignment.node_to_language_span,
         )
 
     def match_objects_with_language(
