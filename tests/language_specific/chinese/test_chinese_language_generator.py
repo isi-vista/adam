@@ -132,6 +132,31 @@ def test_proper_noun():
     ).as_token_sequence() == ("ba4 ba4",)
 
 
+"""NOUN PHRASES WITH ADJECTIVAL MODIFIERS"""
+
+# basic adjective+noun
+@pytest.mark.skip(reason="NPs and modification isn't implemented yet")
+def test_green_ball():
+    ball = situation_object(BALL, properties=[GREEN])
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[ball]
+    )
+    assert generated_tokens(situation) == as_token_sequence() == ("lyu4 se4", "chyou2")
+
+
+# possession for NP's
+@pytest.mark.skip(reason="possession not yet implemented in NPs")
+def test_my_green_ball():
+    ball = situation_object(BALL, properties=[GREEN])
+    dad = situation_object(DAD, properties=[IS_SPEAKER])
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[ball, dad],
+        always_relations=[Relation(HAS, dad, ball)],
+    )
+    assert generated_tokens(situation) == ("wo3", "de", "lyu4 se4", "chyou2")
+
+
 """COUNTING NOUN PHRASE TESTS (WITH CLASSIFIERS)"""
 
 
@@ -966,5 +991,4 @@ def test_dad_has_cookie():
         always_relations=[Relation(HAS, dad, cookie)],
         actions=[],
     )
-
     assert generated_tokens(situation) == ("ba4 ba4", "you3", "chyu1 chi2 bing3")
