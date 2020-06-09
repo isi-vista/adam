@@ -88,6 +88,14 @@ _SIMPLE_GENERATOR = SimpleRuleBasedChineseLanguageGenerator(
     ontology_lexicon=GAILA_PHASE_1_CHINESE_LEXICON
 )
 
+"""GLOBAL UTILITY FUNCTIONS"""
+
+# function to generate tokens from a given situation
+def generated_tokens(situation):
+    return only(
+        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
+    ).as_token_sequence()
+
 
 """ BASIC NOUN PHRASE TESTS"""
 
@@ -229,9 +237,7 @@ def test_two_objects_with_mum():
             )
         ],
     )
-    assert only(
-        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
-    ).as_token_sequence() == ("ma1 ma1", "dzai4", "nyau3", "pang2 byan1")
+    assert generated_tokens(situation) == ("ma1 ma1", "dzai4", "nyau3", "pang2 byan1")
 
 
 # tests mum being under a bird
@@ -252,9 +258,7 @@ def test_mum_under_object():
             )
         ],
     )
-    assert only(
-        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
-    ).as_token_sequence() == ("ma1 ma1", "dzai4", "nyau3", "sya4")
+    assert generated_tokens(situation) == ("ma1 ma1", "dzai4", "nyau3", "sya4")
 
 
 # tests mum being above an object
@@ -273,9 +277,7 @@ def test_mum_above_object():
             )
         ],
     )
-    assert only(
-        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
-    ).as_token_sequence() == ("ma1 ma1", "dzai4", "nyau3", "shang4")
+    assert generated_tokens(situation) == ("ma1 ma1", "dzai4", "nyau3", "shang4")
 
 
 """BASIC VP TESTING: SV, SVO, and SVIO"""
@@ -289,12 +291,7 @@ def test_simple_subject_verb():
         salient_objects=[mum],
         actions=[Action(action_type=EAT, argument_roles_to_fillers=[(AGENT, mum)])],
     )
-    assert only(
-        _SIMPLE_GENERATOR.generate_language(
-            situation, FixedIndexChooser(0)
-        ).as_token_sequence()
-        == ("ma1 ma1", "chr1")
-    )
+    assert generated_tokens(situation) == ("ma1 ma1", "chr1")
 
 
 # test more complex SVO phrase "mum eats a cookie"
@@ -311,12 +308,7 @@ def test_simple_SVO():
             )
         ],
     )
-    assert only(
-        _SIMPLE_GENERATOR.generate_language(
-            situation, FixedIndexChooser(0)
-        ).as_token_sequence()
-        == ("ma1 ma1", "chr1", "chyu1 chi2 bing3")
-    )
+    assert generated_tokens(situation) == ("ma1 ma1", "chr1", "chyu1 chi2 bing3")
 
 
 # test SVIO transfer of possession
@@ -335,16 +327,9 @@ def test_simple_SVIO_transfer():
             )
         ],
     )
-    assert only(
-        _SIMPLE_GENERATOR.generate_language(
-            situation, FixedIndexChooser(0)
-        ).as_token_sequence()
-        == ("ma1 ma1", "chr1", "bau3 bau3", "chyu1 chi2 bing3")
+    assert generated_tokens(situation) == (
+        "ma1 ma1",
+        "chr1",
+        "bau3 bau3",
+        "chyu1 chi2 bing3",
     )
-
-
-# method to generate tokens from a given situation
-def generated_tokens(situation):
-    return only(
-        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
-    ).as_token_sequence()
