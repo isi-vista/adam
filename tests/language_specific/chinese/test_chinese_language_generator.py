@@ -125,9 +125,8 @@ def test_proper_noun():
 
 """COUNTING NOUN PHRASE TESTS (WITH CLASSIFIERS)"""
 
-# a single object
-# TODO: we need to mark whether we want to specify that there is one object
-# TODO: these classifiers should be checked by a native speaker
+
+# a single object -- note that we don't use yi clf noun yet but this could be implemented later on
 @pytest.mark.skip(reason="Classifiers aren't yet supported")
 def test_single_item():
     dog = situation_object(DOG)
@@ -136,9 +135,11 @@ def test_single_item():
     )
     assert only(
         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
-    ).as_token_sequence() == ("yi1", "jr3", "gou3")
+    ).as_token_sequence() == ("gou3",)
 
 
+# https://github.com/isi-vista/adam/issues/782
+# TODO: get classifiers checked by a native speaker upon implementation
 # two objects, which can be counted distinctly
 @pytest.mark.skip(reason="Classifiers aren't yet supported")
 def test_two_items():
@@ -153,7 +154,6 @@ def test_two_items():
 
 
 # many objects
-# TODO: this can be implemented before classifier issue is resolved
 @pytest.mark.skip(reason="Many object NPs aren't yet supported")
 def test_many_items():
     ball1 = situation_object(BALL, debug_handle="ball1")
