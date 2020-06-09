@@ -936,3 +936,35 @@ def test_speaker_not_owner_of_box():
         "syang1",
         "li3",
     )
+
+
+"""TEST HAVE POSSESSION"""
+
+# this tests possession where the speaker has something that they possess
+@pytest.mark.skip(reason="possession and 'you3' aren't yet implemented")
+def test_i_have_my_ball():
+    baby = situation_object(BABY, properties=[IS_SPEAKER])
+    ball = situation_object(BALL)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[baby, ball],
+        always_relations=[Relation(HAS, baby, ball)],
+        actions=[],
+    )
+    # TODO: have native speaker check wo de vs wo
+    assert generated_tokens(situation) == ("wo3", "you3", "wo3", "de", "chyou2")
+
+
+# this tests possession when a non-speaker has something that they possess
+@pytest.mark.skip(reason="possession and 'you3' aren't yet implemented")
+def test_dad_has_cookie():
+    dad = situation_object(DAD)
+    cookie = situation_object(COOKIE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[dad, cookie],
+        always_relations=[Relation(HAS, dad, cookie)],
+        actions=[],
+    )
+
+    assert generated_tokens(situation) == ("ba4 ba4", "you3", "chyu1 chi2 bing3")
