@@ -351,6 +351,8 @@ def test_object_beside_object():
     assert generated_tokens(situation) == ("chyou2", "dzai4", "jwo1 dz", "pang2 byan1")
 
 
+# in front and behind tests copied from English files
+@pytest.mark.skip(reason="in front and behind aren't yet implemented")
 def test_object_behind_in_front_object():
     # HACK FOR AXES - See https://github.com/isi-vista/adam/issues/316
     box = situation_object(BOX)
@@ -390,7 +392,7 @@ def test_object_behind_in_front_object():
             ],
         ),
     )
-    assert generated_tokens(front_situation) == ("a", "box", "in front of", "a", "table")
+    assert generated_tokens(front_situation) == ("syang1", "dzai4", "jwo1 dz", "chyan2")
 
     behind_situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -424,7 +426,12 @@ def test_object_behind_in_front_object():
             ],
         ),
     )
-    assert generated_tokens(behind_situation) == ("a", "box", "behind", "a", "table")
+    assert generated_tokens(behind_situation) == (
+        "syang1",
+        "dzai4",
+        "jwo1 dz",
+        "hou4 myan4",
+    )
 
 
 """BASIC VP TESTING: SV, SVO, and SVIO"""
