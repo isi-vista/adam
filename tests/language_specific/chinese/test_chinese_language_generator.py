@@ -1506,14 +1506,108 @@ def test_jump_up():
 
 
 """GO WITH GOAL"""
+# TODO: check this with native speaker, unsure about qu/lai behaviour with locational mods
 
-# this tests SVO structure of agent going to a region
+# this tests dao for going to a region
 @pytest.mark.skip(reason="go/come not yet implemented")
 def test_to_regions_as_goal():
     goal_object = situation_object(BOX, properties=[HOLLOW])
     assert generated_tokens(
         region_as_goal_situation(Region(goal_object, distance=PROXIMAL), goal_object)
-    ) == ("gou3", "chyu4", "syang1")
+    ) == ("gou3", "chyu4", "dau3", "syang1")
+
+
+# this tests being inside a region
+@pytest.mark.skip(reason="go/come not yet implemented")
+def test_in_region_as_goal():
+    goal_object = situation_object(BOX, properties=[HOLLOW])
+    assert generated_tokens(
+        region_as_goal_situation(Region(goal_object, distance=INTERIOR), goal_object)
+    ) == ("gou3", "chyu4", "dzai4", "syang1", "nei4")
+
+
+# this tests being next to a region
+@pytest.mark.skip(reason="go/come not yet implemented")
+def test_beside_region_as_goal():
+    goal_object = situation_object(BOX, properties=[HOLLOW])
+    # Beside
+    assert generated_tokens(
+        region_as_goal_situation(
+            Region(
+                goal_object,
+                distance=PROXIMAL,
+                direction=Direction(
+                    positive=True,
+                    relative_to_axis=HorizontalAxisOfObject(goal_object, index=0),
+                ),
+            ),
+            goal_object,
+        )
+    ) == ("gou3", "chyu4", "dzai4", "syang1", "pang2 byan1")
+
+
+# this tests going behind a region
+@pytest.mark.skip(reason="go/come not yet implemented")
+def test_behind_region_as_goal():
+    goal_object = situation_object(BOX, properties=[HOLLOW])
+    # Behind
+    assert generated_tokens(
+        region_as_goal_situation(
+            Region(
+                goal_object,
+                distance=PROXIMAL,
+                direction=Direction(
+                    positive=False, relative_to_axis=FacingAddresseeAxis(goal_object)
+                ),
+            ),
+            goal_object,
+        )
+    ) == ("gou3", "chyu4", "dzai4", "syang1", "bei4 hou4")
+
+
+# this tests going in front of a region
+@pytest.mark.skip(reason="go/come not yet implemented")
+def test_in_front_of_region_as_goal():
+    # In front of
+    goal_object = situation_object(BOX, properties=[HOLLOW])
+    assert generated_tokens(
+        region_as_goal_situation(
+            Region(
+                goal_object,
+                distance=PROXIMAL,
+                direction=Direction(
+                    positive=True, relative_to_axis=FacingAddresseeAxis(goal_object)
+                ),
+            ),
+            goal_object,
+        )
+    ) == ("gou3", "chyu4", "dzai4", "syang1", "chyan2 myan4")
+
+
+# this tests going over a region
+@pytest.mark.skip(reason="go/come not yet implemented")
+def test_over_region_as_goal():
+    goal_object = situation_object(TABLE)
+    # Over
+    assert generated_tokens(
+        region_as_goal_situation(
+            Region(goal_object, distance=PROXIMAL, direction=GRAVITATIONAL_UP),
+            goal_object,
+        )
+    ) == ("gou3", "chyu4", "gwo4", "jwo1 dz")
+
+
+# this tests going under a region
+@pytest.mark.skip(reason="go/come not yet implemented")
+def test_under_region_as_goal():
+    goal_object = situation_object(TABLE)
+    # Over
+    assert generated_tokens(
+        region_as_goal_situation(
+            Region(goal_object, distance=PROXIMAL, direction=GRAVITATIONAL_DOWN),
+            goal_object,
+        )
+    ) == ("gou3", "chyu4", "dzai4", "jwo1 dz", "sya4 myan4")
 
 
 """MISC TESTS REPLICATED FROM ENGLISH TESTING FILE"""
