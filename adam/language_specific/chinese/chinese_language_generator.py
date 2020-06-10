@@ -159,9 +159,23 @@ class SimpleRuleBasedChineseLanguageGenerator(
             else:
                 # handle one type of object (there may be many of it)
                 if len(object_types_in_situation) == 1:
-                    raise NotImplementedError
+                    first_object = first(self.situation.salient_objects)
+                    self._noun_for_object(first_object)
+                # multiple objects of different types
                 else:
-                    raise NotImplementedError
+                    for object_ in self.situation.salient_objects:
+                        if not self._only_translate_if_referenced(object_):
+                            self._noun_for_object(object_)
+
+            # TODO: handle persisting relations
+
+            return immutableset(
+                [
+                    self.generator._dependency_tree_linearizer.linearizer(
+                        DependencyTree(self.dependency_graph)
+                    )
+                ]
+            )
 
         # get the noun for the object in a given situation
         def _noun_for_object(
