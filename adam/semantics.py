@@ -48,6 +48,9 @@ class ActionConcept(Concept):
     debug_string: str = attrib(validator=instance_of(str))
 
 
+GROUND_OBJECT_CONCEPT = ObjectConcept("ground")
+
+
 @runtime
 class SemanticNode(Protocol):
     concept: Concept

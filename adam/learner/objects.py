@@ -44,7 +44,7 @@ from adam.perception.developmental_primitive_perception import (
     RgbColorPerception,
 )
 from adam.perception.perception_graph import PerceptionGraph, PerceptionGraphPattern
-from adam.semantics import Concept, ObjectConcept
+from adam.semantics import Concept, ObjectConcept, GROUND_OBJECT_CONCEPT
 from adam.utils import networkx_utils
 from attr import attrib, attrs, evolve
 from attr.validators import instance_of, optional
@@ -455,10 +455,15 @@ class ObjectRecognizerAsTemplateLearner(TemplateLearner):
     def _init_concepts_to_templates(
         self
     ) -> ImmutableSetMultiDict[Concept, SurfaceTemplate]:
+        # Ground is added explicitly to this list because the code
+        # Which matches the ground matches by recognition and not shape
+        # See: `ObjectRecognizer.match_objects`
         return immutablesetmultidict(
             (concept, SurfaceTemplate.for_object_name(name))
-            for (
-                concept,
-                name,
-            ) in self._object_recognizer._concepts_to_names.items()  # pylint:disable=protected-access
+            for (concept, name) in (
+                list(
+                    self._object_recognizer._concepts_to_names.items()  # pylint:disable=protected-access
+                )
+                + [(GROUND_OBJECT_CONCEPT, "ground")]
+            )
         )
