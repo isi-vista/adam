@@ -3,6 +3,7 @@ from more_itertools import first, one
 
 from adam.curriculum.curriculum_utils import PHASE1_CHOOSER_FACTORY, phase1_instances
 from adam.language_specific.english.english_language_generator import PREFER_DITRANSITIVE
+from adam.learner import PerceptionSemanticAlignment
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.objects import ObjectRecognizerAsTemplateLearner
 from adam.ontology.phase1_ontology import (
@@ -86,10 +87,14 @@ def test_trivial_dynamic_situation_with_schemaless_object():
     perception_graph = PerceptionGraph.from_dynamic_perceptual_representation(
         dynamic_perception
     )
-
-    match_result = TEST_OBJECT_RECOGNIZER.match_objects(perception_graph)
-    assert len(match_result.description_to_matched_object_node) == 1
-    assert ("Dad",) in match_result.description_to_matched_object_node
+    perception_semantic_alignment = PerceptionSemanticAlignment.create_unaligned(
+        perception_graph
+    )
+    (_, description_to_matched_semantic_node) = TEST_OBJECT_RECOGNIZER.match_objects(
+        perception_semantic_alignment
+    )
+    assert len(description_to_matched_semantic_node) == 1
+    assert ("Dad",) in description_to_matched_semantic_node
 
 
 def test_recognize_in_transfer_of_possession():
@@ -122,6 +127,11 @@ def test_recognize_in_transfer_of_possession():
     )
 
     perception_graph = PerceptionGraph.from_dynamic_perceptual_representation(perception)
-    match_result = TEST_OBJECT_RECOGNIZER.match_objects(perception_graph)
-    assert len(match_result.description_to_matched_object_node) == 4
-    assert ("Dad",) in match_result.description_to_matched_object_node
+    perception_semantic_alignment = PerceptionSemanticAlignment.create_unaligned(
+        perception_graph
+    )
+    (_, description_to_matched_semantic_node) = TEST_OBJECT_RECOGNIZER.match_objects(
+        perception_semantic_alignment
+    )
+    assert len(description_to_matched_semantic_node) == 4
+    assert ("Dad",) in description_to_matched_semantic_node
