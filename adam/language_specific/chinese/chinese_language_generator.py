@@ -245,21 +245,6 @@ class SimpleRuleBasedChineseLanguageGenerator(
             else:
                 raise RuntimeError(f"No lexicon entry for ontology node {ontology_node}")
 
-        """functions from here on have not been touched yet and just have dummy definitions"""
-
-        def _only_translate_if_referenced(self, object_: SituationObject) -> bool:
-            raise NotImplementedError
-
-        def add_classifier(
-            self,
-            _object: SituationObject,
-            count: int,
-            noun_dependency_node: DependencyTreeToken,
-            *,
-            noun_lexicon_entry: LexiconEntry,
-        ) -> None:
-            raise NotImplementedError
-
 
 GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR = SimpleRuleBasedChineseLanguageGenerator(
     ontology_lexicon=GAILA_PHASE_1_CHINESE_LEXICON
