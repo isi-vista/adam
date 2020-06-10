@@ -1,6 +1,6 @@
 import itertools
 from abc import ABC
-from enum import Enum
+from enum import Enum, auto
 from typing import AbstractSet, Mapping, Union, List, Iterable, Optional, Dict, Tuple
 
 from adam.language import LinguisticDescription
@@ -47,13 +47,11 @@ from vistautils.span import Span
 # This is the maximum number of tokens we will hypothesize
 # as the non-argument-slots portion of a surface template for an action.
 _MAXIMUM_ACTION_TEMPLATE_TOKEN_LENGTH = 3
-_LEFT = -1
-_RIGHT = 1
 
 
 class VerbAlignmentSlots(Enum):
-    Argument = "Argument"
-    FixedString = "FixedString"
+    Argument = auto()
+    FixedString = auto()
 
 
 @attrs(frozen=True, slots=True)
@@ -72,6 +70,12 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
         language_concept_alignment = (
             language_perception_semantic_alignment.language_concept_alignment
         )
+        # We make an assumption that the order of nouns in our sentence will be
+        # in the same order as they appear in the sentence, left to right,
+        # To avoid calculating this condition multiple times we do so once
+        # For the number of arguments (nouns) our candidate template
+        # desires and store the resulting possible aligments in this dict
+        # for easy look up.
         num_arguments_to_alignments_sets: Dict[
             int, ImmutableSet[Tuple[SemanticNodeWithSpan, ...]]
         ] = {}
@@ -105,15 +109,27 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
             return True
 
         def candidate_verb_templates() -> Iterable[Tuple[VerbAlignmentSlots, ...]]:
-            # First let's handle only one argument - Intransitive Verbs
+            # This function returns templates for the candidate verb templates
+            # Terminology:
+            # (A)rgument - Noun
+            # (F)ixedString - A collection of str tokens which can be the verb or a modifier
 
+            # First let's handle only one argument - Intransitive Verbs
+            # This generates templates for examples like "Mom falls"
             for output in immutableset(
                 itertools.permutations(
                     [VerbAlignmentSlots.Argument, VerbAlignmentSlots.FixedString], 2
                 )
             ):
                 yield output
-            # Now we want to handle two arguments - Ditransitive Verbs
+            # Now we want to handle two arguments - transitive Verbs
+            # We want to handle following verb syntaxes:
+            # SOV, SVO, VSO, VOS, OVS, OSV
+            # However, currently our templates don't distinguish subject and object
+            # So we only need to handle AAF, AFA, FAA
+            # Example: "Mom throws a ball"
+            # We include an extra FixedString to account for adverbial modifiers such as in the example
+            # "Mom throws a ball up"
             for output in immutableset(
                 itertools.permutations(
                     [
@@ -126,7 +142,9 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                 )
             ):
                 yield output
-            # Now we want to handle three arguments, which can either have one or two fixed strings
+            # Now we want to handle three arguments , which can either have one or two fixed strings
+            # This is either ditransitive "Mom throws me a ball"
+            # or includes a locational preposition phrase "Mom falls on the ground"
             for output in immutableset(
                 itertools.permutations(
                     [
@@ -141,7 +159,7 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
             ):
                 yield output
 
-        def is_valid_aligned_object_nodes(
+        def in_left_to_right_order(
             semantic_nodes: Tuple[SemanticNodeWithSpan, ...]
         ) -> bool:
             previous_node = semantic_nodes[0]
@@ -156,6 +174,10 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
         ) -> ImmutableSet[Tuple[SemanticNodeWithSpan, ...]]:
             # We guarantee the return order is in order of sentence appearance from left to right
             if num_arguments not in num_arguments_to_alignments_sets.keys():
+                # We haven't seen a request for this number of arguments before
+                # So we need to generate all the valid options
+
+                # First, we convert a tuple into a helper class for cleaner code
                 semantic_nodes_with_spans = immutableset(
                     SemanticNodeWithSpan(node=node, span=span)
                     for (
@@ -164,12 +186,16 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                     ) in language_concept_alignment.node_to_language_span.items()
                 )
 
+                # Then we use itertools.product given a number of repeats allowed to
+                # Generate a cartesian product of all the options for nouns to appear
+                # in the sentence. We check if the result of the produce meets our
+                # in_left_to_right_order before adding it to a set of acceptable alignments
                 num_arguments_to_alignments_sets[num_arguments] = immutableset(
                     ordered_semantic_nodes
                     for ordered_semantic_nodes in itertools.product(
                         semantic_nodes_with_spans, repeat=num_arguments
                     )
-                    if is_valid_aligned_object_nodes(ordered_semantic_nodes)
+                    if in_left_to_right_order(ordered_semantic_nodes)
                 )
 
             return num_arguments_to_alignments_sets[num_arguments]
@@ -178,12 +204,24 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
             verb_template: Tuple[VerbAlignmentSlots, ...],
             aligned_nodes: Tuple[SemanticNodeWithSpan, ...],
         ) -> Iterable[Optional[SurfaceTemplateBoundToSemanticNodes]]:
+
             aligned_node_index = 0
             template_elements: List[Union[str, SyntaxSemanticsVariable]] = []
             slot_to_semantic_node: List[Tuple[SyntaxSemanticsVariable, SemanticNode]] = []
+
+            # We need to handle fixed strings that are pre or post fix to the rest of the
+            # Sentence differently as they don't have a fixed length so we could generate
+            # multiple options.
             prefix_string_end = None
             postfix_string_start = None
+            # In the event we generate a candidate template like:
+            # A, F, F, A then we want to compute this like A, F, A
+            # So we keep track if the previous token was a FixedString indicator
+            previous_node_was_string = False
+
             for token in verb_template:
+                # If the token in our template is an argument we need to assign it a
+                # unique SyntaxSemanticsVariable, and map it to the SemanticNode
                 if token == VerbAlignmentSlots.Argument:
                     slot_semantic_variable = STANDARD_SLOT_VARIABLES[aligned_node_index]
                     template_elements.append(slot_semantic_variable)
@@ -191,14 +229,23 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                         (slot_semantic_variable, aligned_nodes[aligned_node_index].node)
                     )
                     aligned_node_index += 1
+                    previous_node_was_string = False
                 else:
-                    if aligned_node_index == 0:
+                    # We ignore this case to process A, F, F, A like A, F, A
+                    if previous_node_was_string:
+                        continue
+                    # We make a note of where the end of our prefix string can be
+                    # Then continue as we'll handle this case afterwards
+                    elif aligned_node_index == 0:
                         prefix_string_end = aligned_nodes[aligned_node_index].span.start
+                    # Similiarly to above, we instead mark the start of the postfix string
                     elif aligned_node_index == len(aligned_nodes):
                         postfix_string_start = aligned_nodes[
                             aligned_node_index - 1
                         ].span.end
                     else:
+                        # If our FixedString is flanked by two Arguments we just want to acquire all the tokens
+                        # between them
                         if (
                             aligned_nodes[aligned_node_index - 1].span.end
                             != aligned_nodes[aligned_node_index].span.start
@@ -214,6 +261,7 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                                     candidate_verb_token_span.start : candidate_verb_token_span.end
                                 ]
                             )
+                        previous_node_was_string = True
             # We need to handle searching before or after the aligned token
             # And we could generate multiple options of different lengths
             # between 1 and _MAXIMUM_ACTION_TEMPLATE_TOKEN_LENGTH
