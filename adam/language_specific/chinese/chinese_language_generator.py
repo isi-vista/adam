@@ -1,4 +1,3 @@
-"""Dummy generator for test writing right now"""
 import collections
 from itertools import chain
 from typing import Iterable, List, Mapping, MutableMapping, Optional, Tuple, Union, cast
@@ -80,6 +79,10 @@ from adam.random_utils import SequenceChooser
 from adam.relation import Relation
 from adam.situation import Action, SituationObject, SituationRegion
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
+
+"""Simple rule-based approach for translating HighLevelSemanticSituations to 
+Chinese dependency trees. We currently only generate a single possible linearized
+tree for a semantic situation."""
 
 
 @attrs(frozen=True, slots=True)
