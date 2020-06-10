@@ -163,6 +163,28 @@ def test_proper_noun():
     ).as_token_sequence() == ("ba4 ba4",)
 
 
+# get the first person pronoun
+def test_wo():
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[situation_object(DAD, properties=[IS_SPEAKER])],
+    )
+    assert only(
+        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
+    ).as_token_sequence() == ("wo3",)
+
+
+# get the second person pronoun
+def test_ni():
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[situation_object(DAD, properties=[IS_ADDRESSEE])],
+    )
+    assert only(
+        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
+    ).as_token_sequence() == ("ni3",)
+
+
 """NOUN PHRASES WITH ADJECTIVAL MODIFIERS"""
 
 # basic adjective+noun
