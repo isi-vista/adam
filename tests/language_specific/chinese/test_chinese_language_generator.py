@@ -134,7 +134,6 @@ def region_as_goal_situation(
 """ BASIC NOUN PHRASE TESTS"""
 
 # just a single common noun
-# @pytest.mark.skip(reason="NPs aren't yet supported by our Chinese language generator")
 def test_common_noun():
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[situation_object(BALL)]
@@ -145,9 +144,8 @@ def test_common_noun():
 
 
 # a single mass noun. The distinction isn't nearly as salient in Chinese
-@pytest.mark.skip(reason="NP's aren't yet supported by our Chinese language generator")
 def test_mass_noun():
-    situtation = HighLevelSemanticsSituation(
+    situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[situation_object(WATER)]
     )
     assert only(
@@ -156,10 +154,9 @@ def test_mass_noun():
 
 
 # a single proper noun
-@pytest.mark.skip(reason="NP's aren't yet supported by our Chinese language generator")
 def test_proper_noun():
     situation = HighLevelSemanticsSituation(
-        ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[situation_objects[DAD]]
+        ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[situation_object(DAD)]
     )
     assert only(
         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
