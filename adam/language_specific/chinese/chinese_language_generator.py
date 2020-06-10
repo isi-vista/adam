@@ -127,6 +127,66 @@ class SimpleRuleBasedChineseLanguageGenerator(
         # keep a mapping of object counts so we know what quantifiers to use when there are multiple objects
         object_counts: Mapping[OntologyNode, int] = attrib(init=False)
 
+        # the function that tries to generate language for a given representation
+        def generate(self) -> ImmutableSet[LinearizedDependencyTree]:
+            raise NotImplementedError
+            try:
+                return self._real_generate()
+            except Exception as e:
+                raise RuntimeError(
+                    "Error while generating Chinese for the situation {}".format(
+                        self.situation
+                    )
+                ) from e
+
+        # the function that actually generates the language
+        def _real_generate(self) -> ImmutableSet[LinearizedDependencyTree]:
+            # TODO: deal with situations with more than one action
+            if len(self.situation.actions) > 1:
+                raise RuntimeError(
+                    "Currently only situations with 0 or 1 actions are supported"
+                )
+
+            # handle the special case of a static situation with only multiple objects of the same type
+            object_types_in_situation = set(
+                object_.ontology_node for object_ in self.situation.salient_objects
+            )
+
+            # handle dynamic situations
+            if self.situation.is_dynamic:
+                raise NotImplementedError
+            # handle static situations
+            else:
+                # handle one type of object (there may be many of it)
+                if len(object_types_in_situation) == 1:
+                    raise NotImplementedError
+                else:
+                    raise NotImplementedError
+
+        # get the noun for the object in a given situation
+        def _noun_for_object(
+            self,
+            _object: SituationObject,
+            *,
+            syntactic_role_if_known: Optional[DependencyRole] = None,
+        ) -> DependencyTreeToken:
+            raise NotImplementedError
+
+        """functions from here on have not been touched yet and just have dummy definitions"""
+
+        def _only_translate_if_referenced(self, object_: SituationObject) -> bool:
+            raise NotImplementedError
+
+        def add_classifier(
+            self,
+            _object: SituationObject,
+            count: int,
+            noun_dependency_node: DependencyTreeToken,
+            *,
+            noun_lexicon_entry: LexiconEntry,
+        ) -> None:
+            raise NotImplementedError
+
 
 GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR = SimpleRuleBasedChineseLanguageGenerator(
     ontology_lexicon=GAILA_PHASE_1_CHINESE_LEXICON
