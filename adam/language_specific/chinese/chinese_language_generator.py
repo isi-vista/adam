@@ -103,11 +103,29 @@ class SimpleRuleBasedChineseLanguageGenerator(
     def generate_language(
         self, situation: HighLevelSemanticsSituation, chooser: SequenceChooser
     ) -> ImmutableSet[LinearizedDependencyTree]:
-        # we haven't implemented this yet
+        # remove once done
         raise NotImplementedError
         return SimpleRuleBasedChineseLanguageGenerator._Generation(
             self, situation
         ).generate()
+
+    """This class encapsulates all the mutable state for an execution of the 
+    SimpleRuleBasedChineseLanguageGenerator on a single input"""
+
+    @attrs(frozen=True, slots=True)
+    class _Generation:
+        # keep the reference to the parent because python doesn't have real inner classes
+        generator: "SimpleRuleBasedChineseLanguageGenerator" = attrib()
+        # the situation being translated into language
+        situation: HighLevelSemanticsSituation = attrib()
+        # the graph we are building
+        dependency_graph: DiGraph = attrib(init=False, default=Factory(DiGraph))
+        # stores a mapping of nouns for the objects in the situation
+        objects_to_dependency_nodes: MutableMapping[
+            SituationObject, DependencyTreeToken
+        ] = attrib(init=False, factory=dict)
+        # keep a mapping of object counts so we know what quantifiers to use when there are multiple objects
+        object_counts: Mapping[OntologyNode, int] = attrib(init=False)
 
 
 GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR = SimpleRuleBasedChineseLanguageGenerator(
