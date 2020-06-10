@@ -102,6 +102,35 @@ def generated_tokens(situation):
     ).as_token_sequence()
 
 
+# generates region-as-goal situations for go/come (qu/lai)
+def region_as_goal_situation(
+    goal: Region[SituationObject], goal_object: SituationObject
+) -> HighLevelSemanticsSituation:
+    agent = situation_object(DOG)
+    learner = situation_object(LEARNER, properties=[IS_ADDRESSEE])
+
+    return HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[agent, goal_object],
+        other_objects=[learner],
+        actions=[Action(GO, argument_roles_to_fillers=[(AGENT, agent), (GOAL, goal)])],
+        axis_info=AxesInfo(
+            addressee=learner,
+            axes_facing=[
+                (
+                    learner,
+                    # TODO: fix this hack
+                    HorizontalAxisOfObject(obj, index=1).to_concrete_axis(  # type: ignore
+                        None
+                    ),
+                )
+                for obj in [agent, goal_object, learner]
+                if obj.axes
+            ],
+        ),
+    )
+
+
 """ BASIC NOUN PHRASE TESTS"""
 
 # just a single common noun
@@ -1416,9 +1445,7 @@ def test_mom_sits_on_a_table():
 
 """ADV MODIFICATION"""
 # TODO: check if adverb path modifiers are salient and should be implemented in Chinese
-# it appears that there is a distinction for fall/fall down but not sit/sit down
-# if there is such a distinction, it needs to be checked by a native speaker
-
+# https://github.com/isi-vista/adam/issues/797
 
 # fall down testing -- this does translate but I'm not sure how much it's used
 @pytest.mark.skip("advmods not yet implemented")
@@ -1455,7 +1482,7 @@ def test_bird_flies_up():
         ],
         syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
     )
-    assert generated_tokens(situation) == ("nyau3", "chi3", "fei1")
+    assert generated_tokens(situation) == ("nyau3", "fei1", "chi3lai2")
 
 
 # direction of jumping
@@ -1475,7 +1502,18 @@ def test_jump_up():
         ],
         syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
     )
-    assert generated_tokens(situation) == ("ba4 ba4", "chi3", "tyau4")
+    assert generated_tokens(situation) == ("ba4 ba4", "tyau4", "chi3lai2")
+
+
+"""GO WITH GOAL"""
+
+# this tests SVO structure of agent going to a region
+@pytest.mark.skip(reason="go/come not yet implemented")
+def test_to_regions_as_goal():
+    goal_object = situation_object(BOX, properties=[HOLLOW])
+    assert generated_tokens(
+        region_as_goal_situation(Region(goal_object, distance=PROXIMAL), goal_object)
+    ) == ("gou3", "chyu4", "syang1")
 
 
 """MISC TESTS REPLICATED FROM ENGLISH TESTING FILE"""
