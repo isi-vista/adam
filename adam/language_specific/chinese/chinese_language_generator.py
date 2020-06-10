@@ -104,7 +104,6 @@ class SimpleRuleBasedChineseLanguageGenerator(
         self, situation: HighLevelSemanticsSituation, chooser: SequenceChooser
     ) -> ImmutableSet[LinearizedDependencyTree]:
         # remove once done
-        raise NotImplementedError
         return SimpleRuleBasedChineseLanguageGenerator._Generation(
             self, situation
         ).generate()
@@ -127,9 +126,9 @@ class SimpleRuleBasedChineseLanguageGenerator(
         # keep a mapping of object counts so we know what quantifiers to use when there are multiple objects
         object_counts: Mapping[OntologyNode, int] = attrib(init=False)
 
-        # the function that tries to generate language for a given representation
+        """The function that tries to generate language for a given representation"""
+
         def generate(self) -> ImmutableSet[LinearizedDependencyTree]:
-            raise NotImplementedError
             try:
                 return self._real_generate()
             except Exception as e:
@@ -139,7 +138,8 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     )
                 ) from e
 
-        # the function that actually generates the language
+        """The function that actually generates the language"""
+
         def _real_generate(self) -> ImmutableSet[LinearizedDependencyTree]:
             # TODO: deal with situations with more than one action
             if len(self.situation.actions) > 1:
@@ -171,20 +171,79 @@ class SimpleRuleBasedChineseLanguageGenerator(
 
             return immutableset(
                 [
-                    self.generator._dependency_tree_linearizer.linearizer(
+                    self.generator._dependency_tree_linearizer.linearize(
                         DependencyTree(self.dependency_graph)
                     )
                 ]
             )
 
-        # get the noun for the object in a given situation
+        """Get the noun for the object in a given situation"""
+
         def _noun_for_object(
             self,
             _object: SituationObject,
             *,
             syntactic_role_if_known: Optional[DependencyRole] = None,
         ) -> DependencyTreeToken:
-            raise NotImplementedError
+
+            # if we already have a mapping for a noun, we're done
+            if _object in self.objects_to_dependency_nodes:
+                return self.objects_to_dependency_nodes[_object]
+
+            # TODO: handle counts
+
+            # make sure there is a corresponding ontology node
+            if not _object.ontology_node:
+                raise RuntimeError(
+                    f"Don't know how to handle objects which don't correspond to "
+                    f"an ontology node currently: {_object}"
+                )
+
+            # check if the situation object is the speaker
+            if IS_SPEAKER in _object.properties:
+                noun_lexicon_entry = ME
+
+            # check if the situation object is the addressee
+            elif IS_ADDRESSEE in _object.properties:
+                noun_lexicon_entry = YOU
+
+            # if not wo or ni, then just an object
+            else:
+                noun_lexicon_entry = self._unique_lexicon_entry(
+                    _object.ontology_node  # pylint:disable=protected-access
+                )
+
+            dependency_node = DependencyTreeToken(
+                noun_lexicon_entry.base_form,
+                noun_lexicon_entry.part_of_speech,
+                morphosyntactic_properties=noun_lexicon_entry.intrinsic_morphosyntactic_properties,
+            )
+            # TODO: handle X_IS_Y and not IGNORE_COLOURS, deal with classifiers
+            self.dependency_graph.add_node(dependency_node)
+            return dependency_node
+
+        """Get a lexicon entry for a given ontology node"""
+
+        def _unique_lexicon_entry(self, ontology_node: OntologyNode) -> LexiconEntry:
+            # get the lexicon entries for the ontology node
+            lexicon_entries = self.generator._ontology_lexicon.words_for_node(  # pylint:disable=protected-access
+                ontology_node
+            )
+            # if there is one possible match, return it
+            if lexicon_entries:
+                if len(lexicon_entries) == 1:
+                    return only(lexicon_entries)
+
+                # if there's more than one possible match, we don't know how to handle this
+                else:
+                    raise RuntimeError(
+                        f"We don't yet know how to deal with ontology nodes which "
+                        f"could be realized by multiple lexical entries: "
+                        f"{ontology_node} --> {lexicon_entries}. "
+                        f"This is https://github.com/isi-vista/adam/issues/59 ."
+                    )
+            else:
+                raise RuntimeError(f"No lexicon entry for ontology node {ontology_node}")
 
         """functions from here on have not been touched yet and just have dummy definitions"""
 

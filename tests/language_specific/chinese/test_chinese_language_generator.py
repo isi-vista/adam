@@ -134,7 +134,7 @@ def region_as_goal_situation(
 """ BASIC NOUN PHRASE TESTS"""
 
 # just a single common noun
-@pytest.mark.skip(reason="NPs aren't yet supported by our Chinese language generator")
+# @pytest.mark.skip(reason="NPs aren't yet supported by our Chinese language generator")
 def test_common_noun():
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[situation_object(BALL)]
