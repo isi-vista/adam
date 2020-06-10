@@ -27,6 +27,7 @@ from adam.semantics import (
     ObjectSemanticNode,
     RelationSemanticNode,
     SemanticNode,
+    GROUND_OBJECT_CONCEPT,
 )
 from attr import attrib, attrs
 from attr.validators import instance_of, optional
@@ -245,11 +246,13 @@ class IntegratedTemplateLearner(
                             cur_string = attribute_template.instantiate(
                                 template_variable_to_filler={SLOT1: cur_string}
                             ).as_token_sequence()
-
             # English-specific hack to deal with us not understanding determiners:
             # https://github.com/isi-vista/adam/issues/498
             # The "is lower" check is a hack to block adding a determiner to proper names.
-            if (
+            # Ground is a specific thing so we special case this to be assigned
+            if object_node.concept == GROUND_OBJECT_CONCEPT:
+                yield tuple(chain(("the",), cur_string))
+            elif (
                 object_node.concept.debug_string not in MASS_NOUNS
                 and object_node.concept.debug_string.islower()
                 and not cur_string[0] in ENGLISH_BLOCK_DETERMINERS

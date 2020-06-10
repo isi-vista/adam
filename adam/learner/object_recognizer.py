@@ -35,7 +35,12 @@ from adam.perception.perception_graph import (
     edge_equals_ignoring_temporal_scope,
     raise_graph_exception,
 )
-from adam.semantics import Concept, ObjectConcept, ObjectSemanticNode
+from adam.semantics import (
+    Concept,
+    ObjectConcept,
+    ObjectSemanticNode,
+    GROUND_OBJECT_CONCEPT,
+)
 from adam.utils.networkx_utils import subgraph
 from attr import attrib, attrs
 from attr.validators import deep_iterable, deep_mapping, instance_of
@@ -241,8 +246,10 @@ class ObjectRecognizer:
         graph_to_return = perception_graph
         for node in graph_to_return._graph.nodes:  # pylint:disable=protected-access
             if node == GROUND_PERCEPTION:
-                matched_object_node = ObjectSemanticNode(concept=ObjectConcept("ground"))
-                object_nodes.append((("ground",), matched_object_node))
+                matched_object_node = ObjectSemanticNode(GROUND_OBJECT_CONCEPT)
+                object_nodes.append(
+                    ((f"{GROUND_OBJECT_CONCEPT.debug_string}",), matched_object_node)
+                )
                 # We construct a fake match which is only the ground perception node
                 subgraph_of_root = subgraph(perception_graph.copy_as_digraph(), [node])
                 pattern_match = PerceptionGraphPatternMatch(
