@@ -16,6 +16,7 @@ from adam.language_specific.chinese.chinese_language_generator import (
     PREFER_DITRANSITIVE,
     SimpleRuleBasedChineseLanguageGenerator,
     USE_ADVERBIAL_PATH_MODIFIER,
+    IGNORE_HAS_AS_VERB,
 )
 from adam.language_specific.chinese.chinese_phase_1_lexicon import (
     GAILA_PHASE_1_CHINESE_LEXICON,
@@ -194,6 +195,7 @@ def test_my_green_ball():
         ontology=GAILA_PHASE_1_ONTOLOGY,
         salient_objects=[ball, dad],
         always_relations=[Relation(HAS, dad, ball)],
+        syntax_hints=[IGNORE_HAS_AS_VERB],
     )
     assert generated_tokens(situation) == ("wo3", "de", "lyu4 se4", "chyou2")
 
@@ -206,6 +208,7 @@ def test_your_green_ball():
         ontology=GAILA_PHASE_1_ONTOLOGY,
         salient_objects=[ball, dad],
         always_relations=[Relation(HAS, dad, ball)],
+        syntax_hints=[IGNORE_HAS_AS_VERB],
     )
     assert generated_tokens(situation) == ("ni3", "de", "lyu4 se4", "chyou2")
 
@@ -218,6 +221,7 @@ def test_babade_green_ball():
         ontology=GAILA_PHASE_1_ONTOLOGY,
         salient_objects=[ball, dad],
         always_relations=[Relation(HAS, dad, ball)],
+        syntax_hints=[IGNORE_HAS_AS_VERB],
     )
     assert generated_tokens(situation) == ("ba4 ba4", "de", "lyu4 se4", "chyou2")
 

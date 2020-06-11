@@ -153,11 +153,13 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 object_.ontology_node for object_ in self.situation.salient_objects
             )
 
+            action: Optional[Action[OntologyNode, SituationObject]]
             # handle dynamic situations
             if self.situation.is_dynamic:
                 raise NotImplementedError
             # handle static situations
             else:
+                action = None
                 # handle one type of object (there may be many of it)
                 if len(object_types_in_situation) == 1:
                     first_object = first(self.situation.salient_objects)
@@ -170,6 +172,8 @@ class SimpleRuleBasedChineseLanguageGenerator(
                             self._noun_for_object(object_)
 
             # TODO: handle persisting relations
+            for persisting_relation in self.situation.always_relations:
+                self._translate_relation(action, persisting_relation)
 
             return immutableset(
                 [
@@ -192,7 +196,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
             if _object in self.objects_to_dependency_nodes:
                 return self.objects_to_dependency_nodes[_object]
 
-            # TODO: handle counts
+            # the number of this object that is in the scene
             count = self.object_counts[_object.ontology_node]
 
             # make sure there is a corresponding ontology node
@@ -229,7 +233,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 _object, count, dependency_node, noun_lexicon_entry=noun_lexicon_entry
             )
 
-            # TODO: handle X_IS_Y, deal with classifiers
+            # TODO: handle X_IS_Y; not implemented in syntax yet either
 
             # if colour is specified it, add it as an adjectival modifier
             if IGNORE_COLORS not in self.situation.syntax_hints:
@@ -293,6 +297,48 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 self.dependency_graph.add_edge(
                     many, noun_dependency_node, role=NUMERIC_MODIFIER
                 )
+
+        """Translate relations that the user explicitly calls out"""
+
+        def _translate_relation(
+            self,
+            action: Optional[Action[OntologyNode, SituationObject]],
+            relation: Relation[SituationObject],
+        ):
+            if relation.relation_type == HAS:
+                # if the situation is dynamic, then this will be handled within the NP
+                if (
+                    self.situation.is_dynamic
+                    or IGNORE_HAS_AS_VERB in self.situation.syntax_hints
+                ):
+                    pass
+                else:
+                    raise NotImplementedError
+            elif relation.relation_type == IN_REGION:
+                prepositional_modifier = self.relation_to_prepositional_modifier(
+                    action, relation
+                )
+                if prepositional_modifier:
+                    self.dependency_graph.add_edge(
+                        prepositional_modifier,
+                        self._noun_for_object(relation.first_slot),
+                        role=NOMINAL_MODIFIER,
+                    )
+                else:
+                    raise RuntimeError(
+                        "We currently don't have a way to translate {} to a preposition".format(
+                            relation
+                        )
+                    )
+            else:
+                raise RuntimeError(
+                    "We can't currently translate {} relation to Chinese".format(relation)
+                )
+
+        """Translate a relation to a prepositional modifier"""
+
+        def relation_to_prepositional_modifier(self, action, relation):
+            raise NotImplementedError
 
         """Get a lexicon entry for a given ontology node"""
 
