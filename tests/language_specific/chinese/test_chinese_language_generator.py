@@ -381,7 +381,6 @@ def test_two_objects_with_mum():
 
 
 # tests mum being under a bird
-@pytest.mark.skip(reason="localisers and NP's aren't supported yet")
 def test_mum_under_object():
     bird1 = situation_object(BIRD, debug_handle="bird1")
     bird2 = situation_object(BIRD, debug_handle="bird2")
@@ -402,7 +401,6 @@ def test_mum_under_object():
 
 
 # tests mum being above an object
-@pytest.mark.skip(reason="localisers and NP's aren't supported yet")
 def test_mum_above_object():
     bird1 = situation_object(BIRD, debug_handle="bird1")
     bird2 = situation_object(BIRD, debug_handle="bird2")
@@ -417,7 +415,7 @@ def test_mum_above_object():
             )
         ],
     )
-    assert generated_tokens(situation) == ("ma1 ma1", "dzai4", "nyau3", "shang4")
+    assert generated_tokens(situation) == ("ma1 ma1", "gwo4", "nyau3")
 
 
 # tests an object beside another object

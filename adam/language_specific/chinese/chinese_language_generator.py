@@ -362,7 +362,24 @@ class SimpleRuleBasedChineseLanguageGenerator(
                         preposition = "shang4"
                 else:
                     if direction_axis.aligned_to_gravitational:
-                        raise NotImplementedError
+                        # over is handled differently since it's more analagous to dao/zai
+                        if region.direction.positive:
+                            preposition = "gwo4"
+                            reference_object_node = self._noun_for_object(
+                                region.reference_object
+                            )
+                            if self.dependency_graph.out_degree[reference_object_node]:
+                                return None
+                            else:
+                                self.dependency_graph.add_edge(
+                                    DependencyTreeToken(preposition, ADPOSITION),
+                                    reference_object_node,
+                                    role=CASE_SPATIAL,
+                                )
+                            return reference_object_node
+                        # under
+                        else:
+                            preposition = "sya4"
                     else:
                         if isinstance(
                             region.direction.relative_to_axis, FacingAddresseeAxis
@@ -433,6 +450,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
 
         """Default method for initializing the object counts"""
 
+        # TODO: only counting salient object right now, this may need to be changed later or consider adding counts for both separately
         @object_counts.default
         def _init_object_counts(self) -> Mapping[OntologyNode, int]:
             if not self.situation.actions:
