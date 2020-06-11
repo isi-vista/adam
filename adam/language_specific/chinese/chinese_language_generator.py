@@ -336,21 +336,37 @@ class SimpleRuleBasedChineseLanguageGenerator(
             action: Optional[Action[OntologyNode, SituationObject]],
             relation: Relation[SituationObject],
         ) -> Optional[DependencyTreeToken]:
+
             region = cast(SituationRegion, relation.second_slot)
             # if the object in the relation is not salient, then we don't care about the relation
             if region.reference_object not in self.situation.salient_objects:
                 return None
+            # deal with actions with verbs
             if action:
                 raise NotImplementedError
             preposition: Optional[str] = None
             # inside/in
             if region.distance == INTERIOR:
-                raise NotImplementedError
+                preposition = "nei4"
             # to/towards
+            # TODO: to in Chinese is expressed differently than in English
             if region.distance == PROXIMAL and not region.direction:
                 raise NotImplementedError
             elif region.direction:
-                raise NotImplementedError
+                direction_axis = region.direction.relative_to_concrete_axis(
+                    self.situation.axis_info
+                )
+                # on & in contact
+                if region.distance == EXTERIOR_BUT_IN_CONTACT:
+                    if region.direction.positive:
+                        preposition = "shang4"
+                else:
+                    if direction_axis.aligned_to_gravitational:
+                        raise NotImplementedError
+                    else:
+                        raise NotImplementedError
+
+                    raise NotImplementedError
             if not preposition:
                 raise RuntimeError(
                     "Don't know how to handle {} as a preposition".format(relation)
@@ -366,6 +382,11 @@ class SimpleRuleBasedChineseLanguageGenerator(
             else:
                 self.dependency_graph.add_edge(
                     DependencyTreeToken(preposition, ADPOSITION),
+                    reference_object_node,
+                    role=NOMINAL_MODIFIER,
+                )
+                self.dependency_graph.add_edge(
+                    DependencyTreeToken("dzai4", ADPOSITION),
                     reference_object_node,
                     role=CASE_SPATIAL,
                 )

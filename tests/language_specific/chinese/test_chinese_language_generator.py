@@ -238,10 +238,8 @@ def test_single_item():
     assert generated_tokens(situation) == ("gou3",)
 
 
-# https://github.com/isi-vista/adam/issues/782
-# TODO: get classifiers checked by a native speaker upon implementation
 # two objects, which can be counted distinctly
-@pytest.mark.skip(reason="Classifiers aren't yet supported")
+@pytest.mark.skip(reason="https://github.com/isi-vista/adam/issues/782")
 def test_two_items():
     dog1 = situation_object(DOG, debug_handle="dog1")
     dog2 = situation_object(DOG, debug_handle="dog2")
@@ -298,8 +296,7 @@ def test_two_salient_objects():
 """NOUN PHRASES WITH LOCALISER NOMINAL MODIFIERS"""
 # TODO: native speaker should check the localisers once they are implemented
 
-# test two inanimte objects
-@pytest.mark.skip(reason="localisers and NP's aren't yet supported")
+# test two inanimate objects
 def test_noun_with_spatial_modifier():
     table = situation_object(TABLE)
     ground = situation_object(GROUND)
