@@ -186,8 +186,7 @@ def test_green_ball():
     assert generated_tokens(situation) == ("lyu4 se4", "chyou2")
 
 
-# possession for NP's
-# @pytest.mark.skip(reason="possession not yet implemented in NPs")
+# possession for NP's: first person
 def test_my_green_ball():
     ball = situation_object(BALL, properties=[GREEN])
     dad = situation_object(DAD, properties=[IS_SPEAKER])
@@ -197,6 +196,30 @@ def test_my_green_ball():
         always_relations=[Relation(HAS, dad, ball)],
     )
     assert generated_tokens(situation) == ("wo3", "de", "lyu4 se4", "chyou2")
+
+
+# possession for NP's: second person
+def test_your_green_ball():
+    ball = situation_object(BALL, properties=[GREEN])
+    dad = situation_object(DAD, properties=[IS_ADDRESSEE])
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[ball, dad],
+        always_relations=[Relation(HAS, dad, ball)],
+    )
+    assert generated_tokens(situation) == ("ni3", "de", "lyu4 se4", "chyou2")
+
+
+# possession for NP's: third person
+def test_babade_green_ball():
+    ball = situation_object(BALL, properties=[GREEN])
+    dad = situation_object(DAD)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[ball, dad],
+        always_relations=[Relation(HAS, dad, ball)],
+    )
+    assert generated_tokens(situation) == ("ba4 ba4", "de", "lyu4 se4", "chyou2")
 
 
 """COUNTING NOUN PHRASE TESTS (WITH CLASSIFIERS)"""

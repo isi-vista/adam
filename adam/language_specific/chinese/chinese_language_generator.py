@@ -271,21 +271,12 @@ class SimpleRuleBasedChineseLanguageGenerator(
             else:
                 # handle the possession relation if there is one
                 if len(possession_relations) == 1:
-                    # first person: wo de NP
-                    if IS_SPEAKER in possession_relations[0].first_slot.properties:
-                        wo = self._noun_for_object(possession_relations[0].first_slot)
-                        de = DependencyTreeToken("de", PARTICLE)
-                        self.dependency_graph.add_edge(de, wo, role=CASE_POSSESSIVE)
-                        self.dependency_graph.add_edge(
-                            wo, noun_dependency_node, role=NOMINAL_MODIFIER_POSSESSIVE
-                        )
-                        return
-                    # second person: ni de NP
-                    elif IS_ADDRESSEE in possession_relations[0].first_slot.properties:
-                        raise NotImplementedError
-                    # third person: NP de NP
-                    else:
-                        raise NotImplementedError
+                    possessor = self._noun_for_object(possession_relations[0].first_slot)
+                    de = DependencyTreeToken("de", PARTICLE)
+                    self.dependency_graph.add_edge(de, possessor, role=CASE_POSSESSIVE)
+                    self.dependency_graph.add_edge(
+                        possessor, noun_dependency_node, role=NOMINAL_MODIFIER_POSSESSIVE
+                    )
                 # if the count is one, we're done since we're not using yi CLF currently
                 if count == 1:
                     return
