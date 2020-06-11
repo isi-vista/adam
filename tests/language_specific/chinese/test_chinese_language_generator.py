@@ -310,7 +310,31 @@ def test_noun_with_spatial_modifier():
 
 
 # tests mum being next to an object, a relation that is represented with a localiser phrase
-@pytest.mark.skip(reason="localisers and NP's aren't yet supported")
+def test_two_objects_with_mum_no_extra():
+    bird1 = situation_object(BIRD, debug_handle="bird1")
+    mum = situation_object(MOM, debug_handle="mum")
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[bird1, mum],
+        always_relations=[
+            Relation(
+                IN_REGION,
+                mum,
+                Region(
+                    bird1,
+                    distance=PROXIMAL,
+                    direction=Direction(
+                        positive=True,
+                        relative_to_axis=HorizontalAxisOfObject(bird1, index=0),
+                    ),
+                ),
+            )
+        ],
+    )
+    assert generated_tokens(situation) == ("ma1 ma1", "dzai4", "nyau3", "pang2 byan1")
+
+
+# tests mum being next to an object, a relation that is represented with a localiser phrase
 def test_two_objects_with_mum():
     bird1 = situation_object(BIRD, debug_handle="bird1")
     bird2 = situation_object(BIRD, debug_handle="bird2")

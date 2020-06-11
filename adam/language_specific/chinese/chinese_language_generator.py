@@ -287,12 +287,12 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 return
             #  https://github.com/isi-vista/adam/issues/782
             # TODO: get classifiers checked by a native speaker upon implementation
-            elif count == 2:
+            elif count == 2 and len(self.object_counts) == 1:
                 raise NotImplementedError(
                     "We don't know how to handle Chinese classifiers yet"
                 )
             # if the count is many, we don't need a CLF
-            else:
+            elif len(self.object_counts) == 1:
                 many = DependencyTreeToken("hen3 dwo1", NUMERAL)
                 self.dependency_graph.add_edge(
                     many, noun_dependency_node, role=NUMERIC_MODIFIER
@@ -364,9 +364,15 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     if direction_axis.aligned_to_gravitational:
                         raise NotImplementedError
                     else:
-                        raise NotImplementedError
-
-                    raise NotImplementedError
+                        if isinstance(
+                            region.direction.relative_to_axis, FacingAddresseeAxis
+                        ):
+                            if region.direction.positive:
+                                raise NotImplementedError
+                            else:
+                                raise NotImplementedError
+                        elif region.distance == PROXIMAL:
+                            preposition = "pang2 byan1"
             if not preposition:
                 raise RuntimeError(
                     "Don't know how to handle {} as a preposition".format(relation)
