@@ -15,6 +15,7 @@ from adam.language.dependency import (
     LinearizedDependencyTree,
 )
 from adam.language.dependency.universal_dependencies import (
+    PARTICLE,
     ADJECTIVAL_MODIFIER,
     ADPOSITION,
     ADVERB,
@@ -191,6 +192,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 return self.objects_to_dependency_nodes[_object]
 
             # TODO: handle counts
+            count = self.object_counts[_object.ontology_node]
 
             # make sure there is a corresponding ontology node
             if not _object.ontology_node:
@@ -221,6 +223,11 @@ class SimpleRuleBasedChineseLanguageGenerator(
             )
             self.dependency_graph.add_node(dependency_node)
 
+            # add a classifier if necessary
+            self.add_classifier(
+                _object, count, dependency_node, noun_lexicon_entry=noun_lexicon_entry
+            )
+
             # TODO: handle X_IS_Y, deal with classifiers
 
             # if colour is specified it, add it as an adjectival modifier
@@ -239,6 +246,55 @@ class SimpleRuleBasedChineseLanguageGenerator(
 
             self.objects_to_dependency_nodes[_object] = dependency_node
             return dependency_node
+
+        """Add a classifier to a given noun"""
+
+        def add_classifier(
+            self,
+            _object: SituationObject,
+            count: int,
+            noun_dependency_node: DependencyTreeToken,
+            *,
+            noun_lexicon_entry: LexiconEntry,
+        ) -> None:
+
+            # get the current possession relations so we can add wo de or ni de
+            possession_relations = [
+                relation
+                for relation in self.situation.always_relations
+                if relation.relation_type == HAS and relation.second_slot == _object
+            ]
+
+            # we can only handle one possession relation at a time right now
+            if len(possession_relations) > 1:
+                raise RuntimeError("Cannot handle multiple possession relations")
+            else:
+                # handle the possession relation if there is one
+                if len(possession_relations) == 1:
+                    # first person: wo de NP
+                    if IS_SPEAKER in possession_relations[0].first_slot.properties:
+                        wo = self._noun_for_object(possession_relations[0].first_slot)
+                        de = DependencyTreeToken("de", PARTICLE)
+                        self.dependency_graph.add_edge(de, wo, role=CASE_POSSESSIVE)
+                        self.dependency_graph.add_edge(
+                            wo, noun_dependency_node, role=NOMINAL_MODIFIER_POSSESSIVE
+                        )
+                        return
+                    # second person: ni de NP
+                    elif IS_ADDRESSEE in possession_relations[0].first_slot.properties:
+                        raise NotImplementedError
+                    # third person: NP de NP
+                    else:
+                        raise NotImplementedError
+                # if the count is one, we're done since we're not using yi CLF currently
+                if count == 1:
+                    return
+                # if the count is two, we use two + CLF
+                elif count == 2:
+                    raise NotImplementedError
+                # if the count is many, we don't need a CLF
+                else:
+                    raise NotImplementedError
 
         """Get a lexicon entry for a given ontology node"""
 
@@ -262,6 +318,37 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     )
             else:
                 raise RuntimeError(f"No lexicon entry for ontology node {ontology_node}")
+
+        """Some objects like the ground or speaker shouldn't be addressed unless explicitly mentioned"""
+
+        def _only_translate_if_referenced(self, object_: SituationObject) -> bool:
+            return (
+                object_.ontology_node == GROUND
+                or object_.ontology_node == LEARNER
+                or IS_SPEAKER in object_.properties
+                or IS_ADDRESSEE in object_.properties
+            )
+
+        """Default method for initializing the object counts"""
+
+        @object_counts.default
+        def _init_object_counts(self) -> Mapping[OntologyNode, int]:
+            if not self.situation.actions:
+                # For now, only apply quantifiers to object-only situations
+                return collections.Counter(
+                    [_object.ontology_node for _object in self.situation.all_objects]
+                )
+            else:
+                return {
+                    ontology_node: 1
+                    for ontology_node in immutableset(
+                        # even though only salient objects have linguistic expression
+                        # by default,
+                        # we gather counts over all objects in the scene.
+                        object_.ontology_node
+                        for object_ in self.situation.all_objects
+                    )
+                }
 
 
 GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR = SimpleRuleBasedChineseLanguageGenerator(

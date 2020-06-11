@@ -187,7 +187,7 @@ def test_green_ball():
 
 
 # possession for NP's
-@pytest.mark.skip(reason="possession not yet implemented in NPs")
+# @pytest.mark.skip(reason="possession not yet implemented in NPs")
 def test_my_green_ball():
     ball = situation_object(BALL, properties=[GREEN])
     dad = situation_object(DAD, properties=[IS_SPEAKER])
