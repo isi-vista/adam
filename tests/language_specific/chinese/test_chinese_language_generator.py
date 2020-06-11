@@ -138,9 +138,7 @@ def test_common_noun():
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[situation_object(BALL)]
     )
-    assert only(
-        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
-    ).as_token_sequence() == ("chyou2",)
+    assert generated_tokens(situation) == ("chyou2",)
 
 
 # a single mass noun. The distinction isn't nearly as salient in Chinese
@@ -148,9 +146,7 @@ def test_mass_noun():
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[situation_object(WATER)]
     )
-    assert only(
-        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
-    ).as_token_sequence() == ("shwei3",)
+    assert generated_tokens(situation) == ("shwei3",)
 
 
 # a single proper noun
@@ -158,9 +154,7 @@ def test_proper_noun():
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[situation_object(DAD)]
     )
-    assert only(
-        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
-    ).as_token_sequence() == ("ba4 ba4",)
+    assert generated_tokens(situation) == ("ba4 ba4",)
 
 
 # get the first person pronoun
@@ -169,9 +163,7 @@ def test_wo():
         ontology=GAILA_PHASE_1_ONTOLOGY,
         salient_objects=[situation_object(DAD, properties=[IS_SPEAKER])],
     )
-    assert only(
-        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
-    ).as_token_sequence() == ("wo3",)
+    assert generated_tokens(situation) == ("wo3",)
 
 
 # get the second person pronoun
@@ -180,21 +172,18 @@ def test_ni():
         ontology=GAILA_PHASE_1_ONTOLOGY,
         salient_objects=[situation_object(DAD, properties=[IS_ADDRESSEE])],
     )
-    assert only(
-        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
-    ).as_token_sequence() == ("ni3",)
+    assert generated_tokens(situation) == ("ni3",)
 
 
 """NOUN PHRASES WITH ADJECTIVAL MODIFIERS"""
 
 # basic adjective+noun
-@pytest.mark.skip(reason="NPs and modification isn't implemented yet")
 def test_green_ball():
     ball = situation_object(BALL, properties=[GREEN])
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[ball]
     )
-    assert generated_tokens(situation) == as_token_sequence() == ("lyu4 se4", "chyou2")
+    assert generated_tokens(situation) == ("lyu4 se4", "chyou2")
 
 
 # possession for NP's

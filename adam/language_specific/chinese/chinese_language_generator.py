@@ -141,7 +141,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
         """The function that actually generates the language"""
 
         def _real_generate(self) -> ImmutableSet[LinearizedDependencyTree]:
-            # TODO: deal with situations with more than one action
+            # we currently can't deal with situations with more than one action
             if len(self.situation.actions) > 1:
                 raise RuntimeError(
                     "Currently only situations with 0 or 1 actions are supported"
@@ -213,13 +213,31 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     _object.ontology_node  # pylint:disable=protected-access
                 )
 
+            # create a dependency node for the noun
             dependency_node = DependencyTreeToken(
                 noun_lexicon_entry.base_form,
                 noun_lexicon_entry.part_of_speech,
                 morphosyntactic_properties=noun_lexicon_entry.intrinsic_morphosyntactic_properties,
             )
-            # TODO: handle X_IS_Y and not IGNORE_COLOURS, deal with classifiers
             self.dependency_graph.add_node(dependency_node)
+
+            # TODO: handle X_IS_Y, deal with classifiers
+
+            # if colour is specified it, add it as an adjectival modifier
+            if IGNORE_COLORS not in self.situation.syntax_hints:
+                for property_ in _object.properties:
+                    if self.situation.ontology.is_subtype_of(property_, COLOR):
+                        color_lexicon_entry = self._unique_lexicon_entry(property_)
+                        color_node = DependencyTreeToken(
+                            color_lexicon_entry.base_form,
+                            color_lexicon_entry.part_of_speech,
+                            color_lexicon_entry.intrinsic_morphosyntactic_properties,
+                        )
+                        self.dependency_graph.add_edge(
+                            color_node, dependency_node, role=ADJECTIVAL_MODIFIER
+                        )
+
+            self.objects_to_dependency_nodes[_object] = dependency_node
             return dependency_node
 
         """Get a lexicon entry for a given ontology node"""
