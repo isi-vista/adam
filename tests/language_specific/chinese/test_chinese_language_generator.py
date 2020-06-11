@@ -203,15 +203,12 @@ def test_my_green_ball():
 
 
 # a single object -- note that we don't use yi clf noun yet but this could be implemented later on
-@pytest.mark.skip(reason="Classifiers aren't yet supported")
 def test_single_item():
     dog = situation_object(DOG)
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[dog]
     )
-    assert only(
-        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
-    ).as_token_sequence() == ("gou3",)
+    assert generated_tokens(situation) == ("gou3",)
 
 
 # https://github.com/isi-vista/adam/issues/782
