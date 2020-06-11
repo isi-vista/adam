@@ -1496,8 +1496,6 @@ def _make_come_down_template(
     background_objects_mutable = [speaker, ground]
     background_objects_mutable.extend(background)
     background_objects = immutableset(background_objects_mutable)
-    # TODO: Make sure the agent isn't in contact with the ground at the start
-    # See: https://github.com/isi-vista/adam/issues/597
     return Phase1SituationTemplate(
         f"{agent.handle}-come-to-{goal_reference.handle}",
         salient_object_variables=[agent, goal_reference],
@@ -1514,6 +1512,7 @@ def _make_come_down_template(
                 ),
             )
         ],
+        before_action_relations=[negate(contacts(agent, ground))],
         asserted_always_relations=flatten_relations(near(speaker, goal_reference)),
         syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
     )
