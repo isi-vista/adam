@@ -268,24 +268,30 @@ class SimpleRuleBasedChineseLanguageGenerator(
             # we can only handle one possession relation at a time right now
             if len(possession_relations) > 1:
                 raise RuntimeError("Cannot handle multiple possession relations")
+            elif len(possession_relations) == 1:
+                # handle the possession relation if there is one. We don't need to case on person in Chinese
+                # since all possessives are expressed NP+de+NP
+                possessor = self._noun_for_object(possession_relations[0].first_slot)
+                de = DependencyTreeToken("de", PARTICLE)
+                self.dependency_graph.add_edge(de, possessor, role=CASE_POSSESSIVE)
+                self.dependency_graph.add_edge(
+                    possessor, noun_dependency_node, role=NOMINAL_MODIFIER_POSSESSIVE
+                )
+            # if the count is one, we're done since we're not using yi CLF currently
+            if count == 1:
+                return
+            #  https://github.com/isi-vista/adam/issues/782
+            # TODO: get classifiers checked by a native speaker upon implementation
+            elif count == 2:
+                raise NotImplementedError(
+                    "We don't know how to handle Chinese classifiers yet"
+                )
+            # if the count is many, we don't need a CLF
             else:
-                # handle the possession relation if there is one
-                if len(possession_relations) == 1:
-                    possessor = self._noun_for_object(possession_relations[0].first_slot)
-                    de = DependencyTreeToken("de", PARTICLE)
-                    self.dependency_graph.add_edge(de, possessor, role=CASE_POSSESSIVE)
-                    self.dependency_graph.add_edge(
-                        possessor, noun_dependency_node, role=NOMINAL_MODIFIER_POSSESSIVE
-                    )
-                # if the count is one, we're done since we're not using yi CLF currently
-                if count == 1:
-                    return
-                # if the count is two, we use two + CLF
-                elif count == 2:
-                    raise NotImplementedError
-                # if the count is many, we don't need a CLF
-                else:
-                    raise NotImplementedError
+                many = DependencyTreeToken("hen3 dwo1", NUMERAL)
+                self.dependency_graph.add_edge(
+                    many, noun_dependency_node, role=NUMERIC_MODIFIER
+                )
 
         """Get a lexicon entry for a given ontology node"""
 

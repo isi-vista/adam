@@ -250,7 +250,6 @@ def test_two_items():
 
 
 # many objects
-@pytest.mark.skip(reason="Many object NPs aren't yet supported")
 def test_many_items():
     ball1 = situation_object(BALL, debug_handle="ball1")
     ball2 = situation_object(BALL, debug_handle="ball2")
@@ -258,9 +257,7 @@ def test_many_items():
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[ball1, ball2, ball3]
     )
-    assert only(
-        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
-    ).as_token_sequence() == ("hen3dwo1", "chyou2")
+    assert generated_tokens(situation) == ("hen3 dwo1", "chyou2")
 
 
 """SALIENT VS. NOT SALIENT OBJECTS"""
