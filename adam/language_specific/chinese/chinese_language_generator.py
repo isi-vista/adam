@@ -324,12 +324,6 @@ class SimpleRuleBasedChineseLanguageGenerator(
                         self._noun_for_object(relation.first_slot),
                         role=NOMINAL_MODIFIER,
                     )
-                else:
-                    raise RuntimeError(
-                        "We currently don't have a way to translate {} to a preposition".format(
-                            relation
-                        )
-                    )
             else:
                 raise RuntimeError(
                     "We can't currently translate {} relation to Chinese".format(relation)
@@ -337,8 +331,45 @@ class SimpleRuleBasedChineseLanguageGenerator(
 
         """Translate a relation to a prepositional modifier"""
 
-        def relation_to_prepositional_modifier(self, action, relation):
-            raise NotImplementedError
+        def relation_to_prepositional_modifier(
+            self,
+            action: Optional[Action[OntologyNode, SituationObject]],
+            relation: Relation[SituationObject],
+        ) -> Optional[DependencyTreeToken]:
+            region = cast(SituationRegion, relation.second_slot)
+            # if the object in the relation is not salient, then we don't care about the relation
+            if region.reference_object not in self.situation.salient_objects:
+                return None
+            if action:
+                raise NotImplementedError
+            preposition: Optional[str] = None
+            # inside/in
+            if region.distance == INTERIOR:
+                raise NotImplementedError
+            # to/towards
+            if region.distance == PROXIMAL and not region.direction:
+                raise NotImplementedError
+            elif region.direction:
+                raise NotImplementedError
+            if not preposition:
+                raise RuntimeError(
+                    "Don't know how to handle {} as a preposition".format(relation)
+                )
+
+            # get the noun for the OOP
+            reference_object_node = self._noun_for_object(region.reference_object)
+
+            # this means that the reference node is already in the graph
+            if self.dependency_graph.out_degree[reference_object_node]:
+                return None
+            # if the reference node isn't already in the graph, add it
+            else:
+                self.dependency_graph.add_edge(
+                    DependencyTreeToken(preposition, ADPOSITION),
+                    reference_object_node,
+                    role=CASE_SPATIAL,
+                )
+                return reference_object_node
 
         """Get a lexicon entry for a given ontology node"""
 
