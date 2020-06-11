@@ -362,21 +362,9 @@ class SimpleRuleBasedChineseLanguageGenerator(
                         preposition = "shang4"
                 else:
                     if direction_axis.aligned_to_gravitational:
-                        # over is handled differently since it's more analagous to dao/zai
+                        # TODO: check "over" mapping
                         if region.direction.positive:
-                            preposition = "gwo4"
-                            reference_object_node = self._noun_for_object(
-                                region.reference_object
-                            )
-                            if self.dependency_graph.out_degree[reference_object_node]:
-                                return None
-                            else:
-                                self.dependency_graph.add_edge(
-                                    DependencyTreeToken(preposition, ADPOSITION),
-                                    reference_object_node,
-                                    role=CASE_SPATIAL,
-                                )
-                            return reference_object_node
+                            preposition = "shang4 myan4"
                         # under
                         else:
                             preposition = "sya4"
@@ -385,9 +373,9 @@ class SimpleRuleBasedChineseLanguageGenerator(
                             region.direction.relative_to_axis, FacingAddresseeAxis
                         ):
                             if region.direction.positive:
-                                raise NotImplementedError
+                                preposition = "chyan2 myan4"
                             else:
-                                raise NotImplementedError
+                                preposition = "hou4 myan4"
                         elif region.distance == PROXIMAL:
                             preposition = "pang2 byan1"
             if not preposition:

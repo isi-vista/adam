@@ -415,11 +415,10 @@ def test_mum_above_object():
             )
         ],
     )
-    assert generated_tokens(situation) == ("ma1 ma1", "gwo4", "nyau3")
+    assert generated_tokens(situation) == ("ma1 ma1", "dzai4", "nyau3", "shang4 myan4")
 
 
 # tests an object beside another object
-@pytest.mark.skip(reason="localisers and NP's aren't supported yet")
 def test_object_beside_object():
     # HACK FOR AXES - See https://github.com/isi-vista/adam/issues/316
     ball = situation_object(BALL)
@@ -446,7 +445,6 @@ def test_object_beside_object():
 
 
 # in front and behind tests copied from English files
-@pytest.mark.skip(reason="in front and behind aren't yet implemented")
 def test_object_behind_in_front_object():
     # HACK FOR AXES - See https://github.com/isi-vista/adam/issues/316
     box = situation_object(BOX)
@@ -486,7 +484,12 @@ def test_object_behind_in_front_object():
             ],
         ),
     )
-    assert generated_tokens(front_situation) == ("syang1", "dzai4", "jwo1 dz", "chyan2")
+    assert generated_tokens(front_situation) == (
+        "syang1",
+        "dzai4",
+        "jwo1 dz",
+        "chyan2 myan4",
+    )
 
     behind_situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
