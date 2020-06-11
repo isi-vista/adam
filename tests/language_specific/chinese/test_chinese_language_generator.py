@@ -263,16 +263,14 @@ def test_many_items():
 """SALIENT VS. NOT SALIENT OBJECTS"""
 
 # two trucks, only one is salient
-@pytest.mark.skip(reason="saliency not yet supported")
+@pytest.mark.skip(reason="https://github.com/isi-vista/adam/issues/802")
 def test_one_salient_object():
     truck1 = situation_object(TRUCK, debug_handle="truck1")
     truck2 = situation_object(TRUCK, debug_handle="truck2")
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[truck1], other_objects=[truck2]
     )
-    assert only(
-        _SIMPLE_GENERATOR.generate_language((situation, FixedIndexChooser(0)))
-    ).as_token_sequence() == ("ka3 che1")
+    assert generated_tokens(situation) == ("ka3 che1")
 
 
 # many objects, only two are salient

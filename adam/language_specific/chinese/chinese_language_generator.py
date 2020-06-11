@@ -165,6 +165,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 # multiple objects of different types
                 else:
                     for object_ in self.situation.salient_objects:
+                        print(object_)
                         if not self._only_translate_if_referenced(object_):
                             self._noun_for_object(object_)
 
@@ -347,6 +348,8 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     )
                 }
 
+
+ALWAYS_USE_THE_OBJECTS = immutableset([GROUND])
 
 GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR = SimpleRuleBasedChineseLanguageGenerator(
     ontology_lexicon=GAILA_PHASE_1_CHINESE_LEXICON
