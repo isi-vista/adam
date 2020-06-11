@@ -265,14 +265,14 @@ def test_many_items():
 """SALIENT VS. NOT SALIENT OBJECTS"""
 
 # two trucks, only one is salient
-@pytest.mark.skip(reason="https://github.com/isi-vista/adam/issues/802")
+# https://github.com/isi-vista/adam/issues/802")
 def test_one_salient_object():
     truck1 = situation_object(TRUCK, debug_handle="truck1")
     truck2 = situation_object(TRUCK, debug_handle="truck2")
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[truck1], other_objects=[truck2]
     )
-    assert generated_tokens(situation) == ("ka3 che1")
+    assert generated_tokens(situation) == ("ka3 che1",)
 
 
 # many objects, only two are salient
@@ -281,16 +281,35 @@ def test_two_salient_objects():
     dog1 = situation_object(DOG, debug_handle="dog1")
     dog2 = situation_object(DOG, debug_handle="dog2")
     dog3 = situation_object(DOG, debug_handle="dog3")
+    dog4 = situation_object(DOG, debug_handle="dog4")
     truck1 = situation_object(TRUCK, debug_handle="truck1")
     truck2 = situation_object(TRUCK, debug_handle="truck2")
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         salient_objects=[dog1, dog2],
-        other_objects=[dog3, truck1, truck2],
+        other_objects=[dog3, truck1, truck2, dog4],
     )
     assert only(
         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
     ).as_token_sequence() == ("lyang3", "jr3", "gou3")
+
+
+# many objects, only two are salient
+def test_many_salient_objects():
+    dog1 = situation_object(DOG, debug_handle="dog1")
+    dog2 = situation_object(DOG, debug_handle="dog2")
+    dog3 = situation_object(DOG, debug_handle="dog3")
+    dog4 = situation_object(DOG, debug_handle="dog4")
+    truck1 = situation_object(TRUCK, debug_handle="truck1")
+    truck2 = situation_object(TRUCK, debug_handle="truck2")
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[dog1, dog2, dog4],
+        other_objects=[dog3, truck1, truck2],
+    )
+    assert only(
+        _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
+    ).as_token_sequence() == ("hen3 dwo1", "gou3")
 
 
 """NOUN PHRASES WITH LOCALISER NOMINAL MODIFIERS"""

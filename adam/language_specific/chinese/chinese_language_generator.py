@@ -287,12 +287,12 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 return
             #  https://github.com/isi-vista/adam/issues/782
             # TODO: get classifiers checked by a native speaker upon implementation
-            elif count == 2 and len(self.object_counts) == 1:
+            elif count == 2:
                 raise NotImplementedError(
                     "We don't know how to handle Chinese classifiers yet"
                 )
             # if the count is many, we don't need a CLF
-            elif len(self.object_counts) == 1:
+            else:
                 many = DependencyTreeToken("hen3 dwo1", NUMERAL)
                 self.dependency_graph.add_edge(
                     many, noun_dependency_node, role=NUMERIC_MODIFIER
@@ -438,7 +438,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
             if not self.situation.actions:
                 # For now, only apply quantifiers to object-only situations
                 return collections.Counter(
-                    [_object.ontology_node for _object in self.situation.all_objects]
+                    [_object.ontology_node for _object in self.situation.salient_objects]
                 )
             else:
                 return {
@@ -448,7 +448,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
                         # by default,
                         # we gather counts over all objects in the scene.
                         object_.ontology_node
-                        for object_ in self.situation.all_objects
+                        for object_ in self.situation.salient_objects
                     )
                 }
 
