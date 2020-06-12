@@ -654,7 +654,13 @@ def test_simple_SVIO_transfer_with_personal_pronouns_and_ba():
             )
         ],
     )
-    assert generated_tokens(situation) == ("wo3", "ba", "chyu1 chi2 bing3", "gei3", "ni3")
+    assert generated_tokens(situation) == (
+        "wo3",
+        "ba3",
+        "chyu1 chi2 bing3",
+        "gei3",
+        "ni3",
+    )
 
 
 # test SVO with action/movement verb
@@ -703,7 +709,6 @@ def test_you_give_me_a_cookie():
 # a list of verbs that currently don't accept goals is at https://github.com/isi-vista/adam/issues/582
 
 # this situation doesn't have any after-action relations so it uses zai, which is valid
-@pytest.mark.skip(reason="Localisers aren't yet implemented")
 def test_mom_put_a_ball_on_a_table_zai():
     mum = situation_object(MOM)
     ball = situation_object(BALL)
@@ -715,7 +720,7 @@ def test_mom_put_a_ball_on_a_table_zai():
             Action(
                 action_type=PUT,
                 argument_roles_to_fillers=[
-                    (AGENT, mom),
+                    (AGENT, mum),
                     (THEME, ball),
                     (
                         GOAL,

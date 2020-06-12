@@ -35,6 +35,7 @@ from adam.language.dependency.universal_dependencies import (
     PROPER_NOUN,
     VERB,
     IS_ATTRIBUTE,
+    ADVERBIAL_CLAUSE_MODIFIER,
 )
 from adam.language.language_generator import LanguageGenerator
 from adam.language.lexicon import LexiconEntry
@@ -247,18 +248,98 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 # this is the "ba" construction in Chinese where an object occurs with "ba" before
                 # the verb if the verb isn't ditransitive but is "trying" to take 2 objects
                 if argument_role == THEME and syntactic_role == OBLIQUE_NOMINAL:
-                    preposition = DependencyTreeToken("ba", ADPOSITION)
+                    preposition = DependencyTreeToken("ba3", ADPOSITION)
                     self.dependency_graph.add_edge(
                         preposition, filler_noun, role=CASE_SPATIAL
                     )
                     # raise NotImplementedError("Ditransitive prepositions not yet handled")
                 return (syntactic_role, filler_noun)
             elif isinstance(filler, Region):
-                raise NotImplementedError("Haven't implemented regions yet")
+                # get the noun for the object
+                reference_object_dependency_node = self._noun_for_object(
+                    filler.reference_object
+                )
+
+                # this determines the coverb based on whether the situation is static or dynamic
+                coverb: str = "dzai4"
+                if self.situation.after_action_relations:
+                    coverb = "dau3"
+                self.dependency_graph.add_edge(
+                    DependencyTreeToken(coverb, ADPOSITION),
+                    reference_object_dependency_node,
+                    role=CASE_SPATIAL,
+                )
+
+                # get the localiser as well
+                localiser_dependency_node = DependencyTreeToken(
+                    self._localiser_for_region_as_goal(filler), ADPOSITION
+                )
+                self.dependency_graph.add_edge(
+                    localiser_dependency_node,
+                    reference_object_dependency_node,
+                    role=NOMINAL_MODIFIER,
+                )
+                # this is an adverbial clause modifier since it occurs post-verbally -- hack
+                # (https://github.com/isi-vista/adam/issues/797)
+                return (ADVERBIAL_CLAUSE_MODIFIER, reference_object_dependency_node)
             else:
                 raise RuntimeError(
                     "The only argument role we can currently handle regions as a filler "
                     "for is GOAL"
+                )
+
+        def _localiser_for_region_as_goal(self, region: SituationRegion) -> str:
+            """
+            When a `Region` appears as the filler of the semantic role `GOAL`,
+            determine what preposition to use to express it in English.
+            """
+            if region.distance == INTERIOR:
+                return "nei4"
+            elif (
+                region.distance == EXTERIOR_BUT_IN_CONTACT
+                and region.direction
+                and region.direction.positive
+                # TODO: put constraints on the axis
+            ):
+                return "shang4"
+            elif region.distance == PROXIMAL and not region.direction:
+                raise NotImplementedError("Haven't handled to in Chinese")
+            elif region.direction == GRAVITATIONAL_UP:
+                return "shang4 myan4"
+            elif region.direction == GRAVITATIONAL_DOWN:
+                return "sya4"
+            # region.distance == DISTAL is not check as this does not define a specific preposition in scope for Phase 1
+            elif region.direction and self.situation.axis_info:
+                if not self.situation.axis_info.addressee:
+                    raise RuntimeError(
+                        f"Unable to translate region into a preposition because an addressee is lacking. "
+                        f"Region: {region}\nSituation: {self.situation}"
+                    )
+                # HACK, from M3
+                # see: https://github.com/isi-vista/adam/issues/573
+                if isinstance(region.direction.relative_to_axis, FacingAddresseeAxis):
+                    # "in front of" and "behind" is defined without a distance as you can accurate use the phrase
+                    # regardless of distance example:
+                    # "the teacher is in front of your laptop"
+                    # (Assuming the laptop is near the back of class and the addressee is facing the front of the room)
+                    # "your friend is in front of your laptop"
+                    # (Assuming the friend is one row up in the classroom)
+                    if region.direction.positive:
+                        return "chyan2 myan4"
+                    else:
+                        return "hou4 myan4"
+                elif (
+                    region.direction.relative_to_axis != GRAVITATIONAL_DOWN_TO_UP_AXIS
+                    and region.distance == PROXIMAL
+                ):
+                    return "pang2 byan1"
+                else:
+                    raise RuntimeError(
+                        f"Don't know how to translate {region} to a preposition yet"
+                    )
+            else:
+                raise RuntimeError(
+                    f"Don't know how to translate {region} to a preposition yet"
                 )
 
         def _translate_argument_role(
