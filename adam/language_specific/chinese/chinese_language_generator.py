@@ -152,7 +152,9 @@ class SimpleRuleBasedChineseLanguageGenerator(
             action: Optional[Action[OntologyNode, SituationObject]]
             # handle dynamic situations
             if self.situation.is_dynamic:
-                raise NotImplementedError("We currently only know how to handle NP's")
+                # get the action
+                action = only(self.situation.actions)
+                self._translate_action_to_verb(action)  # type: ignore
             # handle static situations
             else:
                 action = None
@@ -176,6 +178,111 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     )
                 ]
             )
+
+        def _translate_action_to_verb(
+            self, action: Action[OntologyNode, SituationObject]
+        ) -> DependencyTreeToken:
+            """Translate the situation's action to a VP"""
+            verb_lexical_entry = self._unique_lexicon_entry(action.action_type)
+
+            # map all the arguments to chunks of the dependency tree, ignoring relationships which are learner objects
+            syntactic_roles_to_argument_heads = immutablesetmultidict(
+                self._translate_verb_argument(
+                    action, verb_lexical_entry, argument_role, filler
+                )
+                for (argument_role, filler) in action.argument_roles_to_fillers.items()
+                if not (
+                    isinstance(filler, SituationObject)
+                    and filler.ontology_node == LEARNER
+                )
+            )
+
+            # check that there is only one subject
+            subject_heads = syntactic_roles_to_argument_heads[NOMINAL_SUBJECT]
+            if not len(subject_heads) == 1:
+                raise RuntimeError(
+                    f"Cannot handle multiple or zero subject heads for {action} and semantic role mapping {syntactic_roles_to_argument_heads}"
+                )
+            # actually add the verb to the dependency tree
+            verb_dependency_node = DependencyTreeToken(
+                verb_lexical_entry.base_form,
+                verb_lexical_entry.part_of_speech,
+                morphosyntactic_properties=verb_lexical_entry.intrinsic_morphosyntactic_properties,
+            )
+            self.dependency_graph.add_node(verb_dependency_node)
+
+            # attach the arguments computed above to the verb's dependency tree node
+            for (
+                syntactic_role,
+                argument_head,
+            ) in syntactic_roles_to_argument_heads.items():
+                self.dependency_graph.add_edge(
+                    argument_head, verb_dependency_node, role=syntactic_role
+                )
+
+            # TODO: attach modifiers
+            return verb_dependency_node
+
+        def _translate_verb_argument(
+            self,
+            action: Action[OntologyNode, SituationObject],
+            verb_lexical_entry: LexiconEntry,
+            argument_role: OntologyNode,
+            filler: Union[SituationObject, SituationRegion],
+        ) -> Tuple[DependencyRole, DependencyTreeToken]:
+            if isinstance(filler, SituationObject):
+                syntactic_role = self._translate_argument_role(
+                    action, verb_lexical_entry, argument_role
+                )
+                filler_noun = self._noun_for_object(
+                    filler, syntactic_role_if_known=syntactic_role
+                )
+                if argument_role == GOAL and syntactic_role == OBLIQUE_NOMINAL:
+                    raise NotImplementedError("Ditransitive prepositions not yet handled")
+                return (syntactic_role, filler_noun)
+            elif isinstance(filler, Region):
+                raise NotImplementedError("Haven't implemented regions yet")
+            else:
+                raise RuntimeError(
+                    "The only argument role we can currently handle regions as a filler "
+                    "for is GOAL"
+                )
+
+        def _translate_argument_role(
+            self,
+            action: Action[OntologyNode, SituationObject],
+            verb_lexical_entry: LexiconEntry,
+            argument_role: OntologyNode,
+        ) -> DependencyRole:
+            if argument_role == AGENT:
+                # Thomas reads the book.
+                return NOMINAL_SUBJECT
+            elif argument_role == PATIENT:
+                # James smashes the Lego castle.
+                return OBJECT
+            elif argument_role == THEME:
+                if AGENT in action.argument_roles_to_fillers:
+                    # Beatrice rolls the ball.
+                    return OBJECT
+                else:
+                    # the ball falls.
+                    return NOMINAL_SUBJECT
+            elif self.situation.ontology.is_subtype_of(argument_role, GOAL):
+                if (
+                    PREFER_DITRANSITIVE in self.situation.syntax_hints
+                    and ALLOWS_DITRANSITIVE in verb_lexical_entry.properties
+                ):
+                    # Mom gives a baby a cookie
+                    return INDIRECT_OBJECT
+                else:
+                    # Mom gives a cookie to a baby
+                    # Dad puts a box on a table
+                    return OBLIQUE_NOMINAL
+            else:
+                raise RuntimeError(
+                    f"Do not know how to map argument role "
+                    f"{argument_role} of {action} to a syntactic role."
+                )
 
         def _noun_for_object(
             self,

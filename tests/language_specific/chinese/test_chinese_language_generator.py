@@ -535,10 +535,10 @@ def test_object_behind_in_front_object():
 
 
 # basic intransitive verb testing
-@pytest.mark.skip("Intransitive VP's not yet implemented")
+# @pytest.mark.skip("Intransitive VP's not yet implemented")
 def test_falling():
     ball = situation_object(BALL)
-    situation_without_modifier = HighLevelSemanticsSituation(
+    situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         salient_objects=[ball],
         actions=[Action(FALL, argument_roles_to_fillers=[(THEME, ball)])],
