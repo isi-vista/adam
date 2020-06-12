@@ -263,7 +263,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 # this determines the coverb based on whether the situation is static or dynamic
                 coverb: str = "dzai4"
                 if self.situation.after_action_relations:
-                    coverb = "dau3"
+                    coverb = "dau4"
                 self.dependency_graph.add_edge(
                     DependencyTreeToken(coverb, ADPOSITION),
                     reference_object_dependency_node,

@@ -747,7 +747,6 @@ def test_mom_put_a_ball_on_a_table_zai():
 
 # this situation specifies the after_action_relations and so dao should be used
 # since there was an explicit change in location
-@pytest.mark.skip(reason="Localisers and dao aren't yet implemented")
 def test_mom_put_a_ball_on_a_table_dao():
     mum = situation_object(MOM)
     ball = situation_object(BALL)
@@ -759,7 +758,7 @@ def test_mom_put_a_ball_on_a_table_dao():
             Action(
                 action_type=PUT,
                 argument_roles_to_fillers=[
-                    (AGENT, mom),
+                    (AGENT, mum),
                     (THEME, ball),
                     (
                         GOAL,
@@ -787,7 +786,6 @@ def test_mom_put_a_ball_on_a_table_dao():
 
 # this situation doesn't have any after-action relations so it uses zai, which is valid
 # the mum is the speaker here, so we expect the first person 'wo'
-@pytest.mark.skip(reason="pronouns and localisers aren't yet implemented")
 def test_I_put_a_ball_on_a_table_zai():
     mum = situation_object(MOM, properties=[IS_SPEAKER])
     ball = situation_object(BALL)
@@ -799,7 +797,7 @@ def test_I_put_a_ball_on_a_table_zai():
             Action(
                 action_type=PUT,
                 argument_roles_to_fillers=[
-                    (AGENT, mom),
+                    (AGENT, mum),
                     (THEME, ball),
                     (
                         GOAL,
@@ -825,7 +823,6 @@ def test_I_put_a_ball_on_a_table_zai():
 
 
 # the speaker is putting the ball on the table here, using dao since we have after-action relations
-@pytest.mark.skip(reason="We don't handle speaker or localisers yet")
 def test_i_put_a_ball_on_a_table_dao():
     mum = situation_object(MOM, properties=[IS_SPEAKER])
     ball = situation_object(BALL)
@@ -837,7 +834,7 @@ def test_i_put_a_ball_on_a_table_dao():
             Action(
                 action_type=PUT,
                 argument_roles_to_fillers=[
-                    (AGENT, mom),
+                    (AGENT, mum),
                     (THEME, ball),
                     (
                         GOAL,
@@ -865,7 +862,6 @@ def test_i_put_a_ball_on_a_table_dao():
 
 # this situation doesn't have any after-action relations so it uses zai, which is valid
 # the mum is the speaker here, so we expect the first person 'wo'
-@pytest.mark.skip(reason="pronouns and localisers aren't yet implemented")
 def test_you_put_a_ball_on_a_table_zai():
     mum = situation_object(MOM, properties=[IS_ADDRESSEE])
     ball = situation_object(BALL)
@@ -877,7 +873,7 @@ def test_you_put_a_ball_on_a_table_zai():
             Action(
                 action_type=PUT,
                 argument_roles_to_fillers=[
-                    (AGENT, mom),
+                    (AGENT, mum),
                     (THEME, ball),
                     (
                         GOAL,
@@ -903,7 +899,6 @@ def test_you_put_a_ball_on_a_table_zai():
 
 
 # the speaker is putting the ball on the table here, using dao since we have after-action relations
-@pytest.mark.skip(reason="We don't handle speaker or localisers yet")
 def test_you_put_a_ball_on_a_table_dao():
     mum = situation_object(MOM, properties=[IS_ADDRESSEE])
     ball = situation_object(BALL)
@@ -915,7 +910,7 @@ def test_you_put_a_ball_on_a_table_dao():
             Action(
                 action_type=PUT,
                 argument_roles_to_fillers=[
-                    (AGENT, mom),
+                    (AGENT, mum),
                     (THEME, ball),
                     (
                         GOAL,
@@ -942,7 +937,6 @@ def test_you_put_a_ball_on_a_table_dao():
 
 
 # an additional test for localizers using a different localizer
-@pytest.mark.skip(reason="localizers aren't yet handled")
 def test_dad_put_a_cookie_in_a_box_zai():
     dad = situation_object(DAD)
     cookie = situation_object(COOKIE)
@@ -968,13 +962,12 @@ def test_dad_put_a_cookie_in_a_box_zai():
         "fang4",
         "dzai4",
         "syang1",
-        "li3",
+        "nei4",
     )
 
 
 # an additional test for localizers using a different localizer. This one specifies
 # a change in location, so we use dao instead of zai to indicate this change
-@pytest.mark.skip(reason="localizers aren't yet handled")
 def test_dad_put_a_cookie_in_a_box_dao():
     dad = situation_object(DAD)
     cookie = situation_object(COOKIE)
@@ -1001,12 +994,11 @@ def test_dad_put_a_cookie_in_a_box_dao():
         "fang4",
         "dau4",
         "syang1",
-        "li3",
+        "nei4",
     )
 
 
 # test with another localiser and first person
-@pytest.mark.skip(reason="we haven't implemented pronouns or localisers yet")
 def test_i_put_cookie_in_box_zai():
     dad = situation_object(DAD, properties=[IS_SPEAKER])
     cookie = situation_object(COOKIE)
@@ -1032,12 +1024,11 @@ def test_i_put_cookie_in_box_zai():
         "fang4",
         "dzai4",
         "syang1",
-        "li3",
+        "nei4",
     )
 
 
 # test with another localiser and second person
-@pytest.mark.skip(reason="we haven't implemented pronouns or localisers yet")
 def test_you_put_cookie_in_box_zai():
     dad = situation_object(DAD, properties=[IS_ADDRESSEE])
     cookie = situation_object(COOKIE)
@@ -1063,7 +1054,7 @@ def test_you_put_cookie_in_box_zai():
         "fang4",
         "dzai4",
         "syang1",
-        "li3",
+        "nei4",
     )
 
 
@@ -1129,7 +1120,7 @@ def test_i_put_cookie_in_my_box():
         "wo3",
         "de",
         "syang1",
-        "li3",
+        "nei4",
     )
 
 
@@ -1161,7 +1152,7 @@ def test_third_person_cookie_in_his_box():
         "fang4",
         "dzai4",
         "syang1",
-        "li3",
+        "nei4",
     )
 
 
@@ -1201,7 +1192,6 @@ def test_you_put_cookie_in_your_box():
 
 
 # tests use of first person possessive 'wo de' when the speaker isn't the agent
-@pytest.mark.skip("we don't handle possessives or localisers yet")
 def test_speaker_owner_of_box():
     dad = situation_object(DAD)
     cookie = situation_object(COOKIE)
@@ -1209,7 +1199,7 @@ def test_speaker_owner_of_box():
     mum = situation_object(MOM, properties=[IS_SPEAKER])
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        salient_objects=[dad, cookie, box],
+        salient_objects=[dad, cookie, box, mum],
         always_relations=[Relation(HAS, mum, box)],
         actions=[
             Action(
@@ -1232,12 +1222,11 @@ def test_speaker_owner_of_box():
         "wo3",
         "de",
         "syang1",
-        "li3",
+        "nei4",
     )
 
 
 # test the third person possessive, expressed by a separate speaker
-@pytest.mark.skip("we don't handle possessives or localisers yet")
 def test_speaker_not_owner_of_box():
     dad = situation_object(DAD)
     cookie = situation_object(COOKIE)
@@ -1245,7 +1234,7 @@ def test_speaker_not_owner_of_box():
     mum = situation_object(MOM, properties=[IS_SPEAKER])
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        salient_objects=[dad, cookie, box],
+        salient_objects=[dad, cookie, box, mum],
         always_relations=[Relation(HAS, dad, box)],
         actions=[
             Action(
@@ -1268,7 +1257,7 @@ def test_speaker_not_owner_of_box():
         "ba4 ba4",
         "de",
         "syang1",
-        "li3",
+        "nei4",
     )
 
 
@@ -1494,7 +1483,6 @@ def test_ball_fell_on_ground():
 
 
 # another intransitive verb
-@pytest.mark.skip(reason="path modifiers have not been implemented yet")
 def test_mom_sits_on_a_table():
     mom = situation_object(MOM)
     table = situation_object(TABLE)
@@ -1519,7 +1507,7 @@ def test_mom_sits_on_a_table():
         ],
     )
     assert generated_tokens(situation) == (
-        "ma1ma1",
+        "ma1 ma1",
         "dzwo4",
         "dzai4",
         "jwo1 dz",
@@ -1602,7 +1590,6 @@ def test_to_regions_as_goal():
 
 
 # this tests being inside a region
-@pytest.mark.skip(reason="go/come not yet implemented")
 def test_in_region_as_goal():
     goal_object = situation_object(BOX, properties=[HOLLOW])
     assert generated_tokens(
@@ -1611,7 +1598,6 @@ def test_in_region_as_goal():
 
 
 # this tests being next to a region
-@pytest.mark.skip(reason="go/come not yet implemented")
 def test_beside_region_as_goal():
     goal_object = situation_object(BOX, properties=[HOLLOW])
     # Beside
@@ -1631,7 +1617,6 @@ def test_beside_region_as_goal():
 
 
 # this tests going behind a region
-@pytest.mark.skip(reason="go/come not yet implemented")
 def test_behind_region_as_goal():
     goal_object = situation_object(BOX, properties=[HOLLOW])
     # Behind
@@ -1646,11 +1631,10 @@ def test_behind_region_as_goal():
             ),
             goal_object,
         )
-    ) == ("gou3", "chyu4", "dzai4", "syang1", "bei4 hou4")
+    ) == ("gou3", "chyu4", "dzai4", "syang1", "hou4 myan4")
 
 
 # this tests going in front of a region
-@pytest.mark.skip(reason="go/come not yet implemented")
 def test_in_front_of_region_as_goal():
     # In front of
     goal_object = situation_object(BOX, properties=[HOLLOW])
@@ -1682,7 +1666,7 @@ def test_over_region_as_goal():
 
 
 # this tests going under a region
-@pytest.mark.skip(reason="go/come not yet implemented")
+# @pytest.mark.skip(reason="go/come not yet implemented")
 def test_under_region_as_goal():
     goal_object = situation_object(TABLE)
     # Over
@@ -1691,7 +1675,7 @@ def test_under_region_as_goal():
             Region(goal_object, distance=PROXIMAL, direction=GRAVITATIONAL_DOWN),
             goal_object,
         )
-    ) == ("gou3", "chyu4", "dzai4", "jwo1 dz", "sya4 myan4")
+    ) == ("gou3", "chyu4", "dzai4", "jwo1 dz", "sya4")
 
 
 """MISC TESTS REPLICATED FROM ENGLISH TESTING FILE"""
