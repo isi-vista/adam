@@ -574,7 +574,6 @@ def test_simple_SVO():
 
 
 # test SVIO transfer of possession
-@pytest.mark.skip(reason="SVIO structure isn't yet supported")
 def test_simple_SVIO_transfer():
     mum = situation_object(MOM, debug_handle="mum_subject")
     baby = situation_object(BABY, debug_handle="babyIO")
@@ -585,9 +584,10 @@ def test_simple_SVIO_transfer():
         actions=[
             Action(
                 action_type=GIVE,
-                argument_roles_to_fillers=[(AGENT, mom), (GOAL, baby), (THEME, cookie)],
+                argument_roles_to_fillers=[(AGENT, mum), (GOAL, baby), (THEME, cookie)],
             )
         ],
+        syntax_hints=[PREFER_DITRANSITIVE],
     )
     assert generated_tokens(situation) == (
         "ma1 ma1",
@@ -622,8 +622,7 @@ def test_simple_subject_verb_you():
 
 
 # test SVIO transfer of possession with personal pronouns
-@pytest.mark.skip(reason="SVIO structure isn't yet supported")
-def test_simple_SVIO_transfer():
+def test_simple_SVIO_transfer_with_personal_pronouns():
     mum = situation_object(MOM, debug_handle="mum_subject", properties=[IS_SPEAKER])
     baby = situation_object(BABY, debug_handle="babyIO", properties=[IS_ADDRESSEE])
     cookie = situation_object(COOKIE, debug_handle="cookieDO")
@@ -633,9 +632,30 @@ def test_simple_SVIO_transfer():
         actions=[
             Action(
                 action_type=GIVE,
-                argument_roles_to_fillers=[(AGENT, mom), (GOAL, baby), (THEME, cookie)],
+                argument_roles_to_fillers=[(AGENT, mum), (GOAL, baby), (THEME, cookie)],
             )
         ],
+        syntax_hints=[PREFER_DITRANSITIVE],
+    )
+    assert generated_tokens(situation) == ("wo3", "gei3", "ni3", "chyu1 chi2 bing3")
+
+
+# test SVIO transfer of possession with personal pronouns
+@pytest.mark.skip(reason="ba construction not yet handled")
+def test_simple_SVIO_transfer_with_personal_pronouns_and_ba():
+    mum = situation_object(MOM, debug_handle="mum_subject", properties=[IS_SPEAKER])
+    baby = situation_object(BABY, debug_handle="babyIO", properties=[IS_ADDRESSEE])
+    cookie = situation_object(COOKIE, debug_handle="cookieDO")
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mum, baby, cookie],
+        actions=[
+            Action(
+                action_type=GIVE,
+                argument_roles_to_fillers=[(AGENT, mum), (GOAL, baby), (THEME, cookie)],
+            )
+        ],
+        syntax_hints=[PREFER_DITRANSITIVE],
     )
     assert generated_tokens(situation) == ("wo3", "gei3", "ni3", "chyu1 chi2 bing3")
 
