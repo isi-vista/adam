@@ -81,15 +81,15 @@ from adam.relation import Relation
 from adam.situation import Action, SituationObject, SituationRegion
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 
-"""Simple rule-based approach for translating HighLevelSemanticSituations to 
-Chinese dependency trees. We currently only generate a single possible linearized
-tree for a semantic situation."""
-
 
 @attrs(frozen=True, slots=True)
 class SimpleRuleBasedChineseLanguageGenerator(
     LanguageGenerator[HighLevelSemanticsSituation, LinearizedDependencyTree]
 ):
+    """Simple rule-based approach for translating HighLevelSemanticSituations to
+    Chinese dependency trees. We currently only generate a single possible linearized
+    tree for a semantic situation."""
+
     # mapping from nodes in the concept ontology to Chinese words
     _ontology_lexicon: OntologyLexicon = attrib(
         validator=instance_of(OntologyLexicon), kw_only=True
@@ -100,20 +100,20 @@ class SimpleRuleBasedChineseLanguageGenerator(
         init=False, default=SIMPLE_CHINESE_DEPENDENCY_TREE_LINEARIZER, kw_only=True
     )
 
-    # the function that actually generates the language
     def generate_language(
         self, situation: HighLevelSemanticsSituation, chooser: SequenceChooser
     ) -> ImmutableSet[LinearizedDependencyTree]:
+        """The function that actually generates the language"""
         # remove once done
         return SimpleRuleBasedChineseLanguageGenerator._Generation(
             self, situation
         ).generate()
 
-    """This class encapsulates all the mutable state for an execution of the 
-    SimpleRuleBasedChineseLanguageGenerator on a single input"""
-
     @attrs(frozen=True, slots=True)
     class _Generation:
+        """This class encapsulates all the mutable state for an execution of the
+           SimpleRuleBasedChineseLanguageGenerator on a single input"""
+
         # keep the reference to the parent because python doesn't have real inner classes
         generator: "SimpleRuleBasedChineseLanguageGenerator" = attrib()
         # the situation being translated into language
@@ -127,21 +127,17 @@ class SimpleRuleBasedChineseLanguageGenerator(
         # keep a mapping of object counts so we know what quantifiers to use when there are multiple objects
         object_counts: Mapping[OntologyNode, int] = attrib(init=False)
 
-        """The function that tries to generate language for a given representation"""
-
         def generate(self) -> ImmutableSet[LinearizedDependencyTree]:
+            """The function that tries to generate language for a given representation"""
             try:
                 return self._real_generate()
             except Exception as e:
                 raise RuntimeError(
-                    "Error while generating Chinese for the situation {}".format(
-                        self.situation
-                    )
+                    f"Error while generating Chinese for the situation {self.situation}"
                 ) from e
 
-        """The function that actually generates the language"""
-
         def _real_generate(self) -> ImmutableSet[LinearizedDependencyTree]:
+            """The function that actually generates the language"""
             # we currently can't deal with situations with more than one action
             if len(self.situation.actions) > 1:
                 raise RuntimeError(
@@ -156,7 +152,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
             action: Optional[Action[OntologyNode, SituationObject]]
             # handle dynamic situations
             if self.situation.is_dynamic:
-                raise NotImplementedError
+                raise NotImplementedError("We currently only know how to handle NP's")
             # handle static situations
             else:
                 action = None
@@ -167,11 +163,9 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 # multiple objects of different types
                 else:
                     for object_ in self.situation.salient_objects:
-                        print(object_)
                         if not self._only_translate_if_referenced(object_):
                             self._noun_for_object(object_)
 
-            # TODO: handle persisting relations
             for persisting_relation in self.situation.always_relations:
                 self._translate_relation(action, persisting_relation)
 
@@ -183,14 +177,13 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 ]
             )
 
-        """Get the noun for the object in a given situation"""
-
         def _noun_for_object(
             self,
             _object: SituationObject,
             *,
             syntactic_role_if_known: Optional[DependencyRole] = None,
         ) -> DependencyTreeToken:
+            """Get the noun for the object in a given situation"""
 
             # if we already have a mapping for a noun, we're done
             if _object in self.objects_to_dependency_nodes:
@@ -233,7 +226,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 _object, count, dependency_node, noun_lexicon_entry=noun_lexicon_entry
             )
 
-            # TODO: handle X_IS_Y; not implemented in syntax yet either
+            # TODO: handle X_IS_Y; not implemented in syntax yet either (https://github.com/isi-vista/adam/issues/804)
 
             # if colour is specified it, add it as an adjectival modifier
             if IGNORE_COLORS not in self.situation.syntax_hints:
@@ -252,8 +245,6 @@ class SimpleRuleBasedChineseLanguageGenerator(
             self.objects_to_dependency_nodes[_object] = dependency_node
             return dependency_node
 
-        """Add a classifier to a given noun"""
-
         def add_classifier(
             self,
             _object: SituationObject,
@@ -262,6 +253,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
             *,
             noun_lexicon_entry: LexiconEntry,
         ) -> None:
+            """Add a classifier to a given noun"""
 
             # get the current possession relations so we can add wo de or ni de
             possession_relations = [
@@ -298,13 +290,12 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     many, noun_dependency_node, role=NUMERIC_MODIFIER
                 )
 
-        """Translate relations that the user explicitly calls out"""
-
         def _translate_relation(
             self,
             action: Optional[Action[OntologyNode, SituationObject]],
             relation: Relation[SituationObject],
         ):
+            """Translate relations that the user explicitly calls out"""
             if relation.relation_type == HAS:
                 # if the situation is dynamic, then this will be handled within the NP
                 if (
@@ -313,7 +304,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 ):
                     pass
                 else:
-                    raise NotImplementedError
+                    raise NotImplementedError("We don't handle 'has' as a verb yet")
             elif relation.relation_type == IN_REGION:
                 prepositional_modifier = self.relation_to_prepositional_modifier(
                     action, relation
@@ -326,16 +317,15 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     )
             else:
                 raise RuntimeError(
-                    "We can't currently translate {} relation to Chinese".format(relation)
+                    f"We can't currently translate {relation} relation to Chinese"
                 )
-
-        """Translate a relation to a prepositional modifier"""
 
         def relation_to_prepositional_modifier(
             self,
             action: Optional[Action[OntologyNode, SituationObject]],
             relation: Relation[SituationObject],
         ) -> Optional[DependencyTreeToken]:
+            """Translate a relation to a prepositional modifier"""
 
             region = cast(SituationRegion, relation.second_slot)
             # if the object in the relation is not salient, then we don't care about the relation
@@ -343,15 +333,18 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 return None
             # deal with actions with verbs
             if action:
-                raise NotImplementedError
+                raise NotImplementedError("We don't handle prepositions in VP's yet")
             preposition: Optional[str] = None
             # inside/in
             if region.distance == INTERIOR:
                 preposition = "nei4"
             # to/towards
             # TODO: to in Chinese is expressed differently than in English
+            # https://github.com/isi-vista/adam/issues/805
             if region.distance == PROXIMAL and not region.direction:
-                raise NotImplementedError
+                raise NotImplementedError(
+                    "We have not finished implementing co-verbs in Chinese"
+                )
             elif region.direction:
                 direction_axis = region.direction.relative_to_concrete_axis(
                     self.situation.axis_info
@@ -363,6 +356,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 else:
                     if direction_axis.aligned_to_gravitational:
                         # TODO: check "over" mapping
+                        # https://github.com/isi-vista/adam/issues/805
                         if region.direction.positive:
                             preposition = "shang4 myan4"
                         # under
@@ -380,7 +374,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
                             preposition = "pang2 byan1"
             if not preposition:
                 raise RuntimeError(
-                    "Don't know how to handle {} as a preposition".format(relation)
+                    f"Don't know how to handle {relation} as a preposition"
                 )
 
             # get the noun for the OOP
@@ -403,9 +397,8 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 )
                 return reference_object_node
 
-        """Get a lexicon entry for a given ontology node"""
-
         def _unique_lexicon_entry(self, ontology_node: OntologyNode) -> LexiconEntry:
+            """Get a lexicon entry for a given ontology node"""
             # get the lexicon entries for the ontology node
             lexicon_entries = self.generator._ontology_lexicon.words_for_node(  # pylint:disable=protected-access
                 ontology_node
@@ -426,9 +419,8 @@ class SimpleRuleBasedChineseLanguageGenerator(
             else:
                 raise RuntimeError(f"No lexicon entry for ontology node {ontology_node}")
 
-        """Some objects like the ground or speaker shouldn't be addressed unless explicitly mentioned"""
-
         def _only_translate_if_referenced(self, object_: SituationObject) -> bool:
+            """Some objects like the ground or speaker shouldn't be addressed unless explicitly mentioned"""
             return (
                 object_.ontology_node == GROUND
                 or object_.ontology_node == LEARNER
@@ -436,11 +428,11 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 or IS_ADDRESSEE in object_.properties
             )
 
-        """Default method for initializing the object counts"""
-
         # TODO: only counting salient object right now, this may need to be changed later or consider adding counts for both separately
+        # https://github.com/isi-vista/adam/issues/802
         @object_counts.default
         def _init_object_counts(self) -> Mapping[OntologyNode, int]:
+            """Default method for initializing the object counts"""
             if not self.situation.actions:
                 # For now, only apply quantifiers to object-only situations
                 return collections.Counter(
@@ -459,8 +451,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 }
 
 
-ALWAYS_USE_THE_OBJECTS = immutableset([GROUND])
-
+# create an instance of the rule-based language generator for our current ontology
 GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR = SimpleRuleBasedChineseLanguageGenerator(
     ontology_lexicon=GAILA_PHASE_1_CHINESE_LEXICON
 )
