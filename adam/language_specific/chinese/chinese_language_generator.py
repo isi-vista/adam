@@ -185,7 +185,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
             """Translate the situation's action to a VP"""
             verb_lexical_entry = self._unique_lexicon_entry(action.action_type)
 
-            # map all the arguments to chunks of the dependency tree, ignoring relationships which are learner objects
+            # map all the arguments to chunks of the dependency tree, ignoring LEARNER object from generation
             syntactic_roles_to_argument_heads = immutablesetmultidict(
                 self._translate_verb_argument(
                     action, verb_lexical_entry, argument_role, filler
@@ -197,12 +197,13 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 )
             )
 
-            # check that there is only one subject
+            # check that there is only one subject. We don't need to get a surface form here since Chinese doesn't conjugate
             subject_heads = syntactic_roles_to_argument_heads[NOMINAL_SUBJECT]
             if not len(subject_heads) == 1:
                 raise RuntimeError(
                     f"Cannot handle multiple or zero subject heads for {action} and semantic role mapping {syntactic_roles_to_argument_heads}"
                 )
+
             # actually add the verb to the dependency tree
             verb_dependency_node = DependencyTreeToken(
                 verb_lexical_entry.base_form,
@@ -230,15 +231,27 @@ class SimpleRuleBasedChineseLanguageGenerator(
             argument_role: OntologyNode,
             filler: Union[SituationObject, SituationRegion],
         ) -> Tuple[DependencyRole, DependencyTreeToken]:
+
+            """Maps dependency roles to the corresponding node heads for verb arguments"""
+
+            # deal with the case that this is an object in the situation
             if isinstance(filler, SituationObject):
+                # get the syntactic role by using a helper function
                 syntactic_role = self._translate_argument_role(
                     action, verb_lexical_entry, argument_role
                 )
+                # get the noun corresponding to the object
                 filler_noun = self._noun_for_object(
                     filler, syntactic_role_if_known=syntactic_role
                 )
-                if argument_role == GOAL and syntactic_role == OBLIQUE_NOMINAL:
-                    raise NotImplementedError("Ditransitive prepositions not yet handled")
+                # this is the "ba" construction in Chinese where an object occurs with "ba" before
+                # the verb if the verb isn't ditransitive but is "trying" to take 2 objects
+                if argument_role == THEME and syntactic_role == OBLIQUE_NOMINAL:
+                    preposition = DependencyTreeToken("ba", ADPOSITION)
+                    self.dependency_graph.add_edge(
+                        preposition, filler_noun, role=CASE_SPATIAL
+                    )
+                    # raise NotImplementedError("Ditransitive prepositions not yet handled")
                 return (syntactic_role, filler_noun)
             elif isinstance(filler, Region):
                 raise NotImplementedError("Haven't implemented regions yet")
@@ -254,6 +267,8 @@ class SimpleRuleBasedChineseLanguageGenerator(
             verb_lexical_entry: LexiconEntry,
             argument_role: OntologyNode,
         ) -> DependencyRole:
+            """Translate an argument role to a syntactic role so verb arguments can be joined to trees"""
+
             if argument_role == AGENT:
                 # Thomas reads the book.
                 return NOMINAL_SUBJECT
@@ -262,22 +277,20 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 return OBJECT
             elif argument_role == THEME:
                 if AGENT in action.argument_roles_to_fillers:
-                    # Beatrice rolls the ball.
-                    return OBJECT
+                    # if there's a theme and a goal but the verb isn't ditransitive, the theme becomes preverbial
+                    if (
+                        GOAL in action.argument_roles_to_fillers
+                        and PREFER_DITRANSITIVE not in self.situation.syntax_hints
+                    ):
+                        return OBLIQUE_NOMINAL
+                    # if there's no goal or the verb is ditransitive, it's still post verbal
+                    else:
+                        return OBJECT
                 else:
-                    # the ball falls.
+                    # the theme can be the subject if there is not an agent in the action
                     return NOMINAL_SUBJECT
             elif self.situation.ontology.is_subtype_of(argument_role, GOAL):
-                if (
-                    PREFER_DITRANSITIVE in self.situation.syntax_hints
-                    and ALLOWS_DITRANSITIVE in verb_lexical_entry.properties
-                ):
-                    # Mom gives a baby a cookie
-                    return INDIRECT_OBJECT
-                else:
-                    # Mom gives a cookie to a baby
-                    # Dad puts a box on a table
-                    return OBLIQUE_NOMINAL
+                return INDIRECT_OBJECT
             else:
                 raise RuntimeError(
                     f"Do not know how to map argument role "

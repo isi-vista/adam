@@ -535,7 +535,6 @@ def test_object_behind_in_front_object():
 
 
 # basic intransitive verb testing
-# @pytest.mark.skip("Intransitive VP's not yet implemented")
 def test_falling():
     ball = situation_object(BALL)
     situation = HighLevelSemanticsSituation(
@@ -641,7 +640,6 @@ def test_simple_SVIO_transfer_with_personal_pronouns():
 
 
 # test SVIO transfer of possession with personal pronouns
-@pytest.mark.skip(reason="ba construction not yet handled")
 def test_simple_SVIO_transfer_with_personal_pronouns_and_ba():
     mum = situation_object(MOM, debug_handle="mum_subject", properties=[IS_SPEAKER])
     baby = situation_object(BABY, debug_handle="babyIO", properties=[IS_ADDRESSEE])
@@ -655,13 +653,11 @@ def test_simple_SVIO_transfer_with_personal_pronouns_and_ba():
                 argument_roles_to_fillers=[(AGENT, mum), (GOAL, baby), (THEME, cookie)],
             )
         ],
-        syntax_hints=[PREFER_DITRANSITIVE],
     )
-    assert generated_tokens(situation) == ("wo3", "gei3", "ni3", "chyu1 chi2 bing3")
+    assert generated_tokens(situation) == ("wo3", "ba", "chyu1 chi2 bing3", "gei3", "ni3")
 
 
 # test SVO with action/movement verb
-@pytest.mark.skip(reason="SVO structure isn't supported yet")
 def test_simple_SVO_movement():
     dad = situation_object(DAD)
     chair = situation_object(CHAIR)
@@ -678,7 +674,6 @@ def test_simple_SVO_movement():
 
 
 # SVIO with pronouns
-@pytest.mark.skip(reason="SVO structure isn't supported yet")
 def test_you_give_me_a_cookie():
     you = situation_object(DAD, properties=[IS_ADDRESSEE])
     baby = situation_object(BABY, properties=[IS_SPEAKER])
