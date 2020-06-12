@@ -547,7 +547,6 @@ def test_falling():
 
 
 # test the simple subject-verb phrase "mum eats"
-@pytest.mark.skip(reason="VP's aren't yet supported")
 def test_simple_subject_verb():
     mum = situation_object(MOM, debug_handle="mum")
     situation = HighLevelSemanticsSituation(
@@ -559,7 +558,6 @@ def test_simple_subject_verb():
 
 
 # test more complex SVO phrase "mum eats a cookie"
-@pytest.mark.skip(reason="SVO structure isn't yet supported")
 def test_simple_SVO():
     mum = situation_object(MOM, debug_handle="mum")
     cookie = situation_object(COOKIE, debug_handle="cookie")
@@ -602,7 +600,6 @@ def test_simple_SVIO_transfer():
 """VP's WITH PERSONAL PRONOUNS"""
 
 # test the simple subject-verb phrase "mum eats" with first person
-@pytest.mark.skip(reason="pronouns and VP's aren't yet supported")
 def test_simple_subject_verb_me():
     mum = situation_object(MOM, debug_handle="mum", properties=[IS_SPEAKER])
     situation = HighLevelSemanticsSituation(
@@ -614,7 +611,6 @@ def test_simple_subject_verb_me():
 
 
 # test the simple subject-verb phrase "mum eats" with second person
-@pytest.mark.skip(reason="pronouns and VP's aren't yet supported")
 def test_simple_subject_verb_you():
     mum = situation_object(MOM, debug_handle="mum", properties=[IS_ADDRESSEE])
     situation = HighLevelSemanticsSituation(
