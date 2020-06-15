@@ -1401,11 +1401,8 @@ def test_you_have_your_ball():
 
 
 """PATH MODIFIERS"""
-# TODO: deal with doa/zai distinction for path modifiers and deal with guo. It may be
-
 
 # this tests over, which is a special case since it doesn't use zai/dao
-# @pytest.mark.skip(reason="path modifiers have not been implemented yet")
 def test_path_modifier():
     bird = situation_object(BIRD)
     house = situation_object(HOUSE)
@@ -1439,7 +1436,6 @@ def test_path_modifier():
 
 
 # a slightly different test for over
-@pytest.mark.skip(reason="path modifiers haven't been implemented yet")
 def test_jumps_over():
     dad = situation_object(DAD)
     chair = situation_object(CHAIR)
@@ -1456,11 +1452,16 @@ def test_jumps_over():
             )
         ],
     )
-    assert generated_tokens(situation) == ("ba4 ba4", "tyau4", "gwo4", "yi3 dz")
+    assert generated_tokens(situation) == (
+        "ba4 ba4",
+        "tyau4",
+        "gwo4",
+        "yi3 dz",
+        "shang4 myan4",
+    )
 
 
 # this tests under, which is a regular case using 'dao'
-@pytest.mark.skip(reason="path modifiers have not been implemented yet")
 def test_path_modifier_under():
     bird = situation_object(BIRD)
     table = situation_object(TABLE)
@@ -1486,10 +1487,15 @@ def test_path_modifier_under():
                 ),
             )
         ],
-        # TODO: must include these in order to use dao; is this the best way to handle this?
         after_action_relations=[near(bird, table)],
     )
-    assert generated_tokens(situation) == ("nyau3", "fei1", "dau4", "jwo1 dz", "di3 sya")
+    assert generated_tokens(situation) == (
+        "nyau3",
+        "fei1",
+        "dau4",
+        "jwo1 dz",
+        "sya4 myan4",
+    )
 
 
 # this is a different case for Chinese since there's no change in location so the PP is preverbal

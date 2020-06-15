@@ -278,10 +278,24 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     )
                 )
                 if fills_legal_argument_role:
+                    region = cast(SituationRegion, relation.second_slot)
+                    reference_object_node = self._noun_for_object(region.reference_object)
+                    # we can only have one relation per object; this is an issue for cases such as having during and after action relations
+                    if (
+                        (ADVERBIAL_CLAUSE_MODIFIER, reference_object_node) in modifiers
+                        or (OBLIQUE_NOMINAL, reference_object_node) in modifiers
+                    ):
+                        return
                     prepositional_modifier = self.relation_to_prepositional_modifier(
                         action, relation
                     )
                     if prepositional_modifier:
+                        if (
+                            (ADVERBIAL_CLAUSE_MODIFIER, prepositional_modifier)
+                            in modifiers
+                            or (OBLIQUE_NOMINAL, prepositional_modifier) in modifiers
+                        ):
+                            return
                         if relation not in self.situation.always_relations:
                             modifiers.append(
                                 (ADVERBIAL_CLAUSE_MODIFIER, prepositional_modifier)
