@@ -1799,7 +1799,7 @@ def test_under_region_as_goal():
 """MISC TESTS REPLICATED FROM ENGLISH TESTING FILE"""
 
 
-@pytest.mark.skip()
+# @pytest.mark.skip()
 def test_roll():
     agent = situation_object(BABY)
     theme = situation_object(COOKIE)
@@ -1813,6 +1813,19 @@ def test_roll():
                 ROLL,
                 argument_roles_to_fillers=[(AGENT, agent), (THEME, theme)],
                 auxiliary_variable_bindings=[(ROLL_SURFACE_AUXILIARY, surface)],
+                during=DuringAction(
+                    at_some_point=[
+                        Relation(
+                            IN_REGION,
+                            theme,
+                            Region(
+                                reference_object=surface,
+                                distance=EXTERIOR_BUT_IN_CONTACT,
+                                direction=GRAVITATIONAL_UP,
+                            ),
+                        )
+                    ]
+                ),
             )
         ],
         always_relations=[on(theme, surface)],
