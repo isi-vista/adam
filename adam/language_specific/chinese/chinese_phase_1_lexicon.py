@@ -81,7 +81,7 @@ GAILA_PHASE_1_CHINESE_LEXICON = OntologyLexicon(
     ontology=GAILA_PHASE_1_ONTOLOGY,
     ontology_node_to_word=(
         (GROUND, LexiconEntry("di4 myan4", NOUN)),
-        (MOM, LexiconEntry("ma1ma1", PROPER_NOUN)),
+        (MOM, LexiconEntry("ma1 ma1", PROPER_NOUN)),
         (BALL, LexiconEntry("chyou2", NOUN)),
         (TABLE, LexiconEntry("jwo1 dz", NOUN)),
         (PUT, LexiconEntry("fang4", VERB)),
@@ -101,7 +101,7 @@ GAILA_PHASE_1_CHINESE_LEXICON = OntologyLexicon(
         (DOOR, LexiconEntry("men2", NOUN)),
         (HAT, LexiconEntry("mau4 dz", NOUN)),
         (COOKIE, LexiconEntry("chyu1 chi2 bing3", NOUN)),
-        (DAD, LexiconEntry("ba4ba4", PROPER_NOUN)),
+        (DAD, LexiconEntry("ba4 ba4", PROPER_NOUN)),
         (BABY, LexiconEntry("bau3 bau3", NOUN)),
         (DOG, LexiconEntry("gou3", NOUN)),
         (BIRD, LexiconEntry("nyau3", NOUN)),

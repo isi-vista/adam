@@ -11,6 +11,7 @@ from adam.language.dependency import (
 )
 from adam.language.dependency.universal_dependencies import (
     ADJECTIVAL_MODIFIER,
+    ADVERBIAL_CLAUSE_MODIFIER,
     ADVERBIAL_MODIFIER,
     CASE_POSSESSIVE,
     CASE_SPATIAL,
@@ -41,6 +42,7 @@ _CHINESE_HEAD_TO_ROLE_ORDER: ImmutableDict[
             OBLIQUE_NOMINAL,
             ADVERBIAL_MODIFIER,
             HEAD,
+            ADVERBIAL_CLAUSE_MODIFIER,
             INDIRECT_OBJECT,
             OBJECT,
         ),

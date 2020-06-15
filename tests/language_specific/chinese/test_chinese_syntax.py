@@ -6,6 +6,7 @@ import pytest
 from adam.language.dependency import DependencyTree, DependencyTreeToken
 from adam.language.dependency.universal_dependencies import (
     ADPOSITION,
+    ADVERBIAL_CLAUSE_MODIFIER,
     CASE_SPATIAL,
     DETERMINER,
     DETERMINER_ROLE,
@@ -338,7 +339,7 @@ def test_I_put_the_book_on_the_table():
     tree.add_edge(on, table, role=NOMINAL_MODIFIER)
     # TODO: this is a bit of a hack since I'm not sure this really counts as an IO, but I'm not sure what to classify it as
     #  since PP's occur before the verb in Chinese
-    tree.add_edge(table, put, role=INDIRECT_OBJECT)
+    tree.add_edge(table, put, role=ADVERBIAL_CLAUSE_MODIFIER)
     predicted_token_order = tuple(
         node.token
         for node in SIMPLE_CHINESE_DEPENDENCY_TREE_LINEARIZER.linearize(
@@ -374,7 +375,7 @@ def test_I_push_the_book_along_the_table():
     tree.add_edge(at, table, role=CASE_SPATIAL)
     tree.add_edge(on, table, role=NOMINAL_MODIFIER)
     # TODO: this is a bit of a hack since I'm not sure this really counts as an IO, but I'm not sure what to classify it as
-    tree.add_edge(table, push, role=INDIRECT_OBJECT)
+    tree.add_edge(table, push, role=ADVERBIAL_CLAUSE_MODIFIER)
     predicted_token_order = tuple(
         node.token
         for node in SIMPLE_CHINESE_DEPENDENCY_TREE_LINEARIZER.linearize(
