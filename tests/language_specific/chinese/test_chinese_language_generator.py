@@ -1538,7 +1538,6 @@ def test_path_modifier_on():
 
 
 # test besides for path of flight
-@pytest.mark.skip(reason="path modifiers have not been implemented yet")
 def test_bird_flies_path_beside():
     bird = situation_object(BIRD)
     car = situation_object(CAR)
@@ -1576,14 +1575,14 @@ def test_bird_flies_path_beside():
     assert generated_tokens(situation) == (
         "nyau3",
         "fei1",
-        "dau4",
+        "gwo4",
         "chi4 che1",
         "pang2 byan1",
     )
 
 
 # test path modifiers with intransitive verbs
-@pytest.mark.skip(reason="path modifiers have not been implemented yet")
+# @pytest.mark.skip(reason="path modifiers have not been implemented yet")
 def test_ball_fell_on_ground():
     ball = situation_object(BALL)
     ground = situation_object(GROUND)
@@ -1593,7 +1592,13 @@ def test_ball_fell_on_ground():
         actions=[Action(FALL, argument_roles_to_fillers=[(THEME, ball)])],
         after_action_relations=[on(ball, ground)],
     )
-    assert generated_tokens(situation) == ("chyou2", "dye2 dau3", "di4 myan4", "shang4")
+    assert generated_tokens(situation) == (
+        "chyou2",
+        "dye2 dau3",
+        "dau4",
+        "di4 myan4",
+        "shang4",
+    )
 
 
 # another intransitive verb
