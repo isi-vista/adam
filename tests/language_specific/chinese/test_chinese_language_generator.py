@@ -313,7 +313,6 @@ def test_many_salient_objects():
 
 
 """NOUN PHRASES WITH LOCALISER NOMINAL MODIFIERS"""
-# TODO: native speaker should check the localisers once they are implemented
 
 # test two inanimate objects: the table on the ground
 def test_noun_with_spatial_modifier():
