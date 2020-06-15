@@ -92,7 +92,7 @@ GAILA_PHASE_1_CHINESE_LEXICON = OntologyLexicon(
         (WATER, LexiconEntry("shwei3", NOUN, [MASS_NOUN])),
         (JUICE, LexiconEntry("gwo3 jr1", NOUN, [MASS_NOUN])),
         (CUP, LexiconEntry("bei1 dz", NOUN)),
-        (BOX, LexiconEntry("syang1", NOUN)),
+        (BOX, LexiconEntry("syang1 dz", NOUN)),
         (CHAIR, LexiconEntry("yi3 dz", NOUN)),
         (HEAD, LexiconEntry("tou2", NOUN)),
         (MILK, LexiconEntry("nyou2 nai3", NOUN, [MASS_NOUN])),

@@ -361,7 +361,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
             determine what preposition to use to express it in English.
             """
             if region.distance == INTERIOR:
-                return "nei4"
+                return "li3"
             elif (
                 region.distance == EXTERIOR_BUT_IN_CONTACT
                 and region.direction
@@ -374,7 +374,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
             elif region.direction == GRAVITATIONAL_UP:
                 return "shang4 myan4"
             elif region.direction == GRAVITATIONAL_DOWN:
-                return "sya4"
+                return "sya4 myan4"
             # region.distance == DISTAL is not check as this does not define a specific preposition in scope for Phase 1
             elif region.direction and self.situation.axis_info:
                 if not self.situation.axis_info.addressee:
@@ -670,7 +670,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
             preposition: Optional[str] = None
             # inside/in
             if region.distance == INTERIOR:
-                preposition = "nei4"
+                preposition = "li3"
             # to/towards
             # TODO: to in Chinese is expressed differently than in English
             # https://github.com/isi-vista/adam/issues/805
@@ -692,7 +692,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
                             preposition = "shang4 myan4"
                         # under
                         else:
-                            preposition = "sya4"
+                            preposition = "sya4 myan4"
                     else:
                         if isinstance(
                             region.direction.relative_to_axis, FacingAddresseeAxis

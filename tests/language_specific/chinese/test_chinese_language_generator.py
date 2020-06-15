@@ -415,7 +415,13 @@ def test_mum_under_object():
             )
         ],
     )
-    assert generated_tokens(situation) == ("dzai4", "nyau3", "sya4", "de", "ma1 ma1")
+    assert generated_tokens(situation) == (
+        "dzai4",
+        "nyau3",
+        "sya4 myan4",
+        "de",
+        "ma1 ma1",
+    )
 
 
 # tests mum being above an object
@@ -519,7 +525,7 @@ def test_object_behind_in_front_object():
         "jwo1 dz",
         "chyan2 myan4",
         "de",
-        "syang1",
+        "syang1 dz",
     )
 
     behind_situation = HighLevelSemanticsSituation(
@@ -559,7 +565,7 @@ def test_object_behind_in_front_object():
         "jwo1 dz",
         "hou4 myan4",
         "de",
-        "syang1",
+        "syang1 dz",
     )
 
 
@@ -993,8 +999,8 @@ def test_dad_put_a_cookie_in_a_box_zai():
         "chyu1 chi2 bing3",
         "fang4",
         "dzai4",
-        "syang1",
-        "nei4",
+        "syang1 dz",
+        "li3",
     )
 
 
@@ -1025,8 +1031,8 @@ def test_dad_put_a_cookie_in_a_box_dao():
         "chyu1 chi2 bing3",
         "fang4",
         "dau4",
-        "syang1",
-        "nei4",
+        "syang1 dz",
+        "li3",
     )
 
 
@@ -1055,8 +1061,8 @@ def test_i_put_cookie_in_box_zai():
         "chyu1 chi2 bing3",
         "fang4",
         "dzai4",
-        "syang1",
-        "nei4",
+        "syang1 dz",
+        "li3",
     )
 
 
@@ -1085,8 +1091,8 @@ def test_you_put_cookie_in_box_zai():
         "chyu1 chi2 bing3",
         "fang4",
         "dzai4",
-        "syang1",
-        "nei4",
+        "syang1 dz",
+        "li3",
     )
 
 
@@ -1149,8 +1155,8 @@ def test_i_put_cookie_in_my_box():
         "dzai4",
         "wo3",
         "de",
-        "syang1",
-        "nei4",
+        "syang1 dz",
+        "li3",
     )
 
 
@@ -1180,8 +1186,8 @@ def test_third_person_cookie_in_his_box():
         "chyu1 chi2 bing3",
         "fang4",
         "dzai4",
-        "syang1",
-        "nei4",
+        "syang1 dz",
+        "li3",
     )
 
 
@@ -1214,8 +1220,8 @@ def test_you_put_cookie_in_your_box():
         "dzai4",
         "ni3",
         "de",
-        "syang1",
-        "nei4",
+        "syang1 dz",
+        "li3",
     )
 
 
@@ -1249,8 +1255,8 @@ def test_speaker_owner_of_box():
         "dzai4",
         "wo3",
         "de",
-        "syang1",
-        "nei4",
+        "syang1 dz",
+        "li3",
     )
 
 
@@ -1284,8 +1290,8 @@ def test_speaker_not_owner_of_box():
         "dzai4",
         "ba4 ba4",
         "de",
-        "syang1",
-        "nei4",
+        "syang1 dz",
+        "li3",
     )
 
 
@@ -1614,7 +1620,7 @@ def test_to_regions_as_goal():
     goal_object = situation_object(BOX, properties=[HOLLOW])
     assert generated_tokens(
         region_as_goal_situation(Region(goal_object, distance=PROXIMAL), goal_object)
-    ) == ("gou3", "chyu4", "dau3", "syang1")
+    ) == ("gou3", "chyu4", "dau3", "syang1 dz")
 
 
 # this tests being inside a region
@@ -1622,7 +1628,7 @@ def test_in_region_as_goal():
     goal_object = situation_object(BOX, properties=[HOLLOW])
     assert generated_tokens(
         region_as_goal_situation(Region(goal_object, distance=INTERIOR), goal_object)
-    ) == ("gou3", "chyu4", "dzai4", "syang1", "nei4")
+    ) == ("gou3", "chyu4", "dzai4", "syang1 dz", "li3")
 
 
 # this tests being next to a region
@@ -1641,7 +1647,7 @@ def test_beside_region_as_goal():
             ),
             goal_object,
         )
-    ) == ("gou3", "chyu4", "dzai4", "syang1", "pang2 byan1")
+    ) == ("gou3", "chyu4", "dzai4", "syang1 dz", "pang2 byan1")
 
 
 # this tests going behind a region
@@ -1659,7 +1665,7 @@ def test_behind_region_as_goal():
             ),
             goal_object,
         )
-    ) == ("gou3", "chyu4", "dzai4", "syang1", "hou4 myan4")
+    ) == ("gou3", "chyu4", "dzai4", "syang1 dz", "hou4 myan4")
 
 
 # this tests going in front of a region
@@ -1677,7 +1683,7 @@ def test_in_front_of_region_as_goal():
             ),
             goal_object,
         )
-    ) == ("gou3", "chyu4", "dzai4", "syang1", "chyan2 myan4")
+    ) == ("gou3", "chyu4", "dzai4", "syang1 dz", "chyan2 myan4")
 
 
 # this tests going over a region
@@ -1702,7 +1708,7 @@ def test_under_region_as_goal():
             Region(goal_object, distance=PROXIMAL, direction=GRAVITATIONAL_DOWN),
             goal_object,
         )
-    ) == ("gou3", "chyu4", "dzai4", "jwo1 dz", "sya4")
+    ) == ("gou3", "chyu4", "dzai4", "jwo1 dz", "sya4 myan4")
 
 
 """MISC TESTS REPLICATED FROM ENGLISH TESTING FILE"""
@@ -1729,7 +1735,7 @@ def test_roll():
     assert generated_tokens(situation) == (
         "bau3 bau3",
         "dzai4",
-        "syang1",
+        "syang1 dz",
         "shang4",
         "gwun3",
         "chyu1 chi2 bing3",
