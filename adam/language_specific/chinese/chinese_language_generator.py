@@ -542,7 +542,13 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     possessor = DependencyTreeToken("wo3", NOUN)
                 elif IS_ADDRESSEE in possession_relations[0].first_slot.properties:
                     possessor = DependencyTreeToken("ni3", NOUN)
-                elif not self.situation.is_dynamic or (
+                elif (
+                    IGNORE_HAS_AS_VERB not in self.situation.syntax_hints
+                    and not self.situation.is_dynamic
+                ):
+                    return
+                    # TODO: we currently return here since we can't handle one possessive node and one not -- once we fix this we don't need this case
+                elif (not self.situation.is_dynamic) or (
                     possession_relations[0].first_slot
                     not in only(self.situation.actions).argument_roles_to_fillers[AGENT]
                 ):
@@ -584,7 +590,6 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 ):
                     pass
                 else:
-                    raise NotImplementedError()
                     self._translate_relation_to_verb(relation)
             elif relation.relation_type == IN_REGION:
                 prepositional_modifier = self.relation_to_prepositional_modifier(
