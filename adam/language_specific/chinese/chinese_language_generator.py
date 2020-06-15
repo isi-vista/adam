@@ -152,13 +152,17 @@ class SimpleRuleBasedChineseLanguageGenerator(
             )
 
             action: Optional[Action[OntologyNode, SituationObject]]
+            verbdependencynode: Optional[DependencyTreeToken]
             # handle dynamic situations
             if self.situation.is_dynamic:
                 # get the action
                 action = only(self.situation.actions)
-                self._translate_action_to_verb(action)  # type: ignore
+                verbdependencynode = self._translate_action_to_verb(
+                    action
+                )  # type: ignore
             # handle static situations
             else:
+                verbdependencynode = None
                 action = None
                 # handle one type of object (there may be many of it)
                 if len(object_types_in_situation) == 1:
@@ -170,8 +174,10 @@ class SimpleRuleBasedChineseLanguageGenerator(
                         if not self._only_translate_if_referenced(object_):
                             self._noun_for_object(object_)
 
-            for persisting_relation in self.situation.always_relations:
-                self._translate_relation(action, persisting_relation)
+                for persisting_relation in self.situation.always_relations:
+                    self._translate_relation(
+                        action, persisting_relation, verbdependencynode
+                    )
 
             return immutableset(
                 [
@@ -223,7 +229,6 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     argument_head, verb_dependency_node, role=syntactic_role
                 )
 
-            # TODO: attach modifiers
             for (modifier_role, path_modifier) in self._collect_action_modifiers(action):
                 self.dependency_graph.add_edge(
                     path_modifier, verb_dependency_node, role=modifier_role
@@ -250,7 +255,8 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     )
             for relation in self.situation.after_action_relations:
                 self._translate_relation_to_action_modifier(action, relation, modifiers)
-
+            for relation in self.situation.always_relations:
+                self._translate_relation_to_action_modifier(action, relation, modifiers)
             if USE_ADVERBIAL_PATH_MODIFIER in self.situation.syntax_hints:
                 raise NotImplementedError(
                     "Adverbial path modifiers aren't yet implemented"
@@ -290,8 +296,8 @@ class SimpleRuleBasedChineseLanguageGenerator(
                         action, relation
                     )
                     if prepositional_modifier:
+                        # this is where we handle the case of a preverbial prepositional phrase since any always relation should be preverbal
                         if relation in self.situation.always_relations:
-                            self.situation.always_relations
                             modifiers.append((OBLIQUE_NOMINAL, prepositional_modifier))
                         else:
                             modifiers.append(
@@ -589,6 +595,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
             self,
             action: Optional[Action[OntologyNode, SituationObject]],
             relation: Relation[SituationObject],
+            verb: Optional[DependencyTreeToken],
         ):
             """Translate relations that the user explicitly calls out"""
             if relation.relation_type == HAS:

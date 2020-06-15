@@ -1539,25 +1539,7 @@ def test_path_modifier_on():
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         salient_objects=[mom, ball, table],
-        actions=[
-            Action(
-                ROLL,
-                argument_roles_to_fillers=[(AGENT, mom), (THEME, ball)],
-                during=DuringAction(
-                    at_some_point=[
-                        Relation(
-                            IN_REGION,
-                            ball,
-                            Region(
-                                reference_object=table,
-                                distance=EXTERIOR_BUT_IN_CONTACT,
-                                direction=GRAVITATIONAL_UP,
-                            ),
-                        )
-                    ]
-                ),
-            )
-        ],
+        actions=[Action(ROLL, argument_roles_to_fillers=[(AGENT, mom), (THEME, ball)])],
         always_relations=[on(ball, table)],
     )
     assert generated_tokens(situation) == (
@@ -1925,7 +1907,6 @@ def test_under_region_as_goal_come():
 """MISC TESTS REPLICATED FROM ENGLISH TESTING FILE"""
 
 
-# @pytest.mark.skip()
 def test_roll():
     agent = situation_object(BABY)
     theme = situation_object(COOKIE)
@@ -1939,19 +1920,6 @@ def test_roll():
                 ROLL,
                 argument_roles_to_fillers=[(AGENT, agent), (THEME, theme)],
                 auxiliary_variable_bindings=[(ROLL_SURFACE_AUXILIARY, surface)],
-                during=DuringAction(
-                    at_some_point=[
-                        Relation(
-                            IN_REGION,
-                            theme,
-                            Region(
-                                reference_object=surface,
-                                distance=EXTERIOR_BUT_IN_CONTACT,
-                                direction=GRAVITATIONAL_UP,
-                            ),
-                        )
-                    ]
-                ),
             )
         ],
         always_relations=[on(theme, surface)],
