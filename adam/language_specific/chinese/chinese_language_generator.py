@@ -644,7 +644,6 @@ class SimpleRuleBasedChineseLanguageGenerator(
             self.dependency_graph.add_edge(
                 second_slot_dependency_node, verb_dependency_node, role=OBJECT
             )
-
             return verb_dependency_node
 
         def relation_to_prepositional_modifier(
@@ -729,6 +728,8 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 coverb = "dzai4"
                 if self.situation.after_action_relations:
                     coverb = "dau4"
+                elif action and action.during.at_some_point:
+                    coverb = "gwo4"
                 self.dependency_graph.add_edge(
                     DependencyTreeToken(coverb, ADPOSITION),
                     reference_object_node,

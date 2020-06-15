@@ -68,6 +68,7 @@ from adam.ontology.phase1_ontology import (
     CAR,
     ROLL_SURFACE_AUXILIARY,
     TRUCK,
+    HOUSE,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -1404,7 +1405,7 @@ def test_you_have_your_ball():
 
 
 # this tests over, which is a special case since it doesn't use zai/dao
-@pytest.mark.skip(reason="path modifiers have not been implemented yet")
+# @pytest.mark.skip(reason="path modifiers have not been implemented yet")
 def test_path_modifier():
     bird = situation_object(BIRD)
     house = situation_object(HOUSE)
@@ -1434,7 +1435,7 @@ def test_path_modifier():
             )
         ],
     )
-    assert generated_tokens(situation) == ("nyau3", "fei1", "gwo4", "wu1")
+    assert generated_tokens(situation) == ("nyau3", "fei1", "gwo4", "wu1", "shang4 myan4")
 
 
 # a slightly different test for over
