@@ -16,6 +16,7 @@ from adam.language.dependency import (
 )
 from adam.language.dependency.universal_dependencies import (
     PARTICLE,
+    NOUN,
     ADJECTIVAL_MODIFIER,
     ADPOSITION,
     ADVERB,
@@ -281,9 +282,12 @@ class SimpleRuleBasedChineseLanguageGenerator(
                         action, relation
                     )
                     if prepositional_modifier:
-                        modifiers.append(
-                            (ADVERBIAL_CLAUSE_MODIFIER, prepositional_modifier)
-                        )
+                        if relation not in self.situation.always_relations:
+                            modifiers.append(
+                                (ADVERBIAL_CLAUSE_MODIFIER, prepositional_modifier)
+                            )
+                        else:
+                            modifiers.append((OBLIQUE_NOMINAL, prepositional_modifier))
                 else:
                     # we don't want to translate relations of the agent (yet)
                     return
@@ -532,12 +536,23 @@ class SimpleRuleBasedChineseLanguageGenerator(
             elif len(possession_relations) == 1:
                 # handle the possession relation if there is one. We don't need to case on person in Chinese
                 # since all possessives are expressed NP+de+NP
-                possessor = self._noun_for_object(possession_relations[0].first_slot)
+                possessor = None
+                if IS_SPEAKER in possession_relations[0].first_slot.properties:
+                    possessor = DependencyTreeToken("wo3", NOUN)
+                elif IS_ADDRESSEE in possession_relations[0].first_slot.properties:
+                    possessor = DependencyTreeToken("ni3", NOUN)
+                elif not self.situation.is_dynamic or (
+                    possession_relations[0].first_slot
+                    not in only(self.situation.actions).argument_roles_to_fillers[AGENT]
+                ):
+                    possessor = self._noun_for_object(possession_relations[0].first_slot)
+
                 de = DependencyTreeToken("de", PARTICLE)
-                self.dependency_graph.add_edge(de, possessor, role=CASE_POSSESSIVE)
-                self.dependency_graph.add_edge(
-                    possessor, noun_dependency_node, role=NOMINAL_MODIFIER_POSSESSIVE
-                )
+                if possessor:
+                    self.dependency_graph.add_edge(
+                        possessor, noun_dependency_node, role=NOMINAL_MODIFIER_POSSESSIVE
+                    )
+                    self.dependency_graph.add_edge(de, possessor, role=CASE_POSSESSIVE)
             # if the count is one, we're done since we're not using yi CLF currently
             if count == 1:
                 return

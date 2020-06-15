@@ -1089,7 +1089,6 @@ def test_take_to_car():
 """TESTS POSSESSIVE: WO DE AND NI DE"""
 
 # tests the use of the first person possessive, 'wo de'
-@pytest.mark.skip("we don't handle possessives or localisers yet")
 def test_i_put_cookie_in_my_box():
     dad = situation_object(DAD, properties=[IS_SPEAKER])
     cookie = situation_object(COOKIE)
@@ -1124,7 +1123,6 @@ def test_i_put_cookie_in_my_box():
 
 
 # this is where another person in the interaction has a box, but we don't note this in our langauge
-@pytest.mark.skip("we don't handle possessives or localisers yet")
 def test_third_person_cookie_in_his_box():
     dad = situation_object(DAD)
     cookie = situation_object(COOKIE)
@@ -1156,7 +1154,6 @@ def test_third_person_cookie_in_his_box():
 
 
 # tests the use of the second person possessive, 'ni de'
-@pytest.mark.skip("we don't handle possessives or localisers yet")
 def test_you_put_cookie_in_your_box():
     dad = situation_object(DAD, properties=[IS_ADDRESSEE])
     cookie = situation_object(COOKIE)
@@ -1186,7 +1183,7 @@ def test_you_put_cookie_in_your_box():
         "ni3",
         "de",
         "syang1",
-        "li3",
+        "nei4",
     )
 
 
@@ -1665,7 +1662,6 @@ def test_over_region_as_goal():
 
 
 # this tests going under a region
-# @pytest.mark.skip(reason="go/come not yet implemented")
 def test_under_region_as_goal():
     goal_object = situation_object(TABLE)
     # Over
@@ -1680,7 +1676,7 @@ def test_under_region_as_goal():
 """MISC TESTS REPLICATED FROM ENGLISH TESTING FILE"""
 
 
-@pytest.mark.skip(reason="VP with localisers not implemented yet")
+@pytest.mark.skip()
 def test_roll():
     agent = situation_object(BABY)
     theme = situation_object(COOKIE)
