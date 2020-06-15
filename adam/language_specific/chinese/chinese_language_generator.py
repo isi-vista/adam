@@ -379,7 +379,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
             ):
                 return "shang4"
             elif region.distance == PROXIMAL and not region.direction:
-                raise NotImplementedError("Haven't handled to in Chinese")
+                return "shang4"
             elif region.direction == GRAVITATIONAL_UP:
                 return "shang4 myan4"
             elif region.direction == GRAVITATIONAL_DOWN:

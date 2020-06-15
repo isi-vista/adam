@@ -130,6 +130,7 @@ def region_as_goal_situation(
                 if obj.axes
             ],
         ),
+        after_action_relations=[near(agent, goal_object)],
     )
 
 
@@ -1700,12 +1701,11 @@ def test_jump_up():
 # TODO: check this with native speaker, unsure about qu/lai behaviour with locational mods
 
 # this tests dao for going to a region
-@pytest.mark.skip(reason="go/come not yet implemented")
 def test_to_regions_as_goal():
     goal_object = situation_object(BOX, properties=[HOLLOW])
     assert generated_tokens(
         region_as_goal_situation(Region(goal_object, distance=PROXIMAL), goal_object)
-    ) == ("gou3", "chyu4", "dau3", "syang1 dz")
+    ) == ("gou3", "chyu4", "dau4", "syang1 dz", "shang4")
 
 
 # this tests being inside a region
@@ -1713,7 +1713,7 @@ def test_in_region_as_goal():
     goal_object = situation_object(BOX, properties=[HOLLOW])
     assert generated_tokens(
         region_as_goal_situation(Region(goal_object, distance=INTERIOR), goal_object)
-    ) == ("gou3", "chyu4", "dzai4", "syang1 dz", "li3")
+    ) == ("gou3", "chyu4", "dau4", "syang1 dz", "li3")
 
 
 # this tests being next to a region
@@ -1732,7 +1732,7 @@ def test_beside_region_as_goal():
             ),
             goal_object,
         )
-    ) == ("gou3", "chyu4", "dzai4", "syang1 dz", "pang2 byan1")
+    ) == ("gou3", "chyu4", "dau4", "syang1 dz", "pang2 byan1")
 
 
 # this tests going behind a region
@@ -1750,7 +1750,7 @@ def test_behind_region_as_goal():
             ),
             goal_object,
         )
-    ) == ("gou3", "chyu4", "dzai4", "syang1 dz", "hou4 myan4")
+    ) == ("gou3", "chyu4", "dau4", "syang1 dz", "hou4 myan4")
 
 
 # this tests going in front of a region
@@ -1768,11 +1768,10 @@ def test_in_front_of_region_as_goal():
             ),
             goal_object,
         )
-    ) == ("gou3", "chyu4", "dzai4", "syang1 dz", "chyan2 myan4")
+    ) == ("gou3", "chyu4", "dau4", "syang1 dz", "chyan2 myan4")
 
 
 # this tests going over a region
-@pytest.mark.skip(reason="go/come not yet implemented")
 def test_over_region_as_goal():
     goal_object = situation_object(TABLE)
     # Over
@@ -1781,7 +1780,7 @@ def test_over_region_as_goal():
             Region(goal_object, distance=PROXIMAL, direction=GRAVITATIONAL_UP),
             goal_object,
         )
-    ) == ("gou3", "chyu4", "gwo4", "jwo1 dz")
+    ) == ("gou3", "chyu4", "dau4", "jwo1 dz", "shang4 myan4")
 
 
 # this tests going under a region
@@ -1793,7 +1792,7 @@ def test_under_region_as_goal():
             Region(goal_object, distance=PROXIMAL, direction=GRAVITATIONAL_DOWN),
             goal_object,
         )
-    ) == ("gou3", "chyu4", "dzai4", "jwo1 dz", "sya4 myan4")
+    ) == ("gou3", "chyu4", "dau4", "jwo1 dz", "sya4 myan4")
 
 
 """MISC TESTS REPLICATED FROM ENGLISH TESTING FILE"""
