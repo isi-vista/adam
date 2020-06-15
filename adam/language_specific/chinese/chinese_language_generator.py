@@ -290,18 +290,13 @@ class SimpleRuleBasedChineseLanguageGenerator(
                         action, relation
                     )
                     if prepositional_modifier:
-                        if (
-                            (ADVERBIAL_CLAUSE_MODIFIER, prepositional_modifier)
-                            in modifiers
-                            or (OBLIQUE_NOMINAL, prepositional_modifier) in modifiers
-                        ):
-                            return
-                        if relation not in self.situation.always_relations:
+                        if relation in self.situation.always_relations:
+                            self.situation.always_relations
+                            modifiers.append((OBLIQUE_NOMINAL, prepositional_modifier))
+                        else:
                             modifiers.append(
                                 (ADVERBIAL_CLAUSE_MODIFIER, prepositional_modifier)
                             )
-                        else:
-                            modifiers.append((OBLIQUE_NOMINAL, prepositional_modifier))
                 else:
                     # we don't want to translate relations of the agent (yet)
                     return
@@ -740,9 +735,17 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     role=NOMINAL_MODIFIER,
                 )
                 coverb = "dzai4"
-                if self.situation.after_action_relations:
+                if (
+                    self.situation.after_action_relations
+                    and relation not in self.situation.always_relations
+                ):
                     coverb = "dau4"
-                elif action and action.during.at_some_point:
+                elif (
+                    action
+                    and action.during
+                    and action.during.at_some_point
+                    and relation not in self.situation.always_relations
+                ):
                     coverb = "gwo4"
                 self.dependency_graph.add_edge(
                     DependencyTreeToken(coverb, ADPOSITION),

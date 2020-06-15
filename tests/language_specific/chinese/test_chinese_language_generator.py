@@ -1499,7 +1499,7 @@ def test_path_modifier_under():
 
 
 # this is a different case for Chinese since there's no change in location so the PP is preverbal
-@pytest.mark.skip(reason="path modifiers have not been implemented yet")
+# @pytest.mark.skip(reason="path modifiers have not been implemented yet")
 def test_path_modifier_on():
     mom = situation_object(MOM)
     ball = situation_object(BALL)
@@ -1526,6 +1526,7 @@ def test_path_modifier_on():
                 ),
             )
         ],
+        always_relations=[on(ball, table)],
     )
     assert generated_tokens(situation) == (
         "ma1 ma1",
@@ -1582,7 +1583,6 @@ def test_bird_flies_path_beside():
 
 
 # test path modifiers with intransitive verbs
-# @pytest.mark.skip(reason="path modifiers have not been implemented yet")
 def test_ball_fell_on_ground():
     ball = situation_object(BALL)
     ground = situation_object(GROUND)
