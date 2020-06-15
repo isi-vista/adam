@@ -223,7 +223,70 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 )
 
             # TODO: attach modifiers
+            for (modifier_role, path_modifier) in self._collect_action_modifiers(action):
+                self.dependency_graph.add_edge(
+                    path_modifier, verb_dependency_node, role=modifier_role
+                )
             return verb_dependency_node
+
+        def _collect_action_modifiers(
+            self, action: Action[OntologyNode, SituationObject]
+        ) -> Iterable[Tuple[DependencyRole, DependencyTreeToken]]:
+            """
+            Collect adverbial and other modifiers of an action.
+
+            For right now we only handle a subset of spatial modifiers
+            which are realized as prepositions.
+            """
+            modifiers: List[Tuple[DependencyRole, DependencyTreeToken]] = []
+
+            if action.during:
+                for relation in chain(
+                    action.during.at_some_point, action.during.continuously
+                ):
+                    self._translate_relation_to_action_modifier(
+                        action, relation, modifiers
+                    )
+            for relation in self.situation.after_action_relations:
+                self._translate_relation_to_action_modifier(action, relation, modifiers)
+
+            if USE_ADVERBIAL_PATH_MODIFIER in self.situation.syntax_hints:
+                raise NotImplementedError(
+                    "Adverbial path modifiers aren't yet implemented"
+                )
+            return modifiers
+
+        def _translate_relation_to_action_modifier(
+            self,
+            action: Action[OntologyNode, SituationObject],
+            relation: Relation[SituationObject],
+            modifiers,
+        ):
+            if relation.relation_type == IN_REGION:
+                fills_legal_argument_role = (
+                    # the theme
+                    relation.first_slot in action.argument_roles_to_fillers[THEME]
+                    # or the agent or patient if there is no theme (e.g. jumps, falls)
+                    or (
+                        (
+                            relation.first_slot in action.argument_roles_to_fillers[AGENT]
+                            or relation.first_slot
+                            not in action.argument_roles_to_fillers[THEME]
+                        )
+                        and not action.argument_roles_to_fillers[THEME]
+                    )
+                )
+                if fills_legal_argument_role:
+                    prepositional_modifier = self.relation_to_prepositional_modifier(
+                        action, relation
+                    )
+                    if prepositional_modifier:
+                        modifiers.append(
+                            (ADVERBIAL_CLAUSE_MODIFIER, prepositional_modifier)
+                        )
+                else:
+                    # we don't want to translate relations of the agent (yet)
+                    return
 
         def _translate_verb_argument(
             self,
@@ -361,8 +424,8 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     # if there's a theme and a goal but the verb isn't ditransitive, the theme becomes preverbial
                     if (
                         GOAL in action.argument_roles_to_fillers
-                        and PREFER_DITRANSITIVE not in self.situation.syntax_hints
-                    ):
+                        or self.situation.after_action_relations
+                    ) and PREFER_DITRANSITIVE not in self.situation.syntax_hints:
                         return OBLIQUE_NOMINAL
                     # if there's no goal or the verb is ditransitive, it's still post verbal
                     else:
@@ -534,7 +597,18 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 return None
             # deal with actions with verbs
             if action:
-                raise NotImplementedError("We don't handle prepositions in VP's yet")
+                core_argument_fillers = immutableset(
+                    chain(
+                        action.argument_roles_to_fillers[AGENT],
+                        action.argument_roles_to_fillers[PATIENT],
+                        action.argument_roles_to_fillers[THEME],
+                    )
+                )
+                if (
+                    relation.first_slot in core_argument_fillers
+                    and region.reference_object in core_argument_fillers
+                ):
+                    return None
             preposition: Optional[str] = None
             # inside/in
             if region.distance == INTERIOR:
@@ -543,9 +617,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
             # TODO: to in Chinese is expressed differently than in English
             # https://github.com/isi-vista/adam/issues/805
             if region.distance == PROXIMAL and not region.direction:
-                raise NotImplementedError(
-                    "We have not finished implementing co-verbs in Chinese"
-                )
+                preposition = "shang4"
             elif region.direction:
                 direction_axis = region.direction.relative_to_concrete_axis(
                     self.situation.axis_info
@@ -591,8 +663,11 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     reference_object_node,
                     role=NOMINAL_MODIFIER,
                 )
+                coverb = "dzai4"
+                if self.situation.after_action_relations:
+                    coverb = "dau4"
                 self.dependency_graph.add_edge(
-                    DependencyTreeToken("dzai4", ADPOSITION),
+                    DependencyTreeToken(coverb, ADPOSITION),
                     reference_object_node,
                     role=CASE_SPATIAL,
                 )

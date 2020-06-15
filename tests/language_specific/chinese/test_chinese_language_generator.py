@@ -1059,7 +1059,6 @@ def test_you_put_cookie_in_box_zai():
 
 
 # another meaning to test with localisers
-@pytest.mark.skip(reason="we haven't implemented pronouns or localisers yet")
 def test_take_to_car():
     baby = situation_object(BABY)
     ball = situation_object(BALL)
@@ -1078,7 +1077,7 @@ def test_take_to_car():
 
     assert generated_tokens(situation) == (
         "bau3 bau3",
-        "ba",
+        "ba3",
         "chyou2",
         "na2",
         "dau4",

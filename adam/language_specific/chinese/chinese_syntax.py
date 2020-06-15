@@ -34,7 +34,7 @@ _CHINESE_HEAD_TO_ROLE_ORDER: ImmutableDict[
 ] = [
     # Currently we treat locations associated with verbs as IO's since obliques occur before the verb.
     # https://github.com/isi-vista/adam/issues/797
-    # TODO: find a better way to handle the above
+    # TODO: find a better way to handle the aboveA
     (
         VERB,
         (
