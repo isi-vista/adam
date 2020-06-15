@@ -536,6 +536,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
             elif len(possession_relations) == 1:
                 # handle the possession relation if there is one. We don't need to case on person in Chinese
                 # since all possessives are expressed NP+de+NP
+                # TODO this is a bit of a hack due to replication of nodes; i.e. we must distinguish between "I" and "my"
                 possessor = None
                 if IS_SPEAKER in possession_relations[0].first_slot.properties:
                     possessor = DependencyTreeToken("wo3", NOUN)
@@ -583,21 +584,63 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 ):
                     pass
                 else:
-                    raise NotImplementedError("We don't handle 'has' as a verb yet")
+                    raise NotImplementedError()
+                    self._translate_relation_to_verb(relation)
             elif relation.relation_type == IN_REGION:
                 prepositional_modifier = self.relation_to_prepositional_modifier(
                     action, relation
                 )
                 if prepositional_modifier:
-                    self.dependency_graph.add_edge(
-                        prepositional_modifier,
-                        self._noun_for_object(relation.first_slot),
-                        role=NOMINAL_MODIFIER,
-                    )
+                    if action:
+                        self.dependency_graph.add_edge(
+                            prepositional_modifier,
+                            self._noun_for_object(relation.first_slot),
+                            role=NOMINAL_MODIFIER,
+                        )
+                    else:
+                        de = DependencyTreeToken("de", PARTICLE)
+                        self.dependency_graph.add_edge(
+                            de, prepositional_modifier, role=CASE_POSSESSIVE
+                        )
+                        self.dependency_graph.add_edge(
+                            prepositional_modifier,
+                            self._noun_for_object(relation.first_slot),
+                            role=NOMINAL_MODIFIER_POSSESSIVE,
+                        )
+
             else:
                 raise RuntimeError(
                     f"We can't currently translate {relation} relation to Chinese"
                 )
+
+        def _translate_relation_to_verb(
+            self, relation: Relation[SituationObject]
+        ) -> DependencyTreeToken:
+            lexicon_entry = self._unique_lexicon_entry(relation.relation_type)
+            verb_dependency_node = DependencyTreeToken(
+                lexicon_entry.base_form, lexicon_entry.part_of_speech
+            )
+            self.dependency_graph.add_node(verb_dependency_node)
+
+            first_slot_dependency_node = self._noun_for_object(relation.first_slot)
+            self.dependency_graph.add_edge(
+                first_slot_dependency_node, verb_dependency_node, role=NOMINAL_SUBJECT
+            )
+            if isinstance(relation.second_slot, SituationObject):
+                second_slot_dependency_node = self._noun_for_object(relation.second_slot)
+            elif isinstance(relation.second_slot, Region):
+                second_slot_dependency_node = self._noun_for_object(
+                    relation.second_slot.reference_object
+                )
+            else:
+                raise RuntimeError(
+                    f"Unknown object type in relation {relation.second_slot}"
+                )
+            self.dependency_graph.add_edge(
+                second_slot_dependency_node, verb_dependency_node, role=OBJECT
+            )
+
+            return verb_dependency_node
 
         def relation_to_prepositional_modifier(
             self,

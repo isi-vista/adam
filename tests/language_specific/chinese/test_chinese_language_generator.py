@@ -315,7 +315,7 @@ def test_many_salient_objects():
 """NOUN PHRASES WITH LOCALISER NOMINAL MODIFIERS"""
 # TODO: native speaker should check the localisers once they are implemented
 
-# test two inanimate objects
+# test two inanimate objects: the table on the ground
 def test_noun_with_spatial_modifier():
     table = situation_object(TABLE)
     ground = situation_object(GROUND)
@@ -325,7 +325,13 @@ def test_noun_with_spatial_modifier():
         salient_objects=[table, ground],
         always_relations=[on(table, ground)],
     )
-    assert generated_tokens(situation) == ("jwo1 dz", "dzai4", "di4 myan4", "shang4")
+    assert generated_tokens(situation) == (
+        "dzai4",
+        "di4 myan4",
+        "shang4",
+        "de",
+        "jwo1 dz",
+    )
 
 
 # tests mum being next to an object, a relation that is represented with a localiser phrase
@@ -350,7 +356,13 @@ def test_two_objects_with_mum_no_extra():
             )
         ],
     )
-    assert generated_tokens(situation) == ("ma1 ma1", "dzai4", "nyau3", "pang2 byan1")
+    assert generated_tokens(situation) == (
+        "dzai4",
+        "nyau3",
+        "pang2 byan1",
+        "de",
+        "ma1 ma1",
+    )
 
 
 # tests mum being next to an object, a relation that is represented with a localiser phrase
@@ -377,7 +389,13 @@ def test_two_objects_with_mum():
             )
         ],
     )
-    assert generated_tokens(situation) == ("ma1 ma1", "dzai4", "nyau3", "pang2 byan1")
+    assert generated_tokens(situation) == (
+        "dzai4",
+        "nyau3",
+        "pang2 byan1",
+        "de",
+        "ma1 ma1",
+    )
 
 
 # tests mum being under a bird
@@ -397,7 +415,7 @@ def test_mum_under_object():
             )
         ],
     )
-    assert generated_tokens(situation) == ("ma1 ma1", "dzai4", "nyau3", "sya4")
+    assert generated_tokens(situation) == ("dzai4", "nyau3", "sya4", "de", "ma1 ma1")
 
 
 # tests mum being above an object
@@ -415,7 +433,13 @@ def test_mum_above_object():
             )
         ],
     )
-    assert generated_tokens(situation) == ("ma1 ma1", "dzai4", "nyau3", "shang4 myan4")
+    assert generated_tokens(situation) == (
+        "dzai4",
+        "nyau3",
+        "shang4 myan4",
+        "de",
+        "ma1 ma1",
+    )
 
 
 # tests an object beside another object
@@ -441,7 +465,13 @@ def test_object_beside_object():
             )
         ],
     )
-    assert generated_tokens(situation) == ("chyou2", "dzai4", "jwo1 dz", "pang2 byan1")
+    assert generated_tokens(situation) == (
+        "dzai4",
+        "jwo1 dz",
+        "pang2 byan1",
+        "de",
+        "chyou2",
+    )
 
 
 # in front and behind tests copied from English files
@@ -485,10 +515,11 @@ def test_object_behind_in_front_object():
         ),
     )
     assert generated_tokens(front_situation) == (
-        "syang1",
         "dzai4",
         "jwo1 dz",
         "chyan2 myan4",
+        "de",
+        "syang1",
     )
 
     behind_situation = HighLevelSemanticsSituation(
@@ -524,10 +555,11 @@ def test_object_behind_in_front_object():
         ),
     )
     assert generated_tokens(behind_situation) == (
-        "syang1",
         "dzai4",
         "jwo1 dz",
         "hou4 myan4",
+        "de",
+        "syang1",
     )
 
 
@@ -1283,7 +1315,7 @@ def test_dad_has_cookie():
         ontology=GAILA_PHASE_1_ONTOLOGY,
         salient_objects=[dad, cookie],
         always_relations=[Relation(HAS, dad, cookie)],
-        actions=[],
+        # actions=[],
     )
     assert generated_tokens(situation) == ("ba4 ba4", "you3", "chyu1 chi2 bing3")
 
