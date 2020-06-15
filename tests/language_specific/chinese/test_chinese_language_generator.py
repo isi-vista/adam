@@ -25,6 +25,7 @@ from adam.ontology import IN_REGION, IS_SPEAKER, IS_ADDRESSEE
 from adam.ontology.during import DuringAction
 from adam.ontology.phase1_ontology import (
     AGENT,
+    COME,
     BABY,
     BALL,
     BIRD,
@@ -116,6 +117,36 @@ def region_as_goal_situation(
         salient_objects=[agent, goal_object],
         other_objects=[learner],
         actions=[Action(GO, argument_roles_to_fillers=[(AGENT, agent), (GOAL, goal)])],
+        axis_info=AxesInfo(
+            addressee=learner,
+            axes_facing=[
+                (
+                    learner,
+                    # TODO: fix this hack
+                    HorizontalAxisOfObject(obj, index=1).to_concrete_axis(  # type: ignore
+                        None
+                    ),
+                )
+                for obj in [agent, goal_object, learner]
+                if obj.axes
+            ],
+        ),
+        after_action_relations=[near(agent, goal_object)],
+    )
+
+
+# generates region-as-goal situations for go/come (qu/lai)
+def region_as_goal_situation_come(
+    goal: Region[SituationObject], goal_object: SituationObject
+) -> HighLevelSemanticsSituation:
+    agent = situation_object(DOG)
+    learner = situation_object(LEARNER, properties=[IS_ADDRESSEE])
+
+    return HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[agent, goal_object],
+        other_objects=[learner],
+        actions=[Action(COME, argument_roles_to_fillers=[(AGENT, agent), (GOAL, goal)])],
         axis_info=AxesInfo(
             addressee=learner,
             axes_facing=[
@@ -1698,7 +1729,6 @@ def test_jump_up():
 
 
 """GO WITH GOAL"""
-# TODO: check this with native speaker, unsure about qu/lai behaviour with locational mods
 
 # this tests dao for going to a region
 def test_to_regions_as_goal():
@@ -1793,6 +1823,103 @@ def test_under_region_as_goal():
             goal_object,
         )
     ) == ("gou3", "chyu4", "dau4", "jwo1 dz", "sya4 myan4")
+
+
+"""COME WITH GOAL"""
+
+# this tests dao for going to a region
+def test_to_regions_as_goal_come():
+    goal_object = situation_object(BOX, properties=[HOLLOW])
+    assert generated_tokens(
+        region_as_goal_situation_come(Region(goal_object, distance=PROXIMAL), goal_object)
+    ) == ("gou3", "lai2", "dau4", "syang1 dz", "shang4")
+
+
+# this tests being inside a region
+def test_in_region_as_goal_come():
+    goal_object = situation_object(BOX, properties=[HOLLOW])
+    assert generated_tokens(
+        region_as_goal_situation_come(Region(goal_object, distance=INTERIOR), goal_object)
+    ) == ("gou3", "lai2", "dau4", "syang1 dz", "li3")
+
+
+# this tests being next to a region
+def test_beside_region_as_goal_come():
+    goal_object = situation_object(BOX, properties=[HOLLOW])
+    # Beside
+    assert generated_tokens(
+        region_as_goal_situation_come(
+            Region(
+                goal_object,
+                distance=PROXIMAL,
+                direction=Direction(
+                    positive=True,
+                    relative_to_axis=HorizontalAxisOfObject(goal_object, index=0),
+                ),
+            ),
+            goal_object,
+        )
+    ) == ("gou3", "lai2", "dau4", "syang1 dz", "pang2 byan1")
+
+
+# this tests going behind a region
+def test_behind_region_as_goal_come():
+    goal_object = situation_object(BOX, properties=[HOLLOW])
+    # Behind
+    assert generated_tokens(
+        region_as_goal_situation_come(
+            Region(
+                goal_object,
+                distance=PROXIMAL,
+                direction=Direction(
+                    positive=False, relative_to_axis=FacingAddresseeAxis(goal_object)
+                ),
+            ),
+            goal_object,
+        )
+    ) == ("gou3", "lai2", "dau4", "syang1 dz", "hou4 myan4")
+
+
+# this tests going in front of a region
+def test_in_front_of_region_as_goal_come():
+    # In front of
+    goal_object = situation_object(BOX, properties=[HOLLOW])
+    assert generated_tokens(
+        region_as_goal_situation_come(
+            Region(
+                goal_object,
+                distance=PROXIMAL,
+                direction=Direction(
+                    positive=True, relative_to_axis=FacingAddresseeAxis(goal_object)
+                ),
+            ),
+            goal_object,
+        )
+    ) == ("gou3", "lai2", "dau4", "syang1 dz", "chyan2 myan4")
+
+
+# this tests going over a region
+def test_over_region_as_goal_come():
+    goal_object = situation_object(TABLE)
+    # Over
+    assert generated_tokens(
+        region_as_goal_situation_come(
+            Region(goal_object, distance=PROXIMAL, direction=GRAVITATIONAL_UP),
+            goal_object,
+        )
+    ) == ("gou3", "lai2", "dau4", "jwo1 dz", "shang4 myan4")
+
+
+# this tests going under a region
+def test_under_region_as_goal_come():
+    goal_object = situation_object(TABLE)
+    # Over
+    assert generated_tokens(
+        region_as_goal_situation_come(
+            Region(goal_object, distance=PROXIMAL, direction=GRAVITATIONAL_DOWN),
+            goal_object,
+        )
+    ) == ("gou3", "lai2", "dau4", "jwo1 dz", "sya4 myan4")
 
 
 """MISC TESTS REPLICATED FROM ENGLISH TESTING FILE"""

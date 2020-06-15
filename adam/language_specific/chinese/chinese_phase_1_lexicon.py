@@ -106,7 +106,7 @@ GAILA_PHASE_1_CHINESE_LEXICON = OntologyLexicon(
         (DOG, LexiconEntry("gou3", NOUN)),
         (BIRD, LexiconEntry("nyau3", NOUN)),
         (GO, LexiconEntry("chyu4", VERB)),
-        (COME, LexiconEntry("lái", VERB)),
+        (COME, LexiconEntry("lai2", VERB)),
         (TAKE, LexiconEntry("na2", VERB)),
         (EAT, LexiconEntry("chr1", VERB)),
         (GIVE, LexiconEntry("gei3", VERB, properties=[ALLOWS_DITRANSITIVE])),
