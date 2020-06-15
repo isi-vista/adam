@@ -1145,13 +1145,46 @@ def test_i_put_cookie_in_my_box():
             )
         ],
     )
-    # TODO: have native speaker check whether wo de or wo is preferred here
     assert generated_tokens(situation) == (
         "wo3",
         "ba3",
         "chyu1 chi2 bing3",
         "fang4",
         "dzai4",
+        "wo3",
+        "de",
+        "syang1 dz",
+        "li3",
+    )
+
+
+# tests the use of the first person possessive, 'wo de'
+def test_i_put_cookie_in_my_box_dao():
+    dad = situation_object(DAD, properties=[IS_SPEAKER])
+    cookie = situation_object(COOKIE)
+    box = situation_object(BOX)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[dad, cookie, box],
+        always_relations=[Relation(HAS, dad, box)],
+        actions=[
+            Action(
+                action_type=PUT,
+                argument_roles_to_fillers=[
+                    (AGENT, dad),
+                    (THEME, cookie),
+                    (GOAL, Region(reference_object=box, distance=INTERIOR)),
+                ],
+            )
+        ],
+        after_action_relations=[on(cookie, box)],
+    )
+    assert generated_tokens(situation) == (
+        "wo3",
+        "ba3",
+        "chyu1 chi2 bing3",
+        "fang4",
+        "dau4",
         "wo3",
         "de",
         "syang1 dz",
@@ -1210,7 +1243,6 @@ def test_you_put_cookie_in_your_box():
             )
         ],
     )
-    # TODO: have native speaker check whether ni de or ni is preferred here
     assert generated_tokens(situation) == (
         "ni3",
         "ba3",
@@ -1245,7 +1277,6 @@ def test_speaker_owner_of_box():
             )
         ],
     )
-    # TODO: have native speaker check whether wo de or wo is preferred here
     assert generated_tokens(situation) == (
         "ba4 ba4",
         "ba3",
@@ -1253,6 +1284,40 @@ def test_speaker_owner_of_box():
         "fang4",
         "dzai4",
         "wo3",
+        "de",
+        "syang1 dz",
+        "li3",
+    )
+
+
+# tests use of first person possessive 'wo de' when the speaker isn't the agent
+def test_addressee_owner_of_box():
+    dad = situation_object(DAD)
+    cookie = situation_object(COOKIE)
+    box = situation_object(BOX)
+    mum = situation_object(MOM, properties=[IS_ADDRESSEE])
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[dad, cookie, box, mum],
+        always_relations=[Relation(HAS, mum, box)],
+        actions=[
+            Action(
+                action_type=PUT,
+                argument_roles_to_fillers=[
+                    (AGENT, dad),
+                    (THEME, cookie),
+                    (GOAL, Region(reference_object=box, distance=INTERIOR)),
+                ],
+            )
+        ],
+    )
+    assert generated_tokens(situation) == (
+        "ba4 ba4",
+        "ba3",
+        "chyu1 chi2 bing3",
+        "fang4",
+        "dzai4",
+        "ni3",
         "de",
         "syang1 dz",
         "li3",
@@ -1280,7 +1345,6 @@ def test_speaker_not_owner_of_box():
             )
         ],
     )
-    # TODO: have native speaker check whether baba de or baba is preferred here
     assert generated_tokens(situation) == (
         "wo3",
         "ba3",
