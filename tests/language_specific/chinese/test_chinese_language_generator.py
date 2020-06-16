@@ -1494,7 +1494,7 @@ def test_jumps_over():
     )
 
 
-# this tests under, which is a regular case using 'dao'
+# this tests under, using dao. After_action relations are translated before during_action relations
 def test_path_modifier_under():
     bird = situation_object(BIRD)
     table = situation_object(TABLE)
@@ -1520,7 +1520,15 @@ def test_path_modifier_under():
                 ),
             )
         ],
-        after_action_relations=[near(bird, table)],
+        after_action_relations=[
+            Relation(
+                IN_REGION,
+                bird,
+                Region(
+                    reference_object=table, distance=DISTAL, direction=GRAVITATIONAL_DOWN
+                ),
+            )
+        ],
     )
     assert generated_tokens(situation) == (
         "nyau3",
