@@ -293,6 +293,28 @@ def test_many_items():
     assert generated_tokens(situation) == ("hen3 dwo1", "chyou2")
 
 
+"""ADDITIONAL CLASSIFIER TESTS"""
+
+# check the automobile classifier, lyang4
+def test_car_truck_clf():
+    car1 = situation_object(CAR, debug_handle="car1")
+    car2 = situation_object(CAR, debug_handle="car2")
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[car1, car2]
+    )
+    assert generated_tokens(situation) == ("lyang3", "lyang4", "chi4 che1")
+
+
+# check the default classifier
+def test_default_clf():
+    box1 = situation_object(BOX, debug_handle="box1")
+    box2 = situation_object(BOX, debug_handle="box2")
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[box1, box2]
+    )
+    assert generated_tokens(situation) == ("lyang3", "ge4", "syang1 dz")
+
+
 """SALIENT VS. NOT SALIENT OBJECTS"""
 
 # two trucks, only one is salient
