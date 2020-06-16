@@ -1666,7 +1666,7 @@ def test_falling_down():
 
 
 # sit down testing
-def test_falling_down():
+def test_sitting_down():
     mum = situation_object(MOM)
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -1675,6 +1675,30 @@ def test_falling_down():
         syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
     )
     assert generated_tokens(situation) == ("ma1 ma1", "dzwo4", "sya4 lai2")
+
+
+# test sitting up -- falling up doesn't make sense but we want to be sure we can use both despite the defaults in the
+# language generator
+def test_sitting_up():
+    mum = situation_object(MOM)
+    ground = situation_object(GROUND)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mum],
+        actions=[
+            Action(
+                SIT,
+                argument_roles_to_fillers=[(AGENT, mum)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (mum, SpatialPath(operator=AWAY_FROM, reference_object=ground))
+                    ]
+                ),
+            )
+        ],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
+    )
+    assert generated_tokens(situation) == ("ma1 ma1", "dzwo4", "chi3 lai2")
 
 
 # direction of flight = up
@@ -1836,6 +1860,30 @@ def test_jump_up():
         syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
     )
     assert generated_tokens(situation) == ("ba4 ba4", "tyau4", "chi3 lai2")
+
+
+# direction of jumping
+def test_jump_down():
+    dad = situation_object(DAD)
+    ground = situation_object(GROUND)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[dad],
+        actions=[
+            Action(
+                JUMP,
+                argument_roles_to_fillers=[(AGENT, dad)],
+                auxiliary_variable_bindings=[(JUMP_INITIAL_SUPPORTER_AUX, ground)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (dad, SpatialPath(operator=TOWARD, reference_object=ground))
+                    ]
+                ),
+            )
+        ],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
+    )
+    assert generated_tokens(situation) == ("ba4 ba4", "tyau4", "sya4 lai2")
 
 
 """GO WITH GOAL"""
