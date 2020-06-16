@@ -68,6 +68,8 @@ from adam.ontology.phase1_ontology import (
     SIT,
     THEME,
     JUMP,
+    GO,
+    COME,
 )
 from adam.ontology.phase1_spatial_relations import (
     EXTERIOR_BUT_IN_CONTACT,
@@ -259,7 +261,45 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 self._translate_relation_to_action_modifier(action, relation, modifiers)
             if USE_ADVERBIAL_PATH_MODIFIER in self.situation.syntax_hints:
                 if action.during:
-                    raise NotImplementedError
+                    paths_involving_ground = immutableset(
+                        path
+                        for (_, path) in action.during.objects_to_paths.items()
+                        if path.reference_object.ontology_node == GROUND
+                    )
+                    if paths_involving_ground:
+                        first_path = first(paths_involving_ground)
+                        # the object is moving towards the ground, so down
+                        if first_path.operator == TOWARD:
+                            if action.action_type == GO or action.action_type == COME:
+                                modifiers.append(
+                                    (
+                                        ADVERBIAL_MODIFIER,
+                                        DependencyTreeToken("sya4", ADVERB),
+                                    )
+                                )
+                            else:
+                                modifiers.append(
+                                    (
+                                        ADVERBIAL_CLAUSE_MODIFIER,
+                                        DependencyTreeToken("sya4 lai2", ADVERB),
+                                    )
+                                )
+                        # the object is moving away from the ground, so up
+                        else:
+                            if action.action_type == GO or action.action_type == COME:
+                                modifiers.append(
+                                    (
+                                        ADVERBIAL_MODIFIER,
+                                        DependencyTreeToken("shang4", ADVERB),
+                                    )
+                                )
+                            else:
+                                modifiers.append(
+                                    (
+                                        ADVERBIAL_CLAUSE_MODIFIER,
+                                        DependencyTreeToken("chi3 lai2", ADVERB),
+                                    )
+                                )
                 # hack, awaiting https://github.com/isi-vista/adam/issues/239
                 elif action.action_type == FALL or action.action_type == SIT:
                     modifiers.append(
@@ -269,7 +309,12 @@ class SimpleRuleBasedChineseLanguageGenerator(
                         )
                     )
                 elif action.action_type == JUMP:
-                    raise NotImplementedError
+                    modifiers.append(
+                        (
+                            ADVERBIAL_CLAUSE_MODIFIER,
+                            DependencyTreeToken("chi3 lai2", ADVERB),
+                        )
+                    )
             return modifiers
 
         def _translate_relation_to_action_modifier(

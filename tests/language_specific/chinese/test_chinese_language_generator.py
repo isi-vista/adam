@@ -73,6 +73,7 @@ from adam.ontology.phase1_ontology import (
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
+    TOWARD,
     DISTAL,
     EXTERIOR_BUT_IN_CONTACT,
     GRAVITATIONAL_DOWN,
@@ -1664,8 +1665,19 @@ def test_falling_down():
     assert generated_tokens(situation) == ("chyou2", "dye2 dau3", "sya4 lai2")
 
 
-# direction of flight
-@pytest.mark.skip("advmods not yet implemented")
+# sit down testing
+def test_falling_down():
+    mum = situation_object(MOM)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mum],
+        actions=[Action(SIT, argument_roles_to_fillers=[(AGENT, mum)])],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
+    )
+    assert generated_tokens(situation) == ("ma1 ma1", "dzwo4", "sya4 lai2")
+
+
+# direction of flight = up
 def test_bird_flies_up():
     bird = situation_object(BIRD)
     ground = situation_object(GROUND)
@@ -1686,11 +1698,80 @@ def test_bird_flies_up():
         ],
         syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
     )
-    assert generated_tokens(situation) == ("nyau3", "fei1", "chi3lai2")
+    assert generated_tokens(situation) == ("nyau3", "fei1", "chi3 lai2")
+
+
+# direction of flight = up
+def test_bird_flies_down():
+    bird = situation_object(BIRD)
+    ground = situation_object(GROUND)
+
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[bird],
+        actions=[
+            Action(
+                FLY,
+                argument_roles_to_fillers=[(AGENT, bird)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (bird, SpatialPath(operator=TOWARD, reference_object=ground))
+                    ]
+                ),
+            )
+        ],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
+    )
+    assert generated_tokens(situation) == ("nyau3", "fei1", "sya4 lai2")
+
+
+# testing going up
+def test_going_up():
+    bird = situation_object(BIRD)
+    ground = situation_object(GROUND)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[bird],
+        actions=[
+            Action(
+                GO,
+                argument_roles_to_fillers=[(AGENT, bird)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (bird, SpatialPath(operator=AWAY_FROM, reference_object=ground))
+                    ]
+                ),
+            )
+        ],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
+    )
+    assert generated_tokens(situation) == ("nyau3", "shang4", "chyu4")
+
+
+# testing going up
+def test_going_down():
+    bird = situation_object(BIRD)
+    ground = situation_object(GROUND)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[bird],
+        actions=[
+            Action(
+                GO,
+                argument_roles_to_fillers=[(AGENT, bird)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (bird, SpatialPath(operator=TOWARD, reference_object=ground))
+                    ]
+                ),
+            )
+        ],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
+    )
+    assert generated_tokens(situation) == ("nyau3", "sya4", "chyu4")
 
 
 # direction of jumping
-@pytest.mark.skip("advmods not yet implemented")
 def test_jump_up():
     dad = situation_object(DAD)
     ground = situation_object(GROUND)
@@ -1706,7 +1787,7 @@ def test_jump_up():
         ],
         syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
     )
-    assert generated_tokens(situation) == ("ba4 ba4", "tyau4", "chi3lai2")
+    assert generated_tokens(situation) == ("ba4 ba4", "tyau4", "chi3 lai2")
 
 
 """GO WITH GOAL"""
