@@ -271,7 +271,6 @@ def test_single_item():
 
 
 # two objects, which can be counted distinctly
-@pytest.mark.skip(reason="https://github.com/isi-vista/adam/issues/782")
 def test_two_items():
     dog1 = situation_object(DOG, debug_handle="dog1")
     dog2 = situation_object(DOG, debug_handle="dog2")
@@ -308,7 +307,6 @@ def test_one_salient_object():
 
 
 # many objects, only two are salient
-@pytest.mark.skip(reason="saliency and classifiers aren't yet supported")
 def test_two_salient_objects():
     dog1 = situation_object(DOG, debug_handle="dog1")
     dog2 = situation_object(DOG, debug_handle="dog2")

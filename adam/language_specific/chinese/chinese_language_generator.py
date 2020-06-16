@@ -16,6 +16,7 @@ from adam.language.dependency import (
 )
 from adam.language.dependency.universal_dependencies import (
     PARTICLE,
+    CLASSIFIER,
     NOUN,
     ADJECTIVAL_MODIFIER,
     ADPOSITION,
@@ -667,13 +668,27 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     )
                     self.dependency_graph.add_edge(de, possessor, role=CASE_POSSESSIVE)
             # if the count is one, we're done since we're not using yi CLF currently
-            if count == 1:
+            # also, we don't count grounds or proper nouns
+            if (
+                count == 1
+                or _object.ontology_node == GROUND
+                or PROPER_NOUN in _object.properties
+            ):
                 return
             #  https://github.com/isi-vista/adam/issues/782
             # TODO: get classifiers checked by a native speaker upon implementation
             elif count == 2:
-                raise NotImplementedError(
-                    "We don't know how to handle Chinese classifiers yet"
+                two = DependencyTreeToken("lyang3", NUMERAL)
+                classifier = noun_lexicon_entry.counting_classifier
+                if not classifier:
+                    classifier = "ge4"
+                self.dependency_graph.add_edge(
+                    two, noun_dependency_node, role=NUMERIC_MODIFIER
+                )
+                self.dependency_graph.add_edge(
+                    DependencyTreeToken(classifier, PARTICLE),
+                    noun_dependency_node,
+                    role=CLASSIFIER,
                 )
             # if the count is many, we don't need a CLF, and we just use many (this will be checked by a native speaker in the next round of checks)
             else:
