@@ -80,10 +80,10 @@ YOU = LexiconEntry("ni3", NOUN, intrinsic_morphosyntactic_properties=[SECOND_PER
 GAILA_PHASE_1_CHINESE_LEXICON = OntologyLexicon(
     ontology=GAILA_PHASE_1_ONTOLOGY,
     ontology_node_to_word=(
-        (GROUND, LexiconEntry("di4 myan4", NOUN)),
+        (GROUND, LexiconEntry("di4 myan4", NOUN, counting_classifier="jang1")),
         (MOM, LexiconEntry("ma1 ma1", PROPER_NOUN)),
         (BALL, LexiconEntry("chyou2", NOUN)),
-        (TABLE, LexiconEntry("jwo1 dz", NOUN)),
+        (TABLE, LexiconEntry("jwo1 dz", NOUN, counting_classifier="jang1")),
         (PUT, LexiconEntry("fang4", VERB)),
         (PUSH, LexiconEntry("twei1", VERB)),
         (BOOK, LexiconEntry("shu1", NOUN)),
