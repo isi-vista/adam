@@ -16,7 +16,7 @@ from adam.learner.learner_utils import (
 )
 from adam.learner.object_recognizer import (
     PerceptionGraphFromObjectRecognizer,
-    replace_match_with_object_graph_node,
+    replace_match_root_with_object_graph_node,
 )
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
 from adam.learner.surface_templates import (
@@ -367,7 +367,7 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
 
         # Replace any objects found
         for (matched_object_node, pattern_match) in matched_objects:
-            perception_graph_after_matching = replace_match_with_object_graph_node(
+            perception_graph_after_matching = replace_match_root_with_object_graph_node(
                 matched_object_node=cast(ObjectSemanticNode, matched_object_node),
                 current_perception=perception_graph_after_matching,
                 pattern_match=pattern_match,
