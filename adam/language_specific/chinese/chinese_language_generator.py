@@ -258,9 +258,18 @@ class SimpleRuleBasedChineseLanguageGenerator(
             for relation in self.situation.always_relations:
                 self._translate_relation_to_action_modifier(action, relation, modifiers)
             if USE_ADVERBIAL_PATH_MODIFIER in self.situation.syntax_hints:
-                raise NotImplementedError(
-                    "Adverbial path modifiers aren't yet implemented"
-                )
+                if action.during:
+                    raise NotImplementedError
+                # hack, awaiting https://github.com/isi-vista/adam/issues/239
+                elif action.action_type == FALL or action.action_type == SIT:
+                    modifiers.append(
+                        (
+                            ADVERBIAL_CLAUSE_MODIFIER,
+                            DependencyTreeToken("sya4 lai2", ADVERB),
+                        )
+                    )
+                elif action.action_type == JUMP:
+                    raise NotImplementedError
             return modifiers
 
         def _translate_relation_to_action_modifier(

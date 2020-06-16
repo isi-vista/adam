@@ -1649,20 +1649,19 @@ def test_mom_sits_on_a_table():
 
 
 """ADV MODIFICATION"""
-# TODO: check if adverb path modifiers are salient and should be implemented in Chinese
+# TODO: check these with native speakers
 # https://github.com/isi-vista/adam/issues/797
 
-# fall down testing -- this does translate but I'm not sure how much it's used
-@pytest.mark.skip("advmods not yet implemented")
+# fall down testing
 def test_falling_down():
     ball = situation_object(BALL)
-    situation_without_modifier = HighLevelSemanticsSituation(
+    situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         salient_objects=[ball],
         actions=[Action(FALL, argument_roles_to_fillers=[(THEME, ball)])],
         syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
     )
-    assert generated_tokens(situation) == ("chyou2", "dye2 dau3", "sya4lai2")
+    assert generated_tokens(situation) == ("chyou2", "dye2 dau3", "sya4 lai2")
 
 
 # direction of flight
