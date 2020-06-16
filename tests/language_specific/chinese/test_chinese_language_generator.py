@@ -10,8 +10,6 @@ from adam.axes import (
     AxesInfo,
     GRAVITATIONAL_AXIS_FUNCTION,
 )
-
-# TODO: update imports once Chinese syntactic info is updated
 from adam.language_specific.chinese.chinese_language_generator import (
     PREFER_DITRANSITIVE,
     SimpleRuleBasedChineseLanguageGenerator,
@@ -775,7 +773,6 @@ def test_you_give_me_a_cookie():
 
 
 """VP's WITH LOCALIZERS AND VARIOUS SPEAKERS"""
-# TODO: handle zai/dao distinction in generator
 # use zai by default and dao with after-action relations based on https://github.com/isi-vista/adam/issues/796
 # a list of verbs that currently don't accept goals is at https://github.com/isi-vista/adam/issues/582
 
@@ -1540,7 +1537,6 @@ def test_path_modifier_under():
 
 
 # this is a different case for Chinese since there's no change in location so the PP is preverbal
-# @pytest.mark.skip(reason="path modifiers have not been implemented yet")
 def test_path_modifier_on():
     mom = situation_object(MOM)
     ball = situation_object(BALL)
@@ -1659,7 +1655,6 @@ def test_mom_sits_on_a_table():
 
 """ADV MODIFICATION"""
 # TODO: check these with native speakers
-# https://github.com/isi-vista/adam/issues/797
 
 # fall down testing
 def test_falling_down():

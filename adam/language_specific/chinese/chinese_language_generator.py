@@ -243,7 +243,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
             """
             Collect adverbial and other modifiers of an action.
 
-            For right now we only handle a subset of spatial modifiers which are realized as prepositions.
+            For right now we only handle a subset of spatial modifiers which are realized as localisers.
 
             This also collects always_relations since it is helpful for Chinese to handle these in the context of the VP
             rather than globally since information about the VP will influence where the modifiers attach.
@@ -367,19 +367,19 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     # in the same VP. To solve this, we check if the reference object node is already in the modifiers and return if it is.
                     if any(m[1] == reference_object_node for m in modifiers):
                         return
-                    # try to get the prepositional modifier for the given relation
-                    prepositional_modifier = self.relation_to_localiser_modifier(
+                    # try to get the localiser phrase modifier for the given relation
+                    localiser_modifier = self.relation_to_localiser_modifier(
                         action, relation
                     )
-                    if prepositional_modifier:
-                        # an always relation presented as a preposition always occurs preverbially
+                    if localiser_modifier:
+                        # an always relation presented as a localiser always occurs preverbially
                         # TODO: https://github.com/isi-vista/adam/issues/811 NP mods within VP's aren't currently handled
                         if relation in self.situation.always_relations:
-                            modifiers.append((OBLIQUE_NOMINAL, prepositional_modifier))
+                            modifiers.append((OBLIQUE_NOMINAL, localiser_modifier))
                         # all other relations indicate something about the path and so they occur post-verbially
                         else:
                             modifiers.append(
-                                (ADVERBIAL_CLAUSE_MODIFIER, prepositional_modifier)
+                                (ADVERBIAL_CLAUSE_MODIFIER, localiser_modifier)
                             )
                 else:
                     # we don't want to translate relations of the agent (yet)
@@ -408,10 +408,8 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 # this is the "ba" construction in Chinese where an object occurs with "ba" before
                 # the verb if the verb isn't ditransitive but is "trying" to take 2 objects
                 if argument_role == THEME and syntactic_role == OBLIQUE_NOMINAL:
-                    preposition = DependencyTreeToken("ba3", ADPOSITION)
-                    self.dependency_graph.add_edge(
-                        preposition, filler_noun, role=CASE_SPATIAL
-                    )
+                    ba = DependencyTreeToken("ba3", ADPOSITION)
+                    self.dependency_graph.add_edge(ba, filler_noun, role=CASE_SPATIAL)
                 return (syntactic_role, filler_noun)
             # deal with the case that it's a region in the situation
             elif isinstance(filler, Region):
@@ -472,11 +470,11 @@ class SimpleRuleBasedChineseLanguageGenerator(
             # below
             elif region.direction == GRAVITATIONAL_DOWN:
                 return "sya4 myan4"
-            # region.distance == DISTAL is not check as this does not define a specific preposition in scope for Phase 1
+            # region.distance == DISTAL is not check as this does not define a specific location in scope for Phase 1
             elif region.direction and self.situation.axis_info:
                 if not self.situation.axis_info.addressee:
                     raise RuntimeError(
-                        f"Unable to translate region into a preposition because an addressee is lacking. "
+                        f"Unable to translate region into a localiser because an addressee is lacking. "
                         f"Region: {region}\nSituation: {self.situation}"
                     )
                 # HACK, from M3
@@ -502,7 +500,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     return "pang2 byan1"
             else:
                 raise RuntimeError(
-                    f"Don't know how to translate {region} to a preposition yet"
+                    f"Don't know how to translate {region} to a localiser yet"
                 )
 
         def _translate_argument_role(
@@ -704,21 +702,20 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     self._translate_relation_to_verb(relation)
             # handle in_region relations
             elif relation.relation_type == IN_REGION:
-                # get the prepositional modifier
-                prepositional_modifier = self.relation_to_localiser_modifier(
-                    action, relation
-                )
-                if prepositional_modifier:
+                # get the localiser modifier
+                localiser_modifier = self.relation_to_localiser_modifier(action, relation)
+                if localiser_modifier:
                     # when there's not an action, we use the "de" construction (e.g. the table on the floor = the on the floor de table)
                     # this function is only called from within the NP generator, so we don't need to case on action
                     de = DependencyTreeToken("de", PARTICLE)
                     self.dependency_graph.add_edge(
-                        de, prepositional_modifier, role=CASE_POSSESSIVE
+                        de, localiser_modifier, role=CASE_POSSESSIVE
                     )
+                    # it's a little odd to consider "de" as a possessive here, but it's syntactically equivalent
                     self.dependency_graph.add_edge(
-                        prepositional_modifier,
+                        localiser_modifier,
                         self._noun_for_object(relation.first_slot),
-                        role=NOMINAL_MODIFIER_POSSESSIVE,
+                        role=CASE_SPATIAL,
                     )
 
             else:
@@ -824,9 +821,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
                             localiser = "pang2 byan1"
             # if there's no localiser, this is a relation we don't know how to handle
             if not localiser:
-                raise RuntimeError(
-                    f"Don't know how to handle {relation} as a preposition"
-                )
+                raise RuntimeError(f"Don't know how to handle {relation} as a localiser")
 
             # get the noun for the NP in the localiser phrase
             reference_object_node = self._noun_for_object(region.reference_object)
@@ -842,13 +837,17 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     role=NOMINAL_MODIFIER,
                 )
                 # get the coverb that will be used in this phrase: https://github.com/isi-vista/adam/issues/796
-                # dzai is used for after-action relations since these indicate a salient change of state
+                # zai is used by default
                 coverb = "dzai4"
+                # dao is used for after_action relations since this indicates that there was motion to a goal. If a relation
+                # appears in both after and during, we translate it as after
                 if (
                     relation in self.situation.after_action_relations
                     and relation not in self.situation.always_relations
                 ):
                     coverb = "dau4"
+                # gwo is used for during.at_some_point since it indicates motion past a point continuing afterwards (rather
+                # than stopping at a goal as dao and zai do
                 if (
                     action
                     and action.during
@@ -857,6 +856,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     and relation not in self.situation.always_relations
                 ):
                     coverb = "gwo4"
+                # add the coverb to the localiser phrase and return it
                 self.dependency_graph.add_edge(
                     DependencyTreeToken(coverb, ADPOSITION),
                     reference_object_node,
@@ -909,9 +909,6 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 return {
                     ontology_node: 1
                     for ontology_node in immutableset(
-                        # even though only salient objects have linguistic expression
-                        # by default,
-                        # we gather counts over all objects in the scene.
                         object_.ontology_node
                         for object_ in self.situation.salient_objects
                     )
@@ -927,7 +924,6 @@ GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR = SimpleRuleBasedChineseLanguageGenerat
 # these are "hints" situations can pass to the language generator
 # to control its behavior
 # See https://github.com/isi-vista/adam/issues/222
-# TODO: modify these to fit with Chinese syntax
 USE_ADVERBIAL_PATH_MODIFIER = "USE_ADVERBIAL_PATH_MODIFIER"
 PREFER_DITRANSITIVE = "PREFER_DITRANSITIVE"
 IGNORE_COLORS = "IGNORE_COLORS"
