@@ -1725,6 +1725,8 @@ def test_bird_flies_down():
     assert generated_tokens(situation) == ("nyau3", "fei1", "sya4 lai2")
 
 
+"""GO/COME BEHAVE DIFFERENTLY IN CHINESE WITH ADVMODS"""
+
 # testing going up
 def test_going_up():
     bird = situation_object(BIRD)
@@ -1748,7 +1750,7 @@ def test_going_up():
     assert generated_tokens(situation) == ("nyau3", "shang4", "chyu4")
 
 
-# testing going up
+# testing going down
 def test_going_down():
     bird = situation_object(BIRD)
     ground = situation_object(GROUND)
@@ -1769,6 +1771,52 @@ def test_going_down():
         syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
     )
     assert generated_tokens(situation) == ("nyau3", "sya4", "chyu4")
+
+
+# testing coming up
+def test_coming_up():
+    bird = situation_object(BIRD)
+    ground = situation_object(GROUND)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[bird],
+        actions=[
+            Action(
+                COME,
+                argument_roles_to_fillers=[(AGENT, bird)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (bird, SpatialPath(operator=AWAY_FROM, reference_object=ground))
+                    ]
+                ),
+            )
+        ],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
+    )
+    assert generated_tokens(situation) == ("nyau3", "shang4", "lai2")
+
+
+# testing going down
+def test_coming_down():
+    bird = situation_object(BIRD)
+    ground = situation_object(GROUND)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[bird],
+        actions=[
+            Action(
+                COME,
+                argument_roles_to_fillers=[(AGENT, bird)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (bird, SpatialPath(operator=TOWARD, reference_object=ground))
+                    ]
+                ),
+            )
+        ],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
+    )
+    assert generated_tokens(situation) == ("nyau3", "sya4", "lai2")
 
 
 # direction of jumping
