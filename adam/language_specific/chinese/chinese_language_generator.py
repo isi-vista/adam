@@ -677,9 +677,6 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 raise RuntimeError("Cannot handle multiple possession relations")
             elif len(possession_relations) == 1:
                 # handle the possession relation if there is one
-                # TODO: since we can't distinguish nodes of the same ontology type right now (https://github.com/isi-vista/adam/issues/55),
-                #  we must manually fill in wo and ni to prevent "de" from attaching to both in a case of a sentence like
-                #  "I have my ball" (which would turn into wo de you wo de qiu rather than wo you wo de qiu)
                 possessor = None
                 if IS_SPEAKER in possession_relations[0].first_slot.properties:
                     possessor = DependencyTreeToken("wo3", NOUN)
@@ -691,7 +688,9 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     and not self.situation.is_dynamic
                 ):
                     return
-                    # TODO: we currently return here since we can't handle one possessive node and one not -- once we fix this we don't need this case
+                    # TODO: we currently return here since we can't handle one possessive node and one not for the third person (i.e. I have my ball, you have your ball
+                    # but right now, we just have "Dad has a ball" since otherwise we'll end up adding "de" (equivalent of 's in English) to both instances (e.g. Dad's has Dad's ball)
+                    # since the nodes aren't unique). https://github.com/isi-vista/adam/issues/55
                 # handle the 3rd person possessor based on the relation
                 elif (not self.situation.is_dynamic) or (
                     possession_relations[0].first_slot
