@@ -1,3 +1,4 @@
+from itertools import chain
 from typing import Generic, List, Mapping, Optional, TypeVar, Union
 
 from immutablecollections.converter_utils import _to_immutableset
@@ -296,3 +297,41 @@ class SpatialPath(Generic[ReferenceObjectT]):
             object_accumulator.append(self.reference_object)
         if self.reference_axis and not isinstance(self.reference_axis, GeonAxis):
             self.reference_axis.accumulate_referenced_objects(object_accumulator)
+
+    def unify(
+        self, other_path: "SpatialPath[ReferenceObjectT]"
+    ) -> "SpatialPath[ReferenceObjectT]":
+        if self.reference_object != other_path.reference_object:
+            raise RuntimeError(
+                f"Can not unify two spatial paths with different reference objects, {self} and {other_path}"
+            )
+
+        if self.operator and other_path.operator:
+            if self.operator != other_path.operator:
+                raise RuntimeError(
+                    f"Can not unify two spatial paths with different path operators. {self} and {other_path}"
+                )
+
+        if self.reference_axis and other_path.reference_axis:
+            if self.reference_axis != other_path.reference_axis:
+                raise RuntimeError(
+                    f"Can not unify two spatial paths with different reference axis. {self} and {other_path}"
+                )
+
+        if self.orientation_changed and other_path.orientation_changed:
+            if self.orientation_changed != other_path.orientation_changed:
+                raise RuntimeError(
+                    f"Can not unify two spatial paths with different orientated changed indicators. {self} and {other_path}"
+                )
+
+        return SpatialPath(
+            operator=self.operator if self.operator else other_path.operator,
+            reference_object=self.reference_object,
+            reference_axis=self.reference_axis
+            if self.reference_axis
+            else other_path.reference_axis,
+            orientation_changed=self.orientation_changed
+            if self.orientation_changed
+            else other_path.orientation_changed,
+            properties=chain(self.properties, other_path.properties),
+        )

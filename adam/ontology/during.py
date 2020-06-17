@@ -1,5 +1,5 @@
 from itertools import chain
-from typing import Generic, List, Mapping, TypeVar
+from typing import Generic, List, Mapping, TypeVar, Tuple, Set
 
 from attr import attrib, attrs
 from immutablecollections import (
@@ -59,12 +59,24 @@ class DuringAction(Generic[_ObjectT]):
             relation.accumulate_referenced_objects(object_accumulator)
 
     def union(self, other_during: "DuringAction[_ObjectT]") -> "DuringAction[_ObjectT]":
+        objects_to_paths = immutablesetmultidict(
+            chain(self.objects_to_paths.items(), other_during.objects_to_paths.items())
+        )
+        # We want to see if we need to unify any spatial paths
+        objects_to_unified_paths: List[Tuple[_ObjectT, SpatialPath[_ObjectT]]] = []
+        paths_to_skip: Set[SpatialPath[_ObjectT]] = set()
+        for obj in objects_to_paths.keys():
+            paths = objects_to_paths[obj]
+            for (num, path) in enumerate(paths):
+                if path not in paths_to_skip:
+                    for i in range(num, len(paths)):
+                        if path.reference_object == paths[i].reference_object:
+                            path.unify(paths[i])
+                            paths_to_skip.add(paths[i])
+                    objects_to_unified_paths.append((obj, path))
+
         return DuringAction(
-            objects_to_paths=immutablesetmultidict(
-                chain(
-                    self.objects_to_paths.items(), other_during.objects_to_paths.items()
-                )
-            ),
+            objects_to_paths=immutablesetmultidict(objects_to_unified_paths),
             at_some_point=chain(self.at_some_point, other_during.at_some_point),
             continuously=chain(self.continuously, other_during.continuously),
         )
