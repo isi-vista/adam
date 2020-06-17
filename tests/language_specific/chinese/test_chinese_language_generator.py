@@ -71,6 +71,7 @@ from adam.ontology.phase1_ontology import (
     ROLL_SURFACE_AUXILIARY,
     TRUCK,
     HOUSE,
+    RED,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -396,6 +397,16 @@ def test_cookie_classifier():
         ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[cookie1, cookie2]
     )
     assert generated_tokens(situation) == ("lyang3", "kwai4", "chyu1 chi2 bing3")
+
+
+# tests the classifiers with a colour modifier
+def test_colour_classifier():
+    ball1 = situation_object(BALL, debug_handle="ball1", properties=[RED])
+    ball2 = situation_object(BALL, debug_handle="ball2", properties=[RED])
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[ball1, ball2]
+    )
+    assert generated_tokens(situation) == ("lyang3", "ge4", "hung2 se4", "chyou2")
 
 
 """SALIENT VS. NOT SALIENT OBJECTS -- CHECKED BY NATIVE SPEAKER"""
