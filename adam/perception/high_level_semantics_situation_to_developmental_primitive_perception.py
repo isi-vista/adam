@@ -812,6 +812,7 @@ class _PerceptionGeneration:
                                 # Don't make something in contact with the ground
                                 # if the situation explicitly says it isn't.
                                 add_on_ground = False
+                                self._relation_perceptions.remove(relation)
                             elif (
                                 region.distance == EXTERIOR_BUT_IN_CONTACT
                                 or region.distance == INTERIOR
