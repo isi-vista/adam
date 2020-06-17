@@ -838,7 +838,9 @@ def replace_match_root_with_object_semantic_node(
                         external_properties.add(matched_subgraph_node_successor[0])
 
                 perception_digraph.add_edge(
-                    object_semantic_node, matched_subgraph_node_successor, label=edge_label
+                    object_semantic_node,
+                    matched_subgraph_node_successor,
+                    label=edge_label,
                 )
 
         # If there is an edge to the matched sub-graph from a node outside it,
