@@ -65,6 +65,8 @@ from adam.situation.templates.phase1_templates import (
 from adam_test_utils import all_possible_test
 from immutablecollections import immutableset, immutablesetmultidict
 
+from tests.perception import MatchMode
+
 r.seed(0)
 
 
@@ -173,7 +175,9 @@ def do_object_on_table_test(
         # -{idx}.pdf")
         # object_to_match_pattern.render_to_file(f"object_to_match pattern", out_dir /
         # "object_to_match_pattern.pdf")
-        matcher = object_to_match_pattern.matcher(perception_graph, matching_objects=True)
+        matcher = object_to_match_pattern.matcher(
+            perception_graph, match_mode=MatchMode.OBJECT
+        )
         # debug_matching = matcher.debug_matching(
         #    use_lookahead_pruning=False, render_match_to=Path("/Users/gabbard/tmp")
         # )
@@ -218,7 +222,7 @@ def do_object_on_table_test(
         perception_graph = PerceptionGraph.from_frame(perception.frames[0])
         if any(
             object_to_match_pattern.matcher(
-                perception_graph, matching_objects=True
+                perception_graph, match_mode=MatchMode.OBJECT
             ).matches(use_lookahead_pruning=True)
         ):
             return False
@@ -283,7 +287,7 @@ def test_last_failed_pattern_node():
 
         # Start the matching process
         matcher = whole_perception_pattern.matcher(
-            PerceptionGraph(altered_perception_digraph), matching_objects=False
+            PerceptionGraph(altered_perception_digraph), match_mode=MatchMode.NON_OBJECT
         )
         match_or_failure = matcher.first_match_or_failure_info()
         assert isinstance(match_or_failure, PatternMatching.MatchFailure)
@@ -327,7 +331,9 @@ def test_successfully_extending_partial_match():
     partial_perception_pattern = PerceptionGraphPattern(partial_digraph)
 
     # get our initial match by matching the partial pattern
-    matcher = partial_perception_pattern.matcher(perception, matching_objects=False)
+    matcher = partial_perception_pattern.matcher(
+        perception, match_mode=MatchMode.NON_OBJECT
+    )
 
     partial_match: PerceptionGraphPatternMatch = first(
         matcher.matches(use_lookahead_pruning=True)
@@ -335,7 +341,9 @@ def test_successfully_extending_partial_match():
     partial_mapping = partial_match.pattern_node_to_matched_graph_node
 
     # Try to extend the partial mapping, to create a complete mapping
-    matcher_2 = whole_perception_pattern.matcher(perception, matching_objects=False)
+    matcher_2 = whole_perception_pattern.matcher(
+        perception, match_mode=MatchMode.NON_OBJECT
+    )
     complete_match: PerceptionGraphPatternMatch = first(
         matcher_2.matches(
             initial_partial_match=partial_mapping, use_lookahead_pruning=True
@@ -413,7 +421,7 @@ def test_semantically_infeasible_partial_match():
     )
 
     # Start the matching process, get a partial match
-    matcher = whole_perception_pattern.matcher(perception, matching_objects=True)
+    matcher = whole_perception_pattern.matcher(perception, match_mode=MatchMode.OBJECT)
     partial_match: PerceptionGraphPatternMatch = first(
         matcher.matches(use_lookahead_pruning=True)
     )
@@ -421,7 +429,7 @@ def test_semantically_infeasible_partial_match():
 
     # Try to extend the partial mapping, we expect a semantic infeasibility runtime error
     second_matcher = whole_perception_pattern.matcher(
-        PerceptionGraph(altered_perception_digraph), matching_objects=True
+        PerceptionGraph(altered_perception_digraph), match_mode=MatchMode.OBJECT
     )
     # The partial mapping (obtained from first matcher with original perception graph)
     # semantically doesn't match the one in the altered version (second matcher with altered graph)
@@ -478,14 +486,16 @@ def test_syntactically_infeasible_partial_match():
         altered_perception_digraph.add_edge(random_node_2, node, label=PART_OF)
 
     # Start the matching process, get a partial match
-    first_matcher = whole_perception_pattern.matcher(perception, matching_objects=True)
+    first_matcher = whole_perception_pattern.matcher(
+        perception, match_mode=MatchMode.OBJECT
+    )
     partial_match: PerceptionGraphPatternMatch = first(
         first_matcher.matches(use_lookahead_pruning=True), None
     )
     partial_mapping = partial_match.pattern_node_to_matched_graph_node
     # Try to extend the partial mapping, we expect a semantic infeasibility runtime error
     second_matcher = whole_perception_pattern.matcher(
-        PerceptionGraph(altered_perception_digraph), matching_objects=True
+        PerceptionGraph(altered_perception_digraph), match_mode=MatchMode.OBJECT
     )
     # The partial mapping (obtained from first matcher with original perception graph)
     # syntactically doesn't match the one in the altered version (second matcher with altered graph)
@@ -739,10 +749,14 @@ def test_matching_static_vs_dynamic_graphs():
     # Test runtime error for matching static pattern against dynamic graph and vice versa
 
     with pytest.raises(RuntimeError):
-        perception_pattern.matcher(temporal_perception_graph, matching_objects=False)
+        perception_pattern.matcher(
+            temporal_perception_graph, match_mode=MatchMode.NON_OBJECT
+        )
 
     with pytest.raises(RuntimeError):
-        temporal_perception_pattern.matcher(perception_graph, matching_objects=False)
+        temporal_perception_pattern.matcher(
+            perception_graph, match_mode=MatchMode.NON_OBJECT
+        )
 
 
 def test_copy_with_temporal_scope_pattern_content():
@@ -818,7 +832,7 @@ def test_copy_with_temporal_scope_pattern_content():
 
     # Test normal matching behavior
     temporal_matcher = temporal_perception_pattern.matcher(
-        temporal_perception_graph, matching_objects=False
+        temporal_perception_graph, match_mode=MatchMode.NON_OBJECT
     )
     first(temporal_matcher.matches(use_lookahead_pruning=True))
 

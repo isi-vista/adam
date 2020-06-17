@@ -33,6 +33,8 @@ from attr import attrib, attrs
 from attr.validators import instance_of, optional
 from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
 
+from tests.perception import MatchMode
+
 
 @attrs
 class AbstractPrepositionTemplateLearner(AbstractTemplateLearner, ABC):
@@ -217,7 +219,7 @@ class PrepositionPursuitLearner(
             debug_callback=self._debug_callback,
             graph_logger=self._hypothesis_logger,
             ontology=self._ontology,
-            matching_objects=True,
+            match_mode=MatchMode.OBJECT,
         )
         self.debug_counter += 1
 
@@ -299,4 +301,15 @@ class SubsetPrepositionLearner(
         return preposition_hypothesis_from_perception(
             preprocessed_input,
             template_variables_to_object_match_nodes=template_variables_to_object_match_nodes,
+        )
+
+    def _update_hypothesis(
+        self,
+        previous_pattern_hypothesis: PerceptionGraphTemplate,
+        current_pattern_hypothesis: PerceptionGraphTemplate,
+    ) -> Optional[PerceptionGraphTemplate]:
+        return previous_pattern_hypothesis.intersection(
+            current_pattern_hypothesis,
+            ontology=self._ontology,
+            match_mode=MatchMode.NON_OBJECT,
         )

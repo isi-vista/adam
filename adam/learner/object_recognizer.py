@@ -34,6 +34,7 @@ from adam.perception.perception_graph import (
     TemporallyScopedEdgeLabel,
     edge_equals_ignoring_temporal_scope,
     raise_graph_exception,
+    MatchMode,
 )
 from adam.semantics import (
     Concept,
@@ -283,7 +284,7 @@ class ObjectRecognizer:
 
                 with Timer(factor=1000) as t:
                     matcher = pattern.matcher(
-                        candidate_object_graph, matching_objects=True
+                        candidate_object_graph, match_mode=MatchMode.OBJECT
                     )
                     pattern_match = first(
                         matcher.matches(use_lookahead_pruning=True), None

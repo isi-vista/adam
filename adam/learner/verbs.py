@@ -32,7 +32,7 @@ from adam.perception.deprecated import LanguageAlignedPerception
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
-from adam.perception.perception_graph import PerceptionGraph
+from adam.perception.perception_graph import PerceptionGraph, MatchMode
 from adam.semantics import (
     ActionConcept,
     ObjectSemanticNode,
@@ -475,6 +475,17 @@ class SubsetVerbLearner(AbstractTemplateSubsetLearner, AbstractVerbTemplateLearn
             ),
         )
 
+    def _update_hypothesis(
+        self,
+        previous_pattern_hypothesis: PerceptionGraphTemplate,
+        current_pattern_hypothesis: PerceptionGraphTemplate,
+    ) -> Optional[PerceptionGraphTemplate]:
+        return previous_pattern_hypothesis.intersection(
+            current_pattern_hypothesis,
+            ontology=self._ontology,
+            match_mode=MatchMode.NON_OBJECT,
+        )
+
 
 @attrs
 class SubsetVerbLearnerNew(
@@ -521,3 +532,14 @@ class SubsetVerbLearnerNew(
         self, perception_semantic_alignment: PerceptionSemanticAlignment
     ) -> PerceptionSemanticAlignment:
         return perception_semantic_alignment
+
+    def _intersect_hypothesis(
+        self,
+        previous_pattern_hypothesis: PerceptionGraphTemplate,
+        current_pattern_hypothesis: PerceptionGraphTemplate,
+    ) -> Optional[PerceptionGraphTemplate]:
+        return previous_pattern_hypothesis.intersection(
+            current_pattern_hypothesis,
+            ontology=self._ontology,
+            match_mode=MatchMode.NON_OBJECT,
+        )

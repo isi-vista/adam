@@ -100,6 +100,8 @@ from vistautils.misc_utils import str_list_limited
 from vistautils.preconditions import check_arg
 from vistautils.range import Range
 
+from tests.perception import MatchMode
+
 
 class Incrementer:
     def __init__(self, initial_value=0) -> None:
@@ -616,7 +618,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
         graph_to_match_against: PerceptionGraphProtocol,
         *,
         debug_callback: Optional[DebugCallableType] = None,
-        matching_objects: bool,
+        match_mode: MatchMode,
     ) -> "PatternMatching":
         """
         Creates an object representing an attempt to match this pattern
@@ -635,7 +637,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
             pattern=self,
             graph_to_match_against=graph_to_match_against,
             debug_callback=debug_callback,
-            matching_objects=matching_objects,
+            match_mode=match_mode,
         )
 
     @staticmethod
@@ -969,6 +971,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
         graph_logger: Optional["GraphLogger"] = None,
         ontology: Ontology,
         allowed_matches: ImmutableSetMultiDict[Any, Any] = immutablesetmultidict(),
+        match_mode: MatchMode,
     ) -> Optional["PerceptionGraphPattern"]:
         """
         Determine the largest partial match between two `PerceptionGraphPattern`s
@@ -981,7 +984,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
             graph_to_match_against=self,
             debug_callback=debug_callback,
             matching_pattern_against_pattern=True,
-            matching_objects=False,
+            match_mode=match_mode,
             allowed_matches=allowed_matches,
         )
         attempted_match = matcher.relax_pattern_until_it_matches(
@@ -1077,10 +1080,9 @@ class PatternMatching:
     # the attrs mypy plugin complains for the below
     # "Non-default attributes not allowed after default attributes."
     # But that doesn't seem to be our situation? And it works fine?
-    _matching_objects: bool = attrib(  # type: ignore
-        validator=instance_of(bool), kw_only=True
+    _match_mode: MatchMode = attrib(  # type: ignore
+        validator=instance_of(MatchMode), kw_only=True
     )
-
     # Callable object for debugging purposes. We use this to track the number of calls to match and render the graphs.
     debug_callback: Optional[DebugCallableType] = attrib(default=None, kw_only=True)
 
@@ -1319,7 +1321,7 @@ class PatternMatching:
             sorted_pattern,
             use_lookahead_pruning=use_lookahead_pruning,
             matching_pattern_against_pattern=self.matching_pattern_against_pattern,
-            matching_objects=self._matching_objects,
+            match_mode=self._match_mode,
         )
 
         sets_of_nodes_matched: Set[ImmutableSet[PerceptionGraphNode]] = set()
@@ -1497,7 +1499,10 @@ class PatternMatching:
 
         same_color_nodes: List[NodePredicate]
 
-        if isinstance(last_failed_node, IsColorNodePredicate):
+        if (
+            isinstance(last_failed_node, IsColorNodePredicate)
+            and self._match_mode == MatchMode.OBJECT
+        ):
             # We treat colors as a special case.
             # In a complex object (e.g. a dog), an object and a large number of its
             # sub-components will share the same color.
@@ -1514,9 +1519,11 @@ class PatternMatching:
                 for node in pattern_as_digraph.nodes
                 if isinstance(node, IsColorNodePredicate) and node.color == color
             ]
-        elif isinstance(
-            last_failed_node, IsOntologyNodePredicate
-        ) and ontology.is_subtype_of(last_failed_node.property_value, COLOR):
+        elif (
+            isinstance(last_failed_node, IsOntologyNodePredicate)
+            and ontology.is_subtype_of(last_failed_node.property_value, COLOR)
+            and self._match_mode == MatchMode.OBJECT
+        ):
             # same as above, but for the case where we are perceiving colors discretely.
             discrete_color = last_failed_node.property_value
 

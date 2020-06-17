@@ -57,6 +57,8 @@ from immutablecollections import (
 )
 from vistautils.parameters import Parameters
 
+from tests.perception import MatchMode
+
 
 class AbstractObjectTemplateLearnerNew(AbstractTemplateLearnerNew):
     # pylint:disable=abstract-method
@@ -251,7 +253,7 @@ class ObjectPursuitLearner(AbstractPursuitLearner, AbstractObjectTemplateLearner
         observed_perception_graph: PerceptionGraph,
     ) -> bool:
         matcher = hypothesis.graph_pattern.matcher(
-            observed_perception_graph, matching_objects=True
+            observed_perception_graph, match_mode=MatchMode.OBJECT
         )
         return any(
             matcher.matches(
@@ -283,7 +285,7 @@ class ObjectPursuitLearner(AbstractPursuitLearner, AbstractObjectTemplateLearner
             debug_callback=self._debug_callback,
             graph_logger=self._hypothesis_logger,
             ontology=self._ontology,
-            matching_objects=True,
+            match_mode=MatchMode.OBJECT,
         )
         self.debug_counter += 1
 
@@ -366,6 +368,17 @@ class SubsetObjectLearner(AbstractTemplateSubsetLearner, AbstractObjectTemplateL
             template_variable_to_pattern_node=immutabledict(),
         )
 
+    def _update_hypothesis(
+        self,
+        previous_pattern_hypothesis: PerceptionGraphTemplate,
+        current_pattern_hypothesis: PerceptionGraphTemplate,
+    ) -> Optional[PerceptionGraphTemplate]:
+        return previous_pattern_hypothesis.intersection(
+            current_pattern_hypothesis,
+            ontology=self._ontology,
+            match_mode=MatchMode.OBJECT,
+        )
+
 
 @attrs(slots=True)
 class SubsetObjectLearnerNew(
@@ -415,6 +428,17 @@ class SubsetObjectLearnerNew(
             return False
         return True
 
+    def _intersect_hypothesis(
+        self,
+        previous_pattern_hypothesis: PerceptionGraphTemplate,
+        current_pattern_hypothesis: PerceptionGraphTemplate,
+    ) -> Optional[PerceptionGraphTemplate]:
+        return previous_pattern_hypothesis.intersection(
+            current_pattern_hypothesis,
+            ontology=self._ontology,
+            match_mode=MatchMode.OBJECT,
+        )
+
 
 @attrs(frozen=True, kw_only=True)
 class ObjectRecognizerAsTemplateLearner(TemplateLearner):
@@ -450,6 +474,17 @@ class ObjectRecognizerAsTemplateLearner(TemplateLearner):
 
     def log_hypotheses(self, log_output_path: Path) -> None:
         pass
+
+    def _intersect_hypothesis(
+        self,
+        previous_pattern_hypothesis: PerceptionGraphTemplate,
+        current_pattern_hypothesis: PerceptionGraphTemplate,
+    ) -> Optional[PerceptionGraphTemplate]:
+        return previous_pattern_hypothesis.intersection(
+            current_pattern_hypothesis,
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+            match_mode=MatchMode.OBJECT,
+        )
 
     @_concepts_to_templates.default
     def _init_concepts_to_templates(

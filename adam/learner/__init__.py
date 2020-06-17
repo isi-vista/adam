@@ -27,6 +27,7 @@ from adam.perception.perception_graph import (
     DebugCallableType,
     PerceptionGraphPatternMatch,
     GraphLogger,
+    MatchMode,
 )
 from adam.utils.networkx_utils import subgraph
 
@@ -140,12 +141,12 @@ def get_largest_matching_pattern(
     graph_logger: Optional[GraphLogger] = None,
     ontology: Ontology,
     match_ratio: Optional[float] = None,
-    matching_objects: bool
+    match_mode: MatchMode
 ) -> Optional[PerceptionGraphPattern]:
     """ Helper function to return the largest matching `PerceptionGraphPattern`
     for learner from a perception pattern and graph pair."""
     matching = pattern.matcher(
-        graph, debug_callback=debug_callback, matching_objects=matching_objects
+        graph, debug_callback=debug_callback, match_mode=match_mode
     )
     return matching.relax_pattern_until_it_matches(
         graph_logger=graph_logger, ontology=ontology, min_ratio=match_ratio

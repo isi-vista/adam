@@ -11,6 +11,7 @@ from adam.learner.surface_templates import (
     SurfaceTemplateBoundToSemanticNodes,
 )
 from adam.learner.template_learner import AbstractTemplateLearnerNew
+from adam.perception.perception_graph import MatchMode
 from adam.semantics import RelationConcept, SyntaxSemanticsVariable
 from attr import attrs
 from immutablecollections import immutableset
@@ -150,3 +151,14 @@ class SubsetRelationLearnerNew(
         self, perception_semantic_alignment: PerceptionSemanticAlignment
     ) -> PerceptionSemanticAlignment:
         return perception_semantic_alignment
+
+    def _intersect_hypothesis(
+        self,
+        previous_pattern_hypothesis: PerceptionGraphTemplate,
+        current_pattern_hypothesis: PerceptionGraphTemplate,
+    ) -> Optional[PerceptionGraphTemplate]:
+        return previous_pattern_hypothesis.intersection(
+            current_pattern_hypothesis,
+            ontology=self._ontology,
+            match_mode=MatchMode.NON_OBJECT,
+        )

@@ -39,6 +39,8 @@ from attr.validators import instance_of
 from immutablecollections import immutabledict, immutableset
 from vistautils.span import Span
 
+from tests.perception import MatchMode
+
 
 @attrs
 class AbstractAttributeTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
@@ -171,6 +173,17 @@ class SubsetAttributeLearner(
             ),
         )
 
+    def _update_hypothesis(
+        self,
+        previous_pattern_hypothesis: PerceptionGraphTemplate,
+        current_pattern_hypothesis: PerceptionGraphTemplate,
+    ) -> Optional[PerceptionGraphTemplate]:
+        return previous_pattern_hypothesis.intersection(
+            current_pattern_hypothesis,
+            ontology=self._ontology,
+            match_mode=MatchMode.NON_OBJECT,
+        )
+
 
 @attrs
 class SubsetAttributeLearnerNew(
@@ -221,3 +234,14 @@ class SubsetAttributeLearnerNew(
             # for meaningful attribute semantics.
             return False
         return True
+
+    def _intersect_hypothesis(
+        self,
+        previous_pattern_hypothesis: PerceptionGraphTemplate,
+        current_pattern_hypothesis: PerceptionGraphTemplate,
+    ) -> Optional[PerceptionGraphTemplate]:
+        return previous_pattern_hypothesis.intersection(
+            current_pattern_hypothesis,
+            ontology=self._ontology,
+            match_mode=MatchMode.NON_OBJECT,
+        )

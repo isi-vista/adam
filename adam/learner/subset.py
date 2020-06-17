@@ -36,6 +36,16 @@ class AbstractSubsetLearner(AbstractTemplateLearner, ABC):
     _ontology: Ontology = attrib(validator=instance_of(Ontology), kw_only=True)
     _debug_callback: Optional[DebugCallableType] = attrib(default=None, kw_only=True)
 
+    @abstractmethod
+    def _update_hypothesis(
+        self,
+        previous_pattern_hypothesis: PerceptionGraphTemplate,
+        current_pattern_hypothesis: PerceptionGraphTemplate,
+    ) -> Optional[PerceptionGraphTemplate]:
+        """
+        Method to handle how to intersect hypothesis to possibly update hypothesis
+        """
+
     def _learning_step(
         self,
         preprocessed_input: LanguageAlignedPerception,
@@ -64,6 +74,11 @@ class AbstractSubsetLearner(AbstractTemplateLearner, ABC):
                         if previous_slot == new_slot
                     ]
                 ),
+            )
+
+            updated_hypothesis = self._update_hypothesis(
+                previous_pattern_hypothesis,
+                self._hypothesis_from_perception(preprocessed_input),
             )
 
             if updated_hypothesis:

@@ -29,7 +29,11 @@ from adam.perception.deprecated import LanguageAlignedPerception
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
-from adam.perception.perception_graph import PerceptionGraph, PerceptionGraphPatternMatch
+from adam.perception.perception_graph import (
+    PerceptionGraph,
+    PerceptionGraphPatternMatch,
+    MatchMode,
+)
 from adam.semantics import Concept, ObjectConcept, ObjectSemanticNode, SemanticNode
 from attr import attrib, attrs, evolve
 from immutablecollections import immutabledict, immutableset
@@ -109,7 +113,7 @@ class AbstractTemplateLearner(
             # try to see if (our model of) its semantics is present in the situation.
             matcher = pattern.graph_pattern.matcher(
                 preprocessed_perception_graph,
-                matching_objects=False,
+                match_mode=MatchMode.NON_OBJECT
                 # debug_callback=self._debug_callback,
             )
             for match in matcher.matches(use_lookahead_pruning=True):
@@ -336,7 +340,7 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
             # try to see if (our model of) its semantics is present in the situation.
             matcher = pattern.graph_pattern.matcher(
                 preprocessed_perception_graph,
-                matching_objects=False,
+                match_mode=MatchMode.NON_OBJECT,
                 # debug_callback=self._debug_callback,
             )
             for match in matcher.matches(use_lookahead_pruning=True):

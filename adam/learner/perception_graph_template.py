@@ -12,6 +12,7 @@ from adam.perception.perception_graph import (
     PerceptionGraph,
     PerceptionGraphPattern,
     raise_graph_exception,
+    MatchMode,
     NodePredicate,
 )
 from adam.semantics import ObjectSemanticNode, SyntaxSemanticsVariable
@@ -102,6 +103,7 @@ class PerceptionGraphTemplate:
         allowed_matches: ImmutableSetMultiDict[
             NodePredicate, NodePredicate
         ] = immutablesetmultidict(),
+        match_mode: MatchMode,
     ) -> Optional["PerceptionGraphTemplate"]:
         r"""
         Gets the `PerceptionGraphTemplate` which contains all aspects of a pattern
@@ -139,6 +141,7 @@ class PerceptionGraphTemplate:
             ontology=ontology,
             debug_callback=debug_callback,
             allowed_matches=allowed_matches,
+            match_mode=match_mode,
         )
 
         if intersected_pattern:
