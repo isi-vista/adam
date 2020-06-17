@@ -2279,7 +2279,7 @@ def test_two_balls_are_green():
     assert generated_tokens(situation) == ("lyang3", "ge4", "chyou2", "shr4", "lyu4 se4")
 
 
-# x_is_y for many sentence
+# x_is_y for a sentence with many (> 2) objects
 def test_many_balls_are_red():
     ball1 = situation_object(BALL, properties=[RED], debug_handle="ball1")
     ball2 = situation_object(BALL, properties=[RED], debug_handle="ball2")
