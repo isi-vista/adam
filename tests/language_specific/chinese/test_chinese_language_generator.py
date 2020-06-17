@@ -2230,7 +2230,7 @@ def test_roll():
 
 """TESTS FOR X_IS_Y"""
 
-
+# simple x_is_y
 def test_the_ball_is_green():
     ball = situation_object(BALL, properties=[GREEN])
     situation = HighLevelSemanticsSituation(
@@ -2239,3 +2239,54 @@ def test_the_ball_is_green():
         syntax_hints=[ATTRIBUTES_AS_X_IS_Y],
     )
     assert generated_tokens(situation) == ("chyou2", "shr4", "lyu4 se4")
+
+
+# x_is_y with first person possession
+def test_my_ball_is_green():
+    ball = situation_object(BALL, properties=[GREEN])
+    dad = situation_object(DAD, properties=[IS_SPEAKER])
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[ball, dad],
+        always_relations=[Relation(HAS, dad, ball)],
+        syntax_hints=[IGNORE_HAS_AS_VERB, ATTRIBUTES_AS_X_IS_Y],
+    )
+    assert generated_tokens(situation) == ("wo3", "de", "chyou2", "shr4", "lyu4 se4")
+
+
+# x_is_y with second person possession
+def test_your_ball_is_red():
+    ball = situation_object(BALL, properties=[RED])
+    dad = situation_object(DAD, properties=[IS_ADDRESSEE])
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[ball, dad],
+        always_relations=[Relation(HAS, dad, ball)],
+        syntax_hints=[IGNORE_HAS_AS_VERB, ATTRIBUTES_AS_X_IS_Y],
+    )
+    assert generated_tokens(situation) == ("ni3", "de", "chyou2", "shr4", "hung2 se4")
+
+
+# x_is_y for classifier sentence
+def test_two_balls_are_green():
+    ball1 = situation_object(BALL, properties=[GREEN], debug_handle="ball1")
+    ball2 = situation_object(BALL, properties=[GREEN], debug_handle="ball2")
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[ball1, ball2],
+        syntax_hints=[ATTRIBUTES_AS_X_IS_Y],
+    )
+    assert generated_tokens(situation) == ("lyang3", "ge4", "chyou2", "shr4", "lyu4 se4")
+
+
+# x_is_y for many sentence
+def test_many_balls_are_red():
+    ball1 = situation_object(BALL, properties=[RED], debug_handle="ball1")
+    ball2 = situation_object(BALL, properties=[RED], debug_handle="ball2")
+    ball3 = situation_object(BALL, properties=[RED], debug_handle="ball3")
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[ball1, ball2, ball3],
+        syntax_hints=[ATTRIBUTES_AS_X_IS_Y],
+    )
+    assert generated_tokens(situation) == ("hen3 dwo1", "chyou2", "shr4", "hung2 se4")
