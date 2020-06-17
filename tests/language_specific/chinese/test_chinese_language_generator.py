@@ -55,6 +55,7 @@ from adam.ontology.phase1_ontology import (
     THROW,
     WATER,
     DOOR,
+    HAT,
     on,
     strictly_above,
     JUMP,
@@ -375,6 +376,26 @@ def test_door_classifier():
         ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[door1, door2]
     )
     assert generated_tokens(situation) == ("lyang3", "shan4", "men2")
+
+
+# test the classifier for hats
+def test_hat_classifier():
+    hat1 = situation_object(HAT, debug_handle="hat1")
+    hat2 = situation_object(HAT, debug_handle="hat2")
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[hat1, hat2]
+    )
+    assert generated_tokens(situation) == ("lyang3", "ding3", "mau4 dz")
+
+
+# test the classifier for cookies
+def test_cookie_classifier():
+    cookie1 = situation_object(COOKIE, debug_handle="cookie1")
+    cookie2 = situation_object(COOKIE, debug_handle="cookie2")
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[cookie1, cookie2]
+    )
+    assert generated_tokens(situation) == ("lyang3", "kwai4", "chyu1 chi2 bing3")
 
 
 """SALIENT VS. NOT SALIENT OBJECTS"""
