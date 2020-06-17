@@ -604,10 +604,40 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 _object, count, dependency_node, noun_lexicon_entry=noun_lexicon_entry
             )
 
-            # TODO: handle X_IS_Y; not implemented in syntax yet either (https://github.com/isi-vista/adam/issues/804)
+            # handle sentences of the form 'the ball is red'
+            if ATTRIBUTES_AS_X_IS_Y in self.situation.syntax_hints:
+                # this can only be used in static situations
+                if self.situation.is_dynamic:
+                    raise RuntimeError(
+                        "X is Y language can't be provided in dynamic situations"
+                    )
+                # get the attributes; exclude colours if that is a part of the syntax hints
+                properties = [
+                    property_
+                    for property_ in _object.properties
+                    if IGNORE_COLORS not in self.situation.syntax_hints
+                    or not self.situation.ontology.is_subtype_of(property_, COLOR)
+                ]
+                if len(properties) != 1:
+                    raise RuntimeError(
+                        f"Cannot handle X is Y language with {len(properties)} attributes"
+                    )
+                attribute_lexicon_entry = self._unique_lexicon_entry(first(properties))
+                node = DependencyTreeToken(
+                    attribute_lexicon_entry.base_form,
+                    attribute_lexicon_entry.part_of_speech,
+                    attribute_lexicon_entry.intrinsic_morphosyntactic_properties,
+                )
+                is_node = DependencyTreeToken("shr4", VERB)
+                self.dependency_graph.add_edge(
+                    is_node, dependency_node, role=IS_ATTRIBUTE
+                )
+                self.dependency_graph.add_edge(
+                    node, dependency_node, role=NOMINAL_MODIFIER
+                )
 
             # if colour is specified, add it as an adjectival modifier
-            if IGNORE_COLORS not in self.situation.syntax_hints:
+            elif IGNORE_COLORS not in self.situation.syntax_hints:
                 for property_ in _object.properties:
                     if self.situation.ontology.is_subtype_of(property_, COLOR):
                         color_lexicon_entry = self._unique_lexicon_entry(property_)

@@ -15,6 +15,7 @@ from adam.language_specific.chinese.chinese_language_generator import (
     SimpleRuleBasedChineseLanguageGenerator,
     USE_ADVERBIAL_PATH_MODIFIER,
     IGNORE_HAS_AS_VERB,
+    ATTRIBUTES_AS_X_IS_Y,
 )
 from adam.language_specific.chinese.chinese_phase_1_lexicon import (
     GAILA_PHASE_1_CHINESE_LEXICON,
@@ -2225,3 +2226,16 @@ def test_roll():
         "gwun3",
         "chyu1 chi2 bing3",
     )
+
+
+"""TESTS FOR X_IS_Y"""
+
+
+def test_the_ball_is_green():
+    ball = situation_object(BALL, properties=[GREEN])
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[ball],
+        syntax_hints=[ATTRIBUTES_AS_X_IS_Y],
+    )
+    assert generated_tokens(situation) == ("chyou2", "shr4", "lyu4 se4")
