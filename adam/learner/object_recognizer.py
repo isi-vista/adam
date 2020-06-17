@@ -889,7 +889,6 @@ def replace_match_root_with_object_semantic_node(
 
     perception_digraph.remove_node(root)
     # perception_digraph.remove_nodes_from(duplicate_nodes_to_remove)
-    perception_digraph.add_node(matched_object_node)
 
     # We want to re-add any relationships linked directly to the root node of an object.
     # Example: water is a liquid
