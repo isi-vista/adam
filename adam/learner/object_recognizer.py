@@ -764,7 +764,7 @@ def replace_match_with_object_graph_node(
     return PerceptionGraph(perception_digraph, dynamic=current_perception.dynamic)
 
 
-def replace_match_root_with_object_graph_node(
+def replace_match_root_with_semantic_node(
     matched_object_node: ObjectSemanticNode,
     current_perception: PerceptionGraph,
     pattern_match: PerceptionGraphPatternMatch,
