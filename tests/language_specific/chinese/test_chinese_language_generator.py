@@ -54,6 +54,7 @@ from adam.ontology.phase1_ontology import (
     THEME,
     THROW,
     WATER,
+    DOOR,
     on,
     strictly_above,
     JUMP,
@@ -334,6 +335,46 @@ def test_book_classifier():
         ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[book1, book2]
     )
     assert generated_tokens(situation) == ("lyang3", "ben3", "shu1")
+
+
+# test the house/room classifier
+def test_house_classifier():
+    house1 = situation_object(HOUSE, debug_handle="house1")
+    house2 = situation_object(HOUSE, debug_handle="house2")
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[house1, house2]
+    )
+    assert generated_tokens(situation) == ("lyang3", "jyan1", "wu1")
+
+
+# test the classifier for cups of liquid
+def test_cups_of_liquid():
+    water1 = situation_object(WATER, debug_handle="water1")
+    water2 = situation_object(WATER, debug_handle="water2")
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[water1, water2]
+    )
+    assert generated_tokens(situation) == ("lyang3", "bei1", "shwei3")
+
+
+# test the classifier for chairs
+def test_chair_classifiers():
+    chair1 = situation_object(CHAIR, debug_handle="chair1")
+    chair2 = situation_object(CHAIR, debug_handle="chair2")
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[chair1, chair2]
+    )
+    assert generated_tokens(situation) == ("lyang3", "ba3", "yi3 dz")
+
+
+# test the classifier for doors
+def test_door_classifier():
+    door1 = situation_object(DOOR, debug_handle="door1")
+    door2 = situation_object(DOOR, debug_handle="door2")
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[door1, door2]
+    )
+    assert generated_tokens(situation) == ("lyang3", "shan4", "men2")
 
 
 """SALIENT VS. NOT SALIENT OBJECTS"""
