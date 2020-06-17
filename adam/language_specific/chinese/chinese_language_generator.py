@@ -418,27 +418,35 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 reference_object_dependency_node = self._noun_for_object(
                     filler.reference_object
                 )
+                # if this is the equivalent of "to" in English with a go/come verb, we just use the bare noun
+                if (
+                    (action.action_type == GO or action.action_type == COME)
+                    and (filler.distance == PROXIMAL)
+                    and (not filler.direction)
+                ):
+                    pass
+                # in all other cases, we construct a localiser phrase to attach as an adverbial modifier
+                else:
+                    # this determines the coverb based on whether the situation is static or dynamic
+                    coverb: str = "dzai4"
+                    if self.situation.after_action_relations:
+                        coverb = "dau4"
+                    # notice we don't use gwo here since it indicates motion past a place and here, we handle goals
+                    self.dependency_graph.add_edge(
+                        DependencyTreeToken(coverb, ADPOSITION),
+                        reference_object_dependency_node,
+                        role=CASE_SPATIAL,
+                    )
 
-                # this determines the coverb based on whether the situation is static or dynamic
-                coverb: str = "dzai4"
-                if self.situation.after_action_relations:
-                    coverb = "dau4"
-                # notice we don't use gwo here since it indicates motion past a place and here, we handle goals
-                self.dependency_graph.add_edge(
-                    DependencyTreeToken(coverb, ADPOSITION),
-                    reference_object_dependency_node,
-                    role=CASE_SPATIAL,
-                )
-
-                # get the localiser and at it to the noun as well
-                localiser_dependency_node = DependencyTreeToken(
-                    self._localiser_for_region_as_goal(filler), ADPOSITION
-                )
-                self.dependency_graph.add_edge(
-                    localiser_dependency_node,
-                    reference_object_dependency_node,
-                    role=NOMINAL_MODIFIER,
-                )
+                    # get the localiser and at it to the noun as well
+                    localiser_dependency_node = DependencyTreeToken(
+                        self._localiser_for_region_as_goal(filler), ADPOSITION
+                    )
+                    self.dependency_graph.add_edge(
+                        localiser_dependency_node,
+                        reference_object_dependency_node,
+                        role=NOMINAL_MODIFIER,
+                    )
                 # this is an adverbial clause modifier since it occurs post-verbally (https://github.com/isi-vista/adam/issues/797)
                 return (ADVERBIAL_CLAUSE_MODIFIER, reference_object_dependency_node)
             else:

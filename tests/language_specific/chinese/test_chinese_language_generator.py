@@ -1992,14 +1992,13 @@ def test_jump_down():
 
 """GO WITH GOAL -- CHECKED BY NATIVE SPEAKER"""
 
-# TODO: fix this
 
-# this tests dao for going to a region
+# this tests dao for going to a region, in which case we use the bare NP instead of a localiser phrase
 def test_to_regions_as_goal():
     goal_object = situation_object(BOX, properties=[HOLLOW])
     assert generated_tokens(
         region_as_goal_situation(Region(goal_object, distance=PROXIMAL), goal_object)
-    ) == ("gou3", "chyu4", "dau4", "syang1 dz", "shang4")
+    ) == ("gou3", "chyu4", "syang1 dz")
 
 
 # this tests being inside a region
@@ -2091,14 +2090,13 @@ def test_under_region_as_goal():
 
 """COME WITH GOAL-- CHECKED BY NATIVE SPEAKER"""
 
-# TODO: fix this
 
 # this tests dao for going to a region
 def test_to_regions_as_goal_come():
     goal_object = situation_object(BOX, properties=[HOLLOW])
     assert generated_tokens(
         region_as_goal_situation_come(Region(goal_object, distance=PROXIMAL), goal_object)
-    ) == ("gou3", "lai2", "dau4", "syang1 dz", "shang4")
+    ) == ("gou3", "lai2", "syang1 dz")
 
 
 # this tests being inside a region
