@@ -675,8 +675,6 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 or PROPER_NOUN in _object.properties
             ):
                 return
-            #  https://github.com/isi-vista/adam/issues/782
-            # TODO: get classifiers checked by a native speaker upon implementation
             elif count == 2:
                 two = DependencyTreeToken("lyang3", NUMERAL)
                 classifier = noun_lexicon_entry.counting_classifier

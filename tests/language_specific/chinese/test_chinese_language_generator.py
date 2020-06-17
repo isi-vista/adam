@@ -167,7 +167,7 @@ def region_as_goal_situation_come(
     )
 
 
-""" BASIC NOUN PHRASE TESTS"""
+""" BASIC NOUN PHRASE TESTS -- CHECKED BY NATIVE SPEAKER"""
 
 # just a single common noun
 def test_common_noun():
@@ -211,7 +211,7 @@ def test_ni():
     assert generated_tokens(situation) == ("ni3",)
 
 
-"""NOUN PHRASES WITH ADJECTIVAL MODIFIERS"""
+"""NOUN PHRASES WITH ADJECTIVAL MODIFIERS -- CHECKED BY NATIVE SPEAKER"""
 
 # basic adjective+noun
 def test_green_ball():
@@ -401,7 +401,6 @@ def test_cookie_classifier():
 """SALIENT VS. NOT SALIENT OBJECTS"""
 
 # two trucks, only one is salient
-# https://github.com/isi-vista/adam/issues/802")
 def test_one_salient_object():
     truck1 = situation_object(TRUCK, debug_handle="truck1")
     truck2 = situation_object(TRUCK, debug_handle="truck2")
@@ -447,7 +446,7 @@ def test_many_salient_objects():
     ).as_token_sequence() == ("hen3 dwo1", "gou3")
 
 
-"""NOUN PHRASES WITH LOCALISER NOMINAL MODIFIERS"""
+"""NOUN PHRASES WITH LOCALISER NOMINAL MODIFIERS -- CHECKED BY NATIVE SPEAKER"""
 
 # test two inanimate objects: the table on the ground
 def test_noun_with_spatial_modifier():
@@ -703,7 +702,7 @@ def test_object_behind_in_front_object():
     )
 
 
-"""BASIC VP TESTING: SV, SVO, and SVIO"""
+"""BASIC VP TESTING: SV, SVO, and SVIO -- CHECKED BY NATIVE SPEAKER"""
 
 
 # basic intransitive verb testing
@@ -768,7 +767,7 @@ def test_simple_SVIO_transfer():
     )
 
 
-"""VP's WITH PERSONAL PRONOUNS"""
+"""VP's WITH PERSONAL PRONOUNS -- CHECKED BY NATIVE SPEAKER"""
 
 # test the simple subject-verb phrase "mum eats" with first person
 def test_simple_subject_verb_me():
@@ -875,7 +874,7 @@ def test_you_give_me_a_cookie():
     )
 
 
-"""VP's WITH LOCALIZERS AND VARIOUS SPEAKERS"""
+"""VP's WITH LOCALIZERS AND VARIOUS SPEAKERS -- CHECKED BY NATIVE SPEAKER"""
 # use zai by default and dao with after-action relations based on https://github.com/isi-vista/adam/issues/796
 # a list of verbs that currently don't accept goals is at https://github.com/isi-vista/adam/issues/582
 
@@ -1535,7 +1534,7 @@ def test_you_have_your_ball():
 
 """PATH MODIFIERS"""
 
-# this tests over, which is a special case since it doesn't use zai/dao
+# this tests flight over a location using at_some_point
 def test_path_modifier():
     bird = situation_object(BIRD)
     house = situation_object(HOUSE)
