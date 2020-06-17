@@ -615,7 +615,7 @@ def _add_relationships_linked_to_root_object_perception(
 
     linked_properties_and_labels: List[Tuple[PerceptionGraphNode, EdgeLabel]] = []
     for pred in original_graph.predecessors(root_node):
-        edge_label = _get_edge_label(original_graph, root_node, pred)
+        edge_label = _get_edge_label(original_graph, pred, root_node)
         if edge_equals_ignoring_temporal_scope(edge_label, HAS_PROPERTY_LABEL):
             linked_properties_and_labels.append((pred, edge_label))
     for (linked_property_node, edge_label) in linked_properties_and_labels:
