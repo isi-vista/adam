@@ -61,6 +61,7 @@ from adam.ontology.phase1_ontology import (
     DOG,
     HOLLOW,
     GO,
+    BOOK,
     LEARNER,
     near,
     TAKE,
@@ -313,6 +314,26 @@ def test_default_clf():
         ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[box1, box2]
     )
     assert generated_tokens(situation) == ("lyang3", "ge4", "syang1 dz")
+
+
+# test the classifier for flat surfaces
+def test_table_classifier():
+    table1 = situation_object(TABLE, debug_handle="table1")
+    table2 = situation_object(TABLE, debug_handle="table2")
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[table1, table2]
+    )
+    assert generated_tokens(situation) == ("lyang3", "jang1", "jwo1 dz")
+
+
+# test the classifier for books and other bound objects
+def test_book_classifier():
+    book1 = situation_object(BOOK, debug_handle="book1")
+    book2 = situation_object(BOOK, debug_handle="book2")
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[book1, book2]
+    )
+    assert generated_tokens(situation) == ("lyang3", "ben3", "shu1")
 
 
 """SALIENT VS. NOT SALIENT OBJECTS"""
