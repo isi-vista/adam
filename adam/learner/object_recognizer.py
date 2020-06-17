@@ -766,7 +766,7 @@ def replace_match_with_object_graph_node(
 
 
 def replace_match_root_with_object_semantic_node(
-    matched_object_node: ObjectSemanticNode,
+    object_semantic_node: ObjectSemanticNode,
     current_perception: PerceptionGraph,
     pattern_match: PerceptionGraphPatternMatch,
 ) -> PerceptionGraph:
@@ -778,7 +778,7 @@ def replace_match_root_with_object_semantic_node(
     relationships involving either the root node or its children.
     """
     perception_digraph = current_perception.copy_as_digraph()
-    perception_digraph.add_node(matched_object_node)
+    perception_digraph.add_node(object_semantic_node)
 
     matched_subgraph_nodes: ImmutableSet[PerceptionGraphNode] = immutableset(
         pattern_match.matched_sub_graph._graph.nodes,  # pylint:disable=protected-access
@@ -838,7 +838,7 @@ def replace_match_root_with_object_semantic_node(
                         external_properties.add(matched_subgraph_node_successor[0])
 
                 perception_digraph.add_edge(
-                    matched_object_node, matched_subgraph_node_successor, label=edge_label
+                    object_semantic_node, matched_subgraph_node_successor, label=edge_label
                 )
 
         # If there is an edge to the matched sub-graph from a node outside it,
@@ -877,7 +877,7 @@ def replace_match_root_with_object_semantic_node(
 
                 perception_digraph.add_edge(
                     matched_subgraph_node_predecessor,
-                    matched_object_node,
+                    object_semantic_node,
                     label=edge_label,
                 )
 
@@ -899,7 +899,7 @@ def replace_match_root_with_object_semantic_node(
         original_graph=current_perception.copy_as_digraph(),
         output_graph=perception_digraph,
         matched_nodes=matched_subgraph_nodes,
-        matched_object_node=matched_object_node,
+        matched_object_node=object_semantic_node,
     )
 
     return PerceptionGraph(perception_digraph, dynamic=current_perception.dynamic)

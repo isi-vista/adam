@@ -368,7 +368,7 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
         # Replace any objects found
         for (matched_object_node, pattern_match) in matched_objects:
             perception_graph_after_matching = replace_match_root_with_object_semantic_node(
-                matched_object_node=cast(ObjectSemanticNode, matched_object_node),
+                object_semantic_node=cast(ObjectSemanticNode, matched_object_node),
                 current_perception=perception_graph_after_matching,
                 pattern_match=pattern_match,
             )
