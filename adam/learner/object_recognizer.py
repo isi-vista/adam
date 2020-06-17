@@ -879,8 +879,12 @@ def replace_match_root_with_object_graph_node(
                     label=edge_label,
                 )
 
-    if root not in SHARED_WORLD_ITEMS:
-        perception_digraph.remove_node(root)
+    if root in SHARED_WORLD_ITEMS:
+        raise RuntimeError(
+            f"Pattern match root cannot be a shared world item, "
+            f"but got match {pattern_match}"
+        )
+
     perception_digraph.remove_node(root)
     perception_digraph.remove_nodes_from(duplicate_nodes_to_remove)
 
