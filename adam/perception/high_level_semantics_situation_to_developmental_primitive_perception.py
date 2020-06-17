@@ -816,10 +816,13 @@ class _PerceptionGeneration:
                             elif (
                                 region.distance == EXTERIOR_BUT_IN_CONTACT
                                 or region.distance == INTERIOR
+                                or region.reference_object == perceived_ground
                             ) and not relation.negated:
                                 # Anything else in contact with anything else is not on the ground.
                                 # TODO: This is too lax:
                                 # see https://github.com/isi-vista/adam/issues/597
+                                # Also, don't duplicate explicit ground contact relations,
+                                # and don't contradict distal/proximal relations with the ground.
                                 add_on_ground = False
 
                 if add_on_ground:
