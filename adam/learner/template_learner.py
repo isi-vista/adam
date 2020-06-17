@@ -347,7 +347,7 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
                 # We want to replace object matches with their semantic nodes,
                 # but we don't want to alter the graph while matching it,
                 # so we accumulate these to replace later.
-                if isinstance(semantic_node_for_match, ObjectConcept):
+                if isinstance(concept, ObjectConcept):
                     matched_objects.append((semantic_node_for_match, match))
                 # A template only has to match once; we don't care about finding additional matches.
                 return
