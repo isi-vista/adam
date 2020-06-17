@@ -664,7 +664,8 @@ def replace_match_with_object_graph_node(
             )
 
         # A pattern might refer to shared parts of the world like the learner
-        # or the ground, but we don't want to replace those with the matched object node.
+        # or the ground, and we don't want the replacement root to inherit the
+        # shared world item's relationships.
         if matched_subgraph_node in SHARED_WORLD_ITEMS:
             continue
 
@@ -801,7 +802,8 @@ def replace_match_root_with_semantic_node(
             )
 
         # A pattern might refer to shared parts of the world like the learner
-        # or the ground, but we don't want to replace those with the matched object node.
+        # or the ground, and we don't want the replacement root to inherit the
+        # shared world item's relationships.
         if matched_subgraph_node in SHARED_WORLD_ITEMS:
             continue
 
