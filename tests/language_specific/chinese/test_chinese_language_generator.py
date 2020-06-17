@@ -1,5 +1,5 @@
-"""This file contains test cases for the Chinese Language Generator,
-which is still under development"""
+"""This file contains test cases for the Chinese Language Generator"""
+
 
 from typing import Tuple
 import pytest
@@ -261,7 +261,7 @@ def test_babade_green_ball():
     assert generated_tokens(situation) == ("ba4 ba4", "de", "lyu4 se4", "chyou2")
 
 
-"""COUNTING NOUN PHRASE TESTS (WITH CLASSIFIERS)"""
+"""COUNTING NOUN PHRASE TESTS (WITH CLASSIFIERS) -- CHECKED BY NATIVE SPEAKER"""
 
 
 # a single object -- note that we don't use yi clf noun yet but this could be implemented later on
@@ -296,7 +296,7 @@ def test_many_items():
     assert generated_tokens(situation) == ("hen3 dwo1", "chyou2")
 
 
-"""ADDITIONAL CLASSIFIER TESTS"""
+"""ADDITIONAL CLASSIFIER TESTS -- CHECKED BY NATIVE SPEAKER"""
 
 # check the automobile classifier, lyang4
 def test_car_truck_clf():
@@ -398,7 +398,7 @@ def test_cookie_classifier():
     assert generated_tokens(situation) == ("lyang3", "kwai4", "chyu1 chi2 bing3")
 
 
-"""SALIENT VS. NOT SALIENT OBJECTS"""
+"""SALIENT VS. NOT SALIENT OBJECTS -- CHECKED BY NATIVE SPEAKER"""
 
 # two trucks, only one is salient
 def test_one_salient_object():
@@ -1256,7 +1256,7 @@ def test_take_to_car():
     )
 
 
-"""TESTS POSSESSIVE: WO DE AND NI DE"""
+"""TESTS POSSESSIVE: WO DE AND NI DE -- CHECKED BY NATIVE SPEAKER"""
 
 # tests the use of the first person possessive, 'wo de'
 def test_i_put_cookie_in_my_box():
@@ -1491,7 +1491,7 @@ def test_speaker_not_owner_of_box():
     )
 
 
-"""TEST HAVE POSSESSION"""
+"""TEST HAVE POSSESSION -- CHECKED BY NATIVE SPEAKER"""
 
 # this tests possession where the speaker has something that they possess
 def test_i_have_my_ball():
@@ -1532,7 +1532,7 @@ def test_you_have_your_ball():
     assert generated_tokens(situation) == ("ni3", "you3", "ni3", "de", "chyou2")
 
 
-"""PATH MODIFIERS"""
+"""PATH MODIFIERS -- CHECKED BY NATIVE SPEAKER"""
 
 # this tests flight over a location using at_some_point
 def test_path_modifier():
@@ -1755,8 +1755,7 @@ def test_mom_sits_on_a_table():
     )
 
 
-"""ADV MODIFICATION"""
-# TODO: check these with native speakers
+"""ADV MODIFICATION -- CHECKED BY NATIVE SPEAKER"""
 
 # fall down testing
 def test_falling_down():
@@ -1854,7 +1853,7 @@ def test_bird_flies_down():
     assert generated_tokens(situation) == ("nyau3", "fei1", "sya4 lai2")
 
 
-"""GO/COME BEHAVE DIFFERENTLY IN CHINESE WITH ADVMODS"""
+"""GO/COME BEHAVE DIFFERENTLY IN CHINESE WITH ADVMODS -- CHECKED BY NATIVE SPEAKER"""
 
 # testing going up
 def test_going_up():
@@ -1991,7 +1990,9 @@ def test_jump_down():
     assert generated_tokens(situation) == ("ba4 ba4", "tyau4", "sya4 lai2")
 
 
-"""GO WITH GOAL"""
+"""GO WITH GOAL -- CHECKED BY NATIVE SPEAKER"""
+
+# TODO: fix this
 
 # this tests dao for going to a region
 def test_to_regions_as_goal():
@@ -2088,7 +2089,9 @@ def test_under_region_as_goal():
     ) == ("gou3", "chyu4", "dau4", "jwo1 dz", "sya4 myan4")
 
 
-"""COME WITH GOAL"""
+"""COME WITH GOAL-- CHECKED BY NATIVE SPEAKER"""
+
+# TODO: fix this
 
 # this tests dao for going to a region
 def test_to_regions_as_goal_come():
@@ -2185,7 +2188,7 @@ def test_under_region_as_goal_come():
     ) == ("gou3", "lai2", "dau4", "jwo1 dz", "sya4 myan4")
 
 
-"""MISC TESTS REPLICATED FROM ENGLISH TESTING FILE"""
+"""MISC TESTS REPLICATED FROM ENGLISH TESTING FILE -- CHECKED BY NATIVE SPEAKER"""
 
 
 def test_roll():
