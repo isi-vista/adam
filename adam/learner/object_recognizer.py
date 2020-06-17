@@ -637,7 +637,7 @@ def replace_match_with_object_graph_node(
 ) -> PerceptionGraph:
     """
     Internal function to replace the nodes of the perception matched by the object pattern
-    with an `ObjectSemantcNode`.
+    with an `ObjectSemanticNode`.
 
     Any external relationships those nodes had is inherited by the `ObjectSemanticNode`.
     """
@@ -772,7 +772,7 @@ def replace_match_root_with_object_semantic_node(
 ) -> PerceptionGraph:
     """
     Internal function to replace the root node of the perception matched by the object pattern
-    with an `ObjectSemantcNode`.
+    with an `ObjectSemanticNode`.
 
     The `ObjectSemanticNode` inherits both the root node's internal relationships and all external
     relationships involving either the root node or its children.
@@ -888,7 +888,8 @@ def replace_match_root_with_object_semantic_node(
         )
 
     perception_digraph.remove_node(root)
-    perception_digraph.remove_nodes_from(duplicate_nodes_to_remove)
+    # perception_digraph.remove_nodes_from(duplicate_nodes_to_remove)
+    perception_digraph.add_node(matched_object_node)
 
     # We want to re-add any relationships linked directly to the root node of an object.
     # Example: water is a liquid
