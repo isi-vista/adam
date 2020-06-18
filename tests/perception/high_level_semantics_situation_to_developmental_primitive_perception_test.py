@@ -764,14 +764,14 @@ def test_colors_across_part_of_relations():
         for black_perception in black_perceptions
     )
 
+
 def test_subobject_perception_has_appropriate_properties():
     """
     Intended to test that an object's subobjects have their properties assigned to them properly
     """
     learner_perception = _PERCEPTION_GENERATOR.generate_perception(
         HighLevelSemanticsSituation(
-            ontology=GAILA_PHASE_1_ONTOLOGY,
-            salient_objects=[situation_object(TABLE)]
+            ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[situation_object(TABLE)]
         ),
         chooser=RandomChooser.for_seed(0),
     )

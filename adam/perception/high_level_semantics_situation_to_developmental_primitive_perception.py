@@ -513,7 +513,9 @@ class _PerceptionGeneration:
             if object_perception in object_perceptions_to_situation_objects:
                 # Focused Objects are in a special field of the Situation, we check if the situation_object
                 # is a focused and apply the tag here if that is the case.
-                situation_object = object_perceptions_to_situation_objects[object_perception]
+                situation_object = object_perceptions_to_situation_objects[
+                    object_perception
+                ]
                 if situation_object in self._situation.gazed_objects:
                     properties_to_perceive.append(GAZED_AT)
 
