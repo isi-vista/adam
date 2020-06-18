@@ -42,6 +42,7 @@ def standard_object(
     added_properties: Iterable[
         Union[OntologyNode, TemplatePropertyVariable]
     ] = immutableset(),
+    banned_ontology_types: Iterable[OntologyNode] = immutableset(),
 ) -> TemplateObjectVariable:
     """
     Preferred method of generating template objects as this automatically prevent liquids and
@@ -55,6 +56,7 @@ def standard_object(
         banned_properties=banned_properties_final,
         required_properties=required_properties,
         added_properties=added_properties,
+        banned_ontology_types=banned_ontology_types,
     )
 
 

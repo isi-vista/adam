@@ -5,16 +5,15 @@ from typing import Any, Callable, List, Mapping, Optional
 from attr.validators import deep_mapping, instance_of
 from networkx import number_weakly_connected_components
 
-from adam.learner.surface_templates import SurfaceTemplateVariable
 from adam.ontology.ontology import Ontology
 from adam.perception.perception_graph import (
     GraphLogger,
-    MatchedObjectNode,
-    MatchedObjectPerceptionPredicate,
+    ObjectSemanticNodePerceptionPredicate,
     PerceptionGraph,
     PerceptionGraphPattern,
     raise_graph_exception,
 )
+from adam.semantics import ObjectSemanticNode, SyntaxSemanticsVariable
 from attr import attrib, attrs
 from immutablecollections import ImmutableDict, immutabledict
 from immutablecollections.converter_utils import _to_immutabledict
@@ -26,25 +25,25 @@ class PerceptionGraphTemplate:
         validator=instance_of(PerceptionGraphPattern), kw_only=True
     )
     template_variable_to_pattern_node: ImmutableDict[
-        SurfaceTemplateVariable, MatchedObjectPerceptionPredicate
+        SyntaxSemanticsVariable, ObjectSemanticNodePerceptionPredicate
     ] = attrib(
         converter=_to_immutabledict,
         kw_only=True,
         validator=deep_mapping(
-            instance_of(SurfaceTemplateVariable),
-            instance_of(MatchedObjectPerceptionPredicate),
+            instance_of(SyntaxSemanticsVariable),
+            instance_of(ObjectSemanticNodePerceptionPredicate),
         ),
         default=immutabledict(),
     )
     pattern_node_to_template_variable: ImmutableDict[
-        MatchedObjectPerceptionPredicate, SurfaceTemplateVariable
+        ObjectSemanticNodePerceptionPredicate, SyntaxSemanticsVariable
     ] = attrib(init=False)
 
     @staticmethod
     def from_graph(
         perception_graph: PerceptionGraph,
         template_variable_to_matched_object_node: Mapping[
-            SurfaceTemplateVariable, MatchedObjectNode
+            SyntaxSemanticsVariable, ObjectSemanticNode
         ],
     ) -> "PerceptionGraphTemplate":
         # It is possible the perception graph has additional recognized objects
@@ -168,7 +167,7 @@ class PerceptionGraphTemplate:
     @pattern_node_to_template_variable.default
     def _init_pattern_node_to_template_variable(
         self
-    ) -> ImmutableDict[MatchedObjectPerceptionPredicate, SurfaceTemplateVariable]:
+    ) -> ImmutableDict[ObjectSemanticNodePerceptionPredicate, SyntaxSemanticsVariable]:
         return immutabledict(
             {v: k for k, v in self.template_variable_to_pattern_node.items()}
         )

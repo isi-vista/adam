@@ -1,7 +1,6 @@
 from itertools import chain
 
 import pytest
-from immutablecollections import immutableset
 
 from adam.curriculum.curriculum_utils import (
     PHASE1_CHOOSER_FACTORY,
@@ -10,38 +9,40 @@ from adam.curriculum.curriculum_utils import (
 )
 from adam.curriculum.phase1_curriculum import (
     _make_come_down_template,
-    make_eat_template,
     make_drink_template,
-    make_sit_templates,
-    make_take_template,
-    make_put_templates,
-    make_push_templates,
-    make_go_templates,
-    make_spin_templates,
+    make_eat_template,
     make_fall_templates,
-    make_throw_templates,
-    make_move_templates,
-    make_jump_templates,
     make_fly_templates,
-    make_roll_templates,
     make_give_templates,
+    make_go_templates,
+    make_jump_templates,
+    make_move_templates,
+    make_push_templates,
+    make_put_templates,
+    make_roll_templates,
+    make_sit_templates,
+    make_spin_templates,
+    make_take_template,
+    make_throw_templates,
 )
 from adam.learner import LearningExample
-from adam.learner.verbs import SubsetVerbLearner
-from adam.ontology import THING, IS_SPEAKER
+from adam.learner.integrated_learner import IntegratedTemplateLearner
+from adam.learner.objects import ObjectRecognizerAsTemplateLearner
+from adam.learner.verbs import SubsetVerbLearner, SubsetVerbLearnerNew
+from adam.ontology import IS_SPEAKER, THING
 from adam.ontology.phase1_ontology import (
     AGENT,
-    GAILA_PHASE_1_ONTOLOGY,
     ANIMATE,
+    GAILA_PHASE_1_ONTOLOGY,
     GOAL,
     HAS_SPACE_UNDER,
-    SELF_MOVING,
     LEARNER,
     PERSON,
     GROUND,
     COME,
     CAN_JUMP,
     EDIBLE,
+    SELF_MOVING,
 )
 from adam.situation import Action
 from adam.situation.templates.phase1_situation_templates import (
@@ -49,12 +50,19 @@ from adam.situation.templates.phase1_situation_templates import (
     _jump_over_template,
 )
 from adam.situation.templates.phase1_templates import Phase1SituationTemplate, sampled
+from immutablecollections import immutableset
 from tests.learner import TEST_OBJECT_RECOGNIZER
 
 LEARNER_FACTORIES = [
     lambda: SubsetVerbLearner(
         object_recognizer=TEST_OBJECT_RECOGNIZER, ontology=GAILA_PHASE_1_ONTOLOGY
-    )
+    ),
+    lambda: IntegratedTemplateLearner(
+        object_learner=ObjectRecognizerAsTemplateLearner(
+            object_recognizer=TEST_OBJECT_RECOGNIZER
+        ),
+        action_learner=SubsetVerbLearnerNew(ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5),
+    ),
 ]
 
 # VerbPursuitLearner(
@@ -112,7 +120,7 @@ def run_verb_test(learner, situation_template):
         descriptions_from_learner = learner.describe(test_perceptual_representation)
         gold = test_lingustics_description.as_token_sequence()
         assert descriptions_from_learner
-        assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
+        assert gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
 
 
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
@@ -151,7 +159,6 @@ def test_push(learner_factory):
 
 
 # GO
-@pytest.mark.skip("too slow")
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_go(learner_factory):
     goer = standard_object("goer", THING, required_properties=[ANIMATE])
@@ -174,7 +181,6 @@ def test_go(learner_factory):
 
 
 # COME
-@pytest.mark.skip("too slow")
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_come(learner_factory):
     movee = standard_object("movee", required_properties=[SELF_MOVING])
