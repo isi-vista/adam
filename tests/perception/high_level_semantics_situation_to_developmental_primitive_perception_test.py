@@ -763,3 +763,28 @@ def test_colors_across_part_of_relations():
         in property_assertions
         for black_perception in black_perceptions
     )
+
+def test_subobject_perception_has_appropriate_properties():
+    """
+    Intended to test that an object's subobjects have their properties assigned to them properly
+    """
+    learner_perception = _PERCEPTION_GENERATOR.generate_perception(
+        HighLevelSemanticsSituation(
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+            salient_objects=[situation_object(TABLE)]
+        ),
+        chooser=RandomChooser.for_seed(0),
+    )
+    frame = learner_perception.frames[0]
+    property_assertions = frame.property_assertions
+
+    leg_perceptions = [
+        perception_with_handle(frame, "(furniture) leg_0"),
+        perception_with_handle(frame, "(furniture) leg_1"),
+        perception_with_handle(frame, "(furniture) leg_2"),
+        perception_with_handle(frame, "(furniture) leg_3"),
+    ]
+    assert all(
+        HasBinaryProperty(leg_perception, INANIMATE) in property_assertions
+        for leg_perception in leg_perceptions
+    )
