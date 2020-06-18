@@ -456,6 +456,8 @@ class _PerceptionGeneration:
         return region.copy_remapping_objects(self._objects_to_perceptions)
 
     def _perceive_property_assertions(self) -> None:
+        # Situation objects require some special logic, so we need to be able to (1) check if a
+        # perception came from a situation object, and (2) get the situation object if so.
         object_perceptions_to_situation_objects = {
             perception: situation_object
             for situation_object, perception in self._objects_to_perceptions.items()
