@@ -24,10 +24,18 @@ from adam.situation.templates.phase1_templates import (
     color_variable,
     object_variable,
 )
+from adam.language_specific.english.english_language_generator import (
+    GAILA_PHASE_1_LANGUAGE_GENERATOR,
+)
+from adam.language_specific.chinese.chinese_language_generator import (
+    GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
+)
 
 
 def run_subset_learner_for_object(
-    obj: OntologyNode, debug_callback: Optional[DebugCallableType] = None
+    obj: OntologyNode,
+    debug_callback: Optional[DebugCallableType] = None,
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ):
     learner_obj = object_variable("learner_0", LEARNER)
     colored_obj_object = object_variable(
@@ -47,7 +55,9 @@ def run_subset_learner_for_object(
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
         ),
+        language_generator=language_generator,
     )
+
     test_obj_curriculum = phase1_instances(
         "obj test",
         situations=all_possible(
@@ -55,6 +65,7 @@ def run_subset_learner_for_object(
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
         ),
+        language_generator=language_generator,
     )
 
     learner = SubsetObjectLearner(
@@ -81,6 +92,12 @@ def run_subset_learner_for_object(
             assert [desc.as_token_sequence() for desc in descriptions_from_learner][
                 0
             ] == gold
+
+
+def test_subset_learner_chinese():
+    run_subset_learner_for_object(
+        BALL, language_generator=GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR
+    )
 
 
 def test_subset_learner_ball():
