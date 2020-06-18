@@ -104,10 +104,13 @@ def test_subset_learner_ball(language_generator):
     run_subset_learner_for_object(BALL, language_generator=language_generator)
 
 
-def test_subset_learner_dog():
-    # debug_callback = DumpPartialMatchCallback(render_path="../renders/")
-    # We pass this callback into the learner; it is executed if the learning takes too long, i.e after 60 seconds.
-    run_subset_learner_for_object(DOG)
+# test learning "dog" in both languages
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
+)
+def test_subset_learner_dog(language_generator):
+    run_subset_learner_for_object(DOG, language_generator=language_generator)
 
 
 def test_pursuit_object_learner():
