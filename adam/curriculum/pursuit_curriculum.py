@@ -7,9 +7,6 @@ Paper: The Pursuit of Word Meanings (Stevens et al., 2017)
 from adam.language_specific.english.english_language_generator import (
     GAILA_PHASE_1_LANGUAGE_GENERATOR,
 )
-from adam.language_specific.chinese.chinese_language_generator import (
-    GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
-)
 from adam.curriculum import ExplicitWithSituationInstanceGroup
 from adam.curriculum.curriculum_utils import (
     phase1_instances,
