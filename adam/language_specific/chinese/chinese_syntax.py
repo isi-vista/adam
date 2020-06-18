@@ -60,14 +60,23 @@ _CHINESE_HEAD_TO_ROLE_ORDER: ImmutableDict[
             CLASSIFIER,
             ADJECTIVAL_MODIFIER,
             HEAD,
-            CASE_POSSESSIVE,
+            IS_ATTRIBUTE,
             NOMINAL_MODIFIER,
+            CASE_POSSESSIVE,
         ),
     ),
     # a similar structure applies for proper nouns, with the same localizer/preposition issue
     (
         PROPER_NOUN,
-        (CASE_SPATIAL, ADJECTIVAL_MODIFIER, HEAD, CASE_POSSESSIVE, NOMINAL_MODIFIER),
+        (
+            CASE_SPATIAL,
+            NOMINAL_MODIFIER_POSSESSIVE,
+            ADJECTIVAL_MODIFIER,
+            HEAD,
+            IS_ATTRIBUTE,
+            CASE_POSSESSIVE,
+            NOMINAL_MODIFIER,
+        ),
     ),
 ]
 
