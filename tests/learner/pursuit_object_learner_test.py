@@ -113,7 +113,11 @@ def test_subset_learner_dog(language_generator):
     run_subset_learner_for_object(DOG, language_generator=language_generator)
 
 
-def test_pursuit_object_learner():
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
+)
+def test_pursuit_object_learner(language_generator):
     target_objects = [
         BALL,
         # PERSON,
@@ -169,9 +173,14 @@ def test_pursuit_object_learner():
         num_instances=15,
         num_objects_in_instance=3,
         num_noise_instances=0,
+        language_generator=language_generator,
     )
 
-    test_obj_curriculum = phase1_instances("obj test", situations=target_test_templates)
+    test_obj_curriculum = phase1_instances(
+        "obj test",
+        situations=target_test_templates,
+        language_generator=language_generator,
+    )
 
     # All parameters should be in the range 0-1.
     # Learning factor works better when kept < 0.5
