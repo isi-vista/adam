@@ -33,11 +33,8 @@ from adam.ontology import IS_SPEAKER, THING
 from adam.ontology.phase1_ontology import (
     AGENT,
     ANIMATE,
-    CAN_JUMP,
-    COME,
     GAILA_PHASE_1_ONTOLOGY,
     GOAL,
-    GROUND,
     HAS_SPACE_UNDER,
     LEARNER,
     PERSON,

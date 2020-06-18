@@ -127,7 +127,7 @@ UnwrappedPerceptionGraphNode = Union[
     Region[Any],
     Geon,
     GeonAxis,
-    MatchedObjectNode,
+    ObjectSemanticNode,
     SpatialPath[ObjectPerception],
     PathOperator,
 ]
