@@ -299,26 +299,26 @@ class SpatialPath(Generic[ReferenceObjectT]):
             self.reference_axis.accumulate_referenced_objects(object_accumulator)
 
     def unify(
-        self, other_path: "SpatialPath[ReferenceObjectT]"
+        self, other_path: "SpatialPath[ReferenceObjectT]", *, override: bool = False
     ) -> "SpatialPath[ReferenceObjectT]":
         if self.reference_object != other_path.reference_object:
             raise RuntimeError(
                 f"Can not unify two spatial paths with different reference objects, {self} and {other_path}"
             )
 
-        if self.operator and other_path.operator:
+        if self.operator and other_path.operator and not override:
             if self.operator != other_path.operator:
                 raise RuntimeError(
                     f"Can not unify two spatial paths with different path operators. {self} and {other_path}"
                 )
 
-        if self.reference_axis and other_path.reference_axis:
+        if self.reference_axis and other_path.reference_axis and not override:
             if self.reference_axis != other_path.reference_axis:
                 raise RuntimeError(
                     f"Can not unify two spatial paths with different reference axis. {self} and {other_path}"
                 )
 
-        if self.orientation_changed and other_path.orientation_changed:
+        if self.orientation_changed and other_path.orientation_changed and not override:
             if self.orientation_changed != other_path.orientation_changed:
                 raise RuntimeError(
                     f"Can not unify two spatial paths with different orientated changed indicators. {self} and {other_path}"

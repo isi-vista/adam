@@ -59,6 +59,12 @@ class DuringAction(Generic[_ObjectT]):
             relation.accumulate_referenced_objects(object_accumulator)
 
     def union(self, other_during: "DuringAction[_ObjectT]") -> "DuringAction[_ObjectT]":
+        """
+        Unify two DuringAction together.
+
+        For unifying spatial paths,
+        the paths from `self` override any conflicts in `other_during`
+        """
         objects_to_paths = immutablesetmultidict(
             chain(self.objects_to_paths.items(), other_during.objects_to_paths.items())
         )
@@ -71,7 +77,7 @@ class DuringAction(Generic[_ObjectT]):
                 if path not in paths_to_skip:
                     for i in range(num, len(paths)):
                         if path.reference_object == paths[i].reference_object:
-                            path.unify(paths[i])
+                            path.unify(paths[i], override=True)
                             paths_to_skip.add(paths[i])
                     objects_to_unified_paths.append((obj, path))
 
