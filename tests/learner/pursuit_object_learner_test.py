@@ -1,4 +1,5 @@
 import logging
+import pytest
 import random
 from itertools import chain
 from typing import Optional
@@ -94,14 +95,13 @@ def run_subset_learner_for_object(
             ] == gold
 
 
-def test_subset_learner_chinese():
-    run_subset_learner_for_object(
-        BALL, language_generator=GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR
-    )
-
-
-def test_subset_learner_ball():
-    run_subset_learner_for_object(BALL)
+# tests learning "ball" in both languages
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
+)
+def test_subset_learner_ball(language_generator):
+    run_subset_learner_for_object(BALL, language_generator=language_generator)
 
 
 def test_subset_learner_dog():
