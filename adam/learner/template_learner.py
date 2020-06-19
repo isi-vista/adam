@@ -97,6 +97,7 @@ class AbstractTemplateLearner(
         matched_objects_to_names = (
             preprocessing_result.description_to_matched_object_node.inverse()
         )
+        print("MATCHED", matched_objects_to_names)
         # This accumulates our output.
         match_to_score: List[
             Tuple[TokenSequenceLinguisticDescription, PerceptionGraphTemplate, float]
