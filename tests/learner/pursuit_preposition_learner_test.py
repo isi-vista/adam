@@ -517,7 +517,11 @@ def test_pursuit_preposition_in_front_learner(language_generator):
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
 
 
-def test_pursuit_preposition_has_learner():
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
+)
+def test_pursuit_preposition_has_learner(language_generator):
     person = standard_object("person", PERSON)
     inanimate_object = standard_object(
         "inanimate-object", INANIMATE_OBJECT, required_properties=[PERSON_CAN_HAVE]
@@ -532,6 +536,7 @@ def test_pursuit_preposition_has_learner():
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=2,
         ),
+        language_generator=language_generator,
     )
 
     has_test_curriculum = phase1_instances(
@@ -542,6 +547,7 @@ def test_pursuit_preposition_has_learner():
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
         ),
+        language_generator=language_generator,
     )
 
     rng = random.Random()
@@ -562,7 +568,8 @@ def test_pursuit_preposition_has_learner():
         perceptual_representation,
     ) in has_train_curriculum.instances():
         learner.observe(
-            LearningExample(perceptual_representation, linguistic_description)
+            LearningExample(perceptual_representation, linguistic_description),
+            language_generator=language_generator,
         )
 
     for (
@@ -570,7 +577,9 @@ def test_pursuit_preposition_has_learner():
         test_lingustics_description,
         test_perceptual_representation,
     ) in has_test_curriculum.instances():
-        descriptions_from_learner = learner.describe(test_perceptual_representation)
+        descriptions_from_learner = learner.describe(
+            test_perceptual_representation, language_generator=language_generator
+        )
         gold = test_lingustics_description.as_token_sequence()
         assert descriptions_from_learner
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
