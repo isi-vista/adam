@@ -95,6 +95,7 @@ def phase1_instances(
     description: str,
     situations: Iterable[HighLevelSemanticsSituation],
     perception_generator: HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator = GAILA_PHASE_1_PERCEPTION_GENERATOR,
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     """
     Convenience method for more compactly creating sub-curricula for phase 1.
@@ -103,7 +104,7 @@ def phase1_instances(
     return GeneratedFromSituationsInstanceGroup(
         description,
         situations=situations,
-        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+        language_generator=language_generator,
         perception_generator=perception_generator,
         chooser=PHASE1_CHOOSER_FACTORY(),
     )

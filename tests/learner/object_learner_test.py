@@ -1,4 +1,5 @@
 import logging
+import pytest
 import random
 from itertools import chain
 from typing import Optional
@@ -7,8 +8,7 @@ from adam.curriculum.phase1_curriculum import PHASE1_CHOOSER_FACTORY, phase1_ins
 from adam.curriculum.pursuit_curriculum import make_simple_pursuit_curriculum
 from adam.language_specific.english.english_language_generator import IGNORE_COLORS
 from adam.learner import LearningExample
-from adam.learner.integrated_learner import IntegratedTemplateLearner
-from adam.learner.objects import ObjectPursuitLearner, SubsetObjectLearnerNew
+from adam.learner.objects import ObjectPursuitLearner, SubsetObjectLearner
 from adam.ontology import OntologyNode
 from adam.ontology.phase1_ontology import (
     BALL,
@@ -25,10 +25,18 @@ from adam.situation.templates.phase1_templates import (
     color_variable,
     object_variable,
 )
+from adam.language_specific.english.english_language_generator import (
+    GAILA_PHASE_1_LANGUAGE_GENERATOR,
+)
+from adam.language_specific.chinese.chinese_language_generator import (
+    GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
+)
 
 
 def run_subset_learner_for_object(
-    obj: OntologyNode, debug_callback: Optional[DebugCallableType] = None
+    obj: OntologyNode,
+    debug_callback: Optional[DebugCallableType] = None,
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ):
     learner_obj = object_variable("learner_0", LEARNER)
     colored_obj_object = object_variable(
@@ -48,7 +56,9 @@ def run_subset_learner_for_object(
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
         ),
+        language_generator=language_generator,
     )
+
     test_obj_curriculum = phase1_instances(
         "obj test",
         situations=all_possible(
@@ -56,14 +66,12 @@ def run_subset_learner_for_object(
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
         ),
+        language_generator=language_generator,
     )
 
-    learner = IntegratedTemplateLearner(
-        object_learner=SubsetObjectLearnerNew(
-            ontology=GAILA_PHASE_1_ONTOLOGY, debug_callback=debug_callback, beam_size=5
-        )
+    learner = SubsetObjectLearner(
+        ontology=GAILA_PHASE_1_ONTOLOGY, debug_callback=debug_callback
     )
-
     for training_stage in [obj_curriculum]:
         for (
             _,
@@ -82,22 +90,34 @@ def run_subset_learner_for_object(
         ) in test_instance_group.instances():
             descriptions_from_learner = learner.describe(test_instance_perception)
             gold = test_instance_language.as_token_sequence()
-            assert gold in [
-                desc.as_token_sequence() for desc in descriptions_from_learner
-            ]
+            assert [desc.as_token_sequence() for desc in descriptions_from_learner][
+                0
+            ] == gold
 
 
-def test_subset_learner_ball():
-    run_subset_learner_for_object(BALL)
+# tests learning "ball" in both languages
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
+)
+def test_subset_learner_ball(language_generator):
+    run_subset_learner_for_object(BALL, language_generator=language_generator)
 
 
-def test_subset_learner_dog():
-    # debug_callback = DumpPartialMatchCallback(render_path="../renders/")
-    # We pass this callback into the learner; it is executed if the learning takes too long, i.e after 60 seconds.
-    run_subset_learner_for_object(DOG)
+# test learning "dog" in both languages
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
+)
+def test_subset_learner_dog(language_generator):
+    run_subset_learner_for_object(DOG, language_generator=language_generator)
 
 
-def test_pursuit_object_learner():
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
+)
+def test_pursuit_object_learner(language_generator):
     target_objects = [
         BALL,
         # PERSON,
@@ -153,9 +173,14 @@ def test_pursuit_object_learner():
         num_instances=15,
         num_objects_in_instance=3,
         num_noise_instances=0,
+        language_generator=language_generator,
     )
 
-    test_obj_curriculum = phase1_instances("obj test", situations=target_test_templates)
+    test_obj_curriculum = phase1_instances(
+        "obj test",
+        situations=target_test_templates,
+        language_generator=language_generator,
+    )
 
     # All parameters should be in the range 0-1.
     # Learning factor works better when kept < 0.5
