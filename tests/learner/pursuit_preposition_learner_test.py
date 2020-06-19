@@ -2,6 +2,8 @@ import random
 
 from adam.curriculum.phase1_curriculum import _x_has_y_template
 from immutablecollections import immutableset
+from adam.language_specific.english.english_language_generator import GAILA_PHASE_1_LANGUAGE_GENERATOR
+from adam.language_specific.chinese.chinese_language_generator import GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR
 
 from adam.curriculum.curriculum_utils import (
     standard_object,
@@ -34,6 +36,69 @@ from adam.ontology.phase1_ontology import (
 )
 from adam.situation.templates.phase1_templates import sampled, object_variable
 from tests.learner import TEST_OBJECT_RECOGNIZER
+
+
+
+def test_pursuit_preposition_on_learner_chinese():
+    rng = random.Random()
+    rng.seed(0)
+    learner = PrepositionPursuitLearner(
+        learning_factor=0.5,
+        graph_match_confirmation_threshold=0.7,
+        lexicon_entry_threshold=0.7,
+        rng=rng,
+        smoothing_parameter=0.001,
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        object_recognizer=TEST_OBJECT_RECOGNIZER,
+    )  # type: ignore
+    ball = standard_object("ball", BALL)
+    table = standard_object("table", TABLE)
+    on_train_curriculum = phase1_instances(
+        "Preposition Unit Train",
+        situations=sampled(
+            _on_template(ball, table, immutableset(), is_training=True),
+            chooser=PHASE1_CHOOSER_FACTORY(),
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+            max_to_sample=10,
+        ),
+        language_generator=GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
+    )
+    #ON_TRAIN_CURRICULUM IS ALRIGHT
+    on_test_curriculum = phase1_instances(
+        "Preposition Unit Test",
+        situations=sampled(
+            _on_template(ball, table, immutableset(), is_training=False),
+            chooser=PHASE1_CHOOSER_FACTORY(),
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+            max_to_sample=1,
+        ),
+        language_generator=GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
+    )
+    #ON_TEST_CURRICULUM IS ALRIGHT
+    for (
+        _,
+        linguistic_description,
+        perceptual_representation,
+    ) in on_train_curriculum.instances():
+        # Get the object matches first - preposition learner can't learn without already recognized objects
+        learner.observe(
+            LearningExample(perceptual_representation, linguistic_description)
+        )
+
+    for (
+        _,
+        test_lingustics_description,
+        test_perceptual_representation,
+    ) in on_test_curriculum.instances():
+        descriptions_from_learner = learner.describe(test_perceptual_representation)
+        gold = test_lingustics_description.as_token_sequence()
+        assert descriptions_from_learner
+        assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
+
+
+
+
+
 
 
 def test_pursuit_preposition_on_learner():

@@ -64,6 +64,7 @@ class AbstractPrepositionTemplateLearner(AbstractTemplateLearner, ABC):
     def _preprocess_scene_for_learning(
         self, language_aligned_perception: LanguageAlignedPerception
     ) -> LanguageAlignedPerception:
+        #the language_aligned_perception is ok
         post_recognition_object_perception_alignment = self._object_recognizer.match_objects_with_language(
             language_aligned_perception
         )

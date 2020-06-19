@@ -385,6 +385,7 @@ class ObjectRecognizer:
         before prepositional and verbal learning experiments.
         """
         match_result = self.match_objects(language_aligned_perception.perception_graph)
+        #match_result matches to english for both
         return LanguageAlignedPerception(
             language=language_aligned_perception.language,
             perception_graph=match_result.perception_graph,
