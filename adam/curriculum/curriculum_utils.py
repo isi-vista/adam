@@ -8,7 +8,13 @@ from adam.language_specific.english.english_language_generator import (
     GAILA_PHASE_1_LANGUAGE_GENERATOR,
 )
 from adam.ontology import OntologyNode
-from adam.ontology.phase1_ontology import GROUND, INANIMATE_OBJECT, IS_BODY_PART, LIQUID
+from adam.ontology.phase1_ontology import (
+    GROUND,
+    INANIMATE_OBJECT,
+    IS_BODY_PART,
+    LIQUID,
+    LEARNER,
+)
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
@@ -110,3 +116,7 @@ def make_background(
     Convenience method for determining which objects in the situation should be background objects
     """
     return immutableset(object_ for object_ in all_objects if object_ not in salient)
+
+
+def learner_template_factory() -> TemplateObjectVariable:
+    return standard_object("learner_factory", LEARNER)

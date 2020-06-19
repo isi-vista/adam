@@ -22,7 +22,7 @@ from adam.language_specific.english.english_language_generator import (
     ATTRIBUTES_AS_X_IS_Y,
     IGNORE_COLORS,
 )
-from adam.ontology import IS_ADDRESSEE, IS_SPEAKER, THING
+from adam.ontology import IS_ADDRESSEE, IS_SPEAKER, THING, OntologyNode
 from adam.ontology.during import DuringAction
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
@@ -373,46 +373,91 @@ def _make_my_your_object_curriculum(num_to_sample: int = 20) -> Phase1InstanceGr
     )
 
 
+def falling_template(
+    theme: TemplateObjectVariable,
+    *,
+    lands_on_ground: bool,
+    syntax_hints: Iterable[str],
+    spatial_properties: Iterable[OntologyNode] = immutableset(),
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        "object-falls",
+        salient_object_variables=[theme],
+        background_object_variables=[GROUND_OBJECT_TEMPLATE],
+        actions=[
+            Action(
+                action_type=FALL,
+                argument_roles_to_fillers=[(THEME, theme)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            theme,
+                            SpatialPath(
+                                None,
+                                reference_object=GROUND_OBJECT_TEMPLATE,
+                                properties=spatial_properties,
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+        syntax_hints=syntax_hints,
+        before_action_relations=[negate(contacts(theme, GROUND_OBJECT_TEMPLATE))],
+        after_action_relations=flatten_relations([on(theme, GROUND_OBJECT_TEMPLATE)])
+        if lands_on_ground
+        else flatten_relations([negate(contacts(theme, GROUND_OBJECT_TEMPLATE))]),
+    )
+
+
+def fall_on_ground_template(
+    theme: TemplateObjectVariable,
+    *,
+    spatial_properties: Iterable[OntologyNode] = immutableset(),
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        "falls-to-ground",
+        salient_object_variables=[theme, GROUND_OBJECT_TEMPLATE],
+        actions=[
+            Action(
+                action_type=FALL,
+                argument_roles_to_fillers=[(THEME, theme)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            theme,
+                            SpatialPath(
+                                None,
+                                reference_object=GROUND_OBJECT_TEMPLATE,
+                                properties=spatial_properties,
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+        before_action_relations=[negate(on(theme, GROUND_OBJECT_TEMPLATE))],
+        after_action_relations=[on(theme, GROUND_OBJECT_TEMPLATE)],
+    )
+
+
 def make_fall_templates() -> Iterable[Phase1SituationTemplate]:
     arbitary_object = standard_object("object_0", THING)
-    ground = object_variable("ground_0", GROUND)
+    syntax_hints_options = ([], [USE_ADVERBIAL_PATH_MODIFIER])  # type: ignore
 
     # Any Object Falling
-    for object_ends_up_on_ground in (True, False):
-        if object_ends_up_on_ground:
-            after_action_relations = flatten_relations([on(arbitary_object, ground)])
-        else:
-            after_action_relations = flatten_relations(
-                [negate(contacts(arbitary_object, ground))]
-            )
-
-        for use_adverbial_path_modifier in (True, False):
-            yield Phase1SituationTemplate(
-                "object-falls",
-                salient_object_variables=[arbitary_object],
-                background_object_variables=[ground],
-                actions=[
-                    Action(
-                        action_type=FALL,
-                        argument_roles_to_fillers=[(THEME, arbitary_object)],
-                    )
-                ],
-                syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER]
-                if use_adverbial_path_modifier
-                else [],
-                before_action_relations=[negate(contacts(arbitary_object, ground))],
-                after_action_relations=after_action_relations,
-            )
+    object_falling = [
+        falling_template(
+            arbitary_object,
+            lands_on_ground=object_ends_up_on_ground,
+            syntax_hints=syntax_hints,
+        )
+        for object_ends_up_on_ground in (True, False)
+        for syntax_hints in syntax_hints_options
+    ]
 
     # "ball fell on the ground"
-    yield Phase1SituationTemplate(
-        "falls-to-ground",
-        salient_object_variables=[arbitary_object, ground],
-        actions=[
-            Action(action_type=FALL, argument_roles_to_fillers=[(THEME, arbitary_object)])
-        ],
-        after_action_relations=[on(arbitary_object, ground)],
-    )
+    return object_falling + [fall_on_ground_template(arbitary_object)]
 
 
 def _make_fall_curriculum() -> Phase1InstanceGroup:
@@ -610,6 +655,38 @@ def _make_object_in_other_object_curriculum() -> Phase1InstanceGroup:
     )
 
 
+def bare_fly(
+    agent: TemplateObjectVariable,
+    *,
+    up: bool,
+    syntax_hints: Iterable[str],
+    spatial_properties: Iterable[OntologyNode] = immutableset(),
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        "fly",
+        salient_object_variables=[agent],
+        actions=[
+            Action(
+                FLY,
+                argument_roles_to_fillers=[(AGENT, agent)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            agent,
+                            SpatialPath(
+                                AWAY_FROM if up else TOWARD,
+                                reference_object=GROUND_OBJECT_TEMPLATE,
+                                properties=spatial_properties,
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+        syntax_hints=syntax_hints,
+    )
+
+
 def make_fly_templates() -> Iterable[Phase1SituationTemplate]:
     bird = standard_object("bird_0", BIRD)
     object_0 = standard_object("object_0", THING)
@@ -618,35 +695,14 @@ def make_fly_templates() -> Iterable[Phase1SituationTemplate]:
     )
     syntax_hints_options = ([], [USE_ADVERBIAL_PATH_MODIFIER])  # type: ignore
 
-    bare_fly = [
-        Phase1SituationTemplate(
-            "fly",
-            salient_object_variables=[bird],
-            actions=[
-                Action(
-                    FLY,
-                    argument_roles_to_fillers=[(AGENT, bird)],
-                    during=DuringAction(
-                        objects_to_paths=[
-                            (
-                                bird,
-                                SpatialPath(
-                                    AWAY_FROM if up else TOWARD,
-                                    reference_object=GROUND_OBJECT_TEMPLATE,
-                                ),
-                            )
-                        ]
-                    ),
-                )
-            ],
-            syntax_hints=syntax_hints,
-        )
+    fly_templates = [
+        bare_fly(bird, up=up, syntax_hints=syntax_hints)
         for up in (True, False)
         for syntax_hints in syntax_hints_options
     ]
     # We have fly under disabled due to long run times
     # See https://github.com/isi-vista/adam/issues/672
-    return bare_fly + [
+    return fly_templates + [
         _fly_under_template(bird, object_with_space_under, []),
         _fly_over_template(bird, object_0, []),
     ]
@@ -670,6 +726,105 @@ def _make_fly_curriculum() -> Phase1InstanceGroup:
     )
 
 
+def intransitive_roll(
+    agent: TemplateObjectVariable,
+    surface: TemplateObjectVariable,
+    *,
+    spatial_properties: Iterable[OntologyNode] = immutableset(),
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        "roll-intransitive",
+        salient_object_variables=[agent],
+        actions=[
+            Action(
+                ROLL,
+                argument_roles_to_fillers=[(AGENT, agent)],
+                auxiliary_variable_bindings=[(ROLL_SURFACE_AUXILIARY, surface)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            agent,
+                            SpatialPath(
+                                None,
+                                reference_object=surface,
+                                properties=spatial_properties,
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+        constraining_relations=[bigger_than(surface, agent)],
+    )
+
+
+def transitive_roll(
+    agent: TemplateObjectVariable,
+    theme: TemplateObjectVariable,
+    surface: TemplateObjectVariable,
+    *,
+    spatial_properties: Iterable[OntologyNode] = immutableset(),
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        "roll-transitive",
+        salient_object_variables=[agent, theme],
+        actions=[
+            Action(
+                ROLL,
+                argument_roles_to_fillers=[(AGENT, agent), (THEME, theme)],
+                auxiliary_variable_bindings=[(ROLL_SURFACE_AUXILIARY, surface)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            theme,
+                            SpatialPath(
+                                None,
+                                reference_object=surface,
+                                properties=spatial_properties,
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+        constraining_relations=[bigger_than(agent, theme)],
+    )
+
+
+def transitive_roll_with_surface(
+    agent: TemplateObjectVariable,
+    theme: TemplateObjectVariable,
+    surface: TemplateObjectVariable,
+    *,
+    spatial_properties: Iterable[OntologyNode] = immutableset(),
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        "roll-transitive-with-salient-surface",
+        salient_object_variables=[agent, theme, surface],
+        actions=[
+            Action(
+                ROLL,
+                argument_roles_to_fillers=[(AGENT, agent), (THEME, theme)],
+                auxiliary_variable_bindings=[(ROLL_SURFACE_AUXILIARY, surface)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            theme,
+                            SpatialPath(
+                                None,
+                                reference_object=surface,
+                                properties=spatial_properties,
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+        asserted_always_relations=[on(theme, surface)],
+        constraining_relations=[bigger_than([surface, agent], theme)],
+    )
+
+
 def make_roll_templates() -> Iterable[Phase1SituationTemplate]:
     animate_0 = standard_object("object_0", THING, required_properties=[ANIMATE])
     rollable_0 = standard_object(
@@ -679,52 +834,14 @@ def make_roll_templates() -> Iterable[Phase1SituationTemplate]:
         "surface", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
     )
 
-    # rolls intransitively
-    # rolls transitively
-    # rolls on a surface
-    intransitive_roll = Phase1SituationTemplate(
-        "roll-intransitive",
-        salient_object_variables=[animate_0],
-        actions=[
-            Action(
-                ROLL,
-                argument_roles_to_fillers=[(AGENT, animate_0)],
-                auxiliary_variable_bindings=[(ROLL_SURFACE_AUXILIARY, rolling_surface)],
-            )
-        ],
-        constraining_relations=[bigger_than(rolling_surface, animate_0)],
-    )
-
-    transitive_roll = Phase1SituationTemplate(
-        "roll-transitive",
-        salient_object_variables=[animate_0, rollable_0],
-        actions=[
-            Action(
-                ROLL,
-                argument_roles_to_fillers=[(AGENT, animate_0), (THEME, rollable_0)],
-                auxiliary_variable_bindings=[(ROLL_SURFACE_AUXILIARY, rolling_surface)],
-            )
-        ],
-        constraining_relations=[bigger_than(animate_0, rollable_0)],
-    )
-
-    transitive_roll_with_surface = Phase1SituationTemplate(
-        "roll-transitive-with-salient-surface",
-        salient_object_variables=[animate_0, rollable_0, rolling_surface],
-        actions=[
-            Action(
-                ROLL,
-                argument_roles_to_fillers=[(AGENT, animate_0), (THEME, rollable_0)],
-                auxiliary_variable_bindings=[(ROLL_SURFACE_AUXILIARY, rolling_surface)],
-            )
-        ],
-        asserted_always_relations=[on(rollable_0, rolling_surface)],
-        constraining_relations=[
-            bigger_than(rolling_surface, rollable_0),
-            bigger_than(animate_0, rollable_0),
-        ],
-    )
-    return [intransitive_roll, transitive_roll, transitive_roll_with_surface]
+    return [
+        # rolls intransitively
+        intransitive_roll(animate_0, rolling_surface),
+        # rolls transitively
+        transitive_roll(animate_0, rollable_0, rolling_surface),
+        # rolls on a surface
+        transitive_roll_with_surface(animate_0, rollable_0, rolling_surface),
+    ]
 
 
 def _make_roll_curriculum() -> Phase1InstanceGroup:
@@ -803,31 +920,49 @@ def _make_speaker_addressee_curriculum() -> Phase1InstanceGroup:
     )
 
 
-def make_jump_templates() -> Iterable[Phase1SituationTemplate]:
-    jumper = standard_object("jumper_0", THING, required_properties=[CAN_JUMP])
+def make_jump_template(
+    agent: TemplateObjectVariable,
+    *,
+    use_adverbial_path_modifier: bool,
+    spatial_properties: Iterable[OntologyNode] = immutableset(),
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        "jump-on-ground",
+        salient_object_variables=[agent],
+        actions=[
+            Action(
+                JUMP,
+                argument_roles_to_fillers=[(AGENT, agent)],
+                auxiliary_variable_bindings=[
+                    (JUMP_INITIAL_SUPPORTER_AUX, GROUND_OBJECT_TEMPLATE)
+                ],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            agent,
+                            SpatialPath(
+                                None,
+                                reference_object=GROUND_OBJECT_TEMPLATE,
+                                properties=spatial_properties,
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER] if use_adverbial_path_modifier else [],
+    )
 
-    # "A person jumps"
+
+def make_jump_templates():
+    jumper = standard_object("jumper_0", THING, required_properties=[CAN_JUMP])
     for use_adverbial_path_modifier in (True, False):
-        yield Phase1SituationTemplate(
-            "jump-on-ground",
-            salient_object_variables=[jumper],
-            actions=[
-                Action(
-                    JUMP,
-                    argument_roles_to_fillers=[(AGENT, jumper)],
-                    auxiliary_variable_bindings=[
-                        (JUMP_INITIAL_SUPPORTER_AUX, GROUND_OBJECT_TEMPLATE)
-                    ],
-                )
-            ],
-            syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER]
-            if use_adverbial_path_modifier
-            else [],
+        yield make_jump_template(
+            jumper, use_adverbial_path_modifier=use_adverbial_path_modifier
         )
 
 
 def _make_jump_curriculum() -> Phase1InstanceGroup:
-
     jumper = standard_object("jumper_0", THING, required_properties=[CAN_JUMP])
     jumped_over = standard_object("jumped_over")
 
@@ -837,11 +972,15 @@ def _make_jump_curriculum() -> Phase1InstanceGroup:
             flatten(
                 [
                     all_possible(
-                        template,
+                        # "A person jumps"
+                        make_jump_template(
+                            jumper,
+                            use_adverbial_path_modifier=use_adverbial_path_modifier,
+                        ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                     )
-                    for template in make_jump_templates()
+                    for use_adverbial_path_modifier in (True, False)
                 ]
             ),
             flatten(
@@ -1137,6 +1276,75 @@ def _make_take_curriculum() -> Phase1InstanceGroup:
     )
 
 
+def bare_move_template(
+    agent: TemplateObjectVariable,
+    goal_reference: TemplateObjectVariable,
+    *,
+    spatial_properties: Iterable[OntologyNode] = immutableset(),
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        "bare-move",
+        salient_object_variables=[agent],
+        actions=[
+            Action(
+                MOVE,
+                argument_roles_to_fillers=[(AGENT, agent)],
+                auxiliary_variable_bindings=[
+                    (MOVE_GOAL, Region(goal_reference, distance=PROXIMAL))
+                ],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            agent,
+                            SpatialPath(
+                                None,
+                                reference_object=goal_reference,
+                                properties=spatial_properties,
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+    )
+
+
+def transitive_move_template(
+    agent: TemplateObjectVariable,
+    theme: TemplateObjectVariable,
+    goal_reference: TemplateObjectVariable,
+    *,
+    spatial_properties: Iterable[OntologyNode] = immutableset(),
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        "transitive-move",
+        salient_object_variables=[agent, theme],
+        actions=[
+            Action(
+                MOVE,
+                argument_roles_to_fillers=[(AGENT, agent), (THEME, theme)],
+                during=DuringAction(
+                    continuously=[contacts(agent, theme)],
+                    objects_to_paths=[
+                        (
+                            theme,
+                            SpatialPath(
+                                None,
+                                reference_object=goal_reference,
+                                properties=spatial_properties,
+                            ),
+                        )
+                    ],
+                ),
+                auxiliary_variable_bindings=[
+                    (MOVE_GOAL, Region(goal_reference, distance=PROXIMAL))
+                ],
+            )
+        ],
+        constraining_relations=[bigger_than(agent, theme)],
+    )
+
+
 def make_move_templates() -> Iterable[Phase1SituationTemplate]:
     self_mover_0 = standard_object(
         "self-mover_0", THING, required_properties=[SELF_MOVING]
@@ -1148,36 +1356,12 @@ def make_move_templates() -> Iterable[Phase1SituationTemplate]:
         "move-goal-reference", THING, required_properties=[INANIMATE]
     )
 
-    # all movement has the goal of being near an arbitrary inanimate object
-    aux_variable_bindings = [(MOVE_GOAL, Region(move_goal_reference, distance=PROXIMAL))]
-
-    # bare move (e.g. "a box moves") is about half of uses in child speed
-    bare_move_template = Phase1SituationTemplate(
-        "bare-move",
-        salient_object_variables=[self_mover_0],
-        actions=[
-            Action(
-                MOVE,
-                argument_roles_to_fillers=[(AGENT, self_mover_0)],
-                auxiliary_variable_bindings=aux_variable_bindings,
-            )
-        ],
-    )
-
-    transitive_move_template = Phase1SituationTemplate(
-        "transitive-move",
-        salient_object_variables=[other_mover_0, movee_0],
-        actions=[
-            Action(
-                MOVE,
-                argument_roles_to_fillers=[(AGENT, other_mover_0), (THEME, movee_0)],
-                during=DuringAction(continuously=[contacts(other_mover_0, movee_0)]),
-                auxiliary_variable_bindings=aux_variable_bindings,
-            )
-        ],
-        constraining_relations=[bigger_than(other_mover_0, movee_0)],
-    )
-    return [bare_move_template, transitive_move_template]
+    return [
+        # bare move (e.g. "a box moves") is about half of uses in child speed
+        bare_move_template(self_mover_0, move_goal_reference),
+        # Transitive Move
+        transitive_move_template(other_mover_0, movee_0, move_goal_reference),
+    ]
 
 
 def _make_move_curriculum() -> Phase1InstanceGroup:
@@ -1358,22 +1542,21 @@ def _make_push_curriculum() -> Phase1InstanceGroup:
     )
 
 
-def make_throw_templates() -> Iterable[Phase1SituationTemplate]:
-    thrower = standard_object("thrower_0", THING, required_properties=[ANIMATE])
-    catcher = standard_object("catcher_0", THING, required_properties=[ANIMATE])
-    object_thrown = standard_object("object_0", required_properties=[INANIMATE])
-    implicit_goal_reference = standard_object("implicit_throw_goal_object", BOX)
-
-    # Dad throws a cookie on the ground
-    throw_on_ground_template = Phase1SituationTemplate(
+def throw_on_ground_template(
+    agent: TemplateObjectVariable,
+    theme: TemplateObjectVariable,
+    *,
+    spatial_properties: Iterable[OntologyNode] = immutableset(),
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
         "throw-on-ground",
-        salient_object_variables=[thrower, object_thrown, GROUND_OBJECT_TEMPLATE],
+        salient_object_variables=[agent, theme, GROUND_OBJECT_TEMPLATE],
         actions=[
             Action(
                 THROW,
                 argument_roles_to_fillers=[
-                    (AGENT, thrower),
-                    (THEME, object_thrown),
+                    (AGENT, agent),
+                    (THEME, theme),
                     (
                         GOAL,
                         Region(
@@ -1383,86 +1566,160 @@ def make_throw_templates() -> Iterable[Phase1SituationTemplate]:
                         ),
                     ),
                 ],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            theme,
+                            SpatialPath(
+                                None,
+                                reference_object=GROUND_OBJECT_TEMPLATE,
+                                properties=spatial_properties,
+                            ),
+                        )
+                    ]
+                ),
             )
         ],
-        constraining_relations=[bigger_than(thrower, object_thrown)],
+        constraining_relations=[bigger_than(agent, theme)],
     )
 
-    # A baby throws a truck
-    throw_template = Phase1SituationTemplate(
+
+def throw_template(
+    agent: TemplateObjectVariable,
+    theme: TemplateObjectVariable,
+    goal: TemplateObjectVariable,
+    *,
+    spatial_properties: Iterable[OntologyNode] = immutableset(),
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
         "throw",
-        salient_object_variables=[thrower, object_thrown],
+        salient_object_variables=[agent, theme],
         actions=[
             Action(
                 THROW,
-                argument_roles_to_fillers=[(AGENT, thrower), (THEME, object_thrown)],
+                argument_roles_to_fillers=[(AGENT, agent), (THEME, theme)],
                 auxiliary_variable_bindings=[
-                    (THROW_GOAL, Region(implicit_goal_reference, distance=PROXIMAL))
+                    (THROW_GOAL, Region(goal, distance=PROXIMAL))
                 ],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            theme,
+                            SpatialPath(
+                                None, reference_object=goal, properties=spatial_properties
+                            ),
+                        )
+                    ]
+                ),
             )
         ],
-        constraining_relations=[bigger_than(thrower, object_thrown)],
+        constraining_relations=[bigger_than(agent, theme)],
     )
 
-    # Throw up, down
-    throw_up_down_templates = [
-        Phase1SituationTemplate(
-            f"{thrower.handle}-throws-{object_thrown.handle}-up-down",
-            salient_object_variables=[thrower, object_thrown],
-            actions=[
-                Action(
-                    THROW,
-                    argument_roles_to_fillers=[(AGENT, thrower), (THEME, object_thrown)],
-                    auxiliary_variable_bindings=[
-                        (THROW_GOAL, Region(implicit_goal_reference, distance=PROXIMAL))
-                    ],
-                    during=DuringAction(
-                        objects_to_paths=[
-                            (
-                                object_thrown,
-                                SpatialPath(
-                                    AWAY_FROM, reference_object=GROUND_OBJECT_TEMPLATE
-                                ),
-                            )
-                        ]
-                        if is_up
-                        else [
-                            (
-                                object_thrown,
-                                SpatialPath(
-                                    TOWARD, reference_object=GROUND_OBJECT_TEMPLATE
-                                ),
-                            )
-                        ]
-                    ),
-                )
-            ],
-            constraining_relations=flatten_relations(bigger_than(thrower, object_thrown)),
-            syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
-        )
-        for is_up in (True, False)
-    ]
 
-    throw_to_template = Phase1SituationTemplate(
+def throw_up_down_template(
+    agent: TemplateObjectVariable,
+    theme: TemplateObjectVariable,
+    goal: TemplateObjectVariable,
+    *,
+    is_up: bool,
+    spatial_properties: Iterable[OntologyNode] = immutableset(),
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        f"{agent.handle}-throws-{theme.handle}-up-down",
+        salient_object_variables=[agent, theme],
+        actions=[
+            Action(
+                THROW,
+                argument_roles_to_fillers=[(AGENT, agent), (THEME, theme)],
+                auxiliary_variable_bindings=[
+                    (THROW_GOAL, Region(goal, distance=PROXIMAL))
+                ],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            theme,
+                            SpatialPath(
+                                AWAY_FROM,
+                                reference_object=GROUND_OBJECT_TEMPLATE,
+                                properties=spatial_properties,
+                            ),
+                        )
+                    ]
+                    if is_up
+                    else [
+                        (
+                            theme,
+                            SpatialPath(
+                                TOWARD,
+                                reference_object=GROUND_OBJECT_TEMPLATE,
+                                properties=spatial_properties,
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+        constraining_relations=flatten_relations(bigger_than(agent, theme)),
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
+    )
+
+
+def throw_to_template(
+    agent: TemplateObjectVariable,
+    theme: TemplateObjectVariable,
+    goal: TemplateObjectVariable,
+    *,
+    spatial_properties: Iterable[OntologyNode] = None,
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
         "throw-to",
-        salient_object_variables=[thrower, object_thrown, catcher],
+        salient_object_variables=[agent, theme, goal],
         actions=[
             Action(
                 THROW,
                 argument_roles_to_fillers=[
-                    (AGENT, thrower),
-                    (THEME, object_thrown),
-                    (GOAL, Region(catcher, distance=PROXIMAL)),
+                    (AGENT, agent),
+                    (THEME, theme),
+                    (GOAL, Region(goal, distance=PROXIMAL)),
                 ],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            theme,
+                            SpatialPath(
+                                None, reference_object=goal, properties=spatial_properties
+                            ),
+                        )
+                    ]
+                ),
             )
         ],
-        constraining_relations=[bigger_than(thrower, object_thrown)],
+        constraining_relations=[bigger_than(agent, theme)],
     )
 
-    return throw_up_down_templates + [
-        throw_template,
-        throw_on_ground_template,
-        throw_to_template,
+
+def make_throw_templates() -> Iterable[Phase1SituationTemplate]:
+    thrower = standard_object("thrower_0", THING, required_properties=[ANIMATE])
+    catcher = standard_object("catcher_0", THING, required_properties=[ANIMATE])
+    object_thrown = standard_object("object_0", required_properties=[INANIMATE])
+    implicit_goal_reference = standard_object("implicit_throw_goal_object", BOX)
+
+    return [
+        # Dad throws a cookie on the ground
+        throw_on_ground_template(thrower, object_thrown),
+        # A baby throws a truck
+        throw_template(thrower, object_thrown, implicit_goal_reference),
+        # Throw up
+        throw_up_down_template(
+            thrower, object_thrown, implicit_goal_reference, is_up=True
+        ),
+        # Throw down
+        throw_up_down_template(
+            thrower, object_thrown, implicit_goal_reference, is_up=False
+        ),
+        # Throw To
+        throw_to_template(thrower, object_thrown, catcher),
     ]
 
 
