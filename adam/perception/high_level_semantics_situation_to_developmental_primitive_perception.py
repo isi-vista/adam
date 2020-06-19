@@ -463,8 +463,8 @@ class _PerceptionGeneration:
             ObjectPerception, SituationObject
         ] = immutabledict(
             [
-                (perception, situation_object)
-                for situation_object, perception in self._objects_to_perceptions.items()
+                (situation_object, self._objects_to_perceptions[situation_object])
+                for situation_object in self._situation.all_objects
             ]
         )
         for object_perception in self._object_perceptions_to_ontology_nodes.keys():
