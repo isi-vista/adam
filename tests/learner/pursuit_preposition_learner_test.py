@@ -1,5 +1,5 @@
 import random
-
+import pytest
 from adam.curriculum.phase1_curriculum import _x_has_y_template
 from immutablecollections import immutableset
 
@@ -41,9 +41,16 @@ from tests.learner import TEST_OBJECT_RECOGNIZER
 from adam.language_specific.chinese.chinese_language_generator import (
     GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
 )
+from adam.language_specific.english.english_language_generator import (
+    GAILA_PHASE_1_LANGUAGE_GENERATOR,
+)
 
 
-def test_pursuit_preposition_on_learner_chinese():
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
+)
+def test_pursuit_preposition_on_learner(language_generator):
     rng = random.Random()
     rng.seed(0)
     learner = PrepositionPursuitLearner(
@@ -65,7 +72,7 @@ def test_pursuit_preposition_on_learner_chinese():
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=10,
         ),
-        language_generator=GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
+        language_generator=language_generator,
     )
     on_test_curriculum = phase1_instances(
         "Preposition Unit Test",
@@ -75,7 +82,7 @@ def test_pursuit_preposition_on_learner_chinese():
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
         ),
-        language_generator=GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
+        language_generator=language_generator,
     )
 
     for (
@@ -86,7 +93,7 @@ def test_pursuit_preposition_on_learner_chinese():
         # Get the object matches first - preposition learner can't learn without already recognized objects
         learner.observe(
             LearningExample(perceptual_representation, linguistic_description),
-            language_generator=GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
+            language_generator=language_generator,
         )
 
     for (
@@ -95,69 +102,18 @@ def test_pursuit_preposition_on_learner_chinese():
         test_perceptual_representation,
     ) in on_test_curriculum.instances():
         descriptions_from_learner = learner.describe(
-            test_perceptual_representation,
-            language_generator=GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
+            test_perceptual_representation, language_generator=language_generator
         )
         gold = test_lingustics_description.as_token_sequence()
         assert descriptions_from_learner
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
 
 
-def test_pursuit_preposition_on_learner():
-    rng = random.Random()
-    rng.seed(0)
-    learner = PrepositionPursuitLearner(
-        learning_factor=0.5,
-        graph_match_confirmation_threshold=0.7,
-        lexicon_entry_threshold=0.7,
-        rng=rng,
-        smoothing_parameter=0.001,
-        ontology=GAILA_PHASE_1_ONTOLOGY,
-        object_recognizer=TEST_OBJECT_RECOGNIZER,
-    )  # type: ignore
-    ball = standard_object("ball", BALL)
-    table = standard_object("table", TABLE)
-    on_train_curriculum = phase1_instances(
-        "Preposition Unit Train",
-        situations=sampled(
-            _on_template(ball, table, immutableset(), is_training=True),
-            chooser=PHASE1_CHOOSER_FACTORY(),
-            ontology=GAILA_PHASE_1_ONTOLOGY,
-            max_to_sample=10,
-        ),
-    )
-    on_test_curriculum = phase1_instances(
-        "Preposition Unit Test",
-        situations=sampled(
-            _on_template(ball, table, immutableset(), is_training=False),
-            chooser=PHASE1_CHOOSER_FACTORY(),
-            ontology=GAILA_PHASE_1_ONTOLOGY,
-            max_to_sample=1,
-        ),
-    )
-
-    for (
-        _,
-        linguistic_description,
-        perceptual_representation,
-    ) in on_train_curriculum.instances():
-        # Get the object matches first - preposition learner can't learn without already recognized objects
-        learner.observe(
-            LearningExample(perceptual_representation, linguistic_description)
-        )
-
-    for (
-        _,
-        test_lingustics_description,
-        test_perceptual_representation,
-    ) in on_test_curriculum.instances():
-        descriptions_from_learner = learner.describe(test_perceptual_representation)
-        gold = test_lingustics_description.as_token_sequence()
-        assert descriptions_from_learner
-        assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
-
-
-def test_pursuit_preposition_beside_learner():
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
+)
+def test_pursuit_preposition_beside_learner(language_generator):
     rng = random.Random()
     rng.seed(0)
     learner = PrepositionPursuitLearner(
@@ -181,6 +137,7 @@ def test_pursuit_preposition_beside_learner():
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=10,
         ),
+        language_generator=language_generator,
     )
     beside_test_curriculum = phase1_instances(
         "Preposition Beside Unit Test",
@@ -192,6 +149,7 @@ def test_pursuit_preposition_beside_learner():
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
         ),
+        language_generator=language_generator,
     )
 
     for (
@@ -200,7 +158,8 @@ def test_pursuit_preposition_beside_learner():
         perceptual_representation,
     ) in beside_train_curriculum.instances():
         learner.observe(
-            LearningExample(perceptual_representation, linguistic_description)
+            LearningExample(perceptual_representation, linguistic_description),
+            language_generator=language_generator,
         )
 
     for (
@@ -208,13 +167,19 @@ def test_pursuit_preposition_beside_learner():
         test_linguistic_description,
         test_perceptual_representation,
     ) in beside_test_curriculum.instances():
-        descriptions_from_learner = learner.describe(test_perceptual_representation)
+        descriptions_from_learner = learner.describe(
+            test_perceptual_representation, language_generator=language_generator
+        )
         gold = test_linguistic_description.as_token_sequence()
         assert descriptions_from_learner
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
 
 
-def test_pursuit_preposition_under_learner():
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
+)
+def test_pursuit_preposition_under_learner(language_generator):
     rng = random.Random()
     rng.seed(0)
     learner = PrepositionPursuitLearner(
@@ -238,6 +203,7 @@ def test_pursuit_preposition_under_learner():
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=10,
         ),
+        language_generator=language_generator,
     )
     under_test_curriculum = phase1_instances(
         "Preposition Under Unit Test",
@@ -249,6 +215,7 @@ def test_pursuit_preposition_under_learner():
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
         ),
+        language_generator=language_generator,
     )
 
     for (
@@ -257,7 +224,8 @@ def test_pursuit_preposition_under_learner():
         perceptual_representation,
     ) in under_train_curriculum.instances():
         learner.observe(
-            LearningExample(perceptual_representation, linguistic_description)
+            LearningExample(perceptual_representation, linguistic_description),
+            language_generator,
         )
 
     for (
@@ -265,13 +233,19 @@ def test_pursuit_preposition_under_learner():
         test_linguistic_description,
         test_perceptual_representation,
     ) in under_test_curriculum.instances():
-        descriptions_from_learner = learner.describe(test_perceptual_representation)
+        descriptions_from_learner = learner.describe(
+            test_perceptual_representation, language_generator=language_generator
+        )
         gold = test_linguistic_description.as_token_sequence()
         assert descriptions_from_learner
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
 
 
-def test_pursuit_preposition_over_learner():
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
+)
+def test_pursuit_preposition_over_learner(language_generator):
     rng = random.Random()
     rng.seed(0)
     learner = PrepositionPursuitLearner(
@@ -293,6 +267,7 @@ def test_pursuit_preposition_over_learner():
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=10,
         ),
+        language_generator=language_generator,
     )
     over_test_curriculum = phase1_instances(
         "Preposition Over Unit Test",
@@ -304,6 +279,7 @@ def test_pursuit_preposition_over_learner():
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
         ),
+        language_generator=language_generator,
     )
 
     for (
@@ -312,7 +288,8 @@ def test_pursuit_preposition_over_learner():
         perceptual_representation,
     ) in over_train_curriculum.instances():
         learner.observe(
-            LearningExample(perceptual_representation, linguistic_description)
+            LearningExample(perceptual_representation, linguistic_description),
+            language_generator=language_generator,
         )
 
     for (
@@ -320,13 +297,19 @@ def test_pursuit_preposition_over_learner():
         test_linguistic_description,
         test_perceptual_representation,
     ) in over_test_curriculum.instances():
-        descriptions_from_learner = learner.describe(test_perceptual_representation)
+        descriptions_from_learner = learner.describe(
+            test_perceptual_representation, language_generator=language_generator
+        )
         gold = test_linguistic_description.as_token_sequence()
         assert descriptions_from_learner
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
 
 
-def test_pursuit_preposition_in_learner():
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
+)
+def test_pursuit_preposition_in_learner(language_generator):
     rng = random.Random()
     rng.seed(0)
     learner = PrepositionPursuitLearner(
@@ -348,6 +331,7 @@ def test_pursuit_preposition_in_learner():
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=10,
         ),
+        language_generator=language_generator,
     )
     in_test_curriculum = phase1_instances(
         "Preposition In Unit Test",
@@ -357,6 +341,7 @@ def test_pursuit_preposition_in_learner():
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
         ),
+        language_generator=language_generator,
     )
     for (
         _,
@@ -364,7 +349,8 @@ def test_pursuit_preposition_in_learner():
         perceptual_representation,
     ) in in_train_curriculum.instances():
         learner.observe(
-            LearningExample(perceptual_representation, linguistic_description)
+            LearningExample(perceptual_representation, linguistic_description),
+            language_generator=language_generator,
         )
 
     for (
@@ -372,13 +358,19 @@ def test_pursuit_preposition_in_learner():
         test_linguistic_description,
         test_perceptual_representation,
     ) in in_test_curriculum.instances():
-        descriptions_from_learner = learner.describe(test_perceptual_representation)
+        descriptions_from_learner = learner.describe(
+            test_perceptual_representation, language_generator=language_generator
+        )
         gold = test_linguistic_description.as_token_sequence()
         assert descriptions_from_learner
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
 
 
-def test_pursuit_preposition_behind_learner():
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
+)
+def test_pursuit_preposition_behind_learner(language_generator):
     rng = random.Random()
     rng.seed(0)
     learner = PrepositionPursuitLearner(
@@ -408,6 +400,7 @@ def test_pursuit_preposition_behind_learner():
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=10,
         ),
+        language_generator=language_generator,
     )
     behind_test_curriculum = phase1_instances(
         "Preposition Behind Unit Test",
@@ -423,6 +416,7 @@ def test_pursuit_preposition_behind_learner():
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
         ),
+        language_generator=language_generator,
     )
     for (
         _,
@@ -430,7 +424,8 @@ def test_pursuit_preposition_behind_learner():
         perceptual_representation,
     ) in behind_train_curriculum.instances():
         learner.observe(
-            LearningExample(perceptual_representation, linguistic_description)
+            LearningExample(perceptual_representation, linguistic_description),
+            language_generator=language_generator,
         )
 
     for (
@@ -438,13 +433,19 @@ def test_pursuit_preposition_behind_learner():
         test_linguistic_description,
         test_perceptual_representation,
     ) in behind_test_curriculum.instances():
-        descriptions_from_learner = learner.describe(test_perceptual_representation)
+        descriptions_from_learner = learner.describe(
+            test_perceptual_representation, language_generator=language_generator
+        )
         gold = test_linguistic_description.as_token_sequence()
         assert descriptions_from_learner
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
 
 
-def test_pursuit_preposition_in_front_learner():
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
+)
+def test_pursuit_preposition_in_front_learner(language_generator):
     rng = random.Random()
     rng.seed(0)
     learner = PrepositionPursuitLearner(
@@ -474,6 +475,7 @@ def test_pursuit_preposition_in_front_learner():
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=10,
         ),
+        language_generator=language_generator,
     )
     in_front_test_curriculum = phase1_instances(
         "Preposition In Front Unit Test",
@@ -489,6 +491,7 @@ def test_pursuit_preposition_in_front_learner():
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
         ),
+        language_generator=language_generator,
     )
 
     for (
@@ -497,7 +500,8 @@ def test_pursuit_preposition_in_front_learner():
         perceptual_representation,
     ) in in_front_train_curriculum.instances():
         learner.observe(
-            LearningExample(perceptual_representation, linguistic_description)
+            LearningExample(perceptual_representation, linguistic_description),
+            language_generator=language_generator,
         )
 
     for (
@@ -505,7 +509,9 @@ def test_pursuit_preposition_in_front_learner():
         test_linguistic_description,
         test_perceptual_representation,
     ) in in_front_test_curriculum.instances():
-        descriptions_from_learner = learner.describe(test_perceptual_representation)
+        descriptions_from_learner = learner.describe(
+            test_perceptual_representation, language_generator=language_generator
+        )
         gold = test_linguistic_description.as_token_sequence()
         assert descriptions_from_learner
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
