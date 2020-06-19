@@ -2,7 +2,9 @@
 Representations of template-with-slots-like patterns over token strings.
 """
 from typing import List, Mapping, Optional, Tuple, Union
-
+from adam.language_specific.english.english_language_generator import (
+    GAILA_PHASE_1_LANGUAGE_GENERATOR,
+)
 from more_itertools import quantify
 
 from adam.language import TokenSequenceLinguisticDescription
@@ -39,6 +41,7 @@ class SurfaceTemplate:
     def instantiate(
         self,
         template_variable_to_filler: Mapping[SyntaxSemanticsVariable, Tuple[str, ...]],
+        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> TokenSequenceLinguisticDescription:
         """
         Turns a template into a `TokenSequenceLinguisticDescription` by filling in its variables.
@@ -48,13 +51,17 @@ class SurfaceTemplate:
             if isinstance(element, SyntaxSemanticsVariable):
                 filler_words = template_variable_to_filler[element]
                 # Ground is a specific thing so we special case this to be assigned
-                if filler_words[0] == "ground":
+                if (
+                    filler_words[0] == "ground"
+                    and language_generator == GAILA_PHASE_1_LANGUAGE_GENERATOR
+                ):
                     output_tokens.append("the")
                 # English-specific hack to deal with us not understanding determiners:
                 # https://github.com/isi-vista/adam/issues/498
                 # The "is lower" check is a hack to block adding a determiner to proper names.
                 elif (
-                    element in self._determiner_prefix_slots
+                    language_generator == GAILA_PHASE_1_LANGUAGE_GENERATOR
+                    and element in self._determiner_prefix_slots
                     and len(filler_words) == 1
                     and filler_words[0][0].islower()
                     and filler_words[0] not in MASS_NOUNS

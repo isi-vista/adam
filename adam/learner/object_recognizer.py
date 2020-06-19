@@ -1,6 +1,15 @@
 import logging
 from itertools import chain
 from typing import AbstractSet, Iterable, List, Mapping, Sequence, Set, Tuple
+from adam.language_specific.chinese.chinese_phase_1_lexicon import (
+    GAILA_PHASE_1_CHINESE_LEXICON,
+)
+from adam.language_specific.english.english_language_generator import (
+    GAILA_PHASE_1_LANGUAGE_GENERATOR,
+)
+from adam.language_specific.chinese.chinese_language_generator import (
+    GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
+)
 
 from contexttimer import Timer
 from more_itertools import first
@@ -202,19 +211,23 @@ class ObjectRecognizer:
         )
 
     def match_objects_old(
-        self, perception_graph: PerceptionGraph
+        self,
+        perception_graph: PerceptionGraph,
+        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> PerceptionGraphFromObjectRecognizer:
         new_style_input = PerceptionSemanticAlignment(
             perception_graph=perception_graph, semantic_nodes=[]
         )
-        new_style_output = self.match_objects(new_style_input)
+        new_style_output = self.match_objects(new_style_input, language_generator)
         return PerceptionGraphFromObjectRecognizer(
             perception_graph=new_style_output[0].perception_graph,
             description_to_matched_object_node=new_style_output[1],
         )
 
     def match_objects(
-        self, perception_semantic_alignment: PerceptionSemanticAlignment
+        self,
+        perception_semantic_alignment: PerceptionSemanticAlignment,
+        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> Tuple[PerceptionSemanticAlignment, Mapping[Tuple[str, ...], ObjectSemanticNode]]:
         r"""
         Recognize known objects in a `PerceptionGraph`.
@@ -247,9 +260,14 @@ class ObjectRecognizer:
         for node in graph_to_return._graph.nodes:  # pylint:disable=protected-access
             if node == GROUND_PERCEPTION:
                 matched_object_node = ObjectSemanticNode(GROUND_OBJECT_CONCEPT)
-                object_nodes.append(
-                    ((f"{GROUND_OBJECT_CONCEPT.debug_string}",), matched_object_node)
-                )
+                if language_generator == GAILA_PHASE_1_LANGUAGE_GENERATOR:
+                    object_nodes.append(
+                        ((f"{GROUND_OBJECT_CONCEPT.debug_string}",), matched_object_node)
+                    )
+                elif language_generator == GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR:
+                    object_nodes.append((("di4 myan4",), matched_object_node))
+                else:
+                    raise RuntimeError("Invalid language_generator")
                 # We construct a fake match which is only the ground perception node
                 subgraph_of_root = subgraph(perception_graph.copy_as_digraph(), [node])
                 pattern_match = PerceptionGraphPatternMatch(
@@ -296,7 +314,20 @@ class ObjectRecognizer:
                     # We wrap the concept in a tuple because it could in theory be multiple
                     # tokens,
                     # even though currently it never is.
-                    object_nodes.append(((concept.debug_string,), matched_object_node))
+                    if language_generator == GAILA_PHASE_1_LANGUAGE_GENERATOR:
+                        object_nodes.append(
+                            ((concept.debug_string,), matched_object_node)
+                        )
+                    elif language_generator == GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR:
+                        mappings = (
+                            GAILA_PHASE_1_CHINESE_LEXICON._ontology_node_to_word  # pylint:disable=protected-access
+                        )
+                        for k, v in mappings.items():
+                            if k.handle == concept.debug_string:
+                                debug_string = str(v.base_form)
+                                object_nodes.append(
+                                    ((debug_string,), matched_object_node)
+                                )
 
                     graph_to_return = replace_match_with_object_graph_node(
                         matched_object_node, graph_to_return, pattern_match
@@ -327,7 +358,9 @@ class ObjectRecognizer:
         )
 
     def match_objects_with_language_old(
-        self, language_aligned_perception: LanguageAlignedPerception
+        self,
+        language_aligned_perception: LanguageAlignedPerception,
+        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> LanguageAlignedPerception:
         if language_aligned_perception.node_to_language_span:
             raise RuntimeError(
@@ -342,7 +375,9 @@ class ObjectRecognizer:
                 semantic_nodes=[],
             ),
         )
-        new_style_output = self.match_objects_with_language(new_style_input)
+        new_style_output = self.match_objects_with_language(
+            new_style_input, language_generator
+        )
         return LanguageAlignedPerception(
             language=new_style_output.language_concept_alignment.language,
             perception_graph=new_style_output.perception_semantic_alignment.perception_graph,
@@ -350,7 +385,9 @@ class ObjectRecognizer:
         )
 
     def match_objects_with_language(
-        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
+        self,
+        language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
+        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> LanguagePerceptionSemanticAlignment:
         """
         Recognize known objects in a `LanguagePerceptionSemanticAlignment`.
@@ -376,7 +413,8 @@ class ObjectRecognizer:
             post_match_perception_semantic_alignment,
             tokens_to_object_nodes,
         ) = self.match_objects(
-            language_perception_semantic_alignment.perception_semantic_alignment
+            language_perception_semantic_alignment.perception_semantic_alignment,
+            language_generator=language_generator,
         )
         return LanguagePerceptionSemanticAlignment(
             language_concept_alignment=language_perception_semantic_alignment.language_concept_alignment.copy_with_added_token_alignments(
