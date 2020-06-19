@@ -55,7 +55,7 @@ NEW_SUBSET_ATTRIBUTE_LEARNER_FACTORY = lambda: IntegratedTemplateLearner(
 
 LEARNERS_TO_TEST = [
     OLD_SUBSET_ATTRIBUTE_LEARNER_FACTORY,
-    NEW_SUBSET_ATTRIBUTE_LEARNER_FACTORY,
+    # NEW_SUBSET_ATTRIBUTE_LEARNER_FACTORY,
 ]
 
 
@@ -146,7 +146,11 @@ def test_subset_color_attribute_learner(
 
 
 @pytest.mark.parametrize("learner_factory", LEARNERS_TO_TEST)
-def test_subset_my_attribute_learner(learner_factory):
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
+)
+def test_subset_my_attribute_learner(learner_factory, language_generator):
     person = standard_object("speaker", PERSON, added_properties=[IS_SPEAKER])
     inanimate_object = standard_object(
         "object", INANIMATE_OBJECT, required_properties=[PERSON_CAN_HAVE]
@@ -162,6 +166,7 @@ def test_subset_my_attribute_learner(learner_factory):
             chooser=PHASE1_CHOOSER_FACTORY(),
             max_to_sample=2,
         ),
+        language_generator=language_generator,
     )
 
     my_test_curriculum = phase1_instances(
@@ -174,6 +179,7 @@ def test_subset_my_attribute_learner(learner_factory):
             chooser=PHASE1_CHOOSER_FACTORY(),
             max_to_sample=1,
         ),
+        language_generator=language_generator,
     )
 
     learner = learner_factory()
@@ -184,7 +190,8 @@ def test_subset_my_attribute_learner(learner_factory):
         perceptual_representation,
     ) in my_train_curriculum.instances():
         learner.observe(
-            LearningExample(perceptual_representation, linguistic_description)
+            LearningExample(perceptual_representation, linguistic_description),
+            language_generator=language_generator,
         )
 
     for (
@@ -192,14 +199,20 @@ def test_subset_my_attribute_learner(learner_factory):
         test_lingustics_description,
         test_perceptual_representation,
     ) in my_test_curriculum.instances():
-        descriptions_from_learner = learner.describe(test_perceptual_representation)
+        descriptions_from_learner = learner.describe(
+            test_perceptual_representation, language_generator=language_generator
+        )
         gold = test_lingustics_description.as_token_sequence()
         assert descriptions_from_learner
         assert gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
 
 
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
+)
 @pytest.mark.parametrize("learner_factory", LEARNERS_TO_TEST)
-def test_your_attribute_learner(learner_factory):
+def test_your_attribute_learner(learner_factory, language_generator):
     person_0 = standard_object("speaker", PERSON, added_properties=[IS_SPEAKER])
     person_1 = standard_object("addressee", PERSON, added_properties=[IS_ADDRESSEE])
     inanimate_object = standard_object(
@@ -219,6 +232,7 @@ def test_your_attribute_learner(learner_factory):
             chooser=PHASE1_CHOOSER_FACTORY(),
             max_to_sample=2,
         ),
+        language_generator=language_generator,
     )
 
     your_test_curriculum = phase1_instances(
@@ -234,6 +248,7 @@ def test_your_attribute_learner(learner_factory):
             chooser=PHASE1_CHOOSER_FACTORY(),
             max_to_sample=1,
         ),
+        language_generator=language_generator,
     )
 
     learner = learner_factory()
@@ -244,7 +259,8 @@ def test_your_attribute_learner(learner_factory):
         perceptual_representation,
     ) in your_train_curriculum.instances():
         learner.observe(
-            LearningExample(perceptual_representation, linguistic_description)
+            LearningExample(perceptual_representation, linguistic_description),
+            language_generator=language_generator,
         )
 
     for (
@@ -252,7 +268,9 @@ def test_your_attribute_learner(learner_factory):
         test_lingustics_description,
         test_perceptual_representation,
     ) in your_test_curriculum.instances():
-        descriptions_from_learner = learner.describe(test_perceptual_representation)
+        descriptions_from_learner = learner.describe(
+            test_perceptual_representation, language_generator=language_generator
+        )
         gold = test_lingustics_description.as_token_sequence()
         assert descriptions_from_learner
         assert gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
