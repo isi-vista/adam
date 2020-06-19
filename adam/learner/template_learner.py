@@ -1,4 +1,7 @@
 import logging
+from adam.language_specific.english.english_language_generator import (
+    GAILA_PHASE_1_LANGUAGE_GENERATOR,
+)
 from abc import ABC, abstractmethod
 from typing import AbstractSet, Iterable, List, Mapping, Sequence, Tuple, Union, cast
 
@@ -49,6 +52,7 @@ class AbstractTemplateLearner(
         learning_example: LearningExample[
             DevelopmentalPrimitivePerceptionFrame, LinguisticDescription
         ],
+        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> None:
         logging.info(
             "Observation %s: %s",
@@ -69,7 +73,8 @@ class AbstractTemplateLearner(
                     learning_example.perception
                 ),
                 node_to_language_span=immutabledict(),
-            )
+            ),
+            language_generator=language_generator,
         )
 
         logging.info(f"Learner observing {preprocessed_input}")
@@ -78,19 +83,21 @@ class AbstractTemplateLearner(
         self._learning_step(preprocessed_input, surface_template)
 
     def describe(
-        self, perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]
+        self,
+        perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame],
+        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> Mapping[LinguisticDescription, float]:
         self._assert_valid_input(perception)
 
         original_perception_graph = self._extract_perception_graph(perception)
         preprocessing_result = self._preprocess_scene_for_description(
-            original_perception_graph
+            original_perception_graph, language_generator=language_generator
         )
-
         preprocessed_perception_graph = preprocessing_result.perception_graph
         matched_objects_to_names = (
             preprocessing_result.description_to_matched_object_node.inverse()
         )
+        print("MATCHED", matched_objects_to_names)
         # This accumulates our output.
         match_to_score: List[
             Tuple[TokenSequenceLinguisticDescription, PerceptionGraphTemplate, float]
@@ -120,6 +127,7 @@ class AbstractTemplateLearner(
                             pattern=pattern,
                             match=match,
                             matched_objects_to_names=matched_objects_to_names,
+                            language_generator=language_generator,
                         ),
                         pattern,
                         score,
@@ -143,7 +151,6 @@ class AbstractTemplateLearner(
                     pattern=graph_pattern,
                     score=score,
                 )
-
         return immutabledict(self._post_process_descriptions(match_to_score))
 
     @abstractmethod
@@ -173,7 +180,9 @@ class AbstractTemplateLearner(
 
     @abstractmethod
     def _preprocess_scene_for_learning(
-        self, language_concept_alignment: LanguageAlignedPerception
+        self,
+        language_concept_alignment: LanguageAlignedPerception,
+        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> LanguageAlignedPerception:
         """
         Does any preprocessing necessary before the learning process begins.
@@ -183,7 +192,9 @@ class AbstractTemplateLearner(
 
     @abstractmethod
     def _preprocess_scene_for_description(
-        self, perception_graph: PerceptionGraph
+        self,
+        perception_graph: PerceptionGraph,
+        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> PerceptionGraphFromObjectRecognizer:
         """
         Does any preprocessing necessary before attempting to describe a scene.

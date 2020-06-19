@@ -1,5 +1,7 @@
 from typing import Mapping, Tuple, Union, cast
-
+from adam.language_specific.english.english_language_generator import (
+    GAILA_PHASE_1_LANGUAGE_GENERATOR,
+)
 from adam.language import LinguisticDescription, TokenSequenceLinguisticDescription
 from adam.learner import LearningExample
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
@@ -27,6 +29,7 @@ def pattern_match_to_description(
     pattern: PerceptionGraphTemplate,
     match: PerceptionGraphPatternMatch,
     matched_objects_to_names: Mapping[ObjectSemanticNode, Tuple[str, ...]],
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> TokenSequenceLinguisticDescription:
     """
     Given a `SurfaceTemplate`, will fill it in using a *match* for a *pattern*.
@@ -49,6 +52,7 @@ def pattern_match_to_description(
 
     try:
         return surface_template.instantiate(
+            language_generator=language_generator,
             template_variable_to_filler=immutabledict(
                 (
                     pattern.pattern_node_to_template_variable[pattern_node],
@@ -67,7 +71,7 @@ def pattern_match_to_description(
                 # There can sometimes be relevant matched object nodes which are not themselves
                 # slots, like the addressed possessor for "your X".
                 and pattern_node in pattern.pattern_node_to_template_variable
-            )
+            ),
         )
     except KeyError:
         print("foo")
