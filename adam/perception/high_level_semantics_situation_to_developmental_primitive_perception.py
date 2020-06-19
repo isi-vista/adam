@@ -65,6 +65,7 @@ from adam.situation.high_level_semantics_situation import HighLevelSemanticsSitu
 from attr import Factory, attrib, attrs
 from attr.validators import deep_mapping, instance_of
 from immutablecollections import (
+    ImmutableDict,
     ImmutableSet,
     ImmutableSetMultiDict,
     immutabledict,
@@ -458,10 +459,10 @@ class _PerceptionGeneration:
     def _perceive_property_assertions(self) -> None:
         # Situation objects require some special logic, so we need to be able to (1) check if a
         # perception came from a situation object, and (2) get the situation object if so.
-        object_perceptions_to_situation_objects = {
-            perception: situation_object
+        object_perceptions_to_situation_objects: ImmutableDict[ObjectPerception, SituationObject] = immutabledict([
+            (perception, situation_object)
             for situation_object, perception in self._objects_to_perceptions.items()
-        }
+        ])
         for object_perception in self._object_perceptions_to_ontology_nodes.keys():
             ontology_node = self._object_perceptions_to_ontology_nodes[object_perception]
             # process explicitly and implicitly-specified properties
