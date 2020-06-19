@@ -3,6 +3,9 @@ from abc import ABC
 from pathlib import Path
 from random import Random
 from typing import AbstractSet, Iterable, List, Optional, Sequence, Union
+from adam.language_specific.english.english_language_generator import (
+    GAILA_PHASE_1_LANGUAGE_GENERATOR,
+)
 
 from adam.language import LinguisticDescription
 from adam.learner import (
@@ -433,17 +436,21 @@ class ObjectRecognizerAsTemplateLearner(TemplateLearner):
         pass
 
     def enrich_during_learning(
-        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
+        self,
+        language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
+        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> LanguagePerceptionSemanticAlignment:
         return self._object_recognizer.match_objects_with_language(
-            language_perception_semantic_alignment
+            language_perception_semantic_alignment, language_generator=language_generator
         )
 
     def enrich_during_description(
-        self, perception_semantic_alignment: PerceptionSemanticAlignment
+        self,
+        perception_semantic_alignment: PerceptionSemanticAlignment,
+        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> PerceptionSemanticAlignment:
         (new_perception_semantic_alignment, _) = self._object_recognizer.match_objects(
-            perception_semantic_alignment
+            perception_semantic_alignment, language_generator=language_generator
         )
         return new_perception_semantic_alignment
 

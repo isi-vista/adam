@@ -12,6 +12,12 @@ from adam.curriculum.phase1_curriculum import (
     _object_with_color_template,
     _x_has_y_template,
 )
+from adam.language_specific.english.english_language_generator import (
+    GAILA_PHASE_1_LANGUAGE_GENERATOR,
+)
+from adam.language_specific.chinese.chinese_language_generator import (
+    GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
+)
 from adam.language_specific.english.english_language_generator import IGNORE_HAS_AS_VERB
 from adam.learner import LearningExample
 from adam.learner.attributes import SubsetAttributeLearner, SubsetAttributeLearnerNew
@@ -64,8 +70,12 @@ LEARNERS_TO_TEST = [
         (WHITE, BALL, CAR),
     ],
 )
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
+)
 def test_subset_color_attribute_learner(
-    learner_factory, color_node, object_0_node, object_1_node
+    learner_factory, color_node, object_0_node, object_1_node, language_generator
 ):
     color = property_variable(f"{color_node.handle}", color_node)
     object_0 = standard_object(
@@ -81,6 +91,7 @@ def test_subset_color_attribute_learner(
 
     color_train_curriculum = phase1_instances(
         f"{color.handle} Color Train",
+        language_generator=language_generator,
         situations=chain(
             *[
                 flatten(
@@ -106,6 +117,7 @@ def test_subset_color_attribute_learner(
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
         ),
+        language_generator=language_generator,
     )
 
     learner = learner_factory()
@@ -116,7 +128,8 @@ def test_subset_color_attribute_learner(
         perceptual_representation,
     ) in color_train_curriculum.instances():
         learner.observe(
-            LearningExample(perceptual_representation, linguistic_description)
+            LearningExample(perceptual_representation, linguistic_description),
+            language_generator=language_generator,
         )
 
     for (
@@ -124,7 +137,9 @@ def test_subset_color_attribute_learner(
         test_lingustics_description,
         test_perceptual_representation,
     ) in color_test_curriculum.instances():
-        descriptions_from_learner = learner.describe(test_perceptual_representation)
+        descriptions_from_learner = learner.describe(
+            test_perceptual_representation, language_generator=language_generator
+        )
         gold = test_lingustics_description.as_token_sequence()
         assert descriptions_from_learner
         assert gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
