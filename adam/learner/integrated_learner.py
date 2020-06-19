@@ -1,10 +1,19 @@
 import itertools
+from adam.language_specific.english.english_language_generator import (
+    GAILA_PHASE_1_LANGUAGE_GENERATOR,
+)
+from adam.language_specific.chinese.chinese_phase_1_lexicon import (
+    GAILA_PHASE_1_CHINESE_LEXICON,
+)
 import logging
 from itertools import chain, combinations
 from pathlib import Path
 from typing import AbstractSet, Iterable, Iterator, Mapping, Optional, Tuple
-
+from adam.language_specific.chinese.chinese_language_generator import (
+    GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
+)
 from more_itertools import flatten, one
+from adam.learner.surface_templates import SurfaceTemplate
 
 from adam.language import LinguisticDescription, TokenSequenceLinguisticDescription
 from adam.language_specific.english import ENGLISH_BLOCK_DETERMINERS
@@ -83,6 +92,7 @@ class IntegratedTemplateLearner(
         learning_example: LearningExample[
             DevelopmentalPrimitivePerceptionFrame, LinguisticDescription
         ],
+        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> None:
         logging.info(
             "Observation %s: %s",
@@ -124,14 +134,16 @@ class IntegratedTemplateLearner(
                     sub_learner.learn_from(current_learner_state)
 
                 current_learner_state = sub_learner.enrich_during_learning(
-                    current_learner_state
+                    current_learner_state, language_generator=language_generator
                 )
 
         if learning_example.perception.is_dynamic() and self.action_learner:
             self.action_learner.learn_from(current_learner_state)
 
     def describe(
-        self, perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]
+        self,
+        perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame],
+        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> Mapping[LinguisticDescription, float]:
 
         perception_graph = self._extract_perception_graph(perception)
@@ -147,7 +159,7 @@ class IntegratedTemplateLearner(
         ]:
             if sub_learner:
                 cur_description_state = sub_learner.enrich_during_description(
-                    cur_description_state
+                    cur_description_state, language_generator=language_generator
                 )
 
         if perception.is_dynamic() and self.action_learner:
@@ -156,11 +168,13 @@ class IntegratedTemplateLearner(
             )
 
         return self._linguistic_descriptions_from_semantics(
-            cur_description_state.semantic_nodes
+            cur_description_state.semantic_nodes, language_generator=language_generator
         )
 
     def _linguistic_descriptions_from_semantics(
-        self, semantic_nodes: AbstractSet[SemanticNode]
+        self,
+        semantic_nodes: AbstractSet[SemanticNode],
+        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> Mapping[LinguisticDescription, float]:
         learner_semantics = LearnerSemantics.from_nodes(semantic_nodes)
 
@@ -190,23 +204,26 @@ class IntegratedTemplateLearner(
                     if self.relation_learner.templates_for_concept(relation.concept)
                 ]
             )
-
         ret.extend(
             [
                 (object_tokens, 1.0)
                 for object_ in learner_semantics.objects
-                for object_tokens in self._instantiate_object(object_, learner_semantics)
+                for object_tokens in self._instantiate_object(
+                    object_, learner_semantics, language_generator=language_generator
+                )
                 # ensure we have some way of expressing this object
                 if self.object_learner.templates_for_concept(object_.concept)
             ]
         )
-
         return immutabledict(
             (TokenSequenceLinguisticDescription(tokens), score) for (tokens, score) in ret
         )
 
     def _instantiate_object(
-        self, object_node: ObjectSemanticNode, learner_semantics: "LearnerSemantics"
+        self,
+        object_node: ObjectSemanticNode,
+        learner_semantics: "LearnerSemantics",
+        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> Iterator[Tuple[str, ...]]:
         # For now, we assume the order in which modifiers is expressed is arbitrary.
         attributes_we_can_express = (
@@ -224,8 +241,24 @@ class IntegratedTemplateLearner(
         # relations_for_object = learner_semantics.objects_to_relation_in_slot1[object_node]
 
         for template in self.object_learner.templates_for_concept(object_node.concept):
+            description = template.elements[0]
+            # hack to handle Chinese
+            if language_generator == GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR:
+                mappings = (
+                    GAILA_PHASE_1_CHINESE_LEXICON._ontology_node_to_word  # pylint:disable=protected-access
+                )
+                for k, v in mappings.items():
+                    if k.handle == description:
+                        realdescription = v.base_form
+                        newtemplate = SurfaceTemplate(
+                            elements=(realdescription,),
+                            determiner_prefix_slots=template._determiner_prefix_slots,  # pylint:disable=protected-access
+                        )
+                        template = newtemplate
+
             cur_string = template.instantiate(
-                template_variable_to_filler=immutabledict()
+                template_variable_to_filler=immutabledict(),
+                language_generator=language_generator,
             ).as_token_sequence()
 
             for num_attributes in range(
@@ -250,10 +283,14 @@ class IntegratedTemplateLearner(
             # https://github.com/isi-vista/adam/issues/498
             # The "is lower" check is a hack to block adding a determiner to proper names.
             # Ground is a specific thing so we special case this to be assigned
-            if object_node.concept == GROUND_OBJECT_CONCEPT:
+            if (
+                object_node.concept == GROUND_OBJECT_CONCEPT
+                and language_generator == GAILA_PHASE_1_LANGUAGE_GENERATOR
+            ):
                 yield tuple(chain(("the",), cur_string))
             elif (
-                object_node.concept.debug_string not in MASS_NOUNS
+                language_generator == GAILA_PHASE_1_LANGUAGE_GENERATOR
+                and object_node.concept.debug_string not in MASS_NOUNS
                 and object_node.concept.debug_string.islower()
                 and not cur_string[0] in ENGLISH_BLOCK_DETERMINERS
             ):
