@@ -136,7 +136,7 @@ def test_two_objects():
     )
     assert only(
         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
-    ).as_token_sequence() == ("two", "boxes")
+    ).as_token_sequence() == ("two", "box", "s")
 
 
 def test_two_objects_with_dad():
@@ -176,7 +176,7 @@ def test_many_objects():
     )
     assert only(
         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
-    ).as_token_sequence() == ("many", "balls")
+    ).as_token_sequence() == ("many", "ball", "s")
 
 
 def test_simple_verb():
