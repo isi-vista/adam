@@ -138,7 +138,6 @@ def run_verb_test(learner, situation_template, language_generator):
             test_perceptual_representation, language_generator=language_generator
         )
         gold = test_lingustics_description.as_token_sequence()
-        print(gold)
         assert descriptions_from_learner
         assert gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
 
