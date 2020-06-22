@@ -1482,7 +1482,7 @@ def _make_pass_curriculum() -> Phase1InstanceGroup:
     object_passed = standard_object("object_0", required_properties=[INANIMATE])
 
     pass_template = Phase1SituationTemplate(
-        "throw-to",
+        "pass-to",
         salient_object_variables=[passer, object_passed, catcher],
         actions=[
             Action(
