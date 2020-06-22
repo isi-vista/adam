@@ -28,7 +28,9 @@ from adam.curriculum.phase1_curriculum import (
     _make_take_curriculum,
     _make_throw_curriculum,
     _make_transfer_of_possession_curriculum,
-    _make_objects_with_colors_is_curriculum,
+    _make_objects_with_colors_is_curriculum,)
+
+from adam.curriculum.phase2_curriculum import (
     _make_chairs_curriculum,
     _make_cups_curriculum,
 )

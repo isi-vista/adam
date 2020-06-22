@@ -351,21 +351,7 @@ CUP = OntologyNode(
     [HOLLOW, CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, RED, BLUE, GREEN, TRANSPARENT],
 )
 subtype(CUP, INANIMATE_OBJECT)
-CUP_2 = OntologyNode(
-    "cup-2",
-    [HOLLOW, CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, RED, BLUE, GREEN, TRANSPARENT],
-)
-subtype(CUP_2, INANIMATE_OBJECT)
-CUP_3 = OntologyNode(
-    "cup-3",
-    [HOLLOW, CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, RED, BLUE, GREEN, TRANSPARENT],
-)
-subtype(CUP_3, INANIMATE_OBJECT)
-CUP_4 = OntologyNode(
-    "cup-4",
-    [HOLLOW, CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, RED, BLUE, GREEN, TRANSPARENT],
-)
-subtype(CUP_4, INANIMATE_OBJECT)
+
 BOX = OntologyNode(
     "box",
     [
@@ -388,50 +374,7 @@ CHAIR = OntologyNode(
     ],
 )
 subtype(CHAIR, INANIMATE_OBJECT)
-CHAIR_2 = OntologyNode(
-    "chair-2",
-    [
-        CAN_FILL_TEMPLATE_SLOT,
-        CAN_HAVE_THINGS_RESTING_ON_THEM,
-        CAN_BE_SAT_ON_BY_PEOPLE,
-        LIGHT_BROWN,
-        DARK_BROWN,
-    ],
-)
-subtype(CHAIR_2, INANIMATE_OBJECT)
-CHAIR_3 = OntologyNode(
-    "chair-3",
-    [
-        CAN_FILL_TEMPLATE_SLOT,
-        CAN_HAVE_THINGS_RESTING_ON_THEM,
-        CAN_BE_SAT_ON_BY_PEOPLE,
-        LIGHT_BROWN,
-        DARK_BROWN,
-    ],
-)
-subtype(CHAIR_3, INANIMATE_OBJECT)
-CHAIR_4 = OntologyNode(
-    "chair-4",
-    [
-        CAN_FILL_TEMPLATE_SLOT,
-        CAN_HAVE_THINGS_RESTING_ON_THEM,
-        CAN_BE_SAT_ON_BY_PEOPLE,
-        LIGHT_BROWN,
-        DARK_BROWN,
-    ],
-)
-subtype(CHAIR_4, INANIMATE_OBJECT)
-CHAIR_5 = OntologyNode(
-    "chair-5",
-    [
-        CAN_FILL_TEMPLATE_SLOT,
-        CAN_HAVE_THINGS_RESTING_ON_THEM,
-        CAN_BE_SAT_ON_BY_PEOPLE,
-        LIGHT_BROWN,
-        DARK_BROWN,
-    ],
-)
-subtype(CHAIR_5, INANIMATE_OBJECT)
+
 # should a HEAD be hollow? We are answering yes for now,
 # because food and liquids can enter it,
 # but we eventually want something more sophisticated.
@@ -1387,9 +1330,6 @@ _BOX_SCHEMA = _make_box_schema()
 _HAT_SCHEMA = _make_hat_schema()
 _COOKIE_SCHEMA = _make_cookie_schema()
 _CUP_SCHEMA = _make_cup_schema(cross_section_size=SMALL_TO_LARGE)
-_CUP_2_SCHEMA = _make_cup_schema(cross_section_size=CONSTANT)
-_CUP_3_SCHEMA = _make_cup_schema(cross_section_size=LARGE_TO_SMALL)
-_CUP_4_SCHEMA = _make_cup_schema(cross_section_size=SMALL_TO_LARGE_TO_SMALL)
 _BOOK_SCHEMA = _make_book_schema()
 _HAND_SCHEMA = _make_hand_schema()
 _HEAD_SCHEMA = _make_head_schema()
@@ -1512,84 +1452,6 @@ _CHAIR_SCHEMA = ObjectStructuralSchema(
         [
             contacts(_CHAIR_LEGS, _CHAIR_SCHEMA_SEAT),
             above(_CHAIR_SCHEMA_SEAT, _CHAIR_LEGS),
-            contacts(_CHAIR_SCHEMA_BACK, _CHAIR_SCHEMA_SEAT),
-            above(_CHAIR_SCHEMA_BACK, _CHAIR_SCHEMA_SEAT),
-        ]
-    ),
-    axes=_CHAIR_SCHEMA_BACK.schema.axes.copy(),
-)
-
-# 2 with square seat
-_CHAIR_2_SCHEMA = ObjectStructuralSchema(
-    CHAIR,
-    sub_objects=[
-        _CHAIR_SCHEMA_BACK,
-        _CHAIR_SCHEMA_SQUARE_SEAT,
-        _CHAIR_SCHEMA_LEG_1,
-        _CHAIR_SCHEMA_LEG_2,
-        _CHAIR_SCHEMA_LEG_3,
-        _CHAIR_SCHEMA_LEG_4,
-    ],
-    sub_object_relations=flatten_relations(
-        [
-            contacts(_CHAIR_LEGS, _CHAIR_SCHEMA_SQUARE_SEAT),
-            above(_CHAIR_SCHEMA_SQUARE_SEAT, _CHAIR_LEGS),
-            contacts(_CHAIR_SCHEMA_BACK, _CHAIR_SCHEMA_SQUARE_SEAT),
-            above(_CHAIR_SCHEMA_BACK, _CHAIR_SCHEMA_SQUARE_SEAT),
-        ]
-    ),
-    axes=_CHAIR_SCHEMA_BACK.schema.axes.copy(),
-)
-# 3 with no back
-_CHAIR_3_SCHEMA = ObjectStructuralSchema(
-    CHAIR,
-    sub_objects=[
-        _CHAIR_SCHEMA_SEAT,
-        _CHAIR_SCHEMA_LEG_1,
-        _CHAIR_SCHEMA_LEG_2,
-        _CHAIR_SCHEMA_LEG_3,
-        _CHAIR_SCHEMA_LEG_4,
-    ],
-    sub_object_relations=flatten_relations(
-        [
-            contacts(_CHAIR_LEGS, _CHAIR_SCHEMA_SEAT),
-            above(_CHAIR_SCHEMA_SEAT, _CHAIR_LEGS),
-        ]
-    ),
-    axes=_CHAIR_SCHEMA_BACK.schema.axes.copy(),
-)
-# 4 with square seat and no back
-_CHAIR_4_SCHEMA = ObjectStructuralSchema(
-    CHAIR,
-    sub_objects=[
-        _CHAIR_SCHEMA_SQUARE_SEAT,
-        _CHAIR_SCHEMA_LEG_1,
-        _CHAIR_SCHEMA_LEG_2,
-        _CHAIR_SCHEMA_LEG_3,
-        _CHAIR_SCHEMA_LEG_4,
-    ],
-    sub_object_relations=flatten_relations(
-        [
-            contacts(_CHAIR_LEGS, _CHAIR_SCHEMA_SQUARE_SEAT),
-            above(_CHAIR_SCHEMA_SQUARE_SEAT, _CHAIR_LEGS),
-        ]
-    ),
-    axes=_CHAIR_SCHEMA_BACK.schema.axes.copy(),
-)
-# 5 with three legs
-_CHAIR_5_SCHEMA = ObjectStructuralSchema(
-    CHAIR,
-    sub_objects=[
-        _CHAIR_SCHEMA_BACK,
-        _CHAIR_SCHEMA_SEAT,
-        _CHAIR_SCHEMA_LEG_1,
-        _CHAIR_SCHEMA_LEG_2,
-        _CHAIR_SCHEMA_LEG_3,
-    ],
-    sub_object_relations=flatten_relations(
-        [
-            contacts(_CHAIR_THREE_LEGS, _CHAIR_SCHEMA_SEAT),
-            above(_CHAIR_SCHEMA_SEAT, _CHAIR_THREE_LEGS),
             contacts(_CHAIR_SCHEMA_BACK, _CHAIR_SCHEMA_SEAT),
             above(_CHAIR_SCHEMA_BACK, _CHAIR_SCHEMA_SEAT),
         ]
@@ -2531,10 +2393,6 @@ GAILA_PHASE_1_ONTOLOGY = Ontology(
     structural_schemata=[
         (BALL, _BALL_SCHEMA),
         (CHAIR, _CHAIR_SCHEMA),
-        (CHAIR_2, _CHAIR_2_SCHEMA),
-        (CHAIR_3, _CHAIR_3_SCHEMA),
-        (CHAIR_4, _CHAIR_4_SCHEMA),
-        (CHAIR_5, _CHAIR_5_SCHEMA),
         (PERSON, _PERSON_SCHEMA),
         (TABLE, _TABLE_SCHEMA),
         (DOG, _DOG_SCHEMA),
@@ -2545,9 +2403,6 @@ GAILA_PHASE_1_ONTOLOGY = Ontology(
         (COOKIE, _COOKIE_SCHEMA),
         (HEAD, _HEAD_SCHEMA),
         (CUP, _CUP_SCHEMA),
-        (CUP_2, _CUP_2_SCHEMA),
-        (CUP_3, _CUP_3_SCHEMA),
-        (CUP_4, _CUP_4_SCHEMA),
         (BOX, _BOX_SCHEMA),
         (BOOK, _BOOK_SCHEMA),
         (HOUSE, _HOUSE_SCHEMA),
