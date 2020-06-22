@@ -39,6 +39,8 @@ from adam.geon import (
     RECTANGULAR,
     SMALL_TO_LARGE,
     SMALL_TO_LARGE_TO_SMALL,
+    SQUARE,
+    CrossSectionSize,
 )
 from adam.ontology import (
     ACTION,
@@ -353,6 +355,7 @@ CUP = OntologyNode(
     [HOLLOW, CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, RED, BLUE, GREEN, TRANSPARENT],
 )
 subtype(CUP, INANIMATE_OBJECT)
+
 BOX = OntologyNode(
     "box",
     [
@@ -375,6 +378,7 @@ CHAIR = OntologyNode(
     ],
 )
 subtype(CHAIR, INANIMATE_OBJECT)
+
 # should a HEAD be hollow? We are answering yes for now,
 # because food and liquids can enter it,
 # but we eventually want something more sophisticated.
@@ -851,7 +855,9 @@ def _make_cookie_schema() -> ObjectStructuralSchema:
     )
 
 
-def _make_cup_schema() -> ObjectStructuralSchema:
+def _make_cup_schema(
+    cross_section_size: CrossSectionSize = SMALL_TO_LARGE
+) -> ObjectStructuralSchema:
     bottom_to_top = straight_up("bottom-to-top")
     side_to_side_0 = symmetric("side-to-side-0")
     side_to_side_1 = symmetric("side-to-side-1")
@@ -860,7 +866,7 @@ def _make_cup_schema() -> ObjectStructuralSchema:
         ontology_node=CUP,
         geon=Geon(
             cross_section=CIRCULAR,
-            cross_section_size=SMALL_TO_LARGE,
+            cross_section_size=cross_section_size,
             axes=Axes(
                 primary_axis=bottom_to_top,
                 orienting_axes=[side_to_side_0, side_to_side_1],
@@ -1124,6 +1130,27 @@ def _make_chair_seat_schema() -> ObjectStructuralSchema:
     )
 
 
+def _make_square_chair_seat_schema() -> ObjectStructuralSchema:
+    bottom_to_top = straight_up("bottom-to-top")
+    front_edge_to_back_edge = directed("front-to-back")
+    side_to_side = directed("side-to-side")
+
+    return ObjectStructuralSchema(
+        ontology_node=_CHAIR_SEAT,
+        geon=Geon(
+            cross_section=SQUARE,
+            cross_section_size=CONSTANT,
+            axes=Axes(
+                primary_axis=bottom_to_top,
+                orienting_axes=[front_edge_to_back_edge, side_to_side],
+                axis_relations=[
+                    bigger_than([side_to_side, front_edge_to_back_edge], bottom_to_top)
+                ],
+            ),
+        ),
+    )
+
+
 def _make_table_top_schema() -> ObjectStructuralSchema:
     bottom_to_top = straight_up("bottom-to-top")
     side_to_side = directed("side-to-side")
@@ -1312,7 +1339,7 @@ _BALL_SCHEMA = _make_ball_schema()
 _BOX_SCHEMA = _make_box_schema()
 _HAT_SCHEMA = _make_hat_schema()
 _COOKIE_SCHEMA = _make_cookie_schema()
-_CUP_SCHEMA = _make_cup_schema()
+_CUP_SCHEMA = _make_cup_schema(cross_section_size=SMALL_TO_LARGE)
 _BOOK_SCHEMA = _make_book_schema()
 _HAND_SCHEMA = _make_hand_schema()
 _HEAD_SCHEMA = _make_head_schema()
@@ -1325,6 +1352,7 @@ _FOOT_SCHEMA = _make_foot_schema()
 _INANIMATE_LEG_SCHEMA = _make_inanimate_leg_schema()
 _CHAIRBACK_SCHEMA = _make_chair_back_schema()
 _CHAIR_SEAT_SCHEMA = _make_chair_seat_schema()
+_CHAIR_SQUARE_SEAT_SCHEMA = _make_square_chair_seat_schema()
 _TABLETOP_SCHEMA = _make_table_top_schema()
 _TAIL_SCHEMA = _make_tail_schema()
 _WING_SCHEMA = _make_wing_schema()
@@ -1404,18 +1432,24 @@ _PERSON_SCHEMA = ObjectStructuralSchema(
 )
 
 
-# schemata describing the sub-object structural nature of a Chair
+# schemata describing the sub-object structural nature of Chairs
 _CHAIR_SCHEMA_BACK = SubObject(_CHAIRBACK_SCHEMA)
 _CHAIR_SCHEMA_FRONT_LEFT_LEG = SubObject(_INANIMATE_LEG_SCHEMA)
 _CHAIR_SCHEMA_FRONT_RIGHT_LEG = SubObject(_INANIMATE_LEG_SCHEMA)
 _CHAIR_SCHEMA_BACK_LEFT_LEG = SubObject(_INANIMATE_LEG_SCHEMA)
 _CHAIR_SCHEMA_BACK_RIGHT_LEG = SubObject(_INANIMATE_LEG_SCHEMA)
 _CHAIR_SCHEMA_SEAT = SubObject(_CHAIR_SEAT_SCHEMA)
+_CHAIR_SCHEMA_SQUARE_SEAT = SubObject(_CHAIR_SQUARE_SEAT_SCHEMA)
 _CHAIR_LEGS = [
     _CHAIR_SCHEMA_FRONT_LEFT_LEG,
     _CHAIR_SCHEMA_FRONT_RIGHT_LEG,
     _CHAIR_SCHEMA_BACK_LEFT_LEG,
     _CHAIR_SCHEMA_BACK_RIGHT_LEG,
+]
+_CHAIR_THREE_LEGS = [
+    _CHAIR_SCHEMA_FRONT_LEFT_LEG,
+    _CHAIR_SCHEMA_FRONT_RIGHT_LEG,
+    _CHAIR_SCHEMA_BACK_LEFT_LEG,
 ]
 
 _CHAIR_SCHEMA = ObjectStructuralSchema(

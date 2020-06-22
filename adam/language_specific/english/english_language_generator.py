@@ -48,6 +48,9 @@ from adam.language_specific.english.english_phase_1_lexicon import (
     ME,
     YOU,
 )
+from adam.language_specific.english.english_phase_2_lexicon import (
+    GAILA_PHASE_2_ENGLISH_LEXICON,
+)
 from adam.language_specific import (
     FIRST_PERSON,
     SECOND_PERSON,
@@ -1083,6 +1086,9 @@ ALWAYS_USE_THE_OBJECTS = immutableset([GROUND])
 
 GAILA_PHASE_1_LANGUAGE_GENERATOR = SimpleRuleBasedEnglishLanguageGenerator(
     ontology_lexicon=GAILA_PHASE_1_ENGLISH_LEXICON
+)
+GAILA_PHASE_2_LANGUAGE_GENERATOR = SimpleRuleBasedEnglishLanguageGenerator(
+    ontology_lexicon=GAILA_PHASE_2_ENGLISH_LEXICON
 )
 
 # these are "hints" situations can pass to the language generator

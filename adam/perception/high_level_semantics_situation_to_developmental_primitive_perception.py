@@ -41,6 +41,7 @@ from adam.ontology.phase1_spatial_relations import (
     Region,
     SpatialPath,
 )
+from adam.ontology.phase2_ontology import GAILA_PHASE_2_ONTOLOGY
 from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
 from adam.perception import (
     GROUND_PERCEPTION,
@@ -477,7 +478,7 @@ class _PerceptionGeneration:
             ]
 
             # If it is a liquid not inside a container, add two-dimensional property
-            if LIQUID in GAILA_PHASE_1_ONTOLOGY.properties_for_node(
+            if LIQUID in GAILA_PHASE_2_ONTOLOGY.properties_for_node(
                 situation_object.ontology_node
             ) and not any(
                 r.first_slot == situation_object
@@ -1326,6 +1327,9 @@ class _PerceptionGeneration:
 
 GAILA_PHASE_1_PERCEPTION_GENERATOR = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
     GAILA_PHASE_1_ONTOLOGY
+)
+GAILA_PHASE_2_PERCEPTION_GENERATOR = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
+    GAILA_PHASE_2_ONTOLOGY
 )
 
 GAILA_M6_PERCEPTION_GENERATOR = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
