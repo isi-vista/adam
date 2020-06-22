@@ -706,6 +706,8 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     self.dependency_graph.add_edge(de, possessor, role=CASE_POSSESSIVE)
             # if the count is one, we're done since we're not using yi CLF currently
             # also, we don't count grounds or proper nouns
+            if count == 0:
+                raise RuntimeError(f"Invalid count for object {noun_lexicon_entry}")
             if (
                 count == 1
                 or _object.ontology_node == GROUND
@@ -752,6 +754,12 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     self._translate_relation_to_verb(relation)
             # handle in_region relations
             elif relation.relation_type == IN_REGION:
+                # make sure that a relation isn't translated twice, as is the case for over+under when we have a relation saying
+                # "x is over y" and "y is under x" -- we only want to translate one of these, not both
+                if self.dependency_graph.out_degree[
+                    self._noun_for_object(relation.first_slot)
+                ]:
+                    return
                 # get the localiser modifier
                 localiser_modifier = self.relation_to_localiser_modifier(action, relation)
                 if localiser_modifier:

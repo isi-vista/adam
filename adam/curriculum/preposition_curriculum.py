@@ -1,9 +1,13 @@
 from itertools import chain
 from typing import Iterable
-
+from adam.language_specific.english.english_language_generator import (
+    GAILA_PHASE_1_LANGUAGE_GENERATOR,
+)
 from immutablecollections import immutableset
 from more_itertools import flatten
-
+from adam.language_specific.chinese.chinese_language_generator import (
+    GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
+)
 from adam.axes import HorizontalAxisOfObject, FacingAddresseeAxis
 from adam.curriculum.curriculum_utils import (
     PHASE1_CHOOSER_FACTORY,
@@ -102,18 +106,35 @@ def _under_template(
     *,
     is_training: bool,
     is_distal: bool,
+    language_generator=GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
 ) -> Phase1SituationTemplate:
     handle = "training" if is_training else "testing"
-    return Phase1SituationTemplate(
-        f"preposition-{handle}-{figure.handle}-under-{ground.handle}",
-        salient_object_variables=[ground],
-        background_object_variables=background,
-        asserted_always_relations=[
-            strictly_above(ground, figure, dist=DISTAL if is_distal else PROXIMAL)
-        ],
-        constraining_relations=[bigger_than(ground, figure)],
-        gazed_objects=[figure],
-    )
+    # TODO: currently this hack keeps old implementation for English that hasn't solved https://github.com/isi-vista/adam/issues/802
+    # and returns new implementation for Chinese that does solve this
+    if language_generator == GAILA_PHASE_1_LANGUAGE_GENERATOR:
+        return Phase1SituationTemplate(
+            f"preposition-{handle}-{figure.handle}-under-{ground.handle}",
+            salient_object_variables=[ground],
+            background_object_variables=background,
+            asserted_always_relations=[
+                strictly_above(ground, figure, dist=DISTAL if is_distal else PROXIMAL)
+            ],
+            constraining_relations=[bigger_than(ground, figure)],
+            gazed_objects=[figure],
+        )
+    elif language_generator == GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR:
+        return Phase1SituationTemplate(
+            f"preposition-{handle}-{figure.handle}-under-{ground.handle}",
+            salient_object_variables=[figure, ground],
+            background_object_variables=background,
+            asserted_always_relations=[
+                strictly_above(ground, figure, dist=DISTAL if is_distal else PROXIMAL)
+            ],
+            constraining_relations=[bigger_than(ground, figure)],
+            gazed_objects=[figure],
+        )
+    else:
+        raise RuntimeError(f"Invalid language genertor {language_generator}")
 
 
 def _over_template(
@@ -123,17 +144,33 @@ def _over_template(
     *,
     is_training: bool,
     is_distal: bool,
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1SituationTemplate:
     handle = "training" if is_training else "testing"
-    return Phase1SituationTemplate(
-        f"preposition-{handle}-{figure.handle}-over-{ground.handle}",
-        salient_object_variables=[ground],
-        background_object_variables=background,
-        asserted_always_relations=[
-            strictly_above(figure, ground, dist=DISTAL if is_distal else PROXIMAL)
-        ],
-        gazed_objects=[figure],
-    )
+    # TODO: currently this hack keeps old implementation for English that hasn't solved https://github.com/isi-vista/adam/issues/802
+    # and returns new implementation for Chinese that does solve this
+    if language_generator == GAILA_PHASE_1_LANGUAGE_GENERATOR:
+        return Phase1SituationTemplate(
+            f"preposition-{handle}-{figure.handle}-over-{ground.handle}",
+            salient_object_variables=[ground],
+            background_object_variables=background,
+            asserted_always_relations=[
+                strictly_above(figure, ground, dist=DISTAL if is_distal else PROXIMAL)
+            ],
+            gazed_objects=[figure],
+        )
+    elif language_generator == GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR:
+        return Phase1SituationTemplate(
+            f"preposition-{handle}-{figure.handle}-over-{ground.handle}",
+            salient_object_variables=[figure, ground],
+            background_object_variables=background,
+            asserted_always_relations=[
+                strictly_above(figure, ground, dist=DISTAL if is_distal else PROXIMAL)
+            ],
+            gazed_objects=[figure],
+        )
+    else:
+        raise RuntimeError(f"Invalid language genertor {language_generator}")
 
 
 def _in_template(
