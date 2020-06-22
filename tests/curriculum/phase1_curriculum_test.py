@@ -28,6 +28,7 @@ from adam.curriculum.phase1_curriculum import (
     _make_throw_curriculum,
     _make_transfer_of_possession_curriculum,
     _make_objects_with_colors_is_curriculum,
+    _make_part_whole_curriculum,
     _make_plural_objects_curriculum,
     _make_generic_statements_curriculum,
 )
@@ -70,6 +71,10 @@ def test_object_on_ground_curriculum():
 
 def test_person_has_object_curriculum():
     curriculum_test(_make_person_has_object_curriculum())
+
+
+def test_part_whole_curriculum():
+    curriculum_test(_make_part_whole_curriculum())
 
 
 def test_fall_curriculum():

@@ -383,9 +383,10 @@ class CurriculumToHtmlDumper:
                 raise RuntimeError(
                     f"Expected the Situation to be HighLevelSemanticsSituation got {type(situation)}"
                 )
-            if not isinstance(
-                dependency_tree, LinearizedDependencyTree
-            ) and not isinstance(dependency_tree, TokenSequenceLinguisticDescription):
+            if not (
+                isinstance(dependency_tree, LinearizedDependencyTree)
+                or isinstance(dependency_tree, TokenSequenceLinguisticDescription)
+            ):
                 raise RuntimeError(
                     f"Expected the Lingustics to be LinearizedDependencyTree or TokenSequenceLinguisticDescription got {type(dependency_tree)}"
                 )
