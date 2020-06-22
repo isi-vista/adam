@@ -62,6 +62,7 @@ from adam.ontology.phase1_ontology import (
     WHITE,
     LIGHT_BROWN,
     DARK_BROWN,
+    PASS,
 )
 
 MASS_NOUN = LexiconProperty("mass-noun")
@@ -133,6 +134,12 @@ GAILA_PHASE_1_ENGLISH_LEXICON = OntologyLexicon(
                 VERB,
                 verb_form_sg3_prs="throws",
                 properties=[ALLOWS_DITRANSITIVE],
+            ),
+        ),
+        (
+            PASS,
+            LexiconEntry(
+                "pass", VERB, verb_form_sg3_prs="passes", properties=[ALLOWS_DITRANSITIVE]
             ),
         ),
         (MOVE, LexiconEntry("move", VERB, verb_form_sg3_prs="moves")),
