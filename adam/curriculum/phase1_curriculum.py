@@ -1498,7 +1498,7 @@ def _make_pass_curriculum() -> Phase1InstanceGroup:
     )
 
     return phase1_instances(
-        "throwing",
+        "passing",
         sampled(
             pass_template,
             max_to_sample=25,
