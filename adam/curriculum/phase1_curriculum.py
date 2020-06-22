@@ -84,6 +84,7 @@ from adam.ontology.phase1_ontology import (
     near,
     on,
     strictly_above,
+    PASS,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -1486,7 +1487,7 @@ def _make_pass_curriculum() -> Phase1InstanceGroup:
         salient_object_variables=[passer, object_passed, catcher],
         actions=[
             Action(
-                THROW,
+                PASS,
                 argument_roles_to_fillers=[
                     (AGENT, passer),
                     (THEME, object_passed),
