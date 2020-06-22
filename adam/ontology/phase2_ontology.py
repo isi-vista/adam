@@ -5,10 +5,10 @@ from adam.ontology.phase1_ontology import (
     _make_cup_schema,
     _CHAIR_SCHEMA_BACK,
     _CHAIR_SCHEMA_SQUARE_SEAT,
-    _CHAIR_SCHEMA_LEG_1,
-    _CHAIR_SCHEMA_LEG_2,
-    _CHAIR_SCHEMA_LEG_3,
-    _CHAIR_SCHEMA_LEG_4,
+    _CHAIR_SCHEMA_FRONT_LEFT_LEG,
+    _CHAIR_SCHEMA_FRONT_RIGHT_LEG,
+    _CHAIR_SCHEMA_BACK_LEFT_LEG,
+    _CHAIR_SCHEMA_BACK_RIGHT_LEG,
     _CHAIR_LEGS,
     _CHAIR_SCHEMA_SEAT,
     _CHAIR_THREE_LEGS,
@@ -110,10 +110,10 @@ _CHAIR_2_SCHEMA = ObjectStructuralSchema(
     sub_objects=[
         _CHAIR_SCHEMA_BACK,
         _CHAIR_SCHEMA_SQUARE_SEAT,
-        _CHAIR_SCHEMA_LEG_1,
-        _CHAIR_SCHEMA_LEG_2,
-        _CHAIR_SCHEMA_LEG_3,
-        _CHAIR_SCHEMA_LEG_4,
+        _CHAIR_SCHEMA_FRONT_LEFT_LEG,
+        _CHAIR_SCHEMA_FRONT_RIGHT_LEG,
+        _CHAIR_SCHEMA_BACK_LEFT_LEG,
+        _CHAIR_SCHEMA_BACK_RIGHT_LEG,
     ],
     sub_object_relations=flatten_relations(
         [
@@ -130,10 +130,10 @@ _CHAIR_3_SCHEMA = ObjectStructuralSchema(
     CHAIR,
     sub_objects=[
         _CHAIR_SCHEMA_SEAT,
-        _CHAIR_SCHEMA_LEG_1,
-        _CHAIR_SCHEMA_LEG_2,
-        _CHAIR_SCHEMA_LEG_3,
-        _CHAIR_SCHEMA_LEG_4,
+        _CHAIR_SCHEMA_FRONT_LEFT_LEG,
+        _CHAIR_SCHEMA_FRONT_RIGHT_LEG,
+        _CHAIR_SCHEMA_BACK_LEFT_LEG,
+        _CHAIR_SCHEMA_BACK_RIGHT_LEG,
     ],
     sub_object_relations=flatten_relations(
         [
@@ -148,10 +148,10 @@ _CHAIR_4_SCHEMA = ObjectStructuralSchema(
     CHAIR,
     sub_objects=[
         _CHAIR_SCHEMA_SQUARE_SEAT,
-        _CHAIR_SCHEMA_LEG_1,
-        _CHAIR_SCHEMA_LEG_2,
-        _CHAIR_SCHEMA_LEG_3,
-        _CHAIR_SCHEMA_LEG_4,
+        _CHAIR_SCHEMA_FRONT_LEFT_LEG,
+        _CHAIR_SCHEMA_FRONT_RIGHT_LEG,
+        _CHAIR_SCHEMA_BACK_LEFT_LEG,
+        _CHAIR_SCHEMA_BACK_RIGHT_LEG,
     ],
     sub_object_relations=flatten_relations(
         [
@@ -167,9 +167,9 @@ _CHAIR_5_SCHEMA = ObjectStructuralSchema(
     sub_objects=[
         _CHAIR_SCHEMA_BACK,
         _CHAIR_SCHEMA_SEAT,
-        _CHAIR_SCHEMA_LEG_1,
-        _CHAIR_SCHEMA_LEG_2,
-        _CHAIR_SCHEMA_LEG_3,
+        _CHAIR_SCHEMA_FRONT_LEFT_LEG,
+        _CHAIR_SCHEMA_FRONT_RIGHT_LEG,
+        _CHAIR_SCHEMA_BACK_LEFT_LEG,
     ],
     sub_object_relations=flatten_relations(
         [
