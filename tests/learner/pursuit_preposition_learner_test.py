@@ -34,10 +34,6 @@ from adam.ontology.phase1_ontology import (
 )
 from adam.situation.templates.phase1_templates import sampled, object_variable
 from tests.learner import TEST_OBJECT_RECOGNIZER
-
-# from adam.language_specific.english.english_language_generator import (
-#    GAILA_PHASE_1_LANGUAGE_GENERATOR,
-# )
 from adam.language_specific.chinese.chinese_language_generator import (
     GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
 )
