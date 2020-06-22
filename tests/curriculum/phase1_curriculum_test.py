@@ -10,7 +10,6 @@ from adam.curriculum.phase1_curriculum import (
     _make_go_curriculum,
     _make_jump_curriculum,
     _make_move_curriculum,
-    _make_multiple_objects_curriculum,
     _make_object_beside_object_curriculum,
     _make_object_in_other_object_curriculum,
     _make_object_on_ground_curriculum,
@@ -29,6 +28,8 @@ from adam.curriculum.phase1_curriculum import (
     _make_throw_curriculum,
     _make_transfer_of_possession_curriculum,
     _make_objects_with_colors_is_curriculum,
+    _make_plural_objects_curriculum,
+    _make_generic_statements_curriculum,
 )
 
 
@@ -59,8 +60,8 @@ def test_instantiate_fly_curriculum():
     curriculum_test(_make_fly_curriculum())
 
 
-def test_multiple_objects_curriculum():
-    curriculum_test(_make_multiple_objects_curriculum())
+def test_plural_objects_curriculum():
+    curriculum_test(_make_plural_objects_curriculum())
 
 
 def test_object_on_ground_curriculum():
@@ -157,3 +158,7 @@ def test_come_curriculum():
 
 def test_behind_in_front_curriculum():
     curriculum_test(_make_behind_in_front_curriculum())
+
+
+def test_generics_curriculum():
+    curriculum_test(_make_generic_statements_curriculum())

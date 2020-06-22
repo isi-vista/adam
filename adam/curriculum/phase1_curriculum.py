@@ -8,6 +8,7 @@ from typing import Iterable, Sequence
 from more_itertools import flatten
 
 from adam.axes import AxesInfo, FacingAddresseeAxis, HorizontalAxisOfObject
+from adam.curriculum import ExplicitWithSituationInstanceGroup
 from adam.curriculum.curriculum_utils import (
     GROUND_OBJECT_TEMPLATE,
     PHASE1_CHOOSER_FACTORY,
@@ -15,6 +16,7 @@ from adam.curriculum.curriculum_utils import (
     phase1_instances,
     standard_object,
 )
+from adam.language import TokenSequenceLinguisticDescription
 from adam.language_specific.english.english_language_generator import (
     IGNORE_HAS_AS_VERB,
     PREFER_DITRANSITIVE,
@@ -235,16 +237,14 @@ def _make_objects_with_colors_is_curriculum() -> Phase1InstanceGroup:
     )
 
 
-def _make_multiple_objects_curriculum() -> Phase1InstanceGroup:
-    """
-    We are deferring handling numeric quantifiers until Phase 2,
-    so this curriculum is not actually executed in Phase 1.
-    """
-
+def _make_plural_objects_curriculum() -> Phase1InstanceGroup:
     def build_object_multiples_situations(
         ontology: Ontology, *, samples_per_object: int = 3, chooser: RandomChooser
     ) -> Iterable[HighLevelSemanticsSituation]:
         for object_type in PHASE_1_CURRICULUM_OBJECTS:
+            # Exclude slow objects for now
+            if object_type.handle in ["bird", "dog", "truck"]:
+                continue
             is_liquid = ontology.has_all_properties(object_type, [LIQUID])
             # don't want multiples of named people
             if not is_recognized_particular(ontology, object_type) and not is_liquid:
@@ -269,6 +269,34 @@ def _make_multiple_objects_curriculum() -> Phase1InstanceGroup:
             ontology=GAILA_PHASE_1_ONTOLOGY, chooser=PHASE1_CHOOSER_FACTORY()
         ),
     )
+
+
+def _make_generic_statements_curriculum() -> Phase1InstanceGroup:
+    # Hard-coded examples: we create dynamic instances and replace the linguistic description
+    # The way we do this is explained here: https://github.com/isi-vista/adam/issues/771
+    all_instances = []
+    verbs_to_instances = {
+        "eat": _make_eat_curriculum().instances(),  # E.g babies eat
+        "drink": _make_drink_curriculum().instances(),
+        "sit": _make_sit_curriculum().instances(),
+        "jump": _make_jump_curriculum().instances(),
+        "fly": _make_fly_curriculum().instances(),
+    }
+    for verb, instances in verbs_to_instances.items():
+        for (situation, description, perception) in instances:
+            subject = [
+                token
+                for token in description.as_token_sequence()
+                if token not in ["a", "the"]
+            ][0]
+            all_instances.append(
+                (
+                    situation,
+                    TokenSequenceLinguisticDescription((subject, "s", verb)),
+                    perception,
+                )
+            )
+    return ExplicitWithSituationInstanceGroup("generics instances", all_instances)
 
 
 def _make_object_on_ground_curriculum() -> Phase1InstanceGroup:
@@ -1916,6 +1944,14 @@ def build_gaila_phase1_object_curriculum() -> Sequence[Phase1InstanceGroup]:
         # _make_multiple_objects_curriculum(),
         _make_object_on_ground_curriculum(),
     ]
+
+
+def build_gaila_plurals_curriculum() -> Sequence[Phase1InstanceGroup]:
+    return [_make_plural_objects_curriculum()]
+
+
+def build_gaila_generics_curriculum() -> Sequence[Phase1InstanceGroup]:
+    return [_make_generic_statements_curriculum()]
 
 
 def build_gaila_phase1_attribute_curriculum() -> Sequence[Phase1InstanceGroup]:

@@ -45,6 +45,7 @@ from adam.curriculum.verbs_with_dynamic_prepositions_curriculum import (
 )
 from adam.geon import Geon
 from adam.axes import WORLD_AXES, AxesInfo, _GravitationalAxis
+from adam.language import TokenSequenceLinguisticDescription
 from adam.language.dependency import LinearizedDependencyTree
 from adam.ontology import IN_REGION, IS_SPEAKER, OntologyNode
 from adam.ontology.during import DuringAction
@@ -382,9 +383,11 @@ class CurriculumToHtmlDumper:
                 raise RuntimeError(
                     f"Expected the Situation to be HighLevelSemanticsSituation got {type(situation)}"
                 )
-            if not isinstance(dependency_tree, LinearizedDependencyTree):
+            if not isinstance(
+                dependency_tree, LinearizedDependencyTree
+            ) and not isinstance(dependency_tree, TokenSequenceLinguisticDescription):
                 raise RuntimeError(
-                    f"Expected the Lingustics to be LinearizedDependencyTree got {type(dependency_tree)}"
+                    f"Expected the Lingustics to be LinearizedDependencyTree or TokenSequenceLinguisticDescription got {type(dependency_tree)}"
                 )
             if not (
                 isinstance(perception, PerceptualRepresentation)
