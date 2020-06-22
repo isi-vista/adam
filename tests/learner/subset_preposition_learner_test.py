@@ -182,12 +182,7 @@ def test_subset_preposition_under_learner(learner_factory, language_generator):
         "Preposition Under Unit Train",
         situations=sampled(
             _under_template(
-                ball,
-                table,
-                immutableset(),
-                is_training=True,
-                is_distal=True,
-                language_generator=language_generator,
+                ball, table, immutableset(), is_training=True, is_distal=True
             ),
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -199,12 +194,7 @@ def test_subset_preposition_under_learner(learner_factory, language_generator):
         "Preposition Under Unit Test",
         situations=sampled(
             _under_template(
-                ball,
-                table,
-                immutableset(),
-                is_training=False,
-                is_distal=True,
-                language_generator=language_generator,
+                ball, table, immutableset(), is_training=False, is_distal=True
             ),
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -248,14 +238,7 @@ def test_subset_preposition_over_learner(learner_factory, language_generator):
     over_train_curriculum = phase1_instances(
         "Preposition Over Unit Train",
         situations=sampled(
-            _over_template(
-                ball,
-                table,
-                immutableset(),
-                is_training=True,
-                is_distal=True,
-                language_generator=language_generator,
-            ),
+            _over_template(ball, table, immutableset(), is_training=True, is_distal=True),
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=2,
@@ -266,12 +249,7 @@ def test_subset_preposition_over_learner(learner_factory, language_generator):
         "Preposition Over Unit Test",
         situations=sampled(
             _over_template(
-                ball,
-                table,
-                immutableset(),
-                is_training=False,
-                is_distal=True,
-                language_generator=language_generator,
+                ball, table, immutableset(), is_training=False, is_distal=True
             ),
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
