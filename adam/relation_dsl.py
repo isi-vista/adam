@@ -198,27 +198,20 @@ def make_opposite_dsl_region_relation(
     return dsl_relation_function
 
 
-# updated function that returns only one relation for above/below rather than two since the English Language Generator
-# can't currently handle two relations with the same objects without making one of them not salient, which then has implications
-# for counts
+# This is currently used for over/under since English can't handle opposite relations with all salient objects ( see
+# https://github.com/isi-vista/adam/issues/802)
 def make_dsl_region_relation(
-    region_factory: Callable[..., "Region[Any]"],
+    region_factory: Callable[..., "Region[Any]"]
 ) -> Callable[..., Tuple[Relation[Any], ...]]:
     def dsl_relation_function(
         arg1s: Union[_ObjectT, Iterable[_ObjectT]],
         arg2s: Union[_ObjectT, Iterable[_ObjectT]],
         **kw_args,
-    ) -> Tuple[Relation[_ObjectT], ...]:
-        arg1s = _ensure_iterable(arg1s)
-        arg2s = _ensure_iterable(arg2s)
-        return flatten(
-            [
-                tuple(
-                    Relation(IN_REGION, arg1, region_factory(arg2, **kw_args))
-                    for arg1 in arg1s
-                    for arg2 in arg2s
-                )
-            ]
+    ) -> Tuple["Relation[_ObjectT]", ...]:
+        return tuple(
+            Relation(IN_REGION, arg1, region_factory(arg2, **kw_args))
+            for arg1 in _ensure_iterable(arg1s)
+            for arg2 in _ensure_iterable(arg2s)
         )
 
     return dsl_relation_function
