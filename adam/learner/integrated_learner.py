@@ -205,6 +205,24 @@ class IntegratedTemplateLearner(
             (TokenSequenceLinguisticDescription(tokens), score) for (tokens, score) in ret
         )
 
+    def _add_determiners(
+        self, object_node: ObjectSemanticNode, cur_string: Tuple[str, ...]
+    ) -> Tuple[str, ...]:
+        # English-specific hack to deal with us not understanding determiners:
+        # https://github.com/isi-vista/adam/issues/498
+        # The "is lower" check is a hack to block adding a determiner to proper names.
+        # Ground is a specific thing so we special case this to be assigned
+        if object_node.concept == GROUND_OBJECT_CONCEPT:
+            return tuple(chain(("the",), cur_string))
+        elif (
+            object_node.concept.debug_string not in MASS_NOUNS
+            and object_node.concept.debug_string.islower()
+            and not cur_string[0] in ENGLISH_BLOCK_DETERMINERS
+        ):
+            return tuple(chain(("a",), cur_string))
+        else:
+            return cur_string
+
     def _instantiate_object(
         self, object_node: ObjectSemanticNode, learner_semantics: "LearnerSemantics"
     ) -> Iterator[Tuple[str, ...]]:
@@ -243,23 +261,13 @@ class IntegratedTemplateLearner(
                         ) in self.attribute_learner.templates_for_concept(  # type: ignore
                             attribute.concept
                         ):
-                            cur_string = attribute_template.instantiate(
-                                template_variable_to_filler={SLOT1: cur_string}
-                            ).as_token_sequence()
-            # English-specific hack to deal with us not understanding determiners:
-            # https://github.com/isi-vista/adam/issues/498
-            # The "is lower" check is a hack to block adding a determiner to proper names.
-            # Ground is a specific thing so we special case this to be assigned
-            if object_node.concept == GROUND_OBJECT_CONCEPT:
-                yield tuple(chain(("the",), cur_string))
-            elif (
-                object_node.concept.debug_string not in MASS_NOUNS
-                and object_node.concept.debug_string.islower()
-                and not cur_string[0] in ENGLISH_BLOCK_DETERMINERS
-            ):
-                yield tuple(chain(("a",), cur_string))
-            else:
-                yield cur_string
+                            yield self._add_determiners(
+                                object_node,
+                                attribute_template.instantiate(
+                                    template_variable_to_filler={SLOT1: cur_string}
+                                ).as_token_sequence(),
+                            )
+            yield self._add_determiners(object_node, cur_string)
 
     def _instantiate_relation(
         self, relation_node: RelationSemanticNode, learner_semantics: "LearnerSemantics"

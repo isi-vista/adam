@@ -463,9 +463,13 @@ def _by_score(scored_description: Tuple[LinguisticDescription, float]) -> float:
     return scored_description[1]
 
 
+def _by_length(scored_description: Tuple[LinguisticDescription, float]) -> int:
+    return -1 * len(scored_description[0])
+
+
 def pretty_descriptions(descriptions: Mapping[LinguisticDescription, float]) -> str:
     if len(descriptions) > 1:
-        top_descriptions = take(3, sorted(descriptions.items(), key=_by_score))
+        top_descriptions = take(10, sorted(descriptions.items(), key=_by_length))
         parts = ["<ul>"]
         parts.extend(
             [

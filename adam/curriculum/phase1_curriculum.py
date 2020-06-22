@@ -2202,7 +2202,9 @@ def build_gaila_phase1_attribute_curriculum() -> Sequence[Phase1InstanceGroup]:
     """
     return [
         _make_objects_with_colors_curriculum(),
-        _make_objects_with_colors_is_curriculum(),
+        # TODO: Enable this curriculum once we handle it better
+        # See: https://github.com/isi-vista/adam/issues/830
+        # _make_objects_with_colors_is_curriculum(),
         _make_my_your_object_curriculum(),
     ]
 
