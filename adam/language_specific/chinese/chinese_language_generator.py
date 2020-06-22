@@ -534,6 +534,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     if (
                         GOAL in action.argument_roles_to_fillers
                         or self.situation.after_action_relations
+                        or USE_ADVERBIAL_PATH_MODIFIER in self.situation.syntax_hints
                     ) and (
                         PREFER_DITRANSITIVE not in self.situation.syntax_hints
                         or ALLOWS_DITRANSITIVE not in verb_lexical_entry.properties
