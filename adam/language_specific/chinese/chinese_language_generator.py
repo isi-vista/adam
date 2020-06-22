@@ -395,7 +395,6 @@ class SimpleRuleBasedChineseLanguageGenerator(
         ) -> Tuple[DependencyRole, DependencyTreeToken]:
 
             """Maps dependency roles to the corresponding node heads for verb arguments"""
-
             # deal with the case that this is an object in the situation
             if isinstance(filler, SituationObject):
                 # get the syntactic role
@@ -411,6 +410,14 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 if argument_role == THEME and syntactic_role == OBLIQUE_NOMINAL:
                     ba = DependencyTreeToken("ba3", ADPOSITION)
                     self.dependency_graph.add_edge(ba, filler_noun, role=CASE_SPATIAL)
+                # when a person is coming or going towards a another person, we need zhao
+                elif (
+                    action
+                    and (action.action_type == GO or action.action_type == COME)
+                    and argument_role == GOAL
+                ):
+                    zhao = DependencyTreeToken("jau3", ADPOSITION)
+                    self.dependency_graph.add_edge(zhao, filler_noun, role=CASE_SPATIAL)
                 return (syntactic_role, filler_noun)
             # deal with the case that it's a region in the situation
             elif isinstance(filler, Region):
