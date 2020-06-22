@@ -322,7 +322,7 @@ def _make_chairs_curriculum(
         Phase1SituationTemplate(
             "chair-object",
             salient_object_variables=[
-                standard_object("speaker", chair_type, added_properties=[color])
+                standard_object("chair", chair_type, added_properties=[color])
             ],
             syntax_hints=[IGNORE_COLORS],
         )
@@ -330,7 +330,7 @@ def _make_chairs_curriculum(
     ]
 
     return phase1_instances(
-        "each object by itself",
+        "each chair by itself",
         chain(
             *[
                 all_possible(
@@ -351,9 +351,9 @@ def _make_cups_curriculum(
     color = color_variable("color")
     cup_templates = [
         Phase1SituationTemplate(
-            "chair-object",
+            "cup-object",
             salient_object_variables=[
-                standard_object("speaker", cup, added_properties=[color])
+                standard_object("cup", cup, added_properties=[color])
             ],
             syntax_hints=[IGNORE_COLORS],
         )
