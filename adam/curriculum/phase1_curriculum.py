@@ -237,10 +237,6 @@ def _make_objects_with_colors_is_curriculum() -> Phase1InstanceGroup:
 
 
 def _make_plural_objects_curriculum() -> Phase1InstanceGroup:
-    """
-    We are deferring handling numeric quantifiers until Phase 2,
-    so this curriculum is not actually executed in Phase 1.
-    """
 
     def build_object_multiples_situations(
         ontology: Ontology, *, samples_per_object: int = 3, chooser: RandomChooser
@@ -277,6 +273,7 @@ def _make_plural_objects_curriculum() -> Phase1InstanceGroup:
 
 def _make_generic_statements_curriculum() -> Phase1InstanceGroup:
     # Hard-coded examples: we create dynamic instances and replace the linguistic description
+    # The way we do this is explained here: https://github.com/isi-vista/adam/issues/771
     all_instances = []
     verbs_to_instances = {
         "eat": _make_eat_curriculum().instances(),  # E.g babies eat
