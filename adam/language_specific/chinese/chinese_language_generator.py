@@ -568,7 +568,11 @@ class SimpleRuleBasedChineseLanguageGenerator(
 
             # the number of this object that is in the scene
             # https://github.com/isi-vista/adam/issues/802 -- currently for Chinese we only count salient objects
-            count = self.object_counts[_object.ontology_node]
+            try:
+                count = self.object_counts[_object.ontology_node]
+            # if this object isn't salient, then we don't want to add it to our language so we just return
+            except KeyError:
+                return
 
             # make sure there is a corresponding ontology node
             if not _object.ontology_node:
