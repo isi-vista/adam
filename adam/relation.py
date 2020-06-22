@@ -1,27 +1,17 @@
-from typing import (
-    Any,
-    Callable,
-    Generic,
-    Iterable,
-    List,
-    Mapping,
-    Tuple,
-    TypeVar,
-    Union,
-    TYPE_CHECKING,
-)
+from typing import Any, Generic, Iterable, List, Mapping, TYPE_CHECKING, TypeVar, Union
 
-from attr import attrib, attrs, evolve
-from attr.validators import instance_of
-from immutablecollections import ImmutableSet, immutableset
 from more_itertools import flatten
-from vistautils.preconditions import check_arg
 
 from adam.ontology import IN_REGION, OntologyNode
 from adam.remappable import CanRemapObjects
+from attr import attrib, attrs, evolve
+from attr.validators import instance_of
+from immutablecollections import ImmutableSet, immutableset
+from vistautils.preconditions import check_arg
 
 if TYPE_CHECKING:
     from adam.ontology.phase1_spatial_relations import Region
+
 
 _ObjectT = TypeVar("_ObjectT")
 _NewObjectT = TypeVar("_NewObjectT")
@@ -115,8 +105,6 @@ def flatten_relations(
     return immutableset(flatten(_ensure_iterable(x) for x in relation_collections))
 
 
-_OneOrMoreObjects = Union[_ObjectT, Iterable[_ObjectT]]
-
 _T = TypeVar("_T")
 
 
@@ -125,219 +113,3 @@ def _ensure_iterable(x: Union[_T, Iterable[_T]]) -> Iterable[_T]:
         return x
     else:
         return (x,)
-
-
-def make_dsl_relation(
-    relation_type: OntologyNode
-) -> Callable[
-    [Union[_ObjectT, Iterable[_ObjectT]], Union[_ObjectT, Iterable[_ObjectT]]],
-    Tuple[Relation[_ObjectT], ...],
-]:
-    r"""
-    Make a function which, when given either single or groups
-    of arguments for two slots of a `Relation`,
-    generates `Relation`\ s of type *relation_type*
-    for the cross-product of the arguments.
-
-    See `adam.ontology.phase1_ontology` for many examples.
-    """
-
-    def dsl_relation_function(
-        arg1s: Union[_ObjectT, Iterable[_ObjectT]],
-        arg2s: Union[_ObjectT, Iterable[_ObjectT]],
-    ) -> Tuple[Relation[_ObjectT], ...]:
-        return tuple(
-            Relation(relation_type, arg1, arg2)
-            for arg1 in _ensure_iterable(arg1s)
-            for arg2 in _ensure_iterable(arg2s)
-        )
-
-    return dsl_relation_function
-
-
-def make_symetric_dsl_relation(
-    relation_type: OntologyNode
-) -> Callable[
-    [Union[_ObjectT, Iterable[_ObjectT]], Union[_ObjectT, Iterable[_ObjectT]]],
-    Tuple[Relation[_ObjectT], ...],
-]:
-    r"""
-    Make a function which, when given either single or groups
-    of arguments for two slots of a `Relation`,
-    generates a symmetric `Relation`\ s of type *relation_type*
-    for the cross-product of the arguments.
-
-    See `adam.ontology.phase1_ontology` for many examples.
-    """
-
-    def dsl_symetric_function(
-        arg1s: Union[_ObjectT, Iterable[_ObjectT]],
-        arg2s: Union[_ObjectT, Iterable[_ObjectT]],
-    ) -> Tuple[Relation[_ObjectT], ...]:
-        arg1s = _ensure_iterable(arg1s)
-        arg2s = _ensure_iterable(arg2s)
-        return flatten(
-            [
-                tuple(
-                    Relation(relation_type, arg1, arg2)
-                    for arg1 in arg1s
-                    for arg2 in arg2s
-                ),
-                tuple(
-                    Relation(relation_type, arg2, arg1)
-                    for arg2 in arg2s
-                    for arg1 in arg1s
-                ),
-            ]
-        )
-
-    return dsl_symetric_function
-
-
-def make_opposite_dsl_relation(
-    relation_type: OntologyNode, *, opposite_type: OntologyNode
-) -> Callable[
-    [Union[_ObjectT, Iterable[_ObjectT]], Union[_ObjectT, Iterable[_ObjectT]]],
-    Tuple[Relation[_ObjectT], ...],
-]:
-    r"""
-    Make a function which, when given either single or groups
-    of arguments for two slots of a `Relation`,
-    generates a  `Relation`\ s of type *relation_type*
-    and an inverse of type *opposite_type* for the for the
-    reversed cross-product of the arguments
-
-    See `adam.ontology.phase1_ontology` for many examples.
-    """
-
-    def dsl_opposite_function(
-        arg1s: Union[_ObjectT, Iterable[_ObjectT]],
-        arg2s: Union[_ObjectT, Iterable[_ObjectT]],
-    ) -> Tuple[Relation[_ObjectT], ...]:
-        arg1s = _ensure_iterable(arg1s)
-        arg2s = _ensure_iterable(arg2s)
-        return flatten(
-            [
-                tuple(
-                    Relation(relation_type, arg1, arg2)
-                    for arg1 in arg1s
-                    for arg2 in arg2s
-                ),
-                tuple(
-                    Relation(opposite_type, arg2, arg1)
-                    for arg1 in arg1s
-                    for arg2 in arg2s
-                ),
-            ]
-        )
-
-    return dsl_opposite_function
-
-
-# Proper signature commented-out, see https://github.com/isi-vista/adam/issues/161
-#
-# def make_dsl_region_relation(
-#     region_factory: Callable[[ObjectT], Region[ObjectT]]
-# ) -> Callable[
-#     [Union[ObjectT, Iterable[ObjectT]], Union[ObjectT, Iterable[ObjectT]]],
-#     Tuple[Relation[ObjectT], ...],
-# ]:
-def make_dsl_region_relation(
-    region_factory: Callable[[Any], "Region[Any]"]
-) -> Callable[
-    [Union[Any, Iterable[Any]], Union[Any, Iterable[Any]]], Tuple[Relation[Any], ...]
-]:
-    def dsl_relation_function(
-        arg1s: Union[_ObjectT, Iterable[_ObjectT]],
-        arg2s: Union[_ObjectT, Iterable[_ObjectT]],
-        **kw_args,
-    ) -> Tuple["Relation[_ObjectT]", ...]:
-        return tuple(
-            Relation(IN_REGION, arg1, region_factory(arg2, **kw_args))
-            for arg1 in _ensure_iterable(arg1s)
-            for arg2 in _ensure_iterable(arg2s)
-        )
-
-    return dsl_relation_function
-
-
-# Proper signature commented-out, see https://github.com/isi-vista/adam/issues/161
-#
-# def make_symmetric_dsl_region_relation(
-#     region_factory: Callable[[ObjectT], Region[ObjectT]]
-# ) -> Callable[
-#     [Union[ObjectT, Iterable[ObjectT]], Union[ObjectT, Iterable[ObjectT]]],
-#     Tuple[Relation[ObjectT], ...],
-# ]:
-def make_symmetric_dsl_region_relation(
-    region_factory: Callable[[_ObjectT], "Region[_ObjectT]"]
-) -> Callable[
-    [Union[Any, Iterable[Any]], Union[Any, Iterable[Any]]], Tuple[Relation[Any], ...]
-]:
-    def dsl_relation_function(
-        arg1s: Union[_ObjectT, Iterable[_ObjectT]],
-        arg2s: Union[_ObjectT, Iterable[_ObjectT]],
-        **kw_args,
-    ) -> Tuple["Relation[_ObjectT]", ...]:
-        arg1s = _ensure_iterable(arg1s)
-        arg2s = _ensure_iterable(arg2s)
-        return flatten(
-            [
-                tuple(
-                    Relation(IN_REGION, arg1, region_factory(arg2, **kw_args))
-                    for arg1 in arg1s
-                    for arg2 in arg2s
-                ),
-                tuple(
-                    Relation(IN_REGION, arg2, region_factory(arg1, **kw_args))
-                    for arg1 in arg1s
-                    for arg2 in arg2s
-                ),
-            ]
-        )
-
-    return dsl_relation_function
-
-
-# Proper signature commented-out, see https://github.com/isi-vista/adam/issues/161
-#
-# def make_opposite_dsl_region_relation(
-#     region_factory: Callable[[ObjectT], Region[ObjectT]],
-#     opposite_region_factory: Callable[[ObjectT], Region[ObjectT]],
-# ) -> Callable[
-#     [Union[ObjectT, Iterable[ObjectT]], Union[ObjectT, Iterable[ObjectT]]],
-#     Tuple[Relation[ObjectT], ...],
-# ]:
-def make_opposite_dsl_region_relation(
-    region_factory: Callable[[Any], "Region[Any]"],
-    opposite_region_factory: Callable[[Any], "Region[Any]"],
-) -> Callable[
-    [Union[Any, Iterable[Any]], Union[Any, Iterable[Any]]], Tuple[Relation[Any], ...]
-]:
-    def dsl_relation_function(
-        arg1s: Union[_ObjectT, Iterable[_ObjectT]],
-        arg2s: Union[_ObjectT, Iterable[_ObjectT]],
-        **kw_args,
-    ) -> Tuple[Relation[_ObjectT], ...]:
-        arg1s = _ensure_iterable(arg1s)
-        arg2s = _ensure_iterable(arg2s)
-        return flatten(
-            [
-                tuple(
-                    Relation(IN_REGION, arg1, region_factory(arg2, **kw_args))
-                    for arg1 in arg1s
-                    for arg2 in arg2s
-                ),
-                tuple(
-                    Relation(IN_REGION, arg2, opposite_region_factory(arg1, **kw_args))
-                    for arg1 in arg1s
-                    for arg2 in arg2s
-                ),
-            ]
-        )
-
-    return dsl_relation_function
-
-
-def negate(relations: Iterable[Relation[_ObjectT]]) -> Iterable[Relation[_ObjectT]]:
-    return (relation.negated_copy() for relation in relations)

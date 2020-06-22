@@ -80,9 +80,9 @@ from adam.ontology.phase1_spatial_relations import (
     Direction,
 )
 from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
-from adam.relation import (
-    Relation,
-    flatten_relations,
+from adam.relation import Relation, flatten_relations
+from adam.relation_dsl import (
+    located,
     make_dsl_region_relation,
     make_dsl_relation,
     make_opposite_dsl_region_relation,
@@ -209,6 +209,10 @@ EDIBLE = OntologyNode("edible")
 subtype(EDIBLE, PROPERTY)
 CAN_BE_SAT_ON_BY_PEOPLE = OntologyNode("can-be-sat-on")
 subtype(CAN_BE_SAT_ON_BY_PEOPLE, PROPERTY)
+FAST = OntologyNode("fast")
+subtype(FAST, PROPERTY)
+SLOW = OntologyNode("slow")
+subtype(SLOW, PROPERTY)
 
 COLOR = OntologyNode("color")
 subtype(COLOR, PERCEIVABLE_PROPERTY)
@@ -529,8 +533,8 @@ STATE = OntologyNode("state")
 CONSUME = OntologyNode("consume")
 subtype(CONSUME, ACTION)
 PUT = OntologyNode("put")
-PUSH = OntologyNode("push")
 subtype(PUT, ACTION)
+PUSH = OntologyNode("push")
 subtype(PUSH, ACTION)
 GO = OntologyNode("go")
 subtype(GO, ACTION)
@@ -1078,10 +1082,14 @@ def _make_inanimate_leg_schema():
     )
 
 
+_CHAIR_FRONT_TO_BACK_AXIS = directed("chair-front-to-back")
+_CHAIR_LEFT_TO_RIGHT_AXIS = directed("chair-left-to-right")
+
+
 def _make_chair_back_schema() -> ObjectStructuralSchema:
     bottom_to_top = straight_up("bottom-to-top")
-    front_to_back = directed("front-to-back")
-    side_to_side = directed("side-to-side")
+    front_to_back = _CHAIR_FRONT_TO_BACK_AXIS
+    side_to_side = _CHAIR_LEFT_TO_RIGHT_AXIS
 
     return ObjectStructuralSchema(
         ontology_node=_CHAIR_BACK,
@@ -1424,17 +1432,17 @@ _PERSON_SCHEMA = ObjectStructuralSchema(
 
 # schemata describing the sub-object structural nature of Chairs
 _CHAIR_SCHEMA_BACK = SubObject(_CHAIRBACK_SCHEMA)
-_CHAIR_SCHEMA_LEG_1 = SubObject(_INANIMATE_LEG_SCHEMA)
-_CHAIR_SCHEMA_LEG_2 = SubObject(_INANIMATE_LEG_SCHEMA)
-_CHAIR_SCHEMA_LEG_3 = SubObject(_INANIMATE_LEG_SCHEMA)
-_CHAIR_SCHEMA_LEG_4 = SubObject(_INANIMATE_LEG_SCHEMA)
+_CHAIR_SCHEMA_FRONT_LEFT_LEG = SubObject(_INANIMATE_LEG_SCHEMA)
+_CHAIR_SCHEMA_FRONT_RIGHT_LEG = SubObject(_INANIMATE_LEG_SCHEMA)
+_CHAIR_SCHEMA_BACK_LEFT_LEG = SubObject(_INANIMATE_LEG_SCHEMA)
+_CHAIR_SCHEMA_BACK_RIGHT_LEG = SubObject(_INANIMATE_LEG_SCHEMA)
 _CHAIR_SCHEMA_SEAT = SubObject(_CHAIR_SEAT_SCHEMA)
 _CHAIR_SCHEMA_SQUARE_SEAT = SubObject(_CHAIR_SQUARE_SEAT_SCHEMA)
 _CHAIR_LEGS = [
-    _CHAIR_SCHEMA_LEG_1,
-    _CHAIR_SCHEMA_LEG_2,
-    _CHAIR_SCHEMA_LEG_3,
-    _CHAIR_SCHEMA_LEG_4,
+    _CHAIR_SCHEMA_FRONT_LEFT_LEG,
+    _CHAIR_SCHEMA_FRONT_RIGHT_LEG,
+    _CHAIR_SCHEMA_BACK_LEFT_LEG,
+    _CHAIR_SCHEMA_BACK_RIGHT_LEG,
 ]
 _CHAIR_THREE_LEGS = [_CHAIR_SCHEMA_LEG_1, _CHAIR_SCHEMA_LEG_2, _CHAIR_SCHEMA_LEG_3]
 
@@ -1443,10 +1451,10 @@ _CHAIR_SCHEMA = ObjectStructuralSchema(
     sub_objects=[
         _CHAIR_SCHEMA_BACK,
         _CHAIR_SCHEMA_SEAT,
-        _CHAIR_SCHEMA_LEG_1,
-        _CHAIR_SCHEMA_LEG_2,
-        _CHAIR_SCHEMA_LEG_3,
-        _CHAIR_SCHEMA_LEG_4,
+        _CHAIR_SCHEMA_FRONT_LEFT_LEG,
+        _CHAIR_SCHEMA_FRONT_RIGHT_LEG,
+        _CHAIR_SCHEMA_BACK_LEFT_LEG,
+        _CHAIR_SCHEMA_BACK_RIGHT_LEG,
     ],
     sub_object_relations=flatten_relations(
         [
@@ -1454,6 +1462,34 @@ _CHAIR_SCHEMA = ObjectStructuralSchema(
             above(_CHAIR_SCHEMA_SEAT, _CHAIR_LEGS),
             contacts(_CHAIR_SCHEMA_BACK, _CHAIR_SCHEMA_SEAT),
             above(_CHAIR_SCHEMA_BACK, _CHAIR_SCHEMA_SEAT),
+            located(  # type: ignore
+                [  # type: ignore
+                    _CHAIR_SCHEMA_FRONT_LEFT_LEG,
+                    _CHAIR_SCHEMA_FRONT_RIGHT_LEG,
+                ],  # type: ignore
+                [  # type: ignore
+                    _CHAIR_SCHEMA_BACK_LEFT_LEG,
+                    _CHAIR_SCHEMA_BACK_RIGHT_LEG,
+                ],  # type: ignore
+                distance=PROXIMAL,
+                direction=Direction(
+                    relative_to_axis=_CHAIR_FRONT_TO_BACK_AXIS, positive=True
+                ),
+            ),
+            located(  # type: ignore
+                [  # type: ignore
+                    _CHAIR_SCHEMA_FRONT_LEFT_LEG,
+                    _CHAIR_SCHEMA_BACK_LEFT_LEG,
+                ],  # type: ignore
+                [  # type: ignore
+                    _CHAIR_SCHEMA_FRONT_RIGHT_LEG,
+                    _CHAIR_SCHEMA_BACK_RIGHT_LEG,
+                ],  # type: ignore
+                distance=PROXIMAL,
+                direction=Direction(
+                    relative_to_axis=_CHAIR_LEFT_TO_RIGHT_AXIS, positive=True
+                ),
+            ),
         ]
     ),
     axes=_CHAIR_SCHEMA_BACK.schema.axes.copy(),

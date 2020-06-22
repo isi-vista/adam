@@ -9,7 +9,13 @@ from adam.language_specific.english.english_language_generator import (
     GAILA_PHASE_2_LANGUAGE_GENERATOR,
 )
 from adam.ontology import OntologyNode
-from adam.ontology.phase1_ontology import GROUND, INANIMATE_OBJECT, IS_BODY_PART, LIQUID
+from adam.ontology.phase1_ontology import (
+    GROUND,
+    INANIMATE_OBJECT,
+    IS_BODY_PART,
+    LIQUID,
+    LEARNER,
+)
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
@@ -43,6 +49,7 @@ def standard_object(
     added_properties: Iterable[
         Union[OntologyNode, TemplatePropertyVariable]
     ] = immutableset(),
+    banned_ontology_types: Iterable[OntologyNode] = immutableset(),
 ) -> TemplateObjectVariable:
     """
     Preferred method of generating template objects as this automatically prevent liquids and
@@ -56,6 +63,7 @@ def standard_object(
         banned_properties=banned_properties_final,
         required_properties=required_properties,
         added_properties=added_properties,
+        banned_ontology_types=banned_ontology_types,
     )
 
 
@@ -127,3 +135,7 @@ def make_background(
     Convenience method for determining which objects in the situation should be background objects
     """
     return immutableset(object_ for object_ in all_objects if object_ not in salient)
+
+
+def learner_template_factory() -> TemplateObjectVariable:
+    return standard_object("learner_factory", LEARNER)

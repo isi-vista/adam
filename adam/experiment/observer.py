@@ -10,7 +10,7 @@ from attr.validators import instance_of
 
 from adam.curriculum_to_html import CurriculumToHtmlDumper
 from adam.language import LinguisticDescription, LinguisticDescriptionT
-from adam.language.language_generator import SituationT
+from adam.situation import SituationT
 from adam.perception import PerceptionT, PerceptualRepresentation
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.visualization.make_scenes import situation_to_filename
@@ -270,7 +270,7 @@ class LearningProgressHtmlLogger:  # pragma: no cover
             situation_text = ""
 
         perception_text = self.html_dumper.perception_text(  # type: ignore
-            perceptual_representation
+            perceptual_representation  # type: ignore
         )
 
         true_description_text = " ".join(true_description.as_token_sequence())
