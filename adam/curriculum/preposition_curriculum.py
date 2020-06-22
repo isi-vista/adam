@@ -205,11 +205,8 @@ def _near_template(
     background: Iterable[TemplateObjectVariable],
     *,
     is_training: bool,
-    is_near: bool = True,
 ) -> Phase1SituationTemplate:
     handle = "training" if is_training else "testing"
-    if not is_near:
-        raise RuntimeError("Near template cannot have is_near set to False")
     return Phase1SituationTemplate(
         f"preposition-{handle}-{figure.handle}-behind-{ground.handle}",
         salient_object_variables=[figure, ground],
@@ -529,8 +526,6 @@ def _make_near_training(
     ground_0 = standard_object("cookie", COOKIE)
     ground_1 = standard_object("table", TABLE)
     ground_2 = standard_object("person", PERSON)
-    speaker = standard_object("speaker", MOM, added_properties=[IS_SPEAKER])
-    addressee = standard_object("addressee", LEARNER, added_properties=[IS_ADDRESSEE])
 
     figures = immutableset([figure_0, figure_1, figure_2])
     grounds = immutableset([ground_0, ground_1, ground_2])
@@ -547,12 +542,10 @@ def _make_near_training(
                                 ground,
                                 make_background(
                                     [figure, ground],
-                                    all_objects=flatten(
-                                        [figures, grounds, [speaker, addressee]]
-                                    ),
+                                    all_objects=flatten([figures, grounds]),
                                 )
                                 if noise_objects
-                                else immutableset([speaker, addressee]),
+                                else immutableset([]),
                                 is_training=True,
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -885,9 +878,6 @@ def _make_near_tests(
     ground_0 = standard_object("ground_0", THING, banned_properties=[HOLLOW])
     ground_1 = standard_object("ground_1", THING, banned_properties=[HOLLOW])
 
-    speaker = standard_object("speaker", MOM, added_properties=[IS_SPEAKER])
-    addressee = standard_object("addressee", LEARNER, added_properties=[IS_ADDRESSEE])
-
     figures = immutableset([figure_0, figure_1])
     grounds = immutableset([ground_0, ground_1])
 
@@ -903,12 +893,10 @@ def _make_near_tests(
                                 ground,
                                 make_background(
                                     [figure, ground],
-                                    all_objects=flatten(
-                                        [figures, grounds, [speaker, addressee]]
-                                    ),
+                                    all_objects=flatten([figures, grounds]),
                                 )
                                 if noise_objects
-                                else immutableset([speaker, addressee]),
+                                else immutableset([]),
                                 is_training=False,
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
