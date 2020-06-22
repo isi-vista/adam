@@ -122,33 +122,6 @@ def make_opposite_dsl_relation(
 
 # Proper signature commented-out, see https://github.com/isi-vista/adam/issues/161
 #
-# def make_dsl_region_relation(
-#     region_factory: Callable[[ObjectT], Region[ObjectT]]
-# ) -> Callable[
-#     [Union[ObjectT, Iterable[ObjectT]], Union[ObjectT, Iterable[ObjectT]]],
-#     Tuple[Relation[ObjectT], ...],
-# ]:
-
-
-def make_dsl_region_relation(
-    region_factory: Callable[..., "Region[Any]"]
-) -> Callable[..., Tuple[Relation[Any], ...]]:
-    def dsl_relation_function(
-        arg1s: Union[_ObjectT, Iterable[_ObjectT]],
-        arg2s: Union[_ObjectT, Iterable[_ObjectT]],
-        **kw_args,
-    ) -> Tuple["Relation[_ObjectT]", ...]:
-        return tuple(
-            Relation(IN_REGION, arg1, region_factory(arg2, **kw_args))
-            for arg1 in _ensure_iterable(arg1s)
-            for arg2 in _ensure_iterable(arg2s)
-        )
-
-    return dsl_relation_function
-
-
-# Proper signature commented-out, see https://github.com/isi-vista/adam/issues/161
-#
 # def make_symmetric_dsl_region_relation(
 #     region_factory: Callable[[ObjectT], Region[ObjectT]]
 # ) -> Callable[
@@ -219,6 +192,32 @@ def make_opposite_dsl_region_relation(
                     for arg1 in arg1s
                     for arg2 in arg2s
                 ),
+            ]
+        )
+
+    return dsl_relation_function
+
+
+# updated function that returns only one relation for above/below rather than two since the English Language Generator
+# can't currently handle two relations with the same objects without making one of them not salient, which then has implications
+# for counts
+def make_dsl_region_relation(
+    region_factory: Callable[..., "Region[Any]"],
+) -> Callable[..., Tuple[Relation[Any], ...]]:
+    def dsl_relation_function(
+        arg1s: Union[_ObjectT, Iterable[_ObjectT]],
+        arg2s: Union[_ObjectT, Iterable[_ObjectT]],
+        **kw_args,
+    ) -> Tuple[Relation[_ObjectT], ...]:
+        arg1s = _ensure_iterable(arg1s)
+        arg2s = _ensure_iterable(arg2s)
+        return flatten(
+            [
+                tuple(
+                    Relation(IN_REGION, arg1, region_factory(arg2, **kw_args))
+                    for arg1 in arg1s
+                    for arg2 in arg2s
+                )
             ]
         )
 

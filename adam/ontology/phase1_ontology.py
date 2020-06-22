@@ -739,6 +739,18 @@ strictly_above = make_opposite_dsl_region_relation(  # pylint:disable=invalid-na
     _strictly_above_region_factory, _strictly_below_region_factory
 )
 
+strictly_below = make_opposite_dsl_region_relation(  # pylint:disable=invalid-name
+    _strictly_above_region_factory, _strictly_below_region_factory
+)
+
+# these are designed specifically to handle over & under relations without bidirectionals
+strictly_over = make_dsl_region_relation(  # pylint:disable=invalid-name
+    _strictly_above_region_factory
+)
+strictly_under = make_dsl_region_relation(  # pylint:disable=invalid-name
+    _strictly_below_region_factory
+)
+
 _GROUND_SCHEMA = ObjectStructuralSchema(ontology_node=GROUND, axes=WORLD_AXES)
 
 _LEARNER_SCHEMA = ObjectStructuralSchema(ontology_node=LEARNER, axes=LEARNER_AXES)

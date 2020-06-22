@@ -139,13 +139,6 @@ def test_pursuit_preposition_beside_learner(language_generator):
         ),
         language_generator=language_generator,
     )
-    situations = sampled(
-        _beside_template(ball, table, immutableset(), is_training=True, is_right=True),
-        chooser=PHASE1_CHOOSER_FACTORY(),
-        ontology=GAILA_PHASE_1_ONTOLOGY,
-        max_to_sample=10,
-    )
-    print(situations)
     beside_test_curriculum = phase1_instances(
         "Preposition Beside Unit Test",
         situations=sampled(
@@ -204,12 +197,7 @@ def test_pursuit_preposition_under_learner(language_generator):
         "Preposition Under Unit Train",
         situations=sampled(
             _under_template(
-                ball,
-                table,
-                immutableset(),
-                is_training=True,
-                is_distal=True,
-                language_generator=language_generator,
+                ball, table, immutableset(), is_training=True, is_distal=True
             ),
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -221,12 +209,7 @@ def test_pursuit_preposition_under_learner(language_generator):
         "Preposition Under Unit Test",
         situations=sampled(
             _under_template(
-                ball,
-                table,
-                immutableset(),
-                is_training=False,
-                is_distal=True,
-                language_generator=language_generator,
+                ball, table, immutableset(), is_training=False, is_distal=True
             ),
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -279,14 +262,7 @@ def test_pursuit_preposition_over_learner(language_generator):
     over_train_curriculum = phase1_instances(
         "Preposition Over Unit Train",
         situations=sampled(
-            _over_template(
-                ball,
-                table,
-                immutableset(),
-                is_training=True,
-                is_distal=True,
-                language_generator=language_generator,
-            ),
+            _over_template(ball, table, immutableset(), is_training=True, is_distal=True),
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=10,
@@ -297,12 +273,7 @@ def test_pursuit_preposition_over_learner(language_generator):
         "Preposition Over Unit Test",
         situations=sampled(
             _over_template(
-                ball,
-                table,
-                immutableset(),
-                is_training=False,
-                is_distal=True,
-                language_generator=language_generator,
+                ball, table, immutableset(), is_training=False, is_distal=True
             ),
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
