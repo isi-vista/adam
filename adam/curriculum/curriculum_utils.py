@@ -107,7 +107,7 @@ def phase2_instances(
     perception_generator: HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator = GAILA_PHASE_1_PERCEPTION_GENERATOR,
 ) -> Phase1InstanceGroup:
     """
-    Convenience method for more compactly creating sub-curricula for phase 1.
+    Convenience method for more compactly creating sub-curricula for phase 2.
     """
 
     return GeneratedFromSituationsInstanceGroup(
