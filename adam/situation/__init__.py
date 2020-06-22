@@ -83,9 +83,7 @@ class SituationObject(HasAxes):
     Instead use `instantiate_ontology_node`.
     """
 
-    ontology_node: OntologyNode = attrib(
-        validator=instance_of(OntologyNode)  # , default=None
-    )
+    ontology_node: OntologyNode = attrib(validator=instance_of(OntologyNode))
     """
     The `OntologyNode` specifying the type of thing this object is.
     """

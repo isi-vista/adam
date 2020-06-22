@@ -5,20 +5,20 @@ from pathlib import Path
 from random import Random
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set, Tuple
 
-from attr.validators import in_, instance_of, optional
 from more_itertools import first
 
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
 from adam.learner.surface_templates import SurfaceTemplate
 from adam.learner.template_learner import AbstractTemplateLearner
 from adam.ontology.ontology import Ontology
+from adam.perception.deprecated import LanguageAlignedPerception
 from adam.perception.perception_graph import (
     DebugCallableType,
     GraphLogger,
-    LanguageAlignedPerception,
     PerceptionGraph,
 )
 from attr import Factory, attrib, attrs
+from attr.validators import in_, instance_of, optional
 from immutablecollections import immutabledict
 from vistautils.range import Range
 

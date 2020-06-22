@@ -111,6 +111,12 @@ class PerceptualRepresentation(Generic[PerceptionT]):
         """
         return PerceptualRepresentation((perception_frame,))
 
+    def is_dynamic(self) -> bool:
+        """
+        Does this situation represent a changing state-of-affairs?
+        """
+        return len(self.frames) > 1
+
 
 class PerceptualRepresentationGenerator(Generic[_SituationT, PerceptionT], ABC):
     r"""

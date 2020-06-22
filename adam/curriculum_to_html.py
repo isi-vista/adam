@@ -1,3 +1,4 @@
+from datetime import date
 import shutil
 from pathlib import Path
 from typing import (
@@ -30,6 +31,10 @@ from vistautils.parameters import Parameters
 from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 from vistautils.preconditions import check_state
 
+from adam.curriculum.imprecise_descriptions_curriculum import (
+    make_imprecise_temporal_descriptions,
+)
+from adam.curriculum.attribute_constraining_action_curriculum import make_german_complete
 from adam.curriculum.m6_curriculum import make_m6_curriculum
 from adam.curriculum.preposition_curriculum import make_prepositions_curriculum
 from adam.curriculum.pursuit_curriculum import make_pursuit_curriculum
@@ -109,6 +114,7 @@ EXPLANATION_HEADER = (
     "<li>The colors provided in the background of a phrase reading 'color=#XXXXXX' is the color indicated by the hex code</li>"
     "<li>The Axis Facing section, if included, lists which axes of the objects in the scene face a given object. "
     "In most cases, this information is only provided for the addressee in a scene.</li>"
+    "\n\t Generated On: {date}"
     "</ul>"
 )
 STR_TO_CURRICULUM: Mapping[str, Callable[[], Iterable[Phase1InstanceGroup]]] = {
@@ -117,12 +123,14 @@ STR_TO_CURRICULUM: Mapping[str, Callable[[], Iterable[Phase1InstanceGroup]]] = {
     "pursuit": make_pursuit_curriculum,
     "m6-curriculum": make_m6_curriculum,
     "verbs-with-dynamic-prepositions": make_verb_with_dynamic_prepositions_curriculum,
+    "essen-fressen-distinction": make_german_complete,
+    "imprecise-temporal": make_imprecise_temporal_descriptions,
 }
 
 
 def main(params: Parameters) -> None:
     root_output_directory = params.creatable_directory("output_directory")
-    curriculum_string = params.optional_string(
+    curriculum_string = params.string(
         "curriculum", valid_options=STR_TO_CURRICULUM.keys(), default="phase1"
     )
     phase1_curriculum_dir = root_output_directory / curriculum_string
@@ -131,11 +139,9 @@ def main(params: Parameters) -> None:
     # about any of them we don't actually use.
     curriculum_to_render = STR_TO_CURRICULUM[curriculum_string]()
 
-    sort_by_utterance_length_flag = params.optional_boolean(
-        "sort_by_utterance", default=False
-    )
+    sort_by_utterance_length_flag = params.boolean("sort_by_utterance", default=False)
     if sort_by_utterance_length_flag:
-        random_seed = params.optional_integer("random_seed", default=1)
+        random_seed = params.integer("random_seed", default=1)
         CurriculumToHtmlDumper().dump_to_html_as_sorted_by_utterance_length(
             curriculum_to_render,
             output_directory=phase1_curriculum_dir,
@@ -244,7 +250,7 @@ class CurriculumToHtmlDumper:
                 html_out.write(f"<head>\n\t<style>{CSS}\n\t</style>\n</head>")
                 html_out.write(f"\n<body>\n\t<h1>{title} - {curriculum_string}</h1>")
                 html_out.write(f"\t<a href='index.html'>" f"Back to Index</a>")
-                html_out.write(EXPLANATION_HEADER)
+                html_out.write(EXPLANATION_HEADER.format(date=date.today()))
                 for (instance_number, instance_holder) in enumerate(immutableset(chunk)):
                     # By using the immutable set we guaruntee iteration order and remove duplicates
                     html_out.write(
@@ -407,7 +413,7 @@ class CurriculumToHtmlDumper:
             html_out.write(f"<head>\n\t<style>{CSS}\n\t</style>\n</head>")
             html_out.write(f"\n<body>\n\t<h1>{title}</h1>")
             html_out.write(f"\t<a href='index.html'>" f"Back to Index</a>")
-            html_out.write(EXPLANATION_HEADER)
+            html_out.write(EXPLANATION_HEADER.format(date=date.today()))
             # By using the immutable set we guarantee iteration order and remove duplicates
             for (instance_number, instance_holder) in enumerate(
                 immutableset(rendered_instances)
@@ -499,6 +505,11 @@ class CurriculumToHtmlDumper:
                     f"\t\t\t\t\t\t<li>{rel.relation_type.handle}({situation_obj_to_handle[rel.first_slot]},"
                     f"{self._situation_object_or_region_text(rel.second_slot, situation_obj_to_handle)})</li>"
                 )
+            output_text.append("\t\t\t\t\t</ul>")
+        if situation.syntax_hints:
+            output_text.append("\t\t\t\t\t<h4>Syntax Hints</h4>\n\t\t\t\t\t<ul>")
+            for hint in situation.syntax_hints:
+                output_text.append(f"\t\t\t\t\t\t<li>{hint}</li>")
             output_text.append("\t\t\t\t\t</ul>")
         return ("\n".join(output_text), speaker)
 

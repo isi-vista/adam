@@ -2,38 +2,103 @@ import logging
 from abc import ABC
 from pathlib import Path
 from random import Random
-from typing import Union, Sequence, List, Optional, Iterable
+from typing import AbstractSet, Iterable, List, Optional, Sequence, Union
 
 from adam.language import LinguisticDescription
 from adam.learner import (
     LearningExample,
-    graph_without_learner,
     get_largest_matching_pattern,
+    graph_without_learner,
+)
+from adam.learner.alignments import (
+    LanguagePerceptionSemanticAlignment,
+    PerceptionSemanticAlignment,
 )
 from adam.learner.learner_utils import assert_static_situation
-from adam.learner.object_recognizer import PerceptionGraphFromObjectRecognizer
+from adam.learner.object_recognizer import (
+    ObjectRecognizer,
+    PerceptionGraphFromObjectRecognizer,
+    extract_candidate_objects,
+)
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
 from adam.learner.pursuit import AbstractPursuitLearner, HypothesisLogger
-from adam.learner.subset import AbstractTemplateSubsetLearner
-from adam.learner.surface_templates import SurfaceTemplate
-from adam.learner.template_learner import AbstractTemplateLearner
+from adam.learner.subset import (
+    AbstractTemplateSubsetLearner,
+    AbstractTemplateSubsetLearnerNew,
+)
+from adam.learner.surface_templates import (
+    SurfaceTemplate,
+    SurfaceTemplateBoundToSemanticNodes,
+)
+from adam.learner.template_learner import (
+    AbstractTemplateLearner,
+    AbstractTemplateLearnerNew,
+    TemplateLearner,
+)
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
 from adam.ontology.phase1_spatial_relations import Region
-from adam.perception import PerceptualRepresentation, ObjectPerception
+from adam.perception import ObjectPerception, PerceptualRepresentation
+from adam.perception.deprecated import LanguageAlignedPerception
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
     RgbColorPerception,
 )
-from adam.perception.perception_graph import (
-    PerceptionGraph,
-    LanguageAlignedPerception,
-    PerceptionGraphPattern,
-)
+from adam.perception.perception_graph import PerceptionGraph, PerceptionGraphPattern
+from adam.semantics import Concept, ObjectConcept, GROUND_OBJECT_CONCEPT
 from adam.utils import networkx_utils
-from attr import evolve, attrs, attrib
-from attr.validators import optional, instance_of
-from immutablecollections import immutabledict
+from attr import attrib, attrs, evolve
+from attr.validators import instance_of, optional
+from immutablecollections import (
+    ImmutableSet,
+    ImmutableSetMultiDict,
+    immutabledict,
+    immutableset,
+    immutablesetmultidict,
+)
 from vistautils.parameters import Parameters
+
+
+class AbstractObjectTemplateLearnerNew(AbstractTemplateLearnerNew):
+    # pylint:disable=abstract-method
+    def _can_learn_from(
+        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
+    ) -> bool:
+        # We can try to learn objects from anything, as long as the scene isn't already
+        # completely understood.
+        return (
+            not language_perception_semantic_alignment.language_concept_alignment.is_entirely_aligned
+        )
+
+    def _preprocess_scene(
+        self, perception_semantic_alignment: PerceptionSemanticAlignment
+    ) -> PerceptionSemanticAlignment:
+        # Avoid accidentally identifying a word with the learner itself.
+        return perception_semantic_alignment.copy_with_updated_graph_and_added_nodes(
+            new_graph=graph_without_learner(
+                perception_semantic_alignment.perception_graph
+            ),
+            new_nodes=[],
+        )
+
+    def _candidate_templates(
+        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
+    ) -> AbstractSet[SurfaceTemplateBoundToSemanticNodes]:
+        # We can only learn single words for objects at the moment.
+        # See https://github.com/isi-vista/adam/issues/793 .
+
+        # Attempt to align every unaligned token to some object in the scene.
+        language_alignment = (
+            language_perception_semantic_alignment.language_concept_alignment
+        )
+        return immutableset(
+            SurfaceTemplateBoundToSemanticNodes(
+                SurfaceTemplate.for_object_name(token), slot_to_semantic_node={}
+            )
+            for (tok_idx, token) in enumerate(
+                language_alignment.language.as_token_sequence()
+            )
+            if not language_alignment.token_index_is_aligned(tok_idx)
+        )
 
 
 class AbstractObjectTemplateLearner(AbstractTemplateLearner, ABC):
@@ -52,12 +117,12 @@ class AbstractObjectTemplateLearner(AbstractTemplateLearner, ABC):
         return PerceptionGraph.from_frame(perception.frames[0])
 
     def _preprocess_scene_for_learning(
-        self, language_aligned_perception: LanguageAlignedPerception
+        self, language_concept_alignment: LanguageAlignedPerception
     ) -> LanguageAlignedPerception:
         return evolve(
-            language_aligned_perception,
+            language_concept_alignment,
             perception_graph=self._common_preprocessing(
-                language_aligned_perception.perception_graph
+                language_concept_alignment.perception_graph
             ),
         )
 
@@ -73,9 +138,9 @@ class AbstractObjectTemplateLearner(AbstractTemplateLearner, ABC):
         return graph_without_learner(perception_graph)
 
     def _extract_surface_template(
-        self, preprocessed_input: LanguageAlignedPerception
+        self, language_concept_alignment: LanguageAlignedPerception
     ) -> SurfaceTemplate:
-        return SurfaceTemplate(preprocessed_input.language.as_token_sequence())
+        return SurfaceTemplate(language_concept_alignment.language.as_token_sequence())
 
 
 @attrs
@@ -299,4 +364,106 @@ class SubsetObjectLearner(AbstractTemplateSubsetLearner, AbstractObjectTemplateL
         return PerceptionGraphTemplate(
             graph_pattern=new_hypothesis,
             template_variable_to_pattern_node=immutabledict(),
+        )
+
+
+@attrs(slots=True)
+class SubsetObjectLearnerNew(
+    AbstractObjectTemplateLearnerNew, AbstractTemplateSubsetLearnerNew
+):
+    """
+    An implementation of `LanguageLearner` for subset learning based approach for single object detection.
+    """
+
+    def _new_concept(self, debug_string: str) -> ObjectConcept:
+        return ObjectConcept(debug_string)
+
+    def _hypotheses_from_perception(
+        self,
+        learning_state: LanguagePerceptionSemanticAlignment,
+        bound_surface_template: SurfaceTemplateBoundToSemanticNodes,
+    ) -> AbstractSet[PerceptionGraphTemplate]:
+        if bound_surface_template.slot_to_semantic_node:
+            raise RuntimeError(
+                "Object learner should not have slot to semantic node alignments!"
+            )
+
+        return immutableset(
+            PerceptionGraphTemplate(
+                graph_pattern=PerceptionGraphPattern.from_graph(
+                    candidate_object
+                ).perception_graph_pattern,
+                template_variable_to_pattern_node=immutabledict(),
+            )
+            for candidate_object in extract_candidate_objects(
+                learning_state.perception_semantic_alignment.perception_graph
+            )
+        )
+
+    # I can't spot the difference in arguments pylint claims?
+    def _keep_hypothesis(  # pylint: disable=arguments-differ
+        self,
+        hypothesis: PerceptionGraphTemplate,
+        bound_surface_template: SurfaceTemplateBoundToSemanticNodes,  # pylint:disable=unused-argument
+    ) -> bool:
+        if len(hypothesis.graph_pattern) < 2:
+            # A one node graph is to small to meaningfully describe an object
+            return False
+        if all(isinstance(node, ObjectPerception) for node in hypothesis.graph_pattern):
+            # A hypothesis which consists of just sub-object structure
+            # with no other content is insufficiently distinctive.
+            return False
+        return True
+
+
+@attrs(frozen=True, kw_only=True)
+class ObjectRecognizerAsTemplateLearner(TemplateLearner):
+    _object_recognizer: ObjectRecognizer = attrib(validator=instance_of(ObjectRecognizer))
+    _concepts_to_templates: ImmutableSetMultiDict[Concept, SurfaceTemplate] = attrib(
+        init=False
+    )
+
+    def learn_from(
+        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
+    ) -> None:
+        # The object recognizer doesn't learn anything.
+        # It just recognizes predefined object patterns.
+        pass
+
+    def enrich_during_learning(
+        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
+    ) -> LanguagePerceptionSemanticAlignment:
+        return self._object_recognizer.match_objects_with_language(
+            language_perception_semantic_alignment
+        )
+
+    def enrich_during_description(
+        self, perception_semantic_alignment: PerceptionSemanticAlignment
+    ) -> PerceptionSemanticAlignment:
+        (new_perception_semantic_alignment, _) = self._object_recognizer.match_objects(
+            perception_semantic_alignment
+        )
+        return new_perception_semantic_alignment
+
+    def templates_for_concept(self, concept: Concept) -> ImmutableSet[SurfaceTemplate]:
+        return self._concepts_to_templates[concept]
+
+    def log_hypotheses(self, log_output_path: Path) -> None:
+        pass
+
+    @_concepts_to_templates.default
+    def _init_concepts_to_templates(
+        self
+    ) -> ImmutableSetMultiDict[Concept, SurfaceTemplate]:
+        # Ground is added explicitly to this list because the code
+        # Which matches the ground matches by recognition and not shape
+        # See: `ObjectRecognizer.match_objects`
+        return immutablesetmultidict(
+            (concept, SurfaceTemplate.for_object_name(name))
+            for (concept, name) in (
+                list(
+                    self._object_recognizer._concepts_to_names.items()  # pylint:disable=protected-access
+                )
+                + [(GROUND_OBJECT_CONCEPT, "ground")]
+            )
         )

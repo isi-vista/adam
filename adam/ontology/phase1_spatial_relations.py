@@ -1,12 +1,16 @@
+from itertools import chain
 from typing import Generic, List, Mapping, Optional, TypeVar, Union
+
+from immutablecollections.converter_utils import _to_immutableset
 
 from adam.axis import GeonAxis
 from attr import attrib, attrs
 from attr.validators import in_, instance_of, optional
-from immutablecollections import immutabledict
+from immutablecollections import immutabledict, ImmutableSet, immutableset
 from vistautils.preconditions import check_arg
 
 from adam.axes import AxesInfo, AxisFunction, GRAVITATIONAL_AXIS_FUNCTION
+from adam.ontology import OntologyNode
 
 
 @attrs(frozen=True, slots=True, repr=False)
@@ -237,6 +241,9 @@ class SpatialPath(Generic[ReferenceObjectT]):
     orientation_changed: bool = attrib(
         validator=instance_of(bool), default=False, kw_only=True
     )
+    properties: ImmutableSet[OntologyNode] = attrib(
+        default=immutableset(), kw_only=True, converter=_to_immutableset
+    )
 
     def __attrs_post_init__(self) -> None:
         # you either need a path operator
@@ -275,6 +282,7 @@ class SpatialPath(Generic[ReferenceObjectT]):
             else object_mapping[self.reference_object],
             reference_axis=new_reference_axis,
             orientation_changed=self.orientation_changed,
+            properties=self.properties,
         )
 
     def accumulate_referenced_objects(
@@ -289,3 +297,41 @@ class SpatialPath(Generic[ReferenceObjectT]):
             object_accumulator.append(self.reference_object)
         if self.reference_axis and not isinstance(self.reference_axis, GeonAxis):
             self.reference_axis.accumulate_referenced_objects(object_accumulator)
+
+    def unify(
+        self, other_path: "SpatialPath[ReferenceObjectT]", *, override: bool = False
+    ) -> "SpatialPath[ReferenceObjectT]":
+        if self.reference_object != other_path.reference_object:
+            raise RuntimeError(
+                f"Can not unify two spatial paths with different reference objects, {self} and {other_path}"
+            )
+
+        if self.operator and other_path.operator and not override:
+            if self.operator != other_path.operator:
+                raise RuntimeError(
+                    f"Can not unify two spatial paths with different path operators. {self} and {other_path}"
+                )
+
+        if self.reference_axis and other_path.reference_axis and not override:
+            if self.reference_axis != other_path.reference_axis:
+                raise RuntimeError(
+                    f"Can not unify two spatial paths with different reference axis. {self} and {other_path}"
+                )
+
+        if self.orientation_changed and other_path.orientation_changed and not override:
+            if self.orientation_changed != other_path.orientation_changed:
+                raise RuntimeError(
+                    f"Can not unify two spatial paths with different orientated changed indicators. {self} and {other_path}"
+                )
+
+        return SpatialPath(
+            operator=self.operator if self.operator else other_path.operator,
+            reference_object=self.reference_object,
+            reference_axis=self.reference_axis
+            if self.reference_axis
+            else other_path.reference_axis,
+            orientation_changed=self.orientation_changed
+            if self.orientation_changed
+            else other_path.orientation_changed,
+            properties=chain(self.properties, other_path.properties),
+        )

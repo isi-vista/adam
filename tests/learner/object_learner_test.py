@@ -7,7 +7,8 @@ from adam.curriculum.phase1_curriculum import PHASE1_CHOOSER_FACTORY, phase1_ins
 from adam.curriculum.pursuit_curriculum import make_simple_pursuit_curriculum
 from adam.language_specific.english.english_language_generator import IGNORE_COLORS
 from adam.learner import LearningExample
-from adam.learner.objects import ObjectPursuitLearner, SubsetObjectLearner
+from adam.learner.integrated_learner import IntegratedTemplateLearner
+from adam.learner.objects import ObjectPursuitLearner, SubsetObjectLearnerNew
 from adam.ontology import OntologyNode
 from adam.ontology.phase1_ontology import (
     BALL,
@@ -57,9 +58,12 @@ def run_subset_learner_for_object(
         ),
     )
 
-    learner = SubsetObjectLearner(
-        ontology=GAILA_PHASE_1_ONTOLOGY, debug_callback=debug_callback
+    learner = IntegratedTemplateLearner(
+        object_learner=SubsetObjectLearnerNew(
+            ontology=GAILA_PHASE_1_ONTOLOGY, debug_callback=debug_callback, beam_size=5
+        )
     )
+
     for training_stage in [obj_curriculum]:
         for (
             _,
@@ -78,9 +82,9 @@ def run_subset_learner_for_object(
         ) in test_instance_group.instances():
             descriptions_from_learner = learner.describe(test_instance_perception)
             gold = test_instance_language.as_token_sequence()
-            assert [desc.as_token_sequence() for desc in descriptions_from_learner][
-                0
-            ] == gold
+            assert gold in [
+                desc.as_token_sequence() for desc in descriptions_from_learner
+            ]
 
 
 def test_subset_learner_ball():
