@@ -1519,6 +1519,7 @@ def make_push_templates() -> Iterable[Phase1SituationTemplate]:
                 during=during,
             )
         ],
+        asserted_always_relations=[on(pushee, push_surface)],
         constraining_relations=[bigger_than(push_surface, pusher)],
     )
     return [push_unexpressed_goal, push_unexpressed_goal_expressed_surface]
