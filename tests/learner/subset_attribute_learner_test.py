@@ -14,7 +14,9 @@ from adam.curriculum.phase1_curriculum import (
 )
 from adam.language_specific.english.english_language_generator import IGNORE_HAS_AS_VERB
 from adam.learner import LearningExample
-from adam.learner.attributes import SubsetAttributeLearner
+from adam.learner.attributes import SubsetAttributeLearner, SubsetAttributeLearnerNew
+from adam.learner.integrated_learner import IntegratedTemplateLearner
+from adam.learner.objects import ObjectRecognizerAsTemplateLearner
 from adam.ontology import IS_SPEAKER, IS_ADDRESSEE
 from adam.ontology.phase1_ontology import (
     RED,
@@ -33,11 +35,25 @@ from adam.ontology.phase1_ontology import (
 from adam.situation.templates.phase1_templates import property_variable, sampled
 from tests.learner import TEST_OBJECT_RECOGNIZER
 
-SUBSET_ATTRIBUTE_LEARNER_FACTORY = lambda: SubsetAttributeLearner(
+OLD_SUBSET_ATTRIBUTE_LEARNER_FACTORY = lambda: SubsetAttributeLearner(
     object_recognizer=TEST_OBJECT_RECOGNIZER, ontology=GAILA_PHASE_1_ONTOLOGY
 )
+NEW_SUBSET_ATTRIBUTE_LEARNER_FACTORY = lambda: IntegratedTemplateLearner(
+    object_learner=ObjectRecognizerAsTemplateLearner(
+        object_recognizer=TEST_OBJECT_RECOGNIZER
+    ),
+    attribute_learner=SubsetAttributeLearnerNew(
+        ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5
+    ),
+)
+
+LEARNERS_TO_TEST = [
+    OLD_SUBSET_ATTRIBUTE_LEARNER_FACTORY,
+    NEW_SUBSET_ATTRIBUTE_LEARNER_FACTORY,
+]
 
 
+@pytest.mark.parametrize("learner_factory", LEARNERS_TO_TEST)
 @pytest.mark.parametrize(
     "color_node,object_0_node,object_1_node",
     [
@@ -48,7 +64,9 @@ SUBSET_ATTRIBUTE_LEARNER_FACTORY = lambda: SubsetAttributeLearner(
         (WHITE, BALL, CAR),
     ],
 )
-def test_subset_color_attribute_learner(color_node, object_0_node, object_1_node):
+def test_subset_color_attribute_learner(
+    learner_factory, color_node, object_0_node, object_1_node
+):
     color = property_variable(f"{color_node.handle}", color_node)
     object_0 = standard_object(
         f"{object_0_node.handle}", object_0_node, added_properties=[color]
@@ -90,7 +108,7 @@ def test_subset_color_attribute_learner(color_node, object_0_node, object_1_node
         ),
     )
 
-    learner = SUBSET_ATTRIBUTE_LEARNER_FACTORY()
+    learner = learner_factory()
 
     for (
         _,
@@ -109,10 +127,11 @@ def test_subset_color_attribute_learner(color_node, object_0_node, object_1_node
         descriptions_from_learner = learner.describe(test_perceptual_representation)
         gold = test_lingustics_description.as_token_sequence()
         assert descriptions_from_learner
-        assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
+        assert gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
 
 
-def test_subset_my_attribute_learner():
+@pytest.mark.parametrize("learner_factory", LEARNERS_TO_TEST)
+def test_subset_my_attribute_learner(learner_factory):
     person = standard_object("speaker", PERSON, added_properties=[IS_SPEAKER])
     inanimate_object = standard_object(
         "object", INANIMATE_OBJECT, required_properties=[PERSON_CAN_HAVE]
@@ -142,7 +161,7 @@ def test_subset_my_attribute_learner():
         ),
     )
 
-    learner = SUBSET_ATTRIBUTE_LEARNER_FACTORY()
+    learner = learner_factory()
 
     for (
         _,
@@ -161,10 +180,11 @@ def test_subset_my_attribute_learner():
         descriptions_from_learner = learner.describe(test_perceptual_representation)
         gold = test_lingustics_description.as_token_sequence()
         assert descriptions_from_learner
-        assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
+        assert gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
 
 
-def test_your_attribute_learner():
+@pytest.mark.parametrize("learner_factory", LEARNERS_TO_TEST)
+def test_your_attribute_learner(learner_factory):
     person_0 = standard_object("speaker", PERSON, added_properties=[IS_SPEAKER])
     person_1 = standard_object("addressee", PERSON, added_properties=[IS_ADDRESSEE])
     inanimate_object = standard_object(
@@ -201,7 +221,7 @@ def test_your_attribute_learner():
         ),
     )
 
-    learner = SUBSET_ATTRIBUTE_LEARNER_FACTORY()
+    learner = learner_factory()
 
     for (
         _,
@@ -220,4 +240,4 @@ def test_your_attribute_learner():
         descriptions_from_learner = learner.describe(test_perceptual_representation)
         gold = test_lingustics_description.as_token_sequence()
         assert descriptions_from_learner
-        assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
+        assert gold in [desc.as_token_sequence() for desc in descriptions_from_learner]

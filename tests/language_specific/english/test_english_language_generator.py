@@ -8,6 +8,8 @@ from adam.language_specific.english.english_language_generator import (
     PREFER_DITRANSITIVE,
     SimpleRuleBasedEnglishLanguageGenerator,
     USE_ADVERBIAL_PATH_MODIFIER,
+    ATTRIBUTES_AS_X_IS_Y,
+    IGNORE_COLORS,
 )
 from adam.language_specific.english.english_phase_1_lexicon import (
     GAILA_PHASE_1_ENGLISH_LEXICON,
@@ -58,6 +60,10 @@ from adam.ontology.phase1_ontology import (
     TAKE,
     CAR,
     ROLL_SURFACE_AUXILIARY,
+    has,
+    bigger_than,
+    RED,
+    BLACK,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -73,7 +79,7 @@ from adam.ontology.phase1_spatial_relations import (
     VIA,
 )
 from adam.random_utils import FixedIndexChooser
-from adam.relation import Relation
+from adam.relation import Relation, flatten_relations
 from adam.situation import Action, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam_test_utils import situation_object
@@ -130,7 +136,7 @@ def test_two_objects():
     )
     assert only(
         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
-    ).as_token_sequence() == ("two", "boxes")
+    ).as_token_sequence() == ("two", "box", "s")
 
 
 def test_two_objects_with_dad():
@@ -170,7 +176,7 @@ def test_many_objects():
     )
     assert only(
         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
-    ).as_token_sequence() == ("many", "balls")
+    ).as_token_sequence() == ("many", "ball", "s")
 
 
 def test_simple_verb():
@@ -1236,6 +1242,50 @@ def test_region_with_out_addressee():
         )
 
 
+def test_is_color_when_dynamic():
+    agent = situation_object(BALL, properties=[RED])
+    ground = situation_object(GROUND)
+    with pytest.raises(RuntimeError):
+        generated_tokens(
+            HighLevelSemanticsSituation(
+                ontology=GAILA_PHASE_1_ONTOLOGY,
+                salient_objects=[agent],
+                actions=[
+                    Action(
+                        ROLL,
+                        argument_roles_to_fillers=[(AGENT, agent)],
+                        auxiliary_variable_bindings=[(ROLL_SURFACE_AUXILIARY, ground)],
+                    )
+                ],
+                syntax_hints=[ATTRIBUTES_AS_X_IS_Y],
+            )
+        )
+
+
+def test_is_property_none():
+    agent = situation_object(BALL, properties=[RED])
+    with pytest.raises(RuntimeError):
+        generated_tokens(
+            HighLevelSemanticsSituation(
+                ontology=GAILA_PHASE_1_ONTOLOGY,
+                salient_objects=[agent],
+                syntax_hints=[ATTRIBUTES_AS_X_IS_Y, IGNORE_COLORS],
+            )
+        )
+
+
+def test_multiple_colors():
+    agent = situation_object(BALL, properties=[RED, BLACK])
+    with pytest.raises(RuntimeError):
+        generated_tokens(
+            HighLevelSemanticsSituation(
+                ontology=GAILA_PHASE_1_ONTOLOGY,
+                salient_objects=[agent],
+                syntax_hints=[ATTRIBUTES_AS_X_IS_Y],
+            )
+        )
+
+
 def region_as_goal_situation(
     goal: Region[SituationObject], goal_object: SituationObject
 ) -> HighLevelSemanticsSituation:
@@ -1262,6 +1312,257 @@ def region_as_goal_situation(
             ],
         ),
     )
+
+
+def test_more_than_one_action():
+    agent = situation_object(DOG)
+    box = situation_object(BOX)
+    situation = HighLevelSemanticsSituation(
+        salient_objects=[agent],
+        other_objects=[box],
+        actions=[
+            Action(GO, argument_roles_to_fillers=[(AGENT, agent), (GOAL, box)]),
+            Action(FALL, argument_roles_to_fillers=[(AGENT, box), (GOAL, agent)]),
+        ],
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+    )
+
+    with pytest.raises(RuntimeError):
+        generated_tokens(situation)
+
+
+def test_multiple_has_relations():
+    agent = situation_object(MOM)
+    ball = situation_object(BALL)
+    cookie = situation_object(COOKIE)
+    situation = HighLevelSemanticsSituation(
+        salient_objects=[agent, ball],
+        always_relations=[has(agent, [ball, cookie])],
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+    )
+
+    with pytest.raises(RuntimeError):
+        generated_tokens(situation)
+
+
+def test_has_as_verb():
+    speaker = situation_object(MOM, properties=[IS_SPEAKER])
+    ball = situation_object(BALL)
+    box = situation_object(BOX)
+
+    speaker_has_ball = HighLevelSemanticsSituation(
+        salient_objects=[speaker, ball],
+        always_relations=[has(speaker, ball)],
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+    )
+
+    speaker_has_ball_on_box = HighLevelSemanticsSituation(
+        salient_objects=[speaker, ball, box],
+        always_relations=flatten_relations([has(speaker, ball), on(ball, box)]),
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+    )
+
+    assert ("I", "have", "my", "ball") == generated_tokens(speaker_has_ball)
+
+    assert ("I", "have", "my", "ball", "on", "a", "box") == generated_tokens(
+        speaker_has_ball_on_box
+    )
+
+
+def test_multiple_posession():
+    speaker = situation_object(MOM, properties=[IS_SPEAKER])
+    addressee = situation_object(DAD, properties=[IS_ADDRESSEE])
+    ball = situation_object(BALL)
+    multiple_possession = HighLevelSemanticsSituation(
+        salient_objects=[speaker, addressee, ball],
+        always_relations=[has([speaker, addressee], ball)],
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+    )
+
+    with pytest.raises(RuntimeError):
+        generated_tokens(multiple_possession)
+
+
+def test_fail_relation():
+    mom = situation_object(MOM)
+    ball = situation_object(BALL)
+
+    ball_bigger_mom = HighLevelSemanticsSituation(
+        salient_objects=[mom, ball],
+        always_relations=[bigger_than(ball, mom)],
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+    )
+
+    with pytest.raises(RuntimeError):
+        generated_tokens(ball_bigger_mom)
+
+
+def test_multiple_action_heads():
+    mom = situation_object(MOM)
+    dad = situation_object(DAD)
+    box = situation_object(BOX)
+
+    mom_and_dad_go_to_box = HighLevelSemanticsSituation(
+        salient_objects=[mom, dad, box],
+        actions=[
+            Action(
+                GO, argument_roles_to_fillers=[(AGENT, mom), (AGENT, dad), (GOAL, box)]
+            )
+        ],
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+    )
+
+    with pytest.raises(RuntimeError):
+        generated_tokens(mom_and_dad_go_to_box)
+
+
+def test_only_goal():
+    box = situation_object(BOX)
+
+    only_goal = HighLevelSemanticsSituation(
+        salient_objects=[box],
+        actions=[
+            Action(GO, argument_roles_to_fillers=[(GOAL, Region(box, distance=PROXIMAL))])
+        ],
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+    )
+
+    with pytest.raises(RuntimeError):
+        generated_tokens(only_goal)
+
+
+def test_region_as_theme():
+    box = situation_object(BOX)
+
+    region_as_theme = HighLevelSemanticsSituation(
+        salient_objects=[box],
+        actions=[
+            Action(
+                FALL, argument_roles_to_fillers=[(THEME, Region(box, distance=PROXIMAL))]
+            )
+        ],
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+    )
+    with pytest.raises(RuntimeError):
+        generated_tokens(region_as_theme)
+
+
+def test_invalid_arguement_to_action():
+    box = situation_object(BOX)
+
+    invalid_argument = HighLevelSemanticsSituation(
+        salient_objects=[box],
+        actions=[Action(FALL, argument_roles_to_fillers=[(BOX, box)])],
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+    )
+
+    with pytest.raises(RuntimeError):
+        generated_tokens(invalid_argument)
+
+
+def test_beside_distal():
+    box = situation_object(BOX)
+    mom = situation_object(MOM)
+    learner = situation_object(LEARNER)
+
+    beside_distal = HighLevelSemanticsSituation(
+        salient_objects=[mom, box],
+        other_objects=[learner],
+        actions=[
+            Action(
+                GO,
+                argument_roles_to_fillers=[
+                    (AGENT, mom),
+                    (
+                        GOAL,
+                        Region(
+                            box,
+                            distance=DISTAL,
+                            direction=Direction(
+                                False, HorizontalAxisOfObject(box, index=0)
+                            ),
+                        ),
+                    ),
+                ],
+            )
+        ],
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        axis_info=AxesInfo(
+            addressee=learner,
+            axes_facing=[
+                (
+                    learner,
+                    # TODO: fix this hack
+                    HorizontalAxisOfObject(obj, index=1).to_concrete_axis(  # type: ignore
+                        None
+                    ),
+                )
+                for obj in [mom, box]
+                if obj.axes
+            ],
+        ),
+    )
+
+    basic_distal = HighLevelSemanticsSituation(
+        salient_objects=[mom, box],
+        actions=[
+            Action(
+                GO,
+                argument_roles_to_fillers=[
+                    (AGENT, mom),
+                    (GOAL, Region(box, distance=DISTAL)),
+                ],
+            )
+        ],
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+    )
+
+    with pytest.raises(RuntimeError):
+        generated_tokens(beside_distal)
+
+    with pytest.raises(RuntimeError):
+        generated_tokens(basic_distal)
+
+
+def test_action_attribute_request():
+    box = situation_object(BOX, properties=[RED])
+    mom = situation_object(MOM)
+
+    mom_go_to_red_box = HighLevelSemanticsSituation(
+        salient_objects=[mom, box],
+        actions=[Action(GO, argument_roles_to_fillers=[(AGENT, mom), (GOAL, box)])],
+        syntax_hints=[ATTRIBUTES_AS_X_IS_Y],
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+    )
+
+    with pytest.raises(RuntimeError):
+        generated_tokens(mom_go_to_red_box)
+
+
+def test_red_black_attribute():
+    box = situation_object(BOX, properties=[BLACK, RED])
+
+    red_black_box = HighLevelSemanticsSituation(
+        salient_objects=[box],
+        syntax_hints=[ATTRIBUTES_AS_X_IS_Y],
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+    )
+
+    with pytest.raises(RuntimeError):
+        generated_tokens(red_black_box)
+
+
+def test_box_without_attribute():
+    box = situation_object(BOX)
+
+    box_without_attribute = HighLevelSemanticsSituation(
+        salient_objects=[box],
+        syntax_hints=[ATTRIBUTES_AS_X_IS_Y],
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+    )
+
+    with pytest.raises(RuntimeError):
+        generated_tokens(box_without_attribute)
 
 
 def generated_tokens(situation):

@@ -154,25 +154,31 @@ def test_learner_as_default_addressee():
         ],
     )
 
-    situation_with_learner = sampled(
-        template_with_learner,
-        ontology=GAILA_PHASE_1_ONTOLOGY,
-        chooser=RandomChooser.for_seed(0),
-        max_to_sample=1,
+    situation_with_learner = tuple(
+        sampled(
+            template_with_learner,
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+            chooser=RandomChooser.for_seed(0),
+            max_to_sample=1,
+        )
     )
 
-    situation_with_out_learner = sampled(
-        template_with_out_learner,
-        ontology=GAILA_PHASE_1_ONTOLOGY,
-        chooser=RandomChooser.for_seed(0),
-        max_to_sample=1,
+    situation_with_out_learner = tuple(
+        sampled(
+            template_with_out_learner,
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+            chooser=RandomChooser.for_seed(0),
+            max_to_sample=1,
+        )
     )
 
-    situation_with_addressee = sampled(
-        template_with_addressee,
-        ontology=GAILA_PHASE_1_ONTOLOGY,
-        chooser=RandomChooser.for_seed(0),
-        max_to_sample=1,
+    situation_with_addressee = tuple(
+        sampled(
+            template_with_addressee,
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+            chooser=RandomChooser.for_seed(0),
+            max_to_sample=1,
+        )
     )
 
     for object_ in situation_with_learner[0].all_objects:
@@ -221,11 +227,13 @@ def test_before_after_relations_asserted():
         after_action_relations=flatten_relations([far(ball, box)]),
     )
 
-    situation_with_relations = sampled(
-        template_action,
-        ontology=GAILA_PHASE_1_ONTOLOGY,
-        chooser=RandomChooser.for_seed(0),
-        max_to_sample=1,
+    situation_with_relations = tuple(
+        sampled(
+            template_action,
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+            chooser=RandomChooser.for_seed(0),
+            max_to_sample=1,
+        )
     )
 
     assert situation_with_relations[0].before_action_relations

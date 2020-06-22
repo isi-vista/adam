@@ -32,6 +32,7 @@ class LexiconEntry:
     intrinsic_morphosyntactic_properties: ImmutableSet[MorphosyntacticProperty] = attrib(
         converter=_to_immutableset, default=immutableset()
     )
+    counting_classifier: Optional[str] = attrib(default=None, kw_only=True)
     plural_form: Optional[str] = attrib(default=None, kw_only=True)
     verb_form_sg3_prs: Optional[str] = attrib(default=None, kw_only=True)
 

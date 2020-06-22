@@ -2,7 +2,7 @@ r"""
 Ways to produce human language descriptions of `Situation`\ s by rule.
 """
 from abc import ABC, abstractmethod
-from typing import Generic, TypeVar
+from typing import Generic
 
 from attr import attrib, attrs
 from attr.validators import instance_of
@@ -12,9 +12,7 @@ from vistautils.iter_utils import only
 from adam.language import LinguisticDescriptionT, TokenSequenceLinguisticDescription
 from adam.language.ontology_dictionary import OntologyLexicon
 from adam.random_utils import SequenceChooser
-from adam.situation import LocatedObjectSituation, Situation
-
-SituationT = TypeVar("SituationT", bound=Situation)
+from adam.situation import LocatedObjectSituation, SituationT
 
 
 class LanguageGenerator(Generic[SituationT, LinguisticDescriptionT], ABC):

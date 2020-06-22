@@ -25,7 +25,7 @@ from adam.curriculum.phase1_curriculum import (
 from adam.curriculum.pursuit_curriculum import make_simple_pursuit_curriculum
 from adam.experiment import Experiment, execute_experiment
 from adam.experiment.observer import LearningProgressHtmlLogger, CandidateAccuracyObserver
-from adam.learner import LanguageLearner
+from adam.learner import TopLevelLanguageLearner
 from adam.learner.object_recognizer import ObjectRecognizer
 from adam.learner.prepositions import SubsetPrepositionLearner
 from adam.learner.pursuit import HypothesisLogger
@@ -84,7 +84,7 @@ def log_experiment_entry_point(params: Parameters) -> None:
 
 def learner_factory_from_params(
     params: Parameters, graph_logger: Optional[HypothesisLogger]
-) -> Callable[[], LanguageLearner]:  # type: ignore
+) -> Callable[[], TopLevelLanguageLearner]:  # type: ignore
     learner_type = params.string(
         "learner",
         [

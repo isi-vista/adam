@@ -27,6 +27,7 @@ from typing import (
     Iterable,
     List,
     Mapping,
+    MutableMapping,
     Optional,
     Set,
     Sized,
@@ -34,20 +35,17 @@ from typing import (
     TypeVar,
     Union,
     cast,
-    MutableMapping,
 )
 from uuid import uuid4
 
 import graphviz
-from attr.validators import deep_iterable, instance_of, optional
-from more_itertools import first, ilen, pairwise
+from more_itertools import first, ilen
 from networkx import DiGraph, connected_components, is_isomorphic, set_node_attributes
 from typing_extensions import Protocol
 
 from adam.axes import AxesInfo, HasAxes
 from adam.axis import GeonAxis
 from adam.geon import Geon, MaybeHasGeon
-from adam.language import LinguisticDescription
 from adam.ontology import OntologyNode
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
@@ -78,11 +76,13 @@ from adam.perception.high_level_semantics_situation_to_developmental_primitive_p
 )
 from adam.random_utils import RandomChooser
 from adam.relation import Relation
+from adam.semantics import ObjectSemanticNode
 from adam.situation import SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.utilities import sign
 from adam.utils.networkx_utils import copy_digraph, digraph_with_nodes_sorted_by, subgraph
 from attr import attrib, attrs
+from attr.validators import deep_iterable, instance_of, optional
 from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
 from immutablecollections.converter_utils import (
     _to_immutabledict,
@@ -92,7 +92,6 @@ from immutablecollections.converter_utils import (
 from vistautils.misc_utils import str_list_limited
 from vistautils.preconditions import check_arg
 from vistautils.range import Range
-from vistautils.span import Span
 
 
 class Incrementer:
@@ -108,24 +107,27 @@ class Incrementer:
 
 DebugCallableType = Callable[[DiGraph, Dict[Any, Any]], None]
 
-
-@attrs(frozen=True, eq=False, slots=True)
-class MatchedObjectNode:
-    """
-    A `MatchedObjectNode` is the PerceptionGraph node to indicate an object which
-    has been identified in the graph
-    """
-
-    name: Tuple[str] = attrib()
-
-
 PerceptionGraphNode = Union[
     ObjectPerception,
     OntologyNode,
     Tuple[Region[Any], int],
     Tuple[Geon, int],
     GeonAxis,
-    MatchedObjectNode,
+    ObjectSemanticNode,
+    SpatialPath[ObjectPerception],
+    PathOperator,
+]
+
+# Some perception graph nodes are wrapped in tuples with counters
+# to avoid them be treated as equal in NetworkX graphs.
+# This type is the same as PerceptionGraphNode, except with such wrapping removed.
+UnwrappedPerceptionGraphNode = Union[
+    ObjectPerception,
+    OntologyNode,
+    Region[Any],
+    Geon,
+    GeonAxis,
+    ObjectSemanticNode,
     SpatialPath[ObjectPerception],
     PathOperator,
 ]
@@ -134,7 +136,7 @@ PerceptionGraphNode = Union[
 EdgeLabel = Union[OntologyNode, str, Direction[Any]]
 """
 This is the core information stored on a perception graph edge.
-This is wrapped in `TemporallyScopdPerceptionGraphEdgeAttribute`
+This is wrapped in `TemporallyScopedPerceptionGraphEdgeAttribute`
 before actually being applied to a `DiGraph` edge.
 """
 
@@ -471,6 +473,7 @@ class PerceptionGraph(PerceptionGraphProtocol):
         *,
         replace_node_labels: Mapping[Any, str] = immutabledict(),
     ) -> str:
+        unwrapped_perception_node: UnwrappedPerceptionGraphNode
         if isinstance(perception_node, tuple):
             unwrapped_perception_node = perception_node[0]
         else:
@@ -494,8 +497,8 @@ class PerceptionGraph(PerceptionGraphProtocol):
             label = str(unwrapped_perception_node.cross_section) + str(
                 unwrapped_perception_node.cross_section_size
             )
-        elif isinstance(unwrapped_perception_node, MatchedObjectNode):
-            label = " ".join(unwrapped_perception_node.name)
+        elif isinstance(unwrapped_perception_node, ObjectSemanticNode):
+            label = " ".join(unwrapped_perception_node.concept.debug_string)
         elif isinstance(unwrapped_perception_node, SpatialPath):
             label = "path"
         elif isinstance(unwrapped_perception_node, PathOperator):
@@ -567,7 +570,7 @@ class PerceptionGraph(PerceptionGraphProtocol):
 
 
 @attrs(frozen=True, slots=True, repr=False)
-class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
+class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredicate"]):
     r"""
     A pattern which can match `PerceptionGraph`\ s.
 
@@ -755,6 +758,9 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
     def __contains__(self, item) -> bool:
         return item in self._graph
 
+    def __iter__(self):
+        return iter(self._graph)
+
     def copy_with_temporal_scopes(
         self, required_temporal_scopes: Union[TemporalScope, Iterable[TemporalScope]]
     ) -> "PerceptionGraphPattern":
@@ -828,10 +834,10 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized):
                     perception_node_to_pattern_node[key] = IsOntologyNodePredicate(node)
                 elif isinstance(node, RgbColorPerception):
                     perception_node_to_pattern_node[key] = IsColorNodePredicate(node)
-                elif isinstance(node, MatchedObjectNode):
+                elif isinstance(node, ObjectSemanticNode):
                     perception_node_to_pattern_node[
                         key
-                    ] = MatchedObjectPerceptionPredicate()
+                    ] = ObjectSemanticNodePerceptionPredicate()
                 elif isinstance(node, SpatialPath):
                     perception_node_to_pattern_node[key] = IsPathPredicate()
                 elif isinstance(node, PathOperator):
@@ -1090,7 +1096,7 @@ class PatternMatching:
 
         pattern: PerceptionGraphPattern
         graph: PerceptionGraphProtocol
-        pattern_node_to_graph_node_for_largest_match: Dict[Any, Any]
+        pattern_node_to_graph_node_for_largest_match: Mapping[Any, Any]
         last_failed_pattern_node: "NodePredicate"
         largest_match_pattern_subgraph: PerceptionGraphPattern = attrib()
         # TODO: the below is just a DiGraph because these is currently overloaded
@@ -1661,6 +1667,18 @@ class AnyObjectPerception(NodePredicate):
         return isinstance(predicate_node, AnyObjectPerception)
 
 
+def unwrap_if_necessary(graph_node: PerceptionGraphNode) -> UnwrappedPerceptionGraphNode:
+    """
+    Some nodes might be wrapped in tuples together with IDs to prevent them
+    from being compared equal and collapsed in perception graphs.
+    This method removes that wrapping.
+    """
+    if isinstance(graph_node, tuple):
+        return graph_node[0]
+    else:
+        return graph_node
+
+
 @attrs(frozen=True, slots=True, eq=False)
 class AxisPredicate(NodePredicate):
     """
@@ -1674,19 +1692,20 @@ class AxisPredicate(NodePredicate):
     )
 
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
-        # axes might be wrapped in tuples with their id()
-        # in order to simulate comparison by object ID.
-        if isinstance(graph_node, tuple):
-            graph_node = graph_node[0]
+        unwrapped_graph_node = unwrap_if_necessary(graph_node)
 
-        if isinstance(graph_node, GeonAxis):
-            if self.curved is not None and self.curved != graph_node.curved:
+        if isinstance(unwrapped_graph_node, GeonAxis):
+            if self.curved is not None and self.curved != unwrapped_graph_node.curved:
                 return False
-            if self.directed is not None and self.directed != graph_node.directed:
+            if (
+                self.directed is not None
+                and self.directed != unwrapped_graph_node.directed
+            ):
                 return False
             if (
                 self.aligned_to_gravitational is not None
-                and self.aligned_to_gravitational != graph_node.aligned_to_gravitational
+                and self.aligned_to_gravitational
+                != unwrapped_graph_node.aligned_to_gravitational
             ):
                 return False
             return True
@@ -1747,13 +1766,13 @@ class GeonPredicate(NodePredicate):
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
         # geons might be wrapped in tuples with their id()
         # in order to simulate comparison by object ID.
-        if isinstance(graph_node, tuple):
-            graph_node = graph_node[0]
+        unwrapped_graph_node = unwrap_if_necessary(graph_node)
 
-        if isinstance(graph_node, Geon):
+        if isinstance(unwrapped_graph_node, Geon):
             return (
-                self.template_geon.cross_section == graph_node.cross_section
-                and self.template_geon.cross_section_size == graph_node.cross_section_size
+                self.template_geon.cross_section == unwrapped_graph_node.cross_section
+                and self.template_geon.cross_section_size
+                == unwrapped_graph_node.cross_section_size
             )
         else:
             return False
@@ -1814,9 +1833,11 @@ class RegionPredicate(NodePredicate):
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
         # regions might be wrapped in tuples with their id()
         # in order to simulate comparison by object ID.
-        if isinstance(graph_node, tuple):
-            graph_node = graph_node[0]
-        return isinstance(graph_node, Region) and self.distance == graph_node.distance
+        unwrapped_graph_node = unwrap_if_necessary(graph_node)
+        return (
+            isinstance(unwrapped_graph_node, Region)
+            and self.distance == unwrapped_graph_node.distance
+        )
 
     def dot_label(self) -> str:
         return f"dist({self.distance})"
@@ -1845,11 +1866,8 @@ class IsOntologyNodePredicate(NodePredicate):
     property_value: OntologyNode = attrib(validator=instance_of(OntologyNode))
 
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
-        # ontology nodes might be wrapped in tuples with their id()
-        # in order to simulate comparison by object ID.
-        if isinstance(graph_node, tuple):
-            graph_node = graph_node[0]
-        return graph_node == self.property_value
+        unwrapped_graph_node = unwrap_if_necessary(graph_node)
+        return unwrapped_graph_node == self.property_value
 
     def dot_label(self) -> str:
         return f"{self.property_value.handle}"
@@ -1870,16 +1888,12 @@ class IsColorNodePredicate(NodePredicate):
     color: RgbColorPerception = attrib(validator=instance_of(RgbColorPerception))
 
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
-        # color nodes might be wrapped in tuples with their id()
-        # in order to simulate comparison by object ID.
-        if isinstance(graph_node, tuple):
-            graph_node = graph_node[0]
-
-        if isinstance(graph_node, RgbColorPerception):
+        unwrapped_graph_node = unwrap_if_necessary(graph_node)
+        if isinstance(unwrapped_graph_node, RgbColorPerception):
             return (
-                (graph_node.red == self.color.red)
-                and (graph_node.blue == self.color.blue)
-                and (graph_node.green == self.color.green)
+                (unwrapped_graph_node.red == self.color.red)
+                and (unwrapped_graph_node.blue == self.color.blue)
+                and (unwrapped_graph_node.green == self.color.green)
             )
         return False
 
@@ -1932,22 +1946,22 @@ class AndNodePredicate(NodePredicate):
 
 
 @attrs(frozen=True, slots=True, eq=False)
-class MatchedObjectPerceptionPredicate(NodePredicate):
+class ObjectSemanticNodePerceptionPredicate(NodePredicate):
     """
     `NodePredicate` which matches if the node is of this type
     """
 
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
-        return isinstance(graph_node, MatchedObjectNode)
+        return isinstance(graph_node, ObjectSemanticNode)
 
     def dot_label(self) -> str:
         return "*[matched-obj]"
 
     def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
-        return isinstance(predicate_node, MatchedObjectPerceptionPredicate)
+        return isinstance(predicate_node, ObjectSemanticNodePerceptionPredicate)
 
     def is_equivalent(self, other) -> bool:
-        return isinstance(other, MatchedObjectPerceptionPredicate)
+        return isinstance(other, ObjectSemanticNodePerceptionPredicate)
 
 
 @attrs(frozen=True, slots=True, eq=False)
@@ -1977,11 +1991,8 @@ class PathOperatorPredicate(NodePredicate):
     reference_path_operator: PathOperator = attrib(validator=instance_of(PathOperator))
 
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
-        # path operator nodes might be wrapped in tuples with their id()
-        # in order to simulate comparison by object ID.
-        if isinstance(graph_node, tuple):
-            graph_node = graph_node[0]
-        return graph_node == self.reference_path_operator
+
+        return unwrap_if_necessary(graph_node) == self.reference_path_operator
 
     def dot_label(self) -> str:
         return self.reference_path_operator.name
@@ -2231,7 +2242,7 @@ def _translate_axes(
     # the relations between those axes becomes edges
     for axis_relation in owner.axes.axis_relations:
         mapped_arg1 = map_axis(axis_relation.first_slot)
-        mapped_arg2 = map_axis(axis_relation.second_slot)
+        mapped_arg2 = map_axis(cast(GeonAxis, axis_relation.second_slot))
         _add_labelled_edge(
             graph,
             mapped_arg1,
@@ -2287,7 +2298,7 @@ def _translate_region(
         temporal_scopes=temporal_scopes,
     )
     if region.direction:
-        axis_relative_to = region.direction.relative_to_axis.to_concrete_axis(axes_info)
+        axis_relative_to = region.direction.relative_to_concrete_axis(axes_info)
         mapped_axis_relative_to = map_node(axis_relative_to)
         _add_labelled_edge(
             graph,
@@ -2304,7 +2315,7 @@ def _translate_region(
 # We try to match the most restrictive nodes first.
 _PATTERN_PREDICATE_NODE_ORDER = [
     # If we have matchedObjects in the pattern we want to try and find these first.
-    MatchedObjectPerceptionPredicate,
+    ObjectSemanticNodePerceptionPredicate,
     # Paths are rare, match them next
     IsPathPredicate,
     PathOperatorPredicate,
@@ -2329,7 +2340,7 @@ def _pattern_matching_node_order(node_node_data_tuple) -> int:
 # which can have a significant impact on match speed.
 # This should match _PATTERN_PREDICATE_NODE_ORDER above.
 _GRAPH_NODE_ORDER = [  # type: ignore
-    MatchedObjectNode,
+    ObjectSemanticNode,
     SpatialPath,
     PathOperator,
     OntologyNode,
@@ -2493,60 +2504,6 @@ class GraphLogger:
             )
         else:
             logging.log(level, msg, *args)
-
-
-# Used by LanguageAlignedPerception below.
-def _sort_mapping_by_token_spans(pairs) -> ImmutableDict[MatchedObjectNode, Span]:
-    # we type: ignore because the proper typing of pairs is huge and mypy is going to screw it up
-    # anyway.
-    unsorted = immutabledict(pairs)  # type: ignore
-    return immutabledict(
-        (matched_node, token_span)
-        for (matched_node, token_span) in sorted(
-            unsorted.items(),
-            key=lambda item: Span.earliest_then_longest_first_key(item[1]),
-        )
-    )
-
-
-@attrs(frozen=True)
-class LanguageAlignedPerception:
-    """
-    Represents an alignment between a `PerceptionGraph` and a `TokensSequenceLinguisticDescription`.
-
-    This can be generified in the future.
-
-    *node_to_language_span* and *language_span_to_node* are both guaranteed to be sorted by
-    the token spans.
-
-    Aligned token spans may not overlap.
-    """
-
-    language: LinguisticDescription = attrib(validator=instance_of(LinguisticDescription))
-    perception_graph: PerceptionGraph = attrib(validator=instance_of(PerceptionGraph))
-    node_to_language_span: ImmutableDict[MatchedObjectNode, Span] = attrib(
-        converter=_sort_mapping_by_token_spans, default=immutabledict()
-    )
-    language_span_to_node: ImmutableDict[Span, PerceptionGraphNode] = attrib(init=False)
-    aligned_nodes: ImmutableSet[MatchedObjectNode] = attrib(init=False)
-
-    @language_span_to_node.default
-    def _init_language_span_to_node(self) -> ImmutableDict[PerceptionGraphNode, Span]:
-        return immutabledict((v, k) for (k, v) in self.node_to_language_span.items())
-
-    @aligned_nodes.default
-    def _init_aligned_nodes(self) -> ImmutableSet[MatchedObjectNode]:
-        return immutableset(self.node_to_language_span.keys())
-
-    def __attrs_post_init__(self) -> None:
-        # In the converter, we guarantee that node_to_language_span is sorted by
-        # token indices.
-        for (span1, span2) in pairwise(self.node_to_language_span.values()):
-            if not span1.precedes(span2):
-                raise RuntimeError(
-                    f"Aligned spans in a LanguageAlignedPerception must be "
-                    f"disjoint but got {span1} and {span2}"
-                )
 
 
 def _uniquify(
@@ -2813,7 +2770,9 @@ class _FrameTranslation:
             edges_to_add.append(
                 (
                     path,
-                    path.reference_axis.to_concrete_axis(axes_info),
+                    path.reference_axis
+                    if isinstance(path.reference_axis, GeonAxis)
+                    else path.reference_axis.to_concrete_axis(axes_info),
                     REFERENCE_AXIS_LABEL,
                 )
             )

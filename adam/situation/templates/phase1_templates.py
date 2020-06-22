@@ -730,6 +730,7 @@ def object_variable(
     added_properties: Iterable[
         Union[OntologyNode, TemplatePropertyVariable]
     ] = immutableset(),
+    banned_ontology_types: Iterable[OntologyNode] = immutableset(),
 ) -> TemplateObjectVariable:
     r"""
     Create a `TemplateObjectVariable` with the specified *debug_handle*
@@ -743,6 +744,9 @@ def object_variable(
     "anything filling this variable should be animate."
     Use *added_properties* for things like
     "whatever fills this variable, make it red."
+
+    You can optionally specify *banned_ontology_types* to block this variable
+    from being filled by those ontology types or any of their descendants.
     """
     real_required_properties = list(required_properties)
     if root_node != LEARNER and root_node != GROUND:
@@ -756,6 +760,7 @@ def object_variable(
             descendents_of=root_node,
             required_properties=real_required_properties,
             banned_properties=banned_properties,
+            banned_ontology_types=banned_ontology_types,
         ),
         asserted_properties=added_properties,
     )

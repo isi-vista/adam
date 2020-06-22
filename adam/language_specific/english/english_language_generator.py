@@ -36,21 +36,25 @@ from adam.language.dependency.universal_dependencies import (
     PROPER_NOUN,
     VERB,
     IS_ATTRIBUTE,
+    OTHER,
+    MARKER,
 )
 from adam.language.language_generator import LanguageGenerator
 from adam.language.lexicon import LexiconEntry
 from adam.language.ontology_dictionary import OntologyLexicon
 from adam.language_specific.english.english_phase_1_lexicon import (
-    ALLOWS_DITRANSITIVE,
     GAILA_PHASE_1_ENGLISH_LEXICON,
     I,
-    MASS_NOUN,
     ME,
     YOU,
 )
-from adam.language_specific.english.english_syntax import (
+from adam.language_specific import (
     FIRST_PERSON,
     SECOND_PERSON,
+    ALLOWS_DITRANSITIVE,
+    MASS_NOUN,
+)
+from adam.language_specific.english.english_syntax import (
     SIMPLE_ENGLISH_DEPENDENCY_TREE_LINEARIZER,
 )
 from adam.ontology import IN_REGION, IS_ADDRESSEE, IS_SPEAKER, OntologyNode
@@ -66,6 +70,8 @@ from adam.ontology.phase1_ontology import (
     SIT,
     THEME,
     JUMP,
+    FAST,
+    SLOW,
 )
 from adam.ontology.phase1_spatial_relations import (
     EXTERIOR_BUT_IN_CONTACT,
@@ -75,6 +81,9 @@ from adam.ontology.phase1_spatial_relations import (
     Region,
     TOWARD,
     GRAVITATIONAL_UP,
+    SpatialPath,
+    AWAY_FROM,
+    TO,
 )
 from adam.random_utils import SequenceChooser
 from adam.relation import Relation
@@ -225,11 +234,6 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             # (e.g. in a situation where one box is on a table and one is below it,
             # don't output "two boxes")
             # https://github.com/isi-vista/adam/issues/129
-            if not _object.ontology_node:
-                raise RuntimeError(
-                    f"Don't know how to handle objects which don't correspond to "
-                    f"an ontology node currently: {_object}"
-                )
 
             # Check if the situation object is the speaker
             if IS_SPEAKER in _object.properties:
@@ -263,14 +267,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     _object.ontology_node  # pylint:disable=protected-access
                 )
 
-            if (
-                count > 1
-                and noun_lexicon_entry.plural_form
-                and len(self.object_counts) == 1
-            ):
-                word_form = noun_lexicon_entry.plural_form
-            else:
-                word_form = noun_lexicon_entry.base_form
+            word_form = noun_lexicon_entry.base_form
 
             dependency_node = DependencyTreeToken(
                 word_form,
@@ -284,56 +281,23 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 _object, count, dependency_node, noun_lexicon_entry=noun_lexicon_entry
             )
 
-            if ATTRIBUTES_AS_X_IS_Y in self.situation.syntax_hints:
-                # We can use this only in static situations
-                if self.situation.is_dynamic:
-                    raise RuntimeError(
-                        "Cannot produce X is Y language in dynamic situations"
-                    )
-                # If we want x is y language, first get the attributes
-                if IGNORE_COLORS in self.situation.syntax_hints:
-                    properties = [
-                        property_
-                        for property_ in _object.properties
-                        if not self.situation.ontology.is_subtype_of(property_, COLOR)
-                    ]
-                else:
-                    properties = [property_ for property_ in _object.properties]
-                if len(properties) > 1:
-                    raise RuntimeError(
-                        "Cannot handle X is Y language with multiple attributes"
-                    )
-                elif not properties:
-                    raise RuntimeError(
-                        "No available attributes (Y) for the X is Y language"
-                    )
+            # IF plural, add a separate +s marker token
+            if (
+                count > 1
+                and noun_lexicon_entry.plural_form
+                and len(self.object_counts) == 1
+            ):
+                # If plural
+                plural_marker_node = DependencyTreeToken("s", OTHER)  # PoS tag
+                self.dependency_graph.add_node(plural_marker_node)
+                self.dependency_graph.add_edge(
+                    plural_marker_node, dependency_node, role=MARKER
+                )
 
-                attribute_lexicon_entry = self._unique_lexicon_entry(first(properties))
-                node = DependencyTreeToken(
-                    attribute_lexicon_entry.base_form,
-                    attribute_lexicon_entry.part_of_speech,
-                    attribute_lexicon_entry.intrinsic_morphosyntactic_properties,
-                )
-                is_node = DependencyTreeToken("is", VERB, {})
-                self.dependency_graph.add_edge(
-                    is_node, dependency_node, role=IS_ATTRIBUTE
-                )
-                self.dependency_graph.add_edge(
-                    node, dependency_node, role=NOMINAL_MODIFIER
-                )
-            elif IGNORE_COLORS not in self.situation.syntax_hints:
-                # Begin work on translating modifiers of Nouns with Color
-                for property_ in _object.properties:
-                    if self.situation.ontology.is_subtype_of(property_, COLOR):
-                        color_lexicon_entry = self._unique_lexicon_entry(property_)
-                        color_node = DependencyTreeToken(
-                            color_lexicon_entry.base_form,
-                            color_lexicon_entry.part_of_speech,
-                            color_lexicon_entry.intrinsic_morphosyntactic_properties,
-                        )
-                        self.dependency_graph.add_edge(
-                            color_node, dependency_node, role=ADJECTIVAL_MODIFIER
-                        )
+            if ATTRIBUTES_AS_X_IS_Y in self.situation.syntax_hints:
+                self._translate_attribute_as_verb(_object, dependency_node)
+            else:
+                self._add_attributes(_object, dependency_node)
 
             self.objects_to_dependency_nodes[_object] = dependency_node
             return dependency_node
@@ -429,6 +393,60 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     determiner_node, noun_dependency_node, role=determiner_role
                 )
 
+        def _add_attributes(
+            self, _object: SituationObject, noun_dependency_node: DependencyTreeToken
+        ) -> None:
+            if IGNORE_COLORS not in self.situation.syntax_hints:
+                # Begin work on translating modifiers of Nouns with Color
+                for property_ in _object.properties:
+                    if self.situation.ontology.is_subtype_of(property_, COLOR):
+                        color_lexicon_entry = self._unique_lexicon_entry(property_)
+                        color_node = DependencyTreeToken(
+                            color_lexicon_entry.base_form,
+                            color_lexicon_entry.part_of_speech,
+                            color_lexicon_entry.intrinsic_morphosyntactic_properties,
+                        )
+                        self.dependency_graph.add_edge(
+                            color_node, noun_dependency_node, role=ADJECTIVAL_MODIFIER
+                        )
+
+        def _translate_attribute_as_verb(
+            self, _object: SituationObject, noun_dependency_node: DependencyTreeToken
+        ) -> None:
+            # We can use this only in static situations
+            if self.situation.is_dynamic:
+                raise RuntimeError("Cannot produce X is Y language in dynamic situations")
+            # If we want x is y language, first get the attributes
+            if IGNORE_COLORS in self.situation.syntax_hints:
+                properties = [
+                    property_
+                    for property_ in _object.properties
+                    if not self.situation.ontology.is_subtype_of(property_, COLOR)
+                ]
+            else:
+                properties = [property_ for property_ in _object.properties]
+
+            if len(properties) > 1:
+                raise RuntimeError(
+                    "Cannot handle X is Y language with multiple attributes"
+                )
+            elif not properties:
+                raise RuntimeError("No available attributes (Y) for the X is Y language")
+
+            attribute_lexicon_entry = self._unique_lexicon_entry(first(properties))
+            node = DependencyTreeToken(
+                attribute_lexicon_entry.base_form,
+                attribute_lexicon_entry.part_of_speech,
+                attribute_lexicon_entry.intrinsic_morphosyntactic_properties,
+            )
+            is_node = DependencyTreeToken("is", VERB, {})
+            self.dependency_graph.add_edge(
+                is_node, noun_dependency_node, role=IS_ATTRIBUTE
+            )
+            self.dependency_graph.add_edge(
+                node, noun_dependency_node, role=NOMINAL_MODIFIER
+            )
+
         def _translate_relation(
             self,
             action: Optional[Action[OntologyNode, SituationObject]],
@@ -476,6 +494,9 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 if not (
                     isinstance(filler, SituationObject)
                     and filler.ontology_node == LEARNER
+                )
+                and not (
+                    argument_role == GOAL and IGNORE_GOAL in self.situation.syntax_hints
                 )
                 # Explicitly ignore relationships which are LEARNER objects from language generation
             )
@@ -541,8 +562,6 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             argument_role: OntologyNode,
             filler: Union[SituationObject, SituationRegion],
         ) -> Tuple[DependencyRole, DependencyTreeToken]:
-            # TODO: to alternation
-            # https://github.com/isi-vista/adam/issues/150
             if isinstance(filler, SituationObject):
                 syntactic_role = self._translate_argument_role(
                     action, verb_lexical_entry, argument_role
@@ -729,6 +748,28 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     self._translate_relation_to_action_modifier(
                         action, relation, modifiers
                     )
+                if action.during.objects_to_paths:
+                    for (
+                        path_object,
+                        spatial_path,
+                    ) in action.during.objects_to_paths.items():
+                        spatial_prepositonal_modifier = self._translate_spatial_path_to_action_modifier(
+                            action, path_object, spatial_path
+                        )
+                        if spatial_prepositonal_modifier:
+                            modifiers.append(
+                                (OBLIQUE_NOMINAL, spatial_prepositonal_modifier)
+                            )
+
+                for (_, path) in action.during.objects_to_paths.items():
+                    if FAST in path.properties:
+                        modifiers.append(
+                            (ADVERBIAL_MODIFIER, DependencyTreeToken("fast", ADVERB))
+                        )
+                    elif SLOW in path.properties:
+                        modifiers.append(
+                            (ADVERBIAL_MODIFIER, DependencyTreeToken("fast", ADVERB))
+                        )
 
             for relation in self.situation.after_action_relations:
                 self._translate_relation_to_action_modifier(action, relation, modifiers)
@@ -831,17 +872,20 @@ class SimpleRuleBasedEnglishLanguageGenerator(
 
             preposition: Optional[str] = None
 
-            if region.distance == INTERIOR:
+            if region.distance == INTERIOR and relation.negated:
+                preposition = "out_of"
+
+            elif region.distance == INTERIOR:
                 preposition = "in"
 
             elif region.distance == PROXIMAL and not region.direction:
                 preposition = "to"
 
             elif region.direction:
-
-                direction_axis = region.direction.relative_to_axis.to_concrete_axis(
+                direction_axis = region.direction.relative_to_concrete_axis(
                     self.situation.axis_info
                 )
+
                 if region.distance == EXTERIOR_BUT_IN_CONTACT:
                     if region.direction.positive:
                         preposition = "on"
@@ -870,6 +914,80 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 )
 
             reference_object_node = self._noun_for_object(region.reference_object)
+
+            if self.dependency_graph.out_degree[reference_object_node]:
+                # the reference node already has a syntactic connection to the tree,
+                # so don't add another one
+                return None
+            else:
+                self.dependency_graph.add_edge(
+                    DependencyTreeToken(preposition, ADPOSITION),
+                    reference_object_node,
+                    role=CASE_SPATIAL,
+                )
+                return reference_object_node
+
+        def _translate_spatial_path_to_action_modifier(
+            self,
+            action: Optional[Action[OntologyNode, SituationObject]],
+            path_object: SituationObject,
+            spatial_path: SpatialPath[SituationObject],
+        ):
+            # don't talk about spatial paths to non-salient objects
+            if (
+                spatial_path.reference_object
+                and spatial_path.reference_object not in self.situation.salient_objects
+            ):
+                return None
+
+            # Only derive spatial path if path object is salient
+            if path_object not in self.situation.salient_objects:
+                return None
+
+            if action:
+                # If both arguments of the relation are core argument roles,
+                # we assume the verb takes care of expressing their relationship.
+                core_argument_fillers = immutableset(
+                    chain(
+                        action.argument_roles_to_fillers[AGENT],
+                        action.argument_roles_to_fillers[PATIENT],
+                        action.argument_roles_to_fillers[THEME],
+                    )
+                )
+
+                if (
+                    path_object in core_argument_fillers
+                    and spatial_path.reference_object in core_argument_fillers
+                ):
+                    return None
+
+            preposition: Optional[str] = None
+
+            if spatial_path.operator == TOWARD:
+                preposition = "toward"
+            elif spatial_path.operator == AWAY_FROM:
+                preposition = "away_from"
+            # TO is the default spatial path in most actions
+            # so we let the preposition be handled by the GOAL
+            # We also explicitly ignore the None operator
+            # as spatial paths may just have properties
+            # we are interested in asserting
+            elif spatial_path.operator in [TO, None]:
+                return None
+
+            if not preposition:
+                raise RuntimeError(
+                    f"Don't know how to translate spatial path {spatial_path}"
+                )
+
+            if isinstance(spatial_path.reference_object, Region):
+                reference_object_node = self._noun_for_object(
+                    spatial_path.reference_object.reference_object
+                )
+            else:
+                reference_object_node = self._noun_for_object(
+                    spatial_path.reference_object
+                )
 
             if self.dependency_graph.out_degree[reference_object_node]:
                 # the reference node already has a syntactic connection to the tree,
@@ -975,3 +1093,5 @@ PREFER_DITRANSITIVE = "PREFER_DITRANSITIVE"
 IGNORE_COLORS = "IGNORE_COLORS"
 IGNORE_HAS_AS_VERB = "IGNORE_HAS_AS_VERB"
 ATTRIBUTES_AS_X_IS_Y = "ATTRIBUTES_AS_X_IS_Y"
+IGNORE_SIZE_ATTRIBUTE = "IGNORE_SIZE_ATTRIBUTE"
+IGNORE_GOAL = "IGNORE_GOAL"

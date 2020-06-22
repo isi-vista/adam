@@ -6,6 +6,11 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Dict, Generic, Mapping, Optional, Any
 
+from adam.learner.alignments import (
+    LanguagePerceptionSemanticAlignment,
+    PerceptionSemanticAlignment,
+)
+
 from adam.ontology.ontology import Ontology
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
@@ -48,7 +53,7 @@ class LearningExample(Generic[PerceptionT, LinguisticDescriptionT]):
     """
 
 
-class LanguageLearner(ABC, Generic[PerceptionT, LinguisticDescriptionT]):
+class TopLevelLanguageLearner(ABC, Generic[PerceptionT, LinguisticDescriptionT]):
     r"""
     Models an infant learning language.
 
@@ -91,7 +96,7 @@ class LanguageLearner(ABC, Generic[PerceptionT, LinguisticDescriptionT]):
 @attrs
 class MemorizingLanguageLearner(
     Generic[PerceptionT, LinguisticDescriptionT],
-    LanguageLearner[PerceptionT, LinguisticDescription],
+    TopLevelLanguageLearner[PerceptionT, LinguisticDescription],
 ):
     """
     A trivial implementation of `LanguageLearner` which just memorizes situations it has seen before
@@ -167,3 +172,45 @@ def graph_without_learner(perception_graph: PerceptionGraph) -> PerceptionGraph:
         islands = list(isolates(graph))
         graph.remove_nodes_from(islands)
     return PerceptionGraph(graph)
+
+
+class ComposableLearner(ABC):
+    @abstractmethod
+    def learn_from(
+        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
+    ) -> None:
+        """
+        Learn from a `LanguagePerceptionSemanticAlignment` describing a situation. This may update
+        some internal state.
+        """
+
+    @abstractmethod
+    def enrich_during_learning(
+        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
+    ) -> LanguagePerceptionSemanticAlignment:
+        """
+        Given a `LanguagePerceptionSemanticAlignment` wrapping a learning example, return such
+        an updated alignment enriched with some extra semantic alignment information.
+
+        The learner may have no information to add, in which case it can simply return the alignment
+        it was passed.
+        """
+
+    @abstractmethod
+    def enrich_during_description(
+        self, perception_semantic_alignment: PerceptionSemanticAlignment
+    ) -> PerceptionSemanticAlignment:
+        """
+        Given a `PerceptionSemanticAlignment` wrapping a perception to be described, return an
+        updated alignment enriched with some extra semantic alignment information.
+
+        The learner may have no information to add, in which case it can simply return the alignment
+        it was passed.
+        """
+
+    @abstractmethod
+    def log_hypotheses(self, log_output_path: Path) -> None:
+        """
+        Log some representation of the learner's current hypothesized semantics for words/phrases to
+        *log_output_path*.
+        """

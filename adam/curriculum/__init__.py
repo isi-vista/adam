@@ -9,7 +9,8 @@ from attr.validators import instance_of
 from immutablecollections.converter_utils import _to_tuple
 
 from adam.language import LinguisticDescriptionT
-from adam.language.language_generator import LanguageGenerator, SituationT
+from adam.language.language_generator import LanguageGenerator
+from adam.situation import SituationT
 from adam.perception import (
     PerceptionT,
     PerceptualRepresentation,
@@ -49,7 +50,7 @@ class InstanceGroup(ABC, Generic[SituationT, LinguisticDescriptionT, PerceptionT
 
 @attrs(frozen=True, slots=True)
 class ExplicitWithoutSituationInstanceGroup(
-    InstanceGroup[None, LinguisticDescriptionT, PerceptionT]
+    InstanceGroup[SituationT, LinguisticDescriptionT, PerceptionT]
 ):
     r"""
     A collection of instances where the user explicitly specifies
@@ -60,7 +61,9 @@ class ExplicitWithoutSituationInstanceGroup(
     # https://github.com/python-attrs/attrs/issues/519
     _instances: Tuple[  # type: ignore
         Tuple[LinguisticDescriptionT, PerceptualRepresentation[PerceptionT]]
-    ] = attrib(converter=_to_tuple)
+    ] = attrib(  # type: ignore
+        converter=_to_tuple
+    )
 
     def name(self) -> str:
         return self._name
@@ -68,10 +71,10 @@ class ExplicitWithoutSituationInstanceGroup(
     def instances(
         self
     ) -> Iterable[
-        Tuple[None, LinguisticDescriptionT, PerceptualRepresentation[PerceptionT]]
+        Tuple[SituationT, LinguisticDescriptionT, PerceptualRepresentation[PerceptionT]]
     ]:
         for (linguistic_description, perception) in self._instances:
-            yield (None, linguistic_description, perception)
+            yield (None, linguistic_description, perception)  # type: ignore
 
 
 @attrs(frozen=True, slots=True)
@@ -86,7 +89,9 @@ class ExplicitWithSituationInstanceGroup(
     # https://github.com/python-attrs/attrs/issues/519
     _instances: Tuple[  # type: ignore
         Tuple[SituationT, LinguisticDescriptionT, PerceptualRepresentation[PerceptionT]]
-    ] = attrib(converter=_to_tuple)
+    ] = attrib(  # type: ignore
+        converter=_to_tuple
+    )
 
     def name(self) -> str:
         return self._name

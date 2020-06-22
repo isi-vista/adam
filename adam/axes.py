@@ -1,6 +1,12 @@
 from itertools import chain
 from typing import Any, Generic, Iterable, List, Mapping, Optional, TypeVar
 
+from more_itertools import only, quantify
+from typing_extensions import Protocol, runtime
+
+from adam.axis import GeonAxis
+from adam.relation import Relation, flatten_relations
+from adam.remappable import CanRemapObjects
 from attr import attrib, attrs
 from attr.validators import in_, instance_of
 from immutablecollections import (
@@ -13,13 +19,7 @@ from immutablecollections.converter_utils import (
     _to_immutableset,
     _to_immutablesetmultidict,
 )
-from more_itertools import only, quantify
-from typing_extensions import Protocol, runtime
 from vistautils.range import Range
-
-from adam.axis import GeonAxis
-from adam.relation import flatten_relations
-from adam.remappable import CanRemapObjects
 
 
 def directed(debug_name: str) -> GeonAxis:
@@ -221,9 +221,10 @@ class Axes:
         converter=_to_immutableset, kw_only=True
     )
     # TODO: fix typing issue below
-    axis_relations: ImmutableSet["Relation[GeonAxis]"] = attrib(  # type: ignore
+    axis_relations: ImmutableSet[Relation[GeonAxis]] = attrib(  # type: ignore
         converter=flatten_relations, default=immutableset(), kw_only=True
     )
+    gravitationally_aligned_axis: Optional[GeonAxis] = attrib(init=False)
 
     def __attrs_post_init__(self) -> None:
         if quantify(self.all_axes) != 3:
@@ -267,6 +268,20 @@ class Axes:
                 for relation in self.axis_relations
             ],
         )
+
+    @gravitationally_aligned_axis.default
+    def _init_gravitationally_aligned_axis(self) -> Optional[GeonAxis]:
+        gravitationally_aligned_axes = [
+            axis
+            for axis in chain((self.primary_axis,), self.orienting_axes)
+            if axis.aligned_to_gravitational
+        ]
+        if gravitationally_aligned_axes:
+            # There should be at most one,
+            # but we don't verify this until post-init.
+            return gravitationally_aligned_axes[0]
+        else:
+            return None
 
 
 @runtime
