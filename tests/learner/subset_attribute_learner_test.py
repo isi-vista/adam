@@ -53,6 +53,7 @@ NEW_SUBSET_ATTRIBUTE_LEARNER_FACTORY = lambda: IntegratedTemplateLearner(
     ),
 )
 
+# TODO: fix integrated learner for Chinese
 LEARNERS_TO_TEST = [
     OLD_SUBSET_ATTRIBUTE_LEARNER_FACTORY,
     # NEW_SUBSET_ATTRIBUTE_LEARNER_FACTORY,
