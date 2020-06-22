@@ -6,7 +6,8 @@ from adam.curriculum import InstanceGroup, GeneratedFromSituationsInstanceGroup
 from adam.language.dependency import LinearizedDependencyTree
 from adam.language_specific.english.english_language_generator import (
     GAILA_PHASE_1_LANGUAGE_GENERATOR,
-    GAILA_PHASE_2_LANGUAGE_GENERATOR)
+    GAILA_PHASE_2_LANGUAGE_GENERATOR,
+)
 from adam.ontology import OntologyNode
 from adam.ontology.phase1_ontology import GROUND, INANIMATE_OBJECT, IS_BODY_PART, LIQUID
 from adam.perception.developmental_primitive_perception import (

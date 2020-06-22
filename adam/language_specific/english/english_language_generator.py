@@ -48,7 +48,9 @@ from adam.language_specific.english.english_phase_1_lexicon import (
     ME,
     YOU,
 )
-from adam.language_specific.english.english_phase_2_lexicon import GAILA_PHASE_2_ENGLISH_LEXICON
+from adam.language_specific.english.english_phase_2_lexicon import (
+    GAILA_PHASE_2_ENGLISH_LEXICON,
+)
 from adam.language_specific.english.english_syntax import (
     FIRST_PERSON,
     SECOND_PERSON,

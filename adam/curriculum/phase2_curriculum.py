@@ -7,21 +7,25 @@ from itertools import chain
 from adam.curriculum.curriculum_utils import (
     PHASE1_CHOOSER_FACTORY,
     Phase1InstanceGroup,
-    phase1_instances,
     standard_object,
-    phase2_instances)
-from adam.language_specific.english.english_language_generator import (
-    IGNORE_COLORS,
+    phase2_instances,
 )
-from adam.ontology.phase1_ontology import (
-    GAILA_PHASE_1_ONTOLOGY,
-    CHAIR, CUP)
-from adam.ontology.phase2_ontology import CHAIR_2, CHAIR_3, CHAIR_4, CHAIR_5, CUP_2, CUP_3, CUP_4, \
-    GAILA_PHASE_2_ONTOLOGY
+from adam.language_specific.english.english_language_generator import IGNORE_COLORS
+from adam.ontology.phase1_ontology import CHAIR, CUP
+from adam.ontology.phase2_ontology import (
+    CHAIR_2,
+    CHAIR_3,
+    CHAIR_4,
+    CHAIR_5,
+    CUP_2,
+    CUP_3,
+    CUP_4,
+    GAILA_PHASE_2_ONTOLOGY,
+)
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
-    GAILA_PHASE_1_PERCEPTION_GENERATOR,
     HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
-    GAILA_PHASE_2_PERCEPTION_GENERATOR)
+    GAILA_PHASE_2_PERCEPTION_GENERATOR,
+)
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
     all_possible,

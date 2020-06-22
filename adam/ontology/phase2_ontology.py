@@ -1,7 +1,42 @@
-from adam.ontology.phase1_ontology import *
-from adam.ontology.phase1_ontology import _make_cup_schema, _CHAIR_SCHEMA_BACK, _CHAIR_SCHEMA_SQUARE_SEAT, \
-    _CHAIR_SCHEMA_LEG_1, _CHAIR_SCHEMA_LEG_2, _CHAIR_SCHEMA_LEG_3, _CHAIR_SCHEMA_LEG_4, _CHAIR_LEGS, _CHAIR_SCHEMA_SEAT, \
-    _CHAIR_THREE_LEGS, _ontology_graph, _ACTIONS_TO_DESCRIPTIONS
+from adam.geon import LARGE_TO_SMALL, CONSTANT, SMALL_TO_LARGE_TO_SMALL
+from adam.ontology import OntologyNode, CAN_FILL_TEMPLATE_SLOT
+from adam.ontology.ontology import Ontology
+from adam.ontology.phase1_ontology import (
+    _make_cup_schema,
+    _CHAIR_SCHEMA_BACK,
+    _CHAIR_SCHEMA_SQUARE_SEAT,
+    _CHAIR_SCHEMA_LEG_1,
+    _CHAIR_SCHEMA_LEG_2,
+    _CHAIR_SCHEMA_LEG_3,
+    _CHAIR_SCHEMA_LEG_4,
+    _CHAIR_LEGS,
+    _CHAIR_SCHEMA_SEAT,
+    _CHAIR_THREE_LEGS,
+    _ontology_graph,
+    _ACTIONS_TO_DESCRIPTIONS,
+    CAN_HAVE_THINGS_RESTING_ON_THEM,
+    CAN_BE_SAT_ON_BY_PEOPLE,
+    LIGHT_BROWN,
+    DARK_BROWN,
+    INANIMATE_OBJECT,
+    subtype,
+    HOLLOW,
+    PERSON_CAN_HAVE,
+    RED,
+    BLUE,
+    GREEN,
+    TRANSPARENT,
+    CHAIR,
+    contacts,
+    above,
+    GAILA_PHASE_1_ONTOLOGY,
+    GAILA_PHASE_1_SIZE_GRADES,
+    SMALLER_THAN,
+    BIGGER_THAN,
+)
+from adam.ontology.phase1_size_relationships import build_size_relationships
+from adam.ontology.structural_schema import ObjectStructuralSchema
+from adam.relation import flatten_relations
 
 CHAIR_2 = OntologyNode(
     "chair-2",
@@ -151,7 +186,11 @@ _CHAIR_5_SCHEMA = ObjectStructuralSchema(
 GAILA_PHASE_2_ONTOLOGY = Ontology(
     "gaila-phase-2",
     _ontology_graph,
-    structural_schemata= [schemata for schemata in GAILA_PHASE_1_ONTOLOGY._structural_schemata.items()] + [
+    structural_schemata=[
+        schemata
+        for schemata in GAILA_PHASE_1_ONTOLOGY._structural_schemata.items()  # pylint: disable=protected-access
+    ]
+    + [
         (CHAIR_2, _CHAIR_2_SCHEMA),
         (CHAIR_3, _CHAIR_3_SCHEMA),
         (CHAIR_4, _CHAIR_4_SCHEMA),
