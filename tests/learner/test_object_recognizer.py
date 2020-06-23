@@ -40,11 +40,6 @@ from adam.situation.templates.phase1_templates import (
 )
 from learner import TEST_OBJECT_RECOGNIZER
 
-NEW_STYLE_OBJECT_RECOGNIZER = ObjectRecognizerAsTemplateLearner(
-    object_recognizer=TEST_OBJECT_RECOGNIZER
-)
-INTEGRATED_LEARNER = IntegratedTemplateLearner(object_learner=NEW_STYLE_OBJECT_RECOGNIZER)
-
 
 @pytest.mark.parametrize("object_type", PHASE_1_CURRICULUM_OBJECTS)
 @pytest.mark.parametrize(
