@@ -360,7 +360,16 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
         # For each template whose semantics we are certain of (=have been added to the lexicon)
         for (concept, graph_pattern, score) in self._primary_templates():
             check_state(isinstance(graph_pattern, PerceptionGraphTemplate))
-            match_template(concept=concept, pattern=graph_pattern, score=score)
+            if (
+                preprocessed_perception_graph.dynamic
+                == graph_pattern.graph_pattern.dynamic
+            ):
+                match_template(concept=concept, pattern=graph_pattern, score=score)
+            else:
+                logging.debug(
+                    f"Unable to try and match {concept} to {preprocessed_perception_graph} "
+                    f"because both patterns must be static or dynamic"
+                )
 
         if not match_to_score:
             # Try to match against patterns being learned

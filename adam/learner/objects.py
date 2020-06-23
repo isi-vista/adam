@@ -368,6 +368,8 @@ class SubsetObjectLearner(AbstractTemplateSubsetLearner, AbstractObjectTemplateL
             template_variable_to_pattern_node=immutabledict(),
         )
 
+
+
     def _update_hypothesis(
         self,
         previous_pattern_hypothesis: PerceptionGraphTemplate,
@@ -377,6 +379,14 @@ class SubsetObjectLearner(AbstractTemplateSubsetLearner, AbstractObjectTemplateL
             current_pattern_hypothesis,
             ontology=self._ontology,
             match_mode=MatchMode.OBJECT,
+            allowed_matches=immutablesetmultidict(
+                [
+                    (node2, node1)
+                    for previous_slot, node1 in previous_pattern_hypothesis.template_variable_to_pattern_node.items()
+                    for new_slot, node2 in current_pattern_hypothesis.template_variable_to_pattern_node.items()
+                    if previous_slot == new_slot
+                ]
+            ),
         )
 
 
@@ -428,7 +438,7 @@ class SubsetObjectLearnerNew(
             return False
         return True
 
-    def _intersect_hypothesis(
+    def _update_hypothesis(
         self,
         previous_pattern_hypothesis: PerceptionGraphTemplate,
         current_pattern_hypothesis: PerceptionGraphTemplate,
@@ -437,6 +447,14 @@ class SubsetObjectLearnerNew(
             current_pattern_hypothesis,
             ontology=self._ontology,
             match_mode=MatchMode.OBJECT,
+            allowed_matches=immutablesetmultidict(
+                [
+                    (node2, node1)
+                    for previous_slot, node1 in previous_pattern_hypothesis.template_variable_to_pattern_node.items()
+                    for new_slot, node2 in current_pattern_hypothesis.template_variable_to_pattern_node.items()
+                    if previous_slot == new_slot
+                ]
+            ),
         )
 
 
@@ -484,6 +502,14 @@ class ObjectRecognizerAsTemplateLearner(TemplateLearner):
             current_pattern_hypothesis,
             ontology=GAILA_PHASE_1_ONTOLOGY,
             match_mode=MatchMode.OBJECT,
+            allowed_matches=immutablesetmultidict(
+                [
+                    (node2, node1)
+                    for previous_slot, node1 in previous_pattern_hypothesis.template_variable_to_pattern_node.items()
+                    for new_slot, node2 in current_pattern_hypothesis.template_variable_to_pattern_node.items()
+                    if previous_slot == new_slot
+                ]
+            ),
         )
 
     @_concepts_to_templates.default

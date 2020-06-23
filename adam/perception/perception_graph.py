@@ -1499,6 +1499,8 @@ class PatternMatching:
 
         same_color_nodes: List[NodePredicate]
 
+        # We only want to gather all the color nodes when we are trying to match an object
+        # Otherwise we can accidentally remove important information for the pattern
         if (
             isinstance(last_failed_node, IsColorNodePredicate)
             and self._match_mode == MatchMode.OBJECT

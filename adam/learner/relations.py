@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import AbstractSet, List, Union
+from typing import AbstractSet, List, Union, Optional
 
 from adam.learner import LanguagePerceptionSemanticAlignment, PerceptionSemanticAlignment
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
@@ -14,7 +14,7 @@ from adam.learner.template_learner import AbstractTemplateLearnerNew
 from adam.perception.perception_graph import MatchMode
 from adam.semantics import RelationConcept, SyntaxSemanticsVariable
 from attr import attrs
-from immutablecollections import immutableset
+from immutablecollections import immutableset, immutablesetmultidict
 from vistautils.span import Span
 
 _MAXIMUM_RELATION_TEMPLATE_TOKEN_LENGTH = 3
@@ -152,7 +152,7 @@ class SubsetRelationLearnerNew(
     ) -> PerceptionSemanticAlignment:
         return perception_semantic_alignment
 
-    def _intersect_hypothesis(
+    def _update_hypothesis(
         self,
         previous_pattern_hypothesis: PerceptionGraphTemplate,
         current_pattern_hypothesis: PerceptionGraphTemplate,
@@ -161,4 +161,12 @@ class SubsetRelationLearnerNew(
             current_pattern_hypothesis,
             ontology=self._ontology,
             match_mode=MatchMode.NON_OBJECT,
+            allowed_matches=immutablesetmultidict(
+                [
+                    (node2, node1)
+                    for previous_slot, node1 in previous_pattern_hypothesis.template_variable_to_pattern_node.items()
+                    for new_slot, node2 in current_pattern_hypothesis.template_variable_to_pattern_node.items()
+                    if previous_slot == new_slot
+                ]
+            ),
         )

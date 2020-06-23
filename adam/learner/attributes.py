@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import AbstractSet, Union
+from typing import AbstractSet, Union, Optional
 
 from adam.language import LinguisticDescription
 from adam.learner import LearningExample
@@ -36,7 +36,7 @@ from adam.perception.perception_graph import PerceptionGraph
 from adam.semantics import AttributeConcept, ObjectSemanticNode
 from attr import attrib, attrs
 from attr.validators import instance_of
-from immutablecollections import immutabledict, immutableset
+from immutablecollections import immutabledict, immutableset, immutablesetmultidict
 from vistautils.span import Span
 
 from tests.perception import MatchMode
@@ -182,6 +182,14 @@ class SubsetAttributeLearner(
             current_pattern_hypothesis,
             ontology=self._ontology,
             match_mode=MatchMode.NON_OBJECT,
+            allowed_matches=immutablesetmultidict(
+                [
+                    (node2, node1)
+                    for previous_slot, node1 in previous_pattern_hypothesis.template_variable_to_pattern_node.items()
+                    for new_slot, node2 in current_pattern_hypothesis.template_variable_to_pattern_node.items()
+                    if previous_slot == new_slot
+                ]
+            ),
         )
 
 
@@ -235,7 +243,7 @@ class SubsetAttributeLearnerNew(
             return False
         return True
 
-    def _intersect_hypothesis(
+    def _update_hypothesis(
         self,
         previous_pattern_hypothesis: PerceptionGraphTemplate,
         current_pattern_hypothesis: PerceptionGraphTemplate,
@@ -244,4 +252,12 @@ class SubsetAttributeLearnerNew(
             current_pattern_hypothesis,
             ontology=self._ontology,
             match_mode=MatchMode.NON_OBJECT,
+            allowed_matches=immutablesetmultidict(
+                [
+                    (node2, node1)
+                    for previous_slot, node1 in previous_pattern_hypothesis.template_variable_to_pattern_node.items()
+                    for new_slot, node2 in current_pattern_hypothesis.template_variable_to_pattern_node.items()
+                    if previous_slot == new_slot
+                ]
+            ),
         )

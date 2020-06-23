@@ -67,6 +67,8 @@ from immutablecollections import immutableset, immutablesetmultidict
 
 from tests.perception import MatchMode
 
+from tests.perception import MatchMode
+
 r.seed(0)
 
 
@@ -578,7 +580,7 @@ def test_allowed_matches_with_bad_partial_match():
         pattern=pattern1,
         graph_to_match_against=pattern2,
         matching_pattern_against_pattern=True,
-        matching_objects=True,
+        match_mode=MatchMode.OBJECT,
         allowed_matches=immutablesetmultidict([(pattern1_box, pattern2_box)]),
     )
     with pytest.raises(RuntimeError):

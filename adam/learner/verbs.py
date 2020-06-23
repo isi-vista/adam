@@ -40,7 +40,12 @@ from adam.semantics import (
     SemanticNode,
 )
 from attr import attrib, attrs
-from immutablecollections import immutabledict, immutableset, ImmutableSet
+from immutablecollections import (
+    immutabledict,
+    immutableset,
+    ImmutableSet,
+    immutablesetmultidict,
+)
 from attr.validators import instance_of
 from vistautils.span import Span
 
@@ -484,6 +489,14 @@ class SubsetVerbLearner(AbstractTemplateSubsetLearner, AbstractVerbTemplateLearn
             current_pattern_hypothesis,
             ontology=self._ontology,
             match_mode=MatchMode.NON_OBJECT,
+            allowed_matches=immutablesetmultidict(
+                [
+                    (node2, node1)
+                    for previous_slot, node1 in previous_pattern_hypothesis.template_variable_to_pattern_node.items()
+                    for new_slot, node2 in current_pattern_hypothesis.template_variable_to_pattern_node.items()
+                    if previous_slot == new_slot
+                ]
+            ),
         )
 
 
@@ -533,7 +546,7 @@ class SubsetVerbLearnerNew(
     ) -> PerceptionSemanticAlignment:
         return perception_semantic_alignment
 
-    def _intersect_hypothesis(
+    def _update_hypothesis(
         self,
         previous_pattern_hypothesis: PerceptionGraphTemplate,
         current_pattern_hypothesis: PerceptionGraphTemplate,
@@ -542,4 +555,12 @@ class SubsetVerbLearnerNew(
             current_pattern_hypothesis,
             ontology=self._ontology,
             match_mode=MatchMode.NON_OBJECT,
+            allowed_matches=immutablesetmultidict(
+                [
+                    (node2, node1)
+                    for previous_slot, node1 in previous_pattern_hypothesis.template_variable_to_pattern_node.items()
+                    for new_slot, node2 in current_pattern_hypothesis.template_variable_to_pattern_node.items()
+                    if previous_slot == new_slot
+                ]
+            ),
         )
