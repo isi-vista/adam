@@ -60,7 +60,6 @@ LEARNERS_TO_TEST = [
 ]
 
 
-@pytest.mark.parametrize("learner_factory", LEARNERS_TO_TEST)
 @pytest.mark.parametrize(
     "color_node,object_0_node,object_1_node",
     [
@@ -75,8 +74,8 @@ LEARNERS_TO_TEST = [
     "language_generator",
     [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
 )
-def test_subset_color_attribute_learner(
-    learner_factory, color_node, object_0_node, object_1_node, language_generator
+def test_subset_color_attribute_learner_integrated(
+    color_node, object_0_node, object_1_node, language_generator
 ):
     color = property_variable(f"{color_node.handle}", color_node)
     object_0 = standard_object(
@@ -121,7 +120,100 @@ def test_subset_color_attribute_learner(
         language_generator=language_generator,
     )
 
-    learner = learner_factory()
+    learner = IntegratedTemplateLearner(
+        object_learner=ObjectRecognizerAsTemplateLearner(
+            object_recognizer=TEST_OBJECT_RECOGNIZER,
+            language_generator=language_generator,
+        ),
+        attribute_learner=SubsetAttributeLearnerNew(
+            ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5
+        ),
+    )
+
+    for (
+        _,
+        linguistic_description,
+        perceptual_representation,
+    ) in color_train_curriculum.instances():
+        learner.observe(
+            LearningExample(perceptual_representation, linguistic_description),
+            language_generator=language_generator,
+        )
+
+    for (
+        _,
+        test_lingustics_description,
+        test_perceptual_representation,
+    ) in color_test_curriculum.instances():
+        descriptions_from_learner = learner.describe(
+            test_perceptual_representation, language_generator=language_generator
+        )
+        gold = test_lingustics_description.as_token_sequence()
+        assert descriptions_from_learner
+        assert gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
+
+
+@pytest.mark.parametrize(
+    "color_node,object_0_node,object_1_node",
+    [
+        (RED, BALL, BOOK),
+        (BLUE, BALL, BOOK),
+        (GREEN, BALL, BOOK),
+        (BLACK, BALL, CAR),
+        (WHITE, BALL, CAR),
+    ],
+)
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
+)
+def test_subset_color_attribute_learner_subset(
+    color_node, object_0_node, object_1_node, language_generator
+):
+    color = property_variable(f"{color_node.handle}", color_node)
+    object_0 = standard_object(
+        f"{object_0_node.handle}", object_0_node, added_properties=[color]
+    )
+    object_1 = standard_object(
+        f"{object_1_node.handle}", object_1_node, added_properties=[color]
+    )
+
+    color_object_template = _object_with_color_template(object_0)
+
+    templates = [color_object_template, _object_with_color_template(object_1)]
+
+    color_train_curriculum = phase1_instances(
+        f"{color.handle} Color Train",
+        language_generator=language_generator,
+        situations=chain(
+            *[
+                flatten(
+                    [
+                        sampled(
+                            template,
+                            chooser=PHASE1_CHOOSER_FACTORY(),
+                            ontology=GAILA_PHASE_1_ONTOLOGY,
+                            max_to_sample=2,
+                        )
+                        for template in templates
+                    ]
+                )
+            ]
+        ),
+    )
+
+    color_test_curriculum = phase1_instances(
+        f"{color.handle} Color Test",
+        situations=sampled(
+            color_object_template,
+            chooser=PHASE1_CHOOSER_FACTORY(),
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+            max_to_sample=1,
+        ),
+        language_generator=language_generator,
+    )
+
+    learner = OLD_SUBSET_ATTRIBUTE_LEARNER_FACTORY()
 
     for (
         _,
