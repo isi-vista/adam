@@ -234,7 +234,7 @@ def test_my_green_ball():
         always_relations=[Relation(HAS, dad, ball)],
         syntax_hints=[IGNORE_HAS_AS_VERB],
     )
-    assert generated_tokens(situation) == ("wo3", "de", "lyu4 se4", "chyou2")
+    assert generated_tokens(situation) == ("wo3 de", "lyu4 se4", "chyou2")
 
 
 # possession for NP's: second person
@@ -247,7 +247,7 @@ def test_your_green_ball():
         always_relations=[Relation(HAS, dad, ball)],
         syntax_hints=[IGNORE_HAS_AS_VERB],
     )
-    assert generated_tokens(situation) == ("ni3", "de", "lyu4 se4", "chyou2")
+    assert generated_tokens(situation) == ("ni3 de", "lyu4 se4", "chyou2")
 
 
 # possession for NP's: third person
@@ -1296,8 +1296,7 @@ def test_i_put_cookie_in_my_box():
         "chyu1 chi2 bing3",
         "fang4",
         "dzai4",
-        "wo3",
-        "de",
+        "wo3 de",
         "syang1 dz",
         "li3",
     )
@@ -1330,8 +1329,7 @@ def test_i_put_cookie_in_my_box_dao():
         "chyu1 chi2 bing3",
         "fang4",
         "dau4",
-        "wo3",
-        "de",
+        "wo3 de",
         "syang1 dz",
         "li3",
     )
@@ -1394,8 +1392,7 @@ def test_you_put_cookie_in_your_box():
         "chyu1 chi2 bing3",
         "fang4",
         "dzai4",
-        "ni3",
-        "de",
+        "ni3 de",
         "syang1 dz",
         "li3",
     )
@@ -1428,8 +1425,7 @@ def test_speaker_owner_of_box():
         "chyu1 chi2 bing3",
         "fang4",
         "dzai4",
-        "wo3",
-        "de",
+        "wo3 de",
         "syang1 dz",
         "li3",
     )
@@ -1462,8 +1458,7 @@ def test_addressee_owner_of_box():
         "chyu1 chi2 bing3",
         "fang4",
         "dzai4",
-        "ni3",
-        "de",
+        "ni3 de",
         "syang1 dz",
         "li3",
     )
@@ -1515,7 +1510,7 @@ def test_i_have_my_ball():
         always_relations=[Relation(HAS, baby, ball)],
         actions=[],
     )
-    assert generated_tokens(situation) == ("wo3", "you3", "wo3", "de", "chyou2")
+    assert generated_tokens(situation) == ("wo3", "you3", "wo3 de", "chyou2")
 
 
 # this tests possession when a non-speaker has something that they possess
@@ -1541,7 +1536,7 @@ def test_you_have_your_ball():
         always_relations=[Relation(HAS, baby, ball)],
         actions=[],
     )
-    assert generated_tokens(situation) == ("ni3", "you3", "ni3", "de", "chyou2")
+    assert generated_tokens(situation) == ("ni3", "you3", "ni3 de", "chyou2")
 
 
 """PATH MODIFIERS -- CHECKED BY NATIVE SPEAKER"""
@@ -2251,7 +2246,7 @@ def test_my_ball_is_green():
         always_relations=[Relation(HAS, dad, ball)],
         syntax_hints=[IGNORE_HAS_AS_VERB, ATTRIBUTES_AS_X_IS_Y],
     )
-    assert generated_tokens(situation) == ("wo3", "de", "chyou2", "shr4", "lyu4 se4")
+    assert generated_tokens(situation) == ("wo3 de", "chyou2", "shr4", "lyu4 se4")
 
 
 # x_is_y with second person possession
@@ -2264,7 +2259,7 @@ def test_your_ball_is_red():
         always_relations=[Relation(HAS, dad, ball)],
         syntax_hints=[IGNORE_HAS_AS_VERB, ATTRIBUTES_AS_X_IS_Y],
     )
-    assert generated_tokens(situation) == ("ni3", "de", "chyou2", "shr4", "hung2 se4")
+    assert generated_tokens(situation) == ("ni3 de", "chyou2", "shr4", "hung2 se4")
 
 
 # x_is_y for classifier sentence

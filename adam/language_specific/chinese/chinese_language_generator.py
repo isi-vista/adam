@@ -691,9 +691,9 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 # handle the possession relation if there is one
                 possessor = None
                 if IS_SPEAKER in possession_relations[0].first_slot.properties:
-                    possessor = DependencyTreeToken("wo3", NOUN)
+                    possessor = DependencyTreeToken("wo3 de", NOUN)
                 elif IS_ADDRESSEE in possession_relations[0].first_slot.properties:
-                    possessor = DependencyTreeToken("ni3", NOUN)
+                    possessor = DependencyTreeToken("ni3 de", NOUN)
                 # if the possessor is a 3rd person, check that "has" isn't the main verb
                 elif (
                     IGNORE_HAS_AS_VERB not in self.situation.syntax_hints
@@ -709,13 +709,13 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     not in only(self.situation.actions).argument_roles_to_fillers[AGENT]
                 ):
                     possessor = self._noun_for_object(possession_relations[0].first_slot)
+                    de = DependencyTreeToken("de", PARTICLE)
+                    self.dependency_graph.add_edge(de, possessor, role=CASE_POSSESSIVE)
                 # if there is a possessor, add "de" (the rough equivalent of 's in English) and add the resulting node to the tree
-                de = DependencyTreeToken("de", PARTICLE)
                 if possessor:
                     self.dependency_graph.add_edge(
                         possessor, noun_dependency_node, role=NOMINAL_MODIFIER_POSSESSIVE
                     )
-                    self.dependency_graph.add_edge(de, possessor, role=CASE_POSSESSIVE)
             # if the count is one, we're done since we're not using yi CLF currently
             # also, we don't count grounds or proper nouns
             if count == 0:
