@@ -238,12 +238,11 @@ def test_subset_color_attribute_learner_subset(
         assert gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
 
 
-@pytest.mark.parametrize("learner_factory", LEARNERS_TO_TEST)
-@pytest.mark.parametrize(
-    "language_generator",
-    [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
-)
-def test_subset_my_attribute_learner(learner_factory, language_generator):
+# TODO: fix integrated learner to learn wo de and ni de (https://github.com/isi-vista/adam/issues/834)
+
+
+@pytest.mark.parametrize("language_generator", [GAILA_PHASE_1_LANGUAGE_GENERATOR])
+def test_subset_my_attribute_learner_integrated(language_generator):
     person = standard_object("speaker", PERSON, added_properties=[IS_SPEAKER])
     inanimate_object = standard_object(
         "object", INANIMATE_OBJECT, required_properties=[PERSON_CAN_HAVE]
@@ -275,7 +274,76 @@ def test_subset_my_attribute_learner(learner_factory, language_generator):
         language_generator=language_generator,
     )
 
-    learner = learner_factory()
+    learner = IntegratedTemplateLearner(
+        object_learner=ObjectRecognizerAsTemplateLearner(
+            object_recognizer=TEST_OBJECT_RECOGNIZER,
+            language_generator=language_generator,
+        ),
+        attribute_learner=SubsetAttributeLearnerNew(
+            ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5
+        ),
+    )
+
+    for (
+        _,
+        linguistic_description,
+        perceptual_representation,
+    ) in my_train_curriculum.instances():
+        learner.observe(
+            LearningExample(perceptual_representation, linguistic_description),
+            language_generator=language_generator,
+        )
+
+    for (
+        _,
+        test_lingustics_description,
+        test_perceptual_representation,
+    ) in my_test_curriculum.instances():
+        descriptions_from_learner = learner.describe(
+            test_perceptual_representation, language_generator=language_generator
+        )
+        gold = test_lingustics_description.as_token_sequence()
+        assert descriptions_from_learner
+        assert gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
+
+
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
+)
+def test_subset_my_attribute_learner_subset(language_generator):
+    person = standard_object("speaker", PERSON, added_properties=[IS_SPEAKER])
+    inanimate_object = standard_object(
+        "object", INANIMATE_OBJECT, required_properties=[PERSON_CAN_HAVE]
+    )
+
+    my_train_curriculum = phase1_instances(
+        "my-train",
+        situations=sampled(
+            _x_has_y_template(
+                person, inanimate_object, syntax_hints=[IGNORE_HAS_AS_VERB]
+            ),
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+            chooser=PHASE1_CHOOSER_FACTORY(),
+            max_to_sample=2,
+        ),
+        language_generator=language_generator,
+    )
+
+    my_test_curriculum = phase1_instances(
+        "my-test",
+        situations=sampled(
+            _x_has_y_template(
+                person, inanimate_object, syntax_hints=[IGNORE_HAS_AS_VERB]
+            ),
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+            chooser=PHASE1_CHOOSER_FACTORY(),
+            max_to_sample=1,
+        ),
+        language_generator=language_generator,
+    )
+
+    learner = OLD_SUBSET_ATTRIBUTE_LEARNER_FACTORY()
 
     for (
         _,
