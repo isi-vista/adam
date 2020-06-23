@@ -33,6 +33,7 @@ from vistautils.preconditions import check_state
 
 from adam.curriculum.imprecise_descriptions_curriculum import (
     make_imprecise_temporal_descriptions,
+    make_imprecise_size_curriculum,
 )
 from adam.curriculum.attribute_constraining_action_curriculum import make_german_complete
 from adam.curriculum.m6_curriculum import make_m6_curriculum
@@ -125,6 +126,7 @@ STR_TO_CURRICULUM: Mapping[str, Callable[[], Iterable[Phase1InstanceGroup]]] = {
     "verbs-with-dynamic-prepositions": make_verb_with_dynamic_prepositions_curriculum,
     "essen-fressen-distinction": make_german_complete,
     "imprecise-temporal": make_imprecise_temporal_descriptions,
+    "imprecise-size": make_imprecise_size_curriculum,
 }
 
 
