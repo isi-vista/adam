@@ -159,7 +159,7 @@ class IntegratedTemplateLearner(
         ]:
             if sub_learner:
                 cur_description_state = sub_learner.enrich_during_description(
-                    cur_description_state, language_generator=language_generator
+                    cur_description_state
                 )
 
         if perception.is_dynamic() and self.action_learner:

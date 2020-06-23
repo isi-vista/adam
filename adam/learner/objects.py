@@ -427,6 +427,7 @@ class ObjectRecognizerAsTemplateLearner(TemplateLearner):
     _concepts_to_templates: ImmutableSetMultiDict[Concept, SurfaceTemplate] = attrib(
         init=False
     )
+    _language_generator = attrib(default=GAILA_PHASE_1_LANGUAGE_GENERATOR)
 
     def learn_from(
         self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
@@ -445,12 +446,10 @@ class ObjectRecognizerAsTemplateLearner(TemplateLearner):
         )
 
     def enrich_during_description(
-        self,
-        perception_semantic_alignment: PerceptionSemanticAlignment,
-        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+        self, perception_semantic_alignment: PerceptionSemanticAlignment
     ) -> PerceptionSemanticAlignment:
         (new_perception_semantic_alignment, _) = self._object_recognizer.match_objects(
-            perception_semantic_alignment, language_generator=language_generator
+            perception_semantic_alignment, language_generator=self._language_generator
         )
         return new_perception_semantic_alignment
 

@@ -203,9 +203,7 @@ class ComposableLearner(ABC):
 
     @abstractmethod
     def enrich_during_description(
-        self,
-        perception_semantic_alignment: PerceptionSemanticAlignment,
-        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+        self, perception_semantic_alignment: PerceptionSemanticAlignment
     ) -> PerceptionSemanticAlignment:
         """
         Given a `PerceptionSemanticAlignment` wrapping a perception to be described, return an
