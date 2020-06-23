@@ -74,7 +74,6 @@ def test_recognizes_ontology_objects(object_type, language_generator):
     )
     descriptions = learner.describe(perception, language_generator=language_generator)
     assert descriptions
-    print(descriptions)
     if language_generator == GAILA_PHASE_1_LANGUAGE_GENERATOR:
         assert object_type.handle in one(descriptions.items())[0].as_token_sequence()
     else:
@@ -86,7 +85,11 @@ def test_recognizes_ontology_objects(object_type, language_generator):
                 assert v.base_form in one(descriptions.items())[0].as_token_sequence()
 
 
-def test_trivial_dynamic_situation_with_schemaless_object():
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
+)
+def test_trivial_dynamic_situation_with_schemaless_object(language_generator):
     dad_situation_object = SituationObject.instantiate_ontology_node(
         ontology_node=DAD, ontology=GAILA_PHASE_1_ONTOLOGY
     )
@@ -115,10 +118,16 @@ def test_trivial_dynamic_situation_with_schemaless_object():
         perception_graph
     )
     (_, description_to_matched_semantic_node) = TEST_OBJECT_RECOGNIZER.match_objects(
-        perception_semantic_alignment
+        perception_semantic_alignment, language_generator=language_generator
     )
     assert len(description_to_matched_semantic_node) == 1
-    assert ("Dad",) in description_to_matched_semantic_node
+    assert (
+        language_generator == GAILA_PHASE_1_LANGUAGE_GENERATOR
+        and ("Dad",) in description_to_matched_semantic_node
+    ) or (
+        language_generator == GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR
+        and ("ba4 ba4",) in description_to_matched_semantic_node
+    )
 
 
 def test_recognize_in_transfer_of_possession():
