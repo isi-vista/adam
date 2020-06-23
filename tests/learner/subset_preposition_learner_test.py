@@ -53,7 +53,7 @@ NEW_SUBSET_RELATION_LEARNER_FACTORY = lambda: IntegratedTemplateLearner(
     ),
 )
 
-# TODO: fix Chinese for Integrated learner
+# TODO: fix Chinese for Integrated learner localiser phrases (https://github.com/isi-vista/adam/issues/834)
 LEARNER_FACTORIES = [
     OLD_SUBSET_PREPOSITION_LEARNER_FACTORY,
     # NEW_SUBSET_RELATION_LEARNER_FACTORY,
