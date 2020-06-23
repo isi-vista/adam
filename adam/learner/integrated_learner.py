@@ -220,7 +220,6 @@ class IntegratedTemplateLearner(
         language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> Iterator[Tuple[str, ...]]:
 
-        print("LANGUAGEGEN", language_generator == GAILA_PHASE_1_LANGUAGE_GENERATOR)
         # For now, we assume the order in which modifiers is expressed is arbitrary.
         attributes_we_can_express = (
             [
