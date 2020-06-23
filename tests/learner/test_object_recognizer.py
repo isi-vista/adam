@@ -1,6 +1,14 @@
 import pytest
 from more_itertools import first, one
-
+from adam.language_specific.chinese.chinese_language_generator import (
+    GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
+)
+from adam.language_specific.english.english_language_generator import (
+    GAILA_PHASE_1_LANGUAGE_GENERATOR,
+)
+from adam.language_specific.chinese.chinese_phase_1_lexicon import (
+    GAILA_PHASE_1_CHINESE_LEXICON,
+)
 from adam.curriculum.curriculum_utils import PHASE1_CHOOSER_FACTORY, phase1_instances
 from adam.language_specific.english.english_language_generator import PREFER_DITRANSITIVE
 from adam.learner import PerceptionSemanticAlignment
@@ -39,7 +47,11 @@ INTEGRATED_LEARNER = IntegratedTemplateLearner(object_learner=NEW_STYLE_OBJECT_R
 
 
 @pytest.mark.parametrize("object_type", PHASE_1_CURRICULUM_OBJECTS)
-def test_recognizes_ontology_objects(object_type):
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
+)
+def test_recognizes_ontology_objects(object_type, language_generator):
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         salient_objects=[
@@ -48,18 +60,30 @@ def test_recognizes_ontology_objects(object_type):
             )
         ],
     )
-
     perception_generator = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
         GAILA_PHASE_1_ONTOLOGY
     )
-
     perception = perception_generator.generate_perception(
         situation, chooser=RandomChooser.for_seed(0), include_ground=False
     )
-
-    descriptions = INTEGRATED_LEARNER.describe(perception)
+    learner = IntegratedTemplateLearner(
+        object_learner=ObjectRecognizerAsTemplateLearner(
+            object_recognizer=TEST_OBJECT_RECOGNIZER,
+            language_generator=language_generator,
+        )
+    )
+    descriptions = learner.describe(perception, language_generator=language_generator)
     assert descriptions
-    assert object_type.handle in one(descriptions.items())[0].as_token_sequence()
+    print(descriptions)
+    if language_generator == GAILA_PHASE_1_LANGUAGE_GENERATOR:
+        assert object_type.handle in one(descriptions.items())[0].as_token_sequence()
+    else:
+        mappings = (
+            GAILA_PHASE_1_CHINESE_LEXICON._ontology_node_to_word  # pylint:disable=protected-access
+        )
+        for k, v in mappings.items():
+            if k.handle == object_type.handle:
+                assert v.base_form in one(descriptions.items())[0].as_token_sequence()
 
 
 def test_trivial_dynamic_situation_with_schemaless_object():

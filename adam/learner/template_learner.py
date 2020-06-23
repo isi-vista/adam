@@ -314,9 +314,7 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
         )
 
     def enrich_during_description(
-        self,
-        perception_semantic_alignment: PerceptionSemanticAlignment,
-        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+        self, perception_semantic_alignment: PerceptionSemanticAlignment
     ) -> PerceptionSemanticAlignment:
         # The other information returned by _enrich_common is only needed by
         # enrich_during_learning.
