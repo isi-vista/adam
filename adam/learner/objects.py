@@ -6,6 +6,9 @@ from typing import AbstractSet, Iterable, List, Optional, Sequence, Union
 from adam.language_specific.english.english_language_generator import (
     GAILA_PHASE_1_LANGUAGE_GENERATOR,
 )
+from adam.language_specific.chinese.chinese_phase_1_lexicon import (
+    GAILA_PHASE_1_CHINESE_LEXICON,
+)
 
 from adam.language import LinguisticDescription
 from adam.learner import (
@@ -454,7 +457,16 @@ class ObjectRecognizerAsTemplateLearner(TemplateLearner):
         return new_perception_semantic_alignment
 
     def templates_for_concept(self, concept: Concept) -> ImmutableSet[SurfaceTemplate]:
-        return self._concepts_to_templates[concept]
+        if self._language_generator == GAILA_PHASE_1_LANGUAGE_GENERATOR:
+            return self._concepts_to_templates[concept]
+        else:
+            mappings = (
+                GAILA_PHASE_1_CHINESE_LEXICON._ontology_node_to_word  # pylint:disable=protected-access
+            )
+            for k, v in mappings.items():
+                if k.handle == concept.debug_string:
+                    return immutableset([SurfaceTemplate.for_object_name(v.base_form)])
+        raise RuntimeError(f"Invalid concept {concept}")
 
     def log_hypotheses(self, log_output_path: Path) -> None:
         pass

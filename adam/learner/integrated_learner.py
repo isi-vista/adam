@@ -2,18 +2,11 @@ import itertools
 from adam.language_specific.english.english_language_generator import (
     GAILA_PHASE_1_LANGUAGE_GENERATOR,
 )
-from adam.language_specific.chinese.chinese_phase_1_lexicon import (
-    GAILA_PHASE_1_CHINESE_LEXICON,
-)
 import logging
 from itertools import chain, combinations
 from pathlib import Path
 from typing import AbstractSet, Iterable, Iterator, Mapping, Optional, Tuple
-from adam.language_specific.chinese.chinese_language_generator import (
-    GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
-)
 from more_itertools import flatten, one
-from adam.learner.surface_templates import SurfaceTemplate
 
 from adam.language import LinguisticDescription, TokenSequenceLinguisticDescription
 from adam.language_specific.english import ENGLISH_BLOCK_DETERMINERS
@@ -176,6 +169,7 @@ class IntegratedTemplateLearner(
         semantic_nodes: AbstractSet[SemanticNode],
         language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> Mapping[LinguisticDescription, float]:
+
         learner_semantics = LearnerSemantics.from_nodes(semantic_nodes)
 
         ret = []
@@ -185,7 +179,7 @@ class IntegratedTemplateLearner(
                     (action_tokens, 1.0)
                     for action in learner_semantics.actions
                     for action_tokens in self._instantiate_action(
-                        action, learner_semantics
+                        action, learner_semantics, language_generator=language_generator
                     )
                     # ensure we have some way of expressing this action
                     if self.action_learner.templates_for_concept(action.concept)
@@ -225,6 +219,8 @@ class IntegratedTemplateLearner(
         learner_semantics: "LearnerSemantics",
         language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> Iterator[Tuple[str, ...]]:
+
+        print("LANGUAGEGEN", language_generator == GAILA_PHASE_1_LANGUAGE_GENERATOR)
         # For now, we assume the order in which modifiers is expressed is arbitrary.
         attributes_we_can_express = (
             [
@@ -235,26 +231,11 @@ class IntegratedTemplateLearner(
             if self.attribute_learner
             else []
         )
-
         # We currently cannot deal with relations that modify objects embedded in other expressions.
         # See https://github.com/isi-vista/adam/issues/794 .
         # relations_for_object = learner_semantics.objects_to_relation_in_slot1[object_node]
 
         for template in self.object_learner.templates_for_concept(object_node.concept):
-            description = template.elements[0]
-            # hack to handle Chinese
-            if language_generator == GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR:
-                mappings = (
-                    GAILA_PHASE_1_CHINESE_LEXICON._ontology_node_to_word  # pylint:disable=protected-access
-                )
-                for k, v in mappings.items():
-                    if k.handle == description:
-                        realdescription = v.base_form
-                        newtemplate = SurfaceTemplate(
-                            elements=(realdescription,),
-                            determiner_prefix_slots=template._determiner_prefix_slots,  # pylint:disable=protected-access
-                        )
-                        template = newtemplate
 
             cur_string = template.instantiate(
                 template_variable_to_filler=immutabledict(),
@@ -322,12 +303,19 @@ class IntegratedTemplateLearner(
                 ).as_token_sequence()
 
     def _instantiate_action(
-        self, action_node: ActionSemanticNode, learner_semantics: "LearnerSemantics"
+        self,
+        action_node: ActionSemanticNode,
+        learner_semantics: "LearnerSemantics",
+        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> Iterator[Tuple[str, ...]]:
         if not self.action_learner:
             raise RuntimeError("Cannot instantiate an action without an action learner")
         slots_to_instantiations = {
-            slot: list(self._instantiate_object(slot_filler, learner_semantics))
+            slot: list(
+                self._instantiate_object(
+                    slot_filler, learner_semantics, language_generator=language_generator
+                )
+            )
             for (slot, slot_filler) in action_node.slot_fillings.items()
         }
         slot_order = tuple(slots_to_instantiations.keys())
@@ -340,7 +328,8 @@ class IntegratedTemplateLearner(
             )
             for possible_slot_filling in all_possible_slot_fillings:
                 yield action_template.instantiate(
-                    immutabledict(zip(slot_order, possible_slot_filling))
+                    immutabledict(zip(slot_order, possible_slot_filling)),
+                    language_generator=language_generator,
                 ).as_token_sequence()
 
     def log_hypotheses(self, log_output_path: Path) -> None:

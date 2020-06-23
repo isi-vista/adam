@@ -59,25 +59,21 @@ from immutablecollections import immutableset
 from tests.learner import TEST_OBJECT_RECOGNIZER
 
 
-NOT_USED_LEARNER = IntegratedTemplateLearner(
-    object_learner=ObjectRecognizerAsTemplateLearner(
-        object_recognizer=TEST_OBJECT_RECOGNIZER
-    ),
-    action_learner=SubsetVerbLearnerNew(ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5),
-)
-
 LEARNER_FACTORIES = [
     lambda: SubsetVerbLearner(
         object_recognizer=TEST_OBJECT_RECOGNIZER, ontology=GAILA_PHASE_1_ONTOLOGY
     ),
-    # TODO: implement the integrated learner for Chinese
-    # lambda: IntegratedTemplateLearner(
-    #    object_learner=ObjectRecognizerAsTemplateLearner(
-    #        object_recognizer=TEST_OBJECT_RECOGNIZER
-    #    ),
-    #    action_learner=SubsetVerbLearnerNew(ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5),
-    # ),
+    lambda: IntegratedTemplateLearner(
+        object_learner=ObjectRecognizerAsTemplateLearner(
+            object_recognizer=TEST_OBJECT_RECOGNIZER,
+            language_generator=GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
+        ),
+        action_learner=SubsetVerbLearnerNew(ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5),
+    ),
 ]
+SUBSET_LEARNER = SubsetVerbLearner(
+    object_recognizer=TEST_OBJECT_RECOGNIZER, ontology=GAILA_PHASE_1_ONTOLOGY
+)
 
 # VerbPursuitLearner(
 #         learning_factor=0.5,
@@ -144,11 +140,16 @@ def run_verb_test(learner, situation_template, language_generator):
 
 @pytest.mark.parametrize(
     "language_generator",
-    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
+    [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
 )
-@pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
-def test_eat_simple(learner_factory, language_generator):
-    learner = learner_factory()
+def test_eat_simple_integrated(language_generator):
+    learner = IntegratedTemplateLearner(
+        object_learner=ObjectRecognizerAsTemplateLearner(
+            object_recognizer=TEST_OBJECT_RECOGNIZER,
+            language_generator=language_generator,
+        ),
+        action_learner=SubsetVerbLearnerNew(ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5),
+    )
     object_to_eat = standard_object("object_0", required_properties=[EDIBLE])
     eater = standard_object("eater_0", THING, required_properties=[ANIMATE])
     run_verb_test(
@@ -162,9 +163,29 @@ def test_eat_simple(learner_factory, language_generator):
     "language_generator",
     [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
 )
-@pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
-def test_drink(learner_factory, language_generator):
-    learner = learner_factory()
+def test_eat_simple_subset(language_generator):
+    learner = SUBSET_LEARNER
+    object_to_eat = standard_object("object_0", required_properties=[EDIBLE])
+    eater = standard_object("eater_0", THING, required_properties=[ANIMATE])
+    run_verb_test(
+        learner,
+        make_eat_template(eater, object_to_eat),
+        language_generator=language_generator,
+    )
+
+
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
+)
+def test_drink_integrated(language_generator):
+    learner = IntegratedTemplateLearner(
+        object_learner=ObjectRecognizerAsTemplateLearner(
+            object_recognizer=TEST_OBJECT_RECOGNIZER,
+            language_generator=language_generator,
+        ),
+        action_learner=SubsetVerbLearnerNew(ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5),
+    )
     run_verb_test(learner, make_drink_template(), language_generator=language_generator)
 
 
@@ -172,10 +193,26 @@ def test_drink(learner_factory, language_generator):
     "language_generator",
     [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
 )
-@pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
-def test_sit(learner_factory, language_generator):
+def test_drink_subset(language_generator):
+    learner = SUBSET_LEARNER
+    run_verb_test(learner, make_drink_template(), language_generator=language_generator)
+
+
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
+)
+def test_sit_integrated(language_generator):
     for situation_template in make_sit_templates():
-        learner = learner_factory()
+        learner = IntegratedTemplateLearner(
+            object_learner=ObjectRecognizerAsTemplateLearner(
+                object_recognizer=TEST_OBJECT_RECOGNIZER,
+                language_generator=language_generator,
+            ),
+            action_learner=SubsetVerbLearnerNew(
+                ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5
+            ),
+        )
         run_verb_test(learner, situation_template, language_generator=language_generator)
 
 
@@ -183,10 +220,37 @@ def test_sit(learner_factory, language_generator):
     "language_generator",
     [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
 )
-@pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
-def test_put(learner_factory, language_generator):
+def test_sit_subset(language_generator):
+    for situation_template in make_sit_templates():
+        learner = SUBSET_LEARNER
+        run_verb_test(learner, situation_template, language_generator=language_generator)
+
+
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
+)
+def test_put_integrated(language_generator):
     for situation_template in make_put_templates():
-        learner = learner_factory()
+        learner = IntegratedTemplateLearner(
+            object_learner=ObjectRecognizerAsTemplateLearner(
+                object_recognizer=TEST_OBJECT_RECOGNIZER,
+                language_generator=language_generator,
+            ),
+            action_learner=SubsetVerbLearnerNew(
+                ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5
+            ),
+        )
+        run_verb_test(learner, situation_template, language_generator=language_generator)
+
+
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
+)
+def test_put_subset(language_generator):
+    for situation_template in make_put_templates():
+        learner = SUBSET_LEARNER
         run_verb_test(learner, situation_template, language_generator=language_generator)
 
 
@@ -194,10 +258,27 @@ def test_put(learner_factory, language_generator):
     "language_generator",
     [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
 )
-@pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
-def test_push(learner_factory, language_generator):
+def test_push_integrated(language_generator):
     for situation_template in make_push_templates():
-        learner = learner_factory()
+        learner = IntegratedTemplateLearner(
+            object_learner=ObjectRecognizerAsTemplateLearner(
+                object_recognizer=TEST_OBJECT_RECOGNIZER,
+                language_generator=language_generator,
+            ),
+            action_learner=SubsetVerbLearnerNew(
+                ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5
+            ),
+        )
+        run_verb_test(learner, situation_template, language_generator=language_generator)
+
+
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
+)
+def test_push_subset(language_generator):
+    for situation_template in make_push_templates():
+        learner = SUBSET_LEARNER
         run_verb_test(learner, situation_template, language_generator=language_generator)
 
 

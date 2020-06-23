@@ -46,6 +46,7 @@ class SurfaceTemplate:
         """
         Turns a template into a `TokenSequenceLinguisticDescription` by filling in its variables.
         """
+
         output_tokens: List[str] = []
         for element in self.elements:
             if isinstance(element, SyntaxSemanticsVariable):
