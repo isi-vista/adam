@@ -771,7 +771,36 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             """
             modifiers: List[Tuple[DependencyRole, DependencyTreeToken]] = []
 
+            if USE_ADVERBIAL_PATH_MODIFIER in self.situation.syntax_hints:
+                # up and down modifiers
+                if action.during:
+                    paths_involving_ground = immutableset(
+                        path
+                        for (_, path) in action.during.objects_to_paths.items()
+                        if path.reference_object.ontology_node == GROUND
+                    )
+                    if paths_involving_ground:
+                        # we just look at the first to determine the direction
+                        first_path = first(paths_involving_ground)
+                        if first_path.operator == TOWARD:
+                            modifiers.append(
+                                (ADVERBIAL_MODIFIER, DependencyTreeToken("down", ADVERB))
+                            )
+                        else:
+                            modifiers.append(
+                                (ADVERBIAL_MODIFIER, DependencyTreeToken("up", ADVERB))
+                            )
+                elif action.action_type == FALL or action.action_type == SIT:
+                    # hack, awaiting https://github.com/isi-vista/adam/issues/239
+                    modifiers.append(
+                        (ADVERBIAL_MODIFIER, DependencyTreeToken("down", ADVERB))
+                    )
+                elif action.action_type == JUMP:
+                    modifiers.append(
+                        (ADVERBIAL_MODIFIER, DependencyTreeToken("up", ADVERB))
+                    )
             if action.during:
+
                 # so far we only handle IN_REGION relations which are asserted to hold
                 # either continuously or at some point during an action
                 for relation in chain(
@@ -805,35 +834,6 @@ class SimpleRuleBasedEnglishLanguageGenerator(
 
             for relation in self.situation.after_action_relations:
                 self._translate_relation_to_action_modifier(action, relation, modifiers)
-
-            # up and down modifiers
-            if USE_ADVERBIAL_PATH_MODIFIER in self.situation.syntax_hints:
-                if action.during:
-                    paths_involving_ground = immutableset(
-                        path
-                        for (_, path) in action.during.objects_to_paths.items()
-                        if path.reference_object.ontology_node == GROUND
-                    )
-                    if paths_involving_ground:
-                        # we just look at the first to determine the direction
-                        first_path = first(paths_involving_ground)
-                        if first_path.operator == TOWARD:
-                            modifiers.append(
-                                (ADVERBIAL_MODIFIER, DependencyTreeToken("down", ADVERB))
-                            )
-                        else:
-                            modifiers.append(
-                                (ADVERBIAL_MODIFIER, DependencyTreeToken("up", ADVERB))
-                            )
-                elif action.action_type == FALL or action.action_type == SIT:
-                    # hack, awaiting https://github.com/isi-vista/adam/issues/239
-                    modifiers.append(
-                        (ADVERBIAL_MODIFIER, DependencyTreeToken("down", ADVERB))
-                    )
-                elif action.action_type == JUMP:
-                    modifiers.append(
-                        (ADVERBIAL_MODIFIER, DependencyTreeToken("up", ADVERB))
-                    )
 
             return modifiers
 
