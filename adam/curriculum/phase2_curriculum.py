@@ -3,6 +3,7 @@ Additions for the Curricula for DARPA GAILA Phase 2
 """
 
 from itertools import chain
+from typing import Sequence
 
 from adam.curriculum.curriculum_utils import (
     PHASE1_CHOOSER_FACTORY,
@@ -10,6 +11,11 @@ from adam.curriculum.curriculum_utils import (
     standard_object,
     phase2_instances,
 )
+from adam.curriculum.imprecise_descriptions_curriculum import make_imprecise_temporal_descriptions
+from adam.curriculum.phase1_curriculum import _make_plural_objects_curriculum, _make_pass_curriculum, \
+    _make_generic_statements_curriculum, _make_part_whole_curriculum, _make_roll_curriculum
+from adam.curriculum.preposition_curriculum import make_prepositions_curriculum
+from adam.curriculum.verbs_with_dynamic_prepositions_curriculum import make_verb_with_dynamic_prepositions_curriculum
 from adam.language_specific.english.english_language_generator import IGNORE_COLORS
 from adam.ontology.phase1_ontology import CHAIR, CUP
 from adam.ontology.phase2_ontology import (
@@ -93,3 +99,18 @@ def _make_cups_curriculum(
         ),
         perception_generator=perception_generator,
     )
+
+
+def build_gaila_m12_curriculum() -> Sequence[Phase1InstanceGroup]:
+    return list(chain([
+        _make_plural_objects_curriculum(), # plurals
+        _make_chairs_curriculum(), # functionally defined objects
+        _make_cups_curriculum(),
+        _make_pass_curriculum(), # Subtle verb distinctions
+        _make_generic_statements_curriculum(), # Generics
+        _make_part_whole_curriculum(), # Part whole
+        _make_roll_curriculum(), # External Limitations
+    ], list(make_imprecise_temporal_descriptions()), # Imprecise descriptions
+       make_verb_with_dynamic_prepositions_curriculum(), # Dynamic prepositions
+        make_prepositions_curriculum(), # Relative prepositions
+    ))
