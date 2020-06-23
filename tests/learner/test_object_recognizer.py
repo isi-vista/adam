@@ -130,7 +130,11 @@ def test_trivial_dynamic_situation_with_schemaless_object(language_generator):
     )
 
 
-def test_recognize_in_transfer_of_possession():
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
+)
+def test_recognize_in_transfer_of_possession(language_generator):
     dad = object_variable("person_0", DAD)
     baby = object_variable("person_1", BABY)
     chair = object_variable("give_object_0", CHAIR)
@@ -164,7 +168,13 @@ def test_recognize_in_transfer_of_possession():
         perception_graph
     )
     (_, description_to_matched_semantic_node) = TEST_OBJECT_RECOGNIZER.match_objects(
-        perception_semantic_alignment
+        perception_semantic_alignment, language_generator=language_generator
     )
     assert len(description_to_matched_semantic_node) == 4
-    assert ("Dad",) in description_to_matched_semantic_node
+    assert (
+        language_generator == GAILA_PHASE_1_LANGUAGE_GENERATOR
+        and ("Dad",) in description_to_matched_semantic_node
+    ) or (
+        language_generator == GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR
+        and ("ba4 ba4",) in description_to_matched_semantic_node
+    )
