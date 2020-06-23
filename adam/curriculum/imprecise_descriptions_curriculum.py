@@ -1,5 +1,5 @@
 from itertools import chain
-from typing import Sequence
+from typing import Sequence, Iterable
 
 from immutablecollections import immutableset
 from more_itertools import flatten
@@ -9,6 +9,7 @@ from adam.curriculum.curriculum_utils import (
     PHASE1_CHOOSER_FACTORY,
     phase1_instances,
     standard_object,
+    learner_template_factory,
 )
 from adam.curriculum.phase1_curriculum import (
     throw_on_ground_template,
@@ -41,70 +42,113 @@ from adam.ontology.phase1_ontology import (
     ROLLABLE,
     CAN_HAVE_THINGS_RESTING_ON_THEM,
     BIRD,
+    bigger_than,
 )
-from adam.situation.templates.phase1_templates import sampled
+from adam.situation.templates.phase1_templates import (
+    sampled,
+    TemplateObjectVariable,
+    Phase1SituationTemplate,
+)
 
 BOOL_SET = immutableset([True, False])
 
-# TODO: Renable big and small after future considerations
 # TODO: See https://github.com/isi-vista/adam/issues/742
-# def _big_x_template(
-#   theme: TemplateObjectVariable, background: Iterable[TemplateObjectVariable]
-# ) -> Phase1SituationTemplate:
-#    learner = learner_template_factory()
-#    computed_background = [learner]
-#    computed_background.extend(background)
-#    return Phase1SituationTemplate(
-#        f"big-{theme.handle}",
-#        salient_object_variables=[theme],
-#        background_object_variables=computed_background,
-#        asserted_always_relations=[bigger_than(theme, learner)],
-#    )
 
 
-# def _small_x_template(
-#    theme: TemplateObjectVariable, background: Iterable[TemplateObjectVariable]
-# ) -> Phase1SituationTemplate:
-#    learner = learner_template_factory()
-#    computed_background = [learner]
-#    computed_background.extend(background)
-#    return Phase1SituationTemplate(
-#        f"small-{theme.handle}",
-#        salient_object_variables=[theme],
-#        background_object_variables=computed_background,
-#        asserted_always_relations=[bigger_than(learner, theme)],
-#    )
+def _big_x_template(
+    theme: TemplateObjectVariable, background: Iterable[TemplateObjectVariable]
+) -> Phase1SituationTemplate:
+    learner = learner_template_factory()
+    computed_background = [learner]
+    computed_background.extend(background)
+    return Phase1SituationTemplate(
+        f"big-{theme.handle}",
+        salient_object_variables=[theme],
+        background_object_variables=computed_background,
+        asserted_always_relations=[bigger_than(theme, learner)],
+    )
 
 
-# def make_imprecise_size_descriptions(
-#    num_samples: int = 5, *, num_noise_objects: int = 0
-# ) -> Phase1InstanceGroup:
-#    background = immutableset(
-#        standard_object(f"noise_object_{x}") for x in range(num_noise_objects)
-#    )
+def _little_x_template(
+    theme: TemplateObjectVariable, background: Iterable[TemplateObjectVariable]
+) -> Phase1SituationTemplate:
+    learner = learner_template_factory()
+    computed_background = [learner]
+    computed_background.extend(background)
+    return Phase1SituationTemplate(
+        f"small-{theme.handle}",
+        salient_object_variables=[theme],
+        background_object_variables=computed_background,
+        asserted_always_relations=[bigger_than(learner, theme)],
+    )
 
-#    theme = standard_object("theme", THING)
-#    big_small_template = [_big_x_template, _small_x_template]
 
-#    return phase1_instances(
-#        "Imprecise Size",
-#        chain(
-# Big, Small
-#           flatten(
-#                [
-#                    sampled(
-#                        template(theme, background),
-#                        ontology=GAILA_PHASE_1_ONTOLOGY,
-#                        chooser=PHASE1_CHOOSER_FACTORY(),
-#                        max_to_sample=num_samples,
-#                    )
-#                    for template in big_small_template
-#                ]
-#            ),
-# Tall, Short
-# flatten(),
-#        ),
-#    )
+def _tall_x_template(
+    theme: TemplateObjectVariable, background: Iterable[TemplateObjectVariable]
+) -> Phase1SituationTemplate:
+    learner = learner_template_factory()
+    computed_background = [learner]
+    computed_background.extend(background)
+
+    # TODO: This difference should be an axis size but we can't yet
+    # implement that. See: https://github.com/isi-vista/adam/issues/832
+    return Phase1SituationTemplate(
+        f"tall-{theme.handle}",
+        salient_object_variables=[theme],
+        background_object_variables=background,
+        asserted_always_relations=[bigger_than(theme, learner)],
+    )
+
+
+def _short_x_template(
+    theme: TemplateObjectVariable, background: Iterable[TemplateObjectVariable]
+) -> Phase1SituationTemplate:
+    learner = learner_template_factory()
+    computed_background = [learner]
+    computed_background.extend(background)
+
+    # TODO: This difference should be an axis size but we can't yet
+    # implement that. See: https://github.com/isi-vista/adam/issues/832
+    return Phase1SituationTemplate(
+        f"tall-{theme.handle}",
+        salient_object_variables=[theme],
+        background_object_variables=background,
+        asserted_always_relations=[bigger_than(learner, theme)],
+    )
+
+
+def make_imprecise_size_descriptions(
+    num_samples: int = 5, *, num_noise_objects: int = 0
+) -> Phase1InstanceGroup:
+    background = immutableset(
+        standard_object(f"noise_object_{x}") for x in range(num_noise_objects)
+    )
+
+    theme_0 = standard_object("theme")
+    theme_1 = standard_object("theme-thing", THING)
+
+    return phase1_instances(
+        "Imprecise Size",
+        chain(
+            flatten(
+                [
+                    sampled(
+                        template(theme, background),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        max_to_sample=num_samples,
+                    )
+                    for template in [
+                        _big_x_template,
+                        _little_x_template,
+                        _tall_x_template,
+                        _short_x_template,
+                    ]
+                    for theme in [theme_0, theme_1]
+                ]
+            )
+        ),
+    )
 
 
 def make_throw_imprecise_temporal_descriptions(
@@ -391,6 +435,18 @@ def make_fall_imprecise_temporal_descriptions(
             ),
         ),
     )
+
+
+def make_imprecise_size_curriculum(
+    num_samples: int = 5, *, num_noise_objects: int = 0
+) -> Sequence[Phase1InstanceGroup]:
+    """
+    One particular instantiation of the Imprecise Size Descriptions Curriculum
+    """
+
+    return [
+        make_imprecise_size_descriptions(num_samples, num_noise_objects=num_noise_objects)
+    ]
 
 
 def make_imprecise_temporal_descriptions(

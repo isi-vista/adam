@@ -38,6 +38,7 @@ from adam.language.dependency.universal_dependencies import (
     IS_ATTRIBUTE,
     OTHER,
     MARKER,
+    ADJECTIVE,
 )
 from adam.language.language_generator import LanguageGenerator
 from adam.language.lexicon import LexiconEntry
@@ -75,6 +76,8 @@ from adam.ontology.phase1_ontology import (
     JUMP,
     FAST,
     SLOW,
+    BIGGER_THAN,
+    SMALLER_THAN,
 )
 from adam.ontology.phase1_spatial_relations import (
     EXTERIOR_BUT_IN_CONTACT,
@@ -478,6 +481,32 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                         self._noun_for_object(relation.first_slot),
                         role=NOMINAL_MODIFIER,
                     )
+            elif relation.relation_type == BIGGER_THAN:
+                if (
+                    relation.first_slot in self.situation.salient_objects
+                    and isinstance(relation.second_slot, SituationObject)
+                    and relation.second_slot.ontology_node == LEARNER
+                ):
+                    token = DependencyTreeToken("big", ADJECTIVE)
+                    self.dependency_graph.add_node(token)
+                    self.dependency_graph.add_edge(
+                        token,
+                        self._noun_for_object(relation.first_slot),
+                        role=ADJECTIVAL_MODIFIER,
+                    )
+            elif relation.relation_type == SMALLER_THAN:
+                if (
+                    relation.first_slot in self.situation.salient_objects
+                    and isinstance(relation.second_slot, SituationObject)
+                    and relation.second_slot.ontology_node == LEARNER
+                ):
+                    token = DependencyTreeToken("small", ADJECTIVE)
+                    self.dependency_graph.add_node(token)
+                    self.dependency_graph.add_edge(
+                        token,
+                        self._noun_for_object(relation.first_slot),
+                        role=ADJECTIVAL_MODIFIER,
+                    )
             else:
                 raise RuntimeError(
                     f"Don't know how to translate relation " f"{relation} to English"
@@ -876,7 +905,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             preposition: Optional[str] = None
 
             if region.distance == INTERIOR and relation.negated:
-                preposition = "out_of"
+                preposition = "out of"
 
             elif region.distance == INTERIOR:
                 preposition = "in"
