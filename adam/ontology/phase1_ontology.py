@@ -2428,14 +2428,14 @@ def _make_jump_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
 
 
 _WALK_AGENT = ActionDescriptionVariable(THING, properties=[ANIMATE])
-_WALK_SURFACE_AUXILIARY = ActionDescriptionVariable(
+WALK_SURFACE_AUXILIARY = ActionDescriptionVariable(
     INANIMATE_OBJECT,
     properties=[CAN_HAVE_THINGS_RESTING_ON_THEM],
     debug_handle="walk-surface-aux",
 )
 _WALK_ACTION_DESCRIPTION = ActionDescription(
     frame=ActionDescriptionFrame({AGENT: _WALK_AGENT}),
-    during=DuringAction(continuously=[on(_WALK_AGENT, _WALK_SURFACE_AUXILIARY)]),
+    during=DuringAction(continuously=[on(_WALK_AGENT, WALK_SURFACE_AUXILIARY)]),
     asserted_properties=[(_WALK_AGENT, MOVES)],
 )
 

@@ -44,6 +44,7 @@ from adam.ontology.phase1_ontology import (
     FALL,
     FLY,
     GAILA_PHASE_1_ONTOLOGY,
+    WALK_SURFACE_AUXILIARY,
     GIVE,
     GOAL,
     GROUND,
@@ -1432,7 +1433,7 @@ def make_take_template(
                             agent,
                             SpatialPath(
                                 None,
-                                reference_object=GROUND_OBJECT_TEMPLATE,
+                                reference_object=ground,
                                 properties=spatial_properties,
                             ),
                         )
@@ -1454,12 +1455,15 @@ def make_walk_run_template(
     spatial_properties: Iterable[OntologyNode] = None,
 ) -> Phase1SituationTemplate:
     # X walks
+    ground = GROUND_OBJECT_TEMPLATE
     return Phase1SituationTemplate(
         f"{agent.handle} walk",
         salient_object_variables=[agent],
+        background_object_variables=[ground],
         actions=[
             Action(
                 WALK,
+                auxiliary_variable_bindings=[(WALK_SURFACE_AUXILIARY, ground)],
                 argument_roles_to_fillers=[(AGENT, agent)],
                 during=DuringAction(
                     objects_to_paths=[

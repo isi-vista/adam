@@ -19,7 +19,7 @@ def test__pass_toss_subtle_verb_distinction():
     curriculum_test(make_pass_toss_subtle_verb_distinction())
 
 
-@pytest.mark.skip(reason="currently not passing")
+@pytest.mark.skip(reason="spatial path with declared surface doesn't work right now")
 def test__push_shove_subtle_verb_distinction():
     curriculum_test(make_push_shove_subtle_verb_distinctions())
 
@@ -28,7 +28,6 @@ def test__take_grab_subtle_verb_distinction():
     curriculum_test(make_take_grab_subtle_verb_distinction())
 
 
-@pytest.mark.skip(reason="currently not passing")
 def test__walk_run_subtle_verb_distinction():
     curriculum_test(make_walk_run_subtle_verb_distinction())
 
