@@ -467,7 +467,10 @@ class _PerceptionGeneration:
                 for situation_object in self._situation.all_objects
             ]
         )
-        for object_perception, ontology_node in self._object_perceptions_to_ontology_nodes.items():
+        for (
+            object_perception,
+            ontology_node,
+        ) in self._object_perceptions_to_ontology_nodes.items():
             # process explicitly and implicitly-specified properties
             all_object_properties: List[OntologyNode] = []
             # Explicit properties are stipulated by the user in the situation description.
