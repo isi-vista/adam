@@ -90,6 +90,7 @@ from adam.ontology.phase1_spatial_relations import (
     SpatialPath,
     AWAY_FROM,
     TO,
+    DISTAL,
 )
 from adam.random_utils import SequenceChooser
 from adam.relation import Relation
@@ -727,12 +728,23 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             ):
                 return "on"
             elif region.distance == PROXIMAL and not region.direction:
-                return "to"
+                # See: https://github.com/isi-vista/adam/issues/836
+                if USE_NEAR in self.situation.syntax_hints:
+                    return "near"
+                else:
+                    return "to"
             elif region.direction == GRAVITATIONAL_UP:
-                return "over"
+                if USE_ABOVE_BELOW in self.situation.syntax_hints:
+                    return "above"
+                else:
+                    return "over"
             elif region.direction == GRAVITATIONAL_DOWN:
-                return "under"
-            # region.distance == DISTAL is not check as this does not define a specific preposition in scope for Phase 1
+                if USE_ABOVE_BELOW in self.situation.syntax_hints:
+                    return "below"
+                else:
+                    return "under"
+            elif region.distance == DISTAL and not region.direction:
+                return "far from"
             elif region.direction and self.situation.axis_info:
                 if not self.situation.axis_info.addressee:
                     raise RuntimeError(
@@ -917,7 +929,14 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 preposition = "in"
 
             elif region.distance == PROXIMAL and not region.direction:
-                preposition = "to"
+                # See: https://github.com/isi-vista/adam/issues/836
+                if USE_NEAR in self.situation.syntax_hints:
+                    preposition = "near"
+                else:
+                    preposition = "to"
+
+            elif region.distance == DISTAL and not region.direction:
+                preposition = "far from"
 
             elif region.direction:
                 direction_axis = region.direction.relative_to_concrete_axis(
@@ -930,9 +949,15 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 else:
                     if direction_axis.aligned_to_gravitational:
                         if region.direction.positive:
-                            preposition = "over"
+                            if USE_ABOVE_BELOW in self.situation.syntax_hints:
+                                preposition = "above"
+                            else:
+                                preposition = "over"
                         else:
-                            preposition = "under"
+                            if USE_ABOVE_BELOW in self.situation.syntax_hints:
+                                preposition = "below"
+                            else:
+                                preposition = "under"
                     else:
                         # TODO: hack for M3; revisit in cleanup
                         # see: https://github.com/isi-vista/adam/issues/573
@@ -1137,3 +1162,5 @@ ATTRIBUTES_AS_X_IS_Y = "ATTRIBUTES_AS_X_IS_Y"
 IGNORE_SIZE_ATTRIBUTE = "IGNORE_SIZE_ATTRIBUTE"
 IGNORE_GOAL = "IGNORE_GOAL"
 USE_VERTICAL_MODIFIERS = "USE_VERTICAL_MODIFIERS"
+USE_ABOVE_BELOW = "USE_ABOVE_BELOW"
+USE_NEAR = "USE_NEAR"
