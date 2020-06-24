@@ -1373,7 +1373,7 @@ def make_take_grab_template(
 ) -> Phase1SituationTemplate:
     # X puts Y on Z
     return Phase1SituationTemplate(
-        "take",
+        f"{agent.handle}-take-{theme.handle}",
         salient_object_variables=[agent, theme],
         actions=[
             Action(
