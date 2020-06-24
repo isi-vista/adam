@@ -10,6 +10,7 @@ from adam.language_specific.english.english_language_generator import (
     USE_ADVERBIAL_PATH_MODIFIER,
     ATTRIBUTES_AS_X_IS_Y,
     IGNORE_COLORS,
+    USE_VERTICAL_MODIFIERS,
 )
 from adam.language_specific.english.english_phase_1_lexicon import (
     GAILA_PHASE_1_ENGLISH_LEXICON,
@@ -1563,6 +1564,52 @@ def test_box_without_attribute():
 
     with pytest.raises(RuntimeError):
         generated_tokens(box_without_attribute)
+
+
+def test_bigger_than():
+    box = situation_object(BOX)
+    learner = situation_object(LEARNER)
+    big_box = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[box, learner],
+        always_relations=[bigger_than(box, learner)],
+    )
+    assert generated_tokens(situation=big_box) == ("a", "big", "box")
+
+
+def test_taller_than():
+    box = situation_object(BOX)
+    learner = situation_object(LEARNER)
+    big_box = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[box, learner],
+        always_relations=[bigger_than(box, learner)],
+        syntax_hints=[USE_VERTICAL_MODIFIERS],
+    )
+    assert generated_tokens(situation=big_box) == ("a", "tall", "box")
+
+
+def test_shorter_than():
+    box = situation_object(BOX)
+    learner = situation_object(LEARNER)
+    big_box = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[box, learner],
+        always_relations=[bigger_than(learner, box)],
+        syntax_hints=[USE_VERTICAL_MODIFIERS],
+    )
+    assert generated_tokens(situation=big_box) == ("a", "short", "box")
+
+
+def test_smaller_than():
+    box = situation_object(BOX)
+    learner = situation_object(LEARNER)
+    big_box = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[box, learner],
+        always_relations=[bigger_than(learner, box)],
+    )
+    assert generated_tokens(situation=big_box) == ("a", "small", "box")
 
 
 def generated_tokens(situation):

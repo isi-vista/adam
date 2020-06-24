@@ -487,7 +487,10 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     and isinstance(relation.second_slot, SituationObject)
                     and relation.second_slot.ontology_node == LEARNER
                 ):
-                    token = DependencyTreeToken("big", ADJECTIVE)
+                    if USE_VERTICAL_MODIFIERS in self.situation.syntax_hints:
+                        token = DependencyTreeToken("tall", ADJECTIVE)
+                    else:
+                        token = DependencyTreeToken("big", ADJECTIVE)
                     self.dependency_graph.add_node(token)
                     self.dependency_graph.add_edge(
                         token,
@@ -500,7 +503,10 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     and isinstance(relation.second_slot, SituationObject)
                     and relation.second_slot.ontology_node == LEARNER
                 ):
-                    token = DependencyTreeToken("small", ADJECTIVE)
+                    if USE_VERTICAL_MODIFIERS in self.situation.syntax_hints:
+                        token = DependencyTreeToken("short", ADJECTIVE)
+                    else:
+                        token = DependencyTreeToken("small", ADJECTIVE)
                     self.dependency_graph.add_node(token)
                     self.dependency_graph.add_edge(
                         token,
@@ -1130,3 +1136,4 @@ IGNORE_HAS_AS_VERB = "IGNORE_HAS_AS_VERB"
 ATTRIBUTES_AS_X_IS_Y = "ATTRIBUTES_AS_X_IS_Y"
 IGNORE_SIZE_ATTRIBUTE = "IGNORE_SIZE_ATTRIBUTE"
 IGNORE_GOAL = "IGNORE_GOAL"
+USE_VERTICAL_MODIFIERS = "USE_VERTICAL_MODIFIERS"
