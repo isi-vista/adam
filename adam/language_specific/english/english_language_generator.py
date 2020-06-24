@@ -1010,8 +1010,6 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             # We also explicitly ignore the None operator
             # as spatial paths may just have properties
             # we are interested in asserting
-            elif spatial_path.operator == TO:
-                preposition = "on"
             elif spatial_path.operator in [TO, None]:
                 return None
 
