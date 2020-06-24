@@ -12,7 +12,7 @@ from adam.curriculum.curriculum_utils import (
     learner_template_factory,
 )
 from adam.curriculum.phase1_curriculum import (
-    make_toss_pass_template,
+    make_pass_template,
     throw_on_ground_template,
     throw_template,
     throw_up_down_template,
@@ -26,7 +26,7 @@ from adam.curriculum.phase1_curriculum import (
     bare_fly,
     fall_on_ground_template,
     falling_template,
-    make_take_grab_template,
+    make_take_template,
     make_push_templates,
     make_walk_run_template,
 )
@@ -325,7 +325,7 @@ def make_take_grab_imprecise_temporal_descriptions(
             flatten(
                 [
                     sampled(
-                        make_take_grab_template(
+                        make_take_template(
                             taker,
                             takee,
                             use_adverbial_path_modifier=use_adverbial_path_modifier,
@@ -345,7 +345,7 @@ def make_take_grab_imprecise_temporal_descriptions(
     )
 
 
-def make_push_shove_temporal_descriptions(
+def make_push_shove_subtle_verb_distinctions(
     num_samples: int = 5, *, num_noise_objects: int = 0  # pylint:disable=unused-argument
 ) -> Phase1InstanceGroup:
     pusher = standard_object("pusher_0", THING, required_properties=[ANIMATE])
@@ -447,7 +447,7 @@ def make_pass_toss_imprecise_temporal_descriptions(
             flatten(
                 [
                     sampled(
-                        make_toss_pass_template(
+                        make_pass_template(
                             tosser,
                             tossee,
                             goal,
