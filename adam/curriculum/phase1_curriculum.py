@@ -96,6 +96,7 @@ from adam.ontology.phase1_ontology import (
     DAD,
     HOUSE,
     BALL,
+    PASS_GOAL,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -1056,6 +1057,42 @@ def make_jump_template(
                 argument_roles_to_fillers=[(AGENT, agent)],
                 auxiliary_variable_bindings=[
                     (JUMP_INITIAL_SUPPORTER_AUX, GROUND_OBJECT_TEMPLATE)
+                ],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            agent,
+                            SpatialPath(
+                                None,
+                                reference_object=GROUND_OBJECT_TEMPLATE,
+                                properties=spatial_properties,
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER] if use_adverbial_path_modifier else [],
+    )
+
+
+def make_toss_pass_template(
+    agent: TemplateObjectVariable,
+    theme: TemplateObjectVariable,
+    goal: TemplateObjectVariable,
+    *,
+    use_adverbial_path_modifier: bool,
+    spatial_properties: Iterable[OntologyNode] = immutableset(),
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        "toss-pass",
+        salient_object_variables=[agent, theme, goal],
+        actions=[
+            Action(
+                PASS,
+                argument_roles_to_fillers=[(AGENT, agent), (THEME, theme)],
+                auxiliary_variable_bindings=[
+                    (PASS_GOAL, Region(goal, distance=PROXIMAL))
                 ],
                 during=DuringAction(
                     objects_to_paths=[

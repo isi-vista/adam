@@ -12,6 +12,7 @@ from adam.curriculum.curriculum_utils import (
     learner_template_factory,
 )
 from adam.curriculum.phase1_curriculum import (
+    make_toss_pass_template,
     throw_on_ground_template,
     throw_template,
     throw_up_down_template,
@@ -37,6 +38,8 @@ from adam.ontology.phase1_ontology import (
     INANIMATE,
     BOX,
     FAST,
+    HARD_FORCE,
+    SOFT_FORCE,
     SLOW,
     SELF_MOVING,
     CAN_JUMP,
@@ -302,6 +305,40 @@ def make_jump_imprecise_temporal_descriptions(
                     )
                     for use_adverbial_path_modifier in (True, False)
                     for is_fast in BOOL_SET
+                ]
+            )
+        ),
+    )
+
+
+def make_pass_toss_imprecise_temporal_descriptions(
+    num_samples: int = 5, *, num_noise_objects: int = 0  # pylint:disable=unused-argument
+) -> Phase1InstanceGroup:
+    tosser = standard_object("tosser_passer_0", THING, required_properties=[ANIMATE])
+    tossee = standard_object("tossee_passee_0", THING, required_properties=[INANIMATE])
+    goal = standard_object("move-goal-reference", THING, required_properties=[INANIMATE])
+
+    return phase1_instances(
+        "tossing_passing",
+        chain(
+            flatten(
+                [
+                    sampled(
+                        make_toss_pass_template(
+                            tosser,
+                            tossee,
+                            goal,
+                            use_adverbial_path_modifier=use_adverbial_path_modifier,
+                            spatial_properties=[HARD_FORCE]
+                            if hard_force
+                            else [SOFT_FORCE],
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        max_to_sample=num_samples,
+                    )
+                    for use_adverbial_path_modifier in (True, False)
+                    for hard_force in BOOL_SET
                 ]
             )
         ),
