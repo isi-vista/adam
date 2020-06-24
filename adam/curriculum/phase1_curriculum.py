@@ -96,7 +96,6 @@ from adam.ontology.phase1_ontology import (
     DAD,
     HOUSE,
     BALL,
-    PASS_GOAL,
     WALK,
 )
 from adam.ontology.phase1_spatial_relations import (
@@ -1043,12 +1042,18 @@ def make_jump_template(
     )
 
 
-def make_toss_pass_template(
-    agent: TemplateObjectVariable,
-    theme: TemplateObjectVariable,
-    goal: TemplateObjectVariable,
+def make_pass_template(
+    agent: TemplateObjectVariable = standard_object(
+        "thrower_0", THING, required_properties=[ANIMATE]
+    ),
+    theme: TemplateObjectVariable = standard_object(
+        "object_0", required_properties=[INANIMATE]
+    ),
+    goal: TemplateObjectVariable = standard_object(
+        "catcher_0", THING, required_properties=[ANIMATE]
+    ),
     *,
-    use_adverbial_path_modifier: bool,
+    use_adverbial_path_modifier: bool = False,
     spatial_properties: Iterable[OntologyNode] = immutableset(),
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
@@ -1057,9 +1062,10 @@ def make_toss_pass_template(
         actions=[
             Action(
                 PASS,
-                argument_roles_to_fillers=[(AGENT, agent), (THEME, theme)],
-                auxiliary_variable_bindings=[
-                    (PASS_GOAL, Region(goal, distance=PROXIMAL))
+                argument_roles_to_fillers=[
+                    (AGENT, agent),
+                    (THEME, theme),
+                    (GOAL, Region(goal, distance=PROXIMAL)),
                 ],
                 during=DuringAction(
                     objects_to_paths=[
@@ -1072,9 +1078,12 @@ def make_toss_pass_template(
                             ),
                         )
                     ]
-                ),
+                )
+                if spatial_properties
+                else None,
             )
         ],
+        constraining_relations=[bigger_than(agent, theme)],
         syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER] if use_adverbial_path_modifier else [],
     )
 
@@ -1364,11 +1373,15 @@ def _make_sit_curriculum() -> Phase1InstanceGroup:
     )
 
 
-def make_take_grab_template(
-    agent: TemplateObjectVariable,
-    theme: TemplateObjectVariable,
+def make_take_template(
+    agent: TemplateObjectVariable = standard_object(
+        "taker_0", THING, required_properties=[ANIMATE]
+    ),
+    theme: TemplateObjectVariable = standard_object(
+        "object_taken_0", required_properties=[INANIMATE]
+    ),
     *,
-    use_adverbial_path_modifier: bool,
+    use_adverbial_path_modifier: bool = False,
     spatial_properties: Iterable[OntologyNode] = None,
 ) -> Phase1SituationTemplate:
     # X grabs Y
@@ -1390,7 +1403,9 @@ def make_take_grab_template(
                             ),
                         )
                     ]
-                ),
+                )
+                if spatial_properties
+                else None,
             )
         ],
         constraining_relations=[bigger_than(agent, theme)],
@@ -1427,23 +1442,6 @@ def make_walk_run_template(
             )
         ],
         syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER] if use_adverbial_path_modifier else [],
-    )
-
-
-def make_take_template() -> Phase1SituationTemplate:
-    taker = standard_object("taker_0", THING, required_properties=[ANIMATE])
-    object_taken = standard_object("object_taken_0", required_properties=[INANIMATE])
-
-    # X takes Y
-    return Phase1SituationTemplate(
-        "take",
-        salient_object_variables=[taker, object_taken],
-        actions=[
-            Action(
-                TAKE, argument_roles_to_fillers=[(AGENT, taker), (THEME, object_taken)]
-            )
-        ],
-        constraining_relations=[bigger_than(taker, object_taken)],
     )
 
 
@@ -1955,30 +1953,10 @@ def _make_throw_curriculum() -> Phase1InstanceGroup:
 
 
 def _make_pass_curriculum() -> Phase1InstanceGroup:
-    passer = standard_object("thrower_0", THING, required_properties=[ANIMATE])
-    catcher = standard_object("catcher_0", THING, required_properties=[ANIMATE])
-    object_passed = standard_object("object_0", required_properties=[INANIMATE])
-
-    pass_template = Phase1SituationTemplate(
-        "pass-to",
-        salient_object_variables=[passer, object_passed, catcher],
-        actions=[
-            Action(
-                PASS,
-                argument_roles_to_fillers=[
-                    (AGENT, passer),
-                    (THEME, object_passed),
-                    (GOAL, Region(catcher, distance=PROXIMAL)),
-                ],
-            )
-        ],
-        constraining_relations=[bigger_than(passer, object_passed)],
-    )
-
     return phase1_instances(
         "passing",
         sampled(
-            pass_template,
+            make_pass_template(),
             max_to_sample=25,
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
