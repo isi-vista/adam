@@ -65,7 +65,8 @@ from adam.ontology.phase1_ontology import (
     LIGHT_BROWN,
     DARK_BROWN,
     PASS,
-    WATERMELON)
+    WATERMELON,
+)
 
 I = LexiconEntry(  # noqa: E741
     "I",
