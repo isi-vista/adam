@@ -1872,6 +1872,19 @@ def _make_go_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
     )
 
 
+_WALK_AGENT = ActionDescriptionVariable(THING, properties=[ANIMATE])
+_WALK_GOAL = ActionDescriptionVariable(THING)
+_WALK_ACTION_DESCRIPTION = ActionDescriptionVariable(
+    frame=ActionDescriptionFrame({AGENT: _WALK_AGENT, GOAL: _WALK_GOAL}),
+    preconditions=[Relation(IN_REGION, _WALK_AGENT, Region(_WALK_GOAL))],
+    during=DuringAction(objects_to_paths=[(_WALK_AGENT, SpatialPath(TO, _WALK_GOAL))]),
+    postconditions=[
+        Relation(IN_REGION, _WALK_AGENT, Region(_WALK_GOAL, distance=PROXIMAL))
+    ],
+    asserted_properties=[(_WALK_AGENT, VOLITIONALLY_INVOLVED), (_WALK_AGENT, MOVES)],
+)
+
+
 _COME_AGENT = ActionDescriptionVariable(THING, properties=[ANIMATE])
 _COME_GOAL = ActionDescriptionVariable(THING)
 
@@ -2496,6 +2509,7 @@ _ACTIONS_TO_DESCRIPTIONS = [
     (EAT, _EAT_ACTION_DESCRIPTION),
     (FALL, _FALL_ACTION_DESCRIPTION),
     (FLY, _FLY_ACTION_DESCRIPTION),
+    (WALK, _WALK_ACTION_DESCRIPTION),
 ]
 
 _ACTIONS_TO_DESCRIPTIONS.extend(_make_roll_description())
