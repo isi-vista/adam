@@ -1405,7 +1405,7 @@ def make_take_grab_template(
     use_adverbial_path_modifier: bool,
     spatial_properties: Iterable[OntologyNode] = None,
 ) -> Phase1SituationTemplate:
-    # X puts Y on Z
+    # X grabs Y
     return Phase1SituationTemplate(
         f"{agent.handle}-take-{theme.handle}",
         salient_object_variables=[agent, theme],
@@ -1438,9 +1438,9 @@ def make_walk_run_template(
     use_adverbial_path_modifier: bool,
     spatial_properties: Iterable[OntologyNode] = None,
 ) -> Phase1SituationTemplate:
-    # X puts Y on Z
+    # X walks
     return Phase1SituationTemplate(
-        "walk-run",
+        f"{agent.handle} walk",
         salient_object_variables=[agent],
         actions=[
             Action(
