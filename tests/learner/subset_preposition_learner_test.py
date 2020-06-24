@@ -60,6 +60,63 @@ LEARNER_FACTORIES = [
 ]
 
 
+@pytest.mark.parametrize("language_generator", [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR])
+def test_subset_preposition_on_learner_chinese(language_generator):
+    ball = standard_object("ball", BALL)
+    table = standard_object("table", TABLE)
+    on_train_curriculum = phase1_instances(
+        "Preposition Unit Train",
+        situations=sampled(
+            _on_template(ball, table, immutableset(), is_training=True),
+            chooser=PHASE1_CHOOSER_FACTORY(),
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+            max_to_sample=2,
+        ),
+        language_generator=language_generator,
+    )
+    on_test_curriculum = phase1_instances(
+        "Preposition Unit Test",
+        situations=sampled(
+            _on_template(ball, table, immutableset(), is_training=False),
+            chooser=PHASE1_CHOOSER_FACTORY(),
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+            max_to_sample=1,
+        ),
+        language_generator=language_generator,
+    )
+
+    learner = IntegratedTemplateLearner(
+        object_learner=ObjectRecognizerAsTemplateLearner(
+            object_recognizer=TEST_OBJECT_RECOGNIZER,
+            language_generator=GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
+        ),
+        relation_learner=SubsetRelationLearnerNew(
+            ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5
+        ),
+    )
+    for (
+        _,
+        linguistic_description,
+        perceptual_representation,
+    ) in on_train_curriculum.instances():
+        learner.observe(
+            LearningExample(perceptual_representation, linguistic_description),
+            language_generator=language_generator,
+        )
+
+    for (
+        _,
+        test_lingustics_description,
+        test_perceptual_representation,
+    ) in on_test_curriculum.instances():
+        descriptions_from_learner = learner.describe(
+            test_perceptual_representation, language_generator=language_generator
+        )
+        gold = test_lingustics_description.as_token_sequence()
+        assert descriptions_from_learner
+        assert gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
+
+
 @pytest.mark.parametrize(
     "language_generator",
     [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],

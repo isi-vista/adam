@@ -79,17 +79,48 @@ class AbstractRelationTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                     candidate_relation_token_span = Span(
                         span_for_left_object.end, span_for_right_object.start
                     )
-
                     if is_legal_template_span(candidate_relation_token_span):
-                        template_elements: List[Union[SyntaxSemanticsVariable, str]] = [
-                            SLOT1
-                        ]
+                        # Hack for Chinese: this gets a node one to the left of the start that may be a part of the preposition
+                        leftone = None
+                        # Check that the span is valid and that we don't already have a concept for this node
+                        if span_for_left_object.start > 0 and Span(
+                            span_for_left_object.start - 1, span_for_left_object.start
+                        ) not in list(
+                            language_concept_alignment.node_to_language_span.values()
+                        ):
+                            leftone = sentence_tokens[
+                                span_for_left_object.start
+                                - 1 : span_for_left_object.start
+                            ]
+                            # for English, we also want to be sure that it's not a determiner
+                            if leftone[0] == "the" or leftone[0] == "a":
+                                leftone = None
+
+                        # we do the same for the right side of the relation
+                        rightone = None
+                        if span_for_right_object.end < len(sentence_tokens) and Span(
+                            span_for_right_object.end, span_for_right_object.end + 1
+                        ) not in list(
+                            language_concept_alignment.node_to_language_span.values()
+                        ):
+                            rightone = sentence_tokens[
+                                span_for_right_object.end : span_for_right_object.end + 1
+                            ]
+                            if rightone[0] == "a" or rightone[0] == "the":
+                                rightone = None
+
+                        template_elements: List[Union[SyntaxSemanticsVariable, str]] = []
+                        if leftone:
+                            template_elements.extend([leftone[0]])
+                        template_elements.append(SLOT1)
                         template_elements.extend(
                             sentence_tokens[
                                 candidate_relation_token_span.start : candidate_relation_token_span.end
                             ]
                         )
                         template_elements.append(SLOT2)
+                        if rightone:
+                            template_elements.extend([rightone[0]])
                         ret.append(
                             SurfaceTemplateBoundToSemanticNodes(
                                 surface_template=SurfaceTemplate(

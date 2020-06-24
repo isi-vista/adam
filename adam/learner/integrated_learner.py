@@ -171,7 +171,6 @@ class IntegratedTemplateLearner(
     ) -> Mapping[LinguisticDescription, float]:
 
         learner_semantics = LearnerSemantics.from_nodes(semantic_nodes)
-
         ret = []
         if self.action_learner:
             ret.extend(
@@ -192,7 +191,7 @@ class IntegratedTemplateLearner(
                     (relation_tokens, 1.0)
                     for relation in learner_semantics.relations
                     for relation_tokens in self._instantiate_relation(
-                        relation, learner_semantics
+                        relation, learner_semantics, language_generator=language_generator
                     )
                     # ensure we have some way of expressing this relation
                     if self.relation_learner.templates_for_concept(relation.concept)
@@ -279,13 +278,20 @@ class IntegratedTemplateLearner(
                 yield cur_string
 
     def _instantiate_relation(
-        self, relation_node: RelationSemanticNode, learner_semantics: "LearnerSemantics"
+        self,
+        relation_node: RelationSemanticNode,
+        learner_semantics: "LearnerSemantics",
+        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> Iterator[Tuple[str, ...]]:
         if not self.relation_learner:
             raise RuntimeError("Cannot instantiate relations without a relation learner")
 
         slots_to_instantiations = {
-            slot: list(self._instantiate_object(slot_filler, learner_semantics))
+            slot: list(
+                self._instantiate_object(
+                    slot_filler, learner_semantics, language_generator=language_generator
+                )
+            )
             for (slot, slot_filler) in relation_node.slot_fillings.items()
         }
         slot_order = tuple(slots_to_instantiations.keys())
@@ -298,7 +304,8 @@ class IntegratedTemplateLearner(
             )
             for possible_slot_filling in all_possible_slot_fillings:
                 yield relation_template.instantiate(
-                    immutabledict(zip(slot_order, possible_slot_filling))
+                    immutabledict(zip(slot_order, possible_slot_filling)),
+                    language_generator=language_generator,
                 ).as_token_sequence()
 
     def _instantiate_action(
