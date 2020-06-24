@@ -1658,6 +1658,82 @@ def _make_go_curriculum() -> Phase1InstanceGroup:
     )
 
 
+def make_push_shove_template(
+    agent: TemplateObjectVariable,
+    theme: TemplateObjectVariable,
+    push_surface: TemplateObjectVariable,
+    push_goal: TemplateObjectVariable,
+    *,
+    use_adverbial_path_modifier: bool,
+    express_surface: bool,
+    spatial_properties: Iterable[OntologyNode] = immutableset(),
+) -> Phase1SituationTemplate:
+    # push with implicit goal
+    aux_bindings = [
+        (PUSH_SURFACE_AUX, push_surface),
+        (PUSH_GOAL, Region(push_goal, distance=PROXIMAL)),
+    ]
+    push_unexpressed_goal = Phase1SituationTemplate(
+        "push-unexpressed-goal",
+        salient_object_variables=[agent, theme],
+        actions=[
+            Action(
+                PUSH,
+                argument_roles_to_fillers=[(AGENT, agent), (THEME, theme)],
+                auxiliary_variable_bindings=aux_bindings,
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            agent,
+                            SpatialPath(
+                                None,
+                                reference_object=push_surface,
+                                properties=spatial_properties,
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+        constraining_relations=[
+            bigger_than(push_surface, agent),
+            bigger_than(push_surface, push_goal),
+        ],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER] if use_adverbial_path_modifier else [],
+    )
+
+    # push with implicit goal
+    push_unexpressed_goal_expressed_surface = Phase1SituationTemplate(
+        "push-unexpressed-goal",
+        salient_object_variables=[agent, theme, push_surface],
+        actions=[
+            Action(
+                PUSH,
+                argument_roles_to_fillers=[(AGENT, agent), (THEME, theme)],
+                auxiliary_variable_bindings=aux_bindings,
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            agent,
+                            SpatialPath(
+                                None,
+                                reference_object=push_surface,
+                                properties=spatial_properties,
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+        constraining_relations=[bigger_than(push_surface, theme)],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER] if use_adverbial_path_modifier else [],
+    )
+    if express_surface:
+        return push_unexpressed_goal_expressed_surface
+    else:
+        return push_unexpressed_goal
+
+
 def make_push_templates() -> Iterable[Phase1SituationTemplate]:
     pusher = standard_object("pusher", THING, required_properties=[ANIMATE])
     pushee = standard_object("pushee", INANIMATE_OBJECT)
