@@ -10,6 +10,8 @@ from adam.language_specific.english.english_language_generator import (
     USE_ADVERBIAL_PATH_MODIFIER,
     ATTRIBUTES_AS_X_IS_Y,
     IGNORE_COLORS,
+    USE_ABOVE_BELOW,
+    USE_NEAR,
     USE_VERTICAL_MODIFIERS,
 )
 from adam.language_specific.english.english_phase_1_lexicon import (
@@ -65,6 +67,7 @@ from adam.ontology.phase1_ontology import (
     bigger_than,
     RED,
     BLACK,
+    far,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -1504,6 +1507,14 @@ def test_beside_distal():
         ),
     )
 
+    with pytest.raises(RuntimeError):
+        generated_tokens(beside_distal)
+
+
+def test_distal_action():
+    box = situation_object(BOX)
+    mom = situation_object(MOM)
+
     basic_distal = HighLevelSemanticsSituation(
         salient_objects=[mom, box],
         actions=[
@@ -1517,12 +1528,68 @@ def test_beside_distal():
         ],
         ontology=GAILA_PHASE_1_ONTOLOGY,
     )
+    assert generated_tokens(basic_distal) == ("Mom", "goes", "far from", "a", "box")
 
-    with pytest.raises(RuntimeError):
-        generated_tokens(beside_distal)
 
-    with pytest.raises(RuntimeError):
-        generated_tokens(basic_distal)
+def test_near():
+    table = situation_object(TABLE)
+    box = situation_object(BOX)
+
+    below_situation = HighLevelSemanticsSituation(
+        salient_objects=[box, table],
+        always_relations=[near(box, table)],
+        syntax_hints=[USE_NEAR],
+        gazed_objects=[box],
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+    )
+
+    assert generated_tokens(below_situation) == ("a", "box", "near", "a", "table")
+
+
+def test_far():
+    table = situation_object(TABLE)
+    box = situation_object(BOX)
+
+    below_situation = HighLevelSemanticsSituation(
+        salient_objects=[box, table],
+        always_relations=[far(box, table)],
+        gazed_objects=[box],
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+    )
+
+    assert generated_tokens(below_situation) == ("a", "box", "far from", "a", "table")
+
+
+def test_below():
+    table = situation_object(TABLE)
+    box = situation_object(BOX)
+
+    below_situation = HighLevelSemanticsSituation(
+        salient_objects=[table],
+        other_objects=[box],
+        always_relations=[strictly_above(table, box)],
+        syntax_hints=[USE_ABOVE_BELOW],
+        gazed_objects=[box],
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+    )
+
+    assert generated_tokens(below_situation) == ("a", "box", "below", "a", "table")
+
+
+def test_above():
+    table = situation_object(TABLE)
+    box = situation_object(BOX)
+
+    below_situation = HighLevelSemanticsSituation(
+        salient_objects=[box],
+        other_objects=[table],
+        always_relations=[strictly_above(table, box)],
+        syntax_hints=[USE_ABOVE_BELOW],
+        gazed_objects=[box],
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+    )
+
+    assert generated_tokens(below_situation) == ("a", "table", "above", "a", "box")
 
 
 def test_action_attribute_request():
