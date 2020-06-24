@@ -28,6 +28,7 @@ from adam.curriculum.phase1_curriculum import (
     falling_template,
     make_take_grab_template,
     make_push_shove_template,
+    make_walk_run_template,
 )
 from adam.language_specific.english.english_language_generator import (
     USE_ADVERBIAL_PATH_MODIFIER,
@@ -344,7 +345,7 @@ def make_take_grab_imprecise_temporal_descriptions(
     )
 
 
-def make_take_push_shove_temporal_descriptions(
+def make_push_shove_temporal_descriptions(
     num_samples: int = 5, *, num_noise_objects: int = 0  # pylint:disable=unused-argument
 ) -> Phase1InstanceGroup:
     pusher = standard_object("pusher_0", THING, required_properties=[ANIMATE])
@@ -377,6 +378,35 @@ def make_take_push_shove_temporal_descriptions(
                     for use_adverbial_path_modifier in (True, False)
                     for hard_force in BOOL_SET
                     for express_surface in (True, False)
+                ]
+            )
+        ),
+    )
+
+
+def make_walk_run_temporal_descriptions(
+    num_samples: int = 5, *, num_noise_objects: int = 0  # pylint:disable=unused-argument
+) -> Phase1InstanceGroup:
+    agent = standard_object("walker_0", THING, required_properties=[ANIMATE])
+    return phase1_instances(
+        "walking-running",
+        chain(
+            flatten(
+                [
+                    sampled(
+                        make_walk_run_template(
+                            agent,
+                            use_adverbial_path_modifier=use_adverbial_path_modifier,
+                            spatial_properties=[HARD_FORCE]
+                            if hard_force
+                            else [SOFT_FORCE],
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        max_to_sample=num_samples,
+                    )
+                    for use_adverbial_path_modifier in (True, False)
+                    for hard_force in BOOL_SET
                 ]
             )
         ),
