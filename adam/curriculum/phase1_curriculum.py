@@ -1086,7 +1086,7 @@ def make_toss_pass_template(
     spatial_properties: Iterable[OntologyNode] = immutableset(),
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
-        "toss-pass",
+        f"{agent.handle} tosses {theme.handle}",
         salient_object_variables=[agent, theme, goal],
         actions=[
             Action(
@@ -1468,7 +1468,7 @@ def make_take_template() -> Phase1SituationTemplate:
     taker = standard_object("taker_0", THING, required_properties=[ANIMATE])
     object_taken = standard_object("object_taken_0", required_properties=[INANIMATE])
 
-    # X puts Y on Z
+    # X takes Y
     return Phase1SituationTemplate(
         "take",
         salient_object_variables=[taker, object_taken],
