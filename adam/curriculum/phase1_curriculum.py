@@ -1397,6 +1397,40 @@ def _make_sit_curriculum() -> Phase1InstanceGroup:
     )
 
 
+def make_take_grab_template(
+    agent: TemplateObjectVariable,
+    theme: TemplateObjectVariable,
+    *,
+    use_adverbial_path_modifier: bool,
+    spatial_properties: Iterable[OntologyNode] = None,
+) -> Phase1SituationTemplate:
+    # X puts Y on Z
+    return Phase1SituationTemplate(
+        "take",
+        salient_object_variables=[agent, theme],
+        actions=[
+            Action(
+                TAKE,
+                argument_roles_to_fillers=[(AGENT, agent), (THEME, theme)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            agent,
+                            SpatialPath(
+                                None,
+                                reference_object=GROUND_OBJECT_TEMPLATE,
+                                properties=spatial_properties,
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+        constraining_relations=[bigger_than(agent, theme)],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER] if use_adverbial_path_modifier else [],
+    )
+
+
 def make_take_template() -> Phase1SituationTemplate:
     taker = standard_object("taker_0", THING, required_properties=[ANIMATE])
     object_taken = standard_object("object_taken_0", required_properties=[INANIMATE])
