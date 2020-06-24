@@ -65,6 +65,7 @@ from adam.ontology.phase1_ontology import (
     LIGHT_BROWN,
     DARK_BROWN,
     PASS,
+    WATERMELON,
 )
 
 I = LexiconEntry(  # noqa: E741
@@ -90,6 +91,7 @@ GAILA_PHASE_1_ENGLISH_LEXICON = OntologyLexicon(
         (GROUND, LexiconEntry("ground", NOUN, plural_form="grounds")),
         (MOM, LexiconEntry("Mom", PROPER_NOUN)),
         (BALL, LexiconEntry("ball", NOUN, plural_form="balls")),
+        (WATERMELON, LexiconEntry("watermelon", NOUN, plural_form="watermelons")),
         (TABLE, LexiconEntry("table", NOUN, plural_form="tables")),
         (PUT, LexiconEntry("put", VERB, verb_form_sg3_prs="puts")),
         (PUSH, LexiconEntry("push", VERB, verb_form_sg3_prs="pushes")),

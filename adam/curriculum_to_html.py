@@ -37,6 +37,7 @@ from adam.curriculum.imprecise_descriptions_curriculum import (
 )
 from adam.curriculum.attribute_constraining_action_curriculum import make_german_complete
 from adam.curriculum.m6_curriculum import make_m6_curriculum
+from adam.curriculum.phase2_curriculum import build_gaila_m8_curriculum
 from adam.curriculum.preposition_curriculum import make_prepositions_curriculum
 from adam.curriculum.pursuit_curriculum import make_pursuit_curriculum
 from adam.curriculum.phase1_curriculum import build_gaila_phase_1_curriculum
@@ -119,6 +120,7 @@ EXPLANATION_HEADER = (
     "</ul>"
 )
 STR_TO_CURRICULUM: Mapping[str, Callable[[], Iterable[Phase1InstanceGroup]]] = {
+    "m8": build_gaila_m8_curriculum,
     "phase1": build_gaila_phase_1_curriculum,
     "prepositions": make_prepositions_curriculum,
     "pursuit": make_pursuit_curriculum,
