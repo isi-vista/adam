@@ -1369,14 +1369,10 @@ def _make_sit_curriculum() -> Phase1InstanceGroup:
 
 
 def make_take_template(
-    agent: TemplateObjectVariable = standard_object(
-        "taker_0", THING, required_properties=[ANIMATE]
-    ),
-    theme: TemplateObjectVariable = standard_object(
-        "object_taken_0", required_properties=[INANIMATE]
-    ),
+    agent: TemplateObjectVariable,
+    theme: TemplateObjectVariable,
     *,
-    use_adverbial_path_modifier: bool = False,
+    use_adverbial_path_modifier: bool,
     spatial_properties: Iterable[OntologyNode] = None,
 ) -> Phase1SituationTemplate:
     # X grabs Y
@@ -1449,7 +1445,15 @@ def _make_take_curriculum() -> Phase1InstanceGroup:
         chain(
             *[
                 sampled(
-                    make_take_template(),
+                    make_take_template(
+                        agent=standard_object(
+                            "taker_0", THING, required_properties=[ANIMATE]
+                        ),
+                        theme=standard_object(
+                            "object_taken_0", required_properties=[INANIMATE]
+                        ),
+                        use_adverbial_path_modifier=False,
+                    ),
                     max_to_sample=25,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
