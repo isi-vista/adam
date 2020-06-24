@@ -97,6 +97,7 @@ from adam.ontology.phase1_ontology import (
     HOUSE,
     BALL,
     PASS_GOAL,
+    WALK,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -1393,6 +1394,38 @@ def make_take_grab_template(
             )
         ],
         constraining_relations=[bigger_than(agent, theme)],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER] if use_adverbial_path_modifier else [],
+    )
+
+
+def make_walk_run_template(
+    agent: TemplateObjectVariable,
+    *,
+    use_adverbial_path_modifier: bool,
+    spatial_properties: Iterable[OntologyNode] = None,
+) -> Phase1SituationTemplate:
+    # X puts Y on Z
+    return Phase1SituationTemplate(
+        "walk-run",
+        salient_object_variables=[agent],
+        actions=[
+            Action(
+                WALK,
+                argument_roles_to_fillers=[(AGENT, agent)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            agent,
+                            SpatialPath(
+                                None,
+                                reference_object=GROUND_OBJECT_TEMPLATE,
+                                properties=spatial_properties,
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
         syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER] if use_adverbial_path_modifier else [],
     )
 

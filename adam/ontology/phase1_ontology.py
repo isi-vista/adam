@@ -534,7 +534,8 @@ _FOOT = OntologyNode("foot")
 subtype(_FOOT, _BODY_PART)
 
 # Verbs
-
+WALK = OntologyNode("walk")
+subtype(WALK, ACTION)
 STATE = OntologyNode("state")
 CONSUME = OntologyNode("consume")
 subtype(CONSUME, ACTION)

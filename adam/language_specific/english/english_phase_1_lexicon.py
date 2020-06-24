@@ -65,6 +65,7 @@ from adam.ontology.phase1_ontology import (
     LIGHT_BROWN,
     DARK_BROWN,
     PASS,
+    WALK,
 )
 
 I = LexiconEntry(  # noqa: E741
@@ -142,6 +143,7 @@ GAILA_PHASE_1_ENGLISH_LEXICON = OntologyLexicon(
             ),
         ),
         (MOVE, LexiconEntry("move", VERB, verb_form_sg3_prs="moves")),
+        (WALK, LexiconEntry("walks", VERB, verb_form_sg3_prs="walks")),
         (JUMP, LexiconEntry("jump", VERB, verb_form_sg3_prs="jumps")),
         (HAS, LexiconEntry("have", VERB, verb_form_sg3_prs="has")),
         (ROLL, LexiconEntry("roll", VERB, verb_form_sg3_prs="rolls")),
