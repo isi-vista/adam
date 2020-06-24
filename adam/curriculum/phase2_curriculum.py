@@ -11,7 +11,8 @@ from adam.curriculum.curriculum_utils import (
     standard_object,
     phase2_instances,
 )
-from adam.curriculum.imprecise_descriptions_curriculum import make_imprecise_temporal_descriptions
+from adam.curriculum.imprecise_descriptions_curriculum import make_imprecise_temporal_descriptions, \
+    make_imprecise_size_curriculum
 from adam.curriculum.phase1_curriculum import _make_plural_objects_curriculum, _make_pass_curriculum, \
     _make_generic_statements_curriculum, _make_part_whole_curriculum, _make_roll_curriculum
 from adam.curriculum.preposition_curriculum import make_prepositions_curriculum
@@ -101,7 +102,7 @@ def _make_cups_curriculum(
     )
 
 
-def build_gaila_m12_curriculum() -> Sequence[Phase1InstanceGroup]:
+def build_gaila_m8_curriculum() -> Sequence[Phase1InstanceGroup]:
     return list(chain([
         _make_plural_objects_curriculum(), # plurals
         _make_chairs_curriculum(), # functionally defined objects
@@ -113,4 +114,5 @@ def build_gaila_m12_curriculum() -> Sequence[Phase1InstanceGroup]:
     ], list(make_imprecise_temporal_descriptions()), # Imprecise descriptions
        make_verb_with_dynamic_prepositions_curriculum(), # Dynamic prepositions
         make_prepositions_curriculum(), # Relative prepositions
+        make_imprecise_size_curriculum(),
     ))
