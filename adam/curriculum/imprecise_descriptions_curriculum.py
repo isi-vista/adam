@@ -439,7 +439,7 @@ def make_pass_toss_imprecise_temporal_descriptions(
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
                     )
-                    for use_adverbial_path_modifier in (True, False)
+                    for use_adverbial_path_modifier in BOOL_SET
                     for hard_force in BOOL_SET
                 ]
             )
