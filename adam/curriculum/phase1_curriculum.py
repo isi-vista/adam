@@ -948,6 +948,40 @@ def _make_roll_curriculum() -> Phase1InstanceGroup:
     )
 
 
+def make_transitive_roll_templates() -> Iterable[Phase1SituationTemplate]:
+    animate_0 = standard_object("object_0", THING, required_properties=[ANIMATE])
+    rollable_0 = standard_object(
+        "object_1", INANIMATE_OBJECT, required_properties=[ROLLABLE]
+    )
+    rolling_surface = standard_object(
+        "surface", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
+    )
+
+    return [
+        # rolls transitively
+        transitive_roll(animate_0, rollable_0, rolling_surface),
+        # rolls on a surface
+        transitive_roll_with_surface(animate_0, rollable_0, rolling_surface),
+    ]
+
+
+def _make_transitive_roll_curriculum() -> Phase1InstanceGroup:
+    return phase1_instances(
+        "rolling",
+        chain(
+            *[
+                sampled(
+                    situation,
+                    max_to_sample=25,
+                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                )
+                for situation in make_transitive_roll_templates()
+            ]
+        ),
+    )
+
+
 def _make_speaker_addressee_curriculum() -> Phase1InstanceGroup:
     speaker = standard_object("speaker_0", PERSON, added_properties=[IS_SPEAKER])
     addressee = standard_object("addressee_0", PERSON, added_properties=[IS_ADDRESSEE])
