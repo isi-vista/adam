@@ -199,7 +199,17 @@ class AbstractSubsetLearnerNew(AbstractTemplateLearnerNew, ABC):
             )
             updated_hypotheses_maybe_null = [
                 previous_pattern_hypothesis.intersection(
-                    hypothesis_from_current_perception, ontology=self._ontology
+                    hypothesis_from_current_perception, ontology=self._ontology,
+                    allowed_matches=immutablesetmultidict(
+                        [
+                            (node2, node1)
+                            for previous_slot, node1 in
+                            previous_pattern_hypothesis.template_variable_to_pattern_node.items()
+                            for new_slot, node2 in
+                            hypothesis_from_current_perception.template_variable_to_pattern_node.items()
+                            if previous_slot == new_slot
+                        ]
+                    ),
                 )
                 for previous_pattern_hypothesis in previous_pattern_hypotheses
                 for hypothesis_from_current_perception in hypotheses_from_current_perception
