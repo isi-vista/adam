@@ -26,6 +26,7 @@ from adam.curriculum.phase1_curriculum import (
     bare_fly,
     fall_on_ground_template,
     falling_template,
+    make_take_grab_template,
 )
 from adam.language_specific.english.english_language_generator import (
     USE_ADVERBIAL_PATH_MODIFIER,
@@ -305,6 +306,37 @@ def make_jump_imprecise_temporal_descriptions(
                     )
                     for use_adverbial_path_modifier in (True, False)
                     for is_fast in BOOL_SET
+                ]
+            )
+        ),
+    )
+
+
+def make_take_grab_imprecise_temporal_descriptions(
+    num_samples: int = 5, *, num_noise_objects: int = 0  # pylint:disable=unused-argument
+) -> Phase1InstanceGroup:
+    taker = standard_object("tosser_passer_0", THING, required_properties=[ANIMATE])
+    takee = standard_object("tossee_passee_0", THING, required_properties=[INANIMATE])
+    return phase1_instances(
+        "taking-grabbing",
+        chain(
+            flatten(
+                [
+                    sampled(
+                        make_take_grab_template(
+                            taker,
+                            takee,
+                            use_adverbial_path_modifier=use_adverbial_path_modifier,
+                            spatial_properties=[HARD_FORCE]
+                            if hard_force
+                            else [SOFT_FORCE],
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        max_to_sample=num_samples,
+                    )
+                    for use_adverbial_path_modifier in (True, False)
+                    for hard_force in BOOL_SET
                 ]
             )
         ),
