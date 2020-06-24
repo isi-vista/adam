@@ -214,6 +214,12 @@ subtype(FAST, PROPERTY)
 SLOW = OntologyNode("slow")
 subtype(SLOW, PROPERTY)
 
+# forcefulness distinctions
+HARD_FORCE = OntologyNode("hard-force")
+subtype(HARD_FORCE, PROPERTY)
+SOFT_FORCE = OntologyNode("soft-force")
+subtype(SOFT_FORCE, PROPERTY)
+
 COLOR = OntologyNode("color")
 subtype(COLOR, PERCEIVABLE_PROPERTY)
 RED = OntologyNode("red", [CAN_FILL_TEMPLATE_SLOT])
