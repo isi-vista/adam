@@ -807,7 +807,7 @@ def _make_watermelon_schema() -> ObjectStructuralSchema:
     return ObjectStructuralSchema(
         ontology_node=WATERMELON,
         geon=Geon(
-            cross_section=CIRCULAR,
+            cross_section=OVALISH,
             cross_section_size=SMALL_TO_LARGE_TO_SMALL,
             axes=Axes(
                 primary_axis=generating_axis,
