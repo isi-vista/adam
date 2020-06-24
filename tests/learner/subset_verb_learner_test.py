@@ -31,6 +31,8 @@ from adam.learner.objects import ObjectRecognizerAsTemplateLearner
 from adam.learner.verbs import SubsetVerbLearner, SubsetVerbLearnerNew
 from adam.ontology import IS_SPEAKER, THING
 from adam.ontology.phase1_ontology import (
+    INANIMATE_OBJECT,
+    CAN_HAVE_THINGS_RESTING_ON_THEM,
     AGENT,
     ANIMATE,
     GAILA_PHASE_1_ONTOLOGY,
@@ -153,7 +155,15 @@ def test_put(learner_factory):
 
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_push(learner_factory):
-    for situation_template in make_push_templates():
+    for situation_template in make_push_templates(
+        agent=standard_object("pusher", THING, required_properties=[ANIMATE]),
+        theme=standard_object("pushee", INANIMATE_OBJECT),
+        push_surface=standard_object(
+            "push_surface", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
+        ),
+        push_goal=standard_object("push_goal", INANIMATE_OBJECT),
+        use_adverbial_path_modifier=False,
+    ):
         learner = learner_factory()
         run_verb_test(learner, situation_template)
 

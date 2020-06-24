@@ -1694,16 +1694,12 @@ def _make_go_curriculum() -> Phase1InstanceGroup:
 
 
 def make_push_templates(
-    agent: TemplateObjectVariable = standard_object(
-        "pusher", THING, required_properties=[ANIMATE]
-    ),
-    theme: TemplateObjectVariable = standard_object("pushee", INANIMATE_OBJECT),
-    push_surface: TemplateObjectVariable = standard_object(
-        "push_surface", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
-    ),
-    push_goal: TemplateObjectVariable = standard_object("push_goal", INANIMATE_OBJECT),
+    agent: TemplateObjectVariable,
+    theme: TemplateObjectVariable,
+    push_surface: TemplateObjectVariable,
+    push_goal: TemplateObjectVariable,
     *,
-    use_adverbial_path_modifier: bool = False,
+    use_adverbial_path_modifier: bool,
     spatial_properties: Iterable[OntologyNode] = immutableset(),
 ) -> List[Phase1SituationTemplate]:
     # push with implicit goal
@@ -1720,6 +1716,7 @@ def make_push_templates(
                 argument_roles_to_fillers=[(AGENT, agent), (THEME, theme)],
                 auxiliary_variable_bindings=aux_bindings,
                 during=DuringAction(
+                    continuously=[on(theme, push_surface)],
                     objects_to_paths=[
                         (
                             agent,
@@ -1729,7 +1726,7 @@ def make_push_templates(
                                 properties=spatial_properties,
                             ),
                         )
-                    ]
+                    ],
                 )
                 if spatial_properties
                 else DuringAction(continuously=[on(theme, push_surface)]),  # type: ignore
@@ -1752,6 +1749,7 @@ def make_push_templates(
                 argument_roles_to_fillers=[(AGENT, agent), (THEME, theme)],
                 auxiliary_variable_bindings=aux_bindings,
                 during=DuringAction(
+                    continuously=[on(theme, push_surface)],
                     objects_to_paths=[
                         (
                             agent,
@@ -1761,7 +1759,7 @@ def make_push_templates(
                                 properties=spatial_properties,
                             ),
                         )
-                    ]
+                    ],
                 )
                 if spatial_properties
                 else DuringAction(continuously=[on(theme, push_surface)]),  # type: ignore
@@ -1784,7 +1782,17 @@ def _make_push_curriculum() -> Phase1InstanceGroup:
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                 )
-                for situation in make_push_templates()
+                for situation in make_push_templates(
+                    agent=standard_object("pusher", THING, required_properties=[ANIMATE]),
+                    theme=standard_object("pushee", INANIMATE_OBJECT),
+                    push_surface=standard_object(
+                        "push_surface",
+                        THING,
+                        required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM],
+                    ),
+                    push_goal=standard_object("push_goal", INANIMATE_OBJECT),
+                    use_adverbial_path_modifier=False,
+                )
             ]
         ),
     )
