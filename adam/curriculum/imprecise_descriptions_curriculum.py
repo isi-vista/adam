@@ -28,6 +28,7 @@ from adam.curriculum.phase1_curriculum import (
 )
 from adam.language_specific.english.english_language_generator import (
     USE_ADVERBIAL_PATH_MODIFIER,
+    USE_VERTICAL_MODIFIERS,
 )
 from adam.ontology import THING
 from adam.ontology.phase1_ontology import (
@@ -97,6 +98,7 @@ def _tall_x_template(
         salient_object_variables=[theme],
         background_object_variables=background,
         asserted_always_relations=[bigger_than(theme, learner)],
+        syntax_hints=[USE_VERTICAL_MODIFIERS],
     )
 
 
@@ -114,6 +116,7 @@ def _short_x_template(
         salient_object_variables=[theme],
         background_object_variables=background,
         asserted_always_relations=[bigger_than(learner, theme)],
+        syntax_hints=[USE_VERTICAL_MODIFIERS],
     )
 
 
