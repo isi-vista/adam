@@ -44,7 +44,8 @@ from adam.ontology.phase1_ontology import (
     CAN_HAVE_THINGS_RESTING_ON_THEM,
     BIRD,
     bigger_than,
-)
+    EAT, AGENT, PATIENT, COOKIE, WATERMELON)
+from adam.situation import Action
 from adam.situation.templates.phase1_templates import (
     sampled,
     TemplateObjectVariable,
@@ -67,6 +68,50 @@ def _big_x_template(
         salient_object_variables=[theme],
         background_object_variables=computed_background,
         asserted_always_relations=[bigger_than(theme, learner)],
+    )
+
+
+def make_eat_big_curriculum(
+    num_to_sample: int = 5, *, noise_objects: int = 0
+) -> Phase1SituationTemplate:
+
+    learner = learner_template_factory()
+    eater = standard_object("eater_0", THING, required_properties=[ANIMATE])
+    templates = []
+    for object in [COOKIE, WATERMELON]:
+        object_to_eat = standard_object("object_0", object)
+        other_edibles = [standard_object(f"object_{i}", object) for i in range(4)]
+        computed_background = [learner]
+        background = list(
+            standard_object(f"noise_object_{x}") for x in range(noise_objects)
+        )
+        computed_background.extend(background)
+        computed_background.extend(other_edibles)
+
+        # "Mom eats a big cookie"
+        templates.append(Phase1SituationTemplate(
+            "eat-object",
+            salient_object_variables=[eater, object_to_eat],
+            background_object_variables=computed_background,
+            actions=[
+                Action(EAT, argument_roles_to_fillers=[(AGENT, eater), (PATIENT, object_to_eat)])
+            ],
+            asserted_always_relations=[bigger_than(object_to_eat, learner), bigger_than(object_to_eat, other_edibles)]
+        ))
+
+    return phase1_instances(
+        "eating",
+        chain(
+            *[
+                sampled(
+                    template,
+                    max_to_sample=num_to_sample,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                    chooser=PHASE1_CHOOSER_FACTORY(),
+                )
+                for template in templates
+            ]
+        ),
     )
 
 
