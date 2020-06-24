@@ -3,7 +3,7 @@ Curricula for DARPA GAILA Phase 1
 """
 
 from itertools import chain
-from typing import Iterable, Sequence
+from typing import Iterable, Sequence, List
 
 from immutablecollections import immutableset
 from more_itertools import flatten, first
@@ -1691,16 +1691,19 @@ def _make_go_curriculum() -> Phase1InstanceGroup:
     )
 
 
-def make_push_shove_template(
-    agent: TemplateObjectVariable,
-    theme: TemplateObjectVariable,
-    push_surface: TemplateObjectVariable,
-    push_goal: TemplateObjectVariable,
+def make_push_templates(
+    agent: TemplateObjectVariable = standard_object(
+        "pusher", THING, required_properties=[ANIMATE]
+    ),
+    theme: TemplateObjectVariable = standard_object("pushee", INANIMATE_OBJECT),
+    push_surface: TemplateObjectVariable = standard_object(
+        "push_surface", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
+    ),
+    push_goal: TemplateObjectVariable = standard_object("push_goal", INANIMATE_OBJECT),
     *,
-    use_adverbial_path_modifier: bool,
-    express_surface: bool,
+    use_adverbial_path_modifier: bool = False,
     spatial_properties: Iterable[OntologyNode] = immutableset(),
-) -> Phase1SituationTemplate:
+) -> List[Phase1SituationTemplate]:
     # push with implicit goal
     aux_bindings = [
         (PUSH_SURFACE_AUX, push_surface),
@@ -1725,7 +1728,9 @@ def make_push_shove_template(
                             ),
                         )
                     ]
-                ),
+                )
+                if spatial_properties
+                else DuringAction(continuously=[on(theme, push_surface)]),  # type: ignore
             )
         ],
         constraining_relations=[
@@ -1755,67 +1760,13 @@ def make_push_shove_template(
                             ),
                         )
                     ]
-                ),
+                )
+                if spatial_properties
+                else DuringAction(continuously=[on(theme, push_surface)]),  # type: ignore
             )
         ],
         constraining_relations=[bigger_than(push_surface, theme)],
         syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER] if use_adverbial_path_modifier else [],
-    )
-    if express_surface:
-        return push_unexpressed_goal_expressed_surface
-    else:
-        return push_unexpressed_goal
-
-
-def make_push_templates() -> Iterable[Phase1SituationTemplate]:
-    pusher = standard_object("pusher", THING, required_properties=[ANIMATE])
-    pushee = standard_object("pushee", INANIMATE_OBJECT)
-    push_surface = standard_object(
-        "push_surface", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
-    )
-    push_goal_reference = standard_object("push_goal", INANIMATE_OBJECT)
-
-    # push with implicit goal
-    aux_bindings = [
-        (PUSH_SURFACE_AUX, push_surface),
-        (PUSH_GOAL, Region(push_goal_reference, distance=PROXIMAL)),
-    ]
-
-    # this shouldn't need to be expressed explicitly;
-    # we should be able to derive it from the action description
-    # https://github.com/isi-vista/adam/issues/239
-    # This declaration has mypy confused so we ignore it
-    during = DuringAction(continuously=[on(pushee, push_surface)])  # type: ignore
-    push_unexpressed_goal = Phase1SituationTemplate(
-        "push-unexpressed-goal",
-        salient_object_variables=[pusher, pushee],
-        actions=[
-            Action(
-                PUSH,
-                argument_roles_to_fillers=[(AGENT, pusher), (THEME, pushee)],
-                auxiliary_variable_bindings=aux_bindings,
-                during=during,
-            )
-        ],
-        constraining_relations=[
-            bigger_than(push_surface, pusher),
-            bigger_than(push_surface, push_goal_reference),
-        ],
-    )
-
-    # push with implicit goal
-    push_unexpressed_goal_expressed_surface = Phase1SituationTemplate(
-        "push-unexpressed-goal",
-        salient_object_variables=[pusher, pushee, push_surface],
-        actions=[
-            Action(
-                PUSH,
-                argument_roles_to_fillers=[(AGENT, pusher), (THEME, pushee)],
-                auxiliary_variable_bindings=aux_bindings,
-                during=during,
-            )
-        ],
-        constraining_relations=[bigger_than(push_surface, pusher)],
     )
     return [push_unexpressed_goal, push_unexpressed_goal_expressed_surface]
 

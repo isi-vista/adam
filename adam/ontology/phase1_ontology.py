@@ -1896,19 +1896,6 @@ def _make_go_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
     )
 
 
-_WALK_AGENT = ActionDescriptionVariable(THING, properties=[ANIMATE])
-_WALK_GOAL = ActionDescriptionVariable(THING)
-_WALK_ACTION_DESCRIPTION = ActionDescriptionVariable(
-    frame=ActionDescriptionFrame({AGENT: _WALK_AGENT, GOAL: _WALK_GOAL}),
-    preconditions=[Relation(IN_REGION, _WALK_AGENT, Region(_WALK_GOAL))],
-    during=DuringAction(objects_to_paths=[(_WALK_AGENT, SpatialPath(TO, _WALK_GOAL))]),
-    postconditions=[
-        Relation(IN_REGION, _WALK_AGENT, Region(_WALK_GOAL, distance=PROXIMAL))
-    ],
-    asserted_properties=[(_WALK_AGENT, VOLITIONALLY_INVOLVED), (_WALK_AGENT, MOVES)],
-)
-
-
 _COME_AGENT = ActionDescriptionVariable(THING, properties=[ANIMATE])
 _COME_GOAL = ActionDescriptionVariable(THING)
 
@@ -2438,6 +2425,19 @@ def _make_jump_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
             asserted_properties=asserted_properties,
         ),
     )
+
+
+_WALK_AGENT = ActionDescriptionVariable(THING, properties=[ANIMATE])
+_WALK_SURFACE_AUXILIARY = ActionDescriptionVariable(
+    INANIMATE_OBJECT,
+    properties=[CAN_HAVE_THINGS_RESTING_ON_THEM],
+    debug_handle="walk-surface-aux",
+)
+_WALK_ACTION_DESCRIPTION = ActionDescription(
+    frame=ActionDescriptionFrame({AGENT: _WALK_AGENT}),
+    during=DuringAction(continuously=[on(_WALK_AGENT, _WALK_SURFACE_AUXILIARY)]),
+    asserted_properties=[(_WALK_AGENT, MOVES)],
+)
 
 
 ROLL_SURFACE_AUXILIARY = ActionDescriptionVariable(
