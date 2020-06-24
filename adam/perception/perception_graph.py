@@ -1340,9 +1340,10 @@ class PatternMatching:
                     "Initial partial match is not compatible with set of allowed matches!"
                 )
 
-        # If our initial partial match has already defined allowed matches for some of our nodes, we
-        # don't need to iterate over those nodes' allowed matchings, so we remove them from our
-        # collection of allowed matchings.
+        # Our initial partial match may already match up some of our nodes that have matching
+        # restrictions (as given by allowed_matches). In that case, we don't need to iterate over
+        # the different allowed ways to match up those nodes, so we remove them from our collection
+        # of allowed matches.
         allowed_matches = immutablesetmultidict(
             (node, allowed_match)
             for node, allowed_match in allowed_matches.items()
