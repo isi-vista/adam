@@ -27,7 +27,7 @@ from adam.curriculum.phase1_curriculum import (
     fall_on_ground_template,
     falling_template,
     make_take_grab_template,
-    make_push_shove_template,
+    make_push_templates,
     make_walk_run_template,
 )
 from adam.language_specific.english.english_language_generator import (
@@ -360,17 +360,16 @@ def make_push_shove_temporal_descriptions(
             flatten(
                 [
                     sampled(
-                        make_push_shove_template(
+                        make_push_templates(
                             pusher,
                             pushee,
                             push_surface,
                             push_goal,
                             use_adverbial_path_modifier=use_adverbial_path_modifier,
-                            express_surface=express_surface,
                             spatial_properties=[HARD_FORCE]
                             if hard_force
                             else [SOFT_FORCE],
-                        ),
+                        )[1],
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
@@ -379,7 +378,29 @@ def make_push_shove_temporal_descriptions(
                     for hard_force in BOOL_SET
                     for express_surface in BOOL_SET
                 ]
-            )
+            ),
+            flatten(
+                [
+                    sampled(
+                        make_push_templates(
+                            pusher,
+                            pushee,
+                            push_surface,
+                            push_goal,
+                            use_adverbial_path_modifier=use_adverbial_path_modifier,
+                            spatial_properties=[HARD_FORCE]
+                            if hard_force
+                            else [SOFT_FORCE],
+                        )[0],
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        max_to_sample=num_samples,
+                    )
+                    for use_adverbial_path_modifier in BOOL_SET
+                    for hard_force in BOOL_SET
+                    for express_surface in BOOL_SET
+                ]
+            ),
         ),
     )
 
