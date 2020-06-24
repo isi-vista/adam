@@ -56,8 +56,6 @@ class AbstractSubsetLearner(AbstractTemplateLearner, ABC):
             updated_hypothesis = previous_pattern_hypothesis.intersection(
                 raw_new_pattern_hypothesis,
                 ontology=self._ontology,
-                # Q: Is there a better way to compute this? Is it guaranteed that the slots are
-                # in order so that we can do zip(prev, new)?
                 allowed_matches=immutablesetmultidict(
                     [
                         (node2, node1)
