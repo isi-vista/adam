@@ -1,4 +1,3 @@
-import pytest
 from adam.curriculum.imprecise_descriptions_curriculum import (
     make_move_imprecise_temporal_descriptions,
     make_throw_imprecise_temporal_descriptions,
@@ -19,7 +18,6 @@ def test__pass_toss_subtle_verb_distinction():
     curriculum_test(make_pass_toss_subtle_verb_distinction())
 
 
-@pytest.mark.skip(reason="spatial path with declared surface doesn't work right now")
 def test__push_shove_subtle_verb_distinction():
     curriculum_test(make_push_shove_subtle_verb_distinctions())
 
