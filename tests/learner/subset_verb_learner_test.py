@@ -32,6 +32,7 @@ from adam.learner.verbs import SubsetVerbLearner, SubsetVerbLearnerNew
 from adam.ontology import IS_SPEAKER, THING
 from adam.ontology.phase1_ontology import (
     INANIMATE_OBJECT,
+    INANIMATE,
     CAN_HAVE_THINGS_RESTING_ON_THEM,
     AGENT,
     ANIMATE,
@@ -233,7 +234,14 @@ def test_come(learner_factory):
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_take(learner_factory):
     learner = learner_factory()
-    run_verb_test(learner, make_take_template())
+    run_verb_test(
+        learner,
+        make_take_template(
+            agent=standard_object("taker_0", THING, required_properties=[ANIMATE]),
+            theme=standard_object("object_taken_0", required_properties=[INANIMATE]),
+            use_adverbial_path_modifier=False,
+        ),
+    )
 
 
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
