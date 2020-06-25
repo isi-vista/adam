@@ -14,6 +14,8 @@ from adam.curriculum.curriculum_utils import (
 )
 from adam.curriculum.imprecise_descriptions_curriculum import (
     make_imprecise_temporal_descriptions,
+    make_imprecise_size_curriculum,
+    make_subtle_verb_distinctions_curriculum,
     make_spin_tall_short_curriculum,
     make_eat_big_small_curriculum,
 )
@@ -226,5 +228,7 @@ def build_gaila_m8_curriculum() -> Sequence[Phase1InstanceGroup]:
             list(make_imprecise_temporal_descriptions()),  # Imprecise descriptions
             make_verb_with_dynamic_prepositions_curriculum(),  # Dynamic prepositions
             make_prepositions_curriculum(),  # Relative prepositions
+            make_imprecise_size_curriculum(),
+            list(make_subtle_verb_distinctions_curriculum()),  # Subtle verb distinctions
         )
     )

@@ -6,8 +6,28 @@ from adam.curriculum.imprecise_descriptions_curriculum import (
     make_fly_imprecise_temporal_descriptions,
     make_fall_imprecise_temporal_descriptions,
     make_imprecise_size_descriptions,
+    make_walk_run_subtle_verb_distinction,
+    make_pass_toss_subtle_verb_distinction,
+    make_push_shove_subtle_verb_distinctions,
+    make_take_grab_subtle_verb_distinction,
 )
 from tests.curriculum.phase1_curriculum_test import curriculum_test
+
+
+def test__pass_toss_subtle_verb_distinction():
+    curriculum_test(make_pass_toss_subtle_verb_distinction())
+
+
+def test__push_shove_subtle_verb_distinction():
+    curriculum_test(make_push_shove_subtle_verb_distinctions())
+
+
+def test__take_grab_subtle_verb_distinction():
+    curriculum_test(make_take_grab_subtle_verb_distinction())
+
+
+def test__walk_run_subtle_verb_distinction():
+    curriculum_test(make_walk_run_subtle_verb_distinction())
 
 
 def test__throw_imprecise_temporal_descriptions_curriculum():

@@ -1,6 +1,5 @@
 from itertools import chain
 from typing import Sequence, Iterable
-
 from immutablecollections import immutableset
 from more_itertools import flatten
 
@@ -12,6 +11,7 @@ from adam.curriculum.curriculum_utils import (
     learner_template_factory,
 )
 from adam.curriculum.phase1_curriculum import (
+    make_pass_template,
     throw_on_ground_template,
     throw_template,
     throw_up_down_template,
@@ -25,6 +25,9 @@ from adam.curriculum.phase1_curriculum import (
     bare_fly,
     fall_on_ground_template,
     falling_template,
+    make_take_template,
+    make_push_templates,
+    make_walk_run_template,
 )
 from adam.language_specific.english.english_language_generator import (
     USE_ADVERBIAL_PATH_MODIFIER,
@@ -37,6 +40,8 @@ from adam.ontology.phase1_ontology import (
     INANIMATE,
     BOX,
     FAST,
+    HARD_FORCE,
+    SOFT_FORCE,
     SLOW,
     SELF_MOVING,
     CAN_JUMP,
@@ -450,6 +455,142 @@ def make_jump_imprecise_temporal_descriptions(
     )
 
 
+def make_take_grab_subtle_verb_distinction(
+    num_samples: int = 5, *, num_noise_objects: int = 0  # pylint:disable=unused-argument
+) -> Phase1InstanceGroup:
+    taker = standard_object("tosser_passer_0", THING, required_properties=[ANIMATE])
+    takee = standard_object("tossee_passee_0", THING, required_properties=[INANIMATE])
+    return phase1_instances(
+        "taking-grabbing",
+        chain(
+            flatten(
+                [
+                    sampled(
+                        make_take_template(
+                            taker,
+                            takee,
+                            use_adverbial_path_modifier=use_adverbial_path_modifier,
+                            spatial_properties=[HARD_FORCE]
+                            if hard_force
+                            else [SOFT_FORCE],
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        max_to_sample=num_samples,
+                    )
+                    for use_adverbial_path_modifier in BOOL_SET
+                    for hard_force in BOOL_SET
+                ]
+            )
+        ),
+    )
+
+
+def make_push_shove_subtle_verb_distinctions(
+    num_samples: int = 5, *, num_noise_objects: int = 0  # pylint:disable=unused-argument
+) -> Phase1InstanceGroup:
+    pusher = standard_object("pusher_0", THING, required_properties=[ANIMATE])
+    pushee = standard_object("pushee_0", THING, required_properties=[INANIMATE])
+    push_surface = standard_object(
+        "push_surface_0", THING, required_properties=[INANIMATE]
+    )
+    push_goal = standard_object("push_goal_0", THING, required_properties=[INANIMATE])
+    # get all possible templates
+    templates = flatten(
+        [
+            make_push_templates(
+                pusher,
+                pushee,
+                push_surface,
+                push_goal,
+                use_adverbial_path_modifier=use_adverbial_path_modifier,
+                spatial_properties=[HARD_FORCE] if hard_force else [SOFT_FORCE],
+            )
+            for use_adverbial_path_modifier in BOOL_SET
+            for hard_force in BOOL_SET
+        ]
+    )
+    return phase1_instances(
+        "pushing-shoving",
+        chain(
+            flatten(
+                [
+                    sampled(
+                        template,
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        max_to_sample=num_samples,
+                    )
+                    for template in templates
+                ]
+            )
+        ),
+    )
+
+
+def make_walk_run_subtle_verb_distinction(
+    num_samples: int = 5, *, num_noise_objects: int = 0  # pylint:disable=unused-argument
+) -> Phase1InstanceGroup:
+    agent = standard_object("walker_0", THING, required_properties=[ANIMATE])
+    return phase1_instances(
+        "walking-running",
+        chain(
+            flatten(
+                [
+                    sampled(
+                        make_walk_run_template(
+                            agent,
+                            use_adverbial_path_modifier=use_adverbial_path_modifier,
+                            spatial_properties=[HARD_FORCE]
+                            if hard_force
+                            else [SOFT_FORCE],
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        max_to_sample=num_samples,
+                    )
+                    for use_adverbial_path_modifier in BOOL_SET
+                    for hard_force in BOOL_SET
+                ]
+            )
+        ),
+    )
+
+
+def make_pass_toss_subtle_verb_distinction(
+    num_samples: int = 5, *, num_noise_objects: int = 0  # pylint:disable=unused-argument
+) -> Phase1InstanceGroup:
+    tosser = standard_object("tosser_passer_0", THING, required_properties=[ANIMATE])
+    tossee = standard_object("tossee_passee_0", THING, required_properties=[INANIMATE])
+    goal = standard_object("move-goal-reference", THING, required_properties=[INANIMATE])
+
+    return phase1_instances(
+        "tossing_passing",
+        chain(
+            flatten(
+                [
+                    sampled(
+                        make_pass_template(
+                            tosser,
+                            tossee,
+                            goal,
+                            use_adverbial_path_modifier=use_adverbial_path_modifier,
+                            spatial_properties=[HARD_FORCE]
+                            if hard_force
+                            else [SOFT_FORCE],
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        max_to_sample=num_samples,
+                    )
+                    for use_adverbial_path_modifier in BOOL_SET
+                    for hard_force in BOOL_SET
+                ]
+            )
+        ),
+    )
+
+
 def make_roll_imprecise_temporal_descriptions(
     num_samples: int = 5, *, num_noise_objects: int = 0  # pylint:disable=unused-argument
 ) -> Phase1InstanceGroup:
@@ -617,6 +758,26 @@ def make_imprecise_temporal_descriptions(
             num_samples, num_noise_objects=num_noise_objects
         ),
         make_fall_imprecise_temporal_descriptions(
+            num_samples, num_noise_objects=num_noise_objects
+        ),
+    ]
+
+
+def make_subtle_verb_distinctions_curriculum(
+    num_samples: int = 5, *, num_noise_objects: int = 0
+) -> Sequence[Phase1InstanceGroup]:
+    """One particular instanatiation of the Subtle Verb Distinction Curriculum"""
+    return [
+        make_push_shove_subtle_verb_distinctions(
+            num_samples, num_noise_objects=num_noise_objects
+        ),
+        make_walk_run_subtle_verb_distinction(
+            num_samples, num_noise_objects=num_noise_objects
+        ),
+        make_pass_toss_subtle_verb_distinction(
+            num_samples, num_noise_objects=num_noise_objects
+        ),
+        make_take_grab_subtle_verb_distinction(
             num_samples, num_noise_objects=num_noise_objects
         ),
     ]
