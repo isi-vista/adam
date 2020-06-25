@@ -1423,7 +1423,11 @@ def make_take_template(
                             agent,
                             SpatialPath(
                                 None,
+<<<<<<< HEAD
                                 reference_object=ground,
+=======
+                                reference_object=GROUND_OBJECT_TEMPLATE,
+>>>>>>> f893f93fbc93e8100f043d388dcc11bafe306337
                                 properties=spatial_properties,
                             ),
                         )
@@ -1461,7 +1465,7 @@ def make_walk_run_template(
                             agent,
                             SpatialPath(
                                 None,
-                                reference_object=GROUND_OBJECT_TEMPLATE,
+                                reference_object=ground,
                                 properties=spatial_properties,
                             ),
                         )
