@@ -44,8 +44,23 @@ from adam.ontology.phase1_ontology import (
     CAN_HAVE_THINGS_RESTING_ON_THEM,
     BIRD,
     bigger_than,
-    EAT, AGENT, PATIENT, COOKIE, WATERMELON)
-from adam.situation import Action
+    EAT,
+    AGENT,
+    PATIENT,
+    COOKIE,
+    WATERMELON,
+    MOM,
+    LEARNER,
+    DOG,
+    BABY,
+    DAD,
+    CHAIR,
+    TABLE,
+    THEME,
+    SPIN,
+)
+from adam.situation import Action, SituationObject
+from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.situation.templates.phase1_templates import (
     sampled,
     TemplateObjectVariable,
@@ -71,48 +86,70 @@ def _big_x_template(
     )
 
 
-def make_eat_big_curriculum(
-    num_to_sample: int = 5, *, noise_objects: int = 0
-) -> Phase1SituationTemplate:
+def make_eat_big_small_curriculum() -> Phase1InstanceGroup:
+    # "Mom eats a big cookie"
+    # We generate situations directly since templates fail to generate plurals.
 
-    learner = learner_template_factory()
-    eater = standard_object("eater_0", THING, required_properties=[ANIMATE])
-    templates = []
-    for object in [COOKIE, WATERMELON]:
-        object_to_eat = standard_object("object_0", object)
-        other_edibles = [standard_object(f"object_{i}", object) for i in range(4)]
-        computed_background = [learner]
-        background = list(
-            standard_object(f"noise_object_{x}") for x in range(noise_objects)
-        )
-        computed_background.extend(background)
-        computed_background.extend(other_edibles)
-
-        # "Mom eats a big cookie"
-        templates.append(Phase1SituationTemplate(
-            "eat-object",
-            salient_object_variables=[eater, object_to_eat],
-            background_object_variables=computed_background,
-            actions=[
-                Action(EAT, argument_roles_to_fillers=[(AGENT, eater), (PATIENT, object_to_eat)])
-            ],
-            asserted_always_relations=[bigger_than(object_to_eat, learner), bigger_than(object_to_eat, other_edibles)]
-        ))
-
-    return phase1_instances(
-        "eating",
-        chain(
-            *[
-                sampled(
-                    template,
-                    max_to_sample=num_to_sample,
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER_FACTORY(),
-                )
-                for template in templates
-            ]
-        ),
+    learner = SituationObject.instantiate_ontology_node(
+        ontology_node=LEARNER,
+        debug_handle=LEARNER.handle,
+        ontology=GAILA_PHASE_1_ONTOLOGY,
     )
+    situations = []
+
+    for eater_ontology_node in [MOM, DAD, BABY, DOG]:
+        eater = SituationObject.instantiate_ontology_node(
+            ontology_node=eater_ontology_node,
+            debug_handle=eater_ontology_node.handle,
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+        )
+        for _object in [COOKIE, WATERMELON]:
+            object_to_eat = SituationObject.instantiate_ontology_node(
+                ontology_node=_object,
+                debug_handle=_object.handle,
+                ontology=GAILA_PHASE_1_ONTOLOGY,
+            )
+            other_edibles = [
+                SituationObject.instantiate_ontology_node(
+                    ontology_node=_object,
+                    debug_handle=_object.handle + f"_{i}",
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                )
+                for i in range(3)
+            ]
+            computed_background = [learner]
+            computed_background.extend(other_edibles)
+
+            # Big
+            for relation_list in [
+                [
+                    bigger_than(object_to_eat, learner),
+                    bigger_than(object_to_eat, other_edibles),
+                ],
+                [
+                    bigger_than(learner, object_to_eat),
+                    bigger_than(other_edibles, object_to_eat),
+                ],
+            ]:
+                situations.append(
+                    HighLevelSemanticsSituation(
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        salient_objects=[eater, object_to_eat],
+                        other_objects=computed_background,
+                        actions=[
+                            Action(
+                                EAT,
+                                argument_roles_to_fillers=[
+                                    (AGENT, eater),
+                                    (PATIENT, object_to_eat),
+                                ],
+                            )
+                        ],
+                        always_relations=relation_list,
+                    )
+                )
+
+    return phase1_instances("Big - Small Curriculum", situations)
 
 
 def _little_x_template(
@@ -163,6 +200,66 @@ def _short_x_template(
         asserted_always_relations=[bigger_than(learner, theme)],
         syntax_hints=[USE_VERTICAL_MODIFIERS],
     )
+
+
+def make_spin_tall_short_curriculum() -> Phase1InstanceGroup:
+    # "Mom eats a big cookie"
+    # We generate situations directly since templates fail to generate plurals.
+
+    learner = SituationObject.instantiate_ontology_node(
+        ontology_node=LEARNER,
+        debug_handle=LEARNER.handle,
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+    )
+    situations = []
+    for agent_ontology_node in [MOM, DAD, BABY, DOG]:
+        agent = SituationObject.instantiate_ontology_node(
+            ontology_node=agent_ontology_node,
+            debug_handle=agent_ontology_node.handle,
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+        )
+        for _object in [CHAIR, TABLE]:
+            theme = SituationObject.instantiate_ontology_node(
+                ontology_node=_object,
+                debug_handle=_object.handle,
+                ontology=GAILA_PHASE_1_ONTOLOGY,
+            )
+            other_objs = [
+                SituationObject.instantiate_ontology_node(
+                    ontology_node=_object,
+                    debug_handle=_object.handle + f"_{i}",
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                )
+                for i in range(3)
+            ]
+            computed_background = [learner]
+            computed_background.extend(other_objs)
+
+            # Tall and short
+            for relation_list in [
+                [bigger_than(learner, theme), bigger_than(other_objs, theme)],
+                [bigger_than(theme, learner), bigger_than(theme, other_objs)],
+            ]:
+                situations.append(
+                    HighLevelSemanticsSituation(
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        salient_objects=[agent, theme],
+                        other_objects=computed_background,
+                        actions=[
+                            Action(
+                                SPIN,
+                                argument_roles_to_fillers=[
+                                    (AGENT, agent),
+                                    (THEME, theme),
+                                ],
+                            )
+                        ],
+                        always_relations=relation_list,
+                        syntax_hints=[USE_VERTICAL_MODIFIERS],
+                    )
+                )
+
+    return phase1_instances("Tall - Short Curriculum", situations)
 
 
 def make_imprecise_size_descriptions(

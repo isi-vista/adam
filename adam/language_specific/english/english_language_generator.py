@@ -430,9 +430,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                                 token = DependencyTreeToken("big", ADJECTIVE)
                             self.dependency_graph.add_node(token)
                             self.dependency_graph.add_edge(
-                                token,
-                                noun_dependency_node,
-                                role=ADJECTIVAL_MODIFIER,
+                                token, noun_dependency_node, role=ADJECTIVAL_MODIFIER
                             )
                     elif relation.relation_type == SMALLER_THAN:
                         if (
@@ -446,9 +444,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                                 token = DependencyTreeToken("small", ADJECTIVE)
                             self.dependency_graph.add_node(token)
                             self.dependency_graph.add_edge(
-                                token,
-                                noun_dependency_node,
-                                role=ADJECTIVAL_MODIFIER,
+                                token, noun_dependency_node, role=ADJECTIVAL_MODIFIER
                             )
 
         def _translate_attribute_as_verb(
