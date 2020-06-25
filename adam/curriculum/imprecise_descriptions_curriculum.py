@@ -1,6 +1,5 @@
 from itertools import chain
-from typing import Sequence, Iterable, List
-from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
+from typing import Sequence, Iterable
 from immutablecollections import immutableset
 from more_itertools import flatten
 
@@ -355,7 +354,7 @@ def make_push_shove_subtle_verb_distinctions(
     )
     push_goal = standard_object("push_goal_0", THING, required_properties=[INANIMATE])
     # get all possible templates
-templates = flatten(
+    templates = flatten(
         [
             make_push_templates(
                 pusher,
@@ -382,7 +381,7 @@ templates = flatten(
                     )
                     for template in templates
                 ]
-            ),
+            )
         ),
     )
 
