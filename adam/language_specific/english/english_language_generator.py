@@ -48,6 +48,10 @@ from adam.language_specific.english.english_phase_1_lexicon import (
     I,
     ME,
     YOU,
+    GRAB,
+    SHOVE,
+    TOSS,
+    RUN,
 )
 from adam.language_specific.english.english_phase_2_lexicon import (
     GAILA_PHASE_2_ENGLISH_LEXICON,
@@ -78,6 +82,11 @@ from adam.ontology.phase1_ontology import (
     SLOW,
     BIGGER_THAN,
     SMALLER_THAN,
+    WALK,
+    PASS,
+    PUSH,
+    TAKE,
+    HARD_FORCE,
 )
 from adam.ontology.phase1_spatial_relations import (
     EXTERIOR_BUT_IN_CONTACT,
@@ -522,7 +531,26 @@ class SimpleRuleBasedEnglishLanguageGenerator(
         def _translate_action_to_verb(
             self, action: Action[OntologyNode, SituationObject]
         ) -> DependencyTreeToken:
-            verb_lexical_entry = self._unique_lexicon_entry(action.action_type)
+            special_lexical: bool = False
+            if (
+                action.action_type in [WALK, TAKE, PUSH, PASS]
+                and action.during
+                and action.during.objects_to_paths
+            ):
+                for (_, path) in action.during.objects_to_paths.items():
+                    if HARD_FORCE in path.properties:
+                        special_lexical = True
+            if special_lexical:
+                if action.action_type == WALK:
+                    verb_lexical_entry = RUN
+                elif action.action_type == TAKE:
+                    verb_lexical_entry = GRAB
+                elif action.action_type == PUSH:
+                    verb_lexical_entry = SHOVE
+                elif action.action_type == PASS:
+                    verb_lexical_entry = TOSS
+            else:
+                verb_lexical_entry = self._unique_lexicon_entry(action.action_type)
 
             # first, we map all the arguments to chunks of dependency tree
             syntactic_roles_to_argument_heads = immutablesetmultidict(

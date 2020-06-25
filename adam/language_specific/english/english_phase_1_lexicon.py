@@ -67,10 +67,6 @@ from adam.ontology.phase1_ontology import (
     PASS,
     WATERMELON,
     WALK,
-    RUN,
-    TOSS,
-    SHOVE,
-    GRAB,
 )
 
 I = LexiconEntry(  # noqa: E741
@@ -89,6 +85,16 @@ ME = LexiconEntry(  # noqa: E741
 YOU = LexiconEntry(
     "you", NOUN, plural_form="y'all", intrinsic_morphosyntactic_properties=[SECOND_PERSON]
 )
+
+GRAB = LexiconEntry("grab", VERB, verb_form_sg3_prs="grabs")
+
+RUN = LexiconEntry("run", VERB, verb_form_sg3_prs="runs")
+TOSS = LexiconEntry(
+    "toss", VERB, verb_form_sg3_prs="tosses", properties=[ALLOWS_DITRANSITIVE]
+)
+
+SHOVE = LexiconEntry("shove", VERB, verb_form_sg3_prs="shoves")
+
 
 GAILA_PHASE_1_ENGLISH_LEXICON = OntologyLexicon(
     ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -149,16 +155,7 @@ GAILA_PHASE_1_ENGLISH_LEXICON = OntologyLexicon(
             ),
         ),
         (MOVE, LexiconEntry("move", VERB, verb_form_sg3_prs="moves")),
-        (GRAB, LexiconEntry("grab", VERB, verb_form_sg3_prs="grabs")),
         (WALK, LexiconEntry("walk", VERB, verb_form_sg3_prs="walks")),
-        (RUN, LexiconEntry("run", VERB, verb_form_sg3_prs="runs")),
-        (
-            TOSS,
-            LexiconEntry(
-                "toss", VERB, verb_form_sg3_prs="tosses", properties=[ALLOWS_DITRANSITIVE]
-            ),
-        ),
-        (SHOVE, LexiconEntry("shove", VERB, verb_form_sg3_prs="shoves")),
         (JUMP, LexiconEntry("jump", VERB, verb_form_sg3_prs="jumps")),
         (HAS, LexiconEntry("have", VERB, verb_form_sg3_prs="has")),
         (ROLL, LexiconEntry("roll", VERB, verb_form_sg3_prs="rolls")),
