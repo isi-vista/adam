@@ -1,6 +1,5 @@
 from itertools import chain
 from typing import Sequence, Iterable
-
 from immutablecollections import immutableset
 from more_itertools import flatten
 
@@ -12,6 +11,7 @@ from adam.curriculum.curriculum_utils import (
     learner_template_factory,
 )
 from adam.curriculum.phase1_curriculum import (
+    make_pass_template,
     throw_on_ground_template,
     throw_template,
     throw_up_down_template,
@@ -25,9 +25,13 @@ from adam.curriculum.phase1_curriculum import (
     bare_fly,
     fall_on_ground_template,
     falling_template,
+    make_take_template,
+    make_push_templates,
+    make_walk_run_template,
 )
 from adam.language_specific.english.english_language_generator import (
     USE_ADVERBIAL_PATH_MODIFIER,
+    USE_VERTICAL_MODIFIERS,
 )
 from adam.ontology import THING
 from adam.ontology.phase1_ontology import (
@@ -36,6 +40,8 @@ from adam.ontology.phase1_ontology import (
     INANIMATE,
     BOX,
     FAST,
+    HARD_FORCE,
+    SOFT_FORCE,
     SLOW,
     SELF_MOVING,
     CAN_JUMP,
@@ -43,7 +49,23 @@ from adam.ontology.phase1_ontology import (
     CAN_HAVE_THINGS_RESTING_ON_THEM,
     BIRD,
     bigger_than,
+    EAT,
+    AGENT,
+    PATIENT,
+    COOKIE,
+    WATERMELON,
+    MOM,
+    LEARNER,
+    DOG,
+    BABY,
+    DAD,
+    CHAIR,
+    TABLE,
+    THEME,
+    SPIN,
 )
+from adam.situation import Action, SituationObject
+from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.situation.templates.phase1_templates import (
     sampled,
     TemplateObjectVariable,
@@ -67,6 +89,72 @@ def _big_x_template(
         background_object_variables=computed_background,
         asserted_always_relations=[bigger_than(theme, learner)],
     )
+
+
+def make_eat_big_small_curriculum() -> Phase1InstanceGroup:
+    # "Mom eats a big cookie"
+    # We generate situations directly since templates fail to generate plurals.
+
+    learner = SituationObject.instantiate_ontology_node(
+        ontology_node=LEARNER,
+        debug_handle=LEARNER.handle,
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+    )
+    situations = []
+
+    for eater_ontology_node in [MOM, DAD, BABY, DOG]:
+        eater = SituationObject.instantiate_ontology_node(
+            ontology_node=eater_ontology_node,
+            debug_handle=eater_ontology_node.handle,
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+        )
+        for _object in [COOKIE, WATERMELON]:
+            object_to_eat = SituationObject.instantiate_ontology_node(
+                ontology_node=_object,
+                debug_handle=_object.handle,
+                ontology=GAILA_PHASE_1_ONTOLOGY,
+            )
+            other_edibles = [
+                SituationObject.instantiate_ontology_node(
+                    ontology_node=_object,
+                    debug_handle=_object.handle + f"_{i}",
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                )
+                for i in range(3)
+            ]
+            computed_background = [learner]
+            computed_background.extend(other_edibles)
+
+            # Big
+            for relation_list in [
+                [
+                    bigger_than(object_to_eat, learner),
+                    bigger_than(object_to_eat, other_edibles),
+                ],
+                [
+                    bigger_than(learner, object_to_eat),
+                    bigger_than(other_edibles, object_to_eat),
+                ],
+            ]:
+                situations.append(
+                    HighLevelSemanticsSituation(
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        salient_objects=[eater, object_to_eat],
+                        other_objects=computed_background,
+                        actions=[
+                            Action(
+                                EAT,
+                                argument_roles_to_fillers=[
+                                    (AGENT, eater),
+                                    (PATIENT, object_to_eat),
+                                ],
+                            )
+                        ],
+                        always_relations=relation_list,
+                    )
+                )
+
+    return phase1_instances("Big - Small Curriculum", situations)
 
 
 def _little_x_template(
@@ -97,6 +185,7 @@ def _tall_x_template(
         salient_object_variables=[theme],
         background_object_variables=background,
         asserted_always_relations=[bigger_than(theme, learner)],
+        syntax_hints=[USE_VERTICAL_MODIFIERS],
     )
 
 
@@ -114,7 +203,68 @@ def _short_x_template(
         salient_object_variables=[theme],
         background_object_variables=background,
         asserted_always_relations=[bigger_than(learner, theme)],
+        syntax_hints=[USE_VERTICAL_MODIFIERS],
     )
+
+
+def make_spin_tall_short_curriculum() -> Phase1InstanceGroup:
+    # "Mom spins a tall chair"
+    # We generate situations directly since templates fail to generate plurals.
+
+    learner = SituationObject.instantiate_ontology_node(
+        ontology_node=LEARNER,
+        debug_handle=LEARNER.handle,
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+    )
+    situations = []
+    for agent_ontology_node in [MOM, DAD, BABY, DOG]:
+        agent = SituationObject.instantiate_ontology_node(
+            ontology_node=agent_ontology_node,
+            debug_handle=agent_ontology_node.handle,
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+        )
+        for _object in [CHAIR, TABLE]:
+            theme = SituationObject.instantiate_ontology_node(
+                ontology_node=_object,
+                debug_handle=_object.handle,
+                ontology=GAILA_PHASE_1_ONTOLOGY,
+            )
+            other_objs = [
+                SituationObject.instantiate_ontology_node(
+                    ontology_node=_object,
+                    debug_handle=_object.handle + f"_{i}",
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                )
+                for i in range(3)
+            ]
+            computed_background = [learner]
+            computed_background.extend(other_objs)
+
+            # Tall and short
+            for relation_list in [
+                [bigger_than(learner, theme), bigger_than(other_objs, theme)],
+                [bigger_than(theme, learner), bigger_than(theme, other_objs)],
+            ]:
+                situations.append(
+                    HighLevelSemanticsSituation(
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        salient_objects=[agent, theme],
+                        other_objects=computed_background,
+                        actions=[
+                            Action(
+                                SPIN,
+                                argument_roles_to_fillers=[
+                                    (AGENT, agent),
+                                    (THEME, theme),
+                                ],
+                            )
+                        ],
+                        always_relations=relation_list,
+                        syntax_hints=[USE_VERTICAL_MODIFIERS],
+                    )
+                )
+
+    return phase1_instances("Tall - Short Curriculum", situations)
 
 
 def make_imprecise_size_descriptions(
@@ -305,6 +455,142 @@ def make_jump_imprecise_temporal_descriptions(
     )
 
 
+def make_take_grab_subtle_verb_distinction(
+    num_samples: int = 5, *, num_noise_objects: int = 0  # pylint:disable=unused-argument
+) -> Phase1InstanceGroup:
+    taker = standard_object("tosser_passer_0", THING, required_properties=[ANIMATE])
+    takee = standard_object("tossee_passee_0", THING, required_properties=[INANIMATE])
+    return phase1_instances(
+        "taking-grabbing",
+        chain(
+            flatten(
+                [
+                    sampled(
+                        make_take_template(
+                            taker,
+                            takee,
+                            use_adverbial_path_modifier=use_adverbial_path_modifier,
+                            spatial_properties=[HARD_FORCE]
+                            if hard_force
+                            else [SOFT_FORCE],
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        max_to_sample=num_samples,
+                    )
+                    for use_adverbial_path_modifier in BOOL_SET
+                    for hard_force in BOOL_SET
+                ]
+            )
+        ),
+    )
+
+
+def make_push_shove_subtle_verb_distinctions(
+    num_samples: int = 5, *, num_noise_objects: int = 0  # pylint:disable=unused-argument
+) -> Phase1InstanceGroup:
+    pusher = standard_object("pusher_0", THING, required_properties=[ANIMATE])
+    pushee = standard_object("pushee_0", THING, required_properties=[INANIMATE])
+    push_surface = standard_object(
+        "push_surface_0", THING, required_properties=[INANIMATE]
+    )
+    push_goal = standard_object("push_goal_0", THING, required_properties=[INANIMATE])
+    # get all possible templates
+    templates = flatten(
+        [
+            make_push_templates(
+                pusher,
+                pushee,
+                push_surface,
+                push_goal,
+                use_adverbial_path_modifier=use_adverbial_path_modifier,
+                spatial_properties=[HARD_FORCE] if hard_force else [SOFT_FORCE],
+            )
+            for use_adverbial_path_modifier in BOOL_SET
+            for hard_force in BOOL_SET
+        ]
+    )
+    return phase1_instances(
+        "pushing-shoving",
+        chain(
+            flatten(
+                [
+                    sampled(
+                        template,
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        max_to_sample=num_samples,
+                    )
+                    for template in templates
+                ]
+            )
+        ),
+    )
+
+
+def make_walk_run_subtle_verb_distinction(
+    num_samples: int = 5, *, num_noise_objects: int = 0  # pylint:disable=unused-argument
+) -> Phase1InstanceGroup:
+    agent = standard_object("walker_0", THING, required_properties=[ANIMATE])
+    return phase1_instances(
+        "walking-running",
+        chain(
+            flatten(
+                [
+                    sampled(
+                        make_walk_run_template(
+                            agent,
+                            use_adverbial_path_modifier=use_adverbial_path_modifier,
+                            spatial_properties=[HARD_FORCE]
+                            if hard_force
+                            else [SOFT_FORCE],
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        max_to_sample=num_samples,
+                    )
+                    for use_adverbial_path_modifier in BOOL_SET
+                    for hard_force in BOOL_SET
+                ]
+            )
+        ),
+    )
+
+
+def make_pass_toss_subtle_verb_distinction(
+    num_samples: int = 5, *, num_noise_objects: int = 0  # pylint:disable=unused-argument
+) -> Phase1InstanceGroup:
+    tosser = standard_object("tosser_passer_0", THING, required_properties=[ANIMATE])
+    tossee = standard_object("tossee_passee_0", THING, required_properties=[INANIMATE])
+    goal = standard_object("move-goal-reference", THING, required_properties=[INANIMATE])
+
+    return phase1_instances(
+        "tossing_passing",
+        chain(
+            flatten(
+                [
+                    sampled(
+                        make_pass_template(
+                            tosser,
+                            tossee,
+                            goal,
+                            use_adverbial_path_modifier=use_adverbial_path_modifier,
+                            spatial_properties=[HARD_FORCE]
+                            if hard_force
+                            else [SOFT_FORCE],
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        max_to_sample=num_samples,
+                    )
+                    for use_adverbial_path_modifier in BOOL_SET
+                    for hard_force in BOOL_SET
+                ]
+            )
+        ),
+    )
+
+
 def make_roll_imprecise_temporal_descriptions(
     num_samples: int = 5, *, num_noise_objects: int = 0  # pylint:disable=unused-argument
 ) -> Phase1InstanceGroup:
@@ -472,6 +758,26 @@ def make_imprecise_temporal_descriptions(
             num_samples, num_noise_objects=num_noise_objects
         ),
         make_fall_imprecise_temporal_descriptions(
+            num_samples, num_noise_objects=num_noise_objects
+        ),
+    ]
+
+
+def make_subtle_verb_distinctions_curriculum(
+    num_samples: int = 5, *, num_noise_objects: int = 0
+) -> Sequence[Phase1InstanceGroup]:
+    """One particular instanatiation of the Subtle Verb Distinction Curriculum"""
+    return [
+        make_push_shove_subtle_verb_distinctions(
+            num_samples, num_noise_objects=num_noise_objects
+        ),
+        make_walk_run_subtle_verb_distinction(
+            num_samples, num_noise_objects=num_noise_objects
+        ),
+        make_pass_toss_subtle_verb_distinction(
+            num_samples, num_noise_objects=num_noise_objects
+        ),
+        make_take_grab_subtle_verb_distinction(
             num_samples, num_noise_objects=num_noise_objects
         ),
     ]

@@ -65,6 +65,8 @@ from adam.ontology.phase1_ontology import (
     LIGHT_BROWN,
     DARK_BROWN,
     PASS,
+    WATERMELON,
+    WALK,
 )
 
 I = LexiconEntry(  # noqa: E741
@@ -84,12 +86,23 @@ YOU = LexiconEntry(
     "you", NOUN, plural_form="y'all", intrinsic_morphosyntactic_properties=[SECOND_PERSON]
 )
 
+GRAB = LexiconEntry("grab", VERB, verb_form_sg3_prs="grabs")
+
+RUN = LexiconEntry("run", VERB, verb_form_sg3_prs="runs")
+TOSS = LexiconEntry(
+    "toss", VERB, verb_form_sg3_prs="tosses", properties=[ALLOWS_DITRANSITIVE]
+)
+
+SHOVE = LexiconEntry("shove", VERB, verb_form_sg3_prs="shoves")
+
+
 GAILA_PHASE_1_ENGLISH_LEXICON = OntologyLexicon(
     ontology=GAILA_PHASE_1_ONTOLOGY,
     ontology_node_to_word=(
         (GROUND, LexiconEntry("ground", NOUN, plural_form="grounds")),
         (MOM, LexiconEntry("Mom", PROPER_NOUN)),
         (BALL, LexiconEntry("ball", NOUN, plural_form="balls")),
+        (WATERMELON, LexiconEntry("watermelon", NOUN, plural_form="watermelons")),
         (TABLE, LexiconEntry("table", NOUN, plural_form="tables")),
         (PUT, LexiconEntry("put", VERB, verb_form_sg3_prs="puts")),
         (PUSH, LexiconEntry("push", VERB, verb_form_sg3_prs="pushes")),
@@ -142,6 +155,7 @@ GAILA_PHASE_1_ENGLISH_LEXICON = OntologyLexicon(
             ),
         ),
         (MOVE, LexiconEntry("move", VERB, verb_form_sg3_prs="moves")),
+        (WALK, LexiconEntry("walk", VERB, verb_form_sg3_prs="walks")),
         (JUMP, LexiconEntry("jump", VERB, verb_form_sg3_prs="jumps")),
         (HAS, LexiconEntry("have", VERB, verb_form_sg3_prs="has")),
         (ROLL, LexiconEntry("roll", VERB, verb_form_sg3_prs="rolls")),

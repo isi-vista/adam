@@ -16,7 +16,7 @@ import logging
 import pickle
 from abc import ABC, abstractmethod
 from enum import Enum
-from itertools import chain
+from itertools import chain, product, repeat
 from pathlib import Path
 from time import process_time
 from typing import (
@@ -83,7 +83,14 @@ from adam.utilities import sign
 from adam.utils.networkx_utils import copy_digraph, digraph_with_nodes_sorted_by, subgraph
 from attr import attrib, attrs
 from attr.validators import deep_iterable, instance_of, optional
-from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
+from immutablecollections import (
+    ImmutableDict,
+    ImmutableSet,
+    immutabledict,
+    immutableset,
+    immutablesetmultidict,
+    ImmutableSetMultiDict,
+)
 from immutablecollections.converter_utils import (
     _to_immutabledict,
     _to_immutableset,
@@ -961,6 +968,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
         debug_callback: Optional[DebugCallableType] = None,
         graph_logger: Optional["GraphLogger"] = None,
         ontology: Ontology,
+        allowed_matches: ImmutableSetMultiDict[Any, Any] = immutablesetmultidict(),
     ) -> Optional["PerceptionGraphPattern"]:
         """
         Determine the largest partial match between two `PerceptionGraphPattern`s
@@ -974,6 +982,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
             debug_callback=debug_callback,
             matching_pattern_against_pattern=True,
             matching_objects=False,
+            allowed_matches=allowed_matches,
         )
         attempted_match = matcher.relax_pattern_until_it_matches(
             graph_logger=graph_logger, ontology=ontology
@@ -1074,6 +1083,12 @@ class PatternMatching:
 
     # Callable object for debugging purposes. We use this to track the number of calls to match and render the graphs.
     debug_callback: Optional[DebugCallableType] = attrib(default=None, kw_only=True)
+
+    allowed_matches: ImmutableSetMultiDict[Any, Any] = attrib(
+        validator=instance_of(ImmutableSetMultiDict),
+        kw_only=True,
+        default=immutablesetmultidict(),
+    )
 
     @attrs(frozen=True, kw_only=True, auto_attribs=True)
     class MatchFailure:
@@ -1312,51 +1327,95 @@ class PatternMatching:
         got_a_match = False
         if debug_callback:
             self.debug_callback = debug_callback
-        for graph_node_to_matching_pattern_node in matching.subgraph_isomorphisms_iter(
-            collect_debug_statistics=collect_debug_statistics,
-            debug_callback=debug_callback,
-            initial_partial_match=initial_partial_match,
-        ):
-            matched_graph_nodes: ImmutableSet[PerceptionGraphNode] = immutableset(
-                graph_node_to_matching_pattern_node
-            )
+
+        allowed_matches = self.allowed_matches
+        logging.debug("PatternMatcher code... Allowed matches were %s", allowed_matches)
+
+        for node in initial_partial_match.keys():
             if (
-                matched_graph_nodes not in sets_of_nodes_matched
-                or not suppress_multiple_alignments_to_same_nodes
+                node in allowed_matches
+                and initial_partial_match[node] not in allowed_matches[node]
             ):
-                got_a_match = True
-
-                matched_subgraph_digraph = subgraph(
-                    matching.graph, graph_node_to_matching_pattern_node.keys()
-                ).copy()
-                matched_subgraph_dynamic = graph_to_match_against.dynamic
-
-                matched_subgraph: PerceptionGraphProtocol
-                if isinstance(graph_to_match_against, PerceptionGraph):
-                    matched_subgraph = PerceptionGraph(
-                        graph=matched_subgraph_digraph, dynamic=matched_subgraph_dynamic
-                    )
-                elif isinstance(graph_to_match_against, PerceptionGraphPattern):
-                    matched_subgraph = PerceptionGraphPattern(
-                        graph=matched_subgraph_digraph, dynamic=matched_subgraph_dynamic
-                    )
-                else:
-                    raise RuntimeError(
-                        f"Can only match against PerceptionGraphs or "
-                        f"PerceptionGraphPatterns but got a "
-                        f"{type(graph_to_match_against)}"
-                    )
-
-                yield PerceptionGraphPatternMatch(
-                    graph_matched_against=graph_to_match_against,
-                    matched_pattern=pattern,
-                    # mypy doesn't like
-                    matched_sub_graph=matched_subgraph,
-                    pattern_node_to_matched_graph_node=_invert_to_immutabledict(
-                        graph_node_to_matching_pattern_node
-                    ),
+                raise RuntimeError(
+                    "Initial partial match is not compatible with set of allowed matches!"
                 )
-            sets_of_nodes_matched.add(matched_graph_nodes)
+
+        # Our initial partial match may already match up some of our nodes that have matching
+        # restrictions (as given by allowed_matches). In that case, we don't need to iterate over
+        # the different allowed ways to match up those nodes, so we remove them from our collection
+        # of allowed matches.
+        allowed_matches = immutablesetmultidict(
+            (node, allowed_match)
+            for node, allowed_match in allowed_matches.items()
+            if node not in initial_partial_match
+        )
+
+        # We want to iterate over all possible initial matchings, which means taking the product of
+        # the sequences of allowed pairings for each node in allowed_matches.
+        logging.debug(
+            "PatternMatcher code... After filtering, allowed matches were %s",
+            allowed_matches,
+        )
+        for allowed_matching in product(
+            *[zip(repeat(node), allowed_matches[node]) for node in allowed_matches.keys()]
+        ):
+            logging.debug(
+                "PatternMatcher code... Allowed matching was %s", allowed_matching
+            )
+            allowed_matching = immutabledict(allowed_matching)
+            merged_initial_partial_match: Mapping[Any, Any] = immutabledict(
+                chain(allowed_matching.items(), initial_partial_match.items())
+            )
+
+            for (
+                graph_node_to_matching_pattern_node
+            ) in matching.subgraph_isomorphisms_iter(
+                collect_debug_statistics=collect_debug_statistics,
+                debug_callback=debug_callback,
+                initial_partial_match=merged_initial_partial_match,
+            ):
+                matched_graph_nodes: ImmutableSet[PerceptionGraphNode] = immutableset(
+                    graph_node_to_matching_pattern_node
+                )
+                if (
+                    matched_graph_nodes not in sets_of_nodes_matched
+                    or not suppress_multiple_alignments_to_same_nodes
+                ):
+                    got_a_match = True
+
+                    matched_subgraph_digraph = subgraph(
+                        matching.graph, graph_node_to_matching_pattern_node.keys()
+                    ).copy()
+                    matched_subgraph_dynamic = graph_to_match_against.dynamic
+
+                    matched_subgraph: PerceptionGraphProtocol
+                    if isinstance(graph_to_match_against, PerceptionGraph):
+                        matched_subgraph = PerceptionGraph(
+                            graph=matched_subgraph_digraph,
+                            dynamic=matched_subgraph_dynamic,
+                        )
+                    elif isinstance(graph_to_match_against, PerceptionGraphPattern):
+                        matched_subgraph = PerceptionGraphPattern(
+                            graph=matched_subgraph_digraph,
+                            dynamic=matched_subgraph_dynamic,
+                        )
+                    else:
+                        raise RuntimeError(
+                            f"Can only match against PerceptionGraphs or "
+                            f"PerceptionGraphPatterns but got a "
+                            f"{type(graph_to_match_against)}"
+                        )
+
+                    yield PerceptionGraphPatternMatch(
+                        graph_matched_against=graph_to_match_against,
+                        matched_pattern=pattern,
+                        # mypy doesn't like
+                        matched_sub_graph=matched_subgraph,
+                        pattern_node_to_matched_graph_node=_invert_to_immutabledict(
+                            graph_node_to_matching_pattern_node
+                        ),
+                    )
+                sets_of_nodes_matched.add(matched_graph_nodes)
         if not got_a_match:
             # mypy doesn't like the assignment to the pattern_node_to_graph_node_for_largest_match
             # argument for reasons which are unclear to me. It works fine, though.

@@ -3,7 +3,7 @@ Curricula for DARPA GAILA Phase 1
 """
 
 from itertools import chain
-from typing import Iterable, Sequence
+from typing import Iterable, Sequence, List
 
 from immutablecollections import immutableset
 from more_itertools import flatten, first
@@ -44,6 +44,7 @@ from adam.ontology.phase1_ontology import (
     FALL,
     FLY,
     GAILA_PHASE_1_ONTOLOGY,
+    WALK_SURFACE_AUXILIARY,
     GIVE,
     GOAL,
     GROUND,
@@ -96,6 +97,7 @@ from adam.ontology.phase1_ontology import (
     DAD,
     HOUSE,
     BALL,
+    WALK,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -948,6 +950,40 @@ def _make_roll_curriculum() -> Phase1InstanceGroup:
     )
 
 
+def make_transitive_roll_templates() -> Iterable[Phase1SituationTemplate]:
+    animate_0 = standard_object("object_0", THING, required_properties=[ANIMATE])
+    rollable_0 = standard_object(
+        "object_1", INANIMATE_OBJECT, required_properties=[ROLLABLE]
+    )
+    rolling_surface = standard_object(
+        "surface", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
+    )
+
+    return [
+        # rolls transitively
+        transitive_roll(animate_0, rollable_0, rolling_surface),
+        # rolls on a surface
+        transitive_roll_with_surface(animate_0, rollable_0, rolling_surface),
+    ]
+
+
+def _make_transitive_roll_curriculum() -> Phase1InstanceGroup:
+    return phase1_instances(
+        "rolling",
+        chain(
+            *[
+                sampled(
+                    situation,
+                    max_to_sample=25,
+                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                )
+                for situation in make_transitive_roll_templates()
+            ]
+        ),
+    )
+
+
 def _make_speaker_addressee_curriculum() -> Phase1InstanceGroup:
     speaker = standard_object("speaker_0", PERSON, added_properties=[IS_SPEAKER])
     addressee = standard_object("addressee_0", PERSON, added_properties=[IS_ADDRESSEE])
@@ -1037,6 +1073,44 @@ def make_jump_template(
                 ),
             )
         ],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER] if use_adverbial_path_modifier else [],
+    )
+
+
+def make_pass_template(
+    agent: TemplateObjectVariable,
+    theme: TemplateObjectVariable,
+    goal: TemplateObjectVariable,
+    *,
+    use_adverbial_path_modifier: bool,
+    spatial_properties: Iterable[OntologyNode] = immutableset(),
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        f"{agent.handle} tosses {theme.handle}",
+        salient_object_variables=[agent, theme, goal],
+        actions=[
+            Action(
+                PASS,
+                argument_roles_to_fillers=[
+                    (AGENT, agent),
+                    (THEME, theme),
+                    (GOAL, Region(goal, distance=PROXIMAL)),
+                ],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            agent,
+                            SpatialPath(
+                                None, reference_object=goal, properties=spatial_properties
+                            ),
+                        )
+                    ]
+                )
+                if spatial_properties
+                else None,
+            )
+        ],
+        constraining_relations=[bigger_than(agent, theme)],
         syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER] if use_adverbial_path_modifier else [],
     )
 
@@ -1326,20 +1400,76 @@ def _make_sit_curriculum() -> Phase1InstanceGroup:
     )
 
 
-def make_take_template() -> Phase1SituationTemplate:
-    taker = standard_object("taker_0", THING, required_properties=[ANIMATE])
-    object_taken = standard_object("object_taken_0", required_properties=[INANIMATE])
-
-    # X puts Y on Z
+def make_take_template(
+    agent: TemplateObjectVariable,
+    theme: TemplateObjectVariable,
+    *,
+    use_adverbial_path_modifier: bool,
+    spatial_properties: Iterable[OntologyNode] = None,
+) -> Phase1SituationTemplate:
+    # X grabs Y
+    ground = GROUND_OBJECT_TEMPLATE
     return Phase1SituationTemplate(
-        "take",
-        salient_object_variables=[taker, object_taken],
+        f"{agent.handle}-take-{theme.handle}",
+        salient_object_variables=[agent, theme],
         actions=[
             Action(
-                TAKE, argument_roles_to_fillers=[(AGENT, taker), (THEME, object_taken)]
+                TAKE,
+                argument_roles_to_fillers=[(AGENT, agent), (THEME, theme)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            agent,
+                            SpatialPath(
+                                None,
+                                reference_object=ground,
+                                properties=spatial_properties,
+                            ),
+                        )
+                    ]
+                )
+                if spatial_properties
+                else None,
             )
         ],
-        constraining_relations=[bigger_than(taker, object_taken)],
+        constraining_relations=[bigger_than(agent, theme)],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER] if use_adverbial_path_modifier else [],
+    )
+
+
+def make_walk_run_template(
+    agent: TemplateObjectVariable,
+    *,
+    use_adverbial_path_modifier: bool,
+    spatial_properties: Iterable[OntologyNode] = None,
+) -> Phase1SituationTemplate:
+    # X walks
+    goal = standard_object("goal", THING, required_properties=[INANIMATE])
+    ground = GROUND_OBJECT_TEMPLATE
+    return Phase1SituationTemplate(
+        f"{agent.handle} walk",
+        salient_object_variables=[agent],
+        background_object_variables=[ground],
+        actions=[
+            Action(
+                WALK,
+                auxiliary_variable_bindings=[(WALK_SURFACE_AUXILIARY, ground)],
+                argument_roles_to_fillers=[(AGENT, agent)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            agent,
+                            SpatialPath(
+                                operator=TOWARD,
+                                reference_object=goal,
+                                properties=spatial_properties,
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER] if use_adverbial_path_modifier else [],
     )
 
 
@@ -1349,7 +1479,15 @@ def _make_take_curriculum() -> Phase1InstanceGroup:
         chain(
             *[
                 sampled(
-                    make_take_template(),
+                    make_take_template(
+                        agent=standard_object(
+                            "taker_0", THING, required_properties=[ANIMATE]
+                        ),
+                        theme=standard_object(
+                            "object_taken_0", required_properties=[INANIMATE]
+                        ),
+                        use_adverbial_path_modifier=False,
+                    ),
                     max_to_sample=25,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -1553,56 +1691,80 @@ def _make_go_curriculum() -> Phase1InstanceGroup:
     )
 
 
-def make_push_templates() -> Iterable[Phase1SituationTemplate]:
-    pusher = standard_object("pusher", THING, required_properties=[ANIMATE])
-    pushee = standard_object("pushee", INANIMATE_OBJECT)
-    push_surface = standard_object(
-        "push_surface", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
-    )
-    push_goal_reference = standard_object("push_goal", INANIMATE_OBJECT)
-
+def make_push_templates(
+    agent: TemplateObjectVariable,
+    theme: TemplateObjectVariable,
+    push_surface: TemplateObjectVariable,
+    push_goal: TemplateObjectVariable,
+    *,
+    use_adverbial_path_modifier: bool,
+    spatial_properties: Iterable[OntologyNode] = immutableset(),
+) -> List[Phase1SituationTemplate]:
     # push with implicit goal
     aux_bindings = [
         (PUSH_SURFACE_AUX, push_surface),
-        (PUSH_GOAL, Region(push_goal_reference, distance=PROXIMAL)),
+        (PUSH_GOAL, Region(push_goal, distance=PROXIMAL)),
     ]
-
-    # this shouldn't need to be expressed explicitly;
-    # we should be able to derive it from the action description
-    # https://github.com/isi-vista/adam/issues/239
-    # This declaration has mypy confused so we ignore it
-    during = DuringAction(continuously=[on(pushee, push_surface)])  # type: ignore
     push_unexpressed_goal = Phase1SituationTemplate(
         "push-unexpressed-goal",
-        salient_object_variables=[pusher, pushee],
+        salient_object_variables=[agent, theme],
         actions=[
             Action(
                 PUSH,
-                argument_roles_to_fillers=[(AGENT, pusher), (THEME, pushee)],
+                argument_roles_to_fillers=[(AGENT, agent), (THEME, theme)],
                 auxiliary_variable_bindings=aux_bindings,
-                during=during,
+                during=DuringAction(
+                    continuously=[on(theme, push_surface)],
+                    objects_to_paths=[
+                        (
+                            agent,
+                            SpatialPath(
+                                None,
+                                reference_object=push_goal,
+                                properties=spatial_properties,
+                            ),
+                        )
+                    ],
+                )
+                if spatial_properties
+                else DuringAction(continuously=[on(theme, push_surface)]),  # type: ignore
             )
         ],
         constraining_relations=[
-            bigger_than(push_surface, pusher),
-            bigger_than(push_surface, push_goal_reference),
+            bigger_than(push_surface, agent),
+            bigger_than(push_surface, push_goal),
         ],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER] if use_adverbial_path_modifier else [],
     )
 
     # push with implicit goal
     push_unexpressed_goal_expressed_surface = Phase1SituationTemplate(
         "push-unexpressed-goal",
-        salient_object_variables=[pusher, pushee, push_surface],
+        salient_object_variables=[agent, theme, push_surface],
         actions=[
             Action(
                 PUSH,
-                argument_roles_to_fillers=[(AGENT, pusher), (THEME, pushee)],
+                argument_roles_to_fillers=[(AGENT, agent), (THEME, theme)],
                 auxiliary_variable_bindings=aux_bindings,
-                during=during,
+                during=DuringAction(
+                    continuously=[on(theme, push_surface)],
+                    objects_to_paths=[
+                        (
+                            agent,
+                            SpatialPath(
+                                None,
+                                reference_object=push_goal,
+                                properties=spatial_properties,
+                            ),
+                        )
+                    ],
+                )
+                if spatial_properties
+                else DuringAction(continuously=[on(theme, push_surface)]),  # type: ignore
             )
         ],
-        asserted_always_relations=[on(pushee, push_surface)],
-        constraining_relations=[bigger_than(push_surface, pusher)],
+        constraining_relations=[bigger_than(push_surface, theme)],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER] if use_adverbial_path_modifier else [],
     )
     return [push_unexpressed_goal, push_unexpressed_goal_expressed_surface]
 
@@ -1618,7 +1780,17 @@ def _make_push_curriculum() -> Phase1InstanceGroup:
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                 )
-                for situation in make_push_templates()
+                for situation in make_push_templates(
+                    agent=standard_object("pusher", THING, required_properties=[ANIMATE]),
+                    theme=standard_object("pushee", INANIMATE_OBJECT),
+                    push_surface=standard_object(
+                        "push_surface",
+                        THING,
+                        required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM],
+                    ),
+                    push_goal=standard_object("push_goal", INANIMATE_OBJECT),
+                    use_adverbial_path_modifier=False,
+                )
             ]
         ),
     )
@@ -1821,30 +1993,15 @@ def _make_throw_curriculum() -> Phase1InstanceGroup:
 
 
 def _make_pass_curriculum() -> Phase1InstanceGroup:
-    passer = standard_object("thrower_0", THING, required_properties=[ANIMATE])
-    catcher = standard_object("catcher_0", THING, required_properties=[ANIMATE])
-    object_passed = standard_object("object_0", required_properties=[INANIMATE])
-
-    pass_template = Phase1SituationTemplate(
-        "pass-to",
-        salient_object_variables=[passer, object_passed, catcher],
-        actions=[
-            Action(
-                PASS,
-                argument_roles_to_fillers=[
-                    (AGENT, passer),
-                    (THEME, object_passed),
-                    (GOAL, Region(catcher, distance=PROXIMAL)),
-                ],
-            )
-        ],
-        constraining_relations=[bigger_than(passer, object_passed)],
-    )
-
     return phase1_instances(
         "passing",
         sampled(
-            pass_template,
+            make_pass_template(
+                agent=standard_object("thrower_0", THING, required_properties=[ANIMATE]),
+                theme=standard_object("object_0", required_properties=[INANIMATE]),
+                goal=standard_object("catcher_0", THING, required_properties=[ANIMATE]),
+                use_adverbial_path_modifier=False,
+            ),
             max_to_sample=25,
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,

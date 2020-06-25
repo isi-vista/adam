@@ -15,6 +15,8 @@ from adam.curriculum.preposition_curriculum import (
     _make_on_tests,
     _make_near_training,
     _make_near_tests,
+    _make_far_training,
+    _make_far_tests,
 )
 from tests.curriculum.phase1_curriculum_test import curriculum_test
 
@@ -51,6 +53,10 @@ def test_near_training():
     curriculum_test(_make_near_training())
 
 
+def test_far_training():
+    curriculum_test(_make_far_training())
+
+
 def test_on_tests():
     curriculum_test(_make_on_tests())
 
@@ -81,3 +87,7 @@ def test_in_front_tests():
 
 def test_near_tests():
     curriculum_test(_make_near_tests())
+
+
+def test_far_tests():
+    curriculum_test(_make_far_tests())

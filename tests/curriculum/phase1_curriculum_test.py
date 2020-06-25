@@ -34,11 +34,6 @@ from adam.curriculum.phase1_curriculum import (
     _make_generic_statements_curriculum,
 )
 
-from adam.curriculum.phase2_curriculum import (
-    _make_chairs_curriculum,
-    _make_cups_curriculum,
-)
-
 
 def curriculum_test(curriculum: Phase1InstanceGroup) -> None:
     for _ in curriculum.instances():
@@ -73,14 +68,6 @@ def test_plural_objects_curriculum():
 
 def test_object_on_ground_curriculum():
     curriculum_test(_make_object_on_ground_curriculum())
-
-
-def test_chairs_curriculum():
-    curriculum_test(_make_chairs_curriculum())
-
-
-def test_cups_curriculum():
-    curriculum_test(_make_cups_curriculum())
 
 
 def test_person_has_object_curriculum():

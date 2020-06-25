@@ -1,5 +1,6 @@
 import random as r
 from itertools import chain
+from typing import cast
 
 import pytest
 from more_itertools import first, only
@@ -50,6 +51,8 @@ from adam.perception.perception_graph import (
     TemporallyScopedEdgeLabel,
     HoldsAtTemporalScopePredicate,
     AnyEdgePredicate,
+    AnyObjectPerception,
+    PerceptionGraphNode,
 )
 from adam.random_utils import RandomChooser
 from adam.relation import Relation
@@ -60,7 +63,7 @@ from adam.situation.templates.phase1_templates import (
     object_variable,
 )
 from adam_test_utils import all_possible_test
-from immutablecollections import immutableset
+from immutablecollections import immutableset, immutablesetmultidict
 
 r.seed(0)
 
@@ -490,6 +493,89 @@ def test_syntactically_infeasible_partial_match():
         first(
             second_matcher.matches(
                 initial_partial_match=partial_mapping, use_lookahead_pruning=True
+            ),
+            None,
+        )
+
+
+def test_allowed_matches_with_bad_partial_match():
+    """
+    Tests whether PatternMarching's allowed_matches functionality works as intended when a bad
+    partial match is specified.
+    """
+    target_object = BOX
+    train_obj_object = object_variable("obj-with-color", target_object)
+    obj_template = Phase1SituationTemplate(
+        "colored-obj-object", salient_object_variables=[train_obj_object]
+    )
+    template = all_possible(
+        obj_template, chooser=PHASE1_CHOOSER_FACTORY(), ontology=GAILA_PHASE_1_ONTOLOGY
+    )
+
+    train_curriculum = phase1_instances("all obj situations", situations=template)
+
+    perceptual_representation = only(train_curriculum.instances())[2]
+    perception = graph_without_learner(
+        PerceptionGraph.from_frame(perceptual_representation.frames[0])
+    )
+
+    pattern1: PerceptionGraphPattern = PerceptionGraphPattern.from_graph(
+        perception.subgraph_by_nodes(
+            {
+                cast(PerceptionGraphNode, node)
+                for node in perception._graph.nodes  # pylint: disable=protected-access
+                if getattr(node, "debug_handle", None) == "box_0"
+            }
+        )
+    ).perception_graph_pattern
+
+    pattern2: PerceptionGraphPattern = PerceptionGraphPattern.from_graph(
+        perception.subgraph_by_nodes(
+            {
+                cast(PerceptionGraphNode, node)
+                for node in perception._graph.nodes  # pylint: disable=protected-access
+                if getattr(node, "debug_handle", None) in {"box_0", "the ground"}
+            }
+        )
+    ).perception_graph_pattern
+
+    pattern1_box: AnyObjectPerception = cast(
+        AnyObjectPerception,
+        only(
+            node
+            for node in pattern1._graph  # pylint: disable=protected-access
+            if getattr(node, "debug_handle", None) == "box_0"
+        ),
+    )
+    pattern2_box: AnyObjectPerception = cast(
+        AnyObjectPerception,
+        only(
+            node
+            for node in pattern2._graph  # pylint: disable=protected-access
+            if getattr(node, "debug_handle", None) == "box_0"
+        ),
+    )
+    pattern2_ground: AnyObjectPerception = cast(
+        AnyObjectPerception,
+        only(
+            node
+            for node in pattern2._graph  # pylint: disable=protected-access
+            if getattr(node, "debug_handle", None) == "the ground"
+        ),
+    )
+
+    matcher = PatternMatching(
+        pattern=pattern1,
+        graph_to_match_against=pattern2,
+        matching_pattern_against_pattern=True,
+        matching_objects=True,
+        allowed_matches=immutablesetmultidict([(pattern1_box, pattern2_box)]),
+    )
+    with pytest.raises(RuntimeError):
+        first(
+            matcher.matches(
+                initial_partial_match={pattern1_box: pattern2_ground},
+                use_lookahead_pruning=True,
             ),
             None,
         )

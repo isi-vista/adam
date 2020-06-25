@@ -48,6 +48,10 @@ from adam.language_specific.english.english_phase_1_lexicon import (
     I,
     ME,
     YOU,
+    GRAB,
+    SHOVE,
+    TOSS,
+    RUN,
 )
 from adam.language_specific.english.english_phase_2_lexicon import (
     GAILA_PHASE_2_ENGLISH_LEXICON,
@@ -78,6 +82,11 @@ from adam.ontology.phase1_ontology import (
     SLOW,
     BIGGER_THAN,
     SMALLER_THAN,
+    WALK,
+    PASS,
+    PUSH,
+    TAKE,
+    HARD_FORCE,
 )
 from adam.ontology.phase1_spatial_relations import (
     EXTERIOR_BUT_IN_CONTACT,
@@ -90,6 +99,7 @@ from adam.ontology.phase1_spatial_relations import (
     SpatialPath,
     AWAY_FROM,
     TO,
+    DISTAL,
 )
 from adam.random_utils import SequenceChooser
 from adam.relation import Relation
@@ -415,6 +425,36 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                         self.dependency_graph.add_edge(
                             color_node, noun_dependency_node, role=ADJECTIVAL_MODIFIER
                         )
+            for relation in self.situation.always_relations:
+                if relation.first_slot == _object:
+                    if relation.relation_type == BIGGER_THAN:
+                        if (
+                            relation.first_slot in self.situation.salient_objects
+                            and isinstance(relation.second_slot, SituationObject)
+                            and relation.second_slot.ontology_node == LEARNER
+                        ):
+                            if USE_VERTICAL_MODIFIERS in self.situation.syntax_hints:
+                                token = DependencyTreeToken("tall", ADJECTIVE)
+                            else:
+                                token = DependencyTreeToken("big", ADJECTIVE)
+                            self.dependency_graph.add_node(token)
+                            self.dependency_graph.add_edge(
+                                token, noun_dependency_node, role=ADJECTIVAL_MODIFIER
+                            )
+                    elif relation.relation_type == SMALLER_THAN:
+                        if (
+                            relation.first_slot in self.situation.salient_objects
+                            and isinstance(relation.second_slot, SituationObject)
+                            and relation.second_slot.ontology_node == LEARNER
+                        ):
+                            if USE_VERTICAL_MODIFIERS in self.situation.syntax_hints:
+                                token = DependencyTreeToken("short", ADJECTIVE)
+                            else:
+                                token = DependencyTreeToken("small", ADJECTIVE)
+                            self.dependency_graph.add_node(token)
+                            self.dependency_graph.add_edge(
+                                token, noun_dependency_node, role=ADJECTIVAL_MODIFIER
+                            )
 
         def _translate_attribute_as_verb(
             self, _object: SituationObject, noun_dependency_node: DependencyTreeToken
@@ -481,32 +521,11 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                         self._noun_for_object(relation.first_slot),
                         role=NOMINAL_MODIFIER,
                     )
+            # We handle size relationships inside _add_attributes to generate e.g "big cookie"
             elif relation.relation_type == BIGGER_THAN:
-                if (
-                    relation.first_slot in self.situation.salient_objects
-                    and isinstance(relation.second_slot, SituationObject)
-                    and relation.second_slot.ontology_node == LEARNER
-                ):
-                    token = DependencyTreeToken("big", ADJECTIVE)
-                    self.dependency_graph.add_node(token)
-                    self.dependency_graph.add_edge(
-                        token,
-                        self._noun_for_object(relation.first_slot),
-                        role=ADJECTIVAL_MODIFIER,
-                    )
+                pass
             elif relation.relation_type == SMALLER_THAN:
-                if (
-                    relation.first_slot in self.situation.salient_objects
-                    and isinstance(relation.second_slot, SituationObject)
-                    and relation.second_slot.ontology_node == LEARNER
-                ):
-                    token = DependencyTreeToken("small", ADJECTIVE)
-                    self.dependency_graph.add_node(token)
-                    self.dependency_graph.add_edge(
-                        token,
-                        self._noun_for_object(relation.first_slot),
-                        role=ADJECTIVAL_MODIFIER,
-                    )
+                pass
             else:
                 raise RuntimeError(
                     f"Don't know how to translate relation " f"{relation} to English"
@@ -515,7 +534,26 @@ class SimpleRuleBasedEnglishLanguageGenerator(
         def _translate_action_to_verb(
             self, action: Action[OntologyNode, SituationObject]
         ) -> DependencyTreeToken:
-            verb_lexical_entry = self._unique_lexicon_entry(action.action_type)
+            special_lexical: bool = False
+            if (
+                action.action_type in [WALK, TAKE, PUSH, PASS]
+                and action.during
+                and action.during.objects_to_paths
+            ):
+                for (_, path) in action.during.objects_to_paths.items():
+                    if HARD_FORCE in path.properties:
+                        special_lexical = True
+            if special_lexical:
+                if action.action_type == WALK:
+                    verb_lexical_entry = RUN
+                elif action.action_type == TAKE:
+                    verb_lexical_entry = GRAB
+                elif action.action_type == PUSH:
+                    verb_lexical_entry = SHOVE
+                elif action.action_type == PASS:
+                    verb_lexical_entry = TOSS
+            else:
+                verb_lexical_entry = self._unique_lexicon_entry(action.action_type)
 
             # first, we map all the arguments to chunks of dependency tree
             syntactic_roles_to_argument_heads = immutablesetmultidict(
@@ -721,12 +759,23 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             ):
                 return "on"
             elif region.distance == PROXIMAL and not region.direction:
-                return "to"
+                # See: https://github.com/isi-vista/adam/issues/836
+                if USE_NEAR in self.situation.syntax_hints:
+                    return "near"
+                else:
+                    return "to"
             elif region.direction == GRAVITATIONAL_UP:
-                return "over"
+                if USE_ABOVE_BELOW in self.situation.syntax_hints:
+                    return "above"
+                else:
+                    return "over"
             elif region.direction == GRAVITATIONAL_DOWN:
-                return "under"
-            # region.distance == DISTAL is not check as this does not define a specific preposition in scope for Phase 1
+                if USE_ABOVE_BELOW in self.situation.syntax_hints:
+                    return "below"
+                else:
+                    return "under"
+            elif region.distance == DISTAL and not region.direction:
+                return "far from"
             elif region.direction and self.situation.axis_info:
                 if not self.situation.axis_info.addressee:
                     raise RuntimeError(
@@ -911,7 +960,14 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 preposition = "in"
 
             elif region.distance == PROXIMAL and not region.direction:
-                preposition = "to"
+                # See: https://github.com/isi-vista/adam/issues/836
+                if USE_NEAR in self.situation.syntax_hints:
+                    preposition = "near"
+                else:
+                    preposition = "to"
+
+            elif region.distance == DISTAL and not region.direction:
+                preposition = "far from"
 
             elif region.direction:
                 direction_axis = region.direction.relative_to_concrete_axis(
@@ -924,9 +980,15 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                 else:
                     if direction_axis.aligned_to_gravitational:
                         if region.direction.positive:
-                            preposition = "over"
+                            if USE_ABOVE_BELOW in self.situation.syntax_hints:
+                                preposition = "above"
+                            else:
+                                preposition = "over"
                         else:
-                            preposition = "under"
+                            if USE_ABOVE_BELOW in self.situation.syntax_hints:
+                                preposition = "below"
+                            else:
+                                preposition = "under"
                     else:
                         # TODO: hack for M3; revisit in cleanup
                         # see: https://github.com/isi-vista/adam/issues/573
@@ -1130,3 +1192,6 @@ IGNORE_HAS_AS_VERB = "IGNORE_HAS_AS_VERB"
 ATTRIBUTES_AS_X_IS_Y = "ATTRIBUTES_AS_X_IS_Y"
 IGNORE_SIZE_ATTRIBUTE = "IGNORE_SIZE_ATTRIBUTE"
 IGNORE_GOAL = "IGNORE_GOAL"
+USE_VERTICAL_MODIFIERS = "USE_VERTICAL_MODIFIERS"
+USE_ABOVE_BELOW = "USE_ABOVE_BELOW"
+USE_NEAR = "USE_NEAR"

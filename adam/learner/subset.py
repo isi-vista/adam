@@ -20,7 +20,12 @@ from adam.perception.perception_graph import DebugCallableType
 from adam.semantics import Concept
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
-from immutablecollections import ImmutableSet, immutabledict, immutableset
+from immutablecollections import (
+    ImmutableSet,
+    immutabledict,
+    immutableset,
+    immutablesetmultidict,
+)
 
 
 @attrs
@@ -44,10 +49,21 @@ class AbstractSubsetLearner(AbstractTemplateLearner, ABC):
             previous_pattern_hypothesis = self._surface_template_to_hypothesis[
                 surface_template
             ]
+            raw_new_pattern_hypothesis = self._hypothesis_from_perception(
+                preprocessed_input
+            )
 
             updated_hypothesis = previous_pattern_hypothesis.intersection(
-                self._hypothesis_from_perception(preprocessed_input),
+                raw_new_pattern_hypothesis,
                 ontology=self._ontology,
+                allowed_matches=immutablesetmultidict(
+                    [
+                        (node2, node1)
+                        for previous_slot, node1 in previous_pattern_hypothesis.template_variable_to_pattern_node.items()
+                        for new_slot, node2 in raw_new_pattern_hypothesis.template_variable_to_pattern_node.items()
+                        if previous_slot == new_slot
+                    ]
+                ),
             )
 
             if updated_hypothesis:
@@ -183,7 +199,16 @@ class AbstractSubsetLearnerNew(AbstractTemplateLearnerNew, ABC):
             )
             updated_hypotheses_maybe_null = [
                 previous_pattern_hypothesis.intersection(
-                    hypothesis_from_current_perception, ontology=self._ontology
+                    hypothesis_from_current_perception,
+                    ontology=self._ontology,
+                    allowed_matches=immutablesetmultidict(
+                        [
+                            (node2, node1)
+                            for previous_slot, node1 in previous_pattern_hypothesis.template_variable_to_pattern_node.items()
+                            for new_slot, node2 in hypothesis_from_current_perception.template_variable_to_pattern_node.items()
+                            if previous_slot == new_slot
+                        ]
+                    ),
                 )
                 for previous_pattern_hypothesis in previous_pattern_hypotheses
                 for hypothesis_from_current_perception in hypotheses_from_current_perception

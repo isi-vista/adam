@@ -14,6 +14,7 @@ from adam.curriculum.curriculum_utils import (
 )
 from adam.curriculum.phase1_curriculum import (
     _make_come_down_template,
+    make_push_templates,
     make_drink_template,
     make_eat_template,
     make_fall_templates,
@@ -22,7 +23,6 @@ from adam.curriculum.phase1_curriculum import (
     make_go_templates,
     make_jump_templates,
     make_move_templates,
-    make_push_templates,
     make_put_templates,
     make_roll_templates,
     make_sit_templates,
@@ -36,6 +36,9 @@ from adam.learner.objects import ObjectRecognizerAsTemplateLearner
 from adam.learner.verbs import SubsetVerbLearner, SubsetVerbLearnerNew
 from adam.ontology import IS_SPEAKER, THING
 from adam.ontology.phase1_ontology import (
+    INANIMATE_OBJECT,
+    CAN_HAVE_THINGS_RESTING_ON_THEM,
+    INANIMATE,
     AGENT,
     ANIMATE,
     GAILA_PHASE_1_ONTOLOGY,
@@ -255,6 +258,7 @@ def test_put_subset(language_generator):
         run_verb_test(learner, situation_template, language_generator=language_generator)
 
 
+
 @pytest.mark.parametrize(
     "language_generator",
     [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
@@ -281,6 +285,21 @@ def test_push_subset(language_generator):
     for situation_template in make_push_templates():
         learner = SUBSET_LEARNER
         run_verb_test(learner, situation_template, language_generator=language_generator)
+
+@pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
+def test_push(learner_factory):
+    for situation_template in make_push_templates(
+        agent=standard_object("pusher", THING, required_properties=[ANIMATE]),
+        theme=standard_object("pushee", INANIMATE_OBJECT),
+        push_surface=standard_object(
+            "push_surface", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
+        ),
+        push_goal=standard_object("push_goal", INANIMATE_OBJECT),
+        use_adverbial_path_modifier=False,
+    ):
+        learner = learner_factory()
+        run_verb_test(learner, situation_template)
+
 
 
 # GO
@@ -400,6 +419,7 @@ def test_come_integrated(language_generator):
         run_verb_test(learner, situation_template, language_generator=language_generator)
 
 
+
 # COME
 @pytest.mark.parametrize(
     "language_generator",
@@ -441,6 +461,19 @@ def test_come_subset(language_generator):
     ]:
         learner = SUBSET_LEARNER
         run_verb_test(learner, situation_template, language_generator=language_generator)
+
+@pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
+def test_take(learner_factory):
+    learner = learner_factory()
+    run_verb_test(
+        learner,
+        make_take_template(
+            agent=standard_object("taker_0", THING, required_properties=[ANIMATE]),
+            theme=standard_object("object_taken_0", required_properties=[INANIMATE]),
+            use_adverbial_path_modifier=False,
+        ),
+    )
+
 
 
 @pytest.mark.parametrize(

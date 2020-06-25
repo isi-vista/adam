@@ -10,6 +10,9 @@ from adam.language_specific.english.english_language_generator import (
     USE_ADVERBIAL_PATH_MODIFIER,
     ATTRIBUTES_AS_X_IS_Y,
     IGNORE_COLORS,
+    USE_ABOVE_BELOW,
+    USE_NEAR,
+    USE_VERTICAL_MODIFIERS,
 )
 from adam.language_specific.english.english_phase_1_lexicon import (
     GAILA_PHASE_1_ENGLISH_LEXICON,
@@ -64,6 +67,11 @@ from adam.ontology.phase1_ontology import (
     bigger_than,
     RED,
     BLACK,
+    far,
+    WALK,
+    HARD_FORCE,
+    PASS,
+    WALK_SURFACE_AUXILIARY,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -1503,6 +1511,14 @@ def test_beside_distal():
         ),
     )
 
+    with pytest.raises(RuntimeError):
+        generated_tokens(beside_distal)
+
+
+def test_distal_action():
+    box = situation_object(BOX)
+    mom = situation_object(MOM)
+
     basic_distal = HighLevelSemanticsSituation(
         salient_objects=[mom, box],
         actions=[
@@ -1516,12 +1532,68 @@ def test_beside_distal():
         ],
         ontology=GAILA_PHASE_1_ONTOLOGY,
     )
+    assert generated_tokens(basic_distal) == ("Mom", "goes", "far from", "a", "box")
 
-    with pytest.raises(RuntimeError):
-        generated_tokens(beside_distal)
 
-    with pytest.raises(RuntimeError):
-        generated_tokens(basic_distal)
+def test_near():
+    table = situation_object(TABLE)
+    box = situation_object(BOX)
+
+    below_situation = HighLevelSemanticsSituation(
+        salient_objects=[box, table],
+        always_relations=[near(box, table)],
+        syntax_hints=[USE_NEAR],
+        gazed_objects=[box],
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+    )
+
+    assert generated_tokens(below_situation) == ("a", "box", "near", "a", "table")
+
+
+def test_far():
+    table = situation_object(TABLE)
+    box = situation_object(BOX)
+
+    below_situation = HighLevelSemanticsSituation(
+        salient_objects=[box, table],
+        always_relations=[far(box, table)],
+        gazed_objects=[box],
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+    )
+
+    assert generated_tokens(below_situation) == ("a", "box", "far from", "a", "table")
+
+
+def test_below():
+    table = situation_object(TABLE)
+    box = situation_object(BOX)
+
+    below_situation = HighLevelSemanticsSituation(
+        salient_objects=[table],
+        other_objects=[box],
+        always_relations=[strictly_above(table, box)],
+        syntax_hints=[USE_ABOVE_BELOW],
+        gazed_objects=[box],
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+    )
+
+    assert generated_tokens(below_situation) == ("a", "box", "below", "a", "table")
+
+
+def test_above():
+    table = situation_object(TABLE)
+    box = situation_object(BOX)
+
+    below_situation = HighLevelSemanticsSituation(
+        salient_objects=[box],
+        other_objects=[table],
+        always_relations=[strictly_above(table, box)],
+        syntax_hints=[USE_ABOVE_BELOW],
+        gazed_objects=[box],
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+    )
+
+    assert generated_tokens(below_situation) == ("a", "table", "above", "a", "box")
 
 
 def test_action_attribute_request():
@@ -1563,6 +1635,165 @@ def test_box_without_attribute():
 
     with pytest.raises(RuntimeError):
         generated_tokens(box_without_attribute)
+
+
+def test_bigger_than():
+    box = situation_object(BOX)
+    learner = situation_object(LEARNER)
+    big_box = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[box, learner],
+        always_relations=[bigger_than(box, learner)],
+    )
+    assert generated_tokens(situation=big_box) == ("a", "big", "box")
+
+
+def test_taller_than():
+    box = situation_object(BOX)
+    learner = situation_object(LEARNER)
+    big_box = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[box, learner],
+        always_relations=[bigger_than(box, learner)],
+        syntax_hints=[USE_VERTICAL_MODIFIERS],
+    )
+    assert generated_tokens(situation=big_box) == ("a", "tall", "box")
+
+
+def test_shorter_than():
+    box = situation_object(BOX)
+    learner = situation_object(LEARNER)
+    big_box = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[box, learner],
+        always_relations=[bigger_than(learner, box)],
+        syntax_hints=[USE_VERTICAL_MODIFIERS],
+    )
+    assert generated_tokens(situation=big_box) == ("a", "short", "box")
+
+
+def test_smaller_than():
+    box = situation_object(BOX)
+    learner = situation_object(LEARNER)
+    big_box = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[box, learner],
+        always_relations=[bigger_than(learner, box)],
+    )
+    assert generated_tokens(situation=big_box) == ("a", "small", "box")
+
+
+def test_run():
+    mom = situation_object(MOM, properties=[IS_SPEAKER])
+    mom_runs = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom],
+        actions=[
+            Action(
+                WALK,
+                auxiliary_variable_bindings=[(WALK_SURFACE_AUXILIARY, GROUND)],
+                argument_roles_to_fillers=[(AGENT, mom)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            mom,
+                            SpatialPath(
+                                None, reference_object=GROUND, properties=[HARD_FORCE]
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+    )
+    assert generated_tokens(mom_runs) == ("I", "run")
+
+
+def test_toss():
+    mom = situation_object(MOM, properties=[IS_ADDRESSEE])
+    ball = situation_object(BALL)
+    mom_tosses = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom, ball],
+        actions=[
+            Action(
+                PASS,
+                argument_roles_to_fillers=[(AGENT, mom), (THEME, ball)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            mom,
+                            SpatialPath(
+                                None, reference_object=GROUND, properties=[HARD_FORCE]
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+    )
+    assert generated_tokens(mom_tosses) == ("you", "toss", "a", "ball")
+
+
+def test_shove():
+    mom = situation_object(MOM)
+    ball = situation_object(BALL)
+    table = situation_object(TABLE)
+    mom_shoves = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom, ball, table],
+        actions=[
+            Action(
+                PUSH,
+                argument_roles_to_fillers=[(AGENT, mom), (THEME, ball), (GOAL, table)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            mom,
+                            SpatialPath(
+                                None, reference_object=table, properties=[HARD_FORCE]
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+    )
+    assert generated_tokens(mom_shoves) == (
+        "Mom",
+        "shoves",
+        "a",
+        "ball",
+        "to",
+        "a",
+        "table",
+    )
+
+
+def test_grab():
+    mom = situation_object(MOM)
+    ball = situation_object(BALL)
+    mom_grab = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom, ball],
+        actions=[
+            Action(
+                TAKE,
+                argument_roles_to_fillers=[(AGENT, mom), (THEME, ball)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            mom,
+                            SpatialPath(
+                                None, reference_object=GROUND, properties=[HARD_FORCE]
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+    )
+    assert generated_tokens(mom_grab) == ("Mom", "grabs", "a", "ball")
 
 
 def generated_tokens(situation):

@@ -65,6 +65,7 @@ from adam.situation.high_level_semantics_situation import HighLevelSemanticsSitu
 from attr import Factory, attrib, attrs
 from attr.validators import deep_mapping, instance_of
 from immutablecollections import (
+    ImmutableDict,
     ImmutableSet,
     ImmutableSetMultiDict,
     immutabledict,
@@ -456,17 +457,32 @@ class _PerceptionGeneration:
         return region.copy_remapping_objects(self._objects_to_perceptions)
 
     def _perceive_property_assertions(self) -> None:
-        for situation_object in self._situation.all_objects:
+        # Situation objects require some special logic, so we need to be able to (1) check if a
+        # perception came from a situation object, and (2) get the situation object if so.
+        object_perceptions_to_situation_objects: ImmutableDict[
+            ObjectPerception, SituationObject
+        ] = immutabledict(
+            [
+                (self._objects_to_perceptions[situation_object], situation_object)
+                for situation_object in self._situation.all_objects
+            ]
+        )
+        for (
+            object_perception,
+            ontology_node,
+        ) in self._object_perceptions_to_ontology_nodes.items():
             # process explicitly and implicitly-specified properties
             all_object_properties: List[OntologyNode] = []
             # Explicit properties are stipulated by the user in the situation description.
-            all_object_properties.extend(situation_object.properties)
+            if object_perception in object_perceptions_to_situation_objects:
+                situation_object = object_perceptions_to_situation_objects[
+                    object_perception
+                ]
+                all_object_properties.extend(situation_object.properties)
             # Implicit properties are derived from what type of thing an object is,
             # e.g. that people are ANIMATE.
             all_object_properties.extend(
-                self._generator.ontology.properties_for_node(
-                    situation_object.ontology_node
-                )
+                self._generator.ontology.properties_for_node(ontology_node)
             )
 
             # Colors require special processing, so we ignore them for now
@@ -478,32 +494,44 @@ class _PerceptionGeneration:
             ]
 
             # If it is a liquid not inside a container, add two-dimensional property
-            if LIQUID in GAILA_PHASE_2_ONTOLOGY.properties_for_node(
-                situation_object.ontology_node
-            ) and not any(
-                r.first_slot == situation_object
-                and r.relation_type == IN_REGION
-                and isinstance(r.second_slot, Region)
-                and HOLLOW
-                in GAILA_PHASE_1_ONTOLOGY.properties_for_node(
-                    r.second_slot.reference_object.ontology_node
+            if (
+                LIQUID
+                in GAILA_PHASE_2_ONTOLOGY.properties_for_node(
+                    ontology_node
+                    # TODO: Handle non-explicit liquid objects (subobjects, etc.)
                 )
-                and r.second_slot.distance == INTERIOR
-                for r in self._situation.always_relations
+                and (object_perception in object_perceptions_to_situation_objects)
+                and not any(
+                    r.first_slot
+                    == object_perceptions_to_situation_objects[object_perception]
+                    and r.relation_type == IN_REGION
+                    and isinstance(r.second_slot, Region)
+                    and HOLLOW
+                    in GAILA_PHASE_2_ONTOLOGY.properties_for_node(
+                        r.second_slot.reference_object.ontology_node
+                    )
+                    and r.second_slot.distance == INTERIOR
+                    for r in self._situation.always_relations
+                )
             ):
                 properties_to_perceive.append(TWO_DIMENSIONAL)
 
-            # Focused Objects are in a special field of the Situation, we check if the situation_object
-            # is a focused and apply the tag here if that is the case.
-            if situation_object in self._situation.gazed_objects:
-                properties_to_perceive.append(GAZED_AT)
+            # Logic relevant only to situation_objects, such as gaze handling
+            if object_perception in object_perceptions_to_situation_objects:
+                # Focused Objects are in a special field of the Situation, we check if the situation_object
+                # is a focused and apply the tag here if that is the case.
+                situation_object = object_perceptions_to_situation_objects[
+                    object_perception
+                ]
+                if situation_object in self._situation.gazed_objects:
+                    properties_to_perceive.append(GAZED_AT)
 
             # We wrap an ImmutableSet around properties_to_perceive to remove duplicates
             # while still guaranteeing deterministic iteration order.
             for property_ in immutableset(properties_to_perceive):
                 self._perceive_property(
                     self._generator.ontology.properties_for_node(property_),
-                    self._objects_to_perceptions[situation_object],
+                    object_perception,
                     property_,
                 )
 

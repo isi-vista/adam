@@ -10,6 +10,10 @@ from adam.curriculum.curriculum_utils import (
     Phase1InstanceGroup,
     phase1_instances,
 )
+from adam.language_specific.english.english_language_generator import (
+    USE_ABOVE_BELOW,
+    USE_NEAR,
+)
 from adam.ontology import IS_ADDRESSEE, IS_SPEAKER, THING
 from adam.ontology.phase1_ontology import (
     BALL,
@@ -101,6 +105,7 @@ def _under_template(
     *,
     is_training: bool,
     is_distal: bool,
+    syntax_hints: Iterable[str] = [],
 ) -> Phase1SituationTemplate:
     handle = "training" if is_training else "testing"
     # TODO: currently this hack keeps old implementation for English that hasn't solved https://github.com/isi-vista/adam/issues/802
@@ -114,6 +119,7 @@ def _under_template(
         ],
         constraining_relations=[bigger_than(ground, figure)],
         gazed_objects=[figure],
+        syntax_hints=syntax_hints,
     )
 
 
@@ -124,6 +130,7 @@ def _over_template(
     *,
     is_training: bool,
     is_distal: bool,
+    syntax_hints: Iterable[str] = [],
 ) -> Phase1SituationTemplate:
     handle = "training" if is_training else "testing"
     # TODO: currently this hack keeps old implementation for English that hasn't solved https://github.com/isi-vista/adam/issues/802
@@ -136,6 +143,7 @@ def _over_template(
             strictly_over(figure, ground, dist=DISTAL if is_distal else PROXIMAL)
         ],
         gazed_objects=[figure],
+        syntax_hints=syntax_hints,
     )
 
 
@@ -211,10 +219,28 @@ def _near_template(
 ) -> Phase1SituationTemplate:
     handle = "training" if is_training else "testing"
     return Phase1SituationTemplate(
-        f"preposition-{handle}-{figure.handle}-behind-{ground.handle}",
+        f"preposition-{handle}-{figure.handle}-near-{ground.handle}",
         salient_object_variables=[figure, ground],
         background_object_variables=background,
         asserted_always_relations=[near(figure, ground)],
+        gazed_objects=[figure],
+        syntax_hints=[USE_NEAR],
+    )
+
+
+def _far_template(
+    figure: TemplateObjectVariable,
+    ground: TemplateObjectVariable,
+    background: Iterable[TemplateObjectVariable],
+    *,
+    is_training: bool,
+) -> Phase1SituationTemplate:
+    handle = "training" if is_training else "testing"
+    return Phase1SituationTemplate(
+        f"preposition-{handle}-{figure.handle}-far-{ground.handle}",
+        salient_object_variables=[figure, ground],
+        background_object_variables=background,
+        asserted_always_relations=[far(figure, ground)],
         gazed_objects=[figure],
     )
 
@@ -332,6 +358,7 @@ def _make_under_training(
                         else immutableset(),
                         is_training=True,
                         is_distal=distance,
+                        syntax_hints=[USE_ABOVE_BELOW] if use_above_below else [],
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
@@ -340,6 +367,7 @@ def _make_under_training(
                 for figure in figures
                 for ground in grounds
                 for distance in BOOL_SET
+                for use_above_below in BOOL_SET
             ]
         ),
     )
@@ -370,6 +398,7 @@ def _make_over_training(
                         else immutableset(),
                         is_training=True,
                         is_distal=distance,
+                        syntax_hints=[USE_ABOVE_BELOW] if use_above_below else [],
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
@@ -378,6 +407,7 @@ def _make_over_training(
                 for figure in figures
                 for ground in grounds
                 for distance in BOOL_SET
+                for use_above_below in BOOL_SET
             ]
         ),
     )
@@ -564,6 +594,50 @@ def _make_near_training(
     )
 
 
+def _make_far_training(
+    num_samples: int = 5, *, noise_objects: bool = True
+) -> Phase1InstanceGroup:
+    figure_0 = standard_object("ball", BALL)
+    figure_1 = standard_object("book", BOOK)
+    figure_2 = standard_object("dad", DAD)
+    ground_0 = standard_object("cookie", COOKIE)
+    ground_1 = standard_object("table", TABLE)
+    ground_2 = standard_object("person", PERSON)
+
+    figures = immutableset([figure_0, figure_1, figure_2])
+    grounds = immutableset([ground_0, ground_1, ground_2])
+
+    return phase1_instances(
+        "Preposition Training Far",
+        chain(
+            *[
+                flatten(
+                    [
+                        sampled(
+                            _far_template(
+                                figure,
+                                ground,
+                                make_background(
+                                    [figure, ground],
+                                    all_objects=flatten([figures, grounds]),
+                                )
+                                if noise_objects
+                                else immutableset([]),
+                                is_training=True,
+                            ),
+                            ontology=GAILA_PHASE_1_ONTOLOGY,
+                            chooser=PHASE1_CHOOSER_FACTORY(),
+                            max_to_sample=num_samples,
+                        )
+                        for figure in figures
+                        for ground in grounds
+                    ]
+                )
+            ]
+        ),
+    )
+
+
 def _make_on_tests(
     num_samples: int = 5, *, noise_objects: bool = True
 ) -> Phase1InstanceGroup:
@@ -688,6 +762,7 @@ def _make_under_tests(
                         else immutableset(),
                         is_training=False,
                         is_distal=distance,
+                        syntax_hints=[USE_ABOVE_BELOW] if use_above_below else [],
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
@@ -696,6 +771,7 @@ def _make_under_tests(
                 for figure in figures
                 for ground in grounds
                 for distance in BOOL_SET
+                for use_above_below in BOOL_SET
             ]
         ),
     )
@@ -725,6 +801,7 @@ def _make_over_tests(
                         else immutableset(),
                         is_training=False,
                         is_distal=distance,
+                        syntax_hints=[USE_ABOVE_BELOW] if use_above_below else [],
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
@@ -733,6 +810,7 @@ def _make_over_tests(
                 for figure in figures
                 for ground in grounds
                 for distance in BOOL_SET
+                for use_above_below in BOOL_SET
             ]
         ),
     )
@@ -915,6 +993,48 @@ def _make_near_tests(
     )
 
 
+def _make_far_tests(
+    num_samples: int = 5, *, noise_objects: bool = True
+) -> Phase1InstanceGroup:
+    figure_0 = standard_object("figure_0", THING, banned_properties=[HOLLOW])
+    figure_1 = standard_object("figure_1", THING, banned_properties=[HOLLOW])
+    ground_0 = standard_object("ground_0", THING, banned_properties=[HOLLOW])
+    ground_1 = standard_object("ground_1", THING, banned_properties=[HOLLOW])
+
+    figures = immutableset([figure_0, figure_1])
+    grounds = immutableset([ground_0, ground_1])
+
+    return phase1_instances(
+        "Preposition Testing Far",
+        chain(
+            *[
+                flatten(
+                    [
+                        sampled(
+                            _far_template(
+                                figure,
+                                ground,
+                                make_background(
+                                    [figure, ground],
+                                    all_objects=flatten([figures, grounds]),
+                                )
+                                if noise_objects
+                                else immutableset([]),
+                                is_training=False,
+                            ),
+                            ontology=GAILA_PHASE_1_ONTOLOGY,
+                            chooser=PHASE1_CHOOSER_FACTORY(),
+                            max_to_sample=num_samples,
+                        )
+                        for figure in figures
+                        for ground in grounds
+                    ]
+                )
+            ]
+        ),
+    )
+
+
 def make_prepositions_curriculum_training(
     num_samples: int = 5, *, noise_objects: bool = True
 ):
@@ -927,6 +1047,7 @@ def make_prepositions_curriculum_training(
         _make_behind_training(num_samples, noise_objects=noise_objects),
         _make_in_front_training(num_samples, noise_objects=noise_objects),
         _make_near_training(num_samples, noise_objects=noise_objects),
+        _make_far_training(num_samples, noise_objects=noise_objects),
     ]
 
 
@@ -942,6 +1063,7 @@ def make_prepositions_curriculum_testing(
         _make_behind_tests(num_samples, noise_objects=noise_objects),
         _make_in_front_tests(num_samples, noise_objects=noise_objects),
         _make_near_tests(num_samples, noise_objects=noise_objects),
+        _make_far_tests(num_samples, noise_objects=noise_objects),
     ]
 
 

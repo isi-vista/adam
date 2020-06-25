@@ -214,6 +214,12 @@ subtype(FAST, PROPERTY)
 SLOW = OntologyNode("slow")
 subtype(SLOW, PROPERTY)
 
+# forcefulness distinctions
+HARD_FORCE = OntologyNode("hard-force")
+subtype(HARD_FORCE, PROPERTY)
+SOFT_FORCE = OntologyNode("soft-force")
+subtype(SOFT_FORCE, PROPERTY)
+
 COLOR = OntologyNode("color")
 subtype(COLOR, PERCEIVABLE_PROPERTY)
 RED = OntologyNode("red", [CAN_FILL_TEMPLATE_SLOT])
@@ -311,6 +317,10 @@ BALL = OntologyNode(
     [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, ROLLABLE, RED, BLUE, GREEN, BLACK, WHITE],
 )
 subtype(BALL, INANIMATE_OBJECT)
+WATERMELON = OntologyNode(
+    "watermelon", [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, EDIBLE, ROLLABLE, GREEN]
+)
+subtype(WATERMELON, INANIMATE_OBJECT)
 BOOK = OntologyNode(
     "book",
     [
@@ -386,7 +396,7 @@ HEAD = OntologyNode(
     "head",
     [HOLLOW, CAN_FILL_TEMPLATE_SLOT, CAN_HAVE_THINGS_RESTING_ON_THEM, IS_BODY_PART],
 )
-subtype(HEAD, INANIMATE_OBJECT)
+subtype(HEAD, THING)
 MILK = OntologyNode(
     "milk", [LIQUID], non_inheritable_properties=[WHITE, CAN_FILL_TEMPLATE_SLOT, EDIBLE]
 )
@@ -394,7 +404,7 @@ subtype(MILK, SUBSTANCE)
 HAND = OntologyNode(
     "hand", [CAN_MANIPULATE_OBJECTS, CAN_FILL_TEMPLATE_SLOT, IS_BODY_PART]
 )
-subtype(HAND, INANIMATE_OBJECT)
+subtype(HAND, THING)
 TRUCK = OntologyNode(
     "truck",
     [
@@ -458,6 +468,7 @@ PHASE_1_CURRICULUM_OBJECTS = immutableset(
     [
         BABY,
         BALL,
+        WATERMELON,
         BIRD,
         BOOK,
         BOX,
@@ -485,7 +496,7 @@ PHASE_1_CURRICULUM_OBJECTS = immutableset(
 _BODY_PART = OntologyNode("body-part", [IS_BODY_PART])
 subtype(_BODY_PART, THING)
 _ARM = OntologyNode("arm")
-subtype(_ARM, INANIMATE_OBJECT)
+subtype(_ARM, THING)
 _TORSO = OntologyNode("torso")
 subtype(_TORSO, _BODY_PART)
 _ANIMAL_LEG = OntologyNode("(animal) leg")
@@ -528,7 +539,10 @@ _FOOT = OntologyNode("foot")
 subtype(_FOOT, _BODY_PART)
 
 # Verbs
-
+WALK = OntologyNode("walk")
+subtype(WALK, ACTION)
+RUN = OntologyNode("run")
+subtype(RUN, ACTION)
 STATE = OntologyNode("state")
 CONSUME = OntologyNode("consume")
 subtype(CONSUME, ACTION)
@@ -536,12 +550,16 @@ PUT = OntologyNode("put")
 subtype(PUT, ACTION)
 PUSH = OntologyNode("push")
 subtype(PUSH, ACTION)
+SHOVE = OntologyNode("shove")
+subtype(SHOVE, ACTION)
 GO = OntologyNode("go")
 subtype(GO, ACTION)
 COME = OntologyNode("come")
 subtype(COME, ACTION)
 TAKE = OntologyNode("take")
 subtype(TAKE, ACTION)
+GRAB = OntologyNode("grab")
+subtype(GRAB, ACTION)
 EAT = OntologyNode("eat")
 subtype(EAT, CONSUME)
 GIVE = OntologyNode("give", [TRANSFER_OF_POSSESSION])
@@ -558,6 +576,8 @@ THROW = OntologyNode("throw", [TRANSFER_OF_POSSESSION])
 subtype(THROW, ACTION)
 PASS = OntologyNode("pass", [TRANSFER_OF_POSSESSION])
 subtype(PASS, ACTION)
+TOSS = OntologyNode("pass", [TRANSFER_OF_POSSESSION])
+subtype(TOSS, ACTION)
 MOVE = OntologyNode("move")
 subtype(MOVE, ACTION)
 JUMP = OntologyNode("jump")
@@ -797,6 +817,24 @@ def _make_ball_schema() -> ObjectStructuralSchema:
         ontology_node=BALL,
         geon=Geon(
             cross_section=CIRCULAR,
+            cross_section_size=SMALL_TO_LARGE_TO_SMALL,
+            axes=Axes(
+                primary_axis=generating_axis,
+                orienting_axes=[orienting_axis_0, orienting_axis_1],
+            ),
+        ),
+    )
+
+
+def _make_watermelon_schema() -> ObjectStructuralSchema:
+    generating_axis = symmetric_vertical("watermelon-generating")
+    orienting_axis_0 = symmetric("watermelon-orienting-0")
+    orienting_axis_1 = symmetric("watermelon-orienting-1")
+
+    return ObjectStructuralSchema(
+        ontology_node=WATERMELON,
+        geon=Geon(
+            cross_section=OVALISH,
             cross_section_size=SMALL_TO_LARGE_TO_SMALL,
             axes=Axes(
                 primary_axis=generating_axis,
@@ -1348,6 +1386,7 @@ def _make_human_arm_segment():
 
 _DOOR_SCHEMA = _make_door_schema()
 _BALL_SCHEMA = _make_ball_schema()
+_WATERMELON_SCHEMA = _make_watermelon_schema()
 _BOX_SCHEMA = _make_box_schema()
 _HAT_SCHEMA = _make_hat_schema()
 _COOKIE_SCHEMA = _make_cookie_schema()
@@ -1920,6 +1959,7 @@ _TAKE_ACTION_DESCRIPTION = ActionDescription(
     ],
 )
 
+
 _EAT_AGENT = ActionDescriptionVariable(THING, properties=[ANIMATE])
 _EAT_PATIENT = ActionDescriptionVariable(INANIMATE_OBJECT, properties=[EDIBLE])
 
@@ -2408,6 +2448,19 @@ def _make_jump_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
     )
 
 
+_WALK_AGENT = ActionDescriptionVariable(THING, properties=[ANIMATE])
+WALK_SURFACE_AUXILIARY = ActionDescriptionVariable(
+    INANIMATE_OBJECT,
+    properties=[CAN_HAVE_THINGS_RESTING_ON_THEM],
+    debug_handle="walk-surface-aux",
+)
+_WALK_ACTION_DESCRIPTION = ActionDescription(
+    frame=ActionDescriptionFrame({AGENT: _WALK_AGENT}),
+    during=DuringAction(continuously=[on(_WALK_AGENT, WALK_SURFACE_AUXILIARY)]),
+    asserted_properties=[(_WALK_AGENT, MOVES)],
+)
+
+
 ROLL_SURFACE_AUXILIARY = ActionDescriptionVariable(
     INANIMATE_OBJECT,
     properties=[CAN_HAVE_THINGS_RESTING_ON_THEM],
@@ -2501,6 +2554,11 @@ _ACTIONS_TO_DESCRIPTIONS = [
     (EAT, _EAT_ACTION_DESCRIPTION),
     (FALL, _FALL_ACTION_DESCRIPTION),
     (FLY, _FLY_ACTION_DESCRIPTION),
+    (WALK, _WALK_ACTION_DESCRIPTION),
+    (RUN, _WALK_ACTION_DESCRIPTION),
+    (GRAB, _TAKE_ACTION_DESCRIPTION),
+    (SHOVE, list(_make_push_descriptions())[0][1]),
+    (TOSS, list(_make_pass_descriptions())[0][1]),
 ]
 
 _ACTIONS_TO_DESCRIPTIONS.extend(_make_roll_description())
@@ -2530,7 +2588,7 @@ GAILA_PHASE_1_SIZE_GRADES: Tuple[Tuple[OntologyNode, ...], ...] = (
     (_TORSO, _CHAIR_BACK, _CHAIR_SEAT),
     (_ARM, _ANIMAL_LEG, _INANIMATE_LEG),
     (HAND, HEAD, _ARM_SEGMENT, _LEG_SEGMENT, _FOOT),
-    (BALL, BIRD, BOOK, COOKIE, CUP, HAT, JUICE, WATER, MILK),
+    (WATERMELON, BALL, BIRD, BOOK, COOKIE, CUP, HAT, JUICE, WATER, MILK),
     (_TAIL, _WING),
 )
 
@@ -2539,6 +2597,7 @@ GAILA_PHASE_1_ONTOLOGY = Ontology(
     _ontology_graph,
     structural_schemata=[
         (BALL, _BALL_SCHEMA),
+        (WATERMELON, _WATERMELON_SCHEMA),
         (CHAIR, _CHAIR_SCHEMA),
         (PERSON, _PERSON_SCHEMA),
         (TABLE, _TABLE_SCHEMA),
