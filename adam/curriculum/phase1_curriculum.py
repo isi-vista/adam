@@ -1102,7 +1102,7 @@ def make_pass_template(
                             agent,
                             SpatialPath(
                                 None,
-                                reference_object=GROUND_OBJECT_TEMPLATE,
+                                reference_object=goal,
                                 properties=spatial_properties,
                             ),
                         )
