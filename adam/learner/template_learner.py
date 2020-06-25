@@ -377,8 +377,8 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
             root: ObjectPerception = _get_root_object_perception(
                 pattern_match.matched_sub_graph._graph,  # pylint:disable=protected-access
                 immutableset(
-                    pattern_match.matched_sub_graph._graph.nodes,
-                    disable_order_check=True,  # pylint:disable=protected-access
+                    pattern_match.matched_sub_graph._graph.nodes,  # pylint:disable=protected-access
+                    disable_order_check=True,
                 ),
             )
             if root not in already_replaced:
