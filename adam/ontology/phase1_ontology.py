@@ -541,6 +541,8 @@ subtype(_FOOT, _BODY_PART)
 # Verbs
 WALK = OntologyNode("walk")
 subtype(WALK, ACTION)
+RUN = OntologyNode("run")
+subtype(RUN, ACTION)
 STATE = OntologyNode("state")
 CONSUME = OntologyNode("consume")
 subtype(CONSUME, ACTION)
@@ -548,12 +550,16 @@ PUT = OntologyNode("put")
 subtype(PUT, ACTION)
 PUSH = OntologyNode("push")
 subtype(PUSH, ACTION)
+SHOVE = OntologyNode("shove")
+subtype(SHOVE, ACTION)
 GO = OntologyNode("go")
 subtype(GO, ACTION)
 COME = OntologyNode("come")
 subtype(COME, ACTION)
 TAKE = OntologyNode("take")
 subtype(TAKE, ACTION)
+GRAB = OntologyNode("grab")
+subtype(GRAB, ACTION)
 EAT = OntologyNode("eat")
 subtype(EAT, CONSUME)
 GIVE = OntologyNode("give", [TRANSFER_OF_POSSESSION])
@@ -570,6 +576,8 @@ THROW = OntologyNode("throw", [TRANSFER_OF_POSSESSION])
 subtype(THROW, ACTION)
 PASS = OntologyNode("pass", [TRANSFER_OF_POSSESSION])
 subtype(PASS, ACTION)
+TOSS = OntologyNode("pass", [TRANSFER_OF_POSSESSION])
+subtype(TOSS, ACTION)
 MOVE = OntologyNode("move")
 subtype(MOVE, ACTION)
 JUMP = OntologyNode("jump")
@@ -1939,6 +1947,7 @@ _TAKE_ACTION_DESCRIPTION = ActionDescription(
     ],
 )
 
+
 _EAT_AGENT = ActionDescriptionVariable(THING, properties=[ANIMATE])
 _EAT_PATIENT = ActionDescriptionVariable(INANIMATE_OBJECT, properties=[EDIBLE])
 
@@ -2534,6 +2543,10 @@ _ACTIONS_TO_DESCRIPTIONS = [
     (FALL, _FALL_ACTION_DESCRIPTION),
     (FLY, _FLY_ACTION_DESCRIPTION),
     (WALK, _WALK_ACTION_DESCRIPTION),
+    (RUN, _WALK_ACTION_DESCRIPTION),
+    (GRAB, _TAKE_ACTION_DESCRIPTION),
+    (SHOVE, list(_make_push_descriptions())[0][1]),
+    (TOSS, list(_make_pass_descriptions())[0][1]),
 ]
 
 _ACTIONS_TO_DESCRIPTIONS.extend(_make_roll_description())
