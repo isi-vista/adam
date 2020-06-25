@@ -1,6 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import AbstractSet, Iterable, List, Mapping, Sequence, Tuple, Union, cast
+from typing import AbstractSet, Iterable, List, Mapping, Sequence, Tuple, Union, cast, Set
 
 from more_itertools import one
 
@@ -17,13 +17,13 @@ from adam.learner.learner_utils import (
 from adam.learner.object_recognizer import (
     PerceptionGraphFromObjectRecognizer,
     replace_match_root_with_object_semantic_node,
-)
+    _get_root_object_perception)
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
 from adam.learner.surface_templates import (
     SurfaceTemplate,
     SurfaceTemplateBoundToSemanticNodes,
 )
-from adam.perception import PerceptualRepresentation
+from adam.perception import PerceptualRepresentation, ObjectPerception
 from adam.perception.deprecated import LanguageAlignedPerception
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -366,12 +366,30 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
         perception_graph_after_matching = perception_semantic_alignment.perception_graph
 
         # Replace any objects found
+        def by_pattern_complexity(pair):
+            _, pattern_match = pair
+            return len(pattern_match.matched_pattern)
+
+        matched_objects.sort(key=by_pattern_complexity, reverse=True)
+        already_replaced: Set[ObjectPerception] = set()
         for (matched_object_node, pattern_match) in matched_objects:
-            perception_graph_after_matching = replace_match_root_with_object_semantic_node(
-                object_semantic_node=cast(ObjectSemanticNode, matched_object_node),
-                current_perception=perception_graph_after_matching,
-                pattern_match=pattern_match,
+            root: ObjectPerception = _get_root_object_perception(
+                pattern_match.matched_sub_graph._graph,
+                # pattern_match.graph_matched_against._graph,
+                immutableset(pattern_match.matched_sub_graph._graph.nodes, disable_order_check=True),
             )
+            if root not in already_replaced:
+                perception_graph_after_matching = replace_match_root_with_object_semantic_node(
+                    object_semantic_node=cast(ObjectSemanticNode, matched_object_node),
+                    current_perception=perception_graph_after_matching,
+                    pattern_match=pattern_match,
+                )
+                already_replaced.add(root)
+            else:
+                logging.info(
+                    f'Matched pattern for {matched_object_node} '
+                    f'but root object {root} already replaced.'
+                )
 
         new_nodes = immutableset(node for (node, _) in match_to_score)
 
