@@ -13,6 +13,7 @@ from adam.ontology.phase1_ontology import (
     GROUND,
     INANIMATE_OBJECT,
     IS_BODY_PART,
+    THING,
     LIQUID,
     LEARNER,
 )
@@ -69,7 +70,7 @@ def standard_object(
 
 def body_part_object(
     debug_handle: str,
-    root_node: OntologyNode = INANIMATE_OBJECT,
+    root_node: OntologyNode = THING,
     *,
     required_properties: Iterable[OntologyNode] = tuple(),
     banned_properties: Iterable[OntologyNode] = immutableset(),

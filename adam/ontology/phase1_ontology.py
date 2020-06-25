@@ -390,7 +390,7 @@ HEAD = OntologyNode(
     "head",
     [HOLLOW, CAN_FILL_TEMPLATE_SLOT, CAN_HAVE_THINGS_RESTING_ON_THEM, IS_BODY_PART],
 )
-subtype(HEAD, INANIMATE_OBJECT)
+subtype(HEAD, THING)
 MILK = OntologyNode(
     "milk", [LIQUID], non_inheritable_properties=[WHITE, CAN_FILL_TEMPLATE_SLOT, EDIBLE]
 )
@@ -398,7 +398,7 @@ subtype(MILK, SUBSTANCE)
 HAND = OntologyNode(
     "hand", [CAN_MANIPULATE_OBJECTS, CAN_FILL_TEMPLATE_SLOT, IS_BODY_PART]
 )
-subtype(HAND, INANIMATE_OBJECT)
+subtype(HAND, THING)
 TRUCK = OntologyNode(
     "truck",
     [
@@ -490,7 +490,7 @@ PHASE_1_CURRICULUM_OBJECTS = immutableset(
 _BODY_PART = OntologyNode("body-part", [IS_BODY_PART])
 subtype(_BODY_PART, THING)
 _ARM = OntologyNode("arm")
-subtype(_ARM, INANIMATE_OBJECT)
+subtype(_ARM, THING)
 _TORSO = OntologyNode("torso")
 subtype(_TORSO, _BODY_PART)
 _ANIMAL_LEG = OntologyNode("(animal) leg")
