@@ -222,9 +222,9 @@ def build_gaila_m8_curriculum() -> Sequence[Phase1InstanceGroup]:
                 _make_put_in_curriculum(),
             ],
             list(make_imprecise_temporal_descriptions()),  # Imprecise descriptions
-            list(make_subtle_verb_distinctions_curriculum()),  # Subtle verb distinctions
             make_verb_with_dynamic_prepositions_curriculum(),  # Dynamic prepositions
             make_prepositions_curriculum(),  # Relative prepositions
             make_imprecise_size_curriculum(),
+            list(make_subtle_verb_distinctions_curriculum()),  # Subtle verb distinctions
         )
     )
