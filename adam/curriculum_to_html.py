@@ -121,7 +121,7 @@ EXPLANATION_HEADER = (
     "</ul>"
 )
 STR_TO_CURRICULUM: Mapping[str, Callable[[], Iterable[Phase1InstanceGroup]]] = {
-    "m8": build_gaila_m8_curriculum,
+    "isi-gaila-milestone-8": build_gaila_m8_curriculum,
     "phase1": build_gaila_phase_1_curriculum,
     "prepositions": make_prepositions_curriculum,
     "pursuit": make_pursuit_curriculum,
