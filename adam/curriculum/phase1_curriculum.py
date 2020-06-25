@@ -1753,7 +1753,7 @@ def make_push_templates(
                             agent,
                             SpatialPath(
                                 None,
-                                reference_object=push_surface,
+                                reference_object=push_goal,
                                 properties=spatial_properties,
                             ),
                         )
