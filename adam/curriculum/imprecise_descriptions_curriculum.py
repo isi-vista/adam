@@ -617,3 +617,23 @@ def make_imprecise_temporal_descriptions(
             num_samples, num_noise_objects=num_noise_objects
         ),
     ]
+
+
+def make_subtle_verb_distinctions_curriculum(
+    num_samples: int = 5, *, num_noise_objects: int = 0
+) -> Sequence[Phase1InstanceGroup]:
+    """One particular instanatiation of the Subtle Verb Distinction Curriculum"""
+    return [
+        make_push_shove_subtle_verb_distinctions(
+            num_samples, num_noise_objects=num_noise_objects
+        ),
+        make_walk_run_subtle_verb_distinction(
+            num_samples, num_noise_objects=num_noise_objects
+        ),
+        make_pass_toss_subtle_verb_distinction(
+            num_samples, num_noise_objects=num_noise_objects
+        ),
+        make_take_grab_subtle_verb_distinction(
+            num_samples, num_noise_objects=num_noise_objects
+        ),
+    ]
