@@ -369,16 +369,22 @@ templates = flatten(
             for hard_force in BOOL_SET
         ]
     )
-    res: List[HighLevelSemanticsSituation] = []
-    # sample each template and append the samples to the result
-    for template in formatted_templates:
-        res += sampled(
-            template,
-            ontology=GAILA_PHASE_1_ONTOLOGY,
-            chooser=PHASE1_CHOOSER_FACTORY(),
-            max_to_sample=num_samples,
-        )
-    return phase1_instances("pushing-shoving", chain(res))
+    return phase1_instances(
+        "pushing-shoving",
+        chain(
+            flatten(
+                [
+                    sampled(
+                        template,
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        max_to_sample=num_samples,
+                    )
+                    for template in templates
+                ]
+            ),
+        ),
+    )
 
 
 def make_walk_run_subtle_verb_distinction(
