@@ -416,6 +416,36 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                         self.dependency_graph.add_edge(
                             color_node, noun_dependency_node, role=ADJECTIVAL_MODIFIER
                         )
+            for relation in self.situation.always_relations:
+                if relation.first_slot == _object:
+                    if relation.relation_type == BIGGER_THAN:
+                        if (
+                            relation.first_slot in self.situation.salient_objects
+                            and isinstance(relation.second_slot, SituationObject)
+                            and relation.second_slot.ontology_node == LEARNER
+                        ):
+                            if USE_VERTICAL_MODIFIERS in self.situation.syntax_hints:
+                                token = DependencyTreeToken("tall", ADJECTIVE)
+                            else:
+                                token = DependencyTreeToken("big", ADJECTIVE)
+                            self.dependency_graph.add_node(token)
+                            self.dependency_graph.add_edge(
+                                token, noun_dependency_node, role=ADJECTIVAL_MODIFIER
+                            )
+                    elif relation.relation_type == SMALLER_THAN:
+                        if (
+                            relation.first_slot in self.situation.salient_objects
+                            and isinstance(relation.second_slot, SituationObject)
+                            and relation.second_slot.ontology_node == LEARNER
+                        ):
+                            if USE_VERTICAL_MODIFIERS in self.situation.syntax_hints:
+                                token = DependencyTreeToken("short", ADJECTIVE)
+                            else:
+                                token = DependencyTreeToken("small", ADJECTIVE)
+                            self.dependency_graph.add_node(token)
+                            self.dependency_graph.add_edge(
+                                token, noun_dependency_node, role=ADJECTIVAL_MODIFIER
+                            )
 
         def _translate_attribute_as_verb(
             self, _object: SituationObject, noun_dependency_node: DependencyTreeToken
@@ -482,38 +512,11 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                         self._noun_for_object(relation.first_slot),
                         role=NOMINAL_MODIFIER,
                     )
+            # We handle size relationships inside _add_attributes to generate e.g "big cookie"
             elif relation.relation_type == BIGGER_THAN:
-                if (
-                    relation.first_slot in self.situation.salient_objects
-                    and isinstance(relation.second_slot, SituationObject)
-                    and relation.second_slot.ontology_node == LEARNER
-                ):
-                    if USE_VERTICAL_MODIFIERS in self.situation.syntax_hints:
-                        token = DependencyTreeToken("tall", ADJECTIVE)
-                    else:
-                        token = DependencyTreeToken("big", ADJECTIVE)
-                    self.dependency_graph.add_node(token)
-                    self.dependency_graph.add_edge(
-                        token,
-                        self._noun_for_object(relation.first_slot),
-                        role=ADJECTIVAL_MODIFIER,
-                    )
+                pass
             elif relation.relation_type == SMALLER_THAN:
-                if (
-                    relation.first_slot in self.situation.salient_objects
-                    and isinstance(relation.second_slot, SituationObject)
-                    and relation.second_slot.ontology_node == LEARNER
-                ):
-                    if USE_VERTICAL_MODIFIERS in self.situation.syntax_hints:
-                        token = DependencyTreeToken("short", ADJECTIVE)
-                    else:
-                        token = DependencyTreeToken("small", ADJECTIVE)
-                    self.dependency_graph.add_node(token)
-                    self.dependency_graph.add_edge(
-                        token,
-                        self._noun_for_object(relation.first_slot),
-                        role=ADJECTIVAL_MODIFIER,
-                    )
+                pass
             else:
                 raise RuntimeError(
                     f"Don't know how to translate relation " f"{relation} to English"
