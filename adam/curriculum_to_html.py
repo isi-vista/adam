@@ -34,6 +34,7 @@ from vistautils.preconditions import check_state
 from adam.curriculum.imprecise_descriptions_curriculum import (
     make_imprecise_temporal_descriptions,
     make_imprecise_size_curriculum,
+    make_subtle_verb_distinctions_curriculum,
 )
 from adam.curriculum.attribute_constraining_action_curriculum import make_german_complete
 from adam.curriculum.m6_curriculum import make_m6_curriculum
@@ -127,6 +128,7 @@ STR_TO_CURRICULUM: Mapping[str, Callable[[], Iterable[Phase1InstanceGroup]]] = {
     "essen-fressen-distinction": make_german_complete,
     "imprecise-temporal": make_imprecise_temporal_descriptions,
     "imprecise-size": make_imprecise_size_curriculum,
+    "subtle-verb-distinction": make_subtle_verb_distinctions_curriculum,
 }
 
 
