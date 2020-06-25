@@ -18,7 +18,6 @@ from adam.curriculum.imprecise_descriptions_curriculum import (
     make_subtle_verb_distinctions_curriculum,
     make_spin_tall_short_curriculum,
     make_eat_big_small_curriculum,
-
 )
 from adam.curriculum.phase1_curriculum import (
     _make_plural_objects_curriculum,
