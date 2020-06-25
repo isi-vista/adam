@@ -791,7 +791,6 @@ def replace_match_root_with_object_semantic_node(
     # (for example, to a color shared by all the parts).
     # In this case, we want the shared object node to link to this property only once.
     external_properties: Set[OntologyNode] = set()
-    duplicate_nodes_to_remove: List[PerceptionGraphNode] = []
 
     for matched_subgraph_node in matched_subgraph_nodes:
         if isinstance(matched_subgraph_node, ObjectSemanticNode):
@@ -832,7 +831,6 @@ def replace_match_root_with_object_semantic_node(
                                 f"but has degree != 1",
                                 current_perception,
                             )
-                        duplicate_nodes_to_remove.append(matched_subgraph_node_successor)
                         continue
                     else:
                         external_properties.add(matched_subgraph_node_successor[0])
@@ -870,9 +868,6 @@ def replace_match_root_with_object_semantic_node(
                                 f"but has degree != 1",
                                 current_perception,
                             )
-                        duplicate_nodes_to_remove.append(
-                            matched_subgraph_node_predecessor
-                        )
                         continue
                     else:
                         external_properties.add(matched_subgraph_node_predecessor[0])
@@ -890,7 +885,6 @@ def replace_match_root_with_object_semantic_node(
         )
 
     perception_digraph.remove_node(root)
-    # perception_digraph.remove_nodes_from(duplicate_nodes_to_remove)
 
     # We want to re-add any relationships linked directly to the root node of an object.
     # Example: water is a liquid
