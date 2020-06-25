@@ -1,4 +1,5 @@
 import pytest
+from immutablecollections import immutableset
 from more_itertools import only, quantify
 
 from adam.axes import HorizontalAxisOfObject
@@ -65,7 +66,8 @@ from adam.perception.high_level_semantics_situation_to_developmental_primitive_p
     HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
 )
 from adam.random_utils import RandomChooser
-from adam.relation import Relation
+from adam.relation import Relation, flatten_relations
+from adam.relation_dsl import negate
 from adam.situation import Action
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam_test_utils import perception_with_handle, situation_object
@@ -787,4 +789,33 @@ def test_subobject_perception_has_appropriate_properties():
     assert all(
         HasBinaryProperty(leg_perception, INANIMATE) in property_assertions
         for leg_perception in leg_perceptions
+    )
+
+
+def test_object_not_on_ground():
+    """
+    Intended to test that one can specify an object is not on the ground
+    """
+    table = situation_object(TABLE)
+    ground = situation_object(GROUND)
+    perception = _PERCEPTION_GENERATOR.generate_perception(
+        HighLevelSemanticsSituation(
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+            salient_objects=immutableset([table]),
+            other_objects=immutableset([ground]),
+            always_relations=flatten_relations(negate(on(table, ground))),
+        ),
+        chooser=RandomChooser.for_seed(0),
+    )
+    frame = perception.frames[0]
+    relations = frame.relations
+    table_perception = perception_with_handle(frame, "table_0")
+    ground_perception = perception_with_handle(frame, "the ground")
+    assert not any(
+        relation.relation_type == IN_REGION
+        and relation.first_slot == table_perception
+        and isinstance(relation.second_slot, Region)
+        and relation.region.reference_object == ground_perception
+        and relation.region.distance == EXTERIOR_BUT_IN_CONTACT
+        for relation in relations
     )
