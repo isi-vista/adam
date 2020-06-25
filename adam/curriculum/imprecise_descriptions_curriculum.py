@@ -355,23 +355,20 @@ def make_push_shove_subtle_verb_distinctions(
     )
     push_goal = standard_object("push_goal_0", THING, required_properties=[INANIMATE])
     # get all possible templates
-    all_templates = [
-        make_push_templates(
-            pusher,
-            pushee,
-            push_surface,
-            push_goal,
-            use_adverbial_path_modifier=use_adverbial_path_modifier,
-            spatial_properties=[HARD_FORCE] if hard_force else [SOFT_FORCE],
-        )
-        for use_adverbial_path_modifier in BOOL_SET
-        for hard_force in BOOL_SET
-        for express_surface in BOOL_SET
-    ]
-    # format these template pairs into one long list
-    formatted_templates = [template[0] for template in all_templates] + [
-        template[1] for template in all_templates
-    ]
+templates = flatten(
+        [
+            make_push_templates(
+                pusher,
+                pushee,
+                push_surface,
+                push_goal,
+                use_adverbial_path_modifier=use_adverbial_path_modifier,
+                spatial_properties=[HARD_FORCE] if hard_force else [SOFT_FORCE],
+            )
+            for use_adverbial_path_modifier in BOOL_SET
+            for hard_force in BOOL_SET
+        ]
+    )
     res: List[HighLevelSemanticsSituation] = []
     # sample each template and append the samples to the result
     for template in formatted_templates:
