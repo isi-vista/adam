@@ -17,7 +17,8 @@ from adam.learner.learner_utils import (
 from adam.learner.object_recognizer import (
     PerceptionGraphFromObjectRecognizer,
     replace_match_root_with_object_semantic_node,
-    _get_root_object_perception)
+    _get_root_object_perception,
+)
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
 from adam.learner.surface_templates import (
     SurfaceTemplate,
@@ -374,9 +375,11 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
         already_replaced: Set[ObjectPerception] = set()
         for (matched_object_node, pattern_match) in matched_objects:
             root: ObjectPerception = _get_root_object_perception(
-                pattern_match.matched_sub_graph._graph,
-                # pattern_match.graph_matched_against._graph,
-                immutableset(pattern_match.matched_sub_graph._graph.nodes, disable_order_check=True),
+                pattern_match.matched_sub_graph._graph,  # pylint:disable=protected-access
+                immutableset(
+                    pattern_match.matched_sub_graph._graph.nodes,
+                    disable_order_check=True,  # pylint:disable=protected-access
+                ),
             )
             if root not in already_replaced:
                 perception_graph_after_matching = replace_match_root_with_object_semantic_node(
@@ -387,8 +390,8 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
                 already_replaced.add(root)
             else:
                 logging.info(
-                    f'Matched pattern for {matched_object_node} '
-                    f'but root object {root} already replaced.'
+                    f"Matched pattern for {matched_object_node} "
+                    f"but root object {root} already replaced."
                 )
 
         new_nodes = immutableset(node for (node, _) in match_to_score)

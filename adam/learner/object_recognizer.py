@@ -560,7 +560,7 @@ def _get_edge_label(
 
 def _get_root_object_perception(
     graph: DiGraph, matched_subgraph_nodes: AbstractSet[PerceptionGraphNode]
-) -> PerceptionGraphNode:
+) -> ObjectPerception:
     matched_object_perceptions = immutableset(
         node for node in matched_subgraph_nodes if isinstance(node, ObjectPerception)
     )

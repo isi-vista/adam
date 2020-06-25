@@ -5,7 +5,6 @@ from typing import Optional
 
 from immutablecollections import immutableset
 
-from adam.curriculum.curriculum_utils import standard_object
 from adam.curriculum.phase1_curriculum import PHASE1_CHOOSER_FACTORY, phase1_instances
 from adam.curriculum.pursuit_curriculum import make_simple_pursuit_curriculum
 from adam.language_specific.english.english_language_generator import (
@@ -19,9 +18,8 @@ from adam.learner import (
 )
 from adam.learner.alignments import LanguageConceptAlignment
 from adam.learner.integrated_learner import IntegratedTemplateLearner
-from adam.learner.object_recognizer import SHARED_WORLD_ITEMS
 from adam.learner.objects import ObjectPursuitLearner, SubsetObjectLearnerNew
-from adam.ontology import OntologyNode, IN_REGION
+from adam.ontology import OntologyNode
 from adam.ontology.phase1_ontology import (
     BALL,
     BIRD,
@@ -33,8 +31,9 @@ from adam.ontology.phase1_ontology import (
     LEARNER,
     MOM,
     on,
-    far, near, HAND, CAR, HOUSE)
-from adam.ontology.phase1_spatial_relations import GRAVITATIONAL_UP, DISTAL, Region
+    HAND,
+    HOUSE,
+)
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     GAILA_PHASE_1_PERCEPTION_GENERATOR,
 )
@@ -44,7 +43,7 @@ from adam.perception.perception_graph import (
     PerceptionGraph,
 )
 from adam.random_utils import RandomChooser
-from adam.relation import flatten_relations, Relation
+from adam.relation import flatten_relations
 from adam.relation_dsl import negate
 from adam.semantics import ObjectSemanticNode
 from adam.situation import SituationObject
@@ -55,7 +54,6 @@ from adam.situation.templates.phase1_templates import (
     color_variable,
     object_variable,
 )
-from tests.adam_test_utils import perception_with_handle
 
 
 def run_subset_learner_for_object(
@@ -135,7 +133,18 @@ def test_subset_learner_subobject():
     head = SituationObject.instantiate_ontology_node(
         ontology_node=HEAD, ontology=GAILA_PHASE_1_ONTOLOGY
     )
-    ground = SituationObject.instantiate_ontology_node(ontology_node=GROUND, ontology=GAILA_PHASE_1_ONTOLOGY)
+    hand = SituationObject.instantiate_ontology_node(
+        ontology_node=HAND, ontology=GAILA_PHASE_1_ONTOLOGY
+    )
+    ball = SituationObject.instantiate_ontology_node(
+        ontology_node=BALL, ontology=GAILA_PHASE_1_ONTOLOGY
+    )
+    house = SituationObject.instantiate_ontology_node(
+        ontology_node=HOUSE, ontology=GAILA_PHASE_1_ONTOLOGY
+    )
+    ground = SituationObject.instantiate_ontology_node(
+        ontology_node=GROUND, ontology=GAILA_PHASE_1_ONTOLOGY
+    )
 
     mom_situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=immutableset([mom])
@@ -150,9 +159,6 @@ def test_subset_learner_subobject():
 
     # Need to include some extra situations so that the learner will prune its semantics for 'a'
     # away and not recognize it as an object.
-    hand = SituationObject.instantiate_ontology_node(
-        ontology_node=HAND, ontology=GAILA_PHASE_1_ONTOLOGY
-    )
     floating_hand_situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         salient_objects=immutableset([hand]),
@@ -160,9 +166,6 @@ def test_subset_learner_subobject():
         always_relations=flatten_relations(negate(on(hand, ground))),
     )
 
-    ball = SituationObject.instantiate_ontology_node(
-        ontology_node=BALL, ontology=GAILA_PHASE_1_ONTOLOGY
-    )
     floating_ball_situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         salient_objects=immutableset([ball]),
@@ -170,9 +173,6 @@ def test_subset_learner_subobject():
         always_relations=flatten_relations(negate(on(ball, ground))),
     )
 
-    house = SituationObject.instantiate_ontology_node(
-        ontology_node=HOUSE, ontology=GAILA_PHASE_1_ONTOLOGY
-    )
     floating_house_situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         salient_objects=immutableset([house]),
@@ -182,7 +182,13 @@ def test_subset_learner_subobject():
 
     object_learner = SubsetObjectLearnerNew(ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5)
 
-    for situation in [mom_situation, floating_head_situation, floating_hand_situation, floating_ball_situation, floating_house_situation]:
+    for situation in [
+        mom_situation,
+        floating_head_situation,
+        floating_hand_situation,
+        floating_ball_situation,
+        floating_house_situation,
+    ]:
         perceptual_representation = GAILA_PHASE_1_PERCEPTION_GENERATOR.generate_perception(
             situation, chooser=RandomChooser.for_seed(0)
         )
@@ -213,11 +219,12 @@ def test_subset_learner_subobject():
     )
 
     node_debug_strings = {
-        (type(semantic_node), semantic_node.concept.debug_string) for semantic_node in enriched.semantic_nodes
+        (type(semantic_node), semantic_node.concept.debug_string)
+        for semantic_node in enriched.semantic_nodes
     }
-    assert (ObjectSemanticNode, 'Mom') in node_debug_strings
-    assert (ObjectSemanticNode, 'head') in node_debug_strings
-    assert (ObjectSemanticNode, 'hand') in node_debug_strings
+    assert (ObjectSemanticNode, "Mom") in node_debug_strings
+    assert (ObjectSemanticNode, "head") in node_debug_strings
+    assert (ObjectSemanticNode, "hand") in node_debug_strings
 
 
 def test_pursuit_object_learner():
