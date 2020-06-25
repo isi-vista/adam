@@ -1410,6 +1410,7 @@ def make_take_template(
     spatial_properties: Iterable[OntologyNode] = None,
 ) -> Phase1SituationTemplate:
     # X grabs Y
+    ground = GROUND_OBJECT_TEMPLATE
     return Phase1SituationTemplate(
         f"{agent.handle}-take-{theme.handle}",
         salient_object_variables=[agent, theme],
@@ -1423,11 +1424,7 @@ def make_take_template(
                             agent,
                             SpatialPath(
                                 None,
-<<<<<<< HEAD
                                 reference_object=ground,
-=======
-                                reference_object=GROUND_OBJECT_TEMPLATE,
->>>>>>> f893f93fbc93e8100f043d388dcc11bafe306337
                                 properties=spatial_properties,
                             ),
                         )
