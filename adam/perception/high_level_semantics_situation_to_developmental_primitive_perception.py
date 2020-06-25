@@ -742,8 +742,7 @@ class _PerceptionGeneration:
         by our object recognition algorithms,
         it is easier if we represent this as a property as well as a relation.
         """
-        for object_ in self._situation.all_objects:
-            ontology_type = object_.ontology_node
+        for perception, ontology_type in self._object_perceptions_to_ontology_nodes.items():
             size_relations = immutableset(
                 relation
                 for relation in self._situation.ontology.subjects_to_relations[
@@ -760,14 +759,14 @@ class _PerceptionGeneration:
                     )
                 self._property_assertion_perceptions.append(
                     HasBinaryProperty(
-                        self._objects_to_perceptions[object_],
+                        perception,
                         only(size_relations).relation_type,
                     )
                 )
             else:
                 self._property_assertion_perceptions.append(
                     HasBinaryProperty(
-                        self._objects_to_perceptions[object_],
+                        perception,
                         ABOUT_THE_SAME_SIZE_AS_LEARNER,
                     )
                 )
