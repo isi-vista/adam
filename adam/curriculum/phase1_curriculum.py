@@ -1718,8 +1718,8 @@ def make_push_templates(
                         (
                             agent,
                             SpatialPath(
-                                operator=TO,
-                                reference_object=push_surface,
+                                operator=NONE,
+                                reference_object=push_goal,
                                 properties=spatial_properties,
                             ),
                         )
