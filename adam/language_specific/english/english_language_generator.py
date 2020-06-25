@@ -512,6 +512,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                         self._noun_for_object(relation.first_slot),
                         role=NOMINAL_MODIFIER,
                     )
+            # We handle size relationships inside _add_attributes to generate e.g "big cookie"
             elif relation.relation_type == BIGGER_THAN:
                 pass
             elif relation.relation_type == SMALLER_THAN:

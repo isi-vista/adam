@@ -203,7 +203,7 @@ def _short_x_template(
 
 
 def make_spin_tall_short_curriculum() -> Phase1InstanceGroup:
-    # "Mom eats a big cookie"
+    # "Mom spins a tall chair"
     # We generate situations directly since templates fail to generate plurals.
 
     learner = SituationObject.instantiate_ontology_node(
