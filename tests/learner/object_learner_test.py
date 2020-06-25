@@ -218,13 +218,13 @@ def test_subset_learner_subobject():
         PerceptionSemanticAlignment.create_unaligned(perception_graph)
     )
 
-    node_debug_strings = {
+    semantic_node_types_and_debug_strings = {
         (type(semantic_node), semantic_node.concept.debug_string)
         for semantic_node in enriched.semantic_nodes
     }
-    assert (ObjectSemanticNode, "Mom") in node_debug_strings
-    assert (ObjectSemanticNode, "head") in node_debug_strings
-    assert (ObjectSemanticNode, "hand") in node_debug_strings
+    assert (ObjectSemanticNode, "Mom") in semantic_node_types_and_debug_strings
+    assert (ObjectSemanticNode, "head") in semantic_node_types_and_debug_strings
+    assert (ObjectSemanticNode, "hand") in semantic_node_types_and_debug_strings
 
 
 def test_pursuit_object_learner():
