@@ -68,6 +68,10 @@ from adam.ontology.phase1_ontology import (
     RED,
     BLACK,
     far,
+    WALK,
+    HARD_FORCE,
+    PASS,
+    WALK_SURFACE_AUXILIARY,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -1677,6 +1681,119 @@ def test_smaller_than():
         always_relations=[bigger_than(learner, box)],
     )
     assert generated_tokens(situation=big_box) == ("a", "small", "box")
+
+
+def test_run():
+    mom = situation_object(MOM, properties=[IS_SPEAKER])
+    mom_runs = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom],
+        actions=[
+            Action(
+                WALK,
+                auxiliary_variable_bindings=[(WALK_SURFACE_AUXILIARY, GROUND)],
+                argument_roles_to_fillers=[(AGENT, mom)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            mom,
+                            SpatialPath(
+                                None, reference_object=GROUND, properties=[HARD_FORCE]
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+    )
+    assert generated_tokens(mom_runs) == ("I", "run")
+
+
+def test_toss():
+    mom = situation_object(MOM, properties=[IS_ADDRESSEE])
+    ball = situation_object(BALL)
+    mom_tosses = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom, ball],
+        actions=[
+            Action(
+                PASS,
+                argument_roles_to_fillers=[(AGENT, mom), (THEME, ball)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            mom,
+                            SpatialPath(
+                                None, reference_object=GROUND, properties=[HARD_FORCE]
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+    )
+    assert generated_tokens(mom_tosses) == ("you", "toss", "a", "ball")
+
+
+def test_shove():
+    mom = situation_object(MOM)
+    ball = situation_object(BALL)
+    table = situation_object(TABLE)
+    mom_shoves = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom, ball, table],
+        actions=[
+            Action(
+                PUSH,
+                argument_roles_to_fillers=[(AGENT, mom), (THEME, ball), (GOAL, table)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            mom,
+                            SpatialPath(
+                                None, reference_object=table, properties=[HARD_FORCE]
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+    )
+    assert generated_tokens(mom_shoves) == (
+        "mom",
+        "shoves",
+        "a",
+        "ball",
+        "to",
+        "a",
+        "table",
+    )
+
+
+def test_grab():
+    mom = situation_object(MOM)
+    ball = situation_object(BALL)
+    mom_grab = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom, ball],
+        actions=[
+            Action(
+                TAKE,
+                argument_roles_to_fillers=[(AGENT, mom), (THEME, ball)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            mom,
+                            SpatialPath(
+                                None, reference_object=GROUND, properties=[HARD_FORCE]
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+    )
+    assert generated_tokens(mom_grab) == ("mom", "grabs", "a", "ball")
 
 
 def generated_tokens(situation):
