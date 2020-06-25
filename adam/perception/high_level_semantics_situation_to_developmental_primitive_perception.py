@@ -812,6 +812,10 @@ class _PerceptionGeneration:
                                 # this relation is still in the list of relation perceptions and we
                                 # need to remove it so that we don't try to add a negative relation
                                 # to the perceptual representation.
+                                #
+                                # However, sometimes the relation we're looking at came from a
+                                # before or after assertion, either explicit or implicit, and is
+                                # therefore not in the list. So if it's not there, that's normal.
                                 try:
                                     self._relation_perceptions.remove(relation)
                                 except ValueError:
