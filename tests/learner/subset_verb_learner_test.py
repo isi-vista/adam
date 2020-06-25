@@ -62,18 +62,6 @@ from immutablecollections import immutableset
 from tests.learner import TEST_OBJECT_RECOGNIZER
 
 
-LEARNER_FACTORIES = [
-    lambda: SubsetVerbLearner(
-        object_recognizer=TEST_OBJECT_RECOGNIZER, ontology=GAILA_PHASE_1_ONTOLOGY
-    ),
-    lambda: IntegratedTemplateLearner(
-        object_learner=ObjectRecognizerAsTemplateLearner(
-            object_recognizer=TEST_OBJECT_RECOGNIZER,
-            language_generator=GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
-        ),
-        action_learner=SubsetVerbLearnerNew(ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5),
-    ),
-]
 SUBSET_LEARNER = SubsetVerbLearner(
     object_recognizer=TEST_OBJECT_RECOGNIZER, ontology=GAILA_PHASE_1_ONTOLOGY
 )
@@ -258,13 +246,20 @@ def test_put_subset(language_generator):
         run_verb_test(learner, situation_template, language_generator=language_generator)
 
 
-
 @pytest.mark.parametrize(
     "language_generator",
     [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
 )
 def test_push_integrated(language_generator):
-    for situation_template in make_push_templates():
+    for situation_template in make_push_templates(
+        agent=standard_object("pusher", THING, required_properties=[ANIMATE]),
+        theme=standard_object("pushee", INANIMATE_OBJECT),
+        push_surface=standard_object(
+            "push_surface", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
+        ),
+        push_goal=standard_object("push_goal", INANIMATE_OBJECT),
+        use_adverbial_path_modifier=False,
+    ):
         learner = IntegratedTemplateLearner(
             object_learner=ObjectRecognizerAsTemplateLearner(
                 object_recognizer=TEST_OBJECT_RECOGNIZER,
@@ -282,12 +277,6 @@ def test_push_integrated(language_generator):
     [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
 )
 def test_push_subset(language_generator):
-    for situation_template in make_push_templates():
-        learner = SUBSET_LEARNER
-        run_verb_test(learner, situation_template, language_generator=language_generator)
-
-@pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
-def test_push(learner_factory):
     for situation_template in make_push_templates(
         agent=standard_object("pusher", THING, required_properties=[ANIMATE]),
         theme=standard_object("pushee", INANIMATE_OBJECT),
@@ -297,9 +286,8 @@ def test_push(learner_factory):
         push_goal=standard_object("push_goal", INANIMATE_OBJECT),
         use_adverbial_path_modifier=False,
     ):
-        learner = learner_factory()
-        run_verb_test(learner, situation_template)
-
+        learner = SUBSET_LEARNER
+        run_verb_test(learner, situation_template, language_generator=language_generator)
 
 
 # GO
@@ -419,7 +407,6 @@ def test_come_integrated(language_generator):
         run_verb_test(learner, situation_template, language_generator=language_generator)
 
 
-
 # COME
 @pytest.mark.parametrize(
     "language_generator",
@@ -462,19 +449,6 @@ def test_come_subset(language_generator):
         learner = SUBSET_LEARNER
         run_verb_test(learner, situation_template, language_generator=language_generator)
 
-@pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
-def test_take(learner_factory):
-    learner = learner_factory()
-    run_verb_test(
-        learner,
-        make_take_template(
-            agent=standard_object("taker_0", THING, required_properties=[ANIMATE]),
-            theme=standard_object("object_taken_0", required_properties=[INANIMATE]),
-            use_adverbial_path_modifier=False,
-        ),
-    )
-
-
 
 @pytest.mark.parametrize(
     "language_generator",
@@ -488,7 +462,15 @@ def test_take_integrated(language_generator):
         ),
         action_learner=SubsetVerbLearnerNew(ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5),
     )
-    run_verb_test(learner, make_take_template(), language_generator=language_generator)
+    run_verb_test(
+        learner,
+        make_take_template(
+            agent=standard_object("taker_0", THING, required_properties=[ANIMATE]),
+            theme=standard_object("object_taken_0", required_properties=[INANIMATE]),
+            use_adverbial_path_modifier=False,
+        ),
+        language_generator=language_generator,
+    )
 
 
 @pytest.mark.parametrize(
@@ -497,7 +479,15 @@ def test_take_integrated(language_generator):
 )
 def test_take_subset(language_generator):
     learner = SUBSET_LEARNER
-    run_verb_test(learner, make_take_template(), language_generator=language_generator)
+    run_verb_test(
+        learner,
+        make_take_template(
+            agent=standard_object("taker_0", THING, required_properties=[ANIMATE]),
+            theme=standard_object("object_taken_0", required_properties=[INANIMATE]),
+            use_adverbial_path_modifier=False,
+        ),
+        language_generator=language_generator,
+    )
 
 
 @pytest.mark.parametrize(
