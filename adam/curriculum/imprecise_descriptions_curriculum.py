@@ -1,6 +1,6 @@
 from itertools import chain
-from typing import Sequence, Iterable
-
+from typing import Sequence, Iterable, List
+from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from immutablecollections import immutableset
 from more_itertools import flatten
 
@@ -354,55 +354,34 @@ def make_push_shove_subtle_verb_distinctions(
         "push_surface_0", THING, required_properties=[INANIMATE]
     )
     push_goal = standard_object("push_goal_0", THING, required_properties=[INANIMATE])
-    return phase1_instances(
-        "pushing-shoving",
-        chain(
-            flatten(
-                [
-                    sampled(
-                        make_push_templates(
-                            pusher,
-                            pushee,
-                            push_surface,
-                            push_goal,
-                            use_adverbial_path_modifier=use_adverbial_path_modifier,
-                            spatial_properties=[HARD_FORCE]
-                            if hard_force
-                            else [SOFT_FORCE],
-                        )[1],
-                        ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
-                    )
-                    for use_adverbial_path_modifier in BOOL_SET
-                    for hard_force in BOOL_SET
-                    for express_surface in BOOL_SET
-                ]
-            ),
-            flatten(
-                [
-                    sampled(
-                        make_push_templates(
-                            pusher,
-                            pushee,
-                            push_surface,
-                            push_goal,
-                            use_adverbial_path_modifier=use_adverbial_path_modifier,
-                            spatial_properties=[HARD_FORCE]
-                            if hard_force
-                            else [SOFT_FORCE],
-                        )[0],
-                        ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
-                    )
-                    for use_adverbial_path_modifier in BOOL_SET
-                    for hard_force in BOOL_SET
-                    for express_surface in BOOL_SET
-                ]
-            ),
-        ),
-    )
+    # get all possible templates
+    all_templates = [
+        make_push_templates(
+            pusher,
+            pushee,
+            push_surface,
+            push_goal,
+            use_adverbial_path_modifier=use_adverbial_path_modifier,
+            spatial_properties=[HARD_FORCE] if hard_force else [SOFT_FORCE],
+        )
+        for use_adverbial_path_modifier in BOOL_SET
+        for hard_force in BOOL_SET
+        for express_surface in BOOL_SET
+    ]
+    # format these template pairs into one long list
+    formatted_templates = [template[0] for template in all_templates] + [
+        template[1] for template in all_templates
+    ]
+    res: List[HighLevelSemanticsSituation] = []
+    # sample each template and append the samples to the result
+    for template in formatted_templates:
+        res += sampled(
+            template,
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+            chooser=PHASE1_CHOOSER_FACTORY(),
+            max_to_sample=num_samples,
+        )
+    return phase1_instances("pushing-shoving", chain(res))
 
 
 def make_walk_run_subtle_verb_distinction(
