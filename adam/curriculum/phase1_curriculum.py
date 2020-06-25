@@ -1101,9 +1101,7 @@ def make_pass_template(
                         (
                             agent,
                             SpatialPath(
-                                None,
-                                reference_object=goal,
-                                properties=spatial_properties,
+                                None, reference_object=goal, properties=spatial_properties
                             ),
                         )
                     ]
@@ -1446,6 +1444,7 @@ def make_walk_run_template(
     spatial_properties: Iterable[OntologyNode] = None,
 ) -> Phase1SituationTemplate:
     # X walks
+    goal = standard_object("goal", THING, required_properties=[INANIMATE])
     ground = GROUND_OBJECT_TEMPLATE
     return Phase1SituationTemplate(
         f"{agent.handle} walk",
@@ -1461,8 +1460,8 @@ def make_walk_run_template(
                         (
                             agent,
                             SpatialPath(
-                                None,
-                                reference_object=ground,
+                                operator=TOWARD,
+                                reference_object=goal,
                                 properties=spatial_properties,
                             ),
                         )

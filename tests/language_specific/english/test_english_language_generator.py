@@ -1760,7 +1760,7 @@ def test_shove():
         ],
     )
     assert generated_tokens(mom_shoves) == (
-        "mom",
+        "Mom",
         "shoves",
         "a",
         "ball",
@@ -1793,7 +1793,7 @@ def test_grab():
             )
         ],
     )
-    assert generated_tokens(mom_grab) == ("mom", "grabs", "a", "ball")
+    assert generated_tokens(mom_grab) == ("Mom", "grabs", "a", "ball")
 
 
 def generated_tokens(situation):
