@@ -9,7 +9,7 @@ from adam.curriculum.curriculum_utils import (
 )
 from adam.curriculum.phase1_curriculum import (
     _make_come_down_template,
-    _make_push_curriculum,
+    make_push_templates,
     make_drink_template,
     make_eat_template,
     make_fall_templates,
@@ -31,6 +31,8 @@ from adam.learner.objects import ObjectRecognizerAsTemplateLearner
 from adam.learner.verbs import SubsetVerbLearner, SubsetVerbLearnerNew
 from adam.ontology import IS_SPEAKER, THING
 from adam.ontology.phase1_ontology import (
+    INANIMATE_OBJECT,
+    CAN_HAVE_THINGS_RESTING_ON_THEM,
     INANIMATE,
     AGENT,
     ANIMATE,
@@ -154,30 +156,17 @@ def test_put(learner_factory):
 
 @pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
 def test_push(learner_factory):
-    # get all 50 instances from the push curriculum and divide them into their subsets for training
-    all_instances = list(_make_push_curriculum().instances())
-    divided_for_training = [all_instances[:25], all_instances[25:]]
-    # iterate through the training + testing groups
-    for training_testing_group in divided_for_training:
+    for situation_template in make_push_templates(
+        agent=standard_object("pusher", THING, required_properties=[ANIMATE]),
+        theme=standard_object("pushee", INANIMATE_OBJECT),
+        push_surface=standard_object(
+            "push_surface", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
+        ),
+        push_goal=standard_object("push_goal", INANIMATE_OBJECT),
+        use_adverbial_path_modifier=False,
+    ):
         learner = learner_factory()
-        # divide into training and testing and train and test the learner
-        testing_instance = training_testing_group[0:5]
-        training_instances = training_testing_group[5:]
-        for (_, linguistic_description, perceptual_representation) in training_instances:
-            learner.observe(
-                LearningExample(perceptual_representation, linguistic_description)
-            )
-        for (
-            _,
-            test_linguistic_description,
-            test_perceptual_representation,
-        ) in testing_instance:
-            descriptions_from_learner = learner.describe(test_perceptual_representation)
-            gold = test_linguistic_description.as_token_sequence()
-            assert descriptions_from_learner
-            assert gold in [
-                desc.as_token_sequence() for desc in descriptions_from_learner
-            ]
+        run_verb_test(learner, situation_template)
 
 
 # GO
