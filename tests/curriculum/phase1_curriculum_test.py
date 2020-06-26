@@ -101,16 +101,34 @@ def test_instantiate_fly_curriculum(language_generator):
     curriculum_test(_make_fly_curriculum(language_generator=language_generator))
 
 
-def test_plural_objects_curriculum():
-    curriculum_test(_make_plural_objects_curriculum())
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
+)
+def test_plural_objects_curriculum(language_generator):
+    curriculum_test(
+        _make_plural_objects_curriculum(language_generator=language_generator)
+    )
 
 
-def test_object_on_ground_curriculum():
-    curriculum_test(_make_object_on_ground_curriculum())
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
+)
+def test_object_on_ground_curriculum(language_generator):
+    curriculum_test(
+        _make_object_on_ground_curriculum(language_generator=language_generator)
+    )
 
 
-def test_person_has_object_curriculum():
-    curriculum_test(_make_person_has_object_curriculum())
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
+)
+def test_person_has_object_curriculum(language_generator):
+    curriculum_test(
+        _make_person_has_object_curriculum(language_generator=language_generator)
+    )
 
 
 def test_part_whole_curriculum():

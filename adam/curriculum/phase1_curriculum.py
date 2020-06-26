@@ -258,7 +258,9 @@ def _make_objects_with_colors_is_curriculum(
     )
 
 
-def _make_plural_objects_curriculum() -> Phase1InstanceGroup:
+def _make_plural_objects_curriculum(
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     def build_object_multiples_situations(
         ontology: Ontology, *, samples_per_object: int = 3, chooser: RandomChooser
     ) -> Iterable[HighLevelSemanticsSituation]:
@@ -289,6 +291,7 @@ def _make_plural_objects_curriculum() -> Phase1InstanceGroup:
         build_object_multiples_situations(
             ontology=GAILA_PHASE_1_ONTOLOGY, chooser=PHASE1_CHOOSER_FACTORY()
         ),
+        language_generator=language_generator,
     )
 
 
@@ -320,7 +323,9 @@ def _make_generic_statements_curriculum() -> Phase1InstanceGroup:
     return ExplicitWithSituationInstanceGroup("generics instances", all_instances)
 
 
-def _make_object_on_ground_curriculum() -> Phase1InstanceGroup:
+def _make_object_on_ground_curriculum(
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     object_0 = standard_object("object_0")
     liquid_0 = object_variable("liquid_0", THING, required_properties=[LIQUID])
 
@@ -352,6 +357,7 @@ def _make_object_on_ground_curriculum() -> Phase1InstanceGroup:
                 ),
             ]
         ),
+        language_generator=language_generator,
     )
 
 
@@ -371,7 +377,9 @@ def _x_has_y_template(
     )
 
 
-def _make_person_has_object_curriculum() -> Phase1InstanceGroup:
+def _make_person_has_object_curriculum(
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     person_0 = object_variable("person", PERSON)
     inanimate_object_0 = standard_object(
         "inanimate-object", INANIMATE_OBJECT, required_properties=[PERSON_CAN_HAVE]
@@ -389,6 +397,7 @@ def _make_person_has_object_curriculum() -> Phase1InstanceGroup:
                 )
             ]
         ),
+        language_generator=language_generator,
     )
 
 
