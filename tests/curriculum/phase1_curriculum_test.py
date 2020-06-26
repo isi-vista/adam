@@ -318,13 +318,29 @@ def test_pass_curriculum(language_generator):
     curriculum_test(_make_pass_curriculum(language_generator=language_generator))
 
 
-def test_come_curriculum():
-    curriculum_test(_make_come_curriculum())
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
+)
+def test_come_curriculum(language_generator):
+    curriculum_test(_make_come_curriculum(language_generator=language_generator))
 
 
-def test_behind_in_front_curriculum():
-    curriculum_test(_make_behind_in_front_curriculum())
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
+)
+def test_behind_in_front_curriculum(language_generator):
+    curriculum_test(
+        _make_behind_in_front_curriculum(language_generator=language_generator)
+    )
 
 
-def test_generics_curriculum():
-    curriculum_test(_make_generic_statements_curriculum())
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
+)
+def test_generics_curriculum(language_generator):
+    curriculum_test(
+        _make_generic_statements_curriculum(language_generator=language_generator)
+    )

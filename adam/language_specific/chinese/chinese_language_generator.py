@@ -419,6 +419,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 reference_object_dependency_node = self._noun_for_object(
                     filler.reference_object
                 )
+                # humans have a different coverb than non-humans, currently this is hard coded but can be updated to use animacy
                 if reference_object_dependency_node.token in [
                     "ma1 ma1",
                     "ba4 ba4",

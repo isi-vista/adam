@@ -298,16 +298,30 @@ def _make_plural_objects_curriculum(
     )
 
 
-def _make_generic_statements_curriculum() -> Phase1InstanceGroup:
+def _make_generic_statements_curriculum(
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     # Hard-coded examples: we create dynamic instances and replace the linguistic description
     # The way we do this is explained here: https://github.com/isi-vista/adam/issues/771
     all_instances = []
     verbs_to_instances = {
-        "eat": _make_eat_curriculum().instances(),  # E.g babies eat
-        "drink": _make_drink_curriculum().instances(),
-        "sit": _make_sit_curriculum().instances(),
-        "jump": _make_jump_curriculum().instances(),
-        "fly": _make_fly_curriculum().instances(),
+        "eat": _make_eat_curriculum(
+            language_generator=language_generator
+        ).instances(),  # E.g babies eat
+        "drink": _make_drink_curriculum(
+            language_generator=language_generator
+        ).instances(),
+        "sit": _make_sit_curriculum(language_generator=language_generator).instances(),
+        "jump": _make_jump_curriculum(language_generator=language_generator).instances(),
+        "fly": _make_fly_curriculum(language_generator=language_generator).instances(),
+    }
+    # hack for chinese generics
+    verbs_to_ch = {
+        "eat": "chr1",
+        "drink": "he1",
+        "sit": "dzwo4",
+        "jump": "tyau4",
+        "fly": "fei1",
     }
     for verb, instances in verbs_to_instances.items():
         for (situation, description, perception) in instances:
@@ -319,7 +333,10 @@ def _make_generic_statements_curriculum() -> Phase1InstanceGroup:
             all_instances.append(
                 (
                     situation,
-                    TokenSequenceLinguisticDescription((subject, "s", verb)),
+                    # the token sequence needs pluralization for English but this isn't morphologically salient for Chinese
+                    TokenSequenceLinguisticDescription((subject, "s", verb))
+                    if language_generator == GAILA_PHASE_1_LANGUAGE_GENERATOR
+                    else TokenSequenceLinguisticDescription((subject, verbs_to_ch[verb])),
                     perception,
                 )
             )
@@ -2160,7 +2177,9 @@ def _make_come_down_template(
     )
 
 
-def _make_come_curriculum() -> Phase1InstanceGroup:
+def _make_come_curriculum(
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     movee = standard_object("movee", required_properties=[SELF_MOVING])
     learner = standard_object("leaner_0", LEARNER)
     speaker = standard_object("speaker", PERSON, added_properties=[IS_SPEAKER])
@@ -2221,10 +2240,13 @@ def _make_come_curriculum() -> Phase1InstanceGroup:
                 ),
             ]
         ),
+        language_generator=language_generator,
     )
 
 
-def _make_behind_in_front_curriculum() -> Phase1InstanceGroup:
+def _make_behind_in_front_curriculum(
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     front_behind_ground_object = standard_object("ground_object")
     front_behind_figure_object = standard_object("figure_object")
     front_behind_speaker = standard_object(
@@ -2287,6 +2309,7 @@ def _make_behind_in_front_curriculum() -> Phase1InstanceGroup:
                 )
             ]
         ),
+        language_generator=language_generator,
     )
 
 
