@@ -62,19 +62,43 @@ def test_each_object_by_itself_curriculum(language_generator):
     )
 
 
-def test_objects_with_colors_curriculum():
-    curriculum_test(_make_objects_with_colors_curriculum())
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
+)
+def test_objects_with_colors_curriculum(language_generator):
+    curriculum_test(
+        _make_objects_with_colors_curriculum(language_generator=language_generator)
+    )
 
 
-def test_objects_with_colors_is_curriculum():
-    cur = _make_objects_with_colors_is_curriculum().instances()
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
+)
+def test_objects_with_colors_is_curriculum(language_generator):
+    cur = _make_objects_with_colors_is_curriculum(
+        language_generator=language_generator
+    ).instances()
     for c in cur:
-        assert c[1].as_token_sequence()[2] == "is"
-    curriculum_test(_make_objects_with_colors_is_curriculum())
+        assert (
+            language_generator == GAILA_PHASE_1_LANGUAGE_GENERATOR
+            and c[1].as_token_sequence()[2] == "is"
+        ) or (
+            language_generator == GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR
+            and c[1].as_token_sequence()[1] == "shr4"
+        )
+    curriculum_test(
+        _make_objects_with_colors_is_curriculum(language_generator=language_generator)
+    )
 
 
-def test_instantiate_fly_curriculum():
-    curriculum_test(_make_fly_curriculum())
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
+)
+def test_instantiate_fly_curriculum(language_generator):
+    curriculum_test(_make_fly_curriculum(language_generator=language_generator))
 
 
 def test_plural_objects_curriculum():

@@ -204,7 +204,9 @@ def _object_with_color_template(
     )
 
 
-def _make_objects_with_colors_curriculum() -> Phase1InstanceGroup:
+def _make_objects_with_colors_curriculum(
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     color = color_variable("color")
     object_with_color = standard_object("object", added_properties=[color])
 
@@ -220,6 +222,7 @@ def _make_objects_with_colors_curriculum() -> Phase1InstanceGroup:
                 )
             ]
         ),
+        language_generator=language_generator,
     )
 
 
@@ -233,7 +236,9 @@ def _object_with_color_is_template(
     )
 
 
-def _make_objects_with_colors_is_curriculum() -> Phase1InstanceGroup:
+def _make_objects_with_colors_is_curriculum(
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     color = color_variable("color")
     object_with_color = standard_object("object", added_properties=[color])
 
@@ -249,6 +254,7 @@ def _make_objects_with_colors_is_curriculum() -> Phase1InstanceGroup:
                 )
             ]
         ),
+        language_generator=language_generator,
     )
 
 
@@ -801,7 +807,9 @@ def make_fly_templates() -> Iterable[Phase1SituationTemplate]:
     ]
 
 
-def _make_fly_curriculum() -> Phase1InstanceGroup:
+def _make_fly_curriculum(
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     return phase1_instances(
         "flying",
         chain(
@@ -816,6 +824,7 @@ def _make_fly_curriculum() -> Phase1InstanceGroup:
                 ]
             )
         ),
+        language_generator=language_generator,
     )
 
 
