@@ -218,32 +218,64 @@ def test_jump_curriculum(language_generator):
     curriculum_test(_make_jump_curriculum(language_generator=language_generator))
 
 
-def test_put():
-    curriculum_test(_make_put_curriculum())
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
+)
+def test_put(language_generator):
+    curriculum_test(_make_put_curriculum(language_generator=language_generator))
 
 
-def test_put_on_speaker_addressee_body_part_curriculum():
-    curriculum_test(_make_put_on_speaker_addressee_body_part_curriculum())
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
+)
+def test_put_on_speaker_addressee_body_part_curriculum(language_generator):
+    curriculum_test(
+        _make_put_on_speaker_addressee_body_part_curriculum(
+            language_generator=language_generator
+        )
+    )
 
 
-def test_drink_curriculum():
-    curriculum_test(_make_drink_curriculum())
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
+)
+def test_drink_curriculum(language_generator):
+    curriculum_test(_make_drink_curriculum(language_generator=language_generator))
 
 
-def test_eat_curriculum():
-    curriculum_test(_make_eat_curriculum())
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
+)
+def test_eat_curriculum(language_generator):
+    curriculum_test(_make_eat_curriculum(language_generator=language_generator))
 
 
-def test_sit_curriculum():
-    curriculum_test(_make_sit_curriculum())
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
+)
+def test_sit_curriculum(language_generator):
+    curriculum_test(_make_sit_curriculum(language_generator=language_generator))
 
 
-def test_take_curriculum():
-    curriculum_test(_make_take_curriculum())
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
+)
+def test_take_curriculum(language_generator):
+    curriculum_test(_make_take_curriculum(language_generator=language_generator))
 
 
-def test_move_curriculum():
-    curriculum_test(_make_move_curriculum())
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
+)
+def test_move_curriculum(language_generator):
+    curriculum_test(_make_move_curriculum(language_generator=language_generator))
 
 
 def test_spin_curriculum():

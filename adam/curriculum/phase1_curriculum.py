@@ -1245,7 +1245,9 @@ def make_put_templates() -> Iterable[Phase1SituationTemplate]:
     ]
 
 
-def _make_put_curriculum() -> Phase1InstanceGroup:
+def _make_put_curriculum(
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     return phase1_instances(
         "putting",
         chain(
@@ -1261,10 +1263,13 @@ def _make_put_curriculum() -> Phase1InstanceGroup:
                 ]
             )
         ),
+        language_generator=language_generator,
     )
 
 
-def _make_put_on_speaker_addressee_body_part_curriculum() -> Phase1InstanceGroup:
+def _make_put_on_speaker_addressee_body_part_curriculum(
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     speaker_putter = standard_object(
         "speaker_putter_0",
         THING,
@@ -1301,6 +1306,7 @@ def _make_put_on_speaker_addressee_body_part_curriculum() -> Phase1InstanceGroup
                 ]
             )
         ),
+        language_generator=language_generator,
     )
 
 
@@ -1322,7 +1328,9 @@ def make_drink_template() -> Phase1SituationTemplate:
     )
 
 
-def _make_drink_curriculum() -> Phase1InstanceGroup:
+def _make_drink_curriculum(
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     return phase1_instances(
         "drinking",
         chain(
@@ -1334,6 +1342,7 @@ def _make_drink_curriculum() -> Phase1InstanceGroup:
                 )
             ]
         ),
+        language_generator=language_generator,
     )
 
 
@@ -1355,7 +1364,10 @@ def make_eat_template(
 
 
 def _make_eat_curriculum(
-    num_to_sample: int = 25, *, noise_objects: int = 0
+    num_to_sample: int = 25,
+    *,
+    noise_objects: int = 0,
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     # TODO: "eat it up"
     # https://github.com/isi-vista/adam/issues/267
@@ -1378,6 +1390,7 @@ def _make_eat_curriculum(
                 )
             ]
         ),
+        language_generator=language_generator,
     )
 
 
@@ -1458,7 +1471,9 @@ def make_sit_templates() -> Iterable[Phase1SituationTemplate]:
             )
 
 
-def _make_sit_curriculum() -> Phase1InstanceGroup:
+def _make_sit_curriculum(
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     return phase1_instances(
         "sitting",
         chain(
@@ -1471,6 +1486,7 @@ def _make_sit_curriculum() -> Phase1InstanceGroup:
                 for situation_templates in make_sit_templates()
             ]
         ),
+        language_generator=language_generator,
     )
 
 
@@ -1547,7 +1563,9 @@ def make_walk_run_template(
     )
 
 
-def _make_take_curriculum() -> Phase1InstanceGroup:
+def _make_take_curriculum(
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     return phase1_instances(
         "taking",
         chain(
@@ -1568,6 +1586,7 @@ def _make_take_curriculum() -> Phase1InstanceGroup:
                 )
             ]
         ),
+        language_generator=language_generator,
     )
 
 
@@ -1659,7 +1678,9 @@ def make_move_templates() -> Iterable[Phase1SituationTemplate]:
     ]
 
 
-def _make_move_curriculum() -> Phase1InstanceGroup:
+def _make_move_curriculum(
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     return phase1_instances(
         "move",
         chain(
@@ -1673,6 +1694,7 @@ def _make_move_curriculum() -> Phase1InstanceGroup:
                 for situation in make_move_templates()
             ]
         ),
+        language_generator=language_generator,
     )
 
 
