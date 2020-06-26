@@ -74,6 +74,7 @@ from adam.ontology.phase1_ontology import (
     LIGHT_BROWN,
     DARK_BROWN,
     WATERMELON,
+    PASS,
 )
 
 ME = LexiconEntry("wo3", NOUN, intrinsic_morphosyntactic_properties=[FIRST_PERSON])
@@ -131,5 +132,6 @@ GAILA_PHASE_1_CHINESE_LEXICON = OntologyLexicon(
         (LIGHT_BROWN, LexiconEntry("chyan3 he2 se4", ADJECTIVE)),
         (DARK_BROWN, LexiconEntry("shen1 dzung1 se4", ADJECTIVE)),
         (WATERMELON, LexiconEntry("syi1 gwa1", NOUN)),
+        (PASS, LexiconEntry("di4", VERB)),
     ),
 )

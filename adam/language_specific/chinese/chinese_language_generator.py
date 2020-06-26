@@ -414,10 +414,23 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 return (syntactic_role, filler_noun)
             # deal with the case that it's a region in the situation
             elif isinstance(filler, Region):
+
                 # get the noun for the object
                 reference_object_dependency_node = self._noun_for_object(
                     filler.reference_object
                 )
+                if reference_object_dependency_node.token in [
+                    "ma1 ma1",
+                    "ba4 ba4",
+                    "bau3 bau3",
+                ]:
+                    self.dependency_graph.add_edge(
+                        DependencyTreeToken("gei3", ADPOSITION),
+                        reference_object_dependency_node,
+                        role=CASE_SPATIAL,
+                    )
+                    return (ADVERBIAL_CLAUSE_MODIFIER, reference_object_dependency_node)
+
                 # if this is the equivalent of "to" in English with a go/come verb, we just use the bare noun
                 if (
                     (action.action_type == GO or action.action_type == COME)
@@ -438,7 +451,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
                         role=CASE_SPATIAL,
                     )
 
-                    # get the localiser and at it to the noun as well
+                    # get the localiser and add it to the noun as well
                     localiser_dependency_node = DependencyTreeToken(
                         self._localiser_for_region_as_goal(filler), ADPOSITION
                     )

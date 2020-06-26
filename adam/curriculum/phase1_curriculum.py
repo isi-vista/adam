@@ -2108,7 +2108,9 @@ def _make_throw_curriculum(
     )
 
 
-def _make_pass_curriculum() -> Phase1InstanceGroup:
+def _make_pass_curriculum(
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     return phase1_instances(
         "passing",
         sampled(
@@ -2122,6 +2124,7 @@ def _make_pass_curriculum() -> Phase1InstanceGroup:
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
         ),
+        language_generator=language_generator,
     )
 
 
