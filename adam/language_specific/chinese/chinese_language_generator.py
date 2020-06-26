@@ -489,6 +489,8 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 return "shang4"
             # this is how we currently handle "to" in Chinese, but there's not a real equivalent
             elif region.distance == PROXIMAL and not region.direction:
+                if USE_NEAR in self.situation.syntax_hints:
+                    return "pang2 byan1"
                 return "shang4"
             # above
             elif region.direction == GRAVITATIONAL_UP:
@@ -859,7 +861,10 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 localiser = "li3"
             # to/towards -- this functions differntly in Chinese but this is the best approximation to handle it
             if region.distance == PROXIMAL and not region.direction:
-                localiser = "shang4"
+                if USE_NEAR in self.situation.syntax_hints:
+                    localiser = "pang2 byan1"
+                else:
+                    localiser = "shang4"
             elif region.direction:
                 direction_axis = region.direction.relative_to_concrete_axis(
                     self.situation.axis_info
@@ -1002,3 +1007,4 @@ PREFER_DITRANSITIVE = "PREFER_DITRANSITIVE"
 IGNORE_COLORS = "IGNORE_COLORS"
 IGNORE_HAS_AS_VERB = "IGNORE_HAS_AS_VERB"
 ATTRIBUTES_AS_X_IS_Y = "ATTRIBUTES_AS_X_IS_Y"
+USE_NEAR = "USE_NEAR"

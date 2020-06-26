@@ -3,7 +3,9 @@ from typing import Iterable
 
 from immutablecollections import immutableset
 from more_itertools import flatten
-
+from adam.language_specific.english.english_language_generator import (
+    GAILA_PHASE_1_LANGUAGE_GENERATOR,
+)
 from adam.axes import HorizontalAxisOfObject, FacingAddresseeAxis
 from adam.curriculum.curriculum_utils import (
     PHASE1_CHOOSER_FACTORY,
@@ -243,7 +245,10 @@ def _far_template(
 
 
 def _make_on_training(
-    num_samples: int = 5, *, noise_objects: bool = True
+    num_samples: int = 5,
+    *,
+    noise_objects: bool = True,
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
@@ -282,11 +287,15 @@ def _make_on_training(
                 )
             ]
         ),
+        language_generator=language_generator,
     )
 
 
 def _make_beside_training(
-    num_samples: int = 5, *, noise_objects: bool = True
+    num_samples: int = 5,
+    *,
+    noise_objects: bool = True,
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
@@ -328,11 +337,15 @@ def _make_beside_training(
                 )
             ]
         ),
+        language_generator=language_generator,
     )
 
 
 def _make_under_training(
-    num_samples: int = 5, *, noise_objects: bool = True
+    num_samples: int = 5,
+    *,
+    noise_objects: bool = True,
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
@@ -367,6 +380,7 @@ def _make_under_training(
                 for use_above_below in BOOL_SET
             ]
         ),
+        language_generator=language_generator,
     )
 
 
@@ -411,7 +425,10 @@ def _make_over_training(
 
 
 def _make_in_training(
-    num_samples: int = 5, *, noise_objects: bool = True
+    num_samples: int = 5,
+    *,
+    noise_objects: bool = True,
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = object_variable("water", WATER)
     figure_1 = object_variable("juice", JUICE)
@@ -444,11 +461,15 @@ def _make_in_training(
                 for ground in grounds
             ]
         ),
+        language_generator=language_generator,
     )
 
 
 def _make_behind_training(
-    num_samples: int = 5, *, noise_objects: bool = True
+    num_samples: int = 5,
+    *,
+    noise_objects: bool = True,
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
@@ -494,11 +515,15 @@ def _make_behind_training(
                 )
             ]
         ),
+        language_generator=language_generator,
     )
 
 
 def _make_in_front_training(
-    num_samples: int = 5, *, noise_objects: bool = True
+    num_samples: int = 5,
+    *,
+    noise_objects: bool = True,
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
@@ -544,11 +569,15 @@ def _make_in_front_training(
                 )
             ]
         ),
+        language_generator=language_generator,
     )
 
 
 def _make_near_training(
-    num_samples: int = 5, *, noise_objects: bool = True
+    num_samples: int = 5,
+    *,
+    noise_objects: bool = True,
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
@@ -588,6 +617,7 @@ def _make_near_training(
                 )
             ]
         ),
+        language_generator=language_generator,
     )
 
 
