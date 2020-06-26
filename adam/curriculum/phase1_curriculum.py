@@ -658,7 +658,9 @@ def _make_transfer_of_possession_curriculum(
     )
 
 
-def _make_object_on_object_curriculum() -> Phase1InstanceGroup:
+def _make_object_on_object_curriculum(
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     object_ = object_variable("object_0", INANIMATE_OBJECT)
     object_with_surface = object_variable(
         "object_1",
@@ -680,10 +682,13 @@ def _make_object_on_object_curriculum() -> Phase1InstanceGroup:
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
         ),
+        language_generator=language_generator,
     )
 
 
-def _make_object_beside_object_curriculum() -> Phase1InstanceGroup:
+def _make_object_beside_object_curriculum(
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     smaller_beside_object = standard_object("object")
     larger_beside_object = standard_object("larger_beside_object")
 
@@ -713,10 +718,13 @@ def _make_object_beside_object_curriculum() -> Phase1InstanceGroup:
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
         ),
+        language_generator=language_generator,
     )
 
 
-def _make_object_under_or_over_object_curriculum() -> Phase1InstanceGroup:
+def _make_object_under_or_over_object_curriculum(
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     object_under = standard_object("object_0")
     object_above = standard_object("object_1", required_properties=[HAS_SPACE_UNDER])
     bird = object_variable("bird_0", BIRD)
@@ -749,10 +757,13 @@ def _make_object_under_or_over_object_curriculum() -> Phase1InstanceGroup:
                 for template in templates
             ]
         ),
+        language_generator=language_generator,
     )
 
 
-def _make_object_in_other_object_curriculum() -> Phase1InstanceGroup:
+def _make_object_in_other_object_curriculum(
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     object_ = standard_object("object_0")
     liquid = object_variable(
         "liquid_0", required_properties=[LIQUID], banned_properties=[IS_BODY_PART]
@@ -791,6 +802,7 @@ def _make_object_in_other_object_curriculum() -> Phase1InstanceGroup:
                 ),
             ]
         ),
+        language_generator=language_generator,
     )
 
 
@@ -986,7 +998,9 @@ def make_roll_templates() -> Iterable[Phase1SituationTemplate]:
     ]
 
 
-def _make_roll_curriculum() -> Phase1InstanceGroup:
+def _make_roll_curriculum(
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     return phase1_instances(
         "rolling",
         chain(
@@ -1000,6 +1014,7 @@ def _make_roll_curriculum() -> Phase1InstanceGroup:
                 for situation in make_roll_templates()
             ]
         ),
+        language_generator=language_generator,
     )
 
 
@@ -1037,7 +1052,9 @@ def _make_transitive_roll_curriculum() -> Phase1InstanceGroup:
     )
 
 
-def _make_speaker_addressee_curriculum() -> Phase1InstanceGroup:
+def _make_speaker_addressee_curriculum(
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     speaker = standard_object("speaker_0", PERSON, added_properties=[IS_SPEAKER])
     addressee = standard_object("addressee_0", PERSON, added_properties=[IS_ADDRESSEE])
     given_object = standard_object("given_object", INANIMATE_OBJECT)
@@ -1093,6 +1110,7 @@ def _make_speaker_addressee_curriculum() -> Phase1InstanceGroup:
                 )
             ]
         ),
+        language_generator=language_generator,
     )
 
 
@@ -1176,7 +1194,9 @@ def make_jump_templates():
         )
 
 
-def _make_jump_curriculum() -> Phase1InstanceGroup:
+def _make_jump_curriculum(
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     jumper = standard_object("jumper_0", THING, required_properties=[CAN_JUMP])
     jumped_over = standard_object("jumped_over")
 
@@ -1208,6 +1228,7 @@ def _make_jump_curriculum() -> Phase1InstanceGroup:
                 ]
             ),
         ),
+        language_generator=language_generator,
     )
 
 

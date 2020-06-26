@@ -157,32 +157,65 @@ def test_transfer_of_possession_curriculum(language_generator):
     )
 
 
-def test_object_on_object_curriculum():
-    curriculum_test(_make_object_on_object_curriculum())
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
+)
+def test_object_on_object_curriculum(language_generator):
+    curriculum_test(
+        _make_object_on_object_curriculum(language_generator=language_generator)
+    )
 
 
-def test_object_beside_object_curriculum():
-    curriculum_test(_make_object_beside_object_curriculum())
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
+)
+def test_object_beside_object_curriculum(language_generator):
+    curriculum_test(
+        _make_object_beside_object_curriculum(language_generator=language_generator)
+    )
 
 
+# TODO: update this implementation for Chinese once https://github.com/isi-vista/adam/pull/819 is merged
 def test_object_under_or_over_object_curriculum():
     curriculum_test(_make_object_under_or_over_object_curriculum())
 
 
-def test_object_in_other_object_curriculum():
-    curriculum_test(_make_object_in_other_object_curriculum())
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
+)
+def test_object_in_other_object_curriculum(language_generator):
+    curriculum_test(
+        _make_object_in_other_object_curriculum(language_generator=language_generator)
+    )
 
 
-def test_roll_curriculum():
-    curriculum_test(_make_roll_curriculum())
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
+)
+def test_roll_curriculum(language_generator):
+    curriculum_test(_make_roll_curriculum(language_generator=language_generator))
 
 
-def test_speaker_addressee():
-    curriculum_test(_make_speaker_addressee_curriculum())
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
+)
+def test_speaker_addressee(language_generator):
+    curriculum_test(
+        _make_speaker_addressee_curriculum(language_generator=language_generator)
+    )
 
 
-def test_jump_curriculum():
-    curriculum_test(_make_jump_curriculum())
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
+)
+def test_jump_curriculum(language_generator):
+    curriculum_test(_make_jump_curriculum(language_generator=language_generator))
 
 
 def test_put():
