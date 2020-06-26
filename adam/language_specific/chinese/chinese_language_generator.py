@@ -938,11 +938,14 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     return None
 
             localiser: Optional[str] = None
+            # out of
+            if region.distance == INTERIOR and relation.negated:
+                localiser = "chu1"
             # inside/in
-            if region.distance == INTERIOR:
+            elif region.distance == INTERIOR:
                 localiser = "li3"
             # to/towards -- this functions differntly in Chinese but this is the best approximation to handle it
-            if region.distance == PROXIMAL and not region.direction:
+            elif region.distance == PROXIMAL and not region.direction:
                 if USE_NEAR in self.situation.syntax_hints:
                     localiser = "pang2 byan1"
                 else:
