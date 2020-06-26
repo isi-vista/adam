@@ -83,6 +83,7 @@ from adam.ontology.phase1_spatial_relations import (
     Region,
     TOWARD,
     GRAVITATIONAL_UP,
+    DISTAL,
 )
 from adam.random_utils import SequenceChooser
 from adam.relation import Relation
@@ -492,6 +493,8 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 if USE_NEAR in self.situation.syntax_hints:
                     return "pang2 byan1"
                 return "shang4"
+            elif region.distance == DISTAL and not region.direction:
+                return "ywan3 li2"
             # above
             elif region.direction == GRAVITATIONAL_UP:
                 return "shang4 myan4"
@@ -865,6 +868,8 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     localiser = "pang2 byan1"
                 else:
                     localiser = "shang4"
+            elif region.distance == DISTAL and not region.direction:
+                localiser = "ywan3 li2"
             elif region.direction:
                 direction_axis = region.direction.relative_to_concrete_axis(
                     self.situation.axis_info

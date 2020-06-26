@@ -622,7 +622,10 @@ def _make_near_training(
 
 
 def _make_far_training(
-    num_samples: int = 5, *, noise_objects: bool = True
+    num_samples: int = 5,
+    *,
+    noise_objects: bool = True,
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
@@ -662,6 +665,7 @@ def _make_far_training(
                 )
             ]
         ),
+        language_generator=language_generator,
     )
 
 

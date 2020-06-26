@@ -86,8 +86,12 @@ def test_near_training(language_generator):
     curriculum_test(_make_near_training(language_generator=language_generator))
 
 
-def test_far_training():
-    curriculum_test(_make_far_training())
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
+)
+def test_far_training(language_generator):
+    curriculum_test(_make_far_training(language_generator=language_generator))
 
 
 def test_on_tests():
