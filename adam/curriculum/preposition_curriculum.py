@@ -670,7 +670,10 @@ def _make_far_training(
 
 
 def _make_on_tests(
-    num_samples: int = 5, *, noise_objects: bool = True
+    num_samples: int = 5,
+    *,
+    noise_objects: bool = True,
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("figure_0", THING, banned_properties=[HOLLOW])
     figure_1 = standard_object("figure_1", THING, banned_properties=[HOLLOW])
@@ -718,11 +721,15 @@ def _make_on_tests(
                 )
             ]
         ),
+        language_generator=language_generator,
     )
 
 
 def _make_beside_tests(
-    num_samples: int = 5, *, noise_objects: bool = True
+    num_samples: int = 5,
+    *,
+    noise_objects: bool = True,
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("figure_0", THING, banned_properties=[HOLLOW])
     figure_1 = standard_object("figure_1", THING, banned_properties=[HOLLOW])
@@ -762,6 +769,7 @@ def _make_beside_tests(
                 )
             ]
         ),
+        language_generator=language_generator,
     )
 
 
@@ -848,7 +856,10 @@ def _make_over_tests(
 
 
 def _make_in_tests(
-    num_samples: int = 5, *, noise_objects: bool = True
+    num_samples: int = 5,
+    *,
+    noise_objects: bool = True,
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = object_variable("figure_0", THING, banned_properties=[IS_BODY_PART])
     figure_1 = standard_object("figure_1", THING, banned_properties=[IS_BODY_PART])
@@ -881,11 +892,15 @@ def _make_in_tests(
                 for ground in grounds
             ]
         ),
+        language_generator=language_generator,
     )
 
 
 def _make_behind_tests(
-    num_samples: int = 5, *, noise_objects: bool = True
+    num_samples: int = 5,
+    *,
+    noise_objects: bool = True,
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("figure_0", THING, banned_properties=[HOLLOW])
     figure_1 = standard_object("figure_1", THING, banned_properties=[HOLLOW])
@@ -930,11 +945,15 @@ def _make_behind_tests(
                 )
             ]
         ),
+        language_generator=language_generator,
     )
 
 
 def _make_in_front_tests(
-    num_samples: int = 5, *, noise_objects: bool = True
+    num_samples: int = 5,
+    *,
+    noise_objects: bool = True,
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("figure_0", THING, banned_properties=[HOLLOW])
     figure_1 = standard_object("figure_1", THING, banned_properties=[HOLLOW])
@@ -979,11 +998,15 @@ def _make_in_front_tests(
                 )
             ]
         ),
+        language_generator=language_generator,
     )
 
 
 def _make_near_tests(
-    num_samples: int = 5, *, noise_objects: bool = True
+    num_samples: int = 5,
+    *,
+    noise_objects: bool = True,
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("figure_0", THING, banned_properties=[HOLLOW])
     figure_1 = standard_object("figure_1", THING, banned_properties=[HOLLOW])
@@ -1021,11 +1044,15 @@ def _make_near_tests(
                 )
             ]
         ),
+        language_generator=language_generator,
     )
 
 
 def _make_far_tests(
-    num_samples: int = 5, *, noise_objects: bool = True
+    num_samples: int = 5,
+    *,
+    noise_objects: bool = True,
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("figure_0", THING, banned_properties=[HOLLOW])
     figure_1 = standard_object("figure_1", THING, banned_properties=[HOLLOW])
@@ -1063,6 +1090,7 @@ def _make_far_tests(
                 )
             ]
         ),
+        language_generator=language_generator,
     )
 
 

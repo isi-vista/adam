@@ -94,37 +94,67 @@ def test_far_training(language_generator):
     curriculum_test(_make_far_training(language_generator=language_generator))
 
 
-def test_on_tests():
-    curriculum_test(_make_on_tests())
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
+)
+def test_on_tests(language_generator):
+    curriculum_test(_make_on_tests(language_generator=language_generator))
 
 
-def test_beside_tests():
-    curriculum_test(_make_beside_tests())
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
+)
+def test_beside_tests(language_generator):
+    curriculum_test(_make_beside_tests(language_generator=language_generator))
 
 
+# TODO update implementation one over is updated from https://github.com/isi-vista/adam/pull/819
 def test_under_tests():
     curriculum_test(_make_under_tests())
 
 
+# TODO update implementation one over is updated from https://github.com/isi-vista/adam/pull/819
 def test_over_tests():
     curriculum_test(_make_over_tests())
 
 
-def test_in_tests():
-    curriculum_test(_make_in_tests())
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
+)
+def test_in_tests(language_generator):
+    curriculum_test(_make_in_tests(language_generator=language_generator))
 
 
-def test_behind_tests():
-    curriculum_test(_make_behind_tests())
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
+)
+def test_behind_tests(language_generator):
+    curriculum_test(_make_behind_tests(language_generator=language_generator))
 
 
-def test_in_front_tests():
-    curriculum_test(_make_in_front_tests())
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
+)
+def test_in_front_tests(language_generator):
+    curriculum_test(_make_in_front_tests(language_generator=language_generator))
 
 
-def test_near_tests():
-    curriculum_test(_make_near_tests())
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
+)
+def test_near_tests(language_generator):
+    curriculum_test(_make_near_tests(language_generator=language_generator))
 
 
-def test_far_tests():
-    curriculum_test(_make_far_tests())
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
+)
+def test_far_tests(language_generator):
+    curriculum_test(_make_far_tests(language_generator=language_generator))

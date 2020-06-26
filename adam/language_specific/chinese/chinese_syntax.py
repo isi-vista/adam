@@ -71,11 +71,13 @@ _CHINESE_HEAD_TO_ROLE_ORDER: ImmutableDict[
         (
             CASE_SPATIAL,
             NOMINAL_MODIFIER_POSSESSIVE,
+            NUMERIC_MODIFIER,
+            CLASSIFIER,
             ADJECTIVAL_MODIFIER,
             HEAD,
             IS_ATTRIBUTE,
-            CASE_POSSESSIVE,
             NOMINAL_MODIFIER,
+            CASE_POSSESSIVE,
         ),
     ),
 ]
