@@ -5,6 +5,9 @@ metrics to pursue the strongest hypothesis as long as it is supported by the fol
 Paper: The Pursuit of Word Meanings (Stevens et al., 2017)
 """
 from adam.curriculum import ExplicitWithSituationInstanceGroup
+from adam.language_specific.english.english_language_generator import (
+    GAILA_PHASE_1_LANGUAGE_GENERATOR,
+)
 from adam.curriculum.curriculum_utils import (
     phase1_instances,
     PHASE1_CHOOSER_FACTORY,
@@ -40,6 +43,7 @@ def make_simple_pursuit_curriculum(
     num_noise_instances: int = 0,
     num_objects_in_instance: int = 3,
     perception_generator: HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator = GAILA_PHASE_1_PERCEPTION_GENERATOR,
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     """
     Creates a Pursuit-learning curriculum with for a set of standard objects. Each instance in the curriculum is a set
@@ -87,6 +91,7 @@ def make_simple_pursuit_curriculum(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                 ),
                 perception_generator=perception_generator,
+                language_generator=language_generator,
             ).instances()
         )
 
@@ -109,6 +114,7 @@ def make_simple_pursuit_curriculum(
                 ontology=GAILA_PHASE_1_ONTOLOGY,
             ),
             perception_generator=perception_generator,
+            language_generator=language_generator,
         ).instances()
         # [1] is the index of the linguistic description in an instance
         # It doesn't matter which non-noise instance is chosen
