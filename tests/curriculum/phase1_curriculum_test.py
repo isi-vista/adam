@@ -34,17 +34,32 @@ from adam.curriculum.phase1_curriculum import (
     _make_generic_statements_curriculum,
 )
 
+from adam.language_specific.english.english_language_generator import (
+    GAILA_PHASE_1_LANGUAGE_GENERATOR,
+)
+from adam.language_specific.chinese.chinese_language_generator import (
+    GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
+)
+import pytest
+
 
 def curriculum_test(curriculum: Phase1InstanceGroup) -> None:
     for _ in curriculum.instances():
+        print(_)
         # we don't need to do anything
         # the curriculum may be dynamically generated
         # so we just want to test we can instantiate it
-        pass
+        # pass
 
 
-def test_each_object_by_itself_curriculum():
-    curriculum_test(_make_each_object_by_itself_curriculum())
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
+)
+def test_each_object_by_itself_curriculum(language_generator):
+    curriculum_test(
+        _make_each_object_by_itself_curriculum(language_generator=language_generator)
+    )
 
 
 def test_objects_with_colors_curriculum():

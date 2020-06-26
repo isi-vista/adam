@@ -4,7 +4,9 @@ Curricula for DARPA GAILA Phase 1
 
 from itertools import chain
 from typing import Iterable, Sequence, List
-
+from adam.language_specific.english.english_language_generator import (
+    GAILA_PHASE_1_LANGUAGE_GENERATOR,
+)
 from immutablecollections import immutableset
 from more_itertools import flatten, first
 
@@ -143,7 +145,8 @@ from adam.situation.templates.phase1_templates import (
 
 # Show each object once by itself
 def _make_each_object_by_itself_curriculum(
-    perception_generator: HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator = GAILA_PHASE_1_PERCEPTION_GENERATOR
+    perception_generator: HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator = GAILA_PHASE_1_PERCEPTION_GENERATOR,
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     color = color_variable("color")
     single_object_template = Phase1SituationTemplate(
@@ -186,6 +189,7 @@ def _make_each_object_by_itself_curriculum(
             ]
         ),
         perception_generator=perception_generator,
+        language_generator=language_generator,
     )
 
 
