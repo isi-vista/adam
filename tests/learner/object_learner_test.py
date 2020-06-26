@@ -3,10 +3,20 @@ import random
 from itertools import chain
 from typing import Optional
 
+from immutablecollections import immutableset
+
 from adam.curriculum.phase1_curriculum import PHASE1_CHOOSER_FACTORY, phase1_instances
 from adam.curriculum.pursuit_curriculum import make_simple_pursuit_curriculum
-from adam.language_specific.english.english_language_generator import IGNORE_COLORS
-from adam.learner import LearningExample
+from adam.language_specific.english.english_language_generator import (
+    IGNORE_COLORS,
+    GAILA_PHASE_1_LANGUAGE_GENERATOR,
+)
+from adam.learner import (
+    LearningExample,
+    PerceptionSemanticAlignment,
+    LanguagePerceptionSemanticAlignment,
+)
+from adam.learner.alignments import LanguageConceptAlignment
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.objects import ObjectPursuitLearner, SubsetObjectLearnerNew
 from adam.ontology import OntologyNode
@@ -16,9 +26,28 @@ from adam.ontology.phase1_ontology import (
     BOX,
     DOG,
     GAILA_PHASE_1_ONTOLOGY,
+    GROUND,
+    HEAD,
     LEARNER,
+    MOM,
+    on,
+    HAND,
+    HOUSE,
 )
-from adam.perception.perception_graph import DebugCallableType, DumpPartialMatchCallback
+from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
+    GAILA_PHASE_1_PERCEPTION_GENERATOR,
+)
+from adam.perception.perception_graph import (
+    DebugCallableType,
+    DumpPartialMatchCallback,
+    PerceptionGraph,
+)
+from adam.random_utils import RandomChooser
+from adam.relation import flatten_relations
+from adam.relation_dsl import negate
+from adam.semantics import ObjectSemanticNode
+from adam.situation import SituationObject
+from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
     all_possible,
@@ -95,6 +124,107 @@ def test_subset_learner_dog():
     # debug_callback = DumpPartialMatchCallback(render_path="../renders/")
     # We pass this callback into the learner; it is executed if the learning takes too long, i.e after 60 seconds.
     run_subset_learner_for_object(DOG)
+
+
+def test_subset_learner_subobject():
+    mom = SituationObject.instantiate_ontology_node(
+        ontology_node=MOM, ontology=GAILA_PHASE_1_ONTOLOGY
+    )
+    head = SituationObject.instantiate_ontology_node(
+        ontology_node=HEAD, ontology=GAILA_PHASE_1_ONTOLOGY
+    )
+    hand = SituationObject.instantiate_ontology_node(
+        ontology_node=HAND, ontology=GAILA_PHASE_1_ONTOLOGY
+    )
+    ball = SituationObject.instantiate_ontology_node(
+        ontology_node=BALL, ontology=GAILA_PHASE_1_ONTOLOGY
+    )
+    house = SituationObject.instantiate_ontology_node(
+        ontology_node=HOUSE, ontology=GAILA_PHASE_1_ONTOLOGY
+    )
+    ground = SituationObject.instantiate_ontology_node(
+        ontology_node=GROUND, ontology=GAILA_PHASE_1_ONTOLOGY
+    )
+
+    mom_situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=immutableset([mom])
+    )
+
+    floating_head_situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=immutableset([head]),
+        other_objects=immutableset([ground]),
+        always_relations=flatten_relations(negate(on(head, ground))),
+    )
+
+    # Need to include some extra situations so that the learner will prune its semantics for 'a'
+    # away and not recognize it as an object.
+    floating_hand_situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=immutableset([hand]),
+        other_objects=immutableset([ground]),
+        always_relations=flatten_relations(negate(on(hand, ground))),
+    )
+
+    floating_ball_situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=immutableset([ball]),
+        other_objects=immutableset([ground]),
+        always_relations=flatten_relations(negate(on(ball, ground))),
+    )
+
+    floating_house_situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=immutableset([house]),
+        other_objects=immutableset([ground]),
+        always_relations=flatten_relations(negate(on(house, ground))),
+    )
+
+    object_learner = SubsetObjectLearnerNew(ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5)
+
+    for situation in [
+        mom_situation,
+        floating_head_situation,
+        floating_hand_situation,
+        floating_ball_situation,
+        floating_house_situation,
+    ]:
+        perceptual_representation = GAILA_PHASE_1_PERCEPTION_GENERATOR.generate_perception(
+            situation, chooser=RandomChooser.for_seed(0)
+        )
+        for linguistic_description in GAILA_PHASE_1_LANGUAGE_GENERATOR.generate_language(
+            situation, chooser=RandomChooser.for_seed(0)
+        ):
+            perception_graph = PerceptionGraph.from_frame(
+                perceptual_representation.frames[0]
+            )
+
+            object_learner.learn_from(
+                LanguagePerceptionSemanticAlignment(
+                    language_concept_alignment=LanguageConceptAlignment.create_unaligned(
+                        language=linguistic_description
+                    ),
+                    perception_semantic_alignment=PerceptionSemanticAlignment(
+                        perception_graph=perception_graph, semantic_nodes=[]
+                    ),
+                )
+            )
+
+    mom_perceptual_representation = GAILA_PHASE_1_PERCEPTION_GENERATOR.generate_perception(
+        mom_situation, chooser=RandomChooser.for_seed(0)
+    )
+    perception_graph = PerceptionGraph.from_frame(mom_perceptual_representation.frames[0])
+    enriched = object_learner.enrich_during_description(
+        PerceptionSemanticAlignment.create_unaligned(perception_graph)
+    )
+
+    semantic_node_types_and_debug_strings = {
+        (type(semantic_node), semantic_node.concept.debug_string)
+        for semantic_node in enriched.semantic_nodes
+    }
+    assert (ObjectSemanticNode, "Mom") in semantic_node_types_and_debug_strings
+    assert (ObjectSemanticNode, "head") in semantic_node_types_and_debug_strings
+    assert (ObjectSemanticNode, "hand") in semantic_node_types_and_debug_strings
 
 
 def test_pursuit_object_learner():
