@@ -13,10 +13,17 @@ from adam.curriculum.verbs_with_dynamic_prepositions_curriculum import (
     _make_come_with_prepositions,
 )
 from tests.curriculum.phase1_curriculum_test import curriculum_test
+from adam.language_specific.chinese.chinese_language_generator import (
+    GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
+)
 
 
 def test_make_push():
-    curriculum_test(_make_push_with_prepositions())
+    curriculum_test(
+        _make_push_with_prepositions(
+            language_generator=GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR
+        )
+    )
 
 
 def test_make_go():

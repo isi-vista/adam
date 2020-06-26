@@ -1,7 +1,9 @@
 from immutablecollections import immutableset, ImmutableSet
 from itertools import chain
 from typing import Iterable, Sequence
-
+from adam.language_specific.english.english_language_generator import (
+    GAILA_PHASE_1_LANGUAGE_GENERATOR,
+)
 from more_itertools import flatten
 
 from adam.axes import (
@@ -132,6 +134,7 @@ def _push_to_template(
                 during=DuringAction(continuously=[on(theme, surface)]),
             )
         ],
+        after_action_relations=[near(theme, goal_reference)],
         constraining_relations=flatten_relations(
             bigger_than(surface, [agent, goal_reference])
         ),
@@ -161,6 +164,7 @@ def _push_in_template(
                 during=DuringAction(continuously=[on(theme, surface)]),
             )
         ],
+        after_action_relations=[near(theme, goal_reference)],
         constraining_relations=flatten_relations(
             [
                 bigger_than(surface, [agent, goal_reference]),
@@ -202,6 +206,7 @@ def _push_under_template(
                 during=DuringAction(continuously=[on(theme, surface)]),
             )
         ],
+        after_action_relations=[near(theme, goal_reference)],
         constraining_relations=flatten_relations(
             [
                 bigger_than(surface, [agent, goal_reference]),
@@ -248,6 +253,7 @@ def _push_beside_template(
                 during=DuringAction(continuously=[on(theme, surface)]),
             )
         ],
+        after_action_relations=[near(theme, goal_reference)],
         constraining_relations=flatten_relations(
             bigger_than(surface, [agent, goal_reference])
         ),
@@ -290,6 +296,7 @@ def _push_in_front_of_behind_template(
                 during=DuringAction(continuously=[on(theme, surface)]),
             )
         ],
+        after_action_relations=[near(theme, goal_reference)],
         constraining_relations=flatten_relations(
             bigger_than(surface, [agent, goal_reference])
         ),
@@ -2444,7 +2451,10 @@ def _make_come_out_of_template(
 
 
 def _make_push_with_prepositions(
-    num_samples: int = 5, *, noise_objects: int = 0
+    num_samples: int = 5,
+    *,
+    noise_objects: int = 0,
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     agent = standard_object("agent", THING, required_properties=[ANIMATE])
     theme = standard_object("theme", INANIMATE_OBJECT)
@@ -2580,6 +2590,7 @@ def _make_push_with_prepositions(
                 ]
             ),
         ),
+        language_generator=language_generator,
     )
 
 

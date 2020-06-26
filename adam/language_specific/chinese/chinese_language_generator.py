@@ -84,6 +84,9 @@ from adam.ontology.phase1_spatial_relations import (
     TOWARD,
     GRAVITATIONAL_UP,
     DISTAL,
+    SpatialPath,
+    AWAY_FROM,
+    TO,
 )
 from adam.random_utils import SequenceChooser
 from adam.relation import Relation
@@ -271,6 +274,18 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     self._translate_relation_to_action_modifier(
                         action, relation, modifiers
                     )
+                if action.during.objects_to_paths:
+                    for (
+                        path_object,
+                        spatial_path,
+                    ) in action.during.objects_to_paths.items():
+                        spatial_modifier = self._translate_spatial_path(
+                            action, path_object, spatial_path
+                        )
+                        if spatial_modifier:
+                            modifiers.append(
+                                (ADVERBIAL_CLAUSE_MODIFIER, spatial_modifier)
+                            )
 
             # if there are always relations, collect them, parse them, and add them to the modifiers
             for relation in self.situation.always_relations:
@@ -341,6 +356,69 @@ class SimpleRuleBasedChineseLanguageGenerator(
                         )
                     )
             return modifiers
+
+        def _translate_spatial_path(
+            self,
+            action: Optional[Action[OntologyNode, SituationObject]],
+            path_object: SituationObject,
+            spatial_path: SpatialPath[SituationObject],
+        ):
+            if (
+                spatial_path.reference_object
+                and spatial_path.reference_object not in self.situation.salient_objects
+            ):
+                return None
+            if path_object not in self.situation.salient_objects:
+                return None
+            if action:
+                # If both arguments of the relation are core argument roles,
+                # we assume the verb takes care of expressing their relationship.
+                core_argument_fillers = immutableset(
+                    chain(
+                        action.argument_roles_to_fillers[AGENT],
+                        action.argument_roles_to_fillers[PATIENT],
+                        action.argument_roles_to_fillers[THEME],
+                    )
+                )
+
+                if (
+                    path_object in core_argument_fillers
+                    and spatial_path.reference_object in core_argument_fillers
+                ):
+                    return None
+            preposition: Optional[str] = None
+            if spatial_path.operator == TOWARD:
+                preposition = "syang4"
+            elif spatial_path.operator == AWAY_FROM:
+                preposition = "ywan3 li2"
+            elif spatial_path.operator in [TO, None]:
+                return None
+            if not preposition:
+                raise RuntimeError(
+                    f"Don't know how to translate spatial path {spatial_path}"
+                )
+            if isinstance(spatial_path.reference_object, Region):
+                reference_object_node = self._noun_for_object(
+                    spatial_path.reference_object.reference_object
+                )
+            else:
+                reference_object_node = self._noun_for_object(
+                    spatial_path.reference_object
+                )
+            if self.dependency_graph.out_degree[reference_object_node]:
+                return None
+            else:
+                self.dependency_graph.add_edge(
+                    DependencyTreeToken(preposition, ADPOSITION),
+                    reference_object_node,
+                    role=CASE_POSSESSIVE,
+                )
+                self.dependency_graph.add_edge(
+                    DependencyTreeToken("dau3", ADPOSITION),
+                    reference_object_node,
+                    role=CASE_SPATIAL,
+                )
+                return reference_object_node
 
         def _translate_relation_to_action_modifier(
             self,
@@ -556,6 +634,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     if (
                         GOAL in action.argument_roles_to_fillers
                         or self.situation.after_action_relations
+                        or (action.during and action.during.objects_to_paths)
                     ) and (
                         PREFER_DITRANSITIVE not in self.situation.syntax_hints
                         or ALLOWS_DITRANSITIVE not in verb_lexical_entry.properties
