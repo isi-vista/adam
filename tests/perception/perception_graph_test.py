@@ -67,8 +67,6 @@ from immutablecollections import immutableset, immutablesetmultidict
 
 from tests.perception import MatchMode
 
-from tests.perception import MatchMode
-
 r.seed(0)
 
 

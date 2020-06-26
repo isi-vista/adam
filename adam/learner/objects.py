@@ -368,8 +368,6 @@ class SubsetObjectLearner(AbstractTemplateSubsetLearner, AbstractObjectTemplateL
             template_variable_to_pattern_node=immutabledict(),
         )
 
-
-
     def _update_hypothesis(
         self,
         previous_pattern_hypothesis: PerceptionGraphTemplate,

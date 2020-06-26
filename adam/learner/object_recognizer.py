@@ -1,6 +1,6 @@
 import logging
 from itertools import chain
-from typing import AbstractSet, Iterable, List, Mapping, Sequence, Set, Tuple
+from typing import AbstractSet, Iterable, List, Mapping, Sequence, Set, Tuple, Union
 
 from contexttimer import Timer
 from more_itertools import first
@@ -791,7 +791,7 @@ def replace_match_root_with_object_semantic_node(
     # Multiple sub-objects of a matched object may link to the same property
     # (for example, to a color shared by all the parts).
     # In this case, we want the shared object node to link to this property only once.
-    external_properties: Set[OntologyNode] = set()
+    external_properties: Set[Union[OntologyNode, ObjectSemanticNode]] = set()
 
     for matched_subgraph_node in matched_subgraph_nodes:
         if isinstance(matched_subgraph_node, ObjectSemanticNode):
@@ -858,7 +858,11 @@ def replace_match_root_with_object_semantic_node(
                 if edge_equals_ignoring_temporal_scope(edge_label, HAS_PROPERTY_LABEL):
                     # Prevent multiple `has-property` assertions to the same color node
                     # On a recognized object
-                    if matched_subgraph_node_predecessor[0] in external_properties:
+                    if isinstance(matched_subgraph_node_predecessor, ObjectSemanticNode):
+                        prop = matched_subgraph_node_predecessor
+                    else:
+                        prop = matched_subgraph_node_predecessor[0]
+                    if prop in external_properties:
                         if (
                             perception_digraph.degree(matched_subgraph_node_predecessor)
                             != 1
@@ -871,7 +875,7 @@ def replace_match_root_with_object_semantic_node(
                             )
                         continue
                     else:
-                        external_properties.add(matched_subgraph_node_predecessor[0])
+                        external_properties.add(prop)
 
                 perception_digraph.add_edge(
                     matched_subgraph_node_predecessor,

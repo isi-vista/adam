@@ -161,7 +161,7 @@ class LanguageConceptAlignment:
                         (new_semantic_node, covered_token_span)
                     )
             else:
-                raise RuntimeError(
+                logging.debug(
                     f"Could not match surface template {surface_template} "
                     f"with fillers {slots_to_spans} against "
                     f"{self.language.as_token_sequence()}"
