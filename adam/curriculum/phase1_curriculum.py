@@ -595,7 +595,9 @@ def make_fall_templates() -> Iterable[Phase1SituationTemplate]:
     return object_falling + [fall_on_ground_template(arbitary_object)]
 
 
-def _make_fall_curriculum() -> Phase1InstanceGroup:
+def _make_fall_curriculum(
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     return phase1_instances(
         "falling objects",
         chain(
@@ -608,6 +610,7 @@ def _make_fall_curriculum() -> Phase1InstanceGroup:
                 for template in make_fall_templates()
             ]
         ),
+        language_generator=language_generator,
     )
 
 
@@ -635,7 +638,9 @@ def make_give_templates() -> Iterable[Phase1SituationTemplate]:
         )
 
 
-def _make_transfer_of_possession_curriculum() -> Phase1InstanceGroup:
+def _make_transfer_of_possession_curriculum(
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     return phase1_instances(
         "transfer-of-possession",
         chain(
@@ -649,6 +654,7 @@ def _make_transfer_of_possession_curriculum() -> Phase1InstanceGroup:
                 for template in make_give_templates()
             ]
         ),
+        language_generator=language_generator,
     )
 
 

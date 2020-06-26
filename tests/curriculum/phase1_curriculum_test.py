@@ -139,12 +139,22 @@ def test_part_whole_curriculum(language_generator):
     curriculum_test(_make_part_whole_curriculum(language_generator=language_generator))
 
 
-def test_fall_curriculum():
-    curriculum_test(_make_fall_curriculum())
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
+)
+def test_fall_curriculum(language_generator):
+    curriculum_test(_make_fall_curriculum(language_generator=language_generator))
 
 
-def test_transfer_of_possession_curriculum():
-    curriculum_test(_make_transfer_of_possession_curriculum())
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
+)
+def test_transfer_of_possession_curriculum(language_generator):
+    curriculum_test(
+        _make_transfer_of_possession_curriculum(language_generator=language_generator)
+    )
 
 
 def test_object_on_object_curriculum():
