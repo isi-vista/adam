@@ -1723,7 +1723,9 @@ def make_spin_templates() -> Iterable[Phase1SituationTemplate]:
     return [bare_spin_template, transitive_spin_template]
 
 
-def _make_spin_curriculum() -> Phase1InstanceGroup:
+def _make_spin_curriculum(
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     return phase1_instances(
         "spin",
         chain(
@@ -1737,6 +1739,7 @@ def _make_spin_curriculum() -> Phase1InstanceGroup:
                 for situation in make_spin_templates()
             ]
         ),
+        language_generator=language_generator,
     )
 
 
@@ -1750,7 +1753,9 @@ def make_go_templates() -> Iterable[Phase1SituationTemplate]:
     return [go_to, go_in]
 
 
-def _make_go_curriculum() -> Phase1InstanceGroup:
+def _make_go_curriculum(
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     goer = standard_object("goer", THING, required_properties=[ANIMATE])
     under_goal_reference = standard_object(
         "go-under-goal", THING, required_properties=[HAS_SPACE_UNDER]
@@ -1784,6 +1789,7 @@ def _make_go_curriculum() -> Phase1InstanceGroup:
                 ]
             ),
         ),
+        language_generator=language_generator,
     )
 
 
@@ -1826,6 +1832,7 @@ def make_push_templates(
                 else DuringAction(continuously=[on(theme, push_surface)]),  # type: ignore
             )
         ],
+        after_action_relations=[near(theme, push_goal)],
         constraining_relations=[
             bigger_than(push_surface, agent),
             bigger_than(push_surface, push_goal),
@@ -1859,13 +1866,16 @@ def make_push_templates(
                 else DuringAction(continuously=[on(theme, push_surface)]),  # type: ignore
             )
         ],
+        after_action_relations=[near(theme, push_goal)],
         constraining_relations=[bigger_than(push_surface, theme)],
         syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER] if use_adverbial_path_modifier else [],
     )
     return [push_unexpressed_goal, push_unexpressed_goal_expressed_surface]
 
 
-def _make_push_curriculum() -> Phase1InstanceGroup:
+def _make_push_curriculum(
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     return phase1_instances(
         "pushing",
         chain(
@@ -1889,6 +1899,7 @@ def _make_push_curriculum() -> Phase1InstanceGroup:
                 )
             ]
         ),
+        language_generator=language_generator,
     )
 
 
