@@ -4,6 +4,9 @@ Additions for the Curricula for DARPA GAILA Phase 2
 
 from itertools import chain
 from typing import Sequence
+from adam.language_specific.english.english_language_generator import (
+    GAILA_PHASE_2_LANGUAGE_GENERATOR,
+)
 
 from adam.curriculum.curriculum_utils import (
     PHASE1_CHOOSER_FACTORY,
@@ -79,7 +82,8 @@ from adam.situation.templates.phase1_templates import (
 
 
 def _make_sit_on_chair_curriculum(
-    perception_generator: HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator = GAILA_PHASE_2_PERCEPTION_GENERATOR
+    perception_generator: HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator = GAILA_PHASE_2_PERCEPTION_GENERATOR,
+    language_generator=GAILA_PHASE_2_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
 
     templates = []
@@ -150,11 +154,13 @@ def _make_sit_on_chair_curriculum(
             ]
         ),
         perception_generator=perception_generator,
+        language_generator=language_generator,
     )
 
 
 def _make_drink_cups_curriculum(
-    perception_generator: HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator = GAILA_PHASE_2_PERCEPTION_GENERATOR
+    perception_generator: HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator = GAILA_PHASE_2_PERCEPTION_GENERATOR,
+    language_generator=GAILA_PHASE_2_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
 
     templates = []
@@ -190,10 +196,13 @@ def _make_drink_cups_curriculum(
             ]
         ),
         perception_generator=perception_generator,
+        language_generator=language_generator,
     )
 
 
-def _make_put_in_curriculum() -> Phase1InstanceGroup:
+def _make_put_in_curriculum(
+    language_generator=GAILA_PHASE_2_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     agent = standard_object("agent", THING, required_properties=[ANIMATE])
     theme = standard_object("theme", INANIMATE_OBJECT)
     goal_in = standard_object("goal_in", INANIMATE_OBJECT, required_properties=[HOLLOW])
@@ -206,6 +215,7 @@ def _make_put_in_curriculum() -> Phase1InstanceGroup:
             chooser=PHASE1_CHOOSER_FACTORY(),
             max_to_sample=20,
         ),
+        language_generator=language_generator,
     )
 
 

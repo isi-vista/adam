@@ -6,6 +6,9 @@ from attr.validators import instance_of
 from immutablecollections import ImmutableSet, immutableset, immutablesetmultidict
 from more_itertools import first, only
 from networkx import DiGraph
+from adam.language_specific.chinese.chinese_phase_2_lexicon import (
+    GAILA_PHASE_2_CHINESE_LEXICON,
+)
 from adam.axes import FacingAddresseeAxis, GRAVITATIONAL_DOWN_TO_UP_AXIS
 from adam.language.dependency import (
     DependencyRole,
@@ -987,6 +990,9 @@ GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR = SimpleRuleBasedChineseLanguageGenerat
     ontology_lexicon=GAILA_PHASE_1_CHINESE_LEXICON
 )
 
+GAILA_PHASE_2_CHINESE_LANGUAGE_GENERATOR = SimpleRuleBasedChineseLanguageGenerator(
+    ontology_lexicon=GAILA_PHASE_2_CHINESE_LEXICON
+)
 
 # these are "hints" situations can pass to the language generator
 # to control its behavior
