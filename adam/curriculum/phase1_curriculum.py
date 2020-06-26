@@ -1941,6 +1941,7 @@ def throw_on_ground_template(
                 ),
             )
         ],
+        after_action_relations=[on(theme, GROUND_OBJECT_TEMPLATE)],
         constraining_relations=[bigger_than(agent, theme)],
     )
 
@@ -2056,6 +2057,7 @@ def throw_to_template(
                 ),
             )
         ],
+        after_action_relations=[near(theme, goal)],
         constraining_relations=[bigger_than(agent, theme)],
     )
 
@@ -2084,7 +2086,9 @@ def make_throw_templates() -> Iterable[Phase1SituationTemplate]:
     ]
 
 
-def _make_throw_curriculum() -> Phase1InstanceGroup:
+def _make_throw_curriculum(
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     return phase1_instances(
         "throwing",
         chain(
@@ -2100,6 +2104,7 @@ def _make_throw_curriculum() -> Phase1InstanceGroup:
                 ]
             )
         ),
+        language_generator=language_generator,
     )
 
 

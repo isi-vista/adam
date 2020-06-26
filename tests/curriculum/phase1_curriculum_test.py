@@ -302,8 +302,12 @@ def test_push_curriculum(language_generator):
     curriculum_test(_make_push_curriculum(language_generator=language_generator))
 
 
-def test_throw_curriculum():
-    curriculum_test(_make_throw_curriculum())
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
+)
+def test_throw_curriculum(language_generator):
+    curriculum_test(_make_throw_curriculum(language_generator=language_generator))
 
 
 def test_pass_curriculum():
