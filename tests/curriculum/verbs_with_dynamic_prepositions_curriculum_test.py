@@ -30,12 +30,17 @@ def test_make_push(language_generator):
     curriculum_test(_make_push_with_prepositions(language_generator=language_generator))
 
 
+# TODO: fix under/over
 def test_make_go():
     curriculum_test(_make_go_with_prepositions())
 
 
-def test_make_throw():
-    curriculum_test(_make_throw_with_prepositions())
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
+)
+def test_make_throw(language_generator):
+    curriculum_test(_make_throw_with_prepositions(language_generator=language_generator))
 
 
 def test_make_roll():
