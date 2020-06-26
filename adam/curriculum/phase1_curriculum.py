@@ -3,9 +3,12 @@ Curricula for DARPA GAILA Phase 1
 """
 
 from itertools import chain
-from typing import Iterable, Sequence, List
+from typing import Iterable, Sequence, List, Dict
 from adam.language_specific.english.english_language_generator import (
     GAILA_PHASE_1_LANGUAGE_GENERATOR,
+)
+from adam.language_specific.chinese.chinese_language_generator import (
+    GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
 )
 from immutablecollections import immutableset
 from more_itertools import flatten, first
@@ -401,7 +404,9 @@ def _make_person_has_object_curriculum(
     )
 
 
-def _make_part_whole_curriculum() -> Phase1InstanceGroup:
+def _make_part_whole_curriculum(
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     whole_object_to_parts = {
         BABY: ["head", "hand", "arm"],
         BIRD: ["head", "wing"],
@@ -412,8 +417,26 @@ def _make_part_whole_curriculum() -> Phase1InstanceGroup:
         DOG: ["head", "leg"],
         HOUSE: ["wall", "roof"],
     }
+    whole_object_to_parts_ch = {
+        BABY: ["tou2", "shou3", "bi4"],
+        BIRD: ["tou2", "chr4bang3"],
+        TRUCK: ["tai1"],
+        CAR: ["tai1", "yu4 gau4 pyan4"],
+        DAD: ["tou2", "shou3", "bi4"],
+        MOM: ["tou2", "shou3", "bi4"],
+        DOG: ["tou2", "twei3"],
+        HOUSE: ["bi4", "wu1 ding3"],
+    }
+
     all_instances = []
-    for whole_object, parts in whole_object_to_parts.items():
+    currdict: Dict[OntologyNode, List[str]]
+    if language_generator == GAILA_PHASE_1_LANGUAGE_GENERATOR:
+        currdict = whole_object_to_parts
+    elif language_generator == GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR:
+        currdict = whole_object_to_parts_ch
+    else:
+        raise RuntimeError("Invalid language generator")
+    for whole_object, parts in currdict.items():
         whole = object_variable("whole", whole_object)
 
         # Get the description sequence for "[whole] has a [part]" Using a part directly causes issues.
@@ -426,13 +449,14 @@ def _make_part_whole_curriculum() -> Phase1InstanceGroup:
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     max_to_sample=1,
                 ),
+                language_generator=language_generator,
             ).instances()
         )[1].as_token_sequence()
 
         for part in parts:
             # Replace the filler object with the part object description
             description = TokenSequenceLinguisticDescription(
-                tuple([w if w != "ball" else part for w in seq])
+                tuple([w if (w != "ball" and w != "chyou2") else part for w in seq])
             )
 
             # Get the situation and perception from just the [whole] object
@@ -446,6 +470,7 @@ def _make_part_whole_curriculum() -> Phase1InstanceGroup:
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     max_to_sample=3,
                 ),
+                language_generator=language_generator,
             ).instances()
             for situation, _, perception in instances:
                 all_instances.append((situation, description, perception))
