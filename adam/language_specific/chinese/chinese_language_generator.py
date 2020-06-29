@@ -263,10 +263,6 @@ class SimpleRuleBasedChineseLanguageGenerator(
             # the list of dependency-role -> dependencytoken mappings to be attached to the VP tree
             modifiers: List[Tuple[DependencyRole, DependencyTreeToken]] = []
 
-            # if there are after action relations, collect them, parse them, and add them to the modifiers
-            for relation in self.situation.after_action_relations:
-                self._translate_relation_to_action_modifier(action, relation, modifiers)
-
             # if there are during action modifiers, collect them, parse them, and add them to the modifiers
             # we want to parse these after after_action relations since if there is an after-action relation that is also
             # a during relation, we want to be sure to translate it as having reached the goal
@@ -289,6 +285,10 @@ class SimpleRuleBasedChineseLanguageGenerator(
                             modifiers.append(
                                 (ADVERBIAL_CLAUSE_MODIFIER, spatial_modifier)
                             )
+
+            # if there are after action relations, collect them, parse them, and add them to the modifiers
+            for relation in self.situation.after_action_relations:
+                self._translate_relation_to_action_modifier(action, relation, modifiers)
 
             # if there are always relations, collect them, parse them, and add them to the modifiers
             for relation in self.situation.always_relations:
@@ -417,7 +417,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     role=CASE_POSSESSIVE,
                 )
                 self.dependency_graph.add_edge(
-                    DependencyTreeToken("dau3", ADPOSITION),
+                    DependencyTreeToken("dau4", ADPOSITION),
                     reference_object_node,
                     role=CASE_SPATIAL,
                 )
@@ -452,6 +452,8 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     # we can only have one relation per object; this is an issue for cases such as having during and after action relations
                     # in the same VP. To solve this, we check if the reference object node is already in the modifiers and return if it is.
                     if any(m[1] == reference_object_node for m in modifiers):
+                        return
+                    if self.dependency_graph.out_degree[reference_object_node]:
                         return
                     # try to get the localiser phrase modifier for the given relation
                     localiser_modifier = self.relation_to_localiser_modifier(
