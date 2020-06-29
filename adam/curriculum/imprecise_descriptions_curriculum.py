@@ -459,7 +459,10 @@ def make_jump_imprecise_temporal_descriptions(
 
 
 def make_take_grab_subtle_verb_distinction(
-    num_samples: int = 5, *, num_noise_objects: int = 0  # pylint:disable=unused-argument
+    num_samples: int = 5,
+    *,
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    num_noise_objects: int = 0,  # pylint:disable=unused-argument
 ) -> Phase1InstanceGroup:
     taker = standard_object("tosser_passer_0", THING, required_properties=[ANIMATE])
     takee = standard_object("tossee_passee_0", THING, required_properties=[INANIMATE])
@@ -486,6 +489,7 @@ def make_take_grab_subtle_verb_distinction(
                 ]
             )
         ),
+        language_generator=language_generator,
     )
 
 

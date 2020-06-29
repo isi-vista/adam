@@ -33,16 +33,24 @@ def test__pass_toss_subtle_verb_distinction(language_generator):
     )
 
 
-def test__push_shove_subtle_verb_distinction():
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
+)
+def test__push_shove_subtle_verb_distinction(language_generator):
     curriculum_test(
-        make_push_shove_subtle_verb_distinctions(
-            language_generator=GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR
-        )
+        make_push_shove_subtle_verb_distinctions(language_generator=language_generator)
     )
 
 
-def test__take_grab_subtle_verb_distinction():
-    curriculum_test(make_take_grab_subtle_verb_distinction())
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
+)
+def test__take_grab_subtle_verb_distinction(language_generator):
+    curriculum_test(
+        make_take_grab_subtle_verb_distinction(language_generator=language_generator)
+    )
 
 
 def test__walk_run_subtle_verb_distinction():
