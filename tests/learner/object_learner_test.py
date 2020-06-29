@@ -1,7 +1,6 @@
 import logging
 import random
 from itertools import chain
-from typing import Optional
 
 from immutablecollections import immutableset
 
@@ -18,7 +17,11 @@ from adam.learner import (
 )
 from adam.learner.alignments import LanguageConceptAlignment
 from adam.learner.integrated_learner import IntegratedTemplateLearner
-from adam.learner.objects import ObjectPursuitLearner, SubsetObjectLearnerNew
+from adam.learner.objects import (
+    ObjectPursuitLearner,
+    SubsetObjectLearnerNew,
+    PursuitObjectLearnerNew,
+)
 from adam.ontology import OntologyNode
 from adam.ontology.phase1_ontology import (
     BALL,
@@ -37,11 +40,7 @@ from adam.ontology.phase1_ontology import (
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     GAILA_PHASE_1_PERCEPTION_GENERATOR,
 )
-from adam.perception.perception_graph import (
-    DebugCallableType,
-    DumpPartialMatchCallback,
-    PerceptionGraph,
-)
+from adam.perception.perception_graph import DumpPartialMatchCallback, PerceptionGraph
 from adam.random_utils import RandomChooser
 from adam.relation import flatten_relations
 from adam.relation_dsl import negate
@@ -56,9 +55,7 @@ from adam.situation.templates.phase1_templates import (
 )
 
 
-def run_subset_learner_for_object(
-    obj: OntologyNode, debug_callback: Optional[DebugCallableType] = None
-):
+def run_learner_for_object(learner: IntegratedTemplateLearner, obj: OntologyNode):
     learner_obj = object_variable("learner_0", LEARNER)
     colored_obj_object = object_variable(
         "obj-with-color", obj, added_properties=[color_variable("color")]
@@ -87,12 +84,6 @@ def run_subset_learner_for_object(
         ),
     )
 
-    learner = IntegratedTemplateLearner(
-        object_learner=SubsetObjectLearnerNew(
-            ontology=GAILA_PHASE_1_ONTOLOGY, debug_callback=debug_callback, beam_size=5
-        )
-    )
-
     for training_stage in [obj_curriculum]:
         for (
             _,
@@ -117,13 +108,23 @@ def run_subset_learner_for_object(
 
 
 def test_subset_learner_ball():
-    run_subset_learner_for_object(BALL)
+    learner = IntegratedTemplateLearner(
+        object_learner=SubsetObjectLearnerNew(
+            ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5
+        )
+    )
+    run_learner_for_object(learner, BALL)
 
 
 def test_subset_learner_dog():
+    learner = IntegratedTemplateLearner(
+        object_learner=SubsetObjectLearnerNew(
+            ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5
+        )
+    )
     # debug_callback = DumpPartialMatchCallback(render_path="../renders/")
     # We pass this callback into the learner; it is executed if the learning takes too long, i.e after 60 seconds.
-    run_subset_learner_for_object(DOG)
+    run_learner_for_object(learner, DOG)
 
 
 def test_subset_learner_subobject():
@@ -227,7 +228,7 @@ def test_subset_learner_subobject():
     assert (ObjectSemanticNode, "hand") in semantic_node_types_and_debug_strings
 
 
-def test_pursuit_object_learner():
+def test_old_pursuit_object_learner():
     target_objects = [
         BALL,
         # PERSON,
@@ -433,3 +434,37 @@ def test_pursuit_object_learner():
 #                 "c:",
 #                 len(common_pattern.copy_as_digraph().nodes),
 #             )
+
+
+def test_new_pursuit_learner_ball():
+    rng = random.Random()
+    rng.seed(0)
+    learner = IntegratedTemplateLearner(
+        object_learner=PursuitObjectLearnerNew(
+            learning_factor=0.5,
+            graph_match_confirmation_threshold=0.7,
+            lexicon_entry_threshold=0.7,
+            rng=rng,
+            smoothing_parameter=0.001,
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+        )
+    )
+    run_learner_for_object(learner, BALL)
+
+
+def test_new_pursuit_learner_dog():
+    rng = random.Random()
+    rng.seed(0)
+    learner = IntegratedTemplateLearner(
+        object_learner=PursuitObjectLearnerNew(
+            learning_factor=0.5,
+            graph_match_confirmation_threshold=0.7,
+            lexicon_entry_threshold=0.7,
+            rng=rng,
+            smoothing_parameter=0.001,
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+        )
+    )
+    # debug_callback = DumpPartialMatchCallback(render_path="../renders/")
+    # We pass this callback into the learner; it is executed if the learning takes too long, i.e after 60 seconds.
+    run_learner_for_object(learner, DOG)

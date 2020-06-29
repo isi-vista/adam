@@ -21,7 +21,11 @@ from adam.learner.object_recognizer import (
     extract_candidate_objects,
 )
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
-from adam.learner.pursuit import AbstractPursuitLearner, HypothesisLogger
+from adam.learner.pursuit import (
+    AbstractPursuitLearner,
+    HypothesisLogger,
+    AbstractPursuitLearnerNew,
+)
 from adam.learner.subset import (
     AbstractTemplateSubsetLearner,
     AbstractTemplateSubsetLearnerNew,
@@ -467,3 +471,107 @@ class ObjectRecognizerAsTemplateLearner(TemplateLearner):
                 + [(GROUND_OBJECT_CONCEPT, "ground")]
             )
         )
+
+
+@attrs
+class PursuitObjectLearnerNew(
+    AbstractPursuitLearnerNew, AbstractObjectTemplateLearnerNew
+):
+    """
+    An implementation of pursuit learner for object recognition
+    """
+
+    def _new_concept(self, debug_string: str) -> ObjectConcept:
+        return ObjectConcept(debug_string)
+
+    def _hypotheses_from_perception(
+        self,
+        learning_state: LanguagePerceptionSemanticAlignment,
+        bound_surface_template: SurfaceTemplateBoundToSemanticNodes,
+    ) -> AbstractSet[PerceptionGraphTemplate]:
+        if bound_surface_template.slot_to_semantic_node:
+            raise RuntimeError(
+                "Object learner should not have slot to semantic node alignments!"
+            )
+
+        return immutableset(
+            PerceptionGraphTemplate(
+                graph_pattern=PerceptionGraphPattern.from_graph(
+                    candidate_object
+                ).perception_graph_pattern,
+                template_variable_to_pattern_node=immutabledict(),
+            )
+            for candidate_object in extract_candidate_objects(
+                learning_state.perception_semantic_alignment.perception_graph
+            )
+        )
+
+    # I can't spot the difference in arguments pylint claims?
+    def _keep_hypothesis(  # pylint: disable=arguments-differ
+        self,
+        hypothesis: PerceptionGraphTemplate,
+        bound_surface_template: SurfaceTemplateBoundToSemanticNodes,  # pylint:disable=unused-argument
+    ) -> bool:
+        if len(hypothesis.graph_pattern) < 2:
+            # A one node graph is to small to meaningfully describe an object
+            return False
+        if all(isinstance(node, ObjectPerception) for node in hypothesis.graph_pattern):
+            # A hypothesis which consists of just sub-object structure
+            # with no other content is insufficiently distinctive.
+            return False
+        return True
+
+    def _find_partial_match(
+        self, hypothesis: PerceptionGraphTemplate, graph: PerceptionGraph
+    ) -> "ObjectPursuitLearner.ObjectHypothesisPartialMatch":
+        pattern = hypothesis.graph_pattern
+        hypothesis_pattern_common_subgraph = get_largest_matching_pattern(
+            pattern,
+            graph,
+            debug_callback=self._debug_callback,
+            graph_logger=self._hypothesis_logger,
+            ontology=self._ontology,
+            matching_objects=True,
+        )
+        self.debug_counter += 1
+
+        leading_hypothesis_num_nodes = len(pattern)
+        num_nodes_matched = (
+            len(hypothesis_pattern_common_subgraph.copy_as_digraph().nodes)
+            if hypothesis_pattern_common_subgraph
+            else 0
+        )
+
+        return ObjectPursuitLearner.ObjectHypothesisPartialMatch(
+            PerceptionGraphTemplate(graph_pattern=hypothesis_pattern_common_subgraph)
+            if hypothesis_pattern_common_subgraph
+            else None,
+            num_nodes_matched=num_nodes_matched,
+            num_nodes_in_pattern=leading_hypothesis_num_nodes,
+        )
+
+    def _find_identical_hypothesis(
+        self,
+        new_hypothesis: PerceptionGraphTemplate,
+        candidates: Iterable[PerceptionGraphTemplate],
+    ) -> Optional[PerceptionGraphTemplate]:
+        for candidate in candidates:
+            if new_hypothesis.graph_pattern.check_isomorphism(candidate.graph_pattern):
+                return candidate
+        return None
+
+    # pylint:disable=abstract-method
+    def log_hypotheses(self, log_output_path: Path) -> None:
+        logging.info(
+            "Logging %s hypotheses to %s",
+            len(self._concept_to_hypotheses_and_scores),
+            log_output_path,
+        )
+        for (
+            concept,
+            hypotheses_to_scores,
+        ) in self._concept_to_hypotheses_and_scores.items():
+            for (i, hypothesis) in enumerate(hypotheses_to_scores.keys()):
+                hypothesis.render_to_file(
+                    concept.debug_string, log_output_path / f"concept.debug_string.{i}"
+                )
