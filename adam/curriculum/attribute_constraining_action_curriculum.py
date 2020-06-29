@@ -18,10 +18,16 @@ from adam.ontology.phase1_ontology import (
     ANIMATE,
 )
 from adam.situation.templates.phase1_templates import sampled
+from adam.language_specific.english.english_language_generator import (
+    GAILA_PHASE_1_LANGUAGE_GENERATOR,
+)
 
 
 def make_human_eat_curriculum(
-    num_samples: int = 5, *, noise_objects: int = 0
+    num_samples: int = 5,
+    *,
+    noise_objects: int = 0,
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     object_to_eat = standard_object("object_0", required_properties=[EDIBLE])
     human = standard_object("eater_0", PERSON)
@@ -38,11 +44,15 @@ def make_human_eat_curriculum(
             ontology=GAILA_PHASE_1_ONTOLOGY,
             chooser=PHASE1_CHOOSER_FACTORY(),
         ),
+        language_generator=language_generator,
     )
 
 
 def make_animal_eat_curriculum(
-    num_samples: int = 5, *, noise_objects: int = 0
+    num_samples: int = 5,
+    *,
+    noise_objects: int = 0,
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     object_to_eat = standard_object("object_0", required_properties=[EDIBLE])
     animal = standard_object("eater_0", NONHUMAN_ANIMAL)
@@ -59,11 +69,15 @@ def make_animal_eat_curriculum(
             ontology=GAILA_PHASE_1_ONTOLOGY,
             chooser=PHASE1_CHOOSER_FACTORY(),
         ),
+        language_generator=language_generator,
     )
 
 
 def make_german_eat_test_curriculum(
-    num_samples: int = 5, *, noise_objects: int = 0
+    num_samples: int = 5,
+    *,
+    noise_objects: int = 0,
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
 
     object_to_eat = standard_object("object_0", required_properties=[EDIBLE])
@@ -84,6 +98,7 @@ def make_german_eat_test_curriculum(
                 )
             ]
         ),
+        language_generator=language_generator,
     )
 
 
