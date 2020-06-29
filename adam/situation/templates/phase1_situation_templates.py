@@ -17,6 +17,7 @@ from adam.ontology.phase1_ontology import (
     PUT,
     has,
     GO,
+    near,
 )
 from adam.ontology.phase1_spatial_relations import (
     INTERIOR,
@@ -54,6 +55,7 @@ def _go_in_template(
             )
         ],
         constraining_relations=flatten_relations(bigger_than(goal_object, agent)),
+        after_action_relations=[near(agent, goal_object)],
     )
 
 
@@ -106,6 +108,7 @@ def _go_under_template(
                 ],
             )
         ],
+        after_action_relations=[near(agent, goal_object)],
         constraining_relations=flatten_relations(bigger_than(goal_object, agent)),
     )
 

@@ -3,6 +3,12 @@ from abc import ABC
 from pathlib import Path
 from random import Random
 from typing import AbstractSet, Iterable, List, Optional, Sequence, Union
+from adam.language_specific.english.english_language_generator import (
+    GAILA_PHASE_1_LANGUAGE_GENERATOR,
+)
+from adam.language_specific.chinese.chinese_phase_1_lexicon import (
+    GAILA_PHASE_1_CHINESE_LEXICON,
+)
 
 from adam.language import LinguisticDescription
 from adam.learner import (
@@ -117,7 +123,9 @@ class AbstractObjectTemplateLearner(AbstractTemplateLearner, ABC):
         return PerceptionGraph.from_frame(perception.frames[0])
 
     def _preprocess_scene_for_learning(
-        self, language_concept_alignment: LanguageAlignedPerception
+        self,
+        language_concept_alignment: LanguageAlignedPerception,
+        language_generator=None,
     ) -> LanguageAlignedPerception:
         return evolve(
             language_concept_alignment,
@@ -127,7 +135,7 @@ class AbstractObjectTemplateLearner(AbstractTemplateLearner, ABC):
         )
 
     def _preprocess_scene_for_description(
-        self, perception_graph: PerceptionGraph
+        self, perception_graph: PerceptionGraph, language_generator=None
     ) -> PerceptionGraphFromObjectRecognizer:
         return PerceptionGraphFromObjectRecognizer(
             self._common_preprocessing(perception_graph),
@@ -422,6 +430,7 @@ class ObjectRecognizerAsTemplateLearner(TemplateLearner):
     _concepts_to_templates: ImmutableSetMultiDict[Concept, SurfaceTemplate] = attrib(
         init=False
     )
+    _language_generator = attrib(default=GAILA_PHASE_1_LANGUAGE_GENERATOR)
 
     def learn_from(
         self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
@@ -431,22 +440,33 @@ class ObjectRecognizerAsTemplateLearner(TemplateLearner):
         pass
 
     def enrich_during_learning(
-        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
+        self,
+        language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
+        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> LanguagePerceptionSemanticAlignment:
         return self._object_recognizer.match_objects_with_language(
-            language_perception_semantic_alignment
+            language_perception_semantic_alignment, language_generator=language_generator
         )
 
     def enrich_during_description(
         self, perception_semantic_alignment: PerceptionSemanticAlignment
     ) -> PerceptionSemanticAlignment:
         (new_perception_semantic_alignment, _) = self._object_recognizer.match_objects(
-            perception_semantic_alignment
+            perception_semantic_alignment, language_generator=self._language_generator
         )
         return new_perception_semantic_alignment
 
     def templates_for_concept(self, concept: Concept) -> ImmutableSet[SurfaceTemplate]:
-        return self._concepts_to_templates[concept]
+        if self._language_generator == GAILA_PHASE_1_LANGUAGE_GENERATOR:
+            return self._concepts_to_templates[concept]
+        else:
+            mappings = (
+                GAILA_PHASE_1_CHINESE_LEXICON._ontology_node_to_word  # pylint:disable=protected-access
+            )
+            for k, v in mappings.items():
+                if k.handle == concept.debug_string:
+                    return immutableset([SurfaceTemplate.for_object_name(v.base_form)])
+        raise RuntimeError(f"Invalid concept {concept}")
 
     def log_hypotheses(self, log_output_path: Path) -> None:
         pass

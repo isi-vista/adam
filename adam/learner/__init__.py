@@ -3,6 +3,9 @@ Interfaces for language learning code.
 """
 
 from abc import ABC, abstractmethod
+from adam.language_specific.english.english_language_generator import (
+    GAILA_PHASE_1_LANGUAGE_GENERATOR,
+)
 from pathlib import Path
 from typing import Dict, Generic, Mapping, Optional, Any
 
@@ -186,7 +189,9 @@ class ComposableLearner(ABC):
 
     @abstractmethod
     def enrich_during_learning(
-        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
+        self,
+        language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
+        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> LanguagePerceptionSemanticAlignment:
         """
         Given a `LanguagePerceptionSemanticAlignment` wrapping a learning example, return such
