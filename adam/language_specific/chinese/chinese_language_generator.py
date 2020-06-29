@@ -453,8 +453,6 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     # in the same VP. To solve this, we check if the reference object node is already in the modifiers and return if it is.
                     if any(m[1] == reference_object_node for m in modifiers):
                         return
-                    if self.dependency_graph.out_degree[reference_object_node]:
-                        return
                     # try to get the localiser phrase modifier for the given relation
                     localiser_modifier = self.relation_to_localiser_modifier(
                         action, relation

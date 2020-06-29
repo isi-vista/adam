@@ -103,7 +103,11 @@ def test_make_jump(language_generator):
 
 
 def test_make_fly():
-    curriculum_test(_make_fly_with_prepositions())
+    curriculum_test(
+        _make_fly_with_prepositions(
+            language_generator=GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR
+        )
+    )
 
 
 def test_make_come():
