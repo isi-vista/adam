@@ -1883,8 +1883,9 @@ def make_push_templates(
                 else DuringAction(continuously=[on(theme, push_surface)]),  # type: ignore
             )
         ],
-        after_action_relations=[near(theme, push_goal)],
+        # after_action_relations=[near(theme, push_goal)],
         constraining_relations=[bigger_than(push_surface, theme)],
+        asserted_always_relations=[on(theme, push_surface)],
         syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER] if use_adverbial_path_modifier else [],
     )
     return [push_unexpressed_goal, push_unexpressed_goal_expressed_surface]

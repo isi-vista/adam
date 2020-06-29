@@ -20,6 +20,8 @@ from adam.language_specific.chinese.chinese_language_generator import (
 )
 import pytest
 
+# TODO: https://github.com/isi-vista/adam/issues/847 -- implement subtle verb distinctions in Chinese
+
 
 @pytest.mark.parametrize(
     "language_generator",
@@ -32,7 +34,11 @@ def test__pass_toss_subtle_verb_distinction(language_generator):
 
 
 def test__push_shove_subtle_verb_distinction():
-    curriculum_test(make_push_shove_subtle_verb_distinctions())
+    curriculum_test(
+        make_push_shove_subtle_verb_distinctions(
+            language_generator=GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR
+        )
+    )
 
 
 def test__take_grab_subtle_verb_distinction():

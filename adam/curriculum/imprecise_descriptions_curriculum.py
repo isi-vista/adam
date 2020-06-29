@@ -490,7 +490,10 @@ def make_take_grab_subtle_verb_distinction(
 
 
 def make_push_shove_subtle_verb_distinctions(
-    num_samples: int = 5, *, num_noise_objects: int = 0  # pylint:disable=unused-argument
+    num_samples: int = 5,
+    *,
+    num_noise_objects: int = 0,  # pylint:disable=unused-argument
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     pusher = standard_object("pusher_0", THING, required_properties=[ANIMATE])
     pushee = standard_object("pushee_0", THING, required_properties=[INANIMATE])
@@ -528,6 +531,7 @@ def make_push_shove_subtle_verb_distinctions(
                 ]
             )
         ),
+        language_generator=language_generator,
     )
 
 

@@ -74,6 +74,8 @@ from adam.ontology.phase1_ontology import (
     JUMP,
     GO,
     COME,
+    HARD_FORCE,
+    SOFT_FORCE,
 )
 from adam.ontology.phase1_spatial_relations import (
     EXTERIOR_BUT_IN_CONTACT,
@@ -577,6 +579,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 return "shang4"
             elif region.distance == DISTAL and not region.direction:
                 return "ywan3 li2"
+            # TODO: https://github.com/isi-vista/adam/issues/846 -- above/over distinction
             # above
             elif region.direction == GRAVITATIONAL_UP:
                 return "shang4 myan4"
@@ -638,7 +641,17 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     if (
                         GOAL in action.argument_roles_to_fillers
                         or self.situation.after_action_relations
-                        or (action.during and action.during.objects_to_paths)
+                        or (
+                            action.during
+                            and action.during.objects_to_paths
+                            and any(
+                                any(
+                                    k not in [HARD_FORCE, SOFT_FORCE]
+                                    for k in v.properties
+                                )
+                                for k, v in action.during.objects_to_paths.items()
+                            )
+                        )
                     ) and (
                         PREFER_DITRANSITIVE not in self.situation.syntax_hints
                         or ALLOWS_DITRANSITIVE not in verb_lexical_entry.properties
