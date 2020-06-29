@@ -512,7 +512,7 @@ def _go_behind_in_front_path_template(
     handle = "behind" if is_behind else "in-front-of"
     return Phase1SituationTemplate(
         f"go_{handle}-{agent.handle}-{handle}-{goal_object.handle}-via-{path_object.handle}",
-        salient_object_variables=[agent],
+        salient_object_variables=[agent, goal_object],
         background_object_variables=total_background,
         actions=[
             Action(
@@ -553,7 +553,7 @@ def _go_over_under_path_template(
     handle = "over" if is_over else "under"
     return Phase1SituationTemplate(
         f"go_{handle}-{agent.handle}-{handle}-{goal_object.handle}-via-{path_object.handle}",
-        salient_object_variables=[agent],
+        salient_object_variables=[agent, goal_object],
         background_object_variables=total_background,
         actions=[
             Action(
@@ -2591,7 +2591,12 @@ def _make_push_with_prepositions(
     )
 
 
-def _make_go_with_prepositions(num_samples: int = 5, *, noise_objects: int = 0):
+def _make_go_with_prepositions(
+    num_samples: int = 5,
+    *,
+    noise_objects: int = 0,
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+):
     agent = standard_object("agent", THING, required_properties=[ANIMATE])
     goal_object = standard_object("goal_object")
     goal_object_hollow = standard_object(
@@ -2762,6 +2767,7 @@ def _make_go_with_prepositions(num_samples: int = 5, *, noise_objects: int = 0):
                 ]
             ),
         ),
+        language_generator=language_generator,
     )
 
 

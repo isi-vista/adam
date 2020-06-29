@@ -211,6 +211,9 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     isinstance(filler, SituationObject)
                     and filler.ontology_node == LEARNER
                 )
+                and not (
+                    argument_role == GOAL and IGNORE_GOAL in self.situation.syntax_hints
+                )
             )
 
             # check that there is exactly one subject
@@ -1095,3 +1098,4 @@ IGNORE_COLORS = "IGNORE_COLORS"
 IGNORE_HAS_AS_VERB = "IGNORE_HAS_AS_VERB"
 ATTRIBUTES_AS_X_IS_Y = "ATTRIBUTES_AS_X_IS_Y"
 USE_NEAR = "USE_NEAR"
+IGNORE_GOAL = "IGNORE_GOAL"
