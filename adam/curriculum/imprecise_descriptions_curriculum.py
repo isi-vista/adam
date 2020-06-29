@@ -385,7 +385,10 @@ def make_throw_imprecise_temporal_descriptions(
 
 
 def make_move_imprecise_temporal_descriptions(
-    num_samples: int = 5, *, num_noise_objects: int = 0  # pylint:disable=unused-argument
+    num_samples: int = 5,
+    *,
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    num_noise_objects: int = 0,  # pylint:disable=unused-argument
 ) -> Phase1InstanceGroup:
     self_mover_0 = standard_object(
         "self-mover_0", THING, required_properties=[SELF_MOVING]
@@ -430,6 +433,7 @@ def make_move_imprecise_temporal_descriptions(
                 for is_fast in BOOL_SET
             ),
         ),
+        language_generator=language_generator,
     )
 
 

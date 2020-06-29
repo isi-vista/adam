@@ -76,6 +76,8 @@ from adam.ontology.phase1_ontology import (
     COME,
     HARD_FORCE,
     SOFT_FORCE,
+    FAST,
+    SLOW,
 )
 from adam.ontology.phase1_spatial_relations import (
     EXTERIOR_BUT_IN_CONTACT,
@@ -644,9 +646,10 @@ class SimpleRuleBasedChineseLanguageGenerator(
                         or (
                             action.during
                             and action.during.objects_to_paths
+                            # hack since these modifiers don't change the position of the sentence but towards/away do
                             and any(
                                 any(
-                                    k not in [HARD_FORCE, SOFT_FORCE]
+                                    k not in [HARD_FORCE, SOFT_FORCE, FAST, SLOW]
                                     for k in v.properties
                                 )
                                 for k, v in action.during.objects_to_paths.items()
