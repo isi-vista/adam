@@ -78,8 +78,12 @@ def test_make_fall(language_generator):
     curriculum_test(_make_fall_with_prepositions(language_generator=language_generator))
 
 
-def test_make_put():
-    curriculum_test(_make_put_with_prepositions())
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
+)
+def test_make_put(language_generator):
+    curriculum_test(_make_put_with_prepositions(language_generator=language_generator))
 
 
 def test_make_move():
