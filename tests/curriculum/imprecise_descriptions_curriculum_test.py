@@ -53,12 +53,24 @@ def test__take_grab_subtle_verb_distinction(language_generator):
     )
 
 
-def test__walk_run_subtle_verb_distinction():
-    curriculum_test(make_walk_run_subtle_verb_distinction())
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
+)
+def test__walk_run_subtle_verb_distinction(language_generator):
+    curriculum_test(
+        make_walk_run_subtle_verb_distinction(language_generator=language_generator)
+    )
 
 
-def test__throw_imprecise_temporal_descriptions_curriculum():
-    curriculum_test(make_throw_imprecise_temporal_descriptions())
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
+)
+def test__throw_imprecise_temporal_descriptions_curriculum(language_generator):
+    curriculum_test(
+        make_throw_imprecise_temporal_descriptions(language_generator=language_generator)
+    )
 
 
 def test_move_imprecise_temporal_descriptions_curriculum():

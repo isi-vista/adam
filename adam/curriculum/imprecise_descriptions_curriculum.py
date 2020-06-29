@@ -305,7 +305,10 @@ def make_imprecise_size_descriptions(
 
 
 def make_throw_imprecise_temporal_descriptions(
-    num_samples: int = 5, *, num_noise_objects: int = 0  # pylint:disable=unused-argument
+    num_samples: int = 5,
+    *,
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    num_noise_objects: int = 0,  # pylint:disable=unused-argument
 ) -> Phase1InstanceGroup:
     thrower = standard_object("thrower_0", THING, required_properties=[ANIMATE])
     catcher = standard_object("catcher_0", THING, required_properties=[ANIMATE])
@@ -377,6 +380,7 @@ def make_throw_imprecise_temporal_descriptions(
                 for is_fast in BOOL_SET
             ),
         ),
+        language_generator=language_generator,
     )
 
 
@@ -540,7 +544,10 @@ def make_push_shove_subtle_verb_distinctions(
 
 
 def make_walk_run_subtle_verb_distinction(
-    num_samples: int = 5, *, num_noise_objects: int = 0  # pylint:disable=unused-argument
+    num_samples: int = 5,
+    *,
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    num_noise_objects: int = 0,  # pylint:disable=unused-argument
 ) -> Phase1InstanceGroup:
     agent = standard_object("walker_0", THING, required_properties=[ANIMATE])
     return phase1_instances(
@@ -565,6 +572,7 @@ def make_walk_run_subtle_verb_distinction(
                 ]
             )
         ),
+        language_generator=language_generator,
     )
 
 

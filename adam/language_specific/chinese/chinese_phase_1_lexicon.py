@@ -75,6 +75,7 @@ from adam.ontology.phase1_ontology import (
     DARK_BROWN,
     WATERMELON,
     PASS,
+    WALK,
 )
 
 ME = LexiconEntry("wo3", NOUN, intrinsic_morphosyntactic_properties=[FIRST_PERSON])
@@ -134,5 +135,6 @@ GAILA_PHASE_1_CHINESE_LEXICON = OntologyLexicon(
         # TODO: for below, we need native speaker check (https://github.com/isi-vista/adam/issues/845)
         (WATERMELON, LexiconEntry("syi1 gwa1", NOUN)),
         (PASS, LexiconEntry("di4", VERB)),
+        (WALK, LexiconEntry("bu4 sying2", VERB)),
     ),
 )
