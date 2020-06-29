@@ -1327,7 +1327,7 @@ def _x_rolls_y_towards_away_from_z_template(
     value = "towards" if is_toward else "away from"
     return Phase1SituationTemplate(
         f"{agent.handle}-rolls-{theme.handle}-{value}-{spatial_reference.handle}",
-        salient_object_variables=[agent, spatial_reference],
+        salient_object_variables=[agent, spatial_reference, theme],
         background_object_variables=background,
         actions=[
             Action(
@@ -1353,9 +1353,6 @@ def _x_rolls_y_towards_away_from_z_template(
             far([agent, theme], spatial_reference)
             if is_toward
             else near([agent, theme], spatial_reference)
-        ),
-        after_action_relations=flatten_relations(
-            near([agent, theme], spatial_reference) if is_toward else immutableset()
         ),
         gazed_objects=[theme],
     )
@@ -2819,7 +2816,12 @@ def _make_sit_with_prepositions(
     )
 
 
-def _make_roll_with_prepositions(num_samples: int = 5, *, noise_objects: int = 0):
+def _make_roll_with_prepositions(
+    num_samples: int = 5,
+    *,
+    noise_objects: int = 0,
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+):
     agent = standard_object("agent", THING, required_properties=[ANIMATE])
     goal_object = standard_object("goal_object")
     goal_object_hollow = standard_object(
@@ -3063,6 +3065,7 @@ def _make_roll_with_prepositions(num_samples: int = 5, *, noise_objects: int = 0
                 ]
             ),
         ),
+        language_generator=language_generator,
     )
 
 
