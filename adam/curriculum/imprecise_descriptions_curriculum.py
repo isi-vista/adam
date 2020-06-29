@@ -33,6 +33,9 @@ from adam.language_specific.english.english_language_generator import (
     USE_ADVERBIAL_PATH_MODIFIER,
     USE_VERTICAL_MODIFIERS,
 )
+from adam.language_specific.english.english_language_generator import (
+    GAILA_PHASE_1_LANGUAGE_GENERATOR,
+)
 from adam.ontology import THING
 from adam.ontology.phase1_ontology import (
     GAILA_PHASE_1_ONTOLOGY,
@@ -558,7 +561,10 @@ def make_walk_run_subtle_verb_distinction(
 
 
 def make_pass_toss_subtle_verb_distinction(
-    num_samples: int = 5, *, num_noise_objects: int = 0  # pylint:disable=unused-argument
+    num_samples: int = 5,
+    *,
+    num_noise_objects: int = 0,  # pylint:disable=unused-argument
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     tosser = standard_object("tosser_passer_0", THING, required_properties=[ANIMATE])
     tossee = standard_object("tossee_passee_0", THING, required_properties=[INANIMATE])
@@ -588,6 +594,7 @@ def make_pass_toss_subtle_verb_distinction(
                 ]
             )
         ),
+        language_generator=language_generator,
     )
 
 

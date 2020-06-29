@@ -389,6 +389,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     and spatial_path.reference_object in core_argument_fillers
                 ):
                     return None
+            # TODO: check the following with a native spaker https://github.com/isi-vista/adam/issues/845
             preposition: Optional[str] = None
             if spatial_path.operator == TOWARD:
                 preposition = "syang4"
@@ -941,7 +942,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     return None
 
             localiser: Optional[str] = None
-            # out of
+            # TODO: out of check with native speaker https://github.com/isi-vista/adam/issues/845
             if region.distance == INTERIOR and relation.negated:
                 localiser = "chu1"
             # inside/in
@@ -953,6 +954,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     localiser = "pang2 byan1"
                 else:
                     localiser = "shang4"
+            # TODO: check with native speaker https://github.com/isi-vista/adam/issues/845 (far from)
             elif region.distance == DISTAL and not region.direction:
                 localiser = "ywan3 li2"
             elif region.direction:

@@ -131,6 +131,7 @@ GAILA_PHASE_1_CHINESE_LEXICON = OntologyLexicon(
         (TRANSPARENT, LexiconEntry("tou4 ming2", ADJECTIVE)),
         (LIGHT_BROWN, LexiconEntry("chyan3 he2 se4", ADJECTIVE)),
         (DARK_BROWN, LexiconEntry("shen1 dzung1 se4", ADJECTIVE)),
+        # TODO: for below, we need native speaker check (https://github.com/isi-vista/adam/issues/845)
         (WATERMELON, LexiconEntry("syi1 gwa1", NOUN)),
         (PASS, LexiconEntry("di4", VERB)),
     ),
