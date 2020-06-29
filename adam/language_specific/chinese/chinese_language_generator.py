@@ -485,7 +485,6 @@ class SimpleRuleBasedChineseLanguageGenerator(
         ) -> Tuple[DependencyRole, DependencyTreeToken]:
 
             """Maps dependency roles to the corresponding node heads for verb arguments"""
-
             # deal with the case that this is an object in the situation
             if isinstance(filler, SituationObject):
                 # get the syntactic role
@@ -501,6 +500,14 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 if argument_role == THEME and syntactic_role == OBLIQUE_NOMINAL:
                     ba = DependencyTreeToken("ba3", ADPOSITION)
                     self.dependency_graph.add_edge(ba, filler_noun, role=CASE_SPATIAL)
+                # when a person is coming or going towards a another person, we need zhao
+                elif (
+                    action
+                    and (action.action_type == GO or action.action_type == COME)
+                    and argument_role == GOAL
+                ):
+                    zhao = DependencyTreeToken("jau3", ADPOSITION)
+                    self.dependency_graph.add_edge(zhao, filler_noun, role=CASE_SPATIAL)
                 return (syntactic_role, filler_noun)
             # deal with the case that it's a region in the situation
             elif isinstance(filler, Region):
@@ -655,6 +662,8 @@ class SimpleRuleBasedChineseLanguageGenerator(
                                 for k, v in action.during.objects_to_paths.items()
                             )
                         )
+                        or USE_ADVERBIAL_PATH_MODIFIER in self.situation.syntax_hints
+
                     ) and (
                         PREFER_DITRANSITIVE not in self.situation.syntax_hints
                         or ALLOWS_DITRANSITIVE not in verb_lexical_entry.properties
@@ -689,10 +698,12 @@ class SimpleRuleBasedChineseLanguageGenerator(
 
             # the number of this object that is in the scene
             # https://github.com/isi-vista/adam/issues/802 -- currently for Chinese we only count salient objects
+
             if _object.ontology_node not in self.object_counts:
                 return
             else:
                 count = self.object_counts[_object.ontology_node]
+
 
             # make sure there is a corresponding ontology node
             if not _object.ontology_node:
@@ -803,9 +814,9 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 # handle the possession relation if there is one
                 possessor = None
                 if IS_SPEAKER in possession_relations[0].first_slot.properties:
-                    possessor = DependencyTreeToken("wo3", NOUN)
+                    possessor = DependencyTreeToken("wo3 de", NOUN)
                 elif IS_ADDRESSEE in possession_relations[0].first_slot.properties:
-                    possessor = DependencyTreeToken("ni3", NOUN)
+                    possessor = DependencyTreeToken("ni3 de", NOUN)
                 # if the possessor is a 3rd person, check that "has" isn't the main verb
                 elif (
                     IGNORE_HAS_AS_VERB not in self.situation.syntax_hints
@@ -821,15 +832,17 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     not in only(self.situation.actions).argument_roles_to_fillers[AGENT]
                 ):
                     possessor = self._noun_for_object(possession_relations[0].first_slot)
+                    de = DependencyTreeToken("de", PARTICLE)
+                    self.dependency_graph.add_edge(de, possessor, role=CASE_POSSESSIVE)
                 # if there is a possessor, add "de" (the rough equivalent of 's in English) and add the resulting node to the tree
-                de = DependencyTreeToken("de", PARTICLE)
                 if possessor:
                     self.dependency_graph.add_edge(
                         possessor, noun_dependency_node, role=NOMINAL_MODIFIER_POSSESSIVE
                     )
-                    self.dependency_graph.add_edge(de, possessor, role=CASE_POSSESSIVE)
             # if the count is one, we're done since we're not using yi CLF currently
             # also, we don't count grounds or proper nouns
+            if count == 0:
+                raise RuntimeError(f"Invalid count for object {noun_lexicon_entry}")
             if (
                 count == 1
                 or _object.ontology_node == GROUND
@@ -876,6 +889,12 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     self._translate_relation_to_verb(relation)
             # handle in_region relations
             elif relation.relation_type == IN_REGION:
+                # make sure that a relation isn't translated twice, as is the case for over+under when we have a relation saying
+                # "x is over y" and "y is under x" -- we only want to translate one of these, not both
+                if self.dependency_graph.out_degree[
+                    self._noun_for_object(relation.first_slot)
+                ]:
+                    return
                 # get the localiser modifier
                 localiser_modifier = self.relation_to_localiser_modifier(action, relation)
                 if localiser_modifier:

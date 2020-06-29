@@ -2058,11 +2058,7 @@ def throw_to_template(
         actions=[
             Action(
                 THROW,
-                argument_roles_to_fillers=[
-                    (AGENT, agent),
-                    (THEME, theme),
-                    (GOAL, Region(goal, distance=PROXIMAL)),
-                ],
+                argument_roles_to_fillers=[(AGENT, agent), (THEME, theme), (GOAL, goal)],
                 during=DuringAction(
                     objects_to_paths=[
                         (

@@ -1,6 +1,15 @@
 import logging
 from itertools import chain
 from typing import AbstractSet, Iterable, List, Mapping, Sequence, Set, Tuple
+from adam.language_specific.chinese.chinese_phase_1_lexicon import (
+    GAILA_PHASE_1_CHINESE_LEXICON,
+)
+from adam.language_specific.english.english_language_generator import (
+    GAILA_PHASE_1_LANGUAGE_GENERATOR,
+)
+from adam.language_specific.chinese.chinese_language_generator import (
+    GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
+)
 
 from contexttimer import Timer
 from more_itertools import first
@@ -202,19 +211,23 @@ class ObjectRecognizer:
         )
 
     def match_objects_old(
-        self, perception_graph: PerceptionGraph
+        self,
+        perception_graph: PerceptionGraph,
+        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> PerceptionGraphFromObjectRecognizer:
         new_style_input = PerceptionSemanticAlignment(
             perception_graph=perception_graph, semantic_nodes=[]
         )
-        new_style_output = self.match_objects(new_style_input)
+        new_style_output = self.match_objects(new_style_input, language_generator)
         return PerceptionGraphFromObjectRecognizer(
             perception_graph=new_style_output[0].perception_graph,
             description_to_matched_object_node=new_style_output[1],
         )
 
     def match_objects(
-        self, perception_semantic_alignment: PerceptionSemanticAlignment
+        self,
+        perception_semantic_alignment: PerceptionSemanticAlignment,
+        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> Tuple[PerceptionSemanticAlignment, Mapping[Tuple[str, ...], ObjectSemanticNode]]:
         r"""
         Recognize known objects in a `PerceptionGraph`.
@@ -247,9 +260,14 @@ class ObjectRecognizer:
         for node in graph_to_return._graph.nodes:  # pylint:disable=protected-access
             if node == GROUND_PERCEPTION:
                 matched_object_node = ObjectSemanticNode(GROUND_OBJECT_CONCEPT)
-                object_nodes.append(
-                    ((f"{GROUND_OBJECT_CONCEPT.debug_string}",), matched_object_node)
-                )
+                if language_generator == GAILA_PHASE_1_LANGUAGE_GENERATOR:
+                    object_nodes.append(
+                        ((f"{GROUND_OBJECT_CONCEPT.debug_string}",), matched_object_node)
+                    )
+                elif language_generator == GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR:
+                    object_nodes.append((("di4 myan4",), matched_object_node))
+                else:
+                    raise RuntimeError("Invalid language_generator")
                 # We construct a fake match which is only the ground perception node
                 subgraph_of_root = subgraph(perception_graph.copy_as_digraph(), [node])
                 pattern_match = PerceptionGraphPatternMatch(
@@ -296,7 +314,20 @@ class ObjectRecognizer:
                     # We wrap the concept in a tuple because it could in theory be multiple
                     # tokens,
                     # even though currently it never is.
-                    object_nodes.append(((concept.debug_string,), matched_object_node))
+                    if language_generator == GAILA_PHASE_1_LANGUAGE_GENERATOR:
+                        object_nodes.append(
+                            ((concept.debug_string,), matched_object_node)
+                        )
+                    elif language_generator == GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR:
+                        mappings = (
+                            GAILA_PHASE_1_CHINESE_LEXICON._ontology_node_to_word  # pylint:disable=protected-access
+                        )
+                        for k, v in mappings.items():
+                            if k.handle == concept.debug_string:
+                                debug_string = str(v.base_form)
+                                object_nodes.append(
+                                    ((debug_string,), matched_object_node)
+                                )
 
                     graph_to_return = replace_match_with_object_graph_node(
                         matched_object_node, graph_to_return, pattern_match
@@ -327,7 +358,9 @@ class ObjectRecognizer:
         )
 
     def match_objects_with_language_old(
-        self, language_aligned_perception: LanguageAlignedPerception
+        self,
+        language_aligned_perception: LanguageAlignedPerception,
+        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> LanguageAlignedPerception:
         if language_aligned_perception.node_to_language_span:
             raise RuntimeError(
@@ -342,7 +375,9 @@ class ObjectRecognizer:
                 semantic_nodes=[],
             ),
         )
-        new_style_output = self.match_objects_with_language(new_style_input)
+        new_style_output = self.match_objects_with_language(
+            new_style_input, language_generator
+        )
         return LanguageAlignedPerception(
             language=new_style_output.language_concept_alignment.language,
             perception_graph=new_style_output.perception_semantic_alignment.perception_graph,
@@ -350,7 +385,9 @@ class ObjectRecognizer:
         )
 
     def match_objects_with_language(
-        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
+        self,
+        language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
+        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> LanguagePerceptionSemanticAlignment:
         """
         Recognize known objects in a `LanguagePerceptionSemanticAlignment`.
@@ -376,7 +413,8 @@ class ObjectRecognizer:
             post_match_perception_semantic_alignment,
             tokens_to_object_nodes,
         ) = self.match_objects(
-            language_perception_semantic_alignment.perception_semantic_alignment
+            language_perception_semantic_alignment.perception_semantic_alignment,
+            language_generator=language_generator,
         )
         return LanguagePerceptionSemanticAlignment(
             language_concept_alignment=language_perception_semantic_alignment.language_concept_alignment.copy_with_added_token_alignments(
@@ -560,7 +598,7 @@ def _get_edge_label(
 
 def _get_root_object_perception(
     graph: DiGraph, matched_subgraph_nodes: AbstractSet[PerceptionGraphNode]
-) -> PerceptionGraphNode:
+) -> ObjectPerception:
     matched_object_perceptions = immutableset(
         node for node in matched_subgraph_nodes if isinstance(node, ObjectPerception)
     )
@@ -581,7 +619,7 @@ def _get_root_object_perception(
         )
 
 
-def _add_properties_linked_to_root_object_perception(
+def _add_external_properties_linked_to_root_object_perception(
     *,
     original_graph: DiGraph,
     output_graph: DiGraph,
@@ -601,6 +639,35 @@ def _add_properties_linked_to_root_object_perception(
         output_graph.add_edge(matched_object_node, linked_property_node, label=edge_label)
 
 
+def _add_relationships_linked_to_root_object_perception(
+    *,
+    original_graph: DiGraph,
+    output_graph: DiGraph,
+    matched_nodes: AbstractSet[PerceptionGraphNode],
+    matched_object_node: ObjectSemanticNode,
+) -> None:
+    # We take two graphs as input because we are assuming object-internal properties
+    # have already been deleted from the output_graph, so we have to look for them
+    # in the original, unaltered graph
+    root_node = _get_root_object_perception(original_graph, matched_nodes)
+
+    linked_properties_and_labels: List[Tuple[PerceptionGraphNode, EdgeLabel]] = []
+    for pred in original_graph.predecessors(root_node):
+        edge_label = _get_edge_label(original_graph, pred, root_node)
+        if edge_equals_ignoring_temporal_scope(edge_label, HAS_PROPERTY_LABEL):
+            linked_properties_and_labels.append((pred, edge_label))
+    for (linked_property_node, edge_label) in linked_properties_and_labels:
+        output_graph.add_edge(linked_property_node, matched_object_node, label=edge_label)
+
+    linked_properties_and_labels.clear()
+    for succ in original_graph.successors(root_node):
+        edge_label = _get_edge_label(original_graph, root_node, succ)
+        if edge_equals_ignoring_temporal_scope(edge_label, HAS_PROPERTY_LABEL):
+            linked_properties_and_labels.append((succ, edge_label))
+    for (linked_property_node, edge_label) in linked_properties_and_labels:
+        output_graph.add_edge(matched_object_node, linked_property_node, label=edge_label)
+
+
 def replace_match_with_object_graph_node(
     matched_object_node: ObjectSemanticNode,
     current_perception: PerceptionGraph,
@@ -608,7 +675,7 @@ def replace_match_with_object_graph_node(
 ) -> PerceptionGraph:
     """
     Internal function to replace the nodes of the perception matched by the object pattern
-    with an `ObjectSemantcNode`.
+    with an `ObjectSemanticNode`.
 
     Any external relationships those nodes had is inherited by the `ObjectSemanticNode`.
     """
@@ -635,7 +702,8 @@ def replace_match_with_object_graph_node(
             )
 
         # A pattern might refer to shared parts of the world like the learner
-        # or the ground, but we don't want to replace those with the matched object node.
+        # or the ground, and we don't want the replacement root to inherit the
+        # shared world item's relationships.
         if matched_subgraph_node in SHARED_WORLD_ITEMS:
             continue
 
@@ -725,11 +793,147 @@ def replace_match_with_object_graph_node(
     # Example: water is a liquid
     # These may be relevant to learning verb semantics
     # (e.g. you can only drink a liquid)
-    _add_properties_linked_to_root_object_perception(
+    _add_external_properties_linked_to_root_object_perception(
         original_graph=current_perception.copy_as_digraph(),
         output_graph=perception_digraph,
         matched_nodes=matched_subgraph_nodes,
         matched_object_node=matched_object_node,
+    )
+
+    return PerceptionGraph(perception_digraph, dynamic=current_perception.dynamic)
+
+
+def replace_match_root_with_object_semantic_node(
+    object_semantic_node: ObjectSemanticNode,
+    current_perception: PerceptionGraph,
+    pattern_match: PerceptionGraphPatternMatch,
+) -> PerceptionGraph:
+    """
+    Internal function to replace the root node of the perception matched by the object pattern
+    with an `ObjectSemanticNode`.
+
+    The `ObjectSemanticNode` inherits both the root node's internal relationships and all external
+    relationships involving either the root node or its children.
+    """
+    perception_digraph = current_perception.copy_as_digraph()
+    perception_digraph.add_node(object_semantic_node)
+
+    matched_subgraph_nodes: ImmutableSet[PerceptionGraphNode] = immutableset(
+        pattern_match.matched_sub_graph._graph.nodes,  # pylint:disable=protected-access
+        disable_order_check=True,
+    )
+
+    root = _get_root_object_perception(perception_digraph, matched_subgraph_nodes)
+
+    # Multiple sub-objects of a matched object may link to the same property
+    # (for example, to a color shared by all the parts).
+    # In this case, we want the shared object node to link to this property only once.
+    external_properties: Set[OntologyNode] = set()
+
+    for matched_subgraph_node in matched_subgraph_nodes:
+        if isinstance(matched_subgraph_node, ObjectSemanticNode):
+            raise RuntimeError(
+                f"We do not currently allow object recognitions to themselves "
+                f"operate over other object recognitions, but got match "
+                f"{pattern_match.matched_sub_graph}"
+            )
+
+        # A pattern might refer to shared parts of the world like the learner
+        # or the ground, and we don't want the replacement root to inherit the
+        # shared world item's relationships.
+        if matched_subgraph_node in SHARED_WORLD_ITEMS:
+            continue
+
+        # If there is an edge from the matched sub-graph to a node outside it,
+        # also add an edge from the object match node to that node.
+        for matched_subgraph_node_successor in perception_digraph.successors(
+            matched_subgraph_node
+        ):
+            edge_label = _get_edge_label(
+                perception_digraph, matched_subgraph_node, matched_subgraph_node_successor
+            )
+
+            # don't want to add edges which are internal to the matched sub-graph
+            if matched_subgraph_node_successor not in matched_subgraph_nodes:
+                if edge_equals_ignoring_temporal_scope(edge_label, HAS_PROPERTY_LABEL):
+                    # Prevent multiple `has-property` assertions to the same color node
+                    # On a recognized object
+                    if matched_subgraph_node_successor[0] in external_properties:
+                        if (
+                            perception_digraph.degree(matched_subgraph_node_successor)
+                            != 1
+                        ):
+                            raise_graph_exception(
+                                f"Node {matched_subgraph_node_successor} "
+                                f"appears to be a duplicate property node, "
+                                f"but has degree != 1",
+                                current_perception,
+                            )
+                        continue
+                    else:
+                        external_properties.add(matched_subgraph_node_successor[0])
+
+                perception_digraph.add_edge(
+                    object_semantic_node,
+                    matched_subgraph_node_successor,
+                    label=edge_label,
+                )
+
+        # If there is an edge to the matched sub-graph from a node outside it,
+        # also add an edge to the object match node from that node.
+        for matched_subgraph_node_predecessor in perception_digraph.predecessors(
+            matched_subgraph_node
+        ):
+            edge_label = _get_edge_label(
+                perception_digraph,
+                matched_subgraph_node_predecessor,
+                matched_subgraph_node,
+            )
+
+            # don't want to add edges which are internal to the matched sub-graph
+            if matched_subgraph_node_predecessor not in matched_subgraph_nodes:
+                if edge_equals_ignoring_temporal_scope(edge_label, HAS_PROPERTY_LABEL):
+                    # Prevent multiple `has-property` assertions to the same color node
+                    # On a recognized object
+                    if matched_subgraph_node_predecessor[0] in external_properties:
+                        if (
+                            perception_digraph.degree(matched_subgraph_node_predecessor)
+                            != 1
+                        ):
+                            raise_graph_exception(
+                                f"Node {matched_subgraph_node_predecessor} "
+                                f"appears to be a duplicate property node, "
+                                f"but has degree != 1",
+                                current_perception,
+                            )
+                        continue
+                    else:
+                        external_properties.add(matched_subgraph_node_predecessor[0])
+
+                perception_digraph.add_edge(
+                    matched_subgraph_node_predecessor,
+                    object_semantic_node,
+                    label=edge_label,
+                )
+
+    if root in SHARED_WORLD_ITEMS:
+        raise RuntimeError(
+            f"Pattern match root cannot be a shared world item, "
+            f"but got match {pattern_match}"
+        )
+
+    perception_digraph.remove_node(root)
+
+    # We want to re-add any relationships linked directly to the root node of an object.
+    # Example: water is a liquid
+    # Example: this hand is a part of this person
+    # These may be relevant to learning verb semantics
+    # (e.g. you can only drink a liquid)
+    _add_relationships_linked_to_root_object_perception(
+        original_graph=current_perception.copy_as_digraph(),
+        output_graph=perception_digraph,
+        matched_nodes=matched_subgraph_nodes,
+        matched_object_node=object_semantic_node,
     )
 
     return PerceptionGraph(perception_digraph, dynamic=current_perception.dynamic)

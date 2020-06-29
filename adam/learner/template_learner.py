@@ -1,6 +1,9 @@
 import logging
+from adam.language_specific.english.english_language_generator import (
+    GAILA_PHASE_1_LANGUAGE_GENERATOR,
+)
 from abc import ABC, abstractmethod
-from typing import AbstractSet, Iterable, List, Mapping, Sequence, Tuple, Union, cast
+from typing import AbstractSet, Iterable, List, Mapping, Sequence, Tuple, Union, cast, Set
 
 from more_itertools import one
 
@@ -16,14 +19,15 @@ from adam.learner.learner_utils import (
 )
 from adam.learner.object_recognizer import (
     PerceptionGraphFromObjectRecognizer,
-    replace_match_with_object_graph_node,
+    replace_match_root_with_object_semantic_node,
+    _get_root_object_perception,
 )
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
 from adam.learner.surface_templates import (
     SurfaceTemplate,
     SurfaceTemplateBoundToSemanticNodes,
 )
-from adam.perception import PerceptualRepresentation
+from adam.perception import PerceptualRepresentation, ObjectPerception
 from adam.perception.deprecated import LanguageAlignedPerception
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -49,6 +53,7 @@ class AbstractTemplateLearner(
         learning_example: LearningExample[
             DevelopmentalPrimitivePerceptionFrame, LinguisticDescription
         ],
+        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> None:
         logging.info(
             "Observation %s: %s",
@@ -69,7 +74,8 @@ class AbstractTemplateLearner(
                     learning_example.perception
                 ),
                 node_to_language_span=immutabledict(),
-            )
+            ),
+            language_generator=language_generator,
         )
 
         logging.info(f"Learner observing {preprocessed_input}")
@@ -78,15 +84,16 @@ class AbstractTemplateLearner(
         self._learning_step(preprocessed_input, surface_template)
 
     def describe(
-        self, perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]
+        self,
+        perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame],
+        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> Mapping[LinguisticDescription, float]:
         self._assert_valid_input(perception)
 
         original_perception_graph = self._extract_perception_graph(perception)
         preprocessing_result = self._preprocess_scene_for_description(
-            original_perception_graph
+            original_perception_graph, language_generator=language_generator
         )
-
         preprocessed_perception_graph = preprocessing_result.perception_graph
         matched_objects_to_names = (
             preprocessing_result.description_to_matched_object_node.inverse()
@@ -120,6 +127,7 @@ class AbstractTemplateLearner(
                             pattern=pattern,
                             match=match,
                             matched_objects_to_names=matched_objects_to_names,
+                            language_generator=language_generator,
                         ),
                         pattern,
                         score,
@@ -143,7 +151,6 @@ class AbstractTemplateLearner(
                     pattern=graph_pattern,
                     score=score,
                 )
-
         return immutabledict(self._post_process_descriptions(match_to_score))
 
     @abstractmethod
@@ -173,7 +180,9 @@ class AbstractTemplateLearner(
 
     @abstractmethod
     def _preprocess_scene_for_learning(
-        self, language_concept_alignment: LanguageAlignedPerception
+        self,
+        language_concept_alignment: LanguageAlignedPerception,
+        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> LanguageAlignedPerception:
         """
         Does any preprocessing necessary before the learning process begins.
@@ -183,7 +192,9 @@ class AbstractTemplateLearner(
 
     @abstractmethod
     def _preprocess_scene_for_description(
-        self, perception_graph: PerceptionGraph
+        self,
+        perception_graph: PerceptionGraph,
+        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> PerceptionGraphFromObjectRecognizer:
         """
         Does any preprocessing necessary before attempting to describe a scene.
@@ -274,7 +285,9 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
             self._learning_step(preprocessed_input, thing_whose_meaning_to_learn)
 
     def enrich_during_learning(
-        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
+        self,
+        language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
+        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> LanguagePerceptionSemanticAlignment:
         (
             perception_post_enrichment,
@@ -347,7 +360,7 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
                 # We want to replace object matches with their semantic nodes,
                 # but we don't want to alter the graph while matching it,
                 # so we accumulate these to replace later.
-                if isinstance(semantic_node_for_match, ObjectConcept):
+                if isinstance(concept, ObjectConcept):
                     matched_objects.append((semantic_node_for_match, match))
                 # A template only has to match once; we don't care about finding additional matches.
                 return
@@ -366,12 +379,32 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
         perception_graph_after_matching = perception_semantic_alignment.perception_graph
 
         # Replace any objects found
+        def by_pattern_complexity(pair):
+            _, pattern_match = pair
+            return len(pattern_match.matched_pattern)
+
+        matched_objects.sort(key=by_pattern_complexity, reverse=True)
+        already_replaced: Set[ObjectPerception] = set()
         for (matched_object_node, pattern_match) in matched_objects:
-            perception_graph_after_matching = replace_match_with_object_graph_node(
-                matched_object_node=cast(ObjectSemanticNode, matched_object_node),
-                current_perception=perception_graph_after_matching,
-                pattern_match=pattern_match,
+            root: ObjectPerception = _get_root_object_perception(
+                pattern_match.matched_sub_graph._graph,  # pylint:disable=protected-access
+                immutableset(
+                    pattern_match.matched_sub_graph._graph.nodes,  # pylint:disable=protected-access
+                    disable_order_check=True,
+                ),
             )
+            if root not in already_replaced:
+                perception_graph_after_matching = replace_match_root_with_object_semantic_node(
+                    object_semantic_node=cast(ObjectSemanticNode, matched_object_node),
+                    current_perception=perception_graph_after_matching,
+                    pattern_match=pattern_match,
+                )
+                already_replaced.add(root)
+            else:
+                logging.info(
+                    f"Matched pattern for {matched_object_node} "
+                    f"but root object {root} already replaced."
+                )
 
         new_nodes = immutableset(node for (node, _) in match_to_score)
 

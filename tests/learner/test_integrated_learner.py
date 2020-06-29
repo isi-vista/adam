@@ -1,5 +1,11 @@
 from more_itertools import one
-
+import pytest
+from adam.language_specific.english.english_language_generator import (
+    GAILA_PHASE_1_LANGUAGE_GENERATOR,
+)
+from adam.language_specific.chinese.chinese_language_generator import (
+    GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
+)
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.objects import ObjectRecognizerAsTemplateLearner
 from adam.ontology.phase1_ontology import DAD, GAILA_PHASE_1_ONTOLOGY
@@ -13,10 +19,15 @@ from adam.situation.high_level_semantics_situation import HighLevelSemanticsSitu
 from learner import TEST_OBJECT_RECOGNIZER
 
 
-def test_with_object_recognizer():
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
+)
+def test_with_object_recognizer(language_generator):
     integrated_learner = IntegratedTemplateLearner(
         object_learner=ObjectRecognizerAsTemplateLearner(
-            object_recognizer=TEST_OBJECT_RECOGNIZER
+            object_recognizer=TEST_OBJECT_RECOGNIZER,
+            language_generator=language_generator,
         ),
         attribute_learner=None,
         relation_learner=None,
@@ -44,7 +55,15 @@ def test_with_object_recognizer():
         frames=[perception.frames[0], perception.frames[0]]
     )
 
-    descriptions = integrated_learner.describe(dynamic_perception)
+    descriptions = integrated_learner.describe(
+        dynamic_perception, language_generator=language_generator
+    )
 
     assert len(descriptions) == 1
-    assert one(descriptions.keys()).as_token_sequence() == ("Dad",)
+    assert (
+        language_generator == GAILA_PHASE_1_LANGUAGE_GENERATOR
+        and one(descriptions.keys()).as_token_sequence() == ("Dad",)
+    ) or (
+        language_generator == GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR
+        and one(descriptions.keys()).as_token_sequence() == ("ba4 ba4",)
+    )
