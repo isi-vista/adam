@@ -271,7 +271,10 @@ def make_spin_tall_short_curriculum() -> Phase1InstanceGroup:
 
 
 def make_imprecise_size_descriptions(
-    num_samples: int = 5, *, num_noise_objects: int = 0
+    num_samples: int = 5,
+    *,
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    num_noise_objects: int = 0,
 ) -> Phase1InstanceGroup:
     background = immutableset(
         standard_object(f"noise_object_{x}") for x in range(num_noise_objects)
@@ -301,6 +304,7 @@ def make_imprecise_size_descriptions(
                 ]
             )
         ),
+        language_generator=language_generator,
     )
 
 
@@ -721,7 +725,10 @@ def make_fly_imprecise_temporal_descriptions(
 
 
 def make_fall_imprecise_temporal_descriptions(
-    num_samples: int = 5, *, num_noise_objects: int = 0  # pylint:disable=unused-argument
+    num_samples: int = 5,
+    *,
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    num_noise_objects: int = 0,  # pylint:disable=unused-argument
 ) -> Phase1InstanceGroup:
     arbitary_object = standard_object("object_0", THING)
     syntax_hints_options = ([], [USE_ADVERBIAL_PATH_MODIFIER])  # type: ignore
@@ -759,6 +766,7 @@ def make_fall_imprecise_temporal_descriptions(
                 for is_fast in BOOL_SET
             ),
         ),
+        language_generator=language_generator,
     )
 
 

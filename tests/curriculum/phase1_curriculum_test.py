@@ -45,11 +45,10 @@ import pytest
 
 def curriculum_test(curriculum: Phase1InstanceGroup) -> None:
     for _ in curriculum.instances():
-        print(_)
         # we don't need to do anything
         # the curriculum may be dynamically generated
         # so we just want to test we can instantiate it
-        # pass
+        pass
 
 
 @pytest.mark.parametrize(
