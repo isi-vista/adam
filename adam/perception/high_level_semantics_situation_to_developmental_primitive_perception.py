@@ -742,8 +742,10 @@ class _PerceptionGeneration:
         by our object recognition algorithms,
         it is easier if we represent this as a property as well as a relation.
         """
-        for object_ in self._situation.all_objects:
-            ontology_type = object_.ontology_node
+        for (
+            perception,
+            ontology_type,
+        ) in self._object_perceptions_to_ontology_nodes.items():
             size_relations = immutableset(
                 relation
                 for relation in self._situation.ontology.subjects_to_relations[
@@ -759,17 +761,11 @@ class _PerceptionGeneration:
                         f"{ontology_type} but got {size_relations}"
                     )
                 self._property_assertion_perceptions.append(
-                    HasBinaryProperty(
-                        self._objects_to_perceptions[object_],
-                        only(size_relations).relation_type,
-                    )
+                    HasBinaryProperty(perception, only(size_relations).relation_type)
                 )
             else:
                 self._property_assertion_perceptions.append(
-                    HasBinaryProperty(
-                        self._objects_to_perceptions[object_],
-                        ABOUT_THE_SAME_SIZE_AS_LEARNER,
-                    )
+                    HasBinaryProperty(perception, ABOUT_THE_SAME_SIZE_AS_LEARNER)
                 )
 
     def _perceive_axis_info(self) -> AxesInfo[ObjectPerception]:
@@ -812,13 +808,28 @@ class _PerceptionGeneration:
                                 # Don't make something in contact with the ground
                                 # if the situation explicitly says it isn't.
                                 add_on_ground = False
+                                # If this negated relation was specified as an always relation, then
+                                # this relation is still in the list of relation perceptions and we
+                                # need to remove it so that we don't try to add a negative relation
+                                # to the perceptual representation.
+                                #
+                                # However, sometimes the relation we're looking at came from a
+                                # before or after assertion, either explicit or implicit, and is
+                                # therefore not in the list. So if it's not there, that's normal.
+                                try:
+                                    self._relation_perceptions.remove(relation)
+                                except ValueError:
+                                    pass
                             elif (
                                 region.distance == EXTERIOR_BUT_IN_CONTACT
                                 or region.distance == INTERIOR
+                                or region.reference_object == perceived_ground
                             ) and not relation.negated:
                                 # Anything else in contact with anything else is not on the ground.
                                 # TODO: This is too lax:
                                 # see https://github.com/isi-vista/adam/issues/597
+                                # Also, don't duplicate explicit ground contact relations,
+                                # and don't contradict distal/proximal relations with the ground.
                                 add_on_ground = False
 
                 if add_on_ground:

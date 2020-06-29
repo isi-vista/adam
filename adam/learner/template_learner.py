@@ -3,7 +3,7 @@ from adam.language_specific.english.english_language_generator import (
     GAILA_PHASE_1_LANGUAGE_GENERATOR,
 )
 from abc import ABC, abstractmethod
-from typing import AbstractSet, Iterable, List, Mapping, Sequence, Tuple, Union, cast
+from typing import AbstractSet, Iterable, List, Mapping, Sequence, Tuple, Union, cast, Set
 
 from more_itertools import one
 
@@ -19,14 +19,15 @@ from adam.learner.learner_utils import (
 )
 from adam.learner.object_recognizer import (
     PerceptionGraphFromObjectRecognizer,
-    replace_match_with_object_graph_node,
+    replace_match_root_with_object_semantic_node,
+    _get_root_object_perception,
 )
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
 from adam.learner.surface_templates import (
     SurfaceTemplate,
     SurfaceTemplateBoundToSemanticNodes,
 )
-from adam.perception import PerceptualRepresentation
+from adam.perception import PerceptualRepresentation, ObjectPerception
 from adam.perception.deprecated import LanguageAlignedPerception
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -359,7 +360,7 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
                 # We want to replace object matches with their semantic nodes,
                 # but we don't want to alter the graph while matching it,
                 # so we accumulate these to replace later.
-                if isinstance(semantic_node_for_match, ObjectConcept):
+                if isinstance(concept, ObjectConcept):
                     matched_objects.append((semantic_node_for_match, match))
                 # A template only has to match once; we don't care about finding additional matches.
                 return
@@ -378,12 +379,32 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
         perception_graph_after_matching = perception_semantic_alignment.perception_graph
 
         # Replace any objects found
+        def by_pattern_complexity(pair):
+            _, pattern_match = pair
+            return len(pattern_match.matched_pattern)
+
+        matched_objects.sort(key=by_pattern_complexity, reverse=True)
+        already_replaced: Set[ObjectPerception] = set()
         for (matched_object_node, pattern_match) in matched_objects:
-            perception_graph_after_matching = replace_match_with_object_graph_node(
-                matched_object_node=cast(ObjectSemanticNode, matched_object_node),
-                current_perception=perception_graph_after_matching,
-                pattern_match=pattern_match,
+            root: ObjectPerception = _get_root_object_perception(
+                pattern_match.matched_sub_graph._graph,  # pylint:disable=protected-access
+                immutableset(
+                    pattern_match.matched_sub_graph._graph.nodes,  # pylint:disable=protected-access
+                    disable_order_check=True,
+                ),
             )
+            if root not in already_replaced:
+                perception_graph_after_matching = replace_match_root_with_object_semantic_node(
+                    object_semantic_node=cast(ObjectSemanticNode, matched_object_node),
+                    current_perception=perception_graph_after_matching,
+                    pattern_match=pattern_match,
+                )
+                already_replaced.add(root)
+            else:
+                logging.info(
+                    f"Matched pattern for {matched_object_node} "
+                    f"but root object {root} already replaced."
+                )
 
         new_nodes = immutableset(node for (node, _) in match_to_score)
 
