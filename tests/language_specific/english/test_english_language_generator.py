@@ -72,6 +72,8 @@ from adam.ontology.phase1_ontology import (
     HARD_FORCE,
     PASS,
     WALK_SURFACE_AUXILIARY,
+    FAST,
+    SLOW,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -1794,6 +1796,54 @@ def test_grab():
         ],
     )
     assert generated_tokens(mom_grab) == ("Mom", "grabs", "a", "ball")
+
+
+def test_slowly():
+    mom = situation_object(MOM)
+    ball = situation_object(BALL)
+    mom_grab = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom, ball],
+        actions=[
+            Action(
+                TAKE,
+                argument_roles_to_fillers=[(AGENT, mom), (THEME, ball)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            mom,
+                            SpatialPath(None, reference_object=GROUND, properties=[SLOW]),
+                        )
+                    ]
+                ),
+            )
+        ],
+    )
+    assert generated_tokens(mom_grab) == ("Mom", "takes", "a", "ball", "slowly")
+
+
+def test_fast():
+    mom = situation_object(MOM)
+    ball = situation_object(BALL)
+    mom_grab = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom, ball],
+        actions=[
+            Action(
+                TAKE,
+                argument_roles_to_fillers=[(AGENT, mom), (THEME, ball)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            mom,
+                            SpatialPath(None, reference_object=GROUND, properties=[FAST]),
+                        )
+                    ]
+                ),
+            )
+        ],
+    )
+    assert generated_tokens(mom_grab) == ("Mom", "takes", "a", "ball", "fast")
 
 
 def generated_tokens(situation):

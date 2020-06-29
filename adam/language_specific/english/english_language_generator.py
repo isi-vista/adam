@@ -878,7 +878,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                         )
                     elif SLOW in path.properties:
                         modifiers.append(
-                            (ADVERBIAL_MODIFIER, DependencyTreeToken("fast", ADVERB))
+                            (ADVERBIAL_MODIFIER, DependencyTreeToken("slowly", ADVERB))
                         )
 
             for relation in self.situation.after_action_relations:
