@@ -663,7 +663,6 @@ class SimpleRuleBasedChineseLanguageGenerator(
                             )
                         )
                         or USE_ADVERBIAL_PATH_MODIFIER in self.situation.syntax_hints
-
                     ) and (
                         PREFER_DITRANSITIVE not in self.situation.syntax_hints
                         or ALLOWS_DITRANSITIVE not in verb_lexical_entry.properties
@@ -703,7 +702,6 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 return
             else:
                 count = self.object_counts[_object.ontology_node]
-
 
             # make sure there is a corresponding ontology node
             if not _object.ontology_node:

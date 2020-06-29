@@ -136,6 +136,5 @@ GAILA_PHASE_1_CHINESE_LEXICON = OntologyLexicon(
         (WATERMELON, LexiconEntry("syi1 gwa1", NOUN)),
         (PASS, LexiconEntry("di4", VERB)),
         (WALK, LexiconEntry("bu4 sying2", VERB)),
-
     ),
 )
