@@ -12,13 +12,13 @@ from adam.language_specific.english.english_language_generator import (
     IGNORE_COLORS,
     GAILA_PHASE_1_LANGUAGE_GENERATOR,
 )
+from adam.learner.objects import SubsetObjectLearner
 from adam.learner import (
     LearningExample,
     PerceptionSemanticAlignment,
     LanguagePerceptionSemanticAlignment,
 )
 from adam.learner.alignments import LanguageConceptAlignment
-from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.objects import ObjectPursuitLearner, SubsetObjectLearnerNew
 from adam.ontology import OntologyNode
 from adam.ontology.phase1_ontology import (
@@ -54,9 +54,6 @@ from adam.situation.templates.phase1_templates import (
     all_possible,
     color_variable,
     object_variable,
-)
-from adam.language_specific.english.english_language_generator import (
-    GAILA_PHASE_1_LANGUAGE_GENERATOR,
 )
 from adam.language_specific.chinese.chinese_language_generator import (
     GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
@@ -141,7 +138,6 @@ def test_subset_learner_ball(language_generator):
 )
 def test_subset_learner_dog(language_generator):
     run_subset_learner_for_object(DOG, language_generator=language_generator)
-
 
 
 def test_subset_learner_subobject():
