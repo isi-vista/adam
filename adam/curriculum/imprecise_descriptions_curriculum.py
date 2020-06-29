@@ -438,7 +438,10 @@ def make_move_imprecise_temporal_descriptions(
 
 
 def make_jump_imprecise_temporal_descriptions(
-    num_samples: int = 5, *, num_noise_objects: int = 0  # pylint:disable=unused-argument
+    num_samples: int = 5,
+    *,
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    num_noise_objects: int = 0,  # pylint:disable=unused-argument
 ) -> Phase1InstanceGroup:
     jumper = standard_object("jumper_0", THING, required_properties=[CAN_JUMP])
 
@@ -463,6 +466,7 @@ def make_jump_imprecise_temporal_descriptions(
                 ]
             )
         ),
+        language_generator=language_generator,
     )
 
 
@@ -619,7 +623,10 @@ def make_pass_toss_subtle_verb_distinction(
 
 
 def make_roll_imprecise_temporal_descriptions(
-    num_samples: int = 5, *, num_noise_objects: int = 0  # pylint:disable=unused-argument
+    num_samples: int = 5,
+    *,
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    num_noise_objects: int = 0,  # pylint:disable=unused-argument
 ) -> Phase1InstanceGroup:
     animate_0 = standard_object("object_0", THING, required_properties=[ANIMATE])
     rollable_0 = standard_object("object_1", required_properties=[ROLLABLE])
@@ -675,11 +682,15 @@ def make_roll_imprecise_temporal_descriptions(
                 for is_fast in BOOL_SET
             ),
         ),
+        language_generator=language_generator,
     )
 
 
 def make_fly_imprecise_temporal_descriptions(
-    num_samples: int = 5, *, num_noise_objects: int = 0  # pylint:disable=unused-argument
+    num_samples: int = 5,
+    *,
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    num_noise_objects: int = 0,  # pylint:disable=unused-argument
 ) -> Phase1InstanceGroup:
     bird = standard_object("bird_0", BIRD)
     syntax_hints_options = ([], [USE_ADVERBIAL_PATH_MODIFIER])  # type: ignore
@@ -705,6 +716,7 @@ def make_fly_imprecise_temporal_descriptions(
                 for is_fast in BOOL_SET
             )
         ),
+        language_generator=language_generator,
     )
 
 
