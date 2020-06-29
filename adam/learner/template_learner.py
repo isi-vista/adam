@@ -386,6 +386,7 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
 
         matched_objects.sort(key=by_pattern_complexity, reverse=True)
         already_replaced: Set[ObjectPerception] = set()
+        new_nodes: List[SemanticNode] = []
         for (matched_object_node, pattern_match) in matched_objects:
             root: ObjectPerception = _get_root_object_perception(
                 pattern_match.matched_sub_graph._graph,  # pylint:disable=protected-access
@@ -401,19 +402,22 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
                     pattern_match=pattern_match,
                 )
                 already_replaced.add(root)
+                new_nodes.append(matched_object_node)
+                logging.debug(
+                    f"Matched pattern for {matched_object_node}" f"to root object {root}."
+                )
             else:
                 logging.info(
                     f"Matched pattern for {matched_object_node} "
                     f"but root object {root} already replaced."
                 )
-
-        new_nodes = immutableset(node for (node, _) in match_to_score)
+        immutable_new_nodes = immutableset(new_nodes)
 
         return (
             perception_semantic_alignment.copy_with_updated_graph_and_added_nodes(
-                new_graph=perception_graph_after_matching, new_nodes=new_nodes
+                new_graph=perception_graph_after_matching, new_nodes=immutable_new_nodes
             ),
-            new_nodes,
+            immutable_new_nodes,
         )
 
     @abstractmethod
