@@ -2449,6 +2449,7 @@ def _make_come_out_of_template(
         constraining_relations=flatten_relations(
             bigger_than(object_containing_agent, agent)
         ),
+        syntax_hints=[IGNORE_GOAL],
     )
 
 
@@ -3910,7 +3911,10 @@ def _make_fly_with_prepositions(
 
 
 def _make_come_with_prepositions(
-    num_samples: int = 5, *, noise_objects: int = 0
+    num_samples: int = 5,
+    *,
+    noise_objects: int = 0,
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     agent = standard_object("agent", required_properties=[SELF_MOVING])
     object_with_agent_inside = standard_object(
@@ -3938,6 +3942,7 @@ def _make_come_with_prepositions(
                 ]
             )
         ),
+        language_generator=language_generator,
     )
 
 
