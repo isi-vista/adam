@@ -80,6 +80,7 @@ from adam.ontology.phase1_ontology import (
 
 ME = LexiconEntry("wo3", NOUN, intrinsic_morphosyntactic_properties=[FIRST_PERSON])
 YOU = LexiconEntry("ni3", NOUN, intrinsic_morphosyntactic_properties=[SECOND_PERSON])
+RUN = LexiconEntry("pau3", VERB)
 GAILA_PHASE_1_CHINESE_LEXICON = OntologyLexicon(
     ontology=GAILA_PHASE_1_ONTOLOGY,
     ontology_node_to_word=(
@@ -132,9 +133,8 @@ GAILA_PHASE_1_CHINESE_LEXICON = OntologyLexicon(
         (TRANSPARENT, LexiconEntry("tou4 ming2", ADJECTIVE)),
         (LIGHT_BROWN, LexiconEntry("chyan3 he2 se4", ADJECTIVE)),
         (DARK_BROWN, LexiconEntry("shen1 dzung1 se4", ADJECTIVE)),
-        # TODO: for below, we need native speaker check (https://github.com/isi-vista/adam/issues/845)
-        (WATERMELON, LexiconEntry("syi1 gwa1", NOUN)),  # checked
+        (WATERMELON, LexiconEntry("syi1 gwa1", NOUN)),
         (PASS, LexiconEntry("di4", VERB)),
-        (WALK, LexiconEntry("bu4 sying2", VERB)),  # checked
+        (WALK, LexiconEntry("bu4 sying2", VERB)),
     ),
 )

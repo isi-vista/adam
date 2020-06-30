@@ -27,6 +27,8 @@ from adam.ontology import IN_REGION, IS_SPEAKER, IS_ADDRESSEE
 from adam.ontology.during import DuringAction
 from adam.ontology.phase1_ontology import (
     AGENT,
+    HARD_FORCE,
+    SOFT_FORCE,
     COME,
     BABY,
     BALL,
@@ -2611,3 +2613,85 @@ def test_ball_far_from_cookie():
         "de",
         "chyou2",
     )
+
+
+def test_run():
+    mom = situation_object(MOM, properties=[IS_SPEAKER])
+    mom_runs = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom],
+        actions=[
+            Action(
+                WALK,
+                auxiliary_variable_bindings=[(WALK_SURFACE_AUXILIARY, GROUND)],
+                argument_roles_to_fillers=[(AGENT, mom)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            mom,
+                            SpatialPath(
+                                None, reference_object=GROUND, properties=[HARD_FORCE]
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+    )
+    assert generated_tokens(mom_runs) == ("wo3", "pau3")
+
+
+def test_run_fast():
+    mom = situation_object(MOM)
+    mom_runs = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom],
+        actions=[
+            Action(
+                WALK,
+                auxiliary_variable_bindings=[(WALK_SURFACE_AUXILIARY, GROUND)],
+                argument_roles_to_fillers=[(AGENT, mom)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            mom,
+                            SpatialPath(
+                                None,
+                                reference_object=GROUND,
+                                properties=[HARD_FORCE, FAST],
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+    )
+    assert generated_tokens(mom_runs) == ("ma1 ma1", "kwai4 su4", "pau3")
+
+
+def test_run_slow():
+    mom = situation_object(MOM)
+    mom_runs = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom],
+        actions=[
+            Action(
+                WALK,
+                auxiliary_variable_bindings=[(WALK_SURFACE_AUXILIARY, GROUND)],
+                argument_roles_to_fillers=[(AGENT, mom)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            mom,
+                            SpatialPath(
+                                None,
+                                reference_object=GROUND,
+                                properties=[HARD_FORCE, SLOW],
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+    )
+    assert generated_tokens(mom_runs) == ("ma1 ma1", "man4 man", "pau3")

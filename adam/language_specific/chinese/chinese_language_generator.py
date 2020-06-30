@@ -50,6 +50,7 @@ from adam.language_specific.chinese.chinese_phase_1_lexicon import (
     GAILA_PHASE_1_CHINESE_LEXICON,
     ME,
     YOU,
+    RUN,
 )
 from adam.language_specific import (
     FIRST_PERSON,
@@ -81,6 +82,7 @@ from adam.ontology.phase1_ontology import (
     SLOW,
     BIGGER_THAN,
     SMALLER_THAN,
+    WALK,
 )
 from adam.ontology.phase1_spatial_relations import (
     EXTERIOR_BUT_IN_CONTACT,
@@ -205,8 +207,22 @@ class SimpleRuleBasedChineseLanguageGenerator(
         ) -> DependencyTreeToken:
             """Translate the situation's action to a VP node in the tree"""
 
-            # get the lexical entry corresponding to the verb
-            verb_lexical_entry = self._unique_lexicon_entry(action.action_type)
+            # get the lexical entry corresponding to the verb for special cases
+            special_lexical: bool = False
+            if (
+                action.action_type in [WALK]
+                and action.during
+                and action.during.objects_to_paths
+            ):
+                for (_, path) in action.during.objects_to_paths.items():
+                    if HARD_FORCE in path.properties:
+                        special_lexical = True
+            if special_lexical:
+                if action.action_type == WALK:
+                    verb_lexical_entry = RUN
+
+            else:
+                verb_lexical_entry = self._unique_lexicon_entry(action.action_type)
 
             # map all the arguments to chunks of the dependency tree, ignoring LEARNER object from generation
             syntactic_roles_to_argument_heads = immutablesetmultidict(
