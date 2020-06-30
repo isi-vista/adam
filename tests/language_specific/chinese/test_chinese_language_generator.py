@@ -87,6 +87,7 @@ from adam.ontology.phase1_ontology import (
     WALK,
     WALK_SURFACE_AUXILIARY,
     bigger_than,
+    far,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -2590,6 +2591,23 @@ def test_ball_above_cookie():
         "dzai4",
         "chyu1 chi2 bing3",
         "shang4 fang1",
+        "de",
+        "chyou2",
+    )
+
+
+def test_ball_far_from_cookie():
+    ball = situation_object(BALL)
+    cookie = situation_object(COOKIE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[ball, cookie],
+        always_relations=[far(ball, cookie)],
+    )
+    assert generated_tokens(situation) == (
+        "li2",
+        "chyu1 chi2 bing3",
+        "hen3 ywan3",
         "de",
         "chyou2",
     )

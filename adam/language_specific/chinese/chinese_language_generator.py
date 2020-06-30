@@ -1039,10 +1039,6 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     return None
 
             localiser: Optional[str] = None
-            # TODO: out of check with native speaker https://github.com/isi-vista/adam/issues/845
-            # if region.distance == INTERIOR and relation.negated:
-            #    localiser = "chu1"
-            # inside/in
             if region.distance == INTERIOR and not relation.negated:
                 localiser = "li3"
             # to/towards -- this functions differntly in Chinese but this is the best approximation to handle it
@@ -1051,9 +1047,8 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     localiser = "pang2 byan1"
                 else:
                     localiser = "shang4"
-            # TODO: check with native speaker https://github.com/isi-vista/adam/issues/845 (far from)
             elif region.distance == DISTAL and not region.direction:
-                localiser = "ywan3 li2"
+                localiser = "hen3 ywan3"
             elif region.direction:
                 direction_axis = region.direction.relative_to_concrete_axis(
                     self.situation.axis_info
@@ -1136,6 +1131,8 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     and relation not in self.situation.always_relations
                 ):
                     coverb = "gwo4"
+                if region.distance == DISTAL and not region.direction:
+                    coverb = "li2"
                 # add the coverb to the localiser phrase and return it
                 self.dependency_graph.add_edge(
                     DependencyTreeToken(coverb, ADPOSITION),
