@@ -16,6 +16,7 @@ from adam.language_specific.chinese.chinese_language_generator import (
     USE_ADVERBIAL_PATH_MODIFIER,
     IGNORE_HAS_AS_VERB,
     ATTRIBUTES_AS_X_IS_Y,
+    IGNORE_GOAL,
 )
 from adam.language_specific.chinese.chinese_phase_1_lexicon import (
     GAILA_PHASE_1_CHINESE_LEXICON,
@@ -67,6 +68,7 @@ from adam.ontology.phase1_ontology import (
     BOOK,
     LEARNER,
     near,
+    inside,
     TAKE,
     CAR,
     ROLL_SURFACE_AUXILIARY,
@@ -95,7 +97,7 @@ from adam.ontology.phase1_spatial_relations import (
     VIA,
 )
 from adam.random_utils import FixedIndexChooser
-from adam.relation import Relation
+from adam.relation import Relation, flatten_relations
 from adam.situation import Action, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam_test_utils import situation_object
@@ -2461,3 +2463,28 @@ def test_I_walk_slowly():
         ],
     )
     assert generated_tokens(situation) == ("wo3", "man4 man", "bu4 sying2")
+
+
+def test_I_walk_out_of_house():
+    dad = situation_object(DAD, properties=[IS_SPEAKER])
+    house = situation_object(HOUSE)
+    inside_relation = inside(dad, house)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[dad, house],
+        actions=[
+            Action(
+                WALK,
+                argument_roles_to_fillers=[
+                    (AGENT, dad),
+                    (GOAL, Region(house, distance=DISTAL)),
+                ],
+            )
+        ],
+        before_action_relations=flatten_relations(inside_relation),
+        after_action_relations=flatten_relations(
+            [relation.negated_copy() for relation in inside_relation]
+        ),
+        syntax_hints=[IGNORE_GOAL],
+    )
+    assert generated_tokens(situation) == ("wo3", "bu4 sying2", "chu1", "wu1")

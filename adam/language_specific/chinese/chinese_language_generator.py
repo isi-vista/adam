@@ -997,10 +997,10 @@ class SimpleRuleBasedChineseLanguageGenerator(
 
             localiser: Optional[str] = None
             # TODO: out of check with native speaker https://github.com/isi-vista/adam/issues/845
-            if region.distance == INTERIOR and relation.negated:
-                localiser = "chu1"
+            # if region.distance == INTERIOR and relation.negated:
+            #    localiser = "chu1"
             # inside/in
-            elif region.distance == INTERIOR:
+            if region.distance == INTERIOR and not relation.negated:
                 localiser = "li3"
             # to/towards -- this functions differntly in Chinese but this is the best approximation to handle it
             elif region.distance == PROXIMAL and not region.direction:
@@ -1040,12 +1040,25 @@ class SimpleRuleBasedChineseLanguageGenerator(
                         # beside
                         elif region.distance == PROXIMAL:
                             localiser = "pang2 byan1"
-            # if there's no localiser, this is a relation we don't know how to handle
-            if not localiser:
-                raise RuntimeError(f"Don't know how to handle {relation} as a localiser")
 
             # get the noun for the NP in the localiser phrase
             reference_object_node = self._noun_for_object(region.reference_object)
+
+            # if there's no localiser, this is a relation we don't know how to handle
+            if not localiser:
+                # handle out, which is a coverb rather than a localiser
+                if region.distance == INTERIOR and relation.negated:
+                    coverb = "chu1"
+                    self.dependency_graph.add_edge(
+                        DependencyTreeToken(coverb, ADPOSITION),
+                        reference_object_node,
+                        role=CASE_SPATIAL,
+                    )
+                    return reference_object_node
+                else:
+                    raise RuntimeError(
+                        f"Don't know how to handle {relation} as a localiser"
+                    )
 
             # this means that the reference node is already in the graph, so we're done
             if self.dependency_graph.out_degree[reference_object_node]:
