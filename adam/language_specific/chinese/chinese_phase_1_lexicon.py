@@ -82,6 +82,7 @@ ME = LexiconEntry("wo3", NOUN, intrinsic_morphosyntactic_properties=[FIRST_PERSO
 YOU = LexiconEntry("ni3", NOUN, intrinsic_morphosyntactic_properties=[SECOND_PERSON])
 RUN = LexiconEntry("pau3", VERB)
 GRAB = LexiconEntry("chyang3 na2 chi3", VERB)
+SHOVE = LexiconEntry("yung4 li4 twei1", VERB)
 GAILA_PHASE_1_CHINESE_LEXICON = OntologyLexicon(
     ontology=GAILA_PHASE_1_ONTOLOGY,
     ontology_node_to_word=(

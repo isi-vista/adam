@@ -2766,3 +2766,91 @@ def test_dad_slowly_grabs_cookie():
         "chyang3 na2 chi3",
         "chyu1 chi2 bing3",
     )
+
+
+def test_i_shove_a_ball_on_a_table_dao():
+    mum = situation_object(MOM, properties=[IS_SPEAKER])
+    ball = situation_object(BALL)
+    table = situation_object(TABLE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mum, ball, table],
+        actions=[
+            Action(
+                action_type=PUSH,
+                argument_roles_to_fillers=[
+                    (AGENT, mum),
+                    (THEME, ball),
+                    (
+                        GOAL,
+                        Region(
+                            reference_object=table,
+                            distance=EXTERIOR_BUT_IN_CONTACT,
+                            direction=GRAVITATIONAL_UP,
+                        ),
+                    ),
+                ],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            mum,
+                            SpatialPath(
+                                None, reference_object=GROUND, properties=[HARD_FORCE]
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+        after_action_relations=[on(ball, table)],
+    )
+    assert generated_tokens(situation) == (
+        "wo3",
+        "ba3",
+        "chyou2",
+        "yung4 li4 twei1",
+        "dau4",
+        "jwo1 dz",
+        "shang4",
+    )
+
+
+def test_i_shove_a_table():
+    mum = situation_object(MOM, properties=[IS_SPEAKER])
+    table = situation_object(TABLE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mum, table],
+        actions=[
+            Action(
+                action_type=PUSH,
+                argument_roles_to_fillers=[(AGENT, mum), (THEME, table)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            mum,
+                            SpatialPath(
+                                None, reference_object=GROUND, properties=[HARD_FORCE]
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+    )
+    assert generated_tokens(situation) == ("wo3", "yung4 li4 twei1", "jwo1 dz")
+
+
+def test_i_push_a_table():
+    mum = situation_object(MOM, properties=[IS_SPEAKER])
+    table = situation_object(TABLE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mum, table],
+        actions=[
+            Action(
+                action_type=PUSH, argument_roles_to_fillers=[(AGENT, mum), (THEME, table)]
+            )
+        ],
+    )
+    assert generated_tokens(situation) == ("wo3", "twei1", "jwo1 dz")
