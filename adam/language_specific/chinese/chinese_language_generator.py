@@ -916,15 +916,24 @@ class SimpleRuleBasedChineseLanguageGenerator(
                         self._noun_for_object(relation.first_slot),
                         role=ADJECTIVAL_MODIFIER,
                     )
-                else:
-                    raise NotImplementedError()
             elif relation.relation_type == SMALLER_THAN:
                 if (
                     relation.first_slot in self.situation.salient_objects
                     and isinstance(relation.second_slot, SituationObject)
-                    and relation.second_slot == LEARNER
+                    and relation.second_slot.ontology_node == LEARNER
                 ):
-                    raise NotImplementedError()
+                    # short
+                    if USE_VERTICAL_MODIFIERS in self.situation.syntax_hints:
+                        raise NotImplementedError("No vertical mods yet")
+                    # small
+                    else:
+                        token = DependencyTreeToken("syau3", ADJECTIVE)
+                    self.dependency_graph.add_node(token)
+                    self.dependency_graph.add_edge(
+                        token,
+                        self._noun_for_object(relation.first_slot),
+                        role=ADJECTIVAL_MODIFIER,
+                    )
 
             # handle possession relations
             elif relation.relation_type == HAS:

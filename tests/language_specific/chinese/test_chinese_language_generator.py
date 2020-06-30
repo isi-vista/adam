@@ -2500,3 +2500,14 @@ def test_big_truck():
         always_relations=[(bigger_than(truck, learner))],
     )
     assert generated_tokens(situation) == ("da4", "ka3 che1")
+
+
+def test_small_truck():
+    learner = situation_object(LEARNER)
+    truck = situation_object(TRUCK)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[truck],
+        always_relations=[(bigger_than(learner, truck))],
+    )
+    assert generated_tokens(situation) == ("syau3", "ka3 che1")
