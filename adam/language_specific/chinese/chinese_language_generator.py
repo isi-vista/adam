@@ -217,7 +217,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
             # get the lexical entry corresponding to the verb for special cases
             special_lexical: bool = False
             if (
-                action.action_type in [WALK, TAKE, PUSH]
+                action.action_type in [WALK, TAKE, PUSH, PASS]
                 and action.during
                 and action.during.objects_to_paths
             ):

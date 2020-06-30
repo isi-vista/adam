@@ -2956,3 +2956,195 @@ def test_dad_passes_the_cookie_down_to_me():
     )
 
 
+def test_toss():
+    dad = situation_object(DAD)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[dad],
+        actions=[
+            Action(
+                PASS,
+                argument_roles_to_fillers=[(AGENT, dad)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            dad,
+                            SpatialPath(
+                                None, reference_object=GROUND, properties=[HARD_FORCE]
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+    )
+    assert generated_tokens(situation) == ("ba4 ba4", "reng1")
+
+
+def test_dad_tosses_the_cookie_up_to_me():
+    dad = situation_object(DAD)
+    mum = situation_object(MOM, properties=[IS_SPEAKER])
+    cookie = situation_object(COOKIE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mum, cookie, dad],
+        actions=[
+            Action(
+                action_type=PASS,
+                argument_roles_to_fillers=[(AGENT, dad), (THEME, cookie), (GOAL, mum)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            dad,
+                            SpatialPath(
+                                operator=AWAY_FROM,
+                                reference_object=situation_object(GROUND),
+                                properties=[HARD_FORCE],
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
+    )
+    assert generated_tokens(situation) == (
+        "ba4 ba4",
+        "ba3",
+        "chyu1 chi2 bing3",
+        "reng1",
+        "chi3 lai2",
+        "gei3",
+        "wo3",
+    )
+
+
+def test_bird_flies_up_towards_mum():
+    bird = situation_object(BIRD)
+    mum = situation_object(MOM)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[bird, mum],
+        actions=[
+            Action(
+                FLY,
+                argument_roles_to_fillers=[(AGENT, bird)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            bird,
+                            SpatialPath(
+                                operator=TOWARD,
+                                reference_object=mum,
+                                reference_axis=HorizontalAxisOfObject(bird, 1),
+                            ),
+                        ),
+                        (
+                            bird,
+                            SpatialPath(
+                                operator=AWAY_FROM,
+                                reference_object=situation_object(GROUND),
+                            ),
+                        ),
+                    ]
+                ),
+            )
+        ],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
+    )
+    assert generated_tokens(situation) == (
+        "nyau3",
+        "chau2",
+        "ma1 ma1",
+        "fei1",
+        "chi3 lai2",
+    )
+
+
+def test_bird_flies_away_from_mum():
+    bird = situation_object(BIRD)
+    mum = situation_object(MOM)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[bird, mum],
+        actions=[
+            Action(
+                FLY,
+                argument_roles_to_fillers=[(AGENT, bird)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            bird,
+                            SpatialPath(
+                                operator=AWAY_FROM,
+                                reference_object=mum,
+                                reference_axis=HorizontalAxisOfObject(bird, 1),
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
+    )
+    assert generated_tokens(situation) == ("nyau3", "li2", "ma1 ma1", "fei1")
+
+
+def test_dad_passes_me_cookie():
+    dad = situation_object(DAD)
+    mum = situation_object(MOM, properties=[IS_SPEAKER])
+    cookie = situation_object(COOKIE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mum, cookie, dad],
+        actions=[
+            Action(
+                action_type=PASS,
+                argument_roles_to_fillers=[(AGENT, dad), (THEME, cookie), (GOAL, mum)],
+            )
+        ],
+    )
+    assert generated_tokens(situation) == (
+        "ba4 ba4",
+        "ba3",
+        "chyu1 chi2 bing3",
+        "di4",
+        "gei3",
+        "wo3",
+    )
+
+
+def test_you_toss_me_cookie():
+    dad = situation_object(DAD, properties=[IS_ADDRESSEE])
+    mum = situation_object(MOM, properties=[IS_SPEAKER])
+    cookie = situation_object(COOKIE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mum, cookie, dad],
+        actions=[
+            Action(
+                action_type=PASS,
+                argument_roles_to_fillers=[(AGENT, dad), (THEME, cookie), (GOAL, mum)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            dad,
+                            SpatialPath(
+                                operator=None,
+                                reference_object=situation_object(GROUND),
+                                properties=[HARD_FORCE],
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+    )
+    assert generated_tokens(situation) == (
+        "ni3",
+        "ba3",
+        "chyu1 chi2 bing3",
+        "reng1",
+        "gei3",
+        "wo3",
+    )
