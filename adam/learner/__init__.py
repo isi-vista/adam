@@ -4,7 +4,7 @@ Interfaces for language learning code.
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Dict, Generic, Mapping, Optional, Any
+from typing import Dict, Generic, Mapping, Optional, Callable
 
 from adam.learner.alignments import (
     LanguagePerceptionSemanticAlignment,
@@ -16,7 +16,7 @@ from attr import Factory, attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import immutabledict
 from more_itertools import first
-from networkx import DiGraph, isolates
+from networkx import isolates
 
 from adam.language import LinguisticDescription, LinguisticDescriptionT
 from adam.ontology.phase1_ontology import LEARNER
@@ -25,11 +25,9 @@ from adam.perception.perception_graph import (
     PerceptionGraph,
     PerceptionGraphPattern,
     DebugCallableType,
-    PerceptionGraphPatternMatch,
     GraphLogger,
     MatchMode,
 )
-from adam.utils.networkx_utils import subgraph
 
 
 @attrs(frozen=True)
@@ -141,7 +139,10 @@ def get_largest_matching_pattern(
     graph_logger: Optional[GraphLogger] = None,
     ontology: Ontology,
     match_ratio: Optional[float] = None,
-    match_mode: MatchMode
+    match_mode: MatchMode,
+    trim_after_match: Optional[
+        Callable[[PerceptionGraphPattern], PerceptionGraphPattern]
+    ] = None,
 ) -> Optional[PerceptionGraphPattern]:
     """ Helper function to return the largest matching `PerceptionGraphPattern`
     for learner from a perception pattern and graph pair."""
@@ -149,7 +150,10 @@ def get_largest_matching_pattern(
         graph, debug_callback=debug_callback, match_mode=match_mode
     )
     return matching.relax_pattern_until_it_matches(
-        graph_logger=graph_logger, ontology=ontology, min_ratio=match_ratio
+        graph_logger=graph_logger,
+        ontology=ontology,
+        min_ratio=match_ratio,
+        trim_after_match=trim_after_match,
     )
 
 
