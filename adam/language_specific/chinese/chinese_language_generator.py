@@ -287,6 +287,22 @@ class SimpleRuleBasedChineseLanguageGenerator(
                         )
                         if spatial_modifier:
                             modifiers.append(spatial_modifier)
+                    # handle fast/slow
+                    for (_, spatial_path) in action.during.objects_to_paths.items():
+                        if FAST in spatial_path.properties:
+                            modifiers.append(
+                                (
+                                    ADVERBIAL_MODIFIER,
+                                    DependencyTreeToken("kwai4 su4", ADVERB),
+                                )
+                            )
+                        elif SLOW in spatial_path.properties:
+                            modifiers.append(
+                                (
+                                    ADVERBIAL_MODIFIER,
+                                    DependencyTreeToken("man4 man", ADVERB),
+                                )
+                            )
 
             # if there are after action relations, collect them, parse them, and add them to the modifiers
             for relation in self.situation.after_action_relations:

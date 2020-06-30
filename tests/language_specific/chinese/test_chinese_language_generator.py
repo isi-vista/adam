@@ -75,6 +75,8 @@ from adam.ontology.phase1_ontology import (
     RED,
     WATERMELON,
     MOVE,
+    FAST,
+    SLOW,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -2367,3 +2369,33 @@ def test_dad_moves_away_from_cookie():
         "chyu1 chi2 bing3",
         "yi2 dung4",
     )
+
+
+def test_jump_fast():
+    mum = situation_object(MOM)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mum],
+        actions=[
+            Action(
+                JUMP,
+                argument_roles_to_fillers=[(AGENT, mum)],
+                auxiliary_variable_bindings=[
+                    (JUMP_INITIAL_SUPPORTER_AUX, situation_object(GROUND))
+                ],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            mum,
+                            SpatialPath(
+                                None,
+                                reference_object=situation_object(GROUND),
+                                properties=[FAST],
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+    )
+    assert generated_tokens(situation) == ("ma1 ma1", "kwai4 su4", "tyau4")
