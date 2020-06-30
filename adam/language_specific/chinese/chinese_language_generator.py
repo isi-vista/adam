@@ -286,9 +286,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
                             action, path_object, spatial_path
                         )
                         if spatial_modifier:
-                            modifiers.append(
-                                (ADVERBIAL_CLAUSE_MODIFIER, spatial_modifier)
-                            )
+                            modifiers.append(spatial_modifier)
 
             # if there are after action relations, collect them, parse them, and add them to the modifiers
             for relation in self.situation.after_action_relations:
@@ -396,7 +394,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
             # TODO: check the following with a native spaker https://github.com/isi-vista/adam/issues/845
             preposition: Optional[str] = None
             if spatial_path.operator == TOWARD:
-                preposition = "syang4"
+                preposition = "chau2"
             elif spatial_path.operator == AWAY_FROM:
                 preposition = "ywan3 li2"
             elif spatial_path.operator in [TO, None]:
@@ -416,17 +414,25 @@ class SimpleRuleBasedChineseLanguageGenerator(
             if self.dependency_graph.out_degree[reference_object_node]:
                 return None
             else:
-                self.dependency_graph.add_edge(
-                    DependencyTreeToken(preposition, ADPOSITION),
-                    reference_object_node,
-                    role=CASE_POSSESSIVE,
-                )
-                self.dependency_graph.add_edge(
-                    DependencyTreeToken("dau4", ADPOSITION),
-                    reference_object_node,
-                    role=CASE_SPATIAL,
-                )
-                return reference_object_node
+                if spatial_path.operator in [TOWARD, AWAY_FROM]:
+                    self.dependency_graph.add_edge(
+                        DependencyTreeToken(preposition, ADPOSITION),
+                        reference_object_node,
+                        role=CASE_SPATIAL,
+                    )
+                    return (OBLIQUE_NOMINAL, reference_object_node)
+                else:
+                    self.dependency_graph.add_edge(
+                        DependencyTreeToken(preposition, ADPOSITION),
+                        reference_object_node,
+                        role=CASE_POSSESSIVE,
+                    )
+                    self.dependency_graph.add_edge(
+                        DependencyTreeToken("dau4", ADPOSITION),
+                        reference_object_node,
+                        role=CASE_SPATIAL,
+                    )
+                    return (ADVERBIAL_CLAUSE_MODIFIER, reference_object_node)
 
         def _translate_relation_to_action_modifier(
             self,
