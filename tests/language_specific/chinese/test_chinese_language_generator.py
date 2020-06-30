@@ -37,6 +37,7 @@ from adam.ontology.phase1_ontology import (
     CHAIR,
     COOKIE,
     CUP,
+    PASS,
     DAD,
     DRINK,
     DRINK_CONTAINER_AUX,
@@ -2854,3 +2855,104 @@ def test_i_push_a_table():
         ],
     )
     assert generated_tokens(situation) == ("wo3", "twei1", "jwo1 dz")
+
+
+def test_i_push_table_down_slowly():
+    mum = situation_object(MOM, properties=[IS_SPEAKER])
+    table = situation_object(TABLE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mum, table],
+        actions=[
+            Action(
+                action_type=PUSH,
+                argument_roles_to_fillers=[(AGENT, mum), (THEME, table)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            mum,
+                            SpatialPath(
+                                operator=TOWARD,
+                                reference_object=situation_object(GROUND),
+                                properties=[SLOW],
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
+    )
+    assert generated_tokens(situation) == (
+        "wo3",
+        "man4 man",
+        "ba3",
+        "jwo1 dz",
+        "twei1",
+        "sya4 lai2",
+    )
+
+
+def test_i_throw_ball_down():
+    mum = situation_object(MOM, properties=[IS_SPEAKER])
+    ball = situation_object(BALL)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mum, ball],
+        actions=[
+            Action(
+                action_type=THROW,
+                argument_roles_to_fillers=[(AGENT, mum), (THEME, ball)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            mum,
+                            SpatialPath(
+                                operator=TOWARD, reference_object=situation_object(GROUND)
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
+    )
+    assert generated_tokens(situation) == ("wo3", "ba3", "chyou2", "reng1", "sya4 lai2")
+
+
+def test_dad_passes_the_cookie_down_to_me():
+    dad = situation_object(DAD)
+    mum = situation_object(MOM, properties=[IS_SPEAKER])
+    cookie = situation_object(COOKIE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mum, cookie, dad],
+        actions=[
+            Action(
+                action_type=PASS,
+                argument_roles_to_fillers=[(AGENT, dad), (THEME, cookie), (GOAL, mum)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            dad,
+                            SpatialPath(
+                                operator=TOWARD, reference_object=situation_object(GROUND)
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
+    )
+    assert generated_tokens(situation) == (
+        "ba4 ba4",
+        "ba3",
+        "chyu1 chi2 bing3",
+        "di4",
+        "sya4 lai2",
+        "gei3",
+        "wo3",
+    )
+
+

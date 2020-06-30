@@ -39,8 +39,8 @@ _CHINESE_HEAD_TO_ROLE_ORDER: ImmutableDict[
         VERB,
         (
             NOMINAL_SUBJECT,
-            OBLIQUE_NOMINAL,
             ADVERBIAL_MODIFIER,
+            OBLIQUE_NOMINAL,
             HEAD,
             ADVERBIAL_CLAUSE_MODIFIER,
             INDIRECT_OBJECT,

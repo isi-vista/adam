@@ -53,6 +53,7 @@ from adam.language_specific.chinese.chinese_phase_1_lexicon import (
     RUN,
     GRAB,
     SHOVE,
+    TOSS,
 )
 from adam.language_specific import (
     FIRST_PERSON,
@@ -77,6 +78,7 @@ from adam.ontology.phase1_ontology import (
     SIT,
     THEME,
     JUMP,
+    GIVE,
     GO,
     COME,
     HARD_FORCE,
@@ -87,6 +89,7 @@ from adam.ontology.phase1_ontology import (
     SMALLER_THAN,
     WALK,
     TAKE,
+    PASS,
 )
 from adam.ontology.phase1_spatial_relations import (
     EXTERIOR_BUT_IN_CONTACT,
@@ -228,6 +231,8 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     verb_lexical_entry = GRAB
                 elif action.action_type == PUSH:
                     verb_lexical_entry = SHOVE
+                elif action.action_type == PASS:
+                    verb_lexical_entry = TOSS
 
             else:
                 verb_lexical_entry = self._unique_lexicon_entry(action.action_type)
@@ -556,6 +561,18 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 ):
                     zhao = DependencyTreeToken("jau3", ADPOSITION)
                     self.dependency_graph.add_edge(zhao, filler_noun, role=CASE_SPATIAL)
+                # deal with movement to a person as the goal
+                elif (
+                    action
+                    and argument_role == GOAL
+                    and action.action_type != GIVE
+                    and (
+                        IS_SPEAKER in filler.properties
+                        or IS_ADDRESSEE in filler.properties
+                    )
+                ):
+                    gei = DependencyTreeToken("gei3", ADPOSITION)
+                    self.dependency_graph.add_edge(gei, filler_noun, role=CASE_SPATIAL)
                 return (syntactic_role, filler_noun)
             # deal with the case that it's a region in the situation
             elif isinstance(filler, Region):
@@ -564,18 +581,6 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 reference_object_dependency_node = self._noun_for_object(
                     filler.reference_object
                 )
-                # humans have a different coverb than non-humans, currently this is hard coded but can be updated to use animacy
-                if reference_object_dependency_node.token in [
-                    "ma1 ma1",
-                    "ba4 ba4",
-                    "bau3 bau3",
-                ]:
-                    self.dependency_graph.add_edge(
-                        DependencyTreeToken("gei3", ADPOSITION),
-                        reference_object_dependency_node,
-                        role=CASE_SPATIAL,
-                    )
-                    return (ADVERBIAL_CLAUSE_MODIFIER, reference_object_dependency_node)
 
                 # if this is the equivalent of "to" in English with a go/come verb, we just use the bare noun
                 if (

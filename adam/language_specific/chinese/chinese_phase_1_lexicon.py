@@ -83,6 +83,8 @@ YOU = LexiconEntry("ni3", NOUN, intrinsic_morphosyntactic_properties=[SECOND_PER
 RUN = LexiconEntry("pau3", VERB)
 GRAB = LexiconEntry("chyang3 na2 chi3", VERB)
 SHOVE = LexiconEntry("yung4 li4 twei1", VERB)
+# throw and toss are the same in Chinese
+TOSS = LexiconEntry("reng1", VERB)
 GAILA_PHASE_1_CHINESE_LEXICON = OntologyLexicon(
     ontology=GAILA_PHASE_1_ONTOLOGY,
     ontology_node_to_word=(
