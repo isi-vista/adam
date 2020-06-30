@@ -33,6 +33,7 @@ from adam.language.dependency.universal_dependencies import (
     NOMINAL_MODIFIER,
     NOMINAL_MODIFIER_POSSESSIVE,
     NOMINAL_SUBJECT,
+    ADJECTIVE,
     NUMERAL,
     NUMERIC_MODIFIER,
     OBJECT,
@@ -78,6 +79,8 @@ from adam.ontology.phase1_ontology import (
     SOFT_FORCE,
     FAST,
     SLOW,
+    BIGGER_THAN,
+    SMALLER_THAN,
 )
 from adam.ontology.phase1_spatial_relations import (
     EXTERIOR_BUT_IN_CONTACT,
@@ -895,8 +898,36 @@ class SimpleRuleBasedChineseLanguageGenerator(
         ):
             """Translate relations that the user explicitly calls out, including possession and region"""
 
+            if relation.relation_type == BIGGER_THAN:
+                if (
+                    relation.first_slot in self.situation.salient_objects
+                    and isinstance(relation.second_slot, SituationObject)
+                    and relation.second_slot.ontology_node == LEARNER
+                ):
+                    # tall
+                    if USE_VERTICAL_MODIFIERS in self.situation.syntax_hints:
+                        raise NotImplementedError("No vertical mods yet")
+                    # big
+                    else:
+                        token = DependencyTreeToken("da4", ADJECTIVE)
+                    self.dependency_graph.add_node(token)
+                    self.dependency_graph.add_edge(
+                        token,
+                        self._noun_for_object(relation.first_slot),
+                        role=ADJECTIVAL_MODIFIER,
+                    )
+                else:
+                    raise NotImplementedError()
+            elif relation.relation_type == SMALLER_THAN:
+                if (
+                    relation.first_slot in self.situation.salient_objects
+                    and isinstance(relation.second_slot, SituationObject)
+                    and relation.second_slot == LEARNER
+                ):
+                    raise NotImplementedError()
+
             # handle possession relations
-            if relation.relation_type == HAS:
+            elif relation.relation_type == HAS:
                 # if the situation is dynamic, then this will be handled within the NP
                 if (
                     self.situation.is_dynamic
@@ -1168,3 +1199,4 @@ IGNORE_HAS_AS_VERB = "IGNORE_HAS_AS_VERB"
 ATTRIBUTES_AS_X_IS_Y = "ATTRIBUTES_AS_X_IS_Y"
 USE_NEAR = "USE_NEAR"
 IGNORE_GOAL = "IGNORE_GOAL"
+USE_VERTICAL_MODIFIERS = "USE_VERTICAL_MODIFIERS"

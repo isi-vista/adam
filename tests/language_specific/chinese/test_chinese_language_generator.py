@@ -81,6 +81,7 @@ from adam.ontology.phase1_ontology import (
     SLOW,
     WALK,
     WALK_SURFACE_AUXILIARY,
+    bigger_than,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -2488,3 +2489,14 @@ def test_I_walk_out_of_house():
         syntax_hints=[IGNORE_GOAL],
     )
     assert generated_tokens(situation) == ("wo3", "bu4 sying2", "chu1", "wu1")
+
+
+def test_big_truck():
+    learner = situation_object(LEARNER)
+    truck = situation_object(TRUCK)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[truck],
+        always_relations=[(bigger_than(truck, learner))],
+    )
+    assert generated_tokens(situation) == ("da4", "ka3 che1")
