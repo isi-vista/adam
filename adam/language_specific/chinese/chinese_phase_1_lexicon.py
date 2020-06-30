@@ -81,6 +81,7 @@ from adam.ontology.phase1_ontology import (
 ME = LexiconEntry("wo3", NOUN, intrinsic_morphosyntactic_properties=[FIRST_PERSON])
 YOU = LexiconEntry("ni3", NOUN, intrinsic_morphosyntactic_properties=[SECOND_PERSON])
 RUN = LexiconEntry("pau3", VERB)
+GRAB = LexiconEntry("chyang3 na2 chi3", VERB)
 GAILA_PHASE_1_CHINESE_LEXICON = OntologyLexicon(
     ontology=GAILA_PHASE_1_ONTOLOGY,
     ontology_node_to_word=(

@@ -51,6 +51,7 @@ from adam.language_specific.chinese.chinese_phase_1_lexicon import (
     ME,
     YOU,
     RUN,
+    GRAB,
 )
 from adam.language_specific import (
     FIRST_PERSON,
@@ -83,6 +84,7 @@ from adam.ontology.phase1_ontology import (
     BIGGER_THAN,
     SMALLER_THAN,
     WALK,
+    TAKE,
 )
 from adam.ontology.phase1_spatial_relations import (
     EXTERIOR_BUT_IN_CONTACT,
@@ -210,7 +212,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
             # get the lexical entry corresponding to the verb for special cases
             special_lexical: bool = False
             if (
-                action.action_type in [WALK]
+                action.action_type in [WALK, TAKE]
                 and action.during
                 and action.during.objects_to_paths
             ):
@@ -220,6 +222,8 @@ class SimpleRuleBasedChineseLanguageGenerator(
             if special_lexical:
                 if action.action_type == WALK:
                     verb_lexical_entry = RUN
+                if action.action_type == TAKE:
+                    verb_lexical_entry = GRAB
 
             else:
                 verb_lexical_entry = self._unique_lexicon_entry(action.action_type)

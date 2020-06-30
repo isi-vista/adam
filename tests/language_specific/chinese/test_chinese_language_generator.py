@@ -2695,3 +2695,74 @@ def test_run_slow():
         ],
     )
     assert generated_tokens(mom_runs) == ("ma1 ma1", "man4 man", "pau3")
+
+
+def test_I_run_out_of_car_slowly():
+    dad = situation_object(DAD, properties=[IS_SPEAKER])
+    car = situation_object(CAR)
+    inside_relation = inside(dad, car)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[dad, car],
+        actions=[
+            Action(
+                WALK,
+                argument_roles_to_fillers=[
+                    (AGENT, dad),
+                    (GOAL, Region(car, distance=DISTAL)),
+                ],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            dad,
+                            SpatialPath(
+                                None,
+                                reference_object=GROUND,
+                                properties=[HARD_FORCE, SLOW],
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+        before_action_relations=flatten_relations(inside_relation),
+        after_action_relations=flatten_relations(
+            [relation.negated_copy() for relation in inside_relation]
+        ),
+        syntax_hints=[IGNORE_GOAL],
+    )
+    assert generated_tokens(situation) == ("wo3", "man4 man", "pau3", "chu1", "chi4 che1")
+
+
+def test_dad_slowly_grabs_cookie():
+    dad = situation_object(DAD)
+    cookie = situation_object(COOKIE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[dad, cookie],
+        actions=[
+            Action(
+                TAKE,
+                argument_roles_to_fillers=[(AGENT, dad), (THEME, cookie)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            dad,
+                            SpatialPath(
+                                None,
+                                reference_object=GROUND,
+                                properties=[HARD_FORCE, SLOW],
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+        syntax_hints=[IGNORE_GOAL],
+    )
+    assert generated_tokens(situation) == (
+        "ba4 ba4",
+        "man4 man",
+        "chyang3 na2 chi3",
+        "chyu1 chi2 bing3",
+    )
