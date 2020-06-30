@@ -77,6 +77,8 @@ from adam.ontology.phase1_ontology import (
     MOVE,
     FAST,
     SLOW,
+    WALK,
+    WALK_SURFACE_AUXILIARY,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -2399,3 +2401,63 @@ def test_jump_fast():
         ],
     )
     assert generated_tokens(situation) == ("ma1 ma1", "kwai4 su4", "tyau4")
+
+
+def test_I_walk_fast():
+    mum = situation_object(MOM, properties=[IS_SPEAKER])
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mum],
+        actions=[
+            Action(
+                WALK,
+                argument_roles_to_fillers=[(AGENT, mum)],
+                auxiliary_variable_bindings=[
+                    (WALK_SURFACE_AUXILIARY, situation_object(GROUND))
+                ],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            mum,
+                            SpatialPath(
+                                None,
+                                reference_object=situation_object(GROUND),
+                                properties=[FAST],
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+    )
+    assert generated_tokens(situation) == ("wo3", "kwai4 su4", "bu4 sying2")
+
+
+def test_I_walk_slowly():
+    mum = situation_object(MOM, properties=[IS_SPEAKER])
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mum],
+        actions=[
+            Action(
+                WALK,
+                argument_roles_to_fillers=[(AGENT, mum)],
+                auxiliary_variable_bindings=[
+                    (WALK_SURFACE_AUXILIARY, situation_object(GROUND))
+                ],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            mum,
+                            SpatialPath(
+                                None,
+                                reference_object=situation_object(GROUND),
+                                properties=[SLOW],
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+    )
+    assert generated_tokens(situation) == ("wo3", "man4 man", "bu4 sying2")
