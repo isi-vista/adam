@@ -9,6 +9,7 @@ from adam.language_specific.chinese.chinese_language_generator import (
 )
 from adam.curriculum.curriculum_utils import (
     PHASE1_CHOOSER_FACTORY,
+    PHASE1_TEST_CHOOSER_FACTORY,
     phase1_instances,
     standard_object,
 )
@@ -99,7 +100,7 @@ def run_verb_test(learner, situation_template, language_generator):
                     situation_template,
                     max_to_sample=1,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    chooser=PHASE1_TEST_CHOOSER_FACTORY(),
                 )
             ]
         ),

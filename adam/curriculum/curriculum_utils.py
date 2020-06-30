@@ -34,6 +34,7 @@ from adam.situation.templates.phase1_templates import (
 
 GROUND_OBJECT_TEMPLATE = object_variable("ground", GROUND)
 PHASE1_CHOOSER_FACTORY = lambda: RandomChooser.for_seed(0)  # noqa: E731
+PHASE1_TEST_CHOOSER_FACTORY = lambda: RandomChooser.for_seed(1)  # noqa: E731
 Phase1InstanceGroup = InstanceGroup[  # pylint:disable=invalid-name
     HighLevelSemanticsSituation,
     LinearizedDependencyTree,
