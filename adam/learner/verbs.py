@@ -27,7 +27,7 @@ from adam.learner.template_learner import (
     AbstractTemplateLearner,
     AbstractTemplateLearnerNew,
 )
-from adam.perception import PerceptualRepresentation
+from adam.perception import PerceptualRepresentation, MatchMode
 from adam.perception.deprecated import LanguageAlignedPerception
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -40,7 +40,12 @@ from adam.semantics import (
     SemanticNode,
 )
 from attr import attrib, attrs
-from immutablecollections import immutabledict, immutableset, ImmutableSet
+from immutablecollections import (
+    immutabledict,
+    immutableset,
+    ImmutableSet,
+    immutablesetmultidict,
+)
 from attr.validators import instance_of
 from vistautils.span import Span
 
@@ -477,6 +482,25 @@ class SubsetVerbLearner(AbstractTemplateSubsetLearner, AbstractVerbTemplateLearn
             ),
         )
 
+    def _update_hypothesis(
+        self,
+        previous_pattern_hypothesis: PerceptionGraphTemplate,
+        current_pattern_hypothesis: PerceptionGraphTemplate,
+    ) -> Optional[PerceptionGraphTemplate]:
+        return previous_pattern_hypothesis.intersection(
+            current_pattern_hypothesis,
+            ontology=self._ontology,
+            match_mode=MatchMode.NON_OBJECT,
+            allowed_matches=immutablesetmultidict(
+                [
+                    (node2, node1)
+                    for previous_slot, node1 in previous_pattern_hypothesis.template_variable_to_pattern_node.items()
+                    for new_slot, node2 in current_pattern_hypothesis.template_variable_to_pattern_node.items()
+                    if previous_slot == new_slot
+                ]
+            ),
+        )
+
 
 @attrs
 class SubsetVerbLearnerNew(
@@ -523,3 +547,22 @@ class SubsetVerbLearnerNew(
         self, perception_semantic_alignment: PerceptionSemanticAlignment
     ) -> PerceptionSemanticAlignment:
         return perception_semantic_alignment
+
+    def _update_hypothesis(
+        self,
+        previous_pattern_hypothesis: PerceptionGraphTemplate,
+        current_pattern_hypothesis: PerceptionGraphTemplate,
+    ) -> Optional[PerceptionGraphTemplate]:
+        return previous_pattern_hypothesis.intersection(
+            current_pattern_hypothesis,
+            ontology=self._ontology,
+            match_mode=MatchMode.NON_OBJECT,
+            allowed_matches=immutablesetmultidict(
+                [
+                    (node2, node1)
+                    for previous_slot, node1 in previous_pattern_hypothesis.template_variable_to_pattern_node.items()
+                    for new_slot, node2 in current_pattern_hypothesis.template_variable_to_pattern_node.items()
+                    if previous_slot == new_slot
+                ]
+            ),
+        )

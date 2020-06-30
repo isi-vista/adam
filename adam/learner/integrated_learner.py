@@ -82,6 +82,9 @@ class IntegratedTemplateLearner(
     _max_attributes_per_word: int = attrib(validator=instance_of(int), default=3)
 
     _observation_num: int = attrib(init=False, default=0)
+    _sub_learners: ImmutableSet[TemplateLearner] = attrib(
+        init=False, converter=_to_immutableset
+    )
 
     def observe(
         self,
@@ -221,6 +224,24 @@ class IntegratedTemplateLearner(
             (TokenSequenceLinguisticDescription(tokens), score) for (tokens, score) in ret
         )
 
+    def _add_determiners(
+        self, object_node: ObjectSemanticNode, cur_string: Tuple[str, ...]
+    ) -> Tuple[str, ...]:
+        # English-specific hack to deal with us not understanding determiners:
+        # https://github.com/isi-vista/adam/issues/498
+        # The "is lower" check is a hack to block adding a determiner to proper names.
+        # Ground is a specific thing so we special case this to be assigned
+        if object_node.concept == GROUND_OBJECT_CONCEPT:
+            return tuple(chain(("the",), cur_string))
+        elif (
+            object_node.concept.debug_string not in MASS_NOUNS
+            and object_node.concept.debug_string.islower()
+            and not cur_string[0] in ENGLISH_BLOCK_DETERMINERS
+        ):
+            return tuple(chain(("a",), cur_string))
+        else:
+            return cur_string
+
     def _instantiate_object(
         self,
         object_node: ObjectSemanticNode,
@@ -266,27 +287,13 @@ class IntegratedTemplateLearner(
                         ) in self.attribute_learner.templates_for_concept(  # type: ignore
                             attribute.concept
                         ):
-                            cur_string = attribute_template.instantiate(
-                                template_variable_to_filler={SLOT1: cur_string}
-                            ).as_token_sequence()
-            # English-specific hack to deal with us not understanding determiners:
-            # https://github.com/isi-vista/adam/issues/498
-            # The "is lower" check is a hack to block adding a determiner to proper names.
-            # Ground is a specific thing so we special case this to be assigned
-            if (
-                object_node.concept == GROUND_OBJECT_CONCEPT
-                and language_generator == GAILA_PHASE_1_LANGUAGE_GENERATOR
-            ):
-                yield tuple(chain(("the",), cur_string))
-            elif (
-                language_generator == GAILA_PHASE_1_LANGUAGE_GENERATOR
-                and object_node.concept.debug_string not in MASS_NOUNS
-                and object_node.concept.debug_string.islower()
-                and not cur_string[0] in ENGLISH_BLOCK_DETERMINERS
-            ):
-                yield tuple(chain(("a",), cur_string))
-            else:
-                yield cur_string
+                            yield self._add_determiners(
+                                object_node,
+                                attribute_template.instantiate(
+                                    template_variable_to_filler={SLOT1: cur_string}
+                                ).as_token_sequence(),
+                            )
+                        yield self._add_determiners(object_node, cur_string)
 
     def _instantiate_relation(
         self,
@@ -354,7 +361,8 @@ class IntegratedTemplateLearner(
                 ).as_token_sequence()
 
     def log_hypotheses(self, log_output_path: Path) -> None:
-        raise NotImplementedError("implement me")
+        for sub_learner in self._sub_learners:
+            sub_learner.log_hypotheses(log_output_path)
 
     def _extract_perception_graph(
         self, perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]
@@ -363,6 +371,19 @@ class IntegratedTemplateLearner(
             return PerceptionGraph.from_dynamic_perceptual_representation(perception)
         else:
             return PerceptionGraph.from_frame(perception.frames[0])
+
+    @_sub_learners.default
+    def _init_sub_learners(self) -> Iterable[TemplateLearner]:
+        valid_sub_learners = []
+        if self.object_learner:
+            valid_sub_learners.append(self.object_learner)
+        if self.attribute_learner:
+            valid_sub_learners.append(self.attribute_learner)
+        if self.relation_learner:
+            valid_sub_learners.append(self.relation_learner)
+        if self.action_learner:
+            valid_sub_learners.append(self.action_learner)
+        return valid_sub_learners
 
 
 @attrs(frozen=True)

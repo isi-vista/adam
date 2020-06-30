@@ -26,7 +26,7 @@ from more_itertools import flatten
 from networkx import DiGraph
 
 from adam.ontology.phase1_ontology import PART_OF
-from adam.perception import ObjectPerception
+from adam.perception import ObjectPerception, MatchMode
 
 
 class GraphMatching:
@@ -42,7 +42,7 @@ class GraphMatching:
         *,
         use_lookahead_pruning: bool,
         matching_pattern_against_pattern: bool = False,
-        matching_objects: bool,
+        match_mode: MatchMode,
     ) -> None:
         """
         *matching_pattern_against_pattern* should be indicated as true if the two graphs
@@ -80,7 +80,7 @@ class GraphMatching:
         self.use_lookahead_pruning = use_lookahead_pruning
         self.matching_pattern_against_pattern = matching_pattern_against_pattern
 
-        self._matching_objects = matching_objects
+        self._match_mode = match_mode
 
         self._reset_debugging_maps()
 
@@ -351,7 +351,7 @@ class GraphMatching:
         # We don't want to allow matching a pattern against an incomplete portion of an object;
         # that is, if you match part of a sub-object, you have to match all object perceptions
         # beneath it.
-        if self._matching_objects:
+        if self._match_mode == MatchMode.OBJECT:
             for graph_node in self.graph_node_to_pattern_node:
                 if isinstance(graph_node, ObjectPerception):
                     for predecessor in self.graph.predecessors(graph_node):

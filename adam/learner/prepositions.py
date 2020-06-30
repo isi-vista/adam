@@ -23,7 +23,7 @@ from adam.learner.pursuit import AbstractPursuitLearner
 from adam.learner.subset import AbstractTemplateSubsetLearner
 from adam.learner.surface_templates import SLOT1, SLOT2, SurfaceTemplate
 from adam.learner.template_learner import AbstractTemplateLearner
-from adam.perception import ObjectPerception, PerceptualRepresentation
+from adam.perception import ObjectPerception, PerceptualRepresentation, MatchMode
 from adam.perception.deprecated import LanguageAlignedPerception
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -233,7 +233,7 @@ class PrepositionPursuitLearner(
             debug_callback=self._debug_callback,
             graph_logger=self._hypothesis_logger,
             ontology=self._ontology,
-            matching_objects=True,
+            match_mode=MatchMode.OBJECT,
         )
         self.debug_counter += 1
 
@@ -292,6 +292,17 @@ class PrepositionPursuitLearner(
             template_string = surface_template.to_short_string()
             hypothesis.render_to_file(template_string, log_output_path / template_string)
 
+    def _update_hypothesis(
+        self,
+        previous_pattern_hypothesis: PerceptionGraphTemplate,
+        current_pattern_hypothesis: PerceptionGraphTemplate,
+    ) -> Optional[PerceptionGraphTemplate]:
+        return previous_pattern_hypothesis.intersection(
+            current_pattern_hypothesis,
+            ontology=self._ontology,
+            match_mode=MatchMode.NON_OBJECT,
+        )
+
 
 @attrs
 class SubsetPrepositionLearner(
@@ -315,4 +326,15 @@ class SubsetPrepositionLearner(
         return preposition_hypothesis_from_perception(
             preprocessed_input,
             template_variables_to_object_match_nodes=template_variables_to_object_match_nodes,
+        )
+
+    def _update_hypothesis(
+        self,
+        previous_pattern_hypothesis: PerceptionGraphTemplate,
+        current_pattern_hypothesis: PerceptionGraphTemplate,
+    ) -> Optional[PerceptionGraphTemplate]:
+        return previous_pattern_hypothesis.intersection(
+            current_pattern_hypothesis,
+            ontology=self._ontology,
+            match_mode=MatchMode.NON_OBJECT,
         )
