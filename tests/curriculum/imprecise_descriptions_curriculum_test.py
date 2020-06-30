@@ -123,6 +123,11 @@ def test_fall_imprecise_temporal_descriptions_curriculum(language_generator):
     )
 
 
-# TODO: implement size relations in Chinese https://github.com/isi-vista/adam/issues/847
-def test_imprecise_size_descriptions_curriculum():
-    curriculum_test(make_imprecise_size_descriptions())
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
+)
+def test_imprecise_size_descriptions_curriculum(language_generator):
+    curriculum_test(
+        make_imprecise_size_descriptions(language_generator=language_generator)
+    )

@@ -44,14 +44,20 @@ def test_beside_training(language_generator):
     curriculum_test(_make_beside_training(language_generator=language_generator))
 
 
-# TODO: update implementation once under is updated from https://github.com/isi-vista/adam/pull/819
-def test_under_training():
-    curriculum_test(_make_under_training())
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
+)
+def test_under_training(language_generator):
+    curriculum_test(_make_under_training(language_generator=language_generator))
 
 
-# TODO update implementation one over is updated from https://github.com/isi-vista/adam/pull/819
-def test_over_training():
-    curriculum_test(_make_over_training())
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
+)
+def test_over_training(language_generator):
+    curriculum_test(_make_over_training(language_generator=language_generator))
 
 
 @pytest.mark.parametrize(
@@ -110,14 +116,20 @@ def test_beside_tests(language_generator):
     curriculum_test(_make_beside_tests(language_generator=language_generator))
 
 
-# TODO update implementation one over is updated from https://github.com/isi-vista/adam/pull/819
-def test_under_tests():
-    curriculum_test(_make_under_tests())
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
+)
+def test_under_tests(language_generator):
+    curriculum_test(_make_under_tests(language_generator=language_generator))
 
 
-# TODO update implementation one over is updated from https://github.com/isi-vista/adam/pull/819
-def test_over_tests():
-    curriculum_test(_make_over_tests())
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
+)
+def test_over_tests(language_generator):
+    curriculum_test(_make_over_tests(language_generator=language_generator))
 
 
 @pytest.mark.parametrize(

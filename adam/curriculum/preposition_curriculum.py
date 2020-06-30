@@ -389,7 +389,10 @@ def _make_under_training(
 
 
 def _make_over_training(
-    num_samples: int = 5, *, noise_objects: bool = True
+    num_samples: int = 5,
+    *,
+    noise_objects: bool = True,
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
@@ -425,6 +428,7 @@ def _make_over_training(
                 for use_above_below in BOOL_SET
             ]
         ),
+        language_generator=language_generator,
     )
 
 
@@ -778,7 +782,10 @@ def _make_beside_tests(
 
 
 def _make_under_tests(
-    num_samples: int = 5, *, noise_objects: bool = True
+    num_samples: int = 5,
+    *,
+    noise_objects: bool = True,
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("figure_0", THING, banned_properties=[HOLLOW])
     figure_1 = standard_object("figure_1", THING, banned_properties=[HOLLOW])
@@ -817,11 +824,15 @@ def _make_under_tests(
                 for use_above_below in BOOL_SET
             ]
         ),
+        language_generator=language_generator,
     )
 
 
 def _make_over_tests(
-    num_samples: int = 5, *, noise_objects: bool = True
+    num_samples: int = 5,
+    *,
+    noise_objects: bool = True,
+    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("figure_0", THING, banned_properties=[HOLLOW])
     figure_1 = standard_object("figure_1", THING, banned_properties=[HOLLOW])
@@ -856,6 +867,7 @@ def _make_over_tests(
                 for use_above_below in BOOL_SET
             ]
         ),
+        language_generator=language_generator,
     )
 
 
