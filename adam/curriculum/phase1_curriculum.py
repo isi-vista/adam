@@ -92,7 +92,6 @@ from adam.ontology.phase1_ontology import (
     is_recognized_particular,
     near,
     on,
-    strictly_above,
     PASS,
     BABY,
     TRUCK,
@@ -103,6 +102,7 @@ from adam.ontology.phase1_ontology import (
     HOUSE,
     BALL,
     WALK,
+    strictly_over,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -750,14 +750,14 @@ def _make_object_under_or_over_object_curriculum(
     templates = [
         Phase1SituationTemplate(
             f"object-under-object",
-            salient_object_variables=[object_above],
+            salient_object_variables=[object_above, object_under],
             constraining_relations=[bigger_than(object_above, object_under)],
-            asserted_always_relations=[strictly_above(object_above, object_under)],
+            asserted_always_relations=[strictly_over(object_above, object_under)],
         ),
         Phase1SituationTemplate(
             f"object-over-object",
-            salient_object_variables=[object_under_bird],
-            asserted_always_relations=[strictly_above(bird, object_under_bird)],
+            salient_object_variables=[object_under_bird, bird],
+            asserted_always_relations=[strictly_over(bird, object_under_bird)],
         ),
     ]
 

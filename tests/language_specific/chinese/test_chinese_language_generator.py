@@ -18,6 +18,7 @@ from adam.language_specific.chinese.chinese_language_generator import (
     ATTRIBUTES_AS_X_IS_Y,
     IGNORE_GOAL,
     USE_VERTICAL_MODIFIERS,
+    USE_ABOVE_BELOW,
 )
 from adam.language_specific.chinese.chinese_phase_1_lexicon import (
     GAILA_PHASE_1_CHINESE_LEXICON,
@@ -61,6 +62,9 @@ from adam.ontology.phase1_ontology import (
     HAT,
     on,
     strictly_above,
+    strictly_over,
+    strictly_under,
+    strictly_below,
     JUMP,
     JUMP_INITIAL_SUPPORTER_AUX,
     DOG,
@@ -2536,3 +2540,56 @@ def test_short_truck():
         syntax_hints=[USE_VERTICAL_MODIFIERS],
     )
     assert generated_tokens(situation) == ("dwan3", "ka3 che1")
+
+
+# there is no under/below distinction in Chinese
+def test_ball_under_below_cookie():
+    ball = situation_object(BALL)
+    cookie = situation_object(COOKIE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[ball, cookie],
+        always_relations=[strictly_under(ball, cookie, dist=DISTAL)],
+    )
+    assert generated_tokens(situation) == (
+        "dzai4",
+        "chyu1 chi2 bing3",
+        "sya4 myan4",
+        "de",
+        "chyou2",
+    )
+
+
+def test_ball_over_cookie():
+    ball = situation_object(BALL)
+    cookie = situation_object(COOKIE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[ball, cookie],
+        always_relations=[strictly_over(ball, cookie, dist=DISTAL)],
+    )
+    assert generated_tokens(situation) == (
+        "dzai4",
+        "chyu1 chi2 bing3",
+        "shang4 myan4",
+        "de",
+        "chyou2",
+    )
+
+
+def test_ball_above_cookie():
+    ball = situation_object(BALL)
+    cookie = situation_object(COOKIE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[ball, cookie],
+        always_relations=[strictly_over(ball, cookie, dist=DISTAL)],
+        syntax_hints=[USE_ABOVE_BELOW],
+    )
+    assert generated_tokens(situation) == (
+        "dzai4",
+        "chyu1 chi2 bing3",
+        "shang4 fang1",
+        "de",
+        "chyou2",
+    )

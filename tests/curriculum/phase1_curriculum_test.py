@@ -176,9 +176,16 @@ def test_object_beside_object_curriculum(language_generator):
     )
 
 
-# TODO: update this implementation for Chinese once https://github.com/isi-vista/adam/pull/819 is merged
-def test_object_under_or_over_object_curriculum():
-    curriculum_test(_make_object_under_or_over_object_curriculum())
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
+)
+def test_object_under_or_over_object_curriculum(language_generator):
+    curriculum_test(
+        _make_object_under_or_over_object_curriculum(
+            language_generator=language_generator
+        )
+    )
 
 
 @pytest.mark.parametrize(

@@ -613,10 +613,13 @@ class SimpleRuleBasedChineseLanguageGenerator(
             elif region.distance == DISTAL and not region.direction:
                 return "ywan3 li2"
             # TODO: https://github.com/isi-vista/adam/issues/846 -- above/over distinction
-            # above
+            # over
             elif region.direction == GRAVITATIONAL_UP:
+                # above
+                if USE_ABOVE_BELOW in self.situation.syntax_hints:
+                    return "sya4 fang1"
                 return "shang4 myan4"
-            # below
+            # below or under -- no distinction in chinese
             elif region.direction == GRAVITATIONAL_DOWN:
                 return "sya4 myan4"
             # region.distance == DISTAL is not check as this does not define a specific location in scope for Phase 1
@@ -1063,7 +1066,10 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     if direction_axis.aligned_to_gravitational:
                         # over
                         if region.direction.positive:
-                            localiser = "shang4 myan4"
+                            if USE_ABOVE_BELOW in self.situation.syntax_hints:
+                                localiser = "shang4 fang1"
+                            else:
+                                localiser = "shang4 myan4"
                         # under
                         else:
                             localiser = "sya4 myan4"
@@ -1209,3 +1215,4 @@ ATTRIBUTES_AS_X_IS_Y = "ATTRIBUTES_AS_X_IS_Y"
 USE_NEAR = "USE_NEAR"
 IGNORE_GOAL = "IGNORE_GOAL"
 USE_VERTICAL_MODIFIERS = "USE_VERTICAL_MODIFIERS"
+USE_ABOVE_BELOW = "USE_ABOVE_BELOW"
