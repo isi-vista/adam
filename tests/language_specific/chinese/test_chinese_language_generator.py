@@ -73,6 +73,7 @@ from adam.ontology.phase1_ontology import (
     TRUCK,
     HOUSE,
     RED,
+    WATERMELON,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -2285,3 +2286,16 @@ def test_many_balls_are_red():
         syntax_hints=[ATTRIBUTES_AS_X_IS_Y],
     )
     assert generated_tokens(situation) == ("hen3 dwo1", "chyou2", "shr4", "hung2 se4")
+
+
+# test the new vocab item added
+def test_my_watermelon():
+    watermelon = situation_object(WATERMELON)
+    baby = situation_object(BABY, properties=[IS_SPEAKER])
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[watermelon, baby],
+        always_relations=[Relation(HAS, baby, watermelon)],
+        syntax_hints=[IGNORE_HAS_AS_VERB],
+    )
+    assert generated_tokens(situation) == ("wo3 de", "syi1 gwa1")
