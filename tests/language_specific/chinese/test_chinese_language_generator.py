@@ -2334,3 +2334,36 @@ def test_dad_moves_towards_cookie():
         "chyu1 chi2 bing3",
         "yi2 dung4",
     )
+
+
+def test_dad_moves_away_from_cookie():
+    dad = situation_object(DAD)
+    cookie = situation_object(COOKIE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[dad, cookie],
+        actions=[
+            Action(
+                MOVE,
+                argument_roles_to_fillers=[(AGENT, dad)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            dad,
+                            SpatialPath(
+                                operator=AWAY_FROM,
+                                reference_object=cookie,
+                                reference_axis=HorizontalAxisOfObject(dad, 1),
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+    )
+    assert generated_tokens(situation) == (
+        "ba4 ba4",
+        "li2",
+        "chyu1 chi2 bing3",
+        "yi2 dung4",
+    )

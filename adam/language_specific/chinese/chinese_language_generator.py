@@ -391,12 +391,11 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     and spatial_path.reference_object in core_argument_fillers
                 ):
                     return None
-            # TODO: check the following with a native spaker https://github.com/isi-vista/adam/issues/845
             preposition: Optional[str] = None
             if spatial_path.operator == TOWARD:
                 preposition = "chau2"
             elif spatial_path.operator == AWAY_FROM:
-                preposition = "ywan3 li2"
+                preposition = "li2"
             elif spatial_path.operator in [TO, None]:
                 return None
             if not preposition:
