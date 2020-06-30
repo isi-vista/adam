@@ -906,7 +906,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 ):
                     # tall
                     if USE_VERTICAL_MODIFIERS in self.situation.syntax_hints:
-                        raise NotImplementedError("No vertical mods yet")
+                        token = DependencyTreeToken("gau1 da4", ADJECTIVE)
                     # big
                     else:
                         token = DependencyTreeToken("da4", ADJECTIVE)
@@ -924,7 +924,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 ):
                     # short
                     if USE_VERTICAL_MODIFIERS in self.situation.syntax_hints:
-                        raise NotImplementedError("No vertical mods yet")
+                        token = DependencyTreeToken("dwan3", ADJECTIVE)
                     # small
                     else:
                         token = DependencyTreeToken("syau3", ADJECTIVE)

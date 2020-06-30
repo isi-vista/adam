@@ -17,6 +17,7 @@ from adam.language_specific.chinese.chinese_language_generator import (
     IGNORE_HAS_AS_VERB,
     ATTRIBUTES_AS_X_IS_Y,
     IGNORE_GOAL,
+    USE_VERTICAL_MODIFIERS,
 )
 from adam.language_specific.chinese.chinese_phase_1_lexicon import (
     GAILA_PHASE_1_CHINESE_LEXICON,
@@ -2502,6 +2503,18 @@ def test_big_truck():
     assert generated_tokens(situation) == ("da4", "ka3 che1")
 
 
+def test_tall_truck():
+    learner = situation_object(LEARNER)
+    truck = situation_object(TRUCK)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[truck],
+        always_relations=[(bigger_than(truck, learner))],
+        syntax_hints=[USE_VERTICAL_MODIFIERS],
+    )
+    assert generated_tokens(situation) == ("gau1 da4", "ka3 che1")
+
+
 def test_small_truck():
     learner = situation_object(LEARNER)
     truck = situation_object(TRUCK)
@@ -2511,3 +2524,15 @@ def test_small_truck():
         always_relations=[(bigger_than(learner, truck))],
     )
     assert generated_tokens(situation) == ("syau3", "ka3 che1")
+
+
+def test_short_truck():
+    learner = situation_object(LEARNER)
+    truck = situation_object(TRUCK)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[truck],
+        always_relations=[(bigger_than(learner, truck))],
+        syntax_hints=[USE_VERTICAL_MODIFIERS],
+    )
+    assert generated_tokens(situation) == ("dwan3", "ka3 che1")
