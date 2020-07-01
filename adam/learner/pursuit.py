@@ -1092,25 +1092,17 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
     def _primary_templates(
         self
     ) -> Iterable[Tuple[Concept, PerceptionGraphTemplate, float]]:
-        return (
-            (concept, first(hypotheses.keys()), 1.0)
-            for (concept, hypotheses) in self._concept_to_hypotheses_and_scores.items()
-            # We are confident in a hypothesis if we don't have any alternatives.
-            if len(hypotheses) == 1
-        )
+        return [
+            (self._surface_template_to_concept[surface_template], graph_pattern, 1.0)
+            for (surface_template, graph_pattern) in self._lexicon.items()
+        ]
 
     def _fallback_templates(
         self
     ) -> Iterable[Tuple[Concept, PerceptionGraphTemplate, float]]:
-        # Alternate hypotheses stored in the beam.
-        return (
-            (concept, hypothesis, score)
-            for (
-                concept,
-                hypotheses_to_scores,
-            ) in self._concept_to_hypotheses_and_scores.items()
-            for hypothesis, score in sorted(
-                hypotheses_to_scores.items(), key=lambda x: x[1], reverse=True
-            )
-            if len(hypotheses_to_scores) > 1
-        )
+        for (
+            concept,
+            graph_patterns_to_scores,
+        ) in self._concept_to_hypotheses_and_scores.items():
+            for (graph_pattern, score) in graph_patterns_to_scores.items():
+                yield (concept, graph_pattern, score)
