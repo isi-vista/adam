@@ -1,5 +1,7 @@
 from itertools import chain
-
+from adam.language.language_generator import LanguageGenerator
+from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
+from adam.language.dependency import LinearizedDependencyTree
 from immutablecollections import immutableset
 
 from adam.curriculum.curriculum_utils import (
@@ -27,7 +29,9 @@ def make_human_eat_curriculum(
     num_samples: int = 5,
     *,
     noise_objects: int = 0,
-    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     object_to_eat = standard_object("object_0", required_properties=[EDIBLE])
     human = standard_object("eater_0", PERSON)
@@ -52,7 +56,9 @@ def make_animal_eat_curriculum(
     num_samples: int = 5,
     *,
     noise_objects: int = 0,
-    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     object_to_eat = standard_object("object_0", required_properties=[EDIBLE])
     animal = standard_object("eater_0", NONHUMAN_ANIMAL)
@@ -77,7 +83,9 @@ def make_german_eat_test_curriculum(
     num_samples: int = 5,
     *,
     noise_objects: int = 0,
-    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
 
     object_to_eat = standard_object("object_0", required_properties=[EDIBLE])

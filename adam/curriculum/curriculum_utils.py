@@ -1,9 +1,9 @@
 from typing import Iterable, Union
 
 from immutablecollections import immutableset
-
-from adam.curriculum import InstanceGroup, GeneratedFromSituationsInstanceGroup
+from adam.language.language_generator import LanguageGenerator
 from adam.language.dependency import LinearizedDependencyTree
+from adam.curriculum import InstanceGroup, GeneratedFromSituationsInstanceGroup
 from adam.language_specific.english.english_language_generator import (
     GAILA_PHASE_1_LANGUAGE_GENERATOR,
     GAILA_PHASE_2_LANGUAGE_GENERATOR,
@@ -96,7 +96,9 @@ def phase1_instances(
     description: str,
     situations: Iterable[HighLevelSemanticsSituation],
     perception_generator: HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator = GAILA_PHASE_1_PERCEPTION_GENERATOR,
-    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     """
     Convenience method for more compactly creating sub-curricula for phase 1.
@@ -115,7 +117,9 @@ def phase2_instances(
     description: str,
     situations: Iterable[HighLevelSemanticsSituation],
     perception_generator: HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator = GAILA_PHASE_1_PERCEPTION_GENERATOR,
-    language_generator=GAILA_PHASE_2_LANGUAGE_GENERATOR,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_2_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     """
     Convenience method for more compactly creating sub-curricula for phase 2.

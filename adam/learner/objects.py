@@ -6,6 +6,9 @@ from typing import AbstractSet, Iterable, List, Optional, Sequence, Union
 from adam.language_specific.english.english_language_generator import (
     GAILA_PHASE_1_LANGUAGE_GENERATOR,
 )
+from adam.language.language_generator import LanguageGenerator
+from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
+from adam.language.dependency import LinearizedDependencyTree
 from adam.language_specific.chinese.chinese_phase_1_lexicon import (
     GAILA_PHASE_1_CHINESE_LEXICON,
 )
@@ -442,7 +445,9 @@ class ObjectRecognizerAsTemplateLearner(TemplateLearner):
     def enrich_during_learning(
         self,
         language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
-        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+        language_generator: LanguageGenerator[
+            HighLevelSemanticsSituation, LinearizedDependencyTree
+        ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> LanguagePerceptionSemanticAlignment:
         return self._object_recognizer.match_objects_with_language(
             language_perception_semantic_alignment, language_generator=language_generator

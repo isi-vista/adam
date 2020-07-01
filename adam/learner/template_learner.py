@@ -2,6 +2,9 @@ import logging
 from adam.language_specific.english.english_language_generator import (
     GAILA_PHASE_1_LANGUAGE_GENERATOR,
 )
+from adam.language.language_generator import LanguageGenerator
+from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
+from adam.language.dependency import LinearizedDependencyTree
 from abc import ABC, abstractmethod
 from typing import AbstractSet, Iterable, List, Mapping, Sequence, Tuple, Union, cast, Set
 
@@ -53,7 +56,9 @@ class AbstractTemplateLearner(
         learning_example: LearningExample[
             DevelopmentalPrimitivePerceptionFrame, LinguisticDescription
         ],
-        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+        language_generator: LanguageGenerator[
+            HighLevelSemanticsSituation, LinearizedDependencyTree
+        ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> None:
         logging.info(
             "Observation %s: %s",
@@ -86,7 +91,9 @@ class AbstractTemplateLearner(
     def describe(
         self,
         perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame],
-        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+        language_generator: LanguageGenerator[
+            HighLevelSemanticsSituation, LinearizedDependencyTree
+        ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> Mapping[LinguisticDescription, float]:
         self._assert_valid_input(perception)
 
@@ -182,7 +189,9 @@ class AbstractTemplateLearner(
     def _preprocess_scene_for_learning(
         self,
         language_concept_alignment: LanguageAlignedPerception,
-        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+        language_generator: LanguageGenerator[
+            HighLevelSemanticsSituation, LinearizedDependencyTree
+        ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> LanguageAlignedPerception:
         """
         Does any preprocessing necessary before the learning process begins.
@@ -194,7 +203,9 @@ class AbstractTemplateLearner(
     def _preprocess_scene_for_description(
         self,
         perception_graph: PerceptionGraph,
-        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+        language_generator: LanguageGenerator[
+            HighLevelSemanticsSituation, LinearizedDependencyTree
+        ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> PerceptionGraphFromObjectRecognizer:
         """
         Does any preprocessing necessary before attempting to describe a scene.
@@ -287,7 +298,9 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
     def enrich_during_learning(
         self,
         language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
-        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+        language_generator: LanguageGenerator[
+            HighLevelSemanticsSituation, LinearizedDependencyTree
+        ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> LanguagePerceptionSemanticAlignment:
         (
             perception_post_enrichment,

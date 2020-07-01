@@ -3,6 +3,9 @@ from adam.language_specific.english.english_language_generator import (
     GAILA_PHASE_1_LANGUAGE_GENERATOR,
 )
 import logging
+from adam.language.language_generator import LanguageGenerator
+from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
+from adam.language.dependency import LinearizedDependencyTree
 from itertools import chain, combinations
 from pathlib import Path
 from typing import AbstractSet, Iterable, Iterator, Mapping, Optional, Tuple
@@ -85,7 +88,9 @@ class IntegratedTemplateLearner(
         learning_example: LearningExample[
             DevelopmentalPrimitivePerceptionFrame, LinguisticDescription
         ],
-        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+        language_generator: LanguageGenerator[
+            HighLevelSemanticsSituation, LinearizedDependencyTree
+        ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> None:
         logging.info(
             "Observation %s: %s",
@@ -136,7 +141,9 @@ class IntegratedTemplateLearner(
     def describe(
         self,
         perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame],
-        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+        language_generator: LanguageGenerator[
+            HighLevelSemanticsSituation, LinearizedDependencyTree
+        ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> Mapping[LinguisticDescription, float]:
 
         perception_graph = self._extract_perception_graph(perception)
@@ -167,7 +174,9 @@ class IntegratedTemplateLearner(
     def _linguistic_descriptions_from_semantics(
         self,
         semantic_nodes: AbstractSet[SemanticNode],
-        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+        language_generator: LanguageGenerator[
+            HighLevelSemanticsSituation, LinearizedDependencyTree
+        ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> Mapping[LinguisticDescription, float]:
 
         learner_semantics = LearnerSemantics.from_nodes(semantic_nodes)
@@ -216,7 +225,9 @@ class IntegratedTemplateLearner(
         self,
         object_node: ObjectSemanticNode,
         learner_semantics: "LearnerSemantics",
-        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+        language_generator: LanguageGenerator[
+            HighLevelSemanticsSituation, LinearizedDependencyTree
+        ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> Iterator[Tuple[str, ...]]:
 
         # For now, we assume the order in which modifiers is expressed is arbitrary.
@@ -281,7 +292,9 @@ class IntegratedTemplateLearner(
         self,
         relation_node: RelationSemanticNode,
         learner_semantics: "LearnerSemantics",
-        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+        language_generator: LanguageGenerator[
+            HighLevelSemanticsSituation, LinearizedDependencyTree
+        ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> Iterator[Tuple[str, ...]]:
         if not self.relation_learner:
             raise RuntimeError("Cannot instantiate relations without a relation learner")
@@ -312,7 +325,9 @@ class IntegratedTemplateLearner(
         self,
         action_node: ActionSemanticNode,
         learner_semantics: "LearnerSemantics",
-        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+        language_generator: LanguageGenerator[
+            HighLevelSemanticsSituation, LinearizedDependencyTree
+        ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> Iterator[Tuple[str, ...]]:
         if not self.action_learner:
             raise RuntimeError("Cannot instantiate an action without an action learner")

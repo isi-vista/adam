@@ -5,6 +5,9 @@ from typing import List, Mapping, Optional, Tuple, Union
 from adam.language_specific.english.english_language_generator import (
     GAILA_PHASE_1_LANGUAGE_GENERATOR,
 )
+from adam.language.language_generator import LanguageGenerator
+from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
+from adam.language.dependency import LinearizedDependencyTree
 from more_itertools import quantify
 
 from adam.language import TokenSequenceLinguisticDescription
@@ -41,7 +44,9 @@ class SurfaceTemplate:
     def instantiate(
         self,
         template_variable_to_filler: Mapping[SyntaxSemanticsVariable, Tuple[str, ...]],
-        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+        language_generator: LanguageGenerator[
+            HighLevelSemanticsSituation, LinearizedDependencyTree
+        ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> TokenSequenceLinguisticDescription:
         """
         Turns a template into a `TokenSequenceLinguisticDescription` by filling in its variables.

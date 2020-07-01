@@ -5,6 +5,9 @@ from more_itertools import flatten
 from adam.language_specific.english.english_language_generator import (
     GAILA_PHASE_1_LANGUAGE_GENERATOR,
 )
+from adam.language.language_generator import LanguageGenerator
+from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
+from adam.language.dependency import LinearizedDependencyTree
 from adam.axes import HorizontalAxisOfObject, FacingAddresseeAxis
 from adam.curriculum.curriculum_utils import (
     PHASE1_CHOOSER_FACTORY,
@@ -252,7 +255,9 @@ def _make_on_training(
     num_samples: int = 5,
     *,
     noise_objects: bool = True,
-    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
@@ -299,7 +304,9 @@ def _make_beside_training(
     num_samples: int = 5,
     *,
     noise_objects: bool = True,
-    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
@@ -349,7 +356,9 @@ def _make_under_training(
     num_samples: int = 5,
     *,
     noise_objects: bool = True,
-    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
@@ -392,7 +401,9 @@ def _make_over_training(
     num_samples: int = 5,
     *,
     noise_objects: bool = True,
-    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
@@ -436,7 +447,9 @@ def _make_in_training(
     num_samples: int = 5,
     *,
     noise_objects: bool = True,
-    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = object_variable("water", WATER)
     figure_1 = object_variable("juice", JUICE)
@@ -477,7 +490,9 @@ def _make_behind_training(
     num_samples: int = 5,
     *,
     noise_objects: bool = True,
-    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
@@ -531,7 +546,9 @@ def _make_in_front_training(
     num_samples: int = 5,
     *,
     noise_objects: bool = True,
-    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
@@ -585,7 +602,9 @@ def _make_near_training(
     num_samples: int = 5,
     *,
     noise_objects: bool = True,
-    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
@@ -633,7 +652,9 @@ def _make_far_training(
     num_samples: int = 5,
     *,
     noise_objects: bool = True,
-    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
@@ -681,7 +702,9 @@ def _make_on_tests(
     num_samples: int = 5,
     *,
     noise_objects: bool = True,
-    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("figure_0", THING, banned_properties=[HOLLOW])
     figure_1 = standard_object("figure_1", THING, banned_properties=[HOLLOW])
@@ -737,7 +760,9 @@ def _make_beside_tests(
     num_samples: int = 5,
     *,
     noise_objects: bool = True,
-    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("figure_0", THING, banned_properties=[HOLLOW])
     figure_1 = standard_object("figure_1", THING, banned_properties=[HOLLOW])
@@ -785,7 +810,9 @@ def _make_under_tests(
     num_samples: int = 5,
     *,
     noise_objects: bool = True,
-    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("figure_0", THING, banned_properties=[HOLLOW])
     figure_1 = standard_object("figure_1", THING, banned_properties=[HOLLOW])
@@ -832,7 +859,9 @@ def _make_over_tests(
     num_samples: int = 5,
     *,
     noise_objects: bool = True,
-    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("figure_0", THING, banned_properties=[HOLLOW])
     figure_1 = standard_object("figure_1", THING, banned_properties=[HOLLOW])
@@ -875,7 +904,9 @@ def _make_in_tests(
     num_samples: int = 5,
     *,
     noise_objects: bool = True,
-    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = object_variable("figure_0", THING, banned_properties=[IS_BODY_PART])
     figure_1 = standard_object("figure_1", THING, banned_properties=[IS_BODY_PART])
@@ -916,7 +947,9 @@ def _make_behind_tests(
     num_samples: int = 5,
     *,
     noise_objects: bool = True,
-    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("figure_0", THING, banned_properties=[HOLLOW])
     figure_1 = standard_object("figure_1", THING, banned_properties=[HOLLOW])
@@ -969,7 +1002,9 @@ def _make_in_front_tests(
     num_samples: int = 5,
     *,
     noise_objects: bool = True,
-    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("figure_0", THING, banned_properties=[HOLLOW])
     figure_1 = standard_object("figure_1", THING, banned_properties=[HOLLOW])
@@ -1022,7 +1057,9 @@ def _make_near_tests(
     num_samples: int = 5,
     *,
     noise_objects: bool = True,
-    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("figure_0", THING, banned_properties=[HOLLOW])
     figure_1 = standard_object("figure_1", THING, banned_properties=[HOLLOW])
@@ -1068,7 +1105,9 @@ def _make_far_tests(
     num_samples: int = 5,
     *,
     noise_objects: bool = True,
-    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("figure_0", THING, banned_properties=[HOLLOW])
     figure_1 = standard_object("figure_1", THING, banned_properties=[HOLLOW])

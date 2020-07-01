@@ -7,7 +7,9 @@ from typing import Sequence
 from adam.language_specific.english.english_language_generator import (
     GAILA_PHASE_2_LANGUAGE_GENERATOR,
 )
-
+from adam.language.language_generator import LanguageGenerator
+from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
+from adam.language.dependency import LinearizedDependencyTree
 from adam.curriculum.curriculum_utils import (
     PHASE1_CHOOSER_FACTORY,
     Phase1InstanceGroup,
@@ -83,7 +85,9 @@ from adam.situation.templates.phase1_templates import (
 
 def _make_sit_on_chair_curriculum(
     perception_generator: HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator = GAILA_PHASE_2_PERCEPTION_GENERATOR,
-    language_generator=GAILA_PHASE_2_LANGUAGE_GENERATOR,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_2_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
 
     templates = []
@@ -160,7 +164,9 @@ def _make_sit_on_chair_curriculum(
 
 def _make_drink_cups_curriculum(
     perception_generator: HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator = GAILA_PHASE_2_PERCEPTION_GENERATOR,
-    language_generator=GAILA_PHASE_2_LANGUAGE_GENERATOR,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_2_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
 
     templates = []
@@ -201,7 +207,9 @@ def _make_drink_cups_curriculum(
 
 
 def _make_put_in_curriculum(
-    language_generator=GAILA_PHASE_2_LANGUAGE_GENERATOR
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_2_LANGUAGE_GENERATOR
 ) -> Phase1InstanceGroup:
     agent = standard_object("agent", THING, required_properties=[ANIMATE])
     theme = standard_object("theme", INANIMATE_OBJECT)

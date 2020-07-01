@@ -4,6 +4,9 @@ from typing import Iterable, Sequence
 from adam.language_specific.english.english_language_generator import (
     GAILA_PHASE_1_LANGUAGE_GENERATOR,
 )
+from adam.language.language_generator import LanguageGenerator
+from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
+from adam.language.dependency import LinearizedDependencyTree
 from more_itertools import flatten
 
 from adam.axes import (
@@ -2460,7 +2463,9 @@ def _make_push_with_prepositions(
     num_samples: int = 5,
     *,
     noise_objects: int = 0,
-    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     agent = standard_object("agent", THING, required_properties=[ANIMATE])
     theme = standard_object("theme", INANIMATE_OBJECT)
@@ -2604,7 +2609,9 @@ def _make_go_with_prepositions(
     num_samples: int = 5,
     *,
     noise_objects: int = 0,
-    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ):
     agent = standard_object("agent", THING, required_properties=[ANIMATE])
     goal_object = standard_object("goal_object")
@@ -2784,7 +2791,9 @@ def _make_sit_with_prepositions(
     num_samples: int = 5,
     *,
     noise_objects: int = 0,
-    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     agent = standard_object("agent", THING, required_properties=[ANIMATE])
     seat = standard_object(
@@ -2839,7 +2848,9 @@ def _make_roll_with_prepositions(
     num_samples: int = 5,
     *,
     noise_objects: int = 0,
-    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ):
     agent = standard_object("agent", THING, required_properties=[ANIMATE])
     goal_object = standard_object("goal_object")
@@ -3092,7 +3103,9 @@ def _make_take_with_prepositions(
     num_samples: int = 5,
     *,
     noise_objects: int = 0,
-    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     agent = standard_object("agent", THING, required_properties=[ANIMATE])
     theme = standard_object("theme", INANIMATE_OBJECT)
@@ -3122,7 +3135,9 @@ def _make_fall_with_prepositions(
     num_samples: int = 5,
     *,
     noise_objects: int = 0,
-    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     theme = standard_object("theme", THING)
     goal_reference = standard_object("goal_reference", THING)
@@ -3234,7 +3249,9 @@ def _make_put_with_prepositions(
     num_samples: int = 5,
     *,
     noise_objects: int = 0,
-    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     agent = standard_object("agent", THING, required_properties=[ANIMATE])
     speaker_agent = standard_object(
@@ -3353,7 +3370,9 @@ def _make_move_with_prepositions(
     num_samples: int = 5,
     *,
     noise_objects: int = 0,
-    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     agent = standard_object("agent", THING, required_properties=[SELF_MOVING])
     manipulating_agent = standard_object(
@@ -3572,7 +3591,9 @@ def _make_throw_with_prepositions(
     num_samples: int = 5,
     *,
     noise_objects: int = 0,
-    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     agent = standard_object("agent", THING, required_properties=[ANIMATE])
     theme = standard_object("theme", INANIMATE_OBJECT)
@@ -3723,7 +3744,9 @@ def _make_jump_with_prepositions(
     num_samples: int = 5,
     *,
     noise_objects: int = 0,
-    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     agent = standard_object("agent", THING, required_properties=[CAN_JUMP])
     goal_reference = standard_object("goal_reference", THING)
@@ -3797,7 +3820,9 @@ def _make_fly_with_prepositions(
     num_samples: int = 5,
     *,
     noise_objects: int = 0,
-    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     agent = standard_object("agent", THING, required_properties=[CAN_FLY])
     goal_reference = standard_object("goal_reference", THING)
@@ -3914,7 +3939,9 @@ def _make_come_with_prepositions(
     num_samples: int = 5,
     *,
     noise_objects: int = 0,
-    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     agent = standard_object("agent", required_properties=[SELF_MOVING])
     object_with_agent_inside = standard_object(

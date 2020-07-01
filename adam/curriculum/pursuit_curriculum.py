@@ -8,6 +8,9 @@ from adam.curriculum import ExplicitWithSituationInstanceGroup
 from adam.language_specific.english.english_language_generator import (
     GAILA_PHASE_1_LANGUAGE_GENERATOR,
 )
+from adam.language.language_generator import LanguageGenerator
+from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
+from adam.language.dependency import LinearizedDependencyTree
 from adam.curriculum.curriculum_utils import (
     phase1_instances,
     PHASE1_CHOOSER_FACTORY,
@@ -43,7 +46,9 @@ def make_simple_pursuit_curriculum(
     num_noise_instances: int = 0,
     num_objects_in_instance: int = 3,
     perception_generator: HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator = GAILA_PHASE_1_PERCEPTION_GENERATOR,
-    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     """
     Creates a Pursuit-learning curriculum with for a set of standard objects. Each instance in the curriculum is a set
