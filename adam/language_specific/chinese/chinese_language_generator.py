@@ -599,8 +599,10 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     action
                     and (action.action_type == GO or action.action_type == COME)
                     and argument_role == GOAL
-                    and IS_SPEAKER in filler.properties
-                    or IS_ADDRESSEE in filler.properties
+                    and (
+                        IS_SPEAKER in filler.properties
+                        or IS_ADDRESSEE in filler.properties
+                    )
                 ):
                     zhao = DependencyTreeToken("jau3", ADPOSITION)
                     self.dependency_graph.add_edge(zhao, filler_noun, role=CASE_SPATIAL)
@@ -608,10 +610,11 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 elif (
                     action
                     and argument_role == GOAL
-                    and action.action_type != GIVE
+                    and action.action_type not in [GIVE, GO, COME]
                     and (
                         IS_SPEAKER in filler.properties
                         or IS_ADDRESSEE in filler.properties
+                        or filler.ontology_node in [DAD, MOM, BABY]
                     )
                 ):
                     gei = DependencyTreeToken("gei3", ADPOSITION)
@@ -638,12 +641,29 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     coverb: str = "dzai4"
                     if self.situation.after_action_relations:
                         coverb = "dau4"
+                    # handle people as goals
+                    if (
+                        action
+                        and argument_role == GOAL
+                        and action.action_type not in [GIVE, GO, COME]
+                        and (
+                            IS_SPEAKER in filler.reference_object.properties
+                            or IS_ADDRESSEE in filler.reference_object.properties
+                            or filler.reference_object.ontology_node in [DAD, MOM, BABY]
+                        )
+                    ):
+                        coverb = "gei3"
                     # notice we don't use gwo here since it indicates motion past a place and here, we handle goals
                     self.dependency_graph.add_edge(
                         DependencyTreeToken(coverb, ADPOSITION),
                         reference_object_dependency_node,
                         role=CASE_SPATIAL,
                     )
+                    if coverb == "gei3":
+                        return (
+                            ADVERBIAL_CLAUSE_MODIFIER,
+                            reference_object_dependency_node,
+                        )
 
                     # get the localiser and add it to the noun as well
                     localiser_dependency_node = DependencyTreeToken(
