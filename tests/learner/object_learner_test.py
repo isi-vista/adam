@@ -228,25 +228,25 @@ def test_subset_learner_subobject():
     assert (ObjectSemanticNode, "hand") in semantic_node_types_and_debug_strings
 
 
-def test_old_pursuit_object_learner():
+def learner_test_pursuit_curriculum(learner):
     target_objects = [
         BALL,
         # PERSON,
         # CHAIR,
         # TABLE,
-        DOG,
-        BIRD,
-        BOX,
+        # DOG,
+        # BIRD,
+        # BOX,
     ]
-    debug_callback = DumpPartialMatchCallback(render_path="../renders/")
-
     target_train_templates = []
     target_test_templates = []
     for obj in target_objects:
         # Create train and test templates for the target objects
         train_obj_object = object_variable("obj-with-color", obj)
         obj_template = Phase1SituationTemplate(
-            "colored-obj-object", salient_object_variables=[train_obj_object]
+            "colored-obj-object",
+            salient_object_variables=[train_obj_object],
+            syntax_hints=[IGNORE_COLORS],
         )
         target_train_templates.extend(
             chain(
@@ -288,29 +288,13 @@ def test_old_pursuit_object_learner():
 
     test_obj_curriculum = phase1_instances("obj test", situations=target_test_templates)
 
-    # All parameters should be in the range 0-1.
-    # Learning factor works better when kept < 0.5
-    # Graph matching threshold doesn't seem to matter that much, as often seems to be either a
-    # complete or a very small match.
-    # The lexicon threshold works better between 0.07-0.3, but we need to play around with it because we end up not
-    # lexicalize items sufficiently because of diminishing lexicon probability through training
-    rng = random.Random()
-    rng.seed(0)
-    learner = ObjectPursuitLearner(
-        learning_factor=0.5,
-        graph_match_confirmation_threshold=0.7,
-        lexicon_entry_threshold=0.7,
-        rng=rng,
-        smoothing_parameter=0.001,
-        ontology=GAILA_PHASE_1_ONTOLOGY,
-        debug_callback=debug_callback,
-    )  # type: ignore
     for training_stage in [train_curriculum]:
         for (
             _,
             linguistic_description,
             perceptual_representation,
         ) in training_stage.instances():
+            print(linguistic_description)
             learner.observe(
                 LearningExample(perceptual_representation, linguistic_description)
             )
@@ -327,7 +311,6 @@ def test_old_pursuit_object_learner():
             assert [desc.as_token_sequence() for desc in descriptions_from_learner][
                 0
             ] == gold
-
 
 # def test_get_largest_matching_pattern():
 #     target_objects = [
@@ -435,10 +418,32 @@ def test_old_pursuit_object_learner():
 #                 len(common_pattern.copy_as_digraph().nodes),
 #             )
 
+def test_old_pursuit_object_learner():
+    # debug_callback = DumpPartialMatchCallback(render_path="../renders/")
+
+    # All parameters should be in the range 0-1.
+    # Learning factor works better when kept < 0.5
+    # Graph matching threshold doesn't seem to matter that much, as often seems to be either a
+    # complete or a very small match.
+    # The lexicon threshold works better between 0.07-0.3, but we need to play around with it because we end up not
+    # lexicalize items sufficiently because of diminishing lexicon probability through training
+    rng = random.Random()
+    rng.seed(0)
+    learner = ObjectPursuitLearner(
+        learning_factor=0.5,
+        graph_match_confirmation_threshold=0.7,
+        lexicon_entry_threshold=0.7,
+        rng=rng,
+        smoothing_parameter=0.001,
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        # debug_callback=debug_callback,
+    )  # type: ignore
+    learner_test_pursuit_curriculum(learner)
 
 def test_new_pursuit_learner_ball():
     rng = random.Random()
     rng.seed(0)
+
     learner = IntegratedTemplateLearner(
         object_learner=PursuitObjectLearnerNew(
             learning_factor=0.5,
@@ -468,3 +473,20 @@ def test_new_pursuit_learner_dog():
     # debug_callback = DumpPartialMatchCallback(render_path="../renders/")
     # We pass this callback into the learner; it is executed if the learning takes too long, i.e after 60 seconds.
     run_learner_for_object(learner, DOG)
+
+
+def test_new_pursuit_object_learner():
+    rng = random.Random()
+    rng.seed(0)
+
+    learner = IntegratedTemplateLearner(
+        object_learner=PursuitObjectLearnerNew(
+            learning_factor=0.5,
+            graph_match_confirmation_threshold=0.7,
+            lexicon_entry_threshold=0.7,
+            rng=rng,
+            smoothing_parameter=0.001,
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+        )
+    )
+    learner_test_pursuit_curriculum(learner)
