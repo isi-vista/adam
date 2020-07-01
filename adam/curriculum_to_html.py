@@ -15,9 +15,10 @@ from typing import (
     Mapping,
 )
 
-# from adam.language_specific.chinese.chinese_language_generator import (
-#    GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
-# )
+from adam.language_specific.chinese.chinese_language_generator import (
+    GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
+)
+
 # from adam.language_specific.english.english_language_generator import (
 #    GAILA_PHASE_1_LANGUAGE_GENERATOR,
 # )
@@ -43,7 +44,8 @@ from adam.curriculum.imprecise_descriptions_curriculum import (
     make_subtle_verb_distinctions_curriculum,
 )
 from adam.curriculum.attribute_constraining_action_curriculum import make_german_complete
-from adam.curriculum.m6_curriculum import make_m6_curriculum
+
+# from adam.curriculum.m6_curriculum import make_m6_curriculum
 from adam.curriculum.phase2_curriculum import build_gaila_m8_curriculum
 from adam.curriculum.preposition_curriculum import make_prepositions_curriculum
 from adam.curriculum.pursuit_curriculum import make_pursuit_curriculum
@@ -131,7 +133,8 @@ STR_TO_CURRICULUM: Mapping[str, Callable[[], Iterable[Phase1InstanceGroup]]] = {
     "phase1": build_gaila_phase_1_curriculum,
     "prepositions": make_prepositions_curriculum,
     "pursuit": make_pursuit_curriculum,
-    "m6-curriculum": make_m6_curriculum,
+    # TODO: this is currently not implemented for Chinese
+    # "m6-curriculum": make_m6_curriculum,
     "verbs-with-dynamic-prepositions": make_verb_with_dynamic_prepositions_curriculum,
     "essen-fressen-distinction": make_german_complete,
     "imprecise-temporal": make_imprecise_temporal_descriptions,
@@ -149,7 +152,9 @@ def main(params: Parameters) -> None:
     phase1_curriculum_dir.mkdir(parents=True, exist_ok=True)
     # We lazily instantiate the curriculum so we don't need to worry
     # about any of them we don't actually use.
-    curriculum_to_render = STR_TO_CURRICULUM[curriculum_string]()
+    curriculum_to_render = STR_TO_CURRICULUM[curriculum_string](
+        language_generator=GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR
+    )
 
     sort_by_utterance_length_flag = params.boolean("sort_by_utterance", default=False)
     if sort_by_utterance_length_flag:

@@ -806,14 +806,23 @@ def make_fall_imprecise_temporal_descriptions(
 
 
 def make_imprecise_size_curriculum(
-    num_samples: int = 5, *, num_noise_objects: int = 0
+    num_samples: int = 5,
+    *,
+    num_noise_objects: int = 0,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Sequence[Phase1InstanceGroup]:
     """
     One particular instantiation of the Imprecise Size Descriptions Curriculum
     """
 
     return [
-        make_imprecise_size_descriptions(num_samples, num_noise_objects=num_noise_objects)
+        make_imprecise_size_descriptions(
+            num_samples,
+            num_noise_objects=num_noise_objects,
+            language_generator=language_generator,
+        )
     ]
 
 
