@@ -16,11 +16,11 @@ from typing import (
 )
 
 from adam.language_specific.chinese.chinese_language_generator import (
-    GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
+    GAILA_PHASE_2_CHINESE_LANGUAGE_GENERATOR,
 )
 
 from adam.language_specific.english.english_language_generator import (
-    GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    GAILA_PHASE_2_LANGUAGE_GENERATOR,
 )
 from adam.axis import GeonAxis
 from adam.curriculum.curriculum_utils import Phase1InstanceGroup
@@ -158,11 +158,11 @@ def main(params: Parameters) -> None:
     # about any of them we don't actually use.
     if language_string == "chinese":
         curriculum_to_render = STR_TO_CURRICULUM[curriculum_string](
-            language_generator=GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR
+            language_generator=GAILA_PHASE_2_CHINESE_LANGUAGE_GENERATOR
         )
     elif language_string == "english":
         curriculum_to_render = STR_TO_CURRICULUM[curriculum_string](
-            language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR
+            language_generator=GAILA_PHASE_2_LANGUAGE_GENERATOR
         )
     else:
         raise RuntimeError("Invalid language parameter")
