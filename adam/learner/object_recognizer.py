@@ -30,6 +30,8 @@ from adam.ontology.phase1_ontology import (
     GAILA_PHASE_1_ONTOLOGY,
     PART_OF,
     PHASE_1_CURRICULUM_OBJECTS,
+    BIGGER_THAN,
+    SMALLER_THAN,
 )
 from adam.perception import GROUND_PERCEPTION, LEARNER_PERCEPTION, ObjectPerception
 from adam.perception.deprecated import LanguageAlignedPerception
@@ -731,7 +733,13 @@ def replace_match_with_object_graph_node(
                 if edge_equals_ignoring_temporal_scope(edge_label, HAS_PROPERTY_LABEL):
                     # Prevent multiple `has-property` assertions to the same color node
                     # On a recognized object
-                    if matched_subgraph_node_successor[0] in external_properties:
+                    # Also prevent size relations from being inherited on root object.
+                    if matched_subgraph_node_successor[
+                        0
+                    ] in external_properties or matched_subgraph_node_successor[0] in {
+                        SMALLER_THAN,
+                        BIGGER_THAN,
+                    }:
                         if (
                             perception_digraph.degree(matched_subgraph_node_successor)
                             != 1
@@ -868,7 +876,12 @@ def replace_match_root_with_object_semantic_node(
                 if edge_equals_ignoring_temporal_scope(edge_label, HAS_PROPERTY_LABEL):
                     # Prevent multiple `has-property` assertions to the same color node
                     # On a recognized object
-                    if matched_subgraph_node_successor[0] in external_properties:
+                    if matched_subgraph_node_successor[
+                        0
+                    ] in external_properties or matched_subgraph_node_successor[0] in {
+                        SMALLER_THAN,
+                        BIGGER_THAN,
+                    }:
                         if (
                             perception_digraph.degree(matched_subgraph_node_successor)
                             != 1
