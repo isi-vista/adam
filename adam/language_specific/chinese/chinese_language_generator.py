@@ -54,6 +54,9 @@ from adam.language_specific.chinese.chinese_phase_1_lexicon import (
     GRAB,
     SHOVE,
     TOSS,
+    MOM,
+    DAD,
+    BABY,
 )
 from adam.language_specific import (
     FIRST_PERSON,
@@ -596,6 +599,8 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     action
                     and (action.action_type == GO or action.action_type == COME)
                     and argument_role == GOAL
+                    and IS_SPEAKER in filler.properties
+                    or IS_ADDRESSEE in filler.properties
                 ):
                     zhao = DependencyTreeToken("jau3", ADPOSITION)
                     self.dependency_graph.add_edge(zhao, filler_noun, role=CASE_SPATIAL)
