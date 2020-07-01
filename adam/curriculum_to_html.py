@@ -15,6 +15,12 @@ from typing import (
     Mapping,
 )
 
+# from adam.language_specific.chinese.chinese_language_generator import (
+#    GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
+# )
+# from adam.language_specific.english.english_language_generator import (
+#    GAILA_PHASE_1_LANGUAGE_GENERATOR,
+# )
 from adam.axis import GeonAxis
 from adam.curriculum.curriculum_utils import Phase1InstanceGroup
 from attr import attrib, attrs

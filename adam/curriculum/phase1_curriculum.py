@@ -512,7 +512,12 @@ def _make_part_whole_curriculum(
     return ExplicitWithSituationInstanceGroup("part of instances", all_instances)
 
 
-def _make_my_your_object_curriculum(num_to_sample: int = 20) -> Phase1InstanceGroup:
+def _make_my_your_object_curriculum(
+    num_to_sample: int = 20,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+) -> Phase1InstanceGroup:
     person_0 = standard_object("speaker", PERSON, added_properties=[IS_SPEAKER])
     person_1 = standard_object("addressee", PERSON, added_properties=[IS_ADDRESSEE])
     inanimate_object = standard_object(
@@ -539,6 +544,7 @@ def _make_my_your_object_curriculum(num_to_sample: int = 20) -> Phase1InstanceGr
                 for person in owners
             ]
         ),
+        language_generator=language_generator,
     )
 
 
@@ -2380,16 +2386,20 @@ def _make_behind_in_front_curriculum(
     )
 
 
-def build_gaila_phase1_object_curriculum() -> Sequence[Phase1InstanceGroup]:
+def build_gaila_phase1_object_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Sequence[Phase1InstanceGroup]:
     """
     One particular instantiation of the object-learning parts of the curriculum for GAILA Phase 1.
     """
     return [
-        _make_each_object_by_itself_curriculum(),
+        _make_each_object_by_itself_curriculum(language_generator=language_generator),
         #     We are deferring handling numeric quantifiers until Phase 2,
         #     so this curriculum is not actually executed in Phase 1.
         # _make_multiple_objects_curriculum(),
-        _make_object_on_ground_curriculum(),
+        _make_object_on_ground_curriculum(language_generator=language_generator),
     ]
 
 
@@ -2401,67 +2411,87 @@ def build_gaila_generics_curriculum() -> Sequence[Phase1InstanceGroup]:
     return [_make_generic_statements_curriculum()]
 
 
-def build_gaila_phase1_attribute_curriculum() -> Sequence[Phase1InstanceGroup]:
+def build_gaila_phase1_attribute_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Sequence[Phase1InstanceGroup]:
     """
     One particular instantiation of the object-learning parts of the curriculum for GAILA Phase 1.
     """
     return [
-        _make_objects_with_colors_curriculum(),
-        _make_objects_with_colors_is_curriculum(),
-        _make_my_your_object_curriculum(),
+        _make_objects_with_colors_curriculum(language_generator=language_generator),
+        _make_objects_with_colors_is_curriculum(language_generator=language_generator),
+        _make_my_your_object_curriculum(language_generator=language_generator),
     ]
 
 
-def build_gaila_phase1_relation_curriculum() -> Sequence[Phase1InstanceGroup]:
+def build_gaila_phase1_relation_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Sequence[Phase1InstanceGroup]:
     """
     One particular instantiation of the object-learning parts of the curriculum for GAILA Phase 1.
     """
     return [
-        _make_person_has_object_curriculum(),
-        _make_object_on_object_curriculum(),
-        _make_object_beside_object_curriculum(),
-        _make_object_under_or_over_object_curriculum(),
-        _make_object_in_other_object_curriculum(),
-        _make_behind_in_front_curriculum(),
+        _make_person_has_object_curriculum(language_generator=language_generator),
+        _make_object_on_object_curriculum(language_generator=language_generator),
+        _make_object_beside_object_curriculum(language_generator=language_generator),
+        _make_object_under_or_over_object_curriculum(
+            language_generator=language_generator
+        ),
+        _make_object_in_other_object_curriculum(language_generator=language_generator),
+        _make_behind_in_front_curriculum(language_generator=language_generator),
     ]
 
 
-def build_gaila_phase1_verb_curriculum() -> Sequence[Phase1InstanceGroup]:
+def build_gaila_phase1_verb_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Sequence[Phase1InstanceGroup]:
     """
     One particular instantiation of the object-learning parts of the curriculum for GAILA Phase 1.
     """
     return [
-        _make_fall_curriculum(),
-        _make_transfer_of_possession_curriculum(),
-        _make_fly_curriculum(),
-        _make_roll_curriculum(),
-        _make_speaker_addressee_curriculum(),
-        _make_jump_curriculum(),
-        _make_drink_curriculum(),
-        _make_sit_curriculum(),
-        _make_put_curriculum(),
-        _make_eat_curriculum(),
-        _make_take_curriculum(),
-        _make_move_curriculum(),
-        _make_spin_curriculum(),
-        _make_go_curriculum(),
-        _make_push_curriculum(),
-        _make_throw_curriculum(),
-        _make_pass_curriculum(),
+        _make_fall_curriculum(language_generator=language_generator),
+        _make_transfer_of_possession_curriculum(language_generator=language_generator),
+        _make_fly_curriculum(language_generator=language_generator),
+        _make_roll_curriculum(language_generator=language_generator),
+        _make_speaker_addressee_curriculum(language_generator=language_generator),
+        _make_jump_curriculum(language_generator=language_generator),
+        _make_drink_curriculum(language_generator=language_generator),
+        _make_sit_curriculum(language_generator=language_generator),
+        _make_put_curriculum(language_generator=language_generator),
+        _make_eat_curriculum(language_generator=language_generator),
+        _make_take_curriculum(language_generator=language_generator),
+        _make_move_curriculum(language_generator=language_generator),
+        _make_spin_curriculum(language_generator=language_generator),
+        _make_go_curriculum(language_generator=language_generator),
+        _make_push_curriculum(language_generator=language_generator),
+        _make_throw_curriculum(language_generator=language_generator),
+        _make_pass_curriculum(language_generator=language_generator),
         # _make_put_on_speaker_addressee_body_part_curriculum(),
-        _make_come_curriculum(),
+        _make_come_curriculum(language_generator=language_generator),
     ]
 
 
-def build_gaila_phase_1_curriculum() -> Sequence[Phase1InstanceGroup]:
+def build_gaila_phase_1_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Sequence[Phase1InstanceGroup]:
     """
     One particular instantiation of the curriculum for GAILA Phase 1.
     """
     return list(
         chain(
-            build_gaila_phase1_object_curriculum(),
-            build_gaila_phase1_attribute_curriculum(),
-            build_gaila_phase1_relation_curriculum(),
-            build_gaila_phase1_verb_curriculum(),
+            build_gaila_phase1_object_curriculum(language_generator=language_generator),
+            build_gaila_phase1_attribute_curriculum(
+                language_generator=language_generator
+            ),
+            build_gaila_phase1_relation_curriculum(language_generator=language_generator),
+            build_gaila_phase1_verb_curriculum(language_generator=language_generator),
         )
     )
