@@ -46,6 +46,8 @@ from adam.ontology.phase1_ontology import (
     FLY,
     GAILA_PHASE_1_ONTOLOGY,
     GIVE,
+    PUSH_SURFACE_AUX,
+    PUSH_GOAL,
     GOAL,
     GREEN,
     GROUND,

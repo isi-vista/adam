@@ -767,7 +767,10 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     # be translated post-verbially but the verb isn't ditransitive, the theme becomes preverbial.
                     # The "ba" itself is added by the calling function
                     if (
-                        GOAL in action.argument_roles_to_fillers
+                        (
+                            GOAL in action.argument_roles_to_fillers
+                            and IGNORE_GOAL not in self.situation.syntax_hints
+                        )
                         or self.situation.after_action_relations
                         or (
                             action.during

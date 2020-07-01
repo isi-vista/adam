@@ -1891,7 +1891,7 @@ def make_push_templates(
         (PUSH_GOAL, Region(push_goal, distance=PROXIMAL)),
     ]
     push_unexpressed_goal = Phase1SituationTemplate(
-        "push-unexpressed-goal",
+        "push-unexpressed-surface-goal",
         salient_object_variables=[agent, theme],
         actions=[
             Action(
@@ -1915,7 +1915,7 @@ def make_push_templates(
                 else DuringAction(continuously=[on(theme, push_surface)]),  # type: ignore
             )
         ],
-        after_action_relations=[near(theme, push_goal)],
+        # after_action_relations=[near(theme, push_goal)],
         constraining_relations=[
             bigger_than(push_surface, agent),
             bigger_than(push_surface, push_goal),
