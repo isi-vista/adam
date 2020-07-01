@@ -2,7 +2,8 @@ from itertools import chain
 from typing import Sequence, Iterable
 from immutablecollections import immutableset
 from more_itertools import flatten
-
+from adam.language.language_generator import LanguageGenerator
+from adam.language.dependency import LinearizedDependencyTree
 from adam.curriculum.curriculum_utils import (
     Phase1InstanceGroup,
     PHASE1_CHOOSER_FACTORY,
@@ -32,6 +33,9 @@ from adam.curriculum.phase1_curriculum import (
 from adam.language_specific.english.english_language_generator import (
     USE_ADVERBIAL_PATH_MODIFIER,
     USE_VERTICAL_MODIFIERS,
+)
+from adam.language_specific.english.english_language_generator import (
+    GAILA_PHASE_1_LANGUAGE_GENERATOR,
 )
 from adam.ontology import THING
 from adam.ontology.phase1_ontology import (
@@ -268,7 +272,12 @@ def make_spin_tall_short_curriculum() -> Phase1InstanceGroup:
 
 
 def make_imprecise_size_descriptions(
-    num_samples: int = 5, *, num_noise_objects: int = 0
+    num_samples: int = 5,
+    *,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    num_noise_objects: int = 0,
 ) -> Phase1InstanceGroup:
     background = immutableset(
         standard_object(f"noise_object_{x}") for x in range(num_noise_objects)
@@ -298,11 +307,17 @@ def make_imprecise_size_descriptions(
                 ]
             )
         ),
+        language_generator=language_generator,
     )
 
 
 def make_throw_imprecise_temporal_descriptions(
-    num_samples: int = 5, *, num_noise_objects: int = 0  # pylint:disable=unused-argument
+    num_samples: int = 5,
+    *,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    num_noise_objects: int = 0,  # pylint:disable=unused-argument
 ) -> Phase1InstanceGroup:
     thrower = standard_object("thrower_0", THING, required_properties=[ANIMATE])
     catcher = standard_object("catcher_0", THING, required_properties=[ANIMATE])
@@ -374,11 +389,17 @@ def make_throw_imprecise_temporal_descriptions(
                 for is_fast in BOOL_SET
             ),
         ),
+        language_generator=language_generator,
     )
 
 
 def make_move_imprecise_temporal_descriptions(
-    num_samples: int = 5, *, num_noise_objects: int = 0  # pylint:disable=unused-argument
+    num_samples: int = 5,
+    *,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    num_noise_objects: int = 0,  # pylint:disable=unused-argument
 ) -> Phase1InstanceGroup:
     self_mover_0 = standard_object(
         "self-mover_0", THING, required_properties=[SELF_MOVING]
@@ -423,11 +444,17 @@ def make_move_imprecise_temporal_descriptions(
                 for is_fast in BOOL_SET
             ),
         ),
+        language_generator=language_generator,
     )
 
 
 def make_jump_imprecise_temporal_descriptions(
-    num_samples: int = 5, *, num_noise_objects: int = 0  # pylint:disable=unused-argument
+    num_samples: int = 5,
+    *,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    num_noise_objects: int = 0,  # pylint:disable=unused-argument
 ) -> Phase1InstanceGroup:
     jumper = standard_object("jumper_0", THING, required_properties=[CAN_JUMP])
 
@@ -452,11 +479,17 @@ def make_jump_imprecise_temporal_descriptions(
                 ]
             )
         ),
+        language_generator=language_generator,
     )
 
 
 def make_take_grab_subtle_verb_distinction(
-    num_samples: int = 5, *, num_noise_objects: int = 0  # pylint:disable=unused-argument
+    num_samples: int = 5,
+    *,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    num_noise_objects: int = 0,  # pylint:disable=unused-argument
 ) -> Phase1InstanceGroup:
     taker = standard_object("tosser_passer_0", THING, required_properties=[ANIMATE])
     takee = standard_object("tossee_passee_0", THING, required_properties=[INANIMATE])
@@ -483,11 +516,17 @@ def make_take_grab_subtle_verb_distinction(
                 ]
             )
         ),
+        language_generator=language_generator,
     )
 
 
 def make_push_shove_subtle_verb_distinctions(
-    num_samples: int = 5, *, num_noise_objects: int = 0  # pylint:disable=unused-argument
+    num_samples: int = 5,
+    *,
+    num_noise_objects: int = 0,  # pylint:disable=unused-argument
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     pusher = standard_object("pusher_0", THING, required_properties=[ANIMATE])
     pushee = standard_object("pushee_0", THING, required_properties=[INANIMATE])
@@ -525,11 +564,17 @@ def make_push_shove_subtle_verb_distinctions(
                 ]
             )
         ),
+        language_generator=language_generator,
     )
 
 
 def make_walk_run_subtle_verb_distinction(
-    num_samples: int = 5, *, num_noise_objects: int = 0  # pylint:disable=unused-argument
+    num_samples: int = 5,
+    *,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    num_noise_objects: int = 0,  # pylint:disable=unused-argument
 ) -> Phase1InstanceGroup:
     agent = standard_object("walker_0", THING, required_properties=[ANIMATE])
     return phase1_instances(
@@ -554,11 +599,17 @@ def make_walk_run_subtle_verb_distinction(
                 ]
             )
         ),
+        language_generator=language_generator,
     )
 
 
 def make_pass_toss_subtle_verb_distinction(
-    num_samples: int = 5, *, num_noise_objects: int = 0  # pylint:disable=unused-argument
+    num_samples: int = 5,
+    *,
+    num_noise_objects: int = 0,  # pylint:disable=unused-argument
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     tosser = standard_object("tosser_passer_0", THING, required_properties=[ANIMATE])
     tossee = standard_object("tossee_passee_0", THING, required_properties=[INANIMATE])
@@ -588,11 +639,17 @@ def make_pass_toss_subtle_verb_distinction(
                 ]
             )
         ),
+        language_generator=language_generator,
     )
 
 
 def make_roll_imprecise_temporal_descriptions(
-    num_samples: int = 5, *, num_noise_objects: int = 0  # pylint:disable=unused-argument
+    num_samples: int = 5,
+    *,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    num_noise_objects: int = 0,  # pylint:disable=unused-argument
 ) -> Phase1InstanceGroup:
     animate_0 = standard_object("object_0", THING, required_properties=[ANIMATE])
     rollable_0 = standard_object("object_1", required_properties=[ROLLABLE])
@@ -648,11 +705,17 @@ def make_roll_imprecise_temporal_descriptions(
                 for is_fast in BOOL_SET
             ),
         ),
+        language_generator=language_generator,
     )
 
 
 def make_fly_imprecise_temporal_descriptions(
-    num_samples: int = 5, *, num_noise_objects: int = 0  # pylint:disable=unused-argument
+    num_samples: int = 5,
+    *,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    num_noise_objects: int = 0,  # pylint:disable=unused-argument
 ) -> Phase1InstanceGroup:
     bird = standard_object("bird_0", BIRD)
     syntax_hints_options = ([], [USE_ADVERBIAL_PATH_MODIFIER])  # type: ignore
@@ -678,11 +741,17 @@ def make_fly_imprecise_temporal_descriptions(
                 for is_fast in BOOL_SET
             )
         ),
+        language_generator=language_generator,
     )
 
 
 def make_fall_imprecise_temporal_descriptions(
-    num_samples: int = 5, *, num_noise_objects: int = 0  # pylint:disable=unused-argument
+    num_samples: int = 5,
+    *,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    num_noise_objects: int = 0,  # pylint:disable=unused-argument
 ) -> Phase1InstanceGroup:
     arbitary_object = standard_object("object_0", THING)
     syntax_hints_options = ([], [USE_ADVERBIAL_PATH_MODIFIER])  # type: ignore
@@ -720,6 +789,7 @@ def make_fall_imprecise_temporal_descriptions(
                 for is_fast in BOOL_SET
             ),
         ),
+        language_generator=language_generator,
     )
 
 

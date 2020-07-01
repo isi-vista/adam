@@ -10,7 +10,9 @@ from adam.language_specific.english.english_language_generator import (
 from adam.language_specific.chinese.chinese_language_generator import (
     GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
 )
-
+from adam.language.language_generator import LanguageGenerator
+from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
+from adam.language.dependency import LinearizedDependencyTree
 from contexttimer import Timer
 from more_itertools import first
 from networkx import DiGraph
@@ -213,7 +215,9 @@ class ObjectRecognizer:
     def match_objects_old(
         self,
         perception_graph: PerceptionGraph,
-        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+        language_generator: LanguageGenerator[
+            HighLevelSemanticsSituation, LinearizedDependencyTree
+        ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> PerceptionGraphFromObjectRecognizer:
         new_style_input = PerceptionSemanticAlignment(
             perception_graph=perception_graph, semantic_nodes=[]
@@ -227,7 +231,9 @@ class ObjectRecognizer:
     def match_objects(
         self,
         perception_semantic_alignment: PerceptionSemanticAlignment,
-        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+        language_generator: LanguageGenerator[
+            HighLevelSemanticsSituation, LinearizedDependencyTree
+        ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> Tuple[PerceptionSemanticAlignment, Mapping[Tuple[str, ...], ObjectSemanticNode]]:
         r"""
         Recognize known objects in a `PerceptionGraph`.
@@ -360,7 +366,9 @@ class ObjectRecognizer:
     def match_objects_with_language_old(
         self,
         language_aligned_perception: LanguageAlignedPerception,
-        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+        language_generator: LanguageGenerator[
+            HighLevelSemanticsSituation, LinearizedDependencyTree
+        ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> LanguageAlignedPerception:
         if language_aligned_perception.node_to_language_span:
             raise RuntimeError(
@@ -387,7 +395,9 @@ class ObjectRecognizer:
     def match_objects_with_language(
         self,
         language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
-        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+        language_generator: LanguageGenerator[
+            HighLevelSemanticsSituation, LinearizedDependencyTree
+        ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> LanguagePerceptionSemanticAlignment:
         """
         Recognize known objects in a `LanguagePerceptionSemanticAlignment`.

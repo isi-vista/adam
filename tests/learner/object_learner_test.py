@@ -3,7 +3,8 @@ import pytest
 import random
 from itertools import chain
 from typing import Optional
-
+from adam.language.language_generator import LanguageGenerator
+from adam.language.dependency import LinearizedDependencyTree
 from immutablecollections import immutableset
 
 from adam.curriculum.phase1_curriculum import PHASE1_CHOOSER_FACTORY, phase1_instances
@@ -63,7 +64,9 @@ from adam.language_specific.chinese.chinese_language_generator import (
 def run_subset_learner_for_object(
     obj: OntologyNode,
     debug_callback: Optional[DebugCallableType] = None,
-    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ):
     learner_obj = object_variable("learner_0", LEARNER)
     colored_obj_object = object_variable(

@@ -6,6 +6,9 @@ from attr.validators import instance_of
 from immutablecollections import ImmutableSet, immutableset, immutablesetmultidict
 from more_itertools import first, only
 from networkx import DiGraph
+from adam.language_specific.chinese.chinese_phase_2_lexicon import (
+    GAILA_PHASE_2_CHINESE_LEXICON,
+)
 from adam.axes import FacingAddresseeAxis, GRAVITATIONAL_DOWN_TO_UP_AXIS
 from adam.language.dependency import (
     DependencyRole,
@@ -30,6 +33,7 @@ from adam.language.dependency.universal_dependencies import (
     NOMINAL_MODIFIER,
     NOMINAL_MODIFIER_POSSESSIVE,
     NOMINAL_SUBJECT,
+    ADJECTIVE,
     NUMERAL,
     NUMERIC_MODIFIER,
     OBJECT,
@@ -46,6 +50,10 @@ from adam.language_specific.chinese.chinese_phase_1_lexicon import (
     GAILA_PHASE_1_CHINESE_LEXICON,
     ME,
     YOU,
+    RUN,
+    GRAB,
+    SHOVE,
+    TOSS,
 )
 from adam.language_specific import (
     FIRST_PERSON,
@@ -59,6 +67,7 @@ from adam.language_specific.chinese.chinese_syntax import (
 from adam.ontology import IN_REGION, IS_ADDRESSEE, IS_SPEAKER, OntologyNode
 from adam.ontology.phase1_ontology import (
     AGENT,
+    PUSH,
     COLOR,
     FALL,
     GOAL,
@@ -69,8 +78,18 @@ from adam.ontology.phase1_ontology import (
     SIT,
     THEME,
     JUMP,
+    GIVE,
     GO,
     COME,
+    HARD_FORCE,
+    SOFT_FORCE,
+    FAST,
+    SLOW,
+    BIGGER_THAN,
+    SMALLER_THAN,
+    WALK,
+    TAKE,
+    PASS,
 )
 from adam.ontology.phase1_spatial_relations import (
     EXTERIOR_BUT_IN_CONTACT,
@@ -80,6 +99,10 @@ from adam.ontology.phase1_spatial_relations import (
     Region,
     TOWARD,
     GRAVITATIONAL_UP,
+    DISTAL,
+    SpatialPath,
+    AWAY_FROM,
+    TO,
 )
 from adam.random_utils import SequenceChooser
 from adam.relation import Relation
@@ -191,8 +214,28 @@ class SimpleRuleBasedChineseLanguageGenerator(
         ) -> DependencyTreeToken:
             """Translate the situation's action to a VP node in the tree"""
 
-            # get the lexical entry corresponding to the verb
-            verb_lexical_entry = self._unique_lexicon_entry(action.action_type)
+            # get the lexical entry corresponding to the verb for special cases
+            special_lexical: bool = False
+            if (
+                action.action_type in [WALK, TAKE, PUSH, PASS]
+                and action.during
+                and action.during.objects_to_paths
+            ):
+                for (_, path) in action.during.objects_to_paths.items():
+                    if HARD_FORCE in path.properties:
+                        special_lexical = True
+            if special_lexical:
+                if action.action_type == WALK:
+                    verb_lexical_entry = RUN
+                elif action.action_type == TAKE:
+                    verb_lexical_entry = GRAB
+                elif action.action_type == PUSH:
+                    verb_lexical_entry = SHOVE
+                elif action.action_type == PASS:
+                    verb_lexical_entry = TOSS
+
+            else:
+                verb_lexical_entry = self._unique_lexicon_entry(action.action_type)
 
             # map all the arguments to chunks of the dependency tree, ignoring LEARNER object from generation
             syntactic_roles_to_argument_heads = immutablesetmultidict(
@@ -203,6 +246,9 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 if not (
                     isinstance(filler, SituationObject)
                     and filler.ontology_node == LEARNER
+                )
+                and not (
+                    argument_role == GOAL and IGNORE_GOAL in self.situation.syntax_hints
                 )
             )
 
@@ -253,10 +299,6 @@ class SimpleRuleBasedChineseLanguageGenerator(
             # the list of dependency-role -> dependencytoken mappings to be attached to the VP tree
             modifiers: List[Tuple[DependencyRole, DependencyTreeToken]] = []
 
-            # if there are after action relations, collect them, parse them, and add them to the modifiers
-            for relation in self.situation.after_action_relations:
-                self._translate_relation_to_action_modifier(action, relation, modifiers)
-
             # if there are during action modifiers, collect them, parse them, and add them to the modifiers
             # we want to parse these after after_action relations since if there is an after-action relation that is also
             # a during relation, we want to be sure to translate it as having reached the goal
@@ -267,6 +309,36 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     self._translate_relation_to_action_modifier(
                         action, relation, modifiers
                     )
+                if action.during.objects_to_paths:
+                    for (
+                        path_object,
+                        spatial_path,
+                    ) in action.during.objects_to_paths.items():
+                        spatial_modifier = self._translate_spatial_path(
+                            action, path_object, spatial_path
+                        )
+                        if spatial_modifier:
+                            modifiers.append(spatial_modifier)
+                    # handle fast/slow
+                    for (_, spatial_path) in action.during.objects_to_paths.items():
+                        if FAST in spatial_path.properties:
+                            modifiers.append(
+                                (
+                                    ADVERBIAL_MODIFIER,
+                                    DependencyTreeToken("kwai4 su4", ADVERB),
+                                )
+                            )
+                        elif SLOW in spatial_path.properties:
+                            modifiers.append(
+                                (
+                                    ADVERBIAL_MODIFIER,
+                                    DependencyTreeToken("man4 man", ADVERB),
+                                )
+                            )
+
+            # if there are after action relations, collect them, parse them, and add them to the modifiers
+            for relation in self.situation.after_action_relations:
+                self._translate_relation_to_action_modifier(action, relation, modifiers)
 
             # if there are always relations, collect them, parse them, and add them to the modifiers
             for relation in self.situation.always_relations:
@@ -337,6 +409,77 @@ class SimpleRuleBasedChineseLanguageGenerator(
                         )
                     )
             return modifiers
+
+        def _translate_spatial_path(
+            self,
+            action: Optional[Action[OntologyNode, SituationObject]],
+            path_object: SituationObject,
+            spatial_path: SpatialPath[SituationObject],
+        ):
+            if (
+                spatial_path.reference_object
+                and spatial_path.reference_object not in self.situation.salient_objects
+            ):
+                return None
+            if path_object not in self.situation.salient_objects:
+                return None
+            if action:
+                # If both arguments of the relation are core argument roles,
+                # we assume the verb takes care of expressing their relationship.
+                core_argument_fillers = immutableset(
+                    chain(
+                        action.argument_roles_to_fillers[AGENT],
+                        action.argument_roles_to_fillers[PATIENT],
+                        action.argument_roles_to_fillers[THEME],
+                    )
+                )
+
+                if (
+                    path_object in core_argument_fillers
+                    and spatial_path.reference_object in core_argument_fillers
+                ):
+                    return None
+            preposition: Optional[str] = None
+            if spatial_path.operator == TOWARD:
+                preposition = "chau2"
+            elif spatial_path.operator == AWAY_FROM:
+                preposition = "li2"
+            elif spatial_path.operator in [TO, None]:
+                return None
+            if not preposition:
+                raise RuntimeError(
+                    f"Don't know how to translate spatial path {spatial_path}"
+                )
+            if isinstance(spatial_path.reference_object, Region):
+                reference_object_node = self._noun_for_object(
+                    spatial_path.reference_object.reference_object
+                )
+            else:
+                reference_object_node = self._noun_for_object(
+                    spatial_path.reference_object
+                )
+            if self.dependency_graph.out_degree[reference_object_node]:
+                return None
+            else:
+                if spatial_path.operator in [TOWARD, AWAY_FROM]:
+                    self.dependency_graph.add_edge(
+                        DependencyTreeToken(preposition, ADPOSITION),
+                        reference_object_node,
+                        role=CASE_SPATIAL,
+                    )
+                    return (OBLIQUE_NOMINAL, reference_object_node)
+                else:
+                    self.dependency_graph.add_edge(
+                        DependencyTreeToken(preposition, ADPOSITION),
+                        reference_object_node,
+                        role=CASE_POSSESSIVE,
+                    )
+                    self.dependency_graph.add_edge(
+                        DependencyTreeToken("dau4", ADPOSITION),
+                        reference_object_node,
+                        role=CASE_SPATIAL,
+                    )
+                    return (ADVERBIAL_CLAUSE_MODIFIER, reference_object_node)
 
         def _translate_relation_to_action_modifier(
             self,
@@ -418,13 +561,27 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 ):
                     zhao = DependencyTreeToken("jau3", ADPOSITION)
                     self.dependency_graph.add_edge(zhao, filler_noun, role=CASE_SPATIAL)
+                # deal with movement to a person as the goal
+                elif (
+                    action
+                    and argument_role == GOAL
+                    and action.action_type != GIVE
+                    and (
+                        IS_SPEAKER in filler.properties
+                        or IS_ADDRESSEE in filler.properties
+                    )
+                ):
+                    gei = DependencyTreeToken("gei3", ADPOSITION)
+                    self.dependency_graph.add_edge(gei, filler_noun, role=CASE_SPATIAL)
                 return (syntactic_role, filler_noun)
             # deal with the case that it's a region in the situation
             elif isinstance(filler, Region):
+
                 # get the noun for the object
                 reference_object_dependency_node = self._noun_for_object(
                     filler.reference_object
                 )
+
                 # if this is the equivalent of "to" in English with a go/come verb, we just use the bare noun
                 if (
                     (action.action_type == GO or action.action_type == COME)
@@ -445,7 +602,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
                         role=CASE_SPATIAL,
                     )
 
-                    # get the localiser and at it to the noun as well
+                    # get the localiser and add it to the noun as well
                     localiser_dependency_node = DependencyTreeToken(
                         self._localiser_for_region_as_goal(filler), ADPOSITION
                     )
@@ -479,11 +636,19 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 return "shang4"
             # this is how we currently handle "to" in Chinese, but there's not a real equivalent
             elif region.distance == PROXIMAL and not region.direction:
+                if USE_NEAR in self.situation.syntax_hints:
+                    return "pang2 byan1"
                 return "shang4"
-            # above
+            elif region.distance == DISTAL and not region.direction:
+                return "ywan3 li2"
+            # TODO: https://github.com/isi-vista/adam/issues/846 -- above/over distinction
+            # over
             elif region.direction == GRAVITATIONAL_UP:
+                # above
+                if USE_ABOVE_BELOW in self.situation.syntax_hints:
+                    return "sya4 fang1"
                 return "shang4 myan4"
-            # below
+            # below or under -- no distinction in chinese
             elif region.direction == GRAVITATIONAL_DOWN:
                 return "sya4 myan4"
             # region.distance == DISTAL is not check as this does not define a specific location in scope for Phase 1
@@ -541,6 +706,18 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     if (
                         GOAL in action.argument_roles_to_fillers
                         or self.situation.after_action_relations
+                        or (
+                            action.during
+                            and action.during.objects_to_paths
+                            # hack since these modifiers don't change the position of the sentence but towards/away do
+                            and any(
+                                any(
+                                    k not in [HARD_FORCE, SOFT_FORCE, FAST, SLOW]
+                                    for k in v.properties
+                                )
+                                for k, v in action.during.objects_to_paths.items()
+                            )
+                        )
                         or USE_ADVERBIAL_PATH_MODIFIER in self.situation.syntax_hints
                     ) and (
                         PREFER_DITRANSITIVE not in self.situation.syntax_hints
@@ -576,11 +753,11 @@ class SimpleRuleBasedChineseLanguageGenerator(
 
             # the number of this object that is in the scene
             # https://github.com/isi-vista/adam/issues/802 -- currently for Chinese we only count salient objects
-            try:
-                count = self.object_counts[_object.ontology_node]
-            # if this object isn't salient, then we don't want to add it to our language so we just return
-            except KeyError:
+
+            if _object.ontology_node not in self.object_counts:
                 return
+            else:
+                count = self.object_counts[_object.ontology_node]
 
             # make sure there is a corresponding ontology node
             if not _object.ontology_node:
@@ -753,8 +930,45 @@ class SimpleRuleBasedChineseLanguageGenerator(
         ):
             """Translate relations that the user explicitly calls out, including possession and region"""
 
+            if relation.relation_type == BIGGER_THAN:
+                if (
+                    relation.first_slot in self.situation.salient_objects
+                    and isinstance(relation.second_slot, SituationObject)
+                    and relation.second_slot.ontology_node == LEARNER
+                ):
+                    # tall
+                    if USE_VERTICAL_MODIFIERS in self.situation.syntax_hints:
+                        token = DependencyTreeToken("gau1 da4", ADJECTIVE)
+                    # big
+                    else:
+                        token = DependencyTreeToken("da4", ADJECTIVE)
+                    self.dependency_graph.add_node(token)
+                    self.dependency_graph.add_edge(
+                        token,
+                        self._noun_for_object(relation.first_slot),
+                        role=ADJECTIVAL_MODIFIER,
+                    )
+            elif relation.relation_type == SMALLER_THAN:
+                if (
+                    relation.first_slot in self.situation.salient_objects
+                    and isinstance(relation.second_slot, SituationObject)
+                    and relation.second_slot.ontology_node == LEARNER
+                ):
+                    # short
+                    if USE_VERTICAL_MODIFIERS in self.situation.syntax_hints:
+                        token = DependencyTreeToken("dwan3", ADJECTIVE)
+                    # small
+                    else:
+                        token = DependencyTreeToken("syau3", ADJECTIVE)
+                    self.dependency_graph.add_node(token)
+                    self.dependency_graph.add_edge(
+                        token,
+                        self._noun_for_object(relation.first_slot),
+                        role=ADJECTIVAL_MODIFIER,
+                    )
+
             # handle possession relations
-            if relation.relation_type == HAS:
+            elif relation.relation_type == HAS:
                 # if the situation is dynamic, then this will be handled within the NP
                 if (
                     self.situation.is_dynamic
@@ -854,12 +1068,16 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     return None
 
             localiser: Optional[str] = None
-            # inside/in
-            if region.distance == INTERIOR:
+            if region.distance == INTERIOR and not relation.negated:
                 localiser = "li3"
             # to/towards -- this functions differntly in Chinese but this is the best approximation to handle it
-            if region.distance == PROXIMAL and not region.direction:
-                localiser = "shang4"
+            elif region.distance == PROXIMAL and not region.direction:
+                if USE_NEAR in self.situation.syntax_hints:
+                    localiser = "pang2 byan1"
+                else:
+                    localiser = "shang4"
+            elif region.distance == DISTAL and not region.direction:
+                localiser = "hen3 ywan3"
             elif region.direction:
                 direction_axis = region.direction.relative_to_concrete_axis(
                     self.situation.axis_info
@@ -872,7 +1090,10 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     if direction_axis.aligned_to_gravitational:
                         # over
                         if region.direction.positive:
-                            localiser = "shang4 myan4"
+                            if USE_ABOVE_BELOW in self.situation.syntax_hints:
+                                localiser = "shang4 fang1"
+                            else:
+                                localiser = "shang4 myan4"
                         # under
                         else:
                             localiser = "sya4 myan4"
@@ -889,12 +1110,25 @@ class SimpleRuleBasedChineseLanguageGenerator(
                         # beside
                         elif region.distance == PROXIMAL:
                             localiser = "pang2 byan1"
-            # if there's no localiser, this is a relation we don't know how to handle
-            if not localiser:
-                raise RuntimeError(f"Don't know how to handle {relation} as a localiser")
 
             # get the noun for the NP in the localiser phrase
             reference_object_node = self._noun_for_object(region.reference_object)
+
+            # if there's no localiser, this is a relation we don't know how to handle
+            if not localiser:
+                # handle out, which is a coverb rather than a localiser
+                if region.distance == INTERIOR and relation.negated:
+                    coverb = "chu1"
+                    self.dependency_graph.add_edge(
+                        DependencyTreeToken(coverb, ADPOSITION),
+                        reference_object_node,
+                        role=CASE_SPATIAL,
+                    )
+                    return reference_object_node
+                else:
+                    raise RuntimeError(
+                        f"Don't know how to handle {relation} as a localiser"
+                    )
 
             # this means that the reference node is already in the graph, so we're done
             if self.dependency_graph.out_degree[reference_object_node]:
@@ -926,6 +1160,8 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     and relation not in self.situation.always_relations
                 ):
                     coverb = "gwo4"
+                if region.distance == DISTAL and not region.direction:
+                    coverb = "li2"
                 # add the coverb to the localiser phrase and return it
                 self.dependency_graph.add_edge(
                     DependencyTreeToken(coverb, ADPOSITION),
@@ -990,6 +1226,9 @@ GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR = SimpleRuleBasedChineseLanguageGenerat
     ontology_lexicon=GAILA_PHASE_1_CHINESE_LEXICON
 )
 
+GAILA_PHASE_2_CHINESE_LANGUAGE_GENERATOR = SimpleRuleBasedChineseLanguageGenerator(
+    ontology_lexicon=GAILA_PHASE_2_CHINESE_LEXICON
+)
 
 # these are "hints" situations can pass to the language generator
 # to control its behavior
@@ -999,3 +1238,7 @@ PREFER_DITRANSITIVE = "PREFER_DITRANSITIVE"
 IGNORE_COLORS = "IGNORE_COLORS"
 IGNORE_HAS_AS_VERB = "IGNORE_HAS_AS_VERB"
 ATTRIBUTES_AS_X_IS_Y = "ATTRIBUTES_AS_X_IS_Y"
+USE_NEAR = "USE_NEAR"
+IGNORE_GOAL = "IGNORE_GOAL"
+USE_VERTICAL_MODIFIERS = "USE_VERTICAL_MODIFIERS"
+USE_ABOVE_BELOW = "USE_ABOVE_BELOW"

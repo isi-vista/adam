@@ -74,10 +74,17 @@ from adam.ontology.phase1_ontology import (
     LIGHT_BROWN,
     DARK_BROWN,
     WATERMELON,
+    PASS,
+    WALK,
 )
 
 ME = LexiconEntry("wo3", NOUN, intrinsic_morphosyntactic_properties=[FIRST_PERSON])
 YOU = LexiconEntry("ni3", NOUN, intrinsic_morphosyntactic_properties=[SECOND_PERSON])
+RUN = LexiconEntry("pau3", VERB)
+GRAB = LexiconEntry("chyang3 na2 chi3", VERB)
+SHOVE = LexiconEntry("yung4 li4 twei1", VERB)
+# throw and toss are the same in Chinese
+TOSS = LexiconEntry("reng1", VERB)
 GAILA_PHASE_1_CHINESE_LEXICON = OntologyLexicon(
     ontology=GAILA_PHASE_1_ONTOLOGY,
     ontology_node_to_word=(
@@ -131,5 +138,7 @@ GAILA_PHASE_1_CHINESE_LEXICON = OntologyLexicon(
         (LIGHT_BROWN, LexiconEntry("chyan3 he2 se4", ADJECTIVE)),
         (DARK_BROWN, LexiconEntry("shen1 dzung1 se4", ADJECTIVE)),
         (WATERMELON, LexiconEntry("syi1 gwa1", NOUN)),
+        (PASS, LexiconEntry("di4", VERB)),
+        (WALK, LexiconEntry("bu4 sying2", VERB)),
     ),
 )

@@ -1,7 +1,12 @@
 from immutablecollections import immutableset, ImmutableSet
 from itertools import chain
 from typing import Iterable, Sequence
-
+from adam.language_specific.english.english_language_generator import (
+    GAILA_PHASE_1_LANGUAGE_GENERATOR,
+)
+from adam.language.language_generator import LanguageGenerator
+from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
+from adam.language.dependency import LinearizedDependencyTree
 from more_itertools import flatten
 
 from adam.axes import (
@@ -132,6 +137,7 @@ def _push_to_template(
                 during=DuringAction(continuously=[on(theme, surface)]),
             )
         ],
+        after_action_relations=[near(theme, goal_reference)],
         constraining_relations=flatten_relations(
             bigger_than(surface, [agent, goal_reference])
         ),
@@ -161,6 +167,7 @@ def _push_in_template(
                 during=DuringAction(continuously=[on(theme, surface)]),
             )
         ],
+        after_action_relations=[near(theme, goal_reference)],
         constraining_relations=flatten_relations(
             [
                 bigger_than(surface, [agent, goal_reference]),
@@ -202,6 +209,7 @@ def _push_under_template(
                 during=DuringAction(continuously=[on(theme, surface)]),
             )
         ],
+        after_action_relations=[near(theme, goal_reference)],
         constraining_relations=flatten_relations(
             [
                 bigger_than(surface, [agent, goal_reference]),
@@ -248,6 +256,7 @@ def _push_beside_template(
                 during=DuringAction(continuously=[on(theme, surface)]),
             )
         ],
+        after_action_relations=[near(theme, goal_reference)],
         constraining_relations=flatten_relations(
             bigger_than(surface, [agent, goal_reference])
         ),
@@ -290,6 +299,7 @@ def _push_in_front_of_behind_template(
                 during=DuringAction(continuously=[on(theme, surface)]),
             )
         ],
+        after_action_relations=[near(theme, goal_reference)],
         constraining_relations=flatten_relations(
             bigger_than(surface, [agent, goal_reference])
         ),
@@ -505,7 +515,7 @@ def _go_behind_in_front_path_template(
     handle = "behind" if is_behind else "in-front-of"
     return Phase1SituationTemplate(
         f"go_{handle}-{agent.handle}-{handle}-{goal_object.handle}-via-{path_object.handle}",
-        salient_object_variables=[agent],
+        salient_object_variables=[agent, goal_object],
         background_object_variables=total_background,
         actions=[
             Action(
@@ -546,7 +556,7 @@ def _go_over_under_path_template(
     handle = "over" if is_over else "under"
     return Phase1SituationTemplate(
         f"go_{handle}-{agent.handle}-{handle}-{goal_object.handle}-via-{path_object.handle}",
-        salient_object_variables=[agent],
+        salient_object_variables=[agent, goal_object],
         background_object_variables=total_background,
         actions=[
             Action(
@@ -1320,7 +1330,7 @@ def _x_rolls_y_towards_away_from_z_template(
     value = "towards" if is_toward else "away from"
     return Phase1SituationTemplate(
         f"{agent.handle}-rolls-{theme.handle}-{value}-{spatial_reference.handle}",
-        salient_object_variables=[agent, spatial_reference],
+        salient_object_variables=[agent, spatial_reference, theme],
         background_object_variables=background,
         actions=[
             Action(
@@ -1346,9 +1356,6 @@ def _x_rolls_y_towards_away_from_z_template(
             far([agent, theme], spatial_reference)
             if is_toward
             else near([agent, theme], spatial_reference)
-        ),
-        after_action_relations=flatten_relations(
-            near([agent, theme], spatial_reference) if is_toward else immutableset()
         ),
         gazed_objects=[theme],
     )
@@ -1706,6 +1713,7 @@ def _x_move_beside_y_template(
                 ],
             )
         ],
+        after_action_relations=[near(agent, goal_reference)],
     )
 
 
@@ -1741,6 +1749,7 @@ def _x_move_in_front_of_behind_y_template(
                 ],
             )
         ],
+        after_action_relations=[near(agent, goal_reference)],
     )
 
 
@@ -1773,6 +1782,7 @@ def _x_move_under_y_template(
             )
         ],
         constraining_relations=flatten_relations(bigger_than(goal_reference, agent)),
+        after_action_relations=[near(agent, goal_reference)],
     )
 
 
@@ -1801,6 +1811,7 @@ def _x_move_y_in_z_template(
             )
         ],
         constraining_relations=flatten_relations(bigger_than(goal_reference, theme)),
+        after_action_relations=[near(agent, goal_reference)],
     )
 
 
@@ -1836,6 +1847,7 @@ def _x_move_y_on_z_template(
             )
         ],
         constraining_relations=flatten_relations(bigger_than(goal_reference, theme)),
+        after_action_relations=[near(theme, goal_reference)],
     )
 
 
@@ -1873,6 +1885,7 @@ def _x_move_y_under_z_template(
             )
         ],
         constraining_relations=flatten_relations(bigger_than(goal_reference, theme)),
+        after_action_relations=[near(theme, goal_reference)],
     )
 
 
@@ -1914,6 +1927,7 @@ def _x_move_y_beside_z_template(
                 ),
             )
         ],
+        after_action_relations=[near(theme, goal_reference)],
     )
 
 
@@ -1954,6 +1968,7 @@ def _x_move_y_in_front_of_behind_z_template(
                 ),
             )
         ],
+        after_action_relations=[near(theme, goal_reference)],
     )
 
 
@@ -2437,6 +2452,7 @@ def _make_come_out_of_template(
         constraining_relations=flatten_relations(
             bigger_than(object_containing_agent, agent)
         ),
+        syntax_hints=[IGNORE_GOAL],
     )
 
 
@@ -2444,7 +2460,12 @@ def _make_come_out_of_template(
 
 
 def _make_push_with_prepositions(
-    num_samples: int = 5, *, noise_objects: int = 0
+    num_samples: int = 5,
+    *,
+    noise_objects: int = 0,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     agent = standard_object("agent", THING, required_properties=[ANIMATE])
     theme = standard_object("theme", INANIMATE_OBJECT)
@@ -2580,10 +2601,18 @@ def _make_push_with_prepositions(
                 ]
             ),
         ),
+        language_generator=language_generator,
     )
 
 
-def _make_go_with_prepositions(num_samples: int = 5, *, noise_objects: int = 0):
+def _make_go_with_prepositions(
+    num_samples: int = 5,
+    *,
+    noise_objects: int = 0,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+):
     agent = standard_object("agent", THING, required_properties=[ANIMATE])
     goal_object = standard_object("goal_object")
     goal_object_hollow = standard_object(
@@ -2754,11 +2783,17 @@ def _make_go_with_prepositions(num_samples: int = 5, *, noise_objects: int = 0):
                 ]
             ),
         ),
+        language_generator=language_generator,
     )
 
 
 def _make_sit_with_prepositions(
-    num_samples: int = 5, *, noise_objects: int = 0
+    num_samples: int = 5,
+    *,
+    noise_objects: int = 0,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     agent = standard_object("agent", THING, required_properties=[ANIMATE])
     seat = standard_object(
@@ -2805,10 +2840,18 @@ def _make_sit_with_prepositions(
                 ]
             ),
         ),
+        language_generator=language_generator,
     )
 
 
-def _make_roll_with_prepositions(num_samples: int = 5, *, noise_objects: int = 0):
+def _make_roll_with_prepositions(
+    num_samples: int = 5,
+    *,
+    noise_objects: int = 0,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+):
     agent = standard_object("agent", THING, required_properties=[ANIMATE])
     goal_object = standard_object("goal_object")
     goal_object_hollow = standard_object(
@@ -3052,11 +3095,17 @@ def _make_roll_with_prepositions(num_samples: int = 5, *, noise_objects: int = 0
                 ]
             ),
         ),
+        language_generator=language_generator,
     )
 
 
 def _make_take_with_prepositions(
-    num_samples: int = 5, *, noise_objects: int = 0
+    num_samples: int = 5,
+    *,
+    noise_objects: int = 0,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     agent = standard_object("agent", THING, required_properties=[ANIMATE])
     theme = standard_object("theme", INANIMATE_OBJECT)
@@ -3078,11 +3127,17 @@ def _make_take_with_prepositions(
                 )
             ]
         ),
+        language_generator=language_generator,
     )
 
 
 def _make_fall_with_prepositions(
-    num_samples: int = 5, *, noise_objects: int = 0
+    num_samples: int = 5,
+    *,
+    noise_objects: int = 0,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     theme = standard_object("theme", THING)
     goal_reference = standard_object("goal_reference", THING)
@@ -3186,11 +3241,17 @@ def _make_fall_with_prepositions(
                 ]
             ),
         ),
+        language_generator=language_generator,
     )
 
 
 def _make_put_with_prepositions(
-    num_samples: int = 5, *, noise_objects: int = 0
+    num_samples: int = 5,
+    *,
+    noise_objects: int = 0,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     agent = standard_object("agent", THING, required_properties=[ANIMATE])
     speaker_agent = standard_object(
@@ -3301,11 +3362,17 @@ def _make_put_with_prepositions(
                 ]
             ),
         ),
+        language_generator=language_generator,
     )
 
 
 def _make_move_with_prepositions(
-    num_samples: int = 5, *, noise_objects: int = 0
+    num_samples: int = 5,
+    *,
+    noise_objects: int = 0,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     agent = standard_object("agent", THING, required_properties=[SELF_MOVING])
     manipulating_agent = standard_object(
@@ -3516,11 +3583,17 @@ def _make_move_with_prepositions(
                 ]
             ),
         ),
+        language_generator=language_generator,
     )
 
 
 def _make_throw_with_prepositions(
-    num_samples: int = 5, *, noise_objects: int = 0
+    num_samples: int = 5,
+    *,
+    noise_objects: int = 0,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     agent = standard_object("agent", THING, required_properties=[ANIMATE])
     theme = standard_object("theme", INANIMATE_OBJECT)
@@ -3663,11 +3736,17 @@ def _make_throw_with_prepositions(
                 ]
             ),
         ),
+        language_generator=language_generator,
     )
 
 
 def _make_jump_with_prepositions(
-    num_samples: int = 5, *, noise_objects: int = 0
+    num_samples: int = 5,
+    *,
+    noise_objects: int = 0,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     agent = standard_object("agent", THING, required_properties=[CAN_JUMP])
     goal_reference = standard_object("goal_reference", THING)
@@ -3733,11 +3812,17 @@ def _make_jump_with_prepositions(
                 ]
             ),
         ),
+        language_generator=language_generator,
     )
 
 
 def _make_fly_with_prepositions(
-    num_samples: int = 5, *, noise_objects: int = 0
+    num_samples: int = 5,
+    *,
+    noise_objects: int = 0,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     agent = standard_object("agent", THING, required_properties=[CAN_FLY])
     goal_reference = standard_object("goal_reference", THING)
@@ -3843,6 +3928,7 @@ def _make_fly_with_prepositions(
                 ]
             ),
         ),
+        language_generator=language_generator,
     )
 
 
@@ -3850,7 +3936,12 @@ def _make_fly_with_prepositions(
 
 
 def _make_come_with_prepositions(
-    num_samples: int = 5, *, noise_objects: int = 0
+    num_samples: int = 5,
+    *,
+    noise_objects: int = 0,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     agent = standard_object("agent", required_properties=[SELF_MOVING])
     object_with_agent_inside = standard_object(
@@ -3878,6 +3969,7 @@ def _make_come_with_prepositions(
                 ]
             )
         ),
+        language_generator=language_generator,
     )
 
 

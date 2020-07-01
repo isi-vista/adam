@@ -3,6 +3,9 @@ from typing import AbstractSet, Union
 from adam.language_specific.english.english_language_generator import (
     GAILA_PHASE_1_LANGUAGE_GENERATOR,
 )
+from adam.language.language_generator import LanguageGenerator
+from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
+from adam.language.dependency import LinearizedDependencyTree
 from adam.language import LinguisticDescription
 from adam.learner import LearningExample
 from adam.learner.alignments import (
@@ -124,7 +127,9 @@ class AbstractAttributeTemplateLearner(AbstractTemplateLearner, ABC):
     def _preprocess_scene_for_learning(
         self,
         language_concept_alignment: LanguageAlignedPerception,
-        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+        language_generator: LanguageGenerator[
+            HighLevelSemanticsSituation, LinearizedDependencyTree
+        ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> LanguageAlignedPerception:
         post_recognition_object_perception_alignment = self._object_recognizer.match_objects_with_language_old(
             language_concept_alignment, language_generator=language_generator
@@ -134,7 +139,9 @@ class AbstractAttributeTemplateLearner(AbstractTemplateLearner, ABC):
     def _preprocess_scene_for_description(
         self,
         perception_graph: PerceptionGraph,
-        language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+        language_generator: LanguageGenerator[
+            HighLevelSemanticsSituation, LinearizedDependencyTree
+        ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> PerceptionGraphFromObjectRecognizer:
         return self._object_recognizer.match_objects_old(
             perception_graph, language_generator=language_generator

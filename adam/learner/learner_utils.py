@@ -2,6 +2,9 @@ from typing import Mapping, Tuple, Union, cast
 from adam.language_specific.english.english_language_generator import (
     GAILA_PHASE_1_LANGUAGE_GENERATOR,
 )
+from adam.language.language_generator import LanguageGenerator
+from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
+from adam.language.dependency import LinearizedDependencyTree
 from adam.language import LinguisticDescription, TokenSequenceLinguisticDescription
 from adam.learner import LearningExample
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
@@ -29,7 +32,9 @@ def pattern_match_to_description(
     pattern: PerceptionGraphTemplate,
     match: PerceptionGraphPatternMatch,
     matched_objects_to_names: Mapping[ObjectSemanticNode, Tuple[str, ...]],
-    language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> TokenSequenceLinguisticDescription:
     """
     Given a `SurfaceTemplate`, will fill it in using a *match* for a *pattern*.

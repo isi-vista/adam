@@ -1,10 +1,16 @@
 """
 Curricula for DARPA GAILA Phase 1
 """
-
+from adam.language.language_generator import LanguageGenerator
+from adam.language.dependency import LinearizedDependencyTree
 from itertools import chain
-from typing import Iterable, Sequence, List
-
+from typing import Iterable, Sequence, List, Dict
+from adam.language_specific.english.english_language_generator import (
+    GAILA_PHASE_1_LANGUAGE_GENERATOR,
+)
+from adam.language_specific.chinese.chinese_language_generator import (
+    GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
+)
 from immutablecollections import immutableset
 from more_itertools import flatten, first
 
@@ -87,7 +93,6 @@ from adam.ontology.phase1_ontology import (
     is_recognized_particular,
     near,
     on,
-    strictly_above,
     PASS,
     BABY,
     TRUCK,
@@ -98,6 +103,7 @@ from adam.ontology.phase1_ontology import (
     HOUSE,
     BALL,
     WALK,
+    strictly_over,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -143,7 +149,10 @@ from adam.situation.templates.phase1_templates import (
 
 # Show each object once by itself
 def _make_each_object_by_itself_curriculum(
-    perception_generator: HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator = GAILA_PHASE_1_PERCEPTION_GENERATOR
+    perception_generator: HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator = GAILA_PHASE_1_PERCEPTION_GENERATOR,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     color = color_variable("color")
     single_object_template = Phase1SituationTemplate(
@@ -186,6 +195,7 @@ def _make_each_object_by_itself_curriculum(
             ]
         ),
         perception_generator=perception_generator,
+        language_generator=language_generator,
     )
 
 
@@ -200,7 +210,11 @@ def _object_with_color_template(
     )
 
 
-def _make_objects_with_colors_curriculum() -> Phase1InstanceGroup:
+def _make_objects_with_colors_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     color = color_variable("color")
     object_with_color = standard_object("object", added_properties=[color])
 
@@ -216,6 +230,7 @@ def _make_objects_with_colors_curriculum() -> Phase1InstanceGroup:
                 )
             ]
         ),
+        language_generator=language_generator,
     )
 
 
@@ -229,7 +244,11 @@ def _object_with_color_is_template(
     )
 
 
-def _make_objects_with_colors_is_curriculum() -> Phase1InstanceGroup:
+def _make_objects_with_colors_is_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     color = color_variable("color")
     object_with_color = standard_object("object", added_properties=[color])
 
@@ -245,10 +264,15 @@ def _make_objects_with_colors_is_curriculum() -> Phase1InstanceGroup:
                 )
             ]
         ),
+        language_generator=language_generator,
     )
 
 
-def _make_plural_objects_curriculum() -> Phase1InstanceGroup:
+def _make_plural_objects_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     def build_object_multiples_situations(
         ontology: Ontology, *, samples_per_object: int = 3, chooser: RandomChooser
     ) -> Iterable[HighLevelSemanticsSituation]:
@@ -279,19 +303,36 @@ def _make_plural_objects_curriculum() -> Phase1InstanceGroup:
         build_object_multiples_situations(
             ontology=GAILA_PHASE_1_ONTOLOGY, chooser=PHASE1_CHOOSER_FACTORY()
         ),
+        language_generator=language_generator,
     )
 
 
-def _make_generic_statements_curriculum() -> Phase1InstanceGroup:
+def _make_generic_statements_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     # Hard-coded examples: we create dynamic instances and replace the linguistic description
     # The way we do this is explained here: https://github.com/isi-vista/adam/issues/771
     all_instances = []
     verbs_to_instances = {
-        "eat": _make_eat_curriculum().instances(),  # E.g babies eat
-        "drink": _make_drink_curriculum().instances(),
-        "sit": _make_sit_curriculum().instances(),
-        "jump": _make_jump_curriculum().instances(),
-        "fly": _make_fly_curriculum().instances(),
+        "eat": _make_eat_curriculum(
+            language_generator=language_generator
+        ).instances(),  # E.g babies eat
+        "drink": _make_drink_curriculum(
+            language_generator=language_generator
+        ).instances(),
+        "sit": _make_sit_curriculum(language_generator=language_generator).instances(),
+        "jump": _make_jump_curriculum(language_generator=language_generator).instances(),
+        "fly": _make_fly_curriculum(language_generator=language_generator).instances(),
+    }
+    # hack for chinese generics
+    verbs_to_ch = {
+        "eat": "chr1",
+        "drink": "he1",
+        "sit": "dzwo4",
+        "jump": "tyau4",
+        "fly": "fei1",
     }
     for verb, instances in verbs_to_instances.items():
         for (situation, description, perception) in instances:
@@ -303,14 +344,21 @@ def _make_generic_statements_curriculum() -> Phase1InstanceGroup:
             all_instances.append(
                 (
                     situation,
-                    TokenSequenceLinguisticDescription((subject, "s", verb)),
+                    # the token sequence needs pluralization for English but this isn't morphologically salient for Chinese
+                    TokenSequenceLinguisticDescription((subject, "s", verb))
+                    if language_generator == GAILA_PHASE_1_LANGUAGE_GENERATOR
+                    else TokenSequenceLinguisticDescription((subject, verbs_to_ch[verb])),
                     perception,
                 )
             )
     return ExplicitWithSituationInstanceGroup("generics instances", all_instances)
 
 
-def _make_object_on_ground_curriculum() -> Phase1InstanceGroup:
+def _make_object_on_ground_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     object_0 = standard_object("object_0")
     liquid_0 = object_variable("liquid_0", THING, required_properties=[LIQUID])
 
@@ -342,6 +390,7 @@ def _make_object_on_ground_curriculum() -> Phase1InstanceGroup:
                 ),
             ]
         ),
+        language_generator=language_generator,
     )
 
 
@@ -361,7 +410,11 @@ def _x_has_y_template(
     )
 
 
-def _make_person_has_object_curriculum() -> Phase1InstanceGroup:
+def _make_person_has_object_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     person_0 = object_variable("person", PERSON)
     inanimate_object_0 = standard_object(
         "inanimate-object", INANIMATE_OBJECT, required_properties=[PERSON_CAN_HAVE]
@@ -379,10 +432,15 @@ def _make_person_has_object_curriculum() -> Phase1InstanceGroup:
                 )
             ]
         ),
+        language_generator=language_generator,
     )
 
 
-def _make_part_whole_curriculum() -> Phase1InstanceGroup:
+def _make_part_whole_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     whole_object_to_parts = {
         BABY: ["head", "hand", "arm"],
         BIRD: ["head", "wing"],
@@ -393,8 +451,26 @@ def _make_part_whole_curriculum() -> Phase1InstanceGroup:
         DOG: ["head", "leg"],
         HOUSE: ["wall", "roof"],
     }
+    whole_object_to_parts_ch = {
+        BABY: ["tou2", "shou3", "bi4"],
+        BIRD: ["tou2", "chr4bang3"],
+        TRUCK: ["tai1"],
+        CAR: ["tai1", "yu4 gau4 pyan4"],
+        DAD: ["tou2", "shou3", "bi4"],
+        MOM: ["tou2", "shou3", "bi4"],
+        DOG: ["tou2", "twei3"],
+        HOUSE: ["bi4", "wu1 ding3"],
+    }
+
     all_instances = []
-    for whole_object, parts in whole_object_to_parts.items():
+    currdict: Dict[OntologyNode, List[str]]
+    if language_generator == GAILA_PHASE_1_LANGUAGE_GENERATOR:
+        currdict = whole_object_to_parts
+    elif language_generator == GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR:
+        currdict = whole_object_to_parts_ch
+    else:
+        raise RuntimeError("Invalid language generator")
+    for whole_object, parts in currdict.items():
         whole = object_variable("whole", whole_object)
 
         # Get the description sequence for "[whole] has a [part]" Using a part directly causes issues.
@@ -407,13 +483,14 @@ def _make_part_whole_curriculum() -> Phase1InstanceGroup:
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     max_to_sample=1,
                 ),
+                language_generator=language_generator,
             ).instances()
         )[1].as_token_sequence()
 
         for part in parts:
             # Replace the filler object with the part object description
             description = TokenSequenceLinguisticDescription(
-                tuple([w if w != "ball" else part for w in seq])
+                tuple([w if (w != "ball" and w != "chyou2") else part for w in seq])
             )
 
             # Get the situation and perception from just the [whole] object
@@ -427,6 +504,7 @@ def _make_part_whole_curriculum() -> Phase1InstanceGroup:
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     max_to_sample=3,
                 ),
+                language_generator=language_generator,
             ).instances()
             for situation, _, perception in instances:
                 all_instances.append((situation, description, perception))
@@ -551,7 +629,11 @@ def make_fall_templates() -> Iterable[Phase1SituationTemplate]:
     return object_falling + [fall_on_ground_template(arbitary_object)]
 
 
-def _make_fall_curriculum() -> Phase1InstanceGroup:
+def _make_fall_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     return phase1_instances(
         "falling objects",
         chain(
@@ -564,6 +646,7 @@ def _make_fall_curriculum() -> Phase1InstanceGroup:
                 for template in make_fall_templates()
             ]
         ),
+        language_generator=language_generator,
     )
 
 
@@ -591,7 +674,11 @@ def make_give_templates() -> Iterable[Phase1SituationTemplate]:
         )
 
 
-def _make_transfer_of_possession_curriculum() -> Phase1InstanceGroup:
+def _make_transfer_of_possession_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     return phase1_instances(
         "transfer-of-possession",
         chain(
@@ -605,10 +692,15 @@ def _make_transfer_of_possession_curriculum() -> Phase1InstanceGroup:
                 for template in make_give_templates()
             ]
         ),
+        language_generator=language_generator,
     )
 
 
-def _make_object_on_object_curriculum() -> Phase1InstanceGroup:
+def _make_object_on_object_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     object_ = object_variable("object_0", INANIMATE_OBJECT)
     object_with_surface = object_variable(
         "object_1",
@@ -630,10 +722,15 @@ def _make_object_on_object_curriculum() -> Phase1InstanceGroup:
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
         ),
+        language_generator=language_generator,
     )
 
 
-def _make_object_beside_object_curriculum() -> Phase1InstanceGroup:
+def _make_object_beside_object_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     smaller_beside_object = standard_object("object")
     larger_beside_object = standard_object("larger_beside_object")
 
@@ -663,10 +760,15 @@ def _make_object_beside_object_curriculum() -> Phase1InstanceGroup:
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
         ),
+        language_generator=language_generator,
     )
 
 
-def _make_object_under_or_over_object_curriculum() -> Phase1InstanceGroup:
+def _make_object_under_or_over_object_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     object_under = standard_object("object_0")
     object_above = standard_object("object_1", required_properties=[HAS_SPACE_UNDER])
     bird = object_variable("bird_0", BIRD)
@@ -675,14 +777,14 @@ def _make_object_under_or_over_object_curriculum() -> Phase1InstanceGroup:
     templates = [
         Phase1SituationTemplate(
             f"object-under-object",
-            salient_object_variables=[object_above],
+            salient_object_variables=[object_above, object_under],
             constraining_relations=[bigger_than(object_above, object_under)],
-            asserted_always_relations=[strictly_above(object_above, object_under)],
+            asserted_always_relations=[strictly_over(object_above, object_under)],
         ),
         Phase1SituationTemplate(
             f"object-over-object",
-            salient_object_variables=[object_under_bird],
-            asserted_always_relations=[strictly_above(bird, object_under_bird)],
+            salient_object_variables=[object_under_bird, bird],
+            asserted_always_relations=[strictly_over(bird, object_under_bird)],
         ),
     ]
 
@@ -699,10 +801,15 @@ def _make_object_under_or_over_object_curriculum() -> Phase1InstanceGroup:
                 for template in templates
             ]
         ),
+        language_generator=language_generator,
     )
 
 
-def _make_object_in_other_object_curriculum() -> Phase1InstanceGroup:
+def _make_object_in_other_object_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     object_ = standard_object("object_0")
     liquid = object_variable(
         "liquid_0", required_properties=[LIQUID], banned_properties=[IS_BODY_PART]
@@ -741,6 +848,7 @@ def _make_object_in_other_object_curriculum() -> Phase1InstanceGroup:
                 ),
             ]
         ),
+        language_generator=language_generator,
     )
 
 
@@ -797,7 +905,11 @@ def make_fly_templates() -> Iterable[Phase1SituationTemplate]:
     ]
 
 
-def _make_fly_curriculum() -> Phase1InstanceGroup:
+def _make_fly_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     return phase1_instances(
         "flying",
         chain(
@@ -812,6 +924,7 @@ def _make_fly_curriculum() -> Phase1InstanceGroup:
                 ]
             )
         ),
+        language_generator=language_generator,
     )
 
 
@@ -933,7 +1046,11 @@ def make_roll_templates() -> Iterable[Phase1SituationTemplate]:
     ]
 
 
-def _make_roll_curriculum() -> Phase1InstanceGroup:
+def _make_roll_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     return phase1_instances(
         "rolling",
         chain(
@@ -947,6 +1064,7 @@ def _make_roll_curriculum() -> Phase1InstanceGroup:
                 for situation in make_roll_templates()
             ]
         ),
+        language_generator=language_generator,
     )
 
 
@@ -984,7 +1102,11 @@ def _make_transitive_roll_curriculum() -> Phase1InstanceGroup:
     )
 
 
-def _make_speaker_addressee_curriculum() -> Phase1InstanceGroup:
+def _make_speaker_addressee_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     speaker = standard_object("speaker_0", PERSON, added_properties=[IS_SPEAKER])
     addressee = standard_object("addressee_0", PERSON, added_properties=[IS_ADDRESSEE])
     given_object = standard_object("given_object", INANIMATE_OBJECT)
@@ -1040,6 +1162,7 @@ def _make_speaker_addressee_curriculum() -> Phase1InstanceGroup:
                 )
             ]
         ),
+        language_generator=language_generator,
     )
 
 
@@ -1123,7 +1246,11 @@ def make_jump_templates():
         )
 
 
-def _make_jump_curriculum() -> Phase1InstanceGroup:
+def _make_jump_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     jumper = standard_object("jumper_0", THING, required_properties=[CAN_JUMP])
     jumped_over = standard_object("jumped_over")
 
@@ -1155,6 +1282,7 @@ def _make_jump_curriculum() -> Phase1InstanceGroup:
                 ]
             ),
         ),
+        language_generator=language_generator,
     )
 
 
@@ -1171,7 +1299,11 @@ def make_put_templates() -> Iterable[Phase1SituationTemplate]:
     ]
 
 
-def _make_put_curriculum() -> Phase1InstanceGroup:
+def _make_put_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     return phase1_instances(
         "putting",
         chain(
@@ -1187,10 +1319,15 @@ def _make_put_curriculum() -> Phase1InstanceGroup:
                 ]
             )
         ),
+        language_generator=language_generator,
     )
 
 
-def _make_put_on_speaker_addressee_body_part_curriculum() -> Phase1InstanceGroup:
+def _make_put_on_speaker_addressee_body_part_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     speaker_putter = standard_object(
         "speaker_putter_0",
         THING,
@@ -1227,6 +1364,7 @@ def _make_put_on_speaker_addressee_body_part_curriculum() -> Phase1InstanceGroup
                 ]
             )
         ),
+        language_generator=language_generator,
     )
 
 
@@ -1248,7 +1386,11 @@ def make_drink_template() -> Phase1SituationTemplate:
     )
 
 
-def _make_drink_curriculum() -> Phase1InstanceGroup:
+def _make_drink_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     return phase1_instances(
         "drinking",
         chain(
@@ -1260,6 +1402,7 @@ def _make_drink_curriculum() -> Phase1InstanceGroup:
                 )
             ]
         ),
+        language_generator=language_generator,
     )
 
 
@@ -1281,7 +1424,12 @@ def make_eat_template(
 
 
 def _make_eat_curriculum(
-    num_to_sample: int = 25, *, noise_objects: int = 0
+    num_to_sample: int = 25,
+    *,
+    noise_objects: int = 0,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     # TODO: "eat it up"
     # https://github.com/isi-vista/adam/issues/267
@@ -1304,6 +1452,7 @@ def _make_eat_curriculum(
                 )
             ]
         ),
+        language_generator=language_generator,
     )
 
 
@@ -1384,7 +1533,11 @@ def make_sit_templates() -> Iterable[Phase1SituationTemplate]:
             )
 
 
-def _make_sit_curriculum() -> Phase1InstanceGroup:
+def _make_sit_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     return phase1_instances(
         "sitting",
         chain(
@@ -1397,6 +1550,7 @@ def _make_sit_curriculum() -> Phase1InstanceGroup:
                 for situation_templates in make_sit_templates()
             ]
         ),
+        language_generator=language_generator,
     )
 
 
@@ -1473,7 +1627,11 @@ def make_walk_run_template(
     )
 
 
-def _make_take_curriculum() -> Phase1InstanceGroup:
+def _make_take_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     return phase1_instances(
         "taking",
         chain(
@@ -1494,6 +1652,7 @@ def _make_take_curriculum() -> Phase1InstanceGroup:
                 )
             ]
         ),
+        language_generator=language_generator,
     )
 
 
@@ -1585,7 +1744,11 @@ def make_move_templates() -> Iterable[Phase1SituationTemplate]:
     ]
 
 
-def _make_move_curriculum() -> Phase1InstanceGroup:
+def _make_move_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     return phase1_instances(
         "move",
         chain(
@@ -1599,6 +1762,7 @@ def _make_move_curriculum() -> Phase1InstanceGroup:
                 for situation in make_move_templates()
             ]
         ),
+        language_generator=language_generator,
     )
 
 
@@ -1627,7 +1791,11 @@ def make_spin_templates() -> Iterable[Phase1SituationTemplate]:
     return [bare_spin_template, transitive_spin_template]
 
 
-def _make_spin_curriculum() -> Phase1InstanceGroup:
+def _make_spin_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     return phase1_instances(
         "spin",
         chain(
@@ -1641,6 +1809,7 @@ def _make_spin_curriculum() -> Phase1InstanceGroup:
                 for situation in make_spin_templates()
             ]
         ),
+        language_generator=language_generator,
     )
 
 
@@ -1654,7 +1823,11 @@ def make_go_templates() -> Iterable[Phase1SituationTemplate]:
     return [go_to, go_in]
 
 
-def _make_go_curriculum() -> Phase1InstanceGroup:
+def _make_go_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     goer = standard_object("goer", THING, required_properties=[ANIMATE])
     under_goal_reference = standard_object(
         "go-under-goal", THING, required_properties=[HAS_SPACE_UNDER]
@@ -1688,6 +1861,7 @@ def _make_go_curriculum() -> Phase1InstanceGroup:
                 ]
             ),
         ),
+        language_generator=language_generator,
     )
 
 
@@ -1730,6 +1904,7 @@ def make_push_templates(
                 else DuringAction(continuously=[on(theme, push_surface)]),  # type: ignore
             )
         ],
+        after_action_relations=[near(theme, push_goal)],
         constraining_relations=[
             bigger_than(push_surface, agent),
             bigger_than(push_surface, push_goal),
@@ -1763,13 +1938,19 @@ def make_push_templates(
                 else DuringAction(continuously=[on(theme, push_surface)]),  # type: ignore
             )
         ],
+        # after_action_relations=[near(theme, push_goal)],
         constraining_relations=[bigger_than(push_surface, theme)],
+        asserted_always_relations=[on(theme, push_surface)],
         syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER] if use_adverbial_path_modifier else [],
     )
     return [push_unexpressed_goal, push_unexpressed_goal_expressed_surface]
 
 
-def _make_push_curriculum() -> Phase1InstanceGroup:
+def _make_push_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     return phase1_instances(
         "pushing",
         chain(
@@ -1793,6 +1974,7 @@ def _make_push_curriculum() -> Phase1InstanceGroup:
                 )
             ]
         ),
+        language_generator=language_generator,
     )
 
 
@@ -1834,6 +2016,7 @@ def throw_on_ground_template(
                 ),
             )
         ],
+        after_action_relations=[on(theme, GROUND_OBJECT_TEMPLATE)],
         constraining_relations=[bigger_than(agent, theme)],
     )
 
@@ -1945,6 +2128,7 @@ def throw_to_template(
                 ),
             )
         ],
+        after_action_relations=[near(theme, goal)],
         constraining_relations=[bigger_than(agent, theme)],
     )
 
@@ -1973,7 +2157,11 @@ def make_throw_templates() -> Iterable[Phase1SituationTemplate]:
     ]
 
 
-def _make_throw_curriculum() -> Phase1InstanceGroup:
+def _make_throw_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     return phase1_instances(
         "throwing",
         chain(
@@ -1989,10 +2177,15 @@ def _make_throw_curriculum() -> Phase1InstanceGroup:
                 ]
             )
         ),
+        language_generator=language_generator,
     )
 
 
-def _make_pass_curriculum() -> Phase1InstanceGroup:
+def _make_pass_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     return phase1_instances(
         "passing",
         sampled(
@@ -2006,6 +2199,7 @@ def _make_pass_curriculum() -> Phase1InstanceGroup:
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
         ),
+        language_generator=language_generator,
     )
 
 
@@ -2041,7 +2235,11 @@ def _make_come_down_template(
     )
 
 
-def _make_come_curriculum() -> Phase1InstanceGroup:
+def _make_come_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     movee = standard_object("movee", required_properties=[SELF_MOVING])
     learner = standard_object("leaner_0", LEARNER)
     speaker = standard_object("speaker", PERSON, added_properties=[IS_SPEAKER])
@@ -2102,10 +2300,15 @@ def _make_come_curriculum() -> Phase1InstanceGroup:
                 ),
             ]
         ),
+        language_generator=language_generator,
     )
 
 
-def _make_behind_in_front_curriculum() -> Phase1InstanceGroup:
+def _make_behind_in_front_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     front_behind_ground_object = standard_object("ground_object")
     front_behind_figure_object = standard_object("figure_object")
     front_behind_speaker = standard_object(
@@ -2168,6 +2371,7 @@ def _make_behind_in_front_curriculum() -> Phase1InstanceGroup:
                 )
             ]
         ),
+        language_generator=language_generator,
     )
 
 
