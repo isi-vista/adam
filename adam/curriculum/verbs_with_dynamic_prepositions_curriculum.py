@@ -3974,19 +3974,72 @@ def _make_come_with_prepositions(
 
 
 def make_verb_with_dynamic_prepositions_curriculum(
-    num_samples: int = 5, *, num_noise_objects: int = 0
+    num_samples: int = 5,
+    *,
+    num_noise_objects: int = 0,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ):
     return [
-        _make_push_with_prepositions(num_samples, noise_objects=num_noise_objects),
-        _make_go_with_prepositions(num_samples, noise_objects=num_noise_objects),
-        _make_throw_with_prepositions(num_samples, noise_objects=num_noise_objects),
-        _make_sit_with_prepositions(num_samples, noise_objects=num_noise_objects),
-        _make_roll_with_prepositions(num_samples, noise_objects=num_noise_objects),
-        _make_take_with_prepositions(num_samples, noise_objects=num_noise_objects),
-        _make_fall_with_prepositions(num_samples, noise_objects=num_noise_objects),
-        _make_put_with_prepositions(num_samples, noise_objects=num_noise_objects),
-        _make_move_with_prepositions(num_samples, noise_objects=num_noise_objects),
-        _make_jump_with_prepositions(num_samples, noise_objects=num_noise_objects),
-        _make_fly_with_prepositions(num_samples, noise_objects=num_noise_objects),
-        _make_come_with_prepositions(num_samples, noise_objects=num_noise_objects),
+        _make_push_with_prepositions(
+            num_samples,
+            noise_objects=num_noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_go_with_prepositions(
+            num_samples,
+            noise_objects=num_noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_throw_with_prepositions(
+            num_samples,
+            noise_objects=num_noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_sit_with_prepositions(
+            num_samples,
+            noise_objects=num_noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_roll_with_prepositions(
+            num_samples,
+            noise_objects=num_noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_take_with_prepositions(
+            num_samples,
+            noise_objects=num_noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_fall_with_prepositions(
+            num_samples,
+            noise_objects=num_noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_put_with_prepositions(
+            num_samples,
+            noise_objects=num_noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_move_with_prepositions(
+            num_samples,
+            noise_objects=num_noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_jump_with_prepositions(
+            num_samples,
+            noise_objects=num_noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_fly_with_prepositions(
+            num_samples,
+            noise_objects=num_noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_come_with_prepositions(
+            num_samples,
+            noise_objects=num_noise_objects,
+            language_generator=language_generator,
+        ),
     ]
