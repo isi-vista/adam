@@ -154,7 +154,7 @@ def test_eat_simple_integrated(language_generator):
 @pytest.mark.parametrize(
     "language_generator",
     # [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
-    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
+    [GAILA_PHASE_1_LANGUAGE_GENERATOR],
 )
 def test_eat_simple_subset(language_generator):
     learner = SUBSET_LEARNER
@@ -185,7 +185,7 @@ def test_drink_integrated(language_generator):
 @pytest.mark.parametrize(
     "language_generator",
     # [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
-    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
+    [GAILA_PHASE_1_LANGUAGE_GENERATOR],
 )
 def test_drink_subset(language_generator):
     learner = SUBSET_LEARNER
@@ -213,7 +213,7 @@ def test_sit_integrated(language_generator):
 @pytest.mark.parametrize(
     "language_generator",
     # [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
-    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
+    [GAILA_PHASE_1_LANGUAGE_GENERATOR],
 )
 def test_sit_subset(language_generator):
     for situation_template in make_sit_templates():
@@ -224,7 +224,7 @@ def test_sit_subset(language_generator):
 @pytest.mark.parametrize(
     "language_generator",
     # [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
-    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
+    [GAILA_PHASE_1_LANGUAGE_GENERATOR],
 )
 def test_put_integrated(language_generator):
     for situation_template in make_put_templates():
@@ -243,7 +243,7 @@ def test_put_integrated(language_generator):
 @pytest.mark.parametrize(
     "language_generator",
     # [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
-    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
+    [GAILA_PHASE_1_LANGUAGE_GENERATOR],
 )
 def test_put_subset(language_generator):
     for situation_template in make_put_templates():
