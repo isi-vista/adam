@@ -95,7 +95,11 @@ def _big_x_template(
     )
 
 
-def make_eat_big_small_curriculum() -> Phase1InstanceGroup:
+def make_eat_big_small_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     # "Mom eats a big cookie"
     # We generate situations directly since templates fail to generate plurals.
 
@@ -158,7 +162,9 @@ def make_eat_big_small_curriculum() -> Phase1InstanceGroup:
                     )
                 )
 
-    return phase1_instances("Big - Small Curriculum", situations)
+    return phase1_instances(
+        "Big - Small Curriculum", situations, language_generator=language_generator
+    )
 
 
 def _little_x_template(

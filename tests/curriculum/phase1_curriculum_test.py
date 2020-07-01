@@ -32,6 +32,7 @@ from adam.curriculum.phase1_curriculum import (
     _make_part_whole_curriculum,
     _make_plural_objects_curriculum,
     _make_generic_statements_curriculum,
+    _make_transitive_roll_curriculum,
 )
 
 from adam.language_specific.english.english_language_generator import (
@@ -48,7 +49,8 @@ def curriculum_test(curriculum: Phase1InstanceGroup) -> None:
         # we don't need to do anything
         # the curriculum may be dynamically generated
         # so we just want to test we can instantiate it
-        pass
+        print(_)
+        # pass
 
 
 @pytest.mark.parametrize(
@@ -58,6 +60,16 @@ def curriculum_test(curriculum: Phase1InstanceGroup) -> None:
 def test_each_object_by_itself_curriculum(language_generator):
     curriculum_test(
         _make_each_object_by_itself_curriculum(language_generator=language_generator)
+    )
+
+
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
+)
+def test_transitive_roll_curriculum(language_generator):
+    curriculum_test(
+        _make_transitive_roll_curriculum(language_generator=language_generator)
     )
 
 

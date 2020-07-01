@@ -489,8 +489,46 @@ class SimpleRuleBasedChineseLanguageGenerator(
         ):
             """Translates a relation such as a during_relation or always_relation to an action modifier for a VP"""
 
+            # translate size relations. The salient objects have already been translated
+            if relation.relation_type == BIGGER_THAN:
+                if (
+                    relation.first_slot in self.situation.salient_objects
+                    and isinstance(relation.second_slot, SituationObject)
+                    and relation.second_slot.ontology_node == LEARNER
+                ):
+                    # tall
+                    if USE_VERTICAL_MODIFIERS in self.situation.syntax_hints:
+                        token = DependencyTreeToken("gau1 da4", ADJECTIVE)
+                    # big
+                    else:
+                        token = DependencyTreeToken("da4", ADJECTIVE)
+                    self.dependency_graph.add_node(token)
+                    self.dependency_graph.add_edge(
+                        token,
+                        self._noun_for_object(relation.first_slot),
+                        role=ADJECTIVAL_MODIFIER,
+                    )
+            elif relation.relation_type == SMALLER_THAN:
+                if (
+                    relation.first_slot in self.situation.salient_objects
+                    and isinstance(relation.second_slot, SituationObject)
+                    and relation.second_slot.ontology_node == LEARNER
+                ):
+                    # short
+                    if USE_VERTICAL_MODIFIERS in self.situation.syntax_hints:
+                        token = DependencyTreeToken("dwan3", ADJECTIVE)
+                    # small
+                    else:
+                        token = DependencyTreeToken("syau3", ADJECTIVE)
+                    self.dependency_graph.add_node(token)
+                    self.dependency_graph.add_edge(
+                        token,
+                        self._noun_for_object(relation.first_slot),
+                        role=ADJECTIVAL_MODIFIER,
+                    )
+
             # we only translate in_region relations because have relations are translated elsewhere
-            if relation.relation_type == IN_REGION:
+            elif relation.relation_type == IN_REGION:
                 # legal arguments include the theme or the agent or patient if there is no theme (intransitive verbs such as jump and fall)
                 fills_legal_argument_role = relation.first_slot in action.argument_roles_to_fillers[
                     THEME

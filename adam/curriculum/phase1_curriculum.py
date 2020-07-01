@@ -1085,7 +1085,11 @@ def make_transitive_roll_templates() -> Iterable[Phase1SituationTemplate]:
     ]
 
 
-def _make_transitive_roll_curriculum() -> Phase1InstanceGroup:
+def _make_transitive_roll_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     return phase1_instances(
         "rolling",
         chain(
@@ -1099,6 +1103,7 @@ def _make_transitive_roll_curriculum() -> Phase1InstanceGroup:
                 for situation in make_transitive_roll_templates()
             ]
         ),
+        language_generator=language_generator,
     )
 
 
