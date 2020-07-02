@@ -2787,13 +2787,13 @@ class _FrameTranslation:
         before_frame_graph = (
             self.translate_frame(perceptual_representation.frames[0])
             .copy_with_temporal_scopes([TemporalScope.BEFORE])
-            .copy_as_digraph()
+            ._graph  # pylint:disable=protected-access
         )
 
         after_frame_graph = (
             self.translate_frame(perceptual_representation.frames[1])
             .copy_with_temporal_scopes([TemporalScope.AFTER])
-            .copy_as_digraph()
+            ._graph  # pylint:disable=protected-access
         )
 
         # This will be what the PerceptionGraph we are building will wrap.
