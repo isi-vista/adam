@@ -152,7 +152,7 @@ def main(params: Parameters) -> None:
     )
     if language_string == "chinese" and curriculum_string == "m6-curriculum":
         raise NotImplementedError("Chinese isn't implemented for m6 yet")
-    phase1_curriculum_dir = root_output_directory / curriculum_string
+    phase1_curriculum_dir = root_output_directory / language_string / curriculum_string
     phase1_curriculum_dir.mkdir(parents=True, exist_ok=True)
     # We lazily instantiate the curriculum so we don't need to worry
     # about any of them we don't actually use.
