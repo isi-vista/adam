@@ -122,9 +122,7 @@ class AbstractObjectTemplateLearner(AbstractTemplateLearner, ABC):
         return PerceptionGraph.from_frame(perception.frames[0])
 
     def _preprocess_scene_for_learning(
-        self,
-        language_concept_alignment: LanguageAlignedPerception,
-        language_generator=None,
+        self, language_concept_alignment: LanguageAlignedPerception
     ) -> LanguageAlignedPerception:
         return evolve(
             language_concept_alignment,
@@ -134,7 +132,7 @@ class AbstractObjectTemplateLearner(AbstractTemplateLearner, ABC):
         )
 
     def _preprocess_scene_for_description(
-        self, perception_graph: PerceptionGraph, language_generator=None
+        self, perception_graph: PerceptionGraph
     ) -> PerceptionGraphFromObjectRecognizer:
         return PerceptionGraphFromObjectRecognizer(
             self._common_preprocessing(perception_graph),

@@ -1,6 +1,5 @@
 import logging
 from abc import ABC, abstractmethod
-from pathlib import Path
 from typing import Generic, Mapping, Optional, Tuple
 
 from more_itertools import only, take

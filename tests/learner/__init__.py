@@ -21,9 +21,14 @@ from adam.situation.high_level_semantics_situation import HighLevelSemanticsSitu
 PHASE_1_CURRICULUM_OBJECTS_INCLUDE_GROUND = list(PHASE_1_CURRICULUM_OBJECTS)
 PHASE_1_CURRICULUM_OBJECTS_INCLUDE_GROUND.append(GROUND)
 
-TEST_OBJECT_RECOGNIZER = ObjectRecognizer.for_ontology_types(
-    PHASE_1_CURRICULUM_OBJECTS_INCLUDE_GROUND, ENGLISH_DETERMINERS, GAILA_PHASE_1_ONTOLOGY
-)
+
+def object_recognizer_factory(language_mode: LanguageMode) -> ObjectRecognizer:
+    return ObjectRecognizer.for_ontology_types(
+        PHASE_1_CURRICULUM_OBJECTS_INCLUDE_GROUND,
+        ENGLISH_DETERMINERS,
+        GAILA_PHASE_1_ONTOLOGY,
+        language_mode=language_mode,
+    )
 
 
 def phase1_language_generator(

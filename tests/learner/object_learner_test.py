@@ -2,11 +2,9 @@ import logging
 import pytest
 import random
 from itertools import chain
-from typing import Optional
-from adam.language.language_generator import LanguageGenerator
-from adam.language.dependency import LinearizedDependencyTree
 from immutablecollections import immutableset
 
+from adam.curriculum.curriculum_utils import PHASE1_TEST_CHOOSER_FACTORY
 from adam.curriculum.phase1_curriculum import PHASE1_CHOOSER_FACTORY, phase1_instances
 from adam.curriculum.pursuit_curriculum import make_simple_pursuit_curriculum
 from adam.language.dependency import LinearizedDependencyTree
@@ -109,7 +107,7 @@ def run_subset_learner_for_object(
         "obj test",
         situations=all_possible(
             obj_template,
-            chooser=PHASE1_CHOOSER_FACTORY(),
+            chooser=PHASE1_TEST_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
         ),
         language_generator=language_generator,
@@ -164,6 +162,7 @@ def test_subset_learner_dog(language_mode, learner):
     )
 
 
+# TODO: Figure out how to run this test over both chinese and english well
 def test_subset_learner_subobject():
     mom = SituationObject.instantiate_ontology_node(
         ontology_node=MOM, ontology=GAILA_PHASE_1_ONTOLOGY
@@ -218,7 +217,9 @@ def test_subset_learner_subobject():
         always_relations=flatten_relations(negate(on(house, ground))),
     )
 
-    object_learner = SubsetObjectLearnerNew(ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5)
+    object_learner = SubsetObjectLearnerNew(
+        ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=LanguageMode.ENGLISH
+    )
 
     for situation in [
         mom_situation,

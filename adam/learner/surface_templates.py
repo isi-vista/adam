@@ -2,12 +2,6 @@
 Representations of template-with-slots-like patterns over token strings.
 """
 from typing import List, Mapping, Optional, Tuple, Union
-from adam.language_specific.english.english_language_generator import (
-    GAILA_PHASE_1_LANGUAGE_GENERATOR,
-)
-from adam.language.language_generator import LanguageGenerator
-from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
-from adam.language.dependency import LinearizedDependencyTree
 from more_itertools import quantify
 
 from adam.language import TokenSequenceLinguisticDescription

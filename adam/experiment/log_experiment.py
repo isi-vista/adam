@@ -102,12 +102,16 @@ def learner_factory_from_params(
     )
 
     beam_size = params.positive_integer("beam_size", default=10)
+    language_mode = params.enum(
+        "language_mode", LanguageMode, default=LanguageMode.ENGLISH
+    )
 
     # Eval hack! This is specific to the Phase 1 ontology
     object_recognizer = ObjectRecognizer.for_ontology_types(
         PHASE_1_CURRICULUM_OBJECTS,
         determiners=ENGLISH_DETERMINERS,
         ontology=GAILA_PHASE_1_ONTOLOGY,
+        language_mode=language_mode,
     )
 
     if learner_type == "pursuit":
@@ -163,12 +167,7 @@ def learner_factory_from_params(
     elif learner_type == "integrated-learner-recognizer":
         return lambda: IntegratedTemplateLearner(
             object_learner=ObjectRecognizerAsTemplateLearner(
-                object_recognizer=ObjectRecognizer.for_ontology_types(
-                    PHASE_1_CURRICULUM_OBJECTS,
-                    ENGLISH_DETERMINERS,
-                    GAILA_PHASE_1_ONTOLOGY,
-                ),
-                language_mode=LanguageMode.ENGLISH,
+                object_recognizer=object_recognizer, language_mode=LanguageMode.ENGLISH
             ),
             attribute_learner=SubsetAttributeLearnerNew(
                 ontology=GAILA_PHASE_1_ONTOLOGY,

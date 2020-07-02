@@ -7,16 +7,11 @@ from adam.curriculum.curriculum_utils import (
     standard_object,
     phase1_instances,
     PHASE1_CHOOSER_FACTORY,
+    PHASE1_TEST_CHOOSER_FACTORY,
 )
 from adam.curriculum.phase1_curriculum import (
     _object_with_color_template,
     _x_has_y_template,
-)
-from adam.language_specific.english.english_language_generator import (
-    GAILA_PHASE_1_LANGUAGE_GENERATOR,
-)
-from adam.language_specific.chinese.chinese_language_generator import (
-    GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
 )
 from adam.language_specific.english.english_language_generator import IGNORE_HAS_AS_VERB
 from adam.learner import LearningExample
@@ -40,12 +35,12 @@ from adam.ontology.phase1_ontology import (
     PERSON_CAN_HAVE,
 )
 from adam.situation.templates.phase1_templates import property_variable, sampled
-from tests.learner import TEST_OBJECT_RECOGNIZER, phase1_language_generator
+from tests.learner import phase1_language_generator, object_recognizer_factory
 
 
 def subset_attribute_leaner_factory(language_mode: LanguageMode):
     return SubsetAttributeLearner(
-        object_recognizer=TEST_OBJECT_RECOGNIZER,
+        object_recognizer=object_recognizer_factory(language_mode),
         ontology=GAILA_PHASE_1_ONTOLOGY,
         language_mode=language_mode,
     )
@@ -54,7 +49,8 @@ def subset_attribute_leaner_factory(language_mode: LanguageMode):
 def integrated_learner_factory(language_mode: LanguageMode):
     return IntegratedTemplateLearner(
         object_learner=ObjectRecognizerAsTemplateLearner(
-            object_recognizer=TEST_OBJECT_RECOGNIZER, language_mode=language_mode
+            object_recognizer=object_recognizer_factory(language_mode),
+            language_mode=language_mode,
         ),
         attribute_learner=SubsetAttributeLearnerNew(
             ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=language_mode
@@ -72,7 +68,10 @@ def integrated_learner_factory(language_mode: LanguageMode):
         (WHITE, BALL, CAR),
     ],
 )
-@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
+@pytest.mark.parametrize(
+    "language_mode",
+    [LanguageMode.ENGLISH, pytest.param(LanguageMode.CHINESE, marks=pytest.mark.xfail)],
+)
 @pytest.mark.parametrize(
     "learner", [subset_attribute_leaner_factory, integrated_learner_factory]
 )
@@ -117,7 +116,7 @@ def test_subset_color_attribute(
         f"{color.handle} Color Test",
         situations=sampled(
             color_object_template,
-            chooser=PHASE1_CHOOSER_FACTORY(),
+            chooser=PHASE1_TEST_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
         ),
@@ -149,7 +148,10 @@ def test_subset_color_attribute(
 
 
 # hack: wo de and ni de are currently considered to be one word. This won't work for third person possession
-@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
+@pytest.mark.parametrize(
+    "language_mode",
+    [LanguageMode.ENGLISH, pytest.param(LanguageMode.CHINESE, marks=pytest.mark.xfail)],
+)
 @pytest.mark.parametrize(
     "learner", [subset_attribute_leaner_factory, integrated_learner_factory]
 )
@@ -181,7 +183,7 @@ def test_subset_my_attribute_learner_integrated(language_mode, learner):
                 person, inanimate_object, syntax_hints=[IGNORE_HAS_AS_VERB]
             ),
             ontology=GAILA_PHASE_1_ONTOLOGY,
-            chooser=PHASE1_CHOOSER_FACTORY(),
+            chooser=PHASE1_TEST_CHOOSER_FACTORY(),
             max_to_sample=1,
         ),
         language_generator=language_generator,
@@ -211,7 +213,10 @@ def test_subset_my_attribute_learner_integrated(language_mode, learner):
         assert gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
 
 
-@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
+@pytest.mark.parametrize(
+    "language_mode",
+    [LanguageMode.ENGLISH, pytest.param(LanguageMode.CHINESE, marks=pytest.mark.xfail)],
+)
 @pytest.mark.parametrize(
     "learner", [subset_attribute_leaner_factory, integrated_learner_factory]
 )
@@ -250,7 +255,7 @@ def test_your_attribute_learner_subset(language_mode, learner):
                 syntax_hints=[IGNORE_HAS_AS_VERB],
             ),
             ontology=GAILA_PHASE_1_ONTOLOGY,
-            chooser=PHASE1_CHOOSER_FACTORY(),
+            chooser=PHASE1_TEST_CHOOSER_FACTORY(),
             max_to_sample=1,
         ),
         language_generator=language_generator,
@@ -281,15 +286,20 @@ def test_your_attribute_learner_subset(language_mode, learner):
 
 
 @pytest.mark.parametrize(
-    "language_generator",
-    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
+    "language_mode",
+    [LanguageMode.ENGLISH, pytest.param(LanguageMode.CHINESE, marks=pytest.mark.xfail)],
 )
-def test_your_attribute_learner_integrated(language_generator):
+@pytest.mark.parametrize(
+    "learner", [subset_attribute_leaner_factory, integrated_learner_factory]
+)
+def test_your_attribute_learner_integrated(language_mode, learner):
     person_0 = standard_object("speaker", PERSON, added_properties=[IS_SPEAKER])
     person_1 = standard_object("addressee", PERSON, added_properties=[IS_ADDRESSEE])
     inanimate_object = standard_object(
         "object", INANIMATE_OBJECT, required_properties=[PERSON_CAN_HAVE]
     )
+
+    language_generator = phase1_language_generator(language_mode)
 
     your_train_curriculum = phase1_instances(
         "your-train",
@@ -317,30 +327,21 @@ def test_your_attribute_learner_integrated(language_generator):
                 syntax_hints=[IGNORE_HAS_AS_VERB],
             ),
             ontology=GAILA_PHASE_1_ONTOLOGY,
-            chooser=PHASE1_CHOOSER_FACTORY(),
+            chooser=PHASE1_TEST_CHOOSER_FACTORY(),
             max_to_sample=1,
         ),
         language_generator=language_generator,
     )
 
-    learner = IntegratedTemplateLearner(
-        object_learner=ObjectRecognizerAsTemplateLearner(
-            object_recognizer=TEST_OBJECT_RECOGNIZER,
-            language_generator=language_generator,
-        ),
-        attribute_learner=SubsetAttributeLearnerNew(
-            ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5
-        ),
-    )
+    process_leaner = learner(language_mode)
 
     for (
         _,
         linguistic_description,
         perceptual_representation,
     ) in your_train_curriculum.instances():
-        learner.observe(
-            LearningExample(perceptual_representation, linguistic_description),
-            language_generator=language_generator,
+        process_leaner.observe(
+            LearningExample(perceptual_representation, linguistic_description)
         )
 
     for (
@@ -348,8 +349,8 @@ def test_your_attribute_learner_integrated(language_generator):
         test_lingustics_description,
         test_perceptual_representation,
     ) in your_test_curriculum.instances():
-        descriptions_from_learner = learner.describe(
-            test_perceptual_representation, language_generator=language_generator
+        descriptions_from_learner = process_leaner.describe(
+            test_perceptual_representation
         )
         gold = test_lingustics_description.as_token_sequence()
         assert descriptions_from_learner

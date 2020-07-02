@@ -4,15 +4,7 @@ from typing import AbstractSet, Iterable, List, Mapping, Sequence, Set, Tuple, U
 from adam.language_specific.chinese.chinese_phase_1_lexicon import (
     GAILA_PHASE_1_CHINESE_LEXICON,
 )
-from adam.language_specific.english.english_language_generator import (
-    GAILA_PHASE_1_LANGUAGE_GENERATOR,
-)
-from adam.language_specific.chinese.chinese_language_generator import (
-    GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
-)
-from adam.language.language_generator import LanguageGenerator
-from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
-from adam.language.dependency import LinearizedDependencyTree
+from adam.learner.language_mode import LanguageMode
 from contexttimer import Timer
 from more_itertools import first
 from networkx import DiGraph
@@ -179,6 +171,9 @@ class ObjectRecognizer:
     """
     Used for a performance optimization in match_objects.
     """
+    _language_mode: LanguageMode = attrib(
+        validator=instance_of(LanguageMode), kw_only=True
+    )
 
     def __attrs_post_init__(self) -> None:
         non_lowercase_determiners = [
@@ -197,6 +192,7 @@ class ObjectRecognizer:
         ontology_types: Iterable[OntologyNode],
         determiners: Iterable[str],
         ontology: Ontology,
+        language_mode: LanguageMode,
     ) -> "ObjectRecognizer":
         ontology_types_to_concepts = {
             obj_type: ObjectConcept(obj_type.handle) for obj_type in ontology_types
@@ -217,30 +213,23 @@ class ObjectRecognizer:
                 concept: obj_type.handle
                 for obj_type, concept in ontology_types_to_concepts.items()
             },
+            language_mode=language_mode,
         )
 
     def match_objects_old(
-        self,
-        perception_graph: PerceptionGraph,
-        language_generator: LanguageGenerator[
-            HighLevelSemanticsSituation, LinearizedDependencyTree
-        ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+        self, perception_graph: PerceptionGraph
     ) -> PerceptionGraphFromObjectRecognizer:
         new_style_input = PerceptionSemanticAlignment(
             perception_graph=perception_graph, semantic_nodes=[]
         )
-        new_style_output = self.match_objects(new_style_input, language_generator)
+        new_style_output = self.match_objects(new_style_input)
         return PerceptionGraphFromObjectRecognizer(
             perception_graph=new_style_output[0].perception_graph,
             description_to_matched_object_node=new_style_output[1],
         )
 
     def match_objects(
-        self,
-        perception_semantic_alignment: PerceptionSemanticAlignment,
-        language_generator: LanguageGenerator[
-            HighLevelSemanticsSituation, LinearizedDependencyTree
-        ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+        self, perception_semantic_alignment: PerceptionSemanticAlignment
     ) -> Tuple[PerceptionSemanticAlignment, Mapping[Tuple[str, ...], ObjectSemanticNode]]:
         r"""
         Recognize known objects in a `PerceptionGraph`.
@@ -273,11 +262,11 @@ class ObjectRecognizer:
         for node in graph_to_return._graph.nodes:  # pylint:disable=protected-access
             if node == GROUND_PERCEPTION:
                 matched_object_node = ObjectSemanticNode(GROUND_OBJECT_CONCEPT)
-                if language_generator == GAILA_PHASE_1_LANGUAGE_GENERATOR:
+                if LanguageMode.ENGLISH == self._language_mode:
                     object_nodes.append(
                         ((f"{GROUND_OBJECT_CONCEPT.debug_string}",), matched_object_node)
                     )
-                elif language_generator == GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR:
+                elif LanguageMode.CHINESE == self._language_mode:
                     object_nodes.append((("di4 myan4",), matched_object_node))
                 else:
                     raise RuntimeError("Invalid language_generator")
@@ -327,11 +316,11 @@ class ObjectRecognizer:
                     # We wrap the concept in a tuple because it could in theory be multiple
                     # tokens,
                     # even though currently it never is.
-                    if language_generator == GAILA_PHASE_1_LANGUAGE_GENERATOR:
+                    if self._language_mode == LanguageMode.ENGLISH:
                         object_nodes.append(
                             ((concept.debug_string,), matched_object_node)
                         )
-                    elif language_generator == GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR:
+                    elif self._language_mode == LanguageMode.CHINESE:
                         mappings = (
                             GAILA_PHASE_1_CHINESE_LEXICON._ontology_node_to_word  # pylint:disable=protected-access
                         )
@@ -347,7 +336,7 @@ class ObjectRecognizer:
                     )
                     # We match each candidate objects against only one object type.
                     # See https://github.com/isi-vista/adam/issues/627
-                    break
+                    continue
                 else:
                     cumulative_millis_in_failed_matches_ms += t.elapsed
         if object_nodes:
@@ -360,22 +349,16 @@ class ObjectRecognizer:
             cumulative_millis_in_successful_matches_ms,
             cumulative_millis_in_failed_matches_ms,
         )
-        object_nodes_dict: Mapping[Tuple[str, ...], ObjectSemanticNode] = immutabledict(
-            object_nodes
-        )
+        semantic_object_nodes = immutableset(node for (_, node) in object_nodes)
         return (
             perception_semantic_alignment.copy_with_updated_graph_and_added_nodes(
-                new_graph=graph_to_return, new_nodes=object_nodes_dict.values()
+                new_graph=graph_to_return, new_nodes=semantic_object_nodes
             ),
-            object_nodes_dict,
+            immutabledict(object_nodes),
         )
 
     def match_objects_with_language_old(
-        self,
-        language_aligned_perception: LanguageAlignedPerception,
-        language_generator: LanguageGenerator[
-            HighLevelSemanticsSituation, LinearizedDependencyTree
-        ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+        self, language_aligned_perception: LanguageAlignedPerception
     ) -> LanguageAlignedPerception:
         if language_aligned_perception.node_to_language_span:
             raise RuntimeError(
@@ -390,9 +373,7 @@ class ObjectRecognizer:
                 semantic_nodes=[],
             ),
         )
-        new_style_output = self.match_objects_with_language(
-            new_style_input, language_generator
-        )
+        new_style_output = self.match_objects_with_language(new_style_input)
         return LanguageAlignedPerception(
             language=new_style_output.language_concept_alignment.language,
             perception_graph=new_style_output.perception_semantic_alignment.perception_graph,
@@ -400,11 +381,7 @@ class ObjectRecognizer:
         )
 
     def match_objects_with_language(
-        self,
-        language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
-        language_generator: LanguageGenerator[
-            HighLevelSemanticsSituation, LinearizedDependencyTree
-        ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
     ) -> LanguagePerceptionSemanticAlignment:
         """
         Recognize known objects in a `LanguagePerceptionSemanticAlignment`.
@@ -430,8 +407,7 @@ class ObjectRecognizer:
             post_match_perception_semantic_alignment,
             tokens_to_object_nodes,
         ) = self.match_objects(
-            language_perception_semantic_alignment.perception_semantic_alignment,
-            language_generator=language_generator,
+            language_perception_semantic_alignment.perception_semantic_alignment
         )
         return LanguagePerceptionSemanticAlignment(
             language_concept_alignment=language_perception_semantic_alignment.language_concept_alignment.copy_with_added_token_alignments(
@@ -707,7 +683,7 @@ def replace_match_with_object_graph_node(
     # Multiple sub-objects of a matched object may link to the same property
     # (for example, to a color shared by all the parts).
     # In this case, we want the shared object node to link to this property only once.
-    external_properties: Set[OntologyNode] = set()
+    external_properties: Set[Union[OntologyNode, ObjectSemanticNode]] = set()
     duplicate_nodes_to_remove: List[PerceptionGraphNode] = []
 
     for matched_subgraph_node in matched_subgraph_nodes:
@@ -780,7 +756,11 @@ def replace_match_with_object_graph_node(
                 if edge_equals_ignoring_temporal_scope(edge_label, HAS_PROPERTY_LABEL):
                     # Prevent multiple `has-property` assertions to the same color node
                     # On a recognized object
-                    if matched_subgraph_node_predecessor[0] in external_properties:
+                    if isinstance(matched_subgraph_node_predecessor, ObjectSemanticNode):
+                        prop = matched_subgraph_node_predecessor
+                    else:
+                        prop = matched_subgraph_node_predecessor[0]
+                    if prop in external_properties:
                         if (
                             perception_digraph.degree(matched_subgraph_node_predecessor)
                             != 1
@@ -796,7 +776,7 @@ def replace_match_with_object_graph_node(
                         )
                         continue
                     else:
-                        external_properties.add(matched_subgraph_node_predecessor[0])
+                        external_properties.add(prop)
 
                 perception_digraph.add_edge(
                     matched_subgraph_node_predecessor,

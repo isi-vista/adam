@@ -1,11 +1,5 @@
 import itertools
-from adam.language_specific.english.english_language_generator import (
-    GAILA_PHASE_1_LANGUAGE_GENERATOR,
-)
 import logging
-from adam.language.language_generator import LanguageGenerator
-from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
-from adam.language.dependency import LinearizedDependencyTree
 from itertools import chain, combinations
 from pathlib import Path
 from typing import AbstractSet, Iterable, Iterator, Mapping, Optional, Tuple, List
@@ -272,7 +266,7 @@ class IntegratedTemplateLearner(
                                     template_variable_to_filler={SLOT1: cur_string}
                                 ).as_token_sequence(),
                             )
-                        yield self._add_determiners(object_node, cur_string)
+            yield self._add_determiners(object_node, cur_string)
 
     def _instantiate_relation(
         self, relation_node: RelationSemanticNode, learner_semantics: "LearnerSemantics"

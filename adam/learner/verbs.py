@@ -443,9 +443,7 @@ class AbstractVerbTemplateLearner(AbstractTemplateLearner, ABC):
         return PerceptionGraph.from_dynamic_perceptual_representation(perception)
 
     def _preprocess_scene_for_learning(
-        self,
-        language_concept_alignment: LanguageAlignedPerception,
-        language_generator=None,
+        self, language_concept_alignment: LanguageAlignedPerception
     ) -> LanguageAlignedPerception:
         post_recognition_object_perception_alignment = self._object_recognizer.match_objects_with_language_old(
             language_concept_alignment
@@ -453,7 +451,7 @@ class AbstractVerbTemplateLearner(AbstractTemplateLearner, ABC):
         return post_recognition_object_perception_alignment
 
     def _preprocess_scene_for_description(
-        self, perception_graph: PerceptionGraph, language_generator=None
+        self, perception_graph: PerceptionGraph
     ) -> PerceptionGraphFromObjectRecognizer:
         return self._object_recognizer.match_objects_old(perception_graph)
 

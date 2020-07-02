@@ -1,13 +1,6 @@
 import logging
 
 from attr.validators import instance_of
-
-from adam.language_specific.english.english_language_generator import (
-    GAILA_PHASE_1_LANGUAGE_GENERATOR,
-)
-from adam.language.language_generator import LanguageGenerator
-from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
-from adam.language.dependency import LinearizedDependencyTree
 from abc import ABC, abstractmethod
 from typing import AbstractSet, Iterable, List, Mapping, Sequence, Tuple, Union, cast, Set
 
@@ -185,11 +178,7 @@ class AbstractTemplateLearner(
 
     @abstractmethod
     def _preprocess_scene_for_learning(
-        self,
-        language_concept_alignment: LanguageAlignedPerception,
-        language_generator: LanguageGenerator[
-            HighLevelSemanticsSituation, LinearizedDependencyTree
-        ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+        self, language_concept_alignment: LanguageAlignedPerception
     ) -> LanguageAlignedPerception:
         """
         Does any preprocessing necessary before the learning process begins.
@@ -199,11 +188,7 @@ class AbstractTemplateLearner(
 
     @abstractmethod
     def _preprocess_scene_for_description(
-        self,
-        perception_graph: PerceptionGraph,
-        language_generator: LanguageGenerator[
-            HighLevelSemanticsSituation, LinearizedDependencyTree
-        ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+        self, perception_graph: PerceptionGraph
     ) -> PerceptionGraphFromObjectRecognizer:
         """
         Does any preprocessing necessary before attempting to describe a scene.
