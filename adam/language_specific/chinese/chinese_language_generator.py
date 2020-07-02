@@ -93,6 +93,7 @@ from adam.ontology.phase1_ontology import (
     WALK,
     TAKE,
     PASS,
+    GOAL_MANIPULATOR,
 )
 from adam.ontology.phase1_spatial_relations import (
     EXTERIOR_BUT_IN_CONTACT,
@@ -609,7 +610,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 # deal with movement to a person as the goal
                 elif (
                     action
-                    and argument_role == GOAL
+                    and (argument_role == GOAL or argument_role == GOAL_MANIPULATOR)
                     and action.action_type not in [GIVE, GO, COME]
                     and (
                         IS_SPEAKER in filler.properties
@@ -644,7 +645,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     # handle people as goals
                     if (
                         action
-                        and argument_role == GOAL
+                        and (argument_role == GOAL or argument_role == GOAL_MANIPULATOR)
                         and action.action_type not in [GIVE, GO, COME]
                         and (
                             IS_SPEAKER in filler.reference_object.properties

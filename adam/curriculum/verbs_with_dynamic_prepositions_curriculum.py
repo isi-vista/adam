@@ -69,7 +69,6 @@ from adam.ontology.phase1_ontology import (
     JUMP,
     FLY,
     CAN_FLY,
-    GOAL_MANIPULATOR,
     PUSH_GOAL,
     COME,
 )
@@ -682,6 +681,7 @@ def _throw_to_template(
                 ],
             )
         ],
+        after_action_relations=[near(theme, goal_reference)],
         constraining_relations=flatten_relations(bigger_than(agent, theme)),
         gazed_objects=[agent, theme, goal_reference],
     )
@@ -711,6 +711,7 @@ def _throw_in_template(
         constraining_relations=flatten_relations(
             bigger_than([agent, goal_reference], theme)
         ),
+        after_action_relations=[near(theme, goal_reference)],
         gazed_objects=[agent, theme, goal_reference],
     )
 
@@ -742,6 +743,7 @@ def _throw_on_template(
                 ],
             )
         ],
+        after_action_relations=[near(theme, goal_reference)],
         constraining_relations=flatten_relations(bigger_than(agent, theme)),
         gazed_objects=[agent, theme, goal_reference],
     )
@@ -782,6 +784,7 @@ def _throw_beside_template(
             )
         ],
         constraining_relations=flatten_relations(bigger_than(agent, theme)),
+        after_action_relations=[near(theme, goal_reference)],
         gazed_objects=[agent, theme, goal_reference],
     )
 
@@ -819,6 +822,7 @@ def _throw_in_front_of_behind_template(
                 ],
             )
         ],
+        after_action_relations=[near(theme, goal_reference)],
         constraining_relations=flatten_relations(bigger_than(agent, theme)),
         gazed_objects=[agent, theme, goal_reference],
     )
@@ -854,6 +858,7 @@ def _throw_under_template(
                 ],
             )
         ],
+        after_action_relations=[near(theme, goal_reference)],
         constraining_relations=flatten_relations(
             bigger_than([agent, goal_reference], theme)
         ),
@@ -885,6 +890,8 @@ def _throw_path_over_template(
                 ),
             )
         ],
+        # hack of ordering relation for English language generator
+        after_action_relations=[near(implicit_goal_reference, theme)],
         constraining_relations=flatten_relations(bigger_than(agent, theme)),
         gazed_objects=[agent, theme, object_in_path],
     )
@@ -922,6 +929,7 @@ def _throw_path_under_template(
                 ),
             )
         ],
+        after_action_relations=[near(theme, implicit_goal_reference)],
         constraining_relations=flatten_relations(
             bigger_than([agent, object_in_path], theme)
         ),
@@ -945,12 +953,14 @@ def _x_throws_y_to_z_template(
                 argument_roles_to_fillers=[
                     (AGENT, agent),
                     (THEME, theme),
-                    (GOAL_MANIPULATOR, recipient),
+                    # hack since English language generator doesn't generate correct language for GOAL_MANIPULATOR currently
+                    (GOAL, Region(recipient, distance=PROXIMAL)),
                 ],
             )
         ],
+        after_action_relations=[near(theme, recipient)],
         constraining_relations=flatten_relations(bigger_than([agent, recipient], theme)),
-        gazed_objects=[theme],
+        gazed_objects=[agent, theme, recipient],
     )
 
 
