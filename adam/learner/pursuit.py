@@ -643,7 +643,7 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
             logging.info(f"Considering '{bound_surface_template}'")
             if (
                 bound_surface_template.surface_template
-                not in self._concept_to_hypotheses_and_scores
+                not in self._surface_template_to_concept
             ):
                 # This is the first time we have seen this word/phrase.
                 self.initialization_step(
