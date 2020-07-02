@@ -37,10 +37,7 @@ from tests.learner import object_recognizer_factory
 
 
 @pytest.mark.parametrize("object_type", PHASE_1_CURRICULUM_OBJECTS)
-@pytest.mark.parametrize(
-    "language_mode",
-    [LanguageMode.ENGLISH, pytest.param(LanguageMode.CHINESE, marks=pytest.mark.xfail)],
-)
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 def test_recognizes_ontology_objects(object_type, language_mode):
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -75,10 +72,7 @@ def test_recognizes_ontology_objects(object_type, language_mode):
                 assert v.base_form in one(descriptions.items())[0].as_token_sequence()
 
 
-@pytest.mark.parametrize(
-    "language_mode",
-    [LanguageMode.ENGLISH, pytest.param(LanguageMode.CHINESE, marks=pytest.mark.xfail)],
-)
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 def test_trivial_dynamic_situation_with_schemaless_object(language_mode):
     dad_situation_object = SituationObject.instantiate_ontology_node(
         ontology_node=DAD, ontology=GAILA_PHASE_1_ONTOLOGY
@@ -120,10 +114,7 @@ def test_trivial_dynamic_situation_with_schemaless_object(language_mode):
     )
 
 
-@pytest.mark.parametrize(
-    "language_mode",
-    [LanguageMode.ENGLISH, pytest.param(LanguageMode.CHINESE, marks=pytest.mark.xfail)],
-)
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 def test_recognize_in_transfer_of_possession(language_mode):
     dad = object_variable("person_0", DAD)
     baby = object_variable("person_1", BABY)

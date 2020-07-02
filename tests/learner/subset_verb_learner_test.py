@@ -268,7 +268,7 @@ def test_go(language_mode, learner):
 )
 def test_come(language_mode, learner):
     movee = standard_object("movee", required_properties=[SELF_MOVING])
-    learner = standard_object("leaner_0", LEARNER)
+    learner_obj = standard_object("leaner_0", LEARNER)
     speaker = standard_object("speaker", PERSON, added_properties=[IS_SPEAKER])
     object_ = standard_object("object_0", THING)
     ground = standard_object("ground", root_node=GROUND)
@@ -284,7 +284,7 @@ def test_come(language_mode, learner):
         "come-to-leaner",
         salient_object_variables=[movee],
         actions=[
-            Action(COME, argument_roles_to_fillers=[(AGENT, movee), (GOAL, learner)])
+            Action(COME, argument_roles_to_fillers=[(AGENT, movee), (GOAL, learner_obj)])
         ],
     )
     come_to_object = Phase1SituationTemplate(

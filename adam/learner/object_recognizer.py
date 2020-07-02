@@ -336,7 +336,7 @@ class ObjectRecognizer:
                     )
                     # We match each candidate objects against only one object type.
                     # See https://github.com/isi-vista/adam/issues/627
-                    continue
+                    break
                 else:
                     cumulative_millis_in_failed_matches_ms += t.elapsed
         if object_nodes:

@@ -237,6 +237,8 @@ class AbstractTemplateLearner(
 
 
 class TemplateLearner(ComposableLearner, ABC):
+    _language_mode: LanguageMode = attrib(validator=instance_of(LanguageMode))
+
     @abstractmethod
     def templates_for_concept(self, concept: Concept) -> AbstractSet[SurfaceTemplate]:
         pass
@@ -409,8 +411,10 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
                     f"Matched pattern for {matched_object_node} "
                     f"but root object {root} already replaced."
                 )
-
-        immutable_new_nodes = immutableset(new_nodes)
+        if matched_objects:
+            immutable_new_nodes = immutableset(new_nodes)
+        else:
+            immutable_new_nodes = immutableset(node for (node, _) in match_to_score)
 
         return (
             perception_semantic_alignment.copy_with_updated_graph_and_added_nodes(

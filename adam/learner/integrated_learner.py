@@ -13,6 +13,7 @@ from adam.learner.alignments import (
     LanguagePerceptionSemanticAlignment,
     PerceptionSemanticAlignment,
 )
+from adam.learner.language_mode import LanguageMode
 from adam.learner.surface_templates import MASS_NOUNS, SLOT1
 from adam.learner.template_learner import TemplateLearner
 from adam.perception import PerceptualRepresentation
@@ -206,6 +207,11 @@ class IntegratedTemplateLearner(
     def _add_determiners(
         self, object_node: ObjectSemanticNode, cur_string: Tuple[str, ...]
     ) -> Tuple[str, ...]:
+        if (
+            self.object_learner._language_mode  # pylint: disable=protected-access
+            != LanguageMode.ENGLISH
+        ):
+            return cur_string
         # English-specific hack to deal with us not understanding determiners:
         # https://github.com/isi-vista/adam/issues/498
         # The "is lower" check is a hack to block adding a determiner to proper names.
