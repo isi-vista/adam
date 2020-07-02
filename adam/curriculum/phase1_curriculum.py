@@ -7,9 +7,11 @@ from itertools import chain
 from typing import Iterable, Sequence, List, Dict
 from adam.language_specific.english.english_language_generator import (
     GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    GAILA_PHASE_2_LANGUAGE_GENERATOR,
 )
 from adam.language_specific.chinese.chinese_language_generator import (
     GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
+    GAILA_PHASE_2_CHINESE_LANGUAGE_GENERATOR,
 )
 from immutablecollections import immutableset
 from more_itertools import flatten, first
@@ -346,7 +348,11 @@ def _make_generic_statements_curriculum(
                     situation,
                     # the token sequence needs pluralization for English but this isn't morphologically salient for Chinese
                     TokenSequenceLinguisticDescription((subject, "s", verb))
-                    if language_generator == GAILA_PHASE_1_LANGUAGE_GENERATOR
+                    if language_generator
+                    in [
+                        GAILA_PHASE_1_LANGUAGE_GENERATOR,
+                        GAILA_PHASE_2_LANGUAGE_GENERATOR,
+                    ]
                     else TokenSequenceLinguisticDescription((subject, verbs_to_ch[verb])),
                     perception,
                 )
@@ -464,9 +470,15 @@ def _make_part_whole_curriculum(
 
     all_instances = []
     currdict: Dict[OntologyNode, List[str]]
-    if language_generator == GAILA_PHASE_1_LANGUAGE_GENERATOR:
+    if (
+        language_generator == GAILA_PHASE_1_LANGUAGE_GENERATOR
+        or language_generator == GAILA_PHASE_2_LANGUAGE_GENERATOR
+    ):
         currdict = whole_object_to_parts
-    elif language_generator == GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR:
+    elif (
+        language_generator == GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR
+        or language_generator == GAILA_PHASE_2_CHINESE_LANGUAGE_GENERATOR
+    ):
         currdict = whole_object_to_parts_ch
     else:
         raise RuntimeError("Invalid language generator")
@@ -1245,6 +1257,7 @@ def make_pass_template(
             )
         ],
         constraining_relations=[bigger_than(agent, theme)],
+        after_action_relations=[near(theme, goal)],
         syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER] if use_adverbial_path_modifier else [],
     )
 

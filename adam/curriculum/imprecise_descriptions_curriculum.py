@@ -554,10 +554,10 @@ def make_push_shove_subtle_verb_distinctions(
                 pushee,
                 push_surface,
                 push_goal,
-                use_adverbial_path_modifier=use_adverbial_path_modifier,
+                # TODO: https://github.com/isi-vista/adam/issues/860
+                use_adverbial_path_modifier=False,
                 spatial_properties=[HARD_FORCE] if hard_force else [SOFT_FORCE],
             )
-            for use_adverbial_path_modifier in BOOL_SET
             for hard_force in BOOL_SET
         ]
     )

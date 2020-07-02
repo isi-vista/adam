@@ -433,6 +433,7 @@ def _go_beside_template(
                 ],
             )
         ],
+        after_action_relations=[near(agent, goal_object)],
     )
 
 
@@ -467,6 +468,7 @@ def _go_behind_in_front_template(
                 ],
             )
         ],
+        after_action_relations=[near(agent, goal_object)],
     )
 
 
@@ -497,6 +499,7 @@ def _go_over_template(
                 ],
             )
         ],
+        after_action_relations=[near(agent, goal_object)],
     )
 
 

@@ -77,6 +77,7 @@ def _go_to_template(
                 ],
             )
         ],
+        after_action_relations=[near(agent, goal_object)],
         gazed_objects=[agent],
     )
 
