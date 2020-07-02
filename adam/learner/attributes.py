@@ -77,6 +77,7 @@ class AbstractAttributeTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                                 restrict_to_span=Span(
                                     preceding_token_index, span_for_object.end
                                 ),
+                                language_mode=self._language_mode,
                             ),
                             {SLOT1: object_node},
                         )
@@ -94,6 +95,7 @@ class AbstractAttributeTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                                 restrict_to_span=Span(
                                     span_for_object.start, following_token_index
                                 ),
+                                language_mode=self._language_mode,
                             ),
                             {SLOT1: object_node},
                         )

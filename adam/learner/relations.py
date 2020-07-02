@@ -127,6 +127,7 @@ class AbstractRelationTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                                 surface_template=SurfaceTemplate(
                                     elements=template_elements,
                                     determiner_prefix_slots=[SLOT1, SLOT2],
+                                    language_mode=self._language_mode,
                                 ),
                                 slot_to_semantic_node=[
                                     (SLOT1, left_object_node),

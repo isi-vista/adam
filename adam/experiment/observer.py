@@ -7,6 +7,7 @@ from more_itertools import only, take
 
 from attr import attrib, attrs
 from attr.validators import instance_of
+from vistautils.parameters import Parameters
 
 from adam.curriculum_to_html import CurriculumToHtmlDumper
 from adam.language import LinguisticDescription, LinguisticDescriptionT
@@ -169,11 +170,21 @@ class LearningProgressHtmlLogger:  # pragma: no cover
     pre_observed_description: Optional[str] = attrib(init=False, default=None)
 
     _button_id_suffix: int = attrib(init=False, default=0)
+    _num_pretty_descriptions: int = attrib(kw_only=True, default=3)
+    _sort_by_length: bool = attrib(kw_only=True, default=False)
 
     @staticmethod
-    def create_logger(
-        *, output_dir: Path, experiment_name: str, include_links_to_images: Optional[bool]
-    ) -> "LearningProgressHtmlLogger":
+    def create_logger(params: Parameters) -> "LearningProgressHtmlLogger":
+        output_dir = params.creatable_directory("experiment_group_dir")
+        experiment_name = params.string("experiment")
+        include_links_to_images = params.optional_boolean("include_image_links")
+        num_pretty_descriptions = params.positive_integer(
+            "num_pretty_descriptions", default=3
+        )
+        sort_by_length = params.boolean(
+            "sort_learner_descriptions_by_length", default=False
+        )
+
         logging_dir = output_dir / experiment_name
         logging_dir.mkdir(parents=True, exist_ok=True)
         output_html_path = str(logging_dir / "index.html")
@@ -207,6 +218,8 @@ class LearningProgressHtmlLogger:  # pragma: no cover
             outfile_dir=output_html_path,
             html_dumper=html_dumper,
             include_links_to_images=include_links_to_images,
+            num_pretty_descriptions=num_pretty_descriptions,
+            sort_by_length=sort_by_length,
         )
 
     def pre_observer(self) -> "DescriptionObserver":  # type: ignore
@@ -242,7 +255,12 @@ class LearningProgressHtmlLogger:  # pragma: no cover
         else:
             accuracy_str = ""
         self.pre_observed_description = (
-            pretty_descriptions(predicted_descriptions) + accuracy_str
+            pretty_descriptions(
+                predicted_descriptions,
+                self._num_pretty_descriptions,
+                sort_by_length=self._sort_by_length,
+            )
+            + accuracy_str
         )
 
     def post_observer_log(
@@ -262,7 +280,11 @@ class LearningProgressHtmlLogger:  # pragma: no cover
         learner_pre_description = self.pre_observed_description
         self.pre_observed_description = None
 
-        learner_description = pretty_descriptions(predicted_descriptions)
+        learner_description = pretty_descriptions(
+            predicted_descriptions,
+            self._num_pretty_descriptions,
+            sort_by_length=self._sort_by_length,
+        )
 
         if situation and isinstance(situation, HighLevelSemanticsSituation):
             situation_text, _ = self.html_dumper.situation_text(situation)
@@ -463,9 +485,21 @@ def _by_score(scored_description: Tuple[LinguisticDescription, float]) -> float:
     return scored_description[1]
 
 
-def pretty_descriptions(descriptions: Mapping[LinguisticDescription, float]) -> str:
+def _by_length(scored_description: Tuple[LinguisticDescription, float]) -> int:
+    return -1 * len(scored_description[0])
+
+
+def pretty_descriptions(
+    descriptions: Mapping[LinguisticDescription, float],
+    num_descriptions: int,
+    *,
+    sort_by_length: bool,
+) -> str:
     if len(descriptions) > 1:
-        top_descriptions = take(3, sorted(descriptions.items(), key=_by_score))
+        top_descriptions = take(
+            num_descriptions,
+            sorted(descriptions.items(), key=_by_length if sort_by_length else _by_score),
+        )
         parts = ["<ul>"]
         parts.extend(
             [

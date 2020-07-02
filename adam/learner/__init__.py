@@ -3,14 +3,8 @@ Interfaces for language learning code.
 """
 
 from abc import ABC, abstractmethod
-from adam.language_specific.english.english_language_generator import (
-    GAILA_PHASE_1_LANGUAGE_GENERATOR,
-)
-from adam.language.language_generator import LanguageGenerator
-from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
-from adam.language.dependency import LinearizedDependencyTree
 from pathlib import Path
-from typing import Dict, Generic, Mapping, Optional, Any
+from typing import Dict, Generic, Mapping, Optional
 
 from adam.learner.alignments import (
     LanguagePerceptionSemanticAlignment,
@@ -22,7 +16,7 @@ from attr import Factory, attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import immutabledict
 from more_itertools import first
-from networkx import DiGraph, isolates
+from networkx import isolates
 
 from adam.language import LinguisticDescription, LinguisticDescriptionT
 from adam.ontology.phase1_ontology import LEARNER
@@ -36,10 +30,8 @@ from adam.perception.perception_graph import (
     PerceptionGraph,
     PerceptionGraphPattern,
     DebugCallableType,
-    PerceptionGraphPatternMatch,
     GraphLogger,
 )
-from adam.utils.networkx_utils import subgraph
 
 
 @attrs(frozen=True)
@@ -197,11 +189,7 @@ class ComposableLearner(ABC):
 
     @abstractmethod
     def enrich_during_learning(
-        self,
-        language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
-        language_generator: LanguageGenerator[
-            HighLevelSemanticsSituation, LinearizedDependencyTree
-        ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
     ) -> LanguagePerceptionSemanticAlignment:
         """
         Given a `LanguagePerceptionSemanticAlignment` wrapping a learning example, return such

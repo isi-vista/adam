@@ -3,8 +3,11 @@ from itertools import repeat
 from typing import Callable, Optional
 
 from adam.language_specific.english import ENGLISH_DETERMINERS
-from adam.learner.attributes import SubsetAttributeLearner
-from adam.learner.verbs import SubsetVerbLearner
+from adam.learner.attributes import SubsetAttributeLearner, SubsetAttributeLearnerNew
+from adam.learner.integrated_learner import IntegratedTemplateLearner
+from adam.learner.language_mode import LanguageMode
+from adam.learner.relations import SubsetRelationLearnerNew
+from adam.learner.verbs import SubsetVerbLearner, SubsetVerbLearnerNew
 from vistautils.parameters import Parameters
 from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 
@@ -21,6 +24,7 @@ from adam.curriculum.phase1_curriculum import (
     build_gaila_phase1_relation_curriculum,
     build_gaila_phase1_verb_curriculum,
     _make_put_on_speaker_addressee_body_part_curriculum,
+    build_gaila_phase_1_curriculum,
 )
 from adam.curriculum.pursuit_curriculum import make_simple_pursuit_curriculum
 from adam.experiment import Experiment, execute_experiment
@@ -29,7 +33,12 @@ from adam.learner import TopLevelLanguageLearner
 from adam.learner.object_recognizer import ObjectRecognizer
 from adam.learner.prepositions import SubsetPrepositionLearner
 from adam.learner.pursuit import HypothesisLogger
-from adam.learner.objects import ObjectPursuitLearner, SubsetObjectLearner
+from adam.learner.objects import (
+    ObjectPursuitLearner,
+    SubsetObjectLearner,
+    SubsetObjectLearnerNew,
+    ObjectRecognizerAsTemplateLearner,
+)
 from adam.ontology.phase1_ontology import (
     GAILA_PHASE_1_ONTOLOGY,
     PHASE_1_CURRICULUM_OBJECTS,
@@ -41,10 +50,8 @@ from adam.random_utils import RandomChooser
 
 
 def log_experiment_entry_point(params: Parameters) -> None:
-    experiment_group_dir = params.creatable_directory("experiment_group_dir")
     experiment_name = params.string("experiment")
     debug_log_dir = params.optional_creatable_directory("debug_log_directory")
-    include_images = params.optional_boolean("include_image_links")
 
     graph_logger: Optional[HypothesisLogger]
     if debug_log_dir:
@@ -53,11 +60,7 @@ def log_experiment_entry_point(params: Parameters) -> None:
     else:
         graph_logger = None
 
-    logger = LearningProgressHtmlLogger.create_logger(
-        output_dir=experiment_group_dir,
-        experiment_name=experiment_name,
-        include_links_to_images=include_images,
-    )
+    logger = LearningProgressHtmlLogger.create_logger(params)
 
     (training_instance_groups, test_instance_groups) = curriculum_from_params(params)
 
@@ -93,8 +96,12 @@ def learner_factory_from_params(
             "preposition-subset",
             "attribute-subset",
             "verb-subset",
+            "integrated-learner",
+            "integrated-learner-recognizer",
         ],
     )
+
+    beam_size = params.positive_integer("beam_size", default=10)
 
     # Eval hack! This is specific to the Phase 1 ontology
     object_recognizer = ObjectRecognizer.for_ontology_types(
@@ -108,20 +115,76 @@ def learner_factory_from_params(
             params.namespace("pursuit"), graph_logger=graph_logger
         )
     elif learner_type == "object-subset":
-        return lambda: SubsetObjectLearner(ontology=GAILA_PHASE_1_ONTOLOGY)
+        return lambda: SubsetObjectLearner(
+            ontology=GAILA_PHASE_1_ONTOLOGY, language_mode=LanguageMode.ENGLISH
+        )
     elif learner_type == "attribute-subset":
         return lambda: SubsetAttributeLearner(
-            ontology=GAILA_PHASE_1_ONTOLOGY, object_recognizer=object_recognizer
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+            object_recognizer=object_recognizer,
+            language_mode=LanguageMode.ENGLISH,
         )
     elif learner_type == "preposition-subset":
         return lambda: SubsetPrepositionLearner(
             # graph_logger=graph_logger,
             object_recognizer=object_recognizer,
             ontology=GAILA_PHASE_1_ONTOLOGY,
+            language_mode=LanguageMode.ENGLISH,
         )
     elif learner_type == "verb-subset":
         return lambda: SubsetVerbLearner(
-            ontology=GAILA_PHASE_1_ONTOLOGY, object_recognizer=object_recognizer
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+            object_recognizer=object_recognizer,
+            language_mode=LanguageMode.ENGLISH,
+        )
+    elif learner_type == "integrated-learner":
+        return lambda: IntegratedTemplateLearner(
+            object_learner=SubsetObjectLearnerNew(
+                ontology=GAILA_PHASE_1_ONTOLOGY,
+                beam_size=beam_size,
+                language_mode=LanguageMode.ENGLISH,
+            ),
+            attribute_learner=SubsetAttributeLearnerNew(
+                ontology=GAILA_PHASE_1_ONTOLOGY,
+                beam_size=beam_size,
+                language_mode=LanguageMode.ENGLISH,
+            ),
+            relation_learner=SubsetRelationLearnerNew(
+                ontology=GAILA_PHASE_1_ONTOLOGY,
+                beam_size=beam_size,
+                language_mode=LanguageMode.ENGLISH,
+            ),
+            action_learner=SubsetVerbLearnerNew(
+                ontology=GAILA_PHASE_1_ONTOLOGY,
+                beam_size=beam_size,
+                language_mode=LanguageMode.ENGLISH,
+            ),
+        )
+    elif learner_type == "integrated-learner-recognizer":
+        return lambda: IntegratedTemplateLearner(
+            object_learner=ObjectRecognizerAsTemplateLearner(
+                object_recognizer=ObjectRecognizer.for_ontology_types(
+                    PHASE_1_CURRICULUM_OBJECTS,
+                    ENGLISH_DETERMINERS,
+                    GAILA_PHASE_1_ONTOLOGY,
+                ),
+                language_mode=LanguageMode.ENGLISH,
+            ),
+            attribute_learner=SubsetAttributeLearnerNew(
+                ontology=GAILA_PHASE_1_ONTOLOGY,
+                beam_size=beam_size,
+                language_mode=LanguageMode.ENGLISH,
+            ),
+            relation_learner=SubsetRelationLearnerNew(
+                ontology=GAILA_PHASE_1_ONTOLOGY,
+                beam_size=beam_size,
+                language_mode=LanguageMode.ENGLISH,
+            ),
+            action_learner=SubsetVerbLearnerNew(
+                ontology=GAILA_PHASE_1_ONTOLOGY,
+                beam_size=beam_size,
+                language_mode=LanguageMode.ENGLISH,
+            ),
         )
     else:
         raise RuntimeError("can't happen")
@@ -140,6 +203,7 @@ def curriculum_from_params(params: Parameters):
             "m9-relations",
             "m9-events",
             "m9-debug",
+            "m9-complete",
         ],
     )
     if curriculum_name == "m6-deniz":
@@ -197,6 +261,8 @@ def curriculum_from_params(params: Parameters):
         return (build_gaila_phase1_verb_curriculum(), [])
     elif curriculum_name == "m9-debug":
         return ([_make_put_on_speaker_addressee_body_part_curriculum()], [])
+    elif curriculum_name == "m9-complete":
+        return (build_gaila_phase_1_curriculum(), [])
     else:
         raise RuntimeError("Can't happen")
 

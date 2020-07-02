@@ -9,10 +9,14 @@ from immutablecollections import immutableset
 
 from adam.curriculum.phase1_curriculum import PHASE1_CHOOSER_FACTORY, phase1_instances
 from adam.curriculum.pursuit_curriculum import make_simple_pursuit_curriculum
+from adam.language.dependency import LinearizedDependencyTree
+from adam.language.language_generator import LanguageGenerator
 from adam.language_specific.english.english_language_generator import (
     IGNORE_COLORS,
     GAILA_PHASE_1_LANGUAGE_GENERATOR,
 )
+from adam.learner.integrated_learner import IntegratedTemplateLearner
+from adam.learner.language_mode import LanguageMode
 from adam.learner.objects import SubsetObjectLearner
 from adam.learner import (
     LearningExample,
@@ -39,11 +43,7 @@ from adam.ontology.phase1_ontology import (
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     GAILA_PHASE_1_PERCEPTION_GENERATOR,
 )
-from adam.perception.perception_graph import (
-    DebugCallableType,
-    DumpPartialMatchCallback,
-    PerceptionGraph,
-)
+from adam.perception.perception_graph import DumpPartialMatchCallback, PerceptionGraph
 from adam.random_utils import RandomChooser
 from adam.relation import flatten_relations
 from adam.relation_dsl import negate
@@ -59,14 +59,30 @@ from adam.situation.templates.phase1_templates import (
 from adam.language_specific.chinese.chinese_language_generator import (
     GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
 )
+from tests.learner import phase1_language_generator
+
+
+def subset_object_learner_factory(language_mode: LanguageMode):
+    return SubsetObjectLearner(
+        ontology=GAILA_PHASE_1_ONTOLOGY, language_mode=language_mode
+    )
+
+
+def integrated_learner_factory(language_mode: LanguageMode):
+    return IntegratedTemplateLearner(
+        object_learner=SubsetObjectLearnerNew(
+            ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=10, language_mode=language_mode
+        )
+    )
 
 
 def run_subset_learner_for_object(
     obj: OntologyNode,
-    debug_callback: Optional[DebugCallableType] = None,
+    *,
+    learner,
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    ]
 ):
     learner_obj = object_variable("learner_0", LEARNER)
     colored_obj_object = object_variable(
@@ -99,9 +115,6 @@ def run_subset_learner_for_object(
         language_generator=language_generator,
     )
 
-    learner = SubsetObjectLearner(
-        ontology=GAILA_PHASE_1_ONTOLOGY, debug_callback=debug_callback
-    )
     for training_stage in [obj_curriculum]:
         for (
             _,
@@ -120,27 +133,35 @@ def run_subset_learner_for_object(
         ) in test_instance_group.instances():
             descriptions_from_learner = learner.describe(test_instance_perception)
             gold = test_instance_language.as_token_sequence()
-            assert [desc.as_token_sequence() for desc in descriptions_from_learner][
-                0
-            ] == gold
+            assert gold in [
+                desc.as_token_sequence() for desc in descriptions_from_learner
+            ]
 
 
 # tests learning "ball" in both languages
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
-    "language_generator",
-    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
+    "learner", [subset_object_learner_factory, integrated_learner_factory]
 )
-def test_subset_learner_ball(language_generator):
-    run_subset_learner_for_object(BALL, language_generator=language_generator)
+def test_subset_learner_ball(language_mode, learner):
+    run_subset_learner_for_object(
+        BALL,
+        learner=learner(language_mode),
+        language_generator=phase1_language_generator(language_mode),
+    )
 
 
 # test learning "dog" in both languages
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
-    "language_generator",
-    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
+    "learner", [subset_object_learner_factory, integrated_learner_factory]
 )
-def test_subset_learner_dog(language_generator):
-    run_subset_learner_for_object(DOG, language_generator=language_generator)
+def test_subset_learner_dog(language_mode, learner):
+    run_subset_learner_for_object(
+        DOG,
+        learner=learner(language_mode),
+        language_generator=phase1_language_generator(language_mode),
+    )
 
 
 def test_subset_learner_subobject():

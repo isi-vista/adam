@@ -307,6 +307,7 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                                         determiner_prefix_slots=[
                                             SLOT for (SLOT, _) in slot_to_semantic_node
                                         ],
+                                        language_mode=self._language_mode,
                                     ),
                                     slot_to_semantic_node=slot_to_semantic_node,
                                 )
@@ -331,6 +332,7 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                                 determiner_prefix_slots=[
                                     SLOT for (SLOT, _) in slot_to_semantic_node
                                 ],
+                                language_mode=self._language_mode,
                             ),
                             slot_to_semantic_node=slot_to_semantic_node,
                         )
@@ -355,6 +357,7 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                                 determiner_prefix_slots=[
                                     SLOT for (SLOT, _) in slot_to_semantic_node
                                 ],
+                                language_mode=self._language_mode,
                             ),
                             slot_to_semantic_node=slot_to_semantic_node,
                         )
@@ -365,6 +368,7 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                         determiner_prefix_slots=[
                             SLOT for (SLOT, _) in slot_to_semantic_node
                         ],
+                        language_mode=self._language_mode,
                     ),
                     slot_to_semantic_node=slot_to_semantic_node,
                 )
