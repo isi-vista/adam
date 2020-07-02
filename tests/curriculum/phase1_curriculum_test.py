@@ -50,8 +50,7 @@ def curriculum_test(curriculum: Phase1InstanceGroup) -> None:
         # we don't need to do anything
         # the curriculum may be dynamically generated
         # so we just want to test we can instantiate it
-        print(_)
-        # pass
+        pass
 
 
 @pytest.mark.parametrize(
