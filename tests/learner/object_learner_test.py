@@ -308,9 +308,10 @@ def learner_test_pursuit_curriculum(learner):
             logging.info("lang: %s", test_instance_language)
             descriptions_from_learner = learner.describe(test_instance_perception)
             gold = test_instance_language.as_token_sequence()
-            assert [desc.as_token_sequence() for desc in descriptions_from_learner][
-                0
-            ] == gold
+            assert gold in [
+                desc.as_token_sequence() for desc in descriptions_from_learner
+            ]
+
 
 # def test_get_largest_matching_pattern():
 #     target_objects = [
