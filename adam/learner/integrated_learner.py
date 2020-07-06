@@ -155,7 +155,6 @@ class IntegratedTemplateLearner(
             cur_description_state = self.action_learner.enrich_during_description(
                 cur_description_state
             )
-
         return self._linguistic_descriptions_from_semantics(
             cur_description_state.semantic_nodes
         )

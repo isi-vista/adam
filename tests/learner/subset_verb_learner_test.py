@@ -134,14 +134,12 @@ def run_verb_test(learner, situation_template, language_generator):
     ) in test_curriculum.instances():
         descriptions_from_learner = learner.describe(test_perceptual_representation)
         gold = test_lingustics_description.as_token_sequence()
+        print(gold)
         assert descriptions_from_learner
         assert gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
 
 
-@pytest.mark.parametrize(
-    "language_mode",
-    [LanguageMode.ENGLISH, pytest.param(LanguageMode.CHINESE, marks=pytest.mark.xfail)],
-)
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
     "learner", [subset_verb_language_factory, integrated_learner_factory]
 )
@@ -155,10 +153,7 @@ def test_eat_simple(language_mode, learner):
     )
 
 
-@pytest.mark.parametrize(
-    "language_mode",
-    [LanguageMode.ENGLISH, pytest.param(LanguageMode.CHINESE, marks=pytest.mark.xfail)],
-)
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
     "learner", [subset_verb_language_factory, integrated_learner_factory]
 )
@@ -170,10 +165,7 @@ def test_drink(language_mode, learner):
     )
 
 
-@pytest.mark.parametrize(
-    "language_mode",
-    [LanguageMode.ENGLISH, pytest.param(LanguageMode.CHINESE, marks=pytest.mark.xfail)],
-)
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
     "learner", [subset_verb_language_factory, integrated_learner_factory]
 )
@@ -191,7 +183,7 @@ def test_sit(language_mode, learner):
     [LanguageMode.ENGLISH, pytest.param(LanguageMode.CHINESE, marks=pytest.mark.xfail)],
 )
 @pytest.mark.parametrize(
-    "learner", [subset_verb_language_factory, integrated_learner_factory]
+    "learner", [integrated_learner_factory, subset_verb_language_factory]
 )
 def test_put(language_mode, learner):
     for situation_template in make_put_templates():
@@ -202,10 +194,7 @@ def test_put(language_mode, learner):
         )
 
 
-@pytest.mark.parametrize(
-    "language_mode",
-    [LanguageMode.ENGLISH, pytest.param(LanguageMode.CHINESE, marks=pytest.mark.xfail)],
-)
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
     "learner", [subset_verb_language_factory, integrated_learner_factory]
 )
@@ -226,10 +215,7 @@ def test_push(language_mode, learner):
         )
 
 
-@pytest.mark.parametrize(
-    "language_mode",
-    [LanguageMode.ENGLISH, pytest.param(LanguageMode.CHINESE, marks=pytest.mark.xfail)],
-)
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
     "learner", [subset_verb_language_factory, integrated_learner_factory]
 )
@@ -259,10 +245,7 @@ def test_go(language_mode, learner):
         )
 
 
-@pytest.mark.parametrize(
-    "language_mode",
-    [LanguageMode.ENGLISH, pytest.param(LanguageMode.CHINESE, marks=pytest.mark.xfail)],
-)
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
     "learner", [subset_verb_language_factory, integrated_learner_factory]
 )
@@ -307,10 +290,7 @@ def test_come(language_mode, learner):
         )
 
 
-@pytest.mark.parametrize(
-    "language_mode",
-    [LanguageMode.ENGLISH, pytest.param(LanguageMode.CHINESE, marks=pytest.mark.xfail)],
-)
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
     "learner", [subset_verb_language_factory, integrated_learner_factory]
 )
@@ -326,10 +306,7 @@ def test_take(language_mode, learner):
     )
 
 
-@pytest.mark.parametrize(
-    "language_mode",
-    [LanguageMode.ENGLISH, pytest.param(LanguageMode.CHINESE, marks=pytest.mark.xfail)],
-)
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
     "learner", [subset_verb_language_factory, integrated_learner_factory]
 )
@@ -342,10 +319,7 @@ def test_give(language_mode, learner):
         )
 
 
-@pytest.mark.parametrize(
-    "language_mode",
-    [LanguageMode.ENGLISH, pytest.param(LanguageMode.CHINESE, marks=pytest.mark.xfail)],
-)
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
     "learner", [subset_verb_language_factory, integrated_learner_factory]
 )
@@ -358,10 +332,7 @@ def test_spin(language_mode, learner):
         )
 
 
-@pytest.mark.parametrize(
-    "language_mode",
-    [LanguageMode.ENGLISH, pytest.param(LanguageMode.CHINESE, marks=pytest.mark.xfail)],
-)
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
     "learner", [subset_verb_language_factory, integrated_learner_factory]
 )
@@ -390,10 +361,7 @@ def test_throw(language_mode, learner):
         )
 
 
-@pytest.mark.parametrize(
-    "language_mode",
-    [LanguageMode.ENGLISH, pytest.param(LanguageMode.CHINESE, marks=pytest.mark.xfail)],
-)
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
     "learner", [subset_verb_language_factory, integrated_learner_factory]
 )
@@ -406,10 +374,7 @@ def test_move(language_mode, learner):
         )
 
 
-@pytest.mark.parametrize(
-    "language_mode",
-    [LanguageMode.ENGLISH, pytest.param(LanguageMode.CHINESE, marks=pytest.mark.xfail)],
-)
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
     "learner", [subset_verb_language_factory, integrated_learner_factory]
 )
@@ -430,10 +395,7 @@ def test_jump(language_mode, learner):
         )
 
 
-@pytest.mark.parametrize(
-    "language_mode",
-    [LanguageMode.ENGLISH, pytest.param(LanguageMode.CHINESE, marks=pytest.mark.xfail)],
-)
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
     "learner", [subset_verb_language_factory, integrated_learner_factory]
 )
@@ -446,10 +408,7 @@ def test_roll(language_mode, learner):
         )
 
 
-@pytest.mark.parametrize(
-    "language_mode",
-    [LanguageMode.ENGLISH, pytest.param(LanguageMode.CHINESE, marks=pytest.mark.xfail)],
-)
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
     "learner", [subset_verb_language_factory, integrated_learner_factory]
 )

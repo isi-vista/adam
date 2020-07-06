@@ -471,6 +471,7 @@ class AbstractVerbTemplateLearner(AbstractTemplateLearner, ABC):
         return language_concept_alignment.to_surface_template(
             object_node_to_template_variable=object_node_to_template_variable,
             determiner_prefix_slots=object_node_to_template_variable.values(),
+            language_mode=language_mode,
         )
 
 
