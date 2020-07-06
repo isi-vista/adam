@@ -12,7 +12,11 @@ from logging import INFO
 from pathlib import Path
 
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
-from adam.perception.perception_graph import PerceptionGraphPattern, GraphLogger
+from adam.perception.perception_graph import (
+    PerceptionGraphPattern,
+    GraphLogger,
+    MatchMode,
+)
 
 if __name__ == "__main__":
     if len(sys.argv) == 3:
@@ -31,7 +35,7 @@ if __name__ == "__main__":
     graph_logger.log_graph(second_pattern, INFO, "Second pattern")
 
     intersection_forward = first_pattern.intersection(
-        second_pattern, ontology=GAILA_PHASE_1_ONTOLOGY
+        second_pattern, ontology=GAILA_PHASE_1_ONTOLOGY, match_mode=MatchMode.NON_OBJECT
     )
     if intersection_forward:
         graph_logger.log_graph(
@@ -41,7 +45,7 @@ if __name__ == "__main__":
         logging.info("Forward intersection is empty")
 
     intersection_backward = second_pattern.intersection(
-        first_pattern, ontology=GAILA_PHASE_1_ONTOLOGY
+        first_pattern, ontology=GAILA_PHASE_1_ONTOLOGY, match_mode=MatchMode.NON_OBJECT
     )
     if intersection_backward:
         graph_logger.log_graph(

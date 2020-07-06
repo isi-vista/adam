@@ -1,18 +1,23 @@
 import logging
+from typing import Iterable
+
 import pytest
 import random
 from itertools import chain
-from typing import Optional
-from adam.language.language_generator import LanguageGenerator
-from adam.language.dependency import LinearizedDependencyTree
 from immutablecollections import immutableset
+from more_itertools import flatten
 
+from adam.curriculum.curriculum_utils import PHASE1_TEST_CHOOSER_FACTORY
 from adam.curriculum.phase1_curriculum import PHASE1_CHOOSER_FACTORY, phase1_instances
 from adam.curriculum.pursuit_curriculum import make_simple_pursuit_curriculum
+from adam.language.dependency import LinearizedDependencyTree
+from adam.language.language_generator import LanguageGenerator
 from adam.language_specific.english.english_language_generator import (
     IGNORE_COLORS,
     GAILA_PHASE_1_LANGUAGE_GENERATOR,
 )
+from adam.learner.integrated_learner import IntegratedTemplateLearner
+from adam.learner.language_mode import LanguageMode
 from adam.learner.objects import SubsetObjectLearner
 from adam.learner import (
     LearningExample,
@@ -30,7 +35,6 @@ from adam.ontology.phase1_ontology import (
     GAILA_PHASE_1_ONTOLOGY,
     GROUND,
     HEAD,
-    LEARNER,
     MOM,
     on,
     HAND,
@@ -39,11 +43,7 @@ from adam.ontology.phase1_ontology import (
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     GAILA_PHASE_1_PERCEPTION_GENERATOR,
 )
-from adam.perception.perception_graph import (
-    DebugCallableType,
-    DumpPartialMatchCallback,
-    PerceptionGraph,
-)
+from adam.perception.perception_graph import DumpPartialMatchCallback, PerceptionGraph
 from adam.random_utils import RandomChooser
 from adam.relation import flatten_relations
 from adam.relation_dsl import negate
@@ -55,53 +55,75 @@ from adam.situation.templates.phase1_templates import (
     all_possible,
     color_variable,
     object_variable,
+    sampled,
 )
-from adam.language_specific.chinese.chinese_language_generator import (
-    GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
-)
+from tests.learner import phase1_language_generator
+
+
+def subset_object_learner_factory(language_mode: LanguageMode):
+    return SubsetObjectLearner(
+        ontology=GAILA_PHASE_1_ONTOLOGY, language_mode=language_mode
+    )
+
+
+def integrated_learner_factory(language_mode: LanguageMode):
+    return IntegratedTemplateLearner(
+        object_learner=SubsetObjectLearnerNew(
+            ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=10, language_mode=language_mode
+        )
+    )
 
 
 def run_subset_learner_for_object(
-    obj: OntologyNode,
-    debug_callback: Optional[DebugCallableType] = None,
+    nodes: Iterable[OntologyNode],
+    *,
+    learner,
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    ]
 ):
-    learner_obj = object_variable("learner_0", LEARNER)
-    colored_obj_object = object_variable(
-        "obj-with-color", obj, added_properties=[color_variable("color")]
-    )
+    colored_obj_objects = [
+        object_variable(
+            "obj-with-color", node, added_properties=[color_variable("color")]
+        )
+        for node in nodes
+    ]
 
-    obj_template = Phase1SituationTemplate(
-        "colored-obj-object",
-        salient_object_variables=[colored_obj_object, learner_obj],
-        syntax_hints=[IGNORE_COLORS],
-    )
+    obj_templates = [
+        Phase1SituationTemplate(
+            "colored-obj-object",
+            salient_object_variables=[colored_obj_object],
+            syntax_hints=[IGNORE_COLORS],
+        )
+        for colored_obj_object in colored_obj_objects
+    ]
 
     obj_curriculum = phase1_instances(
         "all obj situations",
-        situations=all_possible(
-            obj_template,
-            chooser=PHASE1_CHOOSER_FACTORY(),
-            ontology=GAILA_PHASE_1_ONTOLOGY,
+        flatten(
+            [
+                all_possible(
+                    obj_template,
+                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                )
+                for obj_template in obj_templates
+            ]
         ),
         language_generator=language_generator,
     )
 
     test_obj_curriculum = phase1_instances(
         "obj test",
-        situations=all_possible(
-            obj_template,
-            chooser=PHASE1_CHOOSER_FACTORY(),
+        situations=sampled(
+            obj_templates[0],
+            chooser=PHASE1_TEST_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
+            max_to_sample=1,
         ),
         language_generator=language_generator,
     )
 
-    learner = SubsetObjectLearner(
-        ontology=GAILA_PHASE_1_ONTOLOGY, debug_callback=debug_callback
-    )
     for training_stage in [obj_curriculum]:
         for (
             _,
@@ -120,29 +142,25 @@ def run_subset_learner_for_object(
         ) in test_instance_group.instances():
             descriptions_from_learner = learner.describe(test_instance_perception)
             gold = test_instance_language.as_token_sequence()
-            assert [desc.as_token_sequence() for desc in descriptions_from_learner][
-                0
-            ] == gold
+            assert gold in [
+                desc.as_token_sequence() for desc in descriptions_from_learner
+            ]
 
 
 # tests learning "ball" in both languages
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
-    "language_generator",
-    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
+    "learner", [subset_object_learner_factory, integrated_learner_factory]
 )
-def test_subset_learner_ball(language_generator):
-    run_subset_learner_for_object(BALL, language_generator=language_generator)
+def test_subset_learner(language_mode, learner):
+    run_subset_learner_for_object(
+        [BALL, DOG, BOX],
+        learner=learner(language_mode),
+        language_generator=phase1_language_generator(language_mode),
+    )
 
 
-# test learning "dog" in both languages
-@pytest.mark.parametrize(
-    "language_generator",
-    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
-)
-def test_subset_learner_dog(language_generator):
-    run_subset_learner_for_object(DOG, language_generator=language_generator)
-
-
+# TODO: Figure out how to run this test over both chinese and english well
 def test_subset_learner_subobject():
     mom = SituationObject.instantiate_ontology_node(
         ontology_node=MOM, ontology=GAILA_PHASE_1_ONTOLOGY
@@ -197,7 +215,9 @@ def test_subset_learner_subobject():
         always_relations=flatten_relations(negate(on(house, ground))),
     )
 
-    object_learner = SubsetObjectLearnerNew(ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5)
+    object_learner = SubsetObjectLearnerNew(
+        ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=LanguageMode.ENGLISH
+    )
 
     for situation in [
         mom_situation,
@@ -244,11 +264,8 @@ def test_subset_learner_subobject():
     assert (ObjectSemanticNode, "hand") in semantic_node_types_and_debug_strings
 
 
-@pytest.mark.parametrize(
-    "language_generator",
-    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
-)
-def test_pursuit_object_learner(language_generator):
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
+def test_pursuit_object_learner(language_mode):
     target_objects = [
         BALL,
         # PERSON,
@@ -259,6 +276,7 @@ def test_pursuit_object_learner(language_generator):
         BOX,
     ]
     debug_callback = DumpPartialMatchCallback(render_path="../renders/")
+    language_generator = phase1_language_generator(language_mode)
 
     target_train_templates = []
     target_test_templates = []
@@ -329,6 +347,7 @@ def test_pursuit_object_learner(language_generator):
         smoothing_parameter=0.001,
         ontology=GAILA_PHASE_1_ONTOLOGY,
         debug_callback=debug_callback,
+        language_mode=language_mode,
     )  # type: ignore
     for training_stage in [train_curriculum]:
         for (

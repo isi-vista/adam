@@ -3,6 +3,7 @@ This module provides classes related to the perceptual primitive representation
 used to describe `Situation`\ s from the point-of-view of `LanguageLearner`\ s.
 """
 from abc import ABC, abstractmethod
+from enum import Enum
 from typing import Generic, Optional, Tuple, TypeVar
 
 from attr import attrib, attrs
@@ -20,6 +21,11 @@ from adam.random_utils import SequenceChooser
 from adam.situation import LocatedObjectSituation, Situation
 
 _SituationT = TypeVar("_SituationT", bound=Situation)
+
+
+class MatchMode(Enum):
+    OBJECT = "object"
+    NON_OBJECT = "non_object"
 
 
 @attrs(slots=True, frozen=True, repr=False, cache_hash=True)

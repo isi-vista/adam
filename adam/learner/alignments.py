@@ -5,6 +5,7 @@ from typing import Iterable, List, Mapping, Optional, Tuple, Union
 from more_itertools import pairwise
 
 from adam.language import LinguisticDescription
+from adam.learner.language_mode import LanguageMode
 from adam.learner.surface_templates import SurfaceTemplate
 from adam.perception.perception_graph import PerceptionGraph
 from adam.semantics import ObjectSemanticNode, SemanticNode, SyntaxSemanticsVariable
@@ -161,7 +162,7 @@ class LanguageConceptAlignment:
                         (new_semantic_node, covered_token_span)
                     )
             else:
-                raise RuntimeError(
+                logging.info(
                     f"Could not match surface template {surface_template} "
                     f"with fillers {slots_to_spans} against "
                     f"{self.language.as_token_sequence()}"
@@ -177,6 +178,7 @@ class LanguageConceptAlignment:
             ObjectSemanticNode, SyntaxSemanticsVariable
         ],
         *,
+        language_mode: LanguageMode,
         determiner_prefix_slots: Iterable[SyntaxSemanticsVariable] = immutableset(),
         restrict_to_span: Optional[Span] = None,
     ) -> SurfaceTemplate:
@@ -267,7 +269,9 @@ class LanguageConceptAlignment:
             ] = object_node_to_template_variable[matched_object_node]
 
         return SurfaceTemplate(
-            template_elements, determiner_prefix_slots=determiner_prefix_slots
+            template_elements,
+            determiner_prefix_slots=determiner_prefix_slots,
+            language_mode=language_mode,
         )
 
 

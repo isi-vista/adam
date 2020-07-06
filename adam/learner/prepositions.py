@@ -1,10 +1,4 @@
 from abc import ABC
-from adam.language_specific.english.english_language_generator import (
-    GAILA_PHASE_1_LANGUAGE_GENERATOR,
-)
-from adam.language.language_generator import LanguageGenerator
-from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
-from adam.language.dependency import LinearizedDependencyTree
 from pathlib import Path
 from typing import Iterable, Mapping, Optional, Sequence, Union
 
@@ -23,7 +17,7 @@ from adam.learner.pursuit import AbstractPursuitLearner
 from adam.learner.subset import AbstractTemplateSubsetLearner
 from adam.learner.surface_templates import SLOT1, SLOT2, SurfaceTemplate
 from adam.learner.template_learner import AbstractTemplateLearner
-from adam.perception import ObjectPerception, PerceptualRepresentation
+from adam.perception import ObjectPerception, PerceptualRepresentation, MatchMode
 from adam.perception.deprecated import LanguageAlignedPerception
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -63,14 +57,10 @@ class AbstractPrepositionTemplateLearner(AbstractTemplateLearner, ABC):
         return PerceptionGraph.from_frame(perception.frames[0])
 
     def _preprocess_scene_for_learning(
-        self,
-        language_concept_alignment: LanguageAlignedPerception,
-        language_generator: LanguageGenerator[
-            HighLevelSemanticsSituation, LinearizedDependencyTree
-        ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+        self, language_concept_alignment: LanguageAlignedPerception
     ) -> LanguageAlignedPerception:
         post_recognition_object_perception_alignment = self._object_recognizer.match_objects_with_language_old(
-            language_concept_alignment, language_generator=language_generator
+            language_concept_alignment
         )
         num_matched_objects = len(
             post_recognition_object_perception_alignment.node_to_language_span
@@ -84,15 +74,9 @@ class AbstractPrepositionTemplateLearner(AbstractTemplateLearner, ABC):
         return post_recognition_object_perception_alignment
 
     def _preprocess_scene_for_description(
-        self,
-        perception_graph: PerceptionGraph,
-        language_generator: LanguageGenerator[
-            HighLevelSemanticsSituation, LinearizedDependencyTree
-        ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+        self, perception_graph: PerceptionGraph
     ) -> PerceptionGraphFromObjectRecognizer:
-        return self._object_recognizer.match_objects_old(
-            perception_graph, language_generator
-        )
+        return self._object_recognizer.match_objects_old(perception_graph)
 
     def _extract_surface_template(
         self, language_concept_alignment: LanguageAlignedPerception
@@ -233,7 +217,7 @@ class PrepositionPursuitLearner(
             debug_callback=self._debug_callback,
             graph_logger=self._hypothesis_logger,
             ontology=self._ontology,
-            matching_objects=True,
+            match_mode=MatchMode.OBJECT,
         )
         self.debug_counter += 1
 
@@ -292,6 +276,17 @@ class PrepositionPursuitLearner(
             template_string = surface_template.to_short_string()
             hypothesis.render_to_file(template_string, log_output_path / template_string)
 
+    def _update_hypothesis(
+        self,
+        previous_pattern_hypothesis: PerceptionGraphTemplate,
+        current_pattern_hypothesis: PerceptionGraphTemplate,
+    ) -> Optional[PerceptionGraphTemplate]:
+        return previous_pattern_hypothesis.intersection(
+            current_pattern_hypothesis,
+            ontology=self._ontology,
+            match_mode=MatchMode.NON_OBJECT,
+        )
+
 
 @attrs
 class SubsetPrepositionLearner(
@@ -315,4 +310,15 @@ class SubsetPrepositionLearner(
         return preposition_hypothesis_from_perception(
             preprocessed_input,
             template_variables_to_object_match_nodes=template_variables_to_object_match_nodes,
+        )
+
+    def _update_hypothesis(
+        self,
+        previous_pattern_hypothesis: PerceptionGraphTemplate,
+        current_pattern_hypothesis: PerceptionGraphTemplate,
+    ) -> Optional[PerceptionGraphTemplate]:
+        return previous_pattern_hypothesis.intersection(
+            current_pattern_hypothesis,
+            ontology=self._ontology,
+            match_mode=MatchMode.NON_OBJECT,
         )

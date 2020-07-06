@@ -27,7 +27,7 @@ from adam.learner.template_learner import (
     AbstractTemplateLearner,
     AbstractTemplateLearnerNew,
 )
-from adam.perception import PerceptualRepresentation
+from adam.perception import PerceptualRepresentation, MatchMode
 from adam.perception.deprecated import LanguageAlignedPerception
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -40,7 +40,12 @@ from adam.semantics import (
     SemanticNode,
 )
 from attr import attrib, attrs
-from immutablecollections import immutabledict, immutableset, ImmutableSet
+from immutablecollections import (
+    immutabledict,
+    immutableset,
+    ImmutableSet,
+    immutablesetmultidict,
+)
 from attr.validators import instance_of
 from vistautils.span import Span
 
@@ -302,6 +307,7 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                                         determiner_prefix_slots=[
                                             SLOT for (SLOT, _) in slot_to_semantic_node
                                         ],
+                                        language_mode=self._language_mode,
                                     ),
                                     slot_to_semantic_node=slot_to_semantic_node,
                                 )
@@ -326,6 +332,7 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                                 determiner_prefix_slots=[
                                     SLOT for (SLOT, _) in slot_to_semantic_node
                                 ],
+                                language_mode=self._language_mode,
                             ),
                             slot_to_semantic_node=slot_to_semantic_node,
                         )
@@ -350,6 +357,7 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                                 determiner_prefix_slots=[
                                     SLOT for (SLOT, _) in slot_to_semantic_node
                                 ],
+                                language_mode=self._language_mode,
                             ),
                             slot_to_semantic_node=slot_to_semantic_node,
                         )
@@ -360,6 +368,7 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                         determiner_prefix_slots=[
                             SLOT for (SLOT, _) in slot_to_semantic_node
                         ],
+                        language_mode=self._language_mode,
                     ),
                     slot_to_semantic_node=slot_to_semantic_node,
                 )
@@ -434,9 +443,7 @@ class AbstractVerbTemplateLearner(AbstractTemplateLearner, ABC):
         return PerceptionGraph.from_dynamic_perceptual_representation(perception)
 
     def _preprocess_scene_for_learning(
-        self,
-        language_concept_alignment: LanguageAlignedPerception,
-        language_generator=None,
+        self, language_concept_alignment: LanguageAlignedPerception
     ) -> LanguageAlignedPerception:
         post_recognition_object_perception_alignment = self._object_recognizer.match_objects_with_language_old(
             language_concept_alignment
@@ -444,7 +451,7 @@ class AbstractVerbTemplateLearner(AbstractTemplateLearner, ABC):
         return post_recognition_object_perception_alignment
 
     def _preprocess_scene_for_description(
-        self, perception_graph: PerceptionGraph, language_generator=None
+        self, perception_graph: PerceptionGraph
     ) -> PerceptionGraphFromObjectRecognizer:
         return self._object_recognizer.match_objects_old(perception_graph)
 
@@ -474,6 +481,25 @@ class SubsetVerbLearner(AbstractTemplateSubsetLearner, AbstractVerbTemplateLearn
             preprocessed_input.perception_graph,
             template_variable_to_matched_object_node=immutabledict(
                 zip(STANDARD_SLOT_VARIABLES, preprocessed_input.aligned_nodes)
+            ),
+        )
+
+    def _update_hypothesis(
+        self,
+        previous_pattern_hypothesis: PerceptionGraphTemplate,
+        current_pattern_hypothesis: PerceptionGraphTemplate,
+    ) -> Optional[PerceptionGraphTemplate]:
+        return previous_pattern_hypothesis.intersection(
+            current_pattern_hypothesis,
+            ontology=self._ontology,
+            match_mode=MatchMode.NON_OBJECT,
+            allowed_matches=immutablesetmultidict(
+                [
+                    (node2, node1)
+                    for previous_slot, node1 in previous_pattern_hypothesis.template_variable_to_pattern_node.items()
+                    for new_slot, node2 in current_pattern_hypothesis.template_variable_to_pattern_node.items()
+                    if previous_slot == new_slot
+                ]
             ),
         )
 
@@ -523,3 +549,22 @@ class SubsetVerbLearnerNew(
         self, perception_semantic_alignment: PerceptionSemanticAlignment
     ) -> PerceptionSemanticAlignment:
         return perception_semantic_alignment
+
+    def _update_hypothesis(
+        self,
+        previous_pattern_hypothesis: PerceptionGraphTemplate,
+        current_pattern_hypothesis: PerceptionGraphTemplate,
+    ) -> Optional[PerceptionGraphTemplate]:
+        return previous_pattern_hypothesis.intersection(
+            current_pattern_hypothesis,
+            ontology=self._ontology,
+            match_mode=MatchMode.NON_OBJECT,
+            allowed_matches=immutablesetmultidict(
+                [
+                    (node2, node1)
+                    for previous_slot, node1 in previous_pattern_hypothesis.template_variable_to_pattern_node.items()
+                    for new_slot, node2 in current_pattern_hypothesis.template_variable_to_pattern_node.items()
+                    if previous_slot == new_slot
+                ]
+            ),
+        )

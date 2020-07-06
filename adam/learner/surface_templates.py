@@ -2,15 +2,10 @@
 Representations of template-with-slots-like patterns over token strings.
 """
 from typing import List, Mapping, Optional, Tuple, Union
-from adam.language_specific.english.english_language_generator import (
-    GAILA_PHASE_1_LANGUAGE_GENERATOR,
-)
-from adam.language.language_generator import LanguageGenerator
-from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
-from adam.language.dependency import LinearizedDependencyTree
 from more_itertools import quantify
 
 from adam.language import TokenSequenceLinguisticDescription
+from adam.learner.language_mode import LanguageMode
 from adam.semantics import ObjectSemanticNode, SyntaxSemanticsVariable
 from attr import attrib, attrs
 from attr.validators import deep_iterable, instance_of
@@ -34,6 +29,7 @@ class SurfaceTemplate:
         converter=_to_tuple,
         validator=deep_iterable(instance_of((str, SyntaxSemanticsVariable))),
     )
+    _language_mode: LanguageMode = attrib(validator=instance_of(LanguageMode))
     _determiner_prefix_slots: ImmutableSet[SyntaxSemanticsVariable] = attrib(
         converter=_to_immutableset,
         validator=deep_iterable(instance_of(SyntaxSemanticsVariable)),
@@ -44,29 +40,26 @@ class SurfaceTemplate:
     def instantiate(
         self,
         template_variable_to_filler: Mapping[SyntaxSemanticsVariable, Tuple[str, ...]],
-        language_generator: LanguageGenerator[
-            HighLevelSemanticsSituation, LinearizedDependencyTree
-        ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> TokenSequenceLinguisticDescription:
         """
         Turns a template into a `TokenSequenceLinguisticDescription` by filling in its variables.
         """
 
-        output_tokens: List[str] = []
+        output_tokens: List[Union[str, SyntaxSemanticsVariable]] = []
         for element in self.elements:
-            if isinstance(element, SyntaxSemanticsVariable):
+            if (
+                isinstance(element, SyntaxSemanticsVariable)
+                and self._language_mode == LanguageMode.ENGLISH
+            ):
                 filler_words = template_variable_to_filler[element]
                 # Ground is a specific thing so we special case this to be assigned
-                if (
-                    filler_words[0] == "ground"
-                    and language_generator == GAILA_PHASE_1_LANGUAGE_GENERATOR
-                ):
+                if filler_words[0] == "ground":
                     output_tokens.append("the")
                 # English-specific hack to deal with us not understanding determiners:
                 # https://github.com/isi-vista/adam/issues/498
                 # The "is lower" check is a hack to block adding a determiner to proper names.
                 elif (
-                    language_generator == GAILA_PHASE_1_LANGUAGE_GENERATOR
+                    self._language_mode == LanguageMode.ENGLISH
                     and element in self._determiner_prefix_slots
                     and len(filler_words) == 1
                     and filler_words[0][0].islower()
@@ -77,7 +70,7 @@ class SurfaceTemplate:
             else:
                 # element must be a single token str due to object validity checks.
                 output_tokens.append(element)
-        return TokenSequenceLinguisticDescription(output_tokens)
+        return TokenSequenceLinguisticDescription(tuple(output_tokens))
 
     def to_short_string(self) -> str:
         return "_".join(
@@ -94,8 +87,14 @@ class SurfaceTemplate:
         )
 
     @staticmethod
-    def for_object_name(object_name: str) -> "SurfaceTemplate":
-        return SurfaceTemplate(elements=(object_name,), determiner_prefix_slots=[])
+    def for_object_name(
+        object_name: str, *, language_mode: LanguageMode
+    ) -> "SurfaceTemplate":
+        return SurfaceTemplate(
+            elements=(object_name,),
+            determiner_prefix_slots=[],
+            language_mode=language_mode,
+        )
 
     def match_against_tokens(
         self,

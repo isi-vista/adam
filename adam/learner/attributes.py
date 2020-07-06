@@ -1,18 +1,15 @@
 from abc import ABC
-from typing import AbstractSet, Union
-from adam.language_specific.english.english_language_generator import (
-    GAILA_PHASE_1_LANGUAGE_GENERATOR,
-)
-from adam.language.language_generator import LanguageGenerator
-from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
-from adam.language.dependency import LinearizedDependencyTree
+from typing import AbstractSet, Union, Optional
 from adam.language import LinguisticDescription
 from adam.learner import LearningExample
 from adam.learner.alignments import (
     LanguagePerceptionSemanticAlignment,
     PerceptionSemanticAlignment,
 )
-from adam.learner.learner_utils import assert_static_situation
+from adam.learner.learner_utils import (
+    assert_static_situation,
+    pattern_remove_incomplete_region_or_spatial_path,
+)
 from adam.learner.object_recognizer import (
     ObjectRecognizer,
     PerceptionGraphFromObjectRecognizer,
@@ -32,7 +29,7 @@ from adam.learner.template_learner import (
     AbstractTemplateLearner,
     AbstractTemplateLearnerNew,
 )
-from adam.perception import PerceptualRepresentation
+from adam.perception import PerceptualRepresentation, MatchMode
 from adam.perception.deprecated import LanguageAlignedPerception
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -41,7 +38,7 @@ from adam.perception.perception_graph import PerceptionGraph
 from adam.semantics import AttributeConcept, ObjectSemanticNode
 from attr import attrib, attrs
 from attr.validators import instance_of
-from immutablecollections import immutabledict, immutableset
+from immutablecollections import immutabledict, immutableset, immutablesetmultidict
 from vistautils.span import Span
 
 
@@ -77,6 +74,7 @@ class AbstractAttributeTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                                 restrict_to_span=Span(
                                     preceding_token_index, span_for_object.end
                                 ),
+                                language_mode=self._language_mode,
                             ),
                             {SLOT1: object_node},
                         )
@@ -94,6 +92,7 @@ class AbstractAttributeTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                                 restrict_to_span=Span(
                                     span_for_object.start, following_token_index
                                 ),
+                                language_mode=self._language_mode,
                             ),
                             {SLOT1: object_node},
                         )
@@ -125,27 +124,17 @@ class AbstractAttributeTemplateLearner(AbstractTemplateLearner, ABC):
         return PerceptionGraph.from_frame(perception.frames[0])
 
     def _preprocess_scene_for_learning(
-        self,
-        language_concept_alignment: LanguageAlignedPerception,
-        language_generator: LanguageGenerator[
-            HighLevelSemanticsSituation, LinearizedDependencyTree
-        ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+        self, language_concept_alignment: LanguageAlignedPerception
     ) -> LanguageAlignedPerception:
         post_recognition_object_perception_alignment = self._object_recognizer.match_objects_with_language_old(
-            language_concept_alignment, language_generator=language_generator
+            language_concept_alignment
         )
         return post_recognition_object_perception_alignment
 
     def _preprocess_scene_for_description(
-        self,
-        perception_graph: PerceptionGraph,
-        language_generator: LanguageGenerator[
-            HighLevelSemanticsSituation, LinearizedDependencyTree
-        ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+        self, perception_graph: PerceptionGraph
     ) -> PerceptionGraphFromObjectRecognizer:
-        return self._object_recognizer.match_objects_old(
-            perception_graph, language_generator=language_generator
-        )
+        return self._object_recognizer.match_objects_old(perception_graph)
 
     def _extract_surface_template(
         self, language_concept_alignment: LanguageAlignedPerception
@@ -183,6 +172,25 @@ class SubsetAttributeLearner(
             preprocessed_input.perception_graph,
             template_variable_to_matched_object_node=immutabledict(
                 zip(STANDARD_SLOT_VARIABLES, preprocessed_input.aligned_nodes)
+            ),
+        )
+
+    def _update_hypothesis(
+        self,
+        previous_pattern_hypothesis: PerceptionGraphTemplate,
+        current_pattern_hypothesis: PerceptionGraphTemplate,
+    ) -> Optional[PerceptionGraphTemplate]:
+        return previous_pattern_hypothesis.intersection(
+            current_pattern_hypothesis,
+            ontology=self._ontology,
+            match_mode=MatchMode.NON_OBJECT,
+            allowed_matches=immutablesetmultidict(
+                [
+                    (node2, node1)
+                    for previous_slot, node1 in previous_pattern_hypothesis.template_variable_to_pattern_node.items()
+                    for new_slot, node2 in current_pattern_hypothesis.template_variable_to_pattern_node.items()
+                    if previous_slot == new_slot
+                ]
             ),
         )
 
@@ -236,3 +244,23 @@ class SubsetAttributeLearnerNew(
             # for meaningful attribute semantics.
             return False
         return True
+
+    def _update_hypothesis(
+        self,
+        previous_pattern_hypothesis: PerceptionGraphTemplate,
+        current_pattern_hypothesis: PerceptionGraphTemplate,
+    ) -> Optional[PerceptionGraphTemplate]:
+        return previous_pattern_hypothesis.intersection(
+            current_pattern_hypothesis,
+            ontology=self._ontology,
+            match_mode=MatchMode.NON_OBJECT,
+            allowed_matches=immutablesetmultidict(
+                [
+                    (node2, node1)
+                    for previous_slot, node1 in previous_pattern_hypothesis.template_variable_to_pattern_node.items()
+                    for new_slot, node2 in current_pattern_hypothesis.template_variable_to_pattern_node.items()
+                    if previous_slot == new_slot
+                ]
+            ),
+            trim_after_match=pattern_remove_incomplete_region_or_spatial_path,
+        )

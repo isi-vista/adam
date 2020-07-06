@@ -1,11 +1,5 @@
 import pytest
 from more_itertools import first, one
-from adam.language_specific.chinese.chinese_language_generator import (
-    GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
-)
-from adam.language_specific.english.english_language_generator import (
-    GAILA_PHASE_1_LANGUAGE_GENERATOR,
-)
 from adam.language_specific.chinese.chinese_phase_1_lexicon import (
     GAILA_PHASE_1_CHINESE_LEXICON,
 )
@@ -13,6 +7,7 @@ from adam.curriculum.curriculum_utils import PHASE1_CHOOSER_FACTORY, phase1_inst
 from adam.language_specific.english.english_language_generator import PREFER_DITRANSITIVE
 from adam.learner import PerceptionSemanticAlignment
 from adam.learner.integrated_learner import IntegratedTemplateLearner
+from adam.learner.language_mode import LanguageMode
 from adam.learner.objects import ObjectRecognizerAsTemplateLearner
 from adam.ontology.phase1_ontology import (
     AGENT,
@@ -38,15 +33,12 @@ from adam.situation.templates.phase1_templates import (
     object_variable,
     sampled,
 )
-from learner import TEST_OBJECT_RECOGNIZER
+from tests.learner import object_recognizer_factory
 
 
 @pytest.mark.parametrize("object_type", PHASE_1_CURRICULUM_OBJECTS)
-@pytest.mark.parametrize(
-    "language_generator",
-    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
-)
-def test_recognizes_ontology_objects(object_type, language_generator):
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
+def test_recognizes_ontology_objects(object_type, language_mode):
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
         salient_objects=[
@@ -63,13 +55,13 @@ def test_recognizes_ontology_objects(object_type, language_generator):
     )
     learner = IntegratedTemplateLearner(
         object_learner=ObjectRecognizerAsTemplateLearner(
-            object_recognizer=TEST_OBJECT_RECOGNIZER,
-            language_generator=language_generator,
+            object_recognizer=object_recognizer_factory(language_mode),
+            language_mode=language_mode,
         )
     )
-    descriptions = learner.describe(perception, language_generator=language_generator)
+    descriptions = learner.describe(perception)
     assert descriptions
-    if language_generator == GAILA_PHASE_1_LANGUAGE_GENERATOR:
+    if language_mode == LanguageMode.ENGLISH:
         assert object_type.handle in one(descriptions.items())[0].as_token_sequence()
     else:
         mappings = (
@@ -80,11 +72,8 @@ def test_recognizes_ontology_objects(object_type, language_generator):
                 assert v.base_form in one(descriptions.items())[0].as_token_sequence()
 
 
-@pytest.mark.parametrize(
-    "language_generator",
-    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
-)
-def test_trivial_dynamic_situation_with_schemaless_object(language_generator):
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
+def test_trivial_dynamic_situation_with_schemaless_object(language_mode):
     dad_situation_object = SituationObject.instantiate_ontology_node(
         ontology_node=DAD, ontology=GAILA_PHASE_1_ONTOLOGY
     )
@@ -112,24 +101,21 @@ def test_trivial_dynamic_situation_with_schemaless_object(language_generator):
     perception_semantic_alignment = PerceptionSemanticAlignment.create_unaligned(
         perception_graph
     )
-    (_, description_to_matched_semantic_node) = TEST_OBJECT_RECOGNIZER.match_objects(
-        perception_semantic_alignment, language_generator=language_generator
-    )
+    (_, description_to_matched_semantic_node) = object_recognizer_factory(
+        language_mode
+    ).match_objects(perception_semantic_alignment)
     assert len(description_to_matched_semantic_node) == 1
     assert (
-        language_generator == GAILA_PHASE_1_LANGUAGE_GENERATOR
+        language_mode == LanguageMode.ENGLISH
         and ("Dad",) in description_to_matched_semantic_node
     ) or (
-        language_generator == GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR
+        language_mode == LanguageMode.CHINESE
         and ("ba4 ba4",) in description_to_matched_semantic_node
     )
 
 
-@pytest.mark.parametrize(
-    "language_generator",
-    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
-)
-def test_recognize_in_transfer_of_possession(language_generator):
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
+def test_recognize_in_transfer_of_possession(language_mode):
     dad = object_variable("person_0", DAD)
     baby = object_variable("person_1", BABY)
     chair = object_variable("give_object_0", CHAIR)
@@ -162,14 +148,14 @@ def test_recognize_in_transfer_of_possession(language_generator):
     perception_semantic_alignment = PerceptionSemanticAlignment.create_unaligned(
         perception_graph
     )
-    (_, description_to_matched_semantic_node) = TEST_OBJECT_RECOGNIZER.match_objects(
-        perception_semantic_alignment, language_generator=language_generator
-    )
+    (_, description_to_matched_semantic_node) = object_recognizer_factory(
+        language_mode
+    ).match_objects(perception_semantic_alignment)
     assert len(description_to_matched_semantic_node) == 4
     assert (
-        language_generator == GAILA_PHASE_1_LANGUAGE_GENERATOR
+        language_mode == LanguageMode.ENGLISH
         and ("Dad",) in description_to_matched_semantic_node
     ) or (
-        language_generator == GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR
+        language_mode == LanguageMode.CHINESE
         and ("ba4 ba4",) in description_to_matched_semantic_node
     )

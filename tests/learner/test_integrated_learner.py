@@ -1,12 +1,7 @@
 from more_itertools import one
 import pytest
-from adam.language_specific.english.english_language_generator import (
-    GAILA_PHASE_1_LANGUAGE_GENERATOR,
-)
-from adam.language_specific.chinese.chinese_language_generator import (
-    GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
-)
 from adam.learner.integrated_learner import IntegratedTemplateLearner
+from adam.learner.language_mode import LanguageMode
 from adam.learner.objects import ObjectRecognizerAsTemplateLearner
 from adam.ontology.phase1_ontology import DAD, GAILA_PHASE_1_ONTOLOGY
 from adam.perception import PerceptualRepresentation
@@ -16,18 +11,16 @@ from adam.perception.high_level_semantics_situation_to_developmental_primitive_p
 from adam.random_utils import RandomChooser
 from adam.situation import SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
-from learner import TEST_OBJECT_RECOGNIZER
+
+from tests.learner import object_recognizer_factory
 
 
-@pytest.mark.parametrize(
-    "language_generator",
-    [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
-)
-def test_with_object_recognizer(language_generator):
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
+def test_with_object_recognizer(language_mode):
     integrated_learner = IntegratedTemplateLearner(
         object_learner=ObjectRecognizerAsTemplateLearner(
-            object_recognizer=TEST_OBJECT_RECOGNIZER,
-            language_generator=language_generator,
+            object_recognizer=object_recognizer_factory(language_mode),
+            language_mode=language_mode,
         ),
         attribute_learner=None,
         relation_learner=None,
@@ -55,15 +48,13 @@ def test_with_object_recognizer(language_generator):
         frames=[perception.frames[0], perception.frames[0]]
     )
 
-    descriptions = integrated_learner.describe(
-        dynamic_perception, language_generator=language_generator
-    )
+    descriptions = integrated_learner.describe(dynamic_perception)
 
     assert len(descriptions) == 1
     assert (
-        language_generator == GAILA_PHASE_1_LANGUAGE_GENERATOR
+        language_mode == LanguageMode.ENGLISH
         and one(descriptions.keys()).as_token_sequence() == ("Dad",)
     ) or (
-        language_generator == GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR
+        language_mode == LanguageMode.CHINESE
         and one(descriptions.keys()).as_token_sequence() == ("ba4 ba4",)
     )

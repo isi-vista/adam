@@ -159,7 +159,18 @@ def _make_each_object_by_itself_curriculum(
     color = color_variable("color")
     single_object_template = Phase1SituationTemplate(
         "single-object",
-        salient_object_variables=[object_variable("object", added_properties=[color])],
+        salient_object_variables=[
+            object_variable(
+                "object", added_properties=[color], banned_properties=[LIQUID]
+            )
+        ],
+        syntax_hints=[IGNORE_COLORS],
+    )
+    single_liquid_template = Phase1SituationTemplate(
+        "single-liquids",
+        salient_object_variables=[
+            object_variable("liquid", required_properties=[LIQUID])
+        ],
         syntax_hints=[IGNORE_COLORS],
     )
     single_speaker_template = Phase1SituationTemplate(
@@ -181,6 +192,11 @@ def _make_each_object_by_itself_curriculum(
             *[
                 all_possible(
                     single_object_template,
+                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                ),
+                all_possible(
+                    single_liquid_template,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                 ),
@@ -367,17 +383,20 @@ def _make_object_on_ground_curriculum(
 ) -> Phase1InstanceGroup:
     object_0 = standard_object("object_0")
     liquid_0 = object_variable("liquid_0", THING, required_properties=[LIQUID])
+    ground = GROUND_OBJECT_TEMPLATE
 
     object_on_ground_template = Phase1SituationTemplate(
         "object-on-ground",
-        salient_object_variables=[GROUND_OBJECT_TEMPLATE, object_0],
-        asserted_always_relations=[on(object_0, GROUND_OBJECT_TEMPLATE)],
+        salient_object_variables=[object_0],
+        background_object_variables=[ground],
+        asserted_always_relations=[on(object_0, ground)],
     )
 
     liquid_on_ground_template = Phase1SituationTemplate(
         "liquid-on-ground",
-        salient_object_variables=[liquid_0, GROUND_OBJECT_TEMPLATE],
-        asserted_always_relations=[on(liquid_0, GROUND_OBJECT_TEMPLATE)],
+        salient_object_variables=[liquid_0],
+        background_object_variables=[ground],
+        asserted_always_relations=[on(liquid_0, ground)],
     )
 
     return phase1_instances(
@@ -2434,7 +2453,9 @@ def build_gaila_phase1_attribute_curriculum(
     """
     return [
         _make_objects_with_colors_curriculum(language_generator=language_generator),
-        _make_objects_with_colors_is_curriculum(language_generator=language_generator),
+        # TODO: Enable this curriculum once we handle it better
+        # See: https://github.com/isi-vista/adam/issues/830
+        # _make_objects_with_colors_is_curriculum(language_generator=language_generator),
         _make_my_your_object_curriculum(language_generator=language_generator),
     ]
 

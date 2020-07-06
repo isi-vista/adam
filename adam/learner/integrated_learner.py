@@ -1,14 +1,8 @@
 import itertools
-from adam.language_specific.english.english_language_generator import (
-    GAILA_PHASE_1_LANGUAGE_GENERATOR,
-)
 import logging
-from adam.language.language_generator import LanguageGenerator
-from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
-from adam.language.dependency import LinearizedDependencyTree
 from itertools import chain, combinations
 from pathlib import Path
-from typing import AbstractSet, Iterable, Iterator, Mapping, Optional, Tuple
+from typing import AbstractSet, Iterable, Iterator, Mapping, Optional, Tuple, List
 from more_itertools import flatten, one
 
 from adam.language import LinguisticDescription, TokenSequenceLinguisticDescription
@@ -19,6 +13,7 @@ from adam.learner.alignments import (
     LanguagePerceptionSemanticAlignment,
     PerceptionSemanticAlignment,
 )
+from adam.learner.language_mode import LanguageMode
 from adam.learner.surface_templates import MASS_NOUNS, SLOT1
 from adam.learner.template_learner import TemplateLearner
 from adam.perception import PerceptualRepresentation
@@ -82,15 +77,13 @@ class IntegratedTemplateLearner(
     _max_attributes_per_word: int = attrib(validator=instance_of(int), default=3)
 
     _observation_num: int = attrib(init=False, default=0)
+    _sub_learners: List[TemplateLearner] = attrib(init=False)
 
     def observe(
         self,
         learning_example: LearningExample[
             DevelopmentalPrimitivePerceptionFrame, LinguisticDescription
         ],
-        language_generator: LanguageGenerator[
-            HighLevelSemanticsSituation, LinearizedDependencyTree
-        ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
     ) -> None:
         logging.info(
             "Observation %s: %s",
@@ -132,18 +125,14 @@ class IntegratedTemplateLearner(
                     sub_learner.learn_from(current_learner_state)
 
                 current_learner_state = sub_learner.enrich_during_learning(
-                    current_learner_state, language_generator=language_generator
+                    current_learner_state
                 )
 
         if learning_example.perception.is_dynamic() and self.action_learner:
             self.action_learner.learn_from(current_learner_state)
 
     def describe(
-        self,
-        perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame],
-        language_generator: LanguageGenerator[
-            HighLevelSemanticsSituation, LinearizedDependencyTree
-        ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+        self, perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]
     ) -> Mapping[LinguisticDescription, float]:
 
         perception_graph = self._extract_perception_graph(perception)
@@ -168,15 +157,11 @@ class IntegratedTemplateLearner(
             )
 
         return self._linguistic_descriptions_from_semantics(
-            cur_description_state.semantic_nodes, language_generator=language_generator
+            cur_description_state.semantic_nodes
         )
 
     def _linguistic_descriptions_from_semantics(
-        self,
-        semantic_nodes: AbstractSet[SemanticNode],
-        language_generator: LanguageGenerator[
-            HighLevelSemanticsSituation, LinearizedDependencyTree
-        ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+        self, semantic_nodes: AbstractSet[SemanticNode]
     ) -> Mapping[LinguisticDescription, float]:
 
         learner_semantics = LearnerSemantics.from_nodes(semantic_nodes)
@@ -187,7 +172,7 @@ class IntegratedTemplateLearner(
                     (action_tokens, 1.0)
                     for action in learner_semantics.actions
                     for action_tokens in self._instantiate_action(
-                        action, learner_semantics, language_generator=language_generator
+                        action, learner_semantics
                     )
                     # ensure we have some way of expressing this action
                     if self.action_learner.templates_for_concept(action.concept)
@@ -200,7 +185,7 @@ class IntegratedTemplateLearner(
                     (relation_tokens, 1.0)
                     for relation in learner_semantics.relations
                     for relation_tokens in self._instantiate_relation(
-                        relation, learner_semantics, language_generator=language_generator
+                        relation, learner_semantics
                     )
                     # ensure we have some way of expressing this relation
                     if self.relation_learner.templates_for_concept(relation.concept)
@@ -210,9 +195,7 @@ class IntegratedTemplateLearner(
             [
                 (object_tokens, 1.0)
                 for object_ in learner_semantics.objects
-                for object_tokens in self._instantiate_object(
-                    object_, learner_semantics, language_generator=language_generator
-                )
+                for object_tokens in self._instantiate_object(object_, learner_semantics)
                 # ensure we have some way of expressing this object
                 if self.object_learner.templates_for_concept(object_.concept)
             ]
@@ -221,13 +204,31 @@ class IntegratedTemplateLearner(
             (TokenSequenceLinguisticDescription(tokens), score) for (tokens, score) in ret
         )
 
+    def _add_determiners(
+        self, object_node: ObjectSemanticNode, cur_string: Tuple[str, ...]
+    ) -> Tuple[str, ...]:
+        if (
+            self.object_learner._language_mode  # pylint: disable=protected-access
+            != LanguageMode.ENGLISH
+        ):
+            return cur_string
+        # English-specific hack to deal with us not understanding determiners:
+        # https://github.com/isi-vista/adam/issues/498
+        # The "is lower" check is a hack to block adding a determiner to proper names.
+        # Ground is a specific thing so we special case this to be assigned
+        if object_node.concept == GROUND_OBJECT_CONCEPT:
+            return tuple(chain(("the",), cur_string))
+        elif (
+            object_node.concept.debug_string not in MASS_NOUNS
+            and object_node.concept.debug_string.islower()
+            and not cur_string[0] in ENGLISH_BLOCK_DETERMINERS
+        ):
+            return tuple(chain(("a",), cur_string))
+        else:
+            return cur_string
+
     def _instantiate_object(
-        self,
-        object_node: ObjectSemanticNode,
-        learner_semantics: "LearnerSemantics",
-        language_generator: LanguageGenerator[
-            HighLevelSemanticsSituation, LinearizedDependencyTree
-        ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+        self, object_node: ObjectSemanticNode, learner_semantics: "LearnerSemantics"
     ) -> Iterator[Tuple[str, ...]]:
 
         # For now, we assume the order in which modifiers is expressed is arbitrary.
@@ -247,8 +248,7 @@ class IntegratedTemplateLearner(
         for template in self.object_learner.templates_for_concept(object_node.concept):
 
             cur_string = template.instantiate(
-                template_variable_to_filler=immutabledict(),
-                language_generator=language_generator,
+                template_variable_to_filler=immutabledict()
             ).as_token_sequence()
 
             for num_attributes in range(
@@ -266,45 +266,22 @@ class IntegratedTemplateLearner(
                         ) in self.attribute_learner.templates_for_concept(  # type: ignore
                             attribute.concept
                         ):
-                            cur_string = attribute_template.instantiate(
-                                template_variable_to_filler={SLOT1: cur_string}
-                            ).as_token_sequence()
-            # English-specific hack to deal with us not understanding determiners:
-            # https://github.com/isi-vista/adam/issues/498
-            # The "is lower" check is a hack to block adding a determiner to proper names.
-            # Ground is a specific thing so we special case this to be assigned
-            if (
-                object_node.concept == GROUND_OBJECT_CONCEPT
-                and language_generator == GAILA_PHASE_1_LANGUAGE_GENERATOR
-            ):
-                yield tuple(chain(("the",), cur_string))
-            elif (
-                language_generator == GAILA_PHASE_1_LANGUAGE_GENERATOR
-                and object_node.concept.debug_string not in MASS_NOUNS
-                and object_node.concept.debug_string.islower()
-                and not cur_string[0] in ENGLISH_BLOCK_DETERMINERS
-            ):
-                yield tuple(chain(("a",), cur_string))
-            else:
-                yield cur_string
+                            yield self._add_determiners(
+                                object_node,
+                                attribute_template.instantiate(
+                                    template_variable_to_filler={SLOT1: cur_string}
+                                ).as_token_sequence(),
+                            )
+            yield self._add_determiners(object_node, cur_string)
 
     def _instantiate_relation(
-        self,
-        relation_node: RelationSemanticNode,
-        learner_semantics: "LearnerSemantics",
-        language_generator: LanguageGenerator[
-            HighLevelSemanticsSituation, LinearizedDependencyTree
-        ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+        self, relation_node: RelationSemanticNode, learner_semantics: "LearnerSemantics"
     ) -> Iterator[Tuple[str, ...]]:
         if not self.relation_learner:
             raise RuntimeError("Cannot instantiate relations without a relation learner")
 
         slots_to_instantiations = {
-            slot: list(
-                self._instantiate_object(
-                    slot_filler, learner_semantics, language_generator=language_generator
-                )
-            )
+            slot: list(self._instantiate_object(slot_filler, learner_semantics))
             for (slot, slot_filler) in relation_node.slot_fillings.items()
         }
         slot_order = tuple(slots_to_instantiations.keys())
@@ -317,26 +294,16 @@ class IntegratedTemplateLearner(
             )
             for possible_slot_filling in all_possible_slot_fillings:
                 yield relation_template.instantiate(
-                    immutabledict(zip(slot_order, possible_slot_filling)),
-                    language_generator=language_generator,
+                    immutabledict(zip(slot_order, possible_slot_filling))
                 ).as_token_sequence()
 
     def _instantiate_action(
-        self,
-        action_node: ActionSemanticNode,
-        learner_semantics: "LearnerSemantics",
-        language_generator: LanguageGenerator[
-            HighLevelSemanticsSituation, LinearizedDependencyTree
-        ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+        self, action_node: ActionSemanticNode, learner_semantics: "LearnerSemantics"
     ) -> Iterator[Tuple[str, ...]]:
         if not self.action_learner:
             raise RuntimeError("Cannot instantiate an action without an action learner")
         slots_to_instantiations = {
-            slot: list(
-                self._instantiate_object(
-                    slot_filler, learner_semantics, language_generator=language_generator
-                )
-            )
+            slot: list(self._instantiate_object(slot_filler, learner_semantics))
             for (slot, slot_filler) in action_node.slot_fillings.items()
         }
         slot_order = tuple(slots_to_instantiations.keys())
@@ -349,12 +316,12 @@ class IntegratedTemplateLearner(
             )
             for possible_slot_filling in all_possible_slot_fillings:
                 yield action_template.instantiate(
-                    immutabledict(zip(slot_order, possible_slot_filling)),
-                    language_generator=language_generator,
+                    immutabledict(zip(slot_order, possible_slot_filling))
                 ).as_token_sequence()
 
     def log_hypotheses(self, log_output_path: Path) -> None:
-        raise NotImplementedError("implement me")
+        for sub_learner in self._sub_learners:
+            sub_learner.log_hypotheses(log_output_path)
 
     def _extract_perception_graph(
         self, perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]
@@ -363,6 +330,19 @@ class IntegratedTemplateLearner(
             return PerceptionGraph.from_dynamic_perceptual_representation(perception)
         else:
             return PerceptionGraph.from_frame(perception.frames[0])
+
+    @_sub_learners.default
+    def _init_sub_learners(self) -> List[TemplateLearner]:
+        valid_sub_learners = []
+        if self.object_learner:
+            valid_sub_learners.append(self.object_learner)
+        if self.attribute_learner:
+            valid_sub_learners.append(self.attribute_learner)
+        if self.relation_learner:
+            valid_sub_learners.append(self.relation_learner)
+        if self.action_learner:
+            valid_sub_learners.append(self.action_learner)
+        return valid_sub_learners
 
 
 @attrs(frozen=True)
