@@ -1,6 +1,6 @@
 # core requirements
 attrs==19.3.0
-vistautils==0.21.0
+vistautils==0.22.0
 immutablecollections==0.11.0
 networkx==2.3
 more-itertools==7.2.0
