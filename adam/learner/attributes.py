@@ -6,7 +6,10 @@ from adam.learner.alignments import (
     LanguagePerceptionSemanticAlignment,
     PerceptionSemanticAlignment,
 )
-from adam.learner.learner_utils import assert_static_situation
+from adam.learner.learner_utils import (
+    assert_static_situation,
+    pattern_remove_incomplete_region_or_spatial_path,
+)
 from adam.learner.object_recognizer import (
     ObjectRecognizer,
     PerceptionGraphFromObjectRecognizer,
@@ -259,4 +262,5 @@ class SubsetAttributeLearnerNew(
                     if previous_slot == new_slot
                 ]
             ),
+            trim_after_match=pattern_remove_incomplete_region_or_spatial_path,
         )

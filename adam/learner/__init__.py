@@ -4,7 +4,7 @@ Interfaces for language learning code.
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Dict, Generic, Mapping, Optional
+from typing import Dict, Generic, Mapping, Optional, Callable
 
 from adam.learner.alignments import (
     LanguagePerceptionSemanticAlignment,
@@ -144,6 +144,9 @@ def get_largest_matching_pattern(
     ontology: Ontology,
     match_ratio: Optional[float] = None,
     match_mode: MatchMode,
+    trim_after_match: Optional[
+        Callable[[PerceptionGraphPattern], PerceptionGraphPattern]
+    ] = None,
 ) -> Optional[PerceptionGraphPattern]:
     """ Helper function to return the largest matching `PerceptionGraphPattern`
     for learner from a perception pattern and graph pair."""
@@ -151,7 +154,10 @@ def get_largest_matching_pattern(
         graph, debug_callback=debug_callback, match_mode=match_mode
     )
     return matching.relax_pattern_until_it_matches(
-        graph_logger=graph_logger, ontology=ontology, min_ratio=match_ratio
+        graph_logger=graph_logger,
+        ontology=ontology,
+        min_ratio=match_ratio,
+        trim_after_match=trim_after_match,
     )
 
 

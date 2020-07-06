@@ -1,4 +1,12 @@
-from typing import Mapping, Tuple, Union, cast
+import logging
+from typing import Mapping, Tuple, Union, cast, List
+
+from networkx import (
+    number_weakly_connected_components,
+    DiGraph,
+    weakly_connected_components,
+)
+
 from adam.language import LinguisticDescription, TokenSequenceLinguisticDescription
 from adam.learner import LearningExample
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
@@ -10,6 +18,12 @@ from adam.perception.developmental_primitive_perception import (
 from adam.perception.perception_graph import (
     ObjectSemanticNodePerceptionPredicate,
     PerceptionGraphPatternMatch,
+    PerceptionGraphPattern,
+    IsPathPredicate,
+    RegionPredicate,
+    REFERENCE_OBJECT_LABEL,
+    NodePredicate,
+    RelationTypeIsPredicate,
 )
 from adam.semantics import (
     Concept,
@@ -17,7 +31,9 @@ from adam.semantics import (
     SemanticNode,
     SyntaxSemanticsVariable,
 )
-from immutablecollections import immutabledict, immutableset
+from immutablecollections import immutabledict, immutableset, ImmutableSet
+
+from adam.utils.networkx_utils import subgraph
 
 
 def pattern_match_to_description(
@@ -120,3 +136,58 @@ def assert_static_situation(
         raise RuntimeError("Pursuit learner can only handle single frames for now")
     if not isinstance(perception.frames[0], DevelopmentalPrimitivePerceptionFrame):
         raise RuntimeError(f"Cannot process frame type: {type(perception.frames[0])}")
+
+
+def pattern_remove_incomplete_region_or_spatial_path(
+    perception_graph: PerceptionGraphPattern
+) -> PerceptionGraphPattern:
+    """
+    Helper function to return a `PerceptionGraphPattern` verifying
+    that region and spatial path perceptions contain a reference object.
+    """
+    graph = perception_graph.copy_as_digraph()
+    region_and_path_nodes: ImmutableSet[NodePredicate] = immutableset(
+        node
+        for node in graph.nodes
+        if isinstance(node, IsPathPredicate) or isinstance(node, RegionPredicate)
+    )
+    nodes_without_reference: List[NodePredicate] = []
+    for node in region_and_path_nodes:
+        has_reference_edge: bool = False
+        for successor in graph.successors(node):
+            predicate = graph.edges[node, successor]["predicate"]
+            if isinstance(predicate, RelationTypeIsPredicate):
+                if predicate.relation_type == REFERENCE_OBJECT_LABEL:
+                    has_reference_edge = True
+                    break
+        if not has_reference_edge:
+            nodes_without_reference.append(node)
+
+    logging.info(
+        f"Removing incomplete regions and paths. "
+        f"Removing nodes: {nodes_without_reference}"
+    )
+    graph.remove_nodes_from(nodes_without_reference)
+
+    def sort_by_num_nodes(g: DiGraph) -> int:
+        return len(g.nodes)
+
+    # We should maybe consider doing this a different way
+    # As this approach just brute force solves the problem rather than being methodical about it
+    if number_weakly_connected_components(graph) > 1:
+        components = [
+            component
+            for component in [
+                subgraph(graph, comp) for comp in weakly_connected_components(graph)
+            ]
+        ]
+        components.sort(key=sort_by_num_nodes, reverse=True)
+        computed_graph = subgraph(graph, components[0].nodes)
+        removed_nodes: List[NodePredicate] = []
+        for i in range(1, len(components)):
+            removed_nodes.extend(components[i].nodes)
+        logging.info(f"Cleanup disconnected elements. Removing: {removed_nodes}")
+    else:
+        computed_graph = graph
+
+    return PerceptionGraphPattern(computed_graph, dynamic=perception_graph.dynamic)

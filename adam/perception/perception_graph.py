@@ -970,6 +970,9 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
         ontology: Ontology,
         allowed_matches: ImmutableSetMultiDict[Any, Any] = immutablesetmultidict(),
         match_mode: MatchMode,
+        trim_after_match: Optional[
+            Callable[["PerceptionGraphPattern"], "PerceptionGraphPattern"]
+        ] = None,
     ) -> Optional["PerceptionGraphPattern"]:
         """
         Determine the largest partial match between two `PerceptionGraphPattern`s
@@ -986,7 +989,9 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
             allowed_matches=allowed_matches,
         )
         attempted_match = matcher.relax_pattern_until_it_matches(
-            graph_logger=graph_logger, ontology=ontology
+            graph_logger=graph_logger,
+            ontology=ontology,
+            trim_after_match=trim_after_match,
         )
         if attempted_match:
             return attempted_match
@@ -1233,6 +1238,9 @@ class PatternMatching:
         graph_logger: Optional["GraphLogger"] = None,
         ontology: Ontology,
         min_ratio: Optional[float] = None,
+        trim_after_match: Optional[
+            Callable[[PerceptionGraphPattern], PerceptionGraphPattern]
+        ],
     ) -> Optional[PerceptionGraphPattern]:
         """
         Prunes or relaxes the *pattern* for this matching until it successfully matches
@@ -1279,6 +1287,8 @@ class PatternMatching:
                 cur_pattern = self._relax_pattern(
                     match_attempt, graph_logger=graph_logger, ontology=ontology
                 )
+                if trim_after_match and cur_pattern:
+                    cur_pattern = trim_after_match(cur_pattern)
                 if graph_logger and cur_pattern:
                     graph_logger.log_graph(
                         cur_pattern,

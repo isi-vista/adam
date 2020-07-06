@@ -104,6 +104,9 @@ class PerceptionGraphTemplate:
             NodePredicate, NodePredicate
         ] = immutablesetmultidict(),
         match_mode: MatchMode,
+        trim_after_match: Optional[
+            Callable[[PerceptionGraphPattern], PerceptionGraphPattern]
+        ] = None,
     ) -> Optional["PerceptionGraphTemplate"]:
         r"""
         Gets the `PerceptionGraphTemplate` which contains all aspects of a pattern
@@ -142,6 +145,7 @@ class PerceptionGraphTemplate:
             debug_callback=debug_callback,
             allowed_matches=allowed_matches,
             match_mode=match_mode,
+            trim_after_match=trim_after_match,
         )
 
         if intersected_pattern:
