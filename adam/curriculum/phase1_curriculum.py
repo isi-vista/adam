@@ -36,6 +36,7 @@ from adam.language_specific.english.english_language_generator import (
 from adam.ontology import IS_ADDRESSEE, IS_SPEAKER, THING, OntologyNode
 from adam.ontology.during import DuringAction
 from adam.ontology.ontology import Ontology
+from adam.ontology.phase1_spatial_relations import PathOperator
 from adam.ontology.phase1_ontology import (
     AGENT,
     ANIMATE,
@@ -45,6 +46,7 @@ from adam.ontology.phase1_ontology import (
     CAN_HAVE_THINGS_RESTING_ON_THEM,
     CAN_JUMP,
     COME,
+    HARD_FORCE,
     DRINK,
     DRINK_CONTAINER_AUX,
     EAT,
@@ -1212,6 +1214,7 @@ def make_jump_template(
     agent: TemplateObjectVariable,
     *,
     use_adverbial_path_modifier: bool,
+    operator: PathOperator = None,
     spatial_properties: Iterable[OntologyNode] = immutableset(),
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
@@ -1229,7 +1232,7 @@ def make_jump_template(
                         (
                             agent,
                             SpatialPath(
-                                None,
+                                operator=operator,
                                 reference_object=GROUND_OBJECT_TEMPLATE,
                                 properties=spatial_properties,
                             ),
@@ -1248,6 +1251,7 @@ def make_pass_template(
     goal: TemplateObjectVariable,
     *,
     use_adverbial_path_modifier: bool,
+    operator: PathOperator = None,
     spatial_properties: Iterable[OntologyNode] = immutableset(),
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
@@ -1268,11 +1272,17 @@ def make_pass_template(
                             SpatialPath(
                                 None, reference_object=goal, properties=spatial_properties
                             ),
-                        )
+                        ),
+                        (
+                            agent,
+                            SpatialPath(
+                                operator=operator,
+                                reference_object=GROUND_OBJECT_TEMPLATE,
+                                properties=spatial_properties,
+                            ),
+                        ),
                     ]
-                )
-                if spatial_properties
-                else None,
+                ),
             )
         ],
         constraining_relations=[bigger_than(agent, theme)],
@@ -1307,11 +1317,13 @@ def _make_jump_curriculum(
                         make_jump_template(
                             jumper,
                             use_adverbial_path_modifier=use_adverbial_path_modifier,
+                            operator=operator,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                     )
                     for use_adverbial_path_modifier in (True, False)
+                    for operator in [TOWARD, AWAY_FROM]
                 ]
             ),
             flatten(
@@ -1603,6 +1615,7 @@ def make_take_template(
     *,
     use_adverbial_path_modifier: bool,
     spatial_properties: Iterable[OntologyNode] = None,
+    operator: PathOperator = None,
 ) -> Phase1SituationTemplate:
     # X grabs Y
     ground = GROUND_OBJECT_TEMPLATE
@@ -1618,19 +1631,29 @@ def make_take_template(
                         (
                             agent,
                             SpatialPath(
-                                None,
+                                # this is a hack since "grab" with an adverb doesn't really work in English
+                                operator=operator
+                                if (
+                                    not spatial_properties
+                                    or HARD_FORCE not in spatial_properties
+                                )
+                                else None,
                                 reference_object=ground,
                                 properties=spatial_properties,
                             ),
                         )
                     ]
-                )
-                if spatial_properties
-                else None,
+                ),
             )
         ],
         constraining_relations=[bigger_than(agent, theme)],
-        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER] if use_adverbial_path_modifier else [],
+        # this is a hack since "grab" with an adverb doesn't really work in English
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER]
+        if (
+            use_adverbial_path_modifier
+            and (not spatial_properties or HARD_FORCE not in spatial_properties)
+        )
+        else [],
     )
 
 
@@ -1638,6 +1661,7 @@ def make_walk_run_template(
     agent: TemplateObjectVariable,
     *,
     use_adverbial_path_modifier: bool,
+    operator: PathOperator = None,
     spatial_properties: Iterable[OntologyNode] = None,
 ) -> Phase1SituationTemplate:
     # X walks
@@ -1661,7 +1685,15 @@ def make_walk_run_template(
                                 reference_object=goal,
                                 properties=spatial_properties,
                             ),
-                        )
+                        ),
+                        (
+                            agent,
+                            SpatialPath(
+                                operator=operator,
+                                reference_object=GROUND_OBJECT_TEMPLATE,
+                                properties=spatial_properties,
+                            ),
+                        ),
                     ]
                 ),
             )
@@ -1678,22 +1710,27 @@ def _make_take_curriculum(
     return phase1_instances(
         "taking",
         chain(
-            *[
-                sampled(
-                    make_take_template(
-                        agent=standard_object(
-                            "taker_0", THING, required_properties=[ANIMATE]
+            flatten(
+                [
+                    sampled(
+                        make_take_template(
+                            agent=standard_object(
+                                "taker_0", THING, required_properties=[ANIMATE]
+                            ),
+                            theme=standard_object(
+                                "object_taken_0", required_properties=[INANIMATE]
+                            ),
+                            use_adverbial_path_modifier=use_adverbial_path_modifier,
+                            operator=operator,
                         ),
-                        theme=standard_object(
-                            "object_taken_0", required_properties=[INANIMATE]
-                        ),
-                        use_adverbial_path_modifier=False,
-                    ),
-                    max_to_sample=25,
-                    chooser=PHASE1_CHOOSER_FACTORY(),
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                )
-            ]
+                        max_to_sample=25,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                    )
+                    for use_adverbial_path_modifier in [True, False]
+                    for operator in [TOWARD, AWAY_FROM]
+                ]
+            )
         ),
         language_generator=language_generator,
     )
@@ -1914,6 +1951,7 @@ def make_push_templates(
     push_surface: TemplateObjectVariable,
     push_goal: TemplateObjectVariable,
     *,
+    operator: PathOperator = None,
     use_adverbial_path_modifier: bool,
     spatial_properties: Iterable[OntologyNode] = immutableset(),
 ) -> List[Phase1SituationTemplate]:
@@ -1940,14 +1978,19 @@ def make_push_templates(
                                 reference_object=push_goal,
                                 properties=spatial_properties,
                             ),
-                        )
+                        ),
+                        (
+                            agent,
+                            SpatialPath(
+                                operator=operator,
+                                reference_object=GROUND_OBJECT_TEMPLATE,
+                                properties=spatial_properties,
+                            ),
+                        ),
                     ],
-                )
-                if spatial_properties
-                else DuringAction(continuously=[on(theme, push_surface)]),  # type: ignore
+                ),
             )
         ],
-        # after_action_relations=[near(theme, push_goal)],
         constraining_relations=[
             bigger_than(push_surface, agent),
             bigger_than(push_surface, push_goal),
@@ -1974,14 +2017,19 @@ def make_push_templates(
                                 reference_object=push_goal,
                                 properties=spatial_properties,
                             ),
-                        )
+                        ),
+                        (
+                            agent,
+                            SpatialPath(
+                                operator=operator,
+                                reference_object=GROUND_OBJECT_TEMPLATE,
+                                properties=spatial_properties,
+                            ),
+                        ),
                     ],
-                )
-                if spatial_properties
-                else DuringAction(continuously=[on(theme, push_surface)]),  # type: ignore
+                ),
             )
         ],
-        # after_action_relations=[near(theme, push_goal)],
         constraining_relations=[bigger_than(push_surface, theme)],
         asserted_always_relations=[on(theme, push_surface)],
         syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER] if use_adverbial_path_modifier else [],
@@ -2004,6 +2052,8 @@ def _make_push_curriculum(
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                 )
+                for adverbial_path_modifier in [True, False]
+                for operator in [TOWARD, AWAY_FROM]
                 for situation in make_push_templates(
                     agent=standard_object("pusher", THING, required_properties=[ANIMATE]),
                     theme=standard_object("pushee", INANIMATE_OBJECT),
@@ -2013,7 +2063,8 @@ def _make_push_curriculum(
                         required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM],
                     ),
                     push_goal=standard_object("push_goal", INANIMATE_OBJECT),
-                    use_adverbial_path_modifier=False,
+                    use_adverbial_path_modifier=adverbial_path_modifier,
+                    operator=operator,
                 )
             ]
         ),
@@ -2231,16 +2282,31 @@ def _make_pass_curriculum(
 ) -> Phase1InstanceGroup:
     return phase1_instances(
         "passing",
-        sampled(
-            make_pass_template(
-                agent=standard_object("thrower_0", THING, required_properties=[ANIMATE]),
-                theme=standard_object("object_0", required_properties=[INANIMATE]),
-                goal=standard_object("catcher_0", THING, required_properties=[ANIMATE]),
-                use_adverbial_path_modifier=False,
-            ),
-            max_to_sample=25,
-            chooser=PHASE1_CHOOSER_FACTORY(),
-            ontology=GAILA_PHASE_1_ONTOLOGY,
+        chain(
+            flatten(
+                [
+                    sampled(
+                        make_pass_template(
+                            agent=standard_object(
+                                "thrower_0", THING, required_properties=[ANIMATE]
+                            ),
+                            theme=standard_object(
+                                "object_0", required_properties=[INANIMATE]
+                            ),
+                            goal=standard_object(
+                                "catcher_0", THING, required_properties=[ANIMATE]
+                            ),
+                            use_adverbial_path_modifier=use_adverbial_path_modifier,
+                            operator=operator,
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        max_to_sample=25,
+                    )
+                    for use_adverbial_path_modifier in (True, False)
+                    for operator in [TOWARD, AWAY_FROM]
+                ]
+            )
         ),
         language_generator=language_generator,
     )

@@ -58,6 +58,8 @@ from adam.ontology.phase1_ontology import (
     PATIENT,
     COOKIE,
     WATERMELON,
+    TOWARD,
+    AWAY_FROM,
     MOM,
     LEARNER,
     DOG,
@@ -515,6 +517,7 @@ def make_take_grab_subtle_verb_distinction(
                             taker,
                             takee,
                             use_adverbial_path_modifier=use_adverbial_path_modifier,
+                            operator=operator,
                             spatial_properties=[HARD_FORCE]
                             if hard_force
                             else [SOFT_FORCE],
@@ -525,6 +528,7 @@ def make_take_grab_subtle_verb_distinction(
                     )
                     for use_adverbial_path_modifier in BOOL_SET
                     for hard_force in BOOL_SET
+                    for operator in [TOWARD, AWAY_FROM]
                 ]
             )
         ),
@@ -554,11 +558,13 @@ def make_push_shove_subtle_verb_distinctions(
                 pushee,
                 push_surface,
                 push_goal,
-                # TODO: https://github.com/isi-vista/adam/issues/860
-                use_adverbial_path_modifier=False,
+                use_adverbial_path_modifier=use_adverbial_path_modifier,
+                operator=operator,
                 spatial_properties=[HARD_FORCE] if hard_force else [SOFT_FORCE],
             )
             for hard_force in BOOL_SET
+            for use_adverbial_path_modifier in BOOL_SET
+            for operator in [TOWARD, AWAY_FROM]
         ]
     )
     return phase1_instances(
@@ -598,6 +604,7 @@ def make_walk_run_subtle_verb_distinction(
                         make_walk_run_template(
                             agent,
                             use_adverbial_path_modifier=use_adverbial_path_modifier,
+                            operator=operator,
                             spatial_properties=[HARD_FORCE]
                             if hard_force
                             else [SOFT_FORCE],
@@ -608,6 +615,7 @@ def make_walk_run_subtle_verb_distinction(
                     )
                     for use_adverbial_path_modifier in BOOL_SET
                     for hard_force in BOOL_SET
+                    for operator in [AWAY_FROM, TOWARD]
                 ]
             )
         ),
@@ -638,6 +646,7 @@ def make_pass_toss_subtle_verb_distinction(
                             tossee,
                             goal,
                             use_adverbial_path_modifier=use_adverbial_path_modifier,
+                            operator=operator,
                             spatial_properties=[HARD_FORCE]
                             if hard_force
                             else [SOFT_FORCE],
@@ -648,6 +657,7 @@ def make_pass_toss_subtle_verb_distinction(
                     )
                     for use_adverbial_path_modifier in BOOL_SET
                     for hard_force in BOOL_SET
+                    for operator in [TOWARD, AWAY_FROM]
                 ]
             )
         ),
