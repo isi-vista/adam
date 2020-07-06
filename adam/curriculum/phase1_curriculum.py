@@ -1932,6 +1932,7 @@ def make_push_templates(
     push_surface: TemplateObjectVariable,
     push_goal: TemplateObjectVariable,
     *,
+    operator: PathOperator = None,
     use_adverbial_path_modifier: bool,
     spatial_properties: Iterable[OntologyNode] = immutableset(),
 ) -> List[Phase1SituationTemplate]:
@@ -1958,14 +1959,19 @@ def make_push_templates(
                                 reference_object=push_goal,
                                 properties=spatial_properties,
                             ),
-                        )
+                        ),
+                        (
+                            agent,
+                            SpatialPath(
+                                operator=operator,
+                                reference_object=GROUND_OBJECT_TEMPLATE,
+                                properties=spatial_properties,
+                            ),
+                        ),
                     ],
-                )
-                if spatial_properties
-                else DuringAction(continuously=[on(theme, push_surface)]),  # type: ignore
+                ),
             )
         ],
-        # after_action_relations=[near(theme, push_goal)],
         constraining_relations=[
             bigger_than(push_surface, agent),
             bigger_than(push_surface, push_goal),
@@ -1992,14 +1998,19 @@ def make_push_templates(
                                 reference_object=push_goal,
                                 properties=spatial_properties,
                             ),
-                        )
+                        ),
+                        (
+                            agent,
+                            SpatialPath(
+                                operator=operator,
+                                reference_object=GROUND_OBJECT_TEMPLATE,
+                                properties=spatial_properties,
+                            ),
+                        ),
                     ],
-                )
-                if spatial_properties
-                else DuringAction(continuously=[on(theme, push_surface)]),  # type: ignore
+                ),
             )
         ],
-        # after_action_relations=[near(theme, push_goal)],
         constraining_relations=[bigger_than(push_surface, theme)],
         asserted_always_relations=[on(theme, push_surface)],
         syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER] if use_adverbial_path_modifier else [],
@@ -2022,6 +2033,8 @@ def _make_push_curriculum(
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                 )
+                for adverbial_path_modifier in [True, False]
+                for operator in [TOWARD, AWAY_FROM]
                 for situation in make_push_templates(
                     agent=standard_object("pusher", THING, required_properties=[ANIMATE]),
                     theme=standard_object("pushee", INANIMATE_OBJECT),
@@ -2031,7 +2044,8 @@ def _make_push_curriculum(
                         required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM],
                     ),
                     push_goal=standard_object("push_goal", INANIMATE_OBJECT),
-                    use_adverbial_path_modifier=False,
+                    use_adverbial_path_modifier=adverbial_path_modifier,
+                    operator=operator,
                 )
             ]
         ),

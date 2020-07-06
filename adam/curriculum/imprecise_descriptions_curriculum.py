@@ -558,11 +558,13 @@ def make_push_shove_subtle_verb_distinctions(
                 pushee,
                 push_surface,
                 push_goal,
-                # TODO: https://github.com/isi-vista/adam/issues/860
-                use_adverbial_path_modifier=False,
+                use_adverbial_path_modifier=use_adverbial_path_modifier,
+                operator=operator,
                 spatial_properties=[HARD_FORCE] if hard_force else [SOFT_FORCE],
             )
             for hard_force in BOOL_SET
+            for use_adverbial_path_modifier in BOOL_SET
+            for operator in [TOWARD, AWAY_FROM]
         ]
     )
     return phase1_instances(
