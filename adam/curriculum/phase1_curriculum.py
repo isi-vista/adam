@@ -1229,6 +1229,7 @@ def make_pass_template(
     goal: TemplateObjectVariable,
     *,
     use_adverbial_path_modifier: bool,
+    operator=None,
     spatial_properties: Iterable[OntologyNode] = immutableset(),
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
@@ -1249,11 +1250,17 @@ def make_pass_template(
                             SpatialPath(
                                 None, reference_object=goal, properties=spatial_properties
                             ),
-                        )
+                        ),
+                        (
+                            agent,
+                            SpatialPath(
+                                operator=operator,
+                                reference_object=GROUND_OBJECT_TEMPLATE,
+                                properties=spatial_properties,
+                            ),
+                        ),
                     ]
-                )
-                if spatial_properties
-                else None,
+                ),
             )
         ],
         constraining_relations=[bigger_than(agent, theme)],
@@ -2212,16 +2219,31 @@ def _make_pass_curriculum(
 ) -> Phase1InstanceGroup:
     return phase1_instances(
         "passing",
-        sampled(
-            make_pass_template(
-                agent=standard_object("thrower_0", THING, required_properties=[ANIMATE]),
-                theme=standard_object("object_0", required_properties=[INANIMATE]),
-                goal=standard_object("catcher_0", THING, required_properties=[ANIMATE]),
-                use_adverbial_path_modifier=False,
-            ),
-            max_to_sample=25,
-            chooser=PHASE1_CHOOSER_FACTORY(),
-            ontology=GAILA_PHASE_1_ONTOLOGY,
+        chain(
+            flatten(
+                [
+                    sampled(
+                        make_pass_template(
+                            agent=standard_object(
+                                "thrower_0", THING, required_properties=[ANIMATE]
+                            ),
+                            theme=standard_object(
+                                "object_0", required_properties=[INANIMATE]
+                            ),
+                            goal=standard_object(
+                                "catcher_0", THING, required_properties=[ANIMATE]
+                            ),
+                            use_adverbial_path_modifier=use_adverbial_path_modifier,
+                            operator=operator,
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        max_to_sample=25,
+                    )
+                    for use_adverbial_path_modifier in (True, False)
+                    for operator in [TOWARD, AWAY_FROM]
+                ]
+            )
         ),
         language_generator=language_generator,
     )
