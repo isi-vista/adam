@@ -518,13 +518,6 @@ class ObjectRecognizerAsTemplateLearner(TemplateLearner):
     def log_hypotheses(self, log_output_path: Path) -> None:
         pass
 
-    def _intersect_hypothesis(
-        self,
-        previous_pattern_hypothesis: PerceptionGraphTemplate,
-        current_pattern_hypothesis: PerceptionGraphTemplate,
-    ) -> Optional[PerceptionGraphTemplate]:
-        pass
-
     @_concepts_to_templates.default
     def _init_concepts_to_templates(
         self
