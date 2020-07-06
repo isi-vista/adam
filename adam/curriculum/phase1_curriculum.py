@@ -1591,6 +1591,7 @@ def make_take_template(
     *,
     use_adverbial_path_modifier: bool,
     spatial_properties: Iterable[OntologyNode] = None,
+    operator=None,
 ) -> Phase1SituationTemplate:
     # X grabs Y
     ground = GROUND_OBJECT_TEMPLATE
@@ -1606,15 +1607,13 @@ def make_take_template(
                         (
                             agent,
                             SpatialPath(
-                                None,
+                                operator=operator,
                                 reference_object=ground,
                                 properties=spatial_properties,
                             ),
                         )
                     ]
-                )
-                if spatial_properties
-                else None,
+                ),
             )
         ],
         constraining_relations=[bigger_than(agent, theme)],
@@ -1666,22 +1665,27 @@ def _make_take_curriculum(
     return phase1_instances(
         "taking",
         chain(
-            *[
-                sampled(
-                    make_take_template(
-                        agent=standard_object(
-                            "taker_0", THING, required_properties=[ANIMATE]
+            flatten(
+                [
+                    sampled(
+                        make_take_template(
+                            agent=standard_object(
+                                "taker_0", THING, required_properties=[ANIMATE]
+                            ),
+                            theme=standard_object(
+                                "object_taken_0", required_properties=[INANIMATE]
+                            ),
+                            use_adverbial_path_modifier=use_adverbial_path_modifier,
+                            operator=operator,
                         ),
-                        theme=standard_object(
-                            "object_taken_0", required_properties=[INANIMATE]
-                        ),
-                        use_adverbial_path_modifier=False,
-                    ),
-                    max_to_sample=25,
-                    chooser=PHASE1_CHOOSER_FACTORY(),
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                )
-            ]
+                        max_to_sample=25,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                    )
+                    for use_adverbial_path_modifier in [True, False]
+                    for operator in [TOWARD, AWAY_FROM]
+                ]
+            )
         ),
         language_generator=language_generator,
     )

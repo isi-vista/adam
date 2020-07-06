@@ -517,6 +517,7 @@ def make_take_grab_subtle_verb_distinction(
                             taker,
                             takee,
                             use_adverbial_path_modifier=use_adverbial_path_modifier,
+                            operator=operator,
                             spatial_properties=[HARD_FORCE]
                             if hard_force
                             else [SOFT_FORCE],
@@ -527,6 +528,7 @@ def make_take_grab_subtle_verb_distinction(
                     )
                     for use_adverbial_path_modifier in BOOL_SET
                     for hard_force in BOOL_SET
+                    for operator in [TOWARD, AWAY_FROM]
                 ]
             )
         ),
