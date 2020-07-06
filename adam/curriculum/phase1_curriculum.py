@@ -1195,6 +1195,7 @@ def make_jump_template(
     agent: TemplateObjectVariable,
     *,
     use_adverbial_path_modifier: bool,
+    operator: PathOperator = None,
     spatial_properties: Iterable[OntologyNode] = immutableset(),
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
@@ -1212,7 +1213,7 @@ def make_jump_template(
                         (
                             agent,
                             SpatialPath(
-                                None,
+                                operator=operator,
                                 reference_object=GROUND_OBJECT_TEMPLATE,
                                 properties=spatial_properties,
                             ),
@@ -1297,11 +1298,13 @@ def _make_jump_curriculum(
                         make_jump_template(
                             jumper,
                             use_adverbial_path_modifier=use_adverbial_path_modifier,
+                            operator=operator,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                     )
                     for use_adverbial_path_modifier in (True, False)
+                    for operator in [TOWARD, AWAY_FROM]
                 ]
             ),
             flatten(
@@ -1639,6 +1642,7 @@ def make_walk_run_template(
     agent: TemplateObjectVariable,
     *,
     use_adverbial_path_modifier: bool,
+    operator: PathOperator = None,
     spatial_properties: Iterable[OntologyNode] = None,
 ) -> Phase1SituationTemplate:
     # X walks
@@ -1662,7 +1666,15 @@ def make_walk_run_template(
                                 reference_object=goal,
                                 properties=spatial_properties,
                             ),
-                        )
+                        ),
+                        (
+                            agent,
+                            SpatialPath(
+                                operator=operator,
+                                reference_object=GROUND_OBJECT_TEMPLATE,
+                                properties=spatial_properties,
+                            ),
+                        ),
                     ]
                 ),
             )
