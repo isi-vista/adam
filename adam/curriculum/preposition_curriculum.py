@@ -1150,45 +1150,138 @@ def _make_far_tests(
 
 
 def make_prepositions_curriculum_training(
-    num_samples: int = 5, *, noise_objects: bool = True
+    num_samples: int = 5,
+    *,
+    noise_objects: bool = True,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ):
     return [
-        _make_on_training(num_samples, noise_objects=noise_objects),
-        _make_beside_training(num_samples, noise_objects=noise_objects),
-        _make_under_training(num_samples, noise_objects=noise_objects),
-        _make_over_training(num_samples, noise_objects=noise_objects),
-        _make_in_training(num_samples, noise_objects=noise_objects),
-        _make_behind_training(num_samples, noise_objects=noise_objects),
-        _make_in_front_training(num_samples, noise_objects=noise_objects),
-        _make_near_training(num_samples, noise_objects=noise_objects),
-        _make_far_training(num_samples, noise_objects=noise_objects),
+        _make_on_training(
+            num_samples,
+            noise_objects=noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_beside_training(
+            num_samples,
+            noise_objects=noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_under_training(
+            num_samples,
+            noise_objects=noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_over_training(
+            num_samples,
+            noise_objects=noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_in_training(
+            num_samples,
+            noise_objects=noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_behind_training(
+            num_samples,
+            noise_objects=noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_in_front_training(
+            num_samples,
+            noise_objects=noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_near_training(
+            num_samples,
+            noise_objects=noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_far_training(
+            num_samples,
+            noise_objects=noise_objects,
+            language_generator=language_generator,
+        ),
     ]
 
 
 def make_prepositions_curriculum_testing(
-    num_samples: int = 5, *, noise_objects: bool = True
+    num_samples: int = 5,
+    *,
+    noise_objects: bool = True,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ):
     return [
-        _make_on_tests(num_samples, noise_objects=noise_objects),
-        _make_beside_tests(num_samples, noise_objects=noise_objects),
-        _make_under_tests(num_samples, noise_objects=noise_objects),
-        _make_over_tests(num_samples, noise_objects=noise_objects),
-        _make_in_tests(num_samples, noise_objects=noise_objects),
-        _make_behind_tests(num_samples, noise_objects=noise_objects),
-        _make_in_front_tests(num_samples, noise_objects=noise_objects),
-        _make_near_tests(num_samples, noise_objects=noise_objects),
-        _make_far_tests(num_samples, noise_objects=noise_objects),
+        _make_on_tests(
+            num_samples,
+            noise_objects=noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_beside_tests(
+            num_samples,
+            noise_objects=noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_under_tests(
+            num_samples,
+            noise_objects=noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_over_tests(
+            num_samples,
+            noise_objects=noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_in_tests(
+            num_samples,
+            noise_objects=noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_behind_tests(
+            num_samples,
+            noise_objects=noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_in_front_tests(
+            num_samples,
+            noise_objects=noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_near_tests(
+            num_samples,
+            noise_objects=noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_far_tests(
+            num_samples,
+            noise_objects=noise_objects,
+            language_generator=language_generator,
+        ),
     ]
 
 
-def make_prepositions_curriculum(num_samples: int = 5, *, noise_objects: bool = True):
+def make_prepositions_curriculum(
+    num_samples: int = 5,
+    *,
+    noise_objects: bool = True,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+):
     return flatten(
         [
             make_prepositions_curriculum_training(
-                num_samples, noise_objects=noise_objects
+                num_samples,
+                noise_objects=noise_objects,
+                language_generator=language_generator,
             ),
             make_prepositions_curriculum_testing(
-                num_samples, noise_objects=noise_objects
+                num_samples,
+                noise_objects=noise_objects,
+                language_generator=language_generator,
             ),
         ]
     )

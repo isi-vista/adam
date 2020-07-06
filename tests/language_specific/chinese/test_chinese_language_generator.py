@@ -46,6 +46,8 @@ from adam.ontology.phase1_ontology import (
     FLY,
     GAILA_PHASE_1_ONTOLOGY,
     GIVE,
+    PUSH_SURFACE_AUX,
+    PUSH_GOAL,
     GOAL,
     GREEN,
     GROUND,
@@ -3147,4 +3149,66 @@ def test_you_toss_me_cookie():
         "reng1",
         "gei3",
         "wo3",
+    )
+
+
+def test_you_toss_mum_cookie():
+    dad = situation_object(DAD, properties=[IS_ADDRESSEE])
+    mum = situation_object(MOM)
+    cookie = situation_object(COOKIE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mum, cookie, dad],
+        actions=[
+            Action(
+                action_type=PASS,
+                argument_roles_to_fillers=[(AGENT, dad), (THEME, cookie), (GOAL, mum)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            dad,
+                            SpatialPath(
+                                operator=None, reference_object=situation_object(GROUND)
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+    )
+    assert generated_tokens(situation) == (
+        "ni3",
+        "ba3",
+        "chyu1 chi2 bing3",
+        "di4",
+        "gei3",
+        "ma1 ma1",
+    )
+
+
+def test_passing_for_phase1():
+    agent = situation_object(DAD)
+    theme = situation_object(COOKIE)
+    goal = situation_object(MOM)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[agent, theme, goal],
+        actions=[
+            Action(
+                PASS,
+                argument_roles_to_fillers=[
+                    (AGENT, agent),
+                    (THEME, theme),
+                    (GOAL, Region(goal, distance=PROXIMAL)),
+                ],
+            )
+        ],
+    )
+    assert generated_tokens(situation) == (
+        "ba4 ba4",
+        "ba3",
+        "chyu1 chi2 bing3",
+        "di4",
+        "gei3",
+        "ma1 ma1",
     )

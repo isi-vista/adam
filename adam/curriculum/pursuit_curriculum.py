@@ -153,9 +153,19 @@ def make_simple_pursuit_curriculum(
     return final_instance_group
 
 
-def make_pursuit_curriculum():
+def make_pursuit_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+):
     return [
-        make_simple_pursuit_curriculum(),
-        make_simple_pursuit_curriculum(num_noise_instances=2),
-        make_simple_pursuit_curriculum(num_objects_in_instance=4, num_noise_instances=2),
+        make_simple_pursuit_curriculum(language_generator=language_generator),
+        make_simple_pursuit_curriculum(
+            num_noise_instances=2, language_generator=language_generator
+        ),
+        make_simple_pursuit_curriculum(
+            num_objects_in_instance=4,
+            num_noise_instances=2,
+            language_generator=language_generator,
+        ),
     ]

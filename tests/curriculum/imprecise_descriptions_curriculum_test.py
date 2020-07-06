@@ -10,6 +10,8 @@ from adam.curriculum.imprecise_descriptions_curriculum import (
     make_pass_toss_subtle_verb_distinction,
     make_push_shove_subtle_verb_distinctions,
     make_take_grab_subtle_verb_distinction,
+    make_eat_big_small_curriculum,
+    make_spin_tall_short_curriculum,
 )
 from tests.curriculum.phase1_curriculum_test import curriculum_test
 from adam.language_specific.english.english_language_generator import (
@@ -20,7 +22,23 @@ from adam.language_specific.chinese.chinese_language_generator import (
 )
 import pytest
 
-# TODO: https://github.com/isi-vista/adam/issues/847 -- implement subtle verb distinctions in Chinese
+
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
+)
+def test_make_eat_big_small_curriculum(language_generator):
+    curriculum_test(make_eat_big_small_curriculum(language_generator=language_generator))
+
+
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
+)
+def test_make_spin_tall_short(language_generator):
+    curriculum_test(
+        make_spin_tall_short_curriculum(language_generator=language_generator)
+    )
 
 
 @pytest.mark.parametrize(

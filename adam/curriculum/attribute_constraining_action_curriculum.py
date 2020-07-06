@@ -110,16 +110,44 @@ def make_german_eat_test_curriculum(
     )
 
 
-def make_german_eat_train(num_samples: int = 5, *, noise_objects: int = 0):
+def make_german_eat_train(
+    num_samples: int = 5,
+    *,
+    noise_objects: int = 0,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+):
     return [
-        make_human_eat_curriculum(num_samples=num_samples, noise_objects=noise_objects),
-        make_animal_eat_curriculum(num_samples=num_samples, noise_objects=noise_objects),
+        make_human_eat_curriculum(
+            num_samples=num_samples,
+            noise_objects=noise_objects,
+            language_generator=language_generator,
+        ),
+        make_animal_eat_curriculum(
+            num_samples=num_samples,
+            noise_objects=noise_objects,
+            language_generator=language_generator,
+        ),
     ]
 
 
-def make_german_complete(num_samples: int = 5, *, noise_objects: int = 0):
-    return make_german_eat_train(num_samples=num_samples, noise_objects=noise_objects) + [
+def make_german_complete(
+    num_samples: int = 5,
+    *,
+    noise_objects: int = 0,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+):
+    return make_german_eat_train(
+        num_samples=num_samples,
+        noise_objects=noise_objects,
+        language_generator=language_generator,
+    ) + [
         make_german_eat_test_curriculum(
-            num_samples=num_samples, noise_objects=noise_objects
+            num_samples=num_samples,
+            noise_objects=noise_objects,
+            language_generator=language_generator,
         )
     ]

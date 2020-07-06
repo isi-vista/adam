@@ -9,7 +9,12 @@ basic color terms (red, blue, green, white, black…), one, two, my, your)
 """
 import random as r
 from itertools import chain
-
+from adam.language_specific.english.english_language_generator import (
+    GAILA_PHASE_1_LANGUAGE_GENERATOR,
+)
+from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
+from adam.language.language_generator import LanguageGenerator
+from adam.language.dependency import LinearizedDependencyTree
 from immutablecollections import immutableset
 
 from adam.curriculum import ExplicitWithSituationInstanceGroup
@@ -285,6 +290,7 @@ M6_SUBCURRICULUM_GENERATORS = list(
 )
 
 
+# TODO: fix this for Chinese
 def _make_m6_mixed_curriculum() -> Phase1InstanceGroup:
     all_instances = [
         instance
@@ -295,11 +301,23 @@ def _make_m6_mixed_curriculum() -> Phase1InstanceGroup:
     return ExplicitWithSituationInstanceGroup("m6_mixed", tuple(all_instances))
 
 
-def instantiate_subcurricula(subcurricula):
-    return [subcurriculum() for subcurriculum in subcurricula]
-
-
-def make_m6_curriculum():
-    return instantiate_subcurricula(M6_SUBCURRICULUM_GENERATORS) + [
-        _make_m6_mixed_curriculum()
+def instantiate_subcurricula(
+    subcurricula,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+):
+    return [
+        subcurriculum(language_generator=language_generator)
+        for subcurriculum in subcurricula
     ]
+
+
+def make_m6_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+):
+    return instantiate_subcurricula(
+        M6_SUBCURRICULUM_GENERATORS, language_generator=language_generator
+    ) + [_make_m6_mixed_curriculum()]

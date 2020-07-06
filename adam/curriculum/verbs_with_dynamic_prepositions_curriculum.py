@@ -69,7 +69,6 @@ from adam.ontology.phase1_ontology import (
     JUMP,
     FLY,
     CAN_FLY,
-    GOAL_MANIPULATOR,
     PUSH_GOAL,
     COME,
 )
@@ -434,6 +433,7 @@ def _go_beside_template(
                 ],
             )
         ],
+        after_action_relations=[near(agent, goal_object)],
     )
 
 
@@ -468,6 +468,7 @@ def _go_behind_in_front_template(
                 ],
             )
         ],
+        after_action_relations=[near(agent, goal_object)],
     )
 
 
@@ -498,6 +499,7 @@ def _go_over_template(
                 ],
             )
         ],
+        after_action_relations=[near(agent, goal_object)],
     )
 
 
@@ -682,8 +684,9 @@ def _throw_to_template(
                 ],
             )
         ],
+        after_action_relations=[near(theme, goal_reference)],
         constraining_relations=flatten_relations(bigger_than(agent, theme)),
-        gazed_objects=[agent, theme, goal_reference],
+        gazed_objects=[theme],
     )
 
 
@@ -711,7 +714,8 @@ def _throw_in_template(
         constraining_relations=flatten_relations(
             bigger_than([agent, goal_reference], theme)
         ),
-        gazed_objects=[agent, theme, goal_reference],
+        after_action_relations=[near(theme, goal_reference)],
+        gazed_objects=[theme],
     )
 
 
@@ -742,8 +746,9 @@ def _throw_on_template(
                 ],
             )
         ],
+        after_action_relations=[near(theme, goal_reference)],
         constraining_relations=flatten_relations(bigger_than(agent, theme)),
-        gazed_objects=[agent, theme, goal_reference],
+        gazed_objects=[theme],
     )
 
 
@@ -782,7 +787,8 @@ def _throw_beside_template(
             )
         ],
         constraining_relations=flatten_relations(bigger_than(agent, theme)),
-        gazed_objects=[agent, theme, goal_reference],
+        after_action_relations=[near(theme, goal_reference)],
+        gazed_objects=[theme],
     )
 
 
@@ -819,8 +825,9 @@ def _throw_in_front_of_behind_template(
                 ],
             )
         ],
+        after_action_relations=[near(theme, goal_reference)],
         constraining_relations=flatten_relations(bigger_than(agent, theme)),
-        gazed_objects=[agent, theme, goal_reference],
+        gazed_objects=[theme],
     )
 
 
@@ -854,10 +861,11 @@ def _throw_under_template(
                 ],
             )
         ],
+        after_action_relations=[near(theme, goal_reference)],
         constraining_relations=flatten_relations(
             bigger_than([agent, goal_reference], theme)
         ),
-        gazed_objects=[agent, theme, goal_reference],
+        gazed_objects=[theme],
     )
 
 
@@ -885,8 +893,10 @@ def _throw_path_over_template(
                 ),
             )
         ],
+        # hack of ordering relation for English language generator
+        after_action_relations=[near(implicit_goal_reference, theme)],
         constraining_relations=flatten_relations(bigger_than(agent, theme)),
-        gazed_objects=[agent, theme, object_in_path],
+        gazed_objects=[theme],
     )
 
 
@@ -922,10 +932,11 @@ def _throw_path_under_template(
                 ),
             )
         ],
+        after_action_relations=[near(theme, implicit_goal_reference)],
         constraining_relations=flatten_relations(
             bigger_than([agent, object_in_path], theme)
         ),
-        gazed_objects=[agent, theme, object_in_path],
+        gazed_objects=[theme],
     )
 
 
@@ -945,10 +956,12 @@ def _x_throws_y_to_z_template(
                 argument_roles_to_fillers=[
                     (AGENT, agent),
                     (THEME, theme),
-                    (GOAL_MANIPULATOR, recipient),
+                    # hack since English language generator doesn't generate correct language for GOAL_MANIPULATOR currently
+                    (GOAL, Region(recipient, distance=PROXIMAL)),
                 ],
             )
         ],
+        after_action_relations=[near(theme, recipient)],
         constraining_relations=flatten_relations(bigger_than([agent, recipient], theme)),
         gazed_objects=[theme],
     )
@@ -3974,19 +3987,72 @@ def _make_come_with_prepositions(
 
 
 def make_verb_with_dynamic_prepositions_curriculum(
-    num_samples: int = 5, *, num_noise_objects: int = 0
+    num_samples: int = 5,
+    *,
+    num_noise_objects: int = 0,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ):
     return [
-        _make_push_with_prepositions(num_samples, noise_objects=num_noise_objects),
-        _make_go_with_prepositions(num_samples, noise_objects=num_noise_objects),
-        _make_throw_with_prepositions(num_samples, noise_objects=num_noise_objects),
-        _make_sit_with_prepositions(num_samples, noise_objects=num_noise_objects),
-        _make_roll_with_prepositions(num_samples, noise_objects=num_noise_objects),
-        _make_take_with_prepositions(num_samples, noise_objects=num_noise_objects),
-        _make_fall_with_prepositions(num_samples, noise_objects=num_noise_objects),
-        _make_put_with_prepositions(num_samples, noise_objects=num_noise_objects),
-        _make_move_with_prepositions(num_samples, noise_objects=num_noise_objects),
-        _make_jump_with_prepositions(num_samples, noise_objects=num_noise_objects),
-        _make_fly_with_prepositions(num_samples, noise_objects=num_noise_objects),
-        _make_come_with_prepositions(num_samples, noise_objects=num_noise_objects),
+        _make_push_with_prepositions(
+            num_samples,
+            noise_objects=num_noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_go_with_prepositions(
+            num_samples,
+            noise_objects=num_noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_throw_with_prepositions(
+            num_samples,
+            noise_objects=num_noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_sit_with_prepositions(
+            num_samples,
+            noise_objects=num_noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_roll_with_prepositions(
+            num_samples,
+            noise_objects=num_noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_take_with_prepositions(
+            num_samples,
+            noise_objects=num_noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_fall_with_prepositions(
+            num_samples,
+            noise_objects=num_noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_put_with_prepositions(
+            num_samples,
+            noise_objects=num_noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_move_with_prepositions(
+            num_samples,
+            noise_objects=num_noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_jump_with_prepositions(
+            num_samples,
+            noise_objects=num_noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_fly_with_prepositions(
+            num_samples,
+            noise_objects=num_noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_come_with_prepositions(
+            num_samples,
+            noise_objects=num_noise_objects,
+            language_generator=language_generator,
+        ),
     ]

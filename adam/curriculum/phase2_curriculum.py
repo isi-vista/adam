@@ -227,23 +227,51 @@ def _make_put_in_curriculum(
     )
 
 
-def build_gaila_m8_curriculum() -> Sequence[Phase1InstanceGroup]:
+def build_gaila_m8_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_2_LANGUAGE_GENERATOR
+) -> Sequence[Phase1InstanceGroup]:
     return list(
         chain(
             [
-                _make_plural_objects_curriculum(),  # plurals
-                _make_sit_on_chair_curriculum(),  # functionally defined objects
-                _make_drink_cups_curriculum(),
-                _make_pass_curriculum(),  # Subtle verb distinctions
-                _make_generic_statements_curriculum(),  # Generics
-                _make_part_whole_curriculum(),  # Part whole
-                _make_transitive_roll_curriculum(),  # External Limitations
-                make_eat_big_small_curriculum(),
-                make_spin_tall_short_curriculum(),
+                _make_plural_objects_curriculum(
+                    language_generator=language_generator
+                ),  # plurals
+                _make_sit_on_chair_curriculum(
+                    language_generator=language_generator
+                ),  # functionally defined objects
+                _make_drink_cups_curriculum(language_generator=language_generator),
+                _make_pass_curriculum(
+                    language_generator=language_generator
+                ),  # Subtle verb distinctions
+                _make_generic_statements_curriculum(
+                    language_generator=language_generator
+                ),  # Generics
+                _make_part_whole_curriculum(
+                    language_generator=language_generator
+                ),  # Part whole
+                _make_transitive_roll_curriculum(
+                    language_generator=language_generator
+                ),  # External Limitations
+                make_eat_big_small_curriculum(language_generator=language_generator),
+                make_spin_tall_short_curriculum(language_generator=language_generator),
             ],
-            list(make_imprecise_temporal_descriptions()),  # Imprecise descriptions
-            make_verb_with_dynamic_prepositions_curriculum(),  # Dynamic prepositions
-            make_prepositions_curriculum(),  # Relative prepositions
-            list(make_subtle_verb_distinctions_curriculum()),  # Subtle verb distinctions
+            list(
+                make_imprecise_temporal_descriptions(
+                    language_generator=language_generator
+                )
+            ),  # Imprecise descriptions
+            make_verb_with_dynamic_prepositions_curriculum(
+                language_generator=language_generator
+            ),  # Dynamic prepositions
+            make_prepositions_curriculum(
+                language_generator=language_generator
+            ),  # Relative prepositions
+            list(
+                make_subtle_verb_distinctions_curriculum(
+                    language_generator=language_generator
+                )
+            ),  # Subtle verb distinctions
         )
     )

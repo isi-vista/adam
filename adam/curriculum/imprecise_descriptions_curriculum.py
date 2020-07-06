@@ -95,7 +95,11 @@ def _big_x_template(
     )
 
 
-def make_eat_big_small_curriculum() -> Phase1InstanceGroup:
+def make_eat_big_small_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Phase1InstanceGroup:
     # "Mom eats a big cookie"
     # We generate situations directly since templates fail to generate plurals.
 
@@ -158,7 +162,9 @@ def make_eat_big_small_curriculum() -> Phase1InstanceGroup:
                     )
                 )
 
-    return phase1_instances("Big - Small Curriculum", situations)
+    return phase1_instances(
+        "Big - Small Curriculum", situations, language_generator=language_generator
+    )
 
 
 def _little_x_template(
@@ -211,7 +217,11 @@ def _short_x_template(
     )
 
 
-def make_spin_tall_short_curriculum() -> Phase1InstanceGroup:
+def make_spin_tall_short_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+) -> Phase1InstanceGroup:
     # "Mom spins a tall chair"
     # We generate situations directly since templates fail to generate plurals.
 
@@ -268,7 +278,9 @@ def make_spin_tall_short_curriculum() -> Phase1InstanceGroup:
                     )
                 )
 
-    return phase1_instances("Tall - Short Curriculum", situations)
+    return phase1_instances(
+        "Tall - Short Curriculum", situations, language_generator=language_generator
+    )
 
 
 def make_imprecise_size_descriptions(
@@ -542,10 +554,10 @@ def make_push_shove_subtle_verb_distinctions(
                 pushee,
                 push_surface,
                 push_goal,
-                use_adverbial_path_modifier=use_adverbial_path_modifier,
+                # TODO: https://github.com/isi-vista/adam/issues/860
+                use_adverbial_path_modifier=False,
                 spatial_properties=[HARD_FORCE] if hard_force else [SOFT_FORCE],
             )
-            for use_adverbial_path_modifier in BOOL_SET
             for hard_force in BOOL_SET
         ]
     )
@@ -794,60 +806,99 @@ def make_fall_imprecise_temporal_descriptions(
 
 
 def make_imprecise_size_curriculum(
-    num_samples: int = 5, *, num_noise_objects: int = 0
+    num_samples: int = 5,
+    *,
+    num_noise_objects: int = 0,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Sequence[Phase1InstanceGroup]:
     """
     One particular instantiation of the Imprecise Size Descriptions Curriculum
     """
 
     return [
-        make_imprecise_size_descriptions(num_samples, num_noise_objects=num_noise_objects)
+        make_imprecise_size_descriptions(
+            num_samples,
+            num_noise_objects=num_noise_objects,
+            language_generator=language_generator,
+        )
     ]
 
 
 def make_imprecise_temporal_descriptions(
-    num_samples: int = 5, *, num_noise_objects: int = 0
+    num_samples: int = 5,
+    *,
+    num_noise_objects: int = 0,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Sequence[Phase1InstanceGroup]:
     """
     One particular instantiation of the Imprecise Temporal Descriptions Curriculum
     """
     return [
         make_throw_imprecise_temporal_descriptions(
-            num_samples, num_noise_objects=num_noise_objects
+            num_samples,
+            num_noise_objects=num_noise_objects,
+            language_generator=language_generator,
         ),
         make_move_imprecise_temporal_descriptions(
-            num_samples, num_noise_objects=num_noise_objects
+            num_samples,
+            num_noise_objects=num_noise_objects,
+            language_generator=language_generator,
         ),
         make_jump_imprecise_temporal_descriptions(
-            num_samples, num_noise_objects=num_noise_objects
+            num_samples,
+            num_noise_objects=num_noise_objects,
+            language_generator=language_generator,
         ),
         make_roll_imprecise_temporal_descriptions(
-            num_samples, num_noise_objects=num_noise_objects
+            num_samples,
+            num_noise_objects=num_noise_objects,
+            language_generator=language_generator,
         ),
         make_fly_imprecise_temporal_descriptions(
-            num_samples, num_noise_objects=num_noise_objects
+            num_samples,
+            num_noise_objects=num_noise_objects,
+            language_generator=language_generator,
         ),
         make_fall_imprecise_temporal_descriptions(
-            num_samples, num_noise_objects=num_noise_objects
+            num_samples,
+            num_noise_objects=num_noise_objects,
+            language_generator=language_generator,
         ),
     ]
 
 
 def make_subtle_verb_distinctions_curriculum(
-    num_samples: int = 5, *, num_noise_objects: int = 0
+    num_samples: int = 5,
+    *,
+    num_noise_objects: int = 0,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Sequence[Phase1InstanceGroup]:
     """One particular instanatiation of the Subtle Verb Distinction Curriculum"""
     return [
         make_push_shove_subtle_verb_distinctions(
-            num_samples, num_noise_objects=num_noise_objects
+            num_samples,
+            num_noise_objects=num_noise_objects,
+            language_generator=language_generator,
         ),
         make_walk_run_subtle_verb_distinction(
-            num_samples, num_noise_objects=num_noise_objects
+            num_samples,
+            num_noise_objects=num_noise_objects,
+            language_generator=language_generator,
         ),
         make_pass_toss_subtle_verb_distinction(
-            num_samples, num_noise_objects=num_noise_objects
+            num_samples,
+            num_noise_objects=num_noise_objects,
+            language_generator=language_generator,
         ),
         make_take_grab_subtle_verb_distinction(
-            num_samples, num_noise_objects=num_noise_objects
+            num_samples,
+            num_noise_objects=num_noise_objects,
+            language_generator=language_generator,
         ),
     ]

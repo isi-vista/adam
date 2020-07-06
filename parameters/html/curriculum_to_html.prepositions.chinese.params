@@ -2,4 +2,4 @@ _includes:
     - curriculum_to_html.params
 
 curriculum: "prepositions"
-language: "english"
+language: "chinese"

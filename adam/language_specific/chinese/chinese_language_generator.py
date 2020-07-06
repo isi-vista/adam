@@ -54,6 +54,9 @@ from adam.language_specific.chinese.chinese_phase_1_lexicon import (
     GRAB,
     SHOVE,
     TOSS,
+    MOM,
+    DAD,
+    BABY,
 )
 from adam.language_specific import (
     FIRST_PERSON,
@@ -90,6 +93,7 @@ from adam.ontology.phase1_ontology import (
     WALK,
     TAKE,
     PASS,
+    GOAL_MANIPULATOR,
 )
 from adam.ontology.phase1_spatial_relations import (
     EXTERIOR_BUT_IN_CONTACT,
@@ -489,8 +493,46 @@ class SimpleRuleBasedChineseLanguageGenerator(
         ):
             """Translates a relation such as a during_relation or always_relation to an action modifier for a VP"""
 
+            # translate size relations. The salient objects have already been translated
+            if relation.relation_type == BIGGER_THAN:
+                if (
+                    relation.first_slot in self.situation.salient_objects
+                    and isinstance(relation.second_slot, SituationObject)
+                    and relation.second_slot.ontology_node == LEARNER
+                ):
+                    # tall
+                    if USE_VERTICAL_MODIFIERS in self.situation.syntax_hints:
+                        token = DependencyTreeToken("gau1 da4", ADJECTIVE)
+                    # big
+                    else:
+                        token = DependencyTreeToken("da4", ADJECTIVE)
+                    self.dependency_graph.add_node(token)
+                    self.dependency_graph.add_edge(
+                        token,
+                        self._noun_for_object(relation.first_slot),
+                        role=ADJECTIVAL_MODIFIER,
+                    )
+            elif relation.relation_type == SMALLER_THAN:
+                if (
+                    relation.first_slot in self.situation.salient_objects
+                    and isinstance(relation.second_slot, SituationObject)
+                    and relation.second_slot.ontology_node == LEARNER
+                ):
+                    # short
+                    if USE_VERTICAL_MODIFIERS in self.situation.syntax_hints:
+                        token = DependencyTreeToken("dwan3", ADJECTIVE)
+                    # small
+                    else:
+                        token = DependencyTreeToken("syau3", ADJECTIVE)
+                    self.dependency_graph.add_node(token)
+                    self.dependency_graph.add_edge(
+                        token,
+                        self._noun_for_object(relation.first_slot),
+                        role=ADJECTIVAL_MODIFIER,
+                    )
+
             # we only translate in_region relations because have relations are translated elsewhere
-            if relation.relation_type == IN_REGION:
+            elif relation.relation_type == IN_REGION:
                 # legal arguments include the theme or the agent or patient if there is no theme (intransitive verbs such as jump and fall)
                 fills_legal_argument_role = relation.first_slot in action.argument_roles_to_fillers[
                     THEME
@@ -558,17 +600,22 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     action
                     and (action.action_type == GO or action.action_type == COME)
                     and argument_role == GOAL
+                    and (
+                        IS_SPEAKER in filler.properties
+                        or IS_ADDRESSEE in filler.properties
+                    )
                 ):
                     zhao = DependencyTreeToken("jau3", ADPOSITION)
                     self.dependency_graph.add_edge(zhao, filler_noun, role=CASE_SPATIAL)
                 # deal with movement to a person as the goal
                 elif (
                     action
-                    and argument_role == GOAL
-                    and action.action_type != GIVE
+                    and (argument_role == GOAL or argument_role == GOAL_MANIPULATOR)
+                    and action.action_type not in [GIVE, GO, COME]
                     and (
                         IS_SPEAKER in filler.properties
                         or IS_ADDRESSEE in filler.properties
+                        or filler.ontology_node in [DAD, MOM, BABY]
                     )
                 ):
                     gei = DependencyTreeToken("gei3", ADPOSITION)
@@ -595,12 +642,29 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     coverb: str = "dzai4"
                     if self.situation.after_action_relations:
                         coverb = "dau4"
+                    # handle people as goals
+                    if (
+                        action
+                        and (argument_role == GOAL or argument_role == GOAL_MANIPULATOR)
+                        and action.action_type not in [GIVE, GO, COME]
+                        and (
+                            IS_SPEAKER in filler.reference_object.properties
+                            or IS_ADDRESSEE in filler.reference_object.properties
+                            or filler.reference_object.ontology_node in [DAD, MOM, BABY]
+                        )
+                    ):
+                        coverb = "gei3"
                     # notice we don't use gwo here since it indicates motion past a place and here, we handle goals
                     self.dependency_graph.add_edge(
                         DependencyTreeToken(coverb, ADPOSITION),
                         reference_object_dependency_node,
                         role=CASE_SPATIAL,
                     )
+                    if coverb == "gei3":
+                        return (
+                            ADVERBIAL_CLAUSE_MODIFIER,
+                            reference_object_dependency_node,
+                        )
 
                     # get the localiser and add it to the noun as well
                     localiser_dependency_node = DependencyTreeToken(
@@ -704,7 +768,10 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     # be translated post-verbially but the verb isn't ditransitive, the theme becomes preverbial.
                     # The "ba" itself is added by the calling function
                     if (
-                        GOAL in action.argument_roles_to_fillers
+                        (
+                            GOAL in action.argument_roles_to_fillers
+                            and IGNORE_GOAL not in self.situation.syntax_hints
+                        )
                         or self.situation.after_action_relations
                         or (
                             action.during
