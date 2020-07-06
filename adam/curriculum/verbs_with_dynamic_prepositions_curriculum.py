@@ -686,7 +686,7 @@ def _throw_to_template(
         ],
         after_action_relations=[near(theme, goal_reference)],
         constraining_relations=flatten_relations(bigger_than(agent, theme)),
-        gazed_objects=[agent, theme, goal_reference],
+        gazed_objects=[theme],
     )
 
 
@@ -715,7 +715,7 @@ def _throw_in_template(
             bigger_than([agent, goal_reference], theme)
         ),
         after_action_relations=[near(theme, goal_reference)],
-        gazed_objects=[agent, theme, goal_reference],
+        gazed_objects=[theme],
     )
 
 
@@ -748,7 +748,7 @@ def _throw_on_template(
         ],
         after_action_relations=[near(theme, goal_reference)],
         constraining_relations=flatten_relations(bigger_than(agent, theme)),
-        gazed_objects=[agent, theme, goal_reference],
+        gazed_objects=[theme],
     )
 
 
@@ -788,7 +788,7 @@ def _throw_beside_template(
         ],
         constraining_relations=flatten_relations(bigger_than(agent, theme)),
         after_action_relations=[near(theme, goal_reference)],
-        gazed_objects=[agent, theme, goal_reference],
+        gazed_objects=[theme],
     )
 
 
@@ -827,7 +827,7 @@ def _throw_in_front_of_behind_template(
         ],
         after_action_relations=[near(theme, goal_reference)],
         constraining_relations=flatten_relations(bigger_than(agent, theme)),
-        gazed_objects=[agent, theme, goal_reference],
+        gazed_objects=[theme],
     )
 
 
@@ -865,7 +865,7 @@ def _throw_under_template(
         constraining_relations=flatten_relations(
             bigger_than([agent, goal_reference], theme)
         ),
-        gazed_objects=[agent, theme, goal_reference],
+        gazed_objects=[theme],
     )
 
 
@@ -896,7 +896,7 @@ def _throw_path_over_template(
         # hack of ordering relation for English language generator
         after_action_relations=[near(implicit_goal_reference, theme)],
         constraining_relations=flatten_relations(bigger_than(agent, theme)),
-        gazed_objects=[agent, theme, object_in_path],
+        gazed_objects=[theme],
     )
 
 
@@ -936,7 +936,7 @@ def _throw_path_under_template(
         constraining_relations=flatten_relations(
             bigger_than([agent, object_in_path], theme)
         ),
-        gazed_objects=[agent, theme, object_in_path],
+        gazed_objects=[theme],
     )
 
 
@@ -963,7 +963,7 @@ def _x_throws_y_to_z_template(
         ],
         after_action_relations=[near(theme, recipient)],
         constraining_relations=flatten_relations(bigger_than([agent, recipient], theme)),
-        gazed_objects=[agent, theme, recipient],
+        gazed_objects=[theme],
     )
 
 
