@@ -158,8 +158,9 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                         VerbAlignmentSlots.Argument,
                         VerbAlignmentSlots.FixedString,
                         VerbAlignmentSlots.FixedString,
+                        VerbAlignmentSlots.FixedString,
                     ],
-                    5,
+                    6,
                 )
             ):
                 yield output

@@ -178,10 +178,7 @@ def test_sit(language_mode, learner):
         )
 
 
-@pytest.mark.parametrize(
-    "language_mode",
-    [LanguageMode.ENGLISH, pytest.param(LanguageMode.CHINESE, marks=pytest.mark.xfail)],
-)
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
     "learner", [integrated_learner_factory, subset_verb_language_factory]
 )
