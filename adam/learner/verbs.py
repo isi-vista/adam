@@ -2,7 +2,7 @@ import itertools
 from abc import ABC
 from enum import Enum, auto
 from typing import AbstractSet, Mapping, Union, List, Iterable, Optional, Dict, Tuple
-
+from adam.learner.language_mode import LanguageMode
 from adam.language import LinguisticDescription
 from adam.learner import LearningExample
 from adam.learner.alignments import (
@@ -456,7 +456,9 @@ class AbstractVerbTemplateLearner(AbstractTemplateLearner, ABC):
         return self._object_recognizer.match_objects_old(perception_graph)
 
     def _extract_surface_template(
-        self, language_concept_alignment: LanguageAlignedPerception
+        self,
+        language_concept_alignment: LanguageAlignedPerception,
+        language_mode: LanguageMode = LanguageMode.ENGLISH,
     ) -> SurfaceTemplate:
         if len(language_concept_alignment.aligned_nodes) > len(STANDARD_SLOT_VARIABLES):
             raise RuntimeError("Input has too many aligned nodes for us to handle.")

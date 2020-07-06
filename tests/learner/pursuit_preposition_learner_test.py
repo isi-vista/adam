@@ -37,10 +37,7 @@ from adam.situation.templates.phase1_templates import sampled, object_variable
 from tests.learner import object_recognizer_factory, phase1_language_generator
 
 
-@pytest.mark.parametrize(
-    "language_mode",
-    [LanguageMode.ENGLISH, pytest.param(LanguageMode.CHINESE, marks=pytest.mark.xfail)],
-)
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 def test_pursuit_preposition_on_learner(language_mode):
     rng = random.Random()
     rng.seed(0)
@@ -87,7 +84,6 @@ def test_pursuit_preposition_on_learner(language_mode):
         learner.observe(
             LearningExample(perceptual_representation, linguistic_description)
         )
-
     for (
         _,
         test_lingustics_description,
@@ -99,10 +95,7 @@ def test_pursuit_preposition_on_learner(language_mode):
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
 
 
-@pytest.mark.parametrize(
-    "language_mode",
-    [LanguageMode.ENGLISH, pytest.param(LanguageMode.CHINESE, marks=pytest.mark.xfail)],
-)
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 def test_pursuit_preposition_beside_learner(language_mode):
     rng = random.Random()
     rng.seed(0)
@@ -164,10 +157,7 @@ def test_pursuit_preposition_beside_learner(language_mode):
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
 
 
-@pytest.mark.parametrize(
-    "language_mode",
-    [LanguageMode.ENGLISH, pytest.param(LanguageMode.CHINESE, marks=pytest.mark.xfail)],
-)
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 def test_pursuit_preposition_under_learner(language_mode):
     rng = random.Random()
     rng.seed(0)
@@ -229,10 +219,7 @@ def test_pursuit_preposition_under_learner(language_mode):
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
 
 
-@pytest.mark.parametrize(
-    "language_mode",
-    [LanguageMode.ENGLISH, pytest.param(LanguageMode.CHINESE, marks=pytest.mark.xfail)],
-)
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 def test_pursuit_preposition_over_learner(language_mode):
     rng = random.Random()
     rng.seed(0)
@@ -292,10 +279,7 @@ def test_pursuit_preposition_over_learner(language_mode):
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
 
 
-@pytest.mark.parametrize(
-    "language_mode",
-    [LanguageMode.ENGLISH, pytest.param(LanguageMode.CHINESE, marks=pytest.mark.xfail)],
-)
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 def test_pursuit_preposition_in_learner(language_mode):
     rng = random.Random()
     rng.seed(0)
@@ -352,10 +336,7 @@ def test_pursuit_preposition_in_learner(language_mode):
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
 
 
-@pytest.mark.parametrize(
-    "language_mode",
-    [LanguageMode.ENGLISH, pytest.param(LanguageMode.CHINESE, marks=pytest.mark.xfail)],
-)
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 def test_pursuit_preposition_behind_learner(language_mode):
     rng = random.Random()
     rng.seed(0)
@@ -426,10 +407,7 @@ def test_pursuit_preposition_behind_learner(language_mode):
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
 
 
-@pytest.mark.parametrize(
-    "language_mode",
-    [LanguageMode.ENGLISH, pytest.param(LanguageMode.CHINESE, marks=pytest.mark.xfail)],
-)
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 def test_pursuit_preposition_in_front_learner(language_mode):
     rng = random.Random()
     rng.seed(0)
@@ -501,10 +479,7 @@ def test_pursuit_preposition_in_front_learner(language_mode):
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
 
 
-@pytest.mark.parametrize(
-    "language_mode",
-    [LanguageMode.ENGLISH, pytest.param(LanguageMode.CHINESE, marks=pytest.mark.xfail)],
-)
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 def test_pursuit_preposition_has_learner(language_mode):
     person = standard_object("person", PERSON)
     inanimate_object = standard_object(
