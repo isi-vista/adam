@@ -36,6 +36,7 @@ from adam.language_specific.english.english_language_generator import (
 from adam.ontology import IS_ADDRESSEE, IS_SPEAKER, THING, OntologyNode
 from adam.ontology.during import DuringAction
 from adam.ontology.ontology import Ontology
+from adam.ontology.phase1_spatial_relations import PathOperator
 from adam.ontology.phase1_ontology import (
     AGENT,
     ANIMATE,
@@ -45,6 +46,7 @@ from adam.ontology.phase1_ontology import (
     CAN_HAVE_THINGS_RESTING_ON_THEM,
     CAN_JUMP,
     COME,
+    HARD_FORCE,
     DRINK,
     DRINK_CONTAINER_AUX,
     EAT,
@@ -1229,7 +1231,7 @@ def make_pass_template(
     goal: TemplateObjectVariable,
     *,
     use_adverbial_path_modifier: bool,
-    operator=None,
+    operator: PathOperator = None,
     spatial_properties: Iterable[OntologyNode] = immutableset(),
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
@@ -1591,7 +1593,7 @@ def make_take_template(
     *,
     use_adverbial_path_modifier: bool,
     spatial_properties: Iterable[OntologyNode] = None,
-    operator=None,
+    operator: PathOperator = None,
 ) -> Phase1SituationTemplate:
     # X grabs Y
     ground = GROUND_OBJECT_TEMPLATE
@@ -1607,7 +1609,13 @@ def make_take_template(
                         (
                             agent,
                             SpatialPath(
-                                operator=operator,
+                                # this is a hack since "grab" with an adverb doesn't really work in English
+                                operator=operator
+                                if (
+                                    not spatial_properties
+                                    or HARD_FORCE not in spatial_properties
+                                )
+                                else None,
                                 reference_object=ground,
                                 properties=spatial_properties,
                             ),
@@ -1617,7 +1625,13 @@ def make_take_template(
             )
         ],
         constraining_relations=[bigger_than(agent, theme)],
-        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER] if use_adverbial_path_modifier else [],
+        # this is a hack since "grab" with an adverb doesn't really work in English
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER]
+        if (
+            use_adverbial_path_modifier
+            and (not spatial_properties or HARD_FORCE not in spatial_properties)
+        )
+        else [],
     )
 
 
