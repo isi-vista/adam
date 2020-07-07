@@ -60,7 +60,6 @@ class AbstractRelationTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
         # so we look for two token spans aligned to object
         # and hypothesize that the token span between them might realize a relation.
 
-        # TODO: refactor this with similar code in the verb equivalent of this class
         def is_legal_template_span(candidate_relation_token_span: Span) -> bool:
             # A template token span can't exceed the bounds of the utterance
             if candidate_relation_token_span.start < 0:
