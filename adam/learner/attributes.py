@@ -107,6 +107,8 @@ class AbstractAttributeTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
             if covers_entire_utterance(
                 bound_surface_template,
                 language_concept_alignment,
+                # We need to explicitly ignore determiners here for some reason
+                # See: https://github.com/isi-vista/adam/issues/871
                 ignore_determiners=True,
             )
         )

@@ -213,7 +213,9 @@ def covers_entire_utterance(
                     bound_surface_template.slot_to_semantic_node[element]
                 ]
             )
-    # We may need to
+    # We may need to ignore counting english determiners in our comparison
+    # to the template as the way we treat english determiners is currently
+    # a hack. See: https://github.com/isi-vista/adam/issues/498
     sized_tokens = (
         len(language_concept_alignment.language.as_token_sequence())
         if not ignore_determiners
