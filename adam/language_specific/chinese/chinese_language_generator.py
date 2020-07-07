@@ -57,6 +57,8 @@ from adam.language_specific.chinese.chinese_phase_1_lexicon import (
     MOM,
     DAD,
     BABY,
+    DOG,
+    BIRD,
 )
 from adam.language_specific import (
     FIRST_PERSON,
@@ -69,6 +71,7 @@ from adam.language_specific.chinese.chinese_syntax import (
 )
 from adam.ontology import IN_REGION, IS_ADDRESSEE, IS_SPEAKER, OntologyNode
 from adam.ontology.phase1_ontology import (
+    ANIMATE,
     AGENT,
     PUSH,
     COLOR,
@@ -615,7 +618,8 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     and (
                         IS_SPEAKER in filler.properties
                         or IS_ADDRESSEE in filler.properties
-                        or filler.ontology_node in [DAD, MOM, BABY]
+                        # hack to identify possible animate goals
+                        or filler.ontology_node in [DAD, MOM, BABY, DOG, BIRD]
                     )
                 ):
                     gei = DependencyTreeToken("gei3", ADPOSITION)

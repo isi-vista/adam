@@ -68,10 +68,7 @@ def integrated_learner_factory(language_mode: LanguageMode):
         (WHITE, BALL, CAR),
     ],
 )
-@pytest.mark.parametrize(
-    "language_mode",
-    [LanguageMode.ENGLISH, pytest.param(LanguageMode.CHINESE, marks=pytest.mark.xfail)],
-)
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
     "learner", [subset_attribute_leaner_factory, integrated_learner_factory]
 )
@@ -150,10 +147,7 @@ def test_subset_color_attribute(
 # hack: wo de and ni de are currently considered to be one word. This won't work for third person possession
 # TODO: Fix this learning test. See: https://github.com/isi-vista/adam/issues/861
 @pytest.mark.skip("My fails to learn for some reason.")
-@pytest.mark.parametrize(
-    "language_mode",
-    [LanguageMode.ENGLISH, pytest.param(LanguageMode.CHINESE, marks=pytest.mark.xfail)],
-)
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
     "learner", [subset_attribute_leaner_factory, integrated_learner_factory]
 )
@@ -215,10 +209,7 @@ def test_subset_my_attribute_learner_integrated(language_mode, learner):
         assert gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
 
 
-@pytest.mark.parametrize(
-    "language_mode",
-    [LanguageMode.ENGLISH, pytest.param(LanguageMode.CHINESE, marks=pytest.mark.xfail)],
-)
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
     "learner", [subset_attribute_leaner_factory, integrated_learner_factory]
 )

@@ -6,7 +6,6 @@ from typing import AbstractSet, Iterable, List, Optional, Sequence, Union
 from adam.language_specific.chinese.chinese_phase_1_lexicon import (
     GAILA_PHASE_1_CHINESE_LEXICON,
 )
-
 from adam.language import LinguisticDescription
 from adam.learner import (
     LearningExample,
@@ -143,7 +142,9 @@ class AbstractObjectTemplateLearner(AbstractTemplateLearner, ABC):
         return graph_without_learner(perception_graph)
 
     def _extract_surface_template(
-        self, language_concept_alignment: LanguageAlignedPerception
+        self,
+        language_concept_alignment: LanguageAlignedPerception,
+        language_mode: LanguageMode = LanguageMode.ENGLISH,
     ) -> SurfaceTemplate:
         return SurfaceTemplate(
             language_concept_alignment.language.as_token_sequence(),

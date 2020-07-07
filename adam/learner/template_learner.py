@@ -81,7 +81,9 @@ class AbstractTemplateLearner(
 
         logging.info(f"Learner observing {preprocessed_input}")
 
-        surface_template = self._extract_surface_template(preprocessed_input)
+        surface_template = self._extract_surface_template(
+            preprocessed_input, self._language_mode
+        )
         self._learning_step(preprocessed_input, surface_template)
 
     def describe(
@@ -198,7 +200,9 @@ class AbstractTemplateLearner(
 
     @abstractmethod
     def _extract_surface_template(
-        self, language_concept_alignment: LanguageAlignedPerception
+        self,
+        language_concept_alignment: LanguageAlignedPerception,
+        language_mode: LanguageMode = LanguageMode.ENGLISH,
     ) -> SurfaceTemplate:
         r"""
         We treat learning as acquiring an association between "templates"

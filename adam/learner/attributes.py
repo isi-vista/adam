@@ -2,6 +2,7 @@ from abc import ABC
 from typing import AbstractSet, Union, Optional
 from adam.language import LinguisticDescription
 from adam.learner import LearningExample
+from adam.learner.language_mode import LanguageMode
 from adam.learner.alignments import (
     LanguagePerceptionSemanticAlignment,
     PerceptionSemanticAlignment,
@@ -150,7 +151,9 @@ class AbstractAttributeTemplateLearner(AbstractTemplateLearner, ABC):
         return self._object_recognizer.match_objects_old(perception_graph)
 
     def _extract_surface_template(
-        self, language_concept_alignment: LanguageAlignedPerception
+        self,
+        language_concept_alignment: LanguageAlignedPerception,
+        language_mode: LanguageMode = LanguageMode.ENGLISH,
     ) -> SurfaceTemplate:
         if len(language_concept_alignment.aligned_nodes) > 1:
             raise RuntimeError("Input has too many aligned nodes for us to handle.")
