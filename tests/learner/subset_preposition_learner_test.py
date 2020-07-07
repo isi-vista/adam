@@ -104,7 +104,8 @@ def run_preposition_test(learner, situation_template, language_generator):
 
 @pytest.mark.parametrize(
     "language_mode",
-    [LanguageMode.ENGLISH, pytest.param(LanguageMode.CHINESE, marks=pytest.mark.xfail)],
+    [LanguageMode.ENGLISH]
+    # [LanguageMode.ENGLISH, pytest.param(LanguageMode.CHINESE, marks=pytest.mark.xfail)],
 )
 @pytest.mark.parametrize(
     "learner", [subset_relation_language_factory, integrated_learner_factory]
