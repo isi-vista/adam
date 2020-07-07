@@ -280,9 +280,15 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
             ),
         )
 
-        for thing_whose_meaning_to_learn in self._candidate_templates(
-            language_perception_semantic_alignment
-        ):
+        try:
+            things_whose_meaning_to_learn = self._candidate_templates(
+                language_perception_semantic_alignment
+            )
+        except RuntimeError as e:
+            raise RuntimeError(
+                f"{str(e)} occurred while generating candidate templates for {language_perception_semantic_alignment}"
+            )
+        for thing_whose_meaning_to_learn in things_whose_meaning_to_learn:
             self._learning_step(preprocessed_input, thing_whose_meaning_to_learn)
 
     def enrich_during_learning(

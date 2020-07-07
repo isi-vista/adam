@@ -69,36 +69,46 @@ class AbstractAttributeTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                         preceding_token_index
                     )
                 ):
-                    ret.append(
-                        SurfaceTemplateBoundToSemanticNodes(
-                            language_concept_alignment.to_surface_template(
-                                {object_node: SLOT1},
-                                restrict_to_span=Span(
-                                    preceding_token_index, span_for_object.end
+                    try:
+                        ret.append(
+                            SurfaceTemplateBoundToSemanticNodes(
+                                language_concept_alignment.to_surface_template(
+                                    {object_node: SLOT1},
+                                    restrict_to_span=Span(
+                                        preceding_token_index, span_for_object.end
+                                    ),
+                                    language_mode=self._language_mode,
                                 ),
-                                language_mode=self._language_mode,
-                            ),
-                            {SLOT1: object_node},
+                                {SLOT1: object_node},
+                            )
                         )
-                    )
+                    except RuntimeError as e:
+                        raise RuntimeError(
+                            f"{str(e)} with preceding token index = {preceding_token_index}"
+                        )
                 following_token_index = span_for_object.end + 1
                 if following_token_index < len(
                     language_concept_alignment.language.as_token_sequence()
                 ) and not language_concept_alignment.token_index_is_aligned(
                     following_token_index
                 ):
-                    ret.append(
-                        SurfaceTemplateBoundToSemanticNodes(
-                            language_concept_alignment.to_surface_template(
-                                {object_node: SLOT1},
-                                restrict_to_span=Span(
-                                    span_for_object.start, following_token_index
+                    try:
+                        ret.append(
+                            SurfaceTemplateBoundToSemanticNodes(
+                                language_concept_alignment.to_surface_template(
+                                    {object_node: SLOT1},
+                                    restrict_to_span=Span(
+                                        span_for_object.start, following_token_index
+                                    ),
+                                    language_mode=self._language_mode,
                                 ),
-                                language_mode=self._language_mode,
-                            ),
-                            {SLOT1: object_node},
+                                {SLOT1: object_node},
+                            )
                         )
-                    )
+                    except RuntimeError as e:
+                        raise RuntimeError(
+                            f"{str(e)} with following token index = {following_token_index}"
+                        )
 
         return immutableset(
             bound_surface_template
