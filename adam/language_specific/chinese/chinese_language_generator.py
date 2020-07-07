@@ -238,7 +238,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     verb_lexical_entry = GRAB
                 elif action.action_type == PUSH:
                     verb_lexical_entry = SHOVE
-                elif action.action_type == PASS:
+                else:
                     verb_lexical_entry = TOSS
 
             else:
@@ -430,22 +430,22 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 return None
             if path_object not in self.situation.salient_objects:
                 return None
-            if action:
-                # If both arguments of the relation are core argument roles,
-                # we assume the verb takes care of expressing their relationship.
-                core_argument_fillers = immutableset(
-                    chain(
-                        action.argument_roles_to_fillers[AGENT],
-                        action.argument_roles_to_fillers[PATIENT],
-                        action.argument_roles_to_fillers[THEME],
-                    )
-                )
 
-                if (
-                    path_object in core_argument_fillers
-                    and spatial_path.reference_object in core_argument_fillers
-                ):
-                    return None
+            # If both arguments of the relation are core argument roles,
+            # we assume the verb takes care of expressing their relationship.
+            core_argument_fillers = immutableset(
+                chain(
+                    action.argument_roles_to_fillers[AGENT],
+                    action.argument_roles_to_fillers[PATIENT],
+                    action.argument_roles_to_fillers[THEME],
+                )
+            )
+
+            if (
+                path_object in core_argument_fillers
+                and spatial_path.reference_object in core_argument_fillers
+            ):
+                return None
             preposition: Optional[str] = None
             if spatial_path.operator == TOWARD:
                 preposition = "chau2"

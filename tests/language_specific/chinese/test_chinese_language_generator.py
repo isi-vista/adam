@@ -3212,3 +3212,55 @@ def test_passing_for_phase1():
         "gei3",
         "ma1 ma1",
     )
+
+
+def test_multiple_actions():
+    agent = situation_object(DAD)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[agent],
+        actions=[
+            Action(DRINK, argument_roles_to_fillers=[(AGENT, agent)]),
+            Action(EAT, argument_roles_to_fillers=[(AGENT, agent)]),
+        ],
+    )
+    with pytest.raises(RuntimeError):
+        generated_tokens(situation)
+
+
+def test_multiple_subjects():
+    agent = situation_object(DAD)
+    other_agent = situation_object(MOM)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[agent, other_agent],
+        actions=[
+            Action(
+                DRINK, argument_roles_to_fillers=[(AGENT, agent), (AGENT, other_agent)]
+            )
+        ],
+    )
+    with pytest.raises(RuntimeError):
+        generated_tokens(situation)
+
+
+def test_non_salient_in_path():
+    dad = situation_object(DAD, properties=[IS_ADDRESSEE])
+    mum = situation_object(MOM)
+    cookie = situation_object(COOKIE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[cookie, dad],
+        actions=[
+            Action(
+                action_type=EAT,
+                argument_roles_to_fillers=[(AGENT, dad), (THEME, cookie)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (mum, SpatialPath(operator=None, reference_object=cookie))
+                    ]
+                ),
+            )
+        ],
+    )
+    assert generated_tokens(situation) == ("ni3", "chr1", "chyu1 chi2 bing3")
