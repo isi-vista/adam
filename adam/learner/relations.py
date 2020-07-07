@@ -19,7 +19,7 @@ from adam.semantics import RelationConcept, SyntaxSemanticsVariable
 from immutablecollections import immutableset, immutablesetmultidict
 from vistautils.span import Span
 from adam.semantics import SemanticNode
-from adam.learner import SemanticNodeWithSpan
+from adam.learner import SemanticNodeWithSpan, aligned_object_nodes
 
 _MAXIMUM_RELATION_TEMPLATE_TOKEN_LENGTH = 5
 
@@ -108,37 +108,6 @@ class AbstractRelationTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                 )
             ):
                 yield output
-
-        def in_left_to_right_order(
-            semantic_nodes: Tuple[SemanticNodeWithSpan, ...]
-        ) -> bool:
-            previous_node = semantic_nodes[0]
-            for i in range(1, len(semantic_nodes)):
-                if not previous_node.span.precedes(semantic_nodes[i].span):
-                    return False
-                previous_node = semantic_nodes[i]
-            return True
-
-        def aligned_object_nodes(
-            num_arguments: int
-        ) -> ImmutableSet[Tuple[SemanticNodeWithSpan, ...]]:
-            if num_arguments not in num_arguments_to_alignments_sets.keys():
-                # we haven't seen a request for this number of arguments before so we need to generate all the valid options
-                semantic_nodes_with_spans = immutableset(
-                    SemanticNodeWithSpan(node=node, span=span)
-                    for (
-                        node,
-                        span,
-                    ) in language_concept_alignment.node_to_language_span.items()
-                )
-                num_arguments_to_alignments_sets[num_arguments] = immutableset(
-                    ordered_semantic_nodes
-                    for ordered_semantic_nodes in itertools.product(
-                        semantic_nodes_with_spans, repeat=num_arguments
-                    )
-                    if in_left_to_right_order(ordered_semantic_nodes)
-                )
-            return num_arguments_to_alignments_sets[num_arguments]
 
         def process_aligned_objects_with_template(
             relation_template: Tuple[RelationAlignmentSlots, ...],
@@ -310,7 +279,9 @@ class AbstractRelationTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                     1
                     for token in relation_template
                     if token == RelationAlignmentSlots.Argument
-                )
+                ),
+                num_arguments_to_alignments_sets,
+                language_concept_alignment,
             ):
                 for (
                     surface_template_bound_to_semantic_nodes
@@ -318,7 +289,6 @@ class AbstractRelationTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                     relation_template, aligned_nodes
                 ):
                     if surface_template_bound_to_semantic_nodes:
-                        print(surface_template_bound_to_semantic_nodes)
                         ret.append(surface_template_bound_to_semantic_nodes)
 
         return immutableset(

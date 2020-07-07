@@ -4,12 +4,14 @@ Interfaces for language learning code.
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Dict, Generic, Mapping, Optional, Callable
-
+from typing import Dict, Generic, Mapping, Optional, Callable, Tuple
+from immutablecollections import ImmutableSet, immutableset
 from adam.learner.alignments import (
     LanguagePerceptionSemanticAlignment,
     PerceptionSemanticAlignment,
 )
+import itertools
+from adam.learner.alignments import LanguageConceptAlignment
 from adam.semantics import SemanticNode
 from vistautils.span import Span
 from adam.ontology.ontology import Ontology
@@ -232,3 +234,36 @@ class SemanticNodeWithSpan:
 
     node: SemanticNode = attrib(validator=instance_of(SemanticNode))
     span: Span = attrib(validator=instance_of(Span))
+
+
+def in_left_to_right_order(semantic_nodes: Tuple[SemanticNodeWithSpan, ...]) -> bool:
+    """This function checks that a sequence is in left to right order"""
+    previous_node = semantic_nodes[0]
+    for i in range(1, len(semantic_nodes)):
+        if not previous_node.span.precedes(semantic_nodes[i].span):
+            return False
+        previous_node = semantic_nodes[i]
+    return True
+
+
+def aligned_object_nodes(
+    num_arguments: int,
+    num_arguments_to_alignments_sets: Dict[
+        int, ImmutableSet[Tuple[SemanticNodeWithSpan, ...]]
+    ],
+    language_concept_alignment: LanguageConceptAlignment,
+) -> ImmutableSet[Tuple[SemanticNodeWithSpan, ...]]:
+    if num_arguments not in num_arguments_to_alignments_sets.keys():
+        # we haven't seen a request for this number of arguments before so we need to generate all the valid options
+        semantic_nodes_with_spans = immutableset(
+            SemanticNodeWithSpan(node=node, span=span)
+            for (node, span) in language_concept_alignment.node_to_language_span.items()
+        )
+        num_arguments_to_alignments_sets[num_arguments] = immutableset(
+            ordered_semantic_nodes
+            for ordered_semantic_nodes in itertools.product(
+                semantic_nodes_with_spans, repeat=num_arguments
+            )
+            if in_left_to_right_order(ordered_semantic_nodes)
+        )
+    return num_arguments_to_alignments_sets[num_arguments]

@@ -49,7 +49,7 @@ from immutablecollections import (
 )
 from attr.validators import instance_of
 from vistautils.span import Span
-from adam.learner import SemanticNodeWithSpan
+from adam.learner import SemanticNodeWithSpan, aligned_object_nodes
 
 # This is the maximum number of tokens we will hypothesize
 # as the non-argument-slots portion of a surface template for an action.
@@ -160,47 +160,6 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                 )
             ):
                 yield output
-
-        def in_left_to_right_order(
-            semantic_nodes: Tuple[SemanticNodeWithSpan, ...]
-        ) -> bool:
-            previous_node = semantic_nodes[0]
-            for i in range(1, len(semantic_nodes)):
-                if not previous_node.span.precedes(semantic_nodes[i].span):
-                    return False
-                previous_node = semantic_nodes[i]
-            return True
-
-        def aligned_object_nodes(
-            num_arguments: int
-        ) -> ImmutableSet[Tuple[SemanticNodeWithSpan, ...]]:
-            # We guarantee the return order is in order of sentence appearance from left to right
-            if num_arguments not in num_arguments_to_alignments_sets.keys():
-                # We haven't seen a request for this number of arguments before
-                # So we need to generate all the valid options
-
-                # First, we convert a tuple into a helper class for cleaner code
-                semantic_nodes_with_spans = immutableset(
-                    SemanticNodeWithSpan(node=node, span=span)
-                    for (
-                        node,
-                        span,
-                    ) in language_concept_alignment.node_to_language_span.items()
-                )
-
-                # Then we use itertools.product given a number of repeats allowed to
-                # Generate a cartesian product of all the options for nouns to appear
-                # in the sentence. We check if the result of the produce meets our
-                # in_left_to_right_order before adding it to a set of acceptable alignments
-                num_arguments_to_alignments_sets[num_arguments] = immutableset(
-                    ordered_semantic_nodes
-                    for ordered_semantic_nodes in itertools.product(
-                        semantic_nodes_with_spans, repeat=num_arguments
-                    )
-                    if in_left_to_right_order(ordered_semantic_nodes)
-                )
-
-            return num_arguments_to_alignments_sets[num_arguments]
 
         def process_aligned_objects_with_template(
             verb_template: Tuple[VerbAlignmentSlots, ...],
@@ -373,7 +332,9 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
         # Generate all the possible verb template alignments
         for verb_template in candidate_verb_templates():
             for aligned_nodes in aligned_object_nodes(
-                sum(1 for token in verb_template if token == VerbAlignmentSlots.Argument)
+                sum(1 for token in verb_template if token == VerbAlignmentSlots.Argument),
+                num_arguments_to_alignments_sets,
+                language_concept_alignment,
             ):
                 # aligned_object_nodes is guaranteed to only give us alignments
                 # Which the spans go from left most to right most
