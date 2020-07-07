@@ -9,6 +9,7 @@ from typing import (
     Dict,
     Iterable,
     Optional,
+    Callable,
 )
 import itertools
 from adam.learner.alignments import LanguagePerceptionSemanticAlignment
@@ -269,7 +270,7 @@ def candidate_templates(
     language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
     max_length: int,
     language_mode: LanguageMode,
-    candidate_templates_function,
+    candidate_templates_function: Callable[[], Iterable[Tuple[AlignmentSlots, ...]]],
 ) -> AbstractSet[SurfaceTemplateBoundToSemanticNodes]:
     ret = []
     language_concept_alignment = (
