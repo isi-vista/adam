@@ -49,6 +49,7 @@ from immutablecollections import (
 )
 from attr.validators import instance_of
 from vistautils.span import Span
+from adam.learner import SemanticNodeWithSpan
 
 # This is the maximum number of tokens we will hypothesize
 # as the non-argument-slots portion of a surface template for an action.
@@ -58,12 +59,6 @@ _MAXIMUM_ACTION_TEMPLATE_TOKEN_LENGTH = 3
 class VerbAlignmentSlots(Enum):
     Argument = auto()
     FixedString = auto()
-
-
-@attrs(frozen=True, slots=True)
-class SemanticNodeWithSpan:
-    node: SemanticNode = attrib(validator=instance_of(SemanticNode))
-    span: Span = attrib(validator=instance_of(Span))
 
 
 @attrs

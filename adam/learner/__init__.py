@@ -10,7 +10,8 @@ from adam.learner.alignments import (
     LanguagePerceptionSemanticAlignment,
     PerceptionSemanticAlignment,
 )
-
+from adam.semantics import SemanticNode
+from vistautils.span import Span
 from adam.ontology.ontology import Ontology
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
@@ -223,3 +224,11 @@ class ComposableLearner(ABC):
         Log some representation of the learner's current hypothesized semantics for words/phrases to
         *log_output_path*.
         """
+
+
+@attrs(frozen=True, slots=True)
+class SemanticNodeWithSpan:
+    """This is a tuple class currently used by our verb and relation learners"""
+
+    node: SemanticNode = attrib(validator=instance_of(SemanticNode))
+    span: Span = attrib(validator=instance_of(Span))

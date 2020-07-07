@@ -11,28 +11,22 @@ from adam.learner.surface_templates import (
     SurfaceTemplate,
     SurfaceTemplateBoundToSemanticNodes,
 )
-from attr import attrib, attrs
+from attr import attrs
 from enum import Enum, auto
 from adam.learner.template_learner import AbstractTemplateLearnerNew
 from adam.perception import MatchMode
 from adam.semantics import RelationConcept, SyntaxSemanticsVariable
 from immutablecollections import immutableset, immutablesetmultidict
 from vistautils.span import Span
-from attr.validators import instance_of
 from adam.semantics import SemanticNode
+from adam.learner import SemanticNodeWithSpan
 
-_MAXIMUM_RELATION_TEMPLATE_TOKEN_LENGTH = 3
+_MAXIMUM_RELATION_TEMPLATE_TOKEN_LENGTH = 5
 
 
 class RelationAlignmentSlots(Enum):
     Argument = auto()
     FixedString = auto()
-
-
-@attrs(frozen=True, slots=True)
-class SemanticNodeWithSpan:
-    node: SemanticNode = attrib(validator=instance_of(SemanticNode))
-    span: Span = attrib(validator=instance_of(Span))
 
 
 @attrs
@@ -147,7 +141,7 @@ class AbstractRelationTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
             return num_arguments_to_alignments_sets[num_arguments]
 
         def process_aligned_objects_with_template(
-            verb_template: Tuple[RelationAlignmentSlots, ...],
+            relation_template: Tuple[RelationAlignmentSlots, ...],
             aligned_nodes: Tuple[SemanticNodeWithSpan, ...],
         ) -> Iterable[Optional[SurfaceTemplateBoundToSemanticNodes]]:
             aligned_node_index = 0
@@ -164,7 +158,7 @@ class AbstractRelationTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
             # So we keep track if the previous token was a FixedString indicator
             previous_node_was_string = False
 
-            for token in verb_template:
+            for token in relation_template:
                 # if the token in our template is an argument we need to assign it a unique SyntaxSemanticsVariable and map in to the SemanticNode
                 if token == RelationAlignmentSlots.Argument:
                     slot_semantic_variable = STANDARD_SLOT_VARIABLES[aligned_node_index]
@@ -189,15 +183,15 @@ class AbstractRelationTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                             aligned_nodes[aligned_node_index - 1].span.end
                             != aligned_nodes[aligned_node_index].span.start
                         ):
-                            candidate_verb_token_span = Span(
+                            candidate_relation_token_span = Span(
                                 aligned_nodes[aligned_node_index - 1].span.end,
                                 aligned_nodes[aligned_node_index].span.start,
                             )
-                            if not is_legal_template_span(candidate_verb_token_span):
+                            if not is_legal_template_span(candidate_relation_token_span):
                                 yield None
                             template_elements.extend(
                                 sentence_tokens[
-                                    candidate_verb_token_span.start : candidate_verb_token_span.end
+                                    candidate_relation_token_span.start : candidate_relation_token_span.end
                                 ]
                             )
                         previous_node_was_string = True
@@ -209,31 +203,33 @@ class AbstractRelationTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                 for max_token_length_for_template_prefix in range(
                     1, _MAXIMUM_RELATION_TEMPLATE_TOKEN_LENGTH + 1
                 ):
-                    prefix_candidate_verb_token_span = Span(
+                    prefix_candidate_relation_token_span = Span(
                         prefix_string_end - max_token_length_for_template_prefix,
                         prefix_string_end,
                     )
-                    if is_legal_template_span(prefix_candidate_verb_token_span):
+                    if is_legal_template_span(prefix_candidate_relation_token_span):
                         for max_token_length_for_template_postfix in range(
                             1, _MAXIMUM_RELATION_TEMPLATE_TOKEN_LENGTH + 1
                         ):
-                            postfix_candidate_verb_token_span = Span(
+                            postfix_candidate_relation_token_span = Span(
                                 postfix_string_start,
                                 postfix_string_start
                                 + max_token_length_for_template_postfix,
                             )
-                            if is_legal_template_span(postfix_candidate_verb_token_span):
+                            if is_legal_template_span(
+                                postfix_candidate_relation_token_span
+                            ):
                                 final_template_elements: List[
                                     Union[str, SyntaxSemanticsVariable]
                                 ] = list(
                                     sentence_tokens[
-                                        prefix_candidate_verb_token_span.start : prefix_candidate_verb_token_span.end
+                                        prefix_candidate_relation_token_span.start : prefix_candidate_relation_token_span.end
                                     ]
                                 )
                                 final_template_elements.extend(template_elements)
                                 final_template_elements.extend(
                                     sentence_tokens[
-                                        postfix_candidate_verb_token_span.start : postfix_candidate_verb_token_span.end
+                                        postfix_candidate_relation_token_span.start : postfix_candidate_relation_token_span.end
                                     ]
                                 )
                                 yield SurfaceTemplateBoundToSemanticNodes(
@@ -250,14 +246,14 @@ class AbstractRelationTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                 for max_token_length_for_template_prefix in range(
                     1, _MAXIMUM_RELATION_TEMPLATE_TOKEN_LENGTH + 1
                 ):
-                    prefix_candidate_verb_token_span = Span(
+                    prefix_candidate_relation_token_span = Span(
                         prefix_string_end - max_token_length_for_template_prefix,
                         prefix_string_end,
                     )
-                    if is_legal_template_span(prefix_candidate_verb_token_span):
+                    if is_legal_template_span(prefix_candidate_relation_token_span):
                         final_template_elements = list(
                             sentence_tokens[
-                                prefix_candidate_verb_token_span.start : prefix_candidate_verb_token_span.end
+                                prefix_candidate_relation_token_span.start : prefix_candidate_relation_token_span.end
                             ]
                         )
                         final_template_elements.extend(template_elements)
@@ -275,15 +271,15 @@ class AbstractRelationTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                 for max_token_length_for_template_postfix in range(
                     1, _MAXIMUM_RELATION_TEMPLATE_TOKEN_LENGTH + 1
                 ):
-                    postfix_candidate_verb_token_span = Span(
+                    postfix_candidate_relation_token_span = Span(
                         postfix_string_start,
                         postfix_string_start + max_token_length_for_template_postfix,
                     )
-                    if is_legal_template_span(postfix_candidate_verb_token_span):
+                    if is_legal_template_span(postfix_candidate_relation_token_span):
                         final_template_elements = list(template_elements)
                         final_template_elements.extend(
                             sentence_tokens[
-                                postfix_candidate_verb_token_span.start : postfix_candidate_verb_token_span.end
+                                postfix_candidate_relation_token_span.start : postfix_candidate_relation_token_span.end
                             ]
                         )
                         yield SurfaceTemplateBoundToSemanticNodes(
