@@ -559,6 +559,26 @@ class GraphMatching:
         ):
             yield mapping
 
+    def subgraph_monomorphisms_iter(
+            self,
+            *,
+            collect_debug_statistics: bool = False,
+            debug_callback: Optional[Callable[[Any, Any], None]] = None,
+            initial_partial_match: Mapping[Any, Any] = immutabledict(),
+    ):
+        """Generator over monomorphisms from G2 to a subgraph of G1."""
+        # Declare that we are looking for graph-subgraph isomorphism.
+        self.test = "mono"
+        self.initialize(initial_partial_match=initial_partial_match)
+        self.debug_largest_match = {}
+        self.failing_pattern_node_for_deepest_match = None
+        self._reset_debugging_maps()
+        for mapping in self.match(
+                collect_debug_statistics=collect_debug_statistics,
+                debug_callback=debug_callback,
+        ):
+            yield mapping
+
     def syntactic_feasibility(self, graph_node, pattern_node):
         """Returns True if adding (G1_node, G2_node) is syntactically feasible.
 
