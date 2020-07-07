@@ -524,3 +524,14 @@ def candidate_templates(
         # See https://github.com/isi-vista/adam/issues/789
         if covers_entire_utterance(bound_surface_template, language_concept_alignment)
     )
+
+
+def no_object_alignment_in_fixed_strings(
+    bound_surface_template: SurfaceTemplateBoundToSemanticNodes,
+    language_concept_alignment: LanguageConceptAlignment,
+) -> bool:
+    for (node, _) in language_concept_alignment.node_to_language_span.items():
+        if node.concept.debug_string in bound_surface_template.surface_template.elements:
+            return False
+
+    return True
