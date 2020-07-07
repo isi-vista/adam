@@ -201,7 +201,7 @@ def covers_entire_utterance(
     bound_surface_template: SurfaceTemplateBoundToSemanticNodes,
     language_concept_alignment: LanguageConceptAlignment,
     *,
-    token_sequence_count: int,
+    ignore_determiners: bool = False,
 ) -> bool:
     num_covered_tokens = 0
     for element in bound_surface_template.surface_template.elements:
@@ -213,6 +213,19 @@ def covers_entire_utterance(
                     bound_surface_template.slot_to_semantic_node[element]
                 ]
             )
+    # We may need to
+    sized_tokens = (
+        len(language_concept_alignment.language.as_token_sequence())
+        if not ignore_determiners
+        else len(
+            [
+                token
+                for token in language_concept_alignment.language.as_token_sequence()
+                if token not in ["a", "the"]
+            ]
+        )
+    )
+
     # This assumes the slots and the non-slot elements are non-overlapping,
     # which is true for how we construct them.
-    return num_covered_tokens == token_sequence_count
+    return num_covered_tokens == sized_tokens

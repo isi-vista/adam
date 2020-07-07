@@ -392,11 +392,7 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
             for bound_surface_template in ret
             # For now, we require templates to account for the entire utterance.
             # See https://github.com/isi-vista/adam/issues/789
-            if covers_entire_utterance(
-                bound_surface_template,
-                language_concept_alignment,
-                token_sequence_count=len(sentence_tokens),
-            )
+            if covers_entire_utterance(bound_surface_template, language_concept_alignment)
         )
 
 
