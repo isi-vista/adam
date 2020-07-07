@@ -134,7 +134,6 @@ def run_verb_test(learner, situation_template, language_generator):
     ) in test_curriculum.instances():
         descriptions_from_learner = learner.describe(test_perceptual_representation)
         gold = test_lingustics_description.as_token_sequence()
-        print(gold)
         assert descriptions_from_learner
         assert gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
 
@@ -342,10 +341,7 @@ def test_fall(language_mode, learner):
         )
 
 
-@pytest.mark.parametrize(
-    "language_mode",
-    [LanguageMode.ENGLISH, pytest.param(LanguageMode.CHINESE, marks=pytest.mark.xfail)],
-)
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
     "learner", [subset_verb_language_factory, integrated_learner_factory]
 )
