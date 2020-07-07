@@ -24,6 +24,7 @@ from adam.curriculum.phase1_curriculum import (
     make_spin_templates,
     make_take_template,
     make_throw_templates,
+    make_throw_animacy_templates,
 )
 from adam.learner import LearningExample
 from adam.learner.integrated_learner import IntegratedTemplateLearner
@@ -124,6 +125,7 @@ def run_verb_test(learner, situation_template, language_generator):
         perceptual_representation,
     ) in train_curriculum.instances():
         # Get the object matches first - preposition learner can't learn without already recognized objects
+        print(linguistic_description)
         learner.observe(
             LearningExample(perceptual_representation, linguistic_description)
         )
@@ -352,6 +354,70 @@ def test_throw(language_mode, learner):
             situation_template,
             language_generator=phase1_language_generator(language_mode),
         )
+
+
+@pytest.mark.parametrize(
+    "language_mode",
+    [LanguageMode.CHINESE, pytest.param(LanguageMode.ENGLISH, marks=pytest.mark.xfail)],
+)
+@pytest.mark.parametrize(
+    "learner", [subset_verb_language_factory, integrated_learner_factory]
+)
+# this tests gei vs. dau X shang for Chinese throw to
+# TODO: fix English implementation https://github.com/isi-vista/adam/issues/870
+def test_throw_animacy(language_mode, learner):
+    # shuffle both together for the train curriculum
+    train_curriculum = phase1_instances(
+        "train",
+        chain(
+            *[
+                sampled(
+                    situation_template=situation_template,
+                    max_to_sample=10,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                    chooser=PHASE1_CHOOSER_FACTORY(),
+                )
+                for situation_template in make_throw_animacy_templates()
+            ]
+        ),
+        language_generator=phase1_language_generator(language_mode),
+    )
+    # shuffle both together for test curriculum
+    test_curriculum = phase1_instances(
+        "test",
+        chain(
+            *[
+                sampled(
+                    situation_template=situation_template,
+                    max_to_sample=1,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                    chooser=PHASE1_CHOOSER_FACTORY(),
+                )
+                for situation_template in make_throw_animacy_templates()
+            ]
+        ),
+        language_generator=phase1_language_generator(language_mode),
+    )
+    # instantiate and test the learner
+    learner = learner(language_mode)
+    for (
+        _,
+        linguistic_description,
+        perceptual_representation,
+    ) in train_curriculum.instances():
+        learner.observe(
+            LearningExample(perceptual_representation, linguistic_description)
+        )
+
+    for (
+        _,
+        test_lingustics_description,
+        test_perceptual_representation,
+    ) in test_curriculum.instances():
+        descriptions_from_learner = learner.describe(test_perceptual_representation)
+        gold = test_lingustics_description.as_token_sequence()
+        assert descriptions_from_learner
+        assert gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
 
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
