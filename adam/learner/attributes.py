@@ -9,6 +9,7 @@ from adam.learner.alignments import (
 from adam.learner.learner_utils import (
     assert_static_situation,
     pattern_remove_incomplete_region_or_spatial_path,
+    covers_entire_utterance,
 )
 from adam.learner.object_recognizer import (
     ObjectRecognizer,
@@ -98,7 +99,25 @@ class AbstractAttributeTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                         )
                     )
 
-        return immutableset(ret)
+        return immutableset(
+            bound_surface_template
+            for bound_surface_template in ret
+            # For now, we require templates to account for the entire utterance.
+            # See https://github.com/isi-vista/adam/issues/789
+            # We strictly ignore english determiners here for determining
+            # the length needed of our surface template
+            if covers_entire_utterance(
+                bound_surface_template,
+                language_concept_alignment,
+                token_sequence_count=len(
+                    [
+                        token
+                        for token in language_concept_alignment.language.as_token_sequence()
+                        if token not in ["a", "the"]
+                    ]
+                ),
+            )
+        )
 
 
 @attrs

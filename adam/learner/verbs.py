@@ -9,6 +9,7 @@ from adam.learner.alignments import (
     LanguagePerceptionSemanticAlignment,
     PerceptionSemanticAlignment,
 )
+from adam.learner.learner_utils import covers_entire_utterance
 from adam.learner.object_recognizer import (
     ObjectRecognizer,
     PerceptionGraphFromObjectRecognizer,
@@ -386,30 +387,16 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                     if surface_template_bound_to_semantic_nodes:
                         ret.append(surface_template_bound_to_semantic_nodes)
 
-        def covers_entire_utterance(
-            bound_surface_template: SurfaceTemplateBoundToSemanticNodes
-        ) -> bool:
-            num_covered_tokens = 0
-            for element in bound_surface_template.surface_template.elements:
-                if isinstance(element, str):
-                    num_covered_tokens += 1
-                else:
-                    num_covered_tokens += len(
-                        language_concept_alignment.node_to_language_span[
-                            bound_surface_template.slot_to_semantic_node[element]
-                        ]
-                    )
-            # This assumes the slots and the non-slot elements are non-overlapping,
-            # which is true for how we construct them.
-            return num_covered_tokens == len(sentence_tokens)
-
         return immutableset(
             bound_surface_template
             for bound_surface_template in ret
-            # For now, we require action templates to account for the entire
-            # utterance.
+            # For now, we require templates to account for the entire utterance.
             # See https://github.com/isi-vista/adam/issues/789
-            if covers_entire_utterance(bound_surface_template)
+            if covers_entire_utterance(
+                bound_surface_template,
+                language_concept_alignment,
+                token_sequence_count=len(sentence_tokens),
+            )
         )
 
 

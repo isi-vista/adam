@@ -2,6 +2,7 @@ from abc import ABC
 from typing import AbstractSet, List, Union, Optional
 
 from adam.learner import LanguagePerceptionSemanticAlignment, PerceptionSemanticAlignment
+from adam.learner.learner_utils import covers_entire_utterance
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
 from adam.learner.subset import AbstractTemplateSubsetLearnerNew
 from adam.learner.surface_templates import (
@@ -135,7 +136,17 @@ class AbstractRelationTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                                 ],
                             )
                         )
-        return immutableset(ret)
+        return immutableset(
+            bound_surface_template
+            for bound_surface_template in ret
+            # For now, we require templates to account for the entire utterance.
+            # See https://github.com/isi-vista/adam/issues/789
+            if covers_entire_utterance(
+                bound_surface_template,
+                language_concept_alignment,
+                token_sequence_count=len(sentence_tokens),
+            )
+        )
 
 
 @attrs

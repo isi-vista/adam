@@ -9,8 +9,12 @@ from networkx import (
 
 from adam.language import LinguisticDescription, TokenSequenceLinguisticDescription
 from adam.learner import LearningExample
+from adam.learner.alignments import LanguageConceptAlignment
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
-from adam.learner.surface_templates import SurfaceTemplate
+from adam.learner.surface_templates import (
+    SurfaceTemplate,
+    SurfaceTemplateBoundToSemanticNodes,
+)
 from adam.perception import PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -191,3 +195,26 @@ def pattern_remove_incomplete_region_or_spatial_path(
         computed_graph = graph
 
     return PerceptionGraphPattern(computed_graph, dynamic=perception_graph.dynamic)
+
+
+def covers_entire_utterance(
+    bound_surface_template: SurfaceTemplateBoundToSemanticNodes,
+    language_concept_alignment: LanguageConceptAlignment,
+    *,
+    token_sequence_count: int,
+) -> bool:
+    num_covered_tokens = 0
+    for element in bound_surface_template.surface_template.elements:
+        if isinstance(element, str):
+            num_covered_tokens += 1
+        else:
+            num_covered_tokens += len(
+                language_concept_alignment.node_to_language_span[
+                    bound_surface_template.slot_to_semantic_node[element]
+                ]
+            )
+    # This assumes the slots and the non-slot elements are non-overlapping,
+    # which is true for how we construct them.
+    # We also filter out counting for english determiners because
+    # Those are currently a hack
+    return num_covered_tokens == token_sequence_count
