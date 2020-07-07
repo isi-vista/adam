@@ -215,6 +215,4 @@ def covers_entire_utterance(
             )
     # This assumes the slots and the non-slot elements are non-overlapping,
     # which is true for how we construct them.
-    # We also filter out counting for english determiners because
-    # Those are currently a hack
     return num_covered_tokens == token_sequence_count
