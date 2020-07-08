@@ -29,6 +29,7 @@ from adam.ontology import IN_REGION, IS_SPEAKER, IS_ADDRESSEE
 from adam.ontology.during import DuringAction
 from adam.ontology.phase1_ontology import (
     AGENT,
+    SEMANTIC_ROLE,
     HARD_FORCE,
     SOFT_FORCE,
     COME,
@@ -3536,3 +3537,41 @@ def test_beside_for_goal():
         "ma1 ma1",
         "pang2 byan1",
     )
+
+
+def test_invalid_role():
+    mom = situation_object(MOM)
+    dad = situation_object(DAD)
+    learner = situation_object(LEARNER)
+    situation = HighLevelSemanticsSituation(
+        axis_info=AxesInfo(addressee=learner),
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom, dad],
+        actions=[Action(GO, argument_roles_to_fillers=[(SEMANTIC_ROLE, dad)])],
+        after_action_relations=[near(mom, dad)],
+    )
+    with pytest.raises(RuntimeError):
+        generated_tokens(situation)
+
+
+def test_no_x_is_y_dynamic():
+    mom = situation_object(MOM)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom],
+        actions=[Action(EAT, argument_roles_to_fillers=[(AGENT, mom)])],
+        syntax_hints=[ATTRIBUTES_AS_X_IS_Y],
+    )
+    with pytest.raises(RuntimeError):
+        generated_tokens(situation)
+
+
+def test_no_x_is_y_without_attributes():
+    mom = situation_object(MOM)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom],
+        syntax_hints=[ATTRIBUTES_AS_X_IS_Y],
+    )
+    with pytest.raises(RuntimeError):
+        generated_tokens(situation)
