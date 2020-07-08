@@ -492,25 +492,12 @@ class SimpleRuleBasedChineseLanguageGenerator(
             if self.dependency_graph.out_degree[reference_object_node]:
                 return None
             else:
-                if spatial_path.operator in [TOWARD, AWAY_FROM]:
-                    self.dependency_graph.add_edge(
-                        DependencyTreeToken(preposition, ADPOSITION),
-                        reference_object_node,
-                        role=CASE_SPATIAL,
-                    )
-                    return (OBLIQUE_NOMINAL, reference_object_node)
-                else:
-                    self.dependency_graph.add_edge(
-                        DependencyTreeToken(preposition, ADPOSITION),
-                        reference_object_node,
-                        role=CASE_POSSESSIVE,
-                    )
-                    self.dependency_graph.add_edge(
-                        DependencyTreeToken("dau4", ADPOSITION),
-                        reference_object_node,
-                        role=CASE_SPATIAL,
-                    )
-                    return (ADVERBIAL_CLAUSE_MODIFIER, reference_object_node)
+                self.dependency_graph.add_edge(
+                    DependencyTreeToken(preposition, ADPOSITION),
+                    reference_object_node,
+                    role=CASE_SPATIAL,
+                )
+                return (OBLIQUE_NOMINAL, reference_object_node)
 
         def _translate_relation_to_action_modifier(
             self,
