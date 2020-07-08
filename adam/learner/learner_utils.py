@@ -26,6 +26,7 @@ from enum import Enum, auto
 from adam.language import LinguisticDescription, TokenSequenceLinguisticDescription
 from adam.learner import LearningExample
 from adam.learner.alignments import LanguageConceptAlignment
+from adam.learner.language_mode import LanguageMode
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
 from adam.perception import PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
@@ -56,6 +57,7 @@ from adam.semantics import (
 from immutablecollections import immutabledict, immutableset, ImmutableSet
 
 from adam.utils.networkx_utils import subgraph
+from vistautils.span import Span
 
 
 def pattern_match_to_description(
@@ -530,8 +532,38 @@ def no_object_alignment_in_fixed_strings(
     bound_surface_template: SurfaceTemplateBoundToSemanticNodes,
     language_concept_alignment: LanguageConceptAlignment,
 ) -> bool:
-    for (node, _) in language_concept_alignment.node_to_language_span.items():
-        if node.concept.debug_string in bound_surface_template.surface_template.elements:
-            return False
+    i = 0
+    formated_spans = []
+    sentence_tokens = language_concept_alignment.language.as_token_sequence()
+    # First we need to collect the spans for aligned concepts
+    # But we can't just use the spans as they exist as English determiners
+    # can cause processing issues. So we filter out the token entries
+    # Which are determiners
+    for (_, span) in language_concept_alignment.node_to_language_span.items():
+        if (
+            bound_surface_template.surface_template._language_mode  # pylint:disable=protected_access
+            == LanguageMode.ENGLISH
+        ):
+            related_token_span = sentence_tokens[span.start : span.end]
+            if "a" in related_token_span or "the" in related_token_span:
+                formated_spans.append(
+                    Span.from_inclusive_to_exclusive(span.start - i, span.end - i - 1)
+                )
+                i += 1
+            else:
+                formated_spans.append(
+                    Span.from_inclusive_to_exclusive(span.start - i, span.end - i)
+                )
+        else:
+            formated_spans.append(span)
+    # We then take these computed spans and see if the tokens in the SurfaceTemplate
+    # over the given span are at all strings, if so we've included an already aligned
+    # SemanticNode in our fixed string structures so we fail out
+    for formated_span in formated_spans:
+        for token in bound_surface_template.surface_template.elements[
+            formated_span.start : formated_span.end
+        ]:
+            if isinstance(token, str):
+                return False
 
     return True
