@@ -1015,15 +1015,12 @@ class _PerceptionGeneration:
         def satisfies_part_of_restrictions(object_perception) -> bool:
             import logging
 
-            for condition_set in (
-                action_description.enduring_conditions,
-            ):
+            for condition_set in (action_description.enduring_conditions,):
                 for unbound_condition in condition_set:
                     if (
-                        (unbound_condition.first_slot == action_object_variable
-                         or unbound_condition.second_slot == action_object_variable)
-                        and unbound_condition.relation_type == PART_OF
-                    ):
+                        unbound_condition.first_slot == action_object_variable
+                        or unbound_condition.second_slot == action_object_variable
+                    ) and unbound_condition.relation_type == PART_OF:
                         condition = unbound_condition.copy_remapping_objects(
                             {**bindings, action_object_variable: object_perception}
                         )
