@@ -1862,7 +1862,7 @@ def _make_push_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
         objects_to_paths=[(_PUSH_THEME, SpatialPath(TO, PUSH_GOAL))]
     )
     enduring = [
-        # partOf(_PUSH_MANIPULATOR, _PUSH_AGENT),
+        partOf(_PUSH_MANIPULATOR, _PUSH_AGENT),
         bigger_than(_PUSH_AGENT, _PUSH_THEME),
         bigger_than(PUSH_SURFACE_AUX, _PUSH_THEME),
         contacts(_PUSH_MANIPULATOR, _PUSH_THEME),
@@ -1942,7 +1942,7 @@ _TAKE_ACTION_DESCRIPTION = ActionDescription(
     frame=ActionDescriptionFrame({AGENT: _TAKE_AGENT, THEME: _TAKE_THEME}),
     enduring_conditions=[
         bigger_than(_TAKE_AGENT, _TAKE_THEME),
-        # partOf(_TAKE_MANIPULATOR, _TAKE_AGENT),
+        partOf(_TAKE_MANIPULATOR, _TAKE_AGENT),
     ],
     preconditions=[negate(has(_TAKE_AGENT, _TAKE_THEME))],
     postconditions=[
@@ -1993,8 +1993,8 @@ _GIVE_ACTION_DESCRIPTION = ActionDescription(
     enduring_conditions=[
         bigger_than(_GIVE_AGENT, _GIVE_THEME),
         bigger_than(_GIVE_GOAL, _GIVE_THEME),
-        # partOf(_GIVE_AGENT_MANIPULATOR, _GIVE_AGENT),
-        # partOf(_GIVE_GOAL_MANIPULATOR, _GIVE_GOAL),
+        partOf(_GIVE_AGENT_MANIPULATOR, _GIVE_AGENT),
+        partOf(_GIVE_GOAL_MANIPULATOR, _GIVE_GOAL),
     ],
     preconditions=[
         has(_GIVE_AGENT, _GIVE_THEME),
@@ -2156,7 +2156,7 @@ def _make_throw_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription
         ],
     )
     enduring = [
-        # partOf(_THROW_MANIPULATOR, _THROW_AGENT),
+        partOf(_THROW_MANIPULATOR, _THROW_AGENT),
         bigger_than(_THROW_AGENT, _THROW_THEME)
     ]
     preconditions = [
@@ -2248,7 +2248,7 @@ def _make_pass_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
         ],
     )
     enduring = [
-        # partOf(_PASS_MANIPULATOR, _PASS_AGENT),
+        partOf(_PASS_MANIPULATOR, _PASS_AGENT),
         bigger_than(_PASS_AGENT, _PASS_THEME)
     ]
     preconditions = [
@@ -2330,7 +2330,7 @@ def _make_move_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
         ]
     )
     enduring = [
-        # partOf(_MOVE_MANIPULATOR, _MOVE_AGENT),
+        partOf(_MOVE_MANIPULATOR, _MOVE_AGENT),
         contacts(_MOVE_MANIPULATOR, _MOVE_THEME)
     ]
 
