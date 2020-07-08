@@ -637,7 +637,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     self.dependency_graph.add_edge(gei, filler_noun, role=CASE_SPATIAL)
                 return (syntactic_role, filler_noun)
             # deal with the case that it's a region in the situation
-            elif isinstance(filler, Region):
+            elif isinstance(filler, Region) and argument_role == GOAL:
 
                 # get the noun for the object
                 reference_object_dependency_node = self._noun_for_object(

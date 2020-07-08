@@ -19,6 +19,7 @@ from adam.language_specific.chinese.chinese_language_generator import (
     IGNORE_GOAL,
     USE_VERTICAL_MODIFIERS,
     USE_ABOVE_BELOW,
+    USE_NEAR,
 )
 from adam.language_specific.chinese.chinese_phase_1_lexicon import (
     GAILA_PHASE_1_CHINESE_LEXICON,
@@ -3317,3 +3318,36 @@ def test_bird_flies_away_from_mum_region():
         syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
     )
     assert generated_tokens(situation) == ("nyau3", "li2", "ma1 ma1", "fei1")
+
+
+def test_region_as_subject_should_fail():
+    bird = situation_object(BIRD)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[bird],
+        actions=[
+            Action(
+                FLY, argument_roles_to_fillers=[(AGENT, Region(bird, distance=PROXIMAL))]
+            )
+        ],
+    )
+    with pytest.raises(RuntimeError):
+        generated_tokens(situation)
+
+
+def test_near():
+    mom = situation_object(MOM)
+    dad = situation_object(DAD)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom, dad],
+        always_relations=[near(mom, dad)],
+        syntax_hints=[USE_NEAR],
+    )
+    assert generated_tokens(situation) == (
+        "dzai4",
+        "ba4 ba4",
+        "pang2 byan1",
+        "de",
+        "ma1 ma1",
+    )
