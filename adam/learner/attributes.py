@@ -42,6 +42,7 @@ from attr import attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import immutabledict, immutableset, immutablesetmultidict
 from vistautils.span import Span
+from adam.learner.learner_utils import SyntaxSemanticsVariable
 
 
 @attrs
@@ -111,6 +112,10 @@ class AbstractAttributeTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                 # We need to explicitly ignore determiners here for some reason
                 # See: https://github.com/isi-vista/adam/issues/871
                 ignore_determiners=True,
+            )
+            and not all(
+                (e in ["a", "the"] or isinstance(e, SyntaxSemanticsVariable))
+                for e in bound_surface_template.surface_template.elements
             )
         )
 

@@ -102,6 +102,8 @@ class AbstractObjectTemplateLearnerNew(AbstractTemplateLearnerNew):
                 language_alignment.language.as_token_sequence()
             )
             if not language_alignment.token_index_is_aligned(tok_idx)
+            # ignore determiners
+            and token not in ["a", "the"]
         )
 
 
