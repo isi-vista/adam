@@ -839,6 +839,7 @@ def _make_watermelon_schema() -> ObjectStructuralSchema:
             axes=Axes(
                 primary_axis=generating_axis,
                 orienting_axes=[orienting_axis_0, orienting_axis_1],
+                axis_relations=[bigger_than(orienting_axis_0, orienting_axis_1)],
             ),
         ),
     )

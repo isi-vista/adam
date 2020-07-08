@@ -831,9 +831,9 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
                         node
                     )
                 elif isinstance(node, CrossSection):
-                    perception_node_to_pattern_node[key] = CrossSectionPredicate.exactly_matching(
-                        node
-                    )
+                    perception_node_to_pattern_node[
+                        key
+                    ] = CrossSectionPredicate.exactly_matching(node)
                 elif isinstance(node, Region):
                     perception_node_to_pattern_node[
                         key
@@ -1917,9 +1917,7 @@ class CrossSectionPredicate(NodePredicate):
         unwrapped_graph_node = unwrap_if_necessary(graph_node)
 
         if isinstance(unwrapped_graph_node, CrossSection):
-            return (
-                self.cross_section == unwrapped_graph_node
-            )
+            return self.cross_section == unwrapped_graph_node
         else:
             return False
 
@@ -1932,8 +1930,8 @@ class CrossSectionPredicate(NodePredicate):
 
     def is_equivalent(self, other) -> bool:
         if isinstance(other, CrossSectionPredicate):
-            return (self.cross_section.curved
-                == other.cross_section.curved
+            return (
+                self.cross_section.curved == other.cross_section.curved
                 and self.cross_section.has_reflective_symmetry
                 == other.cross_section.has_reflective_symmetry
                 and self.cross_section.has_rotational_symmetry
@@ -1943,10 +1941,7 @@ class CrossSectionPredicate(NodePredicate):
 
     def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
         if isinstance(predicate_node, CrossSectionPredicate):
-            return (
-                self.cross_section
-                == predicate_node.cross_section
-            )
+            return self.cross_section == predicate_node.cross_section
         else:
             return False
 
@@ -2398,7 +2393,11 @@ def _translate_geon(
         )
         graph.add_node((mapped_geon[0].cross_section, mapped_geon[1]))
         _add_labelled_edge(
-            graph, mapped_owner, (mapped_geon[0].cross_section, mapped_geon[1]), HAS_PROPERTY_LABEL, map_edge=map_edge
+            graph,
+            mapped_owner,
+            (mapped_geon[0].cross_section, mapped_geon[1]),
+            HAS_PROPERTY_LABEL,
+            map_edge=map_edge,
         )
         _translate_axes(graph, owner.geon, mapped_geon, map_axis, map_edge)
         mapped_generating_axis = map_axis(owner.geon.generating_axis)
@@ -2483,7 +2482,7 @@ _GRAPH_NODE_ORDER = [  # type: ignore
     Geon,
     Region,
     GeonAxis,
-    CrossSection
+    CrossSection,
 ]
 
 

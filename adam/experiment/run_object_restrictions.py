@@ -1,6 +1,4 @@
 import logging
-from pathlib import Path
-from typing import List
 
 from vistautils.parameters import Parameters, YAMLParametersLoader
 from vistautils.parameters_only_entrypoint import parameters_only_entry_point
