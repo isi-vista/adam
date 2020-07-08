@@ -963,10 +963,12 @@ class _PerceptionGeneration:
             and isinstance(action_variable, ActionDescriptionVariable)
         )
 
+        # TODO: For now we assume that variables can't relate to each other unless one of them fills
+        #  a role in the action.
         bindings.update(
             {
                 unbound_action_object_variable: self._bind_action_object_variable(
-                    situation_action, unbound_action_object_variable
+                    situation_action, action_description, immutabledict(bindings), unbound_action_object_variable
                 )
                 for unbound_action_object_variable in unbound_action_object_variables
             }
@@ -977,6 +979,8 @@ class _PerceptionGeneration:
     def _bind_action_object_variable(
         self,
         situation_action: Action[OntologyNode, SituationObject],
+        action_description: ActionDescription,
+        bindings: ImmutableDict[ActionDescriptionVariable, Union[ObjectPerception, RegionPerception]],
         action_object_variable: ActionDescriptionVariable,
     ) -> Union[ObjectPerception, RegionPerception]:
         """
@@ -995,6 +999,31 @@ class _PerceptionGeneration:
             else:
                 return self._objects_to_perceptions[explicit_binding]
 
+        def meets_conditions(object_perception) -> bool:
+            import logging
+            for condition_set in (
+                    action_description.enduring_conditions,
+                    # action_description.preconditions,
+                    # action_description.postconditions,
+            ):
+                for unbound_condition in condition_set:
+                    condition = unbound_condition.copy_remapping_objects( {
+                        **bindings,
+                        action_object_variable: object_perception
+                    })
+
+                    # TODO: how to hondle conditions where one slot is a region?
+                    # TODO: handle tempoaral relations
+                    if (condition.first_slot == object_perception) or (condition.second_slot == object_perception):
+                        # if other in bindings and not condition in self._relation_perceptions:
+                        if condition not in self._relation_perceptions:
+                            logging.info(
+                                f'Object perception {object_perception.debug_handle} '
+                                f'failed to meet condition {condition}'
+                            )
+                            return False
+            return True
+
         # we continue to use the hand from PUT
         # ( see _bind_action_objects_variables_to_perceived_objects )
         ontology = self._generator.ontology
@@ -1008,6 +1037,7 @@ class _PerceptionGeneration:
             and ontology.has_all_properties(
                 ontology_node, action_object_variable.properties
             )
+               and meets_conditions(object_perception)
         ]
 
         if len(perceived_objects_matching_constraints) == 1:
