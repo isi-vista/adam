@@ -96,6 +96,7 @@ from adam.ontology.phase1_ontology import (
     WALK_SURFACE_AUXILIARY,
     bigger_than,
     far,
+    SPATIAL_RELATION,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -3572,6 +3573,32 @@ def test_no_x_is_y_without_attributes():
         ontology=GAILA_PHASE_1_ONTOLOGY,
         salient_objects=[mom],
         syntax_hints=[ATTRIBUTES_AS_X_IS_Y],
+    )
+    with pytest.raises(RuntimeError):
+        generated_tokens(situation)
+
+
+def test_multiple_possession_relations():
+    mom = situation_object(MOM)
+    dad = situation_object(DAD)
+    cookie = situation_object(COOKIE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom, dad, cookie],
+        always_relations=[Relation(HAS, mom, cookie), Relation(HAS, dad, cookie)],
+    )
+    with pytest.raises(RuntimeError):
+        generated_tokens(situation)
+
+
+def test_invalid_relations():
+    mom = situation_object(MOM)
+    dad = situation_object(DAD)
+    cookie = situation_object(COOKIE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom, dad, cookie],
+        always_relations=[Relation(SPATIAL_RELATION, mom, cookie)],
     )
     with pytest.raises(RuntimeError):
         generated_tokens(situation)
