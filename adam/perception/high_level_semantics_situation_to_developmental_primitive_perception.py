@@ -968,7 +968,10 @@ class _PerceptionGeneration:
         bindings.update(
             {
                 unbound_action_object_variable: self._bind_action_object_variable(
-                    situation_action, action_description, immutabledict(bindings), unbound_action_object_variable
+                    situation_action,
+                    action_description,
+                    immutabledict(bindings),
+                    unbound_action_object_variable,
                 )
                 for unbound_action_object_variable in unbound_action_object_variables
             }
@@ -980,7 +983,9 @@ class _PerceptionGeneration:
         self,
         situation_action: Action[OntologyNode, SituationObject],
         action_description: ActionDescription,
-        bindings: ImmutableDict[ActionDescriptionVariable, Union[ObjectPerception, RegionPerception]],
+        bindings: ImmutableDict[
+            ActionDescriptionVariable, Union[ObjectPerception, RegionPerception]
+        ],
         action_object_variable: ActionDescriptionVariable,
     ) -> Union[ObjectPerception, RegionPerception]:
         """
@@ -1001,10 +1006,11 @@ class _PerceptionGeneration:
 
         def meets_conditions(object_perception) -> bool:
             import logging
+
             for condition_set in (
-                    action_description.enduring_conditions,
-                    # action_description.preconditions,
-                    # action_description.postconditions,
+                action_description.enduring_conditions,
+                # action_description.preconditions,
+                # action_description.postconditions,
             ):
                 for unbound_condition in condition_set:
                     condition = unbound_condition.copy_remapping_objects( {
@@ -1018,8 +1024,8 @@ class _PerceptionGeneration:
                         # if other in bindings and not condition in self._relation_perceptions:
                         if condition not in self._relation_perceptions:
                             logging.info(
-                                f'Object perception {object_perception.debug_handle} '
-                                f'failed to meet condition {condition}'
+                                f"Object perception {object_perception.debug_handle} "
+                                f"failed to meet condition {condition}"
                             )
                             return False
             return True
@@ -1037,7 +1043,7 @@ class _PerceptionGeneration:
             and ontology.has_all_properties(
                 ontology_node, action_object_variable.properties
             )
-               and meets_conditions(object_perception)
+            and meets_conditions(object_perception)
         ]
 
         if len(perceived_objects_matching_constraints) == 1:
@@ -1272,9 +1278,13 @@ class _PerceptionGeneration:
                 instantiation_result.schema_axes_to_perceivable_axes
             )
             # Add indirect children
-            for indirect_sub_object_perception in instantiation_result.subobject_perceptions:
+            for (
+                indirect_sub_object_perception
+            ) in instantiation_result.subobject_perceptions:
                 self._relation_perceptions.append(
-                    Relation(PART_OF, indirect_sub_object_perception, root_object_perception)
+                    Relation(
+                        PART_OF, indirect_sub_object_perception, root_object_perception
+                    )
                 )
 
         for sub_object in schema.sub_objects:

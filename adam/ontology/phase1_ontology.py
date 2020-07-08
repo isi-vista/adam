@@ -2157,7 +2157,7 @@ def _make_throw_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription
     )
     enduring = [
         partOf(_THROW_MANIPULATOR, _THROW_AGENT),
-        bigger_than(_THROW_AGENT, _THROW_THEME)
+        bigger_than(_THROW_AGENT, _THROW_THEME),
     ]
     preconditions = [
         has(_THROW_AGENT, _THROW_THEME),
@@ -2249,7 +2249,7 @@ def _make_pass_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
     )
     enduring = [
         partOf(_PASS_MANIPULATOR, _PASS_AGENT),
-        bigger_than(_PASS_AGENT, _PASS_THEME)
+        bigger_than(_PASS_AGENT, _PASS_THEME),
     ]
     preconditions = [
         has(_PASS_AGENT, _PASS_THEME),
@@ -2331,7 +2331,7 @@ def _make_move_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
     )
     enduring = [
         partOf(_MOVE_MANIPULATOR, _MOVE_AGENT),
-        contacts(_MOVE_MANIPULATOR, _MOVE_THEME)
+        contacts(_MOVE_MANIPULATOR, _MOVE_THEME),
     ]
 
     # bare move - "X moves (of its own accord)"

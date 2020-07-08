@@ -560,11 +560,11 @@ class GraphMatching:
             yield mapping
 
     def subgraph_monomorphisms_iter(
-            self,
-            *,
-            collect_debug_statistics: bool = False,
-            debug_callback: Optional[Callable[[Any, Any], None]] = None,
-            initial_partial_match: Mapping[Any, Any] = immutabledict(),
+        self,
+        *,
+        collect_debug_statistics: bool = False,
+        debug_callback: Optional[Callable[[Any, Any], None]] = None,
+        initial_partial_match: Mapping[Any, Any] = immutabledict(),
     ):
         """Generator over monomorphisms from G2 to a subgraph of G1."""
         # Declare that we are looking for graph-subgraph isomorphism.
@@ -574,8 +574,8 @@ class GraphMatching:
         self.failing_pattern_node_for_deepest_match = None
         self._reset_debugging_maps()
         for mapping in self.match(
-                collect_debug_statistics=collect_debug_statistics,
-                debug_callback=debug_callback,
+            collect_debug_statistics=collect_debug_statistics,
+            debug_callback=debug_callback,
         ):
             yield mapping
 
