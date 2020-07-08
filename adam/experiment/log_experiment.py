@@ -2,6 +2,7 @@ import logging
 from itertools import repeat
 from typing import Callable, Optional
 
+from adam.curriculum.phase2_curriculum import _make_put_in_curriculum
 from adam.language_specific.english import ENGLISH_DETERMINERS
 from adam.learner.attributes import SubsetAttributeLearner, SubsetAttributeLearnerNew
 from adam.learner.integrated_learner import IntegratedTemplateLearner
@@ -25,7 +26,7 @@ from adam.curriculum.phase1_curriculum import (
     build_gaila_phase1_verb_curriculum,
     _make_put_on_speaker_addressee_body_part_curriculum,
     build_gaila_phase_1_curriculum,
-)
+    _make_transitive_roll_curriculum)
 from adam.curriculum.pursuit_curriculum import make_simple_pursuit_curriculum
 from adam.experiment import Experiment, execute_experiment
 from adam.experiment.observer import LearningProgressHtmlLogger, CandidateAccuracyObserver
@@ -203,6 +204,7 @@ def curriculum_from_params(params: Parameters):
             "m9-events",
             "m9-debug",
             "m9-complete",
+            "object-restrictions"
         ],
     )
     if curriculum_name == "m6-deniz":
@@ -262,6 +264,11 @@ def curriculum_from_params(params: Parameters):
         return ([_make_put_on_speaker_addressee_body_part_curriculum()], [])
     elif curriculum_name == "m9-complete":
         return (build_gaila_phase_1_curriculum(), [])
+    elif curriculum_name == "object-restrictions":
+        return (
+            # build_gaila_phase1_object_curriculum() +
+                [_make_transitive_roll_curriculum(),
+                 _make_put_in_curriculum()], [])
     else:
         raise RuntimeError("Can't happen")
 

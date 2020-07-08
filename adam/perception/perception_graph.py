@@ -45,7 +45,7 @@ from typing_extensions import Protocol
 
 from adam.axes import AxesInfo, HasAxes
 from adam.axis import GeonAxis
-from adam.geon import Geon, MaybeHasGeon
+from adam.geon import Geon, MaybeHasGeon, CrossSection
 from adam.ontology import OntologyNode
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
@@ -120,6 +120,7 @@ PerceptionGraphNode = Union[
     Tuple[Region[Any], int],
     Tuple[Geon, int],
     GeonAxis,
+    CrossSection,
     ObjectSemanticNode,
     SpatialPath[ObjectPerception],
     PathOperator,
@@ -134,6 +135,7 @@ UnwrappedPerceptionGraphNode = Union[
     Region[Any],
     Geon,
     GeonAxis,
+    CrossSection,
     ObjectSemanticNode,
     SpatialPath[ObjectPerception],
     PathOperator,
@@ -504,6 +506,8 @@ class PerceptionGraph(PerceptionGraphProtocol):
             label = str(unwrapped_perception_node.cross_section) + str(
                 unwrapped_perception_node.cross_section_size
             )
+        elif isinstance(unwrapped_perception_node, CrossSection):
+            label = str(unwrapped_perception_node)
         elif isinstance(unwrapped_perception_node, ObjectSemanticNode):
             label = " ".join(unwrapped_perception_node.concept.debug_string)
         elif isinstance(unwrapped_perception_node, SpatialPath):
@@ -822,9 +826,12 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
                 # first unwrap any nodes which have been tuple-ized to force distinctness.
                 if isinstance(node, tuple):
                     node = node[0]
-
                 if isinstance(node, Geon):
                     perception_node_to_pattern_node[key] = GeonPredicate.exactly_matching(
+                        node
+                    )
+                elif isinstance(node, CrossSection):
+                    perception_node_to_pattern_node[key] = CrossSectionPredicate.exactly_matching(
                         node
                     )
                 elif isinstance(node, Region):
@@ -1898,6 +1905,53 @@ class GeonPredicate(NodePredicate):
 
 
 @attrs(frozen=True, slots=True, eq=False)
+class CrossSectionPredicate(NodePredicate):
+    """
+    Represents constraints on a `Geon` given in a `PerceptionGraphPattern`
+    """
+
+    cross_section: CrossSection = attrib(validator=instance_of(CrossSection))
+
+    def __call__(self, graph_node: PerceptionGraphNode) -> bool:
+
+        unwrapped_graph_node = unwrap_if_necessary(graph_node)
+
+        if isinstance(unwrapped_graph_node, CrossSection):
+            return (
+                self.cross_section == unwrapped_graph_node
+            )
+        else:
+            return False
+
+    def dot_label(self) -> str:
+        return f"cross-section({self.cross_section})"
+
+    @staticmethod
+    def exactly_matching(cs: CrossSection) -> "CrossSectionPredicate":
+        return CrossSectionPredicate(cs)
+
+    def is_equivalent(self, other) -> bool:
+        if isinstance(other, CrossSectionPredicate):
+            return (self.cross_section.curved
+                == other.cross_section.curved
+                and self.cross_section.has_reflective_symmetry
+                == other.cross_section.has_reflective_symmetry
+                and self.cross_section.has_rotational_symmetry
+                == other.cross_section.has_rotational_symmetry
+            )
+        return False
+
+    def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
+        if isinstance(predicate_node, CrossSectionPredicate):
+            return (
+                self.cross_section
+                == predicate_node.cross_section
+            )
+        else:
+            return False
+
+
+@attrs(frozen=True, slots=True, eq=False)
 class RegionPredicate(NodePredicate):
     """
     Represents constraints on a `Region` given in a `PerceptionGraphPattern`.
@@ -2342,6 +2396,10 @@ def _translate_geon(
         _add_labelled_edge(
             graph, mapped_owner, mapped_geon, HAS_GEON_LABEL, map_edge=map_edge
         )
+        graph.add_node((mapped_geon[0].cross_section, mapped_geon[1]))
+        _add_labelled_edge(
+            graph, mapped_owner, (mapped_geon[0].cross_section, mapped_geon[1]), HAS_PROPERTY_LABEL, map_edge=map_edge
+        )
         _translate_axes(graph, owner.geon, mapped_geon, map_axis, map_edge)
         mapped_generating_axis = map_axis(owner.geon.generating_axis)
         _add_labelled_edge(
@@ -2399,6 +2457,7 @@ _PATTERN_PREDICATE_NODE_ORDER = [
     IsColorNodePredicate,
     AnyObjectPerception,
     GeonPredicate,
+    CrossSectionPredicate,
     RegionPredicate,
     # the matcher tends to get bogged down when dealing with axes,
     # so we search those last one the other nodes have established the skeleton of a match.
@@ -2424,6 +2483,7 @@ _GRAPH_NODE_ORDER = [  # type: ignore
     Geon,
     Region,
     GeonAxis,
+    CrossSection
 ]
 
 

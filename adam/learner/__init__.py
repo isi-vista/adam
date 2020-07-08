@@ -180,7 +180,7 @@ def graph_without_learner(perception_graph: PerceptionGraph) -> PerceptionGraph:
         # remove remaining islands
         islands = list(isolates(graph))
         graph.remove_nodes_from(islands)
-    return PerceptionGraph(graph)
+    return PerceptionGraph(graph, dynamic=perception_graph.dynamic)
 
 
 class ComposableLearner(ABC):

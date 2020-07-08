@@ -834,7 +834,7 @@ def _make_watermelon_schema() -> ObjectStructuralSchema:
     return ObjectStructuralSchema(
         ontology_node=WATERMELON,
         geon=Geon(
-            cross_section=OVALISH,
+            cross_section=CIRCULAR,
             cross_section_size=SMALL_TO_LARGE_TO_SMALL,
             axes=Axes(
                 primary_axis=generating_axis,
@@ -2587,8 +2587,8 @@ GAILA_PHASE_1_SIZE_GRADES: Tuple[Tuple[OntologyNode, ...], ...] = (
     (_BODY,),
     (_TORSO, _CHAIR_BACK, _CHAIR_SEAT),
     (_ARM, _ANIMAL_LEG, _INANIMATE_LEG),
-    (HAND, HEAD, _ARM_SEGMENT, _LEG_SEGMENT, _FOOT),
-    (WATERMELON, BALL, BIRD, BOOK, COOKIE, CUP, HAT, JUICE, WATER, MILK),
+    (WATERMELON, HAND, HEAD, _ARM_SEGMENT, _LEG_SEGMENT, _FOOT),
+    (BALL, BIRD, BOOK, COOKIE, CUP, HAT, JUICE, WATER, MILK),
     (_TAIL, _WING),
 )
 
