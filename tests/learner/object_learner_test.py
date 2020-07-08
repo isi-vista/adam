@@ -1,46 +1,42 @@
 import logging
 import random
-from itertools import chain
-
-from immutablecollections import immutableset
 
 from adam.curriculum.phase1_curriculum import PHASE1_CHOOSER_FACTORY, phase1_instances
 from adam.curriculum.pursuit_curriculum import make_simple_pursuit_curriculum
 from adam.language_specific.english.english_language_generator import (
-    IGNORE_COLORS,
     GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    IGNORE_COLORS,
 )
 from adam.learner import (
+    LanguagePerceptionSemanticAlignment,
     LearningExample,
     PerceptionSemanticAlignment,
-    LanguagePerceptionSemanticAlignment,
 )
 from adam.learner.alignments import LanguageConceptAlignment
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.objects import (
     ObjectPursuitLearner,
-    SubsetObjectLearnerNew,
     PursuitObjectLearnerNew,
+    SubsetObjectLearnerNew,
 )
 from adam.ontology import OntologyNode
 from adam.ontology.phase1_ontology import (
     BALL,
-    BIRD,
     BOX,
     DOG,
     GAILA_PHASE_1_ONTOLOGY,
     GROUND,
+    HAND,
     HEAD,
+    HOUSE,
     LEARNER,
     MOM,
     on,
-    HAND,
-    HOUSE,
 )
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     GAILA_PHASE_1_PERCEPTION_GENERATOR,
 )
-from adam.perception.perception_graph import DumpPartialMatchCallback, PerceptionGraph
+from adam.perception.perception_graph import PerceptionGraph
 from adam.random_utils import RandomChooser
 from adam.relation import flatten_relations
 from adam.relation_dsl import negate
@@ -53,6 +49,7 @@ from adam.situation.templates.phase1_templates import (
     color_variable,
     object_variable,
 )
+from immutablecollections import immutableset
 
 
 def run_learner_for_object(learner: IntegratedTemplateLearner, obj: OntologyNode):
@@ -236,31 +233,11 @@ def learner_test_pursuit_curriculum(learner):
         # TABLE,
         # DOG,
         # BIRD,
-        # BOX,
+        BOX,
     ]
-    target_train_templates = []
     target_test_templates = []
     for obj in target_objects:
         # Create train and test templates for the target objects
-        train_obj_object = object_variable("obj-with-color", obj)
-        obj_template = Phase1SituationTemplate(
-            "colored-obj-object",
-            salient_object_variables=[train_obj_object],
-            syntax_hints=[IGNORE_COLORS],
-        )
-        target_train_templates.extend(
-            chain(
-                *[
-                    all_possible(
-                        obj_template,
-                        chooser=PHASE1_CHOOSER_FACTORY(),
-                        ontology=GAILA_PHASE_1_ONTOLOGY,
-                    )
-                    for _ in range(50)
-                ]
-            )
-        )
-
         test_obj_object = object_variable("obj-with-color", obj)
         test_template = Phase1SituationTemplate(
             "colored-obj-object",
@@ -276,12 +253,11 @@ def learner_test_pursuit_curriculum(learner):
         )
     rng = random.Random()
     rng.seed(0)
-    random.shuffle(target_train_templates, random=rng.random)
 
     # We can use this to generate the actual pursuit curriculum
     train_curriculum = make_simple_pursuit_curriculum(
         target_objects=target_objects,
-        num_instances=15,
+        num_instances=30,
         num_objects_in_instance=3,
         num_noise_instances=0,
     )
@@ -419,6 +395,7 @@ def learner_test_pursuit_curriculum(learner):
 #                 len(common_pattern.copy_as_digraph().nodes),
 #             )
 
+
 def test_old_pursuit_object_learner():
     # debug_callback = DumpPartialMatchCallback(render_path="../renders/")
 
@@ -440,6 +417,7 @@ def test_old_pursuit_object_learner():
         # debug_callback=debug_callback,
     )  # type: ignore
     learner_test_pursuit_curriculum(learner)
+
 
 def test_new_pursuit_learner_ball():
     rng = random.Random()
