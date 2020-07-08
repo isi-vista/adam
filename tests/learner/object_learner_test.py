@@ -460,11 +460,11 @@ def test_new_pursuit_object_learner():
 
     learner = IntegratedTemplateLearner(
         object_learner=PursuitObjectLearnerNew(
-            learning_factor=0.5,
+            learning_factor=0.1,
             graph_match_confirmation_threshold=0.7,
             lexicon_entry_threshold=0.7,
             rng=rng,
-            smoothing_parameter=0.001,
+            smoothing_parameter=0.02,
             ontology=GAILA_PHASE_1_ONTOLOGY,
         )
     )
