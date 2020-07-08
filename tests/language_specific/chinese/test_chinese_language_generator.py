@@ -3351,3 +3351,38 @@ def test_near():
         "de",
         "ma1 ma1",
     )
+
+
+def test_far():
+    mom = situation_object(MOM)
+    dad = situation_object(DAD)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom, dad],
+        always_relations=[far(mom, dad)],
+    )
+    assert generated_tokens(situation) == (
+        "li2",
+        "ba4 ba4",
+        "hen3 ywan3",
+        "de",
+        "ma1 ma1",
+    )
+
+
+def test_above_above():
+    mom = situation_object(MOM)
+    dad = situation_object(DAD)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom, dad],
+        always_relations=[strictly_over(mom, dad, dist=DISTAL)],
+        syntax_hints=[USE_ABOVE_BELOW],
+    )
+    assert generated_tokens(situation) == (
+        "dzai4",
+        "ba4 ba4",
+        "shang4 fang1",
+        "de",
+        "ma1 ma1",
+    )
