@@ -1013,11 +1013,20 @@ class _PerceptionGeneration:
                 # action_description.postconditions,
             ):
                 for unbound_condition in condition_set:
-                    # TODO: how to handle conditions where one slot is a region?
                     # TODO: handle temporal relations
                     if (
                         unbound_condition.first_slot == action_object_variable
+                        or (
+                            isinstance(unbound_condition.first_slot, Region)
+                            and unbound_condition.first_slot.reference_object
+                            == action_object_variable
+                        )
                         or unbound_condition.second_slot == action_object_variable
+                        or (
+                            isinstance(unbound_condition.second_slot, Region)
+                            and unbound_condition.second_slot.reference_object
+                            == action_object_variable
+                        )
                     ):
                         condition = unbound_condition.copy_remapping_objects(
                             {**bindings, action_object_variable: object_perception}
