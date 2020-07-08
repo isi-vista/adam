@@ -96,6 +96,7 @@ from adam.ontology.phase1_ontology import (
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
+    FROM,
     TOWARD,
     DISTAL,
     EXTERIOR_BUT_IN_CONTACT,
@@ -3264,3 +3265,55 @@ def test_non_salient_in_path():
         ],
     )
     assert generated_tokens(situation) == ("ni3", "chr1", "chyu1 chi2 bing3")
+
+
+def test_not_yet_used_operator():
+    dad = situation_object(DAD, properties=[IS_ADDRESSEE])
+    mum = situation_object(MOM)
+    cookie = situation_object(COOKIE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[cookie, dad, mum],
+        actions=[
+            Action(
+                action_type=EAT,
+                argument_roles_to_fillers=[(AGENT, dad), (THEME, cookie)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (mum, SpatialPath(operator=FROM, reference_object=cookie))
+                    ]
+                ),
+            )
+        ],
+    )
+    with pytest.raises(RuntimeError):
+        generated_tokens(situation)
+
+
+def test_bird_flies_away_from_mum_region():
+    bird = situation_object(BIRD)
+    mum = situation_object(MOM)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[bird, mum],
+        actions=[
+            Action(
+                FLY,
+                argument_roles_to_fillers=[(AGENT, bird)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            bird,
+                            SpatialPath(
+                                operator=AWAY_FROM,
+                                reference_object=Region(mum, distance=PROXIMAL),
+                                reference_axis=HorizontalAxisOfObject(bird, 1),
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
+    )
+    assert generated_tokens(situation) == ("nyau3", "li2", "ma1 ma1", "fei1")

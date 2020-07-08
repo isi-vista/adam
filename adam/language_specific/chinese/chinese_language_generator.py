@@ -110,6 +110,7 @@ from adam.ontology.phase1_spatial_relations import (
     SpatialPath,
     AWAY_FROM,
     TO,
+    VIA,
 )
 from adam.random_utils import SequenceChooser
 from adam.relation import Relation
@@ -358,7 +359,14 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     paths_involving_ground = immutableset(
                         path
                         for (_, path) in action.during.objects_to_paths.items()
-                        if path.reference_object.ontology_node == GROUND
+                        if (
+                            isinstance(path.reference_object, SituationObject)
+                            and path.reference_object.ontology_node == GROUND
+                        )
+                        or (
+                            isinstance(path.reference_object, Region)
+                            and path.reference_object.reference_object == GROUND
+                        )
                     )
                     if paths_involving_ground:
                         # only consider the first one to determine direction
@@ -423,12 +431,29 @@ class SimpleRuleBasedChineseLanguageGenerator(
             path_object: SituationObject,
             spatial_path: SpatialPath[SituationObject],
         ):
-            if (
-                spatial_path.reference_object
-                and spatial_path.reference_object not in self.situation.salient_objects
+            if spatial_path.reference_object and (
+                (
+                    isinstance(spatial_path.reference_object, SituationObject)
+                    and spatial_path.reference_object
+                    not in self.situation.salient_objects
+                )
+                or (
+                    isinstance(spatial_path.reference_object, Region)
+                    and spatial_path.reference_object.reference_object
+                    not in self.situation.salient_objects
+                )
             ):
                 return None
-            if path_object not in self.situation.salient_objects:
+            if path_object and (
+                (
+                    isinstance(path_object, SituationObject)
+                    and path_object not in self.situation.salient_objects
+                )
+                or (
+                    isinstance(path_object, Region)
+                    and path_object.reference_object not in self.situation.salient_objects
+                )
+            ):
                 return None
 
             # If both arguments of the relation are core argument roles,
@@ -440,7 +465,6 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     action.argument_roles_to_fillers[THEME],
                 )
             )
-
             if (
                 path_object in core_argument_fillers
                 and spatial_path.reference_object in core_argument_fillers
@@ -451,7 +475,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 preposition = "chau2"
             elif spatial_path.operator == AWAY_FROM:
                 preposition = "li2"
-            elif spatial_path.operator in [TO, None]:
+            elif spatial_path.operator in [TO, VIA, None]:
                 return None
             if not preposition:
                 raise RuntimeError(
