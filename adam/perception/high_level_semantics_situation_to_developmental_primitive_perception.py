@@ -963,8 +963,8 @@ class _PerceptionGeneration:
             and isinstance(action_variable, ActionDescriptionVariable)
         )
 
-        # TODO: For now we assume that variables can't relate to each other unless one of them fills
-        #  a role in the action.
+        # For now we assume that a variable can't be partOf another unless one of them fills
+        # a role in the action.
         bindings.update(
             {
                 unbound_action_object_variable: self._bind_action_object_variable(
