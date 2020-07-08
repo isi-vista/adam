@@ -24,6 +24,7 @@ from adam.language_specific.chinese.chinese_language_generator import (
 from adam.language_specific.chinese.chinese_phase_1_lexicon import (
     GAILA_PHASE_1_CHINESE_LEXICON,
 )
+from adam.axes import GRAVITATIONAL_DOWN_TO_UP_AXIS
 from adam.ontology import IN_REGION, IS_SPEAKER, IS_ADDRESSEE
 from adam.ontology.during import DuringAction
 from adam.ontology.phase1_ontology import (
@@ -3370,7 +3371,7 @@ def test_far():
     )
 
 
-def test_above_above():
+def test_above():
     mom = situation_object(MOM)
     dad = situation_object(DAD)
     situation = HighLevelSemanticsSituation(
@@ -3385,4 +3386,153 @@ def test_above_above():
         "shang4 fang1",
         "de",
         "ma1 ma1",
+    )
+
+
+def test_go_above_goal():
+    mom = situation_object(MOM)
+    dad = situation_object(DAD)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom, dad],
+        actions=[
+            Action(
+                GO,
+                argument_roles_to_fillers=[
+                    (AGENT, dad),
+                    (GOAL, Region(mom, distance=DISTAL, direction=GRAVITATIONAL_UP)),
+                ],
+            )
+        ],
+        after_action_relations=[strictly_over(mom, dad, dist=DISTAL)],
+        syntax_hints=[USE_ABOVE_BELOW],
+    )
+    assert generated_tokens(situation) == (
+        "ba4 ba4",
+        "chyu4",
+        "dau4",
+        "ma1 ma1",
+        "sya4 fang1",
+    )
+
+
+def test_go_near_goal():
+    mom = situation_object(MOM)
+    dad = situation_object(DAD)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom, dad],
+        actions=[
+            Action(
+                GO,
+                argument_roles_to_fillers=[
+                    (AGENT, dad),
+                    (GOAL, Region(mom, distance=PROXIMAL)),
+                ],
+            )
+        ],
+        after_action_relations=[near(mom, dad)],
+        syntax_hints=[USE_NEAR],
+    )
+    assert generated_tokens(situation) == (
+        "ba4 ba4",
+        "chyu4",
+        "dau4",
+        "ma1 ma1",
+        "pang2 byan1",
+    )
+
+
+def test_go_far_from_goal():
+    mom = situation_object(MOM)
+    dad = situation_object(DAD)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom, dad],
+        actions=[
+            Action(
+                GO,
+                argument_roles_to_fillers=[
+                    (AGENT, dad),
+                    (GOAL, Region(mom, distance=DISTAL)),
+                ],
+            )
+        ],
+        after_action_relations=[far(mom, dad)],
+        syntax_hints=[USE_NEAR],
+    )
+    assert generated_tokens(situation) == (
+        "ba4 ba4",
+        "chyu4",
+        "dau4",
+        "ma1 ma1",
+        "ywan3 li2",
+    )
+
+
+def test_error_for_goal():
+    mom = situation_object(MOM)
+    dad = situation_object(DAD)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom, dad],
+        actions=[
+            Action(
+                GO,
+                argument_roles_to_fillers=[
+                    (AGENT, dad),
+                    (
+                        GOAL,
+                        Region(
+                            mom,
+                            direction=Direction(
+                                positive=True,
+                                relative_to_axis=HorizontalAxisOfObject(mom, index=0),
+                            ),
+                            distance=PROXIMAL,
+                        ),
+                    ),
+                ],
+            )
+        ],
+    )
+    with pytest.raises(RuntimeError):
+        generated_tokens(situation)
+
+
+def test_beside_for_goal():
+    mom = situation_object(MOM)
+    dad = situation_object(DAD)
+    learner = situation_object(LEARNER)
+    situation = HighLevelSemanticsSituation(
+        axis_info=AxesInfo(addressee=learner),
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom, dad],
+        actions=[
+            Action(
+                GO,
+                argument_roles_to_fillers=[
+                    (AGENT, dad),
+                    (
+                        GOAL,
+                        Region(
+                            mom,
+                            direction=Direction(
+                                positive=True,
+                                relative_to_axis=HorizontalAxisOfObject(mom, index=0),
+                            ),
+                            distance=PROXIMAL,
+                        ),
+                    ),
+                ],
+            )
+        ],
+        after_action_relations=[near(mom, dad)],
+    )
+    assert generated_tokens(situation) == (
+        "ba4 ba4",
+        "chyu4",
+        "dau4",
+        "ma1 ma1",
+        "pang2 byan1",
     )

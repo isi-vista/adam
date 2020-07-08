@@ -649,6 +649,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     (action.action_type == GO or action.action_type == COME)
                     and (filler.distance == PROXIMAL)
                     and (not filler.direction)
+                    and (USE_NEAR not in self.situation.syntax_hints)
                 ):
                     pass
                 # in all other cases, we construct a localiser phrase to attach as an adverbial modifier
