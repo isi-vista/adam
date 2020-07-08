@@ -8,7 +8,6 @@ from adam.learner.alignments import (
     LanguagePerceptionSemanticAlignment,
     PerceptionSemanticAlignment,
 )
-from adam.learner.learner_utils import covers_entire_utterance
 from adam.learner.object_recognizer import (
     ObjectRecognizer,
     PerceptionGraphFromObjectRecognizer,

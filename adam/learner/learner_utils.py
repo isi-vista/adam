@@ -14,8 +14,6 @@ from typing import (
 import itertools
 from adam.learner.alignments import LanguagePerceptionSemanticAlignment
 from attr.validators import instance_of
-from vistautils.span import Span
-from adam.learner.language_mode import LanguageMode
 from networkx import (
     number_weakly_connected_components,
     DiGraph,
@@ -253,6 +251,47 @@ def covers_entire_utterance(
     return num_covered_tokens == sized_tokens
 
 
+def no_object_alignment_in_fixed_strings(
+    bound_surface_template: SurfaceTemplateBoundToSemanticNodes,
+    language_concept_alignment: LanguageConceptAlignment,
+) -> bool:
+    i = 0
+    formated_spans = []
+    sentence_tokens = language_concept_alignment.language.as_token_sequence()
+    # First we need to collect the spans for aligned concepts
+    # But we can't just use the spans as they exist as English determiners
+    # can cause processing issues. So we filter out the token entries
+    # Which are determiners
+    for (_, span) in language_concept_alignment.node_to_language_span.items():
+        if (
+            bound_surface_template.surface_template._language_mode  # pylint: disable=protected-access
+            == LanguageMode.ENGLISH
+        ):
+            related_token_span = sentence_tokens[span.start : span.end]
+            if "a" in related_token_span or "the" in related_token_span:
+                formated_spans.append(
+                    Span.from_inclusive_to_exclusive(span.start - i, span.end - i - 1)
+                )
+                i += 1
+            else:
+                formated_spans.append(
+                    Span.from_inclusive_to_exclusive(span.start - i, span.end - i)
+                )
+        else:
+            formated_spans.append(span)
+    # We then take these computed spans and see if the tokens in the SurfaceTemplate
+    # over the given span are at all strings, if so we've included an already aligned
+    # SemanticNode in our fixed string structures so we fail out
+    for formated_span in formated_spans:
+        for token in bound_surface_template.surface_template.elements[
+            formated_span.start : formated_span.end
+        ]:
+            if isinstance(token, str):
+                return False
+
+    return True
+
+
 class AlignmentSlots(Enum):
     """An argument is a slot for an object, and a fixed string is something we wish to learn"""
 
@@ -350,7 +389,7 @@ def candidate_templates(
         return num_arguments_to_alignments_sets[num_arguments]
 
     def process_aligned_objects_with_template(
-        verb_template: Tuple[AlignmentSlots, ...],
+        candidate_template: Tuple[AlignmentSlots, ...],
         aligned_nodes: Tuple[SemanticNodeWithSpan, ...],
     ) -> Iterable[Optional[SurfaceTemplateBoundToSemanticNodes]]:
 
@@ -368,7 +407,7 @@ def candidate_templates(
         # So we keep track if the previous token was a FixedString indicator
         previous_node_was_string = False
 
-        for token in verb_template:
+        for token in candidate_template:
             # If the token in our template is an argument we need to assign it a
             # unique SyntaxSemanticsVariable, and map it to the SemanticNode
             if token == AlignmentSlots.Argument:
@@ -397,15 +436,15 @@ def candidate_templates(
                         aligned_nodes[aligned_node_index - 1].span.end
                         != aligned_nodes[aligned_node_index].span.start
                     ):
-                        candidate_verb_token_span = Span(
+                        candidate_token_span = Span(
                             aligned_nodes[aligned_node_index - 1].span.end,
                             aligned_nodes[aligned_node_index].span.start,
                         )
-                        if not is_legal_template_span(candidate_verb_token_span):
+                        if not is_legal_template_span(candidate_token_span):
                             yield None
                         template_elements.extend(
                             sentence_tokens[
-                                candidate_verb_token_span.start : candidate_verb_token_span.end
+                                candidate_token_span.start : candidate_token_span.end
                             ]
                         )
                     previous_node_was_string = True
@@ -414,28 +453,28 @@ def candidate_templates(
         # between 1 and _MAXIMUM_ACTION_TEMPLATE_TOKEN_LENGTH
         if prefix_string_end and postfix_string_start:
             for max_token_length_for_template_prefix in range(1, max_length + 1):
-                prefix_candidate_verb_token_span = Span(
+                prefix_candidate_token_span = Span(
                     prefix_string_end - max_token_length_for_template_prefix,
                     prefix_string_end,
                 )
-                if is_legal_template_span(prefix_candidate_verb_token_span):
+                if is_legal_template_span(prefix_candidate_token_span):
                     for max_token_length_for_template_postfix in range(1, max_length + 1):
-                        postfix_candidate_verb_token_span = Span(
+                        postfix_candidate_token_span = Span(
                             postfix_string_start,
                             postfix_string_start + max_token_length_for_template_postfix,
                         )
-                        if is_legal_template_span(postfix_candidate_verb_token_span):
+                        if is_legal_template_span(postfix_candidate_token_span):
                             final_template_elements: List[
                                 Union[str, SyntaxSemanticsVariable]
                             ] = list(
                                 sentence_tokens[
-                                    prefix_candidate_verb_token_span.start : prefix_candidate_verb_token_span.end
+                                    prefix_candidate_token_span.start : prefix_candidate_token_span.end
                                 ]
                             )
                             final_template_elements.extend(template_elements)
                             final_template_elements.extend(
                                 sentence_tokens[
-                                    postfix_candidate_verb_token_span.start : postfix_candidate_verb_token_span.end
+                                    postfix_candidate_token_span.start : postfix_candidate_token_span.end
                                 ]
                             )
                             yield SurfaceTemplateBoundToSemanticNodes(
@@ -450,14 +489,14 @@ def candidate_templates(
                             )
         elif prefix_string_end:
             for max_token_length_for_template_prefix in range(1, max_length + 1):
-                prefix_candidate_verb_token_span = Span(
+                prefix_candidate_token_span = Span(
                     prefix_string_end - max_token_length_for_template_prefix,
                     prefix_string_end,
                 )
-                if is_legal_template_span(prefix_candidate_verb_token_span):
+                if is_legal_template_span(prefix_candidate_token_span):
                     final_template_elements = list(
                         sentence_tokens[
-                            prefix_candidate_verb_token_span.start : prefix_candidate_verb_token_span.end
+                            prefix_candidate_token_span.start : prefix_candidate_token_span.end
                         ]
                     )
                     final_template_elements.extend(template_elements)
@@ -473,15 +512,15 @@ def candidate_templates(
                     )
         elif postfix_string_start:
             for max_token_length_for_template_postfix in range(1, max_length + 1):
-                postfix_candidate_verb_token_span = Span(
+                postfix_candidate_token_span = Span(
                     postfix_string_start,
                     postfix_string_start + max_token_length_for_template_postfix,
                 )
-                if is_legal_template_span(postfix_candidate_verb_token_span):
+                if is_legal_template_span(postfix_candidate_token_span):
                     final_template_elements = list(template_elements)
                     final_template_elements.extend(
                         sentence_tokens[
-                            postfix_candidate_verb_token_span.start : postfix_candidate_verb_token_span.end
+                            postfix_candidate_token_span.start : postfix_candidate_token_span.end
                         ]
                     )
                     yield SurfaceTemplateBoundToSemanticNodes(
@@ -505,9 +544,9 @@ def candidate_templates(
             )
 
     # Generate all the possible verb template alignments
-    for verb_template in candidate_templates_function():
+    for candidate_template in candidate_templates_function():
         for aligned_nodes in aligned_object_nodes(
-            sum(1 for token in verb_template if token == AlignmentSlots.Argument),
+            sum(1 for token in candidate_template if token == AlignmentSlots.Argument),
             num_arguments_to_alignments_sets,
             language_concept_alignment,
         ):
@@ -515,7 +554,7 @@ def candidate_templates(
             # Which the spans go from left most to right most
             for (
                 surface_template_bound_to_semantic_nodes
-            ) in process_aligned_objects_with_template(verb_template, aligned_nodes):
+            ) in process_aligned_objects_with_template(candidate_template, aligned_nodes):
                 if surface_template_bound_to_semantic_nodes:
                     ret.append(surface_template_bound_to_semantic_nodes)
 
@@ -525,45 +564,9 @@ def candidate_templates(
         # For now, we require templates to account for the entire utterance.
         # See https://github.com/isi-vista/adam/issues/789
         if covers_entire_utterance(bound_surface_template, language_concept_alignment)
+        # We also make sure the fixed strings don't contain any recognized objects in them
+        # See https://github.com/isi-vista/adam/issues/867
+        and no_object_alignment_in_fixed_strings(
+            bound_surface_template, language_concept_alignment
+        )
     )
-
-
-def no_object_alignment_in_fixed_strings(
-    bound_surface_template: SurfaceTemplateBoundToSemanticNodes,
-    language_concept_alignment: LanguageConceptAlignment,
-) -> bool:
-    i = 0
-    formated_spans = []
-    sentence_tokens = language_concept_alignment.language.as_token_sequence()
-    # First we need to collect the spans for aligned concepts
-    # But we can't just use the spans as they exist as English determiners
-    # can cause processing issues. So we filter out the token entries
-    # Which are determiners
-    for (_, span) in language_concept_alignment.node_to_language_span.items():
-        if (
-            bound_surface_template.surface_template._language_mode  # pylint:disable=protected_access
-            == LanguageMode.ENGLISH
-        ):
-            related_token_span = sentence_tokens[span.start : span.end]
-            if "a" in related_token_span or "the" in related_token_span:
-                formated_spans.append(
-                    Span.from_inclusive_to_exclusive(span.start - i, span.end - i - 1)
-                )
-                i += 1
-            else:
-                formated_spans.append(
-                    Span.from_inclusive_to_exclusive(span.start - i, span.end - i)
-                )
-        else:
-            formated_spans.append(span)
-    # We then take these computed spans and see if the tokens in the SurfaceTemplate
-    # over the given span are at all strings, if so we've included an already aligned
-    # SemanticNode in our fixed string structures so we fail out
-    for formated_span in formated_spans:
-        for token in bound_surface_template.surface_template.elements[
-            formated_span.start : formated_span.end
-        ]:
-            if isinstance(token, str):
-                return False
-
-    return True
