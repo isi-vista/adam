@@ -1004,29 +1004,25 @@ class _PerceptionGeneration:
             else:
                 return self._objects_to_perceptions[explicit_binding]
 
-        def meets_conditions(object_perception) -> bool:
+        # Hack: Force the binding process to respect partOf restrictions.
+        # This is to avoid it binding manipulator body parts
+        # For example, in "Dad gives a baby a chair," we don't want the baby's hand (manipulator) to
+        # bind to Dad's hand.
+        # In the long term we want to move variable binding up to the situation level, see
+        # https://github.com/isi-vista/adam/issues/687
+        # https://github.com/isi-vista/adam/issues/400#issuecomment-655155521
+        # https://github.com/isi-vista/adam/issues/400#issuecomment-655575820
+        def satisfies_part_of_restrictions(object_perception) -> bool:
             import logging
 
             for condition_set in (
                 action_description.enduring_conditions,
-                # action_description.preconditions,
-                # action_description.postconditions,
             ):
                 for unbound_condition in condition_set:
-                    # TODO: handle temporal relations
                     if (
-                        unbound_condition.first_slot == action_object_variable
-                        or (
-                            isinstance(unbound_condition.first_slot, Region)
-                            and unbound_condition.first_slot.reference_object
-                            == action_object_variable
-                        )
-                        or unbound_condition.second_slot == action_object_variable
-                        or (
-                            isinstance(unbound_condition.second_slot, Region)
-                            and unbound_condition.second_slot.reference_object
-                            == action_object_variable
-                        )
+                        (unbound_condition.first_slot == action_object_variable
+                         or unbound_condition.second_slot == action_object_variable)
+                        and unbound_condition.relation_type == PART_OF
                     ):
                         condition = unbound_condition.copy_remapping_objects(
                             {**bindings, action_object_variable: object_perception}
@@ -1053,7 +1049,7 @@ class _PerceptionGeneration:
             and ontology.has_all_properties(
                 ontology_node, action_object_variable.properties
             )
-            and meets_conditions(object_perception)
+            and satisfies_part_of_restrictions(object_perception)
         ]
 
         if len(perceived_objects_matching_constraints) == 1:
