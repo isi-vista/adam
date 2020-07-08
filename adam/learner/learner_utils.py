@@ -14,8 +14,6 @@ from typing import (
 import itertools
 from adam.learner.alignments import LanguagePerceptionSemanticAlignment
 from attr.validators import instance_of
-from vistautils.span import Span
-from adam.learner.language_mode import LanguageMode
 from networkx import (
     number_weakly_connected_components,
     DiGraph,
@@ -26,6 +24,7 @@ from enum import Enum, auto
 from adam.language import LinguisticDescription, TokenSequenceLinguisticDescription
 from adam.learner import LearningExample
 from adam.learner.alignments import LanguageConceptAlignment
+from adam.learner.language_mode import LanguageMode
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
 from adam.perception import PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
@@ -56,6 +55,7 @@ from adam.semantics import (
 from immutablecollections import immutabledict, immutableset, ImmutableSet
 
 from adam.utils.networkx_utils import subgraph
+from vistautils.span import Span
 
 
 def pattern_match_to_description(
@@ -303,22 +303,31 @@ def candidate_templates(
             previous_node = semantic_nodes[i]
         return True
 
-    def is_legal_template_span(candidate_verb_token_span: Span) -> bool:
+    # A sample case for invalid tokens spans is if the language of a situation is
+    # "a dog pushes a box to a car" but we are given a candidate template
+    # of AFA then we could generate "slot1 pushes a box to slot2"
+    # which is an undesired output. So if we provide the spans where
+    # aligned objects are we can invalidate templates like the problem one above
+    def is_legal_template_span(
+        candidate_token_span: Span, *, invalid_token_spans: ImmutableSet[Span]
+    ) -> bool:
         # A template token span can't exceed the bounds of the utterance
-        if candidate_verb_token_span.start < 0:
+        if candidate_token_span.start < 0:
             return False
-        if candidate_verb_token_span.end > len(sentence_tokens):
+        if candidate_token_span.end > len(sentence_tokens):
             return False
         # or be bigger than our maximum template size...
-        if len(candidate_verb_token_span) > max_length:
+        if len(candidate_token_span) > max_length:
             return False
 
         # or we have already aligned any of the tokens in between the objects
         # to some other meaning.
-        for token_index in range(
-            candidate_verb_token_span.start, candidate_verb_token_span.end
-        ):
+        for token_index in range(candidate_token_span.start, candidate_token_span.end):
             if language_concept_alignment.token_index_is_aligned(token_index):
+                return False
+
+        for span in invalid_token_spans:
+            if candidate_token_span.contains_span(span):
                 return False
         return True
 
@@ -348,8 +357,10 @@ def candidate_templates(
         return num_arguments_to_alignments_sets[num_arguments]
 
     def process_aligned_objects_with_template(
-        verb_template: Tuple[AlignmentSlots, ...],
+        candidate_template: Tuple[AlignmentSlots, ...],
         aligned_nodes: Tuple[SemanticNodeWithSpan, ...],
+        *,
+        invalid_token_spans: ImmutableSet[Span],
     ) -> Iterable[Optional[SurfaceTemplateBoundToSemanticNodes]]:
 
         aligned_node_index = 0
@@ -366,7 +377,7 @@ def candidate_templates(
         # So we keep track if the previous token was a FixedString indicator
         previous_node_was_string = False
 
-        for token in verb_template:
+        for token in candidate_template:
             # If the token in our template is an argument we need to assign it a
             # unique SyntaxSemanticsVariable, and map it to the SemanticNode
             if token == AlignmentSlots.Argument:
@@ -395,15 +406,17 @@ def candidate_templates(
                         aligned_nodes[aligned_node_index - 1].span.end
                         != aligned_nodes[aligned_node_index].span.start
                     ):
-                        candidate_verb_token_span = Span(
+                        candidate_token_span = Span(
                             aligned_nodes[aligned_node_index - 1].span.end,
                             aligned_nodes[aligned_node_index].span.start,
                         )
-                        if not is_legal_template_span(candidate_verb_token_span):
+                        if not is_legal_template_span(
+                            candidate_token_span, invalid_token_spans=invalid_token_spans
+                        ):
                             yield None
                         template_elements.extend(
                             sentence_tokens[
-                                candidate_verb_token_span.start : candidate_verb_token_span.end
+                                candidate_token_span.start : candidate_token_span.end
                             ]
                         )
                     previous_node_was_string = True
@@ -412,28 +425,33 @@ def candidate_templates(
         # between 1 and _MAXIMUM_ACTION_TEMPLATE_TOKEN_LENGTH
         if prefix_string_end and postfix_string_start:
             for max_token_length_for_template_prefix in range(1, max_length + 1):
-                prefix_candidate_verb_token_span = Span(
+                prefix_candidate_token_span = Span(
                     prefix_string_end - max_token_length_for_template_prefix,
                     prefix_string_end,
                 )
-                if is_legal_template_span(prefix_candidate_verb_token_span):
+                if is_legal_template_span(
+                    prefix_candidate_token_span, invalid_token_spans=invalid_token_spans
+                ):
                     for max_token_length_for_template_postfix in range(1, max_length + 1):
-                        postfix_candidate_verb_token_span = Span(
+                        postfix_candidate_token_span = Span(
                             postfix_string_start,
                             postfix_string_start + max_token_length_for_template_postfix,
                         )
-                        if is_legal_template_span(postfix_candidate_verb_token_span):
+                        if is_legal_template_span(
+                            postfix_candidate_token_span,
+                            invalid_token_spans=invalid_token_spans,
+                        ):
                             final_template_elements: List[
                                 Union[str, SyntaxSemanticsVariable]
                             ] = list(
                                 sentence_tokens[
-                                    prefix_candidate_verb_token_span.start : prefix_candidate_verb_token_span.end
+                                    prefix_candidate_token_span.start : prefix_candidate_token_span.end
                                 ]
                             )
                             final_template_elements.extend(template_elements)
                             final_template_elements.extend(
                                 sentence_tokens[
-                                    postfix_candidate_verb_token_span.start : postfix_candidate_verb_token_span.end
+                                    postfix_candidate_token_span.start : postfix_candidate_token_span.end
                                 ]
                             )
                             yield SurfaceTemplateBoundToSemanticNodes(
@@ -448,14 +466,16 @@ def candidate_templates(
                             )
         elif prefix_string_end:
             for max_token_length_for_template_prefix in range(1, max_length + 1):
-                prefix_candidate_verb_token_span = Span(
+                prefix_candidate_token_span = Span(
                     prefix_string_end - max_token_length_for_template_prefix,
                     prefix_string_end,
                 )
-                if is_legal_template_span(prefix_candidate_verb_token_span):
+                if is_legal_template_span(
+                    prefix_candidate_token_span, invalid_token_spans=invalid_token_spans
+                ):
                     final_template_elements = list(
                         sentence_tokens[
-                            prefix_candidate_verb_token_span.start : prefix_candidate_verb_token_span.end
+                            prefix_candidate_token_span.start : prefix_candidate_token_span.end
                         ]
                     )
                     final_template_elements.extend(template_elements)
@@ -471,15 +491,17 @@ def candidate_templates(
                     )
         elif postfix_string_start:
             for max_token_length_for_template_postfix in range(1, max_length + 1):
-                postfix_candidate_verb_token_span = Span(
+                postfix_candidate_token_span = Span(
                     postfix_string_start,
                     postfix_string_start + max_token_length_for_template_postfix,
                 )
-                if is_legal_template_span(postfix_candidate_verb_token_span):
+                if is_legal_template_span(
+                    postfix_candidate_token_span, invalid_token_spans=invalid_token_spans
+                ):
                     final_template_elements = list(template_elements)
                     final_template_elements.extend(
                         sentence_tokens[
-                            postfix_candidate_verb_token_span.start : postfix_candidate_verb_token_span.end
+                            postfix_candidate_token_span.start : postfix_candidate_token_span.end
                         ]
                     )
                     yield SurfaceTemplateBoundToSemanticNodes(
@@ -503,17 +525,25 @@ def candidate_templates(
             )
 
     # Generate all the possible verb template alignments
-    for verb_template in candidate_templates_function():
+    for candidate_template in candidate_templates_function():
         for aligned_nodes in aligned_object_nodes(
-            sum(1 for token in verb_template if token == AlignmentSlots.Argument),
+            sum(1 for token in candidate_template if token == AlignmentSlots.Argument),
             num_arguments_to_alignments_sets,
             language_concept_alignment,
         ):
             # aligned_object_nodes is guaranteed to only give us alignments
             # Which the spans go from left most to right most
+            # We also provide a set of invalid token spans
+            # for fixed string positions.
+            # see: https://github.com/isi-vista/adam/issues/867
+            invalid_token_spans = immutableset(
+                language_concept_alignment.node_to_language_span.values()
+            )
             for (
                 surface_template_bound_to_semantic_nodes
-            ) in process_aligned_objects_with_template(verb_template, aligned_nodes):
+            ) in process_aligned_objects_with_template(
+                candidate_template, aligned_nodes, invalid_token_spans=invalid_token_spans
+            ):
                 if surface_template_bound_to_semantic_nodes:
                     ret.append(surface_template_bound_to_semantic_nodes)
 
