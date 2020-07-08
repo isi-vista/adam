@@ -303,6 +303,11 @@ def candidate_templates(
             previous_node = semantic_nodes[i]
         return True
 
+    # A sample case for invalid tokens spans is if the language of a situation is
+    # "a dog pushes a box to a car" but we are given a candidate template
+    # of AFA then we could generate "slot1 pushes a box to slot2"
+    # which is an undesired output. So if we provide the spans where
+    # aligned objects are we can invalidate templates like the problem one above
     def is_legal_template_span(
         candidate_token_span: Span, *, invalid_token_spans: ImmutableSet[Span]
     ) -> bool:
@@ -529,15 +534,15 @@ def candidate_templates(
             # aligned_object_nodes is guaranteed to only give us alignments
             # Which the spans go from left most to right most
             # We also provide a set of invalid token spans
-            # for fixed string positions
+            # for fixed string positions.
+            # see: https://github.com/isi-vista/adam/issues/867
+            invalid_token_spans = immutableset(
+                language_concept_alignment.node_to_language_span.values()
+            )
             for (
                 surface_template_bound_to_semantic_nodes
             ) in process_aligned_objects_with_template(
-                candidate_template,
-                aligned_nodes,
-                invalid_token_spans=immutableset(
-                    language_concept_alignment.node_to_language_span.values()
-                ),
+                candidate_template, aligned_nodes, invalid_token_spans=invalid_token_spans
             ):
                 if surface_template_bound_to_semantic_nodes:
                     ret.append(surface_template_bound_to_semantic_nodes)
