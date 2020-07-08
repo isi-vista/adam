@@ -124,19 +124,13 @@ class IntegratedTemplateLearner(
                 if not learning_example.perception.is_dynamic():
                     try:
                         sub_learner.learn_from(current_learner_state)
-                    except RuntimeError as e:
-                        logging.warning(
-                            f"Couldn't learn from {learning_example} with learner {sub_learner} due to {e}"
-                        )
+                    except RuntimeError:
                         return
                 try:
                     current_learner_state = sub_learner.enrich_during_learning(
                         current_learner_state
                     )
-                except RuntimeError as e:
-                    logging.warning(
-                        f"Couldn't enrich from {learning_example} with learner {sub_learner} due to {e}"
-                    )
+                except RuntimeError:
                     return
 
         if learning_example.perception.is_dynamic() and self.action_learner:

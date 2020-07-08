@@ -1,4 +1,5 @@
 from abc import ABC
+import logging
 from typing import AbstractSet, Union, Optional
 from adam.language import LinguisticDescription
 from adam.learner import LearningExample
@@ -83,8 +84,8 @@ class AbstractAttributeTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                             )
                         )
                     except RuntimeError as e:
-                        raise RuntimeError(
-                            f"{str(e)} with preceding token index = {preceding_token_index}"
+                        logging.warning(
+                            f"{str(e)} with preceding token index = {preceding_token_index} for situation {language_perception_semantic_alignment}"
                         )
                 following_token_index = span_for_object.end + 1
                 if following_token_index < len(
@@ -106,8 +107,8 @@ class AbstractAttributeTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                             )
                         )
                     except RuntimeError as e:
-                        raise RuntimeError(
-                            f"{str(e)} with following token index = {following_token_index}"
+                        logging.warning(
+                            f"{str(e)} with following token index = {following_token_index} for situation {language_perception_semantic_alignment}"
                         )
 
         return immutableset(
