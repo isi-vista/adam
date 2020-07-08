@@ -1013,14 +1013,15 @@ class _PerceptionGeneration:
                 # action_description.postconditions,
             ):
                 for unbound_condition in condition_set:
-                    condition = unbound_condition.copy_remapping_objects( {
-                        **bindings,
-                        action_object_variable: object_perception
-                    })
-
-                    # TODO: how to hondle conditions where one slot is a region?
-                    # TODO: handle tempoaral relations
-                    if (condition.first_slot == object_perception) or (condition.second_slot == object_perception):
+                    # TODO: how to handle conditions where one slot is a region?
+                    # TODO: handle temporal relations
+                    if (
+                        unbound_condition.first_slot == action_object_variable
+                        or unbound_condition.second_slot == action_object_variable
+                    ):
+                        condition = unbound_condition.copy_remapping_objects(
+                            {**bindings, action_object_variable: object_perception}
+                        )
                         # if other in bindings and not condition in self._relation_perceptions:
                         if condition not in self._relation_perceptions:
                             logging.info(
