@@ -41,7 +41,7 @@ In English: run `adam.curriculum_to_html parameters/html/curriculum_to_html.phas
 In Chinese: run `adam.curriculum_to_html parameters/html/curriculum_to_html.phase1.chinese.params`
 
 
-# To Run the Learner over the Entire Curriculum
+# To Run the Learner over an Entire Curriculum
 
 run `adam.experiment.run_m9  /full/path/to/parameters/experiment/m9/m9.params`
 
