@@ -1134,6 +1134,12 @@ class _PerceptionGeneration:
         instantiated_object: ObjectPerception = attrib(
             validator=instance_of(ObjectPerception)
         )
+        """
+        Includes both direct subobjects and indirect subobjects (subobjects of subobjects).
+        """
+        subobject_perceptions: ImmutableSet[ObjectPerception] = attrib(
+            validator=instance_of(ImmutableSet)
+        )
         schema_axes_to_perceivable_axes: Mapping[GeonAxis, GeonAxis] = attrib(
             converter=_to_immutabledict,
             validator=deep_mapping(instance_of(GeonAxis), instance_of(GeonAxis)),
@@ -1265,6 +1271,11 @@ class _PerceptionGeneration:
             top_level_and_subobject_schema_axes_to_perceivable_axes.update(
                 instantiation_result.schema_axes_to_perceivable_axes
             )
+            # Add indirect children
+            for indirect_sub_object_perception in instantiation_result.subobject_perceptions:
+                self._relation_perceptions.append(
+                    Relation(PART_OF, indirect_sub_object_perception, root_object_perception)
+                )
 
         for sub_object in schema.sub_objects:
             sub_object_perception = sub_object_to_object_perception[sub_object]
@@ -1303,6 +1314,7 @@ class _PerceptionGeneration:
             )
         return _PerceptionGeneration._InstantiateObjectSchemaReturn(
             instantiated_object=root_object_perception,
+            subobject_perceptions=immutableset(sub_object_to_object_perception.values()),
             # Axes are only "visible" for relations one layer down,
             # which is why we return only the top-level axis mapping.
             schema_axes_to_perceivable_axes=top_level_schema_axes_to_perceivable_axes,
