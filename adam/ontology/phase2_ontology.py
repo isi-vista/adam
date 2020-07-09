@@ -2,6 +2,8 @@ from adam.geon import LARGE_TO_SMALL, CONSTANT, SMALL_TO_LARGE_TO_SMALL
 from adam.ontology import OntologyNode, CAN_FILL_TEMPLATE_SLOT
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
+    MUCH_BIGGER_THAN,
+    MUCH_SMALLER_THAN,
     _make_cup_schema,
     _CHAIR_SCHEMA_BACK,
     _CHAIR_SCHEMA_SQUARE_SEAT,
@@ -204,3 +206,32 @@ GAILA_PHASE_2_ONTOLOGY = Ontology(
         GAILA_PHASE_1_SIZE_GRADES, relation_type=BIGGER_THAN, opposite_type=SMALLER_THAN
     ),
 )
+
+
+def gravitationally_aligned_axis_is_largest(
+    ontology_node: OntologyNode, ontology: Ontology
+) -> bool:
+    schemata = list(ontology.structural_schemata(ontology_node))
+    if not schemata or len(schemata) != 1:
+        return False
+    gravitational = schemata[0].axes.gravitationally_aligned_axis
+    relations = schemata[0].axes.axis_relations
+    if not gravitational or not relations:
+        return False
+    return (
+        any(
+            r.first_slot == gravitational
+            and r.relation_type in [BIGGER_THAN, MUCH_BIGGER_THAN]
+            for r in relations
+        )
+        and not any(
+            r.first_slot == gravitational
+            and r.relation_type in [SMALLER_THAN, MUCH_SMALLER_THAN]
+            for r in relations
+        )
+        and not any(
+            r.second_slot == gravitational
+            and r.relation_type in [BIGGER_THAN, MUCH_BIGGER_THAN]
+            for r in relations
+        )
+    )
