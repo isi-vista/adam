@@ -747,6 +747,7 @@ class _PerceptionGeneration:
                     ontology_type
                 ]
                 if relation.relation_type in SIZE_RELATIONS
+                and relation.second_slot == relation.first_slot
             )
             if size_relations:
                 if len(size_relations) > 1:
@@ -755,13 +756,12 @@ class _PerceptionGeneration:
                         f"{ontology_type} but got {size_relations}"
                     )
                 # only record relative size if the objects are of the same type, and record this as well if they are
-                if only(size_relations).first_slot == only(size_relations).second_slot:
-                    self._property_assertion_perceptions.append(
-                        HasBinaryProperty(perception, only(size_relations).relation_type)
-                    )
-                    self._property_assertion_perceptions.append(
-                        HasBinaryProperty(perception, SAME_TYPE)
-                    )
+                self._property_assertion_perceptions.append(
+                    HasBinaryProperty(perception, only(size_relations).relation_type)
+                )
+                self._property_assertion_perceptions.append(
+                    HasBinaryProperty(perception, SAME_TYPE)
+                )
 
     def _perceive_size_relative_to_learner(self) -> None:
         """
