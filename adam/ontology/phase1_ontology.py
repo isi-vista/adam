@@ -642,6 +642,8 @@ SIZE_RELATION = OntologyNode("size-relation")
 subtype(SIZE_RELATION, RELATION)
 
 BIGGER_THAN = OntologyNode("biggerThan")
+
+SAME_TYPE = OntologyNode("same-type")
 """
 A relation indicating that one object is bigger than another object.
 

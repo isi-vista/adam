@@ -21,6 +21,7 @@ from adam.ontology.during import DuringAction
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
     ABOUT_THE_SAME_SIZE_AS_LEARNER,
+    SAME_TYPE,
     BABY,
     COLOR,
     COLORS_TO_RGBS,
@@ -242,7 +243,7 @@ class _PerceptionGeneration:
 
         # Handle implicit size relations
         self._perceive_size_relative_to_learner()
-        # self._perceive_implicit_size()
+        self._perceive_all_relative_size()
 
         # for now, we assume that actions do not alter the relationship of objects axes
         # to the speaker, learner, and addressee
@@ -733,6 +734,34 @@ class _PerceptionGeneration:
                     dfs_walk(successor, inherited_color)
 
         dfs_walk(root)
+
+    def _perceive_all_relative_size(self) -> None:
+        """This method handles perception of relative size of two objects of the same type"""
+        for (
+            perception,
+            ontology_type,
+        ) in self._object_perceptions_to_ontology_nodes.items():
+            size_relations = immutableset(
+                relation
+                for relation in self._situation.ontology.subjects_to_relations[
+                    ontology_type
+                ]
+                if relation.relation_type in SIZE_RELATIONS
+            )
+            if size_relations:
+                if len(size_relations) > 1:
+                    raise RuntimeError(
+                        f"Expected only one size relations for "
+                        f"{ontology_type} but got {size_relations}"
+                    )
+                # only record relative size if the objects are of the same type, and record this as well if they are
+                if only(size_relations).first_slot == only(size_relations).second_slot:
+                    self._property_assertion_perceptions.append(
+                        HasBinaryProperty(perception, only(size_relations).relation_type)
+                    )
+                    self._property_assertion_perceptions.append(
+                        HasBinaryProperty(perception, SAME_TYPE)
+                    )
 
     def _perceive_size_relative_to_learner(self) -> None:
         """

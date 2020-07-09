@@ -2912,7 +2912,6 @@ class _FrameTranslation:
             )
         else:
             label = relation.relation_type
-
         graph.add_edge(
             self._map_node(relation.first_slot),
             self._map_node(relation.second_slot),
