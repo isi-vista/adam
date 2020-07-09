@@ -3,7 +3,13 @@ from itertools import repeat
 from typing import Callable, Optional
 
 from adam.curriculum.phase2_curriculum import _make_put_in_curriculum
+from adam.language_specific.chinese.chinese_language_generator import (
+    GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
+)
 from adam.language_specific.english import ENGLISH_DETERMINERS
+from adam.language_specific.english.english_language_generator import (
+    GAILA_PHASE_1_LANGUAGE_GENERATOR,
+)
 from adam.learner.attributes import SubsetAttributeLearner, SubsetAttributeLearnerNew
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
@@ -108,6 +114,12 @@ def learner_factory_from_params(
         "language_mode", LanguageMode, default=LanguageMode.ENGLISH
     )
 
+    if language_mode == LanguageMode.CHINESE and learner_type not in [
+        "integrated-learner",
+        "integrated-learner-recognizer",
+    ]:
+        raise RuntimeError("Only able to test Chinese with integrated learner.")
+
     # Eval hack! This is specific to the Phase 1 ontology
     object_recognizer = ObjectRecognizer.for_ontology_types(
         PHASE_1_CURRICULUM_OBJECTS,
@@ -148,43 +160,43 @@ def learner_factory_from_params(
             object_learner=SubsetObjectLearnerNew(
                 ontology=GAILA_PHASE_1_ONTOLOGY,
                 beam_size=beam_size,
-                language_mode=LanguageMode.ENGLISH,
+                language_mode=language_mode,
             ),
             attribute_learner=SubsetAttributeLearnerNew(
                 ontology=GAILA_PHASE_1_ONTOLOGY,
                 beam_size=beam_size,
-                language_mode=LanguageMode.ENGLISH,
+                language_mode=language_mode,
             ),
             relation_learner=SubsetRelationLearnerNew(
                 ontology=GAILA_PHASE_1_ONTOLOGY,
                 beam_size=beam_size,
-                language_mode=LanguageMode.ENGLISH,
+                language_mode=language_mode,
             ),
             action_learner=SubsetVerbLearnerNew(
                 ontology=GAILA_PHASE_1_ONTOLOGY,
                 beam_size=beam_size,
-                language_mode=LanguageMode.ENGLISH,
+                language_mode=language_mode,
             ),
         )
     elif learner_type == "integrated-learner-recognizer":
         return lambda: IntegratedTemplateLearner(
             object_learner=ObjectRecognizerAsTemplateLearner(
-                object_recognizer=object_recognizer, language_mode=LanguageMode.ENGLISH
+                object_recognizer=object_recognizer, language_mode=language_mode
             ),
             attribute_learner=SubsetAttributeLearnerNew(
                 ontology=GAILA_PHASE_1_ONTOLOGY,
                 beam_size=beam_size,
-                language_mode=LanguageMode.ENGLISH,
+                language_mode=language_mode,
             ),
             relation_learner=SubsetRelationLearnerNew(
                 ontology=GAILA_PHASE_1_ONTOLOGY,
                 beam_size=beam_size,
-                language_mode=LanguageMode.ENGLISH,
+                language_mode=language_mode,
             ),
             action_learner=SubsetVerbLearnerNew(
                 ontology=GAILA_PHASE_1_ONTOLOGY,
                 beam_size=beam_size,
-                language_mode=LanguageMode.ENGLISH,
+                language_mode=language_mode,
             ),
         )
     else:
@@ -208,6 +220,14 @@ def curriculum_from_params(params: Parameters):
             "object-restrictions",
         ],
     )
+
+    language_mode = params.enum(
+        "language_mode", LanguageMode, default=LanguageMode.ENGLISH
+    )
+
+    if language_mode == LanguageMode.CHINESE and curriculum_name != "m9-complete":
+        raise RuntimeError("Only able to test Chinese with m9-complete curriculum.")
+
     if curriculum_name == "m6-deniz":
         return (make_m6_curriculum(), [])
     elif curriculum_name == "each-object-by-itself":
@@ -264,7 +284,14 @@ def curriculum_from_params(params: Parameters):
     elif curriculum_name == "m9-debug":
         return ([_make_put_on_speaker_addressee_body_part_curriculum()], [])
     elif curriculum_name == "m9-complete":
-        return (build_gaila_phase_1_curriculum(), [])
+        return (
+            build_gaila_phase_1_curriculum(
+                language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR
+                if LanguageMode.ENGLISH == language_mode
+                else GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR
+            ),
+            [],
+        )
     elif curriculum_name == "object-restrictions":
         return ([_make_transitive_roll_curriculum(), _make_put_in_curriculum()], [])
     else:

@@ -102,10 +102,7 @@ def run_preposition_test(learner, situation_template, language_generator):
         assert gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
 
 
-@pytest.mark.parametrize(
-    "language_mode",
-    [LanguageMode.ENGLISH, pytest.param(LanguageMode.CHINESE, marks=pytest.mark.xfail)],
-)
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
     "learner", [subset_relation_language_factory, integrated_learner_factory]
 )
@@ -120,10 +117,7 @@ def test_subset_preposition_on(language_mode, learner):
     )
 
 
-@pytest.mark.parametrize(
-    "language_mode",
-    [LanguageMode.ENGLISH, pytest.param(LanguageMode.CHINESE, marks=pytest.mark.xfail)],
-)
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
     "learner", [subset_relation_language_factory, integrated_learner_factory]
 )
@@ -138,10 +132,7 @@ def test_subset_preposition_beside(language_mode, learner):
     )
 
 
-@pytest.mark.parametrize(
-    "language_mode",
-    [LanguageMode.ENGLISH, pytest.param(LanguageMode.CHINESE, marks=pytest.mark.xfail)],
-)
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
     "learner", [subset_relation_language_factory, integrated_learner_factory]
 )
@@ -156,10 +147,7 @@ def test_subset_preposition_under(language_mode, learner):
     )
 
 
-@pytest.mark.parametrize(
-    "language_mode",
-    [LanguageMode.ENGLISH, pytest.param(LanguageMode.CHINESE, marks=pytest.mark.xfail)],
-)
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
     "learner", [subset_relation_language_factory, integrated_learner_factory]
 )
@@ -174,10 +162,7 @@ def test_subset_preposition_over(language_mode, learner):
     )
 
 
-@pytest.mark.parametrize(
-    "language_mode",
-    [LanguageMode.ENGLISH, pytest.param(LanguageMode.CHINESE, marks=pytest.mark.xfail)],
-)
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
     "learner", [subset_relation_language_factory, integrated_learner_factory]
 )
@@ -192,10 +177,7 @@ def test_subset_preposition_in(language_mode, learner):
     )
 
 
-@pytest.mark.parametrize(
-    "language_mode",
-    [LanguageMode.ENGLISH, pytest.param(LanguageMode.CHINESE, marks=pytest.mark.xfail)],
-)
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
     "learner", [subset_relation_language_factory, integrated_learner_factory]
 )
@@ -218,10 +200,7 @@ def test_subset_preposition_behind(language_mode, learner):
     )
 
 
-@pytest.mark.parametrize(
-    "language_mode",
-    [LanguageMode.ENGLISH, pytest.param(LanguageMode.CHINESE, marks=pytest.mark.xfail)],
-)
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
     "learner", [subset_relation_language_factory, integrated_learner_factory]
 )
@@ -244,10 +223,7 @@ def test_subset_preposition_in_front(language_mode, learner):
     )
 
 
-@pytest.mark.parametrize(
-    "language_mode",
-    [LanguageMode.ENGLISH, pytest.param(LanguageMode.CHINESE, marks=pytest.mark.xfail)],
-)
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
     "learner", [subset_relation_language_factory, integrated_learner_factory]
 )

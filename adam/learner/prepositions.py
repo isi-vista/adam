@@ -1,7 +1,7 @@
 from abc import ABC
 from pathlib import Path
 from typing import Iterable, Mapping, Optional, Sequence, Union
-
+from adam.learner.language_mode import LanguageMode
 from more_itertools import flatten
 from networkx import all_shortest_paths, subgraph
 
@@ -79,7 +79,9 @@ class AbstractPrepositionTemplateLearner(AbstractTemplateLearner, ABC):
         return self._object_recognizer.match_objects_old(perception_graph)
 
     def _extract_surface_template(
-        self, language_concept_alignment: LanguageAlignedPerception
+        self,
+        language_concept_alignment: LanguageAlignedPerception,
+        language_mode: LanguageMode = LanguageMode.ENGLISH,
     ) -> SurfaceTemplate:
         return language_concept_alignment.to_surface_template(
             object_node_to_template_variable=immutabledict(
@@ -89,6 +91,7 @@ class AbstractPrepositionTemplateLearner(AbstractTemplateLearner, ABC):
                 ]
             ),
             determiner_prefix_slots=[SLOT1, SLOT2],
+            language_mode=language_mode,
         )
 
 

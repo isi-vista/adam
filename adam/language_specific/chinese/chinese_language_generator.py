@@ -57,6 +57,8 @@ from adam.language_specific.chinese.chinese_phase_1_lexicon import (
     MOM,
     DAD,
     BABY,
+    DOG,
+    BIRD,
 )
 from adam.language_specific import (
     FIRST_PERSON,
@@ -69,6 +71,7 @@ from adam.language_specific.chinese.chinese_syntax import (
 )
 from adam.ontology import IN_REGION, IS_ADDRESSEE, IS_SPEAKER, OntologyNode
 from adam.ontology.phase1_ontology import (
+    ANIMATE,
     AGENT,
     PUSH,
     COLOR,
@@ -107,6 +110,7 @@ from adam.ontology.phase1_spatial_relations import (
     SpatialPath,
     AWAY_FROM,
     TO,
+    VIA,
 )
 from adam.random_utils import SequenceChooser
 from adam.relation import Relation
@@ -235,7 +239,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     verb_lexical_entry = GRAB
                 elif action.action_type == PUSH:
                     verb_lexical_entry = SHOVE
-                elif action.action_type == PASS:
+                else:
                     verb_lexical_entry = TOSS
 
             else:
@@ -355,7 +359,14 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     paths_involving_ground = immutableset(
                         path
                         for (_, path) in action.during.objects_to_paths.items()
-                        if path.reference_object.ontology_node == GROUND
+                        if (
+                            isinstance(path.reference_object, SituationObject)
+                            and path.reference_object.ontology_node == GROUND
+                        )
+                        or (
+                            isinstance(path.reference_object, Region)
+                            and path.reference_object.reference_object == GROUND
+                        )
                     )
                     if paths_involving_ground:
                         # only consider the first one to determine direction
@@ -420,35 +431,51 @@ class SimpleRuleBasedChineseLanguageGenerator(
             path_object: SituationObject,
             spatial_path: SpatialPath[SituationObject],
         ):
-            if (
-                spatial_path.reference_object
-                and spatial_path.reference_object not in self.situation.salient_objects
+            if spatial_path.reference_object and (
+                (
+                    isinstance(spatial_path.reference_object, SituationObject)
+                    and spatial_path.reference_object
+                    not in self.situation.salient_objects
+                )
+                or (
+                    isinstance(spatial_path.reference_object, Region)
+                    and spatial_path.reference_object.reference_object
+                    not in self.situation.salient_objects
+                )
             ):
                 return None
-            if path_object not in self.situation.salient_objects:
-                return None
-            if action:
-                # If both arguments of the relation are core argument roles,
-                # we assume the verb takes care of expressing their relationship.
-                core_argument_fillers = immutableset(
-                    chain(
-                        action.argument_roles_to_fillers[AGENT],
-                        action.argument_roles_to_fillers[PATIENT],
-                        action.argument_roles_to_fillers[THEME],
-                    )
+            if path_object and (
+                (
+                    isinstance(path_object, SituationObject)
+                    and path_object not in self.situation.salient_objects
                 )
+                or (
+                    isinstance(path_object, Region)
+                    and path_object.reference_object not in self.situation.salient_objects
+                )
+            ):
+                return None
 
-                if (
-                    path_object in core_argument_fillers
-                    and spatial_path.reference_object in core_argument_fillers
-                ):
-                    return None
+            # If both arguments of the relation are core argument roles,
+            # we assume the verb takes care of expressing their relationship.
+            core_argument_fillers = immutableset(
+                chain(
+                    action.argument_roles_to_fillers[AGENT],
+                    action.argument_roles_to_fillers[PATIENT],
+                    action.argument_roles_to_fillers[THEME],
+                )
+            )
+            if (
+                path_object in core_argument_fillers
+                and spatial_path.reference_object in core_argument_fillers
+            ):
+                return None
             preposition: Optional[str] = None
             if spatial_path.operator == TOWARD:
                 preposition = "chau2"
             elif spatial_path.operator == AWAY_FROM:
                 preposition = "li2"
-            elif spatial_path.operator in [TO, None]:
+            elif spatial_path.operator in [TO, VIA, None]:
                 return None
             if not preposition:
                 raise RuntimeError(
@@ -465,25 +492,12 @@ class SimpleRuleBasedChineseLanguageGenerator(
             if self.dependency_graph.out_degree[reference_object_node]:
                 return None
             else:
-                if spatial_path.operator in [TOWARD, AWAY_FROM]:
-                    self.dependency_graph.add_edge(
-                        DependencyTreeToken(preposition, ADPOSITION),
-                        reference_object_node,
-                        role=CASE_SPATIAL,
-                    )
-                    return (OBLIQUE_NOMINAL, reference_object_node)
-                else:
-                    self.dependency_graph.add_edge(
-                        DependencyTreeToken(preposition, ADPOSITION),
-                        reference_object_node,
-                        role=CASE_POSSESSIVE,
-                    )
-                    self.dependency_graph.add_edge(
-                        DependencyTreeToken("dau4", ADPOSITION),
-                        reference_object_node,
-                        role=CASE_SPATIAL,
-                    )
-                    return (ADVERBIAL_CLAUSE_MODIFIER, reference_object_node)
+                self.dependency_graph.add_edge(
+                    DependencyTreeToken(preposition, ADPOSITION),
+                    reference_object_node,
+                    role=CASE_SPATIAL,
+                )
+                return (OBLIQUE_NOMINAL, reference_object_node)
 
         def _translate_relation_to_action_modifier(
             self,
@@ -615,14 +629,15 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     and (
                         IS_SPEAKER in filler.properties
                         or IS_ADDRESSEE in filler.properties
-                        or filler.ontology_node in [DAD, MOM, BABY]
+                        # hack to identify possible animate goals
+                        or filler.ontology_node in [DAD, MOM, BABY, DOG, BIRD]
                     )
                 ):
                     gei = DependencyTreeToken("gei3", ADPOSITION)
                     self.dependency_graph.add_edge(gei, filler_noun, role=CASE_SPATIAL)
                 return (syntactic_role, filler_noun)
             # deal with the case that it's a region in the situation
-            elif isinstance(filler, Region):
+            elif isinstance(filler, Region) and argument_role == GOAL:
 
                 # get the noun for the object
                 reference_object_dependency_node = self._noun_for_object(
@@ -634,6 +649,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     (action.action_type == GO or action.action_type == COME)
                     and (filler.distance == PROXIMAL)
                     and (not filler.direction)
+                    and (USE_NEAR not in self.situation.syntax_hints)
                 ):
                     pass
                 # in all other cases, we construct a localiser phrase to attach as an adverbial modifier

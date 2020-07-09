@@ -2,6 +2,7 @@ from abc import ABC
 from typing import AbstractSet, Union, Optional
 from adam.language import LinguisticDescription
 from adam.learner import LearningExample
+from adam.learner.language_mode import LanguageMode
 from adam.learner.alignments import (
     LanguagePerceptionSemanticAlignment,
     PerceptionSemanticAlignment,
@@ -9,6 +10,7 @@ from adam.learner.alignments import (
 from adam.learner.learner_utils import (
     assert_static_situation,
     pattern_remove_incomplete_region_or_spatial_path,
+    covers_entire_utterance,
 )
 from adam.learner.object_recognizer import (
     ObjectRecognizer,
@@ -40,6 +42,7 @@ from attr import attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import immutabledict, immutableset, immutablesetmultidict
 from vistautils.span import Span
+from adam.learner.learner_utils import SyntaxSemanticsVariable
 
 
 @attrs
@@ -98,7 +101,26 @@ class AbstractAttributeTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                         )
                     )
 
-        return immutableset(ret)
+        return immutableset(
+            bound_surface_template
+            for bound_surface_template in ret
+            # For now, we require templates to account for the entire utterance.
+            # See https://github.com/isi-vista/adam/issues/789
+            if covers_entire_utterance(
+                bound_surface_template,
+                language_concept_alignment,
+                # We need to explicitly ignore determiners here for some reason
+                # See: https://github.com/isi-vista/adam/issues/871
+                ignore_determiners=True,
+            )
+            # this keeps the relation learner from learning things such as "a_slot1" which will pose an issue for
+            # later learning of attributes since the learner may consider both the attribute and the object to be objects initially,
+            # leading it to try to match two objects with a template that only has one slot
+            and not all(
+                (e in ["a", "the"] or isinstance(e, SyntaxSemanticsVariable))
+                for e in bound_surface_template.surface_template.elements
+            )
+        )
 
 
 @attrs
@@ -137,7 +159,9 @@ class AbstractAttributeTemplateLearner(AbstractTemplateLearner, ABC):
         return self._object_recognizer.match_objects_old(perception_graph)
 
     def _extract_surface_template(
-        self, language_concept_alignment: LanguageAlignedPerception
+        self,
+        language_concept_alignment: LanguageAlignedPerception,
+        language_mode: LanguageMode = LanguageMode.ENGLISH,
     ) -> SurfaceTemplate:
         if len(language_concept_alignment.aligned_nodes) > 1:
             raise RuntimeError("Input has too many aligned nodes for us to handle.")

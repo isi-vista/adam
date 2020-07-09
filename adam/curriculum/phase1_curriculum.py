@@ -2227,6 +2227,55 @@ def throw_to_template(
     )
 
 
+def throw_to_region_template(
+    agent: TemplateObjectVariable,
+    theme: TemplateObjectVariable,
+    goal: TemplateObjectVariable,
+    *,
+    spatial_properties: Iterable[OntologyNode] = None,
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        "throw-to",
+        salient_object_variables=[agent, theme, goal],
+        actions=[
+            Action(
+                THROW,
+                argument_roles_to_fillers=[
+                    (AGENT, agent),
+                    (THEME, theme),
+                    (GOAL, Region(goal, distance=PROXIMAL)),
+                ],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            theme,
+                            SpatialPath(
+                                None, reference_object=goal, properties=spatial_properties
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+        after_action_relations=[near(theme, goal)],
+        constraining_relations=[bigger_than(agent, theme)],
+    )
+
+
+# for testing gei vs dao X shang in Chinese
+def make_throw_animacy_templates() -> Iterable[Phase1SituationTemplate]:
+    thrower = standard_object("thrower_0", THING, required_properties=[ANIMATE])
+    catcher = standard_object("catcher_0", THING, required_properties=[ANIMATE])
+    object_thrown = standard_object("object_0", required_properties=[INANIMATE])
+    goal_reference = standard_object("object_1", required_properties=[INANIMATE])
+    return [
+        # Throw to an animate catcher
+        throw_to_template(thrower, object_thrown, catcher),
+        # Throw to an inanimate object
+        throw_to_region_template(thrower, object_thrown, goal_reference),
+    ]
+
+
 def make_throw_templates() -> Iterable[Phase1SituationTemplate]:
     thrower = standard_object("thrower_0", THING, required_properties=[ANIMATE])
     catcher = standard_object("catcher_0", THING, required_properties=[ANIMATE])

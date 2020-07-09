@@ -41,16 +41,14 @@ class SurfaceTemplate:
         self,
         template_variable_to_filler: Mapping[SyntaxSemanticsVariable, Tuple[str, ...]],
     ) -> TokenSequenceLinguisticDescription:
+
         """
         Turns a template into a `TokenSequenceLinguisticDescription` by filling in its variables.
         """
 
         output_tokens: List[Union[str, SyntaxSemanticsVariable]] = []
         for element in self.elements:
-            if (
-                isinstance(element, SyntaxSemanticsVariable)
-                and self._language_mode == LanguageMode.ENGLISH
-            ):
+            if isinstance(element, SyntaxSemanticsVariable):
                 filler_words = template_variable_to_filler[element]
                 # Ground is a specific thing so we special case this to be assigned
                 if filler_words[0] == "ground":
