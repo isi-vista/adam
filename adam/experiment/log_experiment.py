@@ -2,6 +2,7 @@ import logging
 from itertools import repeat
 from typing import Callable, Optional
 
+from adam.curriculum.phase2_curriculum import _make_put_in_curriculum
 from adam.language_specific.chinese.chinese_language_generator import (
     GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
 )
@@ -31,6 +32,7 @@ from adam.curriculum.phase1_curriculum import (
     build_gaila_phase1_verb_curriculum,
     _make_put_on_speaker_addressee_body_part_curriculum,
     build_gaila_phase_1_curriculum,
+    _make_transitive_roll_curriculum,
 )
 from adam.curriculum.pursuit_curriculum import make_simple_pursuit_curriculum
 from adam.experiment import Experiment, execute_experiment
@@ -215,6 +217,7 @@ def curriculum_from_params(params: Parameters):
             "m9-events",
             "m9-debug",
             "m9-complete",
+            "object-restrictions",
         ],
     )
 
@@ -289,6 +292,8 @@ def curriculum_from_params(params: Parameters):
             ),
             [],
         )
+    elif curriculum_name == "object-restrictions":
+        return ([_make_transitive_roll_curriculum(), _make_put_in_curriculum()], [])
     else:
         raise RuntimeError("Can't happen")
 
