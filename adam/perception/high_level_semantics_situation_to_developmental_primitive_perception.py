@@ -237,7 +237,6 @@ class _PerceptionGeneration:
         self._relation_perceptions.extend(
             self._perceive_relation(relation)
             for relation in self._situation.always_relations
-            if relation.relation_type not in SIZE_RELATIONS
         )
         # Once all the objects and relations are perceived, determine their colors.
         self._perceive_colors()
