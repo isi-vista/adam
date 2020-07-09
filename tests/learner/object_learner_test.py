@@ -1,12 +1,24 @@
 import logging
-import random
+from typing import Iterable
 
+import pytest
+import random
+from itertools import chain
+from immutablecollections import immutableset
+from more_itertools import flatten
+
+from adam.curriculum.curriculum_utils import PHASE1_TEST_CHOOSER_FACTORY
 from adam.curriculum.phase1_curriculum import PHASE1_CHOOSER_FACTORY, phase1_instances
 from adam.curriculum.pursuit_curriculum import make_simple_pursuit_curriculum
+from adam.language.dependency import LinearizedDependencyTree
+from adam.language.language_generator import LanguageGenerator
 from adam.language_specific.english.english_language_generator import (
     GAILA_PHASE_1_LANGUAGE_GENERATOR,
     IGNORE_COLORS,
 )
+from adam.learner.integrated_learner import IntegratedTemplateLearner
+from adam.learner.language_mode import LanguageMode
+from adam.learner.objects import SubsetObjectLearner
 from adam.learner import (
     LanguagePerceptionSemanticAlignment,
     LearningExample,
@@ -36,7 +48,7 @@ from adam.ontology.phase1_ontology import (
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     GAILA_PHASE_1_PERCEPTION_GENERATOR,
 )
-from adam.perception.perception_graph import PerceptionGraph
+from adam.perception.perception_graph import DumpPartialMatchCallback, PerceptionGraph
 from adam.random_utils import RandomChooser
 from adam.relation import flatten_relations
 from adam.relation_dsl import negate
@@ -48,37 +60,74 @@ from adam.situation.templates.phase1_templates import (
     all_possible,
     color_variable,
     object_variable,
+    sampled,
 )
 from immutablecollections import immutableset
+from tests.learner import phase1_language_generator
 
 
-def run_learner_for_object(learner: IntegratedTemplateLearner, obj: OntologyNode):
-    learner_obj = object_variable("learner_0", LEARNER)
-    colored_obj_object = object_variable(
-        "obj-with-color", obj, added_properties=[color_variable("color")]
+def subset_object_learner_factory(language_mode: LanguageMode):
+    return SubsetObjectLearner(
+        ontology=GAILA_PHASE_1_ONTOLOGY, language_mode=language_mode
     )
 
-    obj_template = Phase1SituationTemplate(
-        "colored-obj-object",
-        salient_object_variables=[colored_obj_object, learner_obj],
-        syntax_hints=[IGNORE_COLORS],
+
+def integrated_learner_factory(language_mode: LanguageMode):
+    return IntegratedTemplateLearner(
+        object_learner=SubsetObjectLearnerNew(
+            ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=10, language_mode=language_mode
+        )
     )
+
+
+def run_subset_learner_for_object(
+    nodes: Iterable[OntologyNode],
+    *,
+    learner,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ]
+):
+    colored_obj_objects = [
+        object_variable(
+            "obj-with-color", node, added_properties=[color_variable("color")]
+        )
+        for node in nodes
+    ]
+
+    obj_templates = [
+        Phase1SituationTemplate(
+            "colored-obj-object",
+            salient_object_variables=[colored_obj_object],
+            syntax_hints=[IGNORE_COLORS],
+        )
+        for colored_obj_object in colored_obj_objects
+    ]
 
     obj_curriculum = phase1_instances(
         "all obj situations",
-        situations=all_possible(
-            obj_template,
-            chooser=PHASE1_CHOOSER_FACTORY(),
-            ontology=GAILA_PHASE_1_ONTOLOGY,
+        flatten(
+            [
+                all_possible(
+                    obj_template,
+                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                )
+                for obj_template in obj_templates
+            ]
         ),
+        language_generator=language_generator,
     )
+
     test_obj_curriculum = phase1_instances(
         "obj test",
-        situations=all_possible(
-            obj_template,
-            chooser=PHASE1_CHOOSER_FACTORY(),
+        situations=sampled(
+            obj_templates[0],
+            chooser=PHASE1_TEST_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
+            max_to_sample=1,
         ),
+        language_generator=language_generator,
     )
 
     for training_stage in [obj_curriculum]:
@@ -104,26 +153,20 @@ def run_learner_for_object(learner: IntegratedTemplateLearner, obj: OntologyNode
             ]
 
 
-def test_subset_learner_ball():
-    learner = IntegratedTemplateLearner(
-        object_learner=SubsetObjectLearnerNew(
-            ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5
-        )
+# tests learning "ball" in both languages
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
+@pytest.mark.parametrize(
+    "learner", [subset_object_learner_factory, integrated_learner_factory]
+)
+def test_subset_learner(language_mode, learner):
+    run_subset_learner_for_object(
+        [BALL, DOG, BOX],
+        learner=learner(language_mode),
+        language_generator=phase1_language_generator(language_mode),
     )
-    run_learner_for_object(learner, BALL)
 
 
-def test_subset_learner_dog():
-    learner = IntegratedTemplateLearner(
-        object_learner=SubsetObjectLearnerNew(
-            ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5
-        )
-    )
-    # debug_callback = DumpPartialMatchCallback(render_path="../renders/")
-    # We pass this callback into the learner; it is executed if the learning takes too long, i.e after 60 seconds.
-    run_learner_for_object(learner, DOG)
-
-
+# TODO: Figure out how to run this test over both chinese and english well
 def test_subset_learner_subobject():
     mom = SituationObject.instantiate_ontology_node(
         ontology_node=MOM, ontology=GAILA_PHASE_1_ONTOLOGY
@@ -178,7 +221,9 @@ def test_subset_learner_subobject():
         always_relations=flatten_relations(negate(on(house, ground))),
     )
 
-    object_learner = SubsetObjectLearnerNew(ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5)
+    object_learner = SubsetObjectLearnerNew(
+        ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=LanguageMode.ENGLISH
+    )
 
     for situation in [
         mom_situation,
@@ -225,7 +270,8 @@ def test_subset_learner_subobject():
     assert (ObjectSemanticNode, "hand") in semantic_node_types_and_debug_strings
 
 
-def learner_test_pursuit_curriculum(learner):
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
+def test_pursuit_object_learner(language_mode):
     target_objects = [
         BALL,
         # PERSON,
@@ -235,6 +281,9 @@ def learner_test_pursuit_curriculum(learner):
         # BIRD,
         BOX,
     ]
+
+    language_generator = phase1_language_generator(language_mode)
+
     target_test_templates = []
     for obj in target_objects:
         # Create train and test templates for the target objects
@@ -260,10 +309,34 @@ def learner_test_pursuit_curriculum(learner):
         num_instances=30,
         num_objects_in_instance=3,
         num_noise_instances=0,
+        language_generator=language_generator,
     )
 
-    test_obj_curriculum = phase1_instances("obj test", situations=target_test_templates)
+    test_obj_curriculum = phase1_instances(
+        "obj test",
+        situations=target_test_templates,
+        language_generator=language_generator,
+    )
 
+    # All parameters should be in the range 0-1.
+    # Learning factor works better when kept < 0.5
+    # Graph matching threshold doesn't seem to matter that much, as often seems to be either a
+    # complete or a very small match.
+    # The lexicon threshold works better between 0.07-0.3, but we need to play around with it because we end up not
+    # lexicalize items sufficiently because of diminishing lexicon probability through training
+    rng = random.Random()
+    rng.seed(0)
+    learner = IntegratedTemplateLearner(
+        object_learner=PursuitObjectLearnerNew(
+            learning_factor=0.05,
+            graph_match_confirmation_threshold=0.7,
+            lexicon_entry_threshold=0.7,
+            rng=rng,
+            smoothing_parameter=0.002,
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+            language_mode=language_mode,
+        )
+    )
     for training_stage in [train_curriculum]:
         for (
             _,
@@ -287,185 +360,3 @@ def learner_test_pursuit_curriculum(learner):
             assert gold in [
                 desc.as_token_sequence() for desc in descriptions_from_learner
             ]
-
-
-# def test_get_largest_matching_pattern():
-#     target_objects = [
-#         # BIRD,
-#         BOX,
-#         # BALL
-#     ]
-#
-#     target_train_templates = []
-#     target_test_templates = []
-#     for obj in target_objects:
-#         # Create train and test templates for the target objects
-#         train_obj_object = object_variable("obj-with-color", obj)
-#         obj_template = Phase1SituationTemplate(
-#             "colored-obj-object", salient_object_variables=[train_obj_object]
-#         )
-#         target_train_templates.extend(
-#             chain(
-#                 *[
-#                     all_possible(
-#                         obj_template,
-#                         chooser=PHASE1_CHOOSER,
-#                         ontology=GAILA_PHASE_1_ONTOLOGY,
-#                     )
-#                     for _ in range(1)
-#                 ]
-#             )
-#         )
-#         test_obj_object = object_variable("obj-with-color", obj)
-#         test_template = Phase1SituationTemplate(
-#             "colored-obj-object",
-#             salient_object_variables=[test_obj_object],
-#             syntax_hints=[IGNORE_COLORS],
-#         )
-#         target_test_templates.extend(
-#             all_possible(
-#                 test_template, chooser=PHASE1_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY
-#             )
-#         )
-#
-#     rng = random.Random()
-#     rng.seed(0)
-#     random.shuffle(target_train_templates, random=rng.random)
-#
-#     train_curriculum = phase1_instances(
-#         "all obj situations", situations=target_train_templates
-#     )
-#     learner = PursuitLanguageLearner(
-#         learning_factor=0.5,
-#         graph_match_confirmation_threshold=0.9,
-#         lexicon_entry_threshold=0.7,
-#     )  # type: ignore
-#     for (_, _, perceptual_representation) in train_curriculum.instances():
-#         perception = graph_without_learner(
-#             PerceptionGraph.from_frame(
-#                 perceptual_representation.frames[0]
-#             ).copy_as_digraph()
-#         )
-#         meanings = learner.get_meanings_from_perception(
-#             observed_perception_graph=perception
-#         )
-#         meaning = max(meanings, key=lambda x: len(x.copy_as_digraph().nodes))
-#
-#         whole_perception_pattern = PerceptionGraphPattern.from_graph(
-#             perception.copy_as_digraph()
-#         ).perception_graph_pattern
-#
-#         # Test complete match, where pattern is smalelr than perception
-#         print("\nComplete match:")
-#         for i in range(10):
-#             hypothesis = PerceptionGraphPattern(meaning.copy_as_digraph())
-#             common_pattern = get_largest_matching_pattern(hypothesis, perception)
-#             print(
-#                 i,
-#                 "p:",
-#                 len(perception.copy_as_digraph().nodes),
-#                 "h:",
-#                 len(hypothesis.copy_as_digraph().nodes),
-#                 "c:",
-#                 len(common_pattern.copy_as_digraph().nodes),
-#             )
-#
-#         print("\nPartial match:")
-#         # Test partial match, where perception pattern is larger than perception
-#         # TODO: Partial match is not working!
-#         #  it gives up as soon as it determines it is impossible to complete the match
-#         #  1) different search orders = different matches
-#         #  2) there’s no guarantee that a different search order won’t yield a bigger partial match
-#         for i in range(10):
-#             partial_perception = PerceptionGraph(
-#                 subgraph(
-#                     perception.copy_as_digraph(),
-#                     random.sample(perception.copy_as_digraph().nodes, 5),
-#                 )
-#             )
-#             hypothesis = whole_perception_pattern
-#             common_pattern = get_largest_matching_pattern(meaning, partial_perception)
-#             print(
-#                 i,
-#                 "p:",
-#                 len(partial_perception.copy_as_digraph().nodes),
-#                 "h:",
-#                 len(hypothesis.copy_as_digraph().nodes),
-#                 "c:",
-#                 len(common_pattern.copy_as_digraph().nodes),
-#             )
-
-
-def test_old_pursuit_object_learner():
-    # debug_callback = DumpPartialMatchCallback(render_path="../renders/")
-
-    # All parameters should be in the range 0-1.
-    # Learning factor works better when kept < 0.5
-    # Graph matching threshold doesn't seem to matter that much, as often seems to be either a
-    # complete or a very small match.
-    # The lexicon threshold works better between 0.07-0.3, but we need to play around with it because we end up not
-    # lexicalize items sufficiently because of diminishing lexicon probability through training
-    rng = random.Random()
-    rng.seed(0)
-    learner = ObjectPursuitLearner(
-        learning_factor=0.5,
-        graph_match_confirmation_threshold=0.7,
-        lexicon_entry_threshold=0.7,
-        rng=rng,
-        smoothing_parameter=0.001,
-        ontology=GAILA_PHASE_1_ONTOLOGY,
-        # debug_callback=debug_callback,
-    )  # type: ignore
-    learner_test_pursuit_curriculum(learner)
-
-
-def test_new_pursuit_learner_ball():
-    rng = random.Random()
-    rng.seed(0)
-
-    learner = IntegratedTemplateLearner(
-        object_learner=PursuitObjectLearnerNew(
-            learning_factor=0.5,
-            graph_match_confirmation_threshold=0.7,
-            lexicon_entry_threshold=0.7,
-            rng=rng,
-            smoothing_parameter=0.001,
-            ontology=GAILA_PHASE_1_ONTOLOGY,
-        )
-    )
-    run_learner_for_object(learner, BALL)
-
-
-def test_new_pursuit_learner_dog():
-    rng = random.Random()
-    rng.seed(0)
-    learner = IntegratedTemplateLearner(
-        object_learner=PursuitObjectLearnerNew(
-            learning_factor=0.5,
-            graph_match_confirmation_threshold=0.7,
-            lexicon_entry_threshold=0.7,
-            rng=rng,
-            smoothing_parameter=0.001,
-            ontology=GAILA_PHASE_1_ONTOLOGY,
-        )
-    )
-    # debug_callback = DumpPartialMatchCallback(render_path="../renders/")
-    # We pass this callback into the learner; it is executed if the learning takes too long, i.e after 60 seconds.
-    run_learner_for_object(learner, DOG)
-
-
-def test_new_pursuit_object_learner():
-    rng = random.Random()
-    rng.seed(0)
-
-    learner = IntegratedTemplateLearner(
-        object_learner=PursuitObjectLearnerNew(
-            learning_factor=0.1,
-            graph_match_confirmation_threshold=0.7,
-            lexicon_entry_threshold=0.7,
-            rng=rng,
-            smoothing_parameter=0.02,
-            ontology=GAILA_PHASE_1_ONTOLOGY,
-        )
-    )
-    learner_test_pursuit_curriculum(learner)

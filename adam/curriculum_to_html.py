@@ -15,6 +15,13 @@ from typing import (
     Mapping,
 )
 
+from adam.language_specific.chinese.chinese_language_generator import (
+    GAILA_PHASE_2_CHINESE_LANGUAGE_GENERATOR,
+)
+
+from adam.language_specific.english.english_language_generator import (
+    GAILA_PHASE_2_LANGUAGE_GENERATOR,
+)
 from adam.axis import GeonAxis
 from adam.curriculum.curriculum_utils import Phase1InstanceGroup
 from attr import attrib, attrs
@@ -37,6 +44,7 @@ from adam.curriculum.imprecise_descriptions_curriculum import (
     make_subtle_verb_distinctions_curriculum,
 )
 from adam.curriculum.attribute_constraining_action_curriculum import make_german_complete
+
 from adam.curriculum.m6_curriculum import make_m6_curriculum
 from adam.curriculum.phase2_curriculum import build_gaila_m8_curriculum
 from adam.curriculum.preposition_curriculum import make_prepositions_curriculum
@@ -139,12 +147,25 @@ def main(params: Parameters) -> None:
     curriculum_string = params.string(
         "curriculum", valid_options=STR_TO_CURRICULUM.keys(), default="phase1"
     )
-    phase1_curriculum_dir = root_output_directory / curriculum_string
+    language_string = params.string(
+        "language", valid_options=["english", "chinese"], default="english"
+    )
+    if language_string == "chinese" and curriculum_string == "m6-curriculum":
+        raise NotImplementedError("Chinese isn't implemented for m6 yet")
+    phase1_curriculum_dir = root_output_directory / language_string / curriculum_string
     phase1_curriculum_dir.mkdir(parents=True, exist_ok=True)
     # We lazily instantiate the curriculum so we don't need to worry
     # about any of them we don't actually use.
-    curriculum_to_render = STR_TO_CURRICULUM[curriculum_string]()
-
+    if language_string == "chinese":
+        curriculum_to_render = STR_TO_CURRICULUM[curriculum_string](
+            language_generator=GAILA_PHASE_2_CHINESE_LANGUAGE_GENERATOR
+        )
+    elif language_string == "english":
+        curriculum_to_render = STR_TO_CURRICULUM[curriculum_string](
+            language_generator=GAILA_PHASE_2_LANGUAGE_GENERATOR
+        )
+    else:
+        raise RuntimeError("Invalid language parameter")
     sort_by_utterance_length_flag = params.boolean("sort_by_utterance", default=False)
     if sort_by_utterance_length_flag:
         random_seed = params.integer("random_seed", default=1)

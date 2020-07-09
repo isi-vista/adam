@@ -2,8 +2,7 @@ import itertools
 import logging
 from itertools import chain, combinations
 from pathlib import Path
-from typing import AbstractSet, Iterable, Iterator, Mapping, Optional, Tuple
-
+from typing import AbstractSet, Iterable, Iterator, Mapping, Optional, Tuple, List
 from more_itertools import flatten, one
 
 from adam.language import LinguisticDescription, TokenSequenceLinguisticDescription
@@ -14,6 +13,7 @@ from adam.learner.alignments import (
     LanguagePerceptionSemanticAlignment,
     PerceptionSemanticAlignment,
 )
+from adam.learner.language_mode import LanguageMode
 from adam.learner.surface_templates import MASS_NOUNS, SLOT1
 from adam.learner.template_learner import TemplateLearner
 from adam.perception import PerceptualRepresentation
@@ -77,6 +77,7 @@ class IntegratedTemplateLearner(
     _max_attributes_per_word: int = attrib(validator=instance_of(int), default=3)
 
     _observation_num: int = attrib(init=False, default=0)
+    _sub_learners: List[TemplateLearner] = attrib(init=False)
 
     def observe(
         self,
@@ -154,7 +155,6 @@ class IntegratedTemplateLearner(
             cur_description_state = self.action_learner.enrich_during_description(
                 cur_description_state
             )
-
         return self._linguistic_descriptions_from_semantics(
             cur_description_state.semantic_nodes
         )
@@ -162,8 +162,8 @@ class IntegratedTemplateLearner(
     def _linguistic_descriptions_from_semantics(
         self, semantic_nodes: AbstractSet[SemanticNode]
     ) -> Mapping[LinguisticDescription, float]:
-        learner_semantics = LearnerSemantics.from_nodes(semantic_nodes)
 
+        learner_semantics = LearnerSemantics.from_nodes(semantic_nodes)
         ret = []
         if self.action_learner:
             ret.extend(
@@ -190,7 +190,6 @@ class IntegratedTemplateLearner(
                     if self.relation_learner.templates_for_concept(relation.concept)
                 ]
             )
-
         ret.extend(
             [
                 (object_tokens, 1.0)
@@ -200,14 +199,37 @@ class IntegratedTemplateLearner(
                 if self.object_learner.templates_for_concept(object_.concept)
             ]
         )
-
         return immutabledict(
             (TokenSequenceLinguisticDescription(tokens), score) for (tokens, score) in ret
         )
 
+    def _add_determiners(
+        self, object_node: ObjectSemanticNode, cur_string: Tuple[str, ...]
+    ) -> Tuple[str, ...]:
+        if (
+            self.object_learner._language_mode  # pylint: disable=protected-access
+            != LanguageMode.ENGLISH
+        ):
+            return cur_string
+        # English-specific hack to deal with us not understanding determiners:
+        # https://github.com/isi-vista/adam/issues/498
+        # The "is lower" check is a hack to block adding a determiner to proper names.
+        # Ground is a specific thing so we special case this to be assigned
+        if object_node.concept == GROUND_OBJECT_CONCEPT:
+            return tuple(chain(("the",), cur_string))
+        elif (
+            object_node.concept.debug_string not in MASS_NOUNS
+            and object_node.concept.debug_string.islower()
+            and not cur_string[0] in ENGLISH_BLOCK_DETERMINERS
+        ):
+            return tuple(chain(("a",), cur_string))
+        else:
+            return cur_string
+
     def _instantiate_object(
         self, object_node: ObjectSemanticNode, learner_semantics: "LearnerSemantics"
     ) -> Iterator[Tuple[str, ...]]:
+
         # For now, we assume the order in which modifiers is expressed is arbitrary.
         attributes_we_can_express = (
             [
@@ -218,12 +240,12 @@ class IntegratedTemplateLearner(
             if self.attribute_learner
             else []
         )
-
         # We currently cannot deal with relations that modify objects embedded in other expressions.
         # See https://github.com/isi-vista/adam/issues/794 .
         # relations_for_object = learner_semantics.objects_to_relation_in_slot1[object_node]
 
         for template in self.object_learner.templates_for_concept(object_node.concept):
+
             cur_string = template.instantiate(
                 template_variable_to_filler=immutabledict()
             ).as_token_sequence()
@@ -243,23 +265,13 @@ class IntegratedTemplateLearner(
                         ) in self.attribute_learner.templates_for_concept(  # type: ignore
                             attribute.concept
                         ):
-                            cur_string = attribute_template.instantiate(
-                                template_variable_to_filler={SLOT1: cur_string}
-                            ).as_token_sequence()
-            # English-specific hack to deal with us not understanding determiners:
-            # https://github.com/isi-vista/adam/issues/498
-            # The "is lower" check is a hack to block adding a determiner to proper names.
-            # Ground is a specific thing so we special case this to be assigned
-            if object_node.concept == GROUND_OBJECT_CONCEPT:
-                yield tuple(chain(("the",), cur_string))
-            elif (
-                object_node.concept.debug_string not in MASS_NOUNS
-                and object_node.concept.debug_string.islower()
-                and not cur_string[0] in ENGLISH_BLOCK_DETERMINERS
-            ):
-                yield tuple(chain(("a",), cur_string))
-            else:
-                yield cur_string
+                            yield self._add_determiners(
+                                object_node,
+                                attribute_template.instantiate(
+                                    template_variable_to_filler={SLOT1: cur_string}
+                                ).as_token_sequence(),
+                            )
+            yield self._add_determiners(object_node, cur_string)
 
     def _instantiate_relation(
         self, relation_node: RelationSemanticNode, learner_semantics: "LearnerSemantics"
@@ -307,7 +319,8 @@ class IntegratedTemplateLearner(
                 ).as_token_sequence()
 
     def log_hypotheses(self, log_output_path: Path) -> None:
-        raise NotImplementedError("implement me")
+        for sub_learner in self._sub_learners:
+            sub_learner.log_hypotheses(log_output_path)
 
     def _extract_perception_graph(
         self, perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]
@@ -316,6 +329,19 @@ class IntegratedTemplateLearner(
             return PerceptionGraph.from_dynamic_perceptual_representation(perception)
         else:
             return PerceptionGraph.from_frame(perception.frames[0])
+
+    @_sub_learners.default
+    def _init_sub_learners(self) -> List[TemplateLearner]:
+        valid_sub_learners = []
+        if self.object_learner:
+            valid_sub_learners.append(self.object_learner)
+        if self.attribute_learner:
+            valid_sub_learners.append(self.attribute_learner)
+        if self.relation_learner:
+            valid_sub_learners.append(self.relation_learner)
+        if self.action_learner:
+            valid_sub_learners.append(self.action_learner)
+        return valid_sub_learners
 
 
 @attrs(frozen=True)

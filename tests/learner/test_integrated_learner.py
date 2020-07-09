@@ -1,6 +1,7 @@
 from more_itertools import one
-
+import pytest
 from adam.learner.integrated_learner import IntegratedTemplateLearner
+from adam.learner.language_mode import LanguageMode
 from adam.learner.objects import ObjectRecognizerAsTemplateLearner
 from adam.ontology.phase1_ontology import DAD, GAILA_PHASE_1_ONTOLOGY
 from adam.perception import PerceptualRepresentation
@@ -10,13 +11,16 @@ from adam.perception.high_level_semantics_situation_to_developmental_primitive_p
 from adam.random_utils import RandomChooser
 from adam.situation import SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
-from learner import TEST_OBJECT_RECOGNIZER
+
+from tests.learner import object_recognizer_factory
 
 
-def test_with_object_recognizer():
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
+def test_with_object_recognizer(language_mode):
     integrated_learner = IntegratedTemplateLearner(
         object_learner=ObjectRecognizerAsTemplateLearner(
-            object_recognizer=TEST_OBJECT_RECOGNIZER
+            object_recognizer=object_recognizer_factory(language_mode),
+            language_mode=language_mode,
         ),
         attribute_learner=None,
         relation_learner=None,
@@ -47,4 +51,10 @@ def test_with_object_recognizer():
     descriptions = integrated_learner.describe(dynamic_perception)
 
     assert len(descriptions) == 1
-    assert one(descriptions.keys()).as_token_sequence() == ("Dad",)
+    assert (
+        language_mode == LanguageMode.ENGLISH
+        and one(descriptions.keys()).as_token_sequence() == ("Dad",)
+    ) or (
+        language_mode == LanguageMode.CHINESE
+        and one(descriptions.keys()).as_token_sequence() == ("ba4 ba4",)
+    )

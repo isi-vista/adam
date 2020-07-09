@@ -6,6 +6,7 @@ from attr.validators import deep_mapping, instance_of
 from networkx import number_weakly_connected_components
 
 from adam.ontology.ontology import Ontology
+from adam.perception import MatchMode
 from adam.perception.perception_graph import (
     GraphLogger,
     ObjectSemanticNodePerceptionPredicate,
@@ -102,6 +103,10 @@ class PerceptionGraphTemplate:
         allowed_matches: ImmutableSetMultiDict[
             NodePredicate, NodePredicate
         ] = immutablesetmultidict(),
+        match_mode: MatchMode,
+        trim_after_match: Optional[
+            Callable[[PerceptionGraphPattern], PerceptionGraphPattern]
+        ] = None,
     ) -> Optional["PerceptionGraphTemplate"]:
         r"""
         Gets the `PerceptionGraphTemplate` which contains all aspects of a pattern
@@ -129,7 +134,7 @@ class PerceptionGraphTemplate:
             raise_graph_exception(
                 f"Graph pattern contains multiple ( {num_pattern_weakly_connected} ) "
                 f"weakly connected components heading into intersection. ",
-                self.graph_pattern,
+                pattern.graph_pattern,
             )
 
         # First we just intersect the pattern graph.
@@ -139,6 +144,8 @@ class PerceptionGraphTemplate:
             ontology=ontology,
             debug_callback=debug_callback,
             allowed_matches=allowed_matches,
+            match_mode=match_mode,
+            trim_after_match=trim_after_match,
         )
 
         if intersected_pattern:

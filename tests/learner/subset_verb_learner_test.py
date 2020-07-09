@@ -1,9 +1,9 @@
 from itertools import chain
 
 import pytest
-
 from adam.curriculum.curriculum_utils import (
     PHASE1_CHOOSER_FACTORY,
+    PHASE1_TEST_CHOOSER_FACTORY,
     phase1_instances,
     standard_object,
 )
@@ -24,9 +24,11 @@ from adam.curriculum.phase1_curriculum import (
     make_spin_templates,
     make_take_template,
     make_throw_templates,
+    make_throw_animacy_templates,
 )
 from adam.learner import LearningExample
 from adam.learner.integrated_learner import IntegratedTemplateLearner
+from adam.learner.language_mode import LanguageMode
 from adam.learner.objects import ObjectRecognizerAsTemplateLearner
 from adam.learner.verbs import SubsetVerbLearner, SubsetVerbLearnerNew
 from adam.ontology import IS_SPEAKER, THING
@@ -54,19 +56,28 @@ from adam.situation.templates.phase1_situation_templates import (
 )
 from adam.situation.templates.phase1_templates import Phase1SituationTemplate, sampled
 from immutablecollections import immutableset
-from tests.learner import TEST_OBJECT_RECOGNIZER
+from tests.learner import phase1_language_generator, object_recognizer_factory
 
-LEARNER_FACTORIES = [
-    lambda: SubsetVerbLearner(
-        object_recognizer=TEST_OBJECT_RECOGNIZER, ontology=GAILA_PHASE_1_ONTOLOGY
-    ),
-    lambda: IntegratedTemplateLearner(
+
+def subset_verb_language_factory(language_mode: LanguageMode) -> SubsetVerbLearner:
+    return SubsetVerbLearner(
+        object_recognizer=object_recognizer_factory(language_mode),
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        language_mode=language_mode,
+    )
+
+
+def integrated_learner_factory(language_mode: LanguageMode):
+    return IntegratedTemplateLearner(
         object_learner=ObjectRecognizerAsTemplateLearner(
-            object_recognizer=TEST_OBJECT_RECOGNIZER
+            object_recognizer=object_recognizer_factory(language_mode),
+            language_mode=language_mode,
         ),
-        action_learner=SubsetVerbLearnerNew(ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5),
-    ),
-]
+        action_learner=SubsetVerbLearnerNew(
+            ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=language_mode
+        ),
+    )
+
 
 # VerbPursuitLearner(
 #         learning_factor=0.5,
@@ -78,7 +89,7 @@ LEARNER_FACTORIES = [
 #     )  # type: ignore
 
 
-def run_verb_test(learner, situation_template):
+def run_verb_test(learner, situation_template, language_generator):
     train_curriculum = phase1_instances(
         "train",
         chain(
@@ -91,6 +102,7 @@ def run_verb_test(learner, situation_template):
                 )
             ]
         ),
+        language_generator=language_generator,
     )
     test_curriculum = phase1_instances(
         "test",
@@ -100,10 +112,11 @@ def run_verb_test(learner, situation_template):
                     situation_template,
                     max_to_sample=1,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    chooser=PHASE1_TEST_CHOOSER_FACTORY(),
                 )
             ]
         ),
+        language_generator=language_generator,
     )
 
     for (
@@ -126,36 +139,63 @@ def run_verb_test(learner, situation_template):
         assert gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
 
 
-@pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
-def test_eat_simple(learner_factory):
-    learner = learner_factory()
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
+@pytest.mark.parametrize(
+    "learner", [subset_verb_language_factory, integrated_learner_factory]
+)
+def test_eat_simple(language_mode, learner):
     object_to_eat = standard_object("object_0", required_properties=[EDIBLE])
     eater = standard_object("eater_0", THING, required_properties=[ANIMATE])
-    run_verb_test(learner, make_eat_template(eater, object_to_eat))
+    run_verb_test(
+        learner(language_mode),
+        make_eat_template(eater, object_to_eat),
+        language_generator=phase1_language_generator(language_mode),
+    )
 
 
-@pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
-def test_drink(learner_factory):
-    learner = learner_factory()
-    run_verb_test(learner, make_drink_template())
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
+@pytest.mark.parametrize(
+    "learner", [subset_verb_language_factory, integrated_learner_factory]
+)
+def test_drink(language_mode, learner):
+    run_verb_test(
+        learner(language_mode),
+        make_drink_template(),
+        language_generator=phase1_language_generator(language_mode),
+    )
 
 
-@pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
-def test_sit(learner_factory):
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
+@pytest.mark.parametrize(
+    "learner", [subset_verb_language_factory, integrated_learner_factory]
+)
+def test_sit(language_mode, learner):
     for situation_template in make_sit_templates():
-        learner = learner_factory()
-        run_verb_test(learner, situation_template)
+        run_verb_test(
+            learner(language_mode),
+            situation_template,
+            language_generator=phase1_language_generator(language_mode),
+        )
 
 
-@pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
-def test_put(learner_factory):
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
+@pytest.mark.parametrize(
+    "learner", [integrated_learner_factory, subset_verb_language_factory]
+)
+def test_put(language_mode, learner):
     for situation_template in make_put_templates():
-        learner = learner_factory()
-        run_verb_test(learner, situation_template)
+        run_verb_test(
+            learner(language_mode),
+            situation_template,
+            language_generator=phase1_language_generator(language_mode),
+        )
 
 
-@pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
-def test_push(learner_factory):
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
+@pytest.mark.parametrize(
+    "learner", [subset_verb_language_factory, integrated_learner_factory]
+)
+def test_push(language_mode, learner):
     for situation_template in make_push_templates(
         agent=standard_object("pusher", THING, required_properties=[ANIMATE]),
         theme=standard_object("pushee", INANIMATE_OBJECT),
@@ -165,13 +205,18 @@ def test_push(learner_factory):
         push_goal=standard_object("push_goal", INANIMATE_OBJECT),
         use_adverbial_path_modifier=False,
     ):
-        learner = learner_factory()
-        run_verb_test(learner, situation_template)
+        run_verb_test(
+            learner(language_mode),
+            situation_template,
+            language_generator=phase1_language_generator(language_mode),
+        )
 
 
-# GO
-@pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
-def test_go(learner_factory):
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
+@pytest.mark.parametrize(
+    "learner", [subset_verb_language_factory, integrated_learner_factory]
+)
+def test_go(language_mode, learner):
     goer = standard_object("goer", THING, required_properties=[ANIMATE])
     under_goal_reference = standard_object(
         "go-under-goal", THING, required_properties=[HAS_SPACE_UNDER]
@@ -183,19 +228,27 @@ def test_go(learner_factory):
     ]
 
     for situation_template in make_go_templates():
-        learner = learner_factory()
-        run_verb_test(learner, situation_template)
+        run_verb_test(
+            learner(language_mode),
+            situation_template,
+            language_generator=phase1_language_generator(language_mode),
+        )
 
     for situation_template in under_templates:
-        learner = learner_factory()
-        run_verb_test(learner, situation_template)
+        run_verb_test(
+            learner(language_mode),
+            situation_template,
+            language_generator=phase1_language_generator(language_mode),
+        )
 
 
-# COME
-@pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
-def test_come(learner_factory):
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
+@pytest.mark.parametrize(
+    "learner", [subset_verb_language_factory, integrated_learner_factory]
+)
+def test_come(language_mode, learner):
     movee = standard_object("movee", required_properties=[SELF_MOVING])
-    learner = standard_object("leaner_0", LEARNER)
+    learner_obj = standard_object("leaner_0", LEARNER)
     speaker = standard_object("speaker", PERSON, added_properties=[IS_SPEAKER])
     object_ = standard_object("object_0", THING)
     ground = standard_object("ground", root_node=GROUND)
@@ -211,7 +264,7 @@ def test_come(learner_factory):
         "come-to-leaner",
         salient_object_variables=[movee],
         actions=[
-            Action(COME, argument_roles_to_fillers=[(AGENT, movee), (GOAL, learner)])
+            Action(COME, argument_roles_to_fillers=[(AGENT, movee), (GOAL, learner_obj)])
         ],
     )
     come_to_object = Phase1SituationTemplate(
@@ -227,80 +280,200 @@ def test_come(learner_factory):
         come_to_learner,
         come_to_object,
     ]:
-        learner = learner_factory()
-        run_verb_test(learner, situation_template)
+        run_verb_test(
+            learner(language_mode),
+            situation_template,
+            language_generator=phase1_language_generator(language_mode),
+        )
 
 
-@pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
-def test_take(learner_factory):
-    learner = learner_factory()
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
+@pytest.mark.parametrize(
+    "learner", [subset_verb_language_factory, integrated_learner_factory]
+)
+def test_take(language_mode, learner):
     run_verb_test(
-        learner,
+        learner(language_mode),
         make_take_template(
             agent=standard_object("taker_0", THING, required_properties=[ANIMATE]),
             theme=standard_object("object_taken_0", required_properties=[INANIMATE]),
             use_adverbial_path_modifier=False,
         ),
+        language_generator=phase1_language_generator(language_mode),
     )
 
 
-@pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
-def test_give(learner_factory):
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
+@pytest.mark.parametrize(
+    "learner", [subset_verb_language_factory, integrated_learner_factory]
+)
+def test_give(language_mode, learner):
     for situation_template in make_give_templates():
-        learner = learner_factory()
-        run_verb_test(learner, situation_template)
+        run_verb_test(
+            learner(language_mode),
+            situation_template,
+            language_generator=phase1_language_generator(language_mode),
+        )
 
 
-@pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
-def test_spin(learner_factory):
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
+@pytest.mark.parametrize(
+    "learner", [subset_verb_language_factory, integrated_learner_factory]
+)
+def test_spin(language_mode, learner):
     for situation_template in make_spin_templates():
-        learner = learner_factory()
-        run_verb_test(learner, situation_template)
+        run_verb_test(
+            learner(language_mode),
+            situation_template,
+            language_generator=phase1_language_generator(language_mode),
+        )
 
 
-@pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
-def test_fall(learner_factory):
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
+@pytest.mark.parametrize(
+    "learner", [subset_verb_language_factory, integrated_learner_factory]
+)
+def test_fall(language_mode, learner):
     for situation_template in make_fall_templates():
-        learner = learner_factory()
-        run_verb_test(learner, situation_template)
+        run_verb_test(
+            learner(language_mode),
+            situation_template,
+            language_generator=phase1_language_generator(language_mode),
+        )
 
 
-@pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
-def test_throw(learner_factory):
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
+@pytest.mark.parametrize(
+    "learner", [subset_verb_language_factory, integrated_learner_factory]
+)
+def test_throw(language_mode, learner):
     for situation_template in make_throw_templates():
-        learner = learner_factory()
-        run_verb_test(learner, situation_template)
+        run_verb_test(
+            learner(language_mode),
+            situation_template,
+            language_generator=phase1_language_generator(language_mode),
+        )
 
 
-@pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
-def test_move(learner_factory):
+@pytest.mark.parametrize(
+    "language_mode",
+    [LanguageMode.CHINESE, pytest.param(LanguageMode.ENGLISH, marks=pytest.mark.xfail)],
+)
+@pytest.mark.parametrize(
+    "learner", [subset_verb_language_factory, integrated_learner_factory]
+)
+# this tests gei vs. dau X shang for Chinese throw to
+# TODO: fix English implementation https://github.com/isi-vista/adam/issues/870
+def test_throw_animacy(language_mode, learner):
+    # shuffle both together for the train curriculum
+    train_curriculum = phase1_instances(
+        "train",
+        chain(
+            *[
+                sampled(
+                    situation_template=situation_template,
+                    max_to_sample=10,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                    chooser=PHASE1_CHOOSER_FACTORY(),
+                )
+                for situation_template in make_throw_animacy_templates()
+            ]
+        ),
+        language_generator=phase1_language_generator(language_mode),
+    )
+    # shuffle both together for test curriculum
+    test_curriculum = phase1_instances(
+        "test",
+        chain(
+            *[
+                sampled(
+                    situation_template=situation_template,
+                    max_to_sample=1,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                    chooser=PHASE1_CHOOSER_FACTORY(),
+                )
+                for situation_template in make_throw_animacy_templates()
+            ]
+        ),
+        language_generator=phase1_language_generator(language_mode),
+    )
+    # instantiate and test the learner
+    learner = learner(language_mode)
+    for (
+        _,
+        linguistic_description,
+        perceptual_representation,
+    ) in train_curriculum.instances():
+        learner.observe(
+            LearningExample(perceptual_representation, linguistic_description)
+        )
+
+    for (
+        _,
+        test_lingustics_description,
+        test_perceptual_representation,
+    ) in test_curriculum.instances():
+        descriptions_from_learner = learner.describe(test_perceptual_representation)
+        gold = test_lingustics_description.as_token_sequence()
+        assert descriptions_from_learner
+        assert gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
+
+
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
+@pytest.mark.parametrize(
+    "learner", [subset_verb_language_factory, integrated_learner_factory]
+)
+def test_move(language_mode, learner):
     for situation_template in make_move_templates():
-        learner = learner_factory()
-        run_verb_test(learner, situation_template)
+        run_verb_test(
+            learner(language_mode),
+            situation_template,
+            language_generator=phase1_language_generator(language_mode),
+        )
 
 
-@pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
-def test_jump(learner_factory):
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
+@pytest.mark.parametrize(
+    "learner", [subset_verb_language_factory, integrated_learner_factory]
+)
+def test_jump(language_mode, learner):
     jumper = standard_object("jumper_0", THING, required_properties=[CAN_JUMP])
     jumped_over = standard_object("jumped_over")
     for situation_template in make_jump_templates():
-        learner = learner_factory()
-        run_verb_test(learner, situation_template)
+        run_verb_test(
+            learner(language_mode),
+            situation_template,
+            language_generator=phase1_language_generator(language_mode),
+        )
     for situation_template in [_jump_over_template(jumper, jumped_over, [])]:
-        learner = learner_factory()
-        run_verb_test(learner, situation_template)
+        run_verb_test(
+            learner(language_mode),
+            situation_template,
+            language_generator=phase1_language_generator(language_mode),
+        )
 
 
-@pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
-def test_roll(learner_factory):
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
+@pytest.mark.parametrize(
+    "learner", [subset_verb_language_factory, integrated_learner_factory]
+)
+def test_roll(language_mode, learner):
     for situation_template in make_roll_templates():
-        learner = learner_factory()
-        run_verb_test(learner, situation_template)
+        run_verb_test(
+            learner(language_mode),
+            situation_template,
+            language_generator=phase1_language_generator(language_mode),
+        )
 
 
-# FLY
-@pytest.mark.parametrize("learner_factory", LEARNER_FACTORIES)
-def test_fly(learner_factory):
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
+@pytest.mark.parametrize(
+    "learner", [subset_verb_language_factory, integrated_learner_factory]
+)
+def test_fly(language_mode, learner):
     for situation_template in make_fly_templates():
-        learner = learner_factory()
-        run_verb_test(learner, situation_template)
+        run_verb_test(
+            learner(language_mode),
+            situation_template,
+            phase1_language_generator(language_mode),
+        )

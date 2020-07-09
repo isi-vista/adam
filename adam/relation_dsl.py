@@ -122,33 +122,6 @@ def make_opposite_dsl_relation(
 
 # Proper signature commented-out, see https://github.com/isi-vista/adam/issues/161
 #
-# def make_dsl_region_relation(
-#     region_factory: Callable[[ObjectT], Region[ObjectT]]
-# ) -> Callable[
-#     [Union[ObjectT, Iterable[ObjectT]], Union[ObjectT, Iterable[ObjectT]]],
-#     Tuple[Relation[ObjectT], ...],
-# ]:
-
-
-def make_dsl_region_relation(
-    region_factory: Callable[..., "Region[Any]"]
-) -> Callable[..., Tuple[Relation[Any], ...]]:
-    def dsl_relation_function(
-        arg1s: Union[_ObjectT, Iterable[_ObjectT]],
-        arg2s: Union[_ObjectT, Iterable[_ObjectT]],
-        **kw_args,
-    ) -> Tuple["Relation[_ObjectT]", ...]:
-        return tuple(
-            Relation(IN_REGION, arg1, region_factory(arg2, **kw_args))
-            for arg1 in _ensure_iterable(arg1s)
-            for arg2 in _ensure_iterable(arg2s)
-        )
-
-    return dsl_relation_function
-
-
-# Proper signature commented-out, see https://github.com/isi-vista/adam/issues/161
-#
 # def make_symmetric_dsl_region_relation(
 #     region_factory: Callable[[ObjectT], Region[ObjectT]]
 # ) -> Callable[
@@ -220,6 +193,25 @@ def make_opposite_dsl_region_relation(
                     for arg2 in arg2s
                 ),
             ]
+        )
+
+    return dsl_relation_function
+
+
+# This is currently used for over/under since English can't handle opposite relations with all salient objects ( see
+# https://github.com/isi-vista/adam/issues/802)
+def make_dsl_region_relation(
+    region_factory: Callable[..., "Region[Any]"]
+) -> Callable[..., Tuple[Relation[Any], ...]]:
+    def dsl_relation_function(
+        arg1s: Union[_ObjectT, Iterable[_ObjectT]],
+        arg2s: Union[_ObjectT, Iterable[_ObjectT]],
+        **kw_args,
+    ) -> Tuple["Relation[_ObjectT]", ...]:
+        return tuple(
+            Relation(IN_REGION, arg1, region_factory(arg2, **kw_args))
+            for arg1 in _ensure_iterable(arg1s)
+            for arg2 in _ensure_iterable(arg2s)
         )
 
     return dsl_relation_function

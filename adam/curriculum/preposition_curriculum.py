@@ -1,9 +1,13 @@
 from itertools import chain
 from typing import Iterable
-
 from immutablecollections import immutableset
 from more_itertools import flatten
-
+from adam.language_specific.english.english_language_generator import (
+    GAILA_PHASE_1_LANGUAGE_GENERATOR,
+)
+from adam.language.language_generator import LanguageGenerator
+from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
+from adam.language.dependency import LinearizedDependencyTree
 from adam.axes import HorizontalAxisOfObject, FacingAddresseeAxis
 from adam.curriculum.curriculum_utils import (
     PHASE1_CHOOSER_FACTORY,
@@ -24,7 +28,6 @@ from adam.ontology.phase1_ontology import (
     TABLE,
     on,
     GAILA_PHASE_1_ONTOLOGY,
-    strictly_above,
     inside,
     WATER,
     JUICE,
@@ -42,6 +45,8 @@ from adam.ontology.phase1_ontology import (
     HOLLOW,
     near,
     far,
+    strictly_under,
+    strictly_over,
 )
 from adam.ontology.phase1_spatial_relations import PROXIMAL, Direction, DISTAL
 from adam.situation.templates.phase1_templates import (
@@ -109,12 +114,14 @@ def _under_template(
     syntax_hints: Iterable[str] = [],
 ) -> Phase1SituationTemplate:
     handle = "training" if is_training else "testing"
+    # TODO: currently this hack keeps old implementation for English that hasn't solved https://github.com/isi-vista/adam/issues/802
+    # and returns new implementation for Chinese that does solve this
     return Phase1SituationTemplate(
         f"preposition-{handle}-{figure.handle}-under-{ground.handle}",
-        salient_object_variables=[ground],
+        salient_object_variables=[figure, ground],
         background_object_variables=background,
         asserted_always_relations=[
-            strictly_above(ground, figure, dist=DISTAL if is_distal else PROXIMAL)
+            strictly_under(ground, figure, dist=DISTAL if is_distal else PROXIMAL)
         ],
         constraining_relations=[bigger_than(ground, figure)],
         gazed_objects=[figure],
@@ -132,12 +139,14 @@ def _over_template(
     syntax_hints: Iterable[str] = [],
 ) -> Phase1SituationTemplate:
     handle = "training" if is_training else "testing"
+    # TODO: currently this hack keeps old implementation for English that hasn't solved https://github.com/isi-vista/adam/issues/802
+    # and returns new implementation for Chinese that does solve this
     return Phase1SituationTemplate(
         f"preposition-{handle}-{figure.handle}-over-{ground.handle}",
-        salient_object_variables=[ground],
+        salient_object_variables=[figure, ground],
         background_object_variables=background,
         asserted_always_relations=[
-            strictly_above(figure, ground, dist=DISTAL if is_distal else PROXIMAL)
+            strictly_over(figure, ground, dist=DISTAL if is_distal else PROXIMAL)
         ],
         gazed_objects=[figure],
         syntax_hints=syntax_hints,
@@ -243,7 +252,12 @@ def _far_template(
 
 
 def _make_on_training(
-    num_samples: int = 5, *, noise_objects: bool = True
+    num_samples: int = 5,
+    *,
+    noise_objects: bool = True,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
@@ -282,11 +296,17 @@ def _make_on_training(
                 )
             ]
         ),
+        language_generator=language_generator,
     )
 
 
 def _make_beside_training(
-    num_samples: int = 5, *, noise_objects: bool = True
+    num_samples: int = 5,
+    *,
+    noise_objects: bool = True,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
@@ -328,11 +348,17 @@ def _make_beside_training(
                 )
             ]
         ),
+        language_generator=language_generator,
     )
 
 
 def _make_under_training(
-    num_samples: int = 5, *, noise_objects: bool = True
+    num_samples: int = 5,
+    *,
+    noise_objects: bool = True,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
@@ -367,11 +393,17 @@ def _make_under_training(
                 for use_above_below in BOOL_SET
             ]
         ),
+        language_generator=language_generator,
     )
 
 
 def _make_over_training(
-    num_samples: int = 5, *, noise_objects: bool = True
+    num_samples: int = 5,
+    *,
+    noise_objects: bool = True,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
@@ -407,11 +439,17 @@ def _make_over_training(
                 for use_above_below in BOOL_SET
             ]
         ),
+        language_generator=language_generator,
     )
 
 
 def _make_in_training(
-    num_samples: int = 5, *, noise_objects: bool = True
+    num_samples: int = 5,
+    *,
+    noise_objects: bool = True,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = object_variable("water", WATER)
     figure_1 = object_variable("juice", JUICE)
@@ -444,11 +482,17 @@ def _make_in_training(
                 for ground in grounds
             ]
         ),
+        language_generator=language_generator,
     )
 
 
 def _make_behind_training(
-    num_samples: int = 5, *, noise_objects: bool = True
+    num_samples: int = 5,
+    *,
+    noise_objects: bool = True,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
@@ -494,11 +538,17 @@ def _make_behind_training(
                 )
             ]
         ),
+        language_generator=language_generator,
     )
 
 
 def _make_in_front_training(
-    num_samples: int = 5, *, noise_objects: bool = True
+    num_samples: int = 5,
+    *,
+    noise_objects: bool = True,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
@@ -544,11 +594,17 @@ def _make_in_front_training(
                 )
             ]
         ),
+        language_generator=language_generator,
     )
 
 
 def _make_near_training(
-    num_samples: int = 5, *, noise_objects: bool = True
+    num_samples: int = 5,
+    *,
+    noise_objects: bool = True,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
@@ -588,11 +644,17 @@ def _make_near_training(
                 )
             ]
         ),
+        language_generator=language_generator,
     )
 
 
 def _make_far_training(
-    num_samples: int = 5, *, noise_objects: bool = True
+    num_samples: int = 5,
+    *,
+    noise_objects: bool = True,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
@@ -632,11 +694,17 @@ def _make_far_training(
                 )
             ]
         ),
+        language_generator=language_generator,
     )
 
 
 def _make_on_tests(
-    num_samples: int = 5, *, noise_objects: bool = True
+    num_samples: int = 5,
+    *,
+    noise_objects: bool = True,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("figure_0", THING, banned_properties=[HOLLOW])
     figure_1 = standard_object("figure_1", THING, banned_properties=[HOLLOW])
@@ -684,11 +752,17 @@ def _make_on_tests(
                 )
             ]
         ),
+        language_generator=language_generator,
     )
 
 
 def _make_beside_tests(
-    num_samples: int = 5, *, noise_objects: bool = True
+    num_samples: int = 5,
+    *,
+    noise_objects: bool = True,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("figure_0", THING, banned_properties=[HOLLOW])
     figure_1 = standard_object("figure_1", THING, banned_properties=[HOLLOW])
@@ -728,11 +802,17 @@ def _make_beside_tests(
                 )
             ]
         ),
+        language_generator=language_generator,
     )
 
 
 def _make_under_tests(
-    num_samples: int = 5, *, noise_objects: bool = True
+    num_samples: int = 5,
+    *,
+    noise_objects: bool = True,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("figure_0", THING, banned_properties=[HOLLOW])
     figure_1 = standard_object("figure_1", THING, banned_properties=[HOLLOW])
@@ -771,11 +851,17 @@ def _make_under_tests(
                 for use_above_below in BOOL_SET
             ]
         ),
+        language_generator=language_generator,
     )
 
 
 def _make_over_tests(
-    num_samples: int = 5, *, noise_objects: bool = True
+    num_samples: int = 5,
+    *,
+    noise_objects: bool = True,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("figure_0", THING, banned_properties=[HOLLOW])
     figure_1 = standard_object("figure_1", THING, banned_properties=[HOLLOW])
@@ -810,11 +896,17 @@ def _make_over_tests(
                 for use_above_below in BOOL_SET
             ]
         ),
+        language_generator=language_generator,
     )
 
 
 def _make_in_tests(
-    num_samples: int = 5, *, noise_objects: bool = True
+    num_samples: int = 5,
+    *,
+    noise_objects: bool = True,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = object_variable("figure_0", THING, banned_properties=[IS_BODY_PART])
     figure_1 = standard_object("figure_1", THING, banned_properties=[IS_BODY_PART])
@@ -847,11 +939,17 @@ def _make_in_tests(
                 for ground in grounds
             ]
         ),
+        language_generator=language_generator,
     )
 
 
 def _make_behind_tests(
-    num_samples: int = 5, *, noise_objects: bool = True
+    num_samples: int = 5,
+    *,
+    noise_objects: bool = True,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("figure_0", THING, banned_properties=[HOLLOW])
     figure_1 = standard_object("figure_1", THING, banned_properties=[HOLLOW])
@@ -896,11 +994,17 @@ def _make_behind_tests(
                 )
             ]
         ),
+        language_generator=language_generator,
     )
 
 
 def _make_in_front_tests(
-    num_samples: int = 5, *, noise_objects: bool = True
+    num_samples: int = 5,
+    *,
+    noise_objects: bool = True,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("figure_0", THING, banned_properties=[HOLLOW])
     figure_1 = standard_object("figure_1", THING, banned_properties=[HOLLOW])
@@ -945,11 +1049,17 @@ def _make_in_front_tests(
                 )
             ]
         ),
+        language_generator=language_generator,
     )
 
 
 def _make_near_tests(
-    num_samples: int = 5, *, noise_objects: bool = True
+    num_samples: int = 5,
+    *,
+    noise_objects: bool = True,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("figure_0", THING, banned_properties=[HOLLOW])
     figure_1 = standard_object("figure_1", THING, banned_properties=[HOLLOW])
@@ -987,11 +1097,17 @@ def _make_near_tests(
                 )
             ]
         ),
+        language_generator=language_generator,
     )
 
 
 def _make_far_tests(
-    num_samples: int = 5, *, noise_objects: bool = True
+    num_samples: int = 5,
+    *,
+    noise_objects: bool = True,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("figure_0", THING, banned_properties=[HOLLOW])
     figure_1 = standard_object("figure_1", THING, banned_properties=[HOLLOW])
@@ -1029,49 +1145,143 @@ def _make_far_tests(
                 )
             ]
         ),
+        language_generator=language_generator,
     )
 
 
 def make_prepositions_curriculum_training(
-    num_samples: int = 5, *, noise_objects: bool = True
+    num_samples: int = 5,
+    *,
+    noise_objects: bool = True,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ):
     return [
-        _make_on_training(num_samples, noise_objects=noise_objects),
-        _make_beside_training(num_samples, noise_objects=noise_objects),
-        _make_under_training(num_samples, noise_objects=noise_objects),
-        _make_over_training(num_samples, noise_objects=noise_objects),
-        _make_in_training(num_samples, noise_objects=noise_objects),
-        _make_behind_training(num_samples, noise_objects=noise_objects),
-        _make_in_front_training(num_samples, noise_objects=noise_objects),
-        _make_near_training(num_samples, noise_objects=noise_objects),
-        _make_far_training(num_samples, noise_objects=noise_objects),
+        _make_on_training(
+            num_samples,
+            noise_objects=noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_beside_training(
+            num_samples,
+            noise_objects=noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_under_training(
+            num_samples,
+            noise_objects=noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_over_training(
+            num_samples,
+            noise_objects=noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_in_training(
+            num_samples,
+            noise_objects=noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_behind_training(
+            num_samples,
+            noise_objects=noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_in_front_training(
+            num_samples,
+            noise_objects=noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_near_training(
+            num_samples,
+            noise_objects=noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_far_training(
+            num_samples,
+            noise_objects=noise_objects,
+            language_generator=language_generator,
+        ),
     ]
 
 
 def make_prepositions_curriculum_testing(
-    num_samples: int = 5, *, noise_objects: bool = True
+    num_samples: int = 5,
+    *,
+    noise_objects: bool = True,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ):
     return [
-        _make_on_tests(num_samples, noise_objects=noise_objects),
-        _make_beside_tests(num_samples, noise_objects=noise_objects),
-        _make_under_tests(num_samples, noise_objects=noise_objects),
-        _make_over_tests(num_samples, noise_objects=noise_objects),
-        _make_in_tests(num_samples, noise_objects=noise_objects),
-        _make_behind_tests(num_samples, noise_objects=noise_objects),
-        _make_in_front_tests(num_samples, noise_objects=noise_objects),
-        _make_near_tests(num_samples, noise_objects=noise_objects),
-        _make_far_tests(num_samples, noise_objects=noise_objects),
+        _make_on_tests(
+            num_samples,
+            noise_objects=noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_beside_tests(
+            num_samples,
+            noise_objects=noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_under_tests(
+            num_samples,
+            noise_objects=noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_over_tests(
+            num_samples,
+            noise_objects=noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_in_tests(
+            num_samples,
+            noise_objects=noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_behind_tests(
+            num_samples,
+            noise_objects=noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_in_front_tests(
+            num_samples,
+            noise_objects=noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_near_tests(
+            num_samples,
+            noise_objects=noise_objects,
+            language_generator=language_generator,
+        ),
+        _make_far_tests(
+            num_samples,
+            noise_objects=noise_objects,
+            language_generator=language_generator,
+        ),
     ]
 
 
-def make_prepositions_curriculum(num_samples: int = 5, *, noise_objects: bool = True):
+def make_prepositions_curriculum(
+    num_samples: int = 5,
+    *,
+    noise_objects: bool = True,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+):
     return flatten(
         [
             make_prepositions_curriculum_training(
-                num_samples, noise_objects=noise_objects
+                num_samples,
+                noise_objects=noise_objects,
+                language_generator=language_generator,
             ),
             make_prepositions_curriculum_testing(
-                num_samples, noise_objects=noise_objects
+                num_samples,
+                noise_objects=noise_objects,
+                language_generator=language_generator,
             ),
         ]
     )

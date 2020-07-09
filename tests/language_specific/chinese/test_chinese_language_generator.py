@@ -16,14 +16,22 @@ from adam.language_specific.chinese.chinese_language_generator import (
     USE_ADVERBIAL_PATH_MODIFIER,
     IGNORE_HAS_AS_VERB,
     ATTRIBUTES_AS_X_IS_Y,
+    IGNORE_GOAL,
+    USE_VERTICAL_MODIFIERS,
+    USE_ABOVE_BELOW,
+    USE_NEAR,
 )
 from adam.language_specific.chinese.chinese_phase_1_lexicon import (
     GAILA_PHASE_1_CHINESE_LEXICON,
 )
+from adam.axes import GRAVITATIONAL_DOWN_TO_UP_AXIS
 from adam.ontology import IN_REGION, IS_SPEAKER, IS_ADDRESSEE
 from adam.ontology.during import DuringAction
 from adam.ontology.phase1_ontology import (
     AGENT,
+    SEMANTIC_ROLE,
+    HARD_FORCE,
+    SOFT_FORCE,
     COME,
     BABY,
     BALL,
@@ -32,6 +40,7 @@ from adam.ontology.phase1_ontology import (
     CHAIR,
     COOKIE,
     CUP,
+    PASS,
     DAD,
     DRINK,
     DRINK_CONTAINER_AUX,
@@ -40,6 +49,8 @@ from adam.ontology.phase1_ontology import (
     FLY,
     GAILA_PHASE_1_ONTOLOGY,
     GIVE,
+    PUSH_SURFACE_AUX,
+    PUSH_GOAL,
     GOAL,
     GREEN,
     GROUND,
@@ -59,6 +70,9 @@ from adam.ontology.phase1_ontology import (
     HAT,
     on,
     strictly_above,
+    strictly_over,
+    strictly_under,
+    strictly_below,
     JUMP,
     JUMP_INITIAL_SUPPORTER_AUX,
     DOG,
@@ -67,15 +81,26 @@ from adam.ontology.phase1_ontology import (
     BOOK,
     LEARNER,
     near,
+    inside,
     TAKE,
     CAR,
     ROLL_SURFACE_AUXILIARY,
     TRUCK,
     HOUSE,
     RED,
+    WATERMELON,
+    MOVE,
+    FAST,
+    SLOW,
+    WALK,
+    WALK_SURFACE_AUXILIARY,
+    bigger_than,
+    far,
+    SPATIAL_RELATION,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
+    FROM,
     TOWARD,
     DISTAL,
     EXTERIOR_BUT_IN_CONTACT,
@@ -89,7 +114,7 @@ from adam.ontology.phase1_spatial_relations import (
     VIA,
 )
 from adam.random_utils import FixedIndexChooser
-from adam.relation import Relation
+from adam.relation import Relation, flatten_relations
 from adam.situation import Action, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam_test_utils import situation_object
@@ -234,7 +259,7 @@ def test_my_green_ball():
         always_relations=[Relation(HAS, dad, ball)],
         syntax_hints=[IGNORE_HAS_AS_VERB],
     )
-    assert generated_tokens(situation) == ("wo3", "de", "lyu4 se4", "chyou2")
+    assert generated_tokens(situation) == ("wo3 de", "lyu4 se4", "chyou2")
 
 
 # possession for NP's: second person
@@ -247,7 +272,7 @@ def test_your_green_ball():
         always_relations=[Relation(HAS, dad, ball)],
         syntax_hints=[IGNORE_HAS_AS_VERB],
     )
-    assert generated_tokens(situation) == ("ni3", "de", "lyu4 se4", "chyou2")
+    assert generated_tokens(situation) == ("ni3 de", "lyu4 se4", "chyou2")
 
 
 # possession for NP's: third person
@@ -1296,8 +1321,7 @@ def test_i_put_cookie_in_my_box():
         "chyu1 chi2 bing3",
         "fang4",
         "dzai4",
-        "wo3",
-        "de",
+        "wo3 de",
         "syang1 dz",
         "li3",
     )
@@ -1330,8 +1354,7 @@ def test_i_put_cookie_in_my_box_dao():
         "chyu1 chi2 bing3",
         "fang4",
         "dau4",
-        "wo3",
-        "de",
+        "wo3 de",
         "syang1 dz",
         "li3",
     )
@@ -1394,8 +1417,7 @@ def test_you_put_cookie_in_your_box():
         "chyu1 chi2 bing3",
         "fang4",
         "dzai4",
-        "ni3",
-        "de",
+        "ni3 de",
         "syang1 dz",
         "li3",
     )
@@ -1428,8 +1450,7 @@ def test_speaker_owner_of_box():
         "chyu1 chi2 bing3",
         "fang4",
         "dzai4",
-        "wo3",
-        "de",
+        "wo3 de",
         "syang1 dz",
         "li3",
     )
@@ -1462,8 +1483,7 @@ def test_addressee_owner_of_box():
         "chyu1 chi2 bing3",
         "fang4",
         "dzai4",
-        "ni3",
-        "de",
+        "ni3 de",
         "syang1 dz",
         "li3",
     )
@@ -1515,7 +1535,7 @@ def test_i_have_my_ball():
         always_relations=[Relation(HAS, baby, ball)],
         actions=[],
     )
-    assert generated_tokens(situation) == ("wo3", "you3", "wo3", "de", "chyou2")
+    assert generated_tokens(situation) == ("wo3", "you3", "wo3 de", "chyou2")
 
 
 # this tests possession when a non-speaker has something that they possess
@@ -1541,7 +1561,7 @@ def test_you_have_your_ball():
         always_relations=[Relation(HAS, baby, ball)],
         actions=[],
     )
-    assert generated_tokens(situation) == ("ni3", "you3", "ni3", "de", "chyou2")
+    assert generated_tokens(situation) == ("ni3", "you3", "ni3 de", "chyou2")
 
 
 """PATH MODIFIERS -- CHECKED BY NATIVE SPEAKER"""
@@ -2251,7 +2271,7 @@ def test_my_ball_is_green():
         always_relations=[Relation(HAS, dad, ball)],
         syntax_hints=[IGNORE_HAS_AS_VERB, ATTRIBUTES_AS_X_IS_Y],
     )
-    assert generated_tokens(situation) == ("wo3", "de", "chyou2", "shr4", "lyu4 se4")
+    assert generated_tokens(situation) == ("wo3 de", "chyou2", "shr4", "lyu4 se4")
 
 
 # x_is_y with second person possession
@@ -2264,7 +2284,7 @@ def test_your_ball_is_red():
         always_relations=[Relation(HAS, dad, ball)],
         syntax_hints=[IGNORE_HAS_AS_VERB, ATTRIBUTES_AS_X_IS_Y],
     )
-    assert generated_tokens(situation) == ("ni3", "de", "chyou2", "shr4", "hung2 se4")
+    assert generated_tokens(situation) == ("ni3 de", "chyou2", "shr4", "hung2 se4")
 
 
 # x_is_y for classifier sentence
@@ -2290,3 +2310,1295 @@ def test_many_balls_are_red():
         syntax_hints=[ATTRIBUTES_AS_X_IS_Y],
     )
     assert generated_tokens(situation) == ("hen3 dwo1", "chyou2", "shr4", "hung2 se4")
+
+
+# test the new vocab item added
+def test_my_watermelon():
+    watermelon = situation_object(WATERMELON)
+    baby = situation_object(BABY, properties=[IS_SPEAKER])
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[watermelon, baby],
+        always_relations=[Relation(HAS, baby, watermelon)],
+        syntax_hints=[IGNORE_HAS_AS_VERB],
+    )
+    assert generated_tokens(situation) == ("wo3 de", "syi1 gwa1")
+
+
+# testing of towards/away from
+def test_dad_moves_towards_cookie():
+    dad = situation_object(DAD)
+    cookie = situation_object(COOKIE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[dad, cookie],
+        actions=[
+            Action(
+                MOVE,
+                argument_roles_to_fillers=[(AGENT, dad)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            dad,
+                            SpatialPath(
+                                operator=TOWARD,
+                                reference_object=cookie,
+                                reference_axis=HorizontalAxisOfObject(dad, 1),
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+    )
+    assert generated_tokens(situation) == (
+        "ba4 ba4",
+        "chau2",
+        "chyu1 chi2 bing3",
+        "yi2 dung4",
+    )
+
+
+def test_dad_moves_away_from_cookie():
+    dad = situation_object(DAD)
+    cookie = situation_object(COOKIE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[dad, cookie],
+        actions=[
+            Action(
+                MOVE,
+                argument_roles_to_fillers=[(AGENT, dad)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            dad,
+                            SpatialPath(
+                                operator=AWAY_FROM,
+                                reference_object=cookie,
+                                reference_axis=HorizontalAxisOfObject(dad, 1),
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+    )
+    assert generated_tokens(situation) == (
+        "ba4 ba4",
+        "li2",
+        "chyu1 chi2 bing3",
+        "yi2 dung4",
+    )
+
+
+def test_jump_fast():
+    mum = situation_object(MOM)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mum],
+        actions=[
+            Action(
+                JUMP,
+                argument_roles_to_fillers=[(AGENT, mum)],
+                auxiliary_variable_bindings=[
+                    (JUMP_INITIAL_SUPPORTER_AUX, situation_object(GROUND))
+                ],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            mum,
+                            SpatialPath(
+                                None,
+                                reference_object=situation_object(GROUND),
+                                properties=[FAST],
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+    )
+    assert generated_tokens(situation) == ("ma1 ma1", "kwai4 su4", "tyau4")
+
+
+def test_I_walk_fast():
+    mum = situation_object(MOM, properties=[IS_SPEAKER])
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mum],
+        actions=[
+            Action(
+                WALK,
+                argument_roles_to_fillers=[(AGENT, mum)],
+                auxiliary_variable_bindings=[
+                    (WALK_SURFACE_AUXILIARY, situation_object(GROUND))
+                ],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            mum,
+                            SpatialPath(
+                                None,
+                                reference_object=situation_object(GROUND),
+                                properties=[FAST],
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+    )
+    assert generated_tokens(situation) == ("wo3", "kwai4 su4", "bu4 sying2")
+
+
+def test_I_walk_slowly():
+    mum = situation_object(MOM, properties=[IS_SPEAKER])
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mum],
+        actions=[
+            Action(
+                WALK,
+                argument_roles_to_fillers=[(AGENT, mum)],
+                auxiliary_variable_bindings=[
+                    (WALK_SURFACE_AUXILIARY, situation_object(GROUND))
+                ],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            mum,
+                            SpatialPath(
+                                None,
+                                reference_object=situation_object(GROUND),
+                                properties=[SLOW],
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+    )
+    assert generated_tokens(situation) == ("wo3", "man4 man", "bu4 sying2")
+
+
+def test_I_walk_out_of_house():
+    dad = situation_object(DAD, properties=[IS_SPEAKER])
+    house = situation_object(HOUSE)
+    inside_relation = inside(dad, house)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[dad, house],
+        actions=[
+            Action(
+                WALK,
+                argument_roles_to_fillers=[
+                    (AGENT, dad),
+                    (GOAL, Region(house, distance=DISTAL)),
+                ],
+            )
+        ],
+        before_action_relations=flatten_relations(inside_relation),
+        after_action_relations=flatten_relations(
+            [relation.negated_copy() for relation in inside_relation]
+        ),
+        syntax_hints=[IGNORE_GOAL],
+    )
+    assert generated_tokens(situation) == ("wo3", "bu4 sying2", "chu1", "wu1")
+
+
+def test_big_truck():
+    learner = situation_object(LEARNER)
+    truck = situation_object(TRUCK)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[truck],
+        always_relations=[(bigger_than(truck, learner))],
+    )
+    assert generated_tokens(situation) == ("da4", "ka3 che1")
+
+
+def test_tall_truck():
+    learner = situation_object(LEARNER)
+    truck = situation_object(TRUCK)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[truck],
+        always_relations=[(bigger_than(truck, learner))],
+        syntax_hints=[USE_VERTICAL_MODIFIERS],
+    )
+    assert generated_tokens(situation) == ("gau1 da4", "ka3 che1")
+
+
+def test_small_truck():
+    learner = situation_object(LEARNER)
+    truck = situation_object(TRUCK)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[truck],
+        always_relations=[(bigger_than(learner, truck))],
+    )
+    assert generated_tokens(situation) == ("syau3", "ka3 che1")
+
+
+def test_short_truck():
+    learner = situation_object(LEARNER)
+    truck = situation_object(TRUCK)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[truck],
+        always_relations=[(bigger_than(learner, truck))],
+        syntax_hints=[USE_VERTICAL_MODIFIERS],
+    )
+    assert generated_tokens(situation) == ("dwan3", "ka3 che1")
+
+
+# there is no under/below distinction in Chinese
+def test_ball_under_below_cookie():
+    ball = situation_object(BALL)
+    cookie = situation_object(COOKIE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[ball, cookie],
+        always_relations=[strictly_under(ball, cookie, dist=DISTAL)],
+    )
+    assert generated_tokens(situation) == (
+        "dzai4",
+        "chyu1 chi2 bing3",
+        "sya4 myan4",
+        "de",
+        "chyou2",
+    )
+
+
+def test_ball_over_cookie():
+    ball = situation_object(BALL)
+    cookie = situation_object(COOKIE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[ball, cookie],
+        always_relations=[strictly_over(ball, cookie, dist=DISTAL)],
+    )
+    assert generated_tokens(situation) == (
+        "dzai4",
+        "chyu1 chi2 bing3",
+        "shang4 myan4",
+        "de",
+        "chyou2",
+    )
+
+
+def test_ball_above_cookie():
+    ball = situation_object(BALL)
+    cookie = situation_object(COOKIE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[ball, cookie],
+        always_relations=[strictly_over(ball, cookie, dist=DISTAL)],
+        syntax_hints=[USE_ABOVE_BELOW],
+    )
+    assert generated_tokens(situation) == (
+        "dzai4",
+        "chyu1 chi2 bing3",
+        "shang4 fang1",
+        "de",
+        "chyou2",
+    )
+
+
+def test_ball_far_from_cookie():
+    ball = situation_object(BALL)
+    cookie = situation_object(COOKIE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[ball, cookie],
+        always_relations=[far(ball, cookie)],
+    )
+    assert generated_tokens(situation) == (
+        "li2",
+        "chyu1 chi2 bing3",
+        "hen3 ywan3",
+        "de",
+        "chyou2",
+    )
+
+
+def test_run():
+    mom = situation_object(MOM, properties=[IS_SPEAKER])
+    mom_runs = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom],
+        actions=[
+            Action(
+                WALK,
+                auxiliary_variable_bindings=[(WALK_SURFACE_AUXILIARY, GROUND)],
+                argument_roles_to_fillers=[(AGENT, mom)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            mom,
+                            SpatialPath(
+                                None, reference_object=GROUND, properties=[HARD_FORCE]
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+    )
+    assert generated_tokens(mom_runs) == ("wo3", "pau3")
+
+
+def test_run_fast():
+    mom = situation_object(MOM)
+    mom_runs = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom],
+        actions=[
+            Action(
+                WALK,
+                auxiliary_variable_bindings=[(WALK_SURFACE_AUXILIARY, GROUND)],
+                argument_roles_to_fillers=[(AGENT, mom)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            mom,
+                            SpatialPath(
+                                None,
+                                reference_object=GROUND,
+                                properties=[HARD_FORCE, FAST],
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+    )
+    assert generated_tokens(mom_runs) == ("ma1 ma1", "kwai4 su4", "pau3")
+
+
+def test_run_slow():
+    mom = situation_object(MOM)
+    mom_runs = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom],
+        actions=[
+            Action(
+                WALK,
+                auxiliary_variable_bindings=[(WALK_SURFACE_AUXILIARY, GROUND)],
+                argument_roles_to_fillers=[(AGENT, mom)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            mom,
+                            SpatialPath(
+                                None,
+                                reference_object=GROUND,
+                                properties=[HARD_FORCE, SLOW],
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+    )
+    assert generated_tokens(mom_runs) == ("ma1 ma1", "man4 man", "pau3")
+
+
+def test_I_run_out_of_car_slowly():
+    dad = situation_object(DAD, properties=[IS_SPEAKER])
+    car = situation_object(CAR)
+    inside_relation = inside(dad, car)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[dad, car],
+        actions=[
+            Action(
+                WALK,
+                argument_roles_to_fillers=[
+                    (AGENT, dad),
+                    (GOAL, Region(car, distance=DISTAL)),
+                ],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            dad,
+                            SpatialPath(
+                                None,
+                                reference_object=GROUND,
+                                properties=[HARD_FORCE, SLOW],
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+        before_action_relations=flatten_relations(inside_relation),
+        after_action_relations=flatten_relations(
+            [relation.negated_copy() for relation in inside_relation]
+        ),
+        syntax_hints=[IGNORE_GOAL],
+    )
+    assert generated_tokens(situation) == ("wo3", "man4 man", "pau3", "chu1", "chi4 che1")
+
+
+def test_dad_slowly_grabs_cookie():
+    dad = situation_object(DAD)
+    cookie = situation_object(COOKIE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[dad, cookie],
+        actions=[
+            Action(
+                TAKE,
+                argument_roles_to_fillers=[(AGENT, dad), (THEME, cookie)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            dad,
+                            SpatialPath(
+                                None,
+                                reference_object=GROUND,
+                                properties=[HARD_FORCE, SLOW],
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+        syntax_hints=[IGNORE_GOAL],
+    )
+    assert generated_tokens(situation) == (
+        "ba4 ba4",
+        "man4 man",
+        "chyang3 na2 chi3",
+        "chyu1 chi2 bing3",
+    )
+
+
+def test_i_shove_a_ball_on_a_table_dao():
+    mum = situation_object(MOM, properties=[IS_SPEAKER])
+    ball = situation_object(BALL)
+    table = situation_object(TABLE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mum, ball, table],
+        actions=[
+            Action(
+                action_type=PUSH,
+                argument_roles_to_fillers=[
+                    (AGENT, mum),
+                    (THEME, ball),
+                    (
+                        GOAL,
+                        Region(
+                            reference_object=table,
+                            distance=EXTERIOR_BUT_IN_CONTACT,
+                            direction=GRAVITATIONAL_UP,
+                        ),
+                    ),
+                ],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            mum,
+                            SpatialPath(
+                                None, reference_object=GROUND, properties=[HARD_FORCE]
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+        after_action_relations=[on(ball, table)],
+    )
+    assert generated_tokens(situation) == (
+        "wo3",
+        "ba3",
+        "chyou2",
+        "yung4 li4 twei1",
+        "dau4",
+        "jwo1 dz",
+        "shang4",
+    )
+
+
+def test_i_shove_a_table():
+    mum = situation_object(MOM, properties=[IS_SPEAKER])
+    table = situation_object(TABLE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mum, table],
+        actions=[
+            Action(
+                action_type=PUSH,
+                argument_roles_to_fillers=[(AGENT, mum), (THEME, table)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            mum,
+                            SpatialPath(
+                                None, reference_object=GROUND, properties=[HARD_FORCE]
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+    )
+    assert generated_tokens(situation) == ("wo3", "yung4 li4 twei1", "jwo1 dz")
+
+
+def test_i_push_a_table():
+    mum = situation_object(MOM, properties=[IS_SPEAKER])
+    table = situation_object(TABLE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mum, table],
+        actions=[
+            Action(
+                action_type=PUSH, argument_roles_to_fillers=[(AGENT, mum), (THEME, table)]
+            )
+        ],
+    )
+    assert generated_tokens(situation) == ("wo3", "twei1", "jwo1 dz")
+
+
+def test_i_push_table_down_slowly():
+    mum = situation_object(MOM, properties=[IS_SPEAKER])
+    table = situation_object(TABLE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mum, table],
+        actions=[
+            Action(
+                action_type=PUSH,
+                argument_roles_to_fillers=[(AGENT, mum), (THEME, table)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            mum,
+                            SpatialPath(
+                                operator=TOWARD,
+                                reference_object=situation_object(GROUND),
+                                properties=[SLOW],
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
+    )
+    assert generated_tokens(situation) == (
+        "wo3",
+        "man4 man",
+        "ba3",
+        "jwo1 dz",
+        "twei1",
+        "sya4 lai2",
+    )
+
+
+def test_i_throw_ball_down():
+    mum = situation_object(MOM, properties=[IS_SPEAKER])
+    ball = situation_object(BALL)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mum, ball],
+        actions=[
+            Action(
+                action_type=THROW,
+                argument_roles_to_fillers=[(AGENT, mum), (THEME, ball)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            mum,
+                            SpatialPath(
+                                operator=TOWARD, reference_object=situation_object(GROUND)
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
+    )
+    assert generated_tokens(situation) == ("wo3", "ba3", "chyou2", "reng1", "sya4 lai2")
+
+
+def test_dad_passes_the_cookie_down_to_me():
+    dad = situation_object(DAD)
+    mum = situation_object(MOM, properties=[IS_SPEAKER])
+    cookie = situation_object(COOKIE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mum, cookie, dad],
+        actions=[
+            Action(
+                action_type=PASS,
+                argument_roles_to_fillers=[(AGENT, dad), (THEME, cookie), (GOAL, mum)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            dad,
+                            SpatialPath(
+                                operator=TOWARD, reference_object=situation_object(GROUND)
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
+    )
+    assert generated_tokens(situation) == (
+        "ba4 ba4",
+        "ba3",
+        "chyu1 chi2 bing3",
+        "di4",
+        "sya4 lai2",
+        "gei3",
+        "wo3",
+    )
+
+
+def test_toss():
+    dad = situation_object(DAD)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[dad],
+        actions=[
+            Action(
+                PASS,
+                argument_roles_to_fillers=[(AGENT, dad)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            dad,
+                            SpatialPath(
+                                None, reference_object=GROUND, properties=[HARD_FORCE]
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+    )
+    assert generated_tokens(situation) == ("ba4 ba4", "reng1")
+
+
+def test_dad_tosses_the_cookie_up_to_me():
+    dad = situation_object(DAD)
+    mum = situation_object(MOM, properties=[IS_SPEAKER])
+    cookie = situation_object(COOKIE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mum, cookie, dad],
+        actions=[
+            Action(
+                action_type=PASS,
+                argument_roles_to_fillers=[(AGENT, dad), (THEME, cookie), (GOAL, mum)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            dad,
+                            SpatialPath(
+                                operator=AWAY_FROM,
+                                reference_object=situation_object(GROUND),
+                                properties=[HARD_FORCE],
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
+    )
+    assert generated_tokens(situation) == (
+        "ba4 ba4",
+        "ba3",
+        "chyu1 chi2 bing3",
+        "reng1",
+        "chi3 lai2",
+        "gei3",
+        "wo3",
+    )
+
+
+def test_bird_flies_up_towards_mum():
+    bird = situation_object(BIRD)
+    mum = situation_object(MOM)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[bird, mum],
+        actions=[
+            Action(
+                FLY,
+                argument_roles_to_fillers=[(AGENT, bird)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            bird,
+                            SpatialPath(
+                                operator=TOWARD,
+                                reference_object=mum,
+                                reference_axis=HorizontalAxisOfObject(bird, 1),
+                            ),
+                        ),
+                        (
+                            bird,
+                            SpatialPath(
+                                operator=AWAY_FROM,
+                                reference_object=situation_object(GROUND),
+                            ),
+                        ),
+                    ]
+                ),
+            )
+        ],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
+    )
+    assert generated_tokens(situation) == (
+        "nyau3",
+        "chau2",
+        "ma1 ma1",
+        "fei1",
+        "chi3 lai2",
+    )
+
+
+def test_bird_flies_away_from_mum():
+    bird = situation_object(BIRD)
+    mum = situation_object(MOM)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[bird, mum],
+        actions=[
+            Action(
+                FLY,
+                argument_roles_to_fillers=[(AGENT, bird)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            bird,
+                            SpatialPath(
+                                operator=AWAY_FROM,
+                                reference_object=mum,
+                                reference_axis=HorizontalAxisOfObject(bird, 1),
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
+    )
+    assert generated_tokens(situation) == ("nyau3", "li2", "ma1 ma1", "fei1")
+
+
+def test_dad_passes_me_cookie():
+    dad = situation_object(DAD)
+    mum = situation_object(MOM, properties=[IS_SPEAKER])
+    cookie = situation_object(COOKIE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mum, cookie, dad],
+        actions=[
+            Action(
+                action_type=PASS,
+                argument_roles_to_fillers=[(AGENT, dad), (THEME, cookie), (GOAL, mum)],
+            )
+        ],
+    )
+    assert generated_tokens(situation) == (
+        "ba4 ba4",
+        "ba3",
+        "chyu1 chi2 bing3",
+        "di4",
+        "gei3",
+        "wo3",
+    )
+
+
+def test_you_toss_me_cookie():
+    dad = situation_object(DAD, properties=[IS_ADDRESSEE])
+    mum = situation_object(MOM, properties=[IS_SPEAKER])
+    cookie = situation_object(COOKIE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mum, cookie, dad],
+        actions=[
+            Action(
+                action_type=PASS,
+                argument_roles_to_fillers=[(AGENT, dad), (THEME, cookie), (GOAL, mum)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            dad,
+                            SpatialPath(
+                                operator=None,
+                                reference_object=situation_object(GROUND),
+                                properties=[HARD_FORCE],
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+    )
+    assert generated_tokens(situation) == (
+        "ni3",
+        "ba3",
+        "chyu1 chi2 bing3",
+        "reng1",
+        "gei3",
+        "wo3",
+    )
+
+
+def test_you_toss_mum_cookie():
+    dad = situation_object(DAD, properties=[IS_ADDRESSEE])
+    mum = situation_object(MOM)
+    cookie = situation_object(COOKIE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mum, cookie, dad],
+        actions=[
+            Action(
+                action_type=PASS,
+                argument_roles_to_fillers=[(AGENT, dad), (THEME, cookie), (GOAL, mum)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            dad,
+                            SpatialPath(
+                                operator=None, reference_object=situation_object(GROUND)
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+    )
+    assert generated_tokens(situation) == (
+        "ni3",
+        "ba3",
+        "chyu1 chi2 bing3",
+        "di4",
+        "gei3",
+        "ma1 ma1",
+    )
+
+
+def test_passing_for_phase1():
+    agent = situation_object(DAD)
+    theme = situation_object(COOKIE)
+    goal = situation_object(MOM)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[agent, theme, goal],
+        actions=[
+            Action(
+                PASS,
+                argument_roles_to_fillers=[
+                    (AGENT, agent),
+                    (THEME, theme),
+                    (GOAL, Region(goal, distance=PROXIMAL)),
+                ],
+            )
+        ],
+    )
+    assert generated_tokens(situation) == (
+        "ba4 ba4",
+        "ba3",
+        "chyu1 chi2 bing3",
+        "di4",
+        "gei3",
+        "ma1 ma1",
+    )
+
+
+def test_multiple_actions():
+    agent = situation_object(DAD)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[agent],
+        actions=[
+            Action(DRINK, argument_roles_to_fillers=[(AGENT, agent)]),
+            Action(EAT, argument_roles_to_fillers=[(AGENT, agent)]),
+        ],
+    )
+    with pytest.raises(RuntimeError):
+        generated_tokens(situation)
+
+
+def test_multiple_subjects():
+    agent = situation_object(DAD)
+    other_agent = situation_object(MOM)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[agent, other_agent],
+        actions=[
+            Action(
+                DRINK, argument_roles_to_fillers=[(AGENT, agent), (AGENT, other_agent)]
+            )
+        ],
+    )
+    with pytest.raises(RuntimeError):
+        generated_tokens(situation)
+
+
+def test_non_salient_in_path():
+    dad = situation_object(DAD, properties=[IS_ADDRESSEE])
+    mum = situation_object(MOM)
+    cookie = situation_object(COOKIE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[cookie, dad],
+        actions=[
+            Action(
+                action_type=EAT,
+                argument_roles_to_fillers=[(AGENT, dad), (THEME, cookie)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (mum, SpatialPath(operator=None, reference_object=cookie))
+                    ]
+                ),
+            )
+        ],
+    )
+    assert generated_tokens(situation) == ("ni3", "chr1", "chyu1 chi2 bing3")
+
+
+def test_not_yet_used_operator():
+    dad = situation_object(DAD, properties=[IS_ADDRESSEE])
+    mum = situation_object(MOM)
+    cookie = situation_object(COOKIE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[cookie, dad, mum],
+        actions=[
+            Action(
+                action_type=EAT,
+                argument_roles_to_fillers=[(AGENT, dad), (THEME, cookie)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (mum, SpatialPath(operator=FROM, reference_object=cookie))
+                    ]
+                ),
+            )
+        ],
+    )
+    with pytest.raises(RuntimeError):
+        generated_tokens(situation)
+
+
+def test_bird_flies_away_from_mum_region():
+    bird = situation_object(BIRD)
+    mum = situation_object(MOM)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[bird, mum],
+        actions=[
+            Action(
+                FLY,
+                argument_roles_to_fillers=[(AGENT, bird)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            bird,
+                            SpatialPath(
+                                operator=AWAY_FROM,
+                                reference_object=Region(mum, distance=PROXIMAL),
+                                reference_axis=HorizontalAxisOfObject(bird, 1),
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
+    )
+    assert generated_tokens(situation) == ("nyau3", "li2", "ma1 ma1", "fei1")
+
+
+def test_region_as_subject_should_fail():
+    bird = situation_object(BIRD)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[bird],
+        actions=[
+            Action(
+                FLY, argument_roles_to_fillers=[(AGENT, Region(bird, distance=PROXIMAL))]
+            )
+        ],
+    )
+    with pytest.raises(RuntimeError):
+        generated_tokens(situation)
+
+
+def test_near():
+    mom = situation_object(MOM)
+    dad = situation_object(DAD)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom, dad],
+        always_relations=[near(mom, dad)],
+        syntax_hints=[USE_NEAR],
+    )
+    assert generated_tokens(situation) == (
+        "dzai4",
+        "ba4 ba4",
+        "pang2 byan1",
+        "de",
+        "ma1 ma1",
+    )
+
+
+def test_far():
+    mom = situation_object(MOM)
+    dad = situation_object(DAD)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom, dad],
+        always_relations=[far(mom, dad)],
+    )
+    assert generated_tokens(situation) == (
+        "li2",
+        "ba4 ba4",
+        "hen3 ywan3",
+        "de",
+        "ma1 ma1",
+    )
+
+
+def test_above():
+    mom = situation_object(MOM)
+    dad = situation_object(DAD)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom, dad],
+        always_relations=[strictly_over(mom, dad, dist=DISTAL)],
+        syntax_hints=[USE_ABOVE_BELOW],
+    )
+    assert generated_tokens(situation) == (
+        "dzai4",
+        "ba4 ba4",
+        "shang4 fang1",
+        "de",
+        "ma1 ma1",
+    )
+
+
+def test_go_above_goal():
+    mom = situation_object(MOM)
+    dad = situation_object(DAD)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom, dad],
+        actions=[
+            Action(
+                GO,
+                argument_roles_to_fillers=[
+                    (AGENT, dad),
+                    (GOAL, Region(mom, distance=DISTAL, direction=GRAVITATIONAL_UP)),
+                ],
+            )
+        ],
+        after_action_relations=[strictly_over(mom, dad, dist=DISTAL)],
+        syntax_hints=[USE_ABOVE_BELOW],
+    )
+    assert generated_tokens(situation) == (
+        "ba4 ba4",
+        "chyu4",
+        "dau4",
+        "ma1 ma1",
+        "sya4 fang1",
+    )
+
+
+def test_go_near_goal():
+    mom = situation_object(MOM)
+    dad = situation_object(DAD)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom, dad],
+        actions=[
+            Action(
+                GO,
+                argument_roles_to_fillers=[
+                    (AGENT, dad),
+                    (GOAL, Region(mom, distance=PROXIMAL)),
+                ],
+            )
+        ],
+        after_action_relations=[near(mom, dad)],
+        syntax_hints=[USE_NEAR],
+    )
+    assert generated_tokens(situation) == (
+        "ba4 ba4",
+        "chyu4",
+        "dau4",
+        "ma1 ma1",
+        "pang2 byan1",
+    )
+
+
+def test_go_far_from_goal():
+    mom = situation_object(MOM)
+    dad = situation_object(DAD)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom, dad],
+        actions=[
+            Action(
+                GO,
+                argument_roles_to_fillers=[
+                    (AGENT, dad),
+                    (GOAL, Region(mom, distance=DISTAL)),
+                ],
+            )
+        ],
+        after_action_relations=[far(mom, dad)],
+        syntax_hints=[USE_NEAR],
+    )
+    assert generated_tokens(situation) == (
+        "ba4 ba4",
+        "chyu4",
+        "dau4",
+        "ma1 ma1",
+        "ywan3 li2",
+    )
+
+
+def test_error_for_goal():
+    mom = situation_object(MOM)
+    dad = situation_object(DAD)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom, dad],
+        actions=[
+            Action(
+                GO,
+                argument_roles_to_fillers=[
+                    (AGENT, dad),
+                    (
+                        GOAL,
+                        Region(
+                            mom,
+                            direction=Direction(
+                                positive=True,
+                                relative_to_axis=HorizontalAxisOfObject(mom, index=0),
+                            ),
+                            distance=PROXIMAL,
+                        ),
+                    ),
+                ],
+            )
+        ],
+    )
+    with pytest.raises(RuntimeError):
+        generated_tokens(situation)
+
+
+def test_beside_for_goal():
+    mom = situation_object(MOM)
+    dad = situation_object(DAD)
+    learner = situation_object(LEARNER)
+    situation = HighLevelSemanticsSituation(
+        axis_info=AxesInfo(addressee=learner),
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom, dad],
+        actions=[
+            Action(
+                GO,
+                argument_roles_to_fillers=[
+                    (AGENT, dad),
+                    (
+                        GOAL,
+                        Region(
+                            mom,
+                            direction=Direction(
+                                positive=True,
+                                relative_to_axis=HorizontalAxisOfObject(mom, index=0),
+                            ),
+                            distance=PROXIMAL,
+                        ),
+                    ),
+                ],
+            )
+        ],
+        after_action_relations=[near(mom, dad)],
+    )
+    assert generated_tokens(situation) == (
+        "ba4 ba4",
+        "chyu4",
+        "dau4",
+        "ma1 ma1",
+        "pang2 byan1",
+    )
+
+
+def test_invalid_role():
+    mom = situation_object(MOM)
+    dad = situation_object(DAD)
+    learner = situation_object(LEARNER)
+    situation = HighLevelSemanticsSituation(
+        axis_info=AxesInfo(addressee=learner),
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom, dad],
+        actions=[Action(GO, argument_roles_to_fillers=[(SEMANTIC_ROLE, dad)])],
+        after_action_relations=[near(mom, dad)],
+    )
+    with pytest.raises(RuntimeError):
+        generated_tokens(situation)
+
+
+def test_no_x_is_y_dynamic():
+    mom = situation_object(MOM)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom],
+        actions=[Action(EAT, argument_roles_to_fillers=[(AGENT, mom)])],
+        syntax_hints=[ATTRIBUTES_AS_X_IS_Y],
+    )
+    with pytest.raises(RuntimeError):
+        generated_tokens(situation)
+
+
+def test_no_x_is_y_without_attributes():
+    mom = situation_object(MOM)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom],
+        syntax_hints=[ATTRIBUTES_AS_X_IS_Y],
+    )
+    with pytest.raises(RuntimeError):
+        generated_tokens(situation)
+
+
+def test_multiple_possession_relations():
+    mom = situation_object(MOM)
+    dad = situation_object(DAD)
+    cookie = situation_object(COOKIE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom, dad, cookie],
+        always_relations=[Relation(HAS, mom, cookie), Relation(HAS, dad, cookie)],
+    )
+    with pytest.raises(RuntimeError):
+        generated_tokens(situation)
+
+
+def test_invalid_relations():
+    mom = situation_object(MOM)
+    dad = situation_object(DAD)
+    cookie = situation_object(COOKIE)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[mom, dad, cookie],
+        always_relations=[Relation(SPATIAL_RELATION, mom, cookie)],
+    )
+    with pytest.raises(RuntimeError):
+        generated_tokens(situation)

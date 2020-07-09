@@ -3,7 +3,9 @@ from abc import ABC
 from pathlib import Path
 from random import Random
 from typing import AbstractSet, Iterable, List, Optional, Sequence, Union
-
+from adam.language_specific.chinese.chinese_phase_1_lexicon import (
+    GAILA_PHASE_1_CHINESE_LEXICON,
+)
 from adam.language import LinguisticDescription
 from adam.learner import (
     LearningExample,
@@ -14,6 +16,7 @@ from adam.learner.alignments import (
     LanguagePerceptionSemanticAlignment,
     PerceptionSemanticAlignment,
 )
+from adam.learner.language_mode import LanguageMode
 from adam.learner.learner_utils import assert_static_situation
 from adam.learner.object_recognizer import (
     ObjectRecognizer,
@@ -41,7 +44,7 @@ from adam.learner.template_learner import (
 )
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
 from adam.ontology.phase1_spatial_relations import Region
-from adam.perception import ObjectPerception, PerceptualRepresentation
+from adam.perception import ObjectPerception, PerceptualRepresentation, MatchMode
 from adam.perception.deprecated import LanguageAlignedPerception
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -96,12 +99,15 @@ class AbstractObjectTemplateLearnerNew(AbstractTemplateLearnerNew):
         )
         return immutableset(
             SurfaceTemplateBoundToSemanticNodes(
-                SurfaceTemplate.for_object_name(token), slot_to_semantic_node={}
+                SurfaceTemplate.for_object_name(token, language_mode=self._language_mode),
+                slot_to_semantic_node={},
             )
             for (tok_idx, token) in enumerate(
                 language_alignment.language.as_token_sequence()
             )
             if not language_alignment.token_index_is_aligned(tok_idx)
+            # ignore determiners
+            and token not in ["a", "the"]
         )
 
 
@@ -142,9 +148,14 @@ class AbstractObjectTemplateLearner(AbstractTemplateLearner, ABC):
         return graph_without_learner(perception_graph)
 
     def _extract_surface_template(
-        self, language_concept_alignment: LanguageAlignedPerception
+        self,
+        language_concept_alignment: LanguageAlignedPerception,
+        language_mode: LanguageMode = LanguageMode.ENGLISH,
     ) -> SurfaceTemplate:
-        return SurfaceTemplate(language_concept_alignment.language.as_token_sequence())
+        return SurfaceTemplate(
+            language_concept_alignment.language.as_token_sequence(),
+            language_mode=self._language_mode,
+        )
 
 
 @attrs
@@ -255,7 +266,7 @@ class ObjectPursuitLearner(AbstractPursuitLearner, AbstractObjectTemplateLearner
         observed_perception_graph: PerceptionGraph,
     ) -> bool:
         matcher = hypothesis.graph_pattern.matcher(
-            observed_perception_graph, matching_objects=True
+            observed_perception_graph, match_mode=MatchMode.OBJECT
         )
         return any(
             matcher.matches(
@@ -287,7 +298,7 @@ class ObjectPursuitLearner(AbstractPursuitLearner, AbstractObjectTemplateLearner
             debug_callback=self._debug_callback,
             graph_logger=self._hypothesis_logger,
             ontology=self._ontology,
-            matching_objects=True,
+            match_mode=MatchMode.OBJECT,
         )
         self.debug_counter += 1
 
@@ -345,6 +356,9 @@ class ObjectPursuitLearner(AbstractPursuitLearner, AbstractObjectTemplateLearner
             log_learned_item_hypotheses_to=log_word_hypotheses_dir,
             rng=rng,
             ontology=GAILA_PHASE_1_ONTOLOGY,
+            language_mode=params.enum(
+                "language_mode", LanguageMode, default=LanguageMode.ENGLISH
+            ),
         )
 
     def log_hypotheses(self, log_output_path: Path) -> None:
@@ -368,6 +382,25 @@ class SubsetObjectLearner(AbstractTemplateSubsetLearner, AbstractObjectTemplateL
         return PerceptionGraphTemplate(
             graph_pattern=new_hypothesis,
             template_variable_to_pattern_node=immutabledict(),
+        )
+
+    def _update_hypothesis(
+        self,
+        previous_pattern_hypothesis: PerceptionGraphTemplate,
+        current_pattern_hypothesis: PerceptionGraphTemplate,
+    ) -> Optional[PerceptionGraphTemplate]:
+        return previous_pattern_hypothesis.intersection(
+            current_pattern_hypothesis,
+            ontology=self._ontology,
+            match_mode=MatchMode.OBJECT,
+            allowed_matches=immutablesetmultidict(
+                [
+                    (node2, node1)
+                    for previous_slot, node1 in previous_pattern_hypothesis.template_variable_to_pattern_node.items()
+                    for new_slot, node2 in current_pattern_hypothesis.template_variable_to_pattern_node.items()
+                    if previous_slot == new_slot
+                ]
+            ),
         )
 
 
@@ -419,10 +452,32 @@ class SubsetObjectLearnerNew(
             return False
         return True
 
+    def _update_hypothesis(
+        self,
+        previous_pattern_hypothesis: PerceptionGraphTemplate,
+        current_pattern_hypothesis: PerceptionGraphTemplate,
+    ) -> Optional[PerceptionGraphTemplate]:
+        return previous_pattern_hypothesis.intersection(
+            current_pattern_hypothesis,
+            ontology=self._ontology,
+            match_mode=MatchMode.OBJECT,
+            allowed_matches=immutablesetmultidict(
+                [
+                    (node2, node1)
+                    for previous_slot, node1 in previous_pattern_hypothesis.template_variable_to_pattern_node.items()
+                    for new_slot, node2 in current_pattern_hypothesis.template_variable_to_pattern_node.items()
+                    if previous_slot == new_slot
+                ]
+            ),
+        )
+
 
 @attrs(frozen=True, kw_only=True)
 class ObjectRecognizerAsTemplateLearner(TemplateLearner):
     _object_recognizer: ObjectRecognizer = attrib(validator=instance_of(ObjectRecognizer))
+    _language_mode: LanguageMode = attrib(
+        validator=instance_of(LanguageMode), kw_only=True
+    )
     _concepts_to_templates: ImmutableSetMultiDict[Concept, SurfaceTemplate] = attrib(
         init=False
     )
@@ -450,7 +505,22 @@ class ObjectRecognizerAsTemplateLearner(TemplateLearner):
         return new_perception_semantic_alignment
 
     def templates_for_concept(self, concept: Concept) -> ImmutableSet[SurfaceTemplate]:
-        return self._concepts_to_templates[concept]
+        if self._language_mode == LanguageMode.ENGLISH:
+            return self._concepts_to_templates[concept]
+        elif self._language_mode == LanguageMode.CHINESE:
+            mappings = (
+                GAILA_PHASE_1_CHINESE_LEXICON._ontology_node_to_word  # pylint:disable=protected-access
+            )
+            for k, v in mappings.items():
+                if k.handle == concept.debug_string:
+                    return immutableset(
+                        [
+                            SurfaceTemplate.for_object_name(
+                                v.base_form, language_mode=self._language_mode
+                            )
+                        ]
+                    )
+        raise RuntimeError(f"Invalid concept {concept}")
 
     def log_hypotheses(self, log_output_path: Path) -> None:
         pass
@@ -463,7 +533,10 @@ class ObjectRecognizerAsTemplateLearner(TemplateLearner):
         # Which matches the ground matches by recognition and not shape
         # See: `ObjectRecognizer.match_objects`
         return immutablesetmultidict(
-            (concept, SurfaceTemplate.for_object_name(name))
+            (
+                concept,
+                SurfaceTemplate.for_object_name(name, language_mode=self._language_mode),
+            )
             for (concept, name) in (
                 list(
                     self._object_recognizer._concepts_to_names.items()  # pylint:disable=protected-access
@@ -531,7 +604,7 @@ class PursuitObjectLearnerNew(
             debug_callback=self._debug_callback,
             graph_logger=self._hypothesis_logger,
             ontology=self._ontology,
-            matching_objects=True,
+            match_mode=MatchMode.OBJECT,
         )
         self.debug_counter += 1
 

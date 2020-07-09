@@ -1,5 +1,7 @@
 from itertools import chain
-
+from adam.language.language_generator import LanguageGenerator
+from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
+from adam.language.dependency import LinearizedDependencyTree
 from immutablecollections import immutableset
 
 from adam.curriculum.curriculum_utils import (
@@ -18,10 +20,18 @@ from adam.ontology.phase1_ontology import (
     ANIMATE,
 )
 from adam.situation.templates.phase1_templates import sampled
+from adam.language_specific.english.english_language_generator import (
+    GAILA_PHASE_1_LANGUAGE_GENERATOR,
+)
 
 
 def make_human_eat_curriculum(
-    num_samples: int = 5, *, noise_objects: int = 0
+    num_samples: int = 5,
+    *,
+    noise_objects: int = 0,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     object_to_eat = standard_object("object_0", required_properties=[EDIBLE])
     human = standard_object("eater_0", PERSON)
@@ -38,11 +48,17 @@ def make_human_eat_curriculum(
             ontology=GAILA_PHASE_1_ONTOLOGY,
             chooser=PHASE1_CHOOSER_FACTORY(),
         ),
+        language_generator=language_generator,
     )
 
 
 def make_animal_eat_curriculum(
-    num_samples: int = 5, *, noise_objects: int = 0
+    num_samples: int = 5,
+    *,
+    noise_objects: int = 0,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     object_to_eat = standard_object("object_0", required_properties=[EDIBLE])
     animal = standard_object("eater_0", NONHUMAN_ANIMAL)
@@ -59,11 +75,17 @@ def make_animal_eat_curriculum(
             ontology=GAILA_PHASE_1_ONTOLOGY,
             chooser=PHASE1_CHOOSER_FACTORY(),
         ),
+        language_generator=language_generator,
     )
 
 
 def make_german_eat_test_curriculum(
-    num_samples: int = 5, *, noise_objects: int = 0
+    num_samples: int = 5,
+    *,
+    noise_objects: int = 0,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
 
     object_to_eat = standard_object("object_0", required_properties=[EDIBLE])
@@ -84,19 +106,48 @@ def make_german_eat_test_curriculum(
                 )
             ]
         ),
+        language_generator=language_generator,
     )
 
 
-def make_german_eat_train(num_samples: int = 5, *, noise_objects: int = 0):
+def make_german_eat_train(
+    num_samples: int = 5,
+    *,
+    noise_objects: int = 0,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+):
     return [
-        make_human_eat_curriculum(num_samples=num_samples, noise_objects=noise_objects),
-        make_animal_eat_curriculum(num_samples=num_samples, noise_objects=noise_objects),
+        make_human_eat_curriculum(
+            num_samples=num_samples,
+            noise_objects=noise_objects,
+            language_generator=language_generator,
+        ),
+        make_animal_eat_curriculum(
+            num_samples=num_samples,
+            noise_objects=noise_objects,
+            language_generator=language_generator,
+        ),
     ]
 
 
-def make_german_complete(num_samples: int = 5, *, noise_objects: int = 0):
-    return make_german_eat_train(num_samples=num_samples, noise_objects=noise_objects) + [
+def make_german_complete(
+    num_samples: int = 5,
+    *,
+    noise_objects: int = 0,
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+):
+    return make_german_eat_train(
+        num_samples=num_samples,
+        noise_objects=noise_objects,
+        language_generator=language_generator,
+    ) + [
         make_german_eat_test_curriculum(
-            num_samples=num_samples, noise_objects=noise_objects
+            num_samples=num_samples,
+            noise_objects=noise_objects,
+            language_generator=language_generator,
         )
     ]

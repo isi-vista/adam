@@ -63,7 +63,7 @@ from adam.ontology.phase1_spatial_relations import (
     SpatialPath,
 )
 from adam.ontology.structural_schema import ObjectStructuralSchema
-from adam.perception import ObjectPerception, PerceptualRepresentation
+from adam.perception import ObjectPerception, PerceptualRepresentation, MatchMode
 from adam.perception._matcher import GraphMatching
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -616,7 +616,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
         graph_to_match_against: PerceptionGraphProtocol,
         *,
         debug_callback: Optional[DebugCallableType] = None,
-        matching_objects: bool,
+        match_mode: MatchMode,
     ) -> "PatternMatching":
         """
         Creates an object representing an attempt to match this pattern
@@ -635,7 +635,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
             pattern=self,
             graph_to_match_against=graph_to_match_against,
             debug_callback=debug_callback,
-            matching_objects=matching_objects,
+            match_mode=match_mode,
         )
 
     @staticmethod
@@ -969,6 +969,10 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
         graph_logger: Optional["GraphLogger"] = None,
         ontology: Ontology,
         allowed_matches: ImmutableSetMultiDict[Any, Any] = immutablesetmultidict(),
+        match_mode: MatchMode,
+        trim_after_match: Optional[
+            Callable[["PerceptionGraphPattern"], "PerceptionGraphPattern"]
+        ] = None,
     ) -> Optional["PerceptionGraphPattern"]:
         """
         Determine the largest partial match between two `PerceptionGraphPattern`s
@@ -981,11 +985,13 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
             graph_to_match_against=self,
             debug_callback=debug_callback,
             matching_pattern_against_pattern=True,
-            matching_objects=False,
+            match_mode=match_mode,
             allowed_matches=allowed_matches,
         )
         attempted_match = matcher.relax_pattern_until_it_matches(
-            graph_logger=graph_logger, ontology=ontology
+            graph_logger=graph_logger,
+            ontology=ontology,
+            trim_after_match=trim_after_match,
         )
         if attempted_match:
             return attempted_match
@@ -1077,8 +1083,8 @@ class PatternMatching:
     # the attrs mypy plugin complains for the below
     # "Non-default attributes not allowed after default attributes."
     # But that doesn't seem to be our situation? And it works fine?
-    _matching_objects: bool = attrib(  # type: ignore
-        validator=instance_of(bool), kw_only=True
+    _match_mode: MatchMode = attrib(  # type: ignore
+        validator=instance_of(MatchMode), kw_only=MatchMode.OBJECT
     )
 
     # Callable object for debugging purposes. We use this to track the number of calls to match and render the graphs.
@@ -1232,6 +1238,9 @@ class PatternMatching:
         graph_logger: Optional["GraphLogger"] = None,
         ontology: Ontology,
         min_ratio: Optional[float] = None,
+        trim_after_match: Optional[
+            Callable[[PerceptionGraphPattern], PerceptionGraphPattern]
+        ],
     ) -> Optional[PerceptionGraphPattern]:
         """
         Prunes or relaxes the *pattern* for this matching until it successfully matches
@@ -1278,6 +1287,8 @@ class PatternMatching:
                 cur_pattern = self._relax_pattern(
                     match_attempt, graph_logger=graph_logger, ontology=ontology
                 )
+                if trim_after_match and cur_pattern:
+                    cur_pattern = trim_after_match(cur_pattern)
                 if graph_logger and cur_pattern:
                     graph_logger.log_graph(
                         cur_pattern,
@@ -1319,7 +1330,7 @@ class PatternMatching:
             sorted_pattern,
             use_lookahead_pruning=use_lookahead_pruning,
             matching_pattern_against_pattern=self.matching_pattern_against_pattern,
-            matching_objects=self._matching_objects,
+            match_mode=self._match_mode,
         )
 
         sets_of_nodes_matched: Set[ImmutableSet[PerceptionGraphNode]] = set()
@@ -1497,7 +1508,12 @@ class PatternMatching:
 
         same_color_nodes: List[NodePredicate]
 
-        if isinstance(last_failed_node, IsColorNodePredicate):
+        # We only want to gather all the color nodes when we are trying to match an object
+        # Otherwise we can accidentally remove important information for the pattern
+        if (
+            isinstance(last_failed_node, IsColorNodePredicate)
+            and self._match_mode == MatchMode.OBJECT
+        ):
             # We treat colors as a special case.
             # In a complex object (e.g. a dog), an object and a large number of its
             # sub-components will share the same color.

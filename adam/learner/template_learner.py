@@ -1,4 +1,6 @@
 import logging
+
+from attr.validators import instance_of
 from abc import ABC, abstractmethod
 from typing import AbstractSet, Iterable, List, Mapping, Sequence, Tuple, Union, cast, Set
 
@@ -10,6 +12,7 @@ from adam.learner.alignments import (
     LanguagePerceptionSemanticAlignment,
     PerceptionSemanticAlignment,
 )
+from adam.learner.language_mode import LanguageMode
 from adam.learner.learner_utils import (
     pattern_match_to_description,
     pattern_match_to_semantic_node,
@@ -24,7 +27,7 @@ from adam.learner.surface_templates import (
     SurfaceTemplate,
     SurfaceTemplateBoundToSemanticNodes,
 )
-from adam.perception import PerceptualRepresentation, ObjectPerception
+from adam.perception import PerceptualRepresentation, ObjectPerception, MatchMode
 from adam.perception.deprecated import LanguageAlignedPerception
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -44,6 +47,9 @@ class AbstractTemplateLearner(
     ABC,
 ):
     _observation_num: int = attrib(init=False, default=0)
+    _language_mode: LanguageMode = attrib(
+        validator=instance_of(LanguageMode), kw_only=True
+    )
 
     def observe(
         self,
@@ -75,7 +81,9 @@ class AbstractTemplateLearner(
 
         logging.info(f"Learner observing {preprocessed_input}")
 
-        surface_template = self._extract_surface_template(preprocessed_input)
+        surface_template = self._extract_surface_template(
+            preprocessed_input, self._language_mode
+        )
         self._learning_step(preprocessed_input, surface_template)
 
     def describe(
@@ -87,7 +95,6 @@ class AbstractTemplateLearner(
         preprocessing_result = self._preprocess_scene_for_description(
             original_perception_graph
         )
-
         preprocessed_perception_graph = preprocessing_result.perception_graph
         matched_objects_to_names = (
             preprocessing_result.description_to_matched_object_node.inverse()
@@ -109,7 +116,7 @@ class AbstractTemplateLearner(
             # try to see if (our model of) its semantics is present in the situation.
             matcher = pattern.graph_pattern.matcher(
                 preprocessed_perception_graph,
-                matching_objects=False,
+                match_mode=MatchMode.NON_OBJECT,
                 # debug_callback=self._debug_callback,
             )
             for match in matcher.matches(use_lookahead_pruning=True):
@@ -144,7 +151,6 @@ class AbstractTemplateLearner(
                     pattern=graph_pattern,
                     score=score,
                 )
-
         return immutabledict(self._post_process_descriptions(match_to_score))
 
     @abstractmethod
@@ -194,7 +200,9 @@ class AbstractTemplateLearner(
 
     @abstractmethod
     def _extract_surface_template(
-        self, language_concept_alignment: LanguageAlignedPerception
+        self,
+        language_concept_alignment: LanguageAlignedPerception,
+        language_mode: LanguageMode = LanguageMode.ENGLISH,
     ) -> SurfaceTemplate:
         r"""
         We treat learning as acquiring an association between "templates"
@@ -233,6 +241,8 @@ class AbstractTemplateLearner(
 
 
 class TemplateLearner(ComposableLearner, ABC):
+    _language_mode: LanguageMode = attrib(validator=instance_of(LanguageMode))
+
     @abstractmethod
     def templates_for_concept(self, concept: Concept) -> AbstractSet[SurfaceTemplate]:
         pass
@@ -245,6 +255,7 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
     """
 
     _observation_num: int = attrib(init=False, default=0)
+    _language_mode: LanguageMode = attrib(validator=instance_of(LanguageMode))
 
     def learn_from(
         self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
@@ -339,7 +350,7 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
             # try to see if (our model of) its semantics is present in the situation.
             matcher = pattern.graph_pattern.matcher(
                 preprocessed_perception_graph,
-                matching_objects=False,
+                match_mode=MatchMode.NON_OBJECT,
                 # debug_callback=self._debug_callback,
             )
             for match in matcher.matches(use_lookahead_pruning=True):
@@ -359,7 +370,16 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
         # For each template whose semantics we are certain of (=have been added to the lexicon)
         for (concept, graph_pattern, score) in self._primary_templates():
             check_state(isinstance(graph_pattern, PerceptionGraphTemplate))
-            match_template(concept=concept, pattern=graph_pattern, score=score)
+            if (
+                preprocessed_perception_graph.dynamic
+                == graph_pattern.graph_pattern.dynamic
+            ):
+                match_template(concept=concept, pattern=graph_pattern, score=score)
+            else:
+                logging.debug(
+                    f"Unable to try and match {concept} to {preprocessed_perception_graph} "
+                    f"because both patterns must be static or dynamic"
+                )
 
         if not match_to_score:
             # Try to match against patterns being learned
@@ -376,6 +396,7 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
 
         matched_objects.sort(key=by_pattern_complexity, reverse=True)
         already_replaced: Set[ObjectPerception] = set()
+        new_nodes: List[SemanticNode] = []
         for (matched_object_node, pattern_match) in matched_objects:
             root: ObjectPerception = _get_root_object_perception(
                 pattern_match.matched_sub_graph._graph,  # pylint:disable=protected-access
@@ -391,19 +412,22 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
                     pattern_match=pattern_match,
                 )
                 already_replaced.add(root)
+                new_nodes.append(matched_object_node)
             else:
                 logging.info(
                     f"Matched pattern for {matched_object_node} "
                     f"but root object {root} already replaced."
                 )
-
-        new_nodes = immutableset(node for (node, _) in match_to_score)
+        if matched_objects:
+            immutable_new_nodes = immutableset(new_nodes)
+        else:
+            immutable_new_nodes = immutableset(node for (node, _) in match_to_score)
 
         return (
             perception_semantic_alignment.copy_with_updated_graph_and_added_nodes(
-                new_graph=perception_graph_after_matching, new_nodes=new_nodes
+                new_graph=perception_graph_after_matching, new_nodes=immutable_new_nodes
             ),
-            new_nodes,
+            immutable_new_nodes,
         )
 
     @abstractmethod

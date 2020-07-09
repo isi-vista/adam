@@ -1,5 +1,4 @@
 _includes:
     - curriculum_to_html.params
 
-curriculum: "phase1"
-language: "english"
+curriculum: "subtle-verb-distinction"

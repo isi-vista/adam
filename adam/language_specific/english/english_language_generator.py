@@ -878,7 +878,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                         )
                     elif SLOW in path.properties:
                         modifiers.append(
-                            (ADVERBIAL_MODIFIER, DependencyTreeToken("fast", ADVERB))
+                            (ADVERBIAL_MODIFIER, DependencyTreeToken("slowly", ADVERB))
                         )
 
             for relation in self.situation.after_action_relations:
@@ -1157,7 +1157,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             if not self.situation.actions:
                 # For now, only apply quantifiers to object-only situations
                 return collections.Counter(
-                    [_object.ontology_node for _object in self.situation.all_objects]
+                    [_object.ontology_node for _object in self.situation.salient_objects]
                 )
             else:
                 return {

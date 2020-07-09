@@ -1,5 +1,6 @@
 from typing import Iterable, List, Mapping, Optional, Union
 
+from adam.learner.language_mode import LanguageMode
 from adam.learner.surface_templates import SurfaceTemplate
 from adam.semantics import ObjectSemanticNode, SyntaxSemanticsVariable
 from attr.validators import instance_of
@@ -70,6 +71,7 @@ class LanguageAlignedPerception:
         *,
         determiner_prefix_slots: Iterable[SyntaxSemanticsVariable] = immutableset(),
         restrict_to_span: Optional[Span] = None,
+        language_mode: LanguageMode = LanguageMode.ENGLISH,
     ) -> SurfaceTemplate:
         """
         Creates a `SurfaceTemplate` corresponding to all or some portion of this alignment.
@@ -158,5 +160,7 @@ class LanguageAlignedPerception:
             ] = object_node_to_template_variable[matched_object_node]
 
         return SurfaceTemplate(
-            template_elements, determiner_prefix_slots=determiner_prefix_slots
+            template_elements,
+            determiner_prefix_slots=determiner_prefix_slots,
+            language_mode=language_mode,
         )

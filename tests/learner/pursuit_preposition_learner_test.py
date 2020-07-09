@@ -1,5 +1,5 @@
 import random
-
+import pytest
 from adam.curriculum.phase1_curriculum import _x_has_y_template
 from immutablecollections import immutableset
 
@@ -18,6 +18,7 @@ from adam.curriculum.preposition_curriculum import (
     _in_front_template,
 )
 from adam.learner import LearningExample
+from adam.learner.language_mode import LanguageMode
 from adam.learner.prepositions import PrepositionPursuitLearner
 from adam.ontology import IS_ADDRESSEE, IS_SPEAKER
 from adam.ontology.phase1_ontology import (
@@ -33,10 +34,11 @@ from adam.ontology.phase1_ontology import (
     PERSON_CAN_HAVE,
 )
 from adam.situation.templates.phase1_templates import sampled, object_variable
-from tests.learner import TEST_OBJECT_RECOGNIZER
+from tests.learner import object_recognizer_factory, phase1_language_generator
 
 
-def test_pursuit_preposition_on_learner():
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
+def test_pursuit_preposition_on_learner(language_mode):
     rng = random.Random()
     rng.seed(0)
     learner = PrepositionPursuitLearner(
@@ -46,10 +48,12 @@ def test_pursuit_preposition_on_learner():
         rng=rng,
         smoothing_parameter=0.001,
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        object_recognizer=TEST_OBJECT_RECOGNIZER,
+        object_recognizer=object_recognizer_factory(language_mode),
+        language_mode=language_mode,
     )  # type: ignore
     ball = standard_object("ball", BALL)
     table = standard_object("table", TABLE)
+    language_generator = phase1_language_generator(language_mode)
     on_train_curriculum = phase1_instances(
         "Preposition Unit Train",
         situations=sampled(
@@ -58,6 +62,7 @@ def test_pursuit_preposition_on_learner():
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=10,
         ),
+        language_generator=language_generator,
     )
     on_test_curriculum = phase1_instances(
         "Preposition Unit Test",
@@ -67,6 +72,7 @@ def test_pursuit_preposition_on_learner():
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
         ),
+        language_generator=language_generator,
     )
 
     for (
@@ -78,7 +84,6 @@ def test_pursuit_preposition_on_learner():
         learner.observe(
             LearningExample(perceptual_representation, linguistic_description)
         )
-
     for (
         _,
         test_lingustics_description,
@@ -90,7 +95,8 @@ def test_pursuit_preposition_on_learner():
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
 
 
-def test_pursuit_preposition_beside_learner():
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
+def test_pursuit_preposition_beside_learner(language_mode):
     rng = random.Random()
     rng.seed(0)
     learner = PrepositionPursuitLearner(
@@ -100,8 +106,10 @@ def test_pursuit_preposition_beside_learner():
         rng=rng,
         smoothing_parameter=0.001,
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        object_recognizer=TEST_OBJECT_RECOGNIZER,
+        object_recognizer=object_recognizer_factory(language_mode),
+        language_mode=language_mode,
     )  # type: ignore
+    language_generator = phase1_language_generator(language_mode)
     ball = standard_object("ball", BALL)
     table = standard_object("table", TABLE)
     beside_train_curriculum = phase1_instances(
@@ -114,6 +122,7 @@ def test_pursuit_preposition_beside_learner():
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=10,
         ),
+        language_generator=language_generator,
     )
     beside_test_curriculum = phase1_instances(
         "Preposition Beside Unit Test",
@@ -125,6 +134,7 @@ def test_pursuit_preposition_beside_learner():
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
         ),
+        language_generator=language_generator,
     )
 
     for (
@@ -147,7 +157,8 @@ def test_pursuit_preposition_beside_learner():
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
 
 
-def test_pursuit_preposition_under_learner():
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
+def test_pursuit_preposition_under_learner(language_mode):
     rng = random.Random()
     rng.seed(0)
     learner = PrepositionPursuitLearner(
@@ -157,10 +168,12 @@ def test_pursuit_preposition_under_learner():
         rng=rng,
         smoothing_parameter=0.001,
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        object_recognizer=TEST_OBJECT_RECOGNIZER,
+        object_recognizer=object_recognizer_factory(language_mode),
+        language_mode=language_mode,
     )  # type: ignore
     ball = standard_object("ball", BALL)
     table = standard_object("table", TABLE)
+    language_generator = phase1_language_generator(language_mode)
     under_train_curriculum = phase1_instances(
         "Preposition Under Unit Train",
         situations=sampled(
@@ -171,6 +184,7 @@ def test_pursuit_preposition_under_learner():
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=10,
         ),
+        language_generator=language_generator,
     )
     under_test_curriculum = phase1_instances(
         "Preposition Under Unit Test",
@@ -182,6 +196,7 @@ def test_pursuit_preposition_under_learner():
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
         ),
+        language_generator=language_generator,
     )
 
     for (
@@ -204,7 +219,8 @@ def test_pursuit_preposition_under_learner():
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
 
 
-def test_pursuit_preposition_over_learner():
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
+def test_pursuit_preposition_over_learner(language_mode):
     rng = random.Random()
     rng.seed(0)
     learner = PrepositionPursuitLearner(
@@ -214,10 +230,12 @@ def test_pursuit_preposition_over_learner():
         rng=rng,
         smoothing_parameter=0.001,
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        object_recognizer=TEST_OBJECT_RECOGNIZER,
+        object_recognizer=object_recognizer_factory(language_mode),
+        language_mode=language_mode,
     )  # type: ignore
     ball = standard_object("ball", BALL)
     table = standard_object("table", TABLE)
+    language_generator = phase1_language_generator(language_mode)
     over_train_curriculum = phase1_instances(
         "Preposition Over Unit Train",
         situations=sampled(
@@ -226,6 +244,7 @@ def test_pursuit_preposition_over_learner():
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=10,
         ),
+        language_generator=language_generator,
     )
     over_test_curriculum = phase1_instances(
         "Preposition Over Unit Test",
@@ -237,6 +256,7 @@ def test_pursuit_preposition_over_learner():
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
         ),
+        language_generator=language_generator,
     )
 
     for (
@@ -259,7 +279,8 @@ def test_pursuit_preposition_over_learner():
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
 
 
-def test_pursuit_preposition_in_learner():
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
+def test_pursuit_preposition_in_learner(language_mode):
     rng = random.Random()
     rng.seed(0)
     learner = PrepositionPursuitLearner(
@@ -269,10 +290,12 @@ def test_pursuit_preposition_in_learner():
         rng=rng,
         smoothing_parameter=0.001,
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        object_recognizer=TEST_OBJECT_RECOGNIZER,
+        object_recognizer=object_recognizer_factory(language_mode),
+        language_mode=language_mode,
     )  # type: ignore
     water = object_variable("water", WATER)
     cup = standard_object("cup", CUP)
+    language_generator = phase1_language_generator(language_mode)
     in_train_curriculum = phase1_instances(
         "Preposition In Unit Train",
         situations=sampled(
@@ -281,6 +304,7 @@ def test_pursuit_preposition_in_learner():
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=10,
         ),
+        language_generator=language_generator,
     )
     in_test_curriculum = phase1_instances(
         "Preposition In Unit Test",
@@ -290,6 +314,7 @@ def test_pursuit_preposition_in_learner():
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
         ),
+        language_generator=language_generator,
     )
     for (
         _,
@@ -311,7 +336,8 @@ def test_pursuit_preposition_in_learner():
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
 
 
-def test_pursuit_preposition_behind_learner():
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
+def test_pursuit_preposition_behind_learner(language_mode):
     rng = random.Random()
     rng.seed(0)
     learner = PrepositionPursuitLearner(
@@ -321,12 +347,14 @@ def test_pursuit_preposition_behind_learner():
         rng=rng,
         smoothing_parameter=0.001,
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        object_recognizer=TEST_OBJECT_RECOGNIZER,
+        object_recognizer=object_recognizer_factory(language_mode),
+        language_mode=language_mode,
     )  # type: ignore
     ball = standard_object("ball", BALL)
     table = standard_object("table", TABLE)
     learner_object = standard_object("learner", LEARNER, added_properties=[IS_ADDRESSEE])
     mom = standard_object("mom", MOM, added_properties=[IS_SPEAKER])
+    language_generator = phase1_language_generator(language_mode)
     behind_train_curriculum = phase1_instances(
         "Preposition Behind Unit Train",
         situations=sampled(
@@ -341,6 +369,7 @@ def test_pursuit_preposition_behind_learner():
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=10,
         ),
+        language_generator=language_generator,
     )
     behind_test_curriculum = phase1_instances(
         "Preposition Behind Unit Test",
@@ -356,6 +385,7 @@ def test_pursuit_preposition_behind_learner():
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
         ),
+        language_generator=language_generator,
     )
     for (
         _,
@@ -377,7 +407,8 @@ def test_pursuit_preposition_behind_learner():
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
 
 
-def test_pursuit_preposition_in_front_learner():
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
+def test_pursuit_preposition_in_front_learner(language_mode):
     rng = random.Random()
     rng.seed(0)
     learner = PrepositionPursuitLearner(
@@ -387,12 +418,14 @@ def test_pursuit_preposition_in_front_learner():
         rng=rng,
         smoothing_parameter=0.001,
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        object_recognizer=TEST_OBJECT_RECOGNIZER,
+        object_recognizer=object_recognizer_factory(language_mode),
+        language_mode=language_mode,
     )  # type: ignore
     ball = standard_object("ball", BALL)
     table = standard_object("table", TABLE)
     learner_object = standard_object("learner", LEARNER, added_properties=[IS_ADDRESSEE])
     mom = standard_object("mom", MOM, added_properties=[IS_SPEAKER])
+    language_generator = phase1_language_generator(language_mode)
     in_front_train_curriculum = phase1_instances(
         "Preposition In Front Unit Train",
         situations=sampled(
@@ -407,6 +440,7 @@ def test_pursuit_preposition_in_front_learner():
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=10,
         ),
+        language_generator=language_generator,
     )
     in_front_test_curriculum = phase1_instances(
         "Preposition In Front Unit Test",
@@ -422,6 +456,7 @@ def test_pursuit_preposition_in_front_learner():
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
         ),
+        language_generator=language_generator,
     )
 
     for (
@@ -444,12 +479,15 @@ def test_pursuit_preposition_in_front_learner():
         assert [desc.as_token_sequence() for desc in descriptions_from_learner][0] == gold
 
 
-def test_pursuit_preposition_has_learner():
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
+def test_pursuit_preposition_has_learner(language_mode):
     person = standard_object("person", PERSON)
     inanimate_object = standard_object(
         "inanimate-object", INANIMATE_OBJECT, required_properties=[PERSON_CAN_HAVE]
     )
     ball = standard_object("ball", BALL)
+
+    language_generator = phase1_language_generator(language_mode)
 
     has_train_curriculum = phase1_instances(
         "Has Unit Train",
@@ -459,6 +497,7 @@ def test_pursuit_preposition_has_learner():
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=2,
         ),
+        language_generator=language_generator,
     )
 
     has_test_curriculum = phase1_instances(
@@ -469,6 +508,7 @@ def test_pursuit_preposition_has_learner():
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
         ),
+        language_generator=language_generator,
     )
 
     rng = random.Random()
@@ -480,7 +520,8 @@ def test_pursuit_preposition_has_learner():
         rng=rng,
         smoothing_parameter=0.001,
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        object_recognizer=TEST_OBJECT_RECOGNIZER,
+        object_recognizer=object_recognizer_factory(language_mode),
+        language_mode=language_mode,
     )  # type: ignore
 
     for (

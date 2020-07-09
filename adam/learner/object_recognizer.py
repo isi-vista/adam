@@ -1,7 +1,10 @@
 import logging
 from itertools import chain
-from typing import AbstractSet, Iterable, List, Mapping, Sequence, Set, Tuple
-
+from typing import AbstractSet, Iterable, List, Mapping, Sequence, Set, Tuple, Union
+from adam.language_specific.chinese.chinese_phase_1_lexicon import (
+    GAILA_PHASE_1_CHINESE_LEXICON,
+)
+from adam.learner.language_mode import LanguageMode
 from contexttimer import Timer
 from more_itertools import first
 from networkx import DiGraph
@@ -19,8 +22,15 @@ from adam.ontology.phase1_ontology import (
     GAILA_PHASE_1_ONTOLOGY,
     PART_OF,
     PHASE_1_CURRICULUM_OBJECTS,
+    BIGGER_THAN,
+    SMALLER_THAN,
 )
-from adam.perception import GROUND_PERCEPTION, LEARNER_PERCEPTION, ObjectPerception
+from adam.perception import (
+    GROUND_PERCEPTION,
+    LEARNER_PERCEPTION,
+    ObjectPerception,
+    MatchMode,
+)
 from adam.perception.deprecated import LanguageAlignedPerception
 from adam.perception.perception_graph import (
     AnyObjectPerception,
@@ -161,6 +171,9 @@ class ObjectRecognizer:
     """
     Used for a performance optimization in match_objects.
     """
+    _language_mode: LanguageMode = attrib(
+        validator=instance_of(LanguageMode), kw_only=True
+    )
 
     def __attrs_post_init__(self) -> None:
         non_lowercase_determiners = [
@@ -179,6 +192,7 @@ class ObjectRecognizer:
         ontology_types: Iterable[OntologyNode],
         determiners: Iterable[str],
         ontology: Ontology,
+        language_mode: LanguageMode,
     ) -> "ObjectRecognizer":
         ontology_types_to_concepts = {
             obj_type: ObjectConcept(obj_type.handle) for obj_type in ontology_types
@@ -199,6 +213,7 @@ class ObjectRecognizer:
                 concept: obj_type.handle
                 for obj_type, concept in ontology_types_to_concepts.items()
             },
+            language_mode=language_mode,
         )
 
     def match_objects_old(
@@ -247,9 +262,14 @@ class ObjectRecognizer:
         for node in graph_to_return._graph.nodes:  # pylint:disable=protected-access
             if node == GROUND_PERCEPTION:
                 matched_object_node = ObjectSemanticNode(GROUND_OBJECT_CONCEPT)
-                object_nodes.append(
-                    ((f"{GROUND_OBJECT_CONCEPT.debug_string}",), matched_object_node)
-                )
+                if LanguageMode.ENGLISH == self._language_mode:
+                    object_nodes.append(
+                        ((f"{GROUND_OBJECT_CONCEPT.debug_string}",), matched_object_node)
+                    )
+                elif LanguageMode.CHINESE == self._language_mode:
+                    object_nodes.append((("di4 myan4",), matched_object_node))
+                else:
+                    raise RuntimeError("Invalid language_generator")
                 # We construct a fake match which is only the ground perception node
                 subgraph_of_root = subgraph(perception_graph.copy_as_digraph(), [node])
                 pattern_match = PerceptionGraphPatternMatch(
@@ -283,7 +303,7 @@ class ObjectRecognizer:
 
                 with Timer(factor=1000) as t:
                     matcher = pattern.matcher(
-                        candidate_object_graph, matching_objects=True
+                        candidate_object_graph, match_mode=MatchMode.OBJECT
                     )
                     pattern_match = first(
                         matcher.matches(use_lookahead_pruning=True), None
@@ -296,7 +316,20 @@ class ObjectRecognizer:
                     # We wrap the concept in a tuple because it could in theory be multiple
                     # tokens,
                     # even though currently it never is.
-                    object_nodes.append(((concept.debug_string,), matched_object_node))
+                    if self._language_mode == LanguageMode.ENGLISH:
+                        object_nodes.append(
+                            ((concept.debug_string,), matched_object_node)
+                        )
+                    elif self._language_mode == LanguageMode.CHINESE:
+                        mappings = (
+                            GAILA_PHASE_1_CHINESE_LEXICON._ontology_node_to_word  # pylint:disable=protected-access
+                        )
+                        for k, v in mappings.items():
+                            if k.handle == concept.debug_string:
+                                debug_string = str(v.base_form)
+                                object_nodes.append(
+                                    ((debug_string,), matched_object_node)
+                                )
 
                     graph_to_return = replace_match_with_object_graph_node(
                         matched_object_node, graph_to_return, pattern_match
@@ -316,14 +349,12 @@ class ObjectRecognizer:
             cumulative_millis_in_successful_matches_ms,
             cumulative_millis_in_failed_matches_ms,
         )
-        object_nodes_dict: Mapping[Tuple[str, ...], ObjectSemanticNode] = immutabledict(
-            object_nodes
-        )
+        semantic_object_nodes = immutableset(node for (_, node) in object_nodes)
         return (
             perception_semantic_alignment.copy_with_updated_graph_and_added_nodes(
-                new_graph=graph_to_return, new_nodes=object_nodes_dict.values()
+                new_graph=graph_to_return, new_nodes=semantic_object_nodes
             ),
-            object_nodes_dict,
+            immutabledict(object_nodes),
         )
 
     def match_objects_with_language_old(
@@ -652,7 +683,7 @@ def replace_match_with_object_graph_node(
     # Multiple sub-objects of a matched object may link to the same property
     # (for example, to a color shared by all the parts).
     # In this case, we want the shared object node to link to this property only once.
-    external_properties: Set[OntologyNode] = set()
+    external_properties: Set[Union[OntologyNode, ObjectSemanticNode]] = set()
     duplicate_nodes_to_remove: List[PerceptionGraphNode] = []
 
     for matched_subgraph_node in matched_subgraph_nodes:
@@ -683,7 +714,13 @@ def replace_match_with_object_graph_node(
                 if edge_equals_ignoring_temporal_scope(edge_label, HAS_PROPERTY_LABEL):
                     # Prevent multiple `has-property` assertions to the same color node
                     # On a recognized object
-                    if matched_subgraph_node_successor[0] in external_properties:
+                    # Also prevent size relations from being inherited on root object.
+                    if matched_subgraph_node_successor[
+                        0
+                    ] in external_properties or matched_subgraph_node_successor[0] in {
+                        SMALLER_THAN,
+                        BIGGER_THAN,
+                    }:
                         if (
                             perception_digraph.degree(matched_subgraph_node_successor)
                             != 1
@@ -719,7 +756,11 @@ def replace_match_with_object_graph_node(
                 if edge_equals_ignoring_temporal_scope(edge_label, HAS_PROPERTY_LABEL):
                     # Prevent multiple `has-property` assertions to the same color node
                     # On a recognized object
-                    if matched_subgraph_node_predecessor[0] in external_properties:
+                    if isinstance(matched_subgraph_node_predecessor, ObjectSemanticNode):
+                        prop = matched_subgraph_node_predecessor
+                    else:
+                        prop = matched_subgraph_node_predecessor[0]
+                    if prop in external_properties:
                         if (
                             perception_digraph.degree(matched_subgraph_node_predecessor)
                             != 1
@@ -735,7 +776,7 @@ def replace_match_with_object_graph_node(
                         )
                         continue
                     else:
-                        external_properties.add(matched_subgraph_node_predecessor[0])
+                        external_properties.add(prop)
 
                 perception_digraph.add_edge(
                     matched_subgraph_node_predecessor,
@@ -790,7 +831,7 @@ def replace_match_root_with_object_semantic_node(
     # Multiple sub-objects of a matched object may link to the same property
     # (for example, to a color shared by all the parts).
     # In this case, we want the shared object node to link to this property only once.
-    external_properties: Set[OntologyNode] = set()
+    external_properties: Set[Union[OntologyNode, ObjectSemanticNode]] = set()
 
     for matched_subgraph_node in matched_subgraph_nodes:
         if isinstance(matched_subgraph_node, ObjectSemanticNode):
@@ -820,7 +861,12 @@ def replace_match_root_with_object_semantic_node(
                 if edge_equals_ignoring_temporal_scope(edge_label, HAS_PROPERTY_LABEL):
                     # Prevent multiple `has-property` assertions to the same color node
                     # On a recognized object
-                    if matched_subgraph_node_successor[0] in external_properties:
+                    if matched_subgraph_node_successor[
+                        0
+                    ] in external_properties or matched_subgraph_node_successor[0] in {
+                        SMALLER_THAN,
+                        BIGGER_THAN,
+                    }:
                         if (
                             perception_digraph.degree(matched_subgraph_node_successor)
                             != 1
@@ -857,7 +903,11 @@ def replace_match_root_with_object_semantic_node(
                 if edge_equals_ignoring_temporal_scope(edge_label, HAS_PROPERTY_LABEL):
                     # Prevent multiple `has-property` assertions to the same color node
                     # On a recognized object
-                    if matched_subgraph_node_predecessor[0] in external_properties:
+                    if isinstance(matched_subgraph_node_predecessor, ObjectSemanticNode):
+                        prop = matched_subgraph_node_predecessor
+                    else:
+                        prop = matched_subgraph_node_predecessor[0]
+                    if prop in external_properties:
                         if (
                             perception_digraph.degree(matched_subgraph_node_predecessor)
                             != 1
@@ -870,7 +920,7 @@ def replace_match_root_with_object_semantic_node(
                             )
                         continue
                     else:
-                        external_properties.add(matched_subgraph_node_predecessor[0])
+                        external_properties.add(prop)
 
                 perception_digraph.add_edge(
                     matched_subgraph_node_predecessor,
