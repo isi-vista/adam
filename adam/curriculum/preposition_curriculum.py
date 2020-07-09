@@ -1266,7 +1266,7 @@ def make_prepositions_curriculum_testing(
 def make_prepositions_curriculum(
     num_samples: int = 5,
     *,
-    noise_objects: bool = True,
+    noise_objects: bool = False,
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,

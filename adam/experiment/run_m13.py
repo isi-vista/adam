@@ -50,6 +50,9 @@ def main(params: Parameters):
     if params.boolean("include_m13_complete", default=False):
         param_files.append(m13_experiments_dir / "m13_complete.params")
 
+    if params.boolean("include_m13_shuffled", default=False):
+        param_files.append(m13_experiments_dir / "m13_shuffled.params")
+
     # This activates a special "debug" curriculum,
     # which is meant to be edited in the code by a developer to do fine-grained debugging.
     if params.boolean("include_debug", default=False):

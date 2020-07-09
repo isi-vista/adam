@@ -339,3 +339,12 @@ def build_gaila_m13_curriculum(
             ),
         )
     )
+
+
+def build_m13_shuffled_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_2_LANGUAGE_GENERATOR
+) -> Sequence[Phase1InstanceGroup]:
+
+    return []
