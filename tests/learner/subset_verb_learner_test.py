@@ -26,6 +26,7 @@ from adam.curriculum.phase1_curriculum import (
     make_throw_templates,
     make_throw_animacy_templates,
 )
+from adam.language.language_utils import phase1_language_generator
 from adam.learner import LearningExample
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode

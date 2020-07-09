@@ -13,6 +13,7 @@ from adam.curriculum.phase1_curriculum import (
     _object_with_color_template,
     _x_has_y_template,
 )
+from adam.language.language_utils import phase1_language_generator
 from adam.language_specific.english.english_language_generator import IGNORE_HAS_AS_VERB
 from adam.learner import LearningExample
 from adam.learner.attributes import SubsetAttributeLearner, SubsetAttributeLearnerNew

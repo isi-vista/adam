@@ -29,6 +29,11 @@ from adam.curriculum.phase1_curriculum import (
     _make_generic_statements_curriculum,
     _make_part_whole_curriculum,
     _make_transitive_roll_curriculum,
+    build_gaila_phase1_object_curriculum,
+    build_gaila_plurals_curriculum,
+    build_gaila_phase1_attribute_curriculum,
+    build_gaila_generics_curriculum,
+    build_gaila_phase1_verb_curriculum,
 )
 from adam.curriculum.preposition_curriculum import make_prepositions_curriculum
 from adam.curriculum.verbs_with_dynamic_prepositions_curriculum import (
@@ -227,6 +232,30 @@ def _make_put_in_curriculum(
     )
 
 
+def build_functionally_defined_objects_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_2_LANGUAGE_GENERATOR
+) -> Sequence[Phase1InstanceGroup]:
+    return [
+        _make_sit_on_chair_curriculum(
+            language_generator=language_generator
+        ),  # functionally defined objects
+        _make_drink_cups_curriculum(language_generator=language_generator),
+    ]
+
+
+def build_object_restrictions_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_2_LANGUAGE_GENERATOR
+) -> Sequence[Phase1InstanceGroup]:
+    return [
+        _make_transitive_roll_curriculum(language_generator=language_generator),
+        _make_put_in_curriculum(language_generator=language_generator),
+    ]
+
+
 def build_gaila_m8_curriculum(
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
@@ -273,5 +302,40 @@ def build_gaila_m8_curriculum(
                     language_generator=language_generator
                 )
             ),  # Subtle verb distinctions
+        )
+    )
+
+
+def build_gaila_m13_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_2_LANGUAGE_GENERATOR
+) -> Sequence[Phase1InstanceGroup]:
+    return list(
+        chain(
+            build_gaila_phase1_object_curriculum(language_generator=language_generator),
+            build_gaila_plurals_curriculum(language_generator=language_generator),
+            build_gaila_phase1_attribute_curriculum(
+                language_generator=language_generator
+            ),
+            build_gaila_generics_curriculum(language_generator=language_generator),
+            make_prepositions_curriculum(language_generator=language_generator),
+            build_gaila_phase1_verb_curriculum(language_generator=language_generator),
+            list(
+                make_imprecise_temporal_descriptions(
+                    language_generator=language_generator
+                )
+            ),
+            make_verb_with_dynamic_prepositions_curriculum(
+                language_generator=language_generator
+            ),
+            list(
+                make_subtle_verb_distinctions_curriculum(
+                    language_generator=language_generator
+                )
+            ),
+            build_functionally_defined_objects_curriculum(
+                language_generator=language_generator
+            ),
         )
     )

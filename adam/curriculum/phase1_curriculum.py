@@ -2550,12 +2550,20 @@ def build_gaila_phase1_object_curriculum(
     ]
 
 
-def build_gaila_plurals_curriculum() -> Sequence[Phase1InstanceGroup]:
-    return [_make_plural_objects_curriculum()]
+def build_gaila_plurals_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Sequence[Phase1InstanceGroup]:
+    return [_make_plural_objects_curriculum(language_generator)]
 
 
-def build_gaila_generics_curriculum() -> Sequence[Phase1InstanceGroup]:
-    return [_make_generic_statements_curriculum()]
+def build_gaila_generics_curriculum(
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR
+) -> Sequence[Phase1InstanceGroup]:
+    return [_make_generic_statements_curriculum(language_generator)]
 
 
 def build_gaila_phase1_attribute_curriculum(

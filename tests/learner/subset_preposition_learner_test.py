@@ -15,6 +15,7 @@ from adam.curriculum.preposition_curriculum import (
     _over_template,
     _under_template,
 )
+from adam.language.language_utils import phase1_language_generator
 from adam.learner import LearningExample
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
