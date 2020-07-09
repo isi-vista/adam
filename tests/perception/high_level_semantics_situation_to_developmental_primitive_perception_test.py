@@ -5,6 +5,7 @@ from more_itertools import only, quantify
 from adam.axes import HorizontalAxisOfObject
 from adam.ontology import IN_REGION, OntologyNode, IS_SPEAKER
 from adam.ontology.phase1_ontology import (
+    SAME_TYPE,
     AGENT,
     ANIMATE,
     BALL,
@@ -44,6 +45,7 @@ from adam.ontology.phase1_ontology import (
     far,
     near,
     on,
+    bigger_than,
 )
 from adam.ontology.phase1_spatial_relations import (
     DISTAL,
@@ -76,6 +78,34 @@ from sample_situations import make_bird_flies_over_a_house
 _PERCEPTION_GENERATOR = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
     GAILA_PHASE_1_ONTOLOGY
 )
+
+
+def test_big_ball():
+    ball1 = situation_object(BALL, debug_handle="ball_0")
+    ball2 = situation_object(BALL, debug_handle="ball_1")
+
+    ball_situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[ball2, ball1],
+        always_relations=[bigger_than(ball1, ball2)],
+    )
+
+    assert (
+        ball_situation.always_relations[0].first_slot.ontology_node
+        == ball_situation.always_relations[0].second_slot.ontology_node
+    )
+
+    ball_perception = _PERCEPTION_GENERATOR.generate_perception(
+        ball_situation, chooser=RandomChooser.for_seed(0)
+    )
+
+    perceived_objects = ball_perception.frames[0].perceived_objects
+    object_handles = set(obj.debug_handle for obj in perceived_objects)
+    assert object_handles == {"ball_0", "ball_1", "the ground"}
+    assert any(
+        relation.relation_type == SAME_TYPE
+        for relation in ball_perception.frames[0].relations
+    )
 
 
 def test_person_and_ball():

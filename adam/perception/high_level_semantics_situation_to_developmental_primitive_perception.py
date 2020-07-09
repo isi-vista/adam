@@ -237,12 +237,12 @@ class _PerceptionGeneration:
         self._relation_perceptions.extend(
             self._perceive_relation(relation)
             for relation in self._situation.always_relations
+            if relation.relation_type not in SIZE_RELATIONS
         )
         # Once all the objects and relations are perceived, determine their colors.
         self._perceive_colors()
-
         # Handle implicit size relations
-        self._perceive_size_relative_to_learner()
+        # self._perceive_size_relative_to_learner()
         self._perceive_all_relative_size()
 
         # for now, we assume that actions do not alter the relationship of objects axes
@@ -737,31 +737,32 @@ class _PerceptionGeneration:
 
     def _perceive_all_relative_size(self) -> None:
         """This method handles perception of relative size of two objects of the same type"""
-        for (
-            perception,
-            ontology_type,
-        ) in self._object_perceptions_to_ontology_nodes.items():
-            size_relations = immutableset(
-                relation
-                for relation in self._situation.ontology.subjects_to_relations[
-                    ontology_type
-                ]
-                if relation.relation_type in SIZE_RELATIONS
-                and relation.second_slot == relation.first_slot
+        size_relations = [
+            relation
+            for relation in self._situation.always_relations
+            if relation.relation_type in SIZE_RELATIONS
+            and (
+                isinstance(relation.first_slot, SituationObject)
+                and isinstance(relation.second_slot, SituationObject)
+                and relation.first_slot.ontology_node
+                == relation.second_slot.ontology_node
             )
-            if size_relations:
-                if len(size_relations) > 1:
-                    raise RuntimeError(
-                        f"Expected only one size relations for "
-                        f"{ontology_type} but got {size_relations}"
-                    )
-                # only record relative size if the objects are of the same type, and record this as well if they are
-                self._property_assertion_perceptions.append(
-                    HasBinaryProperty(perception, only(size_relations).relation_type)
-                )
-                self._property_assertion_perceptions.append(
-                    HasBinaryProperty(perception, SAME_TYPE)
-                )
+        ]
+        for relation in size_relations:
+            perception = self._objects_to_perceptions[relation.first_slot]
+            # only record relative size if the objects are of the same type, and record this as well if they are
+            self._property_assertion_perceptions.append(
+                HasBinaryProperty(perception, relation.relation_type)
+            )
+            # add a relation indicating that these are of the same type
+            same_relation = Relation(
+                first_slot=self._objects_to_perceptions[relation.first_slot],
+                second_slot=self._objects_to_perceptions[  # type:ignore
+                    relation.second_slot
+                ],
+                relation_type=SAME_TYPE,
+            )
+            self._relation_perceptions.extend([same_relation])
 
     def _perceive_size_relative_to_learner(self) -> None:
         """
