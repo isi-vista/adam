@@ -133,7 +133,7 @@ class AbstractObjectTemplateLearner(AbstractTemplateLearner, ABC):
         )
 
     def _preprocess_scene_for_description(
-        self, perception_graph: PerceptionGraph
+        self, perception_graph: PerceptionGraph, allow_undescribed: bool = False
     ) -> PerceptionGraphFromObjectRecognizer:
         return PerceptionGraphFromObjectRecognizer(
             self._common_preprocessing(perception_graph),

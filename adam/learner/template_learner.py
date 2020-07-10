@@ -87,13 +87,15 @@ class AbstractTemplateLearner(
         self._learning_step(preprocessed_input, surface_template)
 
     def describe(
-        self, perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]
+        self,
+        perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame],
+        allow_undescribed: bool = False,
     ) -> Mapping[LinguisticDescription, float]:
         self._assert_valid_input(perception)
 
         original_perception_graph = self._extract_perception_graph(perception)
         preprocessing_result = self._preprocess_scene_for_description(
-            original_perception_graph
+            original_perception_graph, allow_undescribed=allow_undescribed
         )
         preprocessed_perception_graph = preprocessing_result.perception_graph
         matched_objects_to_names = (
@@ -112,6 +114,7 @@ class AbstractTemplateLearner(
             description_template: SurfaceTemplate,
             pattern: PerceptionGraphTemplate,
             score: float,
+            allow_undescribed: bool = False,
         ) -> None:
             # try to see if (our model of) its semantics is present in the situation.
             matcher = pattern.graph_pattern.matcher(
@@ -128,6 +131,7 @@ class AbstractTemplateLearner(
                             pattern=pattern,
                             match=match,
                             matched_objects_to_names=matched_objects_to_names,
+                            allow_undescribed=allow_undescribed,
                         ),
                         pattern,
                         score,
@@ -139,7 +143,10 @@ class AbstractTemplateLearner(
         # For each template whose semantics we are certain of (=have been added to the lexicon)
         for (surface_template, graph_pattern, score) in self._primary_templates():
             match_template(
-                description_template=surface_template, pattern=graph_pattern, score=score
+                description_template=surface_template,
+                pattern=graph_pattern,
+                score=score,
+                allow_undescribed=allow_undescribed,
             )
 
         if not match_to_score:
@@ -190,7 +197,7 @@ class AbstractTemplateLearner(
 
     @abstractmethod
     def _preprocess_scene_for_description(
-        self, perception_graph: PerceptionGraph
+        self, perception_graph: PerceptionGraph, allow_undescribed: bool = False
     ) -> PerceptionGraphFromObjectRecognizer:
         """
         Does any preprocessing necessary before attempting to describe a scene.

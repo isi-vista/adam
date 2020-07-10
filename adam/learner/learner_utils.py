@@ -64,6 +64,7 @@ def pattern_match_to_description(
     pattern: PerceptionGraphTemplate,
     match: PerceptionGraphPatternMatch,
     matched_objects_to_names: Mapping[ObjectSemanticNode, Tuple[str, ...]],
+    allow_undescribed: bool = False,
 ) -> TokenSequenceLinguisticDescription:
     """
     Given a `SurfaceTemplate`, will fill it in using a *match* for a *pattern*.
@@ -78,7 +79,7 @@ def pattern_match_to_description(
     matched_object_nodes_without_names = matched_object_nodes - immutableset(
         matched_objects_to_names.keys()
     )
-    if matched_object_nodes_without_names:
+    if matched_object_nodes_without_names and not allow_undescribed:
         raise RuntimeError(
             f"The following matched object nodes lack descriptions: "
             f"{matched_object_nodes_without_names}"

@@ -3,7 +3,6 @@ from itertools import chain
 import pytest
 
 from adam.curriculum.curriculum_utils import (
-    standard_object,
     phase1_instances,
     PHASE1_CHOOSER_FACTORY,
     PHASE1_TEST_CHOOSER_FACTORY,
@@ -20,7 +19,7 @@ from adam.learner.attributes import SubsetAttributeLearner, SubsetAttributeLearn
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
 from adam.learner.objects import ObjectRecognizerAsTemplateLearner
-from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY, INANIMATE
+from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
 from adam.situation.templates.phase1_templates import sampled
 from tests.learner import phase1_language_generator, object_recognizer_factory
 
@@ -58,6 +57,8 @@ def run_imprecise_test(learner, situation_template, language_generator):
                     max_to_sample=10,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
+                    # this is a hack since our current object recognizer will throw a runtime error if there are percieved objects not in the description
+                    block_multiple_of_the_same_type=False,
                 )
             ]
         ),
@@ -72,6 +73,7 @@ def run_imprecise_test(learner, situation_template, language_generator):
                     max_to_sample=1,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_TEST_CHOOSER_FACTORY(),
+                    block_multiple_of_the_same_type=False,
                 )
             ]
         ),
@@ -92,7 +94,9 @@ def run_imprecise_test(learner, situation_template, language_generator):
         test_lingustics_description,
         test_perceptual_representation,
     ) in test_curriculum.instances():
-        descriptions_from_learner = learner.describe(test_perceptual_representation)
+        descriptions_from_learner = learner.describe(
+            test_perceptual_representation, allow_undescribed=True
+        )
         gold = test_lingustics_description.as_token_sequence()
         assert descriptions_from_learner
         assert gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
@@ -103,10 +107,9 @@ def run_imprecise_test(learner, situation_template, language_generator):
 )
 @pytest.mark.parametrize("language", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 def test_tall(learner, language):
-    object_0 = standard_object("object_0", required_properties=[INANIMATE])
     run_imprecise_test(
         learner(language),
-        _tall_x_template(object_0, []),
+        _tall_x_template(background=[]),
         language_generator=phase1_language_generator(language),
     )
 
@@ -116,10 +119,9 @@ def test_tall(learner, language):
 )
 @pytest.mark.parametrize("language", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 def test_short(learner, language):
-    object_0 = standard_object("object_0", required_properties=[INANIMATE])
     run_imprecise_test(
         learner(language),
-        _short_x_template(object_0, []),
+        _short_x_template(background=[]),
         language_generator=phase1_language_generator(language),
     )
 
@@ -129,10 +131,9 @@ def test_short(learner, language):
 )
 @pytest.mark.parametrize("language", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 def test_big(learner, language):
-    object_0 = standard_object("object_0", required_properties=[INANIMATE])
     run_imprecise_test(
         learner(language),
-        _big_x_template(object_0, []),
+        _big_x_template(background=[]),
         language_generator=phase1_language_generator(language),
     )
 
@@ -142,9 +143,8 @@ def test_big(learner, language):
 )
 @pytest.mark.parametrize("language", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 def test_small(learner, language):
-    object_0 = standard_object("object_0", required_properties=[INANIMATE])
     run_imprecise_test(
         learner(language),
-        _little_x_template(object_0, []),
+        _little_x_template(background=[]),
         language_generator=phase1_language_generator(language),
     )
