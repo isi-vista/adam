@@ -165,6 +165,7 @@ class PerceptionGraphTemplate:
             if graph_logger:
                 graph_logger.log_graph(intersected_pattern, INFO, "Intersected pattern")
             for (_, object_wildcard) in template_variable_to_pattern_node.items():
+                # we return none here since this means that the given template cannot be learned from since one of the slots has been pruned away
                 if object_wildcard not in intersected_pattern:
                     return None
 
