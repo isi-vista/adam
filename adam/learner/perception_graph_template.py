@@ -164,15 +164,9 @@ class PerceptionGraphTemplate:
             template_variable_to_pattern_node = pattern.template_variable_to_pattern_node
             if graph_logger:
                 graph_logger.log_graph(intersected_pattern, INFO, "Intersected pattern")
-            for (
-                surface_template_variable,
-                object_wildcard,
-            ) in template_variable_to_pattern_node.items():
+            for (_, object_wildcard) in template_variable_to_pattern_node.items():
                 if object_wildcard not in intersected_pattern:
-                    raise RuntimeError(
-                        f"Result of intersection lacks a wildcard node "
-                        f"for template variable {surface_template_variable}"
-                    )
+                    return None
 
             return PerceptionGraphTemplate(
                 graph_pattern=intersected_pattern,
