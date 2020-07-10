@@ -4,6 +4,7 @@ from immutablecollections import immutableset
 from more_itertools import flatten
 from adam.language.language_generator import LanguageGenerator
 from adam.language.dependency import LinearizedDependencyTree
+from adam.ontology import OntologyNode
 from adam.curriculum.curriculum_utils import (
     Phase1InstanceGroup,
     PHASE1_CHOOSER_FACTORY,
@@ -11,6 +12,9 @@ from adam.curriculum.curriculum_utils import (
     standard_object,
     learner_template_factory,
 )
+from adam.language_specific import MASS_NOUN
+from adam.language.dependency.universal_dependencies import NOUN
+from adam.ontology.phase2_ontology import gravitationally_aligned_axis_is_largest
 from adam.curriculum.phase1_curriculum import (
     make_pass_template,
     throw_on_ground_template,
@@ -32,7 +36,6 @@ from adam.curriculum.phase1_curriculum import (
 )
 from adam.language_specific.english.english_language_generator import (
     USE_ADVERBIAL_PATH_MODIFIER,
-    USE_VERTICAL_MODIFIERS,
 )
 from adam.language_specific.english.english_language_generator import (
     GAILA_PHASE_1_LANGUAGE_GENERATOR,
@@ -69,6 +72,8 @@ from adam.ontology.phase1_ontology import (
     TABLE,
     THEME,
     SPIN,
+    HEAD,
+    HAND,
 )
 from adam.situation import Action, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
@@ -77,24 +82,29 @@ from adam.situation.templates.phase1_templates import (
     TemplateObjectVariable,
     Phase1SituationTemplate,
 )
+from adam.language_specific.english.english_phase_1_lexicon import (
+    GAILA_PHASE_1_ENGLISH_LEXICON,
+)
 
 BOOL_SET = immutableset([True, False])
-
-# TODO: See https://github.com/isi-vista/adam/issues/742
-
-
-def _big_x_template(
-    theme: TemplateObjectVariable, background: Iterable[TemplateObjectVariable]
-) -> Phase1SituationTemplate:
-    learner = learner_template_factory()
-    computed_background = [learner]
-    computed_background.extend(background)
-    return Phase1SituationTemplate(
-        f"big-{theme.handle}",
-        salient_object_variables=[theme],
-        background_object_variables=computed_background,
-        asserted_always_relations=[bigger_than(theme, learner)],
-    )
+# easy hack to get all nouns that aren't recognized particulars, body parts, or mass nouns -- i.e. the ones that can be big or small
+NODES_TO_CHOOSE_FROM = [
+    x[0]
+    for x in GAILA_PHASE_1_ENGLISH_LEXICON._ontology_node_to_word.items()  # pylint:disable=protected-access
+    if x[1].part_of_speech in [NOUN]
+    and MASS_NOUN not in x[1].properties
+    and x[0] not in [BABY, HEAD, HAND]
+]
+# differentiate between the nodes that can be modified with tall and those that can't
+TALL_ELIGIBLE_NODES = [
+    node
+    for node in NODES_TO_CHOOSE_FROM
+    if gravitationally_aligned_axis_is_largest(node, GAILA_PHASE_1_ONTOLOGY)
+]
+BIG_ELIGIBLE_NODES = [
+    node for node in NODES_TO_CHOOSE_FROM if node not in TALL_ELIGIBLE_NODES
+]
+CHOOSER = PHASE1_CHOOSER_FACTORY()
 
 
 def make_eat_big_small_curriculum(
@@ -121,7 +131,12 @@ def make_eat_big_small_curriculum(
         for _object in [COOKIE, WATERMELON]:
             object_to_eat = SituationObject.instantiate_ontology_node(
                 ontology_node=_object,
-                debug_handle=_object.handle,
+                debug_handle=_object.handle + "_salient",
+                ontology=GAILA_PHASE_1_ONTOLOGY,
+            )
+            object_to_eat2 = SituationObject.instantiate_ontology_node(
+                ontology_node=_object,
+                debug_handle=_object.handle + "_non_salient",
                 ontology=GAILA_PHASE_1_ONTOLOGY,
             )
             other_edibles = [
@@ -134,15 +149,16 @@ def make_eat_big_small_curriculum(
             ]
             computed_background = [learner]
             computed_background.extend(other_edibles)
+            computed_background.extend([object_to_eat2])
 
             # Big
             for relation_list in [
                 [
-                    bigger_than(object_to_eat, learner),
+                    bigger_than(object_to_eat, object_to_eat2),
                     bigger_than(object_to_eat, other_edibles),
                 ],
                 [
-                    bigger_than(learner, object_to_eat),
+                    bigger_than(object_to_eat2, object_to_eat),
                     bigger_than(other_edibles, object_to_eat),
                 ],
             ]:
@@ -169,53 +185,71 @@ def make_eat_big_small_curriculum(
     )
 
 
-def _little_x_template(
-    theme: TemplateObjectVariable, background: Iterable[TemplateObjectVariable]
+def _tall_x_template(
+    background: Iterable[TemplateObjectVariable],
+    random_node: OntologyNode = CHOOSER.choice(TALL_ELIGIBLE_NODES),
 ) -> Phase1SituationTemplate:
-    learner = learner_template_factory()
-    computed_background = [learner]
+    # hack to pick a random node that will yield "tall"
+    theme1 = standard_object("theme1", random_node)
+    theme2 = standard_object("theme2", random_node)
+    computed_background = [theme2]
     computed_background.extend(background)
     return Phase1SituationTemplate(
-        f"small-{theme.handle}",
-        salient_object_variables=[theme],
+        f"tall-{theme1.handle}",
+        salient_object_variables=[theme1],
         background_object_variables=computed_background,
-        asserted_always_relations=[bigger_than(learner, theme)],
+        asserted_always_relations=[bigger_than(theme1, theme2)],
     )
 
 
-def _tall_x_template(
-    theme: TemplateObjectVariable, background: Iterable[TemplateObjectVariable]
+def _big_x_template(
+    background: Iterable[TemplateObjectVariable],
+    random_node: OntologyNode = CHOOSER.choice(BIG_ELIGIBLE_NODES),
 ) -> Phase1SituationTemplate:
-    learner = learner_template_factory()
-    computed_background = [learner]
+    # hack to pick a random node that will yield "big"
+    theme1 = standard_object("theme1", random_node)
+    theme2 = standard_object("theme2", random_node)
+    computed_background = [theme2, learner_template_factory()]
     computed_background.extend(background)
-
-    # TODO: This difference should be an axis size but we can't yet
-    # implement that. See: https://github.com/isi-vista/adam/issues/832
     return Phase1SituationTemplate(
-        f"tall-{theme.handle}",
-        salient_object_variables=[theme],
-        background_object_variables=background,
-        asserted_always_relations=[bigger_than(theme, learner)],
-        syntax_hints=[USE_VERTICAL_MODIFIERS],
+        f"big-{theme1.handle}",
+        salient_object_variables=[theme1],
+        background_object_variables=computed_background,
+        asserted_always_relations=[bigger_than(theme1, theme2)],
+    )
+
+
+def _little_x_template(
+    background: Iterable[TemplateObjectVariable],
+    random_node: OntologyNode = CHOOSER.choice(BIG_ELIGIBLE_NODES),
+) -> Phase1SituationTemplate:
+    # hack to pick a random node that will yield "little"
+    theme1 = standard_object("theme1", random_node)
+    theme2 = standard_object("theme2", random_node)
+    computed_background = [theme2]
+    computed_background.extend(background)
+    return Phase1SituationTemplate(
+        f"little-{theme1.handle}",
+        salient_object_variables=[theme1],
+        background_object_variables=computed_background,
+        asserted_always_relations=[bigger_than(theme2, theme1)],
     )
 
 
 def _short_x_template(
-    theme: TemplateObjectVariable, background: Iterable[TemplateObjectVariable]
+    background: Iterable[TemplateObjectVariable],
+    random_node: OntologyNode = CHOOSER.choice(TALL_ELIGIBLE_NODES),
 ) -> Phase1SituationTemplate:
-    learner = learner_template_factory()
-    computed_background = [learner]
+    # hack to pick a random node that will yield "short"
+    theme1 = standard_object("theme1", random_node)
+    theme2 = standard_object("theme2", random_node)
+    computed_background = [theme2]
     computed_background.extend(background)
-
-    # TODO: This difference should be an axis size but we can't yet
-    # implement that. See: https://github.com/isi-vista/adam/issues/832
     return Phase1SituationTemplate(
-        f"tall-{theme.handle}",
-        salient_object_variables=[theme],
-        background_object_variables=background,
-        asserted_always_relations=[bigger_than(learner, theme)],
-        syntax_hints=[USE_VERTICAL_MODIFIERS],
+        f"short-{theme1.handle}",
+        salient_object_variables=[theme1],
+        background_object_variables=computed_background,
+        asserted_always_relations=[bigger_than(theme2, theme1)],
     )
 
 
@@ -242,7 +276,12 @@ def make_spin_tall_short_curriculum(
         for _object in [CHAIR, TABLE]:
             theme = SituationObject.instantiate_ontology_node(
                 ontology_node=_object,
-                debug_handle=_object.handle,
+                debug_handle=_object.handle + "_salient",
+                ontology=GAILA_PHASE_1_ONTOLOGY,
+            )
+            theme2 = SituationObject.instantiate_ontology_node(
+                ontology_node=_object,
+                debug_handle=_object.handle + "_non_salient",
                 ontology=GAILA_PHASE_1_ONTOLOGY,
             )
             other_objs = [
@@ -255,11 +294,12 @@ def make_spin_tall_short_curriculum(
             ]
             computed_background = [learner]
             computed_background.extend(other_objs)
+            computed_background.extend([theme2])
 
             # Tall and short
             for relation_list in [
-                [bigger_than(learner, theme), bigger_than(other_objs, theme)],
-                [bigger_than(theme, learner), bigger_than(theme, other_objs)],
+                [bigger_than(theme2, theme), bigger_than(other_objs, theme)],
+                [bigger_than(theme, theme2), bigger_than(theme, other_objs)],
             ]:
                 situations.append(
                     HighLevelSemanticsSituation(
@@ -276,7 +316,6 @@ def make_spin_tall_short_curriculum(
                             )
                         ],
                         always_relations=relation_list,
-                        syntax_hints=[USE_VERTICAL_MODIFIERS],
                     )
                 )
 
@@ -296,30 +335,40 @@ def make_imprecise_size_descriptions(
     background = immutableset(
         standard_object(f"noise_object_{x}") for x in range(num_noise_objects)
     )
-
-    theme_0 = standard_object("theme")
-    theme_1 = standard_object("theme-thing", THING)
-
+    # we choose random tall and short nodes here
+    random_tall_nodes = [CHOOSER.choice(TALL_ELIGIBLE_NODES) for i in range(num_samples)]
+    random_big_nodes = [CHOOSER.choice(BIG_ELIGIBLE_NODES) for i in range(num_samples)]
     return phase1_instances(
         "Imprecise Size",
         chain(
             flatten(
+                # generate big and small for all eligible nodes
                 [
                     sampled(
-                        template(theme, background),
+                        template(random_node=node, background=background),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=1,
+                        block_multiple_of_the_same_type=False,
                     )
-                    for template in [
-                        _big_x_template,
-                        _little_x_template,
-                        _tall_x_template,
-                        _short_x_template,
-                    ]
-                    for theme in [theme_0, theme_1]
+                    for node in random_big_nodes
+                    for template in [_big_x_template, _little_x_template]
                 ]
-            )
+            ),
+            flatten(
+                # generate tall and short for all eligible nodes
+                [
+                    sampled(
+                        template(random_node=node, background=background),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        max_to_sample=1,
+                        block_multiple_of_the_same_type=False,
+                    )
+                    for node in random_tall_nodes
+                    for template in [_tall_x_template, _short_x_template]
+                ]
+            ),
         ),
         language_generator=language_generator,
     )

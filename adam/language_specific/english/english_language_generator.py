@@ -1,7 +1,7 @@
 import collections
 from itertools import chain
 from typing import Iterable, List, Mapping, MutableMapping, Optional, Tuple, Union, cast
-
+from adam.ontology.phase2_ontology import gravitationally_aligned_axis_is_largest
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import ImmutableSet, immutableset, immutablesetmultidict
@@ -431,9 +431,14 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                         if (
                             relation.first_slot in self.situation.salient_objects
                             and isinstance(relation.second_slot, SituationObject)
-                            and relation.second_slot.ontology_node == LEARNER
+                            and relation.second_slot.ontology_node
+                            not in self.situation.salient_objects
+                            and relation.first_slot.ontology_node
+                            == relation.second_slot.ontology_node
                         ):
-                            if USE_VERTICAL_MODIFIERS in self.situation.syntax_hints:
+                            if gravitationally_aligned_axis_is_largest(
+                                relation.first_slot.ontology_node, self.situation.ontology
+                            ):
                                 token = DependencyTreeToken("tall", ADJECTIVE)
                             else:
                                 token = DependencyTreeToken("big", ADJECTIVE)
@@ -445,9 +450,14 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                         if (
                             relation.first_slot in self.situation.salient_objects
                             and isinstance(relation.second_slot, SituationObject)
-                            and relation.second_slot.ontology_node == LEARNER
+                            and relation.second_slot.ontology_node
+                            not in self.situation.salient_objects
+                            and relation.first_slot.ontology_node
+                            == relation.second_slot.ontology_node
                         ):
-                            if USE_VERTICAL_MODIFIERS in self.situation.syntax_hints:
+                            if gravitationally_aligned_axis_is_largest(
+                                relation.first_slot.ontology_node, self.situation.ontology
+                            ):
                                 token = DependencyTreeToken("short", ADJECTIVE)
                             else:
                                 token = DependencyTreeToken("small", ADJECTIVE)
@@ -1192,6 +1202,5 @@ IGNORE_HAS_AS_VERB = "IGNORE_HAS_AS_VERB"
 ATTRIBUTES_AS_X_IS_Y = "ATTRIBUTES_AS_X_IS_Y"
 IGNORE_SIZE_ATTRIBUTE = "IGNORE_SIZE_ATTRIBUTE"
 IGNORE_GOAL = "IGNORE_GOAL"
-USE_VERTICAL_MODIFIERS = "USE_VERTICAL_MODIFIERS"
 USE_ABOVE_BELOW = "USE_ABOVE_BELOW"
 USE_NEAR = "USE_NEAR"

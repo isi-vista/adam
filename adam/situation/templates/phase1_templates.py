@@ -321,6 +321,7 @@ def sampled(
     chooser: SequenceChooser,
     max_to_sample: int,
     default_addressee_node: OntologyNode = LEARNER,
+    block_multiple_of_the_same_type: bool = True,
 ) -> Iterable[HighLevelSemanticsSituation]:
     """
     Gets *max_to_sample* instantiations of *situation_template* with *ontology*
@@ -330,7 +331,9 @@ def sampled(
         take(
             max_to_sample,
             _Phase1SituationTemplateGenerator(
-                ontology=ontology, variable_assigner=_SamplingVariableAssigner()
+                ontology=ontology,
+                variable_assigner=_SamplingVariableAssigner(),
+                block_multiple_objects_of_the_same_type=block_multiple_of_the_same_type,
             ).generate_situations(
                 situation_template,
                 chooser=chooser,
@@ -424,7 +427,6 @@ class _Phase1SituationTemplateGenerator(
                     object_var_to_instantiations
                 ):
                     continue
-
                 if self.block_multiple_objects_of_the_same_type:
                     object_instantiations_ontology_nodes = [
                         object_instantiation.ontology_node
