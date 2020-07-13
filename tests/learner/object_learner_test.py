@@ -1,9 +1,8 @@
 import logging
+import random
 from typing import Iterable
 
 import pytest
-import random
-from itertools import chain
 from immutablecollections import immutableset
 from more_itertools import flatten
 
@@ -16,9 +15,6 @@ from adam.language_specific.english.english_language_generator import (
     GAILA_PHASE_1_LANGUAGE_GENERATOR,
     IGNORE_COLORS,
 )
-from adam.learner.integrated_learner import IntegratedTemplateLearner
-from adam.learner.language_mode import LanguageMode
-from adam.learner.objects import SubsetObjectLearner
 from adam.learner import (
     LanguagePerceptionSemanticAlignment,
     LearningExample,
@@ -26,11 +22,9 @@ from adam.learner import (
 )
 from adam.learner.alignments import LanguageConceptAlignment
 from adam.learner.integrated_learner import IntegratedTemplateLearner
-from adam.learner.objects import (
-    ObjectPursuitLearner,
-    PursuitObjectLearnerNew,
-    SubsetObjectLearnerNew,
-)
+from adam.learner.language_mode import LanguageMode
+from adam.learner.objects import PursuitObjectLearnerNew, SubsetObjectLearnerNew
+from adam.learner.objects import SubsetObjectLearner
 from adam.ontology import OntologyNode
 from adam.ontology.phase1_ontology import (
     BALL,
@@ -41,14 +35,13 @@ from adam.ontology.phase1_ontology import (
     HAND,
     HEAD,
     HOUSE,
-    LEARNER,
     MOM,
     on,
 )
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     GAILA_PHASE_1_PERCEPTION_GENERATOR,
 )
-from adam.perception.perception_graph import DumpPartialMatchCallback, PerceptionGraph
+from adam.perception.perception_graph import PerceptionGraph
 from adam.random_utils import RandomChooser
 from adam.relation import flatten_relations
 from adam.relation_dsl import negate
@@ -62,7 +55,6 @@ from adam.situation.templates.phase1_templates import (
     object_variable,
     sampled,
 )
-from immutablecollections import immutableset
 from tests.learner import phase1_language_generator
 
 
@@ -277,7 +269,7 @@ def test_pursuit_object_learner(language_mode):
         # PERSON,
         # CHAIR,
         # TABLE,
-        # DOG,
+        DOG,
         # BIRD,
         BOX,
     ]
@@ -326,15 +318,17 @@ def test_pursuit_object_learner(language_mode):
     # lexicalize items sufficiently because of diminishing lexicon probability through training
     rng = random.Random()
     rng.seed(0)
+    # debug_callback = DumpPartialMatchCallback(render_path="../renders/")
     learner = IntegratedTemplateLearner(
         object_learner=PursuitObjectLearnerNew(
-            learning_factor=0.05,
+            learning_factor=0.1,
             graph_match_confirmation_threshold=0.7,
             lexicon_entry_threshold=0.7,
             rng=rng,
             smoothing_parameter=0.002,
             ontology=GAILA_PHASE_1_ONTOLOGY,
             language_mode=language_mode,
+            # debug_callback=debug_callback
         )
     )
     for training_stage in [train_curriculum]:
@@ -343,7 +337,6 @@ def test_pursuit_object_learner(language_mode):
             linguistic_description,
             perceptual_representation,
         ) in training_stage.instances():
-            print(linguistic_description)
             learner.observe(
                 LearningExample(perceptual_representation, linguistic_description)
             )
