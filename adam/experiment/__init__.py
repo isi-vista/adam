@@ -2,6 +2,7 @@
 Allows managing experimental configurations in code.
 """
 import logging
+import pickle
 from itertools import chain
 
 # for some reason, pylint doesn't recognize the types used in quoted type annotations
@@ -125,7 +126,7 @@ def execute_experiment(
     experiment: Experiment[SituationT, LinguisticDescriptionT, PerceptionT],
     *,
     log_path: Optional[Path] = None,
-    log_hypotheses_every_n_examples: int = 250
+    log_hypotheses_every_n_examples: int = 250,
 ) -> None:
     """
     Runs an `Experiment`.
@@ -145,8 +146,14 @@ def execute_experiment(
             perceptual_representation,
         ) in training_stage.instances():
             num_observations += 1
+            # if we've reached the next num_observations where we should log hypotheses, log the hypotheses
             if log_path and num_observations % log_hypotheses_every_n_examples == 0:
                 learner.log_hypotheses(log_path / str(num_observations))
+                pickle.dump(
+                    learner,
+                    open(log_path / f"learner_state_at_{str(num_observations)}", "wb"),
+                    pickle.HIGHEST_PROTOCOL,
+                )
 
             if experiment.pre_example_training_observers:
                 learner_descriptions_before_seeing_example = learner.describe(
