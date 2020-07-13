@@ -70,7 +70,7 @@ def integrated_learner_factory(language_mode: LanguageMode):
 )
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
-    "learner", [subset_attribute_leaner_factory, integrated_learner_factory]
+    "learner", [pytest.mark.skip(subset_attribute_leaner_factory), integrated_learner_factory]
 )
 def test_subset_color_attribute(
     color_node, object_0_node, object_1_node, language_mode, learner
@@ -149,7 +149,7 @@ def test_subset_color_attribute(
 @pytest.mark.skip("My fails to learn for some reason.")
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
-    "learner", [subset_attribute_leaner_factory, integrated_learner_factory]
+    "learner", [pytest.mark.skip(subset_attribute_leaner_factory), integrated_learner_factory]
 )
 def test_subset_my_attribute_learner_integrated(language_mode, learner):
     person = standard_object("speaker", PERSON, added_properties=[IS_SPEAKER])
@@ -211,7 +211,7 @@ def test_subset_my_attribute_learner_integrated(language_mode, learner):
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
-    "learner", [subset_attribute_leaner_factory, integrated_learner_factory]
+    "learner", [pytest.mark.skip(subset_attribute_leaner_factory), integrated_learner_factory]
 )
 def test_your_attribute_learner(language_mode, learner):
     person_0 = standard_object("speaker", PERSON, added_properties=[IS_SPEAKER])
