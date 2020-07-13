@@ -46,6 +46,7 @@ class LanguageLearnerNew:
         learning_example: LearningExample[
             DevelopmentalPrimitivePerceptionFrame, LinguisticDescription
         ],
+        observation_num: int = -1,
     ) -> None:
         pass
 
