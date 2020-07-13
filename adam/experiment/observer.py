@@ -31,6 +31,7 @@ class DescriptionObserver(Generic[SituationT, LinguisticDescriptionT, Perception
         true_description: LinguisticDescription,
         perceptual_representation: PerceptualRepresentation[PerceptionT],
         predicted_descriptions: Mapping[LinguisticDescription, float],
+        offset: int = 0,
     ) -> None:
         r"""
         Observe a description provided by a `LanguageLearner`.
@@ -74,6 +75,7 @@ class TopChoiceExactMatchObserver(
         true_description: LinguisticDescription,
         perceptual_representation: PerceptualRepresentation[PerceptionT],
         predicted_descriptions: Mapping[LinguisticDescription, float],
+        offset: int = 0,
     ) -> None:
         self._num_observations += 1
 
@@ -109,6 +111,7 @@ class CandidateAccuracyObserver(
         true_description: LinguisticDescription,
         perceptual_representation: PerceptualRepresentation[PerceptionT],
         predicted_descriptions: Mapping[LinguisticDescription, float],
+        offset: int = 0,
     ) -> None:
         self._num_predictions += 1
 
@@ -428,6 +431,7 @@ class HTMLLoggerPreObserver(  # pragma: no cover
         true_description: LinguisticDescription,
         perceptual_representation: PerceptualRepresentation[PerceptionT],
         predicted_descriptions: Mapping[LinguisticDescription, float],
+        offset: int = 0,
     ) -> None:
         # pylint: disable=unused-argument
         self.html_logger.pre_observer_log(predicted_descriptions)
@@ -459,13 +463,14 @@ class HTMLLoggerPostObserver(  # pragma: no cover
         true_description: LinguisticDescription,
         perceptual_representation: PerceptualRepresentation[PerceptionT],
         predicted_descriptions: Mapping[LinguisticDescription, float],
+        offset: int = 0,
     ) -> None:
         self.candidate_accuracy_observer.observe(
             situation, true_description, perceptual_representation, predicted_descriptions
         )
         self.html_logger.post_observer_log(
             observer_name=self.name,
-            instance_number=self.counter,
+            instance_number=self.counter + offset,
             situation=situation,
             true_description=true_description,
             perceptual_representation=perceptual_representation,

@@ -131,24 +131,20 @@ def execute_experiment(
     learner_logging_path: Optional[Path] = None,
     log_learner_state: bool = True,
     load_learner_state: Optional[Path] = None,
-    load_curriculum_state: Optional[Path] = None,
     starting_point: int = 0,
 ) -> None:
     """
     Runs an `Experiment`.
     """
 
-    # make the directories in which to log the learner and curriculum
+    # make the directories in which to log the learner
     if log_learner_state and learner_logging_path:
         learner_path = learner_logging_path / "learner_state"
-        curriculum_path = learner_logging_path / "curriculum_state"
         try:
             os.mkdir(learner_path)
-            os.mkdir(curriculum_path)
-        # if we don't have a directory where we can log our learner and / or curriculum state, we simply don't log it
+        # if we don't have a directory where we can log our learner state, we simply don't log it
         except OSError:
             logging.warning("Cannot log learner state to %s", str(learner_path))
-            logging.warning("Cannot log curriculum state to %s", str(curriculum_path))
             log_learner_state = False
             logging.warning("Proceeding without logging learner state")
 
@@ -156,6 +152,8 @@ def execute_experiment(
 
     # if there is an existing learner to load, try to load it
     if load_learner_state:
+        if starting_point == 0:
+            logging.warning("Using existing learner, expected starting point > 0")
         logging.info("Loading existing learner from %s", str(load_learner_state))
         try:
             learner = pickle.load(open(load_learner_state, "rb"))
@@ -170,33 +168,25 @@ def execute_experiment(
         learner = experiment.learner_factory()
     logging.info("Instantiated learner %s", learner)
 
-    if load_curriculum_state:
-        logging.info("Loading existing training data from %s", str(load_curriculum_state))
-        try:
-            curriculum = pickle.load(open(load_curriculum_state, "rb"))
-        except OSError:
-            curriculum = experiment.training_stages
-            logging.warning(
-                "Unable to load training data from %s, using default",
-                load_curriculum_state,
-            )
-    else:
-        curriculum = experiment.training_stages
-
     num_observations = 0
-    num_stages = 0
 
-    for training_stage in curriculum:
-        logging.info("Beginning training stage %s", training_stage.name())
+    for training_stage in experiment.training_stages:
+        if num_observations > starting_point:
+            logging.info("Beginning training stage %s", training_stage.name())
         for (
             situation,
             linguistic_description,
             perceptual_representation,
         ) in training_stage.instances():
             num_observations += 1
+
+            # don't learn from anything until we've reached the starting of the the learning
             if num_observations < starting_point:
-                print(num_observations)
                 continue
+
+            # log the start of the learning
+            if num_observations == starting_point:
+                logging.info("Beginning training stage %s", training_stage.name())
 
             # if we've reached the next num_observations where we should log hypotheses, log the hypotheses
             if log_path and num_observations % log_hypotheses_every_n_examples == 0:
@@ -246,8 +236,8 @@ def execute_experiment(
                         linguistic_description,
                         perceptual_representation,
                         learner_descriptions_after_seeing_example,
+                        offset=starting_point,
                     )
-        num_stages += 1
     logging.info("Training complete")
 
     for training_observer in chain(

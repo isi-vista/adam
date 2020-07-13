@@ -87,13 +87,11 @@ def log_experiment_entry_point(params: Parameters) -> None:
             sequence_chooser=RandomChooser.for_seed(0),
         ),
         log_path=params.optional_creatable_directory("hypothesis_log_dir"),
-        # log_hypotheses_every_n_examples=params.integer(
-        #    "log_hypothesis_every_n_steps", default=250
-        # ),
-        log_hypotheses_every_n_examples=3,
+        log_hypotheses_every_n_examples=params.integer(
+            "log_hypothesis_every_n_steps", default=250
+        ),
         learner_logging_path=params.optional_creatable_directory("experiment_group_dir"),
-        # load_learner_state=params.optional_existing_file("load_learner"),
-        starting_point=20,
+        starting_point=params.integer("starting_point", default=-1),
     )
 
 
