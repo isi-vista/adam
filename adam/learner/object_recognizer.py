@@ -1,6 +1,8 @@
 import logging
 from itertools import chain
 from typing import AbstractSet, Iterable, List, Mapping, Sequence, Set, Tuple, Union
+
+from adam.axis import GeonAxis
 from adam.language_specific.chinese.chinese_phase_1_lexicon import (
     GAILA_PHASE_1_CHINESE_LEXICON,
 )
@@ -25,6 +27,7 @@ from adam.ontology.phase1_ontology import (
     BIGGER_THAN,
     SMALLER_THAN,
 )
+from adam.ontology.phase1_spatial_relations import Region
 from adam.perception import (
     GROUND_PERCEPTION,
     LEARNER_PERCEPTION,
@@ -574,6 +577,12 @@ def extract_candidate_objects(
                 nodes_to_examine.extend(
                     in_neighbor
                     for (in_neighbor, _) in scene_digraph.in_edges(node_to_examine)
+                    # Avoid in-edges from Regions as they can come from other objects regions (e.g ground).
+                    if not (
+                        isinstance(node_to_examine, GeonAxis)
+                        and isinstance(in_neighbor, tuple)
+                        and isinstance(in_neighbor[0], Region)
+                    )
                 )
         candidate_objects.append(
             whole_scene_perception_graph.subgraph_by_nodes(

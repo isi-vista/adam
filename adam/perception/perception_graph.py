@@ -2890,8 +2890,6 @@ class _FrameTranslation:
         # but we want to maintain their distinctness in the perceptual graph
         # for the purpose of matching patterns, so we make their corresponding
         # graph nods compare by identity.
-        elif isinstance(obj, (Region)) and str(obj.reference_object) == "the ground":
-            return obj
         elif isinstance(obj, (Region, Geon)):
             return (obj, id(obj))
         else:

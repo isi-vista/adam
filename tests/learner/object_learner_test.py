@@ -321,7 +321,7 @@ def test_pursuit_object_learner(language_mode):
     # debug_callback = DumpPartialMatchCallback(render_path="../renders/")
     learner = IntegratedTemplateLearner(
         object_learner=PursuitObjectLearnerNew(
-            learning_factor=0.1,
+            learning_factor=0.05,
             graph_match_confirmation_threshold=0.7,
             lexicon_entry_threshold=0.7,
             rng=rng,
