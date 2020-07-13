@@ -1,6 +1,6 @@
 language: python
 python:
-    - "3.6"
+    - "pypy3.6-7.1.1"
 
 cache:
     pip: true
@@ -13,7 +13,7 @@ jobs:
     include:
         - stage: test
           script:
-              - echo "python version $(python --version) running"
+              - echo "pypy3 version $(pypy3 --version) running"
               - echo "pip version $(pip --version) running"
               - make check coverage
 

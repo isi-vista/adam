@@ -2,7 +2,7 @@ default:
 	@echo "an explicit target is required"
 
 # easier to test python2 vs. python3
-PYTHON=python3
+PYTHON=pypy3.6
 
 SHELL=bash
 SOURCE_DIR_NAME=adam
@@ -30,13 +30,13 @@ FLAKE8:=flake8
 FLAKE8_CMD:=$(FLAKE8) $(SOURCE_DIR_NAME)
 
 test: 
-	pytest tests
+	$(PYTHON) -m pytest tests
 
 coverage:
-	pytest --cov=adam tests
+	$(PYTHON) -m pytest --cov=adam tests
 
 benchmark:
-	pytest benchmarks
+	$(PYTHON) -m pytest benchmarks
 
 lint:
 	$(PYLINT)
