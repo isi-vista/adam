@@ -205,7 +205,9 @@ def graph_without_learner(perception_graph: PerceptionGraph) -> PerceptionGraph:
 class ComposableLearner(ABC):
     @abstractmethod
     def learn_from(
-        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
+        self,
+        language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
+        observation_num: int = -1,
     ) -> None:
         """
         Learn from a `LanguagePerceptionSemanticAlignment` describing a situation. This may update

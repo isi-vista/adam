@@ -479,7 +479,9 @@ class ObjectRecognizerAsTemplateLearner(TemplateLearner):
     )
 
     def learn_from(
-        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
+        self,
+        language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
+        observation_num: int = -1,
     ) -> None:
         # The object recognizer doesn't learn anything.
         # It just recognizes predefined object patterns.

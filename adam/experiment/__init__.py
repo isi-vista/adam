@@ -132,6 +132,7 @@ def execute_experiment(
     log_learner_state: bool = True,
     load_learner_state: Optional[Path] = None,
     load_curriculum_state: Optional[Path] = None,
+    starting_point: int = 0,
 ) -> None:
     """
     Runs an `Experiment`.
@@ -187,35 +188,16 @@ def execute_experiment(
 
     for training_stage in curriculum:
         logging.info("Beginning training stage %s", training_stage.name())
-        if log_learner_state:
-            experiment_to_log = Experiment(
-                name=experiment.name,
-                training_stages=curriculum[num_stages:],
-                learner_factory=experiment.learner_factory,
-                pre_example_training_observers=experiment.pre_example_training_observers,
-                post_example_training_observers=experiment.post_example_training_observers,
-                test_instance_groups=experiment.test_instance_groups,
-                test_observers=experiment.test_observers,
-                sequence_chooser=experiment.sequence_chooser,
-            )
-
-            # dump the unseen training stages into a pickle file. We don't get more specific than the training stages but
-            # this allows us to start at a training stage that isn't the beginning
-            training_stages_todo = experiment.training_stages[num_stages:]
-            pickle.dump(
-                training_stages_todo,
-                open(
-                    curriculum_path / f"training_state_at_{str(num_observations)}.pkl",
-                    "wb",
-                ),
-                pickle.HIGHEST_PROTOCOL,
-            )
         for (
             situation,
             linguistic_description,
             perceptual_representation,
         ) in training_stage.instances():
             num_observations += 1
+            if num_observations < starting_point:
+                print(num_observations)
+                continue
+
             # if we've reached the next num_observations where we should log hypotheses, log the hypotheses
             if log_path and num_observations % log_hypotheses_every_n_examples == 0:
                 learner.log_hypotheses(log_path / str(num_observations))
@@ -250,7 +232,8 @@ def execute_experiment(
                     )
 
             learner.observe(
-                LearningExample(perceptual_representation, linguistic_description)
+                LearningExample(perceptual_representation, linguistic_description),
+                observation_num=num_observations,
             )
 
             if experiment.post_example_training_observers:
