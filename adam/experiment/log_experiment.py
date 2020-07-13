@@ -92,6 +92,7 @@ def log_experiment_entry_point(params: Parameters) -> None:
         # ),
         log_hypotheses_every_n_examples=3,
         learner_logging_path=params.optional_creatable_directory("experiment_group_dir"),
+        load_learner_state=params.optional_existing_file("load_learner"),
     )
 
 

@@ -130,6 +130,7 @@ def execute_experiment(
     log_hypotheses_every_n_examples: int = 250,
     learner_logging_path: Optional[Path] = None,
     log_learner_state: bool = True,
+    load_learner_state: Optional[Path] = None,
 ) -> None:
     """
     Runs an `Experiment`.
@@ -151,6 +152,15 @@ def execute_experiment(
 
     logging.info("Beginning experiment %s", experiment.name)
 
+    if load_learner_state:
+        try:
+            learner = pickle.load(open(load_learner_state, "rb"))
+        except OSError:
+            learner = experiment.learner_factory()
+            logging.warning(
+                "Unable to instantiate learner at %s, using factory instead",
+                load_learner_state,
+            )
     learner = experiment.learner_factory()
     logging.info("Instantiated learner %s", learner)
 
