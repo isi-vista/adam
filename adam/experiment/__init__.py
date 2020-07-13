@@ -131,6 +131,7 @@ def execute_experiment(
     learner_logging_path: Optional[Path] = None,
     log_learner_state: bool = True,
     load_learner_state: Optional[Path] = None,
+    load_curriculum_state: Optional[Path] = None,
 ) -> None:
     """
     Runs an `Experiment`.
@@ -152,24 +153,52 @@ def execute_experiment(
 
     logging.info("Beginning experiment %s", experiment.name)
 
+    # if there is an existing learner to load, try to load it
     if load_learner_state:
         logging.info("Loading existing learner from %s", str(load_learner_state))
         try:
             learner = pickle.load(open(load_learner_state, "rb"))
+        # if the learner can't be loaded, just instantiate the default learner and notify the user
         except OSError:
             learner = experiment.learner_factory()
             logging.warning(
-                "Unable to instantiate learner at %s, using factory instead",
-                load_learner_state,
+                "Unable to load learner at %s, using factory instead", load_learner_state
             )
+    # if there's no existing learner, instantiate the default
     else:
         learner = experiment.learner_factory()
     logging.info("Instantiated learner %s", learner)
 
-    num_observations = 0
+    if load_curriculum_state:
+        logging.info("Loading existing training data from %s", str(load_curriculum_state))
+        try:
+            curriculum = pickle.load(open(load_curriculum_state, "rb"))
+        except OSError:
+            curriculum = experiment.training_stages
+            logging.warning(
+                "Unable to load training data from %s, using default",
+                load_curriculum_state,
+            )
+    else:
+        curriculum = experiment.training_stages
 
-    for training_stage in experiment.training_stages:
+    num_observations = 0
+    num_stages = 0
+
+    for training_stage in curriculum:
         logging.info("Beginning training stage %s", training_stage.name())
+        if log_learner_state:
+            # dump the unseen training stages into a pickle file. We don't get more specific than the training stages but
+            # this allows us to start at a training stage that isn't the beginning
+            training_stages_todo = experiment.training_stages[num_stages:]
+            pickle.dump(
+                training_stages_todo,
+                open(
+                    curriculum_path / f"training_state_at_{str(num_observations)}.pkl",
+                    "wb",
+                ),
+                pickle.HIGHEST_PROTOCOL,
+            )
         for (
             situation,
             linguistic_description,
@@ -185,20 +214,8 @@ def execute_experiment(
                     pickle.dump(
                         learner,
                         open(
-                            learner_path / f"learner_state_at_{str(num_observations)}",
-                            "wb",
-                        ),
-                        pickle.HIGHEST_PROTOCOL,
-                    )
-                    # dump the unseen curriculum to a pickle file
-                    current_curriculum = list(training_stage.instances())[
-                        num_observations:
-                    ]
-                    pickle.dump(
-                        current_curriculum,
-                        open(
-                            curriculum_path
-                            / f"curriculum_state_at_{str(num_observations)}",
+                            learner_path
+                            / f"learner_state_at_{str(num_observations)}.pkl",
                             "wb",
                         ),
                         pickle.HIGHEST_PROTOCOL,
@@ -236,6 +253,7 @@ def execute_experiment(
                         perceptual_representation,
                         learner_descriptions_after_seeing_example,
                     )
+        num_stages += 1
     logging.info("Training complete")
 
     for training_observer in chain(
