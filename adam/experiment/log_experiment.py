@@ -10,7 +10,8 @@ from adam.curriculum.imprecise_descriptions_curriculum import (
 from adam.curriculum.phase2_curriculum import (
     build_functionally_defined_objects_curriculum,
     build_gaila_m13_curriculum,
-    build_m13_shuffled_curriculum)
+    build_m13_shuffled_curriculum,
+)
 from adam.curriculum.verbs_with_dynamic_prepositions_curriculum import (
     make_verb_with_dynamic_prepositions_curriculum,
 )
@@ -23,17 +24,17 @@ from adam.experiment.experiment_utils import (
     build_m6_prepositions_curriculum,
     build_pursuit_curriculum,
 )
+from adam.language.dependency import LinearizedDependencyTree
+from adam.language.language_generator import LanguageGenerator
 from adam.language.language_utils import phase2_language_generator
 from adam.language_specific.english import ENGLISH_DETERMINERS
-from adam.language_specific.english.english_language_generator import (
-    GAILA_PHASE_1_LANGUAGE_GENERATOR,
-)
 from adam.learner.attributes import SubsetAttributeLearner, SubsetAttributeLearnerNew
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
 from adam.learner.relations import SubsetRelationLearnerNew
 from adam.learner.verbs import SubsetVerbLearner, SubsetVerbLearnerNew
 from adam.ontology.phase2_ontology import GAILA_PHASE_2_ONTOLOGY
+from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from vistautils.parameters import Parameters
 from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 
@@ -63,8 +64,12 @@ from adam.ontology.phase1_ontology import (
 )
 from adam.random_utils import RandomChooser
 
+LANGUAGE_GEN = LanguageGenerator[  # pylint: disable=invalid-name
+    HighLevelSemanticsSituation, LinearizedDependencyTree
+]
+
 CURRICULUM_BUILDER = Callable[  # pylint: disable=invalid-name
-    [], Iterable[Phase1InstanceGroup]
+    [Optional[int], Optional[int], LANGUAGE_GEN], Iterable[Phase1InstanceGroup]
 ]
 
 
@@ -276,14 +281,19 @@ def curriculum_from_params(
         curriculum_name
     ]
 
+    num_samples = params.optional_positive_integer("num_samples")
+    num_noise_objects = params.optional_positive_integer("num_noise_objects")
+
     return (
-        training_instance_groups(language_generator=language_generator)
+        training_instance_groups(num_samples, num_noise_objects, language_generator)
         if curriculum_name != "pursuit"
         else training_instance_groups(
-            language_generator=language_generator,
+            num_samples,
+            num_noise_objects,
+            language_generator,
             pursuit_curriculum_params=pursuit_curriculum_params,
         ),
-        test_instance_groups(language_generator=language_generator)
+        test_instance_groups(num_samples, num_noise_objects, language_generator)
         if test_instance_groups
         else [],
     )

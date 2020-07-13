@@ -85,9 +85,9 @@ def test_subset_color_attribute(
         f"{object_1_node.handle}", object_1_node, added_properties=[color]
     )
 
-    color_object_template = _object_with_color_template(object_0)
+    color_object_template = _object_with_color_template(object_0, None)
 
-    templates = [color_object_template, _object_with_color_template(object_1)]
+    templates = [color_object_template, _object_with_color_template(object_1, None)]
 
     language_generator = phase1_language_generator(language_mode)
 

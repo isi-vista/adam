@@ -163,7 +163,7 @@ def test_eat_simple(language_mode, learner):
 def test_drink(language_mode, learner):
     run_verb_test(
         learner(language_mode),
-        make_drink_template(),
+        make_drink_template(None),
         language_generator=phase1_language_generator(language_mode),
     )
 
@@ -174,7 +174,7 @@ def test_drink(language_mode, learner):
     [pytest.mark.skip(subset_verb_language_factory), integrated_learner_factory],
 )
 def test_sit(language_mode, learner):
-    for situation_template in make_sit_templates():
+    for situation_template in make_sit_templates(None):
         run_verb_test(
             learner(language_mode),
             situation_template,
@@ -188,7 +188,7 @@ def test_sit(language_mode, learner):
     [pytest.mark.skip(subset_verb_language_factory), integrated_learner_factory],
 )
 def test_put(language_mode, learner):
-    for situation_template in make_put_templates():
+    for situation_template in make_put_templates(None):
         run_verb_test(
             learner(language_mode),
             situation_template,
@@ -234,7 +234,7 @@ def test_go(language_mode, learner):
         for is_distal in (True, False)
     ]
 
-    for situation_template in make_go_templates():
+    for situation_template in make_go_templates(None):
         run_verb_test(
             learner(language_mode),
             situation_template,
@@ -318,7 +318,7 @@ def test_take(language_mode, learner):
     [pytest.mark.skip(subset_verb_language_factory), integrated_learner_factory],
 )
 def test_give(language_mode, learner):
-    for situation_template in make_give_templates():
+    for situation_template in make_give_templates(immutableset()):
         run_verb_test(
             learner(language_mode),
             situation_template,
@@ -332,7 +332,7 @@ def test_give(language_mode, learner):
     [pytest.mark.skip(subset_verb_language_factory), integrated_learner_factory],
 )
 def test_spin(language_mode, learner):
-    for situation_template in make_spin_templates():
+    for situation_template in make_spin_templates(None):
         run_verb_test(
             learner(language_mode),
             situation_template,
@@ -346,7 +346,7 @@ def test_spin(language_mode, learner):
     [pytest.mark.skip(subset_verb_language_factory), integrated_learner_factory],
 )
 def test_fall(language_mode, learner):
-    for situation_template in make_fall_templates():
+    for situation_template in make_fall_templates(immutableset()):
         run_verb_test(
             learner(language_mode),
             situation_template,
@@ -360,7 +360,7 @@ def test_fall(language_mode, learner):
     [pytest.mark.skip(subset_verb_language_factory), integrated_learner_factory],
 )
 def test_throw(language_mode, learner):
-    for situation_template in make_throw_templates():
+    for situation_template in make_throw_templates(None):
         run_verb_test(
             learner(language_mode),
             situation_template,
@@ -390,7 +390,7 @@ def test_throw_animacy(language_mode, learner):
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                 )
-                for situation_template in make_throw_animacy_templates()
+                for situation_template in make_throw_animacy_templates(None)
             ]
         ),
         language_generator=phase1_language_generator(language_mode),
@@ -406,7 +406,7 @@ def test_throw_animacy(language_mode, learner):
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                 )
-                for situation_template in make_throw_animacy_templates()
+                for situation_template in make_throw_animacy_templates(None)
             ]
         ),
         language_generator=phase1_language_generator(language_mode),
@@ -439,7 +439,7 @@ def test_throw_animacy(language_mode, learner):
     [pytest.mark.skip(subset_verb_language_factory), integrated_learner_factory],
 )
 def test_move(language_mode, learner):
-    for situation_template in make_move_templates():
+    for situation_template in make_move_templates(None):
         run_verb_test(
             learner(language_mode),
             situation_template,
@@ -455,13 +455,13 @@ def test_move(language_mode, learner):
 def test_jump(language_mode, learner):
     jumper = standard_object("jumper_0", THING, required_properties=[CAN_JUMP])
     jumped_over = standard_object("jumped_over")
-    for situation_template in make_jump_templates():
+    for situation_template in make_jump_templates(None):
         run_verb_test(
             learner(language_mode),
             situation_template,
             language_generator=phase1_language_generator(language_mode),
         )
-    for situation_template in [_jump_over_template(jumper, jumped_over, [])]:
+    for situation_template in [_jump_over_template(jumper, jumped_over, immutableset())]:
         run_verb_test(
             learner(language_mode),
             situation_template,
@@ -475,7 +475,7 @@ def test_jump(language_mode, learner):
     [pytest.mark.skip(subset_verb_language_factory), integrated_learner_factory],
 )
 def test_roll(language_mode, learner):
-    for situation_template in make_roll_templates():
+    for situation_template in make_roll_templates(None):
         run_verb_test(
             learner(language_mode),
             situation_template,
@@ -489,7 +489,7 @@ def test_roll(language_mode, learner):
     [pytest.mark.skip(subset_verb_language_factory), integrated_learner_factory],
 )
 def test_fly(language_mode, learner):
-    for situation_template in make_fly_templates():
+    for situation_template in make_fly_templates(immutableset()):
         run_verb_test(
             learner(language_mode),
             situation_template,

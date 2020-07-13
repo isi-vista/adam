@@ -15,6 +15,7 @@ from typing import (
     Mapping,
 )
 
+from adam.language.language_generator import LanguageGenerator
 from adam.language_specific.chinese.chinese_language_generator import (
     GAILA_PHASE_2_CHINESE_LANGUAGE_GENERATOR,
 )
@@ -128,7 +129,16 @@ EXPLANATION_HEADER = (
     "\n\t Generated On: {date}"
     "</ul>"
 )
-STR_TO_CURRICULUM: Mapping[str, Callable[[], Iterable[Phase1InstanceGroup]]] = {
+
+LANGUAGE_GEN = LanguageGenerator[  # pylint: disable=invalid-name
+    HighLevelSemanticsSituation, LinearizedDependencyTree
+]
+
+CURRICULUM_BUILDER = Callable[  # pylint: disable=invalid-name
+    [Optional[int], Optional[int], LANGUAGE_GEN], Iterable[Phase1InstanceGroup]
+]
+
+STR_TO_CURRICULUM: Mapping[str, CURRICULUM_BUILDER] = {
     "isi-gaila-milestone-8": build_gaila_m8_curriculum,
     "phase1": build_gaila_phase_1_curriculum,
     "prepositions": make_prepositions_curriculum,
@@ -150,19 +160,19 @@ def main(params: Parameters) -> None:
     language_string = params.string(
         "language", valid_options=["english", "chinese"], default="english"
     )
-    if language_string == "chinese" and curriculum_string == "m6-curriculum":
-        raise NotImplementedError("Chinese isn't implemented for m6 yet")
+    num_samples = params.optional_positive_integer("num_samples")
+    num_noise_objects = params.optional_positive_integer("num_noise_objects")
     phase1_curriculum_dir = root_output_directory / language_string / curriculum_string
     phase1_curriculum_dir.mkdir(parents=True, exist_ok=True)
     # We lazily instantiate the curriculum so we don't need to worry
     # about any of them we don't actually use.
     if language_string == "chinese":
         curriculum_to_render = STR_TO_CURRICULUM[curriculum_string](
-            language_generator=GAILA_PHASE_2_CHINESE_LANGUAGE_GENERATOR
+            num_samples, num_noise_objects, GAILA_PHASE_2_CHINESE_LANGUAGE_GENERATOR
         )
     elif language_string == "english":
         curriculum_to_render = STR_TO_CURRICULUM[curriculum_string](
-            language_generator=GAILA_PHASE_2_LANGUAGE_GENERATOR
+            num_samples, num_noise_objects, GAILA_PHASE_2_LANGUAGE_GENERATOR
         )
     else:
         raise RuntimeError("Invalid language parameter")

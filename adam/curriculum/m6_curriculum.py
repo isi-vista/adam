@@ -9,13 +9,13 @@ basic color terms (red, blue, green, white, black…), one, two, my, your)
 """
 import random as r
 from itertools import chain
-from adam.language_specific.english.english_language_generator import (
-    GAILA_PHASE_1_LANGUAGE_GENERATOR,
-)
+from typing import Sequence, List, Optional
+
+from more_itertools import flatten
+
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.language.language_generator import LanguageGenerator
 from adam.language.dependency import LinearizedDependencyTree
-from immutablecollections import immutableset
 
 from adam.curriculum import ExplicitWithSituationInstanceGroup
 from adam.curriculum.curriculum_utils import (
@@ -23,6 +23,7 @@ from adam.curriculum.curriculum_utils import (
     Phase1InstanceGroup,
     phase1_instances,
     standard_object,
+    make_noise_objects,
 )
 from adam.curriculum.phase1_curriculum import (
     _make_each_object_by_itself_curriculum,
@@ -68,8 +69,6 @@ from adam.perception.high_level_semantics_situation_to_developmental_primitive_p
 )
 from adam.situation.templates.phase1_templates import sampled
 
-r.seed(0)
-
 M6_PREPOSITION_CURRICULUM_SMALL_OBJECTS = [BALL, CUP, BOX, HAT, BOOK, COOKIE, BIRD]
 M6_PREPOSITION_CURRICULUM_LARGER_OBJECTS = [TABLE, HOUSE, CAR, CHAIR, TRUCK]
 M6_PREPOSITION_CURRICULUM_OBJECTS = list(
@@ -114,26 +113,44 @@ LARGE_OBJECT_VARS = [
 ]
 
 
-def _make_m6_on_curriculum() -> Phase1InstanceGroup:
+def _make_m6_on_curriculum(
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ],
+) -> Phase1InstanceGroup:
     return phase1_instances(
         "Preposition on",
         situations=chain(
             *[
                 sampled(
-                    _on_template(object_1, object_2, immutableset(), is_training=True),
+                    _on_template(
+                        object_1,
+                        object_2,
+                        make_noise_objects(noise_objects),
+                        is_training=True,
+                    ),
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    max_to_sample=1,
+                    max_to_sample=num_samples if num_samples else 1,
                 )
                 for object_1 in r.sample(SMALL_OBJECT_VARS, 3)
                 for object_2 in r.sample(LARGE_OBJECT_VARS, 3)
             ]
         ),
         perception_generator=GAILA_M6_PERCEPTION_GENERATOR,
+        language_generator=language_generator,
     )
 
 
-def _make_m6_beside_curriculum() -> Phase1InstanceGroup:
+def _make_m6_beside_curriculum(
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ],
+) -> Phase1InstanceGroup:
     return phase1_instances(
         "Preposition on",
         situations=chain(
@@ -142,23 +159,30 @@ def _make_m6_beside_curriculum() -> Phase1InstanceGroup:
                     _beside_template(
                         object_1,
                         object_2,
-                        immutableset(),
+                        make_noise_objects(noise_objects),
                         is_training=True,
                         is_right=True,
                     ),
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    max_to_sample=1,
+                    max_to_sample=num_samples if num_samples else 1,
                 )
                 for object_1 in r.sample(SMALL_OBJECT_VARS, 3)
                 for object_2 in r.sample(LARGE_OBJECT_VARS, 3)
             ]
         ),
         perception_generator=GAILA_M6_PERCEPTION_GENERATOR,
+        language_generator=language_generator,
     )
 
 
-def _make_m6_under_curriculum() -> Phase1InstanceGroup:
+def _make_m6_under_curriculum(
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ],
+) -> Phase1InstanceGroup:
     return phase1_instances(
         "Preposition under",
         situations=chain(
@@ -167,23 +191,30 @@ def _make_m6_under_curriculum() -> Phase1InstanceGroup:
                     _under_template(
                         object_1,
                         object_2,
-                        immutableset(),
+                        make_noise_objects(noise_objects),
                         is_training=True,
                         is_distal=True,
                     ),
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    max_to_sample=1,
+                    max_to_sample=num_samples if num_samples else 1,
                 )
                 for object_1 in r.sample(SMALL_OBJECT_VARS, 3)
                 for object_2 in r.sample(LARGE_OBJECT_VARS, 3)
             ]
         ),
         perception_generator=GAILA_M6_PERCEPTION_GENERATOR,
+        language_generator=language_generator,
     )
 
 
-def _make_m6_over_curriculum() -> Phase1InstanceGroup:
+def _make_m6_over_curriculum(
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ],
+) -> Phase1InstanceGroup:
     return phase1_instances(
         "Preposition over",
         situations=chain(
@@ -192,25 +223,34 @@ def _make_m6_over_curriculum() -> Phase1InstanceGroup:
                     _over_template(
                         object_1,
                         object_2,
-                        immutableset(),
+                        make_noise_objects(noise_objects),
                         is_training=True,
                         is_distal=True,
                     ),
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    max_to_sample=1,
+                    max_to_sample=num_samples if num_samples else 1,
                 )
                 for object_1 in r.sample(SMALL_OBJECT_VARS, 3)
                 for object_2 in r.sample(LARGE_OBJECT_VARS, 3)
             ]
         ),
         perception_generator=GAILA_M6_PERCEPTION_GENERATOR,
+        language_generator=language_generator,
     )
 
 
-def _make_m6_behind_curriculum() -> Phase1InstanceGroup:
+def _make_m6_behind_curriculum(
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ],
+) -> Phase1InstanceGroup:
     learner_object = standard_object("learner", LEARNER, added_properties=[IS_ADDRESSEE])
     mom = standard_object("mom", MOM, added_properties=[IS_SPEAKER])
+    background = [learner_object, mom]
+    background.extend(make_noise_objects(noise_objects))
 
     return phase1_instances(
         "Preposition behind",
@@ -218,27 +258,32 @@ def _make_m6_behind_curriculum() -> Phase1InstanceGroup:
             *[
                 sampled(
                     _behind_template(
-                        object_1,
-                        object_2,
-                        immutableset([learner_object, mom]),
-                        is_training=True,
-                        is_near=True,
+                        object_1, object_2, background, is_training=True, is_near=True
                     ),
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    max_to_sample=1,
+                    max_to_sample=num_samples if num_samples else 1,
                 )
                 for object_1 in r.sample(SMALL_OBJECT_VARS, 3)
                 for object_2 in r.sample(LARGE_OBJECT_VARS, 3)
             ]
         ),
         perception_generator=GAILA_M6_PERCEPTION_GENERATOR,
+        language_generator=language_generator,
     )
 
 
-def _make_m6_in_front_curriculum() -> Phase1InstanceGroup:
+def _make_m6_in_front_curriculum(
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ],
+) -> Phase1InstanceGroup:
     learner_object = standard_object("learner", LEARNER, added_properties=[IS_ADDRESSEE])
     mom = standard_object("mom", MOM, added_properties=[IS_SPEAKER])
+    background = [learner_object, mom]
+    background.extend(make_noise_objects(noise_objects))
 
     return phase1_instances(
         "Preposition behind",
@@ -246,21 +291,18 @@ def _make_m6_in_front_curriculum() -> Phase1InstanceGroup:
             *[
                 sampled(
                     _behind_template(
-                        object_1,
-                        object_2,
-                        immutableset([learner_object, mom]),
-                        is_training=True,
-                        is_near=True,
+                        object_1, object_2, background, is_training=True, is_near=True
                     ),
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    max_to_sample=1,
+                    max_to_sample=num_samples if num_samples else 1,
                 )
                 for object_1 in r.sample(SMALL_OBJECT_VARS, 3)
                 for object_2 in r.sample(LARGE_OBJECT_VARS, 3)
             ]
         ),
         perception_generator=GAILA_M6_PERCEPTION_GENERATOR,
+        language_generator=language_generator,
     )
 
 
@@ -290,34 +332,42 @@ M6_SUBCURRICULUM_GENERATORS = list(
 )
 
 
-# TODO: fix this for Chinese
-def _make_m6_mixed_curriculum() -> Phase1InstanceGroup:
-    all_instances = [
-        instance
-        for instance_group in M6_SUBCURRICULUM_GENERATORS
-        for instance in instance_group().instances()  # type: ignore
-    ]
+def _make_m6_mixed_curriculum(
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ],
+) -> Phase1InstanceGroup:
+    r.seed(0)
+    all_instances = flatten(
+        make_m6_curriculum(num_samples, noise_objects, language_generator)
+    )
     r.shuffle(all_instances)
     return ExplicitWithSituationInstanceGroup("m6_mixed", tuple(all_instances))
 
 
 def instantiate_subcurricula(
     subcurricula,
+    num_samples: Optional[int],
+    num_noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
-):
+    ],
+) -> List[Phase1InstanceGroup]:
     return [
-        subcurriculum(language_generator=language_generator)
+        subcurriculum(num_samples, num_noise_objects, language_generator)
         for subcurriculum in subcurricula
     ]
 
 
 def make_m6_curriculum(
+    num_samples: Optional[int],
+    num_noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
-):
+    ],
+) -> Sequence[Phase1InstanceGroup]:
     return instantiate_subcurricula(
-        M6_SUBCURRICULUM_GENERATORS, language_generator=language_generator
-    ) + [_make_m6_mixed_curriculum()]
+        M6_SUBCURRICULUM_GENERATORS, num_samples, num_noise_objects, language_generator
+    ) + [_make_m6_mixed_curriculum(num_samples, num_noise_objects, language_generator)]

@@ -2,7 +2,6 @@ import logging
 from pathlib import Path
 from typing import List
 
-from adam.learner import LanguageMode
 from vistautils.parameters import Parameters, YAMLParametersLoader
 from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 
@@ -52,11 +51,6 @@ def main(params: Parameters):
 
     if params.boolean("include_m13_shuffled", default=False):
         param_files.append(m13_experiments_dir / "m13_shuffled.params")
-
-    # This activates a special "debug" curriculum,
-    # which is meant to be edited in the code by a developer to do fine-grained debugging.
-    if params.boolean("include_debug", default=False):
-        param_files.append(m13_experiments_dir / "debug.params")
 
     # This activates a special "debug" curriculum,
     # which is meant to be edited in the code by a developer to do fine-grained debugging.

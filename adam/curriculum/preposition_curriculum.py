@@ -1,26 +1,23 @@
 from itertools import chain
-from typing import Iterable
+from typing import Iterable, Sequence, Optional
 from immutablecollections import immutableset
 from more_itertools import flatten
-from adam.language_specific.english.english_language_generator import (
-    GAILA_PHASE_1_LANGUAGE_GENERATOR,
-)
 from adam.language.language_generator import LanguageGenerator
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.language.dependency import LinearizedDependencyTree
 from adam.axes import HorizontalAxisOfObject, FacingAddresseeAxis
 from adam.curriculum.curriculum_utils import (
     PHASE1_CHOOSER_FACTORY,
-    make_background,
     standard_object,
     Phase1InstanceGroup,
     phase1_instances,
+    make_noise_objects,
 )
 from adam.language_specific.english.english_language_generator import (
     USE_ABOVE_BELOW,
     USE_NEAR,
 )
-from adam.ontology import IS_ADDRESSEE, IS_SPEAKER, THING
+from adam.ontology import IS_ADDRESSEE, IS_SPEAKER, THING, OntologyNode
 from adam.ontology.phase1_ontology import (
     BALL,
     BOOK,
@@ -35,7 +32,6 @@ from adam.ontology.phase1_ontology import (
     MOM,
     COOKIE,
     CHAIR,
-    LEARNER,
     DAD,
     PERSON,
     CAN_HAVE_THINGS_RESTING_ON_THEM,
@@ -47,6 +43,7 @@ from adam.ontology.phase1_ontology import (
     far,
     strictly_under,
     strictly_over,
+    LEARNER,
 )
 from adam.ontology.phase1_spatial_relations import PROXIMAL, Direction, DISTAL
 from adam.situation.templates.phase1_templates import (
@@ -177,13 +174,18 @@ def _behind_template(
     *,
     is_training: bool,
     is_near: bool,
+    speaker_root_node: OntologyNode = PERSON,
 ) -> Phase1SituationTemplate:
     handle = "training" if is_training else "testing"
     direction = Direction(positive=False, relative_to_axis=FacingAddresseeAxis(ground))
+    speaker = standard_object("speaker", speaker_root_node, added_properties=[IS_SPEAKER])
+    addressee = standard_object("addressee", LEARNER, added_properties=[IS_ADDRESSEE])
+    computed_background = [speaker, addressee]
+    computed_background.extend(background)
     return Phase1SituationTemplate(
         f"preposition-{handle}-{figure.handle}-behind-{ground.handle}",
         salient_object_variables=[figure, ground],
-        background_object_variables=background,
+        background_object_variables=computed_background,
         asserted_always_relations=[
             near(figure, ground, direction=direction)
             if is_near
@@ -200,13 +202,18 @@ def _in_front_template(
     *,
     is_training: bool,
     is_near: bool,
+    speaker_root_node: OntologyNode = PERSON,
 ) -> Phase1SituationTemplate:
     handle = "training" if is_training else "testing"
     direction = Direction(positive=True, relative_to_axis=FacingAddresseeAxis(ground))
+    speaker = standard_object("speaker", speaker_root_node, added_properties=[IS_SPEAKER])
+    addressee = standard_object("addressee", LEARNER, added_properties=[IS_ADDRESSEE])
+    computed_background = [speaker, addressee]
+    computed_background.extend(background)
     return Phase1SituationTemplate(
         f"preposition-{handle}-{figure.handle}-behind-{ground.handle}",
         salient_object_variables=[figure, ground],
-        background_object_variables=background,
+        background_object_variables=computed_background,
         asserted_always_relations=[
             near(figure, ground, direction=direction)
             if is_near
@@ -252,12 +259,11 @@ def _far_template(
 
 
 def _make_on_training(
-    num_samples: int = 5,
-    *,
-    noise_objects: bool = True,
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    ],
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
@@ -278,17 +284,12 @@ def _make_on_training(
                             _on_template(
                                 figure,
                                 ground,
-                                make_background(
-                                    [figure, ground],
-                                    all_objects=flatten([figures, grounds]),
-                                )
-                                if noise_objects
-                                else immutableset(),
+                                make_noise_objects(noise_objects),
                                 is_training=True,
                             ),
                             chooser=PHASE1_CHOOSER_FACTORY(),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
-                            max_to_sample=num_samples,
+                            max_to_sample=num_samples if num_samples else 5,
                         )
                         for figure in figures
                         for ground in grounds
@@ -301,12 +302,11 @@ def _make_on_training(
 
 
 def _make_beside_training(
-    num_samples: int = 5,
-    *,
-    noise_objects: bool = True,
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    ],
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
@@ -328,18 +328,13 @@ def _make_beside_training(
                             _beside_template(
                                 figure,
                                 ground,
-                                make_background(
-                                    [figure, ground],
-                                    all_objects=flatten([figures, grounds]),
-                                )
-                                if noise_objects
-                                else immutableset(),
+                                make_noise_objects(noise_objects),
                                 is_right=direction,
                                 is_training=True,
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
                             chooser=PHASE1_CHOOSER_FACTORY(),
-                            max_to_sample=num_samples,
+                            max_to_sample=num_samples if num_samples else 5,
                         )
                         for figure in figures
                         for ground in grounds
@@ -353,12 +348,11 @@ def _make_beside_training(
 
 
 def _make_under_training(
-    num_samples: int = 5,
-    *,
-    noise_objects: bool = True,
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    ],
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
@@ -376,16 +370,14 @@ def _make_under_training(
                     _under_template(
                         figure,
                         ground,
-                        make_background([figure], all_objects=flatten([figures, grounds]))
-                        if noise_objects
-                        else immutableset(),
+                        make_noise_objects(noise_objects),
                         is_training=True,
                         is_distal=distance,
                         syntax_hints=[USE_ABOVE_BELOW] if use_above_below else [],
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
-                    max_to_sample=num_samples,
+                    max_to_sample=num_samples if num_samples else 5,
                 )
                 for figure in figures
                 for ground in grounds
@@ -398,12 +390,11 @@ def _make_under_training(
 
 
 def _make_over_training(
-    num_samples: int = 5,
-    *,
-    noise_objects: bool = True,
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    ],
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
@@ -422,16 +413,14 @@ def _make_over_training(
                     _over_template(
                         figure,
                         ground,
-                        make_background([figure], all_objects=flatten([figures, grounds]))
-                        if noise_objects
-                        else immutableset(),
+                        make_noise_objects(noise_objects),
                         is_training=True,
                         is_distal=distance,
                         syntax_hints=[USE_ABOVE_BELOW] if use_above_below else [],
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
-                    max_to_sample=num_samples,
+                    max_to_sample=num_samples if num_samples else 5,
                 )
                 for figure in figures
                 for ground in grounds
@@ -444,12 +433,11 @@ def _make_over_training(
 
 
 def _make_in_training(
-    num_samples: int = 5,
-    *,
-    noise_objects: bool = True,
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    ],
 ) -> Phase1InstanceGroup:
     figure_0 = object_variable("water", WATER)
     figure_1 = object_variable("juice", JUICE)
@@ -467,16 +455,12 @@ def _make_in_training(
                     _in_template(
                         figure,
                         ground,
-                        make_background(
-                            [figure, ground], all_objects=flatten([figures, grounds])
-                        )
-                        if noise_objects
-                        else immutableset(),
+                        make_noise_objects(noise_objects),
                         is_training=True,
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
-                    max_to_sample=num_samples,
+                    max_to_sample=num_samples if num_samples else 5,
                 )
                 for figure in figures
                 for ground in grounds
@@ -487,12 +471,11 @@ def _make_in_training(
 
 
 def _make_behind_training(
-    num_samples: int = 5,
-    *,
-    noise_objects: bool = True,
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    ],
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
@@ -500,8 +483,6 @@ def _make_behind_training(
     ground_0 = standard_object("cookie", COOKIE)
     ground_1 = standard_object("table", TABLE)
     ground_2 = standard_object("person", PERSON)
-    speaker = standard_object("speaker", MOM, added_properties=[IS_SPEAKER])
-    addressee = standard_object("addressee", LEARNER, added_properties=[IS_ADDRESSEE])
 
     figures = immutableset([figure_0, figure_1, figure_2])
     grounds = immutableset([ground_0, ground_1, ground_2])
@@ -516,20 +497,13 @@ def _make_behind_training(
                             _behind_template(
                                 figure,
                                 ground,
-                                make_background(
-                                    [figure, ground],
-                                    all_objects=flatten(
-                                        [figures, grounds, [speaker, addressee]]
-                                    ),
-                                )
-                                if noise_objects
-                                else immutableset([speaker, addressee]),
+                                make_noise_objects(noise_objects),
                                 is_training=True,
                                 is_near=close,
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
                             chooser=PHASE1_CHOOSER_FACTORY(),
-                            max_to_sample=num_samples,
+                            max_to_sample=num_samples if num_samples else 5,
                         )
                         for figure in figures
                         for ground in grounds
@@ -543,12 +517,11 @@ def _make_behind_training(
 
 
 def _make_in_front_training(
-    num_samples: int = 5,
-    *,
-    noise_objects: bool = True,
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    ],
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
@@ -556,8 +529,6 @@ def _make_in_front_training(
     ground_0 = standard_object("cookie", COOKIE)
     ground_1 = standard_object("table", TABLE)
     ground_2 = standard_object("person", PERSON)
-    speaker = standard_object("speaker", MOM, added_properties=[IS_SPEAKER])
-    addressee = standard_object("addressee", LEARNER, added_properties=[IS_ADDRESSEE])
 
     figures = immutableset([figure_0, figure_1, figure_2])
     grounds = immutableset([ground_0, ground_1, ground_2])
@@ -572,20 +543,13 @@ def _make_in_front_training(
                             _in_front_template(
                                 figure,
                                 ground,
-                                make_background(
-                                    [figure, ground],
-                                    all_objects=flatten(
-                                        [figures, grounds, [speaker, addressee]]
-                                    ),
-                                )
-                                if noise_objects
-                                else immutableset([speaker, addressee]),
+                                make_noise_objects(noise_objects),
                                 is_training=True,
                                 is_near=close,
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
                             chooser=PHASE1_CHOOSER_FACTORY(),
-                            max_to_sample=num_samples,
+                            max_to_sample=num_samples if num_samples else 5,
                         )
                         for figure in figures
                         for ground in grounds
@@ -599,12 +563,11 @@ def _make_in_front_training(
 
 
 def _make_near_training(
-    num_samples: int = 5,
-    *,
-    noise_objects: bool = True,
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    ],
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
@@ -626,17 +589,12 @@ def _make_near_training(
                             _near_template(
                                 figure,
                                 ground,
-                                make_background(
-                                    [figure, ground],
-                                    all_objects=flatten([figures, grounds]),
-                                )
-                                if noise_objects
-                                else immutableset([]),
+                                make_noise_objects(noise_objects),
                                 is_training=True,
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
                             chooser=PHASE1_CHOOSER_FACTORY(),
-                            max_to_sample=num_samples,
+                            max_to_sample=num_samples if num_samples else 5,
                         )
                         for figure in figures
                         for ground in grounds
@@ -649,12 +607,11 @@ def _make_near_training(
 
 
 def _make_far_training(
-    num_samples: int = 5,
-    *,
-    noise_objects: bool = True,
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    ],
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("ball", BALL)
     figure_1 = standard_object("book", BOOK)
@@ -676,17 +633,12 @@ def _make_far_training(
                             _far_template(
                                 figure,
                                 ground,
-                                make_background(
-                                    [figure, ground],
-                                    all_objects=flatten([figures, grounds]),
-                                )
-                                if noise_objects
-                                else immutableset([]),
+                                make_noise_objects(noise_objects),
                                 is_training=True,
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
                             chooser=PHASE1_CHOOSER_FACTORY(),
-                            max_to_sample=num_samples,
+                            max_to_sample=num_samples if num_samples else 5,
                         )
                         for figure in figures
                         for ground in grounds
@@ -699,12 +651,11 @@ def _make_far_training(
 
 
 def _make_on_tests(
-    num_samples: int = 5,
-    *,
-    noise_objects: bool = True,
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    ],
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("figure_0", THING, banned_properties=[HOLLOW])
     figure_1 = standard_object("figure_1", THING, banned_properties=[HOLLOW])
@@ -734,17 +685,12 @@ def _make_on_tests(
                             _on_template(
                                 figure,
                                 ground,
-                                make_background(
-                                    [figure, ground],
-                                    all_objects=flatten([figures, grounds]),
-                                )
-                                if noise_objects
-                                else immutableset(),
+                                make_noise_objects(noise_objects),
                                 is_training=False,
                             ),
                             chooser=PHASE1_CHOOSER_FACTORY(),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
-                            max_to_sample=num_samples,
+                            max_to_sample=num_samples if num_samples else 5,
                         )
                         for figure in figures
                         for ground in grounds
@@ -757,12 +703,11 @@ def _make_on_tests(
 
 
 def _make_beside_tests(
-    num_samples: int = 5,
-    *,
-    noise_objects: bool = True,
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    ],
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("figure_0", THING, banned_properties=[HOLLOW])
     figure_1 = standard_object("figure_1", THING, banned_properties=[HOLLOW])
@@ -782,18 +727,13 @@ def _make_beside_tests(
                             _beside_template(
                                 figure,
                                 ground,
-                                make_background(
-                                    [figure, ground],
-                                    all_objects=flatten([figures, grounds]),
-                                )
-                                if noise_objects
-                                else immutableset(),
+                                make_noise_objects(noise_objects),
                                 is_right=direction,
                                 is_training=False,
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
                             chooser=PHASE1_CHOOSER_FACTORY(),
-                            max_to_sample=num_samples,
+                            max_to_sample=num_samples if num_samples else 5,
                         )
                         for figure in figures
                         for ground in grounds
@@ -807,12 +747,11 @@ def _make_beside_tests(
 
 
 def _make_under_tests(
-    num_samples: int = 5,
-    *,
-    noise_objects: bool = True,
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    ],
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("figure_0", THING, banned_properties=[HOLLOW])
     figure_1 = standard_object("figure_1", THING, banned_properties=[HOLLOW])
@@ -834,16 +773,14 @@ def _make_under_tests(
                     _under_template(
                         figure,
                         ground,
-                        make_background([figure], all_objects=flatten([figures, grounds]))
-                        if noise_objects
-                        else immutableset(),
+                        make_noise_objects(noise_objects),
                         is_training=False,
                         is_distal=distance,
                         syntax_hints=[USE_ABOVE_BELOW] if use_above_below else [],
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
-                    max_to_sample=num_samples,
+                    max_to_sample=num_samples if num_samples else 5,
                 )
                 for figure in figures
                 for ground in grounds
@@ -856,12 +793,11 @@ def _make_under_tests(
 
 
 def _make_over_tests(
-    num_samples: int = 5,
-    *,
-    noise_objects: bool = True,
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    ],
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("figure_0", THING, banned_properties=[HOLLOW])
     figure_1 = standard_object("figure_1", THING, banned_properties=[HOLLOW])
@@ -879,16 +815,14 @@ def _make_over_tests(
                     _over_template(
                         figure,
                         ground,
-                        make_background([figure], all_objects=flatten([figures, grounds]))
-                        if noise_objects
-                        else immutableset(),
+                        make_noise_objects(noise_objects),
                         is_training=False,
                         is_distal=distance,
                         syntax_hints=[USE_ABOVE_BELOW] if use_above_below else [],
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
-                    max_to_sample=num_samples,
+                    max_to_sample=num_samples if num_samples else 5,
                 )
                 for figure in figures
                 for ground in grounds
@@ -901,12 +835,11 @@ def _make_over_tests(
 
 
 def _make_in_tests(
-    num_samples: int = 5,
-    *,
-    noise_objects: bool = True,
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    ],
 ) -> Phase1InstanceGroup:
     figure_0 = object_variable("figure_0", THING, banned_properties=[IS_BODY_PART])
     figure_1 = standard_object("figure_1", THING, banned_properties=[IS_BODY_PART])
@@ -924,16 +857,12 @@ def _make_in_tests(
                     _in_template(
                         figure,
                         ground,
-                        make_background(
-                            [figure, ground], all_objects=flatten([figures, grounds])
-                        )
-                        if noise_objects
-                        else immutableset(),
+                        make_noise_objects(noise_objects),
                         is_training=False,
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
-                    max_to_sample=num_samples,
+                    max_to_sample=num_samples if num_samples else 5,
                 )
                 for figure in figures
                 for ground in grounds
@@ -944,20 +873,16 @@ def _make_in_tests(
 
 
 def _make_behind_tests(
-    num_samples: int = 5,
-    *,
-    noise_objects: bool = True,
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    ],
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("figure_0", THING, banned_properties=[HOLLOW])
     figure_1 = standard_object("figure_1", THING, banned_properties=[HOLLOW])
     ground_0 = standard_object("ground_0", THING, banned_properties=[HOLLOW])
     ground_1 = standard_object("ground_1", THING, banned_properties=[HOLLOW])
-
-    speaker = standard_object("speaker", MOM, added_properties=[IS_SPEAKER])
-    addressee = standard_object("addressee", LEARNER, added_properties=[IS_ADDRESSEE])
 
     figures = immutableset([figure_0, figure_1])
     grounds = immutableset([ground_0, ground_1])
@@ -972,20 +897,13 @@ def _make_behind_tests(
                             _behind_template(
                                 figure,
                                 ground,
-                                make_background(
-                                    [figure, ground],
-                                    all_objects=flatten(
-                                        [figures, grounds, [speaker, addressee]]
-                                    ),
-                                )
-                                if noise_objects
-                                else immutableset([speaker, addressee]),
+                                make_noise_objects(noise_objects),
                                 is_training=False,
                                 is_near=close,
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
                             chooser=PHASE1_CHOOSER_FACTORY(),
-                            max_to_sample=num_samples,
+                            max_to_sample=num_samples if num_samples else 5,
                         )
                         for figure in figures
                         for ground in grounds
@@ -999,20 +917,16 @@ def _make_behind_tests(
 
 
 def _make_in_front_tests(
-    num_samples: int = 5,
-    *,
-    noise_objects: bool = True,
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    ],
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("figure_0", THING, banned_properties=[HOLLOW])
     figure_1 = standard_object("figure_1", THING, banned_properties=[HOLLOW])
     ground_0 = standard_object("ground_0", THING, banned_properties=[HOLLOW])
     ground_1 = standard_object("ground_1", THING, banned_properties=[HOLLOW])
-
-    speaker = standard_object("speaker", MOM, added_properties=[IS_SPEAKER])
-    addressee = standard_object("addressee", LEARNER, added_properties=[IS_ADDRESSEE])
 
     figures = immutableset([figure_0, figure_1])
     grounds = immutableset([ground_0, ground_1])
@@ -1027,20 +941,13 @@ def _make_in_front_tests(
                             _in_front_template(
                                 figure,
                                 ground,
-                                make_background(
-                                    [figure, ground],
-                                    all_objects=flatten(
-                                        [figures, grounds, [speaker, addressee]]
-                                    ),
-                                )
-                                if noise_objects
-                                else immutableset([speaker, addressee]),
+                                make_noise_objects(noise_objects),
                                 is_training=False,
                                 is_near=close,
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
                             chooser=PHASE1_CHOOSER_FACTORY(),
-                            max_to_sample=num_samples,
+                            max_to_sample=num_samples if num_samples else 5,
                         )
                         for figure in figures
                         for ground in grounds
@@ -1054,12 +961,11 @@ def _make_in_front_tests(
 
 
 def _make_near_tests(
-    num_samples: int = 5,
-    *,
-    noise_objects: bool = True,
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    ],
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("figure_0", THING, banned_properties=[HOLLOW])
     figure_1 = standard_object("figure_1", THING, banned_properties=[HOLLOW])
@@ -1079,17 +985,12 @@ def _make_near_tests(
                             _near_template(
                                 figure,
                                 ground,
-                                make_background(
-                                    [figure, ground],
-                                    all_objects=flatten([figures, grounds]),
-                                )
-                                if noise_objects
-                                else immutableset([]),
+                                make_noise_objects(noise_objects),
                                 is_training=False,
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
                             chooser=PHASE1_CHOOSER_FACTORY(),
-                            max_to_sample=num_samples,
+                            max_to_sample=num_samples if num_samples else 5,
                         )
                         for figure in figures
                         for ground in grounds
@@ -1102,12 +1003,11 @@ def _make_near_tests(
 
 
 def _make_far_tests(
-    num_samples: int = 5,
-    *,
-    noise_objects: bool = True,
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    ],
 ) -> Phase1InstanceGroup:
     figure_0 = standard_object("figure_0", THING, banned_properties=[HOLLOW])
     figure_1 = standard_object("figure_1", THING, banned_properties=[HOLLOW])
@@ -1127,17 +1027,12 @@ def _make_far_tests(
                             _far_template(
                                 figure,
                                 ground,
-                                make_background(
-                                    [figure, ground],
-                                    all_objects=flatten([figures, grounds]),
-                                )
-                                if noise_objects
-                                else immutableset([]),
+                                make_noise_objects(noise_objects),
                                 is_training=False,
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
                             chooser=PHASE1_CHOOSER_FACTORY(),
-                            max_to_sample=num_samples,
+                            max_to_sample=num_samples if num_samples else 5,
                         )
                         for figure in figures
                         for ground in grounds
@@ -1150,138 +1045,59 @@ def _make_far_tests(
 
 
 def make_prepositions_curriculum_training(
-    num_samples: int = 5,
-    *,
-    noise_objects: bool = True,
+    num_samples: Optional[int],
+    num_noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
-):
+    ],
+) -> Sequence[Phase1InstanceGroup]:
     return [
-        _make_on_training(
-            num_samples,
-            noise_objects=noise_objects,
-            language_generator=language_generator,
-        ),
-        _make_beside_training(
-            num_samples,
-            noise_objects=noise_objects,
-            language_generator=language_generator,
-        ),
-        _make_under_training(
-            num_samples,
-            noise_objects=noise_objects,
-            language_generator=language_generator,
-        ),
-        _make_over_training(
-            num_samples,
-            noise_objects=noise_objects,
-            language_generator=language_generator,
-        ),
-        _make_in_training(
-            num_samples,
-            noise_objects=noise_objects,
-            language_generator=language_generator,
-        ),
-        _make_behind_training(
-            num_samples,
-            noise_objects=noise_objects,
-            language_generator=language_generator,
-        ),
-        _make_in_front_training(
-            num_samples,
-            noise_objects=noise_objects,
-            language_generator=language_generator,
-        ),
-        _make_near_training(
-            num_samples,
-            noise_objects=noise_objects,
-            language_generator=language_generator,
-        ),
-        _make_far_training(
-            num_samples,
-            noise_objects=noise_objects,
-            language_generator=language_generator,
-        ),
+        _make_on_training(num_samples, num_noise_objects, language_generator),
+        _make_beside_training(num_samples, num_noise_objects, language_generator),
+        _make_under_training(num_samples, num_noise_objects, language_generator),
+        _make_over_training(num_samples, num_noise_objects, language_generator),
+        _make_in_training(num_samples, num_noise_objects, language_generator),
+        _make_behind_training(num_samples, num_noise_objects, language_generator),
+        _make_in_front_training(num_samples, num_noise_objects, language_generator),
+        _make_near_training(num_samples, num_noise_objects, language_generator),
+        _make_far_training(num_samples, num_noise_objects, language_generator),
     ]
 
 
 def make_prepositions_curriculum_testing(
-    num_samples: int = 5,
-    *,
-    noise_objects: bool = True,
+    num_samples: Optional[int],
+    num_noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
-):
+    ],
+) -> Sequence[Phase1InstanceGroup]:
     return [
-        _make_on_tests(
-            num_samples,
-            noise_objects=noise_objects,
-            language_generator=language_generator,
-        ),
-        _make_beside_tests(
-            num_samples,
-            noise_objects=noise_objects,
-            language_generator=language_generator,
-        ),
-        _make_under_tests(
-            num_samples,
-            noise_objects=noise_objects,
-            language_generator=language_generator,
-        ),
-        _make_over_tests(
-            num_samples,
-            noise_objects=noise_objects,
-            language_generator=language_generator,
-        ),
-        _make_in_tests(
-            num_samples,
-            noise_objects=noise_objects,
-            language_generator=language_generator,
-        ),
-        _make_behind_tests(
-            num_samples,
-            noise_objects=noise_objects,
-            language_generator=language_generator,
-        ),
-        _make_in_front_tests(
-            num_samples,
-            noise_objects=noise_objects,
-            language_generator=language_generator,
-        ),
-        _make_near_tests(
-            num_samples,
-            noise_objects=noise_objects,
-            language_generator=language_generator,
-        ),
-        _make_far_tests(
-            num_samples,
-            noise_objects=noise_objects,
-            language_generator=language_generator,
-        ),
+        _make_on_tests(num_samples, num_noise_objects, language_generator),
+        _make_beside_tests(num_samples, num_noise_objects, language_generator),
+        _make_under_tests(num_samples, num_noise_objects, language_generator),
+        _make_over_tests(num_samples, num_noise_objects, language_generator),
+        _make_in_tests(num_samples, num_noise_objects, language_generator),
+        _make_behind_tests(num_samples, num_noise_objects, language_generator),
+        _make_in_front_tests(num_samples, num_noise_objects, language_generator),
+        _make_near_tests(num_samples, num_noise_objects, language_generator),
+        _make_far_tests(num_samples, num_noise_objects, language_generator),
     ]
 
 
 def make_prepositions_curriculum(
-    num_samples: int = 5,
-    *,
-    noise_objects: bool = False,
+    num_samples: Optional[int],
+    num_noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
-):
+    ],
+) -> Sequence[Phase1InstanceGroup]:
     return flatten(
         [
             make_prepositions_curriculum_training(
-                num_samples,
-                noise_objects=noise_objects,
-                language_generator=language_generator,
+                num_samples, num_noise_objects, language_generator
             ),
             make_prepositions_curriculum_testing(
-                num_samples,
-                noise_objects=noise_objects,
-                language_generator=language_generator,
+                num_samples, num_noise_objects, language_generator
             ),
         ]
     )

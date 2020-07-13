@@ -26,7 +26,7 @@ def curriculum_test(curriculum: Phase1InstanceGroup) -> None:
     [GAILA_PHASE_2_LANGUAGE_GENERATOR, GAILA_PHASE_2_CHINESE_LANGUAGE_GENERATOR],
 )
 def test_drink_cups_curriculum(language_generator):
-    curriculum_test(_make_drink_cups_curriculum(language_generator=language_generator))
+    curriculum_test(_make_drink_cups_curriculum(None, None, language_generator))
 
 
 @pytest.mark.parametrize(
@@ -34,7 +34,7 @@ def test_drink_cups_curriculum(language_generator):
     [GAILA_PHASE_2_LANGUAGE_GENERATOR, GAILA_PHASE_2_CHINESE_LANGUAGE_GENERATOR],
 )
 def test_put_in_curriculum(language_generator):
-    curriculum_test(_make_put_in_curriculum(language_generator=language_generator))
+    curriculum_test(_make_put_in_curriculum(None, None, language_generator))
 
 
 @pytest.mark.parametrize(
@@ -42,4 +42,4 @@ def test_put_in_curriculum(language_generator):
     [GAILA_PHASE_2_LANGUAGE_GENERATOR, GAILA_PHASE_2_CHINESE_LANGUAGE_GENERATOR],
 )
 def test_sit_on_chairs_curriculum(language_generator):
-    curriculum_test(_make_sit_on_chair_curriculum(language_generator=language_generator))
+    curriculum_test(_make_sit_on_chair_curriculum(None, None, language_generator))
