@@ -34,7 +34,7 @@ from adam.ontology.phase1_ontology import (
     PERSON_CAN_HAVE,
 )
 from adam.situation.templates.phase1_templates import sampled, object_variable
-from tests.learner import object_recognizer_factory, phase1_language_generator
+from tests.learner import phase1_language_generator, LANGUAGE_MODE_TO_OBJECT_RECOGNIZER
 
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
@@ -48,7 +48,7 @@ def test_pursuit_preposition_on_learner(language_mode):
         rng=rng,
         smoothing_parameter=0.001,
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        object_recognizer=object_recognizer_factory(language_mode),
+        object_recognizer=LANGUAGE_MODE_TO_OBJECT_RECOGNIZER[language_mode],
         language_mode=language_mode,
     )  # type: ignore
     ball = standard_object("ball", BALL)
@@ -106,7 +106,7 @@ def test_pursuit_preposition_beside_learner(language_mode):
         rng=rng,
         smoothing_parameter=0.001,
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        object_recognizer=object_recognizer_factory(language_mode),
+        object_recognizer=LANGUAGE_MODE_TO_OBJECT_RECOGNIZER[language_mode],
         language_mode=language_mode,
     )  # type: ignore
     language_generator = phase1_language_generator(language_mode)
@@ -168,7 +168,7 @@ def test_pursuit_preposition_under_learner(language_mode):
         rng=rng,
         smoothing_parameter=0.001,
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        object_recognizer=object_recognizer_factory(language_mode),
+        object_recognizer=LANGUAGE_MODE_TO_OBJECT_RECOGNIZER[language_mode],
         language_mode=language_mode,
     )  # type: ignore
     ball = standard_object("ball", BALL)
@@ -230,7 +230,7 @@ def test_pursuit_preposition_over_learner(language_mode):
         rng=rng,
         smoothing_parameter=0.001,
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        object_recognizer=object_recognizer_factory(language_mode),
+        object_recognizer=LANGUAGE_MODE_TO_OBJECT_RECOGNIZER[language_mode],
         language_mode=language_mode,
     )  # type: ignore
     ball = standard_object("ball", BALL)
@@ -290,7 +290,7 @@ def test_pursuit_preposition_in_learner(language_mode):
         rng=rng,
         smoothing_parameter=0.001,
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        object_recognizer=object_recognizer_factory(language_mode),
+        object_recognizer=LANGUAGE_MODE_TO_OBJECT_RECOGNIZER[language_mode],
         language_mode=language_mode,
     )  # type: ignore
     water = object_variable("water", WATER)
@@ -347,7 +347,7 @@ def test_pursuit_preposition_behind_learner(language_mode):
         rng=rng,
         smoothing_parameter=0.001,
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        object_recognizer=object_recognizer_factory(language_mode),
+        object_recognizer=LANGUAGE_MODE_TO_OBJECT_RECOGNIZER[language_mode],
         language_mode=language_mode,
     )  # type: ignore
     ball = standard_object("ball", BALL)
@@ -418,7 +418,7 @@ def test_pursuit_preposition_in_front_learner(language_mode):
         rng=rng,
         smoothing_parameter=0.001,
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        object_recognizer=object_recognizer_factory(language_mode),
+        object_recognizer=LANGUAGE_MODE_TO_OBJECT_RECOGNIZER[language_mode],
         language_mode=language_mode,
     )  # type: ignore
     ball = standard_object("ball", BALL)
@@ -520,7 +520,7 @@ def test_pursuit_preposition_has_learner(language_mode):
         rng=rng,
         smoothing_parameter=0.001,
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        object_recognizer=object_recognizer_factory(language_mode),
+        object_recognizer=LANGUAGE_MODE_TO_OBJECT_RECOGNIZER[language_mode],
         language_mode=language_mode,
     )  # type: ignore
 

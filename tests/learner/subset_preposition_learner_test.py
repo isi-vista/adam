@@ -18,7 +18,6 @@ from adam.curriculum.preposition_curriculum import (
 from adam.learner import LearningExample
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
-from adam.learner.objects import ObjectRecognizerAsTemplateLearner
 from adam.learner.prepositions import SubsetPrepositionLearner
 from adam.learner.relations import SubsetRelationLearnerNew
 from adam.ontology import IS_ADDRESSEE, IS_SPEAKER
@@ -35,14 +34,18 @@ from adam.ontology.phase1_ontology import (
 )
 from adam.situation.templates.phase1_templates import object_variable, sampled
 from immutablecollections import immutableset
-from tests.learner import phase1_language_generator, object_recognizer_factory
+from tests.learner import (
+    phase1_language_generator,
+    LANGUAGE_MODE_TO_OBJECT_RECOGNIZER,
+    LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER,
+)
 
 
 def subset_relation_language_factory(
     language_mode: LanguageMode
 ) -> SubsetPrepositionLearner:
     return SubsetPrepositionLearner(
-        object_recognizer=object_recognizer_factory(language_mode),
+        object_recognizer=LANGUAGE_MODE_TO_OBJECT_RECOGNIZER[language_mode],
         ontology=GAILA_PHASE_1_ONTOLOGY,
         language_mode=language_mode,
     )
@@ -50,10 +53,7 @@ def subset_relation_language_factory(
 
 def integrated_learner_factory(language_mode: LanguageMode):
     return IntegratedTemplateLearner(
-        object_learner=ObjectRecognizerAsTemplateLearner(
-            object_recognizer=object_recognizer_factory(language_mode),
-            language_mode=language_mode,
-        ),
+        object_learner=LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER[language_mode],
         relation_learner=SubsetRelationLearnerNew(
             ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=language_mode
         ),

@@ -29,7 +29,6 @@ from adam.curriculum.phase1_curriculum import (
 from adam.learner import LearningExample
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
-from adam.learner.objects import ObjectRecognizerAsTemplateLearner
 from adam.learner.verbs import SubsetVerbLearner, SubsetVerbLearnerNew
 from adam.ontology import IS_SPEAKER, THING
 from adam.ontology.phase1_ontology import (
@@ -56,12 +55,16 @@ from adam.situation.templates.phase1_situation_templates import (
 )
 from adam.situation.templates.phase1_templates import Phase1SituationTemplate, sampled
 from immutablecollections import immutableset
-from tests.learner import phase1_language_generator, object_recognizer_factory
+from tests.learner import (
+    phase1_language_generator,
+    LANGUAGE_MODE_TO_OBJECT_RECOGNIZER,
+    LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER,
+)
 
 
 def subset_verb_language_factory(language_mode: LanguageMode) -> SubsetVerbLearner:
     return SubsetVerbLearner(
-        object_recognizer=object_recognizer_factory(language_mode),
+        object_recognizer=LANGUAGE_MODE_TO_OBJECT_RECOGNIZER[language_mode],
         ontology=GAILA_PHASE_1_ONTOLOGY,
         language_mode=language_mode,
     )
@@ -69,10 +72,7 @@ def subset_verb_language_factory(language_mode: LanguageMode) -> SubsetVerbLearn
 
 def integrated_learner_factory(language_mode: LanguageMode):
     return IntegratedTemplateLearner(
-        object_learner=ObjectRecognizerAsTemplateLearner(
-            object_recognizer=object_recognizer_factory(language_mode),
-            language_mode=language_mode,
-        ),
+        object_learner=LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER[language_mode],
         action_learner=SubsetVerbLearnerNew(
             ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=language_mode
         ),
