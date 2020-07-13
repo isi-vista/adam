@@ -12,4 +12,5 @@ num_pretty_descriptions: 10
 experiment: 'm9-integrated-learner-given-object-recognizer'
 curriculum: 'm9-complete'
 learner: 'integrated-learner-recognizer'
-load_learner : '/home/paynesa/learner_state_at_240'
+load_learner : '/home/paynesa/learner_state_at_270.pkl'
+load_curriculum : '/home/paynesa/training_state_at_245.pkl'

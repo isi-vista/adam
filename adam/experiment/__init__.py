@@ -188,6 +188,17 @@ def execute_experiment(
     for training_stage in curriculum:
         logging.info("Beginning training stage %s", training_stage.name())
         if log_learner_state:
+            experiment_to_log = Experiment(
+                name=experiment.name,
+                training_stages=curriculum[num_stages:],
+                learner_factory=experiment.learner_factory,
+                pre_example_training_observers=experiment.pre_example_training_observers,
+                post_example_training_observers=experiment.post_example_training_observers,
+                test_instance_groups=experiment.test_instance_groups,
+                test_observers=experiment.test_observers,
+                sequence_chooser=experiment.sequence_chooser,
+            )
+
             # dump the unseen training stages into a pickle file. We don't get more specific than the training stages but
             # this allows us to start at a training stage that isn't the beginning
             training_stages_todo = experiment.training_stages[num_stages:]
