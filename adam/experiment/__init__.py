@@ -153,6 +153,7 @@ def execute_experiment(
     logging.info("Beginning experiment %s", experiment.name)
 
     if load_learner_state:
+        logging.info("Loading existing learner from %s", str(load_learner_state))
         try:
             learner = pickle.load(open(load_learner_state, "rb"))
         except OSError:
@@ -161,7 +162,8 @@ def execute_experiment(
                 "Unable to instantiate learner at %s, using factory instead",
                 load_learner_state,
             )
-    learner = experiment.learner_factory()
+    else:
+        learner = experiment.learner_factory()
     logging.info("Instantiated learner %s", learner)
 
     num_observations = 0
