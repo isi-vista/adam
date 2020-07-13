@@ -3,6 +3,7 @@ Allows managing experimental configurations in code.
 """
 import logging
 import pickle
+import os
 from itertools import chain
 
 # for some reason, pylint doesn't recognize the types used in quoted type annotations
@@ -127,10 +128,27 @@ def execute_experiment(
     *,
     log_path: Optional[Path] = None,
     log_hypotheses_every_n_examples: int = 250,
+    learner_logging_path: Optional[Path] = None,
+    log_learner_state: bool = True,
 ) -> None:
     """
     Runs an `Experiment`.
     """
+
+    # make the directories in which to log the learner and curriculum
+    if log_learner_state and learner_logging_path:
+        learner_path = learner_logging_path / "learner_state"
+        curriculum_path = learner_logging_path / "curriculum_state"
+        try:
+            os.mkdir(learner_path)
+            os.mkdir(curriculum_path)
+        # if we don't have a directory where we can log our learner and / or curriculum state, we simply don't log it
+        except OSError:
+            logging.warning("Cannot log learner state to %s", str(learner_path))
+            logging.warning("Cannot log curriculum state to %s", str(curriculum_path))
+            log_learner_state = False
+            logging.warning("Proceeding without logging learner state")
+
     logging.info("Beginning experiment %s", experiment.name)
 
     learner = experiment.learner_factory()
@@ -149,11 +167,30 @@ def execute_experiment(
             # if we've reached the next num_observations where we should log hypotheses, log the hypotheses
             if log_path and num_observations % log_hypotheses_every_n_examples == 0:
                 learner.log_hypotheses(log_path / str(num_observations))
-                pickle.dump(
-                    learner,
-                    open(log_path / f"learner_state_at_{str(num_observations)}", "wb"),
-                    pickle.HIGHEST_PROTOCOL,
-                )
+                # if we are logging the learner state, we do it here
+                if log_learner_state:
+                    # dump the learner to a pickle file
+                    pickle.dump(
+                        learner,
+                        open(
+                            learner_path / f"learner_state_at_{str(num_observations)}",
+                            "wb",
+                        ),
+                        pickle.HIGHEST_PROTOCOL,
+                    )
+                    # dump the unseen curriculum to a pickle file
+                    current_curriculum = list(training_stage.instances())[
+                        num_observations:
+                    ]
+                    pickle.dump(
+                        current_curriculum,
+                        open(
+                            curriculum_path
+                            / f"curriculum_state_at_{str(num_observations)}",
+                            "wb",
+                        ),
+                        pickle.HIGHEST_PROTOCOL,
+                    )
 
             if experiment.pre_example_training_observers:
                 learner_descriptions_before_seeing_example = learner.describe(

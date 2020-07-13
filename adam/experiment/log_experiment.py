@@ -91,6 +91,7 @@ def log_experiment_entry_point(params: Parameters) -> None:
         #    "log_hypothesis_every_n_steps", default=250
         # ),
         log_hypotheses_every_n_examples=3,
+        learner_logging_path=params.optional_creatable_directory("experiment_group_dir"),
     )
 
 
