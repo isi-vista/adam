@@ -33,7 +33,7 @@ test:
 	$(PYTHON) -m pytest tests
 
 coverage:
-	$(PYTHON) -m pytest -k 'not visualization and not experiment_test' --cov=adam tests
+	$(PYTHON) -m pytest --ignore tests/visualization/ --ignore tests/experiment_test.py --cov=adam tests
 
 benchmark:
 	$(PYTHON) -m pytest benchmarks
