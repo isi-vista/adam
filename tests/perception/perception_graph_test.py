@@ -464,9 +464,6 @@ def test_syntactically_infeasible_partial_match():
     perception = graph_without_learner(
         PerceptionGraph.from_frame(perceptual_representation.frames[0])
     )
-    whole_perception_pattern = PerceptionGraphPattern.from_graph(
-        perception
-    ).perception_graph_pattern
 
     # Create an altered perception graph we remove the color node
     altered_perception_digraph = perception.copy_as_digraph()
@@ -483,17 +480,22 @@ def test_syntactically_infeasible_partial_match():
         random_node_2 = r.choice(list(altered_perception_digraph.nodes))
         altered_perception_digraph.add_edge(random_node_2, node, label=PART_OF)
 
+    altered_perception_perception_graph = PerceptionGraph(altered_perception_digraph)
+    altered_perception_pattern = PerceptionGraphPattern.from_graph(
+        altered_perception_perception_graph
+    ).perception_graph_pattern
+
     # Start the matching process, get a partial match
-    first_matcher = whole_perception_pattern.matcher(
-        perception, match_mode=MatchMode.OBJECT
+    first_matcher = altered_perception_pattern.matcher(
+        altered_perception_perception_graph, match_mode=MatchMode.OBJECT
     )
     partial_match: PerceptionGraphPatternMatch = first(
         first_matcher.matches(use_lookahead_pruning=True), None
     )
     partial_mapping = partial_match.pattern_node_to_matched_graph_node
     # Try to extend the partial mapping, we expect a semantic infeasibility runtime error
-    second_matcher = whole_perception_pattern.matcher(
-        PerceptionGraph(altered_perception_digraph), match_mode=MatchMode.OBJECT
+    second_matcher = altered_perception_pattern.matcher(
+        perception, match_mode=MatchMode.OBJECT
     )
     # The partial mapping (obtained from first matcher with original perception graph)
     # syntactically doesn't match the one in the altered version (second matcher with altered graph)

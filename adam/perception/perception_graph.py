@@ -1387,7 +1387,7 @@ class PatternMatching:
 
             for (
                 graph_node_to_matching_pattern_node
-            ) in matching.subgraph_isomorphisms_iter(
+            ) in matching.subgraph_monomorphisms_iter(
                 collect_debug_statistics=collect_debug_statistics,
                 debug_callback=debug_callback,
                 initial_partial_match=merged_initial_partial_match,

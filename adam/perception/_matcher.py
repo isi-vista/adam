@@ -531,24 +531,16 @@ class GraphMatching:
                     return False
         return True
 
-    def subgraph_is_isomorphic(self):
-        """Returns True if a subgraph of G1 is isomorphic to G2."""
-        try:
-            next(self.subgraph_isomorphisms_iter())
-            return True
-        except StopIteration:
-            return False
-
-    def subgraph_isomorphisms_iter(
+    def subgraph_monomorphisms_iter(
         self,
         *,
         collect_debug_statistics: bool = False,
         debug_callback: Optional[Callable[[Any, Any], None]] = None,
         initial_partial_match: Mapping[Any, Any] = immutabledict(),
     ):
-        """Generator over isomorphisms between a subgraph of G1 and G2."""
+        """Generator over monomorphisms from G2 to a subgraph of G1."""
         # Declare that we are looking for graph-subgraph isomorphism.
-        self.test = "subgraph"
+        self.test = "mono"
         self.initialize(initial_partial_match=initial_partial_match)
         self.debug_largest_match = {}
         self.failing_pattern_node_for_deepest_match = None

@@ -963,10 +963,15 @@ class _PerceptionGeneration:
             and isinstance(action_variable, ActionDescriptionVariable)
         )
 
+        # For now we assume that a variable can't be partOf another unless one of them fills
+        # a role in the action.
         bindings.update(
             {
                 unbound_action_object_variable: self._bind_action_object_variable(
-                    situation_action, unbound_action_object_variable
+                    situation_action,
+                    action_description,
+                    immutabledict(bindings),
+                    unbound_action_object_variable,
                 )
                 for unbound_action_object_variable in unbound_action_object_variables
             }
@@ -977,6 +982,10 @@ class _PerceptionGeneration:
     def _bind_action_object_variable(
         self,
         situation_action: Action[OntologyNode, SituationObject],
+        action_description: ActionDescription,
+        bindings: ImmutableDict[
+            ActionDescriptionVariable, Union[ObjectPerception, RegionPerception]
+        ],
         action_object_variable: ActionDescriptionVariable,
     ) -> Union[ObjectPerception, RegionPerception]:
         """
@@ -995,6 +1004,35 @@ class _PerceptionGeneration:
             else:
                 return self._objects_to_perceptions[explicit_binding]
 
+        # Hack: Force the binding process to respect partOf restrictions.
+        # This is to avoid it binding manipulator body parts
+        # For example, in "Dad gives a baby a chair," we don't want the baby's hand (manipulator) to
+        # bind to Dad's hand.
+        # In the long term we want to move variable binding up to the situation level, see
+        # https://github.com/isi-vista/adam/issues/687
+        # https://github.com/isi-vista/adam/issues/400#issuecomment-655155521
+        # https://github.com/isi-vista/adam/issues/400#issuecomment-655575820
+        def satisfies_part_of_restrictions(object_perception) -> bool:
+            import logging
+
+            for condition_set in (action_description.enduring_conditions,):
+                for unbound_condition in condition_set:
+                    if (
+                        unbound_condition.first_slot == action_object_variable
+                        or unbound_condition.second_slot == action_object_variable
+                    ) and unbound_condition.relation_type == PART_OF:
+                        condition = unbound_condition.copy_remapping_objects(
+                            {**bindings, action_object_variable: object_perception}
+                        )
+                        # if other in bindings and not condition in self._relation_perceptions:
+                        if condition not in self._relation_perceptions:
+                            logging.info(
+                                f"Object perception {object_perception.debug_handle} "
+                                f"failed to meet condition {condition}"
+                            )
+                            return False
+            return True
+
         # we continue to use the hand from PUT
         # ( see _bind_action_objects_variables_to_perceived_objects )
         ontology = self._generator.ontology
@@ -1008,6 +1046,7 @@ class _PerceptionGeneration:
             and ontology.has_all_properties(
                 ontology_node, action_object_variable.properties
             )
+            and satisfies_part_of_restrictions(object_perception)
         ]
 
         if len(perceived_objects_matching_constraints) == 1:
@@ -1103,6 +1142,12 @@ class _PerceptionGeneration:
     class _InstantiateObjectSchemaReturn:
         instantiated_object: ObjectPerception = attrib(
             validator=instance_of(ObjectPerception)
+        )
+        """
+        Includes both direct subobjects and indirect subobjects (subobjects of subobjects).
+        """
+        subobject_perceptions: ImmutableSet[ObjectPerception] = attrib(
+            validator=instance_of(ImmutableSet)
         )
         schema_axes_to_perceivable_axes: Mapping[GeonAxis, GeonAxis] = attrib(
             converter=_to_immutabledict,
@@ -1235,6 +1280,15 @@ class _PerceptionGeneration:
             top_level_and_subobject_schema_axes_to_perceivable_axes.update(
                 instantiation_result.schema_axes_to_perceivable_axes
             )
+            # Add indirect children
+            for (
+                indirect_sub_object_perception
+            ) in instantiation_result.subobject_perceptions:
+                self._relation_perceptions.append(
+                    Relation(
+                        PART_OF, indirect_sub_object_perception, root_object_perception
+                    )
+                )
 
         for sub_object in schema.sub_objects:
             sub_object_perception = sub_object_to_object_perception[sub_object]
@@ -1273,6 +1327,7 @@ class _PerceptionGeneration:
             )
         return _PerceptionGeneration._InstantiateObjectSchemaReturn(
             instantiated_object=root_object_perception,
+            subobject_perceptions=immutableset(sub_object_to_object_perception.values()),
             # Axes are only "visible" for relations one layer down,
             # which is why we return only the top-level axis mapping.
             schema_axes_to_perceivable_axes=top_level_schema_axes_to_perceivable_axes,
