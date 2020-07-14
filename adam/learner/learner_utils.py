@@ -320,15 +320,16 @@ def candidate_templates(
         if len(candidate_token_span) > max_length:
             return False
 
+        for span in invalid_token_spans:
+            if candidate_token_span.contains_span(span):
+                return False
+
         # or we have already aligned any of the tokens in between the objects
         # to some other meaning.
         for token_index in range(candidate_token_span.start, candidate_token_span.end):
             if language_concept_alignment.token_index_is_aligned(token_index):
                 return False
 
-        for span in invalid_token_spans:
-            if candidate_token_span.contains_span(span):
-                return False
         return True
 
     def aligned_object_nodes(
@@ -413,7 +414,8 @@ def candidate_templates(
                         if not is_legal_template_span(
                             candidate_token_span, invalid_token_spans=invalid_token_spans
                         ):
-                            yield None
+                            # If not a valid span, ignore this attempt
+                            continue
                         template_elements.extend(
                             sentence_tokens[
                                 candidate_token_span.start : candidate_token_span.end
