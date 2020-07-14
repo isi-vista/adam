@@ -226,11 +226,20 @@ def covers_entire_utterance(
         if isinstance(element, str):
             num_covered_tokens += 1
         else:
-            num_covered_tokens += len(
-                language_concept_alignment.node_to_language_span[
-                    bound_surface_template.slot_to_semantic_node[element]
-                ]
-            )
+            slot_for_element = language_concept_alignment.node_to_language_span[
+                bound_surface_template.slot_to_semantic_node[element]
+            ]
+            aligned_strings_for_slot = language_concept_alignment.language[
+                slot_for_element.start : slot_for_element.end
+            ]
+            # we need to check here that the determiners aren't getting aligned; otherwise it can mess up our count
+            if ignore_determiners:
+                num_covered_tokens += len(
+                    [x for x in aligned_strings_for_slot if x not in ["a", "the"]]
+                )
+            else:
+                num_covered_tokens += len(aligned_strings_for_slot)
+
     # We may need to ignore counting english determiners in our comparison
     # to the template as the way we treat english determiners is currently
     # a hack. See: https://github.com/isi-vista/adam/issues/498
