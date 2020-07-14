@@ -132,6 +132,7 @@ def execute_experiment(
     log_learner_state: bool = True,
     load_learner_state: Optional[Path] = None,
     starting_point: int = 0,
+    point_to_log: int = 0,
 ) -> None:
     """
     Runs an `Experiment`.
@@ -187,6 +188,22 @@ def execute_experiment(
             # log the start of the learning
             if num_observations == starting_point:
                 logging.info("Beginning training stage %s", training_stage.name())
+
+            # if we've reached the user-given point where we want to log the learner, log it here
+            if (
+                point_to_log > 0
+                and num_observations == point_to_log
+                and log_learner_state
+            ):
+                # dump the learner to a pickle file
+                pickle.dump(
+                    learner,
+                    open(
+                        learner_path / f"learner_state_at_{str(num_observations)}.pkl",
+                        "wb",
+                    ),
+                    pickle.HIGHEST_PROTOCOL,
+                )
 
             # if we've reached the next num_observations where we should log hypotheses, log the hypotheses
             if log_path and num_observations % log_hypotheses_every_n_examples == 0:
