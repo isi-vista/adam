@@ -57,7 +57,6 @@ from adam.situation.templates.phase1_situation_templates import (
 from adam.situation.templates.phase1_templates import Phase1SituationTemplate, sampled
 from immutablecollections import immutableset
 from tests.learner import (
-    phase1_language_generator,
     LANGUAGE_MODE_TO_OBJECT_RECOGNIZER,
     LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER,
 )

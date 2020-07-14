@@ -36,7 +36,6 @@ from adam.ontology.phase1_ontology import (
 )
 from adam.situation.templates.phase1_templates import property_variable, sampled
 from tests.learner import (
-    phase1_language_generator,
     LANGUAGE_MODE_TO_OBJECT_RECOGNIZER,
     LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER,
 )

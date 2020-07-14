@@ -1,4 +1,3 @@
-from adam.language_specific.english import ENGLISH_DETERMINERS
 from typing import Mapping
 
 from immutablecollections import immutabledict
@@ -49,25 +48,3 @@ LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER: Mapping[
         for language_mode in LanguageMode
     ]
 )
-
-
-def phase1_language_generator(
-    language_mode: LanguageMode
-) -> LanguageGenerator[HighLevelSemanticsSituation, LinearizedDependencyTree]:
-    if language_mode == LanguageMode.ENGLISH:
-        return GAILA_PHASE_1_LANGUAGE_GENERATOR
-    elif language_mode == LanguageMode.CHINESE:
-        return GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR
-    else:
-        raise RuntimeError("Invalid language generator specified")
-
-
-def phase2_language_generator(
-    language_mode: LanguageMode
-) -> LanguageGenerator[HighLevelSemanticsSituation, LinearizedDependencyTree]:
-    if language_mode == LanguageMode.ENGLISH:
-        return GAILA_PHASE_2_LANGUAGE_GENERATOR
-    # elif language_mode == LanguageMode.CHINESE:
-    #    return GAILA_PHASE_2_CHINESE_LANGUAGE_GENERATOR
-    else:
-        raise RuntimeError("Invalid language generator specified")

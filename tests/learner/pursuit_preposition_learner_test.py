@@ -33,7 +33,7 @@ from adam.ontology.phase1_ontology import (
     PERSON_CAN_HAVE,
 )
 from adam.situation.templates.phase1_templates import sampled, object_variable
-from tests.learner import phase1_language_generator, LANGUAGE_MODE_TO_OBJECT_RECOGNIZER
+from tests.learner import LANGUAGE_MODE_TO_OBJECT_RECOGNIZER
 
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
