@@ -1,0 +1,15 @@
+_includes:
+   - "../../root.params"
+   - "m9.params"
+
+experiment_group_dir: '%adam_experiment_root%m9/'
+hypothesis_log_dir: "%experiment_group_dir%hypotheses_recognizer/"
+log_hypothesis_every_n_steps: 25
+
+sort_learner_descriptions_by_length: True
+num_pretty_descriptions: 10
+
+experiment: 'm9-integrated-learner-given-object-recognizer'
+curriculum: 'm9-complete'
+learner: 'integrated-learner-recognizer'
+language_mode: CHINESE
