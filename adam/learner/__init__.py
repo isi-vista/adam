@@ -242,39 +242,3 @@ class ComposableLearner(ABC):
         Log some representation of the learner's current hypothesized semantics for words/phrases to
         *log_output_path*.
         """
-
-
-def covers_entire_utterance(
-    bound_surface_template: SurfaceTemplateBoundToSemanticNodes,
-    language_concept_alignment: LanguageConceptAlignment,
-    *,
-    ignore_determiners: bool = False,
-) -> bool:
-    num_covered_tokens = 0
-    for element in bound_surface_template.surface_template.elements:
-        if isinstance(element, str):
-            num_covered_tokens += 1
-        else:
-            num_covered_tokens += len(
-                language_concept_alignment.node_to_language_span[
-                    bound_surface_template.slot_to_semantic_node[element]
-                ]
-            )
-    # We may need to ignore counting english determiners in our comparison
-    # to the template as the way we treat english determiners is currently
-    # a hack. See: https://github.com/isi-vista/adam/issues/498
-    sized_tokens = (
-        len(language_concept_alignment.language.as_token_sequence())
-        if not ignore_determiners
-        else len(
-            [
-                token
-                for token in language_concept_alignment.language.as_token_sequence()
-                if token not in ["a", "the"]
-            ]
-        )
-    )
-
-    # This assumes the slots and the non-slot elements are non-overlapping,
-    # which is true for how we construct them.
-    return num_covered_tokens == sized_tokens
