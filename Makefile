@@ -29,14 +29,16 @@ FILTERED_MYPY:=$(MYPY) | perl -ne 'print if !/(Too many arguments|Signature of "
 FLAKE8:=flake8
 FLAKE8_CMD:=$(FLAKE8) $(SOURCE_DIR_NAME)
 
+IGNORE_TESTS = --ignore tests/visualization/ --ignore tests/experiment_test.py
+
 test: 
-	$(PYTHON) -m pytest tests
+	$(PYTHON) -m pytest $(IGNORE_TESTS) tests
 
 coverage:
-	$(PYTHON) -m pytest --ignore tests/visualization/ --ignore tests/experiment_test.py --cov=adam tests
+	$(PYTHON) -m pytest $(IGNORE_TESTS) --cov=adam tests
 
 benchmark:
-	$(PYTHON) -m pytest benchmarks
+	$(PYTHON) -m pytest $(IGNORE_TESTS) benchmarks
 
 lint:
 	$(PYLINT)
