@@ -1,9 +1,8 @@
 import logging
+import random
 from typing import Iterable
 
 import pytest
-import random
-from itertools import chain
 from immutablecollections import immutableset
 from more_itertools import flatten
 
@@ -13,37 +12,36 @@ from adam.curriculum.pursuit_curriculum import make_simple_pursuit_curriculum
 from adam.language.dependency import LinearizedDependencyTree
 from adam.language.language_generator import LanguageGenerator
 from adam.language_specific.english.english_language_generator import (
-    IGNORE_COLORS,
     GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    IGNORE_COLORS,
 )
-from adam.learner.integrated_learner import IntegratedTemplateLearner
-from adam.learner.language_mode import LanguageMode
-from adam.learner.objects import SubsetObjectLearner
 from adam.learner import (
+    LanguagePerceptionSemanticAlignment,
     LearningExample,
     PerceptionSemanticAlignment,
-    LanguagePerceptionSemanticAlignment,
 )
 from adam.learner.alignments import LanguageConceptAlignment
-from adam.learner.objects import ObjectPursuitLearner, SubsetObjectLearnerNew
+from adam.learner.integrated_learner import IntegratedTemplateLearner
+from adam.learner.language_mode import LanguageMode
+from adam.learner.objects import PursuitObjectLearnerNew, SubsetObjectLearnerNew
+from adam.learner.objects import SubsetObjectLearner
 from adam.ontology import OntologyNode
 from adam.ontology.phase1_ontology import (
     BALL,
-    BIRD,
     BOX,
     DOG,
     GAILA_PHASE_1_ONTOLOGY,
     GROUND,
+    HAND,
     HEAD,
+    HOUSE,
     MOM,
     on,
-    HAND,
-    HOUSE,
 )
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     GAILA_PHASE_1_PERCEPTION_GENERATOR,
 )
-from adam.perception.perception_graph import DumpPartialMatchCallback, PerceptionGraph
+from adam.perception.perception_graph import PerceptionGraph
 from adam.random_utils import RandomChooser
 from adam.relation import flatten_relations
 from adam.relation_dsl import negate
@@ -273,33 +271,15 @@ def test_pursuit_object_learner(language_mode):
         # CHAIR,
         # TABLE,
         DOG,
-        BIRD,
+        # BIRD,
         BOX,
     ]
-    debug_callback = DumpPartialMatchCallback(render_path="../renders/")
+
     language_generator = phase1_language_generator(language_mode)
 
-    target_train_templates = []
     target_test_templates = []
     for obj in target_objects:
         # Create train and test templates for the target objects
-        train_obj_object = object_variable("obj-with-color", obj)
-        obj_template = Phase1SituationTemplate(
-            "colored-obj-object", salient_object_variables=[train_obj_object]
-        )
-        target_train_templates.extend(
-            chain(
-                *[
-                    all_possible(
-                        obj_template,
-                        chooser=PHASE1_CHOOSER_FACTORY(),
-                        ontology=GAILA_PHASE_1_ONTOLOGY,
-                    )
-                    for _ in range(50)
-                ]
-            )
-        )
-
         test_obj_object = object_variable("obj-with-color", obj)
         test_template = Phase1SituationTemplate(
             "colored-obj-object",
@@ -315,12 +295,11 @@ def test_pursuit_object_learner(language_mode):
         )
     rng = random.Random()
     rng.seed(0)
-    random.shuffle(target_train_templates, random=rng.random)
 
     # We can use this to generate the actual pursuit curriculum
     train_curriculum = make_simple_pursuit_curriculum(
         target_objects=target_objects,
-        num_instances=15,
+        num_instances=30,
         num_objects_in_instance=3,
         num_noise_instances=0,
         language_generator=language_generator,
@@ -340,16 +319,17 @@ def test_pursuit_object_learner(language_mode):
     # lexicalize items sufficiently because of diminishing lexicon probability through training
     rng = random.Random()
     rng.seed(0)
-    learner = ObjectPursuitLearner(
-        learning_factor=0.5,
-        graph_match_confirmation_threshold=0.7,
-        lexicon_entry_threshold=0.7,
-        rng=rng,
-        smoothing_parameter=0.001,
-        ontology=GAILA_PHASE_1_ONTOLOGY,
-        debug_callback=debug_callback,
-        language_mode=language_mode,
-    )  # type: ignore
+    learner = IntegratedTemplateLearner(
+        object_learner=PursuitObjectLearnerNew(
+            learning_factor=0.05,
+            graph_match_confirmation_threshold=0.7,
+            lexicon_entry_threshold=0.7,
+            rng=rng,
+            smoothing_parameter=0.002,
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+            language_mode=language_mode,
+        )
+    )
     for training_stage in [train_curriculum]:
         for (
             _,
@@ -369,113 +349,6 @@ def test_pursuit_object_learner(language_mode):
             logging.info("lang: %s", test_instance_language)
             descriptions_from_learner = learner.describe(test_instance_perception)
             gold = test_instance_language.as_token_sequence()
-            assert [desc.as_token_sequence() for desc in descriptions_from_learner][
-                0
-            ] == gold
-
-
-# def test_get_largest_matching_pattern():
-#     target_objects = [
-#         # BIRD,
-#         BOX,
-#         # BALL
-#     ]
-#
-#     target_train_templates = []
-#     target_test_templates = []
-#     for obj in target_objects:
-#         # Create train and test templates for the target objects
-#         train_obj_object = object_variable("obj-with-color", obj)
-#         obj_template = Phase1SituationTemplate(
-#             "colored-obj-object", salient_object_variables=[train_obj_object]
-#         )
-#         target_train_templates.extend(
-#             chain(
-#                 *[
-#                     all_possible(
-#                         obj_template,
-#                         chooser=PHASE1_CHOOSER,
-#                         ontology=GAILA_PHASE_1_ONTOLOGY,
-#                     )
-#                     for _ in range(1)
-#                 ]
-#             )
-#         )
-#         test_obj_object = object_variable("obj-with-color", obj)
-#         test_template = Phase1SituationTemplate(
-#             "colored-obj-object",
-#             salient_object_variables=[test_obj_object],
-#             syntax_hints=[IGNORE_COLORS],
-#         )
-#         target_test_templates.extend(
-#             all_possible(
-#                 test_template, chooser=PHASE1_CHOOSER, ontology=GAILA_PHASE_1_ONTOLOGY
-#             )
-#         )
-#
-#     rng = random.Random()
-#     rng.seed(0)
-#     random.shuffle(target_train_templates, random=rng.random)
-#
-#     train_curriculum = phase1_instances(
-#         "all obj situations", situations=target_train_templates
-#     )
-#     learner = PursuitLanguageLearner(
-#         learning_factor=0.5,
-#         graph_match_confirmation_threshold=0.9,
-#         lexicon_entry_threshold=0.7,
-#     )  # type: ignore
-#     for (_, _, perceptual_representation) in train_curriculum.instances():
-#         perception = graph_without_learner(
-#             PerceptionGraph.from_frame(
-#                 perceptual_representation.frames[0]
-#             ).copy_as_digraph()
-#         )
-#         meanings = learner.get_meanings_from_perception(
-#             observed_perception_graph=perception
-#         )
-#         meaning = max(meanings, key=lambda x: len(x.copy_as_digraph().nodes))
-#
-#         whole_perception_pattern = PerceptionGraphPattern.from_graph(
-#             perception.copy_as_digraph()
-#         ).perception_graph_pattern
-#
-#         # Test complete match, where pattern is smalelr than perception
-#         print("\nComplete match:")
-#         for i in range(10):
-#             hypothesis = PerceptionGraphPattern(meaning.copy_as_digraph())
-#             common_pattern = get_largest_matching_pattern(hypothesis, perception)
-#             print(
-#                 i,
-#                 "p:",
-#                 len(perception.copy_as_digraph().nodes),
-#                 "h:",
-#                 len(hypothesis.copy_as_digraph().nodes),
-#                 "c:",
-#                 len(common_pattern.copy_as_digraph().nodes),
-#             )
-#
-#         print("\nPartial match:")
-#         # Test partial match, where perception pattern is larger than perception
-#         # TODO: Partial match is not working!
-#         #  it gives up as soon as it determines it is impossible to complete the match
-#         #  1) different search orders = different matches
-#         #  2) there’s no guarantee that a different search order won’t yield a bigger partial match
-#         for i in range(10):
-#             partial_perception = PerceptionGraph(
-#                 subgraph(
-#                     perception.copy_as_digraph(),
-#                     random.sample(perception.copy_as_digraph().nodes, 5),
-#                 )
-#             )
-#             hypothesis = whole_perception_pattern
-#             common_pattern = get_largest_matching_pattern(meaning, partial_perception)
-#             print(
-#                 i,
-#                 "p:",
-#                 len(partial_perception.copy_as_digraph().nodes),
-#                 "h:",
-#                 len(hypothesis.copy_as_digraph().nodes),
-#                 "c:",
-#                 len(common_pattern.copy_as_digraph().nodes),
-#             )
+            assert gold in [
+                desc.as_token_sequence() for desc in descriptions_from_learner
+            ]

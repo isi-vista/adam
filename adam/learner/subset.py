@@ -3,6 +3,10 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import AbstractSet, Dict, Iterable, Mapping, Optional, Sequence, Set, Tuple
 
+from attr import Factory, attrib, attrs
+from attr.validators import instance_of
+from immutablecollections import ImmutableSet, immutabledict, immutableset
+
 from adam.language import TokenSequenceLinguisticDescription
 from adam.learner.alignments import LanguagePerceptionSemanticAlignment
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
@@ -18,9 +22,6 @@ from adam.ontology.ontology import Ontology
 from adam.perception.deprecated import LanguageAlignedPerception
 from adam.perception.perception_graph import DebugCallableType
 from adam.semantics import Concept
-from attr import Factory, attrib, attrs
-from attr.validators import instance_of
-from immutablecollections import ImmutableSet, immutabledict, immutableset
 
 
 @attrs

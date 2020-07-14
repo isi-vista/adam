@@ -325,6 +325,9 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
                     for semantic_node in newly_recognized_semantic_nodes
                 ),
                 filter_out_duplicate_alignments=True,
+                # It's okay if we recognize objects we know how to describe,
+                # but they just happen not to be mentioned in the linguistic description.
+                fail_if_surface_templates_do_not_match_language=False,
             ),
             perception_semantic_alignment=perception_post_enrichment,
         )

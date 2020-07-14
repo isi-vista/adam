@@ -11,7 +11,14 @@ from adam.perception.perception_graph import PerceptionGraph
 from adam.semantics import ObjectSemanticNode, SemanticNode, SyntaxSemanticsVariable
 from attr import attrib, attrs
 from attr.validators import deep_iterable, instance_of
-from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
+from immutablecollections import (
+    ImmutableDict,
+    ImmutableSet,
+    ImmutableSetMultiDict,
+    immutabledict,
+    immutableset,
+    immutablesetmultidict,
+)
 from immutablecollections.converter_utils import _to_immutableset
 from vistautils.span import Span
 
@@ -33,22 +40,26 @@ def _sort_mapping_by_token_spans(pairs) -> ImmutableDict[ObjectSemanticNode, Spa
 @attrs(frozen=True)
 class LanguageConceptAlignment:
     """
-    Represents an alignment between a `LinguisticDescription` and an `ImmutableSet[SemanticNode]` where
-    the nodes represent concepts.
+    Represents an alignment between a `LinguisticDescription`
+    and an `ImmutableSet[SemanticNode]`
+    where the nodes represent concepts.
 
     This can be generified in the future.
 
     *node_to_language_span* and *language_span_to_node* are both guaranteed to be sorted by
     the token spans.
 
-    Aligned token spans may not overlap.
+    The same span may be aligned to multiple objects
+    (e.g. imagine a scene with multiple "balls").
+    However, aligned token spans will either be disjoint or identical;
+    partially overlapping aligned token spans are not allowed.
     """
 
     language: LinguisticDescription = attrib(validator=instance_of(LinguisticDescription))
     node_to_language_span: ImmutableDict[ObjectSemanticNode, Span] = attrib(
         converter=_sort_mapping_by_token_spans, default=immutabledict()
     )
-    language_span_to_node: ImmutableDict[Span, SemanticNode] = attrib(init=False)
+    language_span_to_node: ImmutableSetMultiDict[Span, SemanticNode] = attrib(init=False)
     aligned_nodes: ImmutableSet[SemanticNode] = attrib(init=False)
     aligned_token_indices: ImmutableSet[int] = attrib(init=False)
     is_entirely_aligned: bool = attrib(init=False)
@@ -71,8 +82,12 @@ class LanguageConceptAlignment:
         return token_index in self.aligned_token_indices
 
     @language_span_to_node.default
-    def _init_language_span_to_node(self) -> ImmutableDict[ObjectSemanticNode, Span]:
-        return immutabledict((v, k) for (k, v) in self.node_to_language_span.items())
+    def _init_language_span_to_node(
+        self
+    ) -> ImmutableSetMultiDict[Span, ObjectSemanticNode]:
+        return immutablesetmultidict(
+            (v, k) for (k, v) in self.node_to_language_span.items()
+        )
 
     @aligned_nodes.default
     def _init_aligned_nodes(self) -> ImmutableSet[ObjectSemanticNode]:
@@ -97,10 +112,10 @@ class LanguageConceptAlignment:
         # In the converter, we guarantee that node_to_language_span is sorted by
         # token indices.
         for (span1, span2) in pairwise(self.node_to_language_span.values()):
-            if not span1.precedes(span2):
+            if not span1.precedes(span2) and span1 != span2:
                 raise RuntimeError(
                     f"Aligned spans in a LanguageAlignedPerception must be "
-                    f"disjoint but got {span1} and {span2}"
+                    f"disjoint or entirely overlapping but got {span1} and {span2}"
                 )
 
     def copy_with_new_nodes(
@@ -110,10 +125,16 @@ class LanguageConceptAlignment:
         ],
         *,
         filter_out_duplicate_alignments: bool,
+        fail_if_surface_templates_do_not_match_language: bool = True,
     ) -> "LanguageConceptAlignment":
         """
         Get a new copy of this alignment,
         except with the given given semantic nodes aligned to the associated surface templates.
+
+        If *fail_if_surface_templates_do_not_match_language* is *True*,
+        an exception will be thrown if the associated surface templates are not
+        found in the instance's tokens.
+        Otherwise, no alignment will be added.
         """
         # This is what we will use to build the new alignment.
         new_node_to_language_span = list(self.node_to_language_span.items())
@@ -144,14 +165,16 @@ class LanguageConceptAlignment:
                 intersecting_alignments = [
                     (span, node)
                     for (span, node) in self.language_span_to_node.items()
-                    if covered_token_span.overlaps(span)
+                    if covered_token_span.overlaps(span) and covered_token_span != span
                 ]
                 if intersecting_alignments:
                     message = (
-                        f"Ignoring attempt to align tokens "
+                        f"Blocking attempt to align tokens "
                         f"{self.language.as_token_string(span=covered_token_span)} "
                         f"to {new_semantic_node} because the following alignments already exist:"
-                        f" {intersecting_alignments}"
+                        f" {intersecting_alignments}.  The same span may be aligned to multiple "
+                        f"nodes (e.g. multiple balls in a scene),"
+                        f"but partial overlap of spans is forbidden."
                     )
                     if filter_out_duplicate_alignments:
                         logging.info(message)
@@ -162,11 +185,12 @@ class LanguageConceptAlignment:
                         (new_semantic_node, covered_token_span)
                     )
             else:
-                logging.info(
-                    f"Could not match surface template {surface_template} "
-                    f"with fillers {slots_to_spans} against "
-                    f"{self.language.as_token_sequence()}"
-                )
+                if fail_if_surface_templates_do_not_match_language:
+                    raise RuntimeError(
+                        f"Could not match surface template {surface_template} "
+                        f"with fillers {slots_to_spans} against "
+                        f"{self.language.as_token_sequence()}"
+                    )
 
         return LanguageConceptAlignment(
             self.language, node_to_language_span=new_node_to_language_span
