@@ -2,6 +2,8 @@
 Allows managing experimental configurations in code.
 """
 import logging
+import pickle
+import os
 from itertools import chain
 
 # for some reason, pylint doesn't recognize the types used in quoted type annotations
@@ -125,28 +127,100 @@ def execute_experiment(
     experiment: Experiment[SituationT, LinguisticDescriptionT, PerceptionT],
     *,
     log_path: Optional[Path] = None,
-    log_hypotheses_every_n_examples: int = 250
+    log_hypotheses_every_n_examples: int = 250,
+    learner_logging_path: Optional[Path] = None,
+    log_learner_state: bool = True,
+    load_learner_state: Optional[Path] = None,
+    starting_point: int = 0,
+    point_to_log: int = 0,
 ) -> None:
     """
     Runs an `Experiment`.
     """
+
+    # make the directories in which to log the learner
+    if log_learner_state and learner_logging_path:
+        learner_path = learner_logging_path / "learner_state"
+        try:
+            os.mkdir(learner_path)
+        # if we don't have a directory where we can log our learner state, we simply don't log it
+        except OSError:
+            logging.warning("Cannot log learner state to %s", str(learner_path))
+            log_learner_state = False
+            logging.warning("Proceeding without logging learner state")
+
     logging.info("Beginning experiment %s", experiment.name)
 
-    learner = experiment.learner_factory()
+    # if there is an existing learner to load, try to load it
+    if load_learner_state:
+        if starting_point == 0:
+            logging.warning("Using existing learner, expected starting point > 0")
+        logging.info("Loading existing learner from %s", str(load_learner_state))
+        try:
+            learner = pickle.load(open(load_learner_state, "rb"))
+        # if the learner can't be loaded, just instantiate the default learner and notify the user
+        except OSError:
+            learner = experiment.learner_factory()
+            logging.warning(
+                "Unable to load learner at %s, using factory instead", load_learner_state
+            )
+    # if there's no existing learner, instantiate the default
+    else:
+        learner = experiment.learner_factory()
     logging.info("Instantiated learner %s", learner)
 
     num_observations = 0
 
     for training_stage in experiment.training_stages:
-        logging.info("Beginning training stage %s", training_stage.name())
+        if num_observations > starting_point:
+            logging.info("Beginning training stage %s", training_stage.name())
         for (
             situation,
             linguistic_description,
             perceptual_representation,
         ) in training_stage.instances():
             num_observations += 1
+
+            # don't learn from anything until we've reached the starting of the the learning
+            if num_observations < starting_point:
+                continue
+
+            # log the start of the learning
+            if num_observations == starting_point:
+                logging.info("Beginning training stage %s", training_stage.name())
+
+            # if we've reached the user-given point where we want to log the learner, log it here
+            if (
+                point_to_log > 0
+                # we log after the nth input is given to the learner
+                and num_observations - 1 == point_to_log
+                and log_learner_state
+            ):
+                logging.info(f"Reached {point_to_log} instances, logging learner")
+                # dump the learner to a pickle file
+                pickle.dump(
+                    learner,
+                    open(
+                        learner_path / f"learner_state_at_{str(point_to_log)}.pkl", "wb"
+                    ),
+                    pickle.HIGHEST_PROTOCOL,
+                )
+
+            # if we've reached the next num_observations where we should log hypotheses, log the hypotheses
             if log_path and num_observations % log_hypotheses_every_n_examples == 0:
                 learner.log_hypotheses(log_path / str(num_observations))
+                # if we are logging the learner state, we do it here
+                if log_learner_state:
+                    # dump the learner to a pickle file
+                    pickle.dump(
+                        learner,
+                        open(
+                            learner_path
+                            / f"learner_state_at_{str(num_observations)}.pkl",
+                            "wb",
+                        ),
+                        pickle.HIGHEST_PROTOCOL,
+                    )
 
             if experiment.pre_example_training_observers:
                 learner_descriptions_before_seeing_example = learner.describe(
@@ -166,7 +240,8 @@ def execute_experiment(
                     )
 
             learner.observe(
-                LearningExample(perceptual_representation, linguistic_description)
+                LearningExample(perceptual_representation, linguistic_description),
+                observation_num=num_observations,
             )
 
             if experiment.post_example_training_observers:
@@ -179,6 +254,7 @@ def execute_experiment(
                         linguistic_description,
                         perceptual_representation,
                         learner_descriptions_after_seeing_example,
+                        offset=starting_point,
                     )
     logging.info("Training complete")
 

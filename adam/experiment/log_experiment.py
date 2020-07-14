@@ -90,6 +90,10 @@ def log_experiment_entry_point(params: Parameters) -> None:
         log_hypotheses_every_n_examples=params.integer(
             "log_hypothesis_every_n_steps", default=250
         ),
+        log_learner_state=params.boolean("log_learner_state", default=True),
+        learner_logging_path=params.optional_creatable_directory("experiment_group_dir"),
+        starting_point=params.integer("starting_point", default=-1),
+        point_to_log=params.integer("point_to_log", default=0),
     )
 
 
