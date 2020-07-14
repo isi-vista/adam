@@ -912,7 +912,7 @@ class GraphMatchingState(object):
 
             # Updates for T_1^{out}
             for node in GM.graph_node_to_pattern_node:
-                for successor in GM.graph.succecessors(node):
+                for successor in GM.graph.successors(node):
                     if (
                         successor not in GM.graph_node_to_pattern_node
                         and node not in GM.graph_nodes_in_or_succeeding_match
@@ -921,7 +921,7 @@ class GraphMatchingState(object):
 
             # Updates for T_2^{out}
             for node in GM.pattern_node_to_graph_node:
-                for successor in GM.pattern.predecessors(node):
+                for successor in GM.pattern.successors(node):
                     if (
                         successor not in GM.pattern_node_to_graph_node
                         and node not in GM.pattern_nodes_in_or_succeeding_match
