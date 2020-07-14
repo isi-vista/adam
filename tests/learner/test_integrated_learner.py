@@ -2,7 +2,6 @@ from more_itertools import one
 import pytest
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
-from adam.learner.objects import ObjectRecognizerAsTemplateLearner
 from adam.ontology.phase1_ontology import DAD, GAILA_PHASE_1_ONTOLOGY
 from adam.perception import PerceptualRepresentation
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (

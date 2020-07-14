@@ -601,7 +601,7 @@ def falling_template(
                         (
                             theme,
                             SpatialPath(
-                                None,
+                                operator=TOWARD,
                                 reference_object=GROUND_OBJECT_TEMPLATE,
                                 properties=spatial_properties,
                             ),
