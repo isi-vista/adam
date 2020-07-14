@@ -12,5 +12,5 @@ num_pretty_descriptions: 10
 experiment: 'm9-integrated-learner-given-object-recognizer'
 curriculum: 'm9-complete'
 learner: 'integrated-learner-recognizer'
-
+point_to_log : 7
 

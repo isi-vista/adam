@@ -192,15 +192,16 @@ def execute_experiment(
             # if we've reached the user-given point where we want to log the learner, log it here
             if (
                 point_to_log > 0
-                and num_observations == point_to_log
+                # we log after the nth input is given to the learner
+                and num_observations - 1 == point_to_log
                 and log_learner_state
             ):
+                logging.info(f"Reached {point_to_log} instances, logging learner")
                 # dump the learner to a pickle file
                 pickle.dump(
                     learner,
                     open(
-                        learner_path / f"learner_state_at_{str(num_observations)}.pkl",
-                        "wb",
+                        learner_path / f"learner_state_at_{str(point_to_log)}.pkl", "wb"
                     ),
                     pickle.HIGHEST_PROTOCOL,
                 )
