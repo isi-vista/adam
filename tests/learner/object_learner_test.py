@@ -318,7 +318,6 @@ def test_pursuit_object_learner(language_mode):
     # lexicalize items sufficiently because of diminishing lexicon probability through training
     rng = random.Random()
     rng.seed(0)
-    # debug_callback = DumpPartialMatchCallback(render_path="../renders/")
     learner = IntegratedTemplateLearner(
         object_learner=PursuitObjectLearnerNew(
             learning_factor=0.05,
@@ -328,7 +327,6 @@ def test_pursuit_object_learner(language_mode):
             smoothing_parameter=0.002,
             ontology=GAILA_PHASE_1_ONTOLOGY,
             language_mode=language_mode,
-            # debug_callback=debug_callback
         )
     )
     for training_stage in [train_curriculum]:

@@ -646,5 +646,5 @@ class PursuitObjectLearnerNew(
         ) in self._concept_to_hypotheses_and_scores.items():
             for (i, hypothesis) in enumerate(hypotheses_to_scores.keys()):
                 hypothesis.render_to_file(
-                    concept.debug_string, log_output_path / f"concept.debug_string.{i}"
+                    concept.debug_string, log_output_path / f"{concept.debug_string}.{i}"
                 )
