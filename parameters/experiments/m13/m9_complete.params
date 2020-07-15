@@ -1,0 +1,7 @@
+_includes:
+   - "../../root.params"
+   - "m13.params"
+
+experiment: 'm13-over-m9-curriculum'
+curriculum: 'm9-complete'
+learner: 'integrated-learner-recognizer'

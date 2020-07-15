@@ -1,0 +1,7 @@
+_includes:
+   - "../../root.params"
+   - "m13.params"
+
+experiment: 'm13-object-restrictions'
+curriculum: 'm13-object-restrictions'
+learner: 'integrated-learner-recognizer'

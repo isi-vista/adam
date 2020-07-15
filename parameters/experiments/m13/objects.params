@@ -1,0 +1,7 @@
+_includes:
+   - "../../root.params"
+   - "m13.params"
+
+experiment: 'm13-objects-subset'
+curriculum: 'm9-objects'
+learner: 'integrated-learner'

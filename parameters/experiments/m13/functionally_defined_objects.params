@@ -1,0 +1,7 @@
+_includes:
+   - "../../root.params"
+   - "m13.params"
+
+experiment: 'm13-functionally-defined-objects'
+curriculum: 'm13-functionally-defined-objects'
+learner: 'integrated-learner-recognizer'
