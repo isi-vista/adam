@@ -299,6 +299,7 @@ class ObjectRecognizer:
             num_object_nodes = candidate_object_graph.count_nodes_matching(
                 lambda node: isinstance(node, ObjectPerception)
             )
+
             for (concept, pattern) in concepts_to_patterns.items():
                 # As an optimization, we count how many sub-object nodes
                 # are in the graph and the pattern.

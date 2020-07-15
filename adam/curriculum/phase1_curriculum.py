@@ -459,7 +459,6 @@ def _make_person_has_object_curriculum(
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ] = GAILA_PHASE_1_LANGUAGE_GENERATOR
 ) -> Phase1InstanceGroup:
-    person_0 = object_variable("person", PERSON)
     inanimate_object_0 = standard_object(
         "inanimate-object", INANIMATE_OBJECT, required_properties=[PERSON_CAN_HAVE]
     )
@@ -468,11 +467,16 @@ def _make_person_has_object_curriculum(
         "person has object",
         chain(
             *[
-                sampled(
-                    _x_has_y_template(person_0, inanimate_object_0),
-                    chooser=PHASE1_CHOOSER_FACTORY(),
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                    max_to_sample=100,
+                flatten(
+                    sampled(
+                        _x_has_y_template(
+                            object_variable("person", person), inanimate_object_0
+                        ),
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        max_to_sample=35,
+                    )
+                    for person in [MOM, DAD, BABY]
                 )
             ]
         ),
@@ -2653,11 +2657,11 @@ def build_gaila_phase_1_curriculum(
     """
     return list(
         chain(
-            build_gaila_phase1_object_curriculum(language_generator=language_generator),
+            # build_gaila_phase1_object_curriculum(language_generator=language_generator),
             # build_gaila_phase1_attribute_curriculum(
             #    language_generator=language_generator
             # ),
-            # build_gaila_phase1_relation_curriculum(language_generator=language_generator),
+            build_gaila_phase1_relation_curriculum(language_generator=language_generator),
             # build_gaila_phase1_verb_curriculum(language_generator=language_generator),
         )
     )
