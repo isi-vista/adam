@@ -1,12 +1,12 @@
 language: python
 python:
+    - "3.6"
     - "pypy3.6-7.1.1"
 
 cache:
     pip: true
 
 install:
-    - pip install -r requirements.txt
     - pip install codecov
 
 jobs:
@@ -15,7 +15,14 @@ jobs:
           script:
               - echo "pypy3 version $(pypy3 --version) running"
               - echo "pip version $(pip --version) running"
-              - make check coverage
+              # Awful hack -- there's probably a better way to do this in Travis
+              - if (type -P pypy3) ; then make check; else make coverage; fi
+        - python: "3.6"
+          install:
+              - pip install -r requirements.txt
+        - python: "pypy3.6-7.1.1"
+          install:
+              - pip install -r requirements_pypy.txt
 
 after_success:
   - codecov -t 452b6965-c9da-4306-97d5-a5e86626af8f
