@@ -12,17 +12,22 @@ install:
 jobs:
     include:
         - python: "3.6"
-          stage: test
-          install:
+          stage: install
+          script:
             - pip install -r requirements.txt
+        - python: "3.6"
+          stage: test
           script:
               - echo "pypy3 version $(pypy3 --version) running"
               - echo "pip version $(pip --version) running"
               - make check
         - python: "pypy3.6-7.1.1"
-          install:
-              - pip install -r requirements.txt
+          stage: install
+          script:
+            - pip install -r requirements_pypy.txt
+        - python: "pypy3.6-7.1.1"
           stage: test
+          script:
             - echo "pypy3 version $(pypy3 --version) running"
             - echo "pip version $(pip --version) running"
             - make coverage
