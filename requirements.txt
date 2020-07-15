@@ -10,10 +10,12 @@ contexttimer==0.3.3
 graphviz==0.13
 
 # for the demo visualization
-panda3d==1.10.4.1
-torch==1.3.1
-numpy==1.17.3
-scipy==1.3.1
+# No longer needed since visualization is dead:
+# https://github.com/isi-vista/adam/issues/852#issuecomment-658316999
+# panda3d==1.10.4.1
+# torch==1.3.1
+# numpy==1.17.3
+# scipy==1.3.1
 
 
 # extras for development
