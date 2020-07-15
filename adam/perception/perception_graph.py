@@ -2923,6 +2923,10 @@ class _FrameTranslation:
                     HAS_PROPERTY_LABEL,
                 )
             )
+        for prop in path.properties:
+            edges_to_add.append(
+                (path, _uniquify(prop, referring_node=path), HAS_PROPERTY_LABEL)
+            )
         for (source, target, label) in edges_to_add:
             perception_digraph.add_edge(
                 source,
