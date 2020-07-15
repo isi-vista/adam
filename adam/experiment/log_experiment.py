@@ -1,7 +1,6 @@
 import logging
 from itertools import repeat
 from typing import Callable, Optional
-
 from adam.curriculum.phase2_curriculum import _make_put_in_curriculum
 from adam.language_specific.chinese.chinese_language_generator import (
     GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
@@ -49,6 +48,8 @@ from adam.learner.objects import (
 )
 from adam.ontology.phase1_ontology import (
     GAILA_PHASE_1_ONTOLOGY,
+    ME_HACK,
+    YOU_HACK,
     PHASE_1_CURRICULUM_OBJECTS,
 )
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
@@ -124,9 +125,12 @@ def learner_factory_from_params(
     ]:
         raise RuntimeError("Only able to test Chinese with integrated learner.")
 
+    objects = [YOU_HACK, ME_HACK]
+    objects.extend(PHASE_1_CURRICULUM_OBJECTS)
+
     # Eval hack! This is specific to the Phase 1 ontology
     object_recognizer = ObjectRecognizer.for_ontology_types(
-        PHASE_1_CURRICULUM_OBJECTS,
+        objects,
         determiners=ENGLISH_DETERMINERS,
         ontology=GAILA_PHASE_1_ONTOLOGY,
         language_mode=language_mode,

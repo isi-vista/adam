@@ -5,3 +5,4 @@ experiment_group_dir: '%adam_experiment_root%/m9/'
 
 hypothesis_log_dir: "%experiment_group_dir%/hypotheses"
 include_image_links: true
+language_mode : CHINESE

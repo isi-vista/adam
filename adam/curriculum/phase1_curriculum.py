@@ -151,6 +151,26 @@ from adam.situation.templates.phase1_templates import (
 )
 
 
+# given an ontology node, make a template with just it as the addressee
+def _make_single_addressee_template(addressee: OntologyNode):
+    return Phase1SituationTemplate(
+        "single-addressee",
+        salient_object_variables=[
+            standard_object("addressee", addressee, added_properties=[IS_ADDRESSEE])
+        ],
+    )
+
+
+# given an ontology node, make a template with just it as a speaker
+def _make_single_speaker_template(speaker: OntologyNode):
+    return Phase1SituationTemplate(
+        "single-addressee",
+        salient_object_variables=[
+            standard_object("addressee", speaker, added_properties=[IS_SPEAKER])
+        ],
+    )
+
+
 # Show each object once by itself
 def _make_each_object_by_itself_curriculum(
     perception_generator: HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator = GAILA_PHASE_1_PERCEPTION_GENERATOR,
@@ -163,7 +183,9 @@ def _make_each_object_by_itself_curriculum(
         "single-object",
         salient_object_variables=[
             object_variable(
-                "object", added_properties=[color], banned_properties=[LIQUID]
+                "object",
+                added_properties=[color],
+                banned_properties=[LIQUID, IS_SPEAKER, IS_ADDRESSEE],
             )
         ],
         syntax_hints=[IGNORE_COLORS],
@@ -175,19 +197,6 @@ def _make_each_object_by_itself_curriculum(
         ],
         syntax_hints=[IGNORE_COLORS],
     )
-    single_speaker_template = Phase1SituationTemplate(
-        "single-speaker",
-        salient_object_variables=[
-            standard_object("speaker", PERSON, added_properties=[IS_SPEAKER])
-        ],
-    )
-    single_addressee_template = Phase1SituationTemplate(
-        "single-addressee",
-        salient_object_variables=[
-            standard_object("addressee", PERSON, added_properties=[IS_ADDRESSEE])
-        ],
-    )
-
     return phase1_instances(
         "each object by itself",
         chain(
@@ -202,15 +211,23 @@ def _make_each_object_by_itself_curriculum(
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                 ),
-                all_possible(
-                    single_speaker_template,
-                    chooser=PHASE1_CHOOSER_FACTORY(),
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                flatten(
+                    sampled(
+                        _make_single_addressee_template(addressee=object),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        max_to_sample=5,
+                    )
+                    for object in [MOM, DAD, BABY]
                 ),
-                all_possible(
-                    single_addressee_template,
-                    chooser=PHASE1_CHOOSER_FACTORY(),
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                flatten(
+                    sampled(
+                        _make_single_speaker_template(speaker=object),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        max_to_sample=5,
+                    )
+                    for object in [MOM, DAD, BABY]
                 ),
             ]
         ),
@@ -2637,10 +2654,10 @@ def build_gaila_phase_1_curriculum(
     return list(
         chain(
             build_gaila_phase1_object_curriculum(language_generator=language_generator),
-            build_gaila_phase1_attribute_curriculum(
-                language_generator=language_generator
-            ),
-            build_gaila_phase1_relation_curriculum(language_generator=language_generator),
-            build_gaila_phase1_verb_curriculum(language_generator=language_generator),
+            # build_gaila_phase1_attribute_curriculum(
+            #    language_generator=language_generator
+            # ),
+            # build_gaila_phase1_relation_curriculum(language_generator=language_generator),
+            # build_gaila_phase1_verb_curriculum(language_generator=language_generator),
         )
     )
