@@ -11,7 +11,8 @@ install:
 
 jobs:
     include:
-        - stage: test
+        - python: ["3.6", "pypy3.6-7.1.1"]
+          stage: test
           script:
               - echo "pypy3 version $(pypy3 --version) running"
               - echo "pip version $(pip --version) running"
