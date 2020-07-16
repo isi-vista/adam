@@ -352,7 +352,7 @@ class CurriculumToHtmlDumper:
                         r"Output directory does not appear to be a curriculum "
                         r"dump. It contains the non-html file {f}"
                     )
-            shutil.rmtree(output_directory)
+            shutil.rmtree(str(output_directory))
         output_directory.mkdir(parents=True, exist_ok=True)
 
         files_written: List[Tuple[str, str]] = []
