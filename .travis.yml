@@ -6,6 +6,9 @@ python:
 cache:
     pip: true
 
+install: skip
+script: skip
+
 jobs:
     include:
         - python: "3.6"
