@@ -572,8 +572,18 @@ def _make_my_your_object_curriculum(
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
-    person_0 = standard_object("speaker", PERSON, added_properties=[IS_SPEAKER])
-    person_1 = standard_object("addressee", PERSON, added_properties=[IS_ADDRESSEE])
+    person_0 = standard_object(
+        "speaker",
+        PERSON,
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+        added_properties=[IS_SPEAKER],
+    )
+    person_1 = standard_object(
+        "addressee",
+        PERSON,
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+        added_properties=[IS_ADDRESSEE],
+    )
     inanimate_object = standard_object(
         "object", INANIMATE_OBJECT, required_properties=[PERSON_CAN_HAVE]
     )
@@ -671,7 +681,9 @@ def fall_on_ground_template(
 
 
 def make_fall_templates() -> Iterable[Phase1SituationTemplate]:
-    arbitary_object = standard_object("object_0", THING)
+    arbitary_object = standard_object(
+        "object_0", THING, banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
+    )
     syntax_hints_options = ([], [USE_ADVERBIAL_PATH_MODIFIER])  # type: ignore
 
     # Any Object Falling
@@ -712,8 +724,13 @@ def _make_fall_curriculum(
 
 def make_give_templates() -> Iterable[Phase1SituationTemplate]:
     action_variable("transfer-verb", with_properties=[TRANSFER_OF_POSSESSION])
-    giver = object_variable("person_0", PERSON)
-    recipient = object_variable("person_1", PERSON)
+    # banning being the speaker or addressee keeps us from trying to instantiate "you" or "me" hack nodes
+    giver = object_variable(
+        "person_0", PERSON, banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
+    )
+    recipient = object_variable(
+        "person_1", PERSON, banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
+    )
     given_object = standard_object("give_object_0")
 
     for prefer_ditransitive in (True, False):
@@ -946,9 +963,14 @@ def bare_fly(
 
 def make_fly_templates() -> Iterable[Phase1SituationTemplate]:
     bird = standard_object("bird_0", BIRD)
-    object_0 = standard_object("object_0", THING)
+    object_0 = standard_object(
+        "object_0", THING, banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
+    )
     object_with_space_under = standard_object(
-        "object_with_space_under", THING, required_properties=[HAS_SPACE_UNDER]
+        "object_with_space_under",
+        THING,
+        required_properties=[HAS_SPACE_UNDER],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
     )
     syntax_hints_options = ([], [USE_ADVERBIAL_PATH_MODIFIER])  # type: ignore
 
@@ -1172,8 +1194,18 @@ def _make_speaker_addressee_curriculum(
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ] = GAILA_PHASE_1_LANGUAGE_GENERATOR
 ) -> Phase1InstanceGroup:
-    speaker = standard_object("speaker_0", PERSON, added_properties=[IS_SPEAKER])
-    addressee = standard_object("addressee_0", PERSON, added_properties=[IS_ADDRESSEE])
+    speaker = standard_object(
+        "speaker_0",
+        PERSON,
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+        added_properties=[IS_SPEAKER],
+    )
+    addressee = standard_object(
+        "addressee_0",
+        PERSON,
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+        added_properties=[IS_ADDRESSEE],
+    )
     given_object = standard_object("given_object", INANIMATE_OBJECT)
 
     def _make_templates() -> Iterable[Phase1SituationTemplate]:
@@ -1325,8 +1357,15 @@ def _make_jump_curriculum(
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ] = GAILA_PHASE_1_LANGUAGE_GENERATOR
 ) -> Phase1InstanceGroup:
-    jumper = standard_object("jumper_0", THING, required_properties=[CAN_JUMP])
-    jumped_over = standard_object("jumped_over")
+    jumper = standard_object(
+        "jumper_0",
+        THING,
+        required_properties=[CAN_JUMP],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
+    jumped_over = standard_object(
+        "jumped_over", banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
+    )
 
     return phase1_instances(
         "jumping",
@@ -1363,12 +1402,19 @@ def _make_jump_curriculum(
 
 
 def make_put_templates() -> Iterable[Phase1SituationTemplate]:
-    putter = standard_object("putter_0", THING, required_properties=[ANIMATE])
+    putter = standard_object(
+        "putter_0",
+        THING,
+        required_properties=[ANIMATE],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
     object_put = standard_object("object_0", required_properties=[INANIMATE])
     on_region_object = standard_object(
         "on_region_object", required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
     )
-    in_region_object = standard_object("in_region_object", required_properties=[HOLLOW])
+    in_region_object = standard_object(
+        "in_region_object", required_properties=[HOLLOW], banned_properties=[ANIMATE]
+    )
     return [
         _put_on_template(putter, object_put, on_region_object, []),
         _put_in_template(putter, object_put, in_region_object, []),
@@ -1445,9 +1491,15 @@ def _make_put_on_speaker_addressee_body_part_curriculum(
 
 
 def make_drink_template() -> Phase1SituationTemplate:
-    object_0 = standard_object("object_0", required_properties=[HOLLOW])
+    object_0 = standard_object(
+        "object_0",
+        required_properties=[HOLLOW],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
     liquid_0 = object_variable("liquid_0", required_properties=[LIQUID])
-    person_0 = standard_object("person_0", PERSON)
+    person_0 = standard_object(
+        "person_0", PERSON, banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
+    )
 
     return Phase1SituationTemplate(
         "drink",
@@ -1511,9 +1563,15 @@ def _make_eat_curriculum(
     # https://github.com/isi-vista/adam/issues/267
 
     object_to_eat = standard_object("object_0", required_properties=[EDIBLE])
-    eater = standard_object("eater_0", THING, required_properties=[ANIMATE])
+    eater = standard_object(
+        "eater_0",
+        THING,
+        required_properties=[ANIMATE],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
     background = immutableset(
-        standard_object(f"noise_object_{x}") for x in range(noise_objects)
+        standard_object(f"noise_object_{x}", banned_properties=[IS_SPEAKER, IS_ADDRESSEE])
+        for x in range(noise_objects)
     )
 
     return phase1_instances(
@@ -1533,7 +1591,12 @@ def _make_eat_curriculum(
 
 
 def make_sit_templates() -> Iterable[Phase1SituationTemplate]:
-    sitter = standard_object("sitter_0", THING, required_properties=[ANIMATE])
+    sitter = standard_object(
+        "sitter_0",
+        THING,
+        required_properties=[ANIMATE],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
     sit_surface = standard_object(
         "surface", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
     )
@@ -1736,7 +1799,10 @@ def _make_take_curriculum(
                     sampled(
                         make_take_template(
                             agent=standard_object(
-                                "taker_0", THING, required_properties=[ANIMATE]
+                                "taker_0",
+                                THING,
+                                required_properties=[ANIMATE],
+                                banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
                             ),
                             theme=standard_object(
                                 "object_taken_0", required_properties=[INANIMATE]
@@ -1828,10 +1894,18 @@ def transitive_move_template(
 
 def make_move_templates() -> Iterable[Phase1SituationTemplate]:
     self_mover_0 = standard_object(
-        "self-mover_0", THING, required_properties=[SELF_MOVING]
+        "self-mover_0",
+        THING,
+        required_properties=[SELF_MOVING],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
     )
 
-    other_mover_0 = standard_object("mover_0", THING, required_properties=[ANIMATE])
+    other_mover_0 = standard_object(
+        "mover_0",
+        THING,
+        required_properties=[ANIMATE],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
     movee_0 = standard_object("movee_0", THING, required_properties=[INANIMATE])
     move_goal_reference = standard_object(
         "move-goal-reference", THING, required_properties=[INANIMATE]
@@ -1868,9 +1942,19 @@ def _make_move_curriculum(
 
 
 def make_spin_templates() -> Iterable[Phase1SituationTemplate]:
-    self_turner = standard_object("self-spinner_0", THING, required_properties=[ANIMATE])
+    self_turner = standard_object(
+        "self-spinner_0",
+        THING,
+        required_properties=[ANIMATE],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
 
-    other_spinner = standard_object("spinner_0", THING, required_properties=[ANIMATE])
+    other_spinner = standard_object(
+        "spinner_0",
+        THING,
+        required_properties=[ANIMATE],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
     spinee = standard_object("spinee_0", THING, required_properties=[INANIMATE])
 
     bare_spin_template = Phase1SituationTemplate(
@@ -1915,9 +1999,18 @@ def _make_spin_curriculum(
 
 
 def make_go_templates() -> Iterable[Phase1SituationTemplate]:
-    goer = standard_object("goer", THING, required_properties=[ANIMATE])
-    goal_reference = standard_object("go-goal", THING)
-    in_goal_reference = standard_object("go-in-goal", THING, required_properties=[HOLLOW])
+    goer = standard_object(
+        "goer",
+        THING,
+        required_properties=[ANIMATE],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
+    goal_reference = standard_object(
+        "go-goal", THING, banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
+    )
+    in_goal_reference = standard_object(
+        "go-in-goal", THING, required_properties=[HOLLOW], banned_properties=[ANIMATE]
+    )
 
     go_to = _go_to_template(goer, goal_reference, [])
     go_in = _go_in_template(goer, in_goal_reference, [])
@@ -1929,9 +2022,17 @@ def _make_go_curriculum(
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ] = GAILA_PHASE_1_LANGUAGE_GENERATOR
 ) -> Phase1InstanceGroup:
-    goer = standard_object("goer", THING, required_properties=[ANIMATE])
+    goer = standard_object(
+        "goer",
+        THING,
+        required_properties=[ANIMATE],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
     under_goal_reference = standard_object(
-        "go-under-goal", THING, required_properties=[HAS_SPACE_UNDER]
+        "go-under-goal",
+        THING,
+        required_properties=[HAS_SPACE_UNDER],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
     )
 
     return phase1_instances(
@@ -2076,7 +2177,12 @@ def _make_push_curriculum(
                 for adverbial_path_modifier in [True, False]
                 for operator in [TOWARD, AWAY_FROM]
                 for situation in make_push_templates(
-                    agent=standard_object("pusher", THING, required_properties=[ANIMATE]),
+                    agent=standard_object(
+                        "pusher",
+                        THING,
+                        required_properties=[ANIMATE],
+                        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+                    ),
                     theme=standard_object("pushee", INANIMATE_OBJECT),
                     push_surface=standard_object(
                         "push_surface",
@@ -2298,8 +2404,18 @@ def make_throw_animacy_templates() -> Iterable[Phase1SituationTemplate]:
 
 
 def make_throw_templates() -> Iterable[Phase1SituationTemplate]:
-    thrower = standard_object("thrower_0", THING, required_properties=[ANIMATE])
-    catcher = standard_object("catcher_0", THING, required_properties=[ANIMATE])
+    thrower = standard_object(
+        "thrower_0",
+        THING,
+        required_properties=[ANIMATE],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
+    catcher = standard_object(
+        "catcher_0",
+        THING,
+        required_properties=[ANIMATE],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
     object_thrown = standard_object("object_0", required_properties=[INANIMATE])
     implicit_goal_reference = standard_object("implicit_throw_goal_object", BOX)
 
@@ -2358,13 +2474,19 @@ def _make_pass_curriculum(
                     sampled(
                         make_pass_template(
                             agent=standard_object(
-                                "thrower_0", THING, required_properties=[ANIMATE]
+                                "thrower_0",
+                                THING,
+                                required_properties=[ANIMATE],
+                                banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
                             ),
                             theme=standard_object(
                                 "object_0", required_properties=[INANIMATE]
                             ),
                             goal=standard_object(
-                                "catcher_0", THING, required_properties=[ANIMATE]
+                                "catcher_0",
+                                THING,
+                                required_properties=[ANIMATE],
+                                banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
                             ),
                             use_adverbial_path_modifier=use_adverbial_path_modifier,
                             operator=operator,
@@ -2419,10 +2541,21 @@ def _make_come_curriculum(
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ] = GAILA_PHASE_1_LANGUAGE_GENERATOR
 ) -> Phase1InstanceGroup:
-    movee = standard_object("movee", required_properties=[SELF_MOVING])
+    movee = standard_object(
+        "movee",
+        required_properties=[SELF_MOVING],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
     learner = standard_object("leaner_0", LEARNER)
-    speaker = standard_object("speaker", PERSON, added_properties=[IS_SPEAKER])
-    object_ = standard_object("object_0", THING)
+    speaker = standard_object(
+        "speaker",
+        PERSON,
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+        added_properties=[IS_SPEAKER],
+    )
+    object_ = standard_object(
+        "object_0", THING, banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
+    )
     ground = standard_object("ground", root_node=GROUND)
 
     come_to_speaker = Phase1SituationTemplate(
@@ -2629,6 +2762,7 @@ def build_gaila_phase1_verb_curriculum(
         _make_transfer_of_possession_curriculum(language_generator=language_generator),
         _make_fly_curriculum(language_generator=language_generator),
         _make_roll_curriculum(language_generator=language_generator),
+        # TODO: fix this in Chinese
         _make_speaker_addressee_curriculum(language_generator=language_generator),
         _make_jump_curriculum(language_generator=language_generator),
         _make_drink_curriculum(language_generator=language_generator),
@@ -2642,6 +2776,7 @@ def build_gaila_phase1_verb_curriculum(
         _make_push_curriculum(language_generator=language_generator),
         _make_throw_curriculum(language_generator=language_generator),
         _make_pass_curriculum(language_generator=language_generator),
+        # TODO: implement this
         # _make_put_on_speaker_addressee_body_part_curriculum(),
         _make_come_curriculum(language_generator=language_generator),
     ]
@@ -2657,11 +2792,11 @@ def build_gaila_phase_1_curriculum(
     """
     return list(
         chain(
-            # build_gaila_phase1_object_curriculum(language_generator=language_generator),
-            # build_gaila_phase1_attribute_curriculum(
-            #    language_generator=language_generator
-            # ),
+            build_gaila_phase1_object_curriculum(language_generator=language_generator),
+            build_gaila_phase1_attribute_curriculum(
+                language_generator=language_generator
+            ),
             build_gaila_phase1_relation_curriculum(language_generator=language_generator),
-            # build_gaila_phase1_verb_curriculum(language_generator=language_generator),
+            build_gaila_phase1_verb_curriculum(language_generator=language_generator),
         )
     )
