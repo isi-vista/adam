@@ -151,6 +151,8 @@ from adam.situation.templates.phase1_templates import (
 )
 
 
+# TODO: fix https://github.com/isi-vista/adam/issues/917 which causes us to have to specify that we don't wish to include ME_HACK and YOU_HACK in our curriculum design
+
 # given an ontology node, make a template with just it as the addressee
 def _make_single_addressee_template(addressee: OntologyNode):
     return Phase1SituationTemplate(
@@ -2806,11 +2808,11 @@ def build_gaila_phase_1_curriculum(
     """
     return list(
         chain(
-            # build_gaila_phase1_object_curriculum(language_generator=language_generator),
-            # build_gaila_phase1_attribute_curriculum(
-            #    language_generator=language_generator
-            # ),
-            # build_gaila_phase1_relation_curriculum(language_generator=language_generator),
-            build_gaila_phase1_verb_curriculum(language_generator=language_generator)
+            build_gaila_phase1_object_curriculum(language_generator=language_generator),
+            build_gaila_phase1_attribute_curriculum(
+                language_generator=language_generator
+            ),
+            build_gaila_phase1_relation_curriculum(language_generator=language_generator),
+            build_gaila_phase1_verb_curriculum(language_generator=language_generator),
         )
     )

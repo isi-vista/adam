@@ -61,6 +61,9 @@ def integrated_learner_factory(language_mode: LanguageMode):
     )
 
 
+# TODO: fix https://github.com/isi-vista/adam/issues/917 which causes us to have to specify that we don't wish to include ME_HACK and YOU_HACK in our curriculum design
+
+
 @pytest.mark.parametrize(
     "color_node,object_0_node,object_1_node",
     [

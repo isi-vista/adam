@@ -109,7 +109,7 @@ from adam.situation.templates.phase1_templates import (
 
 BOOL_SET = immutableset([True, False])
 
-
+# TODO: fix https://github.com/isi-vista/adam/issues/917 which causes us to have to specify that we don't wish to include ME_HACK and YOU_HACK in our curriculum design
 # PUSH templates
 
 

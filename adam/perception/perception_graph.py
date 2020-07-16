@@ -2719,6 +2719,7 @@ class _FrameTranslation:
             property_index += 1
             source_node = self._map_node(property_.perceived_object)
             if isinstance(property_, HasBinaryProperty):
+                # TODO: fix this hack for me and you https://github.com/isi-vista/adam/issues/917
                 if (
                     property_.binary_property in [IS_SPEAKER, IS_ADDRESSEE]
                     and source_node.debug_handle
@@ -2728,20 +2729,20 @@ class _FrameTranslation:
                         property_.binary_property,
                         referring_node_to_enforce_uniqueness=source_node,
                     )
+                    # this specification is really gross but ensures that our attribute nodes are unique from each other and
+                    # other attribute nodes that are added doubly.
                     dest_node_2 = self._map_node(
                         property_.binary_property,
                         referring_node_to_enforce_uniqueness=dest_node,
                     )
                     graph.add_edge(source_node, dest_node, label=HAS_PROPERTY_LABEL)
                     graph.add_edge(source_node, dest_node_2, label=HAS_PROPERTY_LABEL)
-                    # print([o for o in graph.out_edges if o[0] == source_node])
                 else:
                     dest_node = self._map_node(
                         property_.binary_property,
                         referring_node_to_enforce_uniqueness=source_node,
                     )
                     graph.add_edge(source_node, dest_node, label=HAS_PROPERTY_LABEL)
-                    # print([o for o in graph.out_edges if o[0] == source_node])
 
             elif isinstance(property_, HasColor):
                 dest_node = self._map_node(

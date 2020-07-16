@@ -82,6 +82,8 @@ from adam.situation.templates.phase1_templates import (
     object_variable,
 )
 
+# TODO: fix https://github.com/isi-vista/adam/issues/917 which causes us to have to specify that we don't wish to include ME_HACK and YOU_HACK in our curriculum design
+
 
 def _make_sit_on_chair_curriculum(
     perception_generator: HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator = GAILA_PHASE_2_PERCEPTION_GENERATOR,

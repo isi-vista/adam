@@ -41,6 +41,9 @@ from adam.situation.templates.phase1_templates import (
 import random
 
 
+# TODO: fix https://github.com/isi-vista/adam/issues/917 which causes us to have to specify that we don't wish to include ME_HACK and YOU_HACK in our curriculum design
+
+
 def make_simple_pursuit_curriculum(
     *,
     target_objects=[BALL, CHAIR, MOM, DAD, BABY, TABLE, DOG, BIRD, BOX],
