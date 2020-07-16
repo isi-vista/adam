@@ -217,8 +217,18 @@ def test_subset_my_attribute_learner_integrated(language_mode, learner):
     [pytest.mark.skip(subset_attribute_leaner_factory), integrated_learner_factory],
 )
 def test_your_attribute_learner(language_mode, learner):
-    person_0 = standard_object("speaker", PERSON, added_properties=[IS_SPEAKER])
-    person_1 = standard_object("addressee", PERSON, added_properties=[IS_ADDRESSEE])
+    person_0 = standard_object(
+        "speaker",
+        PERSON,
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+        added_properties=[IS_SPEAKER],
+    )
+    person_1 = standard_object(
+        "addressee",
+        PERSON,
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+        added_properties=[IS_ADDRESSEE],
+    )
     inanimate_object = standard_object(
         "object", INANIMATE_OBJECT, required_properties=[PERSON_CAN_HAVE]
     )

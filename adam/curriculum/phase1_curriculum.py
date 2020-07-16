@@ -1345,7 +1345,12 @@ def make_pass_template(
 
 
 def make_jump_templates():
-    jumper = standard_object("jumper_0", THING, required_properties=[CAN_JUMP])
+    jumper = standard_object(
+        "jumper_0",
+        THING,
+        required_properties=[CAN_JUMP],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
     for use_adverbial_path_modifier in (True, False):
         yield make_jump_template(
             jumper, use_adverbial_path_modifier=use_adverbial_path_modifier
@@ -2391,8 +2396,18 @@ def throw_to_region_template(
 
 # for testing gei vs dao X shang in Chinese
 def make_throw_animacy_templates() -> Iterable[Phase1SituationTemplate]:
-    thrower = standard_object("thrower_0", THING, required_properties=[ANIMATE])
-    catcher = standard_object("catcher_0", THING, required_properties=[ANIMATE])
+    thrower = standard_object(
+        "thrower_0",
+        THING,
+        required_properties=[ANIMATE],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
+    catcher = standard_object(
+        "catcher_0",
+        THING,
+        required_properties=[ANIMATE],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
     object_thrown = standard_object("object_0", required_properties=[INANIMATE])
     goal_reference = standard_object("object_1", required_properties=[INANIMATE])
     return [
