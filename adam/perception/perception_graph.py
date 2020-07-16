@@ -2719,17 +2719,35 @@ class _FrameTranslation:
             property_index += 1
             source_node = self._map_node(property_.perceived_object)
             if isinstance(property_, HasBinaryProperty):
-                dest_node = self._map_node(
-                    property_.binary_property,
-                    referring_node_to_enforce_uniqueness=source_node,
-                )
+                if (
+                    property_.binary_property in [IS_SPEAKER, IS_ADDRESSEE]
+                    and source_node.debug_handle
+                    and source_node.debug_handle != "learner"
+                ):
+                    dest_node = self._map_node(
+                        property_.binary_property,
+                        referring_node_to_enforce_uniqueness=source_node,
+                    )
+                    dest_node_2 = self._map_node(property_.binary_property)
+                    graph.add_edge(source_node, dest_node, label=HAS_PROPERTY_LABEL)
+                    graph.add_edge(
+                        source_node, dest_node_2, label=OntologyNode("has-property-hack")
+                    )
+                else:
+                    dest_node = self._map_node(
+                        property_.binary_property,
+                        referring_node_to_enforce_uniqueness=source_node,
+                    )
+                    graph.add_edge(source_node, dest_node, label=HAS_PROPERTY_LABEL)
+
             elif isinstance(property_, HasColor):
                 dest_node = self._map_node(
                     property_.color, referring_node_to_enforce_uniqueness=source_node
                 )
+                graph.add_edge(source_node, dest_node, label=HAS_PROPERTY_LABEL)
+
             else:
                 raise RuntimeError(f"Don't know how to translate property {property_}")
-            graph.add_edge(source_node, dest_node, label=HAS_PROPERTY_LABEL)
 
         if frame.axis_info:
             for (object_, axis) in frame.axis_info.axes_facing.items():
