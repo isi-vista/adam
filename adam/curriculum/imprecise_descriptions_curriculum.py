@@ -295,11 +295,6 @@ def make_imprecise_size_descriptions(
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
 ) -> Phase1InstanceGroup:
-    background = immutableset(
-        standard_object(f"noise_object_{x}", banned_properties=[IS_SPEAKER, IS_ADDRESSEE])
-        for x in range(num_noise_objects)
-    )
-
     theme_0 = standard_object("theme", banned_properties=[IS_SPEAKER, IS_ADDRESSEE])
     theme_1 = standard_object(
         "theme-thing", THING, banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
@@ -501,6 +496,7 @@ def make_jump_imprecise_temporal_descriptions(
         banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
     )
 
+    background = make_noise_objects(noise_objects)
 
     return phase1_instances(
         "jumping",
@@ -638,6 +634,7 @@ def make_walk_run_subtle_verb_distinction(
         required_properties=[ANIMATE],
         banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
     )
+    background = make_noise_objects(noise_objects)
 
     return phase1_instances(
         "walking-running",

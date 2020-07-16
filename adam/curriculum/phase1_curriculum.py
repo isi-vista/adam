@@ -229,7 +229,6 @@ def _make_each_object_by_itself_curriculum(  # pylint: disable=unused-argument
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                 ),
-
                 flatten(
                     sampled(
                         _make_single_addressee_template(addressee=object),
@@ -518,6 +517,7 @@ def _make_person_has_object_curriculum(
     inanimate_object_0 = standard_object(
         "inanimate-object", INANIMATE_OBJECT, required_properties=[PERSON_CAN_HAVE]
     )
+    background = make_noise_objects(noise_objects)
 
     return phase1_instances(
         "person has object",
@@ -526,14 +526,15 @@ def _make_person_has_object_curriculum(
                 flatten(
                     sampled(
                         _x_has_y_template(
-                            object_variable("person", person), inanimate_object_0
+                            object_variable("person", person),
+                            inanimate_object_0,
+                            background=background,
                         ),
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
-                        max_to_sample=35,
+                        max_to_sample=num_samples if num_samples else 35,
                     )
                     for person in [MOM, DAD, BABY]
-
                 )
             ]
         ),
@@ -704,7 +705,6 @@ def falling_template(
                             SpatialPath(
                                 operator=TOWARD,
                                 reference_object=ground,
-
                                 properties=spatial_properties,
                             ),
                         )
@@ -751,7 +751,6 @@ def fall_on_ground_template(
         before_action_relations=[negate(on(theme, GROUND_OBJECT_TEMPLATE))],
         after_action_relations=[on(theme, GROUND_OBJECT_TEMPLATE)],
     )
-
 
 
 def make_fall_templates(
@@ -1496,7 +1495,6 @@ def make_pass_template(
     )
 
 
-
 def make_jump_templates(noise_objects: Optional[int]):
     jumper = standard_object(
         "jumper_0",
@@ -1670,7 +1668,6 @@ def _make_put_on_speaker_addressee_body_part_curriculum(
     )
 
 
-
 def make_drink_template(noise_objects: Optional[int]) -> Phase1SituationTemplate:
     object_0 = standard_object(
         "object_0",
@@ -1682,7 +1679,6 @@ def make_drink_template(noise_objects: Optional[int]) -> Phase1SituationTemplate
         "person_0", PERSON, banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
     )
     background = make_noise_objects(noise_objects)
-
 
     return Phase1SituationTemplate(
         "drink",
@@ -1761,11 +1757,7 @@ def _make_eat_curriculum(
         required_properties=[ANIMATE],
         banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
     )
-    background = immutableset(
-        standard_object(f"noise_object_{x}", banned_properties=[IS_SPEAKER, IS_ADDRESSEE])
-        for x in range(noise_objects)
-    )
-
+    background = make_noise_objects(noise_objects)
 
     return phase1_instances(
         "eating",
@@ -2230,7 +2222,6 @@ def _make_spin_curriculum(
     )
 
 
-
 def make_go_templates(noise_objects: Optional[int]) -> Iterable[Phase1SituationTemplate]:
     goer = standard_object(
         "goer",
@@ -2245,7 +2236,6 @@ def make_go_templates(noise_objects: Optional[int]) -> Iterable[Phase1SituationT
         "go-in-goal", THING, required_properties=[HOLLOW], banned_properties=[ANIMATE]
     )
     background = make_noise_objects(noise_objects)
-
 
     go_to = _go_to_template(goer, goal_reference, background)
     go_in = _go_in_template(goer, in_goal_reference, background)
@@ -2673,7 +2663,6 @@ def make_throw_animacy_templates(
             thrower, object_thrown, goal_reference, background=background
         ),
     ]
-
 
 
 def make_throw_templates(
@@ -3116,14 +3105,13 @@ def build_gaila_phase1_verb_curriculum(
     One particular instantiation of the object-learning parts of the curriculum for GAILA Phase 1.
     """
     return [
-
         _make_fall_curriculum(num_samples, num_noise_objects, language_generator),
         _make_transfer_of_possession_curriculum(
             num_samples, num_noise_objects, language_generator
         ),
         _make_fly_curriculum(num_samples, num_noise_objects, language_generator),
         _make_roll_curriculum(num_samples, num_noise_objects, language_generator),
-        #TODO: fix this in Chinese
+        # TODO: fix this in Chinese
         _make_speaker_addressee_curriculum(
             num_samples, num_noise_objects, language_generator
         ),
@@ -3141,7 +3129,6 @@ def build_gaila_phase1_verb_curriculum(
         _make_pass_curriculum(num_samples, num_noise_objects, language_generator),
         # _make_put_on_speaker_addressee_body_part_curriculum(num_samples, num_noise_objects, language_generator),
         _make_come_curriculum(num_samples, num_noise_objects, language_generator),
-
     ]
 
 

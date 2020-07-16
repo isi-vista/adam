@@ -488,9 +488,6 @@ def _make_behind_training(
     ground_2 = standard_object(
         "person", PERSON, banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
     )
-    speaker = standard_object("speaker", MOM, banned_properties=[IS_SPEAKER, IS_ADDRESSEE], added_properties=[IS_SPEAKER])
-    addressee = standard_object("addressee", LEARNER, banned_properties=[IS_SPEAKER, IS_ADDRESSEE], added_properties=[IS_ADDRESSEE])
-
 
     figures = immutableset([figure_0, figure_1, figure_2])
     grounds = immutableset([ground_0, ground_1, ground_2])
@@ -539,10 +536,6 @@ def _make_in_front_training(
     ground_2 = standard_object(
         "person", PERSON, banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
     )
-    speaker = standard_object("speaker", MOM, added_properties=[IS_SPEAKER])
-    addressee = standard_object("addressee", LEARNER, added_properties=[IS_ADDRESSEE])
-
-
     figures = immutableset([figure_0, figure_1, figure_2])
     grounds = immutableset([ground_0, ground_1, ground_2])
 

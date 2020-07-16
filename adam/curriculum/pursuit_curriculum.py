@@ -50,11 +50,7 @@ def make_simple_pursuit_curriculum(
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
     *,
-
     target_objects=[BALL, CHAIR, MOM, DAD, BABY, TABLE, DOG, BIRD, BOX],
-    num_instances: int = 10,
-    num_noise_instances: int = 0,
-
     num_objects_in_instance: int = 3,
     perception_generator: HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator = GAILA_PHASE_1_PERCEPTION_GENERATOR,
 ) -> Phase1InstanceGroup:

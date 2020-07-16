@@ -1,11 +1,4 @@
 import logging
-
-from itertools import repeat
-from typing import Callable, Optional
-from adam.curriculum.phase2_curriculum import _make_put_in_curriculum
-from adam.language_specific.chinese.chinese_language_generator import (
-    GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
-
 from typing import Callable, Optional, Mapping, Iterable, Tuple
 
 from adam.curriculum.curriculum_utils import Phase1InstanceGroup
@@ -13,7 +6,6 @@ from adam.curriculum.imprecise_descriptions_curriculum import (
     make_imprecise_size_curriculum,
     make_imprecise_temporal_descriptions,
     make_subtle_verb_distinctions_curriculum,
-
 )
 from adam.curriculum.phase2_curriculum import (
     build_functionally_defined_objects_curriculum,

@@ -2493,10 +2493,7 @@ def _make_push_with_prepositions(
         "surface", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
     )
 
-    background = immutableset(
-        standard_object(f"noise_object_{x}", banned_properties=[IS_SPEAKER, IS_ADDRESSEE])
-        for x in range(noise_objects)
-    )
+    background = make_noise_objects(noise_objects)
 
     to_in_templates = [
         _push_to_template(agent, theme, goal_reference, surface, background),
@@ -2628,8 +2625,7 @@ def _make_go_with_prepositions(
     noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    ],
 ) -> Phase1InstanceGroup:
     agent = standard_object(
         "agent",
@@ -2872,8 +2868,8 @@ def _make_roll_with_prepositions(
     noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
-)-> Phase1InstanceGroup:
+    ],
+) -> Phase1InstanceGroup:
     agent = standard_object(
         "agent",
         THING,
@@ -2893,8 +2889,7 @@ def _make_roll_with_prepositions(
         "rollable_surface", required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
     )
     noise_objects_immutable: Iterable[TemplateObjectVariable] = immutableset(
-        standard_object(f"noise_object_{x}", banned_properties=[IS_SPEAKER, IS_ADDRESSEE])
-        for x in range(noise_objects)
+        make_noise_objects(noise_objects)
     )
 
     surfaces: Iterable[TemplateObjectVariable] = immutableset([ground, roll_surface])
