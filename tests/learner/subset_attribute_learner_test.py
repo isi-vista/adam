@@ -32,6 +32,9 @@ from adam.ontology.phase1_ontology import (
     PERSON,
     INANIMATE_OBJECT,
     PERSON_CAN_HAVE,
+    MOM,
+    DAD,
+    BABY,
 )
 from adam.situation.templates.phase1_templates import property_variable, sampled
 from tests.learner import (
@@ -147,14 +150,12 @@ def test_subset_color_attribute(
 
 # hack: wo de and ni de are currently considered to be one word. This won't work for third person possession
 # TODO: Fix this learning test. See: https://github.com/isi-vista/adam/issues/861
-@pytest.mark.skip("My fails to learn for some reason.")
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
     "learner",
     [pytest.mark.skip(subset_attribute_leaner_factory), integrated_learner_factory],
 )
 def test_subset_my_attribute_learner_integrated(language_mode, learner):
-    person = standard_object("speaker", PERSON, added_properties=[IS_SPEAKER])
     inanimate_object = standard_object(
         "object", INANIMATE_OBJECT, required_properties=[PERSON_CAN_HAVE]
     )
@@ -163,13 +164,18 @@ def test_subset_my_attribute_learner_integrated(language_mode, learner):
 
     my_train_curriculum = phase1_instances(
         "my-train",
-        situations=sampled(
-            _x_has_y_template(
-                person, inanimate_object, syntax_hints=[IGNORE_HAS_AS_VERB]
-            ),
-            ontology=GAILA_PHASE_1_ONTOLOGY,
-            chooser=PHASE1_CHOOSER_FACTORY(),
-            max_to_sample=5,
+        situations=flatten(
+            sampled(
+                _x_has_y_template(
+                    standard_object("speaker", person, added_properties=[IS_SPEAKER]),
+                    inanimate_object,
+                    syntax_hints=[IGNORE_HAS_AS_VERB],
+                ),
+                ontology=GAILA_PHASE_1_ONTOLOGY,
+                chooser=PHASE1_CHOOSER_FACTORY(),
+                max_to_sample=5,
+            )
+            for person in [MOM, DAD, BABY]
         ),
         language_generator=language_generator,
     )
@@ -178,7 +184,14 @@ def test_subset_my_attribute_learner_integrated(language_mode, learner):
         "my-test",
         situations=sampled(
             _x_has_y_template(
-                person, inanimate_object, syntax_hints=[IGNORE_HAS_AS_VERB]
+                standard_object(
+                    "speaker",
+                    PERSON,
+                    banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+                    added_properties=[IS_SPEAKER],
+                ),
+                inanimate_object,
+                syntax_hints=[IGNORE_HAS_AS_VERB],
             ),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             chooser=PHASE1_TEST_CHOOSER_FACTORY(),

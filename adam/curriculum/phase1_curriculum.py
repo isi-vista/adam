@@ -2791,7 +2791,6 @@ def build_gaila_phase1_verb_curriculum(
         _make_push_curriculum(language_generator=language_generator),
         _make_throw_curriculum(language_generator=language_generator),
         _make_pass_curriculum(language_generator=language_generator),
-        # TODO: implement this
         # _make_put_on_speaker_addressee_body_part_curriculum(),
         _make_come_curriculum(language_generator=language_generator),
     ]
@@ -2807,11 +2806,11 @@ def build_gaila_phase_1_curriculum(
     """
     return list(
         chain(
-            build_gaila_phase1_object_curriculum(language_generator=language_generator),
-            build_gaila_phase1_attribute_curriculum(
-                language_generator=language_generator
-            ),
-            build_gaila_phase1_relation_curriculum(language_generator=language_generator),
-            build_gaila_phase1_verb_curriculum(language_generator=language_generator),
+            # build_gaila_phase1_object_curriculum(language_generator=language_generator),
+            # build_gaila_phase1_attribute_curriculum(
+            #    language_generator=language_generator
+            # ),
+            # build_gaila_phase1_relation_curriculum(language_generator=language_generator),
+            build_gaila_phase1_verb_curriculum(language_generator=language_generator)
         )
     )

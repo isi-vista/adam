@@ -2728,17 +2728,20 @@ class _FrameTranslation:
                         property_.binary_property,
                         referring_node_to_enforce_uniqueness=source_node,
                     )
-                    dest_node_2 = self._map_node(property_.binary_property)
-                    graph.add_edge(source_node, dest_node, label=HAS_PROPERTY_LABEL)
-                    graph.add_edge(
-                        source_node, dest_node_2, label=OntologyNode("has-property-hack")
+                    dest_node_2 = self._map_node(
+                        property_.binary_property,
+                        referring_node_to_enforce_uniqueness=dest_node,
                     )
+                    graph.add_edge(source_node, dest_node, label=HAS_PROPERTY_LABEL)
+                    graph.add_edge(source_node, dest_node_2, label=HAS_PROPERTY_LABEL)
+                    # print([o for o in graph.out_edges if o[0] == source_node])
                 else:
                     dest_node = self._map_node(
                         property_.binary_property,
                         referring_node_to_enforce_uniqueness=source_node,
                     )
                     graph.add_edge(source_node, dest_node, label=HAS_PROPERTY_LABEL)
+                    # print([o for o in graph.out_edges if o[0] == source_node])
 
             elif isinstance(property_, HasColor):
                 dest_node = self._map_node(
