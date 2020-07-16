@@ -21,11 +21,13 @@ from adam.ontology.phase1_ontology import (
     BIRD,
     BOX,
     GAILA_PHASE_1_ONTOLOGY,
-    PERSON,
     BALL,
     CHAIR,
     TABLE,
     DOG,
+    MOM,
+    DAD,
+    BABY,
 )
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
@@ -41,7 +43,7 @@ import random
 
 def make_simple_pursuit_curriculum(
     *,
-    target_objects=[BALL, CHAIR, PERSON, TABLE, DOG, BIRD, BOX],
+    target_objects=[BALL, CHAIR, MOM, DAD, BABY, TABLE, DOG, BIRD, BOX],
     num_instances: int = 10,
     num_noise_instances: int = 0,
     num_objects_in_instance: int = 3,

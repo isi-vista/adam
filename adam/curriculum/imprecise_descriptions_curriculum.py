@@ -11,6 +11,7 @@ from adam.curriculum.curriculum_utils import (
     standard_object,
     learner_template_factory,
 )
+from adam.ontology import IS_SPEAKER, IS_ADDRESSEE
 from adam.curriculum.phase1_curriculum import (
     make_pass_template,
     throw_on_ground_template,
@@ -294,11 +295,14 @@ def make_imprecise_size_descriptions(
     num_noise_objects: int = 0,
 ) -> Phase1InstanceGroup:
     background = immutableset(
-        standard_object(f"noise_object_{x}") for x in range(num_noise_objects)
+        standard_object(f"noise_object_{x}", banned_properties=[IS_SPEAKER, IS_ADDRESSEE])
+        for x in range(num_noise_objects)
     )
 
-    theme_0 = standard_object("theme")
-    theme_1 = standard_object("theme-thing", THING)
+    theme_0 = standard_object("theme", banned_properties=[IS_SPEAKER, IS_ADDRESSEE])
+    theme_1 = standard_object(
+        "theme-thing", THING, banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
+    )
 
     return phase1_instances(
         "Imprecise Size",
@@ -333,8 +337,18 @@ def make_throw_imprecise_temporal_descriptions(
     ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
     num_noise_objects: int = 0,  # pylint:disable=unused-argument
 ) -> Phase1InstanceGroup:
-    thrower = standard_object("thrower_0", THING, required_properties=[ANIMATE])
-    catcher = standard_object("catcher_0", THING, required_properties=[ANIMATE])
+    thrower = standard_object(
+        "thrower_0",
+        THING,
+        required_properties=[ANIMATE],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
+    catcher = standard_object(
+        "catcher_0",
+        THING,
+        required_properties=[ANIMATE],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
     object_thrown = standard_object("object_0", required_properties=[INANIMATE])
     implicit_goal_reference = standard_object("implicit_throw_goal_object", BOX)
 
@@ -416,7 +430,10 @@ def make_move_imprecise_temporal_descriptions(
     num_noise_objects: int = 0,  # pylint:disable=unused-argument
 ) -> Phase1InstanceGroup:
     self_mover_0 = standard_object(
-        "self-mover_0", THING, required_properties=[SELF_MOVING]
+        "self-mover_0",
+        THING,
+        required_properties=[SELF_MOVING],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
     )
 
     other_mover_0 = standard_object("mover_0", THING, required_properties=[ANIMATE])
@@ -470,7 +487,12 @@ def make_jump_imprecise_temporal_descriptions(
     ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
     num_noise_objects: int = 0,  # pylint:disable=unused-argument
 ) -> Phase1InstanceGroup:
-    jumper = standard_object("jumper_0", THING, required_properties=[CAN_JUMP])
+    jumper = standard_object(
+        "jumper_0",
+        THING,
+        required_properties=[CAN_JUMP],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
 
     return phase1_instances(
         "jumping",
@@ -544,7 +566,12 @@ def make_push_shove_subtle_verb_distinctions(
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
-    pusher = standard_object("pusher_0", THING, required_properties=[ANIMATE])
+    pusher = standard_object(
+        "pusher_0",
+        THING,
+        required_properties=[ANIMATE],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
     pushee = standard_object("pushee_0", THING, required_properties=[INANIMATE])
     push_surface = standard_object(
         "push_surface_0", THING, required_properties=[INANIMATE]
@@ -594,7 +621,12 @@ def make_walk_run_subtle_verb_distinction(
     ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
     num_noise_objects: int = 0,  # pylint:disable=unused-argument
 ) -> Phase1InstanceGroup:
-    agent = standard_object("walker_0", THING, required_properties=[ANIMATE])
+    agent = standard_object(
+        "walker_0",
+        THING,
+        required_properties=[ANIMATE],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
     return phase1_instances(
         "walking-running",
         chain(

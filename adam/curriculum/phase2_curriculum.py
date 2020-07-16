@@ -1,7 +1,7 @@
 """
 Additions for the Curricula for DARPA GAILA Phase 2
 """
-
+from adam.ontology import IS_SPEAKER, IS_ADDRESSEE
 from itertools import chain
 from typing import Sequence
 from adam.language_specific.english.english_language_generator import (
@@ -92,7 +92,12 @@ def _make_sit_on_chair_curriculum(
 
     templates = []
     for chair_type in [CHAIR, CHAIR_2, CHAIR_3, CHAIR_4, CHAIR_5]:
-        sitter = standard_object("sitter_0", THING, required_properties=[ANIMATE])
+        sitter = standard_object(
+            "sitter_0",
+            THING,
+            required_properties=[ANIMATE],
+            banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+        )
         seat = standard_object("chair", chair_type)
         templates.append(
             Phase1SituationTemplate(
@@ -173,7 +178,9 @@ def _make_drink_cups_curriculum(
     for cup in [CUP, CUP_2, CUP_3, CUP_4]:
         cup_obj = standard_object("cup", cup)
         liquid_0 = object_variable("liquid_0", required_properties=[LIQUID])
-        person_0 = standard_object("person_0", PERSON)
+        person_0 = standard_object(
+            "person_0", PERSON, banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
+        )
 
         templates.append(
             Phase1SituationTemplate(
@@ -211,7 +218,12 @@ def _make_put_in_curriculum(
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ] = GAILA_PHASE_2_LANGUAGE_GENERATOR
 ) -> Phase1InstanceGroup:
-    agent = standard_object("agent", THING, required_properties=[ANIMATE])
+    agent = standard_object(
+        "agent",
+        THING,
+        required_properties=[ANIMATE],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
     theme = standard_object("theme", INANIMATE_OBJECT)
     goal_in = standard_object("goal_in", INANIMATE_OBJECT, required_properties=[HOLLOW])
 
