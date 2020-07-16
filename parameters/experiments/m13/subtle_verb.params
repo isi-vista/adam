@@ -1,0 +1,7 @@
+_includes:
+   - "../../root.params"
+   - "m13.params"
+
+experiment: 'm13-subtle-verb-distinction'
+curriculum: 'm13-subtle-verb-distinction'
+learner: 'integrated-learner-recognizer'

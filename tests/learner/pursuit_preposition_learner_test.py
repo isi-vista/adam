@@ -17,24 +17,23 @@ from adam.curriculum.preposition_curriculum import (
     _behind_template,
     _in_front_template,
 )
+from adam.language.language_utils import phase1_language_generator
 from adam.learner import LearningExample
 from adam.learner.language_mode import LanguageMode
 from adam.learner.prepositions import PrepositionPursuitLearner
-from adam.ontology import IS_ADDRESSEE, IS_SPEAKER
 from adam.ontology.phase1_ontology import (
     BALL,
     TABLE,
     GAILA_PHASE_1_ONTOLOGY,
     WATER,
     CUP,
-    LEARNER,
     MOM,
     PERSON,
     INANIMATE_OBJECT,
     PERSON_CAN_HAVE,
 )
 from adam.situation.templates.phase1_templates import sampled, object_variable
-from tests.learner import object_recognizer_factory, phase1_language_generator
+from tests.learner import LANGUAGE_MODE_TO_OBJECT_RECOGNIZER
 
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
@@ -48,7 +47,7 @@ def test_pursuit_preposition_on_learner(language_mode):
         rng=rng,
         smoothing_parameter=0.001,
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        object_recognizer=object_recognizer_factory(language_mode),
+        object_recognizer=LANGUAGE_MODE_TO_OBJECT_RECOGNIZER[language_mode],
         language_mode=language_mode,
     )  # type: ignore
     ball = standard_object("ball", BALL)
@@ -106,7 +105,7 @@ def test_pursuit_preposition_beside_learner(language_mode):
         rng=rng,
         smoothing_parameter=0.001,
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        object_recognizer=object_recognizer_factory(language_mode),
+        object_recognizer=LANGUAGE_MODE_TO_OBJECT_RECOGNIZER[language_mode],
         language_mode=language_mode,
     )  # type: ignore
     language_generator = phase1_language_generator(language_mode)
@@ -168,7 +167,7 @@ def test_pursuit_preposition_under_learner(language_mode):
         rng=rng,
         smoothing_parameter=0.001,
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        object_recognizer=object_recognizer_factory(language_mode),
+        object_recognizer=LANGUAGE_MODE_TO_OBJECT_RECOGNIZER[language_mode],
         language_mode=language_mode,
     )  # type: ignore
     ball = standard_object("ball", BALL)
@@ -230,7 +229,7 @@ def test_pursuit_preposition_over_learner(language_mode):
         rng=rng,
         smoothing_parameter=0.001,
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        object_recognizer=object_recognizer_factory(language_mode),
+        object_recognizer=LANGUAGE_MODE_TO_OBJECT_RECOGNIZER[language_mode],
         language_mode=language_mode,
     )  # type: ignore
     ball = standard_object("ball", BALL)
@@ -290,7 +289,7 @@ def test_pursuit_preposition_in_learner(language_mode):
         rng=rng,
         smoothing_parameter=0.001,
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        object_recognizer=object_recognizer_factory(language_mode),
+        object_recognizer=LANGUAGE_MODE_TO_OBJECT_RECOGNIZER[language_mode],
         language_mode=language_mode,
     )  # type: ignore
     water = object_variable("water", WATER)
@@ -347,13 +346,11 @@ def test_pursuit_preposition_behind_learner(language_mode):
         rng=rng,
         smoothing_parameter=0.001,
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        object_recognizer=object_recognizer_factory(language_mode),
+        object_recognizer=LANGUAGE_MODE_TO_OBJECT_RECOGNIZER[language_mode],
         language_mode=language_mode,
     )  # type: ignore
     ball = standard_object("ball", BALL)
     table = standard_object("table", TABLE)
-    learner_object = standard_object("learner", LEARNER, added_properties=[IS_ADDRESSEE])
-    mom = standard_object("mom", MOM, added_properties=[IS_SPEAKER])
     language_generator = phase1_language_generator(language_mode)
     behind_train_curriculum = phase1_instances(
         "Preposition Behind Unit Train",
@@ -361,9 +358,10 @@ def test_pursuit_preposition_behind_learner(language_mode):
             _behind_template(
                 ball,
                 table,
-                immutableset([learner_object, mom]),
+                immutableset(),
                 is_training=True,
                 is_near=True,
+                speaker_root_node=MOM,
             ),
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -377,9 +375,10 @@ def test_pursuit_preposition_behind_learner(language_mode):
             _behind_template(
                 ball,
                 table,
-                immutableset([learner_object, mom]),
+                immutableset(),
                 is_training=False,
                 is_near=True,
+                speaker_root_node=MOM,
             ),
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -418,13 +417,11 @@ def test_pursuit_preposition_in_front_learner(language_mode):
         rng=rng,
         smoothing_parameter=0.001,
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        object_recognizer=object_recognizer_factory(language_mode),
+        object_recognizer=LANGUAGE_MODE_TO_OBJECT_RECOGNIZER[language_mode],
         language_mode=language_mode,
     )  # type: ignore
     ball = standard_object("ball", BALL)
     table = standard_object("table", TABLE)
-    learner_object = standard_object("learner", LEARNER, added_properties=[IS_ADDRESSEE])
-    mom = standard_object("mom", MOM, added_properties=[IS_SPEAKER])
     language_generator = phase1_language_generator(language_mode)
     in_front_train_curriculum = phase1_instances(
         "Preposition In Front Unit Train",
@@ -432,9 +429,10 @@ def test_pursuit_preposition_in_front_learner(language_mode):
             _in_front_template(
                 ball,
                 table,
-                immutableset([learner_object, mom]),
+                immutableset(),
                 is_training=True,
                 is_near=True,
+                speaker_root_node=MOM,
             ),
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -448,9 +446,10 @@ def test_pursuit_preposition_in_front_learner(language_mode):
             _in_front_template(
                 ball,
                 table,
-                immutableset([learner_object, mom]),
+                immutableset(),
                 is_training=False,
                 is_near=True,
+                speaker_root_node=MOM,
             ),
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -520,7 +519,7 @@ def test_pursuit_preposition_has_learner(language_mode):
         rng=rng,
         smoothing_parameter=0.001,
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        object_recognizer=object_recognizer_factory(language_mode),
+        object_recognizer=LANGUAGE_MODE_TO_OBJECT_RECOGNIZER[language_mode],
         language_mode=language_mode,
     )  # type: ignore
 

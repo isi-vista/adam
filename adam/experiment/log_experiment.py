@@ -1,38 +1,51 @@
 import logging
-from itertools import repeat
-from typing import Callable, Optional
+from typing import Callable, Optional, Mapping, Iterable, Tuple
 
-from adam.language_specific.chinese.chinese_language_generator import (
-    GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
+from adam.curriculum.curriculum_utils import Phase1InstanceGroup
+from adam.curriculum.imprecise_descriptions_curriculum import (
+    make_imprecise_size_curriculum,
+    make_imprecise_temporal_descriptions,
+    make_subtle_verb_distinctions_curriculum,
 )
+from adam.curriculum.phase2_curriculum import (
+    build_functionally_defined_objects_curriculum,
+    build_gaila_m13_curriculum,
+    build_m13_shuffled_curriculum,
+)
+from adam.curriculum.verbs_with_dynamic_prepositions_curriculum import (
+    make_verb_with_dynamic_prepositions_curriculum,
+)
+from adam.experiment.experiment_utils import (
+    build_each_object_by_itself_curriculum_train,
+    build_each_object_by_itself_curriculum_test,
+    build_debug_curriculum_train,
+    build_debug_curriculum_test,
+    build_generics_curriculum,
+    build_m6_prepositions_curriculum,
+    build_pursuit_curriculum,
+)
+from adam.language.dependency import LinearizedDependencyTree
+from adam.language.language_generator import LanguageGenerator
+from adam.language.language_utils import phase2_language_generator
 from adam.language_specific.english import ENGLISH_DETERMINERS
-from adam.language_specific.english.english_language_generator import (
-    GAILA_PHASE_1_LANGUAGE_GENERATOR,
-)
 from adam.learner.attributes import SubsetAttributeLearner, SubsetAttributeLearnerNew
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
 from adam.learner.relations import SubsetRelationLearnerNew
 from adam.learner.verbs import SubsetVerbLearner, SubsetVerbLearnerNew
+from adam.ontology.phase2_ontology import GAILA_PHASE_2_ONTOLOGY
+from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from vistautils.parameters import Parameters
 from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 
-from adam.curriculum.m6_curriculum import (
-    M6_PREPOSITION_SUBCURRICULUM_GENERATORS,
-    instantiate_subcurricula,
-    make_m6_curriculum,
-    M6_CURRICULUM_ALL_OBJECTS,
-)
+from adam.curriculum.m6_curriculum import make_m6_curriculum
 from adam.curriculum.phase1_curriculum import (
-    _make_each_object_by_itself_curriculum,
     build_gaila_phase1_object_curriculum,
     build_gaila_phase1_attribute_curriculum,
     build_gaila_phase1_relation_curriculum,
     build_gaila_phase1_verb_curriculum,
-    _make_put_on_speaker_addressee_body_part_curriculum,
     build_gaila_phase_1_curriculum,
 )
-from adam.curriculum.pursuit_curriculum import make_simple_pursuit_curriculum
 from adam.experiment import Experiment, execute_experiment
 from adam.experiment.observer import LearningProgressHtmlLogger, CandidateAccuracyObserver
 from adam.learner import TopLevelLanguageLearner
@@ -47,12 +60,19 @@ from adam.learner.objects import (
 )
 from adam.ontology.phase1_ontology import (
     GAILA_PHASE_1_ONTOLOGY,
+    ME_HACK,
+    YOU_HACK,
     PHASE_1_CURRICULUM_OBJECTS,
 )
-from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
-    GAILA_M6_PERCEPTION_GENERATOR,
-)
 from adam.random_utils import RandomChooser
+
+LANGUAGE_GEN = LanguageGenerator[  # pylint: disable=invalid-name
+    HighLevelSemanticsSituation, LinearizedDependencyTree
+]
+
+CURRICULUM_BUILDER = Callable[  # pylint: disable=invalid-name
+    [Optional[int], Optional[int], LANGUAGE_GEN], Iterable[Phase1InstanceGroup]
+]
 
 
 def log_experiment_entry_point(params: Parameters) -> None:
@@ -68,13 +88,21 @@ def log_experiment_entry_point(params: Parameters) -> None:
 
     logger = LearningProgressHtmlLogger.create_logger(params)
 
-    (training_instance_groups, test_instance_groups) = curriculum_from_params(params)
+    language_mode = params.enum(
+        "language_mode", LanguageMode, default=LanguageMode.ENGLISH
+    )
+
+    (training_instance_groups, test_instance_groups) = curriculum_from_params(
+        params, language_mode
+    )
 
     execute_experiment(
         Experiment(
             name=experiment_name,
             training_stages=training_instance_groups,
-            learner_factory=learner_factory_from_params(params, graph_logger),
+            learner_factory=learner_factory_from_params(
+                params, graph_logger, language_mode
+            ),
             pre_example_training_observers=[
                 logger.pre_observer(),
                 CandidateAccuracyObserver("pre-acc-observer"),
@@ -88,11 +116,17 @@ def log_experiment_entry_point(params: Parameters) -> None:
         log_hypotheses_every_n_examples=params.integer(
             "log_hypothesis_every_n_steps", default=250
         ),
+        log_learner_state=params.boolean("log_learner_state", default=True),
+        learner_logging_path=params.optional_creatable_directory("experiment_group_dir"),
+        starting_point=params.integer("starting_point", default=-1),
+        point_to_log=params.integer("point_to_log", default=0),
     )
 
 
 def learner_factory_from_params(
-    params: Parameters, graph_logger: Optional[HypothesisLogger]
+    params: Parameters,
+    graph_logger: Optional[HypothesisLogger],
+    language_mode: LanguageMode = LanguageMode.ENGLISH,
 ) -> Callable[[], TopLevelLanguageLearner]:  # type: ignore
     learner_type = params.string(
         "learner",
@@ -108,9 +142,6 @@ def learner_factory_from_params(
     )
 
     beam_size = params.positive_integer("beam_size", default=10)
-    language_mode = params.enum(
-        "language_mode", LanguageMode, default=LanguageMode.ENGLISH
-    )
 
     if language_mode == LanguageMode.CHINESE and learner_type not in [
         "integrated-learner",
@@ -118,9 +149,12 @@ def learner_factory_from_params(
     ]:
         raise RuntimeError("Only able to test Chinese with integrated learner.")
 
+    objects = [YOU_HACK, ME_HACK]
+    objects.extend(PHASE_1_CURRICULUM_OBJECTS)
+
     # Eval hack! This is specific to the Phase 1 ontology
     object_recognizer = ObjectRecognizer.for_ontology_types(
-        PHASE_1_CURRICULUM_OBJECTS,
+        objects,
         determiners=ENGLISH_DETERMINERS,
         ontology=GAILA_PHASE_1_ONTOLOGY,
         language_mode=language_mode,
@@ -156,22 +190,22 @@ def learner_factory_from_params(
     elif learner_type == "integrated-learner":
         return lambda: IntegratedTemplateLearner(
             object_learner=SubsetObjectLearnerNew(
-                ontology=GAILA_PHASE_1_ONTOLOGY,
+                ontology=GAILA_PHASE_2_ONTOLOGY,
                 beam_size=beam_size,
                 language_mode=language_mode,
             ),
             attribute_learner=SubsetAttributeLearnerNew(
-                ontology=GAILA_PHASE_1_ONTOLOGY,
+                ontology=GAILA_PHASE_2_ONTOLOGY,
                 beam_size=beam_size,
                 language_mode=language_mode,
             ),
             relation_learner=SubsetRelationLearnerNew(
-                ontology=GAILA_PHASE_1_ONTOLOGY,
+                ontology=GAILA_PHASE_2_ONTOLOGY,
                 beam_size=beam_size,
                 language_mode=language_mode,
             ),
             action_learner=SubsetVerbLearnerNew(
-                ontology=GAILA_PHASE_1_ONTOLOGY,
+                ontology=GAILA_PHASE_2_ONTOLOGY,
                 beam_size=beam_size,
                 language_mode=language_mode,
             ),
@@ -182,17 +216,17 @@ def learner_factory_from_params(
                 object_recognizer=object_recognizer, language_mode=language_mode
             ),
             attribute_learner=SubsetAttributeLearnerNew(
-                ontology=GAILA_PHASE_1_ONTOLOGY,
+                ontology=GAILA_PHASE_2_ONTOLOGY,
                 beam_size=beam_size,
                 language_mode=language_mode,
             ),
             relation_learner=SubsetRelationLearnerNew(
-                ontology=GAILA_PHASE_1_ONTOLOGY,
+                ontology=GAILA_PHASE_2_ONTOLOGY,
                 beam_size=beam_size,
                 language_mode=language_mode,
             ),
             action_learner=SubsetVerbLearnerNew(
-                ontology=GAILA_PHASE_1_ONTOLOGY,
+                ontology=GAILA_PHASE_2_ONTOLOGY,
                 beam_size=beam_size,
                 language_mode=language_mode,
             ),
@@ -201,96 +235,73 @@ def learner_factory_from_params(
         raise RuntimeError("can't happen")
 
 
-def curriculum_from_params(params: Parameters):
-    curriculum_name = params.string(
-        "curriculum",
-        [
-            "m6-deniz",
-            "each-object-by-itself",
-            "pursuit",
-            "m6-preposition",
-            "m9-objects",
-            "m9-attributes",
-            "m9-relations",
-            "m9-events",
-            "m9-debug",
-            "m9-complete",
-        ],
-    )
+def curriculum_from_params(
+    params: Parameters, language_mode: LanguageMode = LanguageMode.ENGLISH
+):
+    str_to_train_test_curriculum: Mapping[
+        str, Tuple[CURRICULUM_BUILDER, Optional[CURRICULUM_BUILDER]]
+    ] = {
+        "m6-deniz": (make_m6_curriculum, None),
+        "each-object-by-itself": (
+            build_each_object_by_itself_curriculum_train,
+            build_each_object_by_itself_curriculum_test,
+        ),
+        "pursuit": (
+            build_pursuit_curriculum,
+            build_each_object_by_itself_curriculum_test,
+        ),
+        "m6-preposition": (build_m6_prepositions_curriculum, None),
+        "m9-objects": (build_gaila_phase1_object_curriculum, None),
+        "m9-attributes": (build_gaila_phase1_attribute_curriculum, None),
+        "m9-relations": (build_gaila_phase1_relation_curriculum, None),
+        "m9-events": (build_gaila_phase1_verb_curriculum, None),
+        "m9-debug": (build_debug_curriculum_train, build_debug_curriculum_test),
+        "m9-complete": (build_gaila_phase_1_curriculum, None),
+        "m13-imprecise-size": (make_imprecise_size_curriculum, None),
+        "m13-imprecise-temporal": (make_imprecise_temporal_descriptions, None),
+        "m13-subtle-verb-distinction": (make_subtle_verb_distinctions_curriculum, None),
+        "m13-object-restrictions": (build_functionally_defined_objects_curriculum, None),
+        "m13-functionally-defined-objects": (
+            build_functionally_defined_objects_curriculum,
+            None,
+        ),
+        "m13-generics": (build_generics_curriculum, None),
+        "m13-complete": (build_gaila_m13_curriculum, None),
+        "m13-verbs-with-dynamic-prepositions": (
+            make_verb_with_dynamic_prepositions_curriculum,
+            None,
+        ),
+        "m13-shuffled": (build_m13_shuffled_curriculum, build_gaila_m13_curriculum),
+    }
 
-    language_mode = params.enum(
-        "language_mode", LanguageMode, default=LanguageMode.ENGLISH
-    )
+    curriculum_name = params.string("curriculum", str_to_train_test_curriculum.keys())
+    language_generator = phase2_language_generator(language_mode)
 
-    if language_mode == LanguageMode.CHINESE and curriculum_name != "m9-complete":
-        raise RuntimeError("Only able to test Chinese with m9-complete curriculum.")
-
-    if curriculum_name == "m6-deniz":
-        return (make_m6_curriculum(), [])
-    elif curriculum_name == "each-object-by-itself":
-        return (
-            # We show the learned each item 6 times,
-            # because pursuit won't lexicalize anything it hasn't seen five times.
-            list(
-                repeat(
-                    _make_each_object_by_itself_curriculum(
-                        perception_generator=GAILA_M6_PERCEPTION_GENERATOR
-                    ),
-                    10,
-                )
-            ),
-            [
-                _make_each_object_by_itself_curriculum(
-                    perception_generator=GAILA_M6_PERCEPTION_GENERATOR
-                )
-            ],
-        )
-    elif curriculum_name == "pursuit":
+    if params.has_namespace("pursuit-curriculum-params"):
         pursuit_curriculum_params = params.namespace("pursuit-curriculum-params")
-        num_instances = pursuit_curriculum_params.integer("num_instances")
-        num_noise_instances = pursuit_curriculum_params.integer("num_noise_instances")
-        num_objects_in_instance = pursuit_curriculum_params.integer(
-            "num_objects_in_instance"
-        )
-        return (
-            [
-                make_simple_pursuit_curriculum(
-                    target_objects=M6_CURRICULUM_ALL_OBJECTS,
-                    num_instances=num_instances,
-                    num_objects_in_instance=num_objects_in_instance,
-                    num_noise_instances=num_noise_instances,
-                    perception_generator=GAILA_M6_PERCEPTION_GENERATOR,
-                )
-            ],
-            [
-                _make_each_object_by_itself_curriculum(
-                    perception_generator=GAILA_M6_PERCEPTION_GENERATOR
-                )
-            ],
-        )
-    elif curriculum_name == "m6-preposition":
-        return (instantiate_subcurricula(M6_PREPOSITION_SUBCURRICULUM_GENERATORS), [])
-    elif curriculum_name == "m9-objects":
-        return (build_gaila_phase1_object_curriculum(), [])
-    elif curriculum_name == "m9-attributes":
-        return (build_gaila_phase1_attribute_curriculum(), [])
-    elif curriculum_name == "m9-relations":
-        return (build_gaila_phase1_relation_curriculum(), [])
-    elif curriculum_name == "m9-events":
-        return (build_gaila_phase1_verb_curriculum(), [])
-    elif curriculum_name == "m9-debug":
-        return ([_make_put_on_speaker_addressee_body_part_curriculum()], [])
-    elif curriculum_name == "m9-complete":
-        return (
-            build_gaila_phase_1_curriculum(
-                language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR
-                if LanguageMode.ENGLISH == language_mode
-                else GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR
-            ),
-            [],
-        )
     else:
-        raise RuntimeError("Can't happen")
+        pursuit_curriculum_params = Parameters.empty()
+
+    (training_instance_groups, test_instance_groups) = str_to_train_test_curriculum[
+        curriculum_name
+    ]
+
+    num_samples = params.optional_positive_integer("num_samples")
+    num_noise_objects = params.optional_positive_integer("num_noise_objects")
+
+    return (
+        training_instance_groups(num_samples, num_noise_objects, language_generator)
+        if curriculum_name != "pursuit"
+        else training_instance_groups(
+            num_samples,
+            num_noise_objects,
+            language_generator,
+            pursuit_curriculum_params=pursuit_curriculum_params,
+        ),
+        test_instance_groups(num_samples, num_noise_objects, language_generator)
+        if test_instance_groups
+        else [],
+    )
 
 
 if __name__ == "__main__":

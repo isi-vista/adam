@@ -1,0 +1,9 @@
+_includes:
+   - "../../root.params"
+   - "m13.params"
+
+experiment: 'm13-shuffled'
+curriculum: 'm13-shuffled'
+learner: 'integrated-learner'
+
+num_samples: 500

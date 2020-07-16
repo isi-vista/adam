@@ -15,19 +15,17 @@ from adam.curriculum.preposition_curriculum import (
     _over_template,
     _under_template,
 )
+from adam.language.language_utils import phase1_language_generator
 from adam.learner import LearningExample
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
-from adam.learner.objects import ObjectRecognizerAsTemplateLearner
 from adam.learner.prepositions import SubsetPrepositionLearner
 from adam.learner.relations import SubsetRelationLearnerNew
-from adam.ontology import IS_ADDRESSEE, IS_SPEAKER
 from adam.ontology.phase1_ontology import (
     BALL,
     BOOK,
     CUP,
     GAILA_PHASE_1_ONTOLOGY,
-    LEARNER,
     MOM,
     PERSON,
     TABLE,
@@ -35,14 +33,17 @@ from adam.ontology.phase1_ontology import (
 )
 from adam.situation.templates.phase1_templates import object_variable, sampled
 from immutablecollections import immutableset
-from tests.learner import phase1_language_generator, object_recognizer_factory
+from tests.learner import (
+    LANGUAGE_MODE_TO_OBJECT_RECOGNIZER,
+    LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER,
+)
 
 
 def subset_relation_language_factory(
     language_mode: LanguageMode
 ) -> SubsetPrepositionLearner:
     return SubsetPrepositionLearner(
-        object_recognizer=object_recognizer_factory(language_mode),
+        object_recognizer=LANGUAGE_MODE_TO_OBJECT_RECOGNIZER[language_mode],
         ontology=GAILA_PHASE_1_ONTOLOGY,
         language_mode=language_mode,
     )
@@ -50,10 +51,7 @@ def subset_relation_language_factory(
 
 def integrated_learner_factory(language_mode: LanguageMode):
     return IntegratedTemplateLearner(
-        object_learner=ObjectRecognizerAsTemplateLearner(
-            object_recognizer=object_recognizer_factory(language_mode),
-            language_mode=language_mode,
-        ),
+        object_learner=LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER[language_mode],
         relation_learner=SubsetRelationLearnerNew(
             ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=language_mode
         ),
@@ -104,7 +102,8 @@ def run_preposition_test(learner, situation_template, language_generator):
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
-    "learner", [subset_relation_language_factory, integrated_learner_factory]
+    "learner",
+    [pytest.mark.skip(subset_relation_language_factory), integrated_learner_factory],
 )
 def test_subset_preposition_on(language_mode, learner):
     ball = standard_object("ball", BALL)
@@ -119,7 +118,8 @@ def test_subset_preposition_on(language_mode, learner):
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
-    "learner", [subset_relation_language_factory, integrated_learner_factory]
+    "learner",
+    [pytest.mark.skip(subset_relation_language_factory), integrated_learner_factory],
 )
 def test_subset_preposition_beside(language_mode, learner):
     ball = standard_object("ball", BALL)
@@ -134,7 +134,8 @@ def test_subset_preposition_beside(language_mode, learner):
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
-    "learner", [subset_relation_language_factory, integrated_learner_factory]
+    "learner",
+    [pytest.mark.skip(subset_relation_language_factory), integrated_learner_factory],
 )
 def test_subset_preposition_under(language_mode, learner):
     ball = standard_object("ball", BALL)
@@ -149,7 +150,8 @@ def test_subset_preposition_under(language_mode, learner):
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
-    "learner", [subset_relation_language_factory, integrated_learner_factory]
+    "learner",
+    [pytest.mark.skip(subset_relation_language_factory), integrated_learner_factory],
 )
 def test_subset_preposition_over(language_mode, learner):
     ball = standard_object("ball", BALL)
@@ -164,7 +166,8 @@ def test_subset_preposition_over(language_mode, learner):
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
-    "learner", [subset_relation_language_factory, integrated_learner_factory]
+    "learner",
+    [pytest.mark.skip(subset_relation_language_factory), integrated_learner_factory],
 )
 def test_subset_preposition_in(language_mode, learner):
     water = object_variable("water", WATER)
@@ -179,22 +182,22 @@ def test_subset_preposition_in(language_mode, learner):
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
-    "learner", [subset_relation_language_factory, integrated_learner_factory]
+    "learner",
+    [pytest.mark.skip(subset_relation_language_factory), integrated_learner_factory],
 )
 def test_subset_preposition_behind(language_mode, learner):
     ball = standard_object("ball", BALL)
     table = standard_object("table", TABLE)
-    learner_object = standard_object("learner", LEARNER, added_properties=[IS_ADDRESSEE])
-    mom = standard_object("mom", MOM, added_properties=[IS_SPEAKER])
 
     run_preposition_test(
         learner(language_mode),
         _behind_template(
             ball,
             table,
-            immutableset([learner_object, mom]),
+            immutableset(),
             is_training=True,
             is_near=True,
+            speaker_root_node=MOM,
         ),
         language_generator=phase1_language_generator(language_mode),
     )
@@ -202,22 +205,22 @@ def test_subset_preposition_behind(language_mode, learner):
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
-    "learner", [subset_relation_language_factory, integrated_learner_factory]
+    "learner",
+    [pytest.mark.skip(subset_relation_language_factory), integrated_learner_factory],
 )
 def test_subset_preposition_in_front(language_mode, learner):
     ball = standard_object("ball", BALL)
     table = standard_object("table", TABLE)
-    learner_object = standard_object("learner", LEARNER, added_properties=[IS_ADDRESSEE])
-    mom = standard_object("mom", MOM, added_properties=[IS_SPEAKER])
 
     run_preposition_test(
         learner(language_mode),
         _in_front_template(
             ball,
             table,
-            immutableset([learner_object, mom]),
+            immutableset(),
             is_training=True,
             is_near=True,
+            speaker_root_node=MOM,
         ),
         language_generator=phase1_language_generator(language_mode),
     )
@@ -225,7 +228,8 @@ def test_subset_preposition_in_front(language_mode, learner):
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
-    "learner", [subset_relation_language_factory, integrated_learner_factory]
+    "learner",
+    [pytest.mark.skip(subset_relation_language_factory), integrated_learner_factory],
 )
 def test_subset_preposition_has(language_mode, learner):
     person = standard_object("person", PERSON)

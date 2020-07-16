@@ -3,6 +3,9 @@ from pathlib import Path
 from adam.curriculum.phase1_curriculum import (
     build_gaila_phase_1_curriculum as build_curriculum,
 )
+from adam.language_specific.english.english_language_generator import (
+    GAILA_PHASE_1_LANGUAGE_GENERATOR,
+)
 from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 from vistautils.parameters import Parameters, YAMLParametersLoader
 
@@ -87,7 +90,9 @@ def main(params: Parameters):
         assert root_output_directory is not None
         if not os.path.isdir(root_output_directory):
             os.mkdir(root_output_directory)
-        for idx, instance_group in enumerate(build_curriculum()):
+        for idx, instance_group in enumerate(
+            build_curriculum(None, None, GAILA_PHASE_1_LANGUAGE_GENERATOR)
+        ):
             # do any filtering here
             if instance_group.name() in EXCLUDED_CURRICULA:
                 continue

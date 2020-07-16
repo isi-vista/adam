@@ -1,5 +1,5 @@
-from typing import Iterable, Union
-
+from typing import Iterable, Union, Optional
+from adam.ontology import IS_SPEAKER, IS_ADDRESSEE
 from immutablecollections import immutableset
 from adam.language.language_generator import LanguageGenerator
 from adam.language.dependency import LinearizedDependencyTree
@@ -143,6 +143,13 @@ def make_background(
     Convenience method for determining which objects in the situation should be background objects
     """
     return immutableset(object_ for object_ in all_objects if object_ not in salient)
+
+
+def make_noise_objects(noise_objects: Optional[int]) -> Iterable[TemplateObjectVariable]:
+    return immutableset(
+        standard_object(f"noise_object_{x}", banned_properties=[IS_SPEAKER, IS_ADDRESSEE])
+        for x in range(noise_objects if noise_objects else 0)
+    )
 
 
 def learner_template_factory() -> TemplateObjectVariable:

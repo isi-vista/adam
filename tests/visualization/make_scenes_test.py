@@ -1,4 +1,6 @@
 from adam.curriculum.phase1_curriculum import build_gaila_phase_1_curriculum
+from adam.language.language_utils import phase2_language_generator
+from adam.learner import LanguageMode
 from adam.visualization.make_scenes import SceneCreator
 from adam.geon import CrossSection
 from adam.visualization.utils import Shape, cross_section_to_geon
@@ -12,7 +14,11 @@ def test_scenes_creation() -> Tuple[
     Tuple[float, float, float], Tuple[float, float, float]
 ]:
     for i, scene_elements in enumerate(
-        SceneCreator.create_scenes(build_gaila_phase_1_curriculum())
+        SceneCreator.create_scenes(
+            build_gaila_phase_1_curriculum(
+                None, None, phase2_language_generator(LanguageMode.ENGLISH)
+            )
+        )
     ):
 
         def test_for_each(obj: ObjectPerception) -> None:

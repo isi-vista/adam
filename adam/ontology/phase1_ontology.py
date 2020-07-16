@@ -53,6 +53,8 @@ from adam.ontology import (
     PROPERTY,
     RELATION,
     THING,
+    IS_SPEAKER,
+    IS_ADDRESSEE,
     minimal_ontology_graph,
 )
 from adam.ontology.action_description import (
@@ -430,6 +432,16 @@ PERSON = OntologyNode(
     "person", inheritable_properties=[ANIMATE, SELF_MOVING, CAN_JUMP, IS_HUMAN]
 )
 subtype(PERSON, THING)
+
+ME_HACK = OntologyNode(
+    "me", non_inheritable_properties=[IS_SPEAKER, CAN_FILL_TEMPLATE_SLOT]
+)
+subtype(ME_HACK, PERSON)
+YOU_HACK = OntologyNode(
+    "you", non_inheritable_properties=[IS_ADDRESSEE, CAN_FILL_TEMPLATE_SLOT]
+)
+subtype(YOU_HACK, PERSON)
+
 IS_MOM = OntologyNode("is-mom")
 subtype(IS_MOM, RECOGNIZED_PARTICULAR_PROPERTY)
 MOM = OntologyNode("Mom", non_inheritable_properties=[IS_MOM, CAN_FILL_TEMPLATE_SLOT])
@@ -836,11 +848,12 @@ def _make_watermelon_schema() -> ObjectStructuralSchema:
     return ObjectStructuralSchema(
         ontology_node=WATERMELON,
         geon=Geon(
-            cross_section=OVALISH,
+            cross_section=CIRCULAR,
             cross_section_size=SMALL_TO_LARGE_TO_SMALL,
             axes=Axes(
                 primary_axis=generating_axis,
                 orienting_axes=[orienting_axis_0, orienting_axis_1],
+                axis_relations=[bigger_than(orienting_axis_0, orienting_axis_1)],
             ),
         ),
     )
@@ -1863,7 +1876,7 @@ def _make_push_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
         objects_to_paths=[(_PUSH_THEME, SpatialPath(TO, PUSH_GOAL))]
     )
     enduring = [
-        # partOf(_PUSH_MANIPULATOR, _PUSH_AGENT),
+        partOf(_PUSH_MANIPULATOR, _PUSH_AGENT),
         bigger_than(_PUSH_AGENT, _PUSH_THEME),
         bigger_than(PUSH_SURFACE_AUX, _PUSH_THEME),
         contacts(_PUSH_MANIPULATOR, _PUSH_THEME),
@@ -1943,7 +1956,7 @@ _TAKE_ACTION_DESCRIPTION = ActionDescription(
     frame=ActionDescriptionFrame({AGENT: _TAKE_AGENT, THEME: _TAKE_THEME}),
     enduring_conditions=[
         bigger_than(_TAKE_AGENT, _TAKE_THEME),
-        # partOf(_TAKE_MANIPULATOR, _TAKE_AGENT),
+        partOf(_TAKE_MANIPULATOR, _TAKE_AGENT),
     ],
     preconditions=[negate(has(_TAKE_AGENT, _TAKE_THEME))],
     postconditions=[
@@ -1994,8 +2007,8 @@ _GIVE_ACTION_DESCRIPTION = ActionDescription(
     enduring_conditions=[
         bigger_than(_GIVE_AGENT, _GIVE_THEME),
         bigger_than(_GIVE_GOAL, _GIVE_THEME),
-        # partOf(_GIVE_AGENT_MANIPULATOR, _GIVE_AGENT),
-        # partOf(_GIVE_GOAL_MANIPULATOR, _GIVE_GOAL),
+        partOf(_GIVE_AGENT_MANIPULATOR, _GIVE_AGENT),
+        partOf(_GIVE_GOAL_MANIPULATOR, _GIVE_GOAL),
     ],
     preconditions=[
         has(_GIVE_AGENT, _GIVE_THEME),
@@ -2157,8 +2170,8 @@ def _make_throw_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription
         ],
     )
     enduring = [
-        # partOf(_THROW_MANIPULATOR, _THROW_AGENT),
-        bigger_than(_THROW_AGENT, _THROW_THEME)
+        partOf(_THROW_MANIPULATOR, _THROW_AGENT),
+        bigger_than(_THROW_AGENT, _THROW_THEME),
     ]
     preconditions = [
         has(_THROW_AGENT, _THROW_THEME),
@@ -2249,8 +2262,8 @@ def _make_pass_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
         ],
     )
     enduring = [
-        # partOf(_PASS_MANIPULATOR, _PASS_AGENT),
-        bigger_than(_PASS_AGENT, _PASS_THEME)
+        partOf(_PASS_MANIPULATOR, _PASS_AGENT),
+        bigger_than(_PASS_AGENT, _PASS_THEME),
     ]
     preconditions = [
         has(_PASS_AGENT, _PASS_THEME),
@@ -2331,8 +2344,8 @@ def _make_move_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
         ]
     )
     enduring = [
-        # partOf(_MOVE_MANIPULATOR, _MOVE_AGENT),
-        contacts(_MOVE_MANIPULATOR, _MOVE_THEME)
+        partOf(_MOVE_MANIPULATOR, _MOVE_AGENT),
+        contacts(_MOVE_MANIPULATOR, _MOVE_THEME),
     ]
 
     # bare move - "X moves (of its own accord)"
@@ -2589,8 +2602,8 @@ GAILA_PHASE_1_SIZE_GRADES: Tuple[Tuple[OntologyNode, ...], ...] = (
     (_BODY,),
     (_TORSO, _CHAIR_BACK, _CHAIR_SEAT),
     (_ARM, _ANIMAL_LEG, _INANIMATE_LEG),
-    (HAND, HEAD, _ARM_SEGMENT, _LEG_SEGMENT, _FOOT),
-    (WATERMELON, BALL, BIRD, BOOK, COOKIE, CUP, HAT, JUICE, WATER, MILK),
+    (WATERMELON, HAND, HEAD, _ARM_SEGMENT, _LEG_SEGMENT, _FOOT),
+    (BALL, BIRD, BOOK, COOKIE, CUP, HAT, JUICE, WATER, MILK),
     (_TAIL, _WING),
 )
 

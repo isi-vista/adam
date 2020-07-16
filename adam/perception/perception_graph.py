@@ -45,7 +45,7 @@ from typing_extensions import Protocol
 
 from adam.axes import AxesInfo, HasAxes
 from adam.axis import GeonAxis
-from adam.geon import Geon, MaybeHasGeon
+from adam.geon import Geon, MaybeHasGeon, CrossSection
 from adam.ontology import OntologyNode
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
@@ -55,6 +55,7 @@ from adam.ontology.phase1_ontology import (
     PART_OF,
     RECOGNIZED_PARTICULAR_PROPERTY,
 )
+from adam.ontology import IS_SPEAKER, IS_ADDRESSEE
 from adam.ontology.phase1_spatial_relations import (
     Direction,
     Distance,
@@ -120,6 +121,7 @@ PerceptionGraphNode = Union[
     Tuple[Region[Any], int],
     Tuple[Geon, int],
     GeonAxis,
+    CrossSection,
     ObjectSemanticNode,
     SpatialPath[ObjectPerception],
     PathOperator,
@@ -134,6 +136,7 @@ UnwrappedPerceptionGraphNode = Union[
     Region[Any],
     Geon,
     GeonAxis,
+    CrossSection,
     ObjectSemanticNode,
     SpatialPath[ObjectPerception],
     PathOperator,
@@ -504,6 +507,8 @@ class PerceptionGraph(PerceptionGraphProtocol):
             label = str(unwrapped_perception_node.cross_section) + str(
                 unwrapped_perception_node.cross_section_size
             )
+        elif isinstance(unwrapped_perception_node, CrossSection):
+            label = str(unwrapped_perception_node)
         elif isinstance(unwrapped_perception_node, ObjectSemanticNode):
             label = " ".join(unwrapped_perception_node.concept.debug_string)
         elif isinstance(unwrapped_perception_node, SpatialPath):
@@ -721,11 +726,12 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
             return PerceptionGraphPattern.from_schema(
                 first(ontology.structural_schemata(node))
             )
-
         # If the node doesn't have a corresponding structural schemata we see if it can be
         # created as a single object scene
         schema_situation_object = SituationObject.instantiate_ontology_node(
-            ontology_node=node, ontology=ontology
+            ontology_node=node,
+            ontology=ontology,
+            properties=node.non_inheritable_properties,
         )
         situation = HighLevelSemanticsSituation(
             ontology=ontology, salient_objects=[schema_situation_object]
@@ -750,6 +756,9 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
             and not (
                 ontology.is_subtype_of(node[0], RECOGNIZED_PARTICULAR_PROPERTY)
                 or node[0] is LIQUID
+                # hack for me/you
+                or node[0] is IS_SPEAKER
+                or node[0] is IS_ADDRESSEE
             )
         ]
         perception_graph_as_digraph.remove_nodes_from(nodes_to_remove)
@@ -822,11 +831,14 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
                 # first unwrap any nodes which have been tuple-ized to force distinctness.
                 if isinstance(node, tuple):
                     node = node[0]
-
                 if isinstance(node, Geon):
                     perception_node_to_pattern_node[key] = GeonPredicate.exactly_matching(
                         node
                     )
+                elif isinstance(node, CrossSection):
+                    perception_node_to_pattern_node[
+                        key
+                    ] = CrossSectionPredicate.exactly_matching(node)
                 elif isinstance(node, Region):
                     perception_node_to_pattern_node[
                         key
@@ -1380,7 +1392,7 @@ class PatternMatching:
 
             for (
                 graph_node_to_matching_pattern_node
-            ) in matching.subgraph_isomorphisms_iter(
+            ) in matching.subgraph_monomorphisms_iter(
                 collect_debug_statistics=collect_debug_statistics,
                 debug_callback=debug_callback,
                 initial_partial_match=merged_initial_partial_match,
@@ -1898,6 +1910,48 @@ class GeonPredicate(NodePredicate):
 
 
 @attrs(frozen=True, slots=True, eq=False)
+class CrossSectionPredicate(NodePredicate):
+    """
+    Represents constraints on a `Geon` given in a `PerceptionGraphPattern`
+    """
+
+    cross_section: CrossSection = attrib(validator=instance_of(CrossSection))
+
+    def __call__(self, graph_node: PerceptionGraphNode) -> bool:
+
+        unwrapped_graph_node = unwrap_if_necessary(graph_node)
+
+        if isinstance(unwrapped_graph_node, CrossSection):
+            return self.cross_section == unwrapped_graph_node
+        else:
+            return False
+
+    def dot_label(self) -> str:
+        return f"cross-section({self.cross_section})"
+
+    @staticmethod
+    def exactly_matching(cs: CrossSection) -> "CrossSectionPredicate":
+        return CrossSectionPredicate(cs)
+
+    def is_equivalent(self, other) -> bool:
+        if isinstance(other, CrossSectionPredicate):
+            return (
+                self.cross_section.curved == other.cross_section.curved
+                and self.cross_section.has_reflective_symmetry
+                == other.cross_section.has_reflective_symmetry
+                and self.cross_section.has_rotational_symmetry
+                == other.cross_section.has_rotational_symmetry
+            )
+        return False
+
+    def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
+        if isinstance(predicate_node, CrossSectionPredicate):
+            return self.cross_section == predicate_node.cross_section
+        else:
+            return False
+
+
+@attrs(frozen=True, slots=True, eq=False)
 class RegionPredicate(NodePredicate):
     """
     Represents constraints on a `Region` given in a `PerceptionGraphPattern`.
@@ -2342,6 +2396,14 @@ def _translate_geon(
         _add_labelled_edge(
             graph, mapped_owner, mapped_geon, HAS_GEON_LABEL, map_edge=map_edge
         )
+        graph.add_node((mapped_geon[0].cross_section, mapped_geon[1]))
+        _add_labelled_edge(
+            graph,
+            mapped_owner,
+            (mapped_geon[0].cross_section, mapped_geon[1]),
+            HAS_PROPERTY_LABEL,
+            map_edge=map_edge,
+        )
         _translate_axes(graph, owner.geon, mapped_geon, map_axis, map_edge)
         mapped_generating_axis = map_axis(owner.geon.generating_axis)
         _add_labelled_edge(
@@ -2399,6 +2461,7 @@ _PATTERN_PREDICATE_NODE_ORDER = [
     IsColorNodePredicate,
     AnyObjectPerception,
     GeonPredicate,
+    CrossSectionPredicate,
     RegionPredicate,
     # the matcher tends to get bogged down when dealing with axes,
     # so we search those last one the other nodes have established the skeleton of a match.
@@ -2424,6 +2487,7 @@ _GRAPH_NODE_ORDER = [  # type: ignore
     Geon,
     Region,
     GeonAxis,
+    CrossSection,
 ]
 
 
@@ -2655,17 +2719,39 @@ class _FrameTranslation:
             property_index += 1
             source_node = self._map_node(property_.perceived_object)
             if isinstance(property_, HasBinaryProperty):
-                dest_node = self._map_node(
-                    property_.binary_property,
-                    referring_node_to_enforce_uniqueness=source_node,
-                )
+                # TODO: fix this hack for me and you https://github.com/isi-vista/adam/issues/917
+                if (
+                    property_.binary_property in [IS_SPEAKER, IS_ADDRESSEE]
+                    and source_node.debug_handle
+                    and source_node.debug_handle != "learner"
+                ):
+                    dest_node = self._map_node(
+                        property_.binary_property,
+                        referring_node_to_enforce_uniqueness=source_node,
+                    )
+                    # this specification is really gross but ensures that our attribute nodes are unique from each other and
+                    # other attribute nodes that are added doubly.
+                    dest_node_2 = self._map_node(
+                        property_.binary_property,
+                        referring_node_to_enforce_uniqueness=dest_node,
+                    )
+                    graph.add_edge(source_node, dest_node, label=HAS_PROPERTY_LABEL)
+                    graph.add_edge(source_node, dest_node_2, label=HAS_PROPERTY_LABEL)
+                else:
+                    dest_node = self._map_node(
+                        property_.binary_property,
+                        referring_node_to_enforce_uniqueness=source_node,
+                    )
+                    graph.add_edge(source_node, dest_node, label=HAS_PROPERTY_LABEL)
+
             elif isinstance(property_, HasColor):
                 dest_node = self._map_node(
                     property_.color, referring_node_to_enforce_uniqueness=source_node
                 )
+                graph.add_edge(source_node, dest_node, label=HAS_PROPERTY_LABEL)
+
             else:
                 raise RuntimeError(f"Don't know how to translate property {property_}")
-            graph.add_edge(source_node, dest_node, label=HAS_PROPERTY_LABEL)
 
         if frame.axis_info:
             for (object_, axis) in frame.axis_info.axes_facing.items():
@@ -2863,6 +2949,10 @@ class _FrameTranslation:
                     _uniquify(ORIENTATION_CHANGED_PROPERTY, referring_node=path),
                     HAS_PROPERTY_LABEL,
                 )
+            )
+        for prop in path.properties:
+            edges_to_add.append(
+                (path, _uniquify(prop, referring_node=path), HAS_PROPERTY_LABEL)
             )
         for (source, target, label) in edges_to_add:
             perception_digraph.add_edge(

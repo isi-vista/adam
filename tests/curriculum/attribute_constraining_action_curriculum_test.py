@@ -18,7 +18,7 @@ import pytest
     [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
 )
 def test_human_eat_curriculum(language_generator):
-    curriculum_test(make_human_eat_curriculum(language_generator=language_generator))
+    curriculum_test(make_human_eat_curriculum(None, None, language_generator))
 
 
 @pytest.mark.parametrize(
@@ -26,7 +26,7 @@ def test_human_eat_curriculum(language_generator):
     [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
 )
 def test_animal_eat_curriculum(language_generator):
-    curriculum_test(make_animal_eat_curriculum(language_generator=language_generator))
+    curriculum_test(make_animal_eat_curriculum(None, None, language_generator))
 
 
 @pytest.mark.parametrize(
@@ -34,6 +34,4 @@ def test_animal_eat_curriculum(language_generator):
     [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
 )
 def test_eat_test_curriculum(language_generator):
-    curriculum_test(
-        make_german_eat_test_curriculum(language_generator=language_generator)
-    )
+    curriculum_test(make_german_eat_test_curriculum(None, None, language_generator))

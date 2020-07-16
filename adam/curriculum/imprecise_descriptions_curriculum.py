@@ -1,5 +1,5 @@
 from itertools import chain
-from typing import Sequence, Iterable
+from typing import Sequence, Optional
 from immutablecollections import immutableset
 from more_itertools import flatten
 from adam.language.language_generator import LanguageGenerator
@@ -11,10 +11,13 @@ from adam.curriculum.curriculum_utils import (
     phase1_instances,
     standard_object,
     learner_template_factory,
+    make_noise_objects,
 )
+
 from adam.language_specific import MASS_NOUN
 from adam.language.dependency.universal_dependencies import NOUN
 from adam.ontology.phase2_ontology import gravitationally_aligned_axis_is_largest
+from adam.ontology import IS_SPEAKER, IS_ADDRESSEE
 from adam.curriculum.phase1_curriculum import (
     make_pass_template,
     throw_on_ground_template,
@@ -36,9 +39,6 @@ from adam.curriculum.phase1_curriculum import (
 )
 from adam.language_specific.english.english_language_generator import (
     USE_ADVERBIAL_PATH_MODIFIER,
-)
-from adam.language_specific.english.english_language_generator import (
-    GAILA_PHASE_1_LANGUAGE_GENERATOR,
 )
 from adam.ontology import THING
 from adam.ontology.phase1_ontology import (
@@ -87,6 +87,7 @@ from adam.language_specific.english.english_phase_1_lexicon import (
 )
 
 BOOL_SET = immutableset([True, False])
+
 # easy hack to get all nouns that aren't recognized particulars, body parts, or mass nouns -- i.e. the ones that can be big or small
 NODES_TO_CHOOSE_FROM = [
     x[0]
@@ -107,10 +108,78 @@ BIG_ELIGIBLE_NODES = [
 CHOOSER = PHASE1_CHOOSER_FACTORY()
 
 
-def make_eat_big_small_curriculum(
+
+def _big_x_template(
+    theme: TemplateObjectVariable, noise_objects: Optional[int]
+) -> Phase1SituationTemplate:
+    learner = learner_template_factory()
+    computed_background = [learner]
+    computed_background.extend(make_noise_objects(noise_objects))
+    return Phase1SituationTemplate(
+        f"big-{theme.handle}",
+        salient_object_variables=[theme],
+        background_object_variables=computed_background,
+        asserted_always_relations=[bigger_than(theme, learner)],
+    )
+
+
+
+def _little_x_template(
+    theme: TemplateObjectVariable, noise_objects: Optional[int]
+) -> Phase1SituationTemplate:
+    learner = learner_template_factory()
+    computed_background = [learner]
+    computed_background.extend(make_noise_objects(noise_objects))
+    return Phase1SituationTemplate(
+        f"small-{theme.handle}",
+        salient_object_variables=[theme],
+        background_object_variables=computed_background,
+        asserted_always_relations=[bigger_than(learner, theme)],
+    )
+
+
+def _tall_x_template(
+    theme: TemplateObjectVariable, noise_objects: Optional[int]
+) -> Phase1SituationTemplate:
+    learner = learner_template_factory()
+    computed_background = [learner]
+    computed_background.extend(make_noise_objects(noise_objects))
+
+    # TODO: This difference should be an axis size but we can't yet
+    # implement that. See: https://github.com/isi-vista/adam/issues/832
+    return Phase1SituationTemplate(
+        f"tall-{theme.handle}",
+        salient_object_variables=[theme],
+        background_object_variables=computed_background,
+        asserted_always_relations=[bigger_than(theme, learner)],
+        syntax_hints=[USE_VERTICAL_MODIFIERS],
+    )
+
+
+def _short_x_template(
+    theme: TemplateObjectVariable, noise_objects: Optional[int]
+) -> Phase1SituationTemplate:
+    learner = learner_template_factory()
+    computed_background = [learner]
+    computed_background.extend(make_noise_objects(noise_objects))
+
+    # TODO: This difference should be an axis size but we can't yet
+    # implement that. See: https://github.com/isi-vista/adam/issues/832
+    return Phase1SituationTemplate(
+        f"tall-{theme.handle}",
+        salient_object_variables=[theme],
+        background_object_variables=computed_background,
+        asserted_always_relations=[bigger_than(learner, theme)],
+        syntax_hints=[USE_VERTICAL_MODIFIERS],
+    )
+
+
+def make_eat_big_small_curriculum(  # pylint: disable=unused-argument
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR
+    ],
 ) -> Phase1InstanceGroup:
     # "Mom eats a big cookie"
     # We generate situations directly since templates fail to generate plurals.
@@ -254,9 +323,14 @@ def _short_x_template(
 
 
 def make_spin_tall_short_curriculum(
+# TODO: Refactor this curriculum
+# See: https://github.com/isi-vista/adam/issues/898
+def make_spin_tall_short_curriculum(  # pylint: disable=unused-argument
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    ],
 ) -> Phase1InstanceGroup:
     # "Mom spins a tall chair"
     # We generate situations directly since templates fail to generate plurals.
@@ -325,19 +399,21 @@ def make_spin_tall_short_curriculum(
 
 
 def make_imprecise_size_descriptions(
-    num_samples: int = 5,
-    *,
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
-    num_noise_objects: int = 0,
+    ],
 ) -> Phase1InstanceGroup:
-    background = immutableset(
-        standard_object(f"noise_object_{x}") for x in range(num_noise_objects)
+    theme_0 = standard_object("theme", banned_properties=[IS_SPEAKER, IS_ADDRESSEE])
+    theme_1 = standard_object(
+        "theme-thing", THING, banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
     )
+
     # we choose random tall and short nodes here
     random_tall_nodes = [CHOOSER.choice(TALL_ELIGIBLE_NODES) for i in range(num_samples)]
     random_big_nodes = [CHOOSER.choice(BIG_ELIGIBLE_NODES) for i in range(num_samples)]
+
     return phase1_instances(
         "Imprecise Size",
         chain(
@@ -345,11 +421,17 @@ def make_imprecise_size_descriptions(
                 # generate big and small for all eligible nodes
                 [
                     sampled(
+
                         template(random_node=node, background=background),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=1,
                         block_multiple_of_the_same_type=False,
+                        template(theme, noise_objects),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        max_to_sample=num_samples if num_samples else 5,
+
                     )
                     for node in random_big_nodes
                     for template in [_big_x_template, _little_x_template]
@@ -375,17 +457,27 @@ def make_imprecise_size_descriptions(
 
 
 def make_throw_imprecise_temporal_descriptions(
-    num_samples: int = 5,
-    *,
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
-    num_noise_objects: int = 0,  # pylint:disable=unused-argument
+    ],
 ) -> Phase1InstanceGroup:
-    thrower = standard_object("thrower_0", THING, required_properties=[ANIMATE])
-    catcher = standard_object("catcher_0", THING, required_properties=[ANIMATE])
+    thrower = standard_object(
+        "thrower_0",
+        THING,
+        required_properties=[ANIMATE],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
+    catcher = standard_object(
+        "catcher_0",
+        THING,
+        required_properties=[ANIMATE],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
     object_thrown = standard_object("object_0", required_properties=[INANIMATE])
     implicit_goal_reference = standard_object("implicit_throw_goal_object", BOX)
+    background = make_noise_objects(noise_objects)
 
     return phase1_instances(
         "throwing-with-temporal-descriptions",
@@ -397,10 +489,11 @@ def make_throw_imprecise_temporal_descriptions(
                         thrower,
                         object_thrown,
                         spatial_properties=[FAST] if is_fast else [SLOW],
+                        background=background,
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
-                    max_to_sample=num_samples,
+                    max_to_sample=num_samples if num_samples else 5,
                 )
                 for is_fast in BOOL_SET
             ),
@@ -412,10 +505,11 @@ def make_throw_imprecise_temporal_descriptions(
                         object_thrown,
                         implicit_goal_reference,
                         spatial_properties=[FAST] if is_fast else [SLOW],
+                        background=background,
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
-                    max_to_sample=num_samples,
+                    max_to_sample=num_samples if num_samples else 5,
                 )
                 for is_fast in BOOL_SET
             ),
@@ -428,10 +522,11 @@ def make_throw_imprecise_temporal_descriptions(
                         implicit_goal_reference,
                         is_up=is_up,
                         spatial_properties=[FAST] if is_fast else [SLOW],
+                        background=background,
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
-                    max_to_sample=num_samples,
+                    max_to_sample=num_samples if num_samples else 5,
                 )
                 for is_fast in BOOL_SET
                 for is_up in BOOL_SET
@@ -444,10 +539,11 @@ def make_throw_imprecise_temporal_descriptions(
                         object_thrown,
                         catcher,
                         spatial_properties=[FAST] if is_fast else [SLOW],
+                        background=background,
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
-                    max_to_sample=num_samples,
+                    max_to_sample=num_samples if num_samples else 5,
                 )
                 for is_fast in BOOL_SET
             ),
@@ -457,15 +553,17 @@ def make_throw_imprecise_temporal_descriptions(
 
 
 def make_move_imprecise_temporal_descriptions(
-    num_samples: int = 5,
-    *,
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
-    num_noise_objects: int = 0,  # pylint:disable=unused-argument
+    ],
 ) -> Phase1InstanceGroup:
     self_mover_0 = standard_object(
-        "self-mover_0", THING, required_properties=[SELF_MOVING]
+        "self-mover_0",
+        THING,
+        required_properties=[SELF_MOVING],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
     )
 
     other_mover_0 = standard_object("mover_0", THING, required_properties=[ANIMATE])
@@ -473,6 +571,7 @@ def make_move_imprecise_temporal_descriptions(
     move_goal_reference = standard_object(
         "move-goal-reference", THING, required_properties=[INANIMATE]
     )
+    background = make_noise_objects(noise_objects)
 
     return phase1_instances(
         "move-with-temporal-descriptions",
@@ -484,10 +583,11 @@ def make_move_imprecise_temporal_descriptions(
                         self_mover_0,
                         move_goal_reference,
                         spatial_properties=[FAST] if is_fast else [SLOW],
+                        background=background,
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
-                    max_to_sample=num_samples,
+                    max_to_sample=num_samples if num_samples else 5,
                 )
                 for is_fast in BOOL_SET
             ),
@@ -499,10 +599,11 @@ def make_move_imprecise_temporal_descriptions(
                         movee_0,
                         move_goal_reference,
                         spatial_properties=[FAST] if is_fast else [SLOW],
+                        background=background,
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
-                    max_to_sample=num_samples,
+                    max_to_sample=num_samples if num_samples else 5,
                 )
                 for is_fast in BOOL_SET
             ),
@@ -512,14 +613,21 @@ def make_move_imprecise_temporal_descriptions(
 
 
 def make_jump_imprecise_temporal_descriptions(
-    num_samples: int = 5,
-    *,
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
-    num_noise_objects: int = 0,  # pylint:disable=unused-argument
+    ],
 ) -> Phase1InstanceGroup:
-    jumper = standard_object("jumper_0", THING, required_properties=[CAN_JUMP])
+
+    jumper = standard_object(
+        "jumper_0",
+        THING,
+        required_properties=[CAN_JUMP],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
+
+    background = make_noise_objects(noise_objects)
 
     return phase1_instances(
         "jumping",
@@ -532,10 +640,11 @@ def make_jump_imprecise_temporal_descriptions(
                             jumper,
                             use_adverbial_path_modifier=use_adverbial_path_modifier,
                             spatial_properties=[FAST] if is_fast else [SLOW],
+                            background=background,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for use_adverbial_path_modifier in (True, False)
                     for is_fast in BOOL_SET
@@ -547,15 +656,15 @@ def make_jump_imprecise_temporal_descriptions(
 
 
 def make_take_grab_subtle_verb_distinction(
-    num_samples: int = 5,
-    *,
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
-    num_noise_objects: int = 0,  # pylint:disable=unused-argument
+    ],
 ) -> Phase1InstanceGroup:
     taker = standard_object("tosser_passer_0", THING, required_properties=[ANIMATE])
     takee = standard_object("tossee_passee_0", THING, required_properties=[INANIMATE])
+    background = make_noise_objects(noise_objects)
     return phase1_instances(
         "taking-grabbing",
         chain(
@@ -570,10 +679,11 @@ def make_take_grab_subtle_verb_distinction(
                             spatial_properties=[HARD_FORCE]
                             if hard_force
                             else [SOFT_FORCE],
+                            background=background,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for use_adverbial_path_modifier in BOOL_SET
                     for hard_force in BOOL_SET
@@ -586,19 +696,24 @@ def make_take_grab_subtle_verb_distinction(
 
 
 def make_push_shove_subtle_verb_distinctions(
-    num_samples: int = 5,
-    *,
-    num_noise_objects: int = 0,  # pylint:disable=unused-argument
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    ],
 ) -> Phase1InstanceGroup:
-    pusher = standard_object("pusher_0", THING, required_properties=[ANIMATE])
+    pusher = standard_object(
+        "pusher_0",
+        THING,
+        required_properties=[ANIMATE],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
     pushee = standard_object("pushee_0", THING, required_properties=[INANIMATE])
     push_surface = standard_object(
         "push_surface_0", THING, required_properties=[INANIMATE]
     )
     push_goal = standard_object("push_goal_0", THING, required_properties=[INANIMATE])
+    background = make_noise_objects(noise_objects)
     # get all possible templates
     templates = flatten(
         [
@@ -610,6 +725,7 @@ def make_push_shove_subtle_verb_distinctions(
                 use_adverbial_path_modifier=use_adverbial_path_modifier,
                 operator=operator,
                 spatial_properties=[HARD_FORCE] if hard_force else [SOFT_FORCE],
+                background=background,
             )
             for hard_force in BOOL_SET
             for use_adverbial_path_modifier in BOOL_SET
@@ -625,7 +741,7 @@ def make_push_shove_subtle_verb_distinctions(
                         template,
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for template in templates
                 ]
@@ -636,14 +752,21 @@ def make_push_shove_subtle_verb_distinctions(
 
 
 def make_walk_run_subtle_verb_distinction(
-    num_samples: int = 5,
-    *,
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
-    num_noise_objects: int = 0,  # pylint:disable=unused-argument
+    ],
 ) -> Phase1InstanceGroup:
-    agent = standard_object("walker_0", THING, required_properties=[ANIMATE])
+
+    agent = standard_object(
+        "walker_0",
+        THING,
+        required_properties=[ANIMATE],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
+    background = make_noise_objects(noise_objects)
+
     return phase1_instances(
         "walking-running",
         chain(
@@ -657,10 +780,11 @@ def make_walk_run_subtle_verb_distinction(
                             spatial_properties=[HARD_FORCE]
                             if hard_force
                             else [SOFT_FORCE],
+                            background=background,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for use_adverbial_path_modifier in BOOL_SET
                     for hard_force in BOOL_SET
@@ -673,16 +797,16 @@ def make_walk_run_subtle_verb_distinction(
 
 
 def make_pass_toss_subtle_verb_distinction(
-    num_samples: int = 5,
-    *,
-    num_noise_objects: int = 0,  # pylint:disable=unused-argument
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    ],
 ) -> Phase1InstanceGroup:
     tosser = standard_object("tosser_passer_0", THING, required_properties=[ANIMATE])
     tossee = standard_object("tossee_passee_0", THING, required_properties=[INANIMATE])
     goal = standard_object("move-goal-reference", THING, required_properties=[INANIMATE])
+    background = make_noise_objects(noise_objects)
 
     return phase1_instances(
         "tossing_passing",
@@ -699,10 +823,11 @@ def make_pass_toss_subtle_verb_distinction(
                             spatial_properties=[HARD_FORCE]
                             if hard_force
                             else [SOFT_FORCE],
+                            background=background,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for use_adverbial_path_modifier in BOOL_SET
                     for hard_force in BOOL_SET
@@ -715,18 +840,18 @@ def make_pass_toss_subtle_verb_distinction(
 
 
 def make_roll_imprecise_temporal_descriptions(
-    num_samples: int = 5,
-    *,
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
-    num_noise_objects: int = 0,  # pylint:disable=unused-argument
+    ],
 ) -> Phase1InstanceGroup:
     animate_0 = standard_object("object_0", THING, required_properties=[ANIMATE])
     rollable_0 = standard_object("object_1", required_properties=[ROLLABLE])
     rolling_surface = standard_object(
         "surface", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
     )
+    background = make_noise_objects(noise_objects)
 
     return phase1_instances(
         "roll-imprecise-temporal-descriptions",
@@ -738,10 +863,11 @@ def make_roll_imprecise_temporal_descriptions(
                         animate_0,
                         rolling_surface,
                         spatial_properties=[FAST] if is_fast else [SLOW],
+                        background=background,
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
-                    max_to_sample=num_samples,
+                    max_to_sample=num_samples if num_samples else 5,
                 )
                 for is_fast in BOOL_SET
             ),
@@ -753,10 +879,11 @@ def make_roll_imprecise_temporal_descriptions(
                         rollable_0,
                         rolling_surface,
                         spatial_properties=[FAST] if is_fast else [SLOW],
+                        background=background,
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
-                    max_to_sample=num_samples,
+                    max_to_sample=num_samples if num_samples else 5,
                 )
                 for is_fast in BOOL_SET
             ),
@@ -768,10 +895,11 @@ def make_roll_imprecise_temporal_descriptions(
                         rollable_0,
                         rolling_surface,
                         spatial_properties=[FAST] if is_fast else [SLOW],
+                        background=background,
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
-                    max_to_sample=num_samples,
+                    max_to_sample=num_samples if num_samples else 5,
                 )
                 for is_fast in BOOL_SET
             ),
@@ -781,15 +909,15 @@ def make_roll_imprecise_temporal_descriptions(
 
 
 def make_fly_imprecise_temporal_descriptions(
-    num_samples: int = 5,
-    *,
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
-    num_noise_objects: int = 0,  # pylint:disable=unused-argument
+    ],
 ) -> Phase1InstanceGroup:
     bird = standard_object("bird_0", BIRD)
     syntax_hints_options = ([], [USE_ADVERBIAL_PATH_MODIFIER])  # type: ignore
+    background = make_noise_objects(noise_objects)
 
     return phase1_instances(
         "fly-imprecise-temporal-descripttions",
@@ -802,10 +930,11 @@ def make_fly_imprecise_temporal_descriptions(
                         up=is_up,
                         syntax_hints=syntax_hints,
                         spatial_properties=[FAST] if is_fast else [SLOW],
+                        background=background,
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
-                    max_to_sample=num_samples,
+                    max_to_sample=num_samples if num_samples else 5,
                 )
                 for is_up in BOOL_SET
                 for syntax_hints in syntax_hints_options
@@ -817,15 +946,15 @@ def make_fly_imprecise_temporal_descriptions(
 
 
 def make_fall_imprecise_temporal_descriptions(
-    num_samples: int = 5,
-    *,
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
-    num_noise_objects: int = 0,  # pylint:disable=unused-argument
+    ],
 ) -> Phase1InstanceGroup:
     arbitary_object = standard_object("object_0", THING)
     syntax_hints_options = ([], [USE_ADVERBIAL_PATH_MODIFIER])  # type: ignore
+    background = make_noise_objects(noise_objects)
 
     return phase1_instances(
         f"fall-imprecise-temporal-description",
@@ -838,10 +967,11 @@ def make_fall_imprecise_temporal_descriptions(
                         lands_on_ground=object_ends_up_on_ground,
                         syntax_hints=syntax_hints,
                         spatial_properties=[FAST] if is_fast else [SLOW],
+                        background=background,
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
-                    max_to_sample=num_samples,
+                    max_to_sample=num_samples if num_samples else 5,
                 )
                 for object_ends_up_on_ground in BOOL_SET
                 for syntax_hints in syntax_hints_options
@@ -851,11 +981,13 @@ def make_fall_imprecise_temporal_descriptions(
             flatten(
                 sampled(
                     fall_on_ground_template(
-                        arbitary_object, spatial_properties=[FAST] if is_fast else [SLOW]
+                        arbitary_object,
+                        spatial_properties=[FAST] if is_fast else [SLOW],
+                        background=background,
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
-                    max_to_sample=num_samples,
+                    max_to_sample=num_samples if num_samples else 5,
                 )
                 for is_fast in BOOL_SET
             ),
@@ -865,99 +997,73 @@ def make_fall_imprecise_temporal_descriptions(
 
 
 def make_imprecise_size_curriculum(
-    num_samples: int = 5,
-    *,
-    num_noise_objects: int = 0,
+    num_samples: Optional[int],
+    num_noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    ],
 ) -> Sequence[Phase1InstanceGroup]:
     """
     One particular instantiation of the Imprecise Size Descriptions Curriculum
     """
-
     return [
         make_imprecise_size_descriptions(
-            num_samples,
-            num_noise_objects=num_noise_objects,
-            language_generator=language_generator,
+            num_samples, num_noise_objects, language_generator
         )
     ]
 
 
 def make_imprecise_temporal_descriptions(
-    num_samples: int = 5,
-    *,
-    num_noise_objects: int = 0,
+    num_samples: Optional[int],
+    num_noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    ],
 ) -> Sequence[Phase1InstanceGroup]:
     """
     One particular instantiation of the Imprecise Temporal Descriptions Curriculum
     """
     return [
         make_throw_imprecise_temporal_descriptions(
-            num_samples,
-            num_noise_objects=num_noise_objects,
-            language_generator=language_generator,
+            num_samples, num_noise_objects, language_generator
         ),
         make_move_imprecise_temporal_descriptions(
-            num_samples,
-            num_noise_objects=num_noise_objects,
-            language_generator=language_generator,
+            num_samples, num_noise_objects, language_generator
         ),
         make_jump_imprecise_temporal_descriptions(
-            num_samples,
-            num_noise_objects=num_noise_objects,
-            language_generator=language_generator,
+            num_samples, num_noise_objects, language_generator
         ),
         make_roll_imprecise_temporal_descriptions(
-            num_samples,
-            num_noise_objects=num_noise_objects,
-            language_generator=language_generator,
+            num_samples, num_noise_objects, language_generator
         ),
         make_fly_imprecise_temporal_descriptions(
-            num_samples,
-            num_noise_objects=num_noise_objects,
-            language_generator=language_generator,
+            num_samples, num_noise_objects, language_generator
         ),
         make_fall_imprecise_temporal_descriptions(
-            num_samples,
-            num_noise_objects=num_noise_objects,
-            language_generator=language_generator,
+            num_samples, num_noise_objects, language_generator
         ),
     ]
 
 
 def make_subtle_verb_distinctions_curriculum(
-    num_samples: int = 5,
-    *,
-    num_noise_objects: int = 0,
+    num_samples: Optional[int],
+    num_noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    ],
 ) -> Sequence[Phase1InstanceGroup]:
     """One particular instanatiation of the Subtle Verb Distinction Curriculum"""
     return [
         make_push_shove_subtle_verb_distinctions(
-            num_samples,
-            num_noise_objects=num_noise_objects,
-            language_generator=language_generator,
+            num_samples, num_noise_objects, language_generator
         ),
         make_walk_run_subtle_verb_distinction(
-            num_samples,
-            num_noise_objects=num_noise_objects,
-            language_generator=language_generator,
+            num_samples, num_noise_objects, language_generator
         ),
         make_pass_toss_subtle_verb_distinction(
-            num_samples,
-            num_noise_objects=num_noise_objects,
-            language_generator=language_generator,
+            num_samples, num_noise_objects, language_generator
         ),
         make_take_grab_subtle_verb_distinction(
-            num_samples,
-            num_noise_objects=num_noise_objects,
-            language_generator=language_generator,
+            num_samples, num_noise_objects, language_generator
         ),
     ]

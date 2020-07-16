@@ -13,12 +13,12 @@ from adam.curriculum.phase1_curriculum import (
     _object_with_color_template,
     _x_has_y_template,
 )
+from adam.language.language_utils import phase1_language_generator
 from adam.language_specific.english.english_language_generator import IGNORE_HAS_AS_VERB
 from adam.learner import LearningExample
 from adam.learner.attributes import SubsetAttributeLearner, SubsetAttributeLearnerNew
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
-from adam.learner.objects import ObjectRecognizerAsTemplateLearner
 from adam.ontology import IS_SPEAKER, IS_ADDRESSEE
 from adam.ontology.phase1_ontology import (
     RED,
@@ -33,14 +33,20 @@ from adam.ontology.phase1_ontology import (
     PERSON,
     INANIMATE_OBJECT,
     PERSON_CAN_HAVE,
+    MOM,
+    DAD,
+    BABY,
 )
 from adam.situation.templates.phase1_templates import property_variable, sampled
-from tests.learner import phase1_language_generator, object_recognizer_factory
+from tests.learner import (
+    LANGUAGE_MODE_TO_OBJECT_RECOGNIZER,
+    LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER,
+)
 
 
 def subset_attribute_leaner_factory(language_mode: LanguageMode):
     return SubsetAttributeLearner(
-        object_recognizer=object_recognizer_factory(language_mode),
+        object_recognizer=LANGUAGE_MODE_TO_OBJECT_RECOGNIZER[language_mode],
         ontology=GAILA_PHASE_1_ONTOLOGY,
         language_mode=language_mode,
     )
@@ -48,14 +54,14 @@ def subset_attribute_leaner_factory(language_mode: LanguageMode):
 
 def integrated_learner_factory(language_mode: LanguageMode):
     return IntegratedTemplateLearner(
-        object_learner=ObjectRecognizerAsTemplateLearner(
-            object_recognizer=object_recognizer_factory(language_mode),
-            language_mode=language_mode,
-        ),
+        object_learner=LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER[language_mode],
         attribute_learner=SubsetAttributeLearnerNew(
             ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=language_mode
         ),
     )
+
+
+# TODO: fix https://github.com/isi-vista/adam/issues/917 which causes us to have to specify that we don't wish to include ME_HACK and YOU_HACK in our curriculum design
 
 
 @pytest.mark.parametrize(
@@ -70,7 +76,8 @@ def integrated_learner_factory(language_mode: LanguageMode):
 )
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
-    "learner", [subset_attribute_leaner_factory, integrated_learner_factory]
+    "learner",
+    [pytest.mark.skip(subset_attribute_leaner_factory), integrated_learner_factory],
 )
 def test_subset_color_attribute(
     color_node, object_0_node, object_1_node, language_mode, learner
@@ -83,9 +90,9 @@ def test_subset_color_attribute(
         f"{object_1_node.handle}", object_1_node, added_properties=[color]
     )
 
-    color_object_template = _object_with_color_template(object_0)
+    color_object_template = _object_with_color_template(object_0, None)
 
-    templates = [color_object_template, _object_with_color_template(object_1)]
+    templates = [color_object_template, _object_with_color_template(object_1, None)]
 
     language_generator = phase1_language_generator(language_mode)
 
@@ -146,13 +153,12 @@ def test_subset_color_attribute(
 
 # hack: wo de and ni de are currently considered to be one word. This won't work for third person possession
 # TODO: Fix this learning test. See: https://github.com/isi-vista/adam/issues/861
-@pytest.mark.skip("My fails to learn for some reason.")
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
-    "learner", [subset_attribute_leaner_factory, integrated_learner_factory]
+    "learner",
+    [pytest.mark.skip(subset_attribute_leaner_factory), integrated_learner_factory],
 )
 def test_subset_my_attribute_learner_integrated(language_mode, learner):
-    person = standard_object("speaker", PERSON, added_properties=[IS_SPEAKER])
     inanimate_object = standard_object(
         "object", INANIMATE_OBJECT, required_properties=[PERSON_CAN_HAVE]
     )
@@ -161,13 +167,18 @@ def test_subset_my_attribute_learner_integrated(language_mode, learner):
 
     my_train_curriculum = phase1_instances(
         "my-train",
-        situations=sampled(
-            _x_has_y_template(
-                person, inanimate_object, syntax_hints=[IGNORE_HAS_AS_VERB]
-            ),
-            ontology=GAILA_PHASE_1_ONTOLOGY,
-            chooser=PHASE1_CHOOSER_FACTORY(),
-            max_to_sample=5,
+        situations=flatten(
+            sampled(
+                _x_has_y_template(
+                    standard_object("speaker", person, added_properties=[IS_SPEAKER]),
+                    inanimate_object,
+                    syntax_hints=[IGNORE_HAS_AS_VERB],
+                ),
+                ontology=GAILA_PHASE_1_ONTOLOGY,
+                chooser=PHASE1_CHOOSER_FACTORY(),
+                max_to_sample=5,
+            )
+            for person in [MOM, DAD, BABY]
         ),
         language_generator=language_generator,
     )
@@ -176,7 +187,14 @@ def test_subset_my_attribute_learner_integrated(language_mode, learner):
         "my-test",
         situations=sampled(
             _x_has_y_template(
-                person, inanimate_object, syntax_hints=[IGNORE_HAS_AS_VERB]
+                standard_object(
+                    "speaker",
+                    PERSON,
+                    banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+                    added_properties=[IS_SPEAKER],
+                ),
+                inanimate_object,
+                syntax_hints=[IGNORE_HAS_AS_VERB],
             ),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             chooser=PHASE1_TEST_CHOOSER_FACTORY(),
@@ -211,11 +229,22 @@ def test_subset_my_attribute_learner_integrated(language_mode, learner):
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
-    "learner", [subset_attribute_leaner_factory, integrated_learner_factory]
+    "learner",
+    [pytest.mark.skip(subset_attribute_leaner_factory), integrated_learner_factory],
 )
 def test_your_attribute_learner(language_mode, learner):
-    person_0 = standard_object("speaker", PERSON, added_properties=[IS_SPEAKER])
-    person_1 = standard_object("addressee", PERSON, added_properties=[IS_ADDRESSEE])
+    person_0 = standard_object(
+        "speaker",
+        PERSON,
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+        added_properties=[IS_SPEAKER],
+    )
+    person_1 = standard_object(
+        "addressee",
+        PERSON,
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+        added_properties=[IS_ADDRESSEE],
+    )
     inanimate_object = standard_object(
         "object", INANIMATE_OBJECT, required_properties=[PERSON_CAN_HAVE]
     )

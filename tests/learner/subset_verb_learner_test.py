@@ -26,12 +26,12 @@ from adam.curriculum.phase1_curriculum import (
     make_throw_templates,
     make_throw_animacy_templates,
 )
+from adam.language.language_utils import phase1_language_generator
 from adam.learner import LearningExample
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
-from adam.learner.objects import ObjectRecognizerAsTemplateLearner
 from adam.learner.verbs import SubsetVerbLearner, SubsetVerbLearnerNew
-from adam.ontology import IS_SPEAKER, THING
+from adam.ontology import IS_SPEAKER, THING, IS_ADDRESSEE
 from adam.ontology.phase1_ontology import (
     INANIMATE_OBJECT,
     CAN_HAVE_THINGS_RESTING_ON_THEM,
@@ -56,12 +56,15 @@ from adam.situation.templates.phase1_situation_templates import (
 )
 from adam.situation.templates.phase1_templates import Phase1SituationTemplate, sampled
 from immutablecollections import immutableset
-from tests.learner import phase1_language_generator, object_recognizer_factory
+from tests.learner import (
+    LANGUAGE_MODE_TO_OBJECT_RECOGNIZER,
+    LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER,
+)
 
 
 def subset_verb_language_factory(language_mode: LanguageMode) -> SubsetVerbLearner:
     return SubsetVerbLearner(
-        object_recognizer=object_recognizer_factory(language_mode),
+        object_recognizer=LANGUAGE_MODE_TO_OBJECT_RECOGNIZER[language_mode],
         ontology=GAILA_PHASE_1_ONTOLOGY,
         language_mode=language_mode,
     )
@@ -69,10 +72,7 @@ def subset_verb_language_factory(language_mode: LanguageMode) -> SubsetVerbLearn
 
 def integrated_learner_factory(language_mode: LanguageMode):
     return IntegratedTemplateLearner(
-        object_learner=ObjectRecognizerAsTemplateLearner(
-            object_recognizer=object_recognizer_factory(language_mode),
-            language_mode=language_mode,
-        ),
+        object_learner=LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER[language_mode],
         action_learner=SubsetVerbLearnerNew(
             ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=language_mode
         ),
@@ -141,11 +141,17 @@ def run_verb_test(learner, situation_template, language_generator):
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
-    "learner", [subset_verb_language_factory, integrated_learner_factory]
+    "learner",
+    [pytest.mark.skip(subset_verb_language_factory), integrated_learner_factory],
 )
 def test_eat_simple(language_mode, learner):
     object_to_eat = standard_object("object_0", required_properties=[EDIBLE])
-    eater = standard_object("eater_0", THING, required_properties=[ANIMATE])
+    eater = standard_object(
+        "eater_0",
+        THING,
+        required_properties=[ANIMATE],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
     run_verb_test(
         learner(language_mode),
         make_eat_template(eater, object_to_eat),
@@ -155,22 +161,24 @@ def test_eat_simple(language_mode, learner):
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
-    "learner", [subset_verb_language_factory, integrated_learner_factory]
+    "learner",
+    [pytest.mark.skip(subset_verb_language_factory), integrated_learner_factory],
 )
 def test_drink(language_mode, learner):
     run_verb_test(
         learner(language_mode),
-        make_drink_template(),
+        make_drink_template(None),
         language_generator=phase1_language_generator(language_mode),
     )
 
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
-    "learner", [subset_verb_language_factory, integrated_learner_factory]
+    "learner",
+    [pytest.mark.skip(subset_verb_language_factory), integrated_learner_factory],
 )
 def test_sit(language_mode, learner):
-    for situation_template in make_sit_templates():
+    for situation_template in make_sit_templates(None):
         run_verb_test(
             learner(language_mode),
             situation_template,
@@ -180,10 +188,11 @@ def test_sit(language_mode, learner):
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
-    "learner", [integrated_learner_factory, subset_verb_language_factory]
+    "learner",
+    [pytest.mark.skip(subset_verb_language_factory), integrated_learner_factory],
 )
 def test_put(language_mode, learner):
-    for situation_template in make_put_templates():
+    for situation_template in make_put_templates(None):
         run_verb_test(
             learner(language_mode),
             situation_template,
@@ -193,11 +202,17 @@ def test_put(language_mode, learner):
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
-    "learner", [subset_verb_language_factory, integrated_learner_factory]
+    "learner",
+    [pytest.mark.skip(subset_verb_language_factory), integrated_learner_factory],
 )
 def test_push(language_mode, learner):
     for situation_template in make_push_templates(
-        agent=standard_object("pusher", THING, required_properties=[ANIMATE]),
+        agent=standard_object(
+            "pusher",
+            THING,
+            required_properties=[ANIMATE],
+            banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+        ),
         theme=standard_object("pushee", INANIMATE_OBJECT),
         push_surface=standard_object(
             "push_surface", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
@@ -214,7 +229,8 @@ def test_push(language_mode, learner):
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
-    "learner", [subset_verb_language_factory, integrated_learner_factory]
+    "learner",
+    [pytest.mark.skip(subset_verb_language_factory), integrated_learner_factory],
 )
 def test_go(language_mode, learner):
     goer = standard_object("goer", THING, required_properties=[ANIMATE])
@@ -227,7 +243,7 @@ def test_go(language_mode, learner):
         for is_distal in (True, False)
     ]
 
-    for situation_template in make_go_templates():
+    for situation_template in make_go_templates(None):
         run_verb_test(
             learner(language_mode),
             situation_template,
@@ -244,13 +260,25 @@ def test_go(language_mode, learner):
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
-    "learner", [subset_verb_language_factory, integrated_learner_factory]
+    "learner",
+    [pytest.mark.skip(subset_verb_language_factory), integrated_learner_factory],
 )
 def test_come(language_mode, learner):
-    movee = standard_object("movee", required_properties=[SELF_MOVING])
+    movee = standard_object(
+        "movee",
+        required_properties=[SELF_MOVING],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
     learner_obj = standard_object("leaner_0", LEARNER)
-    speaker = standard_object("speaker", PERSON, added_properties=[IS_SPEAKER])
-    object_ = standard_object("object_0", THING)
+    speaker = standard_object(
+        "speaker",
+        PERSON,
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+        added_properties=[IS_SPEAKER],
+    )
+    object_ = standard_object(
+        "object_0", THING, banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
+    )
     ground = standard_object("ground", root_node=GROUND)
 
     come_to_speaker = Phase1SituationTemplate(
@@ -289,7 +317,8 @@ def test_come(language_mode, learner):
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
-    "learner", [subset_verb_language_factory, integrated_learner_factory]
+    "learner",
+    [pytest.mark.skip(subset_verb_language_factory), integrated_learner_factory],
 )
 def test_take(language_mode, learner):
     run_verb_test(
@@ -305,10 +334,11 @@ def test_take(language_mode, learner):
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
-    "learner", [subset_verb_language_factory, integrated_learner_factory]
+    "learner",
+    [pytest.mark.skip(subset_verb_language_factory), integrated_learner_factory],
 )
 def test_give(language_mode, learner):
-    for situation_template in make_give_templates():
+    for situation_template in make_give_templates(immutableset()):
         run_verb_test(
             learner(language_mode),
             situation_template,
@@ -318,10 +348,11 @@ def test_give(language_mode, learner):
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
-    "learner", [subset_verb_language_factory, integrated_learner_factory]
+    "learner",
+    [pytest.mark.skip(subset_verb_language_factory), integrated_learner_factory],
 )
 def test_spin(language_mode, learner):
-    for situation_template in make_spin_templates():
+    for situation_template in make_spin_templates(None):
         run_verb_test(
             learner(language_mode),
             situation_template,
@@ -331,10 +362,11 @@ def test_spin(language_mode, learner):
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
-    "learner", [subset_verb_language_factory, integrated_learner_factory]
+    "learner",
+    [pytest.mark.skip(subset_verb_language_factory), integrated_learner_factory],
 )
 def test_fall(language_mode, learner):
-    for situation_template in make_fall_templates():
+    for situation_template in make_fall_templates(immutableset()):
         run_verb_test(
             learner(language_mode),
             situation_template,
@@ -344,10 +376,11 @@ def test_fall(language_mode, learner):
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
-    "learner", [subset_verb_language_factory, integrated_learner_factory]
+    "learner",
+    [pytest.mark.skip(subset_verb_language_factory), integrated_learner_factory],
 )
 def test_throw(language_mode, learner):
-    for situation_template in make_throw_templates():
+    for situation_template in make_throw_templates(None):
         run_verb_test(
             learner(language_mode),
             situation_template,
@@ -360,7 +393,8 @@ def test_throw(language_mode, learner):
     [LanguageMode.CHINESE, pytest.param(LanguageMode.ENGLISH, marks=pytest.mark.xfail)],
 )
 @pytest.mark.parametrize(
-    "learner", [subset_verb_language_factory, integrated_learner_factory]
+    "learner",
+    [pytest.mark.skip(subset_verb_language_factory), integrated_learner_factory],
 )
 # this tests gei vs. dau X shang for Chinese throw to
 # TODO: fix English implementation https://github.com/isi-vista/adam/issues/870
@@ -376,7 +410,7 @@ def test_throw_animacy(language_mode, learner):
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                 )
-                for situation_template in make_throw_animacy_templates()
+                for situation_template in make_throw_animacy_templates(None)
             ]
         ),
         language_generator=phase1_language_generator(language_mode),
@@ -392,7 +426,7 @@ def test_throw_animacy(language_mode, learner):
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                 )
-                for situation_template in make_throw_animacy_templates()
+                for situation_template in make_throw_animacy_templates(None)
             ]
         ),
         language_generator=phase1_language_generator(language_mode),
@@ -421,10 +455,11 @@ def test_throw_animacy(language_mode, learner):
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
-    "learner", [subset_verb_language_factory, integrated_learner_factory]
+    "learner",
+    [pytest.mark.skip(subset_verb_language_factory), integrated_learner_factory],
 )
 def test_move(language_mode, learner):
-    for situation_template in make_move_templates():
+    for situation_template in make_move_templates(None):
         run_verb_test(
             learner(language_mode),
             situation_template,
@@ -434,18 +469,29 @@ def test_move(language_mode, learner):
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
-    "learner", [subset_verb_language_factory, integrated_learner_factory]
+    "learner",
+    [pytest.mark.skip(subset_verb_language_factory), integrated_learner_factory],
 )
 def test_jump(language_mode, learner):
-    jumper = standard_object("jumper_0", THING, required_properties=[CAN_JUMP])
-    jumped_over = standard_object("jumped_over")
-    for situation_template in make_jump_templates():
+
+    jumper = standard_object(
+        "jumper_0",
+        THING,
+        required_properties=[CAN_JUMP],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
+    jumped_over = standard_object(
+        "jumped_over", banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
+    )
+
+    for situation_template in make_jump_templates(None):
+
         run_verb_test(
             learner(language_mode),
             situation_template,
             language_generator=phase1_language_generator(language_mode),
         )
-    for situation_template in [_jump_over_template(jumper, jumped_over, [])]:
+    for situation_template in [_jump_over_template(jumper, jumped_over, immutableset())]:
         run_verb_test(
             learner(language_mode),
             situation_template,
@@ -455,10 +501,11 @@ def test_jump(language_mode, learner):
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
-    "learner", [subset_verb_language_factory, integrated_learner_factory]
+    "learner",
+    [pytest.mark.skip(subset_verb_language_factory), integrated_learner_factory],
 )
 def test_roll(language_mode, learner):
-    for situation_template in make_roll_templates():
+    for situation_template in make_roll_templates(None):
         run_verb_test(
             learner(language_mode),
             situation_template,
@@ -468,10 +515,11 @@ def test_roll(language_mode, learner):
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
-    "learner", [subset_verb_language_factory, integrated_learner_factory]
+    "learner",
+    [pytest.mark.skip(subset_verb_language_factory), integrated_learner_factory],
 )
 def test_fly(language_mode, learner):
-    for situation_template in make_fly_templates():
+    for situation_template in make_fly_templates(immutableset()):
         run_verb_test(
             learner(language_mode),
             situation_template,

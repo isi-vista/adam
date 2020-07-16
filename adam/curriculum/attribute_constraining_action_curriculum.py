@@ -1,14 +1,16 @@
 from itertools import chain
+from typing import Optional, Sequence
+
 from adam.language.language_generator import LanguageGenerator
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.language.dependency import LinearizedDependencyTree
-from immutablecollections import immutableset
-
+from adam.ontology import IS_SPEAKER, IS_ADDRESSEE
 from adam.curriculum.curriculum_utils import (
     Phase1InstanceGroup,
     standard_object,
     phase1_instances,
     PHASE1_CHOOSER_FACTORY,
+    make_noise_objects,
 )
 from adam.curriculum.phase1_curriculum import make_eat_template
 from adam.ontology import THING
@@ -20,31 +22,27 @@ from adam.ontology.phase1_ontology import (
     ANIMATE,
 )
 from adam.situation.templates.phase1_templates import sampled
-from adam.language_specific.english.english_language_generator import (
-    GAILA_PHASE_1_LANGUAGE_GENERATOR,
-)
 
 
 def make_human_eat_curriculum(
-    num_samples: int = 5,
-    *,
-    noise_objects: int = 0,
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    ],
 ) -> Phase1InstanceGroup:
     object_to_eat = standard_object("object_0", required_properties=[EDIBLE])
-    human = standard_object("eater_0", PERSON)
-    background = immutableset(
-        standard_object(f"noise_object_{x}") for x in range(noise_objects)
+    human = standard_object(
+        "eater_0", PERSON, banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
     )
+    background = make_noise_objects(noise_objects)
 
     return phase1_instances(
         "Human-Eat-Curriculum",
         # Essen
         sampled(
             make_eat_template(human, object_to_eat, background),
-            max_to_sample=num_samples,
+            max_to_sample=num_samples if num_samples else 5,
             ontology=GAILA_PHASE_1_ONTOLOGY,
             chooser=PHASE1_CHOOSER_FACTORY(),
         ),
@@ -53,25 +51,22 @@ def make_human_eat_curriculum(
 
 
 def make_animal_eat_curriculum(
-    num_samples: int = 5,
-    *,
-    noise_objects: int = 0,
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    ],
 ) -> Phase1InstanceGroup:
     object_to_eat = standard_object("object_0", required_properties=[EDIBLE])
     animal = standard_object("eater_0", NONHUMAN_ANIMAL)
-    background = immutableset(
-        standard_object(f"noise_object_{x}") for x in range(noise_objects)
-    )
+    background = make_noise_objects(noise_objects)
 
     return phase1_instances(
         "Animal-Eat-Curriculum",
         # Fressen
         sampled(
             make_eat_template(animal, object_to_eat, background),
-            max_to_sample=num_samples,
+            max_to_sample=num_samples if num_samples else 5,
             ontology=GAILA_PHASE_1_ONTOLOGY,
             chooser=PHASE1_CHOOSER_FACTORY(),
         ),
@@ -80,19 +75,21 @@ def make_animal_eat_curriculum(
 
 
 def make_german_eat_test_curriculum(
-    num_samples: int = 5,
-    *,
-    noise_objects: int = 0,
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    ],
 ) -> Phase1InstanceGroup:
 
     object_to_eat = standard_object("object_0", required_properties=[EDIBLE])
-    eater = standard_object("eater_0", THING, required_properties=[ANIMATE])
-    background = immutableset(
-        standard_object(f"noise_object_{x}") for x in range(noise_objects)
+    eater = standard_object(
+        "eater_0",
+        THING,
+        required_properties=[ANIMATE],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
     )
+    background = make_noise_objects(noise_objects)
 
     return phase1_instances(
         "german-eating",
@@ -100,7 +97,7 @@ def make_german_eat_test_curriculum(
             *[
                 sampled(
                     make_eat_template(eater, object_to_eat, background),
-                    max_to_sample=num_samples,
+                    max_to_sample=num_samples if num_samples else 5,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                 )
@@ -111,43 +108,31 @@ def make_german_eat_test_curriculum(
 
 
 def make_german_eat_train(
-    num_samples: int = 5,
-    *,
-    noise_objects: int = 0,
+    num_samples: Optional[int],
+    num_noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
-):
+    ],
+) -> Sequence[Phase1InstanceGroup]:
     return [
-        make_human_eat_curriculum(
-            num_samples=num_samples,
-            noise_objects=noise_objects,
-            language_generator=language_generator,
-        ),
-        make_animal_eat_curriculum(
-            num_samples=num_samples,
-            noise_objects=noise_objects,
-            language_generator=language_generator,
-        ),
+        make_human_eat_curriculum(num_samples, num_noise_objects, language_generator),
+        make_animal_eat_curriculum(num_samples, num_noise_objects, language_generator),
     ]
 
 
 def make_german_complete(
-    num_samples: int = 5,
-    *,
-    noise_objects: int = 0,
+    num_samples: Optional[int],
+    num_noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
-):
-    return make_german_eat_train(
-        num_samples=num_samples,
-        noise_objects=noise_objects,
-        language_generator=language_generator,
-    ) + [
+    ],
+) -> Sequence[Phase1InstanceGroup]:
+    rtrnr = list(
+        make_german_eat_train(num_samples, num_noise_objects, language_generator)
+    )
+    rtrnr.append(
         make_german_eat_test_curriculum(
-            num_samples=num_samples,
-            noise_objects=noise_objects,
-            language_generator=language_generator,
+            num_samples, num_noise_objects, language_generator
         )
-    ]
+    )
+    return rtrnr

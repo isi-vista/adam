@@ -1,0 +1,7 @@
+_includes:
+   - "../../root.params"
+   - "m13.params"
+
+experiment: 'm13-imprecise-size'
+curriculum: 'm13-imprecise-size'
+learner: 'integrated-learner-recognizer'

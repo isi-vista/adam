@@ -1,6 +1,8 @@
 import logging
 from itertools import chain
 from typing import AbstractSet, Iterable, List, Mapping, Sequence, Set, Tuple, Union
+
+from adam.axis import GeonAxis
 from adam.language_specific.chinese.chinese_phase_1_lexicon import (
     GAILA_PHASE_1_CHINESE_LEXICON,
 )
@@ -25,6 +27,7 @@ from adam.ontology.phase1_ontology import (
     BIGGER_THAN,
     SMALLER_THAN,
 )
+from adam.ontology.phase1_spatial_relations import Region
 from adam.perception import (
     GROUND_PERCEPTION,
     LEARNER_PERCEPTION,
@@ -124,7 +127,10 @@ def _sort_mapping_by_pattern_complexity(
         (string, pattern)
         for (string, pattern) in sorted(
             unsorted.items(),
-            key=lambda item: len(item[1]._graph.nodes),  # pylint:disable=protected-access
+            key=lambda item: (
+                len(item[1]._graph.nodes),  # pylint:disable=protected-access
+                len(item[1]._graph.edges),  # pylint:disable=protected-access
+            ),
             reverse=True,
         )
     )
@@ -246,6 +252,7 @@ class ObjectRecognizer:
         This is useful as a pre-processing step
         before prepositional and verbal learning experiments.
         """
+
         # pylint: disable=global-statement,invalid-name
         global cumulative_millis_in_successful_matches_ms
         global cumulative_millis_in_failed_matches_ms
@@ -294,10 +301,10 @@ class ObjectRecognizer:
         candidate_object_subgraphs = extract_candidate_objects(perception_graph)
 
         for candidate_object_graph in candidate_object_subgraphs:
-
             num_object_nodes = candidate_object_graph.count_nodes_matching(
                 lambda node: isinstance(node, ObjectPerception)
             )
+
             for (concept, pattern) in concepts_to_patterns.items():
                 # As an optimization, we count how many sub-object nodes
                 # are in the graph and the pattern.
@@ -315,7 +322,6 @@ class ObjectRecognizer:
                     )
                 if pattern_match:
                     cumulative_millis_in_successful_matches_ms += t.elapsed
-
                     matched_object_node = ObjectSemanticNode(concept)
 
                     # We wrap the concept in a tuple because it could in theory be multiple
@@ -326,6 +332,10 @@ class ObjectRecognizer:
                             ((concept.debug_string,), matched_object_node)
                         )
                     elif self._language_mode == LanguageMode.CHINESE:
+                        if concept.debug_string == "me":
+                            object_nodes.append((("wo3",), matched_object_node))
+                        elif concept.debug_string == "you":
+                            object_nodes.append((("ni3",), matched_object_node))
                         mappings = (
                             GAILA_PHASE_1_CHINESE_LEXICON._ontology_node_to_word  # pylint:disable=protected-access
                         )
@@ -335,7 +345,6 @@ class ObjectRecognizer:
                                 object_nodes.append(
                                     ((debug_string,), matched_object_node)
                                 )
-
                     graph_to_return = replace_match_with_object_graph_node(
                         matched_object_node, graph_to_return, pattern_match
                     )
@@ -579,6 +588,12 @@ def extract_candidate_objects(
                 nodes_to_examine.extend(
                     in_neighbor
                     for (in_neighbor, _) in scene_digraph.in_edges(node_to_examine)
+                    # Avoid in-edges from Regions as they can come from other objects regions (e.g ground).
+                    if not (
+                        isinstance(node_to_examine, GeonAxis)
+                        and isinstance(in_neighbor, tuple)
+                        and isinstance(in_neighbor[0], Region)
+                    )
                 )
         candidate_objects.append(
             whole_scene_perception_graph.subgraph_by_nodes(

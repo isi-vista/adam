@@ -227,11 +227,20 @@ def covers_entire_utterance(
         if isinstance(element, str):
             num_covered_tokens += 1
         else:
-            num_covered_tokens += len(
-                language_concept_alignment.node_to_language_span[
-                    bound_surface_template.slot_to_semantic_node[element]
-                ]
-            )
+            slot_for_element = language_concept_alignment.node_to_language_span[
+                bound_surface_template.slot_to_semantic_node[element]
+            ]
+            aligned_strings_for_slot = language_concept_alignment.language[
+                slot_for_element.start : slot_for_element.end
+            ]
+            # we need to check here that the determiners aren't getting aligned; otherwise it can mess up our count
+            if ignore_determiners:
+                num_covered_tokens += len(
+                    [x for x in aligned_strings_for_slot if x not in ["a", "the"]]
+                )
+            else:
+                num_covered_tokens += len(aligned_strings_for_slot)
+
     # We may need to ignore counting english determiners in our comparison
     # to the template as the way we treat english determiners is currently
     # a hack. See: https://github.com/isi-vista/adam/issues/498
@@ -321,15 +330,16 @@ def candidate_templates(
         if len(candidate_token_span) > max_length:
             return False
 
+        for span in invalid_token_spans:
+            if candidate_token_span.contains_span(span):
+                return False
+
         # or we have already aligned any of the tokens in between the objects
         # to some other meaning.
         for token_index in range(candidate_token_span.start, candidate_token_span.end):
             if language_concept_alignment.token_index_is_aligned(token_index):
                 return False
 
-        for span in invalid_token_spans:
-            if candidate_token_span.contains_span(span):
-                return False
         return True
 
     def aligned_object_nodes(
@@ -414,7 +424,8 @@ def candidate_templates(
                         if not is_legal_template_span(
                             candidate_token_span, invalid_token_spans=invalid_token_spans
                         ):
-                            yield None
+                            # If not a valid span, ignore this attempt
+                            continue
                         template_elements.extend(
                             sentence_tokens[
                                 candidate_token_span.start : candidate_token_span.end

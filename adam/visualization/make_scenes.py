@@ -36,6 +36,9 @@ from adam.curriculum.phase1_curriculum import Phase1InstanceGroup
 
 import attr
 from attr import attrs
+
+from adam.language.language_utils import phase2_language_generator
+from adam.learner import LanguageMode
 from vistautils.parameters import Parameters
 from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 from immutablecollections import ImmutableSet, immutableset
@@ -118,8 +121,14 @@ def main(
     visualizer: Optional[SituationVisualizer] = None,
 ) -> None:
 
+    language_mode = params.enum(
+        "language_mode", LanguageMode, default=LanguageMode.ENGLISH
+    )
+
     if scenes_iterable_input is None:
-        scenes_iterable: Iterable[Phase1InstanceGroup] = [make_curriculum()]
+        scenes_iterable: Iterable[Phase1InstanceGroup] = [
+            make_curriculum(None, None, phase2_language_generator(language_mode))
+        ]
     else:
         scenes_iterable = scenes_iterable_input
 

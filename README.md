@@ -36,8 +36,14 @@ The docs will be under `docs/_build/html`
 
 # To generate an HTML dump of the curriculum
 
-Run `adam.curriculum_to_html parameters/html/curriculum_to_html.phase1.params`
+In English: run `adam.curriculum_to_html parameters/html/curriculum_to_html.phase1.params`
 
+In Chinese: run `adam.curriculum_to_html parameters/html/curriculum_to_html.phase1.chinese.params`
+
+
+# To Run the Learner over an Entire Curriculum
+
+run `adam.experiment.run_m9  /full/path/to/parameters/experiment/m9/m9.params`
 
 # Visualization
 ## To step through visual representations of the curriculum

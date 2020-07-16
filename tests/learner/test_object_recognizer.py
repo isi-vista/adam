@@ -8,7 +8,6 @@ from adam.language_specific.english.english_language_generator import PREFER_DIT
 from adam.learner import PerceptionSemanticAlignment
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
-from adam.learner.objects import ObjectRecognizerAsTemplateLearner
 from adam.ontology.phase1_ontology import (
     AGENT,
     BABY,
@@ -33,7 +32,10 @@ from adam.situation.templates.phase1_templates import (
     object_variable,
     sampled,
 )
-from tests.learner import object_recognizer_factory
+from tests.learner import (
+    LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER,
+    LANGUAGE_MODE_TO_OBJECT_RECOGNIZER,
+)
 
 
 @pytest.mark.parametrize("object_type", PHASE_1_CURRICULUM_OBJECTS)
@@ -54,10 +56,7 @@ def test_recognizes_ontology_objects(object_type, language_mode):
         situation, chooser=RandomChooser.for_seed(0), include_ground=False
     )
     learner = IntegratedTemplateLearner(
-        object_learner=ObjectRecognizerAsTemplateLearner(
-            object_recognizer=object_recognizer_factory(language_mode),
-            language_mode=language_mode,
-        )
+        object_learner=LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER[language_mode]
     )
     descriptions = learner.describe(perception)
     assert descriptions
@@ -101,9 +100,9 @@ def test_trivial_dynamic_situation_with_schemaless_object(language_mode):
     perception_semantic_alignment = PerceptionSemanticAlignment.create_unaligned(
         perception_graph
     )
-    (_, description_to_matched_semantic_node) = object_recognizer_factory(
+    (_, description_to_matched_semantic_node) = LANGUAGE_MODE_TO_OBJECT_RECOGNIZER[
         language_mode
-    ).match_objects(perception_semantic_alignment)
+    ].match_objects(perception_semantic_alignment)
     assert len(description_to_matched_semantic_node) == 1
     assert (
         language_mode == LanguageMode.ENGLISH
@@ -148,9 +147,9 @@ def test_recognize_in_transfer_of_possession(language_mode):
     perception_semantic_alignment = PerceptionSemanticAlignment.create_unaligned(
         perception_graph
     )
-    (_, description_to_matched_semantic_node) = object_recognizer_factory(
+    (_, description_to_matched_semantic_node) = LANGUAGE_MODE_TO_OBJECT_RECOGNIZER[
         language_mode
-    ).match_objects(perception_semantic_alignment)
+    ].match_objects(perception_semantic_alignment)
     assert len(description_to_matched_semantic_node) == 4
     assert (
         language_mode == LanguageMode.ENGLISH
