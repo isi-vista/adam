@@ -315,7 +315,6 @@ class ObjectRecognizer:
                     pattern_match = first(
                         matcher.matches(use_lookahead_pruning=True), None
                     )
-                # if pattern_match:
                 if pattern_match:
                     cumulative_millis_in_successful_matches_ms += t.elapsed
                     matched_object_node = ObjectSemanticNode(concept)
