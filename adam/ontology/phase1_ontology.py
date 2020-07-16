@@ -53,6 +53,8 @@ from adam.ontology import (
     PROPERTY,
     RELATION,
     THING,
+    IS_SPEAKER,
+    IS_ADDRESSEE,
     minimal_ontology_graph,
 )
 from adam.ontology.action_description import (
@@ -430,6 +432,16 @@ PERSON = OntologyNode(
     "person", inheritable_properties=[ANIMATE, SELF_MOVING, CAN_JUMP, IS_HUMAN]
 )
 subtype(PERSON, THING)
+
+ME_HACK = OntologyNode(
+    "me", non_inheritable_properties=[IS_SPEAKER, CAN_FILL_TEMPLATE_SLOT]
+)
+subtype(ME_HACK, PERSON)
+YOU_HACK = OntologyNode(
+    "you", non_inheritable_properties=[IS_ADDRESSEE, CAN_FILL_TEMPLATE_SLOT]
+)
+subtype(YOU_HACK, PERSON)
+
 IS_MOM = OntologyNode("is-mom")
 subtype(IS_MOM, RECOGNIZED_PARTICULAR_PROPERTY)
 MOM = OntologyNode("Mom", non_inheritable_properties=[IS_MOM, CAN_FILL_TEMPLATE_SLOT])

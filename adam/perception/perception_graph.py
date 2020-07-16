@@ -55,6 +55,7 @@ from adam.ontology.phase1_ontology import (
     PART_OF,
     RECOGNIZED_PARTICULAR_PROPERTY,
 )
+from adam.ontology import IS_SPEAKER, IS_ADDRESSEE
 from adam.ontology.phase1_spatial_relations import (
     Direction,
     Distance,
@@ -725,11 +726,12 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
             return PerceptionGraphPattern.from_schema(
                 first(ontology.structural_schemata(node))
             )
-
         # If the node doesn't have a corresponding structural schemata we see if it can be
         # created as a single object scene
         schema_situation_object = SituationObject.instantiate_ontology_node(
-            ontology_node=node, ontology=ontology
+            ontology_node=node,
+            ontology=ontology,
+            properties=node.non_inheritable_properties,
         )
         situation = HighLevelSemanticsSituation(
             ontology=ontology, salient_objects=[schema_situation_object]
@@ -754,6 +756,9 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
             and not (
                 ontology.is_subtype_of(node[0], RECOGNIZED_PARTICULAR_PROPERTY)
                 or node[0] is LIQUID
+                # hack for me/you
+                or node[0] is IS_SPEAKER
+                or node[0] is IS_ADDRESSEE
             )
         ]
         perception_graph_as_digraph.remove_nodes_from(nodes_to_remove)
@@ -2714,17 +2719,39 @@ class _FrameTranslation:
             property_index += 1
             source_node = self._map_node(property_.perceived_object)
             if isinstance(property_, HasBinaryProperty):
-                dest_node = self._map_node(
-                    property_.binary_property,
-                    referring_node_to_enforce_uniqueness=source_node,
-                )
+                # TODO: fix this hack for me and you https://github.com/isi-vista/adam/issues/917
+                if (
+                    property_.binary_property in [IS_SPEAKER, IS_ADDRESSEE]
+                    and source_node.debug_handle
+                    and source_node.debug_handle != "learner"
+                ):
+                    dest_node = self._map_node(
+                        property_.binary_property,
+                        referring_node_to_enforce_uniqueness=source_node,
+                    )
+                    # this specification is really gross but ensures that our attribute nodes are unique from each other and
+                    # other attribute nodes that are added doubly.
+                    dest_node_2 = self._map_node(
+                        property_.binary_property,
+                        referring_node_to_enforce_uniqueness=dest_node,
+                    )
+                    graph.add_edge(source_node, dest_node, label=HAS_PROPERTY_LABEL)
+                    graph.add_edge(source_node, dest_node_2, label=HAS_PROPERTY_LABEL)
+                else:
+                    dest_node = self._map_node(
+                        property_.binary_property,
+                        referring_node_to_enforce_uniqueness=source_node,
+                    )
+                    graph.add_edge(source_node, dest_node, label=HAS_PROPERTY_LABEL)
+
             elif isinstance(property_, HasColor):
                 dest_node = self._map_node(
                     property_.color, referring_node_to_enforce_uniqueness=source_node
                 )
+                graph.add_edge(source_node, dest_node, label=HAS_PROPERTY_LABEL)
+
             else:
                 raise RuntimeError(f"Don't know how to translate property {property_}")
-            graph.add_edge(source_node, dest_node, label=HAS_PROPERTY_LABEL)
 
         if frame.axis_info:
             for (object_, axis) in frame.axis_info.axes_facing.items():

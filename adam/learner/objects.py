@@ -510,6 +510,22 @@ class ObjectRecognizerAsTemplateLearner(TemplateLearner):
         if self._language_mode == LanguageMode.ENGLISH:
             return self._concepts_to_templates[concept]
         elif self._language_mode == LanguageMode.CHINESE:
+            if concept.debug_string == "you":
+                return immutableset(
+                    [
+                        SurfaceTemplate.for_object_name(
+                            "ni3", language_mode=self._language_mode
+                        )
+                    ]
+                )
+            if concept.debug_string == "me":
+                return immutableset(
+                    [
+                        SurfaceTemplate.for_object_name(
+                            "wo3", language_mode=self._language_mode
+                        )
+                    ]
+                )
             mappings = (
                 GAILA_PHASE_1_CHINESE_LEXICON._ontology_node_to_word  # pylint:disable=protected-access
             )

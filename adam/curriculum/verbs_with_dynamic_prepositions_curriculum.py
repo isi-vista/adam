@@ -107,7 +107,7 @@ from adam.situation.templates.phase1_templates import (
 
 BOOL_SET = immutableset([True, False])
 
-
+# TODO: fix https://github.com/isi-vista/adam/issues/917 which causes us to have to specify that we don't wish to include ME_HACK and YOU_HACK in our curriculum design
 # PUSH templates
 
 
@@ -2477,7 +2477,12 @@ def _make_push_with_prepositions(
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
 ) -> Phase1InstanceGroup:
-    agent = standard_object("agent", THING, required_properties=[ANIMATE])
+    agent = standard_object(
+        "agent",
+        THING,
+        required_properties=[ANIMATE],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
     theme = standard_object("theme", INANIMATE_OBJECT)
     goal_reference = standard_object("goal_reference", INANIMATE_OBJECT)
     goal_in = standard_object("goal_in", INANIMATE_OBJECT, required_properties=[HOLLOW])
@@ -2487,7 +2492,9 @@ def _make_push_with_prepositions(
     surface = standard_object(
         "surface", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
     )
+
     background = make_noise_objects(noise_objects)
+
     to_in_templates = [
         _push_to_template(agent, theme, goal_reference, surface, background),
         _push_in_template(agent, theme, goal_in, surface, background),
@@ -2620,13 +2627,23 @@ def _make_go_with_prepositions(
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
 ) -> Phase1InstanceGroup:
-    agent = standard_object("agent", THING, required_properties=[ANIMATE])
-    goal_object = standard_object("goal_object")
+    agent = standard_object(
+        "agent",
+        THING,
+        required_properties=[ANIMATE],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
+    goal_object = standard_object(
+        "goal_object", banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
+    )
+
     goal_object_hollow = standard_object(
-        "goal_object_hollow", required_properties=[HOLLOW]
+        "goal_object_hollow", required_properties=[HOLLOW], banned_properties=[ANIMATE]
     )
     goal_object_with_space_under = standard_object(
-        "goal_object_with_space_under", required_properties=[HAS_SPACE_UNDER]
+        "goal_object_with_space_under",
+        required_properties=[HAS_SPACE_UNDER],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
     )
     path_object = standard_object(
         "path_object",
@@ -2853,17 +2870,28 @@ def _make_roll_with_prepositions(
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
 ) -> Phase1InstanceGroup:
-    agent = standard_object("agent", THING, required_properties=[ANIMATE])
+    agent = standard_object(
+        "agent",
+        THING,
+        required_properties=[ANIMATE],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
+
     goal_object = standard_object("goal_object")
     goal_object_hollow = standard_object(
-        "goal_object_hollow", required_properties=[HOLLOW]
+        "goal_object_hollow",
+        required_properties=[HOLLOW],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
     )
     theme = standard_object("rollee", required_properties=[ROLLABLE])
     ground = standard_object("ground", root_node=GROUND)
     roll_surface = standard_object(
         "rollable_surface", required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
     )
-    noise_objects_immutable = make_noise_objects(noise_objects)
+    noise_objects_immutable: Iterable[TemplateObjectVariable] = immutableset(
+        make_noise_objects(noise_objects)
+    )
+
     surfaces: Iterable[TemplateObjectVariable] = immutableset([ground, roll_surface])
     all_objects_mutable = [ground, roll_surface]
     all_objects_mutable.extend(noise_objects_immutable)
@@ -3134,13 +3162,23 @@ def _make_fall_with_prepositions(
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
 ) -> Phase1InstanceGroup:
-    theme = standard_object("theme", THING)
-    goal_reference = standard_object("goal_reference", THING)
+    theme = standard_object("theme", THING, banned_properties=[IS_SPEAKER, IS_ADDRESSEE])
+    goal_reference = standard_object(
+        "goal_reference", THING, banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
+    )
     goal_on = standard_object(
         "goal_on", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
     )
-    goal_in = standard_object("goal_in", THING, required_properties=[HOLLOW])
+
+    goal_in = standard_object(
+        "goal_in",
+        THING,
+        required_properties=[HOLLOW],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
+
     background = make_noise_objects(noise_objects)
+
     syntax_hints_options: Sequence[Sequence[str]] = [[], [USE_ADVERBIAL_PATH_MODIFIER]]
 
     return phase1_instances(
@@ -3363,9 +3401,17 @@ def _make_move_with_prepositions(
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
 ) -> Phase1InstanceGroup:
-    agent = standard_object("agent", THING, required_properties=[SELF_MOVING])
+    agent = standard_object(
+        "agent",
+        THING,
+        required_properties=[SELF_MOVING],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
     manipulating_agent = standard_object(
-        "manipulating_agent", THING, required_properties=[ANIMATE]
+        "manipulating_agent",
+        THING,
+        required_properties=[ANIMATE],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
     )
     theme = standard_object("theme", INANIMATE_OBJECT)
     goal_reference = standard_object("goal_reference", INANIMATE_OBJECT)
@@ -3374,9 +3420,14 @@ def _make_move_with_prepositions(
         "goal_on", INANIMATE_OBJECT, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
     )
     goal_under = standard_object(
-        "goal_under", INANIMATE_OBJECT, required_properties=[HAS_SPACE_UNDER]
+        "goal_under",
+        INANIMATE_OBJECT,
+        required_properties=[HAS_SPACE_UNDER],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
     )
+
     background = make_noise_objects(noise_objects)
+
     situation_templates = [
         _x_move_y_in_z_template(manipulating_agent, theme, goal_in, background),
         _x_move_y_on_z_template(manipulating_agent, theme, goal_on, background),
@@ -3731,13 +3782,24 @@ def _make_jump_with_prepositions(
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
 ) -> Phase1InstanceGroup:
-    agent = standard_object("agent", THING, required_properties=[CAN_JUMP])
-    goal_reference = standard_object("goal_reference", THING)
-    goal_in = standard_object("goal_reference", THING, required_properties=[HOLLOW])
+    agent = standard_object(
+        "agent",
+        THING,
+        required_properties=[CAN_JUMP],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
+    goal_reference = standard_object(
+        "goal_reference", THING, banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
+    )
+    goal_in = standard_object(
+        "goal_reference", THING, required_properties=[HOLLOW], banned_properties=[ANIMATE]
+    )
     goal_on = standard_object(
         "goal_reference", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
     )
+
     background = make_noise_objects(noise_objects)
+
     templates = [
         _jump_in_template(agent, goal_in, background),
         _jump_on_template(agent, goal_on, background),
@@ -3805,12 +3867,21 @@ def _make_fly_with_prepositions(
     ],
 ) -> Phase1InstanceGroup:
     agent = standard_object("agent", THING, required_properties=[CAN_FLY])
-    goal_reference = standard_object("goal_reference", THING)
-    goal_in = standard_object("goal_in", THING, required_properties=[HOLLOW])
+    goal_reference = standard_object(
+        "goal_reference", THING, banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
+    )
+    goal_in = standard_object(
+        "goal_in",
+        THING,
+        required_properties=[HOLLOW],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
     goal_under = standard_object(
         "goal_under", THING, required_properties=[HAS_SPACE_UNDER]
     )
+
     background = make_noise_objects(noise_objects)
+
     return phase1_instances(
         "Fly + PP",
         chain(

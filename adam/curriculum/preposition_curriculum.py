@@ -56,6 +56,9 @@ from adam.situation.templates.phase1_templates import (
 BOOL_SET = immutableset([True, False])
 
 
+# TODO: fix https://github.com/isi-vista/adam/issues/917 which causes us to have to specify that we don't wish to include ME_HACK and YOU_HACK in our curriculum design
+
+
 def _on_template(
     figure: TemplateObjectVariable,
     ground: TemplateObjectVariable,
@@ -482,7 +485,9 @@ def _make_behind_training(
     figure_2 = standard_object("dad", DAD)
     ground_0 = standard_object("cookie", COOKIE)
     ground_1 = standard_object("table", TABLE)
-    ground_2 = standard_object("person", PERSON)
+    ground_2 = standard_object(
+        "person", PERSON, banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
+    )
 
     figures = immutableset([figure_0, figure_1, figure_2])
     grounds = immutableset([ground_0, ground_1, ground_2])
@@ -528,8 +533,9 @@ def _make_in_front_training(
     figure_2 = standard_object("dad", DAD)
     ground_0 = standard_object("cookie", COOKIE)
     ground_1 = standard_object("table", TABLE)
-    ground_2 = standard_object("person", PERSON)
-
+    ground_2 = standard_object(
+        "person", PERSON, banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
+    )
     figures = immutableset([figure_0, figure_1, figure_2])
     grounds = immutableset([ground_0, ground_1, ground_2])
 
@@ -574,7 +580,9 @@ def _make_near_training(
     figure_2 = standard_object("dad", DAD)
     ground_0 = standard_object("cookie", COOKIE)
     ground_1 = standard_object("table", TABLE)
-    ground_2 = standard_object("person", PERSON)
+    ground_2 = standard_object(
+        "person", PERSON, banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
+    )
 
     figures = immutableset([figure_0, figure_1, figure_2])
     grounds = immutableset([ground_0, ground_1, ground_2])
@@ -618,7 +626,9 @@ def _make_far_training(
     figure_2 = standard_object("dad", DAD)
     ground_0 = standard_object("cookie", COOKIE)
     ground_1 = standard_object("table", TABLE)
-    ground_2 = standard_object("person", PERSON)
+    ground_2 = standard_object(
+        "person", PERSON, banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
+    )
 
     figures = immutableset([figure_0, figure_1, figure_2])
     grounds = immutableset([ground_0, ground_1, ground_2])
@@ -657,8 +667,12 @@ def _make_on_tests(
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
 ) -> Phase1InstanceGroup:
-    figure_0 = standard_object("figure_0", THING, banned_properties=[HOLLOW])
-    figure_1 = standard_object("figure_1", THING, banned_properties=[HOLLOW])
+    figure_0 = standard_object(
+        "figure_0", THING, banned_properties=[HOLLOW, IS_SPEAKER, IS_ADDRESSEE]
+    )
+    figure_1 = standard_object(
+        "figure_1", THING, banned_properties=[HOLLOW, IS_SPEAKER, IS_ADDRESSEE]
+    )
     ground_0 = standard_object(
         "ground_0",
         THING,
@@ -709,10 +723,18 @@ def _make_beside_tests(
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
 ) -> Phase1InstanceGroup:
-    figure_0 = standard_object("figure_0", THING, banned_properties=[HOLLOW])
-    figure_1 = standard_object("figure_1", THING, banned_properties=[HOLLOW])
-    ground_0 = standard_object("ground_0", THING, banned_properties=[HOLLOW])
-    ground_1 = standard_object("ground_1", THING, banned_properties=[HOLLOW])
+    figure_0 = standard_object(
+        "figure_0", THING, banned_properties=[HOLLOW, IS_SPEAKER, IS_ADDRESSEE]
+    )
+    figure_1 = standard_object(
+        "figure_1", THING, banned_properties=[HOLLOW, IS_SPEAKER, IS_ADDRESSEE]
+    )
+    ground_0 = standard_object(
+        "ground_0", THING, banned_properties=[HOLLOW, IS_SPEAKER, IS_ADDRESSEE]
+    )
+    ground_1 = standard_object(
+        "ground_1", THING, banned_properties=[HOLLOW, IS_SPEAKER, IS_ADDRESSEE]
+    )
 
     figures = immutableset([figure_0, figure_1])
     grounds = immutableset([ground_0, ground_1])
@@ -799,10 +821,18 @@ def _make_over_tests(
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
 ) -> Phase1InstanceGroup:
-    figure_0 = standard_object("figure_0", THING, banned_properties=[HOLLOW])
-    figure_1 = standard_object("figure_1", THING, banned_properties=[HOLLOW])
-    ground_0 = standard_object("ground_0", THING, banned_properties=[HOLLOW])
-    ground_1 = standard_object("ground_1", THING, banned_properties=[HOLLOW])
+    figure_0 = standard_object(
+        "figure_0", THING, banned_properties=[HOLLOW, IS_SPEAKER, IS_ADDRESSEE]
+    )
+    figure_1 = standard_object(
+        "figure_1", THING, banned_properties=[HOLLOW, IS_SPEAKER, IS_ADDRESSEE]
+    )
+    ground_0 = standard_object(
+        "ground_0", THING, banned_properties=[HOLLOW, IS_SPEAKER, IS_ADDRESSEE]
+    )
+    ground_1 = standard_object(
+        "ground_1", THING, banned_properties=[HOLLOW, IS_SPEAKER, IS_ADDRESSEE]
+    )
 
     figures = immutableset([figure_0, figure_1])
     grounds = immutableset([ground_0, ground_1])
@@ -841,10 +871,24 @@ def _make_in_tests(
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
 ) -> Phase1InstanceGroup:
-    figure_0 = object_variable("figure_0", THING, banned_properties=[IS_BODY_PART])
-    figure_1 = standard_object("figure_1", THING, banned_properties=[IS_BODY_PART])
-    ground_0 = standard_object("ground_0", THING, required_properties=[HOLLOW])
-    ground_1 = standard_object("ground_1", THING, required_properties=[HOLLOW])
+    figure_0 = object_variable(
+        "figure_0", THING, banned_properties=[IS_BODY_PART, IS_SPEAKER, IS_ADDRESSEE]
+    )
+    figure_1 = standard_object(
+        "figure_1", THING, banned_properties=[IS_BODY_PART, IS_SPEAKER, IS_ADDRESSEE]
+    )
+    ground_0 = standard_object(
+        "ground_0",
+        THING,
+        required_properties=[HOLLOW],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
+    ground_1 = standard_object(
+        "ground_1",
+        THING,
+        required_properties=[HOLLOW],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
 
     figures = immutableset([figure_0, figure_1])
     grounds = immutableset([ground_0, ground_1])
@@ -879,10 +923,18 @@ def _make_behind_tests(
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
 ) -> Phase1InstanceGroup:
-    figure_0 = standard_object("figure_0", THING, banned_properties=[HOLLOW])
-    figure_1 = standard_object("figure_1", THING, banned_properties=[HOLLOW])
-    ground_0 = standard_object("ground_0", THING, banned_properties=[HOLLOW])
-    ground_1 = standard_object("ground_1", THING, banned_properties=[HOLLOW])
+    figure_0 = standard_object(
+        "figure_0", THING, banned_properties=[HOLLOW, IS_SPEAKER, IS_ADDRESSEE]
+    )
+    figure_1 = standard_object(
+        "figure_1", THING, banned_properties=[HOLLOW, IS_SPEAKER, IS_ADDRESSEE]
+    )
+    ground_0 = standard_object(
+        "ground_0", THING, banned_properties=[HOLLOW, IS_SPEAKER, IS_ADDRESSEE]
+    )
+    ground_1 = standard_object(
+        "ground_1", THING, banned_properties=[HOLLOW, IS_SPEAKER, IS_ADDRESSEE]
+    )
 
     figures = immutableset([figure_0, figure_1])
     grounds = immutableset([ground_0, ground_1])
@@ -923,10 +975,18 @@ def _make_in_front_tests(
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
 ) -> Phase1InstanceGroup:
-    figure_0 = standard_object("figure_0", THING, banned_properties=[HOLLOW])
-    figure_1 = standard_object("figure_1", THING, banned_properties=[HOLLOW])
-    ground_0 = standard_object("ground_0", THING, banned_properties=[HOLLOW])
-    ground_1 = standard_object("ground_1", THING, banned_properties=[HOLLOW])
+    figure_0 = standard_object(
+        "figure_0", THING, banned_properties=[HOLLOW, IS_SPEAKER, IS_ADDRESSEE]
+    )
+    figure_1 = standard_object(
+        "figure_1", THING, banned_properties=[HOLLOW, IS_SPEAKER, IS_ADDRESSEE]
+    )
+    ground_0 = standard_object(
+        "ground_0", THING, banned_properties=[HOLLOW, IS_SPEAKER, IS_ADDRESSEE]
+    )
+    ground_1 = standard_object(
+        "ground_1", THING, banned_properties=[HOLLOW, IS_SPEAKER, IS_ADDRESSEE]
+    )
 
     figures = immutableset([figure_0, figure_1])
     grounds = immutableset([ground_0, ground_1])
@@ -967,10 +1027,18 @@ def _make_near_tests(
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
 ) -> Phase1InstanceGroup:
-    figure_0 = standard_object("figure_0", THING, banned_properties=[HOLLOW])
-    figure_1 = standard_object("figure_1", THING, banned_properties=[HOLLOW])
-    ground_0 = standard_object("ground_0", THING, banned_properties=[HOLLOW])
-    ground_1 = standard_object("ground_1", THING, banned_properties=[HOLLOW])
+    figure_0 = standard_object(
+        "figure_0", THING, banned_properties=[HOLLOW, IS_SPEAKER, IS_ADDRESSEE]
+    )
+    figure_1 = standard_object(
+        "figure_1", THING, banned_properties=[HOLLOW, IS_SPEAKER, IS_ADDRESSEE]
+    )
+    ground_0 = standard_object(
+        "ground_0", THING, banned_properties=[HOLLOW, IS_SPEAKER, IS_ADDRESSEE]
+    )
+    ground_1 = standard_object(
+        "ground_1", THING, banned_properties=[HOLLOW, IS_SPEAKER, IS_ADDRESSEE]
+    )
 
     figures = immutableset([figure_0, figure_1])
     grounds = immutableset([ground_0, ground_1])
@@ -1009,10 +1077,18 @@ def _make_far_tests(
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
 ) -> Phase1InstanceGroup:
-    figure_0 = standard_object("figure_0", THING, banned_properties=[HOLLOW])
-    figure_1 = standard_object("figure_1", THING, banned_properties=[HOLLOW])
-    ground_0 = standard_object("ground_0", THING, banned_properties=[HOLLOW])
-    ground_1 = standard_object("ground_1", THING, banned_properties=[HOLLOW])
+    figure_0 = standard_object(
+        "figure_0", THING, banned_properties=[HOLLOW, IS_SPEAKER, IS_ADDRESSEE]
+    )
+    figure_1 = standard_object(
+        "figure_1", THING, banned_properties=[HOLLOW, IS_SPEAKER, IS_ADDRESSEE]
+    )
+    ground_0 = standard_object(
+        "ground_0", THING, banned_properties=[HOLLOW, IS_SPEAKER, IS_ADDRESSEE]
+    )
+    ground_1 = standard_object(
+        "ground_1", THING, banned_properties=[HOLLOW, IS_SPEAKER, IS_ADDRESSEE]
+    )
 
     figures = immutableset([figure_0, figure_1])
     grounds = immutableset([ground_0, ground_1])

@@ -31,7 +31,7 @@ from adam.learner import LearningExample
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
 from adam.learner.verbs import SubsetVerbLearner, SubsetVerbLearnerNew
-from adam.ontology import IS_SPEAKER, THING
+from adam.ontology import IS_SPEAKER, THING, IS_ADDRESSEE
 from adam.ontology.phase1_ontology import (
     INANIMATE_OBJECT,
     CAN_HAVE_THINGS_RESTING_ON_THEM,
@@ -146,7 +146,12 @@ def run_verb_test(learner, situation_template, language_generator):
 )
 def test_eat_simple(language_mode, learner):
     object_to_eat = standard_object("object_0", required_properties=[EDIBLE])
-    eater = standard_object("eater_0", THING, required_properties=[ANIMATE])
+    eater = standard_object(
+        "eater_0",
+        THING,
+        required_properties=[ANIMATE],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
     run_verb_test(
         learner(language_mode),
         make_eat_template(eater, object_to_eat),
@@ -202,7 +207,12 @@ def test_put(language_mode, learner):
 )
 def test_push(language_mode, learner):
     for situation_template in make_push_templates(
-        agent=standard_object("pusher", THING, required_properties=[ANIMATE]),
+        agent=standard_object(
+            "pusher",
+            THING,
+            required_properties=[ANIMATE],
+            banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+        ),
         theme=standard_object("pushee", INANIMATE_OBJECT),
         push_surface=standard_object(
             "push_surface", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
@@ -254,10 +264,21 @@ def test_go(language_mode, learner):
     [pytest.mark.skip(subset_verb_language_factory), integrated_learner_factory],
 )
 def test_come(language_mode, learner):
-    movee = standard_object("movee", required_properties=[SELF_MOVING])
+    movee = standard_object(
+        "movee",
+        required_properties=[SELF_MOVING],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
     learner_obj = standard_object("leaner_0", LEARNER)
-    speaker = standard_object("speaker", PERSON, added_properties=[IS_SPEAKER])
-    object_ = standard_object("object_0", THING)
+    speaker = standard_object(
+        "speaker",
+        PERSON,
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+        added_properties=[IS_SPEAKER],
+    )
+    object_ = standard_object(
+        "object_0", THING, banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
+    )
     ground = standard_object("ground", root_node=GROUND)
 
     come_to_speaker = Phase1SituationTemplate(
@@ -452,9 +473,19 @@ def test_move(language_mode, learner):
     [pytest.mark.skip(subset_verb_language_factory), integrated_learner_factory],
 )
 def test_jump(language_mode, learner):
-    jumper = standard_object("jumper_0", THING, required_properties=[CAN_JUMP])
-    jumped_over = standard_object("jumped_over")
+
+    jumper = standard_object(
+        "jumper_0",
+        THING,
+        required_properties=[CAN_JUMP],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
+    jumped_over = standard_object(
+        "jumped_over", banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
+    )
+
     for situation_template in make_jump_templates(None):
+
         run_verb_test(
             learner(language_mode),
             situation_template,
