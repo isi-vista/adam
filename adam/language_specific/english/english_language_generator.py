@@ -100,6 +100,7 @@ from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
     TO,
     DISTAL,
+    VIA,
 )
 from adam.random_utils import SequenceChooser
 from adam.relation import Relation
@@ -1060,13 +1061,14 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             if spatial_path.operator == TOWARD:
                 preposition = "toward"
             elif spatial_path.operator == AWAY_FROM:
-                preposition = "away_from"
+                preposition = "away from"
             # TO is the default spatial path in most actions
             # so we let the preposition be handled by the GOAL
             # We also explicitly ignore the None operator
             # as spatial paths may just have properties
             # we are interested in asserting
-            elif spatial_path.operator in [TO, None]:
+            # VIA doesn't have a preposition in our set
+            elif spatial_path.operator in [TO, None, VIA]:
                 return None
 
             if not preposition:
