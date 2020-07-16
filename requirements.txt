@@ -1,7 +1,7 @@
 # core requirements
 -e git://github.com/python-attrs/attrs.git#egg=attrs
 vistautils==0.23.0
-immutablecollections==0.11.0
+immutablecollections==0.12.0
 networkx==2.3
 more-itertools==7.2.0
 contexttimer==0.3.3
