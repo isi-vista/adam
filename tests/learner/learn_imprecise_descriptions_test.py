@@ -7,6 +7,7 @@ from adam.curriculum.curriculum_utils import (
     PHASE1_CHOOSER_FACTORY,
     PHASE1_TEST_CHOOSER_FACTORY,
 )
+from adam.language.language_utils import phase1_language_generator
 from adam.curriculum.imprecise_descriptions_curriculum import (
     _big_x_template,
     _little_x_template,
@@ -21,7 +22,7 @@ from adam.learner.language_mode import LanguageMode
 from adam.learner.objects import ObjectRecognizerAsTemplateLearner
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
 from adam.situation.templates.phase1_templates import sampled
-from tests.learner import phase1_language_generator, object_recognizer_factory
+from tests.learner import object_recognizer_factory
 
 
 def subset_attribute_leaner_factory(language_mode: LanguageMode):

@@ -1,5 +1,5 @@
 from itertools import chain
-from typing import Sequence, Optional
+from typing import Sequence, Optional, Iterable
 from immutablecollections import immutableset
 from more_itertools import flatten
 from adam.language.language_generator import LanguageGenerator
@@ -13,7 +13,6 @@ from adam.curriculum.curriculum_utils import (
     learner_template_factory,
     make_noise_objects,
 )
-
 from adam.language_specific import MASS_NOUN
 from adam.language.dependency.universal_dependencies import NOUN
 from adam.ontology.phase2_ontology import gravitationally_aligned_axis_is_largest
@@ -108,8 +107,7 @@ BIG_ELIGIBLE_NODES = [
 CHOOSER = PHASE1_CHOOSER_FACTORY()
 
 
-
-def _big_x_template(
+"""def _big_x_template(
     theme: TemplateObjectVariable, noise_objects: Optional[int]
 ) -> Phase1SituationTemplate:
     learner = learner_template_factory()
@@ -121,7 +119,6 @@ def _big_x_template(
         background_object_variables=computed_background,
         asserted_always_relations=[bigger_than(theme, learner)],
     )
-
 
 
 def _little_x_template(
@@ -171,7 +168,7 @@ def _short_x_template(
         background_object_variables=computed_background,
         asserted_always_relations=[bigger_than(learner, theme)],
         syntax_hints=[USE_VERTICAL_MODIFIERS],
-    )
+    )"""
 
 
 def make_eat_big_small_curriculum(  # pylint: disable=unused-argument
@@ -323,9 +320,9 @@ def _short_x_template(
 
 
 def make_spin_tall_short_curriculum(
-# TODO: Refactor this curriculum
-# See: https://github.com/isi-vista/adam/issues/898
-def make_spin_tall_short_curriculum(  # pylint: disable=unused-argument
+    # TODO: Refactor this curriculum
+    # See: https://github.com/isi-vista/adam/issues/898
+    # pylint: disable=unused-argument
     num_samples: Optional[int],
     noise_objects: Optional[int],
     language_generator: LanguageGenerator[
@@ -405,14 +402,19 @@ def make_imprecise_size_descriptions(
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
 ) -> Phase1InstanceGroup:
-    theme_0 = standard_object("theme", banned_properties=[IS_SPEAKER, IS_ADDRESSEE])
-    theme_1 = standard_object(
-        "theme-thing", THING, banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
+    # we choose random tall and short nodes here
+    random_tall_nodes = (
+        [CHOOSER.choice(TALL_ELIGIBLE_NODES) for i in range(num_samples)]
+        if num_samples
+        else [CHOOSER.choice(TALL_ELIGIBLE_NODES) for i in range(5)]
+    )
+    random_big_nodes = (
+        [CHOOSER.choice(BIG_ELIGIBLE_NODES) for i in range(num_samples)]
+        if num_samples
+        else [CHOOSER.choice(BIG_ELIGIBLE_NODES) for i in range(5)]
     )
 
-    # we choose random tall and short nodes here
-    random_tall_nodes = [CHOOSER.choice(TALL_ELIGIBLE_NODES) for i in range(num_samples)]
-    random_big_nodes = [CHOOSER.choice(BIG_ELIGIBLE_NODES) for i in range(num_samples)]
+    background = make_noise_objects(noise_objects)
 
     return phase1_instances(
         "Imprecise Size",
@@ -421,17 +423,11 @@ def make_imprecise_size_descriptions(
                 # generate big and small for all eligible nodes
                 [
                     sampled(
-
                         template(random_node=node, background=background),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=1,
                         block_multiple_of_the_same_type=False,
-                        template(theme, noise_objects),
-                        ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
-
                     )
                     for node in random_big_nodes
                     for template in [_big_x_template, _little_x_template]
