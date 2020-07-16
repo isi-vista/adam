@@ -20,11 +20,12 @@ jobs:
           stage: test
           install:
               - pip install -r requirements_pypy.txt
-              - pip install codecov
+#              - pip install codecov
           script:
               - echo "pypy3 version $(pypy3 --version) running"
               - echo "pip version $(pip --version) running"
-              - make coverage
-          after_success:
-              - codecov -t 452b6965-c9da-4306-97d5-a5e86626af8f
+#              - make coverage
+              - make test
+#          after_success:
+#              - codecov -t 452b6965-c9da-4306-97d5-a5e86626af8f
 

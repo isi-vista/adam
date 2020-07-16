@@ -22,7 +22,7 @@ graphviz==0.13
 # black==18.9b0
 pytest-benchmark==3.2.2
 pytest==5.2.1
-pytest-cov==2.6.1
+# pytest-cov==2.6.1
 pytest-pythonpath==0.7.3
 coverage
 # pylint==2.3.0
