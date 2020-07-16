@@ -1,4 +1,4 @@
-from typing import Iterable, Union
+from typing import Iterable, Union, Optional
 
 from immutablecollections import immutableset
 from adam.language.language_generator import LanguageGenerator
@@ -143,6 +143,13 @@ def make_background(
     Convenience method for determining which objects in the situation should be background objects
     """
     return immutableset(object_ for object_ in all_objects if object_ not in salient)
+
+
+def make_noise_objects(noise_objects: Optional[int]) -> Iterable[TemplateObjectVariable]:
+    return immutableset(
+        standard_object(f"noise_object_{x}")
+        for x in range(noise_objects if noise_objects else 0)
+    )
 
 
 def learner_template_factory() -> TemplateObjectVariable:

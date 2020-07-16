@@ -4,10 +4,9 @@ In Pursuit, given a set of scenes and labels, the learner hypothesizes a meaning
 metrics to pursue the strongest hypothesis as long as it is supported by the following scenes.
 Paper: The Pursuit of Word Meanings (Stevens et al., 2017)
 """
+from typing import Optional, Sequence
+
 from adam.curriculum import ExplicitWithSituationInstanceGroup
-from adam.language_specific.english.english_language_generator import (
-    GAILA_PHASE_1_LANGUAGE_GENERATOR,
-)
 from adam.language.language_generator import LanguageGenerator
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.language.dependency import LinearizedDependencyTree
@@ -45,15 +44,19 @@ import random
 
 
 def make_simple_pursuit_curriculum(
+    num_instances: Optional[int],
+    num_noise_instances: Optional[int],
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ],
     *,
+
     target_objects=[BALL, CHAIR, MOM, DAD, BABY, TABLE, DOG, BIRD, BOX],
     num_instances: int = 10,
     num_noise_instances: int = 0,
+
     num_objects_in_instance: int = 3,
     perception_generator: HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator = GAILA_PHASE_1_PERCEPTION_GENERATOR,
-    language_generator: LanguageGenerator[
-        HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
 ) -> Phase1InstanceGroup:
     """
     Creates a Pursuit-learning curriculum with for a set of standard objects. Each instance in the curriculum is a set
@@ -63,6 +66,10 @@ def make_simple_pursuit_curriculum(
     For each type of object of interest, we will generate *num_instances_per_object_type* instances,
     of which *num_noise_instances_per_object_type* will be noisy.
     """
+    if not num_instances:
+        num_instances = 10
+    if not num_noise_instances:
+        num_noise_instances = 0
     if num_noise_instances > num_instances:
         raise RuntimeError("Cannot have more noise than regular exemplars")
 
@@ -159,18 +166,18 @@ def make_simple_pursuit_curriculum(
 
 
 def make_pursuit_curriculum(
+    num_samples: Optional[int],
+    num_noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
-):
+    ],
+) -> Sequence[Phase1InstanceGroup]:
     return [
-        make_simple_pursuit_curriculum(language_generator=language_generator),
         make_simple_pursuit_curriculum(
-            num_noise_instances=2, language_generator=language_generator
+            num_samples, num_noise_objects, language_generator
         ),
+        make_simple_pursuit_curriculum(num_samples, 2, language_generator),
         make_simple_pursuit_curriculum(
-            num_objects_in_instance=4,
-            num_noise_instances=2,
-            language_generator=language_generator,
+            num_samples, 2, language_generator, num_objects_in_instance=4
         ),
     ]

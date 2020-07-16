@@ -13,6 +13,7 @@ from adam.curriculum.phase1_curriculum import (
     _object_with_color_template,
     _x_has_y_template,
 )
+from adam.language.language_utils import phase1_language_generator
 from adam.language_specific.english.english_language_generator import IGNORE_HAS_AS_VERB
 from adam.learner import LearningExample
 from adam.learner.attributes import SubsetAttributeLearner, SubsetAttributeLearnerNew
@@ -38,7 +39,6 @@ from adam.ontology.phase1_ontology import (
 )
 from adam.situation.templates.phase1_templates import property_variable, sampled
 from tests.learner import (
-    phase1_language_generator,
     LANGUAGE_MODE_TO_OBJECT_RECOGNIZER,
     LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER,
 )
@@ -90,9 +90,9 @@ def test_subset_color_attribute(
         f"{object_1_node.handle}", object_1_node, added_properties=[color]
     )
 
-    color_object_template = _object_with_color_template(object_0)
+    color_object_template = _object_with_color_template(object_0, None)
 
-    templates = [color_object_template, _object_with_color_template(object_1)]
+    templates = [color_object_template, _object_with_color_template(object_1, None)]
 
     language_generator = phase1_language_generator(language_mode)
 

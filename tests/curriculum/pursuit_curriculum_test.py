@@ -14,7 +14,7 @@ import pytest
     [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
 )
 def test_simple_pursuit_curriculum(language_generator):
-    curriculum_test(make_simple_pursuit_curriculum(language_generator=language_generator))
+    curriculum_test(make_simple_pursuit_curriculum(None, None, language_generator))
 
 
 @pytest.mark.parametrize(
@@ -22,11 +22,7 @@ def test_simple_pursuit_curriculum(language_generator):
     [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
 )
 def test_simple_pursuit_curriculum_with_noise(language_generator):
-    curriculum_test(
-        make_simple_pursuit_curriculum(
-            num_noise_instances=2, language_generator=language_generator
-        )
-    )
+    curriculum_test(make_simple_pursuit_curriculum(None, 2, language_generator))
 
 
 @pytest.mark.parametrize(

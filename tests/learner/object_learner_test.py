@@ -11,6 +11,7 @@ from adam.curriculum.phase1_curriculum import PHASE1_CHOOSER_FACTORY, phase1_ins
 from adam.curriculum.pursuit_curriculum import make_simple_pursuit_curriculum
 from adam.language.dependency import LinearizedDependencyTree
 from adam.language.language_generator import LanguageGenerator
+from adam.language.language_utils import phase1_language_generator
 from adam.language_specific.english.english_language_generator import (
     GAILA_PHASE_1_LANGUAGE_GENERATOR,
     IGNORE_COLORS,
@@ -55,7 +56,6 @@ from adam.situation.templates.phase1_templates import (
     object_variable,
     sampled,
 )
-from tests.learner import phase1_language_generator
 
 
 def subset_object_learner_factory(language_mode: LanguageMode):

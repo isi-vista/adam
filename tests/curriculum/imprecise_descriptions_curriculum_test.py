@@ -28,7 +28,7 @@ import pytest
     [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
 )
 def test_make_eat_big_small_curriculum(language_generator):
-    curriculum_test(make_eat_big_small_curriculum(language_generator=language_generator))
+    curriculum_test(make_eat_big_small_curriculum(None, None, language_generator))
 
 
 @pytest.mark.parametrize(
@@ -36,9 +36,7 @@ def test_make_eat_big_small_curriculum(language_generator):
     [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
 )
 def test_make_spin_tall_short(language_generator):
-    curriculum_test(
-        make_spin_tall_short_curriculum(language_generator=language_generator)
-    )
+    curriculum_test(make_spin_tall_short_curriculum(None, None, language_generator))
 
 
 @pytest.mark.parametrize(
@@ -47,7 +45,7 @@ def test_make_spin_tall_short(language_generator):
 )
 def test__pass_toss_subtle_verb_distinction(language_generator):
     curriculum_test(
-        make_pass_toss_subtle_verb_distinction(language_generator=language_generator)
+        make_pass_toss_subtle_verb_distinction(None, None, language_generator)
     )
 
 
@@ -57,7 +55,7 @@ def test__pass_toss_subtle_verb_distinction(language_generator):
 )
 def test__push_shove_subtle_verb_distinction(language_generator):
     curriculum_test(
-        make_push_shove_subtle_verb_distinctions(language_generator=language_generator)
+        make_push_shove_subtle_verb_distinctions(None, None, language_generator)
     )
 
 
@@ -67,7 +65,7 @@ def test__push_shove_subtle_verb_distinction(language_generator):
 )
 def test__take_grab_subtle_verb_distinction(language_generator):
     curriculum_test(
-        make_take_grab_subtle_verb_distinction(language_generator=language_generator)
+        make_take_grab_subtle_verb_distinction(None, None, language_generator)
     )
 
 
@@ -76,9 +74,7 @@ def test__take_grab_subtle_verb_distinction(language_generator):
     [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
 )
 def test__walk_run_subtle_verb_distinction(language_generator):
-    curriculum_test(
-        make_walk_run_subtle_verb_distinction(language_generator=language_generator)
-    )
+    curriculum_test(make_walk_run_subtle_verb_distinction(None, None, language_generator))
 
 
 @pytest.mark.parametrize(
@@ -87,7 +83,7 @@ def test__walk_run_subtle_verb_distinction(language_generator):
 )
 def test__throw_imprecise_temporal_descriptions_curriculum(language_generator):
     curriculum_test(
-        make_throw_imprecise_temporal_descriptions(language_generator=language_generator)
+        make_throw_imprecise_temporal_descriptions(None, None, language_generator)
     )
 
 
@@ -97,7 +93,7 @@ def test__throw_imprecise_temporal_descriptions_curriculum(language_generator):
 )
 def test_move_imprecise_temporal_descriptions_curriculum(language_generator):
     curriculum_test(
-        make_move_imprecise_temporal_descriptions(language_generator=language_generator)
+        make_move_imprecise_temporal_descriptions(None, None, language_generator)
     )
 
 
@@ -107,7 +103,7 @@ def test_move_imprecise_temporal_descriptions_curriculum(language_generator):
 )
 def test_jump_imprecise_temporal_descriptions_curriculum(language_generator):
     curriculum_test(
-        make_jump_imprecise_temporal_descriptions(language_generator=language_generator)
+        make_jump_imprecise_temporal_descriptions(None, None, language_generator)
     )
 
 
@@ -117,7 +113,7 @@ def test_jump_imprecise_temporal_descriptions_curriculum(language_generator):
 )
 def test_roll_imprecise_temporal_descriptions_curriculum(language_generator):
     curriculum_test(
-        make_roll_imprecise_temporal_descriptions(language_generator=language_generator)
+        make_roll_imprecise_temporal_descriptions(None, None, language_generator)
     )
 
 
@@ -127,7 +123,7 @@ def test_roll_imprecise_temporal_descriptions_curriculum(language_generator):
 )
 def test_fly_imprecise_temporal_descriptions_curriculum(language_generator):
     curriculum_test(
-        make_fly_imprecise_temporal_descriptions(language_generator=language_generator)
+        make_fly_imprecise_temporal_descriptions(None, None, language_generator)
     )
 
 
@@ -137,7 +133,7 @@ def test_fly_imprecise_temporal_descriptions_curriculum(language_generator):
 )
 def test_fall_imprecise_temporal_descriptions_curriculum(language_generator):
     curriculum_test(
-        make_fall_imprecise_temporal_descriptions(language_generator=language_generator)
+        make_fall_imprecise_temporal_descriptions(None, None, language_generator)
     )
 
 
@@ -146,6 +142,4 @@ def test_fall_imprecise_temporal_descriptions_curriculum(language_generator):
     [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
 )
 def test_imprecise_size_descriptions_curriculum(language_generator):
-    curriculum_test(
-        make_imprecise_size_descriptions(language_generator=language_generator)
-    )
+    curriculum_test(make_imprecise_size_descriptions(None, None, language_generator))

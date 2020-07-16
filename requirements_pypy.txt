@@ -19,16 +19,15 @@ graphviz==0.13
 
 
 # extras for development
-black==18.9b0
+# black==18.9b0
 pytest-benchmark==3.2.2
 pytest==5.2.1
-pytest-cov==2.6.1
+# pytest-cov==2.6.1
 pytest-pythonpath==0.7.3
 coverage
-pylint==2.3.0
-flake8==3.5.0
-mypy==0.620
-towncrier
-sphinx==2.1.2
-sphinx-autodoc-typehints==1.8.0
-sphinx_rtd_theme
+# pylint==2.3.0
+# flake8==3.5.0
+# towncrier
+# sphinx==2.1.2
+# sphinx-autodoc-typehints==1.8.0
+# sphinx_rtd_theme

@@ -1,0 +1,7 @@
+_includes:
+   - "../../root.params"
+   - "m13.params"
+
+experiment: 'm13-verbs-with-dynamic-prepositions'
+curriculum: 'm13-verbs-with-dynamic-prepositions'
+learner: 'integrated-learner-recognizer'

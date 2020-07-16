@@ -1,12 +1,15 @@
 """
 Additions for the Curricula for DARPA GAILA Phase 2
 """
+
 from adam.ontology import IS_SPEAKER, IS_ADDRESSEE
+import random
+
 from itertools import chain
-from typing import Sequence
-from adam.language_specific.english.english_language_generator import (
-    GAILA_PHASE_2_LANGUAGE_GENERATOR,
-)
+from typing import Sequence, Optional
+
+from more_itertools import flatten
+
 from adam.language.language_generator import LanguageGenerator
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.language.dependency import LinearizedDependencyTree
@@ -16,6 +19,7 @@ from adam.curriculum.curriculum_utils import (
     standard_object,
     phase2_instances,
     phase1_instances,
+    make_noise_objects,
 )
 from adam.curriculum.imprecise_descriptions_curriculum import (
     make_imprecise_temporal_descriptions,
@@ -29,6 +33,11 @@ from adam.curriculum.phase1_curriculum import (
     _make_generic_statements_curriculum,
     _make_part_whole_curriculum,
     _make_transitive_roll_curriculum,
+    build_gaila_phase1_object_curriculum,
+    build_gaila_plurals_curriculum,
+    build_gaila_phase1_attribute_curriculum,
+    build_gaila_generics_curriculum,
+    build_gaila_phase1_verb_curriculum,
 )
 from adam.curriculum.preposition_curriculum import make_prepositions_curriculum
 from adam.curriculum.verbs_with_dynamic_prepositions_curriculum import (
@@ -70,7 +79,6 @@ from adam.ontology.phase2_ontology import (
     GAILA_PHASE_2_ONTOLOGY,
 )
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
-    HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
     GAILA_PHASE_2_PERCEPTION_GENERATOR,
 )
 from adam.situation import Action
@@ -86,10 +94,11 @@ from adam.situation.templates.phase1_templates import (
 
 
 def _make_sit_on_chair_curriculum(
-    perception_generator: HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator = GAILA_PHASE_2_PERCEPTION_GENERATOR,
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_2_LANGUAGE_GENERATOR,
+    ],
 ) -> Phase1InstanceGroup:
 
     templates = []
@@ -105,6 +114,7 @@ def _make_sit_on_chair_curriculum(
             Phase1SituationTemplate(
                 f"sit-on-chair",
                 salient_object_variables=[sitter, seat],
+                background_object_variables=make_noise_objects(noise_objects),
                 actions=[
                     Action(
                         SIT,
@@ -130,6 +140,7 @@ def _make_sit_on_chair_curriculum(
             Phase1SituationTemplate(
                 f"sit-intransitive",
                 salient_object_variables=[sitter],
+                background_object_variables=make_noise_objects(noise_objects),
                 actions=[
                     Action(
                         SIT,
@@ -156,7 +167,14 @@ def _make_sit_on_chair_curriculum(
         "sit on chair",
         chain(
             *[
-                all_possible(
+                sampled(
+                    template,
+                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    ontology=GAILA_PHASE_2_ONTOLOGY,
+                    max_to_sample=num_samples,
+                )
+                if num_samples
+                else all_possible(
                     template,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_2_ONTOLOGY,
@@ -164,16 +182,17 @@ def _make_sit_on_chair_curriculum(
                 for template in templates
             ]
         ),
-        perception_generator=perception_generator,
+        perception_generator=GAILA_PHASE_2_PERCEPTION_GENERATOR,
         language_generator=language_generator,
     )
 
 
 def _make_drink_cups_curriculum(
-    perception_generator: HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator = GAILA_PHASE_2_PERCEPTION_GENERATOR,
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_2_LANGUAGE_GENERATOR,
+    ],
 ) -> Phase1InstanceGroup:
 
     templates = []
@@ -188,6 +207,7 @@ def _make_drink_cups_curriculum(
             Phase1SituationTemplate(
                 "drink-cup",
                 salient_object_variables=[liquid_0, person_0],
+                background_object_variables=make_noise_objects(noise_objects),
                 actions=[
                     Action(
                         DRINK,
@@ -202,7 +222,14 @@ def _make_drink_cups_curriculum(
         "drink - cup",
         chain(
             *[
-                all_possible(
+                sampled(
+                    cup_template,
+                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    ontology=GAILA_PHASE_2_ONTOLOGY,
+                    max_to_sample=num_samples,
+                )
+                if num_samples
+                else all_possible(
                     cup_template,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_2_ONTOLOGY,
@@ -210,15 +237,17 @@ def _make_drink_cups_curriculum(
                 for cup_template in templates
             ]
         ),
-        perception_generator=perception_generator,
+        perception_generator=GAILA_PHASE_2_PERCEPTION_GENERATOR,
         language_generator=language_generator,
     )
 
 
 def _make_put_in_curriculum(
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_2_LANGUAGE_GENERATOR
+    ],
 ) -> Phase1InstanceGroup:
     agent = standard_object(
         "agent",
@@ -232,60 +261,162 @@ def _make_put_in_curriculum(
     return phase1_instances(
         "Capabilities - Put in",
         sampled(
-            _put_in_template(agent, theme, goal_in, []),
+            _put_in_template(agent, theme, goal_in, make_noise_objects(noise_objects)),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             chooser=PHASE1_CHOOSER_FACTORY(),
-            max_to_sample=20,
+            max_to_sample=num_samples if num_samples else 20,
         ),
         language_generator=language_generator,
     )
 
 
-def build_gaila_m8_curriculum(
+def build_functionally_defined_objects_curriculum(
+    num_samples: Optional[int],
+    num_noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_2_LANGUAGE_GENERATOR
+    ],
+) -> Sequence[Phase1InstanceGroup]:
+    return [
+        _make_sit_on_chair_curriculum(
+            num_samples, num_noise_objects, language_generator
+        ),  # functionally defined objects
+        _make_drink_cups_curriculum(num_samples, num_noise_objects, language_generator),
+    ]
+
+
+def build_object_restrictions_curriculum(
+    num_samples: Optional[int],
+    num_noise_objects: Optional[int],
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ],
+) -> Sequence[Phase1InstanceGroup]:
+    return [
+        _make_transitive_roll_curriculum(
+            num_samples, num_noise_objects, language_generator
+        ),
+        _make_put_in_curriculum(num_samples, num_noise_objects, language_generator),
+    ]
+
+
+def build_gaila_m8_curriculum(
+    num_samples: Optional[int],
+    num_noise_objects: Optional[int],
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ],
 ) -> Sequence[Phase1InstanceGroup]:
     return list(
         chain(
             [
                 _make_plural_objects_curriculum(
-                    language_generator=language_generator
+                    num_samples, num_noise_objects, language_generator
                 ),  # plurals
                 _make_sit_on_chair_curriculum(
-                    language_generator=language_generator
+                    num_samples, num_noise_objects, language_generator
                 ),  # functionally defined objects
-                _make_drink_cups_curriculum(language_generator=language_generator),
+                _make_drink_cups_curriculum(
+                    num_samples, num_noise_objects, language_generator
+                ),
                 _make_pass_curriculum(
-                    language_generator=language_generator
+                    num_samples, num_noise_objects, language_generator
                 ),  # Subtle verb distinctions
                 _make_generic_statements_curriculum(
-                    language_generator=language_generator
+                    num_samples, num_noise_objects, language_generator
                 ),  # Generics
                 _make_part_whole_curriculum(
-                    language_generator=language_generator
+                    num_samples, num_noise_objects, language_generator
                 ),  # Part whole
                 _make_transitive_roll_curriculum(
-                    language_generator=language_generator
+                    num_samples, num_noise_objects, language_generator
                 ),  # External Limitations
-                make_eat_big_small_curriculum(language_generator=language_generator),
-                make_spin_tall_short_curriculum(language_generator=language_generator),
+                make_eat_big_small_curriculum(
+                    num_samples, num_noise_objects, language_generator
+                ),
+                make_spin_tall_short_curriculum(
+                    num_samples, num_noise_objects, language_generator
+                ),
             ],
             list(
                 make_imprecise_temporal_descriptions(
-                    language_generator=language_generator
+                    num_samples, num_noise_objects, language_generator
                 )
             ),  # Imprecise descriptions
             make_verb_with_dynamic_prepositions_curriculum(
-                language_generator=language_generator
+                num_samples, num_noise_objects, language_generator
             ),  # Dynamic prepositions
             make_prepositions_curriculum(
-                language_generator=language_generator
+                num_samples, num_noise_objects, language_generator
             ),  # Relative prepositions
             list(
                 make_subtle_verb_distinctions_curriculum(
-                    language_generator=language_generator
+                    num_samples, num_noise_objects, language_generator
                 )
             ),  # Subtle verb distinctions
         )
     )
+
+
+def build_gaila_m13_curriculum(
+    num_samples: Optional[int],
+    num_noise_objects: Optional[int],
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ],
+) -> Sequence[Phase1InstanceGroup]:
+    return list(
+        chain(
+            build_gaila_phase1_object_curriculum(
+                num_samples, num_noise_objects, language_generator
+            ),
+            build_gaila_plurals_curriculum(
+                num_samples, num_noise_objects, language_generator
+            ),
+            build_gaila_phase1_attribute_curriculum(
+                num_samples, num_noise_objects, language_generator
+            ),
+            build_gaila_generics_curriculum(
+                num_samples, num_noise_objects, language_generator
+            ),
+            make_prepositions_curriculum(
+                num_samples, num_noise_objects, language_generator
+            ),
+            build_gaila_phase1_verb_curriculum(
+                num_samples, num_noise_objects, language_generator
+            ),
+            list(
+                make_imprecise_temporal_descriptions(
+                    num_samples, num_noise_objects, language_generator
+                )
+            ),
+            make_verb_with_dynamic_prepositions_curriculum(
+                num_samples, num_noise_objects, language_generator
+            ),
+            list(
+                make_subtle_verb_distinctions_curriculum(
+                    num_samples, num_noise_objects, language_generator
+                )
+            ),
+            build_functionally_defined_objects_curriculum(
+                num_samples, num_noise_objects, language_generator
+            ),
+        )
+    )
+
+
+def build_m13_shuffled_curriculum(
+    num_samples: Optional[int],
+    num_noise_objects: Optional[int],
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ],
+) -> Sequence[Phase1InstanceGroup]:
+
+    random.seed(0)
+    situations = flatten(
+        build_gaila_m13_curriculum(num_samples, num_noise_objects, language_generator)
+    )
+    random.shuffle(situations)
+
+    return situations

@@ -1,9 +1,6 @@
-from immutablecollections import immutableset, ImmutableSet
+from immutablecollections import immutableset
 from itertools import chain
-from typing import Iterable, Sequence
-from adam.language_specific.english.english_language_generator import (
-    GAILA_PHASE_1_LANGUAGE_GENERATOR,
-)
+from typing import Iterable, Sequence, Optional
 from adam.language.language_generator import LanguageGenerator
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.language.dependency import LinearizedDependencyTree
@@ -22,6 +19,7 @@ from adam.curriculum.curriculum_utils import (
     make_background,
     body_part_object,
     GROUND_OBJECT_TEMPLATE,
+    make_noise_objects,
 )
 from adam.language_specific.english.english_language_generator import (
     USE_ADVERBIAL_PATH_MODIFIER,
@@ -1457,7 +1455,7 @@ def _take_to_template(
 def _fall_on_template(
     theme: TemplateObjectVariable,
     goal_reference: TemplateObjectVariable,
-    background: ImmutableSet[TemplateObjectVariable],
+    background: Iterable[TemplateObjectVariable],
     *,
     syntax_hints: Iterable[str],
 ) -> Phase1SituationTemplate:
@@ -1475,7 +1473,7 @@ def _fall_on_template(
 def _fall_in_template(
     theme: TemplateObjectVariable,
     goal_reference: TemplateObjectVariable,
-    background: ImmutableSet[TemplateObjectVariable],
+    background: Iterable[TemplateObjectVariable],
     *,
     syntax_hints: Iterable[str],
 ) -> Phase1SituationTemplate:
@@ -1493,7 +1491,7 @@ def _fall_in_template(
 def _fall_beside_template(
     theme: TemplateObjectVariable,
     goal_reference: TemplateObjectVariable,
-    background: ImmutableSet[TemplateObjectVariable],
+    background: Iterable[TemplateObjectVariable],
     *,
     syntax_hints: Iterable[str],
     is_right: bool,
@@ -1517,7 +1515,7 @@ def _fall_beside_template(
 def _fall_in_front_of_behind_template(
     theme: TemplateObjectVariable,
     goal_reference: TemplateObjectVariable,
-    background: ImmutableSet[TemplateObjectVariable],
+    background: Iterable[TemplateObjectVariable],
     *,
     syntax_hints: Iterable[str],
     is_distal: bool,
@@ -1543,7 +1541,7 @@ def _fall_in_front_of_behind_template(
 def _fall_toward_away_from_template(
     theme: TemplateObjectVariable,
     spatial_reference: TemplateObjectVariable,
-    background: ImmutableSet[TemplateObjectVariable],
+    background: Iterable[TemplateObjectVariable],
     *,
     syntax_hints: Iterable[str],
     is_toward: bool,
@@ -2473,12 +2471,11 @@ def _make_come_out_of_template(
 
 
 def _make_push_with_prepositions(
-    num_samples: int = 5,
-    *,
-    noise_objects: int = 0,
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    ],
 ) -> Phase1InstanceGroup:
     agent = standard_object(
         "agent",
@@ -2495,10 +2492,12 @@ def _make_push_with_prepositions(
     surface = standard_object(
         "surface", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
     )
+
     background = immutableset(
         standard_object(f"noise_object_{x}", banned_properties=[IS_SPEAKER, IS_ADDRESSEE])
         for x in range(noise_objects)
     )
+
     to_in_templates = [
         _push_to_template(agent, theme, goal_reference, surface, background),
         _push_in_template(agent, theme, goal_in, surface, background),
@@ -2514,7 +2513,7 @@ def _make_push_with_prepositions(
                         template,
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for template in to_in_templates
                 ]
@@ -2533,7 +2532,7 @@ def _make_push_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for is_right in BOOL_SET
                 ]
@@ -2552,7 +2551,7 @@ def _make_push_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for is_distal in BOOL_SET
                 ]
@@ -2572,7 +2571,7 @@ def _make_push_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for is_distal in BOOL_SET
                     for is_in_front in BOOL_SET
@@ -2593,7 +2592,7 @@ def _make_push_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for is_ending_proximal in BOOL_SET
                     for is_towards in BOOL_SET
@@ -2614,7 +2613,7 @@ def _make_push_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for is_distal in BOOL_SET
                 ]
@@ -2625,13 +2624,13 @@ def _make_push_with_prepositions(
 
 
 def _make_go_with_prepositions(
-    num_samples: int = 5,
-    *,
-    noise_objects: int = 0,
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
+
     ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
-):
+) -> Phase1InstanceGroup:
     agent = standard_object(
         "agent",
         THING,
@@ -2641,6 +2640,7 @@ def _make_go_with_prepositions(
     goal_object = standard_object(
         "goal_object", banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
     )
+
     goal_object_hollow = standard_object(
         "goal_object_hollow", required_properties=[HOLLOW], banned_properties=[ANIMATE]
     )
@@ -2653,9 +2653,7 @@ def _make_go_with_prepositions(
         "path_object",
         required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM, HAS_SPACE_UNDER],
     )
-    background = immutableset(
-        standard_object(f"noise_object_{x}") for x in range(noise_objects)
-    )
+    background = make_noise_objects(noise_objects)
 
     return phase1_instances(
         "Go + PP",
@@ -2667,7 +2665,7 @@ def _make_go_with_prepositions(
                         _go_to_template(agent, goal_object, background),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                 ]
             ),
@@ -2678,7 +2676,7 @@ def _make_go_with_prepositions(
                         _go_in_template(agent, goal_object_hollow, background),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                 ]
             ),
@@ -2691,7 +2689,7 @@ def _make_go_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for is_right in BOOL_SET
                 ]
@@ -2709,7 +2707,7 @@ def _make_go_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for is_distal in BOOL_SET
                     for is_behind in BOOL_SET
@@ -2724,7 +2722,7 @@ def _make_go_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for is_distal in BOOL_SET
                 ]
@@ -2741,7 +2739,7 @@ def _make_go_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for is_distal in BOOL_SET
                 ]
@@ -2759,7 +2757,7 @@ def _make_go_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for is_behind in BOOL_SET
                 ]
@@ -2773,7 +2771,7 @@ def _make_go_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for is_over in BOOL_SET
                 ]
@@ -2787,7 +2785,7 @@ def _make_go_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for is_toward in BOOL_SET
                 ]
@@ -2805,7 +2803,7 @@ def _make_go_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for is_distal in BOOL_SET
                 ]
@@ -2816,12 +2814,11 @@ def _make_go_with_prepositions(
 
 
 def _make_sit_with_prepositions(
-    num_samples: int = 5,
-    *,
-    noise_objects: int = 0,
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    ],
 ) -> Phase1InstanceGroup:
     agent = standard_object("agent", THING, required_properties=[ANIMATE])
     seat = standard_object(
@@ -2831,9 +2828,7 @@ def _make_sit_with_prepositions(
     surface = standard_object(
         "surface", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
     )
-    background = immutableset(
-        standard_object(f"noise_object_{x}") for x in range(noise_objects)
-    )
+    background = make_noise_objects(noise_objects)
     syntax_hints_options: Sequence[Sequence[str]] = [[], [USE_ADVERBIAL_PATH_MODIFIER]]
 
     return phase1_instances(
@@ -2848,7 +2843,7 @@ def _make_sit_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for syntax_hints in syntax_hints_options
                 ]
@@ -2862,7 +2857,7 @@ def _make_sit_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for syntax_hints in syntax_hints_options
                 ]
@@ -2873,19 +2868,19 @@ def _make_sit_with_prepositions(
 
 
 def _make_roll_with_prepositions(
-    num_samples: int = 5,
-    *,
-    noise_objects: int = 0,
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
-):
+)-> Phase1InstanceGroup:
     agent = standard_object(
         "agent",
         THING,
         required_properties=[ANIMATE],
         banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
     )
+
     goal_object = standard_object("goal_object")
     goal_object_hollow = standard_object(
         "goal_object_hollow",
@@ -2901,6 +2896,7 @@ def _make_roll_with_prepositions(
         standard_object(f"noise_object_{x}", banned_properties=[IS_SPEAKER, IS_ADDRESSEE])
         for x in range(noise_objects)
     )
+
     surfaces: Iterable[TemplateObjectVariable] = immutableset([ground, roll_surface])
     all_objects_mutable = [ground, roll_surface]
     all_objects_mutable.extend(noise_objects_immutable)
@@ -2922,7 +2918,7 @@ def _make_roll_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for is_right in BOOL_SET
                 ]
@@ -2941,7 +2937,7 @@ def _make_roll_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for is_distal in BOOL_SET
                     for is_behind in BOOL_SET
@@ -2959,7 +2955,7 @@ def _make_roll_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                 ]
             ),
@@ -2976,7 +2972,7 @@ def _make_roll_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                 ]
             ),
@@ -2994,7 +2990,7 @@ def _make_roll_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for is_right in BOOL_SET
                 ]
@@ -3014,7 +3010,7 @@ def _make_roll_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for is_distal in BOOL_SET
                     for is_behind in BOOL_SET
@@ -3034,7 +3030,7 @@ def _make_roll_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for is_over in BOOL_SET
                 ]
@@ -3053,7 +3049,7 @@ def _make_roll_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for is_over in BOOL_SET
                     for surface in surfaces
@@ -3072,7 +3068,7 @@ def _make_roll_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for is_toward in BOOL_SET
                     for surface in surfaces
@@ -3092,7 +3088,7 @@ def _make_roll_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for is_toward in BOOL_SET
                     for surface in surfaces
@@ -3107,7 +3103,7 @@ def _make_roll_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for surface in surfaces
                 ]
@@ -3125,7 +3121,7 @@ def _make_roll_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for surface in surfaces
                 ]
@@ -3136,19 +3132,16 @@ def _make_roll_with_prepositions(
 
 
 def _make_take_with_prepositions(
-    num_samples: int = 5,
-    *,
-    noise_objects: int = 0,
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    ],
 ) -> Phase1InstanceGroup:
     agent = standard_object("agent", THING, required_properties=[ANIMATE])
     theme = standard_object("theme", INANIMATE_OBJECT)
     goal_reference = standard_object("goal_reference", INANIMATE_OBJECT)
-    background = immutableset(
-        standard_object(f"noise_object_{x}") for x in range(noise_objects)
-    )
+    background = make_noise_objects(noise_objects)
 
     return phase1_instances(
         "Take + PP",
@@ -3159,7 +3152,7 @@ def _make_take_with_prepositions(
                     _take_to_template(agent, theme, goal_reference, background),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
-                    max_to_sample=num_samples,
+                    max_to_sample=num_samples if num_samples else 5,
                 )
             ]
         ),
@@ -3168,12 +3161,11 @@ def _make_take_with_prepositions(
 
 
 def _make_fall_with_prepositions(
-    num_samples: int = 5,
-    *,
-    noise_objects: int = 0,
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    ],
 ) -> Phase1InstanceGroup:
     theme = standard_object("theme", THING, banned_properties=[IS_SPEAKER, IS_ADDRESSEE])
     goal_reference = standard_object(
@@ -3182,16 +3174,16 @@ def _make_fall_with_prepositions(
     goal_on = standard_object(
         "goal_on", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
     )
+
     goal_in = standard_object(
         "goal_in",
         THING,
         required_properties=[HOLLOW],
         banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
     )
-    background = immutableset(
-        standard_object(f"noise_object_{x}", banned_properties=[IS_SPEAKER, IS_ADDRESSEE])
-        for x in range(noise_objects)
-    )
+
+    background = make_noise_objects(noise_objects)
+
     syntax_hints_options: Sequence[Sequence[str]] = [[], [USE_ADVERBIAL_PATH_MODIFIER]]
 
     return phase1_instances(
@@ -3206,7 +3198,7 @@ def _make_fall_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for syntax_hints in syntax_hints_options
                 ]
@@ -3220,7 +3212,7 @@ def _make_fall_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for syntax_hints in syntax_hints_options
                 ]
@@ -3238,7 +3230,7 @@ def _make_fall_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for syntax_hints in syntax_hints_options
                     for is_right in BOOL_SET
@@ -3258,7 +3250,7 @@ def _make_fall_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for syntax_hints in syntax_hints_options
                     for is_distal in BOOL_SET
@@ -3278,7 +3270,7 @@ def _make_fall_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for syntax_hints in syntax_hints_options
                     for is_toward in BOOL_SET
@@ -3290,12 +3282,11 @@ def _make_fall_with_prepositions(
 
 
 def _make_put_with_prepositions(
-    num_samples: int = 5,
-    *,
-    noise_objects: int = 0,
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    ],
 ) -> Phase1InstanceGroup:
     agent = standard_object("agent", THING, required_properties=[ANIMATE])
     speaker_agent = standard_object(
@@ -3319,9 +3310,7 @@ def _make_put_with_prepositions(
     body_part_goal = body_part_object(
         "body_part_goal", required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
     )
-    background = immutableset(
-        standard_object(f"noise_object_{x}") for x in range(noise_objects)
-    )
+    background = make_noise_objects(noise_objects)
     on_in_templates = [
         _put_on_template(agent, theme, goal_reference, background),
         _put_in_template(agent, theme, goal_in, background),
@@ -3338,7 +3327,7 @@ def _make_put_with_prepositions(
                         template,
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for template in on_in_templates
                 ]
@@ -3352,7 +3341,7 @@ def _make_put_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for speaker_addressee in special_agents
                 ]
@@ -3366,7 +3355,7 @@ def _make_put_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for is_right in BOOL_SET
                 ]
@@ -3380,7 +3369,7 @@ def _make_put_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for is_distal in BOOL_SET
                 ]
@@ -3399,7 +3388,7 @@ def _make_put_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for is_distal in BOOL_SET
                     for is_in_front in BOOL_SET
@@ -3411,12 +3400,11 @@ def _make_put_with_prepositions(
 
 
 def _make_move_with_prepositions(
-    num_samples: int = 5,
-    *,
-    noise_objects: int = 0,
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    ],
 ) -> Phase1InstanceGroup:
     agent = standard_object(
         "agent",
@@ -3442,10 +3430,9 @@ def _make_move_with_prepositions(
         required_properties=[HAS_SPACE_UNDER],
         banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
     )
-    background = immutableset(
-        standard_object(f"noise_object_{x}", banned_properties=[IS_SPEAKER, IS_ADDRESSEE])
-        for x in range(noise_objects)
-    )
+
+    background = make_noise_objects(noise_objects)
+
     situation_templates = [
         _x_move_y_in_z_template(manipulating_agent, theme, goal_in, background),
         _x_move_y_on_z_template(manipulating_agent, theme, goal_on, background),
@@ -3463,7 +3450,7 @@ def _make_move_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for is_right in BOOL_SET
                 ]
@@ -3481,7 +3468,7 @@ def _make_move_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for is_distal in BOOL_SET
                     for is_in_front in BOOL_SET
@@ -3496,7 +3483,7 @@ def _make_move_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for is_distal in BOOL_SET
                 ]
@@ -3510,7 +3497,7 @@ def _make_move_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for is_toward in BOOL_SET
                 ]
@@ -3522,7 +3509,7 @@ def _make_move_with_prepositions(
                         template,
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for template in situation_templates
                 ]
@@ -3540,7 +3527,7 @@ def _make_move_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for is_distal in BOOL_SET
                 ]
@@ -3558,7 +3545,7 @@ def _make_move_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for is_right in BOOL_SET
                 ]
@@ -3577,7 +3564,7 @@ def _make_move_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for is_distal in BOOL_SET
                     for is_in_front in BOOL_SET
@@ -3596,7 +3583,7 @@ def _make_move_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for is_toward in BOOL_SET
                 ]
@@ -3614,7 +3601,7 @@ def _make_move_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for is_distal in BOOL_SET
                 ]
@@ -3633,7 +3620,7 @@ def _make_move_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for is_distal in BOOL_SET
                 ]
@@ -3644,12 +3631,11 @@ def _make_move_with_prepositions(
 
 
 def _make_throw_with_prepositions(
-    num_samples: int = 5,
-    *,
-    noise_objects: int = 0,
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    ],
 ) -> Phase1InstanceGroup:
     agent = standard_object("agent", THING, required_properties=[ANIMATE])
     theme = standard_object("theme", INANIMATE_OBJECT)
@@ -3664,9 +3650,7 @@ def _make_throw_with_prepositions(
         "goal_under", THING, required_properties=[HAS_SPACE_UNDER]
     )
     implicit_goal_reference = standard_object("goal_reference", INANIMATE_OBJECT)
-    background = immutableset(
-        standard_object(f"noise_object_{x}") for x in range(noise_objects)
-    )
+    background = make_noise_objects(noise_objects)
     situation_templates = [
         _throw_to_template(agent, theme, goal_reference, background),
         _throw_in_template(agent, theme, goal_in, background),
@@ -3684,7 +3668,7 @@ def _make_throw_with_prepositions(
                         template,
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for template in situation_templates
                 ]
@@ -3698,7 +3682,7 @@ def _make_throw_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for is_right in BOOL_SET
                 ]
@@ -3717,7 +3701,7 @@ def _make_throw_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for is_distal in BOOL_SET
                     for is_in_front in BOOL_SET
@@ -3732,7 +3716,7 @@ def _make_throw_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for is_distal in BOOL_SET
                 ]
@@ -3750,7 +3734,7 @@ def _make_throw_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                 ]
             ),
@@ -3768,7 +3752,7 @@ def _make_throw_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for is_distal in BOOL_SET
                 ]
@@ -3786,7 +3770,7 @@ def _make_throw_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for is_towards in BOOL_SET
                 ]
@@ -3797,12 +3781,11 @@ def _make_throw_with_prepositions(
 
 
 def _make_jump_with_prepositions(
-    num_samples: int = 5,
-    *,
-    noise_objects: int = 0,
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    ],
 ) -> Phase1InstanceGroup:
     agent = standard_object(
         "agent",
@@ -3819,10 +3802,9 @@ def _make_jump_with_prepositions(
     goal_on = standard_object(
         "goal_reference", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
     )
-    background = immutableset(
-        standard_object(f"noise_object_{x}", banned_properties=[IS_SPEAKER, IS_ADDRESSEE])
-        for x in range(noise_objects)
-    )
+
+    background = make_noise_objects(noise_objects)
+
     templates = [
         _jump_in_template(agent, goal_in, background),
         _jump_on_template(agent, goal_on, background),
@@ -3839,7 +3821,7 @@ def _make_jump_with_prepositions(
                         template,
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for template in templates
                 ]
@@ -3853,7 +3835,7 @@ def _make_jump_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for is_right in BOOL_SET
                 ]
@@ -3871,7 +3853,7 @@ def _make_jump_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for is_distal in BOOL_SET
                     for is_in_front in BOOL_SET
@@ -3883,12 +3865,11 @@ def _make_jump_with_prepositions(
 
 
 def _make_fly_with_prepositions(
-    num_samples: int = 5,
-    *,
-    noise_objects: int = 0,
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    ],
 ) -> Phase1InstanceGroup:
     agent = standard_object("agent", THING, required_properties=[CAN_FLY])
     goal_reference = standard_object(
@@ -3903,10 +3884,9 @@ def _make_fly_with_prepositions(
     goal_under = standard_object(
         "goal_under", THING, required_properties=[HAS_SPACE_UNDER]
     )
-    background = immutableset(
-        standard_object(f"noise_object_{x}", banned_properties=[IS_SPEAKER, IS_ADDRESSEE])
-        for x in range(noise_objects)
-    )
+
+    background = make_noise_objects(noise_objects)
+
     return phase1_instances(
         "Fly + PP",
         chain(
@@ -3917,7 +3897,7 @@ def _make_fly_with_prepositions(
                         _fly_in_template(agent, goal_in, background),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                 ]
             ),
@@ -3930,7 +3910,7 @@ def _make_fly_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for is_right in BOOL_SET
                 ]
@@ -3948,7 +3928,7 @@ def _make_fly_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for is_distal in BOOL_SET
                     for is_in_front in BOOL_SET
@@ -3961,7 +3941,7 @@ def _make_fly_with_prepositions(
                         _fly_over_template(agent, goal_reference, background),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                 ]
             ),
@@ -3972,7 +3952,7 @@ def _make_fly_with_prepositions(
                         _fly_under_template(agent, goal_under, background),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                 ]
             ),
@@ -3985,7 +3965,7 @@ def _make_fly_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                     for is_toward in BOOL_SET
                 ]
@@ -3997,7 +3977,7 @@ def _make_fly_with_prepositions(
                         _fly_out_template(agent, goal_in, background),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                 ]
             ),
@@ -4010,21 +3990,18 @@ def _make_fly_with_prepositions(
 
 
 def _make_come_with_prepositions(
-    num_samples: int = 5,
-    *,
-    noise_objects: int = 0,
+    num_samples: Optional[int],
+    num_noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    ],
 ) -> Phase1InstanceGroup:
     agent = standard_object("agent", required_properties=[SELF_MOVING])
     object_with_agent_inside = standard_object(
         "object-agent-inside", required_properties=[HOLLOW]
     )
     goal_object = standard_object("goal")
-    background = immutableset(
-        standard_object(f"noise_object_{x}") for x in range(noise_objects)
-    )
+    background = make_noise_objects(num_noise_objects)
 
     return phase1_instances(
         "Come + PP",
@@ -4038,7 +4015,7 @@ def _make_come_with_prepositions(
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples,
+                        max_to_sample=num_samples if num_samples else 5,
                     )
                 ]
             )
@@ -4048,72 +4025,23 @@ def _make_come_with_prepositions(
 
 
 def make_verb_with_dynamic_prepositions_curriculum(
-    num_samples: int = 5,
-    *,
-    num_noise_objects: int = 0,
+    num_samples: Optional[int],
+    num_noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ] = GAILA_PHASE_1_LANGUAGE_GENERATOR,
-):
+    ],
+) -> Sequence[Phase1InstanceGroup]:
     return [
-        _make_push_with_prepositions(
-            num_samples,
-            noise_objects=num_noise_objects,
-            language_generator=language_generator,
-        ),
-        _make_go_with_prepositions(
-            num_samples,
-            noise_objects=num_noise_objects,
-            language_generator=language_generator,
-        ),
-        _make_throw_with_prepositions(
-            num_samples,
-            noise_objects=num_noise_objects,
-            language_generator=language_generator,
-        ),
-        _make_sit_with_prepositions(
-            num_samples,
-            noise_objects=num_noise_objects,
-            language_generator=language_generator,
-        ),
-        _make_roll_with_prepositions(
-            num_samples,
-            noise_objects=num_noise_objects,
-            language_generator=language_generator,
-        ),
-        _make_take_with_prepositions(
-            num_samples,
-            noise_objects=num_noise_objects,
-            language_generator=language_generator,
-        ),
-        _make_fall_with_prepositions(
-            num_samples,
-            noise_objects=num_noise_objects,
-            language_generator=language_generator,
-        ),
-        _make_put_with_prepositions(
-            num_samples,
-            noise_objects=num_noise_objects,
-            language_generator=language_generator,
-        ),
-        _make_move_with_prepositions(
-            num_samples,
-            noise_objects=num_noise_objects,
-            language_generator=language_generator,
-        ),
-        _make_jump_with_prepositions(
-            num_samples,
-            noise_objects=num_noise_objects,
-            language_generator=language_generator,
-        ),
-        _make_fly_with_prepositions(
-            num_samples,
-            noise_objects=num_noise_objects,
-            language_generator=language_generator,
-        ),
-        _make_come_with_prepositions(
-            num_samples,
-            noise_objects=num_noise_objects,
-            language_generator=language_generator,
-        ),
+        _make_push_with_prepositions(num_samples, num_noise_objects, language_generator),
+        _make_go_with_prepositions(num_samples, num_noise_objects, language_generator),
+        _make_throw_with_prepositions(num_samples, num_noise_objects, language_generator),
+        _make_sit_with_prepositions(num_samples, num_noise_objects, language_generator),
+        _make_roll_with_prepositions(num_samples, num_noise_objects, language_generator),
+        _make_take_with_prepositions(num_samples, num_noise_objects, language_generator),
+        _make_fall_with_prepositions(num_samples, num_noise_objects, language_generator),
+        _make_put_with_prepositions(num_samples, num_noise_objects, language_generator),
+        _make_move_with_prepositions(num_samples, num_noise_objects, language_generator),
+        _make_jump_with_prepositions(num_samples, num_noise_objects, language_generator),
+        _make_fly_with_prepositions(num_samples, num_noise_objects, language_generator),
+        _make_come_with_prepositions(num_samples, num_noise_objects, language_generator),
     ]
