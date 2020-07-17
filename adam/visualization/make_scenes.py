@@ -1,4 +1,4 @@
-# pragma: no cover
+_# pragma: no cover
 """This module is responsible for feeding Scenes from a Curriculum into
    a rendering system to be displayed. It manages *when* the renderer is
    operating and when other code (gathering and processing scene information)
