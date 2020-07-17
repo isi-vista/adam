@@ -143,9 +143,7 @@ class IntegratedTemplateLearner(
             self.action_learner.learn_from(current_learner_state)
 
     def describe(
-        self,
-        perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame],
-        allow_undescribed: bool = False,  # pylint: disable=unused-argument
+        self, perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]
     ) -> Mapping[LinguisticDescription, float]:
 
         perception_graph = self._extract_perception_graph(perception)

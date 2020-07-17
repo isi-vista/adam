@@ -154,11 +154,9 @@ class AbstractAttributeTemplateLearner(AbstractTemplateLearner, ABC):
         return post_recognition_object_perception_alignment
 
     def _preprocess_scene_for_description(
-        self, perception_graph: PerceptionGraph, allow_undescribed: bool = False
+        self, perception_graph: PerceptionGraph
     ) -> PerceptionGraphFromObjectRecognizer:
-        return self._object_recognizer.match_objects_old(
-            perception_graph, allow_undescribed=allow_undescribed
-        )
+        return self._object_recognizer.match_objects_old(perception_graph)
 
     def _extract_surface_template(
         self,

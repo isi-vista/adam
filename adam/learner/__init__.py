@@ -96,9 +96,7 @@ class TopLevelLanguageLearner(ABC, Generic[PerceptionT, LinguisticDescriptionT])
 
     @abstractmethod
     def describe(
-        self,
-        perception: PerceptualRepresentation[PerceptionT],
-        allow_undescribed: bool = False,
+        self, perception: PerceptualRepresentation[PerceptionT]
     ) -> Mapping[LinguisticDescription, float]:
         r"""
         Given a `PerceptualRepresentation` of a situation, produce one or more
@@ -148,9 +146,7 @@ class MemorizingLanguageLearner(
         ] = learning_example.linguistic_description
 
     def describe(
-        self,
-        perception: PerceptualRepresentation[PerceptionT],
-        allow_undescribed: bool = False,  # pylint:disable=unused-argument
+        self, perception: PerceptualRepresentation[PerceptionT]
     ) -> Mapping[LinguisticDescription, float]:
         memorized_description = self._memorized_situations.get(perception)
         if memorized_description:

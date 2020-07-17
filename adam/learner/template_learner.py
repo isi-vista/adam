@@ -94,15 +94,13 @@ class AbstractTemplateLearner(
         self._learning_step(preprocessed_input, surface_template)
 
     def describe(
-        self,
-        perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame],
-        allow_undescribed: bool = False,
+        self, perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]
     ) -> Mapping[LinguisticDescription, float]:
         self._assert_valid_input(perception)
 
         original_perception_graph = self._extract_perception_graph(perception)
         preprocessing_result = self._preprocess_scene_for_description(
-            original_perception_graph, allow_undescribed=allow_undescribed
+            original_perception_graph
         )
         preprocessed_perception_graph = preprocessing_result.perception_graph
         matched_objects_to_names = (
@@ -200,7 +198,7 @@ class AbstractTemplateLearner(
 
     @abstractmethod
     def _preprocess_scene_for_description(
-        self, perception_graph: PerceptionGraph, allow_undescribed: bool = False
+        self, perception_graph: PerceptionGraph
     ) -> PerceptionGraphFromObjectRecognizer:
         """
         Does any preprocessing necessary before attempting to describe a scene.

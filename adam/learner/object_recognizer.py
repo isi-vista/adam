@@ -84,7 +84,6 @@ class PerceptionGraphFromObjectRecognizer:
     description_to_matched_object_node: ImmutableDict[
         Tuple[str, ...], ObjectSemanticNode
     ] = attrib(converter=_to_immutabledict)
-    allow_undescribed: bool = attrib(default=False)
 
     def __attrs_post_init__(self) -> None:
         matched_object_nodes = set(
@@ -95,11 +94,8 @@ class PerceptionGraphFromObjectRecognizer:
         described_matched_object_nodes = set(
             self.description_to_matched_object_node.values()
         )
-        if (
-            not self.allow_undescribed
-            and matched_object_nodes != described_matched_object_nodes
-        ):
-            raise RuntimeError(
+        if matched_object_nodes != described_matched_object_nodes:
+            logging.warning(
                 f"A matched object node should be present in the graph"
                 f"if and only if it is described. Got matches objects "
                 f"{matched_object_nodes} but those described were {described_matched_object_nodes}"
@@ -227,7 +223,7 @@ class ObjectRecognizer:
         )
 
     def match_objects_old(
-        self, perception_graph: PerceptionGraph, allow_undescribed: bool = False
+        self, perception_graph: PerceptionGraph
     ) -> PerceptionGraphFromObjectRecognizer:
         new_style_input = PerceptionSemanticAlignment(
             perception_graph=perception_graph, semantic_nodes=[]
@@ -236,7 +232,6 @@ class ObjectRecognizer:
         return PerceptionGraphFromObjectRecognizer(
             perception_graph=new_style_output[0].perception_graph,
             description_to_matched_object_node=new_style_output[1],
-            allow_undescribed=allow_undescribed,
         )
 
     def match_objects(
