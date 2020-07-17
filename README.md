@@ -24,6 +24,12 @@ Documentation can be found [here](https://adam-language-learner.readthedocs.io/e
     adam_experiment_root: PATH_OUTSIDE_WORKING_COPY_TO_WRITE_EXPERIMENT_DATA_TO
     ```
 
+## Using PyPy
+
+1. Complete the project setup as above.
+2. Install PyPy 3.6: `conda install -c conda-forge pypy3.6`.
+3. To run tests using PyPy3.6: `make test`.
+
 # Documentation
 
 To generate Sphinx documentation:
