@@ -27,7 +27,7 @@ Documentation can be found [here](https://adam-language-learner.readthedocs.io/e
 ## Using PyPy
 
 1. Install PyPy 3.6: `conda install -c conda-forge pypy3.6`.
-2. To run tests using PyPy3.6: `pypy3 -m pytest tests --ignore tests/visualization --ignore tests/experiment_test.py`
+2. To run tests using PyPy3.6: `make test`
 
 # Documentation
 
