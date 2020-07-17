@@ -121,7 +121,6 @@ class AbstractTemplateLearner(
             description_template: SurfaceTemplate,
             pattern: PerceptionGraphTemplate,
             score: float,
-            allow_undescribed: bool = False,
         ) -> None:
             # try to see if (our model of) its semantics is present in the situation.
             matcher = pattern.graph_pattern.matcher(
@@ -138,7 +137,7 @@ class AbstractTemplateLearner(
                             pattern=pattern,
                             match=match,
                             matched_objects_to_names=matched_objects_to_names,
-                            allow_undescribed=allow_undescribed,
+                            # allow_undescribed=allow_undescribed,
                         ),
                         pattern,
                         score,
@@ -150,10 +149,7 @@ class AbstractTemplateLearner(
         # For each template whose semantics we are certain of (=have been added to the lexicon)
         for (surface_template, graph_pattern, score) in self._primary_templates():
             match_template(
-                description_template=surface_template,
-                pattern=graph_pattern,
-                score=score,
-                allow_undescribed=allow_undescribed,
+                description_template=surface_template, pattern=graph_pattern, score=score
             )
 
         if not match_to_score:
