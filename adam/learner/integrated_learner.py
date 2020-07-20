@@ -236,8 +236,10 @@ class IntegratedTemplateLearner(
         if isinstance(self.attribute_learner, SubsetPluralLearnerNew):
             if "a" in cur_string:
                 a_position = cur_string.index("a")
-                if a_position > 0 and cur_string[a_position-1] in ['many', 'two']:
-                    return tuple([token for i, token in enumerate(cur_string) if i != a_position])
+                if a_position > 0 and cur_string[a_position - 1] in ["many", "two"]:
+                    return tuple(
+                        [token for i, token in enumerate(cur_string) if i != a_position]
+                    )
         # English-specific hack to deal with us not understanding determiners:
         # https://github.com/isi-vista/adam/issues/498
         # The "is lower" check is a hack to block adding a determiner to proper names.

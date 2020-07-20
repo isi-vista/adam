@@ -10,23 +10,19 @@ from adam.learner.alignments import (
     LanguagePerceptionSemanticAlignment,
     PerceptionSemanticAlignment,
 )
-from adam.learner.attributes import SubsetAttributeLearnerNew, AbstractAttributeTemplateLearnerNew
-from adam.learner.learner_utils import candidate_templates, AlignmentSlots, \
-    pattern_remove_incomplete_region_or_spatial_path
+from adam.learner.learner_utils import (
+    candidate_templates,
+    AlignmentSlots,
+    pattern_remove_incomplete_region_or_spatial_path,
+)
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
-from adam.learner.subset import (
-    AbstractTemplateSubsetLearnerNew,
-)
-from adam.learner.surface_templates import (
-    SurfaceTemplateBoundToSemanticNodes,
-)
-from adam.learner.template_learner import (
-    AbstractTemplateLearnerNew,
-)
-from adam.ontology import OntologyNode
+from adam.learner.subset import AbstractTemplateSubsetLearnerNew
+from adam.learner.surface_templates import SurfaceTemplateBoundToSemanticNodes
+from adam.learner.template_learner import AbstractTemplateLearnerNew
+from adam.ontology.phase2_ontology import TWO, HAS_COUNT, MANY
 from adam.perception import MatchMode
 from adam.perception.perception_graph import PerceptionGraph
-from adam.semantics import ActionConcept, ObjectConcept, AttributeConcept
+from adam.semantics import AttributeConcept
 
 _MAXIMUM_PLURAL_TEMPLATE_TOKEN_LENGTH = 5
 
@@ -35,7 +31,7 @@ _MAXIMUM_PLURAL_TEMPLATE_TOKEN_LENGTH = 5
 class AbstractPluralTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
     # pylint:disable=abstract-method
     def _candidate_templates(
-            self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
+        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
     ) -> AbstractSet[SurfaceTemplateBoundToSemanticNodes]:
         def candidate_plural_templates() -> Iterable[Tuple[AlignmentSlots, ...]]:
             # This function returns templates for the candidate plural templates
@@ -45,9 +41,11 @@ class AbstractPluralTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
 
             for i in [2, 3]:
                 for output in immutableset(
-                        itertools.permutations(
-                            [AlignmentSlots.Argument] + [AlignmentSlots.FixedString] * (i-1), i
-                        )
+                    itertools.permutations(
+                        [AlignmentSlots.Argument]
+                        + [AlignmentSlots.FixedString] * (i - 1),
+                        i,
+                    )
                 ):
 
                     yield output
@@ -62,14 +60,16 @@ class AbstractPluralTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
 
 
 @attrs
-class SubsetPluralLearnerNew(AbstractTemplateSubsetLearnerNew, AbstractPluralTemplateLearnerNew):
-    template_to_count_property = {}
-
+class SubsetPluralLearnerNew(
+    AbstractTemplateSubsetLearnerNew, AbstractPluralTemplateLearnerNew
+):
     def _can_learn_from(
-            self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
+        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
     ) -> bool:
-        concepts = [s.concept for s in
-                    language_perception_semantic_alignment.perception_semantic_alignment.semantic_nodes]
+        concepts = [
+            s.concept
+            for s in language_perception_semantic_alignment.perception_semantic_alignment.semantic_nodes
+        ]
         counts = Counter(concepts)
         return max(counts.values()) > 1
 
@@ -82,11 +82,18 @@ class SubsetPluralLearnerNew(AbstractTemplateSubsetLearnerNew, AbstractPluralTem
         for node in nodes:
             count = counts[node.concept]
             if count > 1:
-                count_node = OntologyNode(str(count))
+                if count == 2:
+                    count_node = TWO
+                else:
+                    count_node = MANY
                 digraph.add_node(count_node)
-                digraph.add_edge(node, count_node, label=OntologyNode("count"))
-        graph_with_counts = PerceptionGraph(digraph, dynamic=perception_semantic_alignment.perception_graph.dynamic)
-        return PerceptionSemanticAlignment(graph_with_counts, perception_semantic_alignment.semantic_nodes)
+                digraph.add_edge(node, count_node, label=HAS_COUNT)
+        graph_with_counts = PerceptionGraph(
+            digraph, dynamic=perception_semantic_alignment.perception_graph.dynamic
+        )
+        return PerceptionSemanticAlignment(
+            graph_with_counts, perception_semantic_alignment.semantic_nodes
+        )
 
     def _new_concept(self, debug_string: str) -> AttributeConcept:
         return AttributeConcept(debug_string)

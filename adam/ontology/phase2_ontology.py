@@ -76,10 +76,17 @@ from adam.ontology.phase1_ontology import (
     _WALL,
     _ROOF,
     HOUSE,
+    PERCEIVABLE_PROPERTY,
 )
 from adam.ontology.phase1_size_relationships import build_size_relationships
 from adam.ontology.structural_schema import ObjectStructuralSchema
 from adam.relation import flatten_relations
+
+TWO = OntologyNode("two")
+subtype(TWO, PERCEIVABLE_PROPERTY)
+MANY = OntologyNode("many")
+subtype(TWO, PERCEIVABLE_PROPERTY)
+HAS_COUNT = OntologyNode("has-count")
 
 CHAIR_2 = OntologyNode(
     "chair-2",
