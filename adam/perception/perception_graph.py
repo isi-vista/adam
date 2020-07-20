@@ -355,9 +355,9 @@ class PerceptionGraph(PerceptionGraphProtocol):
     ) -> "PerceptionGraph":
         return _FrameTranslation().translate_frames(perceptual_representation)
 
-    def as_digraph_with_temporal_scopes(
-            self, temporal_scopes: Union[TemporalScope, Iterable[TemporalScope]]
-    ) -> DiGraph:
+    def copy_with_temporal_scopes(
+        self, temporal_scopes: Union[TemporalScope, Iterable[TemporalScope]]
+    ) -> "PerceptionGraph":
         r"""
         Produces a copy of this perception graph with the given `TemporalScope`\ s
         applied to all edges. This new graph will be dynamic.
@@ -379,18 +379,6 @@ class PerceptionGraph(PerceptionGraphProtocol):
             )
             wrapped_graph.edges[source, target]["label"] = temporally_scoped_label
 
-        return wrapped_graph
-
-    def copy_with_temporal_scopes(
-        self, temporal_scopes: Union[TemporalScope, Iterable[TemporalScope]]
-    ) -> "PerceptionGraph":
-        r"""
-        Produces a copy of this perception graph with the given `TemporalScope`\ s
-        applied to all edges. This new graph will be dynamic.
-
-        This graph must be a static graph or a `RuntimeError` will be raised.
-        """
-        wrapped_graph = self.as_digraph_with_temporal_scopes(temporal_scopes)
         return PerceptionGraph(dynamic=True, graph=wrapped_graph)
 
     def subgraph_by_nodes(
@@ -2808,12 +2796,14 @@ class _FrameTranslation:
         # which tells whether they belong to the "before" frame or the "after" frame.
         before_frame_graph = (
             self._translate_frame(perceptual_representation.frames[0])
-            .as_digraph_with_temporal_scopes([TemporalScope.BEFORE])
+            .copy_with_temporal_scopes([TemporalScope.BEFORE])
+            ._graph  # pylint:disable=protected-access
         )
 
         after_frame_graph = (
             self._translate_frame(perceptual_representation.frames[1])
-            .as_digraph_with_temporal_scopes([TemporalScope.AFTER])
+            .copy_with_temporal_scopes([TemporalScope.AFTER])
+            ._graph  # pylint:disable=protected-access
         )
 
         # This will be what the PerceptionGraph we are building will wrap.
