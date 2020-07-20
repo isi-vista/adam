@@ -13,6 +13,7 @@ from adam.curriculum.curriculum_utils import (
 from adam.curriculum.phase1_curriculum import (
     make_fly_templates,
     _make_plural_objects_curriculum)
+from adam.language.language_utils import phase1_language_generator
 from adam.learner import LearningExample
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
@@ -27,7 +28,6 @@ from adam.situation import SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.situation.templates.phase1_templates import sampled
 from tests.learner import (
-    phase1_language_generator,
     LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER,
 )
 
@@ -75,7 +75,7 @@ def run_plural_test(learner, language_generator):
         language_generator=language_generator,
     )
 
-    test_curriculum = _make_plural_objects_curriculum(language_generator)
+    test_curriculum = _make_plural_objects_curriculum(10, 0, language_generator=language_generator)
 
     for (
         _,
@@ -98,8 +98,8 @@ def run_plural_test(learner, language_generator):
 
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH,
-                                           # LanguageMode.CHINESE
-                         ])
+                                           LanguageMode.CHINESE
+])
 @pytest.mark.parametrize(
     "learner",
     [integrated_learner_factory],
