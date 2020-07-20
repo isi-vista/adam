@@ -2112,10 +2112,8 @@ def _make_drink_description() -> Iterable[Tuple[OntologyNode, ActionDescription]
         DRINK,
         ActionDescription(
             frame=ActionDescriptionFrame({AGENT: drink_agent, THEME: drink_theme}),
-            preconditions=[
-                inside(drink_theme, DRINK_CONTAINER_AUX),
-                bigger_than(drink_agent, DRINK_CONTAINER_AUX),
-            ],
+            preconditions=[inside(drink_theme, DRINK_CONTAINER_AUX)],
+            enduring_conditions=[bigger_than(drink_agent, DRINK_CONTAINER_AUX)],
             postconditions=[inside(drink_theme, drink_agent)],
             asserted_properties=[
                 (drink_agent, VOLITIONALLY_INVOLVED),
