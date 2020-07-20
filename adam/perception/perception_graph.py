@@ -2926,7 +2926,9 @@ class _FrameTranslation:
                     temporal_scopes=_DURING_ONLY,
                 )
 
-        return PerceptionGraph(graph=_dynamic_digraph, dynamic=True)
+        new_perception_graph = PerceptionGraph(graph=DiGraph(), dynamic=True)
+        object.__setattr__(new_perception_graph, '_graph', _dynamic_digraph)
+        return new_perception_graph
 
     def _add_path_node(
         self,
