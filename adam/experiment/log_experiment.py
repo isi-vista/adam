@@ -34,6 +34,9 @@ from adam.learner.language_mode import LanguageMode
 from adam.learner.relations import SubsetRelationLearnerNew
 from adam.learner.verbs import SubsetVerbLearner, SubsetVerbLearnerNew
 from adam.ontology.phase2_ontology import GAILA_PHASE_2_ONTOLOGY
+from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
+    GAILA_PHASE_1_PERCEPTION_GENERATOR,
+)
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from vistautils.parameters import Parameters
 from vistautils.parameters_only_entrypoint import parameters_only_entry_point
@@ -150,6 +153,7 @@ def learner_factory_from_params(
     ]:
         raise RuntimeError("Only able to test Chinese with integrated learner.")
 
+    perception_generator = GAILA_PHASE_1_PERCEPTION_GENERATOR
     objects = [YOU_HACK, ME_HACK]
     objects.extend(PHASE_1_CURRICULUM_OBJECTS)
 
@@ -159,6 +163,7 @@ def learner_factory_from_params(
         determiners=ENGLISH_DETERMINERS,
         ontology=GAILA_PHASE_1_ONTOLOGY,
         language_mode=language_mode,
+        perception_generator=perception_generator,
     )
 
     if learner_type == "pursuit":

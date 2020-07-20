@@ -644,7 +644,11 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
         )
 
     @staticmethod
-    def from_schema(object_schema: ObjectStructuralSchema) -> "PerceptionGraphPattern":
+    def from_schema(
+        object_schema: ObjectStructuralSchema,
+        *,
+        perception_generator: HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
+    ) -> "PerceptionGraphPattern":
         """
         Creates a pattern for recognizing an object based on its *object_schema*.
         """
@@ -658,9 +662,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
         situation = HighLevelSemanticsSituation(
             ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[schema_situation_object]
         )
-        perception_generator = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
-            GAILA_PHASE_1_ONTOLOGY
-        )
+        perception_generator = perception_generator
         # We explicitly exclude groundin perception generation, which were not
         # specified in the schema
         perception = perception_generator.generate_perception(
@@ -712,19 +714,29 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
 
     @staticmethod
     def from_ontology_node(
-        node: OntologyNode, ontology: Ontology
+        node: OntologyNode,
+        ontology: Ontology,
+        *,
+        perception_generator: HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
     ) -> "PerceptionGraphPattern":
         """
         Creates a pattern for recognizing an obect based on its *ontology_node*
         """
         # First, we check to see if the ontology node has a corresponding
         # schema in the ontology. If so we just use `from_schema`
+        if perception_generator.ontology != ontology:
+            raise RuntimeError(
+                "Ontology of perception generator does not match ontology of "
+                "from_ontology_node"
+            )
+
         if (
             node
             in ontology._structural_schemata.keys()  # pylint:disable=protected-access
         ):
             return PerceptionGraphPattern.from_schema(
-                first(ontology.structural_schemata(node))
+                first(ontology.structural_schemata(node)),
+                perception_generator=perception_generator,
             )
         # If the node doesn't have a corresponding structural schemata we see if it can be
         # created as a single object scene
@@ -735,9 +747,6 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
         )
         situation = HighLevelSemanticsSituation(
             ontology=ontology, salient_objects=[schema_situation_object]
-        )
-        perception_generator = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
-            ontology
         )
         # We explicitly exclude ground in perception generation
         perception = perception_generator.generate_perception(
