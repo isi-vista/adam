@@ -2797,9 +2797,8 @@ class _FrameTranslation:
         )
 
         # This will be what the PerceptionGraph we are building will wrap.
-        _dynamic_digraph = DiGraph()
-        # Start with everything which is in the first frame's PerceptionGraph.
-        _dynamic_digraph.update(before_frame_graph)
+        # It starts with everything which is in the first frame's PerceptionGraph.
+        _dynamic_digraph = before_frame_graph
 
         # We have to be more careful adding things from the second frame's PerceptionGraph.
         # We can freely add all the nodes because they don't contain temporal information
