@@ -2668,13 +2668,13 @@ def _uniquify(
 class _FrameTranslation:
     unique_counter: Incrementer = attrib(init=False, default=Incrementer(0))
 
-    def translate_frame(
-        self, frame: DevelopmentalPrimitivePerceptionFrame
-    ) -> "PerceptionGraph":
+    def _translate_frame(
+            self, frame: DevelopmentalPrimitivePerceptionFrame
+    ) -> DiGraph:
         """
-                Gets the `PerceptionGraph` corresponding to a
-                `DevelopmentalPrimitivePerceptionFrame`.
-                """
+        Gets the `DiGraph` corresponding to a
+        `DevelopmentalPrimitivePerceptionFrame`.
+        """
         graph = DiGraph()
 
         # see force_unique_counter in map_node above
@@ -2730,9 +2730,9 @@ class _FrameTranslation:
             if isinstance(property_, HasBinaryProperty):
                 # TODO: fix this hack for me and you https://github.com/isi-vista/adam/issues/917
                 if (
-                    property_.binary_property in [IS_SPEAKER, IS_ADDRESSEE]
-                    and source_node.debug_handle
-                    and source_node.debug_handle != "learner"
+                        property_.binary_property in [IS_SPEAKER, IS_ADDRESSEE]
+                        and source_node.debug_handle
+                        and source_node.debug_handle != "learner"
                 ):
                     dest_node = self._map_node(
                         property_.binary_property,
@@ -2766,6 +2766,16 @@ class _FrameTranslation:
             for (object_, axis) in frame.axis_info.axes_facing.items():
                 graph.add_edge(axis, object_, label=FACING_OBJECT_LABEL)
 
+        return graph
+
+    def translate_frame(
+        self, frame: DevelopmentalPrimitivePerceptionFrame
+    ) -> "PerceptionGraph":
+        """
+        Gets the `PerceptionGraph` corresponding to a
+        `DevelopmentalPrimitivePerceptionFrame`.
+        """
+        graph = self._translate_frame(frame)
         return PerceptionGraph(graph)
 
     def translate_frames(
@@ -2785,13 +2795,13 @@ class _FrameTranslation:
         # The edges of each graph are marked with the appropriate "temporal specifier"
         # which tells whether they belong to the "before" frame or the "after" frame.
         before_frame_graph = (
-            self.translate_frame(perceptual_representation.frames[0])
+            self._translate_frame(perceptual_representation.frames[0])
             .copy_with_temporal_scopes([TemporalScope.BEFORE])
             ._graph  # pylint:disable=protected-access
         )
 
         after_frame_graph = (
-            self.translate_frame(perceptual_representation.frames[1])
+            self._translate_frame(perceptual_representation.frames[1])
             .copy_with_temporal_scopes([TemporalScope.AFTER])
             ._graph  # pylint:disable=protected-access
         )
