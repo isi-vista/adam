@@ -4,7 +4,7 @@ from typing import Optional, Sequence
 from adam.language.language_generator import LanguageGenerator
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.language.dependency import LinearizedDependencyTree
-
+from adam.ontology import IS_SPEAKER, IS_ADDRESSEE
 from adam.curriculum.curriculum_utils import (
     Phase1InstanceGroup,
     standard_object,
@@ -32,7 +32,9 @@ def make_human_eat_curriculum(
     ],
 ) -> Phase1InstanceGroup:
     object_to_eat = standard_object("object_0", required_properties=[EDIBLE])
-    human = standard_object("eater_0", PERSON)
+    human = standard_object(
+        "eater_0", PERSON, banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
+    )
     background = make_noise_objects(noise_objects)
 
     return phase1_instances(
@@ -81,7 +83,12 @@ def make_german_eat_test_curriculum(
 ) -> Phase1InstanceGroup:
 
     object_to_eat = standard_object("object_0", required_properties=[EDIBLE])
-    eater = standard_object("eater_0", THING, required_properties=[ANIMATE])
+    eater = standard_object(
+        "eater_0",
+        THING,
+        required_properties=[ANIMATE],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
     background = make_noise_objects(noise_objects)
 
     return phase1_instances(

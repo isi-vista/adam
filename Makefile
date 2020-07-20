@@ -2,7 +2,7 @@ default:
 	@echo "an explicit target is required"
 
 # easier to test python2 vs. python3
-PYTHON=python3
+PYTHON=pypy3
 
 SHELL=bash
 SOURCE_DIR_NAME=adam
@@ -29,14 +29,16 @@ FILTERED_MYPY:=$(MYPY) | perl -ne 'print if !/(Too many arguments|Signature of "
 FLAKE8:=flake8
 FLAKE8_CMD:=$(FLAKE8) $(SOURCE_DIR_NAME)
 
+IGNORE_TESTS = --ignore tests/visualization/ --ignore tests/experiment_test.py
+
 test: 
-	pytest tests
+	$(PYTHON) -m pytest $(IGNORE_TESTS) tests
 
 coverage:
-	pytest --cov=adam tests
+	$(PYTHON) -m pytest $(IGNORE_TESTS) --cov=adam tests
 
 benchmark:
-	pytest benchmarks
+	$(PYTHON) -m pytest $(IGNORE_TESTS) benchmarks
 
 lint:
 	$(PYLINT)

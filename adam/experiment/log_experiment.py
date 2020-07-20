@@ -63,6 +63,8 @@ from adam.learner.objects import (
 )
 from adam.ontology.phase1_ontology import (
     GAILA_PHASE_1_ONTOLOGY,
+    ME_HACK,
+    YOU_HACK,
     PHASE_1_CURRICULUM_OBJECTS,
 )
 from adam.random_utils import RandomChooser
@@ -121,6 +123,7 @@ def log_experiment_entry_point(params: Parameters) -> None:
         learner_logging_path=params.optional_creatable_directory("experiment_group_dir"),
         starting_point=params.integer("starting_point", default=-1),
         point_to_log=params.integer("point_to_log", default=0),
+        load_learner_state=params.optional_existing_file("learner_state_path"),
     )
 
 
@@ -151,10 +154,12 @@ def learner_factory_from_params(
         raise RuntimeError("Only able to test Chinese with integrated learner.")
 
     perception_generator = GAILA_PHASE_1_PERCEPTION_GENERATOR
+    objects = [YOU_HACK, ME_HACK]
+    objects.extend(PHASE_1_CURRICULUM_OBJECTS)
 
     # Eval hack! This is specific to the Phase 1 ontology
     object_recognizer = ObjectRecognizer.for_ontology_types(
-        PHASE_1_CURRICULUM_OBJECTS,
+        objects,
         determiners=ENGLISH_DETERMINERS,
         ontology=GAILA_PHASE_1_ONTOLOGY,
         language_mode=language_mode,

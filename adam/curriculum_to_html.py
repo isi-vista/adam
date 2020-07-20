@@ -14,15 +14,9 @@ from typing import (
     Dict,
     Mapping,
 )
-
+from adam.language.language_utils import phase2_language_generator
+from adam.learner.language_mode import LanguageMode
 from adam.language.language_generator import LanguageGenerator
-from adam.language_specific.chinese.chinese_language_generator import (
-    GAILA_PHASE_2_CHINESE_LANGUAGE_GENERATOR,
-)
-
-from adam.language_specific.english.english_language_generator import (
-    GAILA_PHASE_2_LANGUAGE_GENERATOR,
-)
 from adam.axis import GeonAxis
 from adam.curriculum.curriculum_utils import Phase1InstanceGroup
 from attr import attrib, attrs
@@ -157,25 +151,19 @@ def main(params: Parameters) -> None:
     curriculum_string = params.string(
         "curriculum", valid_options=STR_TO_CURRICULUM.keys(), default="phase1"
     )
-    language_string = params.string(
-        "language", valid_options=["english", "chinese"], default="english"
+    language_mode = params.enum(
+        "language_mode", LanguageMode, default=LanguageMode.ENGLISH
     )
+    language_string = str(language_mode).split(".")[-1].lower()
     num_samples = params.optional_positive_integer("num_samples")
     num_noise_objects = params.optional_positive_integer("num_noise_objects")
     phase1_curriculum_dir = root_output_directory / language_string / curriculum_string
     phase1_curriculum_dir.mkdir(parents=True, exist_ok=True)
     # We lazily instantiate the curriculum so we don't need to worry
     # about any of them we don't actually use.
-    if language_string == "chinese":
-        curriculum_to_render = STR_TO_CURRICULUM[curriculum_string](
-            num_samples, num_noise_objects, GAILA_PHASE_2_CHINESE_LANGUAGE_GENERATOR
-        )
-    elif language_string == "english":
-        curriculum_to_render = STR_TO_CURRICULUM[curriculum_string](
-            num_samples, num_noise_objects, GAILA_PHASE_2_LANGUAGE_GENERATOR
-        )
-    else:
-        raise RuntimeError("Invalid language parameter")
+    curriculum_to_render = STR_TO_CURRICULUM[curriculum_string](
+        num_samples, num_noise_objects, phase2_language_generator(language_mode)
+    )
     sort_by_utterance_length_flag = params.boolean("sort_by_utterance", default=False)
     if sort_by_utterance_length_flag:
         random_seed = params.integer("random_seed", default=1)
@@ -362,7 +350,7 @@ class CurriculumToHtmlDumper:
                         r"Output directory does not appear to be a curriculum "
                         r"dump. It contains the non-html file {f}"
                     )
-            shutil.rmtree(output_directory)
+            shutil.rmtree(str(output_directory))
         output_directory.mkdir(parents=True, exist_ok=True)
 
         files_written: List[Tuple[str, str]] = []

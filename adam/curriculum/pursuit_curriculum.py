@@ -20,11 +20,13 @@ from adam.ontology.phase1_ontology import (
     BIRD,
     BOX,
     GAILA_PHASE_1_ONTOLOGY,
-    PERSON,
     BALL,
     CHAIR,
     TABLE,
     DOG,
+    MOM,
+    DAD,
+    BABY,
 )
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
@@ -38,6 +40,9 @@ from adam.situation.templates.phase1_templates import (
 import random
 
 
+# TODO: fix https://github.com/isi-vista/adam/issues/917 which causes us to have to specify that we don't wish to include ME_HACK and YOU_HACK in our curriculum design
+
+
 def make_simple_pursuit_curriculum(
     num_instances: Optional[int],
     num_noise_instances: Optional[int],
@@ -45,7 +50,7 @@ def make_simple_pursuit_curriculum(
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
     *,
-    target_objects=[BALL, CHAIR, PERSON, TABLE, DOG, BIRD, BOX],
+    target_objects=[BALL, CHAIR, MOM, DAD, BABY, TABLE, DOG, BIRD, BOX],
     num_objects_in_instance: int = 3,
     perception_generator: HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator = GAILA_PHASE_1_PERCEPTION_GENERATOR,
 ) -> Phase1InstanceGroup:

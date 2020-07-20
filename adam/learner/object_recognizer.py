@@ -256,6 +256,7 @@ class ObjectRecognizer:
         This is useful as a pre-processing step
         before prepositional and verbal learning experiments.
         """
+
         # pylint: disable=global-statement,invalid-name
         global cumulative_millis_in_successful_matches_ms
         global cumulative_millis_in_failed_matches_ms
@@ -304,10 +305,10 @@ class ObjectRecognizer:
         candidate_object_subgraphs = extract_candidate_objects(perception_graph)
 
         for candidate_object_graph in candidate_object_subgraphs:
-
             num_object_nodes = candidate_object_graph.count_nodes_matching(
                 lambda node: isinstance(node, ObjectPerception)
             )
+
             for (concept, pattern) in concepts_to_patterns.items():
                 # As an optimization, we count how many sub-object nodes
                 # are in the graph and the pattern.
@@ -325,7 +326,6 @@ class ObjectRecognizer:
                     )
                 if pattern_match:
                     cumulative_millis_in_successful_matches_ms += t.elapsed
-
                     matched_object_node = ObjectSemanticNode(concept)
 
                     # We wrap the concept in a tuple because it could in theory be multiple
@@ -336,6 +336,10 @@ class ObjectRecognizer:
                             ((concept.debug_string,), matched_object_node)
                         )
                     elif self._language_mode == LanguageMode.CHINESE:
+                        if concept.debug_string == "me":
+                            object_nodes.append((("wo3",), matched_object_node))
+                        elif concept.debug_string == "you":
+                            object_nodes.append((("ni3",), matched_object_node))
                         mappings = (
                             GAILA_PHASE_1_CHINESE_LEXICON._ontology_node_to_word  # pylint:disable=protected-access
                         )
@@ -345,7 +349,6 @@ class ObjectRecognizer:
                                 object_nodes.append(
                                     ((debug_string,), matched_object_node)
                                 )
-
                     graph_to_return = replace_match_with_object_graph_node(
                         matched_object_node, graph_to_return, pattern_match
                     )

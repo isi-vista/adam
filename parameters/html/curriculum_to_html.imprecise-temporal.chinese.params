@@ -1,5 +1,0 @@
-_includes:
-    - curriculum_to_html.params
-
-curriculum: "imprecise-temporal"
-language: "chinese"
