@@ -508,6 +508,8 @@ def _go_behind_in_front_path_template(
     background: Iterable[TemplateObjectVariable],
     *,
     is_behind: bool,
+    is_near_path: bool,
+    is_near_goal: bool,
 ) -> Phase1SituationTemplate:
     additional_background = [goal_object, path_object]
     additional_background.extend(background)
@@ -520,7 +522,15 @@ def _go_behind_in_front_path_template(
         actions=[
             Action(
                 GO,
-                argument_roles_to_fillers=[(AGENT, agent), (GOAL, goal_object)],
+                argument_roles_to_fillers=[
+                    (AGENT, agent),
+                    (
+                        GOAL,
+                        Region(
+                            goal_object, distance=PROXIMAL if is_near_goal else DISTAL
+                        ),
+                    ),
+                ],
                 during=DuringAction(
                     objects_to_paths=[
                         (
@@ -533,12 +543,31 @@ def _go_behind_in_front_path_template(
                             ),
                         )
                     ],
-                    # TODO: ADD 'at_some_point' condition for in_front or behind regional conditions
-                    # See: https://github.com/isi-vista/adam/issmues/583
+                    # HACK - This is a hack for 'in front of' and 'behind'
+                    at_some_point=[
+                        near(
+                            agent,
+                            goal_object,
+                            direction=Direction(
+                                positive=False if is_behind else True,
+                                relative_to_axis=FacingAddresseeAxis(agent),
+                            ),
+                        )
+                        if is_near_path
+                        else far(
+                            agent,
+                            goal_object,
+                            direction=Direction(
+                                positive=False if is_behind else True,
+                                relative_to_axis=FacingAddresseeAxis(agent),
+                            ),
+                        )
+                    ],
                 ),
             )
         ],
         gazed_objects=[agent],
+        syntax_hints=[IGNORE_GOAL],
     )
 
 
@@ -549,6 +578,7 @@ def _go_over_under_path_template(
     background: Iterable[TemplateObjectVariable],
     *,
     is_over: bool,
+    is_near_goal: bool,
 ) -> Phase1SituationTemplate:
     additional_background = [goal_object, path_object]
     additional_background.extend(background)
@@ -556,12 +586,20 @@ def _go_over_under_path_template(
     handle = "over" if is_over else "under"
     return Phase1SituationTemplate(
         f"go_{handle}-{agent.handle}-{handle}-{goal_object.handle}-via-{path_object.handle}",
-        salient_object_variables=[agent, goal_object],
+        salient_object_variables=[agent, path_object],
         background_object_variables=total_background,
         actions=[
             Action(
                 GO,
-                argument_roles_to_fillers=[(AGENT, agent), (GOAL, goal_object)],
+                argument_roles_to_fillers=[
+                    (AGENT, agent),
+                    (
+                        GOAL,
+                        Region(
+                            goal_object, distance=PROXIMAL if is_near_goal else DISTAL
+                        ),
+                    ),
+                ],
                 during=DuringAction(
                     objects_to_paths=[
                         (
@@ -582,6 +620,7 @@ def _go_over_under_path_template(
             )
         ],
         gazed_objects=[agent],
+        syntax_hints=[IGNORE_GOAL],
     )
 
 
@@ -591,6 +630,7 @@ def _go_towards_away_template(
     background: Iterable[TemplateObjectVariable],
     *,
     is_toward: bool,
+    is_near_goal: bool,
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
         f"{agent.handle}-go-toward_away-{spatial_reference.handle}",
@@ -599,7 +639,16 @@ def _go_towards_away_template(
         actions=[
             Action(
                 GO,
-                argument_roles_to_fillers=[(AGENT, agent), (GOAL, spatial_reference)],
+                argument_roles_to_fillers=[
+                    (AGENT, agent),
+                    (
+                        GOAL,
+                        Region(
+                            spatial_reference,
+                            distance=PROXIMAL if is_near_goal else DISTAL,
+                        ),
+                    ),
+                ],
                 during=DuringAction(
                     objects_to_paths=[
                         (
@@ -617,6 +666,7 @@ def _go_towards_away_template(
         before_action_relations=[
             far(agent, spatial_reference) if is_toward else near(agent, spatial_reference)
         ],
+        syntax_hints=[IGNORE_GOAL],
     )
 
 
@@ -2750,12 +2800,16 @@ def _make_go_with_prepositions(
                             path_object,
                             background,
                             is_behind=is_behind,
+                            is_near_path=is_near_path,
+                            is_near_goal=is_near_goal,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
                     )
                     for is_behind in BOOL_SET
+                    for is_near_path in BOOL_SET
+                    for is_near_goal in BOOL_SET
                 ]
             ),
             # Over & Under Paths
@@ -2763,13 +2817,19 @@ def _make_go_with_prepositions(
                 [
                     sampled(
                         _go_over_under_path_template(
-                            agent, goal_object, path_object, background, is_over=is_over
+                            agent,
+                            goal_object,
+                            path_object,
+                            background,
+                            is_over=is_over,
+                            is_near_goal=is_near_goal,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
                     )
                     for is_over in BOOL_SET
+                    for is_near_goal in BOOL_SET
                 ]
             ),
             # Toward & Away Paths
@@ -2777,13 +2837,18 @@ def _make_go_with_prepositions(
                 [
                     sampled(
                         _go_towards_away_template(
-                            agent, goal_object, background, is_toward=is_toward
+                            agent,
+                            goal_object,
+                            background,
+                            is_toward=is_toward,
+                            is_near_goal=is_near_goal,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
                     )
                     for is_toward in BOOL_SET
+                    for is_near_goal in BOOL_SET
                 ]
             ),
             # Out

@@ -120,6 +120,7 @@ def log_experiment_entry_point(params: Parameters) -> None:
         learner_logging_path=params.optional_creatable_directory("experiment_group_dir"),
         starting_point=params.integer("starting_point", default=-1),
         point_to_log=params.integer("point_to_log", default=0),
+        load_learner_state=params.optional_existing_file("learner_state_path"),
     )
 
 

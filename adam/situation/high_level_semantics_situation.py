@@ -10,7 +10,7 @@ from more_itertools import flatten
 from vistautils.preconditions import check_arg
 
 from adam.axes import AxesInfo
-from adam.ontology import OntologyNode
+from adam.ontology import OntologyNode, IN_REGION
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import is_recognized_particular
 from adam.ontology.phase1_spatial_relations import Region
@@ -129,7 +129,11 @@ class HighLevelSemanticsSituation(Situation):
 
     def __attrs_post_init__(self) -> None:
         check_arg(self.salient_objects, "A situation must contain at least one object")
-        for relation in self.always_relations:
+        for relation in chain(
+            self.always_relations,
+            self.before_action_relations,
+            self.after_action_relations,
+        ):
             if not isinstance(relation.first_slot, SituationObject) or not isinstance(
                 relation.second_slot, (SituationObject, Region)
             ):
@@ -137,8 +141,6 @@ class HighLevelSemanticsSituation(Situation):
                     f"Relation fillers for situations must be situation objects "
                     f"but got {relation}"
                 )
-        self.is_dynamic = len(self.actions) > 0
-        for relation in self.always_relations:
             if (
                 isinstance(relation.second_slot, Region)
                 and relation.second_slot.reference_object not in self.all_objects
@@ -148,6 +150,14 @@ class HighLevelSemanticsSituation(Situation):
                     f"set of situation objects but region {relation.second_slot}"
                     f" with situation objects {self.all_objects}"
                 )
+            if relation.relation_type == IN_REGION and not isinstance(
+                relation.second_slot, Region
+            ):
+                raise RuntimeError(
+                    f"Any relation of relation type IN_REGION must have a second slot "
+                    f"which is a region but got {relation.second_slot} instead"
+                )
+        self.is_dynamic = len(self.actions) > 0
         for action in self.actions:
             for action_role_filler in flatten(
                 action.argument_roles_to_fillers.value_groups()
