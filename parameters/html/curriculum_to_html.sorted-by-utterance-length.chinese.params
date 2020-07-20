@@ -1,8 +1,0 @@
-_includes:
-    - ../root.params
-
-output_directory: "%adam_experiment_root%/outputs/html"
-sort_by_utterance: True
-random_seed: 1
-curriculum: "phase1"
-language: "chinese"
