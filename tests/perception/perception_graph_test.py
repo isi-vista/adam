@@ -157,7 +157,9 @@ def do_object_on_table_test(
     )
 
     # We test that a perceptual pattern for "object_to_match" matches in all four cases.
-    object_to_match_pattern = PerceptionGraphPattern.from_schema(object_schema)
+    object_to_match_pattern = PerceptionGraphPattern.from_schema(
+        object_schema, perception_generator=GAILA_PHASE_1_PERCEPTION_GENERATOR
+    )
 
     situations_with_object_to_match = chain(
         all_possible_test(object_on_table_template),
