@@ -263,7 +263,6 @@ class _PerceptionGeneration:
                     axis_info=axis_info,
                 )
             )
-
         # finally, if there are actions, we perceive the before and after states of the action
         _action_perception = self._perceive_action()
         # sometimes additional before and after relations will be given explicitly by the user
@@ -275,7 +274,6 @@ class _PerceptionGeneration:
             self._perceive_relation(relation)
             for relation in self._situation.after_action_relations
         ]
-
         # Add ground for always perception if needed
         if self._include_ground:
             # Grabbing any "always" ground relations
@@ -287,6 +285,12 @@ class _PerceptionGeneration:
                         _action_perception.before_relations,
                         explicit_after_relations,
                         _action_perception.after_relations,
+                        _action_perception.during_action.at_some_point
+                        if _action_perception.during_action
+                        else {},
+                        _action_perception.during_action.continuously
+                        if _action_perception.during_action
+                        else {},
                     )
                 )
             )
@@ -789,7 +793,6 @@ class _PerceptionGeneration:
         for situation_object in self._situation.all_objects:
             if situation_object.ontology_node != GROUND:
                 object_perception = self._objects_to_perceptions[situation_object]
-
                 add_on_ground = True
 
                 if object_perception in objects_to_relations:

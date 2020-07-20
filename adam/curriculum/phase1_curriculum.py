@@ -1784,7 +1784,10 @@ def make_sit_templates(noise_objects: Optional[int]) -> Iterable[Phase1Situation
     )
 
     sit_surface = standard_object(
-        "surface", THING, required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
+        "surface",
+        THING,
+        required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM],
+        banned_properties=[GROUND],
     )
     seat = standard_object(
         "sitting-surface", INANIMATE_OBJECT, required_properties=[CAN_BE_SAT_ON_BY_PEOPLE]
