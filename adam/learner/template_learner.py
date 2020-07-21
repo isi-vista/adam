@@ -310,7 +310,6 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
         ) = self._enrich_common(
             language_perception_semantic_alignment.perception_semantic_alignment
         )
-
         return LanguagePerceptionSemanticAlignment(
             # We need to link the things we found to the language
             # so later learning stages can (a) know they are already covered

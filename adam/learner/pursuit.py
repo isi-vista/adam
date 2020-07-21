@@ -3,6 +3,8 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from pathlib import Path
 from random import Random
+from adam.perception.perception_graph import IsOntologyNodePredicate
+from adam.ontology.phase1_ontology import GAZED_AT
 from typing import (
     Any,
     Dict,
@@ -625,7 +627,6 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
         language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
         bound_surface_template: SurfaceTemplateBoundToSemanticNodes,
     ) -> None:
-
         if bound_surface_template.surface_template in self._known_bad_patterns:
             # We tried to learn an alignment for this surface template previously
             # and it didn't work out.
@@ -673,26 +674,56 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
         ] = self._hypotheses_from_perception(
             language_perception_semantic_alignment, bound_surface_template
         )
-
         pattern_hypothesis = first(hypotheses)
         min_score = float("inf")
-        # Of the possible meanings for the word in this scene,
-        # make our initial hypothesis the one with the least association
-        # with any other word.
+        # get all objects that have gaze
+        gazed_at_hypotheses: List[PerceptionGraphTemplate] = []
         for hypothesis in hypotheses:
-            # TODO Try to make this more efficient?
-            max_association_score = max(
+            if GAZED_AT in [
+                node.property_value
+                for node in hypothesis.graph_pattern.copy_as_digraph().node
+                if isinstance(node, IsOntologyNodePredicate)
+            ]:
+                gazed_at_hypotheses.append(hypothesis)
+        # if there is only one object that has gaze, then this is the one that we consider -- we prioritize gaze above all else
+        if len(gazed_at_hypotheses) == 1:
+            pattern_hypothesis = first(gazed_at_hypotheses)
+            min_score = max(
                 [
                     s
                     for w, h_to_s in self._concept_to_hypotheses_and_scores.items()
                     for h, s in h_to_s.items()
-                    if h.graph_pattern.check_isomorphism(hypothesis.graph_pattern)
+                    if h.graph_pattern.check_isomorphism(pattern_hypothesis.graph_pattern)
                 ]
                 + [0]
             )
-            if max_association_score < min_score:
-                pattern_hypothesis = hypothesis
-                min_score = max_association_score
+        # otherwise, we make our initial hypothesis the one with the least association with any other word
+        else:
+            hypotheses_to_consider: List[PerceptionGraphTemplate] = []
+            # if there were no gazed objects, we consider all hypotheses
+            if gazed_at_hypotheses:
+                hypotheses_to_consider = gazed_at_hypotheses
+            # if there were multiple gazed objects, we consider all objects with gaze
+            else:
+                hypotheses_to_consider = list(hypotheses)
+
+            # Of the possible meanings for the word in this scene,
+            # make our initial hypothesis the one with the least association
+            # with any other word.
+            for hypothesis in hypotheses_to_consider:
+                # TODO Try to make this more efficient?
+                max_association_score = max(
+                    [
+                        s
+                        for w, h_to_s in self._concept_to_hypotheses_and_scores.items()
+                        for h, s in h_to_s.items()
+                        if h.graph_pattern.check_isomorphism(hypothesis.graph_pattern)
+                    ]
+                    + [0]
+                )
+                if max_association_score < min_score:
+                    pattern_hypothesis = hypothesis
+                    min_score = max_association_score
 
         if self._hypothesis_logger:
             self._hypothesis_logger.log_hypothesis_graph(
@@ -760,9 +791,22 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
         if hypothesis_is_confirmed and partial_match.partial_match_hypothesis:
             logging.info("Current hypothesis is confirmed.")
             # Reinforce A(w,h)
+
             new_hypothesis_score = current_hypothesis_score + self._learning_factor * (
                 1 - current_hypothesis_score
             )
+
+            # if the hypothesis is confirmed and there is gaze, increase the reinforcement factor
+            # TODO: tune how much this is reinforced https://github.com/isi-vista/adam/issues/734
+            if GAZED_AT in [
+                node.property_value
+                for node in leading_hypothesis_pattern.graph_pattern.copy_as_digraph().node
+                if isinstance(node, IsOntologyNodePredicate)
+            ]:
+                new_hypothesis_score = (
+                    current_hypothesis_score
+                    + self._learning_factor * (2 - current_hypothesis_score)
+                )
 
             # Register the updated hypothesis score of A(w,h)
             hypotheses_for_item[leading_hypothesis_pattern] = new_hypothesis_score
@@ -802,6 +846,29 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
                 )
 
             else:
+                gazed_at_hypotheses = []
+                hypotheses = self._hypotheses_from_perception(
+                    language_perception_semantic_alignment, bound_surface_template
+                )
+                # choose a node at random to be the candidate hypothesis
+                chosen_hypothesis: PerceptionGraphTemplate = self._rng.choice(
+                    list(hypotheses)
+                )
+                # get all hypotheses that have gaze
+                for hypothesis in hypotheses:
+                    if GAZED_AT in [
+                        node.property_value
+                        for node in hypothesis.graph_pattern.copy_as_digraph().node
+                        if isinstance(node, IsOntologyNodePredicate)
+                    ]:
+                        gazed_at_hypotheses.append(hypothesis)
+                # if there is one, that's our choice
+                if len(gazed_at_hypotheses) == 1:
+                    chosen_hypothesis = first(gazed_at_hypotheses)
+                # if there's more than one, we choose one of them -- if there's none, it will be just the random choice from above
+                elif len(gazed_at_hypotheses) > 1:
+                    chosen_hypothesis = self._rng.choice(gazed_at_hypotheses)
+
                 # Here's where it gets complicated.
                 # In the Pursuit paper, at this point they choose a random meaning from the scene.
                 # But if you do this it becomes difficult to learn object meanings
@@ -809,17 +876,6 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
                 # Therefore, in addition to rewarding the hypothesis
                 # which directly encodes the randomly selected object's perception,
                 # we also reward all other non-leading hypotheses which would match it.
-                logging.info(
-                    "Choosing a random object from the scene to use as the word meaning"
-                )
-
-                chosen_hypothesis: PerceptionGraphTemplate = self._rng.choice(
-                    list(
-                        self._hypotheses_from_perception(
-                            language_perception_semantic_alignment, bound_surface_template
-                        )
-                    )
-                )
                 hypotheses_to_reward.append(chosen_hypothesis)
 
                 for hypothesis in hypotheses_for_item:
@@ -869,10 +925,23 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
                     cur_score_for_new_hypothesis = hypotheses_for_item.get(
                         hypothesis_object_to_reward, 0.0
                     )
-                    hypotheses_for_item[hypothesis_object_to_reward] = (
-                        cur_score_for_new_hypothesis
-                        + self._learning_factor * (1.0 - cur_score_for_new_hypothesis)
-                    )
+                    # if the object has gaze, we want to reinforce it more strongly than if it doesn't
+                    # TODO: tune how much this is reinforced https://github.com/isi-vista/adam/issues/734
+                    if GAZED_AT in [
+                        node
+                        for node in hypothesis_object_to_reward.graph_pattern.copy_as_digraph().node
+                        if isinstance(node, IsOntologyNodePredicate)
+                    ]:
+
+                        hypotheses_for_item[hypothesis_object_to_reward] = (
+                            cur_score_for_new_hypothesis
+                            + self._learning_factor * (2.0 - cur_score_for_new_hypothesis)
+                        )
+                    else:
+                        hypotheses_for_item[hypothesis_object_to_reward] = (
+                            cur_score_for_new_hypothesis
+                            + self._learning_factor * (1.0 - cur_score_for_new_hypothesis)
+                        )
                     hypothesis_objects_boosted_on_this_update.add(
                         hypothesis_object_to_reward
                     )
