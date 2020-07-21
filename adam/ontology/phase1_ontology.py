@@ -2440,12 +2440,6 @@ def _make_jump_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
                     )
                 ],
             ),
-            # during=DuringAction(
-            #    objects_to_paths=[
-            #        (jump_agent, SpatialPath(AWAY_FROM, JUMP_INITIAL_SUPPORTER_AUX)),
-            #        (jump_agent, SpatialPath(AWAY_FROM, jump_ground)),
-            #    ]
-            # ),
             asserted_properties=asserted_properties,
         ),
     )

@@ -273,7 +273,6 @@ def curriculum_from_params(
             None,
         ),
         "m13-shuffled": (build_m13_shuffled_curriculum, build_gaila_m13_curriculum),
-        "m13-relations": (build_gaila_phase1_relation_curriculum, None),
     }
 
     curriculum_name = params.string("curriculum", str_to_train_test_curriculum.keys())
