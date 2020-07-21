@@ -2,8 +2,7 @@ import itertools
 import logging
 from itertools import chain, combinations
 from pathlib import Path
-from typing import AbstractSet, Iterable, Iterator, Mapping, Optional, Tuple, List
-from more_itertools import flatten, one
+from typing import AbstractSet, Iterator, Mapping, Optional, Tuple, List
 
 from adam.language import LinguisticDescription, TokenSequenceLinguisticDescription
 from adam.language_specific.english import ENGLISH_BLOCK_DETERMINERS
@@ -15,7 +14,6 @@ from adam.learner.alignments import (
 )
 from adam.learner.functional_learner import FunctionalLearner
 from adam.learner.language_mode import LanguageMode
-from adam.learner.learner_semantics import LearnerSemantics
 from adam.learner.surface_templates import MASS_NOUNS, SLOT1
 from adam.learner.template_learner import TemplateLearner
 from adam.perception import PerceptualRepresentation
@@ -25,21 +23,15 @@ from adam.perception.developmental_primitive_perception import (
 from adam.perception.perception_graph import PerceptionGraph
 from adam.semantics import (
     ActionSemanticNode,
-    AttributeSemanticNode,
     ObjectSemanticNode,
     RelationSemanticNode,
     SemanticNode,
     GROUND_OBJECT_CONCEPT,
+    LearnerSemantics,
 )
 from attr import attrib, attrs
 from attr.validators import instance_of, optional
-from immutablecollections import (
-    ImmutableSet,
-    ImmutableSetMultiDict,
-    immutabledict,
-    immutablesetmultidict,
-)
-from immutablecollections.converter_utils import _to_immutableset
+from immutablecollections import immutabledict
 
 
 class LanguageLearnerNew:
@@ -144,6 +136,16 @@ class IntegratedTemplateLearner(
                 )
         if learning_example.perception.is_dynamic() and self.action_learner:
             self.action_learner.learn_from(current_learner_state)
+            current_learner_state = self.action_learner.enrich_during_learning(
+                current_learner_state
+            )
+
+            if self.functional_learner:
+                self.functional_learner.learn_from(
+                    current_learner_state,
+                    observation_num=observation_num,
+                    action_learner=self.action_learner,
+                )
 
     def describe(
         self, perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]

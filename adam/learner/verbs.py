@@ -1,5 +1,6 @@
 import itertools
 from abc import ABC
+
 from typing import AbstractSet, Mapping, Union, Iterable, Optional, Tuple
 from adam.learner.language_mode import LanguageMode
 from adam.language import LinguisticDescription
@@ -32,7 +33,12 @@ from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
 from adam.perception.perception_graph import PerceptionGraph
-from adam.semantics import ActionConcept, ObjectSemanticNode, SyntaxSemanticsVariable
+from adam.semantics import (
+    ActionConcept,
+    ObjectSemanticNode,
+    SyntaxSemanticsVariable,
+    SemanticNode,
+)
 from attr import attrib, attrs
 from immutablecollections import immutabledict, immutableset, immutablesetmultidict
 from attr.validators import instance_of
@@ -108,6 +114,13 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
             self._language_mode,
             candidate_verb_templates,
         )
+
+    def _enrich_post_process(
+        self,
+        perception_graph_after_matching: PerceptionGraph,
+        immutable_new_nodes: AbstractSet[SemanticNode],
+    ) -> Tuple[PerceptionGraph, AbstractSet[SemanticNode]]:
+        return perception_graph_after_matching, immutable_new_nodes
 
 
 @attrs

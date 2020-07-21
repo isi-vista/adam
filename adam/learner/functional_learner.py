@@ -1,10 +1,16 @@
-from typing import AbstractSet, Tuple, Dict, Union
+import logging
+
+from typing import Tuple, Dict, Union
 
 from attr.validators import instance_of
 
 from attr import attrs, attrib
 
-from adam.learner import LanguageMode, LanguagePerceptionSemanticAlignment
+from adam.learner import (
+    LanguageMode,
+    LanguagePerceptionSemanticAlignment,
+    PerceptionSemanticAlignment,
+)
 from adam.learner.template_learner import TemplateLearner
 from adam.semantics import SemanticNode, SyntaxSemanticsVariable, LearnerSemantics
 
@@ -43,8 +49,25 @@ class FunctionalLearner:
     def learn_from(
         self,
         language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
+        *,
+        observation_num: int = -1,
         action_learner: TemplateLearner,
     ):
+        if observation_num >= 0:
+            logging.info(
+                "Observation %s: %s",
+                observation_num,
+                language_perception_semantic_alignment.language_concept_alignment.language.as_token_string(),
+            )
+        else:
+            logging.info(
+                "Observation %s: %s",
+                self._observation_num,
+                language_perception_semantic_alignment.language_concept_alignment.language.as_token_string(),
+            )
+
+        self._observation_num += 1
+
         semantics = LearnerSemantics.from_nodes(
             language_perception_semantic_alignment.perception_semantic_alignment.semantic_nodes
         )
@@ -87,5 +110,5 @@ class FunctionalLearner:
                             slot
                         ].add_example(aligned_text)
 
-    def describe(self, semantic_nodes: AbstractSet[SemanticNode]):
+    def describe(self, perception_semantic_alignment: PerceptionSemanticAlignment):
         raise NotImplementedError

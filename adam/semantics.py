@@ -55,6 +55,11 @@ class ActionConcept(Concept):
     debug_string: str = attrib(validator=instance_of(str))
 
 
+@attrs(frozen=True, eq=False)
+class FunctionalObjectConcept(ObjectConcept):
+    debug_string: str = attrib(validator=instance_of(str))
+
+
 GROUND_OBJECT_CONCEPT = ObjectConcept("ground")
 
 
