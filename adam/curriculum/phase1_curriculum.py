@@ -111,6 +111,7 @@ from adam.ontology.phase1_ontology import (
     BALL,
     WALK,
     strictly_over,
+    strictly_under,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -950,21 +951,19 @@ def _make_object_under_or_over_object_curriculum(
 ) -> Phase1InstanceGroup:
     object_under = standard_object("object_0")
     object_above = standard_object("object_1", required_properties=[HAS_SPACE_UNDER])
-    bird = object_variable("bird_0", BIRD)
-    object_under_bird = standard_object("object_under_bird_0")
 
     templates = [
         Phase1SituationTemplate(
             f"object-under-object",
             salient_object_variables=[object_above, object_under],
             constraining_relations=[bigger_than(object_above, object_under)],
-            asserted_always_relations=[strictly_over(object_above, object_under)],
+            asserted_always_relations=[strictly_under(object_above, object_under)],
             background_object_variables=make_noise_objects(noise_objects),
         ),
         Phase1SituationTemplate(
             f"object-over-object",
-            salient_object_variables=[object_under_bird, bird],
-            asserted_always_relations=[strictly_over(bird, object_under_bird)],
+            salient_object_variables=[object_under, object_above],
+            asserted_always_relations=[strictly_over(object_under, object_above)],
             background_object_variables=make_noise_objects(noise_objects),
         ),
     ]
@@ -1482,7 +1481,9 @@ def make_pass_template(
                         (
                             agent,
                             SpatialPath(
-                                operator=operator,
+                                operator=operator
+                                if use_adverbial_path_modifier
+                                else None,
                                 reference_object=GROUND_OBJECT_TEMPLATE,
                                 properties=spatial_properties,
                             ),
@@ -2387,7 +2388,9 @@ def make_push_templates(
                         (
                             agent,
                             SpatialPath(
-                                operator=operator,
+                                operator=operator
+                                if use_adverbial_path_modifier
+                                else None,
                                 reference_object=GROUND_OBJECT_TEMPLATE,
                                 properties=spatial_properties,
                             ),
@@ -2437,7 +2440,7 @@ def _make_push_curriculum(
                     ),
                     push_goal=standard_object("push_goal", INANIMATE_OBJECT),
                     use_adverbial_path_modifier=adverbial_path_modifier,
-                    operator=operator,
+                    operator=operator if adverbial_path_modifier else None,
                     background=make_noise_objects(noise_objects),
                 )
             ]
