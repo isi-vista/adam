@@ -1922,8 +1922,11 @@ def make_take_template(
                                 # this is a hack since "grab" with an adverb doesn't really work in English
                                 operator=operator
                                 if (
-                                    not spatial_properties
-                                    or HARD_FORCE not in spatial_properties
+                                    use_adverbial_path_modifier
+                                    and (
+                                        not spatial_properties
+                                        or HARD_FORCE not in spatial_properties
+                                    )
                                 )
                                 else None,
                                 reference_object=ground,
@@ -2342,7 +2345,9 @@ def make_push_templates(
                         (
                             agent,
                             SpatialPath(
-                                operator=operator,
+                                operator=operator
+                                if use_adverbial_path_modifier
+                                else None,
                                 reference_object=GROUND_OBJECT_TEMPLATE,
                                 properties=spatial_properties,
                             ),
