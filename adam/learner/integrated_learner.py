@@ -28,6 +28,9 @@ from adam.semantics import (
     GROUND_OBJECT_CONCEPT,
     LearnerSemantics,
     FunctionalObjectConcept,
+    SyntaxSemanticsVariable,
+    FunctionalObjectConcept,
+    ObjectConcept,
 )
 from attr import attrib, attrs
 from attr.validators import instance_of, optional

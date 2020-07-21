@@ -203,3 +203,21 @@ class FunctionalLearner(TemplateLearner):
                         file.write(
                             f"\t\t{functional_concept} - {self._concept_to_slots_to_function_counter[concept][slot]._concept_to_count[functional_concept]}\n"  # pylint: disable=protected-access
                         )
+
+    def template_for_concept(
+        self,
+        action_elements: Tuple[Union[str, SyntaxSemanticsVariable], ...],
+        slot: SyntaxSemanticsVariable,
+    ) -> Optional[Tuple[str, ...]]:
+        if action_elements not in self._concept_elements_to_arguments_to_function_counter:
+            return None
+        if (
+            slot
+            not in self._concept_elements_to_arguments_to_function_counter[
+                action_elements
+            ]
+        ):
+            return None
+        return self._concept_elements_to_arguments_to_function_counter[action_elements][
+            slot
+        ].get_best_guess_token()

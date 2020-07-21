@@ -23,8 +23,6 @@ from adam.learner.object_recognizer import (
     ObjectRecognizer,
     PerceptionGraphFromObjectRecognizer,
     extract_candidate_objects,
-    replace_match_root_with_object_semantic_node,
-    replace_match_with_object_graph_node,
 )
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
 from adam.learner.pursuit import (
