@@ -395,9 +395,7 @@ class PerceptionGraph(PerceptionGraphProtocol):
                 "already dynamic"
             )
 
-        wrapped_graph = self.add_temporal_scopes(
-            self._graph.copy(), temporal_scopes
-        )
+        wrapped_graph = self.add_temporal_scopes(self._graph.copy(), temporal_scopes)
 
         return PerceptionGraph(dynamic=True, graph=wrapped_graph)
 
