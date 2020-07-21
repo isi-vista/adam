@@ -2488,7 +2488,8 @@ WALK_SURFACE_AUXILIARY = ActionDescriptionVariable(
 )
 _WALK_ACTION_DESCRIPTION = ActionDescription(
     frame=ActionDescriptionFrame({AGENT: _WALK_AGENT}),
-    during=DuringAction(continuously=[on(_WALK_AGENT, WALK_SURFACE_AUXILIARY)]),
+    enduring_conditions=[on(_WALK_AGENT, WALK_SURFACE_AUXILIARY)],
+    # during=DuringAction(continuously=[on(_WALK_AGENT, WALK_SURFACE_AUXILIARY)]),
     asserted_properties=[(_WALK_AGENT, MOVES)],
 )
 
