@@ -2935,6 +2935,10 @@ class _FrameTranslation:
                     temporal_scopes=_DURING_ONLY,
                 )
 
+        # The PerceptionGraph constructor always copies the graph it's passed, so to avoid copying
+        # the constructed digraph, we use this ugly hack. We construct a PerceptionGraph from an
+        # empty graph (which should be faster) and use object.__setattr__ to set its graph attribute
+        # to our constructed graph (working around the fact that PerceptionGraph is frozen).
         new_perception_graph = PerceptionGraph(graph=DiGraph(), dynamic=True)
         object.__setattr__(new_perception_graph, "_graph", _dynamic_digraph)
         return new_perception_graph
