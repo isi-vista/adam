@@ -357,8 +357,7 @@ class PerceptionGraph(PerceptionGraphProtocol):
 
     @staticmethod
     def copy_digraph_with_temporal_scopes(
-            digraph: DiGraph,
-            temporal_scopes: Union[TemporalScope, Iterable[TemporalScope]],
+        digraph: DiGraph, temporal_scopes: Union[TemporalScope, Iterable[TemporalScope]]
     ) -> DiGraph:
         wrapped_graph = digraph.copy()
 
@@ -386,7 +385,9 @@ class PerceptionGraph(PerceptionGraphProtocol):
                 "already dynamic"
             )
 
-        wrapped_graph = self.copy_digraph_with_temporal_scopes(self._graph, temporal_scopes)
+        wrapped_graph = self.copy_digraph_with_temporal_scopes(
+            self._graph, temporal_scopes
+        )
 
         return PerceptionGraph(dynamic=True, graph=wrapped_graph)
 
@@ -2677,9 +2678,7 @@ def _uniquify(
 class _FrameTranslation:
     unique_counter: Incrementer = attrib(init=False, default=Incrementer(0))
 
-    def _translate_frame(
-            self, frame: DevelopmentalPrimitivePerceptionFrame
-    ) -> DiGraph:
+    def _translate_frame(self, frame: DevelopmentalPrimitivePerceptionFrame) -> DiGraph:
         """
         Gets the `DiGraph` corresponding to a
         `DevelopmentalPrimitivePerceptionFrame`.
@@ -2739,9 +2738,9 @@ class _FrameTranslation:
             if isinstance(property_, HasBinaryProperty):
                 # TODO: fix this hack for me and you https://github.com/isi-vista/adam/issues/917
                 if (
-                        property_.binary_property in [IS_SPEAKER, IS_ADDRESSEE]
-                        and source_node.debug_handle
-                        and source_node.debug_handle != "learner"
+                    property_.binary_property in [IS_SPEAKER, IS_ADDRESSEE]
+                    and source_node.debug_handle
+                    and source_node.debug_handle != "learner"
                 ):
                     dest_node = self._map_node(
                         property_.binary_property,
@@ -2927,7 +2926,7 @@ class _FrameTranslation:
                 )
 
         new_perception_graph = PerceptionGraph(graph=DiGraph(), dynamic=True)
-        object.__setattr__(new_perception_graph, '_graph', _dynamic_digraph)
+        object.__setattr__(new_perception_graph, "_graph", _dynamic_digraph)
         return new_perception_graph
 
     def _add_path_node(
