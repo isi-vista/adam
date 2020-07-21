@@ -356,19 +356,29 @@ class PerceptionGraph(PerceptionGraphProtocol):
         return _FrameTranslation().translate_frames(perceptual_representation)
 
     @staticmethod
-    def copy_digraph_with_temporal_scopes(
+    def add_temporal_scopes(
         digraph: DiGraph, temporal_scopes: Union[TemporalScope, Iterable[TemporalScope]]
     ) -> DiGraph:
-        wrapped_graph = digraph.copy()
+        """
+        Modifies this perception graph in place, applying the given `TemporalScope`\ s
+        to all edges. This new graph will be dynamic.
 
-        for (source, target) in wrapped_graph.edges():
-            unwrapped_label = wrapped_graph.edges[source, target]["label"]
+        This graph must be a static graph or a `RuntimeError` will be raised.
+        Args:
+            digraph:
+            temporal_scopes:
+
+        Returns:
+            The modified graph
+        """
+        for (source, target) in digraph.edges():
+            unwrapped_label = digraph.edges[source, target]["label"]
             temporally_scoped_label = TemporallyScopedEdgeLabel.for_dynamic_perception(
                 unwrapped_label, when=temporal_scopes
             )
-            wrapped_graph.edges[source, target]["label"] = temporally_scoped_label
+            digraph.edges[source, target]["label"] = temporally_scoped_label
 
-        return wrapped_graph
+        return digraph
 
     def copy_with_temporal_scopes(
         self, temporal_scopes: Union[TemporalScope, Iterable[TemporalScope]]
@@ -2802,12 +2812,12 @@ class _FrameTranslation:
         # First, we translate each of the two frames into PerceptionGraphs independently.
         # The edges of each graph are marked with the appropriate "temporal specifier"
         # which tells whether they belong to the "before" frame or the "after" frame.
-        before_frame_graph = PerceptionGraph.copy_digraph_with_temporal_scopes(
+        before_frame_graph = PerceptionGraph.add_temporal_scopes(
             self._translate_frame(perceptual_representation.frames[0]),
             [TemporalScope.BEFORE],
         )
 
-        after_frame_graph = PerceptionGraph.copy_digraph_with_temporal_scopes(
+        after_frame_graph = PerceptionGraph.add_temporal_scopes(
             self._translate_frame(perceptual_representation.frames[1]),
             [TemporalScope.AFTER],
         )
