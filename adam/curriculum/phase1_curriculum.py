@@ -1414,7 +1414,6 @@ def make_jump_template(
     agent: TemplateObjectVariable,
     *,
     use_adverbial_path_modifier: bool,
-    operator: PathOperator = None,
     spatial_properties: Iterable[OntologyNode] = immutableset(),
     background: Iterable[TemplateObjectVariable] = immutableset(),
 ) -> Phase1SituationTemplate:
@@ -1434,7 +1433,9 @@ def make_jump_template(
                         (
                             agent,
                             SpatialPath(
-                                operator=operator,
+                                operator=AWAY_FROM
+                                if use_adverbial_path_modifier
+                                else None,
                                 reference_object=GROUND_OBJECT_TEMPLATE,
                                 properties=spatial_properties,
                             ),
@@ -1541,7 +1542,6 @@ def _make_jump_curriculum(
                         make_jump_template(
                             jumper,
                             use_adverbial_path_modifier=use_adverbial_path_modifier,
-                            operator=operator,
                             background=background,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -1549,7 +1549,6 @@ def _make_jump_curriculum(
                         max_to_sample=num_samples if num_samples else 25,
                     )
                     for use_adverbial_path_modifier in (True, False)
-                    for operator in [TOWARD, AWAY_FROM]
                 ]
             ),
             flatten(
