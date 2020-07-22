@@ -360,10 +360,10 @@ class PerceptionGraph(PerceptionGraphProtocol):
         digraph: DiGraph, temporal_scopes: Union[TemporalScope, Iterable[TemporalScope]]
     ) -> DiGraph:
         """
-        Modifies this perception graph in place, applying the given `TemporalScope`\ s
-        to all edges. This new graph will be dynamic.
+        Modifies the given digraph in place, applying the given `TemporalScope`\ s to all edges.
+        This new graph will be dynamic.
 
-        This graph must be a static graph or a `RuntimeError` will be raised.
+        Note that this should only be applied to static perception digraphs.
         Args:
             digraph:
             temporal_scopes:
