@@ -957,13 +957,13 @@ def _make_object_under_or_over_object_curriculum(
             f"object-under-object",
             salient_object_variables=[object_above, object_under],
             constraining_relations=[bigger_than(object_above, object_under)],
-            asserted_always_relations=[strictly_under(object_above, object_under)],
+            asserted_always_relations=[strictly_under(object_under, object_above)],
             background_object_variables=make_noise_objects(noise_objects),
         ),
         Phase1SituationTemplate(
             f"object-over-object",
             salient_object_variables=[object_under, object_above],
-            asserted_always_relations=[strictly_over(object_under, object_above)],
+            asserted_always_relations=[strictly_over(object_above, object_under)],
             background_object_variables=make_noise_objects(noise_objects),
         ),
     ]
