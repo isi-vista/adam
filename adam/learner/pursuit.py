@@ -316,7 +316,11 @@ class AbstractPursuitLearner(AbstractTemplateLearner, ABC):
                 )
 
                 chosen_hypothesis = self._rng.choice(
-                    self._candidate_hypotheses(language_aligned_perception)
+                    [
+                        x
+                        for x in self._candidate_hypotheses(language_aligned_perception)
+                        if x not in self._lexicon.values()
+                    ]
                 )
                 hypotheses_to_reward.append(chosen_hypothesis)
 
