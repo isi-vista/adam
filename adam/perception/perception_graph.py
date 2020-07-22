@@ -364,12 +364,6 @@ class PerceptionGraph(PerceptionGraphProtocol):
         This new graph will be dynamic.
 
         Note that this should only be applied to static perception digraphs.
-        Args:
-            digraph:
-            temporal_scopes:
-
-        Returns:
-            The modified graph
         """
         for (source, target) in digraph.edges():
             unwrapped_label = digraph.edges[source, target]["label"]
