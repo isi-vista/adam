@@ -184,9 +184,13 @@ class AbstractPursuitLearner(AbstractTemplateLearner, ABC):
         # If it's a novel word, learn a new hypothesis/pattern,
         # generated as a pattern graph from the perception.
         # We want h_0 = arg_min_(m in M_U) max(A_m); i.e. h_0 is pattern_hypothesis
-        hypotheses: Sequence[PerceptionGraphTemplate] = self._candidate_hypotheses(
-            aligned_perception
-        )
+
+        # exclude graphs for which we already have a mapping from our possibilities
+        hypotheses: Sequence[PerceptionGraphTemplate] = [
+            x
+            for x in self._candidate_hypotheses(aligned_perception)
+            if x not in self._lexicon.values()
+        ]
 
         pattern_hypothesis = first(hypotheses)
         min_score = float("inf")
@@ -672,11 +676,16 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
         # If it's a novel word, learn a new hypothesis/pattern,
         # generated as a pattern graph from the perception.
         # We want h_0 = arg_min_(m in M_U) max(A_m); i.e. h_0 is pattern_hypothesis
-        hypotheses: AbstractSet[
-            PerceptionGraphTemplate
-        ] = self._hypotheses_from_perception(
-            language_perception_semantic_alignment, bound_surface_template
-        )
+
+        # only consider those hypotheses for which we don't already have a mapping
+        hypotheses: List[PerceptionGraphTemplate] = [
+            x
+            for x in self._hypotheses_from_perception(
+                language_perception_semantic_alignment, bound_surface_template
+            )
+            if x not in self._lexicon.values()
+        ]
+
         pattern_hypothesis = first(hypotheses)
         min_score = float("inf")
         # get all objects that have gaze
@@ -841,11 +850,6 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
                         partial_match.num_nodes_matched,
                         partial_match.num_nodes_in_pattern,
                     )
-                    # we know if partial_match_hypothesis is non-None above, it still will be.
-                    # we know if partial_match_hypothesis is non-None above, it still will be.
-                    # hypotheses_to_reward.append(  # type: ignore
-                    #     partial_match.partial_match_hypothesis
-                    # )
                     return partial_match.partial_match_hypothesis
                 else:
                     return None
@@ -857,9 +861,14 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
             # we used that relaxed version as the new hypothesis to introduce
 
             hypotheses_to_reward: List[PerceptionGraphTemplate] = []
-            hypotheses = self._hypotheses_from_perception(
-                language_perception_semantic_alignment, bound_surface_template
-            )
+            # get all hypotheses which do not already have a mapping
+            hypotheses = [
+                x
+                for x in self._hypotheses_from_perception(
+                    language_perception_semantic_alignment, bound_surface_template
+                )
+                if x not in self._lexicon.values()
+            ]
             # If ranking the gaze higher, we compute a list of all possible hypotheses that have gaze
             if self.rank_gaze_higher:
                 gazed_at_possibilities = []
