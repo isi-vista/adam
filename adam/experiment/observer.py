@@ -124,6 +124,7 @@ class CandidateAccuracyObserver(
     def report(self) -> None:
         accuracy = self.accuracy()
         if accuracy is not None:
+            print("ACCURACY", 100 * accuracy)
             logging.info(
                 "%s: accuracy of learner's predictions ('gold' description was in learner's candidates) "
                 "%d / %d predictions ("

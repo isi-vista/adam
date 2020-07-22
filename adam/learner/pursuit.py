@@ -674,6 +674,21 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
             if self._log_learned_item_hypotheses_to:
                 self._log_hypotheses(bound_surface_template.surface_template)
 
+    def remove_gaze_from_hypothesis(self, hypothesis: PerceptionGraphTemplate):
+        """Removes any nodes that are gazed-at from a given hypothesis to help prevent this from affecting predictions"""
+        nodes_to_remove = []
+        for node in hypothesis.graph_pattern.copy_as_digraph().node:
+            if (
+                isinstance(node, IsOntologyNodePredicate)
+                and node.property_value == GAZED_AT
+            ):
+                nodes_to_remove.append(node)
+        for node in nodes_to_remove:
+            hypothesis.graph_pattern._graph.remove_node( # pylint: disable=protected-access
+                node
+            )
+        return hypothesis
+
     def initialization_step(
         self,
         language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
@@ -752,6 +767,8 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
                 bound_surface_template,
                 self._learning_factor,
             )
+
+        pattern_hypothesis = self.remove_gaze_from_hypothesis(pattern_hypothesis)
 
         # Create the mappings from concept to template and the new hypothesis
         concept = self._new_concept(
@@ -935,8 +952,11 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
                 if hypothesis_to_reward in hypotheses_for_item:
                     hypothesis_object_to_reward = hypothesis_to_reward
                 else:
+                    hypothesis_to_reward_without_gaze = self.remove_gaze_from_hypothesis(
+                        hypothesis_to_reward
+                    )
                     existing_hypothesis_matching_new_hypothesis = self._find_identical_hypothesis(
-                        hypothesis_to_reward, candidates=hypotheses_for_item
+                        hypothesis_to_reward_without_gaze, candidates=hypotheses_for_item
                     )
                     if existing_hypothesis_matching_new_hypothesis:
                         hypothesis_object_to_reward = (
@@ -946,12 +966,16 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
                     else:
                         hypothesis_object_to_reward = hypothesis_to_reward
 
-                if (
+                hypothesis_object_to_reward_without_gaze = self.remove_gaze_from_hypothesis(
                     hypothesis_object_to_reward
+                )
+                if (
+                    hypothesis_object_to_reward_without_gaze
                     not in hypothesis_objects_boosted_on_this_update
                 ):
+
                     cur_score_for_new_hypothesis = hypotheses_for_item.get(
-                        hypothesis_object_to_reward, 0.0
+                        hypothesis_object_to_reward_without_gaze, 0.0
                     )
                     # if the object has gaze, we want to reinforce it more strongly than if it doesn't
                     # TODO: tune how much this is reinforced https://github.com/isi-vista/adam/issues/734
@@ -961,17 +985,17 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
                         if isinstance(node, IsOntologyNodePredicate)
                     ]:
 
-                        hypotheses_for_item[hypothesis_object_to_reward] = (
+                        hypotheses_for_item[hypothesis_object_to_reward_without_gaze] = (
                             cur_score_for_new_hypothesis
                             + self._learning_factor * (2.0 - cur_score_for_new_hypothesis)
                         )
                     else:
-                        hypotheses_for_item[hypothesis_object_to_reward] = (
+                        hypotheses_for_item[hypothesis_object_to_reward_without_gaze] = (
                             cur_score_for_new_hypothesis
                             + self._learning_factor * (1.0 - cur_score_for_new_hypothesis)
                         )
                     hypothesis_objects_boosted_on_this_update.add(
-                        hypothesis_object_to_reward
+                        hypothesis_object_to_reward_without_gaze
                     )
 
         return hypothesis_is_confirmed
