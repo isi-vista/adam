@@ -2,7 +2,7 @@ import itertools
 import logging
 from itertools import chain, combinations
 from pathlib import Path
-from typing import AbstractSet, Iterator, Mapping, Optional, Tuple, List
+from typing import AbstractSet, Iterator, Mapping, Optional, Tuple, List, Union
 
 from adam.language import LinguisticDescription, TokenSequenceLinguisticDescription
 from adam.language_specific.english import ENGLISH_BLOCK_DETERMINERS
@@ -28,6 +28,9 @@ from adam.semantics import (
     SemanticNode,
     GROUND_OBJECT_CONCEPT,
     LearnerSemantics,
+    SyntaxSemanticsVariable,
+    FunctionalObjectConcept,
+    ObjectConcept,
 )
 from attr import attrib, attrs
 from attr.validators import instance_of, optional
@@ -142,9 +145,7 @@ class IntegratedTemplateLearner(
 
             if self.functional_learner:
                 self.functional_learner.learn_from(
-                    current_learner_state,
-                    observation_num=observation_num,
-                    action_learner=self.action_learner,
+                    current_learner_state, observation_num=observation_num
                 )
 
     def describe(
@@ -171,6 +172,11 @@ class IntegratedTemplateLearner(
             cur_description_state = self.action_learner.enrich_during_description(
                 cur_description_state
             )
+
+            if self.functional_learner:
+                cur_description_state = self.functional_learner.enrich_during_description(
+                    cur_description_state
+                )
         return self._linguistic_descriptions_from_semantics(
             cur_description_state.semantic_nodes
         )
@@ -243,7 +249,11 @@ class IntegratedTemplateLearner(
             return cur_string
 
     def _instantiate_object(
-        self, object_node: ObjectSemanticNode, learner_semantics: "LearnerSemantics"
+        self,
+        object_node: ObjectSemanticNode,
+        learner_semantics: "LearnerSemantics",
+        *,
+        concept_mapping: Mapping[FunctionalObjectConcept, ObjectConcept] = immutabledict()
     ) -> Iterator[Tuple[str, ...]]:
 
         # For now, we assume the order in which modifiers is expressed is arbitrary.
@@ -260,7 +270,15 @@ class IntegratedTemplateLearner(
         # See https://github.com/isi-vista/adam/issues/794 .
         # relations_for_object = learner_semantics.objects_to_relation_in_slot1[object_node]
 
-        for template in self.object_learner.templates_for_concept(object_node.concept):
+        if (
+            isinstance(object_node.concept, FunctionalObjectConcept)
+            and object_node.concept in concept_mapping.keys()
+        ):
+            concept = concept_mapping[object_node.concept]
+        else:
+            concept = object_node.concept
+
+        for template in self.object_learner.templates_for_concept(concept):
 
             cur_string = template.instantiate(
                 template_variable_to_filler=immutabledict()
@@ -287,6 +305,7 @@ class IntegratedTemplateLearner(
                                     template_variable_to_filler={SLOT1: cur_string}
                                 ).as_token_sequence(),
                             )
+
             yield self._add_determiners(object_node, cur_string)
 
     def _instantiate_relation(
@@ -317,15 +336,18 @@ class IntegratedTemplateLearner(
     ) -> Iterator[Tuple[str, ...]]:
         if not self.action_learner:
             raise RuntimeError("Cannot instantiate an action without an action learner")
-        slots_to_instantiations = {
-            slot: list(self._instantiate_object(slot_filler, learner_semantics))
-            for (slot, slot_filler) in action_node.slot_fillings.items()
-        }
-        slot_order = tuple(slots_to_instantiations.keys())
 
         for action_template in self.action_learner.templates_for_concept(
             action_node.concept
         ):
+            # TODO: Handle instantiate objects returning no result from functional learner
+            # If that happens we should break from instantiating this utterance
+            slots_to_instantiations = {
+                slot: list(self._instantiate_object(slot_filler, learner_semantics))
+                for (slot, slot_filler) in action_node.slot_fillings.items()
+            }
+            slot_order = tuple(slots_to_instantiations.keys())
+
             all_possible_slot_fillings = itertools.product(
                 *slots_to_instantiations.values()
             )

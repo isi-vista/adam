@@ -48,13 +48,20 @@ from adam.ontology.phase1_ontology import (
     CAN_JUMP,
     EDIBLE,
     SELF_MOVING,
+    HOLLOW,
+    PERSON_CAN_HAVE,
+    LIQUID,
 )
 from adam.situation import Action
 from adam.situation.templates.phase1_situation_templates import (
     _go_under_template,
     _jump_over_template,
 )
-from adam.situation.templates.phase1_templates import Phase1SituationTemplate, sampled
+from adam.situation.templates.phase1_templates import (
+    Phase1SituationTemplate,
+    sampled,
+    object_variable,
+)
 from immutablecollections import immutableset
 from tests.learner import (
     LANGUAGE_MODE_TO_OBJECT_RECOGNIZER,
@@ -165,9 +172,18 @@ def test_eat_simple(language_mode, learner):
     [pytest.mark.skip(subset_verb_language_factory), integrated_learner_factory],
 )
 def test_drink(language_mode, learner):
+    object_0 = standard_object(
+        "object_0",
+        required_properties=[HOLLOW, PERSON_CAN_HAVE],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
+    liquid_0 = object_variable("liquid_0", required_properties=[LIQUID])
+    person_0 = standard_object(
+        "person_0", PERSON, banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
+    )
     run_verb_test(
         learner(language_mode),
-        make_drink_template(None),
+        make_drink_template(person_0, liquid_0, object_0, None),
         language_generator=phase1_language_generator(language_mode),
     )
 

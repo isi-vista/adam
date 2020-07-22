@@ -546,11 +546,51 @@ class ObjectRecognizerAsTemplateLearner(TemplateLearner):
         # It just recognizes predefined object patterns.
         pass
 
+    @staticmethod
+    def _enrich_post_process(
+        perception_graph_after_matching: PerceptionGraph,
+        immutable_new_nodes: AbstractSet[SemanticNode],
+    ) -> Tuple[PerceptionGraph, AbstractSet[SemanticNode]]:
+        object_root_nodes = immutableset(
+            node
+            for node in perception_graph_after_matching._graph.nodes
+            if isinstance(node, ObjectPerception)
+        )
+        new_nodes = []
+        perception_graph_after_processing = perception_graph_after_matching
+        for object_root_node in object_root_nodes:
+            fake_subgraph = subgraph(
+                perception_graph_after_matching._graph, [object_root_node]
+            )
+            fake_perception_graph = PerceptionGraph(
+                graph=fake_subgraph, dynamic=perception_graph_after_matching.dynamic
+            )
+            fake_pattern_graph = PerceptionGraphPattern.from_graph(fake_perception_graph)
+            fake_object_semantic_node = ObjectSemanticNode(
+                concept=FunctionalObjectConcept("unknown_object")
+            )
+            perception_graph_after_processing = replace_match_root_with_object_semantic_node(
+                object_semantic_node=fake_object_semantic_node,
+                current_perception=perception_graph_after_processing,
+                pattern_match=PerceptionGraphPatternMatch(
+                    matched_pattern=fake_pattern_graph.perception_graph_pattern,
+                    graph_matched_against=perception_graph_after_matching,
+                    matched_sub_graph=fake_perception_graph,
+                    pattern_node_to_matched_graph_node=fake_pattern_graph.perception_graph_node_to_pattern_node,
+                ),
+            )
+            new_nodes.append(fake_object_semantic_node)
+
+        return (
+            perception_graph_after_processing,
+            immutableset(chain(immutable_new_nodes, new_nodes)),
+        )
+
     def enrich_during_learning(
         self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
     ) -> LanguagePerceptionSemanticAlignment:
         return self._object_recognizer.match_objects_with_language(
-            language_perception_semantic_alignment
+            language_perception_semantic_alignment, post_process=self._enrich_post_process
         )
 
     def enrich_during_description(

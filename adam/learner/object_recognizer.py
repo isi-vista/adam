@@ -1,6 +1,17 @@
 import logging
 from itertools import chain
-from typing import AbstractSet, Iterable, List, Mapping, Sequence, Set, Tuple, Union
+from typing import (
+    AbstractSet,
+    Iterable,
+    List,
+    Mapping,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+    Callable,
+    Optional,
+)
 
 from adam.axis import GeonAxis
 from adam.language_specific.chinese.chinese_phase_1_lexicon import (
@@ -18,6 +29,7 @@ from adam.learner.alignments import (
     LanguagePerceptionSemanticAlignment,
     PerceptionSemanticAlignment,
 )
+from adam.learner.learner_utils import default_post_process_enrichment
 from adam.ontology import OntologyNode
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
@@ -57,6 +69,7 @@ from adam.semantics import (
     ObjectConcept,
     ObjectSemanticNode,
     GROUND_OBJECT_CONCEPT,
+    SemanticNode,
 )
 from adam.utils.networkx_utils import subgraph
 from attr import attrib, attrs
@@ -244,7 +257,13 @@ class ObjectRecognizer:
         )
 
     def match_objects(
-        self, perception_semantic_alignment: PerceptionSemanticAlignment
+        self,
+        perception_semantic_alignment: PerceptionSemanticAlignment,
+        *,
+        post_process: Callable[
+            [PerceptionGraph, AbstractSet[SemanticNode]],
+            Tuple[PerceptionGraph, AbstractSet[SemanticNode]],
+        ] = default_post_process_enrichment,
     ) -> Tuple[PerceptionSemanticAlignment, Mapping[Tuple[str, ...], ObjectSemanticNode]]:
         r"""
         Recognize known objects in a `PerceptionGraph`.
@@ -368,9 +387,14 @@ class ObjectRecognizer:
             cumulative_millis_in_failed_matches_ms,
         )
         semantic_object_nodes = immutableset(node for (_, node) in object_nodes)
+
+        post_process_graph, post_process_nodes = post_process(
+            graph_to_return, semantic_object_nodes
+        )
+
         return (
             perception_semantic_alignment.copy_with_updated_graph_and_added_nodes(
-                new_graph=graph_to_return, new_nodes=semantic_object_nodes
+                new_graph=post_process_graph, new_nodes=post_process_nodes
             ),
             immutabledict(object_nodes),
         )
@@ -399,7 +423,13 @@ class ObjectRecognizer:
         )
 
     def match_objects_with_language(
-        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
+        self,
+        language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
+        *,
+        post_process: Callable[
+            [PerceptionGraph, AbstractSet[SemanticNode]],
+            Tuple[PerceptionGraph, AbstractSet[SemanticNode]],
+        ] = default_post_process_enrichment,
     ) -> LanguagePerceptionSemanticAlignment:
         """
         Recognize known objects in a `LanguagePerceptionSemanticAlignment`.
@@ -425,7 +455,8 @@ class ObjectRecognizer:
             post_match_perception_semantic_alignment,
             tokens_to_object_nodes,
         ) = self.match_objects(
-            language_perception_semantic_alignment.perception_semantic_alignment
+            language_perception_semantic_alignment.perception_semantic_alignment,
+            post_process=post_process,
         )
         return LanguagePerceptionSemanticAlignment(
             language_concept_alignment=language_perception_semantic_alignment.language_concept_alignment.copy_with_added_token_alignments(

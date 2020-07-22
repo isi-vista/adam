@@ -1,6 +1,8 @@
 import logging
 
-from typing import Tuple, Dict, Union
+from immutablecollections import immutabledict
+from more_itertools import first
+from typing import Tuple, Dict, List
 
 from attr.validators import instance_of
 
@@ -11,47 +13,56 @@ from adam.learner import (
     LanguagePerceptionSemanticAlignment,
     PerceptionSemanticAlignment,
 )
-from adam.learner.template_learner import TemplateLearner
-from adam.semantics import SemanticNode, SyntaxSemanticsVariable, LearnerSemantics
+from adam.semantics import (
+    SyntaxSemanticsVariable,
+    LearnerSemantics,
+    ObjectConcept,
+    FunctionalObjectConcept,
+    ActionConcept,
+)
 
 
 # This class needs a better name?
 @attrs(slots=True)
-class StringFunctionCounter:
-    _tokens_to_count: Dict[Tuple[str, ...], int] = attrib(init=False, default=dict())
+class ConceptFunctionCounter:
+    _concept_to_count: Dict[ObjectConcept, int] = attrib(init=False, default=dict())
     _num_instances_seen: int = attrib(init=False, default=0)
 
-    def get_best_guess_token(self) -> Tuple[str, ...]:
+    def get_best_concept(self) -> ObjectConcept:
+        def sort_by_counts(tok_to_count: Tuple[ObjectConcept, int]) -> int:
+            _, count = tok_to_count
+            return count
+
+        sorted_by_count = [(k, v) for k, v in self._concept_to_count.items()]
+        sorted_by_count.sort(key=sort_by_counts, reverse=True)
+        concept, _ = first(sorted_by_count)
         # This should apply the tolerance principal to get the assumed token
         # If we don't know what the observation is
-        raise NotImplementedError
+        # But for now we just return the highest seen argument
+        return concept
 
-    def add_example(self, tokens: Tuple[str, ...]) -> None:
-        if tokens in self._tokens_to_count.keys():
-            self._tokens_to_count[tokens] += 1
-        else:
-            self._tokens_to_count[tokens] = 1
-        self._num_instances_seen += 1
+    def add_example(self, concept: ObjectConcept) -> None:
+        if not isinstance(concept, FunctionalObjectConcept):
+            if concept in self._concept_to_count.keys():
+                self._concept_to_count[concept] += 1
+            else:
+                self._concept_to_count[concept] = 1
+            self._num_instances_seen += 1
 
 
 @attrs
 class FunctionalLearner:
     _observation_num: int = attrib(init=False, default=0)
     _language_mode: LanguageMode = attrib(validator=instance_of(LanguageMode))
-    _concept_elements_to_arguments_to_function_counter: Dict[
-        Tuple[Union[str, SyntaxSemanticsVariable], ...],
-        Dict[SyntaxSemanticsVariable, StringFunctionCounter],
+    _concept_to_slots_to_function_counter: Dict[
+        ActionConcept, Dict[SyntaxSemanticsVariable, ConceptFunctionCounter]
     ] = attrib(init=False)
-
-    def _remove_determiners(self, input: Tuple[str, ...]) -> Tuple[str, ...]:
-        return tuple(tok for tok in input if tok not in ["a", "the"])
 
     def learn_from(
         self,
         language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
         *,
         observation_num: int = -1,
-        action_learner: TemplateLearner,
     ):
         if observation_num >= 0:
             logging.info(
@@ -71,44 +82,55 @@ class FunctionalLearner:
         semantics = LearnerSemantics.from_nodes(
             language_perception_semantic_alignment.perception_semantic_alignment.semantic_nodes
         )
-        language = language_perception_semantic_alignment.language_concept_alignment
         for semantic_node in semantics.actions:
-            if action_learner.templates_for_concept(semantic_node.concept):
-                for action_template in action_learner.templates_for_concept(
-                    semantic_node.concept
+            if (
+                semantic_node.concept
+                not in self._concept_to_slots_to_function_counter.keys()
+            ):
+                self._concept_to_slots_to_function_counter[semantic_node.concept] = dict(
+                    (slot, ConceptFunctionCounter())
+                    for slot in semantic_node.slot_fillings.keys()
+                )
+            for (slot, slot_filler) in semantic_node.slot_fillings.items():
+                if (
+                    slot
+                    not in self._concept_to_slots_to_function_counter[
+                        semantic_node.concept
+                    ].keys()
                 ):
-                    elements = action_template.elements
-                    if (
-                        elements
-                        not in self._concept_elements_to_arguments_to_function_counter.keys()
-                    ):
-                        self._concept_elements_to_arguments_to_function_counter[
-                            elements
-                        ] = dict(
-                            (slot, StringFunctionCounter())
-                            for slot in semantic_node.slot_fillings.keys()
-                        )
-                    for (slot, slot_filler) in semantic_node.slot_fillings.items():
-                        if (
-                            slot
-                            not in self._concept_elements_to_arguments_to_function_counter[
-                                elements
-                            ].keys()
-                        ):
-                            raise RuntimeError(
-                                f"Tried to align functional use to slot: {slot} in concept {semantic_node.concept} but {slot} didn't exist in the concept"
-                            )
-                        if slot_filler not in language.node_to_language_span.keys():
-                            raise RuntimeError(
-                                f"Tried to match slot filler: {slot_filler} to span in language but {slot_filler} wasn't in {language.node_to_language_span}"
-                            )
-                        span = language.node_to_language_span[slot_filler]
-                        aligned_text = self._remove_determiners(
-                            language.language.as_token_sequence()[span.start : span.end]
-                        )
-                        self._concept_elements_to_arguments_to_function_counter[elements][
-                            slot
-                        ].add_example(aligned_text)
+                    raise RuntimeError(
+                        f"Tried to align functional use to slot: {slot} in concept {semantic_node.concept} but {slot} didn't exist in the concept"
+                    )
+                self._concept_to_slots_to_function_counter[semantic_node.concept][
+                    slot
+                ].add_example(slot_filler.concept)
 
-    def describe(self, perception_semantic_alignment: PerceptionSemanticAlignment):
-        raise NotImplementedError
+    def enrich_during_description(
+        self, perception_semantic_alignment: PerceptionSemanticAlignment
+    ):
+        semantics = LearnerSemantics.from_nodes(
+            perception_semantic_alignment.semantic_nodes
+        )
+        list_of_matches: List[Tuple[FunctionalObjectConcept, ObjectConcept]] = []
+        for action_semantic_node in semantics.actions:
+            if action_semantic_node.concept in self._concept_to_slots_to_function_counter:
+                for slot, slot_filler in action_semantic_node.slot_fillings.items():
+                    if (
+                        slot
+                        in self._concept_to_slots_to_function_counter[
+                            action_semantic_node.concept
+                        ]
+                    ):
+                        if isinstance(slot_filler, FunctionalObjectConcept):
+                            list_of_matches.append(
+                                (
+                                    slot_filler,
+                                    self._concept_to_slots_to_function_counter[
+                                        action_semantic_node.concept
+                                    ][slot].get_best_concept(),
+                                )
+                            )
+
+        return perception_semantic_alignment.copy_with_mapping(
+            mapping=immutabledict(list_of_matches)
+        )
