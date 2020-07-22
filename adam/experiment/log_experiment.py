@@ -38,8 +38,6 @@ from adam.learner.verbs import SubsetVerbLearner, SubsetVerbLearnerNew
 from adam.ontology.phase2_ontology import GAILA_PHASE_2_ONTOLOGY
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     GAILA_PHASE_1_PERCEPTION_GENERATOR,
-    HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
-    GazePerceivedNoisily,
 )
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from vistautils.parameters import Parameters
@@ -161,27 +159,6 @@ def learner_factory_from_params(
     rng = random.Random()
     rng.seed(0)
     perception_generator = GAILA_PHASE_1_PERCEPTION_GENERATOR
-
-    if params.has_namespace("perception-generator-params"):
-        perception_params = params.namespace("perception-generator-params")
-        ontology = perception_params.string("ontology", default="phase1")
-        prob_given = perception_params.floating_point("prob_given", default=1.0)
-        prob_not_given = perception_params.floating_point("prob_not_given", default=0.0)
-        gaze_perciever = GazePerceivedNoisily(
-            rng=rng,
-            prob_gaze_perceived_given_gaze=prob_given,
-            prob_gaze_perceived_given_not_gaze=prob_not_given,
-        )
-        if ontology == "phase1":
-            perception_generator = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
-                ontology=GAILA_PHASE_1_ONTOLOGY, gaze_strategy=gaze_perciever
-            )
-        elif ontology == "phase2":
-            perception_generator = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
-                ontology=GAILA_PHASE_2_ONTOLOGY, gaze_strategy=gaze_perciever
-            )
-        else:
-            raise RuntimeError(f"Invalid ontology {ontology}")
 
     objects = [YOU_HACK, ME_HACK]
     objects.extend(PHASE_1_CURRICULUM_OBJECTS)

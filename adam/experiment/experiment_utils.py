@@ -1,11 +1,12 @@
 from itertools import repeat
 from typing import Sequence, Optional
-
+import random
 from adam.curriculum.curriculum_utils import Phase1InstanceGroup
 from adam.curriculum.m6_curriculum import (
     M6_PREPOSITION_SUBCURRICULUM_GENERATORS,
     instantiate_subcurricula,
 )
+from adam.ontology.phase2_ontology import GAILA_PHASE_1_ONTOLOGY, GAILA_PHASE_2_ONTOLOGY
 from adam.curriculum.phase1_curriculum import (
     _make_each_object_by_itself_curriculum,
     _make_put_on_speaker_addressee_body_part_curriculum,
@@ -16,6 +17,11 @@ from adam.language.dependency import LinearizedDependencyTree
 from adam.language.language_generator import LanguageGenerator
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from vistautils.parameters import Parameters
+from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
+    GAILA_PHASE_1_PERCEPTION_GENERATOR,
+    HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
+    GazePerceivedNoisily,
+)
 
 
 def build_each_object_by_itself_curriculum_train(
@@ -100,6 +106,27 @@ def build_pursuit_curriculum(
         "num_objects_in_instance", default=3
     )
     add_gaze = pursuit_curriculum_params.boolean("add_gaze", default=False)
+    ontology = pursuit_curriculum_params.string("ontology", default="phase1")
+    prob_given = pursuit_curriculum_params.floating_point("prob_given", default=1.0)
+    prob_not_given = pursuit_curriculum_params.floating_point(
+        "prob_not_given", default=0.0
+    )
+    rng = random.Random()
+    rng.seed(0)
+    gaze_perciever = GazePerceivedNoisily(
+        rng=rng,
+        prob_gaze_perceived_given_gaze=prob_given,
+        prob_gaze_perceived_given_not_gaze=prob_not_given,
+    )
+    perception_generator = GAILA_PHASE_1_PERCEPTION_GENERATOR
+    if ontology == "phase1":
+        perception_generator = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
+            ontology=GAILA_PHASE_1_ONTOLOGY, gaze_strategy=gaze_perciever
+        )
+    elif ontology == "phase2":
+        perception_generator = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
+            ontology=GAILA_PHASE_2_ONTOLOGY, gaze_strategy=gaze_perciever
+        )
     return [
         make_simple_pursuit_curriculum(
             num_instances=num_instances,
@@ -107,6 +134,7 @@ def build_pursuit_curriculum(
             num_noise_instances=num_noise_instances,
             language_generator=language_generator,
             add_gaze=add_gaze,
+            perception_generator=perception_generator,
         )
     ]
 
