@@ -829,77 +829,102 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
                 penalized_hypothesis_score,
             )
 
+            def get_partial_match() -> Optional[PerceptionGraphTemplate]:
+                if (
+                    partial_match.match_score()
+                    >= self._graph_match_confirmation_threshold
+                    and partial_match.partial_match_hypothesis
+                ):
+                    logging.info(
+                        "Introducing partial match as a new hypothesis; %s of %s nodes "
+                        "matched.",
+                        partial_match.num_nodes_matched,
+                        partial_match.num_nodes_in_pattern,
+                    )
+                    # we know if partial_match_hypothesis is non-None above, it still will be.
+                    # we know if partial_match_hypothesis is non-None above, it still will be.
+                    # hypotheses_to_reward.append(  # type: ignore
+                    #     partial_match.partial_match_hypothesis
+                    # )
+                    return partial_match.partial_match_hypothesis
+                else:
+                    return None
+
             # This is where we differ from the pursuit paper.
+            # If considering gaze and there is a gazed-at object, then we pick it.
+            # Otherwise, we look for a node sufficiently close to our node as a new hypothesis
             # If a sufficiently close relaxed version of our pattern matches,
             # we used that relaxed version as the new hypothesis to introduce
+
             hypotheses_to_reward: List[PerceptionGraphTemplate] = []
-            if (
-                partial_match.match_score() >= self._graph_match_confirmation_threshold
-                and partial_match.partial_match_hypothesis
-            ):
-                logging.info(
-                    "Introducing partial match as a new hypothesis; %s of %s nodes "
-                    "matched.",
-                    partial_match.num_nodes_matched,
-                    partial_match.num_nodes_in_pattern,
-                )
-                # we know if partial_match_hypothesis is non-None above, it still will be.
-                # we know if partial_match_hypothesis is non-None above, it still will be.
-                hypotheses_to_reward.append(  # type: ignore
-                    partial_match.partial_match_hypothesis
-                )
-
-            else:
-                hypotheses = self._hypotheses_from_perception(
-                    language_perception_semantic_alignment, bound_surface_template
-                )
-                # choose a node at random to be the candidate hypothesis
-                chosen_hypothesis: PerceptionGraphTemplate = self._rng.choice(
-                    list(hypotheses)
-                )
-
-                # get all hypotheses that have gaze
-                gazed_at_hypotheses: List[PerceptionGraphTemplate] = []
-                if self.rank_gaze_higher:
-                    for hypothesis in hypotheses:
-                        if GAZED_AT in [
-                            node.property_value
-                            for node in hypothesis.graph_pattern.copy_as_digraph().node
-                            if isinstance(node, IsOntologyNodePredicate)
-                        ]:
-                            gazed_at_hypotheses.append(hypothesis)
-                # if there is one, that's our choice
-                if len(gazed_at_hypotheses) == 1:
-                    chosen_hypothesis = first(gazed_at_hypotheses)
-                # if there's more than one, we choose one of them -- if there's none, it will be just the random choice from above
-                elif len(gazed_at_hypotheses) > 1:
-                    chosen_hypothesis = self._rng.choice(gazed_at_hypotheses)
-
-                # Here's where it gets complicated.
-                # In the Pursuit paper, at this point they choose a random meaning from the scene.
-                # But if you do this it becomes difficult to learn object meanings
-                # which are generalizations from the direct object observations.
-                # Therefore, in addition to rewarding the hypothesis
-                # which directly encodes the randomly selected object's perception,
-                # we also reward all other non-leading hypotheses which would match it.
-                hypotheses_to_reward.append(chosen_hypothesis)
-
-                for hypothesis in hypotheses_for_item:
-                    non_leading_hypothesis_partial_match = self._find_partial_match(
-                        hypothesis,
-                        language_perception_semantic_alignment.perception_semantic_alignment.perception_graph,
-                    )
+            hypotheses = self._hypotheses_from_perception(
+                language_perception_semantic_alignment, bound_surface_template
+            )
+            # If ranking the gaze higher, we compute a list of all possible hypotheses that have gaze
+            if self.rank_gaze_higher:
+                gazed_at_possibilities = []
+                for hypothesis in hypotheses:
+                    if GAZED_AT in [
+                        node.property_value
+                        for node in hypothesis.graph_pattern.copy_as_digraph().node
+                        if isinstance(node, IsOntologyNodePredicate)
+                    ]:
+                        gazed_at_possibilities.append(hypothesis)
+                # if there is only one gazed-at object, then we append this and are done
+                if len(gazed_at_possibilities) == 1:
+                    hypotheses_to_reward.append(first(gazed_at_possibilities))
+                # if there are multiple, we check if any of them have a partial match with the node we're currently considering
+                elif len(gazed_at_possibilities) > 1:
+                    partial_possibility = get_partial_match()
                     if (
-                        non_leading_hypothesis_partial_match.match_score()
-                        > self._graph_match_confirmation_threshold
+                        partial_possibility
+                        and partial_possibility in gazed_at_possibilities
                     ):
-                        hypotheses_to_reward.append(hypothesis)
-                        if self._hypothesis_logger:
-                            self._hypothesis_logger.log_hypothesis_graph(
-                                hypothesis,
-                                logging.INFO,
-                                "Boosting existing non-leading hypothesis",
-                            )
+                        hypotheses_to_reward.append(partial_possibility)
+                    # if no such node exists, we add a random gazed-at node
+                    else:
+                        hypotheses_to_reward.append(
+                            self._rng.choice(gazed_at_possibilities)
+                        )
+                # if there are none, we see if there is a partial match available
+                else:
+                    partial_possibility = get_partial_match()
+                    if partial_possibility:
+                        hypotheses_to_reward.append(partial_possibility)
+
+            # if we aren't considering gaze, we only try to get a partial match
+            else:
+                partial_possibility = get_partial_match()
+                if partial_possibility:
+                    hypotheses_to_reward.append(partial_possibility)
+            # if we didn't get a partial match or gazed-at object, then we make a random choice
+            if not hypotheses_to_reward:
+                hypotheses_to_reward.append(self._rng.choice(list(hypotheses)))
+
+            # Here's where it gets complicated.
+            # In the Pursuit paper, at this point they choose a random meaning from the scene.
+            # But if you do this it becomes difficult to learn object meanings
+            # which are generalizations from the direct object observations.
+            # Therefore, in addition to rewarding the hypothesis
+            # which directly encodes the randomly selected object's perception,
+            # we also reward all other non-leading hypotheses which would match it.
+
+            for hypothesis in hypotheses_for_item:
+                non_leading_hypothesis_partial_match = self._find_partial_match(
+                    hypothesis,
+                    language_perception_semantic_alignment.perception_semantic_alignment.perception_graph,
+                )
+                if (
+                    non_leading_hypothesis_partial_match.match_score()
+                    > self._graph_match_confirmation_threshold
+                ):
+                    hypotheses_to_reward.append(hypothesis)
+                    if self._hypothesis_logger:
+                        self._hypothesis_logger.log_hypothesis_graph(
+                            hypothesis,
+                            logging.INFO,
+                            "Boosting existing non-leading hypothesis",
+                        )
 
             # Guard against the same object being rewarded more than once on the same update step.
             hypothesis_objects_boosted_on_this_update: Set[
