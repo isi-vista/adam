@@ -861,10 +861,11 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
                     return None
 
             # This is where we differ from the pursuit paper.
-            # If considering gaze and there is a gazed-at object, then we pick it.
-            # Otherwise, we look for a node sufficiently close to our node as a new hypothesis
+            # First, we look for a node sufficiently close to our node as a new hypothesis
             # If a sufficiently close relaxed version of our pattern matches,
-            # we used that relaxed version as the new hypothesis to introduce
+            # we used that relaxed version as the new hypothesis to introduce.
+            # Otherwise, if we are prioritizing gazed-at object, we pick one of them, and if not, then we pick another
+            # random object.
 
             hypotheses_to_reward: List[PerceptionGraphTemplate] = []
             # get all hypotheses which do not already have a mapping
@@ -875,46 +876,27 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
                 )
                 if hypothesis not in self._lexicon.values()
             ]
-            # If ranking the gaze higher, we compute a list of all possible hypotheses that have gaze
-            if self.rank_gaze_higher:
-                gazed_at_possibilities = []
-                for hypothesis in hypotheses:
-                    if GAZED_AT in [
-                        node.property_value
-                        for node in hypothesis.graph_pattern.copy_as_digraph().node
-                        if isinstance(node, IsOntologyNodePredicate)
-                    ]:
-                        gazed_at_possibilities.append(hypothesis)
-                # if there is only one gazed-at object, then we append this and are done
-                if len(gazed_at_possibilities) == 1:
-                    hypotheses_to_reward.append(first(gazed_at_possibilities))
-                # if there are multiple, we check if any of them have a partial match with the node we're currently considering
-                elif len(gazed_at_possibilities) > 1:
-                    partial_possibility = get_partial_match()
-                    if (
-                        partial_possibility
-                        and partial_possibility in gazed_at_possibilities
-                    ):
-                        hypotheses_to_reward.append(partial_possibility)
-                    # if no such node exists, we add a random gazed-at node
-                    else:
-                        hypotheses_to_reward.append(
-                            self._rng.choice(gazed_at_possibilities)
-                        )
-                # if there are none, we see if there is a partial match available
-                else:
-                    partial_possibility = get_partial_match()
-                    if partial_possibility:
-                        hypotheses_to_reward.append(partial_possibility)
 
-            # if we aren't considering gaze, we only try to get a partial match
+            # if there is an object that partially matches the object we're trying to learn, reward this one
+            partial_possibility: Optional[PerceptionGraphTemplate] = get_partial_match()
+            if partial_possibility:
+                hypotheses_to_reward.append(partial_possibility)
             else:
-                partial_possibility = get_partial_match()
-                if partial_possibility:
-                    hypotheses_to_reward.append(partial_possibility)
-            # if we didn't get a partial match or gazed-at object, then we make a random choice
-            if not hypotheses_to_reward:
-                hypotheses_to_reward.append(self._rng.choice(list(hypotheses)))
+                # if we are considering gaze, get the objects that are gazed at, then pick one of these at random
+                gazed_at_possibilities = []
+                if self.rank_gaze_higher:
+                    for hypothesis in hypotheses:
+                        if GAZED_AT in [
+                            node.property_value
+                            for node in hypothesis.graph_pattern.copy_as_digraph().node
+                            if isinstance(node, IsOntologyNodePredicate)
+                        ]:
+                            gazed_at_possibilities.append(hypothesis)
+                if gazed_at_possibilities:
+                    hypotheses_to_reward.append(self._rng.choice(gazed_at_possibilities))
+                # if there is no gaze or we aren't considering it, then pick any hypothesis at random
+                else:
+                    hypotheses_to_reward.append(self._rng.choice(list(hypotheses)))
 
             # Here's where it gets complicated.
             # In the Pursuit paper, at this point they choose a random meaning from the scene.

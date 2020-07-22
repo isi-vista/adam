@@ -3,8 +3,8 @@ _includes:
    - "m13.params"
 
 experiment: 'pursuit-using-not-ablating-gaze'
-curriculum: each-object-by-itself
-learner: pursuit
+curriculum: pursuit
+learner: pursuit-gaze
 pursuit:
    learning_factor: 0.05
    graph_match_confirmation_threshold: 0.7
@@ -12,7 +12,7 @@ pursuit:
    smoothing_parameter: .001
 
 pursuit-curriculum-params:
-   num_instances: 40
+   num_instances: 5
    num_noise_instances: 0
    num_objects_in_instance: 3
    add_gaze : True

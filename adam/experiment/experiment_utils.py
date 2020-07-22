@@ -5,7 +5,6 @@ from adam.curriculum.curriculum_utils import Phase1InstanceGroup
 from adam.curriculum.m6_curriculum import (
     M6_PREPOSITION_SUBCURRICULUM_GENERATORS,
     instantiate_subcurricula,
-    M6_CURRICULUM_ALL_OBJECTS,
 )
 from adam.curriculum.phase1_curriculum import (
     _make_each_object_by_itself_curriculum,
@@ -15,9 +14,6 @@ from adam.curriculum.phase1_curriculum import (
 from adam.curriculum.pursuit_curriculum import make_simple_pursuit_curriculum
 from adam.language.dependency import LinearizedDependencyTree
 from adam.language.language_generator import LanguageGenerator
-from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
-    GAILA_M6_PERCEPTION_GENERATOR,
-)
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from vistautils.parameters import Parameters
 
@@ -103,15 +99,14 @@ def build_pursuit_curriculum(
     num_objects_in_instance = pursuit_curriculum_params.integer(
         "num_objects_in_instance", default=3
     )
-
+    add_gaze = pursuit_curriculum_params.boolean("add_gaze", default=False)
     return [
         make_simple_pursuit_curriculum(
-            target_objects=M6_CURRICULUM_ALL_OBJECTS,
             num_instances=num_instances,
             num_objects_in_instance=num_objects_in_instance,
             num_noise_instances=num_noise_instances,
-            perception_generator=GAILA_M6_PERCEPTION_GENERATOR,
             language_generator=language_generator,
+            add_gaze=add_gaze,
         )
     ]
 
