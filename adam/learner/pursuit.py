@@ -187,9 +187,9 @@ class AbstractPursuitLearner(AbstractTemplateLearner, ABC):
 
         # exclude graphs for which we already have a mapping from our possibilities
         hypotheses: Sequence[PerceptionGraphTemplate] = [
-            x
-            for x in self._candidate_hypotheses(aligned_perception)
-            if x not in self._lexicon.values()
+            hypothesis
+            for hypothesis in self._candidate_hypotheses(aligned_perception)
+            if hypothesis not in self._lexicon.values()
         ]
 
         pattern_hypothesis = first(hypotheses)
@@ -317,9 +317,11 @@ class AbstractPursuitLearner(AbstractTemplateLearner, ABC):
 
                 chosen_hypothesis = self._rng.choice(
                     [
-                        x
-                        for x in self._candidate_hypotheses(language_aligned_perception)
-                        if x not in self._lexicon.values()
+                        hypothesis
+                        for hypothesis in self._candidate_hypotheses(
+                            language_aligned_perception
+                        )
+                        if hypothesis not in self._lexicon.values()
                     ]
                 )
                 hypotheses_to_reward.append(chosen_hypothesis)
@@ -682,12 +684,12 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
         # We want h_0 = arg_min_(m in M_U) max(A_m); i.e. h_0 is pattern_hypothesis
 
         # only consider those hypotheses for which we don't already have a mapping
-        hypotheses: List[PerceptionGraphTemplate] = [
-            x
-            for x in self._hypotheses_from_perception(
+        hypotheses: Sequence[PerceptionGraphTemplate] = [
+            hypothesis
+            for hypothesis in self._hypotheses_from_perception(
                 language_perception_semantic_alignment, bound_surface_template
             )
-            if x not in self._lexicon.values()
+            if hypothesis not in self._lexicon.values()
         ]
 
         pattern_hypothesis = first(hypotheses)
@@ -866,12 +868,12 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
 
             hypotheses_to_reward: List[PerceptionGraphTemplate] = []
             # get all hypotheses which do not already have a mapping
-            hypotheses = [
-                x
-                for x in self._hypotheses_from_perception(
+            hypotheses: List[PerceptionGraphTemplate] = [
+                hypothesis
+                for hypothesis in self._hypotheses_from_perception(
                     language_perception_semantic_alignment, bound_surface_template
                 )
-                if x not in self._lexicon.values()
+                if hypothesis not in self._lexicon.values()
             ]
             # If ranking the gaze higher, we compute a list of all possible hypotheses that have gaze
             if self.rank_gaze_higher:
