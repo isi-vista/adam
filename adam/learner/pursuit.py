@@ -590,7 +590,6 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
 
     _rng: Random = attrib(validator=instance_of(Random))
     _debug_callback: Optional[DebugCallableType] = attrib(default=None)
-    _rank_gaze_higher: bool = attrib(default=False)
 
     # Learning factor (gamma) is the factor with which we update the hypotheses scores during
     # reinforcement.
@@ -623,6 +622,8 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
     )
 
     _observation_num = attrib(init=False, default=0)
+
+    rank_gaze_higher: bool = attrib(default=False)
 
     def _learning_step(
         self,
@@ -680,7 +681,7 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
         min_score = float("inf")
         # get all objects that have gaze
         gazed_at_hypotheses: List[PerceptionGraphTemplate] = []
-        if self._rank_gaze_higher:
+        if self.rank_gaze_higher:
             for hypothesis in hypotheses:
                 if GAZED_AT in [
                     node.property_value
@@ -801,7 +802,7 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
 
             # if the hypothesis is confirmed and there is gaze, increase the reinforcement factor
             # TODO: tune how much this is reinforced https://github.com/isi-vista/adam/issues/734
-            if self._rank_gaze_higher and GAZED_AT in [
+            if self.rank_gaze_higher and GAZED_AT in [
                 node.property_value
                 for node in leading_hypothesis_pattern.graph_pattern.copy_as_digraph().node
                 if isinstance(node, IsOntologyNodePredicate)
@@ -859,7 +860,7 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
 
                 # get all hypotheses that have gaze
                 gazed_at_hypotheses: List[PerceptionGraphTemplate] = []
-                if self._rank_gaze_higher:
+                if self.rank_gaze_higher:
                     for hypothesis in hypotheses:
                         if GAZED_AT in [
                             node.property_value
@@ -932,7 +933,7 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
                     )
                     # if the object has gaze, we want to reinforce it more strongly than if it doesn't
                     # TODO: tune how much this is reinforced https://github.com/isi-vista/adam/issues/734
-                    if self._rank_gaze_higher and GAZED_AT in [
+                    if self.rank_gaze_higher and GAZED_AT in [
                         node
                         for node in hypothesis_object_to_reward.graph_pattern.copy_as_digraph().node
                         if isinstance(node, IsOntologyNodePredicate)

@@ -421,6 +421,7 @@ def test_pursuit_object_learner_with_gaze(language_mode):
             smoothing_parameter=0.002,
             ontology=GAILA_PHASE_1_ONTOLOGY,
             language_mode=language_mode,
+            rank_gaze_higher=True,
         )
     )
     for training_stage in [train_curriculum]:
