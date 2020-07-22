@@ -684,7 +684,7 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
             ):
                 nodes_to_remove.append(node)
         for node in nodes_to_remove:
-            hypothesis.graph_pattern._graph.remove_node( # pylint: disable=protected-access
+            hypothesis.graph_pattern._graph.remove_node(  # pylint: disable=protected-access
                 node
             )
         return hypothesis

@@ -5,6 +5,7 @@ from adam.curriculum.curriculum_utils import Phase1InstanceGroup
 from adam.curriculum.m6_curriculum import (
     M6_PREPOSITION_SUBCURRICULUM_GENERATORS,
     instantiate_subcurricula,
+    M6_CURRICULUM_ALL_OBJECTS,
 )
 from adam.ontology.phase2_ontology import GAILA_PHASE_1_ONTOLOGY, GAILA_PHASE_2_ONTOLOGY
 from adam.curriculum.phase1_curriculum import (
@@ -129,6 +130,7 @@ def build_pursuit_curriculum(
         )
     return [
         make_simple_pursuit_curriculum(
+            target_objects=M6_CURRICULUM_ALL_OBJECTS,
             num_instances=num_instances,
             num_objects_in_instance=num_objects_in_instance,
             num_noise_instances=num_noise_instances,
