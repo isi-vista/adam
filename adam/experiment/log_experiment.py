@@ -7,6 +7,8 @@ from adam.curriculum.imprecise_descriptions_curriculum import (
     make_imprecise_temporal_descriptions,
     make_subtle_verb_distinctions_curriculum,
 )
+import random
+from adam.learner.objects import PursuitObjectLearnerNew
 from adam.curriculum.phase2_curriculum import (
     build_functionally_defined_objects_curriculum,
     build_gaila_m13_curriculum,
@@ -142,6 +144,7 @@ def learner_factory_from_params(
             "verb-subset",
             "integrated-learner",
             "integrated-learner-recognizer",
+            "pursuit-gaze",
         ],
     )
 
@@ -169,6 +172,21 @@ def learner_factory_from_params(
     if learner_type == "pursuit":
         return lambda: ObjectPursuitLearner.from_parameters(
             params.namespace("pursuit"), graph_logger=graph_logger
+        )
+    elif learner_type == "pursuit-gaze":
+        rng = random.Random()
+        rng.seed(0)
+        return lambda: IntegratedTemplateLearner(
+            object_learner=PursuitObjectLearnerNew(
+                learning_factor=0.05,
+                graph_match_confirmation_threshold=0.7,
+                lexicon_entry_threshold=0.7,
+                rng=rng,
+                smoothing_parameter=0.002,
+                ontology=GAILA_PHASE_1_ONTOLOGY,
+                language_mode=language_mode,
+                rank_gaze_higher=True,
+            )
         )
     elif learner_type == "object-subset":
         return lambda: SubsetObjectLearner(
