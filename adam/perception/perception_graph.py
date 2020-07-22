@@ -356,7 +356,7 @@ class PerceptionGraph(PerceptionGraphProtocol):
         return _FrameTranslation().translate_frames(perceptual_representation)
 
     @staticmethod
-    def add_temporal_scopes(
+    def add_temporal_scopes_to_edges(
         digraph: DiGraph, temporal_scopes: Union[TemporalScope, Iterable[TemporalScope]]
     ) -> DiGraph:
         """
@@ -395,7 +395,9 @@ class PerceptionGraph(PerceptionGraphProtocol):
                 "already dynamic"
             )
 
-        wrapped_graph = self.add_temporal_scopes(self._graph.copy(), temporal_scopes)
+        wrapped_graph = self.add_temporal_scopes_to_edges(
+            self._graph.copy(), temporal_scopes
+        )
 
         return PerceptionGraph(dynamic=True, graph=wrapped_graph)
 
@@ -2810,12 +2812,12 @@ class _FrameTranslation:
         # First, we translate each of the two frames into PerceptionGraphs independently.
         # The edges of each graph are marked with the appropriate "temporal specifier"
         # which tells whether they belong to the "before" frame or the "after" frame.
-        before_frame_graph = PerceptionGraph.add_temporal_scopes(
+        before_frame_graph = PerceptionGraph.add_temporal_scopes_to_edges(
             self._translate_frame(perceptual_representation.frames[0]),
             [TemporalScope.BEFORE],
         )
 
-        after_frame_graph = PerceptionGraph.add_temporal_scopes(
+        after_frame_graph = PerceptionGraph.add_temporal_scopes_to_edges(
             self._translate_frame(perceptual_representation.frames[1]),
             [TemporalScope.AFTER],
         )
