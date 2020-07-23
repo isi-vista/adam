@@ -1,4 +1,4 @@
-from typing import TypeVar, Generic, Mapping, List
+from typing import Generic, List, Mapping, TypeVar
 
 from typing_extensions import Protocol, runtime
 

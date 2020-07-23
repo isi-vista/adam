@@ -1,5 +1,6 @@
-from more_itertools import one
 import pytest
+from more_itertools import one
+
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
 from adam.ontology.phase1_ontology import DAD, GAILA_PHASE_1_ONTOLOGY
@@ -10,7 +11,6 @@ from adam.perception.high_level_semantics_situation_to_developmental_primitive_p
 from adam.random_utils import RandomChooser
 from adam.situation import SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
-
 from tests.learner import LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER
 
 
@@ -21,6 +21,7 @@ def test_with_object_recognizer(language_mode):
         attribute_learner=None,
         relation_learner=None,
         action_learner=None,
+        language_mode=language_mode,
     )
 
     dad_situation_object = SituationObject.instantiate_ontology_node(

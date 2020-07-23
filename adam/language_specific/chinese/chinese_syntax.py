@@ -2,7 +2,7 @@
 by native speaker asked for grammaticality judgments."""
 
 from typing import Tuple
-from immutablecollections import ImmutableDict, immutabledict
+
 from adam.language.dependency import (
     DependencyRole,
     HEAD,
@@ -15,7 +15,9 @@ from adam.language.dependency.universal_dependencies import (
     ADVERBIAL_MODIFIER,
     CASE_POSSESSIVE,
     CASE_SPATIAL,
+    CLASSIFIER,
     INDIRECT_OBJECT,
+    IS_ATTRIBUTE,
     NOMINAL_MODIFIER,
     NOMINAL_MODIFIER_POSSESSIVE,
     NOMINAL_SUBJECT,
@@ -25,9 +27,8 @@ from adam.language.dependency.universal_dependencies import (
     OBLIQUE_NOMINAL,
     PROPER_NOUN,
     VERB,
-    IS_ATTRIBUTE,
-    CLASSIFIER,
 )
+from immutablecollections import ImmutableDict
 
 _CHINESE_HEAD_TO_ROLE_ORDER: ImmutableDict[
     PartOfSpeechTag, Tuple[DependencyRole, ...]

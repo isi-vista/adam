@@ -1,9 +1,10 @@
 import pytest
 from more_itertools import first, one
+
+from adam.curriculum.curriculum_utils import PHASE1_CHOOSER_FACTORY, phase1_instances
 from adam.language_specific.chinese.chinese_phase_1_lexicon import (
     GAILA_PHASE_1_CHINESE_LEXICON,
 )
-from adam.curriculum.curriculum_utils import PHASE1_CHOOSER_FACTORY, phase1_instances
 from adam.language_specific.english.english_language_generator import PREFER_DITRANSITIVE
 from adam.learner import PerceptionSemanticAlignment
 from adam.learner.integrated_learner import IntegratedTemplateLearner
@@ -33,8 +34,8 @@ from adam.situation.templates.phase1_templates import (
     sampled,
 )
 from tests.learner import (
-    LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER,
     LANGUAGE_MODE_TO_OBJECT_RECOGNIZER,
+    LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER,
 )
 
 
@@ -56,7 +57,8 @@ def test_recognizes_ontology_objects(object_type, language_mode):
         situation, chooser=RandomChooser.for_seed(0), include_ground=False
     )
     learner = IntegratedTemplateLearner(
-        object_learner=LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER[language_mode]
+        object_learner=LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER[language_mode],
+        language_mode=language_mode,
     )
     descriptions = learner.describe(perception)
     assert descriptions

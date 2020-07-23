@@ -3,7 +3,6 @@ import random
 from typing import Iterable
 
 import pytest
-from immutablecollections import immutableset
 from more_itertools import flatten
 
 from adam.curriculum.curriculum_utils import PHASE1_TEST_CHOOSER_FACTORY
@@ -24,8 +23,12 @@ from adam.learner import (
 from adam.learner.alignments import LanguageConceptAlignment
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
-from adam.learner.objects import PursuitObjectLearnerNew, SubsetObjectLearnerNew
-from adam.learner.objects import SubsetObjectLearner
+from adam.learner.objects import (
+    PursuitObjectLearnerNew,
+    SubsetObjectLearner,
+    SubsetObjectLearnerNew,
+)
+from adam.learner.quantifers import QuantifierTemplateLearner
 from adam.ontology import OntologyNode
 from adam.ontology.phase1_ontology import (
     BALL,
@@ -56,6 +59,7 @@ from adam.situation.templates.phase1_templates import (
     object_variable,
     sampled,
 )
+from immutablecollections import immutableset
 
 
 def subset_object_learner_factory(language_mode: LanguageMode):
@@ -68,7 +72,11 @@ def integrated_learner_factory(language_mode: LanguageMode):
     return IntegratedTemplateLearner(
         object_learner=SubsetObjectLearnerNew(
             ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=10, language_mode=language_mode
-        )
+        ),
+        language_mode=language_mode,
+        number_learner=QuantifierTemplateLearner.pretrained_for_language_mode(
+            language_mode
+        ),
     )
 
 
@@ -328,7 +336,11 @@ def test_pursuit_object_learner(language_mode):
             smoothing_parameter=0.002,
             ontology=GAILA_PHASE_1_ONTOLOGY,
             language_mode=language_mode,
-        )
+        ),
+        language_mode=language_mode,
+        number_learner=QuantifierTemplateLearner.pretrained_for_language_mode(
+            language_mode
+        ),
     )
     for training_stage in [train_curriculum]:
         for (

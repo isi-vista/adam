@@ -1,11 +1,10 @@
-from vistautils.iter_utils import only
-
 from adam.language import TokenSequenceLinguisticDescription
 from adam.learner import LearningExample, MemorizingLanguageLearner
 from adam.perception import (
     BagOfFeaturesPerceptualRepresentationFrame,
     PerceptualRepresentation,
 )
+from vistautils.iter_utils import only
 
 
 def test_pipeline():

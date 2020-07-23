@@ -15,7 +15,6 @@ The following will eventually end up here:
 """
 from typing import Iterable, Optional, Sequence, Tuple, TypeVar
 
-from immutablecollections import ImmutableDict, immutabledict, immutableset
 from more_itertools import flatten
 
 from adam.axes import (
@@ -32,6 +31,7 @@ from adam.axes import (
 from adam.geon import (
     CIRCULAR,
     CONSTANT,
+    CrossSectionSize,
     Geon,
     IRREGULAR,
     LARGE_TO_SMALL,
@@ -40,21 +40,20 @@ from adam.geon import (
     SMALL_TO_LARGE,
     SMALL_TO_LARGE_TO_SMALL,
     SQUARE,
-    CrossSectionSize,
 )
 from adam.ontology import (
     ACTION,
     BINARY,
     CAN_FILL_TEMPLATE_SLOT,
     IN_REGION,
+    IS_ADDRESSEE,
+    IS_SPEAKER,
     IS_SUBSTANCE,
     OntologyNode,
     PERCEIVABLE,
     PROPERTY,
     RELATION,
     THING,
-    IS_SPEAKER,
-    IS_ADDRESSEE,
     minimal_ontology_graph,
 )
 from adam.ontology.action_description import (
@@ -68,6 +67,8 @@ from adam.ontology.phase1_size_relationships import build_size_relationships
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
     DISTAL,
+    Direction,
+    Distance,
     EXTERIOR_BUT_IN_CONTACT,
     FROM,
     GRAVITATIONAL_DOWN,
@@ -78,8 +79,6 @@ from adam.ontology.phase1_spatial_relations import (
     SpatialPath,
     TO,
     TOWARD,
-    Distance,
-    Direction,
 )
 from adam.ontology.structural_schema import ObjectStructuralSchema, SubObject
 from adam.relation import Relation, flatten_relations
@@ -92,6 +91,7 @@ from adam.relation_dsl import (
     make_symmetric_dsl_region_relation,
     negate,
 )
+from immutablecollections import ImmutableDict, immutabledict, immutableset
 
 _ontology_graph = minimal_ontology_graph()  # pylint:disable=invalid-name
 

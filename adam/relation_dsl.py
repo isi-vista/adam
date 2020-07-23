@@ -9,7 +9,6 @@ from adam.ontology import IN_REGION, OntologyNode
 from adam.ontology.phase1_spatial_relations import Direction, Distance, Region
 from adam.relation import Relation, _ensure_iterable
 
-
 _ObjectT = TypeVar("_ObjectT")
 
 

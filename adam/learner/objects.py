@@ -3,10 +3,11 @@ from abc import ABC
 from pathlib import Path
 from random import Random
 from typing import AbstractSet, Iterable, List, Optional, Sequence, Union
+
+from adam.language import LinguisticDescription
 from adam.language_specific.chinese.chinese_phase_1_lexicon import (
     GAILA_PHASE_1_CHINESE_LEXICON,
 )
-from adam.language import LinguisticDescription
 from adam.learner import (
     LearningExample,
     get_largest_matching_pattern,
@@ -26,8 +27,8 @@ from adam.learner.object_recognizer import (
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
 from adam.learner.pursuit import (
     AbstractPursuitLearner,
-    HypothesisLogger,
     AbstractPursuitLearnerNew,
+    HypothesisLogger,
 )
 from adam.learner.subset import (
     AbstractTemplateSubsetLearner,
@@ -38,20 +39,20 @@ from adam.learner.surface_templates import (
     SurfaceTemplateBoundToSemanticNodes,
 )
 from adam.learner.template_learner import (
-    AbstractTemplateLearner,
-    AbstractTemplateLearnerNew,
+    AbstractPerceptualTemplateLearner,
+    AbstractPerceptualTemplateLearnerNew,
     TemplateLearner,
 )
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
 from adam.ontology.phase1_spatial_relations import Region
-from adam.perception import ObjectPerception, PerceptualRepresentation, MatchMode
+from adam.perception import MatchMode, ObjectPerception, PerceptualRepresentation
 from adam.perception.deprecated import LanguageAlignedPerception
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
     RgbColorPerception,
 )
 from adam.perception.perception_graph import PerceptionGraph, PerceptionGraphPattern
-from adam.semantics import Concept, ObjectConcept, GROUND_OBJECT_CONCEPT
+from adam.semantics import Concept, GROUND_OBJECT_CONCEPT, ObjectConcept
 from adam.utils import networkx_utils
 from attr import attrib, attrs, evolve
 from attr.validators import instance_of, optional
@@ -65,7 +66,7 @@ from immutablecollections import (
 from vistautils.parameters import Parameters
 
 
-class AbstractObjectTemplateLearnerNew(AbstractTemplateLearnerNew):
+class AbstractObjectTemplateLearnerNew(AbstractPerceptualTemplateLearnerNew):
     # pylint:disable=abstract-method
     def _can_learn_from(
         self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
@@ -111,7 +112,7 @@ class AbstractObjectTemplateLearnerNew(AbstractTemplateLearnerNew):
         )
 
 
-class AbstractObjectTemplateLearner(AbstractTemplateLearner, ABC):
+class AbstractObjectTemplateLearner(AbstractPerceptualTemplateLearner, ABC):
     def _assert_valid_input(
         self,
         to_check: Union[

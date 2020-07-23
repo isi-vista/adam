@@ -9,12 +9,6 @@ morphologically-realized feature in Chinese.
 
 This vocabulary has been verified by a native speaker.
 """
-from adam.language_specific import (
-    FIRST_PERSON,
-    SECOND_PERSON,
-    MASS_NOUN,
-    ALLOWS_DITRANSITIVE,
-)
 from adam.language.dependency.universal_dependencies import (
     ADJECTIVE,
     NOUN,
@@ -23,6 +17,12 @@ from adam.language.dependency.universal_dependencies import (
 )
 from adam.language.lexicon import LexiconEntry
 from adam.language.ontology_dictionary import OntologyLexicon
+from adam.language_specific import (
+    ALLOWS_DITRANSITIVE,
+    FIRST_PERSON,
+    MASS_NOUN,
+    SECOND_PERSON,
+)
 from adam.ontology.phase1_ontology import (
     BABY,
     BALL,
@@ -37,6 +37,7 @@ from adam.ontology.phase1_ontology import (
     COOKIE,
     CUP,
     DAD,
+    DARK_BROWN,
     DOG,
     DOOR,
     DRINK,
@@ -55,9 +56,11 @@ from adam.ontology.phase1_ontology import (
     HOUSE,
     JUICE,
     JUMP,
+    LIGHT_BROWN,
     MILK,
     MOM,
     MOVE,
+    PASS,
     PUSH,
     PUT,
     RED,
@@ -69,13 +72,10 @@ from adam.ontology.phase1_ontology import (
     THROW,
     TRANSPARENT,
     TRUCK,
-    WATER,
-    WHITE,
-    LIGHT_BROWN,
-    DARK_BROWN,
-    WATERMELON,
-    PASS,
     WALK,
+    WATER,
+    WATERMELON,
+    WHITE,
 )
 
 ME = LexiconEntry("wo3", NOUN, intrinsic_morphosyntactic_properties=[FIRST_PERSON])

@@ -1,12 +1,12 @@
 from adam.ontology.phase1_ontology import (
-    MOM,
-    BALL,
-    TABLE,
-    PUT,
-    GOAL,
-    THEME,
     AGENT,
+    BALL,
     GAILA_PHASE_1_ONTOLOGY,
+    GOAL,
+    MOM,
+    PUT,
+    TABLE,
+    THEME,
 )
 from adam.ontology.phase1_spatial_relations import (
     EXTERIOR_BUT_IN_CONTACT,

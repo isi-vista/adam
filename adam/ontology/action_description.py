@@ -1,6 +1,10 @@
 from itertools import chain
 from typing import List, Optional
 
+from adam.ontology import OntologyNode
+from adam.ontology.during import DuringAction
+from adam.relation import Relation, flatten_relations
+from attr import attrib, attrs
 from attr.validators import instance_of, optional
 from immutablecollections import (
     ImmutableDict,
@@ -15,11 +19,6 @@ from immutablecollections.converter_utils import (
     _to_immutableset,
     _to_immutablesetmultidict,
 )
-
-from adam.ontology import OntologyNode
-from adam.ontology.during import DuringAction
-from adam.relation import Relation, flatten_relations
-from attr import attrib, attrs
 
 
 @attrs(frozen=True, slots=True, hash=None, eq=False, repr=False)

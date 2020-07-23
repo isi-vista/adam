@@ -1,68 +1,58 @@
-from datetime import date
+import random
 import shutil
+from datetime import date
 from pathlib import Path
 from typing import (
     AbstractSet,
     Any,
     Callable,
+    Dict,
     Iterable,
     List,
+    Mapping,
+    Optional,
     Tuple,
     TypeVar,
     Union,
-    Optional,
-    Dict,
-    Mapping,
 )
-from adam.language.language_utils import phase2_language_generator
-from adam.learner.language_mode import LanguageMode
-from adam.language.language_generator import LanguageGenerator
-from adam.axis import GeonAxis
-from adam.curriculum.curriculum_utils import Phase1InstanceGroup
-from attr import attrib, attrs
-from attr.validators import instance_of
-from immutablecollections import (
-    ImmutableSet,
-    ImmutableSetMultiDict,
-    immutableset,
-    immutablesetmultidict,
-)
+
 from more_itertools import flatten
 from networkx import DiGraph
-from vistautils.parameters import Parameters
-from vistautils.parameters_only_entrypoint import parameters_only_entry_point
-from vistautils.preconditions import check_state
 
+from adam.axes import AxesInfo, WORLD_AXES, _GravitationalAxis
+from adam.axis import GeonAxis
+from adam.curriculum import InstanceGroup
+from adam.curriculum.attribute_constraining_action_curriculum import make_german_complete
+from adam.curriculum.curriculum_utils import Phase1InstanceGroup
 from adam.curriculum.imprecise_descriptions_curriculum import (
-    make_imprecise_temporal_descriptions,
     make_imprecise_size_curriculum,
+    make_imprecise_temporal_descriptions,
     make_subtle_verb_distinctions_curriculum,
 )
-from adam.curriculum.attribute_constraining_action_curriculum import make_german_complete
-
 from adam.curriculum.m6_curriculum import make_m6_curriculum
+from adam.curriculum.phase1_curriculum import build_gaila_phase_1_curriculum
 from adam.curriculum.phase2_curriculum import build_gaila_m8_curriculum
 from adam.curriculum.preposition_curriculum import make_prepositions_curriculum
 from adam.curriculum.pursuit_curriculum import make_pursuit_curriculum
-from adam.curriculum.phase1_curriculum import build_gaila_phase_1_curriculum
-from adam.curriculum import InstanceGroup
 from adam.curriculum.verbs_with_dynamic_prepositions_curriculum import (
     make_verb_with_dynamic_prepositions_curriculum,
 )
 from adam.geon import Geon
-from adam.axes import WORLD_AXES, AxesInfo, _GravitationalAxis
 from adam.language import TokenSequenceLinguisticDescription
 from adam.language.dependency import LinearizedDependencyTree
+from adam.language.language_generator import LanguageGenerator
+from adam.language.language_utils import phase2_language_generator
+from adam.learner.language_mode import LanguageMode
 from adam.ontology import IN_REGION, IS_SPEAKER, OntologyNode
 from adam.ontology.during import DuringAction
 from adam.ontology.phase1_ontology import (
+    BIGGER_THAN,
+    MUCH_BIGGER_THAN,
+    MUCH_SMALLER_THAN,
     PART_OF,
     SMALLER_THAN,
-    BIGGER_THAN,
-    MUCH_SMALLER_THAN,
-    MUCH_BIGGER_THAN,
 )
-from adam.ontology.phase1_spatial_relations import Region, SpatialPath, Direction
+from adam.ontology.phase1_spatial_relations import Direction, Region, SpatialPath
 from adam.perception import ObjectPerception, PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -74,7 +64,17 @@ from adam.relation import Relation
 from adam.situation import SituationObject, SituationRegion
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.utilities import sign
-import random
+from attr import attrib, attrs
+from attr.validators import instance_of
+from immutablecollections import (
+    ImmutableSet,
+    ImmutableSetMultiDict,
+    immutableset,
+    immutablesetmultidict,
+)
+from vistautils.parameters import Parameters
+from vistautils.parameters_only_entrypoint import parameters_only_entry_point
+from vistautils.preconditions import check_state
 
 USAGE_MESSAGE = """
     curriculum_to_html.py param_file

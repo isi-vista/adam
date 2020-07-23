@@ -1,6 +1,8 @@
 from itertools import chain
-from typing import Generic, List, Mapping, TypeVar, Tuple, Set
+from typing import Generic, List, Mapping, Set, Tuple, TypeVar
 
+from adam.ontology.phase1_spatial_relations import SpatialPath
+from adam.relation import Relation, flatten_relations
 from attr import attrib, attrs
 from immutablecollections import (
     ImmutableSet,
@@ -9,9 +11,6 @@ from immutablecollections import (
     immutablesetmultidict,
 )
 from immutablecollections.converter_utils import _to_immutablesetmultidict
-
-from adam.ontology.phase1_spatial_relations import SpatialPath
-from adam.relation import Relation, flatten_relations
 
 _ObjectT = TypeVar("_ObjectT")
 _NewObjectT = TypeVar("_NewObjectT")

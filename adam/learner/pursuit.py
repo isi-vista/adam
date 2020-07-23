@@ -4,6 +4,7 @@ from collections import defaultdict
 from pathlib import Path
 from random import Random
 from typing import (
+    AbstractSet,
     Any,
     Dict,
     Iterable,
@@ -13,14 +14,9 @@ from typing import (
     Sequence,
     Set,
     Tuple,
-    AbstractSet,
 )
 
-from attr import Factory, attrib, attrs
-from attr.validators import in_, instance_of, optional
-from immutablecollections import immutabledict, immutableset
 from more_itertools import first
-from vistautils.range import Range
 
 from adam.learner import LanguagePerceptionSemanticAlignment
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
@@ -29,8 +25,8 @@ from adam.learner.surface_templates import (
     SurfaceTemplateBoundToSemanticNodes,
 )
 from adam.learner.template_learner import (
-    AbstractTemplateLearner,
-    AbstractTemplateLearnerNew,
+    AbstractPerceptualTemplateLearner,
+    AbstractPerceptualTemplateLearnerNew,
 )
 from adam.ontology.ontology import Ontology
 from adam.perception.deprecated import LanguageAlignedPerception
@@ -40,6 +36,10 @@ from adam.perception.perception_graph import (
     PerceptionGraph,
 )
 from adam.semantics import Concept
+from attr import Factory, attrib, attrs
+from attr.validators import in_, instance_of, optional
+from immutablecollections import immutabledict, immutableset
+from vistautils.range import Range
 
 
 @attrs
@@ -73,7 +73,7 @@ class HypothesisLogger(GraphLogger):
 
 
 @attrs
-class AbstractPursuitLearner(AbstractTemplateLearner, ABC):
+class AbstractPursuitLearner(AbstractPerceptualTemplateLearner, ABC):
     """
     An implementation of `LanguageLearner` for pursuit learning as a base for different pursuit based
     learners. Paper on Pursuit Learning Algorithm: https://www.ling.upenn.edu/~ycharles/papers/pursuit-final.pdf
@@ -553,7 +553,7 @@ class AbstractPursuitLearner(AbstractTemplateLearner, ABC):
 
 
 @attrs
-class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
+class AbstractPursuitLearnerNew(AbstractPerceptualTemplateLearnerNew, ABC):
     """
     An implementation of `TemplateLearnerNew` for pursuit learning as a base for different pursuit based
     learners. Paper on Pursuit Learning Algorithm: https://www.ling.upenn.edu/~ycharles/papers/pursuit-final.pdf

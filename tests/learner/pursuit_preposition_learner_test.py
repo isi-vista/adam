@@ -1,21 +1,21 @@
 import random
+
 import pytest
-from adam.curriculum.phase1_curriculum import _x_has_y_template
-from immutablecollections import immutableset
 
 from adam.curriculum.curriculum_utils import (
-    standard_object,
-    phase1_instances,
     PHASE1_CHOOSER_FACTORY,
+    phase1_instances,
+    standard_object,
 )
+from adam.curriculum.phase1_curriculum import _x_has_y_template
 from adam.curriculum.preposition_curriculum import (
-    _on_template,
-    _beside_template,
-    _under_template,
-    _over_template,
-    _in_template,
     _behind_template,
+    _beside_template,
     _in_front_template,
+    _in_template,
+    _on_template,
+    _over_template,
+    _under_template,
 )
 from adam.language.language_utils import phase1_language_generator
 from adam.learner import LearningExample
@@ -23,16 +23,17 @@ from adam.learner.language_mode import LanguageMode
 from adam.learner.prepositions import PrepositionPursuitLearner
 from adam.ontology.phase1_ontology import (
     BALL,
-    TABLE,
-    GAILA_PHASE_1_ONTOLOGY,
-    WATER,
     CUP,
+    GAILA_PHASE_1_ONTOLOGY,
+    INANIMATE_OBJECT,
     MOM,
     PERSON,
-    INANIMATE_OBJECT,
     PERSON_CAN_HAVE,
+    TABLE,
+    WATER,
 )
-from adam.situation.templates.phase1_templates import sampled, object_variable
+from adam.situation.templates.phase1_templates import object_variable, sampled
+from immutablecollections import immutableset
 from tests.learner import LANGUAGE_MODE_TO_OBJECT_RECOGNIZER
 
 

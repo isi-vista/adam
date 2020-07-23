@@ -1,3 +1,5 @@
+import pytest
+
 from adam.curriculum.phase1_curriculum import (
     Phase1InstanceGroup,
     _make_behind_in_front_curriculum,
@@ -7,16 +9,22 @@ from adam.curriculum.phase1_curriculum import (
     _make_eat_curriculum,
     _make_fall_curriculum,
     _make_fly_curriculum,
+    _make_generic_statements_curriculum,
     _make_go_curriculum,
     _make_jump_curriculum,
     _make_move_curriculum,
+    _make_my_your_object_curriculum,
     _make_object_beside_object_curriculum,
     _make_object_in_other_object_curriculum,
     _make_object_on_ground_curriculum,
     _make_object_on_object_curriculum,
     _make_object_under_or_over_object_curriculum,
     _make_objects_with_colors_curriculum,
+    _make_objects_with_colors_is_curriculum,
+    _make_part_whole_curriculum,
+    _make_pass_curriculum,
     _make_person_has_object_curriculum,
+    _make_plural_objects_curriculum,
     _make_push_curriculum,
     _make_put_curriculum,
     _make_put_on_speaker_addressee_body_part_curriculum,
@@ -27,22 +35,14 @@ from adam.curriculum.phase1_curriculum import (
     _make_take_curriculum,
     _make_throw_curriculum,
     _make_transfer_of_possession_curriculum,
-    _make_objects_with_colors_is_curriculum,
-    _make_pass_curriculum,
-    _make_part_whole_curriculum,
-    _make_plural_objects_curriculum,
-    _make_generic_statements_curriculum,
     _make_transitive_roll_curriculum,
-    _make_my_your_object_curriculum,
-)
-
-from adam.language_specific.english.english_language_generator import (
-    GAILA_PHASE_1_LANGUAGE_GENERATOR,
 )
 from adam.language_specific.chinese.chinese_language_generator import (
     GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
 )
-import pytest
+from adam.language_specific.english.english_language_generator import (
+    GAILA_PHASE_1_LANGUAGE_GENERATOR,
+)
 
 
 def curriculum_test(curriculum: Phase1InstanceGroup) -> None:

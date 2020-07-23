@@ -1,13 +1,15 @@
 import itertools
 from abc import ABC
-from typing import AbstractSet, Mapping, Union, Iterable, Optional, Tuple
-from adam.learner.language_mode import LanguageMode
+from typing import AbstractSet, Iterable, Mapping, Optional, Tuple, Union
+
 from adam.language import LinguisticDescription
 from adam.learner import LearningExample
 from adam.learner.alignments import (
     LanguagePerceptionSemanticAlignment,
     PerceptionSemanticAlignment,
 )
+from adam.learner.language_mode import LanguageMode
+from adam.learner.learner_utils import AlignmentSlots, candidate_templates
 from adam.learner.object_recognizer import (
     ObjectRecognizer,
     PerceptionGraphFromObjectRecognizer,
@@ -23,10 +25,10 @@ from adam.learner.surface_templates import (
     SurfaceTemplateBoundToSemanticNodes,
 )
 from adam.learner.template_learner import (
-    AbstractTemplateLearner,
-    AbstractTemplateLearnerNew,
+    AbstractPerceptualTemplateLearner,
+    AbstractPerceptualTemplateLearnerNew,
 )
-from adam.perception import PerceptualRepresentation, MatchMode
+from adam.perception import MatchMode, PerceptualRepresentation
 from adam.perception.deprecated import LanguageAlignedPerception
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -34,9 +36,8 @@ from adam.perception.developmental_primitive_perception import (
 from adam.perception.perception_graph import PerceptionGraph
 from adam.semantics import ActionConcept, ObjectSemanticNode, SyntaxSemanticsVariable
 from attr import attrib, attrs
-from immutablecollections import immutabledict, immutableset, immutablesetmultidict
 from attr.validators import instance_of
-from adam.learner.learner_utils import candidate_templates, AlignmentSlots
+from immutablecollections import immutabledict, immutableset, immutablesetmultidict
 
 # This is the maximum number of tokens we will hypothesize
 # as the non-argument-slots portion of a surface template for an action.
@@ -44,7 +45,7 @@ _MAXIMUM_ACTION_TEMPLATE_TOKEN_LENGTH = 3
 
 
 @attrs
-class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
+class AbstractVerbTemplateLearnerNew(AbstractPerceptualTemplateLearnerNew, ABC):
     # pylint:disable=abstract-method
     def _candidate_templates(
         self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
@@ -111,7 +112,7 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
 
 
 @attrs
-class AbstractVerbTemplateLearner(AbstractTemplateLearner, ABC):
+class AbstractVerbTemplateLearner(AbstractPerceptualTemplateLearner, ABC):
     # mypy doesn't realize that fields without defaults can come after those with defaults
     # if they are keyword-only.
     _object_recognizer: ObjectRecognizer = attrib(  # type: ignore

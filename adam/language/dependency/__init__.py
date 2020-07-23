@@ -4,6 +4,10 @@ Representations for dependency trees
 from abc import ABC, abstractmethod
 from typing import Iterable, Tuple
 
+from more_itertools import flatten
+from networkx import DiGraph
+
+from adam.language import LinguisticDescription
 from attr import attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
@@ -12,10 +16,6 @@ from immutablecollections.converter_utils import (
     _to_immutableset,
     _to_tuple,
 )
-from more_itertools import flatten
-from networkx import DiGraph
-
-from adam.language import LinguisticDescription
 
 
 @attrs(frozen=True, slots=True, eq=False)

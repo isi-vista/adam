@@ -1,44 +1,43 @@
 # pragma: no cover
 import enum
-from typing import Optional, List, Tuple
-from immutablecollections import immutableset, immutabledict, ImmutableDict
+from typing import List, Optional, Tuple
+
 from panda3d.core import NodePath  # pylint: disable=no-name-in-module
-from adam.perception import ObjectPerception
+
 from adam.geon import CrossSection
 from adam.ontology.phase1_ontology import (
-    PHASE_1_CURRICULUM_OBJECTS,
-    OntologyNode,
-    GAILA_PHASE_1_SIZE_GRADES,
-    MOM,
     DAD,
+    GAILA_PHASE_1_SIZE_GRADES,
+    HAND,
+    HEAD,
+    MOM,
+    OntologyNode,
     PERSON,
-)
-
-from adam.ontology.phase1_ontology import (
-    _ARM,
-    _TORSO,
+    PHASE_1_CURRICULUM_OBJECTS,
     _ANIMAL_LEG,
-    _INANIMATE_LEG,
+    _ARM,
+    _ARM_SEGMENT,
+    _BIRD_HEAD,
+    _BODY,
     _CHAIR_BACK,
     _CHAIR_SEAT,
+    _DOG_HEAD,
+    _FLATBED,
+    _FOOT,
+    _INANIMATE_LEG,
+    _LEG_SEGMENT,
+    _ROOF,
     _TABLETOP,
     _TAIL,
-    _WING,
-    _ARM_SEGMENT,
-    _WALL,
-    _ROOF,
     _TIRE,
-    _TRUCK_CAB,
+    _TORSO,
     _TRAILER,
-    _FLATBED,
-    _BODY,
-    _DOG_HEAD,
-    _BIRD_HEAD,
-    _LEG_SEGMENT,
-    _FOOT,
-    HEAD,
-    HAND,
+    _TRUCK_CAB,
+    _WALL,
+    _WING,
 )
+from adam.perception import ObjectPerception
+from immutablecollections import ImmutableDict, immutabledict, immutableset
 
 OBJECT_NAMES_TO_EXCLUDE = immutableset(["the ground", "learner"])
 

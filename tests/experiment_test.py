@@ -1,8 +1,8 @@
 from adam.curriculum import GeneratedFromSituationsInstanceGroup
 from adam.experiment import Experiment, execute_experiment
 from adam.experiment.observer import (
-    TopChoiceExactMatchObserver,
     CandidateAccuracyObserver,
+    TopChoiceExactMatchObserver,
 )
 from adam.language.language_generator import SingleObjectLanguageGenerator
 from adam.language_specific.english.english_phase_1_lexicon import (

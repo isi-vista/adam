@@ -1,49 +1,50 @@
+import itertools
 import logging
+from enum import Enum, auto
 from typing import (
+    AbstractSet,
+    Callable,
+    Dict,
+    Iterable,
+    List,
     Mapping,
+    Optional,
     Tuple,
     Union,
     cast,
-    List,
-    AbstractSet,
-    Dict,
-    Iterable,
-    Optional,
-    Callable,
 )
-import itertools
-from adam.learner.alignments import LanguagePerceptionSemanticAlignment
-from attr.validators import instance_of
+
 from networkx import (
-    number_weakly_connected_components,
     DiGraph,
+    number_weakly_connected_components,
     weakly_connected_components,
 )
-from attr import attrib, attrs
-from enum import Enum, auto
+
 from adam.language import LinguisticDescription, TokenSequenceLinguisticDescription
 from adam.learner import LearningExample
-from adam.learner.alignments import LanguageConceptAlignment
+from adam.learner.alignments import (
+    LanguageConceptAlignment,
+    LanguagePerceptionSemanticAlignment,
+)
 from adam.learner.language_mode import LanguageMode
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
-from adam.perception import PerceptualRepresentation
-from adam.perception.developmental_primitive_perception import (
-    DevelopmentalPrimitivePerceptionFrame,
-)
 from adam.learner.surface_templates import (
     STANDARD_SLOT_VARIABLES,
     SurfaceTemplate,
     SurfaceTemplateBoundToSemanticNodes,
 )
-
+from adam.perception import PerceptualRepresentation
+from adam.perception.developmental_primitive_perception import (
+    DevelopmentalPrimitivePerceptionFrame,
+)
 from adam.perception.perception_graph import (
-    ObjectSemanticNodePerceptionPredicate,
-    PerceptionGraphPatternMatch,
-    PerceptionGraphPattern,
     IsPathPredicate,
-    RegionPredicate,
-    REFERENCE_OBJECT_LABEL,
     NodePredicate,
+    ObjectSemanticNodePerceptionPredicate,
+    PerceptionGraphPattern,
+    PerceptionGraphPatternMatch,
+    REFERENCE_OBJECT_LABEL,
+    RegionPredicate,
     RelationTypeIsPredicate,
 )
 from adam.semantics import (
@@ -52,9 +53,10 @@ from adam.semantics import (
     SemanticNode,
     SyntaxSemanticsVariable,
 )
-from immutablecollections import immutabledict, immutableset, ImmutableSet
-
 from adam.utils.networkx_utils import subgraph
+from attr import attrib, attrs
+from attr.validators import instance_of
+from immutablecollections import ImmutableSet, immutabledict, immutableset
 from vistautils.span import Span
 
 

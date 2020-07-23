@@ -1,14 +1,14 @@
 from typing import Iterable, List, Mapping, Optional, Union
 
-from adam.learner.language_mode import LanguageMode
-from adam.learner.surface_templates import SurfaceTemplate
-from adam.semantics import ObjectSemanticNode, SyntaxSemanticsVariable
-from attr.validators import instance_of
 from more_itertools import pairwise
 
 from adam.language import LinguisticDescription
+from adam.learner.language_mode import LanguageMode
+from adam.learner.surface_templates import SurfaceTemplate
 from adam.perception.perception_graph import PerceptionGraph, PerceptionGraphNode
+from adam.semantics import ObjectSemanticNode, SyntaxSemanticsVariable
 from attr import attrib, attrs
+from attr.validators import instance_of
 from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
 from vistautils.span import Span
 

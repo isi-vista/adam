@@ -1,109 +1,110 @@
-from immutablecollections import immutableset
 from itertools import chain
-from typing import Iterable, Sequence, Optional
-from adam.language.language_generator import LanguageGenerator
-from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
-from adam.language.dependency import LinearizedDependencyTree
+from typing import Iterable, Optional, Sequence
+
 from more_itertools import flatten
 
 from adam.axes import (
-    HorizontalAxisOfObject,
     FacingAddresseeAxis,
     GRAVITATIONAL_AXIS_FUNCTION,
+    HorizontalAxisOfObject,
 )
 from adam.curriculum.curriculum_utils import (
-    standard_object,
-    phase1_instances,
+    GROUND_OBJECT_TEMPLATE,
     PHASE1_CHOOSER_FACTORY,
     Phase1InstanceGroup,
-    make_background,
     body_part_object,
-    GROUND_OBJECT_TEMPLATE,
+    make_background,
     make_noise_objects,
+    phase1_instances,
+    standard_object,
 )
+from adam.language.dependency import LinearizedDependencyTree
+from adam.language.language_generator import LanguageGenerator
 from adam.language_specific.english.english_language_generator import (
-    USE_ADVERBIAL_PATH_MODIFIER,
     IGNORE_GOAL,
+    USE_ADVERBIAL_PATH_MODIFIER,
 )
+from adam.ontology import IN_REGION, IS_ADDRESSEE, IS_SPEAKER, THING
 from adam.ontology.during import DuringAction
 from adam.ontology.phase1_ontology import (
     AGENT,
+    ANIMATE,
+    CAN_BE_SAT_ON_BY_PEOPLE,
+    CAN_FLY,
+    CAN_HAVE_THINGS_RESTING_ON_THEM,
+    CAN_JUMP,
+    COME,
     FALL,
-    GOAL,
+    FLY,
     GAILA_PHASE_1_ONTOLOGY,
+    GO,
+    GOAL,
+    GROUND,
+    HAS_SPACE_UNDER,
     HOLLOW,
+    INANIMATE_OBJECT,
+    JUMP,
+    JUMP_INITIAL_SUPPORTER_AUX,
+    MOVE,
+    PERSON,
+    PUSH,
+    PUSH_GOAL,
+    PUSH_SURFACE_AUX,
+    PUT,
+    ROLL,
+    ROLLABLE,
+    ROLL_SURFACE_AUXILIARY,
+    SELF_MOVING,
     SIT,
     SIT_THING_SAT_ON,
-    CAN_BE_SAT_ON_BY_PEOPLE,
-    HAS_SPACE_UNDER,
-    PUSH,
-    THEME,
-    PUSH_SURFACE_AUX,
-    ANIMATE,
-    INANIMATE_OBJECT,
-    CAN_HAVE_THINGS_RESTING_ON_THEM,
-    GO,
-    ROLL,
-    ROLL_SURFACE_AUXILIARY,
-    ROLLABLE,
-    GROUND,
-    above,
-    on,
-    bigger_than,
-    near,
-    far,
-    inside,
     TAKE,
-    PUT,
-    PERSON,
+    THEME,
     THROW,
     THROW_GOAL,
-    strictly_above,
-    MOVE,
+    above,
+    bigger_than,
     contacts,
-    SELF_MOVING,
-    JUMP_INITIAL_SUPPORTER_AUX,
-    CAN_JUMP,
-    JUMP,
-    FLY,
-    CAN_FLY,
-    PUSH_GOAL,
-    COME,
+    far,
+    inside,
+    near,
+    on,
+    strictly_above,
 )
-from adam.ontology import THING, IS_SPEAKER, IS_ADDRESSEE, IN_REGION
 from adam.ontology.phase1_spatial_relations import (
-    Region,
-    PROXIMAL,
-    INTERIOR,
-    Direction,
-    GRAVITATIONAL_DOWN,
-    DISTAL,
-    GRAVITATIONAL_UP,
-    SpatialPath,
-    VIA,
-    EXTERIOR_BUT_IN_CONTACT,
-    TOWARD,
     AWAY_FROM,
+    DISTAL,
+    Direction,
+    EXTERIOR_BUT_IN_CONTACT,
+    GRAVITATIONAL_DOWN,
+    GRAVITATIONAL_UP,
+    INTERIOR,
+    PROXIMAL,
+    Region,
+    SpatialPath,
+    TOWARD,
+    VIA,
 )
-from adam.relation import flatten_relations, Relation
+from adam.relation import Relation, flatten_relations
 from adam.relation_dsl import negate
 from adam.situation import Action
+from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.situation.templates.phase1_situation_templates import (
     _fly_over_template,
     _fly_under_template,
+    _go_in_template,
+    _go_to_template,
+    _go_under_template,
     _jump_over_template,
     _put_in_template,
-    _put_on_template,
     _put_on_body_part_template,
-    _go_in_template,
-    _go_under_template,
-    _go_to_template,
+    _put_on_template,
 )
 from adam.situation.templates.phase1_templates import (
-    TemplateObjectVariable,
     Phase1SituationTemplate,
+    TemplateObjectVariable,
     sampled,
 )
+from immutablecollections import immutableset
 
 BOOL_SET = immutableset([True, False])
 

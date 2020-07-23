@@ -45,8 +45,8 @@ from typing_extensions import Protocol
 
 from adam.axes import AxesInfo, HasAxes
 from adam.axis import GeonAxis
-from adam.geon import Geon, MaybeHasGeon, CrossSection
-from adam.ontology import OntologyNode
+from adam.geon import CrossSection, Geon, MaybeHasGeon
+from adam.ontology import IS_ADDRESSEE, IS_SPEAKER, OntologyNode
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
     COLOR,
@@ -55,7 +55,6 @@ from adam.ontology.phase1_ontology import (
     PART_OF,
     RECOGNIZED_PARTICULAR_PROPERTY,
 )
-from adam.ontology import IS_SPEAKER, IS_ADDRESSEE
 from adam.ontology.phase1_spatial_relations import (
     Direction,
     Distance,
@@ -64,7 +63,7 @@ from adam.ontology.phase1_spatial_relations import (
     SpatialPath,
 )
 from adam.ontology.structural_schema import ObjectStructuralSchema
-from adam.perception import ObjectPerception, PerceptualRepresentation, MatchMode
+from adam.perception import MatchMode, ObjectPerception, PerceptualRepresentation
 from adam.perception._matcher import GraphMatching
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -87,10 +86,10 @@ from attr.validators import deep_iterable, instance_of, optional
 from immutablecollections import (
     ImmutableDict,
     ImmutableSet,
+    ImmutableSetMultiDict,
     immutabledict,
     immutableset,
     immutablesetmultidict,
-    ImmutableSetMultiDict,
 )
 from immutablecollections.converter_utils import (
     _to_immutabledict,

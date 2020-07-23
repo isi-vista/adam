@@ -1,16 +1,15 @@
 from typing import Mapping
 
-from immutablecollections import immutabledict
 from adam.language_specific.english import ENGLISH_DETERMINERS
 from adam.learner.language_mode import LanguageMode
 from adam.learner.object_recognizer import ObjectRecognizer
 from adam.learner.objects import ObjectRecognizerAsTemplateLearner
-
 from adam.ontology.phase1_ontology import (
     GAILA_PHASE_1_ONTOLOGY,
-    PHASE_1_CURRICULUM_OBJECTS,
     GROUND,
+    PHASE_1_CURRICULUM_OBJECTS,
 )
+from immutablecollections import immutabledict
 
 PHASE_1_CURRICULUM_OBJECTS_INCLUDE_GROUND = list(PHASE_1_CURRICULUM_OBJECTS)
 PHASE_1_CURRICULUM_OBJECTS_INCLUDE_GROUND.append(GROUND)

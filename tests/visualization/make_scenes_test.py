@@ -1,13 +1,14 @@
+from typing import Tuple
+
 from adam.curriculum.phase1_curriculum import build_gaila_phase_1_curriculum
+from adam.geon import CrossSection
 from adam.language.language_utils import phase2_language_generator
 from adam.learner import LanguageMode
-from adam.visualization.make_scenes import SceneCreator
-from adam.geon import CrossSection
-from adam.visualization.utils import Shape, cross_section_to_geon
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     ObjectPerception,
 )
-from typing import Tuple
+from adam.visualization.make_scenes import SceneCreator
+from adam.visualization.utils import Shape, cross_section_to_geon
 
 
 def test_scenes_creation() -> Tuple[

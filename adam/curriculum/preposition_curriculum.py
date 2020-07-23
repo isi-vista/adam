@@ -1,57 +1,59 @@
 from itertools import chain
-from typing import Iterable, Sequence, Optional
-from immutablecollections import immutableset
+from typing import Iterable, Optional, Sequence
+
 from more_itertools import flatten
-from adam.language.language_generator import LanguageGenerator
-from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
-from adam.language.dependency import LinearizedDependencyTree
-from adam.axes import HorizontalAxisOfObject, FacingAddresseeAxis
+
+from adam.axes import FacingAddresseeAxis, HorizontalAxisOfObject
 from adam.curriculum.curriculum_utils import (
     PHASE1_CHOOSER_FACTORY,
-    standard_object,
     Phase1InstanceGroup,
-    phase1_instances,
     make_noise_objects,
+    phase1_instances,
+    standard_object,
 )
+from adam.language.dependency import LinearizedDependencyTree
+from adam.language.language_generator import LanguageGenerator
 from adam.language_specific.english.english_language_generator import (
     USE_ABOVE_BELOW,
     USE_NEAR,
 )
-from adam.ontology import IS_ADDRESSEE, IS_SPEAKER, THING, OntologyNode
+from adam.ontology import IS_ADDRESSEE, IS_SPEAKER, OntologyNode, THING
 from adam.ontology.phase1_ontology import (
     BALL,
     BOOK,
     BOX,
-    TABLE,
-    on,
-    GAILA_PHASE_1_ONTOLOGY,
-    inside,
-    WATER,
-    JUICE,
-    CUP,
-    MOM,
-    COOKIE,
-    CHAIR,
-    DAD,
-    PERSON,
     CAN_HAVE_THINGS_RESTING_ON_THEM,
-    bigger_than,
+    CHAIR,
+    COOKIE,
+    CUP,
+    DAD,
+    GAILA_PHASE_1_ONTOLOGY,
     HAS_SPACE_UNDER,
-    IS_BODY_PART,
     HOLLOW,
-    near,
-    far,
-    strictly_under,
-    strictly_over,
+    IS_BODY_PART,
+    JUICE,
     LEARNER,
+    MOM,
+    PERSON,
+    TABLE,
+    WATER,
+    bigger_than,
+    far,
+    inside,
+    near,
+    on,
+    strictly_over,
+    strictly_under,
 )
-from adam.ontology.phase1_spatial_relations import PROXIMAL, Direction, DISTAL
+from adam.ontology.phase1_spatial_relations import DISTAL, Direction, PROXIMAL
+from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
-    sampled,
     TemplateObjectVariable,
     object_variable,
+    sampled,
 )
+from immutablecollections import immutableset
 
 BOOL_SET = immutableset([True, False])
 

@@ -7,47 +7,40 @@ that can position multiple bounding boxes s/t they do not overlap
 main() function used for testing purposes. Primary function made available to outside callers
 is run_model()
 """
-from itertools import combinations
-from typing import Mapping, AbstractSet, Optional, List, Iterable, Tuple, DefaultDict
-from attr import attrs, attrib
 from collections import defaultdict
+from itertools import combinations
 from math import isnan, pi
+from typing import AbstractSet, DefaultDict, Iterable, List, Mapping, Optional, Tuple
 
 import numpy as np
 import torch
 import torch.nn as nn
-from torch.nn import Parameter
 import torch.optim as optim
-from torch.optim.lr_scheduler import ReduceLROnPlateau
-from torch.nn import PairwiseDistance
-
 from panda3d.core import LPoint3f  # pylint: disable=no-name-in-module
-
-from immutablecollections import immutabledict, immutableset, ImmutableDict, ImmutableSet
-from vistautils.preconditions import check_arg
+from torch.nn import PairwiseDistance, Parameter
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 from adam.axes import (
     Axes,
+    FacingAddresseeAxis,
     HorizontalAxisOfObject,
     straight_up,
-    # directed,
     symmetric,
     symmetric_vertical,
-    FacingAddresseeAxis,
-)
-
+)  # directed,
 from adam.ontology.phase1_spatial_relations import (
-    PROXIMAL,
     DISTAL,
+    Direction,
     EXTERIOR_BUT_IN_CONTACT,
+    GRAVITATIONAL_DOWN,
+    GRAVITATIONAL_UP,
+    PROXIMAL,
     Region,
 )
-from adam.ontology.phase1_spatial_relations import (
-    Direction,
-    GRAVITATIONAL_UP,
-    GRAVITATIONAL_DOWN,
-)
-from adam.perception import ObjectPerception, GROUND_PERCEPTION
+from adam.perception import GROUND_PERCEPTION, ObjectPerception
+from attr import attrib, attrs
+from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
+from vistautils.preconditions import check_arg
 
 # see https://github.com/pytorch/pytorch/issues/24807 re: pylint issue
 

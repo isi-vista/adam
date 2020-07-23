@@ -1,9 +1,10 @@
 from typing import Any, Callable, Iterable
 
-from attr import attrs, attrib
-from immutablecollections import immutableset, ImmutableSet
-from immutablecollections.converter_utils import _to_immutableset
 from networkx import DiGraph, nx
+
+from attr import attrib, attrs
+from immutablecollections import ImmutableSet, immutableset
+from immutablecollections.converter_utils import _to_immutableset
 
 
 def digraph_with_nodes_sorted_by(

@@ -2,37 +2,37 @@ import logging
 from itertools import chain
 from typing import AbstractSet, Iterable, List, Mapping, Sequence, Set, Tuple, Union
 
-from adam.axis import GeonAxis
-from adam.language_specific.chinese.chinese_phase_1_lexicon import (
-    GAILA_PHASE_1_CHINESE_LEXICON,
-)
-from adam.learner.language_mode import LanguageMode
 from contexttimer import Timer
 from more_itertools import first
 from networkx import DiGraph
 
 from adam.axes import GRAVITATIONAL_DOWN_TO_UP_AXIS, LEARNER_AXES, WORLD_AXES
+from adam.axis import GeonAxis
 from adam.language import LinguisticDescription
+from adam.language_specific.chinese.chinese_phase_1_lexicon import (
+    GAILA_PHASE_1_CHINESE_LEXICON,
+)
 from adam.learner.alignments import (
     LanguageConceptAlignment,
     LanguagePerceptionSemanticAlignment,
     PerceptionSemanticAlignment,
 )
+from adam.learner.language_mode import LanguageMode
 from adam.ontology import OntologyNode
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
+    BIGGER_THAN,
     GAILA_PHASE_1_ONTOLOGY,
     PART_OF,
     PHASE_1_CURRICULUM_OBJECTS,
-    BIGGER_THAN,
     SMALLER_THAN,
 )
 from adam.ontology.phase1_spatial_relations import Region
 from adam.perception import (
     GROUND_PERCEPTION,
     LEARNER_PERCEPTION,
-    ObjectPerception,
     MatchMode,
+    ObjectPerception,
 )
 from adam.perception.deprecated import LanguageAlignedPerception
 from adam.perception.perception_graph import (
@@ -50,9 +50,9 @@ from adam.perception.perception_graph import (
 )
 from adam.semantics import (
     Concept,
+    GROUND_OBJECT_CONCEPT,
     ObjectConcept,
     ObjectSemanticNode,
-    GROUND_OBJECT_CONCEPT,
 )
 from adam.utils.networkx_utils import subgraph
 from attr import attrib, attrs

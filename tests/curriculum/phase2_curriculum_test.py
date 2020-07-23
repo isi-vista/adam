@@ -1,3 +1,5 @@
+import pytest
+
 from adam.curriculum.curriculum_utils import Phase1InstanceGroup
 from adam.curriculum.phase2_curriculum import (
     _make_drink_cups_curriculum,
@@ -10,7 +12,6 @@ from adam.language_specific.chinese.chinese_language_generator import (
 from adam.language_specific.english.english_language_generator import (
     GAILA_PHASE_2_LANGUAGE_GENERATOR,
 )
-import pytest
 
 
 def curriculum_test(curriculum: Phase1InstanceGroup) -> None:

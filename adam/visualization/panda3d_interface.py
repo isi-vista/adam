@@ -11,35 +11,38 @@
    supplied from elsewhere.
    """
 
-from typing import Tuple, Optional, Dict, List
-import sys
 import os
-
+import sys
 import time
-from direct.showbase.ShowBase import ShowBase  # pylint: disable=no-name-in-module
-
-from panda3d.core import DirectionalLight  # pylint: disable=no-name-in-module
-from panda3d.core import AmbientLight  # pylint: disable=no-name-in-module
-from panda3d.core import PointLight  # pylint: disable=no-name-in-module
-from panda3d.core import Material  # pylint: disable=no-name-in-module
-from panda3d.core import NodePath  # pylint: disable=no-name-in-module
-from panda3d.core import TextNode  # pylint: disable=no-name-in-module
-from panda3d.core import AntialiasAttrib  # pylint: disable=no-name-in-module
-from panda3d.core import LPoint3f  # pylint: disable=no-name-in-module
-from panda3d.core import Filename  # pylint: disable=no-name-in-module
+from typing import Dict, List, Optional, Tuple
 
 from direct.gui.OnscreenText import OnscreenText  # pylint: disable=no-name-in-module
-from adam.visualization.positioning import PositionsMap
-from adam.visualization.utils import (
-    Shape,
-    OBJECT_NAMES_TO_EXCLUDE,
-    GEON_SHAPES,
-    MODEL_NAMES,
-)
+from direct.showbase.ShowBase import ShowBase  # pylint: disable=no-name-in-module
+from panda3d.core import (
+    AmbientLight,
+    AntialiasAttrib,
+    DirectionalLight,
+    Filename,
+    LPoint3f,
+    Material,
+    NodePath,
+    PointLight,
+    TextNode,
+)  # pylint: disable=no-name-in-module; pylint: disable=no-name-in-module; pylint:
+
+# disable=no-name-in-module; pylint: disable=no-name-in-module; pylint:
+# disable=no-name-in-module; pylint: disable=no-name-in-module; pylint:
+# disable=no-name-in-module; pylint: disable=no-name-in-module; pylint: disable=no-name-in-module
+from torch import Tensor
 
 from adam.perception.developmental_primitive_perception import RgbColorPerception
-
-from torch import Tensor
+from adam.visualization.positioning import PositionsMap
+from adam.visualization.utils import (
+    GEON_SHAPES,
+    MODEL_NAMES,
+    OBJECT_NAMES_TO_EXCLUDE,
+    Shape,
+)
 
 
 class SituationVisualizer(ShowBase):

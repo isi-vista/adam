@@ -4,86 +4,79 @@
    operating and when other code (gathering and processing scene information)
    is executing in a serial manner.
    """
+import logging
+import random
+from collections import defaultdict
+from functools import partial
+from hashlib import md5
+from math import isnan
+from pathlib import Path
 from typing import (
+    Any,
+    Callable,
+    DefaultDict,
+    Dict,
+    Generator,
     Iterable,
     List,
+    Mapping,
+    Optional,
+    Set,
     Tuple,
     Union,
-    DefaultDict,
-    Optional,
-    Callable,
-    Any,
-    Generator,
-    Mapping,
-    Dict,
-    Set,
 )
-from functools import partial
 
-import random
-from pathlib import Path
-from collections import defaultdict
 import numpy as np
 
-import logging
+# consider refactoring away this dependency
+from panda3d.core import (
+    LPoint3f,
+    NodePath,
+)  # pylint: disable=no-name-in-module; pylint: disable=no-name-in-module
+
+import attr
+from adam.curriculum.phase1_curriculum import Phase1InstanceGroup
 
 # currently useful for positioning multiple objects:
 from adam.curriculum.verbs_with_dynamic_prepositions_curriculum import (
     _make_take_with_prepositions as make_curriculum,
 )
-from adam.curriculum.phase1_curriculum import Phase1InstanceGroup
-
-
-import attr
-from attr import attrs
-
+from adam.curriculum_to_html import CurriculumToHtmlDumper
 from adam.language.language_utils import phase2_language_generator
 from adam.learner import LanguageMode
-from vistautils.parameters import Parameters
-from vistautils.parameters_only_entrypoint import parameters_only_entry_point
-from immutablecollections import ImmutableSet, immutableset
-
-# consider refactoring away this dependency
-from panda3d.core import NodePath  # pylint: disable=no-name-in-module
-from panda3d.core import LPoint3f  # pylint: disable=no-name-in-module
-
 from adam.math_3d import Point
-from math import isnan
-from hashlib import md5
-
-from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
-from adam.perception.developmental_primitive_perception import (
-    RgbColorPerception,
-    HasColor,
-    HasBinaryProperty,
-    ObjectPerception,
-    Relation,
-)
 from adam.ontology import OntologyNode
 from adam.ontology.phase1_ontology import (
     AGENT,
-    THEME,
     GOAL,
     PUSH_GOAL,
     PUSH_SURFACE_AUX,
     ROLL_SURFACE_AUXILIARY,
+    THEME,
+)
+from adam.ontology.phase1_spatial_relations import Region
+from adam.perception.developmental_primitive_perception import (
+    HasBinaryProperty,
+    HasColor,
+    ObjectPerception,
+    Relation,
+    RgbColorPerception,
 )
 from adam.relation import IN_REGION
 from adam.situation import SituationObject
-
+from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.visualization.panda3d_interface import SituationVisualizer
+from adam.visualization.positioning import PositionsMap, run_model
 from adam.visualization.utils import (
     OBJECT_NAMES_TO_EXCLUDE,
-    cross_section_to_geon,
     OBJECT_SCALE_MULTIPLIER_MAP,
+    cross_section_to_geon,
     model_lookup,
 )
-
-from adam.visualization.positioning import run_model, PositionsMap
-from adam.ontology.phase1_spatial_relations import Region
-
-
-from adam.curriculum_to_html import CurriculumToHtmlDumper
+from attr import attrs
+from immutablecollections import ImmutableSet, immutableset
+from vistautils.parameters import Parameters
+from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 
 USAGE_MESSAGE = """make_scenes.py param_file
                 \twhere param_file has the following parameters:

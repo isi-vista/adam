@@ -3,11 +3,11 @@ from adam.ontology.phase1_ontology import (
     IS_DAD,
     IS_MOM,
     SENTIENT,
-    above,
-    _PERSON_SCHEMA,
     _BALL_SCHEMA,
+    _PERSON_SCHEMA,
     _TABLE_SCHEMA,
     _make_cup_schema,
+    above,
 )
 from adam.ontology.phase1_spatial_relations import EXTERIOR_BUT_IN_CONTACT, Region
 from adam.perception import ObjectPerception, PerceptualRepresentation

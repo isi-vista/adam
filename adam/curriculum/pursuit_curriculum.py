@@ -4,40 +4,40 @@ In Pursuit, given a set of scenes and labels, the learner hypothesizes a meaning
 metrics to pursue the strongest hypothesis as long as it is supported by the following scenes.
 Paper: The Pursuit of Word Meanings (Stevens et al., 2017)
 """
+import random
 from typing import Optional, Sequence
 
 from adam.curriculum import ExplicitWithSituationInstanceGroup
-from adam.language.language_generator import LanguageGenerator
-from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
-from adam.language.dependency import LinearizedDependencyTree
 from adam.curriculum.curriculum_utils import (
-    phase1_instances,
     PHASE1_CHOOSER_FACTORY,
     Phase1InstanceGroup,
+    phase1_instances,
     standard_object,
 )
+from adam.language.dependency import LinearizedDependencyTree
+from adam.language.language_generator import LanguageGenerator
 from adam.ontology.phase1_ontology import (
+    BABY,
+    BALL,
     BIRD,
     BOX,
-    GAILA_PHASE_1_ONTOLOGY,
-    BALL,
     CHAIR,
-    TABLE,
-    DOG,
-    MOM,
     DAD,
-    BABY,
+    DOG,
+    GAILA_PHASE_1_ONTOLOGY,
+    MOM,
+    TABLE,
 )
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
-    HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
     GAILA_PHASE_1_PERCEPTION_GENERATOR,
+    HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
 )
+from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
     object_variable,
     sampled,
 )
-import random
 
 
 # TODO: fix https://github.com/isi-vista/adam/issues/917 which causes us to have to specify that we don't wish to include ME_HACK and YOU_HACK in our curriculum design

@@ -1,7 +1,6 @@
-from attr import attrs, attrib, evolve
-from attr.validators import instance_of
-
 from adam.utilities import sign
+from attr import attrib, attrs, evolve
+from attr.validators import instance_of
 
 
 @attrs(frozen=True, slots=True, repr=False, eq=False)

@@ -7,12 +7,12 @@ from adam.language.dependency.universal_dependencies import (
 from adam.language.lexicon import LexiconEntry
 from adam.language.ontology_dictionary import OntologyLexicon
 from adam.language_specific import (
-    FIRST_PERSON,
-    SECOND_PERSON,
-    NOMINATIVE,
     ACCUSATIVE,
-    MASS_NOUN,
     ALLOWS_DITRANSITIVE,
+    FIRST_PERSON,
+    MASS_NOUN,
+    NOMINATIVE,
+    SECOND_PERSON,
 )
 from adam.ontology.phase1_ontology import (
     BABY,
@@ -28,6 +28,7 @@ from adam.ontology.phase1_ontology import (
     COOKIE,
     CUP,
     DAD,
+    DARK_BROWN,
     DOG,
     DOOR,
     DRINK,
@@ -46,9 +47,11 @@ from adam.ontology.phase1_ontology import (
     HOUSE,
     JUICE,
     JUMP,
+    LIGHT_BROWN,
     MILK,
     MOM,
     MOVE,
+    PASS,
     PUSH,
     PUT,
     RED,
@@ -60,13 +63,10 @@ from adam.ontology.phase1_ontology import (
     THROW,
     TRANSPARENT,
     TRUCK,
-    WATER,
-    WHITE,
-    LIGHT_BROWN,
-    DARK_BROWN,
-    PASS,
-    WATERMELON,
     WALK,
+    WATER,
+    WATERMELON,
+    WHITE,
 )
 
 I = LexiconEntry(  # noqa: E741

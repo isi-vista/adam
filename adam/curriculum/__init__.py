@@ -2,21 +2,20 @@ r"""
 Code to specify what is shown to `LanguageLearner`\ s and in what order.
 """
 from abc import ABC, abstractmethod
-from typing import Generic, Iterable, Optional, Tuple, List
-
-from attr import attrib, attrs
-from attr.validators import instance_of
-from immutablecollections.converter_utils import _to_tuple
+from typing import Generic, Iterable, Optional, Tuple
 
 from adam.language import LinguisticDescriptionT
 from adam.language.language_generator import LanguageGenerator
-from adam.situation import SituationT
 from adam.perception import (
     PerceptionT,
     PerceptualRepresentation,
     PerceptualRepresentationGenerator,
 )
 from adam.random_utils import SequenceChooser
+from adam.situation import SituationT
+from attr import attrib, attrs
+from attr.validators import instance_of
+from immutablecollections.converter_utils import _to_tuple
 
 
 class InstanceGroup(ABC, Generic[SituationT, LinguisticDescriptionT, PerceptionT]):

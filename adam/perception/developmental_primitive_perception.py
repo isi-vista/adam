@@ -1,16 +1,15 @@
 from abc import ABC
 
+from adam.axes import AxesInfo
+from adam.ontology import OntologyNode
+from adam.perception import ObjectPerception, PerceptualRepresentationFrame
+from adam.relation import Relation, flatten_relations
 from attr import attrib, attrs
 from attr.validators import in_, instance_of
 from immutablecollections import ImmutableSet, immutableset
 from immutablecollections.converter_utils import _to_immutableset
 from vistautils.preconditions import check_arg
 from vistautils.range import Range
-
-from adam.axes import AxesInfo
-from adam.ontology import OntologyNode
-from adam.perception import ObjectPerception, PerceptualRepresentationFrame
-from adam.relation import Relation, flatten_relations
 
 
 @attrs(slots=True, frozen=True, repr=False)

@@ -4,15 +4,14 @@ Ways to produce human language descriptions of `Situation`\ s by rule.
 from abc import ABC, abstractmethod
 from typing import Generic
 
-from attr import attrib, attrs
-from attr.validators import instance_of
-from immutablecollections import ImmutableSet, immutableset
-from vistautils.iter_utils import only
-
 from adam.language import LinguisticDescriptionT, TokenSequenceLinguisticDescription
 from adam.language.ontology_dictionary import OntologyLexicon
 from adam.random_utils import SequenceChooser
 from adam.situation import LocatedObjectSituation, SituationT
+from attr import attrib, attrs
+from attr.validators import instance_of
+from immutablecollections import ImmutableSet, immutableset
+from vistautils.iter_utils import only
 
 
 class LanguageGenerator(Generic[SituationT, LinguisticDescriptionT], ABC):

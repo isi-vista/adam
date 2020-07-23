@@ -9,7 +9,14 @@ import sys
 from abc import ABC, abstractmethod
 from typing import Generic, Iterable, List, Sequence, Tuple, TypeVar
 
+from more_itertools import take
+
+from adam.math_3d import Point
+from adam.ontology import OntologyNode
+from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
+from adam.random_utils import RandomChooser, SequenceChooser
+from adam.situation import LocatedObjectSituation, SituationObject, SituationT
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import (
@@ -26,13 +33,6 @@ from immutablecollections.converter_utils import (
     _to_immutableset,
     _to_immutablesetmultidict,
 )
-from more_itertools import take
-
-from adam.math_3d import Point
-from adam.ontology import OntologyNode
-from adam.ontology.ontology import Ontology
-from adam.random_utils import RandomChooser, SequenceChooser
-from adam.situation import LocatedObjectSituation, SituationObject, SituationT
 
 
 class SituationTemplate(ABC):

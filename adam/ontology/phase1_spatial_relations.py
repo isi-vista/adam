@@ -1,16 +1,14 @@
 from itertools import chain
 from typing import Generic, List, Mapping, Optional, TypeVar, Union
 
-from immutablecollections.converter_utils import _to_immutableset
-
+from adam.axes import AxesInfo, AxisFunction, GRAVITATIONAL_AXIS_FUNCTION
 from adam.axis import GeonAxis
+from adam.ontology import OntologyNode
 from attr import attrib, attrs
 from attr.validators import in_, instance_of, optional
-from immutablecollections import immutabledict, ImmutableSet, immutableset
+from immutablecollections import ImmutableSet, immutabledict, immutableset
+from immutablecollections.converter_utils import _to_immutableset
 from vistautils.preconditions import check_arg
-
-from adam.axes import AxesInfo, AxisFunction, GRAVITATIONAL_AXIS_FUNCTION
-from adam.ontology import OntologyNode
 
 
 @attrs(frozen=True, slots=True, repr=False)

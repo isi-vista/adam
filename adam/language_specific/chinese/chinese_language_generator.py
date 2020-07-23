@@ -1,14 +1,10 @@
 import collections
 from itertools import chain
 from typing import Iterable, List, Mapping, MutableMapping, Optional, Tuple, Union, cast
-from attr import Factory, attrib, attrs
-from attr.validators import instance_of
-from immutablecollections import ImmutableSet, immutableset, immutablesetmultidict
+
 from more_itertools import first, only
 from networkx import DiGraph
-from adam.language_specific.chinese.chinese_phase_2_lexicon import (
-    GAILA_PHASE_2_CHINESE_LEXICON,
-)
+
 from adam.axes import FacingAddresseeAxis, GRAVITATIONAL_DOWN_TO_UP_AXIS
 from adam.language.dependency import (
     DependencyRole,
@@ -18,104 +14,102 @@ from adam.language.dependency import (
     LinearizedDependencyTree,
 )
 from adam.language.dependency.universal_dependencies import (
-    PARTICLE,
-    CLASSIFIER,
-    NOUN,
     ADJECTIVAL_MODIFIER,
+    ADJECTIVE,
     ADPOSITION,
     ADVERB,
+    ADVERBIAL_CLAUSE_MODIFIER,
     ADVERBIAL_MODIFIER,
     CASE_POSSESSIVE,
     CASE_SPATIAL,
-    DETERMINER,
-    DETERMINER_ROLE,
+    CLASSIFIER,
     INDIRECT_OBJECT,
+    IS_ATTRIBUTE,
     NOMINAL_MODIFIER,
     NOMINAL_MODIFIER_POSSESSIVE,
     NOMINAL_SUBJECT,
-    ADJECTIVE,
+    NOUN,
     NUMERAL,
     NUMERIC_MODIFIER,
     OBJECT,
     OBLIQUE_NOMINAL,
+    PARTICLE,
     PROPER_NOUN,
     VERB,
-    IS_ATTRIBUTE,
-    ADVERBIAL_CLAUSE_MODIFIER,
 )
 from adam.language.language_generator import LanguageGenerator
 from adam.language.lexicon import LexiconEntry
 from adam.language.ontology_dictionary import OntologyLexicon
+from adam.language_specific import ALLOWS_DITRANSITIVE
 from adam.language_specific.chinese.chinese_phase_1_lexicon import (
+    BABY,
+    BIRD,
+    DAD,
+    DOG,
     GAILA_PHASE_1_CHINESE_LEXICON,
-    ME,
-    YOU,
-    RUN,
     GRAB,
+    ME,
+    MOM,
+    RUN,
     SHOVE,
     TOSS,
-    MOM,
-    DAD,
-    BABY,
-    DOG,
-    BIRD,
+    YOU,
 )
-from adam.language_specific import (
-    FIRST_PERSON,
-    SECOND_PERSON,
-    ALLOWS_DITRANSITIVE,
-    MASS_NOUN,
+from adam.language_specific.chinese.chinese_phase_2_lexicon import (
+    GAILA_PHASE_2_CHINESE_LEXICON,
 )
 from adam.language_specific.chinese.chinese_syntax import (
     SIMPLE_CHINESE_DEPENDENCY_TREE_LINEARIZER,
 )
 from adam.ontology import IN_REGION, IS_ADDRESSEE, IS_SPEAKER, OntologyNode
 from adam.ontology.phase1_ontology import (
-    ANIMATE,
     AGENT,
-    PUSH,
+    BIGGER_THAN,
     COLOR,
+    COME,
     FALL,
-    GOAL,
-    GROUND,
-    HAS,
-    LEARNER,
-    PATIENT,
-    SIT,
-    THEME,
-    JUMP,
+    FAST,
     GIVE,
     GO,
-    COME,
-    HARD_FORCE,
-    SOFT_FORCE,
-    FAST,
-    SLOW,
-    BIGGER_THAN,
-    SMALLER_THAN,
-    WALK,
-    TAKE,
-    PASS,
+    GOAL,
     GOAL_MANIPULATOR,
+    GROUND,
+    HARD_FORCE,
+    HAS,
+    JUMP,
+    LEARNER,
+    PASS,
+    PATIENT,
+    PUSH,
+    SIT,
+    SLOW,
+    SMALLER_THAN,
+    SOFT_FORCE,
+    TAKE,
+    THEME,
+    WALK,
 )
 from adam.ontology.phase1_spatial_relations import (
+    AWAY_FROM,
+    DISTAL,
     EXTERIOR_BUT_IN_CONTACT,
     GRAVITATIONAL_DOWN,
+    GRAVITATIONAL_UP,
     INTERIOR,
     PROXIMAL,
     Region,
-    TOWARD,
-    GRAVITATIONAL_UP,
-    DISTAL,
     SpatialPath,
-    AWAY_FROM,
     TO,
+    TOWARD,
     VIA,
 )
 from adam.random_utils import SequenceChooser
 from adam.relation import Relation
 from adam.situation import Action, SituationObject, SituationRegion
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
+from attr import Factory, attrib, attrs
+from attr.validators import instance_of
+from immutablecollections import ImmutableSet, immutableset, immutablesetmultidict
 
 
 @attrs(frozen=True, slots=True)

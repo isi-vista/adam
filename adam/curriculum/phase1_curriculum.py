@@ -1,22 +1,11 @@
 """
 Curricula for DARPA GAILA Phase 1
 """
-from math import ceil
-
-from adam.language.language_generator import LanguageGenerator
-from adam.language.dependency import LinearizedDependencyTree
 from itertools import chain
-from typing import Iterable, Sequence, List, Dict, Optional
-from adam.language_specific.english.english_language_generator import (
-    GAILA_PHASE_1_LANGUAGE_GENERATOR,
-    GAILA_PHASE_2_LANGUAGE_GENERATOR,
-)
-from adam.language_specific.chinese.chinese_language_generator import (
-    GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
-    GAILA_PHASE_2_CHINESE_LANGUAGE_GENERATOR,
-)
-from immutablecollections import immutableset
-from more_itertools import flatten, first
+from math import ceil
+from typing import Dict, Iterable, List, Optional, Sequence
+
+from more_itertools import first, flatten
 
 from adam.axes import AxesInfo, FacingAddresseeAxis, HorizontalAxisOfObject
 from adam.curriculum import ExplicitWithSituationInstanceGroup
@@ -24,32 +13,43 @@ from adam.curriculum.curriculum_utils import (
     GROUND_OBJECT_TEMPLATE,
     PHASE1_CHOOSER_FACTORY,
     Phase1InstanceGroup,
+    make_noise_objects,
     phase1_instances,
     standard_object,
-    make_noise_objects,
 )
 from adam.language import TokenSequenceLinguisticDescription
+from adam.language.dependency import LinearizedDependencyTree
+from adam.language.language_generator import LanguageGenerator
+from adam.language_specific.chinese.chinese_language_generator import (
+    GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
+    GAILA_PHASE_2_CHINESE_LANGUAGE_GENERATOR,
+)
 from adam.language_specific.english.english_language_generator import (
+    ATTRIBUTES_AS_X_IS_Y,
+    GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    GAILA_PHASE_2_LANGUAGE_GENERATOR,
+    IGNORE_COLORS,
     IGNORE_HAS_AS_VERB,
     PREFER_DITRANSITIVE,
     USE_ADVERBIAL_PATH_MODIFIER,
-    ATTRIBUTES_AS_X_IS_Y,
-    IGNORE_COLORS,
 )
-from adam.ontology import IS_ADDRESSEE, IS_SPEAKER, THING, OntologyNode
+from adam.ontology import IS_ADDRESSEE, IS_SPEAKER, OntologyNode, THING
 from adam.ontology.during import DuringAction
 from adam.ontology.ontology import Ontology
-from adam.ontology.phase1_spatial_relations import PathOperator
 from adam.ontology.phase1_ontology import (
     AGENT,
     ANIMATE,
+    BABY,
+    BALL,
     BIRD,
     BOX,
     CAN_BE_SAT_ON_BY_PEOPLE,
     CAN_HAVE_THINGS_RESTING_ON_THEM,
     CAN_JUMP,
+    CAR,
     COME,
-    HARD_FORCE,
+    DAD,
+    DOG,
     DRINK,
     DRINK_CONTAINER_AUX,
     EAT,
@@ -57,12 +57,13 @@ from adam.ontology.phase1_ontology import (
     FALL,
     FLY,
     GAILA_PHASE_1_ONTOLOGY,
-    WALK_SURFACE_AUXILIARY,
     GIVE,
     GOAL,
     GROUND,
+    HARD_FORCE,
     HAS_SPACE_UNDER,
     HOLLOW,
+    HOUSE,
     INANIMATE,
     INANIMATE_OBJECT,
     IS_BODY_PART,
@@ -70,8 +71,10 @@ from adam.ontology.phase1_ontology import (
     JUMP_INITIAL_SUPPORTER_AUX,
     LEARNER,
     LIQUID,
+    MOM,
     MOVE,
     MOVE_GOAL,
+    PASS,
     PATIENT,
     PERSON,
     PERSON_CAN_HAVE,
@@ -92,6 +95,9 @@ from adam.ontology.phase1_ontology import (
     THROW,
     THROW_GOAL,
     TRANSFER_OF_POSSESSION,
+    TRUCK,
+    WALK,
+    WALK_SURFACE_AUXILIARY,
     bigger_than,
     contacts,
     far,
@@ -100,16 +106,6 @@ from adam.ontology.phase1_ontology import (
     is_recognized_particular,
     near,
     on,
-    PASS,
-    BABY,
-    TRUCK,
-    CAR,
-    DOG,
-    MOM,
-    DAD,
-    HOUSE,
-    BALL,
-    WALK,
     strictly_over,
 )
 from adam.ontology.phase1_spatial_relations import (
@@ -118,6 +114,7 @@ from adam.ontology.phase1_spatial_relations import (
     EXTERIOR_BUT_IN_CONTACT,
     GRAVITATIONAL_UP,
     PROXIMAL,
+    PathOperator,
     Region,
     SpatialPath,
     TO,
@@ -130,6 +127,7 @@ from adam.situation import Action, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.situation.templates.phase1_situation_templates import (
     _fly_over_template,
+    _fly_under_template,
     _go_in_template,
     _go_to_template,
     _go_under_template,
@@ -137,7 +135,6 @@ from adam.situation.templates.phase1_situation_templates import (
     _put_in_template,
     _put_on_body_part_template,
     _put_on_template,
-    _fly_under_template,
 )
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
@@ -148,6 +145,7 @@ from adam.situation.templates.phase1_templates import (
     object_variable,
     sampled,
 )
+from immutablecollections import immutableset
 
 
 # TODO: fix https://github.com/isi-vista/adam/issues/917 which causes us to have to specify that we don't wish to include ME_HACK and YOU_HACK in our curriculum design

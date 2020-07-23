@@ -1,26 +1,25 @@
 from itertools import chain
 from typing import Optional, Sequence
 
-from adam.language.language_generator import LanguageGenerator
-from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
-from adam.language.dependency import LinearizedDependencyTree
-from adam.ontology import IS_SPEAKER, IS_ADDRESSEE
 from adam.curriculum.curriculum_utils import (
-    Phase1InstanceGroup,
-    standard_object,
-    phase1_instances,
     PHASE1_CHOOSER_FACTORY,
+    Phase1InstanceGroup,
     make_noise_objects,
+    phase1_instances,
+    standard_object,
 )
 from adam.curriculum.phase1_curriculum import make_eat_template
-from adam.ontology import THING
+from adam.language.dependency import LinearizedDependencyTree
+from adam.language.language_generator import LanguageGenerator
+from adam.ontology import IS_ADDRESSEE, IS_SPEAKER, THING
 from adam.ontology.phase1_ontology import (
-    PERSON,
-    EDIBLE,
-    NONHUMAN_ANIMAL,
-    GAILA_PHASE_1_ONTOLOGY,
     ANIMATE,
+    EDIBLE,
+    GAILA_PHASE_1_ONTOLOGY,
+    NONHUMAN_ANIMAL,
+    PERSON,
 )
+from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.situation.templates.phase1_templates import sampled
 
 

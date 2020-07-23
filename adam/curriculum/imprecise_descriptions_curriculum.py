@@ -1,81 +1,82 @@
 from itertools import chain
-from typing import Sequence, Optional
-from immutablecollections import immutableset
+from typing import Optional, Sequence
+
 from more_itertools import flatten
-from adam.language.language_generator import LanguageGenerator
-from adam.language.dependency import LinearizedDependencyTree
+
 from adam.curriculum.curriculum_utils import (
-    Phase1InstanceGroup,
     PHASE1_CHOOSER_FACTORY,
-    phase1_instances,
-    standard_object,
+    Phase1InstanceGroup,
     learner_template_factory,
     make_noise_objects,
+    phase1_instances,
+    standard_object,
 )
-from adam.ontology import IS_SPEAKER, IS_ADDRESSEE
 from adam.curriculum.phase1_curriculum import (
-    make_pass_template,
-    throw_on_ground_template,
-    throw_template,
-    throw_up_down_template,
-    throw_to_template,
-    bare_move_template,
-    transitive_move_template,
-    make_jump_template,
-    intransitive_roll,
-    transitive_roll_with_surface,
-    transitive_roll,
     bare_fly,
+    bare_move_template,
     fall_on_ground_template,
     falling_template,
-    make_take_template,
+    intransitive_roll,
+    make_jump_template,
+    make_pass_template,
     make_push_templates,
+    make_take_template,
     make_walk_run_template,
+    throw_on_ground_template,
+    throw_template,
+    throw_to_template,
+    throw_up_down_template,
+    transitive_move_template,
+    transitive_roll,
+    transitive_roll_with_surface,
 )
+from adam.language.dependency import LinearizedDependencyTree
+from adam.language.language_generator import LanguageGenerator
 from adam.language_specific.english.english_language_generator import (
     USE_ADVERBIAL_PATH_MODIFIER,
     USE_VERTICAL_MODIFIERS,
 )
-from adam.ontology import THING
+from adam.ontology import IS_ADDRESSEE, IS_SPEAKER, THING
 from adam.ontology.phase1_ontology import (
-    GAILA_PHASE_1_ONTOLOGY,
-    ANIMATE,
-    INANIMATE,
-    BOX,
-    FAST,
-    HARD_FORCE,
-    SOFT_FORCE,
-    SLOW,
-    SELF_MOVING,
-    CAN_JUMP,
-    ROLLABLE,
-    CAN_HAVE_THINGS_RESTING_ON_THEM,
-    BIRD,
-    bigger_than,
-    EAT,
     AGENT,
-    PATIENT,
-    COOKIE,
-    WATERMELON,
-    TOWARD,
+    ANIMATE,
     AWAY_FROM,
-    MOM,
-    LEARNER,
-    DOG,
     BABY,
-    DAD,
+    BIRD,
+    BOX,
+    CAN_HAVE_THINGS_RESTING_ON_THEM,
+    CAN_JUMP,
     CHAIR,
+    COOKIE,
+    DAD,
+    DOG,
+    EAT,
+    FAST,
+    GAILA_PHASE_1_ONTOLOGY,
+    HARD_FORCE,
+    INANIMATE,
+    LEARNER,
+    MOM,
+    PATIENT,
+    ROLLABLE,
+    SELF_MOVING,
+    SLOW,
+    SOFT_FORCE,
+    SPIN,
     TABLE,
     THEME,
-    SPIN,
+    TOWARD,
+    WATERMELON,
+    bigger_than,
 )
 from adam.situation import Action, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.situation.templates.phase1_templates import (
-    sampled,
-    TemplateObjectVariable,
     Phase1SituationTemplate,
+    TemplateObjectVariable,
+    sampled,
 )
+from immutablecollections import immutableset
 
 BOOL_SET = immutableset([True, False])
 

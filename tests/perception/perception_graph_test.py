@@ -33,7 +33,7 @@ from adam.ontology.phase1_ontology import (
 )
 from adam.ontology.phase1_spatial_relations import DISTAL, EXTERIOR_BUT_IN_CONTACT, Region
 from adam.ontology.structural_schema import ObjectStructuralSchema
-from adam.perception import ObjectPerception, PerceptualRepresentation, MatchMode
+from adam.perception import MatchMode, ObjectPerception, PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
     RgbColorPerception,
@@ -42,17 +42,17 @@ from adam.perception.high_level_semantics_situation_to_developmental_primitive_p
     GAILA_PHASE_1_PERCEPTION_GENERATOR,
 )
 from adam.perception.perception_graph import (
+    AnyEdgePredicate,
+    AnyObjectPerception,
+    HoldsAtTemporalScopePredicate,
     IsColorNodePredicate,
     PatternMatching,
     PerceptionGraph,
+    PerceptionGraphNode,
     PerceptionGraphPattern,
     PerceptionGraphPatternMatch,
     TemporalScope,
     TemporallyScopedEdgeLabel,
-    HoldsAtTemporalScopePredicate,
-    AnyEdgePredicate,
-    AnyObjectPerception,
-    PerceptionGraphNode,
 )
 from adam.random_utils import RandomChooser
 from adam.relation import Relation

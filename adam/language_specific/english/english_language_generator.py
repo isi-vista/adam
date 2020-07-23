@@ -2,9 +2,6 @@ import collections
 from itertools import chain
 from typing import Iterable, List, Mapping, MutableMapping, Optional, Tuple, Union, cast
 
-from attr import Factory, attrib, attrs
-from attr.validators import instance_of
-from immutablecollections import ImmutableSet, immutableset, immutablesetmultidict
 from more_itertools import first, only
 from networkx import DiGraph
 
@@ -18,6 +15,7 @@ from adam.language.dependency import (
 )
 from adam.language.dependency.universal_dependencies import (
     ADJECTIVAL_MODIFIER,
+    ADJECTIVE,
     ADPOSITION,
     ADVERB,
     ADVERBIAL_MODIFIER,
@@ -26,6 +24,8 @@ from adam.language.dependency.universal_dependencies import (
     DETERMINER,
     DETERMINER_ROLE,
     INDIRECT_OBJECT,
+    IS_ATTRIBUTE,
+    MARKER,
     NOMINAL_MODIFIER,
     NOMINAL_MODIFIER_POSSESSIVE,
     NOMINAL_SUBJECT,
@@ -33,34 +33,31 @@ from adam.language.dependency.universal_dependencies import (
     NUMERIC_MODIFIER,
     OBJECT,
     OBLIQUE_NOMINAL,
+    OTHER,
     PROPER_NOUN,
     VERB,
-    IS_ATTRIBUTE,
-    OTHER,
-    MARKER,
-    ADJECTIVE,
 )
 from adam.language.language_generator import LanguageGenerator
 from adam.language.lexicon import LexiconEntry
 from adam.language.ontology_dictionary import OntologyLexicon
+from adam.language_specific import (
+    ALLOWS_DITRANSITIVE,
+    FIRST_PERSON,
+    MASS_NOUN,
+    SECOND_PERSON,
+)
 from adam.language_specific.english.english_phase_1_lexicon import (
     GAILA_PHASE_1_ENGLISH_LEXICON,
+    GRAB,
     I,
     ME,
-    YOU,
-    GRAB,
+    RUN,
     SHOVE,
     TOSS,
-    RUN,
+    YOU,
 )
 from adam.language_specific.english.english_phase_2_lexicon import (
     GAILA_PHASE_2_ENGLISH_LEXICON,
-)
-from adam.language_specific import (
-    FIRST_PERSON,
-    SECOND_PERSON,
-    ALLOWS_DITRANSITIVE,
-    MASS_NOUN,
 )
 from adam.language_specific.english.english_syntax import (
     SIMPLE_ENGLISH_DEPENDENCY_TREE_LINEARIZER,
@@ -68,44 +65,47 @@ from adam.language_specific.english.english_syntax import (
 from adam.ontology import IN_REGION, IS_ADDRESSEE, IS_SPEAKER, OntologyNode
 from adam.ontology.phase1_ontology import (
     AGENT,
+    BIGGER_THAN,
     COLOR,
     FALL,
+    FAST,
     GOAL,
     GROUND,
-    HAS,
-    LEARNER,
-    PATIENT,
-    SIT,
-    THEME,
-    JUMP,
-    FAST,
-    SLOW,
-    BIGGER_THAN,
-    SMALLER_THAN,
-    WALK,
-    PASS,
-    PUSH,
-    TAKE,
     HARD_FORCE,
+    HAS,
+    JUMP,
+    LEARNER,
+    PASS,
+    PATIENT,
+    PUSH,
+    SIT,
+    SLOW,
+    SMALLER_THAN,
+    TAKE,
+    THEME,
+    WALK,
 )
 from adam.ontology.phase1_spatial_relations import (
+    AWAY_FROM,
+    DISTAL,
     EXTERIOR_BUT_IN_CONTACT,
     GRAVITATIONAL_DOWN,
+    GRAVITATIONAL_UP,
     INTERIOR,
     PROXIMAL,
     Region,
-    TOWARD,
-    GRAVITATIONAL_UP,
     SpatialPath,
-    AWAY_FROM,
     TO,
-    DISTAL,
+    TOWARD,
     VIA,
 )
 from adam.random_utils import SequenceChooser
 from adam.relation import Relation
 from adam.situation import Action, SituationObject, SituationRegion
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
+from attr import Factory, attrib, attrs
+from attr.validators import instance_of
+from immutablecollections import ImmutableSet, immutableset, immutablesetmultidict
 
 
 @attrs(frozen=True, slots=True)

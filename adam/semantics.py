@@ -155,6 +155,7 @@ class ActionSemanticNode(SemanticNode):
     #         check_arg(template.num_slots >= 1)
 
 
+@attrs(frozen=True, slots=True)
 class QuantificationSemanticNode(SemanticNode):
     concept: NumberConcept = attrib(validator=instance_of(NumberConcept))
     slot_fillings: ImmutableDict[SyntaxSemanticsVariable, "ObjectSemanticNode"] = attrib(
@@ -185,6 +186,9 @@ class LearnerSemantics:
     attributes: ImmutableSet[AttributeSemanticNode] = attrib(converter=_to_immutableset)
     relations: ImmutableSet[RelationSemanticNode] = attrib(converter=_to_immutableset)
     actions: ImmutableSet[ActionSemanticNode] = attrib(converter=_to_immutableset)
+    quantifiers: ImmutableSet[QuantificationSemanticNode] = attrib(
+        converter=_to_immutableset
+    )
 
     objects_to_attributes: ImmutableSetMultiDict[
         ObjectSemanticNode, AttributeSemanticNode
@@ -198,18 +202,38 @@ class LearnerSemantics:
 
     @staticmethod
     def from_nodes(semantic_nodes: Iterable[SemanticNode]) -> "LearnerSemantics":
+        semantic_nodes_tuple = tuple(semantic_nodes)
+        for node in semantic_nodes_tuple:
+            if not isinstance(node, SemanticNode):
+                raise RuntimeError(
+                    f"Tried to add something which is not a semantic node to "
+                    f"LearnerSemantics: {node}"
+                )
         return LearnerSemantics(
             objects=[
-                node for node in semantic_nodes if isinstance(node, ObjectSemanticNode)
+                node
+                for node in semantic_nodes_tuple
+                if isinstance(node, ObjectSemanticNode)
             ],
             attributes=[
-                node for node in semantic_nodes if isinstance(node, AttributeSemanticNode)
+                node
+                for node in semantic_nodes_tuple
+                if isinstance(node, AttributeSemanticNode)
             ],
             relations=[
-                node for node in semantic_nodes if isinstance(node, RelationSemanticNode)
+                node
+                for node in semantic_nodes_tuple
+                if isinstance(node, RelationSemanticNode)
             ],
             actions=[
-                node for node in semantic_nodes if isinstance(node, ActionSemanticNode)
+                node
+                for node in semantic_nodes_tuple
+                if isinstance(node, ActionSemanticNode)
+            ],
+            quantifiers=[
+                node
+                for node in semantic_nodes_tuple
+                if isinstance(node, QuantificationSemanticNode)
             ],
         )
 

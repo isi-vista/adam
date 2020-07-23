@@ -1,12 +1,13 @@
+import pytest
+
 from adam.curriculum.pursuit_curriculum import make_simple_pursuit_curriculum
-from tests.curriculum.phase1_curriculum_test import curriculum_test
 from adam.language_specific.chinese.chinese_language_generator import (
     GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
 )
 from adam.language_specific.english.english_language_generator import (
     GAILA_PHASE_1_LANGUAGE_GENERATOR,
 )
-import pytest
+from tests.curriculum.phase1_curriculum_test import curriculum_test
 
 
 @pytest.mark.parametrize(

@@ -4,10 +4,10 @@ import pytest
 from more_itertools import flatten
 
 from adam.curriculum.curriculum_utils import (
-    standard_object,
-    phase1_instances,
     PHASE1_CHOOSER_FACTORY,
     PHASE1_TEST_CHOOSER_FACTORY,
+    phase1_instances,
+    standard_object,
 )
 from adam.curriculum.phase1_curriculum import (
     _object_with_color_template,
@@ -19,23 +19,24 @@ from adam.learner import LearningExample
 from adam.learner.attributes import SubsetAttributeLearner, SubsetAttributeLearnerNew
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
-from adam.ontology import IS_SPEAKER, IS_ADDRESSEE
+from adam.learner.quantifers import QuantifierTemplateLearner
+from adam.ontology import IS_ADDRESSEE, IS_SPEAKER
 from adam.ontology.phase1_ontology import (
+    BABY,
+    BALL,
+    BLACK,
+    BLUE,
+    BOOK,
+    CAR,
+    DAD,
+    GAILA_PHASE_1_ONTOLOGY,
+    GREEN,
+    INANIMATE_OBJECT,
+    MOM,
+    PERSON,
+    PERSON_CAN_HAVE,
     RED,
     WHITE,
-    BLACK,
-    GREEN,
-    BLUE,
-    BALL,
-    BOOK,
-    GAILA_PHASE_1_ONTOLOGY,
-    CAR,
-    PERSON,
-    INANIMATE_OBJECT,
-    PERSON_CAN_HAVE,
-    MOM,
-    DAD,
-    BABY,
 )
 from adam.situation.templates.phase1_templates import property_variable, sampled
 from tests.learner import (
@@ -58,6 +59,10 @@ def integrated_learner_factory(language_mode: LanguageMode):
         attribute_learner=SubsetAttributeLearnerNew(
             ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=language_mode
         ),
+        number_learner=QuantifierTemplateLearner.pretrained_for_language_mode(
+            language_mode
+        ),
+        language_mode=language_mode,
     )
 
 
@@ -75,10 +80,7 @@ def integrated_learner_factory(language_mode: LanguageMode):
     ],
 )
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
-@pytest.mark.parametrize(
-    "learner",
-    [pytest.mark.skip(subset_attribute_leaner_factory), integrated_learner_factory],
-)
+@pytest.mark.parametrize("learner", [integrated_learner_factory])
 def test_subset_color_attribute(
     color_node, object_0_node, object_1_node, language_mode, learner
 ):

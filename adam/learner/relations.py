@@ -1,22 +1,23 @@
-from abc import ABC
-from typing import AbstractSet, Optional, Iterable, Tuple
 import itertools
+from abc import ABC
+from typing import AbstractSet, Iterable, Optional, Tuple
+
 from adam.learner import LanguagePerceptionSemanticAlignment, PerceptionSemanticAlignment
+from adam.learner.learner_utils import AlignmentSlots, candidate_templates
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
 from adam.learner.subset import AbstractTemplateSubsetLearnerNew
 from adam.learner.surface_templates import SurfaceTemplateBoundToSemanticNodes
-from attr import attrs
-from adam.learner.template_learner import AbstractTemplateLearnerNew
+from adam.learner.template_learner import AbstractPerceptualTemplateLearnerNew
 from adam.perception import MatchMode
 from adam.semantics import RelationConcept
+from attr import attrs
 from immutablecollections import immutableset, immutablesetmultidict
-from adam.learner.learner_utils import candidate_templates, AlignmentSlots
 
 _MAXIMUM_RELATION_TEMPLATE_TOKEN_LENGTH = 5
 
 
 @attrs
-class AbstractRelationTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
+class AbstractRelationTemplateLearnerNew(AbstractPerceptualTemplateLearnerNew, ABC):
     # pylint:disable=abstract-method
     def _candidate_templates(
         self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment

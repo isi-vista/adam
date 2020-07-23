@@ -1,5 +1,3 @@
-from immutablecollections import ImmutableSet, immutableset
-
 from adam.language import TokenSequenceLinguisticDescription
 from adam.language.language_generator import (
     ChooseFirstLanguageGenerator,
@@ -15,6 +13,7 @@ from adam.ontology.phase1_ontology import BALL
 from adam.random_utils import FixedIndexChooser, RandomChooser, SequenceChooser
 from adam.situation import LocatedObjectSituation, Situation
 from adam_test_utils import situation_object
+from immutablecollections import ImmutableSet, immutableset
 
 
 def test_single_object_generator():

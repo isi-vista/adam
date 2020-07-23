@@ -1,12 +1,11 @@
 r"""
 Representations of the linguistic input and outputs of a `LanguageLearner`\ .
 """
-from abc import ABC, abstractmethod
-from typing import Optional, Tuple, TypeVar, Sequence, Sized
+from abc import ABC
+from typing import Optional, Sequence, Tuple, TypeVar
 
 from attr import attrib, attrs
-from attr.validators import instance_of, deep_iterable
-
+from attr.validators import deep_iterable, instance_of
 from immutablecollections.converter_utils import _to_tuple
 from vistautils.span import Span
 

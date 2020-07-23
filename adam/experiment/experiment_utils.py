@@ -1,16 +1,16 @@
 from itertools import repeat
-from typing import Sequence, Optional
+from typing import Optional, Sequence
 
 from adam.curriculum.curriculum_utils import Phase1InstanceGroup
 from adam.curriculum.m6_curriculum import (
+    M6_CURRICULUM_ALL_OBJECTS,
     M6_PREPOSITION_SUBCURRICULUM_GENERATORS,
     instantiate_subcurricula,
-    M6_CURRICULUM_ALL_OBJECTS,
 )
 from adam.curriculum.phase1_curriculum import (
     _make_each_object_by_itself_curriculum,
-    _make_put_on_speaker_addressee_body_part_curriculum,
     _make_generic_statements_curriculum,
+    _make_put_on_speaker_addressee_body_part_curriculum,
 )
 from adam.curriculum.pursuit_curriculum import make_simple_pursuit_curriculum
 from adam.language.dependency import LinearizedDependencyTree
