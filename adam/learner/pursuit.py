@@ -683,11 +683,14 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
                 and node.property_value == GAZED_AT
             ):
                 nodes_to_remove.append(node)
+        if not nodes_to_remove:
+            return hypothesis
+        new_hypothesis = hypothesis
         for node in nodes_to_remove:
-            hypothesis.graph_pattern._graph.remove_node(  # pylint: disable=protected-access
+            new_hypothesis.graph_pattern._graph.remove_node(  # pylint: disable=protected-access
                 node
             )
-        return hypothesis
+        return new_hypothesis
 
     def initialization_step(
         self,
@@ -704,7 +707,7 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
             for hypothesis in self._hypotheses_from_perception(
                 language_perception_semantic_alignment, bound_surface_template
             )
-            if hypothesis not in self._lexicon.values()
+            if self.remove_gaze_from_hypothesis(hypothesis) not in self._lexicon.values()
         ]
 
         pattern_hypothesis = first(hypotheses)
@@ -891,7 +894,8 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
                 for hypothesis in self._hypotheses_from_perception(
                     language_perception_semantic_alignment, bound_surface_template
                 )
-                if hypothesis not in self._lexicon.values()
+                if self.remove_gaze_from_hypothesis(hypothesis)
+                not in self._lexicon.values()
             ]
 
             # if there is an object that partially matches the object we're trying to learn, reward this one

@@ -90,7 +90,7 @@ M6_CURRICULUM_ALL_OBJECTS = [
     CUP,
     BOX,
     # TODO: https://github.com/isi-vista/adam/issues/935
-    # CHAIR,
+    CHAIR,
     HEAD,
     MILK,
     HAND,
