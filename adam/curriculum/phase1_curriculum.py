@@ -2,7 +2,6 @@
 Curricula for DARPA GAILA Phase 1
 """
 from itertools import chain
-from math import ceil
 from typing import Dict, Iterable, List, Optional, Sequence
 
 from more_itertools import first, flatten
@@ -327,28 +326,25 @@ def _make_objects_with_colors_is_curriculum(
 # We ignore any noise objects in this curriculum as pursuit
 # has its own implementation method
 def _make_plural_objects_curriculum(  # pylint: disable=unused-argument
-    num_samples: Optional[int],
-    noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
 ) -> Phase1InstanceGroup:
     def build_object_multiples_situations(
-        ontology: Ontology, *, samples_per_object: int = 3, chooser: RandomChooser
+        ontology: Ontology, *, chooser: RandomChooser
     ) -> Iterable[HighLevelSemanticsSituation]:
-        for object_type in PHASE_1_CURRICULUM_OBJECTS:
-            is_liquid = ontology.has_all_properties(object_type, [LIQUID])
-            # don't want multiples of named people
-            if not is_recognized_particular(ontology, object_type) and not is_liquid:
-                for _ in range(samples_per_object):
-                    num_objects = chooser.choice(range(2, 4))
+        for num_objects in range(1, 5):
+            for object_type in PHASE_1_CURRICULUM_OBJECTS:
+                is_liquid = ontology.has_all_properties(object_type, [LIQUID])
+                # don't want multiples of named people
+                if not is_recognized_particular(ontology, object_type) and not is_liquid:
                     yield HighLevelSemanticsSituation(
-                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        ontology=ontology,
                         salient_objects=[
                             SituationObject.instantiate_ontology_node(
                                 ontology_node=object_type,
                                 debug_handle=object_type.handle + f"_{idx}",
-                                ontology=GAILA_PHASE_1_ONTOLOGY,
+                                ontology=ontology,
                             )
                             for idx in range(num_objects)
                         ],
@@ -358,11 +354,7 @@ def _make_plural_objects_curriculum(  # pylint: disable=unused-argument
     return phase1_instances(
         "multiples of the same object",
         build_object_multiples_situations(
-            ontology=GAILA_PHASE_1_ONTOLOGY,
-            chooser=PHASE1_CHOOSER_FACTORY(),
-            samples_per_object=max(ceil(num_samples / len(PHASE_1_CURRICULUM_OBJECTS)), 3)
-            if num_samples
-            else 3,
+            ontology=GAILA_PHASE_1_ONTOLOGY, chooser=PHASE1_CHOOSER_FACTORY()
         ),
         language_generator=language_generator,
     )
@@ -3016,11 +3008,7 @@ def build_gaila_plurals_curriculum(
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
 ) -> Sequence[Phase1InstanceGroup]:
-    return [
-        _make_plural_objects_curriculum(
-            num_samples, num_noise_objects, language_generator
-        )
-    ]
+    return [_make_plural_objects_curriculum(language_generator)]
 
 
 def build_gaila_generics_curriculum(

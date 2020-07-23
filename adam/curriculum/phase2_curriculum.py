@@ -309,9 +309,7 @@ def build_gaila_m8_curriculum(
     return list(
         chain(
             [
-                _make_plural_objects_curriculum(
-                    num_samples, num_noise_objects, language_generator
-                ),  # plurals
+                _make_plural_objects_curriculum(language_generator),  # plurals
                 _make_sit_on_chair_curriculum(
                     num_samples, num_noise_objects, language_generator
                 ),  # functionally defined objects

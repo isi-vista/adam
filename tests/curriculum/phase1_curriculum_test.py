@@ -121,7 +121,7 @@ def test_instantiate_fly_curriculum(language_generator):
     [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
 )
 def test_plural_objects_curriculum(language_generator):
-    curriculum_test(_make_plural_objects_curriculum(None, None, language_generator))
+    curriculum_test(_make_plural_objects_curriculum(language_generator))
 
 
 @pytest.mark.parametrize(

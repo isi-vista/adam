@@ -245,6 +245,15 @@ class ToleranceRuleQuantifierTemplateLearner(SemanticTemplateLearner):
         # We currently limit ourselves to cases
         # where the object + plural marker is the entire utterance.
 
+        # Account for English determiner hack
+        if token_sequence[span_for_object.start] in ("a", "the"):
+            ret.append(
+                SurfaceTemplate(
+                    [token_sequence[span_for_object.start], SLOT1],
+                    language_mode=self.language_mode,
+                )
+            )
+
         # Any tokens immediately before or after the expression of an object
         # are candidate expressions of pluralization.
         preceding_token_index = span_for_object.start - 1
