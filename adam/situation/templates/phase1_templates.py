@@ -299,13 +299,16 @@ def all_possible(
     ontology: Ontology,
     chooser: SequenceChooser,
     default_addressee_node: OntologyNode = LEARNER,
+    block_multiple_objects_of_the_same_type: bool = True,
 ) -> Iterable[HighLevelSemanticsSituation]:
     """
     Generator for all possible instantiations of *situation_template* with *ontology*.
     """
     return list(
         _Phase1SituationTemplateGenerator(
-            ontology=ontology, variable_assigner=_CrossProductVariableAssigner()
+            ontology=ontology,
+            variable_assigner=_CrossProductVariableAssigner(),
+            block_multiple_objects_of_the_same_type=block_multiple_objects_of_the_same_type,
         ).generate_situations(
             situation_template,
             chooser=chooser,

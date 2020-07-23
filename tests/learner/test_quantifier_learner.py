@@ -57,18 +57,19 @@ def test_english_quantifier_learning():
     four_balls_situation = Phase1SituationTemplate(
         "four balls", salient_object_variables=[ball_1, ball_2, ball_3, ball_4]
     )
-    references = {
+    situation_to_references = {
         one_ball_situation: [("a", "ball")],
-        two_balls_situation: [("two", "balls"), ("balls")],
-        three_balls_situation: [("many", "balls"), ("balls")],
-        four_balls_situation: [("many", "balls"), ("balls")],
+        two_balls_situation: [("two", "ball", "s"), ("ball", "s")],
+        three_balls_situation: [("many", "ball", "s"), ("ball", "s")],
+        four_balls_situation: [("many", "ball", "s"), ("ball", "s")],
     }
 
-    for (test_situation_template, references) in references.items():
+    for (test_situation_template, references) in situation_to_references.items():
         for test_situation in all_possible(
             test_situation_template,
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
+            block_multiple_objects_of_the_same_type=False,
         ):
             description = tuple(
                 x.as_token_sequence()
