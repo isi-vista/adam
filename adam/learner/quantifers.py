@@ -283,6 +283,18 @@ class ToleranceRuleQuantifierTemplateLearner(SemanticTemplateLearner):
                 )
             )
 
+        if not object_at_left_edge and not object_at_right_edge:
+            ret.append(
+                SurfaceTemplate(
+                    [
+                        token_sequence[span_for_object.start - 1],
+                        SLOT1,
+                        token_sequence[span_for_object.end],
+                    ],
+                    language_mode=self.language_mode,
+                )
+            )
+
         # We will consider a no-op hypothesis only if everything on both sides
         # is aready aligned
         if object_at_left_edge and object_at_right_edge:
