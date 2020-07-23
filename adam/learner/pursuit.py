@@ -706,13 +706,12 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
         # generated as a pattern graph from the perception.
         # We want h_0 = arg_min_(m in M_U) max(A_m); i.e. h_0 is pattern_hypothesis
 
-        # only consider those hypotheses for which we don't already have a mapping
+        # TODO: only consider those hypotheses for which we don't already have a mapping https://github.com/isi-vista/adam/issues/930
         hypotheses: List[PerceptionGraphTemplate] = [
             hypothesis
             for hypothesis in self._hypotheses_from_perception(
                 language_perception_semantic_alignment, bound_surface_template
             )
-            if self.remove_gaze_from_hypothesis(hypothesis) not in self._lexicon.values()
         ]
 
         pattern_hypothesis = first(hypotheses)
@@ -858,6 +857,7 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
             )
 
             def get_partial_match() -> Optional[PerceptionGraphTemplate]:
+                """Helper function to get a partial match hypothesis if there is one"""
                 if (
                     partial_match.match_score()
                     >= self._graph_match_confirmation_threshold
@@ -881,15 +881,12 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
             # random object.
 
             hypotheses_to_reward: List[PerceptionGraphTemplate] = []
-            # get all hypotheses which do not already have a mapping
+            # TODO: get all hypotheses which do not already have a mapping https://github.com/isi-vista/adam/issues/930
             hypotheses = [
                 hypothesis
                 for hypothesis in self._hypotheses_from_perception(
                     language_perception_semantic_alignment, bound_surface_template
                 )
-                if self.remove_gaze_from_hypothesis(hypothesis)
-                # TODO: fix this
-                not in self._lexicon.values()
             ]
 
             # if there is an object that partially matches the object we're trying to learn, reward this one
