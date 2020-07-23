@@ -327,7 +327,6 @@ class GraphMatching:
                         newstate = self.state.__class__(
                             self, graph_node, next_pattern_node_to_match
                         )
-                        print("MATCHING RECURSIVELY")
                         for mapping in self.match(
                             collect_debug_statistics=collect_debug_statistics,
                             debug_callback=debug_callback,
