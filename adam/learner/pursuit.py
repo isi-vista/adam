@@ -900,6 +900,7 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
                     language_perception_semantic_alignment, bound_surface_template
                 )
                 if self.remove_gaze_from_hypothesis(hypothesis)
+                # TODO: fix this
                 not in self._lexicon.values()
             ]
 
@@ -924,30 +925,30 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
                 else:
                     hypotheses_to_reward.append(self._rng.choice(list(hypotheses)))
 
-            # Here's where it gets complicated.
-            # In the Pursuit paper, at this point they choose a random meaning from the scene.
-            # But if you do this it becomes difficult to learn object meanings
-            # which are generalizations from the direct object observations.
-            # Therefore, in addition to rewarding the hypothesis
-            # which directly encodes the randomly selected object's perception,
-            # we also reward all other non-leading hypotheses which would match it.
+                # Here's where it gets complicated.
+                # In the Pursuit paper, at this point they choose a random meaning from the scene.
+                # But if you do this it becomes difficult to learn object meanings
+                # which are generalizations from the direct object observations.
+                # Therefore, in addition to rewarding the hypothesis
+                # which directly encodes the randomly selected object's perception,
+                # we also reward all other non-leading hypotheses which would match it.
 
-            for hypothesis in hypotheses_for_item:
-                non_leading_hypothesis_partial_match = self._find_partial_match(
-                    hypothesis,
-                    language_perception_semantic_alignment.perception_semantic_alignment.perception_graph,
-                )
-                if (
-                    non_leading_hypothesis_partial_match.match_score()
-                    > self._graph_match_confirmation_threshold
-                ):
-                    hypotheses_to_reward.append(hypothesis)
-                    if self._hypothesis_logger:
-                        self._hypothesis_logger.log_hypothesis_graph(
-                            hypothesis,
-                            logging.INFO,
-                            "Boosting existing non-leading hypothesis",
-                        )
+                for hypothesis in hypotheses_for_item:
+                    non_leading_hypothesis_partial_match = self._find_partial_match(
+                        hypothesis,
+                        language_perception_semantic_alignment.perception_semantic_alignment.perception_graph,
+                    )
+                    if (
+                        non_leading_hypothesis_partial_match.match_score()
+                        > self._graph_match_confirmation_threshold
+                    ):
+                        hypotheses_to_reward.append(hypothesis)
+                        if self._hypothesis_logger:
+                            self._hypothesis_logger.log_hypothesis_graph(
+                                hypothesis,
+                                logging.INFO,
+                                "Boosting existing non-leading hypothesis",
+                            )
 
             # Guard against the same object being rewarded more than once on the same update step.
             hypothesis_objects_boosted_on_this_update: Set[
