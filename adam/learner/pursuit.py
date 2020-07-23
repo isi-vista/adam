@@ -840,18 +840,6 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
                 1 - current_hypothesis_score
             )
 
-            # if the hypothesis is confirmed and there is gaze, increase the reinforcement factor
-            # TODO: tune how much this is reinforced https://github.com/isi-vista/adam/issues/734
-            if self.rank_gaze_higher and GAZED_AT in [
-                node.property_value
-                for node in leading_hypothesis_pattern.graph_pattern.copy_as_digraph().node
-                if isinstance(node, IsOntologyNodePredicate)
-            ]:
-                new_hypothesis_score = (
-                    current_hypothesis_score
-                    + self._learning_factor * (2 - current_hypothesis_score)
-                )
-
             # Register the updated hypothesis score of A(w,h)
             hypotheses_for_item[leading_hypothesis_pattern] = new_hypothesis_score
             logging.info("Updating hypothesis score to %s", new_hypothesis_score)
@@ -987,23 +975,10 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
                     cur_score_for_new_hypothesis = hypotheses_for_item.get(
                         hypothesis_object_to_reward_without_gaze, 0.0
                     )
-                    # if the object has gaze, we want to reinforce it more strongly than if it doesn't
-                    # TODO: tune how much this is reinforced https://github.com/isi-vista/adam/issues/734
-                    if self.rank_gaze_higher and GAZED_AT in [
-                        node
-                        for node in hypothesis_object_to_reward.graph_pattern.copy_as_digraph().node
-                        if isinstance(node, IsOntologyNodePredicate)
-                    ]:
-
-                        hypotheses_for_item[hypothesis_object_to_reward_without_gaze] = (
-                            cur_score_for_new_hypothesis
-                            + self._learning_factor * (2.0 - cur_score_for_new_hypothesis)
-                        )
-                    else:
-                        hypotheses_for_item[hypothesis_object_to_reward_without_gaze] = (
-                            cur_score_for_new_hypothesis
-                            + self._learning_factor * (1.0 - cur_score_for_new_hypothesis)
-                        )
+                    hypotheses_for_item[hypothesis_object_to_reward_without_gaze] = (
+                        cur_score_for_new_hypothesis
+                        + self._learning_factor * (1.0 - cur_score_for_new_hypothesis)
+                    )
                     hypothesis_objects_boosted_on_this_update.add(
                         hypothesis_object_to_reward_without_gaze
                     )
