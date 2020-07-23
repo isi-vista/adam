@@ -1,4 +1,6 @@
 import logging
+from networkx import NetworkXError
+import copy
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from pathlib import Path
@@ -685,11 +687,14 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
                 nodes_to_remove.append(node)
         if not nodes_to_remove:
             return hypothesis
-        new_hypothesis = hypothesis
-        for node in nodes_to_remove:
-            new_hypothesis.graph_pattern._graph.remove_node(  # pylint: disable=protected-access
-                node
-            )
+        new_hypothesis = copy.deepcopy(hypothesis)
+        for node in set(nodes_to_remove):
+            try:
+                new_hypothesis.graph_pattern._graph.remove_node(  # pylint: disable=protected-access
+                    node
+                )
+            except NetworkXError:
+                continue
         return new_hypothesis
 
     def initialization_step(
