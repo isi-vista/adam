@@ -12,13 +12,13 @@ pursuit:
    smoothing_parameter: .001
 
 pursuit-curriculum-params:
-   num_instances: 10
+   num_instances: 20
    num_noise_instances: 0
    num_objects_in_instance: 3
    add_gaze : True
    ontology : phase1
-   prob_given : 0.5
-   prob_not_given : 0.15
+   prob_given : 1.0
+   prob_not_given : 0.0
 
 
 
