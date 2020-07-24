@@ -77,12 +77,16 @@ If you are using PyCharm, please set your docstring format to "Google" and your 
 # Contributors
 
 * Deniz Beser
+* Joe Cecil
 * Marjorie Freedman
 * Ryan Gabbard
 * Chris Jenkins
+* Ashwin Kumar
 * Elizabeth Lee
 * Jacob Lichtefeld
 * Mitch Marcus
+* Justin Martin
+* Sarah Payne
 * Ralph Weischedel
 * Charles Yang
 
