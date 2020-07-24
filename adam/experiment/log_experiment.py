@@ -12,6 +12,7 @@ from adam.curriculum.phase2_curriculum import (
     build_gaila_m13_curriculum,
     build_m13_shuffled_curriculum,
 )
+from adam.curriculum.preposition_curriculum import make_prepositions_curriculum
 from adam.curriculum.verbs_with_dynamic_prepositions_curriculum import (
     make_verb_with_dynamic_prepositions_curriculum,
 )
@@ -278,6 +279,7 @@ def curriculum_from_params(
             None,
         ),
         "m13-shuffled": (build_m13_shuffled_curriculum, build_gaila_m13_curriculum),
+        "m13-relations": (make_prepositions_curriculum, None),
     }
 
     curriculum_name = params.string("curriculum", str_to_train_test_curriculum.keys())
