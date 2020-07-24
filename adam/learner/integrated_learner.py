@@ -75,6 +75,10 @@ class IntegratedTemplateLearner(
         validator=optional(instance_of(TemplateLearner)), default=None
     )
 
+    generics_learner: Optional[TemplateLearner] = attrib(
+        validator=optional(instance_of(TemplateLearner)), default=None
+    )
+
     _max_attributes_per_word: int = attrib(validator=instance_of(int), default=3)
 
     _observation_num: int = attrib(init=False, default=0)
@@ -141,6 +145,9 @@ class IntegratedTemplateLearner(
 
         if learning_example.perception.is_dynamic() and self.action_learner:
             self.action_learner.learn_from(current_learner_state)
+
+        if self.generics_learner:
+            self.generics_learner.learn_from(current_learner_state)
 
     def describe(
         self, perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]
