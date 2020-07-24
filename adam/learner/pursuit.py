@@ -679,22 +679,14 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
     def remove_gaze_from_hypothesis(self, hypothesis: PerceptionGraphTemplate):
         """Removes any nodes that are gazed-at from a given hypothesis to help prevent this from affecting predictions"""
         nodes_to_remove = []
-        for node in hypothesis.graph_pattern.copy_as_digraph().node:
-            if (
-                isinstance(node, IsOntologyNodePredicate)
-                and node.property_value == GAZED_AT
-            ):
-                nodes_to_remove.append(node)
-        if not nodes_to_remove:
-            return hypothesis
         new_hypothesis = copy.deepcopy(hypothesis)
+        for node in new_hypothesis.graph_pattern._graph.node:
+            if (isinstance(node, IsOntologyNodePredicate) and node.property_value == GAZED_AT):
+                nodes_to_remove.append(node)
         for node in set(nodes_to_remove):
-            try:
-                new_hypothesis.graph_pattern._graph.remove_node(  # pylint: disable=protected-access
-                    node
-                )
-            except NetworkXError:
-                continue
+            new_hypothesis.graph_pattern._graph.remove_node(  # pylint: disable=protected-access
+                node
+            )
         return new_hypothesis
 
     def initialization_step(
