@@ -177,15 +177,16 @@ class IntegratedTemplateLearner(
                 cur_description_state = self.functional_learner.enrich_during_description(
                     cur_description_state
                 )
-        return self._linguistic_descriptions_from_semantics(
-            cur_description_state.semantic_nodes
-        )
+        return self._linguistic_descriptions_from_semantics(cur_description_state)
 
     def _linguistic_descriptions_from_semantics(
-        self, semantic_nodes: AbstractSet[SemanticNode]
+        self, description_state: PerceptionSemanticAlignment
     ) -> Mapping[LinguisticDescription, float]:
 
-        learner_semantics = LearnerSemantics.from_nodes(semantic_nodes)
+        learner_semantics = LearnerSemantics.from_nodes(
+            description_state.semantic_nodes,
+            concept_map=description_state.functional_concept_to_object_concept,
+        )
         ret = []
         if self.action_learner:
             ret.extend(
@@ -249,11 +250,7 @@ class IntegratedTemplateLearner(
             return cur_string
 
     def _instantiate_object(
-        self,
-        object_node: ObjectSemanticNode,
-        learner_semantics: "LearnerSemantics",
-        *,
-        concept_mapping: Mapping[FunctionalObjectConcept, ObjectConcept] = immutabledict()
+        self, object_node: ObjectSemanticNode, learner_semantics: LearnerSemantics
     ) -> Iterator[Tuple[str, ...]]:
 
         # For now, we assume the order in which modifiers is expressed is arbitrary.
@@ -272,9 +269,12 @@ class IntegratedTemplateLearner(
 
         if (
             isinstance(object_node.concept, FunctionalObjectConcept)
-            and object_node.concept in concept_mapping.keys()
+            and object_node.concept
+            in learner_semantics.functional_concept_to_object_concept.keys()
         ):
-            concept = concept_mapping[object_node.concept]
+            concept = learner_semantics.functional_concept_to_object_concept[
+                object_node.concept
+            ]
         else:
             concept = object_node.concept
 
@@ -309,7 +309,7 @@ class IntegratedTemplateLearner(
             yield self._add_determiners(object_node, cur_string)
 
     def _instantiate_relation(
-        self, relation_node: RelationSemanticNode, learner_semantics: "LearnerSemantics"
+        self, relation_node: RelationSemanticNode, learner_semantics: LearnerSemantics
     ) -> Iterator[Tuple[str, ...]]:
         if not self.relation_learner:
             raise RuntimeError("Cannot instantiate relations without a relation learner")

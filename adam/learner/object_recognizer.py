@@ -611,7 +611,7 @@ def extract_candidate_objects(
         while nodes_to_examine:
             node_to_examine = nodes_to_examine.pop()
             is_allowable_node = (
-                not isinstance(node_to_examine, ObjectPerception)
+                not isinstance(node_to_examine, (ObjectPerception, ObjectSemanticNode))
                 or node_to_examine in object_nodes_in_object
             )
             if node_to_examine not in nodes_visited and is_allowable_node:
@@ -620,14 +620,19 @@ def extract_candidate_objects(
                 nodes_to_examine.extend(
                     out_neighbor
                     for (_, out_neighbor) in scene_digraph.out_edges(node_to_examine)
+                    if not (
+                        isinstance(out_neighbor, tuple)
+                        and isinstance(out_neighbor[0], Region)
+                        and out_neighbor[0].reference_object == GROUND_PERCEPTION
+                    )
                 )
                 nodes_to_examine.extend(
                     in_neighbor
                     for (in_neighbor, _) in scene_digraph.in_edges(node_to_examine)
                     # Avoid in-edges from Regions as they can come from other objects regions (e.g ground).
                     if not (
-                        isinstance(node_to_examine, GeonAxis)
-                        and isinstance(in_neighbor, tuple)
+                        # isinstance(node_to_examine, GeonAxis)
+                        isinstance(in_neighbor, tuple)
                         and isinstance(in_neighbor[0], Region)
                     )
                 )

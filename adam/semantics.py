@@ -162,6 +162,16 @@ class LearnerSemantics:
     relations: ImmutableSet[RelationSemanticNode] = attrib(converter=_to_immutableset)
     actions: ImmutableSet[ActionSemanticNode] = attrib(converter=_to_immutableset)
 
+    functional_concept_to_object_concept: ImmutableDict[
+        FunctionalObjectConcept, ObjectConcept
+    ] = attrib(
+        converter=_to_immutabledict,
+        validator=deep_mapping(
+            instance_of(FunctionalObjectConcept), instance_of(ObjectConcept)
+        ),
+        default=immutabledict(),
+    )
+
     objects_to_attributes: ImmutableSetMultiDict[
         ObjectSemanticNode, AttributeSemanticNode
     ] = attrib(init=False)
@@ -173,7 +183,13 @@ class LearnerSemantics:
     ] = attrib(init=False)
 
     @staticmethod
-    def from_nodes(semantic_nodes: Iterable[SemanticNode]) -> "LearnerSemantics":
+    def from_nodes(
+        semantic_nodes: Iterable[SemanticNode],
+        *,
+        concept_map: ImmutableDict[
+            FunctionalObjectConcept, ObjectConcept
+        ] = immutabledict(),
+    ) -> "LearnerSemantics":
         return LearnerSemantics(
             objects=[
                 node for node in semantic_nodes if isinstance(node, ObjectSemanticNode)
@@ -187,6 +203,7 @@ class LearnerSemantics:
             actions=[
                 node for node in semantic_nodes if isinstance(node, ActionSemanticNode)
             ],
+            functional_concept_to_object_concept=concept_map,
         )
 
     @objects_to_attributes.default
