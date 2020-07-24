@@ -25,12 +25,9 @@ from adam.semantics import (
     ActionSemanticNode,
     ObjectSemanticNode,
     RelationSemanticNode,
-    SemanticNode,
     GROUND_OBJECT_CONCEPT,
     LearnerSemantics,
-    SyntaxSemanticsVariable,
     FunctionalObjectConcept,
-    ObjectConcept,
 )
 from attr import attrib, attrs
 from attr.validators import instance_of, optional
@@ -379,4 +376,6 @@ class IntegratedTemplateLearner(
             valid_sub_learners.append(self.relation_learner)
         if self.action_learner:
             valid_sub_learners.append(self.action_learner)
+        if self.functional_learner:
+            valid_sub_learners.append(self.functional_learner)
         return valid_sub_learners

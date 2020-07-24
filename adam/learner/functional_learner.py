@@ -3,7 +3,7 @@ from pathlib import Path
 
 from immutablecollections import immutabledict
 from more_itertools import first
-from typing import Tuple, Dict, List
+from typing import Tuple, Dict, List, AbstractSet
 
 from attr.validators import instance_of
 
@@ -13,13 +13,16 @@ from adam.learner import (
     LanguageMode,
     LanguagePerceptionSemanticAlignment,
     PerceptionSemanticAlignment,
+    SurfaceTemplate,
 )
+from adam.learner.template_learner import TemplateLearner
 from adam.semantics import (
     SyntaxSemanticsVariable,
     LearnerSemantics,
     ObjectConcept,
     FunctionalObjectConcept,
     ActionConcept,
+    Concept,
 )
 
 
@@ -54,7 +57,7 @@ class ConceptFunctionCounter:
 
 
 @attrs
-class FunctionalLearner:
+class FunctionalLearner(TemplateLearner):
     _observation_num: int = attrib(init=False, default=0)
     _language_mode: LanguageMode = attrib(validator=instance_of(LanguageMode))
     _concept_to_slots_to_function_counter: Dict[
@@ -64,7 +67,6 @@ class FunctionalLearner:
     def learn_from(
         self,
         language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
-        *,
         observation_num: int = -1,
     ):
         if observation_num >= 0:
@@ -108,9 +110,9 @@ class FunctionalLearner:
                     slot
                 ].add_example(slot_filler.concept)
 
-    def enrich_during_description(
+    def _enrich_common(
         self, perception_semantic_alignment: PerceptionSemanticAlignment
-    ):
+    ) -> PerceptionSemanticAlignment:
         semantics = LearnerSemantics.from_nodes(
             perception_semantic_alignment.semantic_nodes
         )
@@ -138,5 +140,37 @@ class FunctionalLearner:
             mapping=immutabledict(list_of_matches)
         )
 
-    def log_hypotheses(self, log_output_path: Path) -> None:
+    def enrich_during_learning(
+        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
+    ) -> LanguagePerceptionSemanticAlignment:
+        post_enrichment_perception_semantics = self._enrich_common(
+            language_perception_semantic_alignment.perception_semantic_alignment
+        )
+        return LanguagePerceptionSemanticAlignment(
+            language_concept_alignment=language_perception_semantic_alignment.language_concept_alignment,
+            perception_semantic_alignment=post_enrichment_perception_semantics,
+        )
+
+    def enrich_during_description(
+        self, perception_semantic_alignment: PerceptionSemanticAlignment
+    ) -> PerceptionSemanticAlignment:
+        return self._enrich_common(perception_semantic_alignment)
+
+    def templates_for_concept(self, concept: Concept) -> AbstractSet[SurfaceTemplate]:
+        # Our Functional Learner doesn't store concepts the same way as other
+        # Template learners
         pass
+
+    def log_hypotheses(self, log_output_path: Path) -> None:
+        # Could possibly be improved see: https://github.com/isi-vista/adam/issues/938
+        with open(log_output_path / "functional_learner.txt", "w") as file:
+            for concept in self._concept_to_slots_to_function_counter:
+                file.write(f"{concept}\n")
+                for slot in self._concept_to_slots_to_function_counter[concept]:
+                    file.write(f"\t{slot}\n")
+                    for functional_concept in self._concept_to_slots_to_function_counter[
+                        concept
+                    ][slot]._concept_to_count:
+                        file.write(
+                            f"\t\t{functional_concept} - {self._concept_to_slots_to_function_counter[concept][slot]._concept_to_count[functional_concept]}\n"
+                        )
