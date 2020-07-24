@@ -3118,17 +3118,13 @@ def build_gaila_phase1_verb_curriculum(
     """
     One particular instantiation of the object-learning parts of the curriculum for GAILA Phase 1.
     """
-    return [
+    curriculum_to_return = [
         _make_fall_curriculum(num_samples, num_noise_objects, language_generator),
         _make_transfer_of_possession_curriculum(
             num_samples, num_noise_objects, language_generator
         ),
         _make_fly_curriculum(num_samples, num_noise_objects, language_generator),
         _make_roll_curriculum(num_samples, num_noise_objects, language_generator),
-        # TODO: in Chinese, _make_speaker_addressee_curriculum currently leads to an error in graph matching
-        _make_speaker_addressee_curriculum(
-            num_samples, num_noise_objects, language_generator
-        ),
         _make_jump_curriculum(num_samples, num_noise_objects, language_generator),
         _make_drink_curriculum(num_samples, num_noise_objects, language_generator),
         _make_sit_curriculum(num_samples, num_noise_objects, language_generator),
@@ -3144,6 +3140,17 @@ def build_gaila_phase1_verb_curriculum(
         # _make_put_on_speaker_addressee_body_part_curriculum(num_samples, num_noise_objects, language_generator),
         _make_come_curriculum(num_samples, num_noise_objects, language_generator),
     ]
+    # TODO: https://github.com/isi-vista/adam/issues/937
+    if language_generator not in [
+        GAILA_PHASE_2_CHINESE_LANGUAGE_GENERATOR,
+        GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
+    ]:
+        curriculum_to_return.append(
+            _make_speaker_addressee_curriculum(
+                num_samples, num_noise_objects, language_generator
+            )
+        )
+    return curriculum_to_return
 
 
 def build_gaila_phase_1_curriculum(
