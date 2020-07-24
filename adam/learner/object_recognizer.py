@@ -323,6 +323,7 @@ class ObjectRecognizer:
                 )
 
         candidate_object_subgraphs = extract_candidate_objects(perception_graph)
+        object_matches = []
 
         for candidate_object_graph in candidate_object_subgraphs:
             num_object_nodes = candidate_object_graph.count_nodes_matching(
@@ -369,17 +370,21 @@ class ObjectRecognizer:
                                 object_nodes.append(
                                     ((debug_string,), matched_object_node)
                                 )
-                    graph_to_return = replace_object_match(
-                        matched_object_node,
-                        graph_to_return,
-                        pattern_match,
-                        remove_internal_structure=True,
-                    )
+                        object_matches.append((matched_object_node, pattern_match))
                     # We match each candidate objects against only one object type.
                     # See https://github.com/isi-vista/adam/issues/627
                     break
                 else:
                     cumulative_millis_in_failed_matches_ms += t.elapsed
+
+        for (matched_object_node, pattern_match) in object_matches:
+            graph_to_return = replace_object_match(
+                matched_object_node,
+                graph_to_return,
+                pattern_match,
+                remove_internal_structure=False,
+            )
+
         if object_nodes:
             logging.info(
                 "Object recognizer recognized: %s",
