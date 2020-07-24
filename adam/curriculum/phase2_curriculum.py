@@ -278,8 +278,10 @@ def build_gaila_m8_curriculum(
                 _make_generic_statements_curriculum(
                     num_samples, num_noise_objects, language_generator
                 ),  # Generics
-                _make_part_whole_curriculum(
-                    num_samples, num_noise_objects, language_generator
+                flatten(
+                    _make_part_whole_curriculum(
+                        num_samples, num_noise_objects, language_generator
+                    )
                 ),  # Part whole
                 _make_transitive_roll_curriculum(
                     num_samples, num_noise_objects, language_generator

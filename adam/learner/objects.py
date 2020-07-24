@@ -571,7 +571,7 @@ class ObjectRecognizerAsTemplateLearner(TemplateLearner):
                     matched_sub_graph=candiate_object_graph,
                     pattern_node_to_matched_graph_node=fake_pattern_graph.perception_graph_node_to_pattern_node,
                 ),
-                remove_internal_structure=True,
+                remove_internal_structure=False,
             )
             new_nodes.append(fake_object_semantic_node)
 

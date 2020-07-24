@@ -1,3 +1,5 @@
+from more_itertools import flatten
+
 from adam.curriculum.phase1_curriculum import (
     Phase1InstanceGroup,
     _make_behind_in_front_curriculum,
@@ -145,7 +147,8 @@ def test_person_has_object_curriculum(language_generator):
     [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
 )
 def test_part_whole_curriculum(language_generator):
-    curriculum_test(_make_part_whole_curriculum(None, None, language_generator))
+    for curriculum in _make_part_whole_curriculum(None, None, language_generator):
+        curriculum_test(curriculum)
 
 
 @pytest.mark.parametrize(
