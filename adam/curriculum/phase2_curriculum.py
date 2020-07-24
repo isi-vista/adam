@@ -368,7 +368,7 @@ def build_gaila_m13_curriculum(
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
 ) -> Sequence[Phase1InstanceGroup]:
-    # TODO: debug counting in Chinese https://github.com/isi-vista/adam/issues/923
+    # TODO: debug counting and dynamic prepositions in Chinese https://github.com/isi-vista/adam/issues/923
     if language_generator in [
         GAILA_PHASE_2_CHINESE_LANGUAGE_GENERATOR,
         GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
@@ -394,9 +394,6 @@ def build_gaila_m13_curriculum(
                     make_imprecise_temporal_descriptions(
                         num_samples, num_noise_objects, language_generator
                     )
-                ),
-                make_verb_with_dynamic_prepositions_curriculum(
-                    num_samples, num_noise_objects, language_generator
                 ),
                 list(
                     make_subtle_verb_distinctions_curriculum(
