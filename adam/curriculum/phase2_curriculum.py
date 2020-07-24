@@ -4,7 +4,10 @@ Additions for the Curricula for DARPA GAILA Phase 2
 
 from adam.ontology import IS_SPEAKER, IS_ADDRESSEE
 import random
-
+from adam.language_specific.chinese.chinese_language_generator import (
+    GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
+    GAILA_PHASE_2_CHINESE_LANGUAGE_GENERATOR,
+)
 from itertools import chain
 from typing import Sequence, Optional
 
@@ -365,44 +368,85 @@ def build_gaila_m13_curriculum(
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
 ) -> Sequence[Phase1InstanceGroup]:
-    return list(
-        chain(
-            build_gaila_phase1_object_curriculum(
-                num_samples, num_noise_objects, language_generator
-            ),
-            build_gaila_plurals_curriculum(
-                num_samples, num_noise_objects, language_generator
-            ),
-            build_gaila_phase1_attribute_curriculum(
-                num_samples, num_noise_objects, language_generator
-            ),
-            build_gaila_generics_curriculum(
-                num_samples, num_noise_objects, language_generator
-            ),
-            make_prepositions_curriculum(
-                num_samples, num_noise_objects, language_generator
-            ),
-            build_gaila_phase1_verb_curriculum(
-                num_samples, num_noise_objects, language_generator
-            ),
-            list(
-                make_imprecise_temporal_descriptions(
+    # TODO: debug counting in Chinese https://github.com/isi-vista/adam/issues/923
+    if language_generator in [
+        GAILA_PHASE_2_CHINESE_LANGUAGE_GENERATOR,
+        GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
+    ]:
+        return list(
+            chain(
+                build_gaila_phase1_object_curriculum(
                     num_samples, num_noise_objects, language_generator
-                )
-            ),
-            make_verb_with_dynamic_prepositions_curriculum(
-                num_samples, num_noise_objects, language_generator
-            ),
-            list(
-                make_subtle_verb_distinctions_curriculum(
+                ),
+                build_gaila_phase1_attribute_curriculum(
                     num_samples, num_noise_objects, language_generator
-                )
-            ),
-            build_functionally_defined_objects_curriculum(
-                num_samples, num_noise_objects, language_generator
-            ),
+                ),
+                build_gaila_generics_curriculum(
+                    num_samples, num_noise_objects, language_generator
+                ),
+                make_prepositions_curriculum(
+                    num_samples, num_noise_objects, language_generator
+                ),
+                build_gaila_phase1_verb_curriculum(
+                    num_samples, num_noise_objects, language_generator
+                ),
+                list(
+                    make_imprecise_temporal_descriptions(
+                        num_samples, num_noise_objects, language_generator
+                    )
+                ),
+                make_verb_with_dynamic_prepositions_curriculum(
+                    num_samples, num_noise_objects, language_generator
+                ),
+                list(
+                    make_subtle_verb_distinctions_curriculum(
+                        num_samples, num_noise_objects, language_generator
+                    )
+                ),
+                build_functionally_defined_objects_curriculum(
+                    num_samples, num_noise_objects, language_generator
+                ),
+            )
         )
-    )
+    else:
+        return list(
+            chain(
+                build_gaila_phase1_object_curriculum(
+                    num_samples, num_noise_objects, language_generator
+                ),
+                build_gaila_plurals_curriculum(
+                    num_samples, num_noise_objects, language_generator
+                ),
+                build_gaila_phase1_attribute_curriculum(
+                    num_samples, num_noise_objects, language_generator
+                ),
+                build_gaila_generics_curriculum(
+                    num_samples, num_noise_objects, language_generator
+                ),
+                make_prepositions_curriculum(
+                    num_samples, num_noise_objects, language_generator
+                ),
+                build_gaila_phase1_verb_curriculum(
+                    num_samples, num_noise_objects, language_generator
+                ),
+                list(
+                    make_imprecise_temporal_descriptions(
+                        num_samples, num_noise_objects, language_generator
+                    )
+                ),
+                make_verb_with_dynamic_prepositions_curriculum(
+                    num_samples, num_noise_objects, language_generator
+                ),
+                list(
+                    make_subtle_verb_distinctions_curriculum(
+                        num_samples, num_noise_objects, language_generator
+                    )
+                ),
+                build_functionally_defined_objects_curriculum(
+                    num_samples, num_noise_objects, language_generator
+                ),
+            )
+        )
 
 
 def build_m13_shuffled_curriculum(
