@@ -315,8 +315,11 @@ class ObjectRecognizer:
                     ),
                     pattern_node_to_matched_graph_node=immutabledict(),
                 )
-                graph_to_return = replace_match_with_object_graph_node(
-                    matched_object_node, graph_to_return, pattern_match
+                graph_to_return = replace_object_match(
+                    matched_object_node,
+                    graph_to_return,
+                    pattern_match,
+                    remove_internal_structure=True,
                 )
 
         candidate_object_subgraphs = extract_candidate_objects(perception_graph)
@@ -366,8 +369,11 @@ class ObjectRecognizer:
                                 object_nodes.append(
                                     ((debug_string,), matched_object_node)
                                 )
-                    graph_to_return = replace_match_with_object_graph_node(
-                        matched_object_node, graph_to_return, pattern_match
+                    graph_to_return = replace_object_match(
+                        matched_object_node,
+                        graph_to_return,
+                        pattern_match,
+                        remove_internal_structure=True,
                     )
                     # We match each candidate objects against only one object type.
                     # See https://github.com/isi-vista/adam/issues/627
@@ -720,10 +726,12 @@ def _add_relationships_linked_to_root_object_perception(
         output_graph.add_edge(matched_object_node, linked_property_node, label=edge_label)
 
 
-def replace_match_with_object_graph_node(
-    matched_object_node: ObjectSemanticNode,
+def replace_object_match(
+    replacement_object_node: ObjectSemanticNode,
     current_perception: PerceptionGraph,
     pattern_match: PerceptionGraphPatternMatch,
+    *,
+    remove_internal_structure: bool,
 ) -> PerceptionGraph:
     """
     Internal function to replace the nodes of the perception matched by the object pattern
@@ -732,7 +740,7 @@ def replace_match_with_object_graph_node(
     Any external relationships those nodes had is inherited by the `ObjectSemanticNode`.
     """
     perception_digraph = current_perception.copy_as_digraph()
-    perception_digraph.add_node(matched_object_node)
+    perception_digraph.add_node(replacement_object_node)
 
     matched_subgraph_nodes: ImmutableSet[PerceptionGraphNode] = immutableset(
         pattern_match.matched_sub_graph._graph.nodes,  # pylint:disable=protected-access
@@ -743,6 +751,7 @@ def replace_match_with_object_graph_node(
     # (for example, to a color shared by all the parts).
     # In this case, we want the shared object node to link to this property only once.
     external_properties: Set[Union[OntologyNode, ObjectSemanticNode]] = set()
+    # These will only *actually* be removed if remove_internal_structure is True
     duplicate_nodes_to_remove: List[PerceptionGraphNode] = []
 
     for matched_subgraph_node in matched_subgraph_nodes:
@@ -796,7 +805,9 @@ def replace_match_with_object_graph_node(
                         external_properties.add(matched_subgraph_node_successor[0])
 
                 perception_digraph.add_edge(
-                    matched_object_node, matched_subgraph_node_successor, label=edge_label
+                    replacement_object_node,
+                    matched_subgraph_node_successor,
+                    label=edge_label,
                 )
 
         # If there is an edge to the matched sub-graph from a node outside it,
@@ -839,17 +850,26 @@ def replace_match_with_object_graph_node(
 
                 perception_digraph.add_edge(
                     matched_subgraph_node_predecessor,
-                    matched_object_node,
+                    replacement_object_node,
                     label=edge_label,
                 )
 
+    root = _get_root_object_perception(perception_digraph, matched_subgraph_nodes)
+    if root in SHARED_WORLD_ITEMS:
+        raise RuntimeError(
+            f"Pattern match root cannot be a shared world item, "
+            f"but got match {pattern_match}"
+        )
+
     # Remove all matched nodes which are not shared world items (e.g. gravity, the learner)
-    perception_digraph.remove_nodes_from(
-        matched_node
-        for matched_node in matched_subgraph_nodes
-        if matched_node not in SHARED_WORLD_ITEMS
-    )
-    perception_digraph.remove_nodes_from(duplicate_nodes_to_remove)
+    perception_digraph.remove_node(root)
+    if remove_internal_structure:
+        perception_digraph.remove_nodes_from(
+            matched_node
+            for matched_node in matched_subgraph_nodes
+            if matched_node not in SHARED_WORLD_ITEMS
+        )
+        perception_digraph.remove_nodes_from(duplicate_nodes_to_remove)
 
     # We want to re-add any properties linked directly to the root node of an object.
     # Example: water is a liquid
@@ -859,152 +879,7 @@ def replace_match_with_object_graph_node(
         original_graph=current_perception.copy_as_digraph(),
         output_graph=perception_digraph,
         matched_nodes=matched_subgraph_nodes,
-        matched_object_node=matched_object_node,
-    )
-
-    return PerceptionGraph(perception_digraph, dynamic=current_perception.dynamic)
-
-
-def replace_match_root_with_object_semantic_node(
-    object_semantic_node: ObjectSemanticNode,
-    current_perception: PerceptionGraph,
-    pattern_match: PerceptionGraphPatternMatch,
-) -> PerceptionGraph:
-    """
-    Internal function to replace the root node of the perception matched by the object pattern
-    with an `ObjectSemanticNode`.
-
-    The `ObjectSemanticNode` inherits both the root node's internal relationships and all external
-    relationships involving either the root node or its children.
-    """
-    perception_digraph = current_perception.copy_as_digraph()
-    perception_digraph.add_node(object_semantic_node)
-
-    matched_subgraph_nodes: ImmutableSet[PerceptionGraphNode] = immutableset(
-        pattern_match.matched_sub_graph._graph.nodes,  # pylint:disable=protected-access
-        disable_order_check=True,
-    )
-
-    root = _get_root_object_perception(perception_digraph, matched_subgraph_nodes)
-
-    # Multiple sub-objects of a matched object may link to the same property
-    # (for example, to a color shared by all the parts).
-    # In this case, we want the shared object node to link to this property only once.
-    external_properties: Set[Union[OntologyNode, ObjectSemanticNode]] = set()
-
-    for matched_subgraph_node in matched_subgraph_nodes:
-        if isinstance(matched_subgraph_node, ObjectSemanticNode):
-            raise RuntimeError(
-                f"We do not currently allow object recognitions to themselves "
-                f"operate over other object recognitions, but got match "
-                f"{pattern_match.matched_sub_graph}"
-            )
-
-        # A pattern might refer to shared parts of the world like the learner
-        # or the ground, and we don't want the replacement root to inherit the
-        # shared world item's relationships.
-        if matched_subgraph_node in SHARED_WORLD_ITEMS:
-            continue
-
-        # If there is an edge from the matched sub-graph to a node outside it,
-        # also add an edge from the object match node to that node.
-        for matched_subgraph_node_successor in perception_digraph.successors(
-            matched_subgraph_node
-        ):
-            edge_label = _get_edge_label(
-                perception_digraph, matched_subgraph_node, matched_subgraph_node_successor
-            )
-
-            # don't want to add edges which are internal to the matched sub-graph
-            if matched_subgraph_node_successor not in matched_subgraph_nodes:
-                if edge_equals_ignoring_temporal_scope(edge_label, HAS_PROPERTY_LABEL):
-                    # Prevent multiple `has-property` assertions to the same color node
-                    # On a recognized object
-                    if matched_subgraph_node_successor[
-                        0
-                    ] in external_properties or matched_subgraph_node_successor[0] in {
-                        SMALLER_THAN,
-                        BIGGER_THAN,
-                    }:
-                        if (
-                            perception_digraph.degree(matched_subgraph_node_successor)
-                            != 1
-                        ):
-                            raise_graph_exception(
-                                f"Node {matched_subgraph_node_successor} "
-                                f"appears to be a duplicate property node, "
-                                f"but has degree != 1",
-                                current_perception,
-                            )
-                        continue
-                    else:
-                        external_properties.add(matched_subgraph_node_successor[0])
-
-                perception_digraph.add_edge(
-                    object_semantic_node,
-                    matched_subgraph_node_successor,
-                    label=edge_label,
-                )
-
-        # If there is an edge to the matched sub-graph from a node outside it,
-        # also add an edge to the object match node from that node.
-        for matched_subgraph_node_predecessor in perception_digraph.predecessors(
-            matched_subgraph_node
-        ):
-            edge_label = _get_edge_label(
-                perception_digraph,
-                matched_subgraph_node_predecessor,
-                matched_subgraph_node,
-            )
-
-            # don't want to add edges which are internal to the matched sub-graph
-            if matched_subgraph_node_predecessor not in matched_subgraph_nodes:
-                if edge_equals_ignoring_temporal_scope(edge_label, HAS_PROPERTY_LABEL):
-                    # Prevent multiple `has-property` assertions to the same color node
-                    # On a recognized object
-                    if isinstance(matched_subgraph_node_predecessor, ObjectSemanticNode):
-                        prop = matched_subgraph_node_predecessor
-                    else:
-                        prop = matched_subgraph_node_predecessor[0]
-                    if prop in external_properties:
-                        if (
-                            perception_digraph.degree(matched_subgraph_node_predecessor)
-                            != 1
-                        ):
-                            raise_graph_exception(
-                                f"Node {matched_subgraph_node_predecessor} "
-                                f"appears to be a duplicate property node, "
-                                f"but has degree != 1",
-                                current_perception,
-                            )
-                        continue
-                    else:
-                        external_properties.add(prop)
-
-                perception_digraph.add_edge(
-                    matched_subgraph_node_predecessor,
-                    object_semantic_node,
-                    label=edge_label,
-                )
-
-    if root in SHARED_WORLD_ITEMS:
-        raise RuntimeError(
-            f"Pattern match root cannot be a shared world item, "
-            f"but got match {pattern_match}"
-        )
-
-    perception_digraph.remove_node(root)
-
-    # We want to re-add any relationships linked directly to the root node of an object.
-    # Example: water is a liquid
-    # Example: this hand is a part of this person
-    # These may be relevant to learning verb semantics
-    # (e.g. you can only drink a liquid)
-    _add_relationships_linked_to_root_object_perception(
-        original_graph=current_perception.copy_as_digraph(),
-        output_graph=perception_digraph,
-        matched_nodes=matched_subgraph_nodes,
-        matched_object_node=object_semantic_node,
+        matched_object_node=replacement_object_node,
     )
 
     return PerceptionGraph(perception_digraph, dynamic=current_perception.dynamic)

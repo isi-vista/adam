@@ -23,6 +23,7 @@ from adam.learner.object_recognizer import (
     ObjectRecognizer,
     PerceptionGraphFromObjectRecognizer,
     extract_candidate_objects,
+    replace_object_match,
 )
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
 from adam.learner.pursuit import (
@@ -148,8 +149,8 @@ class AbstractObjectTemplateLearnerNew(AbstractTemplateLearnerNew):
             fake_object_semantic_node = ObjectSemanticNode(
                 concept=FunctionalObjectConcept("unknown_object")
             )
-            perception_graph_after_processing = replace_match_root_with_object_semantic_node(
-                object_semantic_node=fake_object_semantic_node,
+            perception_graph_after_processing = replace_object_match(
+                replacement_object_node=fake_object_semantic_node,
                 current_perception=perception_graph_after_processing,
                 pattern_match=PerceptionGraphPatternMatch(
                     matched_pattern=fake_pattern_graph.perception_graph_pattern,
@@ -157,6 +158,7 @@ class AbstractObjectTemplateLearnerNew(AbstractTemplateLearnerNew):
                     matched_sub_graph=fake_perception_graph,
                     pattern_node_to_matched_graph_node=fake_pattern_graph.perception_graph_node_to_pattern_node,
                 ),
+                remove_internal_structure=False,
             )
             new_nodes.append(fake_object_semantic_node)
 
@@ -560,8 +562,8 @@ class ObjectRecognizerAsTemplateLearner(TemplateLearner):
             fake_object_semantic_node = ObjectSemanticNode(
                 concept=FunctionalObjectConcept("unknown_object")
             )
-            perception_graph_after_processing = replace_match_with_object_graph_node(
-                matched_object_node=fake_object_semantic_node,
+            perception_graph_after_processing = replace_object_match(
+                replacement_object_node=fake_object_semantic_node,
                 current_perception=perception_graph_after_processing,
                 pattern_match=PerceptionGraphPatternMatch(
                     matched_pattern=fake_pattern_graph.perception_graph_pattern,
@@ -569,6 +571,7 @@ class ObjectRecognizerAsTemplateLearner(TemplateLearner):
                     matched_sub_graph=candiate_object_graph,
                     pattern_node_to_matched_graph_node=fake_pattern_graph.perception_graph_node_to_pattern_node,
                 ),
+                remove_internal_structure=True,
             )
             new_nodes.append(fake_object_semantic_node)
 

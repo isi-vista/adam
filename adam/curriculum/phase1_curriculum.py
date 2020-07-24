@@ -551,7 +551,7 @@ def _make_part_whole_curriculum(  # pylint: disable=unused-argument
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
-) -> Phase1InstanceGroup:
+) -> Sequence[Phase1InstanceGroup]:
     whole_object_to_parts = {
         BABY: ["head", "hand", "arm"],
         BIRD: ["head", "wing"],
@@ -626,7 +626,7 @@ def _make_part_whole_curriculum(  # pylint: disable=unused-argument
             for situation, _, perception in instances:
                 all_instances.append((situation, description, perception))
 
-    return ExplicitWithSituationInstanceGroup("part of instances", all_instances)
+    return [ExplicitWithSituationInstanceGroup("part of instances", all_instances)]
 
 
 def _make_my_your_object_curriculum(

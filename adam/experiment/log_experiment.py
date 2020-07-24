@@ -47,6 +47,7 @@ from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 
 from adam.curriculum.m6_curriculum import make_m6_curriculum
 from adam.curriculum.phase1_curriculum import (
+    _make_part_whole_curriculum,
     build_gaila_phase1_object_curriculum,
     build_gaila_phase1_attribute_curriculum,
     build_gaila_phase1_relation_curriculum,
@@ -317,6 +318,7 @@ def curriculum_from_params(
         ),
         "m13-shuffled": (build_m13_shuffled_curriculum, build_gaila_m13_curriculum),
         "m13-relations": (make_prepositions_curriculum, None),
+        "m13-part-whole": (_make_part_whole_curriculum, None),
     }
 
     curriculum_name = params.string("curriculum", str_to_train_test_curriculum.keys())
