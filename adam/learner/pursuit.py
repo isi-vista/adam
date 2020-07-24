@@ -1,5 +1,4 @@
 import logging
-from networkx import NetworkXError
 import copy
 from abc import ABC, abstractmethod
 from collections import defaultdict
@@ -680,8 +679,13 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
         """Removes any nodes that are gazed-at from a given hypothesis to help prevent this from affecting predictions"""
         nodes_to_remove = []
         new_hypothesis = copy.deepcopy(hypothesis)
-        for node in new_hypothesis.graph_pattern._graph.node:
-            if (isinstance(node, IsOntologyNodePredicate) and node.property_value == GAZED_AT):
+        for (
+            node
+        ) in new_hypothesis.graph_pattern._graph.node:  # pylint: disable=protected-access
+            if (
+                isinstance(node, IsOntologyNodePredicate)
+                and node.property_value == GAZED_AT
+            ):
                 nodes_to_remove.append(node)
         for node in set(nodes_to_remove):
             new_hypothesis.graph_pattern._graph.remove_node(  # pylint: disable=protected-access
