@@ -14,6 +14,7 @@ from adam.curriculum.phase1_curriculum import (
     build_gaila_phase1_relation_curriculum,
     build_gaila_phase1_verb_curriculum,
     build_gaila_phase_1_curriculum,
+    build_gaila_plurals_curriculum,
 )
 from adam.curriculum.phase2_curriculum import (
     build_functionally_defined_objects_curriculum,
@@ -51,7 +52,10 @@ from adam.learner.objects import (
 )
 from adam.learner.prepositions import SubsetPrepositionLearner
 from adam.learner.pursuit import HypothesisLogger
-from adam.learner.quantifers import QuantifierTemplateLearner
+from adam.learner.quantifers import (
+    QuantifierTemplateLearner,
+    ToleranceRuleQuantifierTemplateLearner,
+)
 from adam.learner.relations import SubsetRelationLearnerNew
 from adam.learner.verbs import SubsetVerbLearner, SubsetVerbLearnerNew
 from adam.ontology.phase1_ontology import (
@@ -139,6 +143,7 @@ def learner_factory_from_params(
             "verb-subset",
             "integrated-learner",
             "integrated-learner-recognizer",
+            "integrated-learner-recognizer-learn-quantifiers",
         ],
     )
 
@@ -240,6 +245,16 @@ def learner_factory_from_params(
             ),
             language_mode=language_mode,
         )
+    elif learner_type == "integrated-learner-recognizer-learn-quantifiers":
+        return lambda: IntegratedTemplateLearner(
+            object_learner=ObjectRecognizerAsTemplateLearner(
+                object_recognizer=object_recognizer, language_mode=language_mode
+            ),
+            number_learner=ToleranceRuleQuantifierTemplateLearner(
+                language_mode=language_mode, min_types_to_lexicalize=4
+            ),
+            language_mode=language_mode,
+        )
     else:
         raise RuntimeError("can't happen")
 
@@ -280,6 +295,7 @@ def curriculum_from_params(
             make_verb_with_dynamic_prepositions_curriculum,
             None,
         ),
+        "m13-plurals": (build_gaila_plurals_curriculum, None),
         "m13-shuffled": (build_m13_shuffled_curriculum, build_gaila_m13_curriculum),
     }
 
