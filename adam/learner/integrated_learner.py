@@ -11,6 +11,7 @@ from adam.language_specific.english import (
     ENGLISH_BLOCK_DETERMINERS,
     ENGLISH_MASS_NOUNS,
     ENGLISH_RECOGNIZED_PARTICULARS,
+    ENGLISH_THE_WORDS,
 )
 from adam.learner import LearningExample, TopLevelLanguageLearner
 from adam.learner.alignments import (
@@ -19,7 +20,7 @@ from adam.learner.alignments import (
     PerceptionSemanticAlignment,
 )
 from adam.learner.language_mode import LanguageMode
-from adam.learner.surface_templates import SLOT1, SLOT2
+from adam.learner.surface_templates import SLOT1, SLOT2, SurfaceTemplate
 from adam.learner.template_learner import SemanticTemplateLearner, TemplateLearner
 from adam.perception import PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
@@ -450,25 +451,30 @@ class IntegratedTemplateLearner(
                 block_determiners = True
             if object_node.concept.debug_string in ENGLISH_RECOGNIZED_PARTICULARS:
                 block_determiners = True
-            if block_determiners:
-                return cur_string
+            if object_node.concept.debug_string in ENGLISH_THE_WORDS:
+                yield ENGLISH_THE_TEMPLATE.instantiate(
+                    {SLOT1: cur_string}
+                ).as_token_sequence()
+                return
+        if block_determiners:
+            yield cur_string
+        else:
+            found_a_quantifier = False
+            for quantifier in semantics.quantifiers:
+                if quantifier.slot_fillings[SLOT1] == object_node:
+                    found_a_quantifier = True
+                    for quantifier_template in self.number_learner.templates_for_concept(
+                        quantifier.concept
+                    ):
+                        yield quantifier_template.instantiate(
+                            {SLOT1: cur_string}
+                        ).as_token_sequence()
 
-        found_a_quantifier = False
-        for quantifier in semantics.quantifiers:
-            if quantifier.slot_fillings[SLOT1] == object_node:
-                found_a_quantifier = True
-                for quantifier_template in self.number_learner.templates_for_concept(
-                    quantifier.concept
-                ):
-                    yield quantifier_template.instantiate(
-                        {SLOT1: cur_string}
-                    ).as_token_sequence()
-
-        if not found_a_quantifier:
-            raise RuntimeError(
-                f"Every object node should have a quantifier but could not find one "
-                f"for {object_node}"
-            )
+            if not found_a_quantifier:
+                raise RuntimeError(
+                    f"Every object node should have a quantifier but could not find one "
+                    f"for {object_node}"
+                )
 
     def _instantiate_object(
         self, object_node: ObjectSemanticNode, learner_semantics: "LearnerSemantics"
@@ -594,3 +600,6 @@ class IntegratedTemplateLearner(
         if self.action_learner:
             valid_sub_learners.append(self.action_learner)
         return valid_sub_learners
+
+
+ENGLISH_THE_TEMPLATE = SurfaceTemplate(["the", SLOT1], language_mode=LanguageMode.ENGLISH)

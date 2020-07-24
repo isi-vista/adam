@@ -14,3 +14,4 @@ These words block the addition of the determiners above to English noun phrases.
 """
 ENGLISH_MASS_NOUNS = ["juice", "water", "milk"]
 ENGLISH_RECOGNIZED_PARTICULARS = immutableset(["me", "you", "Mom", "Dad"])
+ENGLISH_THE_WORDS = ["ground"]

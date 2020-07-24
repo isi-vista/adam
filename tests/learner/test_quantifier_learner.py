@@ -58,10 +58,23 @@ def test_english_quantifier_learning():
         "four balls", salient_object_variables=[ball_1, ball_2, ball_3, ball_4]
     )
     situation_to_references = {
-        one_ball_situation: [("a", "ball")],
-        two_balls_situation: [("two", "ball", "s"), ("ball", "s")],
-        three_balls_situation: [("many", "ball", "s"), ("ball", "s")],
-        four_balls_situation: [("many", "ball", "s"), ("ball", "s")],
+        one_ball_situation: [("a", "ball"), ("the", "ground")],
+        # "a ball" included for plurals because we don't do any pragmatics.
+        # No Grice's Maxim of Quantity for us!
+        two_balls_situation: [("two", "ball", "s"), ("a", "ball"), ("the", "ground")],
+        # "two balls" included for the same reason
+        three_balls_situation: [
+            ("many", "ball", "s"),
+            ("two", "ball", "s"),
+            ("a", "ball"),
+            ("the", "ground"),
+        ],
+        four_balls_situation: [
+            ("many", "ball", "s"),
+            ("a", "ball"),
+            ("two", "ball", "s"),
+            ("the", "ground"),
+        ],
     }
 
     for (test_situation_template, references) in situation_to_references.items():
