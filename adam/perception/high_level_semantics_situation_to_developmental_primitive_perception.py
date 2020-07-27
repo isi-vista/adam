@@ -1,6 +1,8 @@
 from enum import Enum, auto
 from itertools import chain
+from random import Random
 from typing import Dict, Iterable, List, Mapping, MutableMapping, Optional, Union, cast
+from typing_extensions import Protocol, runtime
 
 from more_itertools import only, quantify
 from networkx import DiGraph
@@ -63,7 +65,7 @@ from adam.relation import Relation
 from adam.situation import Action, SituationObject, SituationRegion
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from attr import Factory, attrib, attrs
-from attr.validators import deep_mapping, instance_of
+from attr.validators import deep_mapping, in_, instance_of
 from immutablecollections import (
     ImmutableDict,
     ImmutableSet,
@@ -74,6 +76,7 @@ from immutablecollections import (
 )
 from immutablecollections.converter_utils import _to_immutabledict
 from vistautils.preconditions import check_arg
+from vistautils.range import Range
 
 
 class ColorPerceptionMode(Enum):
@@ -90,6 +93,54 @@ class ColorPerceptionMode(Enum):
     """
     Perceive colors as discrete categories.
     """
+
+
+@runtime
+class GazePerceptionStrategy(Protocol):
+    """
+    Determines how gaze is perceived by the learner.
+    """
+
+    def is_gazed_at(
+        self, *, situation: HighLevelSemanticsSituation, situation_object: SituationObject
+    ) -> bool:
+        """
+        Return whether or not `situation_object` is perceived as being gazed at
+        in `situation`.
+        """
+
+
+class GazePerceivedPerfectly(GazePerceptionStrategy):
+    """
+    Perception of gaze always corresponds perfectly to those things marked as "gazed at"
+    in the `Situation`.
+    """
+
+    def is_gazed_at(
+        self, *, situation: HighLevelSemanticsSituation, situation_object: SituationObject
+    ) -> bool:
+        return situation_object in situation.gazed_objects
+
+
+@attrs(frozen=True, slots=True)
+class GazePerceivedNoisily(GazePerceptionStrategy):
+    """
+    Sometimes gazed at things will not be perceived as such,
+    and sometimes things note gazed at will be falsely perceived to be.
+    """
+
+    rng: Random = attrib(validator=instance_of(Random), kw_only=True)
+    prob_gaze_perceived_given_gaze = attrib(validator=in_(Range.closed(0.0, 1.0)))
+    prob_gaze_perceived_given_not_gaze = attrib(validator=in_(Range.closed(0.0, 1.0)))
+
+    def is_gazed_at(
+        self, *, situation: HighLevelSemanticsSituation, situation_object: SituationObject
+    ) -> bool:
+        is_truly_gazed_at = situation_object in situation.gazed_objects
+        if is_truly_gazed_at:
+            return self.rng.random() <= self.prob_gaze_perceived_given_gaze
+        else:
+            return self.rng.random() <= self.prob_gaze_perceived_given_not_gaze
 
 
 @attrs(frozen=True, slots=True)
@@ -114,6 +165,19 @@ class HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
     color_perception_mode: ColorPerceptionMode = attrib(
         validator=instance_of(ColorPerceptionMode), default=ColorPerceptionMode.CONTINUOUS
     )
+
+    _gaze_strategy: GazePerceptionStrategy = attrib(
+        # mypy infers an overly restrictive type from the default
+        validator=instance_of(GazePerceptionStrategy)  # type: ignore
+    )
+    """
+    Determines how reliably gaze is perceived.
+    This is to support ablation experiments.
+    """
+
+    @_gaze_strategy.default
+    def _gaze_strategy_default(self) -> GazePerceptionStrategy:
+        return GazePerceivedPerfectly()
 
     def generate_perception(
         self,
@@ -263,7 +327,6 @@ class _PerceptionGeneration:
                     axis_info=axis_info,
                 )
             )
-
         # finally, if there are actions, we perceive the before and after states of the action
         _action_perception = self._perceive_action()
         # sometimes additional before and after relations will be given explicitly by the user
@@ -275,7 +338,6 @@ class _PerceptionGeneration:
             self._perceive_relation(relation)
             for relation in self._situation.after_action_relations
         ]
-
         # Add ground for always perception if needed
         if self._include_ground:
             # Grabbing any "always" ground relations
@@ -287,6 +349,12 @@ class _PerceptionGeneration:
                         _action_perception.before_relations,
                         explicit_after_relations,
                         _action_perception.after_relations,
+                        _action_perception.during_action.at_some_point
+                        if _action_perception.during_action
+                        else {},
+                        _action_perception.during_action.continuously
+                        if _action_perception.during_action
+                        else {},
                     )
                 )
             )
@@ -523,7 +591,9 @@ class _PerceptionGeneration:
                 situation_object = object_perceptions_to_situation_objects[
                     object_perception
                 ]
-                if situation_object in self._situation.gazed_objects:
+                if self._generator._gaze_strategy.is_gazed_at(  # pylint:disable=protected-access
+                    situation=self._situation, situation_object=situation_object
+                ):
                     properties_to_perceive.append(GAZED_AT)
 
             # We wrap an ImmutableSet around properties_to_perceive to remove duplicates
@@ -789,7 +859,6 @@ class _PerceptionGeneration:
         for situation_object in self._situation.all_objects:
             if situation_object.ontology_node != GROUND:
                 object_perception = self._objects_to_perceptions[situation_object]
-
                 add_on_ground = True
 
                 if object_perception in objects_to_relations:

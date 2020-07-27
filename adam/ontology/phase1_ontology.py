@@ -2112,10 +2112,8 @@ def _make_drink_description() -> Iterable[Tuple[OntologyNode, ActionDescription]
         DRINK,
         ActionDescription(
             frame=ActionDescriptionFrame({AGENT: drink_agent, THEME: drink_theme}),
-            preconditions=[
-                inside(drink_theme, DRINK_CONTAINER_AUX),
-                bigger_than(drink_agent, DRINK_CONTAINER_AUX),
-            ],
+            preconditions=[inside(drink_theme, DRINK_CONTAINER_AUX)],
+            enduring_conditions=[bigger_than(drink_agent, DRINK_CONTAINER_AUX)],
             postconditions=[inside(drink_theme, drink_agent)],
             asserted_properties=[
                 (drink_agent, VOLITIONALLY_INVOLVED),
@@ -2173,12 +2171,13 @@ def _make_throw_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription
     ]
     preconditions = [
         has(_THROW_AGENT, _THROW_THEME),
-        # contacts(_THROW_MANIPULATOR, _THROW_THEME),
+        on(_THROW_THEME, _THROW_AGENT),
         contacts(_THROW_AGENT, _THROW_THEME),
     ]
     postconditions = flatten_relations(
         [
             Relation(IN_REGION, _THROW_THEME, THROW_GOAL),
+            on(_THROW_THEME, THROW_GOAL),
             # negate(contacts(_THROW_MANIPULATOR, _THROW_THEME)),
             negate(contacts(_THROW_AGENT, _THROW_THEME)),
         ]
@@ -2414,16 +2413,7 @@ def _make_jump_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
     jump_goal = ActionDescriptionVariable(THING)
     jump_ground = ActionDescriptionVariable(GROUND)
 
-    preconditions = (
-        [
-            Relation(
-                IN_REGION,
-                jump_agent,
-                Region(JUMP_INITIAL_SUPPORTER_AUX, distance=EXTERIOR_BUT_IN_CONTACT),
-            )
-        ],
-    )
-
+    preconditions = preconditions = [on(jump_agent, JUMP_INITIAL_SUPPORTER_AUX)]
     asserted_properties = [(jump_agent, VOLITIONALLY_INVOLVED), (jump_agent, MOVES)]
 
     # bare jump
@@ -2436,7 +2426,19 @@ def _make_jump_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
                 objects_to_paths=[
                     (jump_agent, SpatialPath(AWAY_FROM, JUMP_INITIAL_SUPPORTER_AUX)),
                     (jump_agent, SpatialPath(AWAY_FROM, jump_ground)),
-                ]
+                ],
+                # must be above the ground at some point during the action
+                at_some_point=[
+                    Relation(
+                        IN_REGION,
+                        jump_agent,
+                        Region(
+                            reference_object=JUMP_INITIAL_SUPPORTER_AUX,
+                            distance=DISTAL,
+                            direction=GRAVITATIONAL_UP,
+                        ),
+                    )
+                ],
             ),
             asserted_properties=asserted_properties,
         ),
@@ -2452,10 +2454,21 @@ def _make_jump_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
                 objects_to_paths=[
                     (jump_agent, SpatialPath(AWAY_FROM, JUMP_INITIAL_SUPPORTER_AUX)),
                     (jump_agent, SpatialPath(AWAY_FROM, jump_ground)),
-                    (jump_agent, SpatialPath(TO, jump_goal)),
-                ]
+                ],
+                # must be above the ground at some point during the action
+                at_some_point=[
+                    Relation(
+                        IN_REGION,
+                        jump_agent,
+                        Region(
+                            reference_object=JUMP_INITIAL_SUPPORTER_AUX,
+                            distance=DISTAL,
+                            direction=GRAVITATIONAL_UP,
+                        ),
+                    )
+                ],
             ),
-            postconditions=[Relation(IN_REGION, jump_agent, jump_goal)],
+            postconditions=[on(jump_agent, jump_goal)],
             asserted_properties=asserted_properties,
         ),
     )
@@ -2469,7 +2482,8 @@ WALK_SURFACE_AUXILIARY = ActionDescriptionVariable(
 )
 _WALK_ACTION_DESCRIPTION = ActionDescription(
     frame=ActionDescriptionFrame({AGENT: _WALK_AGENT}),
-    during=DuringAction(continuously=[on(_WALK_AGENT, WALK_SURFACE_AUXILIARY)]),
+    enduring_conditions=[on(_WALK_AGENT, WALK_SURFACE_AUXILIARY)],
+    # during=DuringAction(continuously=[on(_WALK_AGENT, WALK_SURFACE_AUXILIARY)]),
     asserted_properties=[(_WALK_AGENT, MOVES)],
 )
 
@@ -2490,8 +2504,8 @@ def _make_roll_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
         ROLL,
         ActionDescription(
             frame=ActionDescriptionFrame({AGENT: roll_agent, THEME: roll_theme}),
+            enduring_conditions=[on(roll_theme, ROLL_SURFACE_AUXILIARY)],
             during=DuringAction(
-                continuously=[on(roll_theme, ROLL_SURFACE_AUXILIARY)],
                 objects_to_paths=[
                     (
                         roll_theme,
@@ -2502,7 +2516,7 @@ def _make_roll_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
                             orientation_changed=True,
                         ),
                     )
-                ],
+                ]
             ),
             preconditions=[contacts(roll_agent, roll_theme)],
             asserted_properties=[
@@ -2519,8 +2533,8 @@ def _make_roll_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
         ROLL,
         ActionDescription(
             frame=ActionDescriptionFrame({AGENT: roll_agent}),
+            enduring_conditions=[on(roll_agent, ROLL_SURFACE_AUXILIARY)],
             during=DuringAction(
-                continuously=[on(roll_agent, ROLL_SURFACE_AUXILIARY)],
                 objects_to_paths=[
                     (
                         roll_agent,
@@ -2531,7 +2545,7 @@ def _make_roll_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
                             orientation_changed=True,
                         ),
                     )
-                ],
+                ]
             ),
             asserted_properties=[(roll_agent, MOVES)],
         ),
@@ -2543,19 +2557,15 @@ _FLY_GROUND = ActionDescriptionVariable(GROUND)
 
 _FLY_ACTION_DESCRIPTION = ActionDescription(
     frame=ActionDescriptionFrame({AGENT: _FLY_AGENT}),
-    during=DuringAction(
-        continuously=[
-            Relation(
-                IN_REGION,
-                _FLY_AGENT,
-                Region(
-                    reference_object=_FLY_GROUND,
-                    distance=DISTAL,
-                    direction=GRAVITATIONAL_UP,
-                ),
-            )
-        ]
-    ),
+    enduring_conditions=[
+        Relation(
+            IN_REGION,
+            _FLY_AGENT,
+            Region(
+                reference_object=_FLY_GROUND, distance=DISTAL, direction=GRAVITATIONAL_UP
+            ),
+        )
+    ],
     asserted_properties=[(_FLY_AGENT, VOLITIONALLY_INVOLVED), (_FLY_AGENT, MOVES)],
 )
 

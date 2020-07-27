@@ -1,5 +1,8 @@
 from typing import Mapping
-
+from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
+    GAILA_PHASE_1_PERCEPTION_GENERATOR,
+)
+from immutablecollections import immutabledict
 from adam.language_specific.english import ENGLISH_DETERMINERS
 from adam.learner.language_mode import LanguageMode
 from adam.learner.object_recognizer import ObjectRecognizer
@@ -21,6 +24,7 @@ def object_recognizer_factory(language_mode: LanguageMode) -> ObjectRecognizer:
         ENGLISH_DETERMINERS,
         GAILA_PHASE_1_ONTOLOGY,
         language_mode=language_mode,
+        perception_generator=GAILA_PHASE_1_PERCEPTION_GENERATOR,
     )
 
 

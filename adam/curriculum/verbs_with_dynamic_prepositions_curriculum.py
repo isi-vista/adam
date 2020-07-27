@@ -2884,7 +2884,10 @@ def _make_sit_with_prepositions(
 ) -> Phase1InstanceGroup:
     agent = standard_object("agent", THING, required_properties=[ANIMATE])
     seat = standard_object(
-        "seat", INANIMATE_OBJECT, required_properties=[CAN_BE_SAT_ON_BY_PEOPLE]
+        "seat",
+        INANIMATE_OBJECT,
+        required_properties=[CAN_BE_SAT_ON_BY_PEOPLE],
+        banned_properties=[GROUND],
     )
     seat_in = standard_object("seat_in", INANIMATE_OBJECT, required_properties=[HOLLOW])
     surface = standard_object(

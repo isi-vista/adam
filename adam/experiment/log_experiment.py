@@ -21,6 +21,7 @@ from adam.curriculum.phase2_curriculum import (
     build_gaila_m13_curriculum,
     build_m13_shuffled_curriculum,
 )
+from adam.curriculum.preposition_curriculum import make_prepositions_curriculum
 from adam.curriculum.verbs_with_dynamic_prepositions_curriculum import (
     make_verb_with_dynamic_prepositions_curriculum,
 )
@@ -43,6 +44,28 @@ from adam.learner import TopLevelLanguageLearner
 from adam.learner.attributes import SubsetAttributeLearner, SubsetAttributeLearnerNew
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
+from adam.learner.relations import SubsetRelationLearnerNew
+from adam.learner.verbs import SubsetVerbLearner, SubsetVerbLearnerNew
+from adam.ontology.phase2_ontology import GAILA_PHASE_2_ONTOLOGY
+from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
+    GAILA_PHASE_1_PERCEPTION_GENERATOR,
+)
+from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
+from vistautils.parameters import Parameters
+from vistautils.parameters_only_entrypoint import parameters_only_entry_point
+
+from adam.curriculum.m6_curriculum import make_m6_curriculum
+from adam.curriculum.phase1_curriculum import (
+    build_gaila_phase1_object_curriculum,
+    build_gaila_phase1_attribute_curriculum,
+    build_gaila_phase1_relation_curriculum,
+    build_gaila_phase1_verb_curriculum,
+    build_gaila_phase_1_curriculum,
+)
+from adam.experiment import Experiment, execute_experiment
+from adam.experiment.observer import LearningProgressHtmlLogger, CandidateAccuracyObserver
+from adam.learner import TopLevelLanguageLearner
+
 from adam.learner.object_recognizer import ObjectRecognizer
 from adam.learner.objects import (
     ObjectPursuitLearner,
@@ -155,6 +178,7 @@ def learner_factory_from_params(
     ]:
         raise RuntimeError("Only able to test Chinese with integrated learner.")
 
+    perception_generator = GAILA_PHASE_1_PERCEPTION_GENERATOR
     objects = [YOU_HACK, ME_HACK]
     objects.extend(PHASE_1_CURRICULUM_OBJECTS)
 
@@ -164,6 +188,7 @@ def learner_factory_from_params(
         determiners=ENGLISH_DETERMINERS,
         ontology=GAILA_PHASE_1_ONTOLOGY,
         language_mode=language_mode,
+        perception_generator=perception_generator,
     )
 
     if learner_type == "pursuit":
@@ -297,6 +322,7 @@ def curriculum_from_params(
         ),
         "m13-plurals": (build_gaila_plurals_curriculum, None),
         "m13-shuffled": (build_m13_shuffled_curriculum, build_gaila_m13_curriculum),
+        "m13-relations": (make_prepositions_curriculum, None),
     }
 
     curriculum_name = params.string("curriculum", str_to_train_test_curriculum.keys())
