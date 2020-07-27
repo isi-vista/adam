@@ -107,7 +107,7 @@ def build_pursuit_curriculum(
         "num_objects_in_instance", default=3
     )
     add_gaze = pursuit_curriculum_params.boolean("add_gaze", default=False)
-    ontology = pursuit_curriculum_params.string("ontology", default="phase1")
+    ontology = pursuit_curriculum_params.string("ontology", default="phase2")
     prob_given = pursuit_curriculum_params.floating_point("prob_given", default=1.0)
     prob_not_given = pursuit_curriculum_params.floating_point(
         "prob_not_given", default=0.0
