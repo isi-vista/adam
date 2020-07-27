@@ -2,8 +2,8 @@
 Allows managing experimental configurations in code.
 """
 import logging
-import pickle
 import os
+import pickle
 from itertools import chain
 
 # for some reason, pylint doesn't recognize the types used in quoted type annotations
@@ -12,25 +12,24 @@ from typing import (
     Any,
     Callable,
     Generic,
+    Optional,
     Sequence,
     Tuple,
-    Optional,
 )  # pylint:disable=unused-import
 
+from adam.curriculum import InstanceGroup
+from adam.experiment.observer import DescriptionObserver
+from adam.language import LinguisticDescriptionT
+from adam.learner import LearningExample, TopLevelLanguageLearner
+from adam.perception import PerceptionT
+from adam.random_utils import SequenceChooser
+from adam.situation import SituationT
 from attr import attrib, attrs
 from attr.validators import instance_of
 
 # noinspection PyProtectedMember
 from immutablecollections.converter_utils import _to_tuple
 from vistautils.preconditions import check_arg
-
-from adam.curriculum import InstanceGroup
-from adam.experiment.observer import DescriptionObserver
-from adam.language import LinguisticDescriptionT
-from adam.situation import SituationT
-from adam.learner import TopLevelLanguageLearner, LearningExample
-from adam.perception import PerceptionT
-from adam.random_utils import SequenceChooser
 
 
 @attrs(frozen=True)

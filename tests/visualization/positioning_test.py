@@ -1,34 +1,33 @@
+from math import isclose, pi
+from typing import List, Mapping, Tuple
+
 import numpy as np
 import torch
 
-from math import isclose, pi
-from immutablecollections import immutableset
-
+from adam.axes import (
+    Axes,
+    HorizontalAxisOfObject,
+    straight_up,
+    symmetric,
+    symmetric_vertical,
+)  # directed,
+from adam.ontology.phase1_spatial_relations import (
+    Direction,
+    EXTERIOR_BUT_IN_CONTACT,
+    GRAVITATIONAL_UP,
+    PROXIMAL,
+    Region,
+)
+from adam.perception import GROUND_PERCEPTION, ObjectPerception
 from adam.visualization.positioning import (
     AxisAlignedBoundingBox,
     CollisionPenalty,
-    WeakGravityPenalty,
-    run_model,
-    angle_between,
     InRegionPenalty,
+    WeakGravityPenalty,
+    angle_between,
+    run_model,
 )
-from typing import Mapping, List, Tuple
-from adam.perception import ObjectPerception, GROUND_PERCEPTION
-from adam.axes import (
-    Axes,
-    straight_up,
-    # directed,
-    symmetric,
-    symmetric_vertical,
-)
-from adam.ontology.phase1_spatial_relations import (
-    Region,
-    PROXIMAL,
-    Direction,
-    GRAVITATIONAL_UP,
-    EXTERIOR_BUT_IN_CONTACT,
-)
-from adam.axes import HorizontalAxisOfObject
+from immutablecollections import immutableset
 
 
 def test_running_model() -> None:

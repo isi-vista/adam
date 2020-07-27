@@ -6,19 +6,18 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Generic, Optional, Tuple, TypeVar
 
-from attr import attrib, attrs
-from attr.validators import instance_of, optional
-from immutablecollections import ImmutableSet, immutableset
-from immutablecollections.converter_utils import _to_immutableset
-from vistautils.preconditions import check_arg
-
+from adam.axes import Axes, HasAxes, LEARNER_AXES, WORLD_AXES
 from adam.geon import Geon, MaybeHasGeon
-from adam.axes import Axes, HasAxes, WORLD_AXES, LEARNER_AXES
 from adam.math_3d import Point
 from adam.ontology.during import DuringAction
 from adam.ontology.phase1_spatial_relations import Region
 from adam.random_utils import SequenceChooser
 from adam.situation import LocatedObjectSituation, Situation
+from attr import attrib, attrs
+from attr.validators import instance_of, optional
+from immutablecollections import ImmutableSet, immutableset
+from immutablecollections.converter_utils import _to_immutableset
+from vistautils.preconditions import check_arg
 
 _SituationT = TypeVar("_SituationT", bound=Situation)
 

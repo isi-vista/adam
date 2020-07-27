@@ -1,5 +1,3 @@
-from immutablecollections import immutableset
-
 from adam.ontology.phase1_ontology import (
     AGENT,
     FALL,
@@ -9,6 +7,7 @@ from adam.ontology.phase1_ontology import (
     THROW,
 )
 from adam.ontology.selectors import SubcategorizationSelector
+from immutablecollections import immutableset
 
 
 def test_subcategorization_selector():

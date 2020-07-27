@@ -1,56 +1,42 @@
 """
 Interfaces for language learning code.
 """
-from adam.learner.language_mode import LanguageMode
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import (
-    Dict,
-    Generic,
-    Mapping,
-    Optional,
-    Callable,
-    Tuple,
-    Iterable,
-    List,
-    AbstractSet,
-)
-from immutablecollections import ImmutableSet, immutableset
+from typing import Callable, Dict, Generic, Mapping, Optional
+
+from more_itertools import first
+from networkx import isolates
+
+from adam.language import LinguisticDescription, LinguisticDescriptionT
 from adam.learner.alignments import (
+    LanguageConceptAlignment,
     LanguagePerceptionSemanticAlignment,
     PerceptionSemanticAlignment,
 )
+from adam.learner.language_mode import LanguageMode
 from adam.learner.surface_templates import (
     STANDARD_SLOT_VARIABLES,
     SurfaceTemplate,
     SurfaceTemplateBoundToSemanticNodes,
 )
-from enum import Enum, auto
-import itertools
-from adam.learner.alignments import LanguageConceptAlignment
-from adam.semantics import SemanticNode
-from vistautils.span import Span
 from adam.ontology.ontology import Ontology
+from adam.ontology.phase1_ontology import LEARNER
+from adam.perception import (
+    MatchMode,
+    ObjectPerception,
+    PerceptionT,
+    PerceptualRepresentation,
+)
+from adam.perception.perception_graph import (
+    DebugCallableType,
+    GraphLogger,
+    PerceptionGraph,
+    PerceptionGraphPattern,
+)
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import immutabledict
-from more_itertools import first
-from networkx import isolates
-
-from adam.language import LinguisticDescription, LinguisticDescriptionT
-from adam.ontology.phase1_ontology import LEARNER
-from adam.perception import (
-    PerceptionT,
-    PerceptualRepresentation,
-    ObjectPerception,
-    MatchMode,
-)
-from adam.perception.perception_graph import (
-    PerceptionGraph,
-    PerceptionGraphPattern,
-    DebugCallableType,
-    GraphLogger,
-)
 
 
 @attrs(frozen=True)

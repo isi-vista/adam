@@ -1,35 +1,30 @@
 from typing import Iterable
 
-from immutablecollections import (
-    ImmutableSetMultiDict,
-    immutableset,
-    immutablesetmultidict,
-)
-
+from adam.axes import WORLD_AXES
 from adam.ontology import (
     CAN_FILL_TEMPLATE_SLOT,
+    IS_ADDRESSEE,
     OntologyNode,
     PROPERTY,
     REQUIRED_ONTOLOGY_NODES,
     THING,
     minimal_ontology_graph,
-    IS_ADDRESSEE,
 )
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
-    RECOGNIZED_PARTICULAR_PROPERTY,
-    LEARNER,
-    BALL,
-    near,
-    GAILA_PHASE_1_ONTOLOGY,
-    MOM,
-    GROUND,
-    BOX,
-    ROLL,
     AGENT,
+    BALL,
+    BOX,
+    GAILA_PHASE_1_ONTOLOGY,
+    GROUND,
+    LEARNER,
+    MOM,
+    RECOGNIZED_PARTICULAR_PROPERTY,
+    ROLL,
     ROLL_SURFACE_AUXILIARY,
-    on,
     far,
+    near,
+    on,
 )
 from adam.ontology.structural_schema import ObjectStructuralSchema
 from adam.random_utils import RandomChooser
@@ -41,7 +36,11 @@ from adam.situation.templates.phase1_templates import (
     object_variable,
     sampled,
 )
-from adam.axes import WORLD_AXES
+from immutablecollections import (
+    ImmutableSetMultiDict,
+    immutableset,
+    immutablesetmultidict,
+)
 
 _TESTING_ONTOLOGY_GRAPH = minimal_ontology_graph()
 _TESTING_ONTOLOGY_GRAPH.add_node(RECOGNIZED_PARTICULAR_PROPERTY)

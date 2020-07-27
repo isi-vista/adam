@@ -13,17 +13,13 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
+    Tuple,
     TypeVar,
     Union,
-    Tuple,
 )
 
-from attr.validators import instance_of
-from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
-from immutablecollections.converter_utils import _to_immutabledict, _to_immutableset
 from more_itertools import only, take
 from typing_extensions import Protocol
-from vistautils.preconditions import check_arg
 
 from adam.axes import AxesInfo, HorizontalAxisOfObject
 from adam.ontology import (
@@ -61,6 +57,10 @@ from adam.situation.templates import (
     SituationTemplateProcessor,
 )
 from attr import Factory, attrib, attrs
+from attr.validators import instance_of
+from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
+from immutablecollections.converter_utils import _to_immutabledict, _to_immutableset
+from vistautils.preconditions import check_arg
 
 _ExplicitOrVariableActionType = Union[OntologyNode, "TemplateActionTypeVariable"]
 
@@ -299,13 +299,16 @@ def all_possible(
     ontology: Ontology,
     chooser: SequenceChooser,
     default_addressee_node: OntologyNode = LEARNER,
+    block_multiple_objects_of_the_same_type: bool = True,
 ) -> Iterable[HighLevelSemanticsSituation]:
     """
     Generator for all possible instantiations of *situation_template* with *ontology*.
     """
     return list(
         _Phase1SituationTemplateGenerator(
-            ontology=ontology, variable_assigner=_CrossProductVariableAssigner()
+            ontology=ontology,
+            variable_assigner=_CrossProductVariableAssigner(),
+            block_multiple_objects_of_the_same_type=block_multiple_objects_of_the_same_type,
         ).generate_situations(
             situation_template,
             chooser=chooser,

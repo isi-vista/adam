@@ -6,27 +6,27 @@ from typing import Iterable
 from adam.curriculum.curriculum_utils import GROUND_OBJECT_TEMPLATE
 from adam.ontology.during import DuringAction
 from adam.ontology.phase1_ontology import (
-    strictly_above,
     AGENT,
     FLY,
-    bigger_than,
-    JUMP_INITIAL_SUPPORTER_AUX,
-    JUMP,
-    GOAL,
-    THEME,
-    PUT,
-    has,
     GO,
+    GOAL,
+    JUMP,
+    JUMP_INITIAL_SUPPORTER_AUX,
+    PUT,
+    THEME,
+    bigger_than,
+    has,
     near,
+    strictly_above,
 )
 from adam.ontology.phase1_spatial_relations import (
-    INTERIOR,
-    Region,
-    GRAVITATIONAL_UP,
+    DISTAL,
     EXTERIOR_BUT_IN_CONTACT,
     GRAVITATIONAL_DOWN,
+    GRAVITATIONAL_UP,
+    INTERIOR,
     PROXIMAL,
-    DISTAL,
+    Region,
 )
 from adam.relation import flatten_relations
 from adam.situation import Action

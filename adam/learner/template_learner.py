@@ -1,14 +1,13 @@
 import logging
-
-from attr.validators import instance_of
 from abc import ABC, abstractmethod
-from typing import AbstractSet, Iterable, List, Mapping, Sequence, Tuple, Union, cast, Set
+from typing import AbstractSet, Iterable, List, Mapping, Sequence, Set, Tuple, Union, cast
 
 from more_itertools import one
 
 from adam.language import LinguisticDescription, TokenSequenceLinguisticDescription
 from adam.learner import ComposableLearner, LearningExample, TopLevelLanguageLearner
 from adam.learner.alignments import (
+    LanguageConceptAlignment,
     LanguagePerceptionSemanticAlignment,
     PerceptionSemanticAlignment,
 )
@@ -19,33 +18,69 @@ from adam.learner.learner_utils import (
 )
 from adam.learner.object_recognizer import (
     PerceptionGraphFromObjectRecognizer,
-    replace_match_root_with_object_semantic_node,
     _get_root_object_perception,
+    replace_match_root_with_object_semantic_node,
 )
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
 from adam.learner.surface_templates import (
     SurfaceTemplate,
     SurfaceTemplateBoundToSemanticNodes,
 )
-from adam.perception import PerceptualRepresentation, ObjectPerception, MatchMode
+from adam.perception import MatchMode, ObjectPerception, PerceptualRepresentation
 from adam.perception.deprecated import LanguageAlignedPerception
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
 from adam.perception.perception_graph import PerceptionGraph, PerceptionGraphPatternMatch
-from adam.semantics import Concept, ObjectConcept, ObjectSemanticNode, SemanticNode
+from adam.semantics import (
+    Concept,
+    LearnerSemantics,
+    ObjectConcept,
+    ObjectSemanticNode,
+    SemanticNode,
+)
 from attr import attrib, attrs, evolve
+from attr.validators import instance_of
 from immutablecollections import immutabledict, immutableset
 from vistautils.preconditions import check_state
 
 
+class ConceptToTemplateMapper(ABC):
+    @abstractmethod
+    def templates_for_concept(self, concept: Concept) -> AbstractSet[SurfaceTemplate]:
+        pass
+
+
+class SemanticTemplateLearner(ConceptToTemplateMapper, ABC):
+    """
+    A learner which learns `SurfaceTemplate` from simplified predicate-argument structure
+    instead of from perception.
+    """
+
+    @abstractmethod
+    def learn_from(
+        self,
+        language_concept_alignment: LanguageConceptAlignment,
+        semantics: LearnerSemantics,
+    ) -> None:
+        """
+        Learn from language + simplified predicate argument structure
+        """
+
+
 @attrs
-class AbstractTemplateLearner(
+class AbstractPerceptualTemplateLearner(
     TopLevelLanguageLearner[
         DevelopmentalPrimitivePerceptionFrame, TokenSequenceLinguisticDescription
     ],
     ABC,
 ):
+    r"""
+    Learn `SurfaceTemplate`\ s from perceptions.
+
+    e.g. learn to recognize an object/attribute/relation/action by what it looks like.
+    """
+
     _observation_num: int = attrib(init=False, default=0)
     _language_mode: LanguageMode = attrib(
         validator=instance_of(LanguageMode), kw_only=True
@@ -247,16 +282,14 @@ class AbstractTemplateLearner(
         )
 
 
-class TemplateLearner(ComposableLearner, ABC):
+class TemplateLearner(
+    ComposableLearner, ConceptToTemplateMapper, ABC
+):  # pylint: disable=abstract-method
     _language_mode: LanguageMode = attrib(validator=instance_of(LanguageMode))
-
-    @abstractmethod
-    def templates_for_concept(self, concept: Concept) -> AbstractSet[SurfaceTemplate]:
-        pass
 
 
 @attrs
-class AbstractTemplateLearnerNew(TemplateLearner, ABC):
+class AbstractPerceptualTemplateLearnerNew(TemplateLearner, ABC):
     """
     Super-class for learners using template-based syntax-semantics mappings.
     """

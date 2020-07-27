@@ -2,15 +2,14 @@ r"""
 Mappings from `Ontology`\ s to particular languages.
 """
 
+from adam.language.lexicon import LexiconEntry
+from adam.ontology import OntologyNode
+from adam.ontology.ontology import Ontology
 from attr import attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import ImmutableSet, ImmutableSetMultiDict
 from immutablecollections.converter_utils import _to_immutablesetmultidict
 from vistautils.preconditions import check_arg
-
-from adam.language.lexicon import LexiconEntry
-from adam.ontology import OntologyNode
-from adam.ontology.ontology import Ontology
 
 
 @attrs(frozen=True, slots=True)

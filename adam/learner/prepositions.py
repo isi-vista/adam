@@ -1,12 +1,13 @@
 from abc import ABC
 from pathlib import Path
 from typing import Iterable, Mapping, Optional, Sequence, Union
-from adam.learner.language_mode import LanguageMode
+
 from more_itertools import flatten
 from networkx import all_shortest_paths, subgraph
 
 from adam.language import LinguisticDescription
 from adam.learner import LearningExample, get_largest_matching_pattern
+from adam.learner.language_mode import LanguageMode
 from adam.learner.learner_utils import assert_static_situation
 from adam.learner.object_recognizer import (
     ObjectRecognizer,
@@ -16,8 +17,8 @@ from adam.learner.perception_graph_template import PerceptionGraphTemplate
 from adam.learner.pursuit import AbstractPursuitLearner
 from adam.learner.subset import AbstractTemplateSubsetLearner
 from adam.learner.surface_templates import SLOT1, SLOT2, SurfaceTemplate
-from adam.learner.template_learner import AbstractTemplateLearner
-from adam.perception import ObjectPerception, PerceptualRepresentation, MatchMode
+from adam.learner.template_learner import AbstractPerceptualTemplateLearner
+from adam.perception import MatchMode, ObjectPerception, PerceptualRepresentation
 from adam.perception.deprecated import LanguageAlignedPerception
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -35,7 +36,7 @@ from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, imm
 
 
 @attrs
-class AbstractPrepositionTemplateLearner(AbstractTemplateLearner, ABC):
+class AbstractPrepositionTemplateLearner(AbstractPerceptualTemplateLearner, ABC):
     # mypy doesn't realize that fields without defaults can come after those with defaults
     # if they are keyword-only.
     _object_recognizer: ObjectRecognizer = attrib(  # type: ignore

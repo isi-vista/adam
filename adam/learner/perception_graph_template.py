@@ -2,26 +2,26 @@ from logging import INFO
 from pathlib import Path
 from typing import Any, Callable, List, Mapping, Optional
 
-from attr.validators import deep_mapping, instance_of
 from networkx import number_weakly_connected_components
 
 from adam.ontology.ontology import Ontology
 from adam.perception import MatchMode
 from adam.perception.perception_graph import (
     GraphLogger,
+    NodePredicate,
     ObjectSemanticNodePerceptionPredicate,
     PerceptionGraph,
     PerceptionGraphPattern,
     raise_graph_exception,
-    NodePredicate,
 )
 from adam.semantics import ObjectSemanticNode, SyntaxSemanticsVariable
 from attr import attrib, attrs
+from attr.validators import deep_mapping, instance_of
 from immutablecollections import (
     ImmutableDict,
+    ImmutableSetMultiDict,
     immutabledict,
     immutablesetmultidict,
-    ImmutableSetMultiDict,
 )
 from immutablecollections.converter_utils import _to_immutabledict
 

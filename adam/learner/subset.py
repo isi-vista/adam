@@ -3,10 +3,6 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import AbstractSet, Dict, Iterable, Mapping, Optional, Sequence, Set, Tuple
 
-from attr import Factory, attrib, attrs
-from attr.validators import instance_of
-from immutablecollections import ImmutableSet, immutabledict, immutableset
-
 from adam.language import TokenSequenceLinguisticDescription
 from adam.learner.alignments import LanguagePerceptionSemanticAlignment
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
@@ -15,17 +11,20 @@ from adam.learner.surface_templates import (
     SurfaceTemplateBoundToSemanticNodes,
 )
 from adam.learner.template_learner import (
-    AbstractTemplateLearner,
-    AbstractTemplateLearnerNew,
+    AbstractPerceptualTemplateLearner,
+    AbstractPerceptualTemplateLearnerNew,
 )
 from adam.ontology.ontology import Ontology
 from adam.perception.deprecated import LanguageAlignedPerception
 from adam.perception.perception_graph import DebugCallableType
 from adam.semantics import Concept
+from attr import Factory, attrib, attrs
+from attr.validators import instance_of
+from immutablecollections import ImmutableSet, immutabledict, immutableset
 
 
 @attrs
-class AbstractSubsetLearner(AbstractTemplateLearner, ABC):
+class AbstractSubsetLearner(AbstractPerceptualTemplateLearner, ABC):
     _surface_template_to_hypothesis: Dict[
         SurfaceTemplate, PerceptionGraphTemplate
     ] = attrib(init=False, default=Factory(dict))
@@ -121,7 +120,7 @@ class AbstractSubsetLearner(AbstractTemplateLearner, ABC):
 
 
 @attrs
-class AbstractSubsetLearnerNew(AbstractTemplateLearnerNew, ABC):
+class AbstractSubsetLearnerNew(AbstractPerceptualTemplateLearnerNew, ABC):
     _beam_size: int = attrib(validator=instance_of(int), kw_only=True)
     _concept_to_hypotheses: Dict[Concept, ImmutableSet[PerceptionGraphTemplate]] = attrib(
         init=False, default=Factory(dict)
@@ -329,7 +328,9 @@ class AbstractSubsetLearnerNew(AbstractTemplateLearnerNew, ABC):
 
 
 @attrs  # pylint:disable=abstract-method
-class AbstractTemplateSubsetLearner(AbstractSubsetLearner, AbstractTemplateLearner, ABC):
+class AbstractTemplateSubsetLearner(
+    AbstractSubsetLearner, AbstractPerceptualTemplateLearner, ABC
+):
     def log_hypotheses(self, log_output_path: Path) -> None:
         logging.info(
             "Logging %s hypotheses to %s",
@@ -345,7 +346,7 @@ class AbstractTemplateSubsetLearner(AbstractSubsetLearner, AbstractTemplateLearn
 
 
 class AbstractTemplateSubsetLearnerNew(
-    AbstractSubsetLearnerNew, AbstractTemplateLearnerNew, ABC
+    AbstractSubsetLearnerNew, AbstractPerceptualTemplateLearnerNew, ABC
 ):
     # pylint:disable=abstract-method
     def log_hypotheses(self, log_output_path: Path) -> None:

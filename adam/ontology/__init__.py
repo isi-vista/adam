@@ -4,11 +4,12 @@ Representations for simple ontologies.
 These ontologies are intended to be used when describing `Situation`\ s and writing `SituationTemplate`\ s.
 """
 
+from networkx import DiGraph
+
 from attr import attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import ImmutableSet, immutableset
 from immutablecollections.converter_utils import _to_immutableset
-from networkx import DiGraph
 
 
 @attrs(frozen=True, slots=True, repr=False, cache_hash=True)

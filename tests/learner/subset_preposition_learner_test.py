@@ -1,9 +1,10 @@
 import pytest
+
 from adam.curriculum.curriculum_utils import (
     PHASE1_CHOOSER_FACTORY,
+    PHASE1_TEST_CHOOSER_FACTORY,
     phase1_instances,
     standard_object,
-    PHASE1_TEST_CHOOSER_FACTORY,
 )
 from adam.curriculum.phase1_curriculum import _x_has_y_template
 from adam.curriculum.preposition_curriculum import (
@@ -20,6 +21,7 @@ from adam.learner import LearningExample
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
 from adam.learner.prepositions import SubsetPrepositionLearner
+from adam.learner.quantifers import QuantifierTemplateLearner
 from adam.learner.relations import SubsetRelationLearnerNew
 from adam.ontology.phase1_ontology import (
     BALL,
@@ -55,6 +57,10 @@ def integrated_learner_factory(language_mode: LanguageMode):
         relation_learner=SubsetRelationLearnerNew(
             ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=language_mode
         ),
+        number_learner=QuantifierTemplateLearner.pretrained_for_language_mode(
+            language_mode
+        ),
+        language_mode=language_mode,
     )
 
 

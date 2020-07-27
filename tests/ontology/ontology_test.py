@@ -1,15 +1,14 @@
-from immutablecollections import immutableset
-
 from adam.ontology.phase1_ontology import (
     BABY,
     DAD,
     GAILA_PHASE_1_ONTOLOGY,
-    IS_HUMAN,
     HAT,
+    IS_HUMAN,
     MOM,
     PERSON,
     THING,
 )
+from immutablecollections import immutableset
 
 
 def test_descends_from():

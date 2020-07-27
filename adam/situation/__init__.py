@@ -2,18 +2,20 @@
 Structures for describing situations in the world at an abstracted, human-friendly level.
 """
 from abc import ABC
-from typing import Generic, List, Mapping, Optional, TypeVar, Union, Iterable, Dict
+from typing import Generic, Iterable, List, Mapping, Optional, TypeVar, Union
 
-from more_itertools import first, only
-from vistautils.preconditions import check_arg
+from more_itertools import only
 
+from adam.axes import Axes, HasAxes, WORLD_AXES
 from adam.axis import GeonAxis
+from adam.math_3d import Point
+from adam.ontology import IS_SUBSTANCE, OntologyNode
 from adam.ontology.action_description import ActionDescriptionVariable
+from adam.ontology.during import DuringAction
 from adam.ontology.ontology import Ontology
-from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
-from adam.ontology.structural_schema import ObjectStructuralSchema
+from adam.ontology.phase1_spatial_relations import Region
 from attr import attrib, attrs
-from attr.validators import instance_of, optional, deep_mapping
+from attr.validators import deep_mapping, instance_of, optional
 from immutablecollections import (
     ImmutableDict,
     ImmutableSet,
@@ -29,12 +31,7 @@ from immutablecollections.converter_utils import (
     _to_immutableset,
     _to_immutablesetmultidict,
 )
-
-from adam.axes import Axes, HasAxes, WORLD_AXES
-from adam.math_3d import Point
-from adam.ontology import OntologyNode, IS_SUBSTANCE
-from adam.ontology.during import DuringAction
-from adam.ontology.phase1_spatial_relations import Region
+from vistautils.preconditions import check_arg
 
 
 class Situation(ABC):

@@ -1,21 +1,20 @@
-from typing import List
+import os
 from pathlib import Path
+from typing import List
+
 from adam.curriculum.phase1_curriculum import (
     build_gaila_phase_1_curriculum as build_curriculum,
 )
-from adam.language_specific.english.english_language_generator import (
-    GAILA_PHASE_1_LANGUAGE_GENERATOR,
-)
-from vistautils.parameters_only_entrypoint import parameters_only_entry_point
-from vistautils.parameters import Parameters, YAMLParametersLoader
-
-import os
-
-from adam.visualization.make_scenes import main as make_scenes
-from adam.visualization.panda3d_interface import SituationVisualizer
 
 # helper function to locating a curriculum
 from adam.experiment.log_experiment import curriculum_from_params
+from adam.language_specific.english.english_language_generator import (
+    GAILA_PHASE_1_LANGUAGE_GENERATOR,
+)
+from adam.visualization.make_scenes import main as make_scenes
+from adam.visualization.panda3d_interface import SituationVisualizer
+from vistautils.parameters import Parameters, YAMLParametersLoader
+from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 
 USAGE_MESSAGE = """"""
 

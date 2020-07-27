@@ -1,9 +1,8 @@
 import logging
 
+from adam.experiment.log_experiment import log_experiment_entry_point
 from vistautils.parameters import Parameters, YAMLParametersLoader
 from vistautils.parameters_only_entrypoint import parameters_only_entry_point
-
-from adam.experiment.log_experiment import log_experiment_entry_point
 
 
 def main(params: Parameters):

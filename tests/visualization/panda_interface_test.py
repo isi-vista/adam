@@ -1,4 +1,5 @@
 from math import isclose
+
 from pandac.PandaModules import ConfigVariableString  # pylint: disable=no-name-in-module
 
 from adam.visualization.panda3d_interface import SituationVisualizer

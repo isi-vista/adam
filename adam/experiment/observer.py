@@ -4,16 +4,15 @@ from typing import Generic, Mapping, Optional, Tuple
 
 from more_itertools import only, take
 
+from adam.curriculum_to_html import CurriculumToHtmlDumper
+from adam.language import LinguisticDescription, LinguisticDescriptionT
+from adam.perception import PerceptionT, PerceptualRepresentation
+from adam.situation import SituationT
+from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
+from adam.visualization.make_scenes import situation_to_filename
 from attr import attrib, attrs
 from attr.validators import instance_of
 from vistautils.parameters import Parameters
-
-from adam.curriculum_to_html import CurriculumToHtmlDumper
-from adam.language import LinguisticDescription, LinguisticDescriptionT
-from adam.situation import SituationT
-from adam.perception import PerceptionT, PerceptualRepresentation
-from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
-from adam.visualization.make_scenes import situation_to_filename
 
 
 class DescriptionObserver(Generic[SituationT, LinguisticDescriptionT, PerceptionT], ABC):

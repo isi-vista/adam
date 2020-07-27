@@ -2,32 +2,30 @@
 The structure and vocab have been verified separately by Chinese native speaker."""
 
 from networkx import DiGraph
-import pytest
+
 from adam.language.dependency import DependencyTree, DependencyTreeToken
 from adam.language.dependency.universal_dependencies import (
-    ADPOSITION,
-    ADVERBIAL_CLAUSE_MODIFIER,
-    CASE_SPATIAL,
-    DETERMINER,
-    DETERMINER_ROLE,
-    NOMINAL_SUBJECT,
-    NOUN,
-    OBJECT,
-    OBLIQUE_NOMINAL,
-    VERB,
-    INDIRECT_OBJECT,
-    ADVERBIAL_MODIFIER,
     ADJECTIVAL_MODIFIER,
     ADJECTIVE,
+    ADPOSITION,
     ADVERB,
-    PARTICLE,
+    ADVERBIAL_CLAUSE_MODIFIER,
+    ADVERBIAL_MODIFIER,
     CASE_POSSESSIVE,
-    NOMINAL_MODIFIER_POSSESSIVE,
-    NOMINAL_MODIFIER,
-    NUMERAL,
+    CASE_SPATIAL,
     CLASSIFIER,
+    INDIRECT_OBJECT,
+    NOMINAL_MODIFIER,
+    NOMINAL_MODIFIER_POSSESSIVE,
+    NOMINAL_SUBJECT,
+    NOUN,
+    NUMERAL,
     NUMERIC_MODIFIER,
+    OBJECT,
+    OBLIQUE_NOMINAL,
+    PARTICLE,
     PROPER_NOUN,
+    VERB,
 )
 from adam.language_specific.chinese.chinese_syntax import (
     SIMPLE_CHINESE_DEPENDENCY_TREE_LINEARIZER,

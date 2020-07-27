@@ -1,11 +1,20 @@
 import logging
-from typing import Callable, Optional, Mapping, Iterable, Tuple
+from typing import Callable, Iterable, Mapping, Optional, Tuple
 
 from adam.curriculum.curriculum_utils import Phase1InstanceGroup
 from adam.curriculum.imprecise_descriptions_curriculum import (
     make_imprecise_size_curriculum,
     make_imprecise_temporal_descriptions,
     make_subtle_verb_distinctions_curriculum,
+)
+from adam.curriculum.m6_curriculum import make_m6_curriculum
+from adam.curriculum.phase1_curriculum import (
+    build_gaila_phase1_attribute_curriculum,
+    build_gaila_phase1_object_curriculum,
+    build_gaila_phase1_relation_curriculum,
+    build_gaila_phase1_verb_curriculum,
+    build_gaila_phase_1_curriculum,
+    build_gaila_plurals_curriculum,
 )
 from adam.curriculum.phase2_curriculum import (
     build_functionally_defined_objects_curriculum,
@@ -16,19 +25,22 @@ from adam.curriculum.preposition_curriculum import make_prepositions_curriculum
 from adam.curriculum.verbs_with_dynamic_prepositions_curriculum import (
     make_verb_with_dynamic_prepositions_curriculum,
 )
+from adam.experiment import Experiment, execute_experiment
 from adam.experiment.experiment_utils import (
-    build_each_object_by_itself_curriculum_train,
-    build_each_object_by_itself_curriculum_test,
-    build_debug_curriculum_train,
     build_debug_curriculum_test,
+    build_debug_curriculum_train,
+    build_each_object_by_itself_curriculum_test,
+    build_each_object_by_itself_curriculum_train,
     build_generics_curriculum,
     build_m6_prepositions_curriculum,
     build_pursuit_curriculum,
 )
+from adam.experiment.observer import CandidateAccuracyObserver, LearningProgressHtmlLogger
 from adam.language.dependency import LinearizedDependencyTree
 from adam.language.language_generator import LanguageGenerator
 from adam.language.language_utils import phase2_language_generator
 from adam.language_specific.english import ENGLISH_DETERMINERS
+from adam.learner import TopLevelLanguageLearner
 from adam.learner.attributes import SubsetAttributeLearner, SubsetAttributeLearnerNew
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
@@ -53,22 +65,33 @@ from adam.curriculum.phase1_curriculum import (
 from adam.experiment import Experiment, execute_experiment
 from adam.experiment.observer import LearningProgressHtmlLogger, CandidateAccuracyObserver
 from adam.learner import TopLevelLanguageLearner
+
 from adam.learner.object_recognizer import ObjectRecognizer
-from adam.learner.prepositions import SubsetPrepositionLearner
-from adam.learner.pursuit import HypothesisLogger
 from adam.learner.objects import (
     ObjectPursuitLearner,
+    ObjectRecognizerAsTemplateLearner,
     SubsetObjectLearner,
     SubsetObjectLearnerNew,
-    ObjectRecognizerAsTemplateLearner,
 )
+from adam.learner.prepositions import SubsetPrepositionLearner
+from adam.learner.pursuit import HypothesisLogger
+from adam.learner.quantifers import (
+    QuantifierTemplateLearner,
+    ToleranceRuleQuantifierTemplateLearner,
+)
+from adam.learner.relations import SubsetRelationLearnerNew
+from adam.learner.verbs import SubsetVerbLearner, SubsetVerbLearnerNew
 from adam.ontology.phase1_ontology import (
     GAILA_PHASE_1_ONTOLOGY,
     ME_HACK,
-    YOU_HACK,
     PHASE_1_CURRICULUM_OBJECTS,
+    YOU_HACK,
 )
+from adam.ontology.phase2_ontology import GAILA_PHASE_2_ONTOLOGY
 from adam.random_utils import RandomChooser
+from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
+from vistautils.parameters import Parameters
+from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 
 LANGUAGE_GEN = LanguageGenerator[  # pylint: disable=invalid-name
     HighLevelSemanticsSituation, LinearizedDependencyTree
@@ -143,6 +166,7 @@ def learner_factory_from_params(
             "verb-subset",
             "integrated-learner",
             "integrated-learner-recognizer",
+            "integrated-learner-recognizer-learn-quantifiers",
         ],
     )
 
@@ -216,6 +240,10 @@ def learner_factory_from_params(
                 beam_size=beam_size,
                 language_mode=language_mode,
             ),
+            number_learner=QuantifierTemplateLearner.pretrained_for_language_mode(
+                language_mode=language_mode
+            ),
+            language_mode=language_mode,
         )
     elif learner_type == "integrated-learner-recognizer":
         return lambda: IntegratedTemplateLearner(
@@ -237,6 +265,20 @@ def learner_factory_from_params(
                 beam_size=beam_size,
                 language_mode=language_mode,
             ),
+            number_learner=QuantifierTemplateLearner.pretrained_for_language_mode(
+                language_mode=language_mode
+            ),
+            language_mode=language_mode,
+        )
+    elif learner_type == "integrated-learner-recognizer-learn-quantifiers":
+        return lambda: IntegratedTemplateLearner(
+            object_learner=ObjectRecognizerAsTemplateLearner(
+                object_recognizer=object_recognizer, language_mode=language_mode
+            ),
+            number_learner=ToleranceRuleQuantifierTemplateLearner(
+                language_mode=language_mode, min_types_to_lexicalize=4
+            ),
+            language_mode=language_mode,
         )
     else:
         raise RuntimeError("can't happen")
@@ -278,6 +320,7 @@ def curriculum_from_params(
             make_verb_with_dynamic_prepositions_curriculum,
             None,
         ),
+        "m13-plurals": (build_gaila_plurals_curriculum, None),
         "m13-shuffled": (build_m13_shuffled_curriculum, build_gaila_m13_curriculum),
         "m13-relations": (make_prepositions_curriculum, None),
     }

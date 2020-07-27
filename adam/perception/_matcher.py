@@ -18,15 +18,13 @@ This code should not be used by anything except the perception_graph module.
 import logging
 import sys
 from collections import defaultdict
-from itertools import chain
-from typing import Mapping, Any, Dict, Callable, Optional
+from typing import Any, Callable, Dict, Mapping, Optional
 
-from immutablecollections import immutableset, ImmutableSet, immutabledict
-from more_itertools import flatten
 from networkx import DiGraph
 
 from adam.ontology.phase1_ontology import PART_OF
-from adam.perception import ObjectPerception, MatchMode
+from adam.perception import MatchMode, ObjectPerception
+from immutablecollections import ImmutableSet, immutabledict, immutableset
 
 
 class GraphMatching:

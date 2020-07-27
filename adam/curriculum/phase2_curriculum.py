@@ -2,71 +2,68 @@
 Additions for the Curricula for DARPA GAILA Phase 2
 """
 
-from adam.ontology import IS_SPEAKER, IS_ADDRESSEE
 import random
-
 from itertools import chain
-from typing import Sequence, Optional
+from typing import Optional, Sequence
 
 from more_itertools import flatten
 
-from adam.language.language_generator import LanguageGenerator
-from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
-from adam.language.dependency import LinearizedDependencyTree
 from adam.curriculum.curriculum_utils import (
     PHASE1_CHOOSER_FACTORY,
     Phase1InstanceGroup,
-    standard_object,
-    phase2_instances,
-    phase1_instances,
     make_noise_objects,
+    phase1_instances,
+    phase2_instances,
+    standard_object,
 )
 from adam.curriculum.imprecise_descriptions_curriculum import (
-    make_imprecise_temporal_descriptions,
-    make_subtle_verb_distinctions_curriculum,
-    make_spin_tall_short_curriculum,
     make_eat_big_small_curriculum,
+    make_imprecise_temporal_descriptions,
+    make_spin_tall_short_curriculum,
+    make_subtle_verb_distinctions_curriculum,
 )
 from adam.curriculum.phase1_curriculum import (
-    _make_plural_objects_curriculum,
-    _make_pass_curriculum,
     _make_generic_statements_curriculum,
     _make_part_whole_curriculum,
+    _make_pass_curriculum,
+    _make_plural_objects_curriculum,
     _make_transitive_roll_curriculum,
-    build_gaila_phase1_object_curriculum,
-    build_gaila_plurals_curriculum,
-    build_gaila_phase1_attribute_curriculum,
     build_gaila_generics_curriculum,
+    build_gaila_phase1_attribute_curriculum,
+    build_gaila_phase1_object_curriculum,
     build_gaila_phase1_verb_curriculum,
+    build_gaila_plurals_curriculum,
 )
 from adam.curriculum.preposition_curriculum import make_prepositions_curriculum
 from adam.curriculum.verbs_with_dynamic_prepositions_curriculum import (
     make_verb_with_dynamic_prepositions_curriculum,
 )
+from adam.language.dependency import LinearizedDependencyTree
+from adam.language.language_generator import LanguageGenerator
 from adam.language_specific.english.english_language_generator import IGNORE_COLORS
-from adam.ontology import THING
+from adam.ontology import IS_ADDRESSEE, IS_SPEAKER, THING
 from adam.ontology.phase1_ontology import (
+    AGENT,
+    ANIMATE,
     CHAIR,
     CUP,
-    ANIMATE,
-    INANIMATE_OBJECT,
-    HOLLOW,
-    GAILA_PHASE_1_ONTOLOGY,
-    SIT,
-    AGENT,
-    SIT_GOAL,
-    SIT_THING_SAT_ON,
-    GOAL,
     DRINK,
+    DRINK_CONTAINER_AUX,
+    GAILA_PHASE_1_ONTOLOGY,
+    GOAL,
+    HOLLOW,
+    INANIMATE_OBJECT,
     LIQUID,
     PERSON,
+    SIT,
+    SIT_GOAL,
+    SIT_THING_SAT_ON,
     THEME,
-    DRINK_CONTAINER_AUX,
 )
 from adam.ontology.phase1_spatial_relations import (
-    Region,
-    GRAVITATIONAL_UP,
     EXTERIOR_BUT_IN_CONTACT,
+    GRAVITATIONAL_UP,
+    Region,
 )
 from adam.ontology.phase2_ontology import (
     CHAIR_2,
@@ -82,13 +79,15 @@ from adam.perception.high_level_semantics_situation_to_developmental_primitive_p
     GAILA_PHASE_2_PERCEPTION_GENERATOR,
 )
 from adam.situation import Action
+from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.situation.templates.phase1_situation_templates import _put_in_template
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
     all_possible,
-    sampled,
     object_variable,
+    sampled,
 )
+
 
 # TODO: fix https://github.com/isi-vista/adam/issues/917 which causes us to have to specify that we don't wish to include ME_HACK and YOU_HACK in our curriculum design
 
@@ -310,9 +309,7 @@ def build_gaila_m8_curriculum(
     return list(
         chain(
             [
-                _make_plural_objects_curriculum(
-                    num_samples, num_noise_objects, language_generator
-                ),  # plurals
+                _make_plural_objects_curriculum(language_generator),  # plurals
                 _make_sit_on_chair_curriculum(
                     num_samples, num_noise_objects, language_generator
                 ),  # functionally defined objects

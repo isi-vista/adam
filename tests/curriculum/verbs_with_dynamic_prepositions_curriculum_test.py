@@ -1,25 +1,26 @@
+import pytest
+
 from adam.curriculum.verbs_with_dynamic_prepositions_curriculum import (
-    _make_push_with_prepositions,
+    _make_come_with_prepositions,
+    _make_fall_with_prepositions,
+    _make_fly_with_prepositions,
     _make_go_with_prepositions,
-    _make_throw_with_prepositions,
+    _make_jump_with_prepositions,
+    _make_move_with_prepositions,
+    _make_push_with_prepositions,
+    _make_put_with_prepositions,
     _make_roll_with_prepositions,
     _make_sit_with_prepositions,
     _make_take_with_prepositions,
-    _make_fall_with_prepositions,
-    _make_put_with_prepositions,
-    _make_move_with_prepositions,
-    _make_jump_with_prepositions,
-    _make_fly_with_prepositions,
-    _make_come_with_prepositions,
+    _make_throw_with_prepositions,
 )
-from tests.curriculum.phase1_curriculum_test import curriculum_test
 from adam.language_specific.chinese.chinese_language_generator import (
     GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
 )
 from adam.language_specific.english.english_language_generator import (
     GAILA_PHASE_1_LANGUAGE_GENERATOR,
 )
-import pytest
+from tests.curriculum.phase1_curriculum_test import curriculum_test
 
 
 @pytest.mark.parametrize(

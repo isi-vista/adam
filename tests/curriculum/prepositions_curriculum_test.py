@@ -1,29 +1,30 @@
+import pytest
+
+from adam.curriculum.preposition_curriculum import (
+    _make_behind_tests,
+    _make_behind_training,
+    _make_beside_tests,
+    _make_beside_training,
+    _make_far_tests,
+    _make_far_training,
+    _make_in_front_tests,
+    _make_in_front_training,
+    _make_in_tests,
+    _make_in_training,
+    _make_near_tests,
+    _make_near_training,
+    _make_on_tests,
+    _make_on_training,
+    _make_over_tests,
+    _make_over_training,
+    _make_under_tests,
+    _make_under_training,
+)
 from adam.language_specific.chinese.chinese_language_generator import (
     GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
 )
 from adam.language_specific.english.english_language_generator import (
     GAILA_PHASE_1_LANGUAGE_GENERATOR,
-)
-import pytest
-from adam.curriculum.preposition_curriculum import (
-    _make_on_training,
-    _make_beside_training,
-    _make_under_training,
-    _make_over_training,
-    _make_in_training,
-    _make_in_front_training,
-    _make_behind_training,
-    _make_in_front_tests,
-    _make_behind_tests,
-    _make_in_tests,
-    _make_over_tests,
-    _make_under_tests,
-    _make_beside_tests,
-    _make_on_tests,
-    _make_near_training,
-    _make_near_tests,
-    _make_far_training,
-    _make_far_tests,
 )
 from tests.curriculum.phase1_curriculum_test import curriculum_test
 

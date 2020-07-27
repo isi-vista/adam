@@ -1,12 +1,18 @@
 import itertools
 import logging
-from itertools import chain, combinations
+from itertools import combinations
 from pathlib import Path
-from typing import AbstractSet, Iterable, Iterator, Mapping, Optional, Tuple, List
-from more_itertools import flatten, one
+from typing import AbstractSet, Iterable, Iterator, List, Mapping, Optional, Tuple
+
+import more_itertools
 
 from adam.language import LinguisticDescription, TokenSequenceLinguisticDescription
-from adam.language_specific.english import ENGLISH_BLOCK_DETERMINERS
+from adam.language_specific.english import (
+    ENGLISH_BLOCK_DETERMINERS,
+    ENGLISH_MASS_NOUNS,
+    ENGLISH_RECOGNIZED_PARTICULARS,
+    ENGLISH_THE_WORDS,
+)
 from adam.learner import LearningExample, TopLevelLanguageLearner
 from adam.learner.alignments import (
     LanguageConceptAlignment,
@@ -14,8 +20,8 @@ from adam.learner.alignments import (
     PerceptionSemanticAlignment,
 )
 from adam.learner.language_mode import LanguageMode
-from adam.learner.surface_templates import MASS_NOUNS, SLOT1
-from adam.learner.template_learner import TemplateLearner
+from adam.learner.surface_templates import SLOT1, SLOT2, SurfaceTemplate
+from adam.learner.template_learner import SemanticTemplateLearner, TemplateLearner
 from adam.perception import PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -24,20 +30,17 @@ from adam.perception.perception_graph import PerceptionGraph
 from adam.semantics import (
     ActionSemanticNode,
     AttributeSemanticNode,
+    LearnerSemantics,
+    NumberConcept,
     ObjectSemanticNode,
+    QuantificationSemanticNode,
     RelationSemanticNode,
     SemanticNode,
-    GROUND_OBJECT_CONCEPT,
 )
 from attr import attrib, attrs
 from attr.validators import instance_of, optional
-from immutablecollections import (
-    ImmutableSet,
-    ImmutableSetMultiDict,
-    immutabledict,
-    immutablesetmultidict,
-)
-from immutablecollections.converter_utils import _to_immutableset
+from immutablecollections import immutabledict, immutablelistmultidict
+from vistautils.iter_utils import only
 
 
 class LanguageLearnerNew:
@@ -62,20 +65,38 @@ class IntegratedTemplateLearner(
     and actions all at once.
     """
 
-    object_learner: TemplateLearner = attrib(validator=instance_of(TemplateLearner))
+    object_learner: TemplateLearner = attrib(
+        validator=instance_of(TemplateLearner), kw_only=True
+    )
+
+    number_learner: SemanticTemplateLearner = attrib(
+        validator=instance_of(SemanticTemplateLearner), kw_only=True
+    )
+
+    _language_mode: LanguageMode = attrib(
+        validator=instance_of(LanguageMode), kw_only=True
+    )
+    """
+    Why does a language-independent learner need to know what language it is learning?
+    This is to support language-specific logic for English determiners, 
+    which is out-of-scope for ADAM and therefore hard-coded.
+    """
+
     attribute_learner: Optional[TemplateLearner] = attrib(
-        validator=optional(instance_of(TemplateLearner)), default=None
+        validator=optional(instance_of(TemplateLearner)), default=None, kw_only=True
     )
 
     relation_learner: Optional[TemplateLearner] = attrib(
-        validator=optional(instance_of(TemplateLearner)), default=None
+        validator=optional(instance_of(TemplateLearner)), default=None, kw_only=True
     )
 
     action_learner: Optional[TemplateLearner] = attrib(
-        validator=optional(instance_of(TemplateLearner)), default=None
+        validator=optional(instance_of(TemplateLearner)), default=None, kw_only=True
     )
 
-    _max_attributes_per_word: int = attrib(validator=instance_of(int), default=3)
+    _max_attributes_per_word: int = attrib(
+        validator=instance_of(int), default=3, kw_only=True
+    )
 
     _observation_num: int = attrib(init=False, default=0)
     _sub_learners: List[TemplateLearner] = attrib(init=False)
@@ -142,10 +163,17 @@ class IntegratedTemplateLearner(
         if learning_example.perception.is_dynamic() and self.action_learner:
             self.action_learner.learn_from(current_learner_state)
 
+        if self.number_learner:
+            self.number_learner.learn_from(
+                current_learner_state.language_concept_alignment,
+                LearnerSemantics.from_nodes(
+                    current_learner_state.perception_semantic_alignment.semantic_nodes
+                ),
+            )
+
     def describe(
         self, perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]
     ) -> Mapping[LinguisticDescription, float]:
-
         perception_graph = self._extract_perception_graph(perception)
 
         cur_description_state = PerceptionSemanticAlignment.create_unaligned(
@@ -175,15 +203,210 @@ class IntegratedTemplateLearner(
     ) -> Mapping[LinguisticDescription, float]:
 
         learner_semantics = LearnerSemantics.from_nodes(semantic_nodes)
+        ret: List[Tuple[Tuple[str, ...], float]] = []
+
+        # To handle numbers/plurality,  we build copies of the semantics pruned
+        # to contain only those things which are predicated in common of
+        # each set of multiple copies of the same object type.
+        # The case of single objects is handled within this as a special case.
+        for quantification_sub_semantics in self._quantification_sub_semantics(
+            learner_semantics
+        ):
+            ret.extend(self._to_tokens(quantification_sub_semantics))
+
+        return immutabledict(
+            (TokenSequenceLinguisticDescription(tokens), score) for (tokens, score) in ret
+        )
+
+    def _quantification_sub_semantics(
+        self, semantics: LearnerSemantics
+    ) -> Iterable[LearnerSemantics]:
+        """
+        Our approach to handling plurals and other quantifiers is
+        to identify when there are multiple objects of the same type,
+        and produce representations of all the aspects of the semantics
+        which are common to all of them.
+        These "quantification sub-semantics",
+        along with indications of the quantification information,
+        can then be turned into tokens by `_to_tokens`.
+        """
+        # Below we will use the running example of a scene which has
+        # * three balls (b_1,b_2,b_3), two of which are red (b_1,b_2)
+        #      and one of which is green ( b_3)
+        # * two tables (t_1, t_2). One red ball (b_1) is on one table (t_1),
+        #      and both other balls (b2, b3) are on another (t_2).
+
+        # First, determine groups of objects with the same concept
+        # (e.g. that there are three balls and two tables in a scene).
+        concept_to_objects = immutablelistmultidict(
+            (object_.concept, object_) for object_ in semantics.objects
+        )
+        # Second, for each group, iterate determine all subsets of the objects.
+        # e.g. for balls, ball by itself, {b_1, b_2}, {b_1, b_3}, {b_2, b_3}, {b_1, b_2, b_3}
+        # and for tables, each table by itself and {t_1, t_2}.
+        concept_to_object_combinations = immutablelistmultidict(
+            (concept, combo)
+            for (concept, objects) in concept_to_objects.as_dict().items()
+            for combo in more_itertools.powerset(objects)
+            # exclude the empty set
+            if combo
+        )
+
+        # Now we take all combinations of subsets.
+        # e.g. ({b_1, b_2}, t_1), ({b_1, b_2}, {t_1, t_2}), etc.
+        for object_grouping in itertools.product(
+            *concept_to_object_combinations.value_groups()
+        ):
+            # For each combination of subsets, we determine what original_attributes, relations, and verbs
+            # hold true for *all* the the selected elements of a type,
+            # taking into account the collapsing together of other nodes.
+            # For example, if {b_1, b_2) are grouped,
+            # then "red" is a valid modifier for the collapsed group.
+            # on(table_obj) is a valid modified for {b_1, b_2} if t_1 and t_2 are grouped,
+            # but it is not if they are not grouped.
+            # Note this allows only one grouping per object type,
+            # so we cannot handle e.g. "two red balls beside three green balls"
+
+            # We start by making new "quantified" ObjectSemanticNodes to represent each group,
+            # and we attach a quantification node to each.
+            # We will call these "quantified objects" or "Q-Objects".
+            # They are the only thing which will appear in the returned "quantified semantics".
+            # The objects in the original semantics we will call "original objects" or "O-Objects".
+            original_object_to_quantified_object = {}
+            quantified_object_to_original_objects_builder = []
+            quantified_semantics: List[SemanticNode] = []
+            for concept, original_objects_for_concept in zip(
+                concept_to_object_combinations.keys(), object_grouping
+            ):
+                num_objects = len(original_objects_for_concept)
+                if num_objects > 1:
+                    quantified_object = ObjectSemanticNode(concept)
+                    quantified_semantics.append(quantified_object)
+                    quantified_semantics.append(
+                        QuantificationSemanticNode(
+                            NumberConcept(num_objects, debug_string=str(num_objects)),
+                            slot_fillings=[(SLOT1, quantified_object)],
+                        )
+                    )
+                    for original_object in original_objects_for_concept:
+                        original_object_to_quantified_object[
+                            original_object
+                        ] = quantified_object
+                        quantified_object_to_original_objects_builder.append(
+                            (quantified_object, original_object)
+                        )
+                else:
+                    # If there's only one instance of a concept,
+                    # we can just use the original object itself as the "quantified object".
+                    original_object = only(original_objects_for_concept)
+                    quantified_semantics.append(original_object)
+                    quantified_semantics.append(
+                        QuantificationSemanticNode(
+                            NumberConcept(1, debug_string="1"),
+                            slot_fillings=[(SLOT1, original_object)],
+                        )
+                    )
+                    original_object_to_quantified_object[
+                        original_object
+                    ] = original_object
+                    quantified_object_to_original_objects_builder.append(
+                        (original_object, original_object)
+                    )
+
+            quantified_object_to_original_objects = immutablelistmultidict(
+                quantified_object_to_original_objects_builder
+            )
+
+            # Each attribute in the original semantics can be "projected" up to an attribute
+            # of a Q-Object in the quantified semantics,
+            # if there is a matching "original attribute" asserted for each O-Object which is
+            # mapped to the Q-Object.
+            # e.g. if b_1 and b_2 are mapped to the same Q-Object B_0,
+            # then you can say B_0 is red iff both b_1 and b_2 are red.
+            for original_attribute in semantics.attributes:
+                original_argument = original_attribute.slot_fillings[SLOT1]
+                if original_argument not in original_object_to_quantified_object:
+                    # This is the case where e.g. there are three balls,
+                    # but we are only including two in this particular quantified semantics.
+                    continue
+                quantified_argument = original_object_to_quantified_object[
+                    original_argument
+                ]
+
+                include_projection_in_quantified_semantics = True
+                other_objects_mapped_to_same_quantified_object = quantified_object_to_original_objects[
+                    quantified_argument
+                ]
+
+                if len(other_objects_mapped_to_same_quantified_object) == 1:
+                    # Since the original object is the same as the quantified object,
+                    # we can just reuse the assertion object as well.
+                    quantified_semantics.append(original_attribute)
+                    continue
+
+                for (
+                    other_original_argument_mapped_to_quantified_argument
+                ) in other_objects_mapped_to_same_quantified_object:
+                    if (
+                        other_original_argument_mapped_to_quantified_argument
+                        is not original_argument
+                    ):
+                        found_a_matching_attribute = False
+                        for attribute in semantics.attributes:
+                            if (
+                                attribute.concept == original_attribute.concept
+                                and attribute.slot_fillings[SLOT1]
+                                is other_original_argument_mapped_to_quantified_argument
+                            ):
+                                found_a_matching_attribute = True
+                        if not found_a_matching_attribute:
+                            include_projection_in_quantified_semantics = False
+                if include_projection_in_quantified_semantics:
+                    # Note that duplicates attributes will get added to the quantified semantics
+                    # because each of the original attributes which are projected to the
+                    # "quantified attribute" will add a copy.
+                    # But it all ends up in a set anyway, so it doesn't matter.
+                    quantified_semantics.append(
+                        AttributeSemanticNode(
+                            concept=original_attribute.concept,
+                            slot_fillings=[(SLOT1, quantified_argument)],
+                        )
+                    )
+
+            # TODO: discuss difficulties with relations and actions
+            for assertion_set in (semantics.relations, semantics.actions):
+                for assertion in assertion_set:  # type: ignore
+                    all_arguments_already_quantified = True
+                    for slot in (SLOT1, SLOT2):
+                        original_slot_filler = assertion.slot_fillings[slot]
+                        quantified_slot_filler = original_object_to_quantified_object[
+                            original_slot_filler
+                        ]
+                        if (
+                            len(
+                                quantified_object_to_original_objects[
+                                    quantified_slot_filler
+                                ]
+                            )
+                            > 1
+                        ):
+                            all_arguments_already_quantified = False
+                            break
+                    if all_arguments_already_quantified:
+                        quantified_semantics.append(assertion)
+
+            yield LearnerSemantics.from_nodes(quantified_semantics)
+
+    def _to_tokens(
+        self, semantics: LearnerSemantics
+    ) -> Iterable[Tuple[Tuple[str, ...], float]]:
         ret = []
         if self.action_learner:
             ret.extend(
                 [
                     (action_tokens, 1.0)
-                    for action in learner_semantics.actions
-                    for action_tokens in self._instantiate_action(
-                        action, learner_semantics
-                    )
+                    for action in semantics.actions
+                    for action_tokens in self._instantiate_action(action, semantics)
                     # ensure we have some way of expressing this action
                     if self.action_learner.templates_for_concept(action.concept)
                 ]
@@ -193,10 +416,8 @@ class IntegratedTemplateLearner(
             ret.extend(
                 [
                     (relation_tokens, 1.0)
-                    for relation in learner_semantics.relations
-                    for relation_tokens in self._instantiate_relation(
-                        relation, learner_semantics
-                    )
+                    for relation in semantics.relations
+                    for relation_tokens in self._instantiate_relation(relation, semantics)
                     # ensure we have some way of expressing this relation
                     if self.relation_learner.templates_for_concept(relation.concept)
                 ]
@@ -204,38 +425,56 @@ class IntegratedTemplateLearner(
         ret.extend(
             [
                 (object_tokens, 1.0)
-                for object_ in learner_semantics.objects
-                for object_tokens in self._instantiate_object(object_, learner_semantics)
+                for object_ in semantics.objects
+                for object_tokens in self._instantiate_object(object_, semantics)
                 # ensure we have some way of expressing this object
                 if self.object_learner.templates_for_concept(object_.concept)
             ]
         )
-        return immutabledict(
-            (TokenSequenceLinguisticDescription(tokens), score) for (tokens, score) in ret
-        )
+        return ret
 
-    def _add_determiners(
-        self, object_node: ObjectSemanticNode, cur_string: Tuple[str, ...]
-    ) -> Tuple[str, ...]:
-        if (
-            self.object_learner._language_mode  # pylint: disable=protected-access
-            != LanguageMode.ENGLISH
-        ):
-            return cur_string
-        # English-specific hack to deal with us not understanding determiners:
+    def _handle_quantifiers(
+        self,
+        semantics: LearnerSemantics,
+        object_node: ObjectSemanticNode,
+        cur_string: Tuple[str, ...],
+    ) -> Iterable[Tuple[str, ...]]:
+        # English-specific special case, since we don't handle learning determiner information
         # https://github.com/isi-vista/adam/issues/498
-        # The "is lower" check is a hack to block adding a determiner to proper names.
-        # Ground is a specific thing so we special case this to be assigned
-        if object_node.concept == GROUND_OBJECT_CONCEPT:
-            return tuple(chain(("the",), cur_string))
-        elif (
-            object_node.concept.debug_string not in MASS_NOUNS
-            and object_node.concept.debug_string.islower()
-            and not cur_string[0] in ENGLISH_BLOCK_DETERMINERS
-        ):
-            return tuple(chain(("a",), cur_string))
+        block_determiners = False
+        if self._language_mode == LanguageMode.ENGLISH:
+            for attribute in semantics.objects_to_attributes[object_node]:
+                if attribute.concept.debug_string in ENGLISH_BLOCK_DETERMINERS:
+                    # These are things like "your" which block determiners
+                    block_determiners = True
+            if object_node.concept.debug_string in ENGLISH_MASS_NOUNS:
+                block_determiners = True
+            if object_node.concept.debug_string in ENGLISH_RECOGNIZED_PARTICULARS:
+                block_determiners = True
+            if object_node.concept.debug_string in ENGLISH_THE_WORDS:
+                yield ENGLISH_THE_TEMPLATE.instantiate(
+                    {SLOT1: cur_string}
+                ).as_token_sequence()
+                return
+        if block_determiners:
+            yield cur_string
         else:
-            return cur_string
+            found_a_quantifier = False
+            for quantifier in semantics.quantifiers:
+                if quantifier.slot_fillings[SLOT1] == object_node:
+                    found_a_quantifier = True
+                    for quantifier_template in self.number_learner.templates_for_concept(
+                        quantifier.concept
+                    ):
+                        yield quantifier_template.instantiate(
+                            {SLOT1: cur_string}
+                        ).as_token_sequence()
+
+            if not found_a_quantifier:
+                raise RuntimeError(
+                    f"Every object node should have a quantifier but could not find one "
+                    f"for {object_node}"
+                )
 
     def _instantiate_object(
         self, object_node: ObjectSemanticNode, learner_semantics: "LearnerSemantics"
@@ -255,9 +494,11 @@ class IntegratedTemplateLearner(
         # See https://github.com/isi-vista/adam/issues/794 .
         # relations_for_object = learner_semantics.objects_to_relation_in_slot1[object_node]
 
-        for template in self.object_learner.templates_for_concept(object_node.concept):
+        for object_template in self.object_learner.templates_for_concept(
+            object_node.concept
+        ):
 
-            cur_string = template.instantiate(
+            object_string = object_template.instantiate(
                 template_variable_to_filler=immutabledict()
             ).as_token_sequence()
 
@@ -269,6 +510,7 @@ class IntegratedTemplateLearner(
                     # +1 because the range starts at 0
                     num_attributes + 1,
                 ):
+                    cur_string = object_string
                     for attribute in attribute_combinations:
                         # we know, but mypy does not, that self.attribute_learner is not None
                         for (
@@ -276,13 +518,18 @@ class IntegratedTemplateLearner(
                         ) in self.attribute_learner.templates_for_concept(  # type: ignore
                             attribute.concept
                         ):
-                            yield self._add_determiners(
+                            for quantified in self._handle_quantifiers(
+                                learner_semantics,
                                 object_node,
                                 attribute_template.instantiate(
                                     template_variable_to_filler={SLOT1: cur_string}
                                 ).as_token_sequence(),
-                            )
-            yield self._add_determiners(object_node, cur_string)
+                            ):
+                                yield quantified
+            for quantified in self._handle_quantifiers(
+                learner_semantics, object_node, object_string
+            ):
+                yield quantified
 
     def _instantiate_relation(
         self, relation_node: RelationSemanticNode, learner_semantics: "LearnerSemantics"
@@ -355,77 +602,4 @@ class IntegratedTemplateLearner(
         return valid_sub_learners
 
 
-@attrs(frozen=True)
-class LearnerSemantics:
-    """
-    Represent's the learner's semantic (rather than perceptual) understanding of a situation.
-
-    The learner is assumed to view the situation as a collection of *objects* which possess
-    *attributes*, have *relations* to one another, and serve as the arguments of *actions*.
-    """
-
-    objects: ImmutableSet[ObjectSemanticNode] = attrib(converter=_to_immutableset)
-    attributes: ImmutableSet[AttributeSemanticNode] = attrib(converter=_to_immutableset)
-    relations: ImmutableSet[RelationSemanticNode] = attrib(converter=_to_immutableset)
-    actions: ImmutableSet[ActionSemanticNode] = attrib(converter=_to_immutableset)
-
-    objects_to_attributes: ImmutableSetMultiDict[
-        ObjectSemanticNode, AttributeSemanticNode
-    ] = attrib(init=False)
-    objects_to_relation_in_slot1: ImmutableSetMultiDict[
-        ObjectSemanticNode, RelationSemanticNode
-    ] = attrib(init=False)
-    objects_to_actions: ImmutableSetMultiDict[
-        ObjectSemanticNode, ActionSemanticNode
-    ] = attrib(init=False)
-
-    @staticmethod
-    def from_nodes(semantic_nodes: Iterable[SemanticNode]) -> "LearnerSemantics":
-        return LearnerSemantics(
-            objects=[
-                node for node in semantic_nodes if isinstance(node, ObjectSemanticNode)
-            ],
-            attributes=[
-                node for node in semantic_nodes if isinstance(node, AttributeSemanticNode)
-            ],
-            relations=[
-                node for node in semantic_nodes if isinstance(node, RelationSemanticNode)
-            ],
-            actions=[
-                node for node in semantic_nodes if isinstance(node, ActionSemanticNode)
-            ],
-        )
-
-    @objects_to_attributes.default
-    def _init_objects_to_attributes(
-        self
-    ) -> ImmutableSetMultiDict[ObjectSemanticNode, AttributeSemanticNode]:
-        return immutablesetmultidict(
-            (one(attribute.slot_fillings.values()), attribute)
-            for attribute in self.attributes
-        )
-
-    @objects_to_relation_in_slot1.default
-    def _init_objects_to_relations(
-        self
-    ) -> ImmutableSetMultiDict[ObjectSemanticNode, AttributeSemanticNode]:
-        return immutablesetmultidict(
-            flatten(
-                [
-                    (slot_filler, relation)
-                    for slot_filler in relation.slot_fillings.values()
-                ]
-                for relation in self.relations
-            )
-        )
-
-    @objects_to_actions.default
-    def _init_objects_to_actions(
-        self
-    ) -> ImmutableSetMultiDict[ObjectSemanticNode, AttributeSemanticNode]:
-        return immutablesetmultidict(
-            flatten(
-                [(slot_filler, action) for slot_filler in action.slot_fillings.values()]
-                for action in self.actions
-            )
-        )
+ENGLISH_THE_TEMPLATE = SurfaceTemplate(["the", SLOT1], language_mode=LanguageMode.ENGLISH)

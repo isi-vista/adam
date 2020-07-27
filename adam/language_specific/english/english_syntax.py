@@ -1,7 +1,5 @@
 from typing import Tuple
 
-from immutablecollections import ImmutableDict, immutabledict
-
 from adam.language.dependency import (
     DependencyRole,
     HEAD,
@@ -15,6 +13,8 @@ from adam.language.dependency.universal_dependencies import (
     CASE_SPATIAL,
     DETERMINER_ROLE,
     INDIRECT_OBJECT,
+    IS_ATTRIBUTE,
+    MARKER,
     NOMINAL_MODIFIER,
     NOMINAL_MODIFIER_POSSESSIVE,
     NOMINAL_SUBJECT,
@@ -24,9 +24,8 @@ from adam.language.dependency.universal_dependencies import (
     OBLIQUE_NOMINAL,
     PROPER_NOUN,
     VERB,
-    IS_ATTRIBUTE,
-    MARKER,
 )
+from immutablecollections import ImmutableDict, immutabledict
 
 _ENGLISH_HEAD_TO_ROLE_ORDER: ImmutableDict[
     PartOfSpeechTag, Tuple[DependencyRole, ...]

@@ -1,13 +1,12 @@
-from typing import Dict, Optional, Mapping
+from typing import Dict, Mapping, Optional
 
 from typing_extensions import Protocol
-
-from attr import attrib, attrs
-from attr.validators import instance_of
 
 from adam.axes import Axes, HasAxes
 from adam.axis import GeonAxis
 from adam.utilities import sign
+from attr import attrib, attrs
+from attr.validators import instance_of
 
 
 @attrs(frozen=True, slots=True, repr=False)

@@ -13,9 +13,9 @@ from pathlib import Path
 
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
 from adam.perception.perception_graph import (
-    PerceptionGraphPattern,
     GraphLogger,
     MatchMode,
+    PerceptionGraphPattern,
 )
 
 if __name__ == "__main__":

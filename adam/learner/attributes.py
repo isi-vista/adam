@@ -1,16 +1,18 @@
 from abc import ABC
-from typing import AbstractSet, Union, Optional
+from typing import AbstractSet, Optional, Union
+
 from adam.language import LinguisticDescription
 from adam.learner import LearningExample
-from adam.learner.language_mode import LanguageMode
 from adam.learner.alignments import (
     LanguagePerceptionSemanticAlignment,
     PerceptionSemanticAlignment,
 )
+from adam.learner.language_mode import LanguageMode
 from adam.learner.learner_utils import (
+    SyntaxSemanticsVariable,
     assert_static_situation,
-    pattern_remove_incomplete_region_or_spatial_path,
     covers_entire_utterance,
+    pattern_remove_incomplete_region_or_spatial_path,
 )
 from adam.learner.object_recognizer import (
     ObjectRecognizer,
@@ -28,10 +30,10 @@ from adam.learner.surface_templates import (
     SurfaceTemplateBoundToSemanticNodes,
 )
 from adam.learner.template_learner import (
-    AbstractTemplateLearner,
-    AbstractTemplateLearnerNew,
+    AbstractPerceptualTemplateLearner,
+    AbstractPerceptualTemplateLearnerNew,
 )
-from adam.perception import PerceptualRepresentation, MatchMode
+from adam.perception import MatchMode, PerceptualRepresentation
 from adam.perception.deprecated import LanguageAlignedPerception
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -42,11 +44,10 @@ from attr import attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import immutabledict, immutableset, immutablesetmultidict
 from vistautils.span import Span
-from adam.learner.learner_utils import SyntaxSemanticsVariable
 
 
 @attrs
-class AbstractAttributeTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
+class AbstractAttributeTemplateLearnerNew(AbstractPerceptualTemplateLearnerNew, ABC):
     # pylint:disable=abstract-method
     def _candidate_templates(
         self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
@@ -124,7 +125,7 @@ class AbstractAttributeTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
 
 
 @attrs
-class AbstractAttributeTemplateLearner(AbstractTemplateLearner, ABC):
+class AbstractAttributeTemplateLearner(AbstractPerceptualTemplateLearner, ABC):
     # mypy doesn't realize that fields without defaults can come after those with defaults
     # if they are keyword-only.
     _object_recognizer: ObjectRecognizer = attrib(  # type: ignore

@@ -4,18 +4,15 @@ from adam.language.ontology_dictionary import OntologyLexicon
 from adam.language_specific.chinese.chinese_phase_1_lexicon import (
     GAILA_PHASE_1_CHINESE_LEXICON,
 )
-from adam.language_specific.english.english_phase_1_lexicon import (
-    GAILA_PHASE_1_ENGLISH_LEXICON,
-)
 from adam.ontology.phase2_ontology import (
-    GAILA_PHASE_2_ONTOLOGY,
+    CHAIR_2,
+    CHAIR_3,
+    CHAIR_4,
     CHAIR_5,
     CUP_2,
     CUP_3,
     CUP_4,
-    CHAIR_2,
-    CHAIR_3,
-    CHAIR_4,
+    GAILA_PHASE_2_ONTOLOGY,
 )
 
 GAILA_PHASE_2_CHINESE_LEXICON = OntologyLexicon(

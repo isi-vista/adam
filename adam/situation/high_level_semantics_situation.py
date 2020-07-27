@@ -2,20 +2,20 @@ from collections import Counter
 from itertools import chain
 from typing import Optional
 
-from attr import attrib, attrs
-from attr.validators import instance_of, optional
-from immutablecollections import ImmutableSet, immutableset
-from immutablecollections.converter_utils import _to_immutableset
 from more_itertools import flatten
-from vistautils.preconditions import check_arg
 
 from adam.axes import AxesInfo
-from adam.ontology import OntologyNode, IN_REGION
+from adam.ontology import IN_REGION, OntologyNode
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import is_recognized_particular
 from adam.ontology.phase1_spatial_relations import Region
 from adam.relation import Relation, flatten_relations
 from adam.situation import Action, Situation, SituationObject
+from attr import attrib, attrs
+from attr.validators import instance_of, optional
+from immutablecollections import ImmutableSet, immutableset
+from immutablecollections.converter_utils import _to_immutableset
+from vistautils.preconditions import check_arg
 
 
 @attrs(slots=True, repr=False)

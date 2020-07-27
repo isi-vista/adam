@@ -1,14 +1,13 @@
 import pytest
-from immutablecollections import immutableset
 from more_itertools import only, quantify
 
 from adam.axes import HorizontalAxisOfObject
-from adam.ontology import IN_REGION, OntologyNode, IS_SPEAKER
+from adam.ontology import IN_REGION, IS_SPEAKER, OntologyNode
 from adam.ontology.phase1_ontology import (
     AGENT,
     ANIMATE,
-    BALL,
     BABY,
+    BALL,
     BLACK,
     BLUE,
     BOX,
@@ -47,13 +46,13 @@ from adam.ontology.phase1_ontology import (
 )
 from adam.ontology.phase1_spatial_relations import (
     DISTAL,
+    Direction,
     EXTERIOR_BUT_IN_CONTACT,
     GRAVITATIONAL_UP,
     INTERIOR,
+    PROXIMAL,
     Region,
     TOWARD,
-    PROXIMAL,
-    Direction,
 )
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -71,6 +70,7 @@ from adam.relation_dsl import negate
 from adam.situation import Action
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam_test_utils import perception_with_handle, situation_object
+from immutablecollections import immutableset
 from sample_situations import make_bird_flies_over_a_house
 
 _PERCEPTION_GENERATOR = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(

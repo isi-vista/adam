@@ -1,6 +1,21 @@
 from itertools import chain
 from typing import AbstractSet, Any, Iterable, List, Union
 
+from more_itertools import only
+from networkx import DiGraph, ancestors, dfs_preorder_nodes, has_path, simple_cycles
+
+from adam.ontology import (
+    CAN_FILL_TEMPLATE_SLOT,
+    IS_SUBSTANCE,
+    OntologyNode,
+    REQUIRED_ONTOLOGY_NODES,
+    THING,
+)
+
+# convenience method for use in Ontology
+from adam.ontology.action_description import ActionDescription
+from adam.ontology.structural_schema import ObjectStructuralSchema
+from adam.relation import Relation
 from attr import attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import (
@@ -13,22 +28,7 @@ from immutablecollections.converter_utils import (
     _to_immutableset,
     _to_immutablesetmultidict,
 )
-from more_itertools import only
-from networkx import DiGraph, ancestors, dfs_preorder_nodes, has_path, simple_cycles
 from vistautils.preconditions import check_arg
-
-from adam.ontology import (
-    CAN_FILL_TEMPLATE_SLOT,
-    OntologyNode,
-    REQUIRED_ONTOLOGY_NODES,
-    THING,
-    IS_SUBSTANCE,
-)
-
-# convenience method for use in Ontology
-from adam.ontology.action_description import ActionDescription
-from adam.ontology.structural_schema import ObjectStructuralSchema
-from adam.relation import Relation
 
 
 def _copy_digraph(digraph: DiGraph) -> DiGraph:

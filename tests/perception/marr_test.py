@@ -1,5 +1,3 @@
-from immutablecollections import immutabledict
-
 from adam.perception.marr import (
     AdjunctRelation,
     Cylinder,
@@ -7,6 +5,7 @@ from adam.perception.marr import (
     feet_to_meters,
     inches_to_meters,
 )
+from immutablecollections import immutabledict
 
 
 def make_test_human_object():

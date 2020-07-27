@@ -2,9 +2,11 @@
 Representations of template-with-slots-like patterns over token strings.
 """
 from typing import List, Mapping, Optional, Tuple, Union
+
 from more_itertools import quantify
 
 from adam.language import TokenSequenceLinguisticDescription
+from adam.language_specific.english import ENGLISH_MASS_NOUNS
 from adam.learner.language_mode import LanguageMode
 from adam.semantics import ObjectSemanticNode, SyntaxSemanticsVariable
 from attr import attrib, attrs
@@ -50,20 +52,20 @@ class SurfaceTemplate:
         for element in self.elements:
             if isinstance(element, SyntaxSemanticsVariable):
                 filler_words = template_variable_to_filler[element]
-                # Ground is a specific thing so we special case this to be assigned
-                if filler_words[0] == "ground":
-                    output_tokens.append("the")
-                # English-specific hack to deal with us not understanding determiners:
-                # https://github.com/isi-vista/adam/issues/498
-                # The "is lower" check is a hack to block adding a determiner to proper names.
-                elif (
-                    self._language_mode == LanguageMode.ENGLISH
-                    and element in self._determiner_prefix_slots
-                    and len(filler_words) == 1
-                    and filler_words[0][0].islower()
-                    and filler_words[0] not in MASS_NOUNS
-                ):
-                    output_tokens.append("a")
+                # # Ground is a specific thing so we special case this to be assigned
+                # if filler_words[0] == "ground":
+                #     output_tokens.append("the")
+                # # English-specific hack to deal with us not understanding determiners:
+                # # https://github.com/isi-vista/adam/issues/498
+                # # The "is lower" check is a hack to block adding a determiner to proper names.
+                # elif (
+                #     self._language_mode == LanguageMode.ENGLISH
+                #     and element in self._determiner_prefix_slots
+                #     and len(filler_words) == 1
+                #     and filler_words[0][0].islower()
+                #     and filler_words[0] not in ENGLISH_MASS_NOUNS
+                # ):
+                #     output_tokens.append("a")
                 output_tokens.extend(filler_words)
             else:
                 # element must be a single token str due to object validity checks.
@@ -183,7 +185,3 @@ SLOT5 = SyntaxSemanticsVariable("slot5")
 SLOT6 = SyntaxSemanticsVariable("slot6")
 
 STANDARD_SLOT_VARIABLES = (SLOT1, SLOT2, SLOT3, SLOT4, SLOT5, SLOT6)
-
-# These nouns are hard-coded not to receive determiners
-# See https://github.com/isi-vista/adam/issues/498
-MASS_NOUNS = ["juice", "water", "milk"]

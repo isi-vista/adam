@@ -1,6 +1,6 @@
 """Define language independent properties at the module level"""
-from adam.language.lexicon import LexiconEntry, LexiconProperty
 from adam.language.dependency import MorphosyntacticProperty
+from adam.language.lexicon import LexiconProperty
 
 # Define universal morphosyntactic properties
 FIRST_PERSON = MorphosyntacticProperty("1p")

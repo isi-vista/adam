@@ -1,21 +1,20 @@
-from typing import Iterable, Union, Optional
-from adam.ontology import IS_SPEAKER, IS_ADDRESSEE
-from immutablecollections import immutableset
-from adam.language.language_generator import LanguageGenerator
+from typing import Iterable, Optional, Union
+
+from adam.curriculum import GeneratedFromSituationsInstanceGroup, InstanceGroup
 from adam.language.dependency import LinearizedDependencyTree
-from adam.curriculum import InstanceGroup, GeneratedFromSituationsInstanceGroup
+from adam.language.language_generator import LanguageGenerator
 from adam.language_specific.english.english_language_generator import (
     GAILA_PHASE_1_LANGUAGE_GENERATOR,
     GAILA_PHASE_2_LANGUAGE_GENERATOR,
 )
-from adam.ontology import OntologyNode
+from adam.ontology import IS_ADDRESSEE, IS_SPEAKER, OntologyNode
 from adam.ontology.phase1_ontology import (
     GROUND,
     INANIMATE_OBJECT,
     IS_BODY_PART,
-    THING,
-    LIQUID,
     LEARNER,
+    LIQUID,
+    THING,
 )
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -27,10 +26,11 @@ from adam.perception.high_level_semantics_situation_to_developmental_primitive_p
 from adam.random_utils import RandomChooser
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.situation.templates.phase1_templates import (
-    object_variable,
-    TemplatePropertyVariable,
     TemplateObjectVariable,
+    TemplatePropertyVariable,
+    object_variable,
 )
+from immutablecollections import immutableset
 
 GROUND_OBJECT_TEMPLATE = object_variable("ground", GROUND)
 PHASE1_CHOOSER_FACTORY = lambda: RandomChooser.for_seed(0)  # noqa: E731

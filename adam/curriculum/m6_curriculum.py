@@ -9,21 +9,17 @@ basic color terms (red, blue, green, white, black…), one, two, my, your)
 """
 import random as r
 from itertools import chain
-from typing import Sequence, List, Optional
+from typing import List, Optional, Sequence
 
 from more_itertools import flatten
-
-from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
-from adam.language.language_generator import LanguageGenerator
-from adam.language.dependency import LinearizedDependencyTree
 
 from adam.curriculum import ExplicitWithSituationInstanceGroup
 from adam.curriculum.curriculum_utils import (
     PHASE1_CHOOSER_FACTORY,
     Phase1InstanceGroup,
+    make_noise_objects,
     phase1_instances,
     standard_object,
-    make_noise_objects,
 )
 from adam.curriculum.phase1_curriculum import (
     _make_each_object_by_itself_curriculum,
@@ -37,8 +33,11 @@ from adam.curriculum.preposition_curriculum import (
     _over_template,
     _under_template,
 )
+from adam.language.dependency import LinearizedDependencyTree
+from adam.language.language_generator import LanguageGenerator
 from adam.ontology import IS_ADDRESSEE, IS_SPEAKER
 from adam.ontology.phase1_ontology import (
+    BABY,
     BALL,
     BIRD,
     BOOK,
@@ -47,26 +46,26 @@ from adam.ontology.phase1_ontology import (
     CHAIR,
     COOKIE,
     CUP,
+    DAD,
+    DOG,
+    DOOR,
     GAILA_PHASE_1_ONTOLOGY,
+    HAND,
     HAT,
+    HEAD,
     HOUSE,
+    JUICE,
     LEARNER,
+    MILK,
     MOM,
     TABLE,
     TRUCK,
-    DAD,
-    BABY,
     WATER,
-    HAND,
-    DOG,
-    MILK,
-    HEAD,
-    JUICE,
-    DOOR,
 )
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     GAILA_M6_PERCEPTION_GENERATOR,
 )
+from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.situation.templates.phase1_templates import sampled
 
 M6_PREPOSITION_CURRICULUM_SMALL_OBJECTS = [BALL, CUP, BOX, HAT, BOOK, COOKIE, BIRD]
