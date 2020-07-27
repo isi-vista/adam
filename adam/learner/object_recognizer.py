@@ -512,6 +512,7 @@ class ObjectRecognizer:
 def extract_candidate_objects(
     whole_scene_perception_graph: PerceptionGraph
 ) -> Sequence[PerceptionGraph]:
+
     """
     Pulls out distinct objects from a scene.
 

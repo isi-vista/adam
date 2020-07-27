@@ -134,11 +134,9 @@ class IntegratedTemplateLearner(
                     sub_learner.learn_from(
                         current_learner_state, observation_num=observation_num
                     )
-
                 current_learner_state = sub_learner.enrich_during_learning(
                     current_learner_state
                 )
-
         if learning_example.perception.is_dynamic() and self.action_learner:
             self.action_learner.learn_from(current_learner_state)
 

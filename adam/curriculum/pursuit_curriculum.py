@@ -5,7 +5,7 @@ metrics to pursue the strongest hypothesis as long as it is supported by the fol
 Paper: The Pursuit of Word Meanings (Stevens et al., 2017)
 """
 from typing import Optional, Sequence
-
+from adam.ontology import IS_ADDRESSEE, IS_SPEAKER
 from adam.curriculum import ExplicitWithSituationInstanceGroup
 from adam.language.language_generator import LanguageGenerator
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
@@ -53,6 +53,7 @@ def make_simple_pursuit_curriculum(
     target_objects=[BALL, CHAIR, MOM, DAD, BABY, TABLE, DOG, BIRD, BOX],
     num_objects_in_instance: int = 3,
     perception_generator: HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator = GAILA_PHASE_1_PERCEPTION_GENERATOR,
+    add_gaze: bool = False,
 ) -> Phase1InstanceGroup:
     """
     Creates a Pursuit-learning curriculum with for a set of standard objects. Each instance in the curriculum is a set
@@ -70,7 +71,8 @@ def make_simple_pursuit_curriculum(
         raise RuntimeError("Cannot have more noise than regular exemplars")
 
     noise_object_variables = [
-        standard_object("obj-" + str(idx)) for idx in range(num_objects_in_instance)
+        standard_object("obj-" + str(idx), banned_properties=[IS_SPEAKER, IS_ADDRESSEE])
+        for idx in range(num_objects_in_instance)
     ]
 
     # A template that is used to replace situations and perceptions (not linguistic description) in noise instances
@@ -93,6 +95,7 @@ def make_simple_pursuit_curriculum(
             "simple_pursuit",
             salient_object_variables=[target_object_variable],
             background_object_variables=noise_object_variables[:-1],
+            gazed_objects=[target_object_variable] if add_gaze else [],
         )
         non_noise_instances = list(
             phase1_instances(

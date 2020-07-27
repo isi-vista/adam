@@ -1,8 +1,11 @@
 import logging
+import copy
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from pathlib import Path
 from random import Random
+from adam.perception.perception_graph import IsOntologyNodePredicate
+from adam.ontology.phase1_ontology import GAZED_AT
 from typing import (
     Any,
     Dict,
@@ -182,9 +185,13 @@ class AbstractPursuitLearner(AbstractTemplateLearner, ABC):
         # If it's a novel word, learn a new hypothesis/pattern,
         # generated as a pattern graph from the perception.
         # We want h_0 = arg_min_(m in M_U) max(A_m); i.e. h_0 is pattern_hypothesis
-        hypotheses: Sequence[PerceptionGraphTemplate] = self._candidate_hypotheses(
-            aligned_perception
-        )
+
+        # exclude graphs for which we already have a mapping from our possibilities
+        hypotheses: Sequence[PerceptionGraphTemplate] = [
+            hypothesis
+            for hypothesis in self._candidate_hypotheses(aligned_perception)
+            if hypothesis not in self._lexicon.values()
+        ]
 
         pattern_hypothesis = first(hypotheses)
         min_score = float("inf")
@@ -310,7 +317,13 @@ class AbstractPursuitLearner(AbstractTemplateLearner, ABC):
                 )
 
                 chosen_hypothesis = self._rng.choice(
-                    self._candidate_hypotheses(language_aligned_perception)
+                    [
+                        hypothesis
+                        for hypothesis in self._candidate_hypotheses(
+                            language_aligned_perception
+                        )
+                        if hypothesis not in self._lexicon.values()
+                    ]
                 )
                 hypotheses_to_reward.append(chosen_hypothesis)
 
@@ -577,6 +590,7 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
     _smoothing_parameter: float = attrib(
         validator=in_(Range.greater_than(0.0)), kw_only=True
     )
+
     """
     This smoothing factor is added to the scores of all hypotheses
     when forming a probability distribution over hypotheses.
@@ -620,12 +634,13 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
 
     _observation_num = attrib(init=False, default=0)
 
+    rank_gaze_higher: bool = attrib(default=False)
+
     def _learning_step(
         self,
         language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
         bound_surface_template: SurfaceTemplateBoundToSemanticNodes,
     ) -> None:
-
         if bound_surface_template.surface_template in self._known_bad_patterns:
             # We tried to learn an alignment for this surface template previously
             # and it didn't work out.
@@ -660,6 +675,24 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
             if self._log_learned_item_hypotheses_to:
                 self._log_hypotheses(bound_surface_template.surface_template)
 
+    def remove_gaze_from_hypothesis(self, hypothesis: PerceptionGraphTemplate):
+        """Removes any nodes that are gazed-at from a given hypothesis to help prevent this from affecting predictions"""
+        nodes_to_remove = []
+        new_hypothesis = copy.deepcopy(hypothesis)
+        for (
+            node
+        ) in new_hypothesis.graph_pattern._graph.node:  # pylint: disable=protected-access
+            if (
+                isinstance(node, IsOntologyNodePredicate)
+                and node.property_value == GAZED_AT
+            ):
+                nodes_to_remove.append(node)
+        for node in set(nodes_to_remove):
+            new_hypothesis.graph_pattern._graph.remove_node(  # pylint: disable=protected-access
+                node
+            )
+        return new_hypothesis
+
     def initialization_step(
         self,
         language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
@@ -668,31 +701,66 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
         # If it's a novel word, learn a new hypothesis/pattern,
         # generated as a pattern graph from the perception.
         # We want h_0 = arg_min_(m in M_U) max(A_m); i.e. h_0 is pattern_hypothesis
-        hypotheses: AbstractSet[
-            PerceptionGraphTemplate
-        ] = self._hypotheses_from_perception(
-            language_perception_semantic_alignment, bound_surface_template
-        )
+
+        # TODO: only consider those hypotheses for which we don't already have a mapping https://github.com/isi-vista/adam/issues/930
+        hypotheses: List[PerceptionGraphTemplate] = [
+            hypothesis
+            for hypothesis in self._hypotheses_from_perception(
+                language_perception_semantic_alignment, bound_surface_template
+            )
+        ]
 
         pattern_hypothesis = first(hypotheses)
         min_score = float("inf")
-        # Of the possible meanings for the word in this scene,
-        # make our initial hypothesis the one with the least association
-        # with any other word.
-        for hypothesis in hypotheses:
-            # TODO Try to make this more efficient?
-            max_association_score = max(
+        # get all objects that have gaze
+        gazed_at_hypotheses: List[PerceptionGraphTemplate] = []
+        if self.rank_gaze_higher:
+            for hypothesis in hypotheses:
+                if GAZED_AT in [
+                    node.property_value
+                    for node in hypothesis.graph_pattern.copy_as_digraph().node
+                    if isinstance(node, IsOntologyNodePredicate)
+                ]:
+                    gazed_at_hypotheses.append(hypothesis)
+        # if there is only one object that has gaze, then this is the one that we consider -- we prioritize gaze above all else
+        if len(gazed_at_hypotheses) == 1:
+            pattern_hypothesis = first(gazed_at_hypotheses)
+            min_score = max(
                 [
                     s
                     for w, h_to_s in self._concept_to_hypotheses_and_scores.items()
                     for h, s in h_to_s.items()
-                    if h.graph_pattern.check_isomorphism(hypothesis.graph_pattern)
+                    if h.graph_pattern.check_isomorphism(pattern_hypothesis.graph_pattern)
                 ]
                 + [0]
             )
-            if max_association_score < min_score:
-                pattern_hypothesis = hypothesis
-                min_score = max_association_score
+        # otherwise, we make our initial hypothesis the one with the least association with any other word
+        else:
+            hypotheses_to_consider: List[PerceptionGraphTemplate] = []
+            # if there were no gazed objects, we consider all hypotheses
+            if gazed_at_hypotheses:
+                hypotheses_to_consider = gazed_at_hypotheses
+            # if there were multiple gazed objects, we consider all objects with gaze
+            else:
+                hypotheses_to_consider = list(hypotheses)
+
+            # Of the possible meanings for the word in this scene,
+            # make our initial hypothesis the one with the least association
+            # with any other word.
+            for hypothesis in hypotheses_to_consider:
+                # TODO Try to make this more efficient?
+                max_association_score = max(
+                    [
+                        s
+                        for w, h_to_s in self._concept_to_hypotheses_and_scores.items()
+                        for h, s in h_to_s.items()
+                        if h.graph_pattern.check_isomorphism(hypothesis.graph_pattern)
+                    ]
+                    + [0]
+                )
+                if max_association_score < min_score:
+                    pattern_hypothesis = hypothesis
+                    min_score = max_association_score
 
         if self._hypothesis_logger:
             self._hypothesis_logger.log_hypothesis_graph(
@@ -702,6 +770,8 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
                 bound_surface_template,
                 self._learning_factor,
             )
+
+        pattern_hypothesis = self.remove_gaze_from_hypothesis(pattern_hypothesis)
 
         # Create the mappings from concept to template and the new hypothesis
         concept = self._new_concept(
@@ -760,6 +830,7 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
         if hypothesis_is_confirmed and partial_match.partial_match_hypothesis:
             logging.info("Current hypothesis is confirmed.")
             # Reinforce A(w,h)
+
             new_hypothesis_score = current_hypothesis_score + self._learning_factor * (
                 1 - current_hypothesis_score
             )
@@ -781,27 +852,60 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
                 penalized_hypothesis_score,
             )
 
-            # This is where we differ from the pursuit paper.
-            # If a sufficiently close relaxed version of our pattern matches,
-            # we used that relaxed version as the new hypothesis to introduce
-            hypotheses_to_reward: List[PerceptionGraphTemplate] = []
-            if (
-                partial_match.match_score() >= self._graph_match_confirmation_threshold
-                and partial_match.partial_match_hypothesis
-            ):
-                logging.info(
-                    "Introducing partial match as a new hypothesis; %s of %s nodes "
-                    "matched.",
-                    partial_match.num_nodes_matched,
-                    partial_match.num_nodes_in_pattern,
-                )
-                # we know if partial_match_hypothesis is non-None above, it still will be.
-                # we know if partial_match_hypothesis is non-None above, it still will be.
-                hypotheses_to_reward.append(  # type: ignore
-                    partial_match.partial_match_hypothesis
-                )
+            def get_partial_match() -> Optional[PerceptionGraphTemplate]:
+                """Helper function to get a partial match hypothesis if there is one"""
+                if (
+                    partial_match.match_score()
+                    >= self._graph_match_confirmation_threshold
+                    and partial_match.partial_match_hypothesis
+                ):
+                    logging.info(
+                        "Introducing partial match as a new hypothesis; %s of %s nodes "
+                        "matched.",
+                        partial_match.num_nodes_matched,
+                        partial_match.num_nodes_in_pattern,
+                    )
+                    return partial_match.partial_match_hypothesis
+                else:
+                    return None
 
+            # This is where we differ from the pursuit paper.
+            # First, we look for a node sufficiently close to our node as a new hypothesis
+            # If a sufficiently close relaxed version of our pattern matches,
+            # we used that relaxed version as the new hypothesis to introduce.
+            # Otherwise, if we are prioritizing gazed-at object, we pick one of them, and if not, then we pick another
+            # random object.
+
+            hypotheses_to_reward: List[PerceptionGraphTemplate] = []
+            # TODO: get all hypotheses which do not already have a mapping https://github.com/isi-vista/adam/issues/930
+            hypotheses = [
+                hypothesis
+                for hypothesis in self._hypotheses_from_perception(
+                    language_perception_semantic_alignment, bound_surface_template
+                )
+            ]
+
+            # if there is an object that partially matches the object we're trying to learn, reward this one
+            partial_possibility: Optional[PerceptionGraphTemplate] = get_partial_match()
+            if partial_possibility:
+                hypotheses_to_reward.append(partial_possibility)
             else:
+                # if we are considering gaze, get the objects that are gazed at, then pick one of these at random
+                gazed_at_possibilities = []
+                if self.rank_gaze_higher:
+                    for hypothesis in hypotheses:
+                        if GAZED_AT in [
+                            node.property_value
+                            for node in hypothesis.graph_pattern.copy_as_digraph().node
+                            if isinstance(node, IsOntologyNodePredicate)
+                        ]:
+                            gazed_at_possibilities.append(hypothesis)
+                if gazed_at_possibilities:
+                    hypotheses_to_reward.append(self._rng.choice(gazed_at_possibilities))
+                # if there is no gaze or we aren't considering it, then pick any hypothesis at random
+                else:
+                    hypotheses_to_reward.append(self._rng.choice(list(hypotheses)))
+
                 # Here's where it gets complicated.
                 # In the Pursuit paper, at this point they choose a random meaning from the scene.
                 # But if you do this it becomes difficult to learn object meanings
@@ -809,18 +913,6 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
                 # Therefore, in addition to rewarding the hypothesis
                 # which directly encodes the randomly selected object's perception,
                 # we also reward all other non-leading hypotheses which would match it.
-                logging.info(
-                    "Choosing a random object from the scene to use as the word meaning"
-                )
-
-                chosen_hypothesis: PerceptionGraphTemplate = self._rng.choice(
-                    list(
-                        self._hypotheses_from_perception(
-                            language_perception_semantic_alignment, bound_surface_template
-                        )
-                    )
-                )
-                hypotheses_to_reward.append(chosen_hypothesis)
 
                 for hypothesis in hypotheses_for_item:
                     non_leading_hypothesis_partial_match = self._find_partial_match(
@@ -851,8 +943,11 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
                 if hypothesis_to_reward in hypotheses_for_item:
                     hypothesis_object_to_reward = hypothesis_to_reward
                 else:
+                    hypothesis_to_reward_without_gaze = self.remove_gaze_from_hypothesis(
+                        hypothesis_to_reward
+                    )
                     existing_hypothesis_matching_new_hypothesis = self._find_identical_hypothesis(
-                        hypothesis_to_reward, candidates=hypotheses_for_item
+                        hypothesis_to_reward_without_gaze, candidates=hypotheses_for_item
                     )
                     if existing_hypothesis_matching_new_hypothesis:
                         hypothesis_object_to_reward = (
@@ -862,19 +957,23 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
                     else:
                         hypothesis_object_to_reward = hypothesis_to_reward
 
-                if (
+                hypothesis_object_to_reward_without_gaze = self.remove_gaze_from_hypothesis(
                     hypothesis_object_to_reward
+                )
+                if (
+                    hypothesis_object_to_reward_without_gaze
                     not in hypothesis_objects_boosted_on_this_update
                 ):
+
                     cur_score_for_new_hypothesis = hypotheses_for_item.get(
-                        hypothesis_object_to_reward, 0.0
+                        hypothesis_object_to_reward_without_gaze, 0.0
                     )
-                    hypotheses_for_item[hypothesis_object_to_reward] = (
+                    hypotheses_for_item[hypothesis_object_to_reward_without_gaze] = (
                         cur_score_for_new_hypothesis
                         + self._learning_factor * (1.0 - cur_score_for_new_hypothesis)
                     )
                     hypothesis_objects_boosted_on_this_update.add(
-                        hypothesis_object_to_reward
+                        hypothesis_object_to_reward_without_gaze
                     )
 
         return hypothesis_is_confirmed

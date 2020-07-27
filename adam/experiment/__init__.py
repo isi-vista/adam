@@ -234,6 +234,7 @@ def execute_experiment(
                             perceptual_representation,
                             learner_descriptions_before_seeing_example,
                         )
+                        pre_example_observer.report()
                 else:
                     raise ValueError(
                         "Observed training instances cannot lack a situation"
