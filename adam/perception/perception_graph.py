@@ -365,6 +365,14 @@ class PerceptionGraph(PerceptionGraphProtocol):
 
         Note that this should only be applied to static perception digraphs.
         """
+        # Assume the graph is dynamic if an arbitrary edge label is temporally scoped.
+        _, _, a_label = first(digraph.edges(data="label"))
+        if isinstance(a_label, TemporallyScopedEdgeLabel):
+            raise RuntimeError(
+                "Cannot use add_temporal_scopes_to_edges on a graph which is "
+                "already dynamic"
+            )
+
         for (source, target) in digraph.edges():
             unwrapped_label = digraph.edges[source, target]["label"]
             temporally_scoped_label = TemporallyScopedEdgeLabel.for_dynamic_perception(
