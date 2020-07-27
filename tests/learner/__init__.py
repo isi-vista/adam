@@ -2,7 +2,6 @@ from typing import Mapping
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     GAILA_PHASE_1_PERCEPTION_GENERATOR,
 )
-from immutablecollections import immutabledict
 from adam.language_specific.english import ENGLISH_DETERMINERS
 from adam.learner.language_mode import LanguageMode
 from adam.learner.object_recognizer import ObjectRecognizer

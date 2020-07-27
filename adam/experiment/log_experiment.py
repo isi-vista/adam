@@ -7,15 +7,7 @@ from adam.curriculum.imprecise_descriptions_curriculum import (
     make_imprecise_temporal_descriptions,
     make_subtle_verb_distinctions_curriculum,
 )
-from adam.curriculum.m6_curriculum import make_m6_curriculum
-from adam.curriculum.phase1_curriculum import (
-    build_gaila_phase1_attribute_curriculum,
-    build_gaila_phase1_object_curriculum,
-    build_gaila_phase1_relation_curriculum,
-    build_gaila_phase1_verb_curriculum,
-    build_gaila_phase_1_curriculum,
-    build_gaila_plurals_curriculum,
-)
+
 from adam.curriculum.phase2_curriculum import (
     build_functionally_defined_objects_curriculum,
     build_gaila_m13_curriculum,
@@ -25,7 +17,6 @@ from adam.curriculum.preposition_curriculum import make_prepositions_curriculum
 from adam.curriculum.verbs_with_dynamic_prepositions_curriculum import (
     make_verb_with_dynamic_prepositions_curriculum,
 )
-from adam.experiment import Experiment, execute_experiment
 from adam.experiment.experiment_utils import (
     build_debug_curriculum_test,
     build_debug_curriculum_train,
@@ -35,27 +26,20 @@ from adam.experiment.experiment_utils import (
     build_m6_prepositions_curriculum,
     build_pursuit_curriculum,
 )
-from adam.experiment.observer import CandidateAccuracyObserver, LearningProgressHtmlLogger
 from adam.language.dependency import LinearizedDependencyTree
 from adam.language.language_generator import LanguageGenerator
 from adam.language.language_utils import phase2_language_generator
 from adam.language_specific.english import ENGLISH_DETERMINERS
-from adam.learner import TopLevelLanguageLearner
 from adam.learner.attributes import SubsetAttributeLearner, SubsetAttributeLearnerNew
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
-from adam.learner.relations import SubsetRelationLearnerNew
-from adam.learner.verbs import SubsetVerbLearner, SubsetVerbLearnerNew
-from adam.ontology.phase2_ontology import GAILA_PHASE_2_ONTOLOGY
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     GAILA_PHASE_1_PERCEPTION_GENERATOR,
 )
-from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
-from vistautils.parameters import Parameters
-from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 
 from adam.curriculum.m6_curriculum import make_m6_curriculum
 from adam.curriculum.phase1_curriculum import (
+    build_gaila_plurals_curriculum,
     build_gaila_phase1_object_curriculum,
     build_gaila_phase1_attribute_curriculum,
     build_gaila_phase1_relation_curriculum,
