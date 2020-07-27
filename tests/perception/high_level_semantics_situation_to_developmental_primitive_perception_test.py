@@ -94,36 +94,36 @@ def test_person_and_ball():
     object_handles = set(obj.debug_handle for obj in perceived_objects)
     assert len(person_and_ball_perception.frames) == 1
     assert object_handles == {
-        "ball_0",
-        "person_0",
-        "head_0",
-        "torso_0",
-        "arm_0",
-        "armsegment_0",
-        "armsegment_1",
-        "hand_0",
-        "arm_1",
-        "armsegment_2",
-        "armsegment_3",
-        "hand_1",
-        "(animal) leg_0",
-        "leg-segment_0",
-        "leg-segment_1",
-        "foot_0",
-        "(animal) leg_1",
-        "leg-segment_2",
-        "leg-segment_3",
-        "foot_1",
+        "**ball_0",
+        "**person_0",
+        "**head_0",
+        "**torso_0",
+        "**arm_0",
+        "**armsegment_0",
+        "**armsegment_1",
+        "**hand_0",
+        "**arm_1",
+        "**armsegment_2",
+        "**armsegment_3",
+        "**hand_1",
+        "**(animal) leg_0",
+        "**leg-segment_0",
+        "**leg-segment_1",
+        "**foot_0",
+        "**(animal) leg_1",
+        "**leg-segment_2",
+        "**leg-segment_3",
+        "**foot_1",
         "the ground",
     }
 
     assert person_and_ball_perception.frames[0].relations
 
     person_perception = perception_with_handle(
-        person_and_ball_perception.frames[0], "person_0"
+        person_and_ball_perception.frames[0], "**person_0"
     )
     ball_perception = perception_with_handle(
-        person_and_ball_perception.frames[0], "ball_0"
+        person_and_ball_perception.frames[0], "**ball_0"
     )
 
     assert set(person_and_ball_perception.frames[0].property_assertions).issuperset(
@@ -155,8 +155,8 @@ def test_person_and_ball_color():
         for prop_assertion in frame.property_assertions
     )
 
-    person_perception = perception_with_handle(frame, "person_0")
-    ball_perception = perception_with_handle(frame, "ball_0")
+    person_perception = perception_with_handle(frame, "**person_0")
+    ball_perception = perception_with_handle(frame, "**ball_0")
     assert HasBinaryProperty(person_perception, ANIMATE) in frame.property_assertions
     assert HasBinaryProperty(person_perception, SELF_MOVING) in frame.property_assertions
     assert HasBinaryProperty(ball_perception, INANIMATE) in frame.property_assertions
@@ -199,10 +199,10 @@ def test_person_put_ball_on_table():
     )
     assert len(perception.frames) == 2
     first_frame = perception.frames[0]
-    person_perception = perception_with_handle(first_frame, "person_0")
-    ball_perception = perception_with_handle(first_frame, "ball_0")
-    table_perception = perception_with_handle(first_frame, "table_0")
-    hand_perception = perception_with_handle(first_frame, "hand_0")
+    person_perception = perception_with_handle(first_frame, "**person_0")
+    ball_perception = perception_with_handle(first_frame, "**ball_0")
+    table_perception = perception_with_handle(first_frame, "**table_0")
+    hand_perception = perception_with_handle(first_frame, "**hand_0")
     assert (
         HasBinaryProperty(person_perception, ANIMATE) in first_frame.property_assertions
     )
@@ -320,9 +320,9 @@ def test_relations_between_objects_and_ground():
         situation, chooser=RandomChooser.for_seed(0)
     )
     first_frame = perception.frames[0]
-    ball_perception = perception_with_handle(first_frame, "ball_0")
+    ball_perception = perception_with_handle(first_frame, "**ball_0")
     ground_perception = perception_with_handle(first_frame, "the ground")
-    table_perception = perception_with_handle(first_frame, "table_0")
+    table_perception = perception_with_handle(first_frame, "**table_0")
 
     first_frame_relations = first_frame.relations
     second_frame_relations = perception.frames[1].relations
@@ -346,9 +346,9 @@ def test_grounding_of_unsupported_objects():
         situation, chooser=RandomChooser.for_seed(0)
     )
     first_frame = perception.frames[0]
-    ball_perception = perception_with_handle(first_frame, "ball_0")
+    ball_perception = perception_with_handle(first_frame, "**ball_0")
     ground_perception = perception_with_handle(first_frame, "the ground")
-    box_perception = perception_with_handle(first_frame, "box_0")
+    box_perception = perception_with_handle(first_frame, "**box_0")
 
     first_frame_relations = first_frame.relations
 
@@ -382,9 +382,9 @@ def test_objects_in_something_not_implcitly_grounded():
         situation, chooser=RandomChooser.for_seed(0)
     )
     first_frame = perception.frames[0]
-    ball_perception = perception_with_handle(first_frame, "ball_0")
+    ball_perception = perception_with_handle(first_frame, "**ball_0")
     ground_perception = perception_with_handle(first_frame, "the ground")
-    box_perception = perception_with_handle(first_frame, "box_0")
+    box_perception = perception_with_handle(first_frame, "**box_0")
 
     first_frame_relations = first_frame.relations
 
@@ -406,9 +406,9 @@ def test_dynamic_prepositions_implicit_grounding():
         situation, chooser=RandomChooser.for_seed(0)
     )
     first_frame = perception.frames[0]
-    baby_perception = perception_with_handle(first_frame, "baby_0")
+    baby_perception = perception_with_handle(first_frame, "**baby_0")
     ground_perception = perception_with_handle(first_frame, "the ground")
-    truck_perception = perception_with_handle(first_frame, "truck_0")
+    truck_perception = perception_with_handle(first_frame, "**truck_0")
 
     first_frame_relations = first_frame.relations
     second_frame_relations = perception.frames[1].relations
@@ -446,21 +446,21 @@ def test_liquid_in_and_out_of_container():
 
     two_perceived_objects = two_d_perception.frames[0].perceived_objects
     two_object_handles = set(obj.debug_handle for obj in two_perceived_objects)
-    assert all(handle in two_object_handles for handle in {"juice_0", "table_0"})
+    assert all(handle in two_object_handles for handle in {"**juice_0", "**table_0"})
     three_perceived_objects = three_d_perception.frames[0].perceived_objects
     three_object_handles = set(obj.debug_handle for obj in three_perceived_objects)
-    assert all(handle in three_object_handles for handle in {"juice_0", "box_0"})
+    assert all(handle in three_object_handles for handle in {"**juice_0", "**box_0"})
 
     assert any(
         isinstance(p, HasBinaryProperty)
-        and perception_with_handle(two_d_perception.frames[0], "juice_0")
+        and perception_with_handle(two_d_perception.frames[0], "**juice_0")
         == p.perceived_object
         and p.binary_property == TWO_DIMENSIONAL
         for p in two_d_perception.frames[0].property_assertions
     )
     assert not any(
         isinstance(p, HasBinaryProperty)
-        and perception_with_handle(three_d_perception.frames[0], "juice_0")
+        and perception_with_handle(three_d_perception.frames[0], "**juice_0")
         == p.perceived_object
         and p.binary_property == TWO_DIMENSIONAL
         for p in three_d_perception.frames[0].property_assertions
@@ -564,8 +564,8 @@ def test_perceive_relations_during():
     )
     assert learner_perception.during
 
-    bird = perception_with_handle(learner_perception.frames[0], "bird_0")
-    house = perception_with_handle(learner_perception.frames[0], "house_0")
+    bird = perception_with_handle(learner_perception.frames[0], "**bird_0")
+    house = perception_with_handle(learner_perception.frames[0], "**house_0")
 
     bird_over_the_house = Relation(
         IN_REGION,
@@ -619,9 +619,9 @@ def test_perceive_explicit_relations():
         situation, chooser=RandomChooser.for_seed(0)
     )
 
-    ball_perception = perception_with_handle(perception.frames[0], "ball_0")
-    box_perception = perception_with_handle(perception.frames[0], "box_0")
-    table_perception = perception_with_handle(perception.frames[0], "table_0")
+    ball_perception = perception_with_handle(perception.frames[0], "**ball_0")
+    box_perception = perception_with_handle(perception.frames[0], "**box_0")
+    table_perception = perception_with_handle(perception.frames[0], "**table_0")
 
     assert only(on(ball_perception, table_perception)) in perception.frames[0].relations
     assert only(on(ball_perception, table_perception)) in perception.frames[0].relations
@@ -647,7 +647,7 @@ def test_path_from_action_description():
     perception = _PERCEPTION_GENERATOR.generate_perception(
         situation, chooser=RandomChooser.for_seed(0)
     )
-    ball_perception = perception_with_handle(perception.frames[0], "ball_0")
+    ball_perception = perception_with_handle(perception.frames[0], "**ball_0")
     ground_perception = perception_with_handle(perception.frames[0], "the ground")
     assert perception.during
     assert perception.during.objects_to_paths
@@ -672,9 +672,9 @@ def test_gaze_default():
         situation, chooser=RandomChooser.for_seed(0)
     )
     frame = perception.frames[0]
-    cookie_perception = perception_with_handle(frame, "cookie_0")
-    dad_perception = perception_with_handle(frame, "Dad_0")
-    table_perception = perception_with_handle(frame, "table_0")
+    cookie_perception = perception_with_handle(frame, "**cookie_0")
+    dad_perception = perception_with_handle(frame, "**Dad_0")
+    table_perception = perception_with_handle(frame, "**table_0")
     assert HasBinaryProperty(cookie_perception, GAZED_AT) in frame.property_assertions
     assert HasBinaryProperty(dad_perception, GAZED_AT) in frame.property_assertions
     # because the table does not occupy a semantic role in the situation
@@ -697,9 +697,9 @@ def test_gaze_specified():
         situation, chooser=RandomChooser.for_seed(0)
     )
     frame = perception.frames[0]
-    cookie_perception = perception_with_handle(frame, "cookie_0")
-    dad_perception = perception_with_handle(frame, "Dad_0")
-    table_perception = perception_with_handle(frame, "table_0")
+    cookie_perception = perception_with_handle(frame, "**cookie_0")
+    dad_perception = perception_with_handle(frame, "**Dad_0")
+    table_perception = perception_with_handle(frame, "**table_0")
     # only the cookie is gazed at, because the user said so.
     assert HasBinaryProperty(cookie_perception, GAZED_AT) in frame.property_assertions
     assert HasBinaryProperty(dad_perception, GAZED_AT) not in frame.property_assertions
@@ -720,16 +720,16 @@ def test_colors_across_part_of_relations():
     frame = learner_perception.frames[0]
     property_assertions = frame.property_assertions
 
-    truck_perception = perception_with_handle(frame, "truck_0")
-    flatbed_perception = perception_with_handle(frame, "flatbed_0")
-    tire0_perception = perception_with_handle(frame, "tire_0")
-    tire1_perception = perception_with_handle(frame, "tire_1")
-    tire2_perception = perception_with_handle(frame, "tire_2")
-    tire3_perception = perception_with_handle(frame, "tire_3")
-    tire4_perception = perception_with_handle(frame, "tire_4")
-    tire5_perception = perception_with_handle(frame, "tire_5")
-    tire6_perception = perception_with_handle(frame, "tire_6")
-    tire7_perception = perception_with_handle(frame, "tire_7")
+    truck_perception = perception_with_handle(frame, "**truck_0")
+    flatbed_perception = perception_with_handle(frame, "**flatbed_0")
+    tire0_perception = perception_with_handle(frame, "**tire_0")
+    tire1_perception = perception_with_handle(frame, "**tire_1")
+    tire2_perception = perception_with_handle(frame, "**tire_2")
+    tire3_perception = perception_with_handle(frame, "**tire_3")
+    tire4_perception = perception_with_handle(frame, "**tire_4")
+    tire5_perception = perception_with_handle(frame, "**tire_5")
+    tire6_perception = perception_with_handle(frame, "**tire_6")
+    tire7_perception = perception_with_handle(frame, "**tire_7")
     blue_options = COLORS_TO_RGBS[BLUE]
     blue_perceptions = [RgbColorPerception(r, g, b) for r, g, b in blue_options]
     red_options = COLORS_TO_RGBS[RED]
@@ -781,10 +781,10 @@ def test_subobject_perception_has_appropriate_properties():
     property_assertions = frame.property_assertions
 
     leg_perceptions = [
-        perception_with_handle(frame, "(furniture) leg_0"),
-        perception_with_handle(frame, "(furniture) leg_1"),
-        perception_with_handle(frame, "(furniture) leg_2"),
-        perception_with_handle(frame, "(furniture) leg_3"),
+        perception_with_handle(frame, "**(furniture) leg_0"),
+        perception_with_handle(frame, "**(furniture) leg_1"),
+        perception_with_handle(frame, "**(furniture) leg_2"),
+        perception_with_handle(frame, "**(furniture) leg_3"),
     ]
     assert all(
         HasBinaryProperty(leg_perception, INANIMATE) in property_assertions
@@ -809,7 +809,7 @@ def test_object_not_on_ground():
     )
     frame = perception.frames[0]
     relations = frame.relations
-    table_perception = perception_with_handle(frame, "table_0")
+    table_perception = perception_with_handle(frame, "**table_0")
     ground_perception = perception_with_handle(frame, "the ground")
     assert not any(
         relation.relation_type == IN_REGION
