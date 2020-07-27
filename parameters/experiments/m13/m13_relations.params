@@ -1,0 +1,7 @@
+_includes:
+   - "../../root.params"
+   - "m13.params"
+
+experiment: 'm13-relations'
+curriculum: 'm13-relations'
+learner: 'integrated-learner-recognizer'

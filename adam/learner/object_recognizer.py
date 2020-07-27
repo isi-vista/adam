@@ -35,6 +35,10 @@ from adam.perception import (
     ObjectPerception,
 )
 from adam.perception.deprecated import LanguageAlignedPerception
+from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
+    GAILA_PHASE_1_PERCEPTION_GENERATOR,
+    HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
+)
 from adam.perception.perception_graph import (
     AnyObjectPerception,
     ENTIRE_SCENE,
@@ -65,7 +69,8 @@ _LIST_OF_PERCEIVED_PATTERNS = immutableset(
     (
         node.handle,
         PerceptionGraphPattern.from_schema(
-            first(GAILA_PHASE_1_ONTOLOGY.structural_schemata(node))
+            first(GAILA_PHASE_1_ONTOLOGY.structural_schemata(node)),
+            perception_generator=GAILA_PHASE_1_PERCEPTION_GENERATOR,
         ),
     )
     for node in PHASE_1_CURRICULUM_OBJECTS
@@ -199,6 +204,8 @@ class ObjectRecognizer:
         determiners: Iterable[str],
         ontology: Ontology,
         language_mode: LanguageMode,
+        *,
+        perception_generator: HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
     ) -> "ObjectRecognizer":
         ontology_types_to_concepts = {
             obj_type: ObjectConcept(obj_type.handle) for obj_type in ontology_types
@@ -209,7 +216,9 @@ class ObjectRecognizer:
                 immutabledict(
                     (
                         concept,
-                        PerceptionGraphPattern.from_ontology_node(obj_type, ontology),
+                        PerceptionGraphPattern.from_ontology_node(
+                            obj_type, ontology, perception_generator=perception_generator
+                        ),
                     )
                     for (obj_type, concept) in ontology_types_to_concepts.items()
                 )
