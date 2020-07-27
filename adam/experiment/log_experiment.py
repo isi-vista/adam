@@ -184,7 +184,7 @@ def learner_factory_from_params(
                 lexicon_entry_threshold=0.7,
                 rng=rng,
                 smoothing_parameter=0.002,
-                ontology=GAILA_PHASE_1_ONTOLOGY,
+                ontology=GAILA_PHASE_2_ONTOLOGY,
                 language_mode=language_mode,
                 rank_gaze_higher=True,
             )
