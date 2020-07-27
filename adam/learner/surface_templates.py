@@ -6,7 +6,8 @@ from typing import List, Mapping, Optional, Tuple, Union
 from more_itertools import quantify
 
 from adam.language import TokenSequenceLinguisticDescription
-from adam.language_specific.english import ENGLISH_MASS_NOUNS
+
+# from adam.language_specific.english import ENGLISH_MASS_NOUNS
 from adam.learner.language_mode import LanguageMode
 from adam.semantics import ObjectSemanticNode, SyntaxSemanticsVariable
 from attr import attrib, attrs

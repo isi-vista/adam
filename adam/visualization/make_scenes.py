@@ -29,10 +29,7 @@ from typing import (
 import numpy as np
 
 # consider refactoring away this dependency
-from panda3d.core import (
-    LPoint3f,
-    NodePath,
-)  # pylint: disable=no-name-in-module; pylint: disable=no-name-in-module
+from panda3d.core import LPoint3f, NodePath  # pylint: disable=no-name-in-module
 
 import attr
 from adam.curriculum.phase1_curriculum import Phase1InstanceGroup

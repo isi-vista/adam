@@ -18,7 +18,7 @@ from typing import Dict, List, Optional, Tuple
 
 from direct.gui.OnscreenText import OnscreenText  # pylint: disable=no-name-in-module
 from direct.showbase.ShowBase import ShowBase  # pylint: disable=no-name-in-module
-from panda3d.core import (
+from panda3d.core import (  # pylint: disable=no-name-in-module
     AmbientLight,
     AntialiasAttrib,
     DirectionalLight,
@@ -28,11 +28,8 @@ from panda3d.core import (
     NodePath,
     PointLight,
     TextNode,
-)  # pylint: disable=no-name-in-module; pylint: disable=no-name-in-module; pylint:
+)
 
-# disable=no-name-in-module; pylint: disable=no-name-in-module; pylint:
-# disable=no-name-in-module; pylint: disable=no-name-in-module; pylint:
-# disable=no-name-in-module; pylint: disable=no-name-in-module; pylint: disable=no-name-in-module
 from torch import Tensor
 
 from adam.perception.developmental_primitive_perception import RgbColorPerception

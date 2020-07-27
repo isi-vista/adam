@@ -3002,8 +3002,8 @@ def build_gaila_phase1_object_curriculum(
 
 
 def build_gaila_plurals_curriculum(
-    num_samples: Optional[int],
-    num_noise_objects: Optional[int],
+    num_samples: Optional[int],  # pylint: disable=unused-argument
+    num_noise_objects: Optional[int],  # pylint: disable=unused-argument
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
