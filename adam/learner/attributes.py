@@ -1,5 +1,6 @@
 from abc import ABC
-from typing import AbstractSet, Union, Optional
+
+from typing import AbstractSet, Union, Optional, Tuple
 from adam.language import LinguisticDescription
 from adam.learner import LearningExample
 from adam.learner.language_mode import LanguageMode
@@ -37,7 +38,7 @@ from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
 from adam.perception.perception_graph import PerceptionGraph
-from adam.semantics import AttributeConcept, ObjectSemanticNode
+from adam.semantics import AttributeConcept, ObjectSemanticNode, SemanticNode
 from attr import attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import immutabledict, immutableset, immutablesetmultidict
@@ -121,6 +122,13 @@ class AbstractAttributeTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                 for e in bound_surface_template.surface_template.elements
             )
         )
+
+    def _enrich_post_process(
+        self,
+        perception_graph_after_matching: PerceptionGraph,
+        immutable_new_nodes: AbstractSet[SemanticNode],
+    ) -> Tuple[PerceptionGraph, AbstractSet[SemanticNode]]:
+        return perception_graph_after_matching, immutable_new_nodes
 
 
 @attrs

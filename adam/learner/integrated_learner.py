@@ -2,8 +2,7 @@ import itertools
 import logging
 from itertools import chain, combinations
 from pathlib import Path
-from typing import AbstractSet, Iterable, Iterator, Mapping, Optional, Tuple, List
-from more_itertools import flatten, one
+from typing import AbstractSet, Iterator, Mapping, Optional, Tuple, List, Union
 
 from adam.language import LinguisticDescription, TokenSequenceLinguisticDescription
 from adam.language_specific.english import ENGLISH_BLOCK_DETERMINERS
@@ -13,6 +12,7 @@ from adam.learner.alignments import (
     LanguagePerceptionSemanticAlignment,
     PerceptionSemanticAlignment,
 )
+from adam.learner.functional_learner import FunctionalLearner
 from adam.learner.language_mode import LanguageMode
 from adam.learner.surface_templates import MASS_NOUNS, SLOT1
 from adam.learner.template_learner import TemplateLearner
@@ -23,21 +23,15 @@ from adam.perception.developmental_primitive_perception import (
 from adam.perception.perception_graph import PerceptionGraph
 from adam.semantics import (
     ActionSemanticNode,
-    AttributeSemanticNode,
     ObjectSemanticNode,
     RelationSemanticNode,
-    SemanticNode,
     GROUND_OBJECT_CONCEPT,
+    LearnerSemantics,
+    FunctionalObjectConcept,
 )
 from attr import attrib, attrs
 from attr.validators import instance_of, optional
-from immutablecollections import (
-    ImmutableSet,
-    ImmutableSetMultiDict,
-    immutabledict,
-    immutablesetmultidict,
-)
-from immutablecollections.converter_utils import _to_immutableset
+from immutablecollections import immutabledict
 
 
 class LanguageLearnerNew:
@@ -73,6 +67,9 @@ class IntegratedTemplateLearner(
 
     action_learner: Optional[TemplateLearner] = attrib(
         validator=optional(instance_of(TemplateLearner)), default=None
+    )
+    functional_learner: Optional[FunctionalLearner] = attrib(
+        validator=optional(instance_of(FunctionalLearner)), default=None
     )
 
     _max_attributes_per_word: int = attrib(validator=instance_of(int), default=3)
@@ -139,6 +136,14 @@ class IntegratedTemplateLearner(
                 )
         if learning_example.perception.is_dynamic() and self.action_learner:
             self.action_learner.learn_from(current_learner_state)
+            current_learner_state = self.action_learner.enrich_during_learning(
+                current_learner_state
+            )
+
+            if self.functional_learner:
+                self.functional_learner.learn_from(
+                    current_learner_state, observation_num=observation_num
+                )
 
     def describe(
         self, perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]
@@ -164,15 +169,21 @@ class IntegratedTemplateLearner(
             cur_description_state = self.action_learner.enrich_during_description(
                 cur_description_state
             )
-        return self._linguistic_descriptions_from_semantics(
-            cur_description_state.semantic_nodes
-        )
+
+            if self.functional_learner:
+                cur_description_state = self.functional_learner.enrich_during_description(
+                    cur_description_state
+                )
+        return self._linguistic_descriptions_from_semantics(cur_description_state)
 
     def _linguistic_descriptions_from_semantics(
-        self, semantic_nodes: AbstractSet[SemanticNode]
+        self, description_state: PerceptionSemanticAlignment
     ) -> Mapping[LinguisticDescription, float]:
 
-        learner_semantics = LearnerSemantics.from_nodes(semantic_nodes)
+        learner_semantics = LearnerSemantics.from_nodes(
+            description_state.semantic_nodes,
+            concept_map=description_state.functional_concept_to_object_concept,
+        )
         ret = []
         if self.action_learner:
             ret.extend(
@@ -236,7 +247,7 @@ class IntegratedTemplateLearner(
             return cur_string
 
     def _instantiate_object(
-        self, object_node: ObjectSemanticNode, learner_semantics: "LearnerSemantics"
+        self, object_node: ObjectSemanticNode, learner_semantics: LearnerSemantics
     ) -> Iterator[Tuple[str, ...]]:
 
         # For now, we assume the order in which modifiers is expressed is arbitrary.
@@ -253,7 +264,18 @@ class IntegratedTemplateLearner(
         # See https://github.com/isi-vista/adam/issues/794 .
         # relations_for_object = learner_semantics.objects_to_relation_in_slot1[object_node]
 
-        for template in self.object_learner.templates_for_concept(object_node.concept):
+        if (
+            isinstance(object_node.concept, FunctionalObjectConcept)
+            and object_node.concept
+            in learner_semantics.functional_concept_to_object_concept.keys()
+        ):
+            concept = learner_semantics.functional_concept_to_object_concept[
+                object_node.concept
+            ]
+        else:
+            concept = object_node.concept
+
+        for template in self.object_learner.templates_for_concept(concept):
 
             cur_string = template.instantiate(
                 template_variable_to_filler=immutabledict()
@@ -280,10 +302,11 @@ class IntegratedTemplateLearner(
                                     template_variable_to_filler={SLOT1: cur_string}
                                 ).as_token_sequence(),
                             )
+
             yield self._add_determiners(object_node, cur_string)
 
     def _instantiate_relation(
-        self, relation_node: RelationSemanticNode, learner_semantics: "LearnerSemantics"
+        self, relation_node: RelationSemanticNode, learner_semantics: LearnerSemantics
     ) -> Iterator[Tuple[str, ...]]:
         if not self.relation_learner:
             raise RuntimeError("Cannot instantiate relations without a relation learner")
@@ -306,19 +329,22 @@ class IntegratedTemplateLearner(
                 ).as_token_sequence()
 
     def _instantiate_action(
-        self, action_node: ActionSemanticNode, learner_semantics: "LearnerSemantics"
+        self, action_node: ActionSemanticNode, learner_semantics: LearnerSemantics
     ) -> Iterator[Tuple[str, ...]]:
         if not self.action_learner:
             raise RuntimeError("Cannot instantiate an action without an action learner")
-        slots_to_instantiations = {
-            slot: list(self._instantiate_object(slot_filler, learner_semantics))
-            for (slot, slot_filler) in action_node.slot_fillings.items()
-        }
-        slot_order = tuple(slots_to_instantiations.keys())
 
         for action_template in self.action_learner.templates_for_concept(
             action_node.concept
         ):
+            # TODO: Handle instantiate objects returning no result from functional learner
+            # If that happens we should break from instantiating this utterance
+            slots_to_instantiations = {
+                slot: list(self._instantiate_object(slot_filler, learner_semantics))
+                for (slot, slot_filler) in action_node.slot_fillings.items()
+            }
+            slot_order = tuple(slots_to_instantiations.keys())
+
             all_possible_slot_fillings = itertools.product(
                 *slots_to_instantiations.values()
             )
@@ -350,80 +376,6 @@ class IntegratedTemplateLearner(
             valid_sub_learners.append(self.relation_learner)
         if self.action_learner:
             valid_sub_learners.append(self.action_learner)
+        if self.functional_learner:
+            valid_sub_learners.append(self.functional_learner)
         return valid_sub_learners
-
-
-@attrs(frozen=True)
-class LearnerSemantics:
-    """
-    Represent's the learner's semantic (rather than perceptual) understanding of a situation.
-
-    The learner is assumed to view the situation as a collection of *objects* which possess
-    *attributes*, have *relations* to one another, and serve as the arguments of *actions*.
-    """
-
-    objects: ImmutableSet[ObjectSemanticNode] = attrib(converter=_to_immutableset)
-    attributes: ImmutableSet[AttributeSemanticNode] = attrib(converter=_to_immutableset)
-    relations: ImmutableSet[RelationSemanticNode] = attrib(converter=_to_immutableset)
-    actions: ImmutableSet[ActionSemanticNode] = attrib(converter=_to_immutableset)
-
-    objects_to_attributes: ImmutableSetMultiDict[
-        ObjectSemanticNode, AttributeSemanticNode
-    ] = attrib(init=False)
-    objects_to_relation_in_slot1: ImmutableSetMultiDict[
-        ObjectSemanticNode, RelationSemanticNode
-    ] = attrib(init=False)
-    objects_to_actions: ImmutableSetMultiDict[
-        ObjectSemanticNode, ActionSemanticNode
-    ] = attrib(init=False)
-
-    @staticmethod
-    def from_nodes(semantic_nodes: Iterable[SemanticNode]) -> "LearnerSemantics":
-        return LearnerSemantics(
-            objects=[
-                node for node in semantic_nodes if isinstance(node, ObjectSemanticNode)
-            ],
-            attributes=[
-                node for node in semantic_nodes if isinstance(node, AttributeSemanticNode)
-            ],
-            relations=[
-                node for node in semantic_nodes if isinstance(node, RelationSemanticNode)
-            ],
-            actions=[
-                node for node in semantic_nodes if isinstance(node, ActionSemanticNode)
-            ],
-        )
-
-    @objects_to_attributes.default
-    def _init_objects_to_attributes(
-        self
-    ) -> ImmutableSetMultiDict[ObjectSemanticNode, AttributeSemanticNode]:
-        return immutablesetmultidict(
-            (one(attribute.slot_fillings.values()), attribute)
-            for attribute in self.attributes
-        )
-
-    @objects_to_relation_in_slot1.default
-    def _init_objects_to_relations(
-        self
-    ) -> ImmutableSetMultiDict[ObjectSemanticNode, AttributeSemanticNode]:
-        return immutablesetmultidict(
-            flatten(
-                [
-                    (slot_filler, relation)
-                    for slot_filler in relation.slot_fillings.values()
-                ]
-                for relation in self.relations
-            )
-        )
-
-    @objects_to_actions.default
-    def _init_objects_to_actions(
-        self
-    ) -> ImmutableSetMultiDict[ObjectSemanticNode, AttributeSemanticNode]:
-        return immutablesetmultidict(
-            flatten(
-                [(slot_filler, action) for slot_filler in action.slot_fillings.values()]
-                for action in self.actions
-            )
-        )

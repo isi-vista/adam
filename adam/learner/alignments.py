@@ -8,9 +8,15 @@ from adam.language import LinguisticDescription
 from adam.learner.language_mode import LanguageMode
 from adam.learner.surface_templates import SurfaceTemplate
 from adam.perception.perception_graph import PerceptionGraph
-from adam.semantics import ObjectSemanticNode, SemanticNode, SyntaxSemanticsVariable
+from adam.semantics import (
+    ObjectSemanticNode,
+    SemanticNode,
+    SyntaxSemanticsVariable,
+    FunctionalObjectConcept,
+    ObjectConcept,
+)
 from attr import attrib, attrs
-from attr.validators import deep_iterable, instance_of
+from attr.validators import deep_iterable, instance_of, deep_mapping
 from immutablecollections import (
     ImmutableDict,
     ImmutableSet,
@@ -19,7 +25,7 @@ from immutablecollections import (
     immutableset,
     immutablesetmultidict,
 )
-from immutablecollections.converter_utils import _to_immutableset
+from immutablecollections.converter_utils import _to_immutableset, _to_immutabledict
 from vistautils.span import Span
 
 
@@ -149,12 +155,17 @@ class LanguageConceptAlignment:
                 if filler_tokens:
                     slots_to_spans.append((slot, filler_tokens))
                 else:
-                    raise RuntimeError(
-                        f"For semantic node {new_semantic_node}, its slot {slot} is "
-                        f"occupied by {filler}, but we don't know how to align "
-                        f"that filler to tokens. Known alignments are: "
-                        f"{self.node_to_language_span}"
-                    )
+                    # If we hit this condition we just want to fail to updated
+                    # Our language alignment but not bail on enrichment entirely
+                    # So that the semantics can still learn something.
+                    # We used to crash here, so that error message is below.
+                    break
+                    # raise RuntimeError(
+                    #    f"For semantic node {new_semantic_node}, its slot {slot} is "
+                    #    f"occupied by {filler}, but we don't know how to align "
+                    #    f"that filler to tokens. Known alignments are: "
+                    #    f"{self.node_to_language_span}"
+                    # )
 
             covered_token_span = surface_template.match_against_tokens(
                 self.language.as_token_sequence(),
@@ -313,6 +324,15 @@ class PerceptionSemanticAlignment:
     semantic_nodes: ImmutableSet[SemanticNode] = attrib(
         converter=_to_immutableset, validator=deep_iterable(instance_of(SemanticNode))
     )
+    functional_concept_to_object_concept: ImmutableDict[
+        FunctionalObjectConcept, ObjectConcept
+    ] = attrib(
+        converter=_to_immutabledict,
+        validator=deep_mapping(
+            instance_of(FunctionalObjectConcept), instance_of(ObjectConcept)
+        ),
+        default=immutabledict(),
+    )
 
     @staticmethod
     def create_unaligned(
@@ -330,6 +350,15 @@ class PerceptionSemanticAlignment:
                 perception_graph=new_graph,
                 semantic_nodes=chain(self.semantic_nodes, new_nodes),
             )
+
+    def copy_with_mapping(
+        self, *, mapping: Mapping[FunctionalObjectConcept, ObjectConcept]
+    ) -> "PerceptionSemanticAlignment":
+        return PerceptionSemanticAlignment(
+            perception_graph=self.perception_graph,
+            semantic_nodes=self.semantic_nodes,
+            functional_concept_to_object_concept=mapping,
+        )
 
     def __attrs_post_init__(self) -> None:
         for node in self.perception_graph._graph:  # pylint:disable=protected-access

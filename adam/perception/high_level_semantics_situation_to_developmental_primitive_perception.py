@@ -217,7 +217,7 @@ class _ObjectHandleGenerator:
         # but this should be small enough not to matter.
         subscript = self._object_handles_seen.count(unsubscripted_handle)
         self._object_handles_seen.append(unsubscripted_handle)
-        return f"{unsubscripted_handle}_{subscript}"
+        return f"**{unsubscripted_handle}_{subscript}"
 
 
 @attrs(frozen=True, slots=True)

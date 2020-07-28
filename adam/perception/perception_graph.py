@@ -1779,7 +1779,9 @@ class AnyObjectPerception(NodePredicate):
         return f"*obj{debug_handle_str}"
 
     def is_equivalent(self, other) -> bool:
-        return isinstance(other, AnyObjectPerception)
+        return isinstance(other, AnyObjectPerception) or isinstance(
+            other, ObjectSemanticNode
+        )
 
     def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
         return isinstance(predicate_node, AnyObjectPerception)
