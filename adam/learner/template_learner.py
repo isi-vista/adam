@@ -2,6 +2,8 @@ import logging
 
 from attr.validators import instance_of
 from abc import ABC, abstractmethod
+
+from networkx import DiGraph
 from typing import AbstractSet, Iterable, List, Mapping, Sequence, Tuple, Union, cast, Set
 
 from more_itertools import one
@@ -33,7 +35,13 @@ from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
 from adam.perception.perception_graph import PerceptionGraph, PerceptionGraphPatternMatch
-from adam.semantics import Concept, ObjectConcept, ObjectSemanticNode, SemanticNode
+from adam.semantics import (
+    Concept,
+    ObjectConcept,
+    ObjectSemanticNode,
+    SemanticNode,
+    FunctionalObjectConcept,
+)
 from attr import attrib, attrs, evolve
 from immutablecollections import immutabledict, immutableset
 from vistautils.preconditions import check_state
@@ -322,6 +330,10 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
                         one(self.templates_for_concept(semantic_node.concept)),
                     )
                     for semantic_node in newly_recognized_semantic_nodes
+                    # We make an exception for a specific type of ObjectConcept which
+                    # Indicates that we know this root is an object but we don't know
+                    # how to refer to it linguisticly
+                    if not isinstance(semantic_node.concept, FunctionalObjectConcept)
                 ),
                 filter_out_duplicate_alignments=True,
                 # It's okay if we recognize objects we know how to describe,
@@ -337,6 +349,16 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
         # The other information returned by _enrich_common is only needed by
         # enrich_during_learning.
         return self._enrich_common(perception_semantic_alignment)[0]
+
+    @abstractmethod
+    def _enrich_post_process(
+        self,
+        perception_graph_after_matching: PerceptionGraph,
+        immutable_new_nodes: AbstractSet[SemanticNode],
+    ) -> Tuple[PerceptionGraph, AbstractSet[SemanticNode]]:
+        """
+        Allows a learner to do specific enrichment post-processing if needed
+        """
 
     def _enrich_common(
         self, perception_semantic_alignment: PerceptionSemanticAlignment
@@ -439,11 +461,19 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
         else:
             immutable_new_nodes = immutableset(node for (node, _) in match_to_score)
 
+        (
+            perception_graph_after_post_processing,
+            nodes_after_post_processing,
+        ) = self._enrich_post_process(
+            perception_graph_after_matching, immutable_new_nodes
+        )
+
         return (
             perception_semantic_alignment.copy_with_updated_graph_and_added_nodes(
-                new_graph=perception_graph_after_matching, new_nodes=immutable_new_nodes
+                new_graph=perception_graph_after_post_processing,
+                new_nodes=nodes_after_post_processing,
             ),
-            immutable_new_nodes,
+            nodes_after_post_processing,
         )
 
     @abstractmethod

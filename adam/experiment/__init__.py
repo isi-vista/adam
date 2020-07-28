@@ -282,12 +282,15 @@ def execute_experiment(
             )
 
     logging.info("Performing tests")
+    num_test_observations = 0
     for test_instance_group in experiment.test_instance_groups:
         for (
             situation,
             test_instance_language,
             test_instance_perception,
         ) in test_instance_group.instances():
+            logging.info(f"Test Description: {num_test_observations}")
+            num_test_observations += 1
             descriptions_from_learner = learner.describe(test_instance_perception)
             for test_observer in experiment.test_observers:
                 test_observer.observe(

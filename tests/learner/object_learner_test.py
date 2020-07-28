@@ -149,7 +149,13 @@ def run_subset_learner_for_object(
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
     "learner",
-    [pytest.mark.skip(subset_object_learner_factory), integrated_learner_factory],
+    [
+        pytest.param(
+            subset_object_learner_factory,
+            marks=pytest.mark.skip("No Longer Need to Test Old Learners"),
+        ),
+        integrated_learner_factory,
+    ],
 )
 def test_subset_learner(language_mode, learner):
     run_subset_learner_for_object(

@@ -1670,29 +1670,48 @@ def _make_put_on_speaker_addressee_body_part_curriculum(
     )
 
 
-def make_drink_template(noise_objects: Optional[int]) -> Phase1SituationTemplate:
-    object_0 = standard_object(
-        "object_0",
-        required_properties=[HOLLOW],
-        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
-    )
-    liquid_0 = object_variable("liquid_0", required_properties=[LIQUID])
-    person_0 = standard_object(
-        "person_0", PERSON, banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
-    )
+def make_drink_template(
+    agent: TemplateObjectVariable,
+    liquid: TemplateObjectVariable,
+    container: TemplateObjectVariable,
+    noise_objects: Optional[int],
+) -> Phase1SituationTemplate:
     background = make_noise_objects(noise_objects)
 
     return Phase1SituationTemplate(
         "drink",
-        salient_object_variables=[liquid_0, person_0],
+        salient_object_variables=[agent, liquid],
         background_object_variables=background,
         actions=[
             Action(
                 DRINK,
-                argument_roles_to_fillers=[(AGENT, person_0), (THEME, liquid_0)],
-                auxiliary_variable_bindings=[(DRINK_CONTAINER_AUX, object_0)],
+                argument_roles_to_fillers=[(AGENT, agent), (THEME, liquid)],
+                auxiliary_variable_bindings=[(DRINK_CONTAINER_AUX, container)],
             )
         ],
+    )
+
+
+def make_drink_from_template(
+    agent: TemplateObjectVariable,
+    liquid: TemplateObjectVariable,
+    container: TemplateObjectVariable,
+    noise_objects: Optional[int],
+) -> Phase1SituationTemplate:
+    background = make_noise_objects(noise_objects)
+
+    return Phase1SituationTemplate(
+        "drink-from",
+        salient_object_variables=[agent, liquid, container],
+        background_object_variables=background,
+        actions=[
+            Action(
+                DRINK,
+                argument_roles_to_fillers=[(AGENT, agent), (THEME, liquid)],
+                auxiliary_variable_bindings=[(DRINK_CONTAINER_AUX, container)],
+            )
+        ],
+        asserted_always_relations=[inside(liquid, container)],
     )
 
 
@@ -1703,22 +1722,39 @@ def _make_drink_curriculum(
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
 ) -> Phase1InstanceGroup:
+    object_0 = standard_object(
+        "object_0",
+        required_properties=[HOLLOW, PERSON_CAN_HAVE],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
+    liquid_0 = object_variable("liquid_0", required_properties=[LIQUID])
+    person_0 = standard_object(
+        "person_0", PERSON, banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
+    )
     return phase1_instances(
         "drinking",
         chain(
             *[
                 sampled(
-                    make_drink_template(noise_objects),
+                    make_drink_template(person_0, liquid_0, object_0, noise_objects),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples,
                 )
                 if num_samples
                 else all_possible(
-                    make_drink_template(noise_objects),
+                    make_drink_template(person_0, liquid_0, object_0, noise_objects),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
-                )
+                ),
+                sampled(
+                    make_drink_from_template(
+                        person_0, liquid_0, object_0, noise_objects=noise_objects
+                    ),
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    max_to_sample=num_samples if num_samples else 5,
+                ),
             ]
         ),
         language_generator=language_generator,
@@ -1777,6 +1813,76 @@ def _make_eat_curriculum(
     )
 
 
+def make_sit_template_intransitive(
+    agent: TemplateObjectVariable,
+    sit_surface: TemplateObjectVariable,
+    noise_objects: Optional[int],
+    *,
+    syntax_hints: bool,
+    surface: bool,
+) -> Phase1SituationTemplate:
+    computed_background = [sit_surface]
+    computed_background.extend(make_noise_objects(noise_objects))
+    return Phase1SituationTemplate(
+        f"{agent.handle}-sit-intransitive",
+        salient_object_variables=[agent],
+        background_object_variables=computed_background,
+        actions=[
+            Action(
+                SIT,
+                argument_roles_to_fillers=[(AGENT, agent)],
+                auxiliary_variable_bindings=[
+                    (
+                        SIT_GOAL,
+                        Region(
+                            sit_surface,
+                            direction=GRAVITATIONAL_UP,
+                            distance=EXTERIOR_BUT_IN_CONTACT,
+                        ),
+                    ),
+                    (SIT_THING_SAT_ON, sit_surface),
+                ],
+            )
+        ],
+        constraining_relations=[bigger_than(sit_surface, agent)] if surface else [],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER] if syntax_hints else [],
+    )
+
+
+def make_sit_transitive(
+    agent: TemplateObjectVariable,
+    sit_surface: TemplateObjectVariable,
+    noise_objects: Optional[int],
+    *,
+    syntax_hints: bool,
+    surface: bool,
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        f"{agent.handle}-sit-on-{sit_surface.handle}-transitive",
+        salient_object_variables=[agent, sit_surface],
+        background_object_variables=make_noise_objects(noise_objects),
+        actions=[
+            Action(
+                SIT,
+                argument_roles_to_fillers=[
+                    (AGENT, agent),
+                    (
+                        GOAL,
+                        Region(
+                            sit_surface,
+                            direction=GRAVITATIONAL_UP,
+                            distance=EXTERIOR_BUT_IN_CONTACT,
+                        ),
+                    ),
+                ],
+                auxiliary_variable_bindings=[(SIT_THING_SAT_ON, sit_surface)],
+            )
+        ],
+        constraining_relations=[bigger_than(sit_surface, agent)] if surface else [],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER] if syntax_hints else [],
+    )
+
+
 def make_sit_templates(noise_objects: Optional[int]) -> Iterable[Phase1SituationTemplate]:
     sitter = standard_object(
         "sitter_0",
@@ -1794,75 +1900,25 @@ def make_sit_templates(noise_objects: Optional[int]) -> Iterable[Phase1Situation
     seat = standard_object(
         "sitting-surface", INANIMATE_OBJECT, required_properties=[CAN_BE_SAT_ON_BY_PEOPLE]
     )
-    background = make_noise_objects(noise_objects)
 
     # we need two groups of templates because in general something can sit on
     # anything bigger than itself which has a surface,
     # but people also sit in chairs, etc., which are smaller than them.
-    sittee_to_contraints = (
-        (  # type: ignore
-            "-on-big-thing",
-            sit_surface,
-            [bigger_than(sit_surface, sitter)],
-        ),
-        ("-on-seat", seat, []),
-    )
-
-    syntax_hints_options = (
-        ("default", []),  # type: ignore
-        ("adverbial-mod", [USE_ADVERBIAL_PATH_MODIFIER]),
-    )
-
-    for (name, sittee, constraints) in sittee_to_contraints:
-        for (syntax_name, syntax_hints) in syntax_hints_options:
-            yield Phase1SituationTemplate(
-                f"sit-intransitive-{name}-{syntax_name}",
-                salient_object_variables=[sitter],
-                background_object_variables=background,
-                actions=[
-                    Action(
-                        SIT,
-                        argument_roles_to_fillers=[(AGENT, sitter)],
-                        auxiliary_variable_bindings=[
-                            (
-                                SIT_GOAL,
-                                Region(
-                                    sittee,
-                                    direction=GRAVITATIONAL_UP,
-                                    distance=EXTERIOR_BUT_IN_CONTACT,
-                                ),
-                            ),
-                            (SIT_THING_SAT_ON, sittee),
-                        ],
-                    )
-                ],
-                constraining_relations=constraints,
-                syntax_hints=syntax_hints,
+    for adverbial_mod in [True, False]:
+        for surface in [True, False]:
+            yield make_sit_template_intransitive(
+                sitter,
+                sit_surface if surface else seat,
+                noise_objects,
+                syntax_hints=adverbial_mod,
+                surface=surface,
             )
-
-            yield Phase1SituationTemplate(
-                f"sit-transitive-{name}-{syntax_name}",
-                salient_object_variables=[sitter, sittee],
-                background_object_variables=background,
-                actions=[
-                    Action(
-                        SIT,
-                        argument_roles_to_fillers=[
-                            (AGENT, sitter),
-                            (
-                                GOAL,
-                                Region(
-                                    sittee,
-                                    direction=GRAVITATIONAL_UP,
-                                    distance=EXTERIOR_BUT_IN_CONTACT,
-                                ),
-                            ),
-                        ],
-                        auxiliary_variable_bindings=[(SIT_THING_SAT_ON, sittee)],
-                    )
-                ],
-                constraining_relations=constraints,
-                syntax_hints=syntax_hints,
+            yield make_sit_transitive(
+                sitter,
+                sit_surface if surface else seat,
+                noise_objects,
+                syntax_hints=adverbial_mod,
+                surface=surface,
             )
 
 
