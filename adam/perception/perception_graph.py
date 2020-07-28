@@ -359,7 +359,7 @@ class PerceptionGraph(PerceptionGraphProtocol):
     def add_temporal_scopes_to_edges(
         digraph: DiGraph, temporal_scopes: Union[TemporalScope, Iterable[TemporalScope]]
     ) -> DiGraph:
-        """
+        r"""
         Modifies the given digraph in place, applying the given `TemporalScope`\ s to all edges.
         This new graph will be dynamic.
 

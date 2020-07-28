@@ -395,12 +395,13 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
                     f"Unable to try and match {concept} to {preprocessed_perception_graph} "
                     f"because both patterns must be static or dynamic"
                 )
-
         if not match_to_score:
             # Try to match against patterns being learned
             # only if no lexicalized pattern was matched.
             for (concept, graph_pattern, score) in self._fallback_templates():
-                match_template(concept=concept, pattern=graph_pattern, score=score)
+                # we may have multiple pattern hypotheses for a single concept, in which case we only want to identify the concept once
+                if not any(m[0].concept == concept for m in match_to_score):
+                    match_template(concept=concept, pattern=graph_pattern, score=score)
 
         perception_graph_after_matching = perception_semantic_alignment.perception_graph
 

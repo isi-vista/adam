@@ -188,7 +188,22 @@ def learner_factory_from_params(
                 ontology=GAILA_PHASE_2_ONTOLOGY,
                 language_mode=language_mode,
                 rank_gaze_higher=True,
-            )
+            ),
+            attribute_learner=SubsetAttributeLearnerNew(
+                ontology=GAILA_PHASE_2_ONTOLOGY,
+                beam_size=beam_size,
+                language_mode=language_mode,
+            ),
+            relation_learner=SubsetRelationLearnerNew(
+                ontology=GAILA_PHASE_2_ONTOLOGY,
+                beam_size=beam_size,
+                language_mode=language_mode,
+            ),
+            action_learner=SubsetVerbLearnerNew(
+                ontology=GAILA_PHASE_2_ONTOLOGY,
+                beam_size=beam_size,
+                language_mode=language_mode,
+            ),
         )
     elif learner_type == "object-subset":
         return lambda: SubsetObjectLearner(
