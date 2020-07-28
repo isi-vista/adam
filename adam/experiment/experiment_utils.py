@@ -1,18 +1,28 @@
 from itertools import repeat, chain
 from typing import Sequence, Optional
 import random
-from adam.curriculum.curriculum_utils import Phase1InstanceGroup
+from adam.curriculum.curriculum_utils import (
+    Phase1InstanceGroup,
+    PHASE1_CHOOSER_FACTORY,
+    phase1_instances,
+    standard_object,
+)
 from adam.curriculum.m6_curriculum import (
     M6_PREPOSITION_SUBCURRICULUM_GENERATORS,
     instantiate_subcurricula,
     M6_CURRICULUM_ALL_OBJECTS,
+)
+from adam.ontology import IS_SPEAKER, IS_ADDRESSEE, THING
+from adam.ontology.phase1_ontology import (
+    INANIMATE_OBJECT,
+    CAN_BE_SAT_ON_BY_PEOPLE,
+    ANIMATE,
 )
 from adam.ontology.phase2_ontology import GAILA_PHASE_1_ONTOLOGY, GAILA_PHASE_2_ONTOLOGY
 from adam.curriculum.phase1_curriculum import (
     _make_each_object_by_itself_curriculum,
     _make_put_on_speaker_addressee_body_part_curriculum,
     _make_generic_statements_curriculum,
-    _make_sit_curriculum,
     _make_drink_curriculum,
     make_sit_transitive,
     make_sit_template_intransitive,
@@ -20,9 +30,6 @@ from adam.curriculum.phase1_curriculum import (
 from adam.curriculum.pursuit_curriculum import make_simple_pursuit_curriculum
 from adam.language.dependency import LinearizedDependencyTree
 from adam.language.language_generator import LanguageGenerator
-from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
-    GAILA_M6_PERCEPTION_GENERATOR,
-)
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.situation.templates.phase1_templates import sampled
 from vistautils.parameters import Parameters
