@@ -19,7 +19,6 @@ from adam.curriculum.curriculum_utils import (
 from adam.ontology.phase1_ontology import (
     BIRD,
     BOX,
-    GAILA_PHASE_1_ONTOLOGY,
     BALL,
     CHAIR,
     TABLE,
@@ -31,7 +30,7 @@ from adam.ontology.phase1_ontology import (
 from adam.ontology.phase2_ontology import GAILA_PHASE_2_ONTOLOGY
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
-    GAILA_PHASE_1_PERCEPTION_GENERATOR,
+    GAILA_PHASE_2_PERCEPTION_GENERATOR,
 )
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
@@ -53,7 +52,7 @@ def make_simple_pursuit_curriculum(
     *,
     target_objects=[BALL, CHAIR, MOM, DAD, BABY, TABLE, DOG, BIRD, BOX],
     num_objects_in_instance: int = 3,
-    perception_generator: HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator = GAILA_PHASE_1_PERCEPTION_GENERATOR,
+    perception_generator: HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator = GAILA_PHASE_2_PERCEPTION_GENERATOR,
     add_gaze: bool = False,
 ) -> Phase1InstanceGroup:
     """
@@ -128,7 +127,7 @@ def make_simple_pursuit_curriculum(
                 noise_template,
                 max_to_sample=num_noise_instances,
                 chooser=PHASE1_CHOOSER_FACTORY(),
-                ontology=GAILA_PHASE_1_ONTOLOGY,
+                ontology=GAILA_PHASE_2_ONTOLOGY,
             ),
             perception_generator=perception_generator,
             language_generator=language_generator,
