@@ -20,7 +20,7 @@ from adam.ontology.phase1_ontology import (
     CAN_BE_SAT_ON_BY_PEOPLE,
     ANIMATE,
 )
-from adam.ontology.phase2_ontology import GAILA_PHASE_1_ONTOLOGY, GAILA_PHASE_2_ONTOLOGY
+from adam.ontology.phase2_ontology import GAILA_PHASE_1_ONTOLOGY
 
 from adam.curriculum.phase1_curriculum import (
     _make_each_object_by_itself_curriculum,

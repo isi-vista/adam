@@ -45,7 +45,7 @@ from adam.curriculum.preposition_curriculum import make_prepositions_curriculum
 from adam.curriculum.verbs_with_dynamic_prepositions_curriculum import (
     make_verb_with_dynamic_prepositions_curriculum,
 )
-from adam.language_specific.english.english_language_generator import IGNORE_COLORS
+
 from adam.ontology import THING
 from adam.ontology.phase1_ontology import (
     CHAIR,
@@ -54,22 +54,13 @@ from adam.ontology.phase1_ontology import (
     INANIMATE_OBJECT,
     HOLLOW,
     GAILA_PHASE_1_ONTOLOGY,
-    SIT,
     AGENT,
-    SIT_GOAL,
-    SIT_THING_SAT_ON,
-    GOAL,
     DRINK,
     LIQUID,
     PERSON,
     THEME,
     DRINK_CONTAINER_AUX,
     inside,
-)
-from adam.ontology.phase1_spatial_relations import (
-    Region,
-    GRAVITATIONAL_UP,
-    EXTERIOR_BUT_IN_CONTACT,
 )
 from adam.ontology.phase2_ontology import (
     CHAIR_2,
