@@ -28,6 +28,7 @@ from adam.ontology.phase1_ontology import (
     DAD,
     BABY,
 )
+from adam.ontology.phase2_ontology import GAILA_PHASE_2_ONTOLOGY
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
     GAILA_PHASE_1_PERCEPTION_GENERATOR,
@@ -104,7 +105,7 @@ def make_simple_pursuit_curriculum(
                     object_is_present_template,
                     max_to_sample=num_instances - num_noise_instances,
                     chooser=PHASE1_CHOOSER_FACTORY(),
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                    ontology=GAILA_PHASE_2_ONTOLOGY,
                 ),
                 perception_generator=perception_generator,
                 language_generator=language_generator,
