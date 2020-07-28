@@ -1,6 +1,5 @@
 import logging
 from typing import Callable, Optional, Mapping, Iterable, Tuple
-
 from adam.curriculum.curriculum_utils import Phase1InstanceGroup
 from adam.curriculum.imprecise_descriptions_curriculum import (
     make_imprecise_size_curriculum,
