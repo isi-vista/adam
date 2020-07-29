@@ -32,7 +32,6 @@ from adam.ontology.phase1_ontology import (
     contacts,
     above,
     GAILA_PHASE_1_ONTOLOGY,
-    GAILA_PHASE_1_SIZE_GRADES,
     SMALLER_THAN,
     BIGGER_THAN,
     _TIRE,

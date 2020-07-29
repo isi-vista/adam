@@ -3,7 +3,6 @@ import logging
 from attr.validators import instance_of
 from abc import ABC, abstractmethod
 
-from networkx import DiGraph
 from typing import AbstractSet, Iterable, List, Mapping, Sequence, Tuple, Union, cast, Set
 
 from more_itertools import one

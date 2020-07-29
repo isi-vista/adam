@@ -2,7 +2,7 @@ _includes:
    - "../../root.params"
    - "m13.params"
 
-experiment: 'pursuit-using-not-ablating-gaze'
+experiment: 'pursuit-ablating-gaze'
 curriculum: pursuit
 learner: pursuit-gaze
 pursuit:
@@ -16,7 +16,6 @@ pursuit-curriculum-params:
    num_noise_instances: 0
    num_objects_in_instance: 3
    add_gaze : True
-   ontology : phase1
    prob_given : 0.5
    prob_not_given : 0.15
 

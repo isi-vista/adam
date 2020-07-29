@@ -131,16 +131,17 @@ class AbstractObjectTemplateLearnerNew(AbstractTemplateLearnerNew):
         perception_graph_after_matching: PerceptionGraph,
         immutable_new_nodes: AbstractSet[SemanticNode],
     ) -> Tuple[PerceptionGraph, AbstractSet[SemanticNode]]:
-        object_root_nodes = immutableset(
+        object_root_nodes = immutableset(  # pylint:disable=protected-access
             node
-            for node in perception_graph_after_matching._graph.nodes
+            for node in perception_graph_after_matching._graph.nodes  # pylint:disable=protected-access
             if isinstance(node, ObjectPerception)
         )
         new_nodes = []
         perception_graph_after_processing = perception_graph_after_matching
         for object_root_node in object_root_nodes:
-            fake_subgraph = subgraph(
-                perception_graph_after_matching._graph, [object_root_node]
+            fake_subgraph = subgraph(  # pylint:disable=protected-access
+                perception_graph_after_matching._graph,  # pylint:disable=protected-access
+                [object_root_node],
             )
             fake_perception_graph = PerceptionGraph(
                 graph=fake_subgraph, dynamic=perception_graph_after_matching.dynamic
@@ -296,10 +297,10 @@ class ObjectPursuitLearner(AbstractPursuitLearner, AbstractObjectTemplateLearner
                     if not isinstance(neighbor, ObjectPerception):
                         other_nodes.append(neighbor)
 
-            subgraph = networkx_utils.subgraph(
+            generated_subgraph = networkx_utils.subgraph(
                 perception_as_digraph, all_object_perception_nodes + other_nodes
             )
-            meanings.append(PerceptionGraph(subgraph))
+            meanings.append(PerceptionGraph(generated_subgraph))
         logging.info(f"Got {len(meanings)} candidate meanings")
         return meanings
 
