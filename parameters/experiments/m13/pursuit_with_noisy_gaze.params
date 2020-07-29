@@ -2,7 +2,7 @@ _includes:
    - "../../root.params"
    - "m13.params"
 
-experiment: 'pursuit-using-not-ablating-gaze'
+experiment: 'pursuit-ablating-gaze'
 curriculum: pursuit
 learner: pursuit-gaze
 pursuit:
