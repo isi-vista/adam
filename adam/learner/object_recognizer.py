@@ -644,10 +644,11 @@ def extract_candidate_objects(
     return candidate_objects
 
 
-def _get_edge_label(
-    graph: DiGraph, source: PerceptionGraphNode, target: PerceptionGraphNode
-) -> EdgeLabel:
-    return graph.get_edge_data(source, target)["label"]
+# Old DiGraph Code
+# def _get_edge_label(
+#    graph: DiGraph, source: PerceptionGraphNode, target: PerceptionGraphNode
+# ) -> EdgeLabel:
+#    return graph.get_edge_data(source, target)["label"]
 
 
 def _get_root_object_perception(
@@ -686,9 +687,9 @@ def _add_external_properties_linked_to_root_object_perception(
     linked_properties_and_labels: List[Tuple[PerceptionGraphNode, EdgeLabel]] = []
     root_node = _get_root_object_perception(original_graph, matched_nodes)
     for succ in original_graph.successors(root_node):
-        edge_label = _get_edge_label(original_graph, root_node, succ)
-        if edge_equals_ignoring_temporal_scope(edge_label, HAS_PROPERTY_LABEL):
-            linked_properties_and_labels.append((succ, edge_label))
+        for edge in get_edges(original_graph, [root_node, succ], label="label"):
+            if edge_equals_ignoring_temporal_scope(edge.data, HAS_PROPERTY_LABEL):
+                linked_properties_and_labels.append((succ, edge.data))
     for (linked_property_node, edge_label) in linked_properties_and_labels:
         output_graph.add_edge(matched_object_node, linked_property_node, label=edge_label)
 
@@ -707,17 +708,17 @@ def _add_relationships_linked_to_root_object_perception(
 
     linked_properties_and_labels: List[Tuple[PerceptionGraphNode, EdgeLabel]] = []
     for pred in original_graph.predecessors(root_node):
-        edge_label = _get_edge_label(original_graph, pred, root_node)
-        if edge_equals_ignoring_temporal_scope(edge_label, HAS_PROPERTY_LABEL):
-            linked_properties_and_labels.append((pred, edge_label))
+        for edge in get_edges(original_graph, [pred, root_node], label="label"):
+            if edge_equals_ignoring_temporal_scope(edge.data, HAS_PROPERTY_LABEL):
+                linked_properties_and_labels.append((pred, edge.data))
     for (linked_property_node, edge_label) in linked_properties_and_labels:
         output_graph.add_edge(linked_property_node, matched_object_node, label=edge_label)
 
     linked_properties_and_labels.clear()
     for succ in original_graph.successors(root_node):
-        edge_label = _get_edge_label(original_graph, root_node, succ)
-        if edge_equals_ignoring_temporal_scope(edge_label, HAS_PROPERTY_LABEL):
-            linked_properties_and_labels.append((succ, edge_label))
+        for edge in get_edges(original_graph, [root_node, succ], label="label"):
+            if edge_equals_ignoring_temporal_scope(edge.data, HAS_PROPERTY_LABEL):
+                linked_properties_and_labels.append((succ, edge.data))
     for (linked_property_node, edge_label) in linked_properties_and_labels:
         output_graph.add_edge(matched_object_node, linked_property_node, label=edge_label)
 
@@ -781,9 +782,13 @@ def replace_match_with_object_graph_node(
                             # Prevent multiple `has-property` assertions to the same color node
                             # On a recognized object object
                             # Also prevent size relations from being inherited on root object.
-                            if matched_subgraph_node_successor[0] in external_properties matched_subgraph_node_successor[0] in (
-                        SMALLER_THAN,
-                        BIGGER_THAN,
+                            if matched_subgraph_node_successor[
+                                0
+                            ] in external_properties or matched_subgraph_node_successor[
+                                0
+                            ] in (
+                                SMALLER_THAN,
+                                BIGGER_THAN,
                             ):
                                 if (
                                     perception_digraph.degree(
@@ -819,7 +824,7 @@ def replace_match_with_object_graph_node(
             ):
                 for edge in get_edges(
                     perception_digraph,
-                    [matched_subgraph_node, matched_subgraph_node_predecessor],
+                    [matched_subgraph_node_predecessor, matched_subgraph_node],
                     label="label",
                 ):
                     edge_label = edge.data
@@ -829,16 +834,15 @@ def replace_match_with_object_graph_node(
                         if edge_equals_ignoring_temporal_scope(
                             edge_label, HAS_PROPERTY_LABEL
                         ):
-                            if isinstance(matched_subgraph_node_predecessor, ObjectSemanticNode):
+                            if isinstance(
+                                matched_subgraph_node_predecessor, ObjectSemanticNode
+                            ):
                                 prop = matched_subgraph_node_predecessor
                             else:
                                 prop = matched_subgraph_node_predecessor[0]
                             # Prevent multiple `has-property` assertions to the same color node
                             # On a recognized object
-                            if (
-                                prop
-                                in external_properties
-                            ):
+                            if prop in external_properties:
                                 if (
                                     perception_digraph.degree(
                                         matched_subgraph_node_predecessor
@@ -856,9 +860,7 @@ def replace_match_with_object_graph_node(
                                 )
                                 continue
                             else:
-                                external_properties.add(
-                                    prop
-                                )
+                                external_properties.add(prop)
 
                         perception_digraph.add_edge(
                             matched_subgraph_node_predecessor,
@@ -934,51 +936,59 @@ def replace_match_root_with_object_semantic_node(
         for matched_subgraph_node_successor in perception_digraph.successors(
             matched_subgraph_node
         ):
-            edge_label = _get_edge_label(
-                perception_digraph, matched_subgraph_node, matched_subgraph_node_successor
-            )
+            for edge in get_edges(
+                perception_digraph,
+                [matched_subgraph_node, matched_subgraph_node_successor],
+                label="label",
+            ):
+                edge_label = edge.data
 
-            # don't want to add edges which are internal to the matched sub-graph
-            if matched_subgraph_node_successor not in matched_subgraph_nodes:
-                if edge_equals_ignoring_temporal_scope(edge_label, HAS_PROPERTY_LABEL):
-                    # Prevent multiple `has-property` assertions to the same color node
-                    # On a recognized object
-                    if matched_subgraph_node_successor[
-                        0
-                    ] in external_properties or matched_subgraph_node_successor[0] in {
-                        SMALLER_THAN,
-                        BIGGER_THAN,
-                    }:
-                        if (
-                            perception_digraph.degree(matched_subgraph_node_successor)
-                            != 1
-                        ):
-                            raise_graph_exception(
-                                f"Node {matched_subgraph_node_successor} "
-                                f"appears to be a duplicate property node, "
-                                f"but has degree != 1",
-                                current_perception,
-                            )
-                        continue
-                    else:
-                        external_properties.add(matched_subgraph_node_successor[0])
+                # don't want to add edges which are internal to the matched sub-graph
+                if matched_subgraph_node_successor not in matched_subgraph_nodes:
+                    if edge_equals_ignoring_temporal_scope(
+                        edge_label, HAS_PROPERTY_LABEL
+                    ):
+                        # Prevent multiple `has-property` assertions to the same color node
+                        # On a recognized object
+                        if matched_subgraph_node_successor[
+                            0
+                        ] in external_properties or matched_subgraph_node_successor[
+                            0
+                        ] in {
+                            SMALLER_THAN,
+                            BIGGER_THAN,
+                        }:
+                            if (
+                                perception_digraph.degree(matched_subgraph_node_successor)
+                                != 1
+                            ):
+                                raise_graph_exception(
+                                    f"Node {matched_subgraph_node_successor} "
+                                    f"appears to be a duplicate property node, "
+                                    f"but has degree != 1",
+                                    current_perception,
+                                )
+                            continue
+                        else:
+                            external_properties.add(matched_subgraph_node_successor[0])
 
-                perception_digraph.add_edge(
-                    object_semantic_node,
-                    matched_subgraph_node_successor,
-                    label=edge_label,
-                )
+                    perception_digraph.add_edge(
+                        object_semantic_node,
+                        matched_subgraph_node_successor,
+                        label=edge_label,
+                    )
 
         # If there is an edge to the matched sub-graph from a node outside it,
         # also add an edge to the object match node from that node.
         for matched_subgraph_node_predecessor in perception_digraph.predecessors(
             matched_subgraph_node
         ):
-            edge_label = _get_edge_label(
+            for edge in get_edges(
                 perception_digraph,
-                matched_subgraph_node_predecessor,
-                matched_subgraph_node,
-            )
+                [matched_subgraph_node_predecessor, matched_subgraph_node],
+                label="label",
+            ):
+                edge_label = edge.data
 
             # don't want to add edges which are internal to the matched sub-graph
             if matched_subgraph_node_predecessor not in matched_subgraph_nodes:

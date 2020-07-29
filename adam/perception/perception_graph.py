@@ -40,8 +40,6 @@ from uuid import uuid4
 
 import graphviz
 from more_itertools import first, ilen
-from attr.validators import deep_iterable, instance_of, optional
-from more_itertools import first, ilen, pairwise
 from networkx import (
     MultiDiGraph,
     connected_components,
@@ -372,30 +370,31 @@ class PerceptionGraph(PerceptionGraphProtocol):
 
     @staticmethod
     def add_temporal_scopes_to_edges(
-        digraph: DiGraph, temporal_scopes: Union[TemporalScope, Iterable[TemporalScope]]
-    ) -> DiGraph:
+        multidigraph: MultiDiGraph,
+        temporal_scopes: Union[TemporalScope, Iterable[TemporalScope]],
+    ) -> MultiDiGraph:
         r"""
-        Modifies the given digraph in place, applying the given `TemporalScope`\ s to all edges.
+        Modifies the given multidigraph in place, applying the given `TemporalScope`\ s to all edges.
         This new graph will be dynamic.
 
         Note that this should only be applied to static perception digraphs.
         """
         # Assume the graph is dynamic if an arbitrary edge label is temporally scoped.
-        _, _, a_label = first(digraph.edges(data="label"))
+        _, _, a_label = first(multidigraph.edges(data="label"))
         if isinstance(a_label, TemporallyScopedEdgeLabel):
             raise RuntimeError(
                 "Cannot use add_temporal_scopes_to_edges on a graph which is "
                 "already dynamic"
             )
 
-        for (source, target) in digraph.edges():
-            unwrapped_label = digraph.edges[source, target]["label"]
+        for (source, target, edge) in multidigraph.edges():
+            unwrapped_label = edge["label"]
             temporally_scoped_label = TemporallyScopedEdgeLabel.for_dynamic_perception(
                 unwrapped_label, when=temporal_scopes
             )
-            digraph.edges[source, target]["label"] = temporally_scoped_label
+            multidigraph.edges[source, target, edge]["label"] = temporally_scoped_label
 
-        return digraph
+        return multidigraph
 
     def copy_with_temporal_scopes(
         self, temporal_scopes: Union[TemporalScope, Iterable[TemporalScope]]
@@ -464,7 +463,7 @@ class PerceptionGraph(PerceptionGraphProtocol):
 
         If *robust* is *True* (the default), then this will suppress crashes on failures.
         """
-        dot_graph = graphviz.Digraph(graph_name)
+        dot_graph = graphviz.DiGraph(graph_name)
         dot_graph.attr(rankdir="LR")
         # combine parallel edges to cut down on clutter
         dot_graph.attr(concentrate="true")
@@ -2735,9 +2734,11 @@ def _uniquify(
 class _FrameTranslation:
     unique_counter: Incrementer = attrib(init=False, default=Incrementer(0))
 
-    def _translate_frame(self, frame: DevelopmentalPrimitivePerceptionFrame) -> DiGraph:
+    def _translate_frame(
+        self, frame: DevelopmentalPrimitivePerceptionFrame
+    ) -> MultiDiGraph:
         """
-        Gets the `DiGraph` corresponding to a
+        Gets the `MultiDiGraph` corresponding to a
         `DevelopmentalPrimitivePerceptionFrame`.
         """
         graph = MultiDiGraph()
@@ -2992,7 +2993,7 @@ class _FrameTranslation:
         # the constructed digraph, we use this ugly hack. We construct a PerceptionGraph from an
         # empty graph (which should be faster) and use object.__setattr__ to set its graph attribute
         # to our constructed graph (working around the fact that PerceptionGraph is frozen).
-        new_perception_graph = PerceptionGraph(graph=DiGraph(), dynamic=True)
+        new_perception_graph = PerceptionGraph(graph=MultiDiGraph(), dynamic=True)
         object.__setattr__(new_perception_graph, "_graph", _dynamic_digraph)
         return new_perception_graph
 
