@@ -297,10 +297,10 @@ class ObjectPursuitLearner(AbstractPursuitLearner, AbstractObjectTemplateLearner
                     if not isinstance(neighbor, ObjectPerception):
                         other_nodes.append(neighbor)
 
-            subgraph = networkx_utils.subgraph(  # pylint: disable=redefined-outer-name
+            generated_subgraph = networkx_utils.subgraph(
                 perception_as_digraph, all_object_perception_nodes + other_nodes
             )
-            meanings.append(PerceptionGraph(subgraph))
+            meanings.append(PerceptionGraph(generated_subgraph))
         logging.info(f"Got {len(meanings)} candidate meanings")
         return meanings
 
