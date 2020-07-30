@@ -141,6 +141,7 @@ def execute_experiment(
     # make the directories in which to log the learner
     if log_learner_state and learner_logging_path:
         learner_path = learner_logging_path / "learner_state"
+        # if the directory in which we wish to log the learner doesn't exist, we must create it
         if not os.path.exists(learner_path):
             try:
                 os.mkdir(learner_path)
