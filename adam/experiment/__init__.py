@@ -141,13 +141,15 @@ def execute_experiment(
     # make the directories in which to log the learner
     if log_learner_state and learner_logging_path:
         learner_path = learner_logging_path / "learner_state"
-        try:
-            os.mkdir(learner_path)
-        # if we don't have a directory where we can log our learner state, we simply don't log it
-        except OSError:
-            logging.warning("Cannot log learner state to %s", str(learner_path))
-            log_learner_state = False
-            logging.warning("Proceeding without logging learner state")
+        # if the directory in which we wish to log the learner doesn't exist, we must create it
+        if not os.path.exists(learner_path):
+            try:
+                os.mkdir(learner_path)
+            # if we don't have a directory where we can log our learner state, we simply don't log it
+            except OSError:
+                logging.warning("Cannot log learner state to %s", str(learner_path))
+                log_learner_state = False
+                logging.warning("Proceeding without logging learner state")
 
     logging.info("Beginning experiment %s", experiment.name)
 
@@ -267,6 +269,13 @@ def execute_experiment(
 
     if log_path:
         learner.log_hypotheses(log_path / "final")
+        # log the final learner if the user wishes for it to be logged
+        if log_learner_state:
+            pickle.dump(
+                learner,
+                open(learner_path / f"final_learner_state.pkl", "wb"),
+                pickle.HIGHEST_PROTOCOL,
+            )
 
     logging.info("Warming up for tests")
     for warm_up_instance_group in experiment.warm_up_test_instance_groups:
