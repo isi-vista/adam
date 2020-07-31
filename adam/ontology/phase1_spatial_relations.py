@@ -313,10 +313,14 @@ class SpatialPath(Generic[ReferenceObjectT]):
 
         return SpatialPath(
             self.operator,
-            reference_source_object=self.reference_source_object.copy_remapping_objects(object_mapping)
+            reference_source_object=self.reference_source_object.copy_remapping_objects(
+                object_mapping
+            )
             if isinstance(self.reference_source_object, Region)
             else object_mapping[self.reference_source_object],
-            reference_destination_object=self.reference_destination_object.copy_remapping_objects(object_mapping)
+            reference_destination_object=self.reference_destination_object.copy_remapping_objects(
+                object_mapping
+            )
             if isinstance(self.reference_destination_object, Region)
             else object_mapping[self.reference_destination_object],
             reference_axis=new_reference_axis,

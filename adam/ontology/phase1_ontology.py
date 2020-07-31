@@ -2134,7 +2134,10 @@ _FALL_ACTION_DESCRIPTION = ActionDescription(
     frame=ActionDescriptionFrame({THEME: _FALL_THEME}),
     during=DuringAction(
         objects_to_paths=[
-            (_FALL_THEME, SpatialPath(operator=TOWARD, reference_source_object=_FALL_GROUND))
+            (
+                _FALL_THEME,
+                SpatialPath(operator=TOWARD, reference_source_object=_FALL_GROUND),
+            )
         ]
     ),
     # You can't fall if you start on the ground.

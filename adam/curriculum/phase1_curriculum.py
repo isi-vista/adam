@@ -709,10 +709,7 @@ def falling_template(
                             theme,
                             SpatialPath(
                                 operator=TOWARD,
-                                reference_source_object=far_region(ground)
-                                if start_distal
-                                else near_region(ground),
-                                reference_destination_object=on_region(ground),
+                                reference_source_object=ground,
                                 properties=spatial_properties,
                             ),
                         )
@@ -750,10 +747,7 @@ def fall_on_ground_template(
                             theme,
                             SpatialPath(
                                 TOWARD,
-                                reference_source_object=far_region(ground)
-                                if start_distal
-                                else near_region(ground),
-                                reference_destination_object=on_region(ground),
+                                reference_source_object=ground,
                                 properties=spatial_properties,
                             ),
                         )
@@ -1497,8 +1491,7 @@ def make_pass_template(
                             agent,
                             SpatialPath(
                                 None,
-                                reference_source_object=agent,
-                                reference_destination_object=goal,
+                                reference_source_object=goal,
                                 properties=spatial_properties,
                             ),
                         ),
@@ -1508,8 +1501,7 @@ def make_pass_template(
                                 operator=operator
                                 if use_adverbial_path_modifier
                                 else None,
-                                reference_source_object=agent,
-                                reference_destination_object=GROUND_OBJECT_TEMPLATE,
+                                reference_source_object=GROUND_OBJECT_TEMPLATE,
                                 properties=spatial_properties,
                             ),
                         ),
@@ -2011,8 +2003,7 @@ def make_take_template(
                                     )
                                 )
                                 else None,
-                                reference_source_object=on_region(ground),
-                                reference_destination_object=on_region(agent),
+                                reference_source_object=agent,
                                 properties=spatial_properties,
                             ),
                         )
@@ -2059,8 +2050,7 @@ def make_walk_run_template(
                             agent,
                             SpatialPath(
                                 operator=TOWARD,
-                                reference_source_object=ground,
-                                reference_destination_object=goal,
+                                reference_source_object=goal,
                                 properties=spatial_properties,
                             ),
                         ),
@@ -2146,8 +2136,7 @@ def bare_move_template(
                             agent,
                             SpatialPath(
                                 None,
-                                reference_source_object=GROUND_OBJECT_TEMPLATE,
-                                reference_destination_object=goal_reference,
+                                reference_source_object=goal_reference,
                                 properties=spatial_properties,
                             ),
                         )
@@ -2181,8 +2170,7 @@ def transitive_move_template(
                             theme,
                             SpatialPath(
                                 None,
-                                reference_source_object=GROUND_OBJECT_TEMPLATE,
-                                reference_destination_object=goal_reference,
+                                reference_source_object=goal_reference,
                                 properties=spatial_properties,
                             ),
                         )
@@ -2424,8 +2412,7 @@ def make_push_templates(
                             agent,
                             SpatialPath(
                                 None,
-                                reference_source_object=push_surface,
-                                reference_destination_object=push_goal,
+                                reference_source_object=push_goal,
                                 properties=spatial_properties,
                             ),
                         ),
@@ -2467,8 +2454,7 @@ def make_push_templates(
                             agent,
                             SpatialPath(
                                 None,
-                                reference_source_object=push_surface,
-                                reference_destination_object=push_goal,
+                                reference_source_object=push_goal,
                                 properties=spatial_properties,
                             ),
                         ),
@@ -2607,8 +2593,7 @@ def throw_template(
                             theme,
                             SpatialPath(
                                 None,
-                                reference_source_object=GROUND_OBJECT_TEMPLATE,
-                                reference_destination_object=goal,
+                                reference_source_object=goal,
                                 properties=spatial_properties,
                             ),
                         )
@@ -2692,8 +2677,7 @@ def throw_to_template(
                             theme,
                             SpatialPath(
                                 None,
-                                reference_source_object=GROUND_OBJECT_TEMPLATE,
-                                reference_destination_object=goal,
+                                reference_source_object=goal,
                                 properties=spatial_properties,
                             ),
                         )
@@ -2732,8 +2716,7 @@ def throw_to_region_template(
                             theme,
                             SpatialPath(
                                 None,
-                                reference_source_object=agent,
-                                reference_destination_object=goal,
+                                reference_source_object=goal,
                                 properties=spatial_properties,
                             ),
                         )
@@ -2921,8 +2904,7 @@ def _make_come_down_template(
                             agent,
                             SpatialPath(
                                 TO,
-                                reference_source_object=ground,
-                                reference_destination_object=goal_reference,
+                                reference_source_object=goal_reference,
                             ),
                         ),
                     ]

@@ -338,8 +338,7 @@ def _push_towards_away_template(
                             theme,
                             SpatialPath(
                                 operator=TOWARD if is_towards else AWAY_FROM,
-                                reference_source_object=surface,
-                                reference_destination_object=spatial_reference,
+                                reference_source_object=spatial_reference,
                                 # The reference axis should explicitly be the axis
                                 # on which movement is occuring. Implying this axis
                                 # May not always be 100% correct because a person
@@ -538,8 +537,7 @@ def _go_behind_in_front_path_template(
                             path_object,
                             SpatialPath(
                                 operator=VIA,
-                                reference_source_object=GROUND_OBJECT_TEMPLATE,
-                                reference_destination_object=path_object,
+                                reference_source_object=path_object,
                                 reference_axis=FacingAddresseeAxis(path_object),
                                 orientation_changed=True,
                             ),
@@ -608,8 +606,7 @@ def _go_over_under_path_template(
                             path_object,
                             SpatialPath(
                                 operator=VIA,
-                                reference_source_object=GROUND_OBJECT_TEMPLATE,
-                                reference_destination_object=path_object,
+                                reference_source_object=path_object,
                                 reference_axis=GRAVITATIONAL_AXIS_FUNCTION,
                             ),
                         )
@@ -658,12 +655,7 @@ def _go_towards_away_template(
                             agent,
                             SpatialPath(
                                 operator=TOWARD if is_toward else AWAY_FROM,
-                                reference_source_object=GROUND_OBJECT_TEMPLATE
-                                if is_toward
-                                else spatial_reference,
-                                reference_destination_object=spatial_reference
-                                if is_toward
-                                else GROUND_OBJECT_TEMPLATE,
+                                reference_source_object=spatial_reference,
                                 reference_axis=HorizontalAxisOfObject(agent, 1),
                             ),
                         )
@@ -1053,12 +1045,7 @@ def _throw_towards_away_template(
                             theme,
                             SpatialPath(
                                 operator=TOWARD if is_towards else AWAY_FROM,
-                                reference_source_object=GROUND_OBJECT_TEMPLATE
-                                if is_towards
-                                else spatial_reference,
-                                reference_destination_object=spatial_reference
-                                if is_towards
-                                else spatial_reference,
+                                reference_source_object=spatial_reference,
                                 reference_axis=HorizontalAxisOfObject(theme, 1),
                             ),
                         )
@@ -1375,12 +1362,7 @@ def _x_rolls_towards_away_from_y_template(
                             agent,
                             SpatialPath(
                                 operator=TOWARD if is_toward else AWAY_FROM,
-                                reference_source_object=GROUND_OBJECT_TEMPLATE
-                                if is_toward
-                                else spatial_reference,
-                                reference_destination_object=spatial_reference
-                                if is_toward
-                                else spatial_reference,
+                                reference_source_object=spatial_reference,
                                 reference_axis=HorizontalAxisOfObject(agent, 1),
                             ),
                         )
@@ -1422,12 +1404,7 @@ def _x_rolls_y_towards_away_from_z_template(
                             agent,
                             SpatialPath(
                                 operator=TOWARD if is_toward else AWAY_FROM,
-                                reference_source_object=surface
-                                if is_toward
-                                else spatial_reference,
-                                reference_destination_object=spatial_reference
-                                if is_toward
-                                else spatial_reference,
+                                reference_source_object=spatial_reference,
                                 reference_axis=HorizontalAxisOfObject(agent, 1),
                             ),
                         )
@@ -1633,12 +1610,7 @@ def _fall_toward_away_from_template(
                             theme,
                             SpatialPath(
                                 operator=TOWARD if is_toward else AWAY_FROM,
-                                reference_source_object=spatial_reference
-                                if is_toward
-                                else GROUND_OBJECT_TEMPLATE,
-                                reference_destination_object=GROUND_OBJECT_TEMPLATE
-                                if is_toward
-                                else spatial_reference,
+                                reference_source_object=spatial_reference,
                                 reference_axis=HorizontalAxisOfObject(theme, 1),
                             ),
                         )
@@ -2082,12 +2054,7 @@ def _x_moves_towards_away_from_z_template(
                             agent,
                             SpatialPath(
                                 operator=TOWARD if is_toward else AWAY_FROM,
-                                reference_source_object=GROUND_OBJECT_TEMPLATE
-                                if is_toward
-                                else spatial_reference,
-                                reference_destination_object=spatial_reference
-                                if is_toward
-                                else GROUND_OBJECT_TEMPLATE,
+                                reference_source_object=spatial_reference,
                                 reference_axis=HorizontalAxisOfObject(agent, 1),
                             ),
                         )
@@ -2125,12 +2092,7 @@ def _x_moves_y_towards_away_from_z_template(
                             theme,
                             SpatialPath(
                                 operator=TOWARD if is_toward else AWAY_FROM,
-                                reference_source_object=GROUND_OBJECT_TEMPLATE
-                                if is_toward
-                                else spatial_reference,
-                                reference_destination_object=spatial_reference
-                                if is_toward
-                                else GROUND_OBJECT_TEMPLATE,
+                                reference_source_object=spatial_reference,
                                 reference_axis=HorizontalAxisOfObject(theme, 1),
                             ),
                         ),
@@ -2138,12 +2100,7 @@ def _x_moves_y_towards_away_from_z_template(
                             agent,
                             SpatialPath(
                                 operator=TOWARD if is_toward else AWAY_FROM,
-                                reference_source_object=GROUND_OBJECT_TEMPLATE
-                                if is_toward
-                                else spatial_reference,
-                                reference_destination_object=spatial_reference
-                                if is_toward
-                                else GROUND_OBJECT_TEMPLATE,
+                                reference_source_object=spatial_reference,
                                 reference_axis=HorizontalAxisOfObject(agent, 1),
                             ),
                         ),
@@ -2499,12 +2456,7 @@ def _fly_towards_away_template(
                             agent,
                             SpatialPath(
                                 operator=TOWARD if is_toward else AWAY_FROM,
-                                reference_source_object=GROUND_OBJECT_TEMPLATE
-                                if is_toward
-                                else spatial_reference,
-                                reference_destination_object=spatial_reference
-                                if is_toward
-                                else GROUND_OBJECT_TEMPLATE,
+                                reference_source_object=spatial_reference,
                                 reference_axis=HorizontalAxisOfObject(agent, 1),
                             ),
                         )

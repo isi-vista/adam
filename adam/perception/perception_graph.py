@@ -2904,8 +2904,10 @@ class _FrameTranslation:
                         map_edge=self._map_edge,
                         map_node=self._map_node,
                     )
-                    if isinstance(path_info.reference_object, Region):
-                        regions.append(path_info.reference_object)
+                    if isinstance(path_info.reference_source_object, Region):
+                        regions.append(path_info.reference_source_object)
+                    if isinstance(path_info.reference_destination_object, Region):
+                        regions.append(path_info.reference_destination_object)
 
             # Below we ensure all regions appearing as relation and path arguments
             # are correctly translated.
@@ -2965,24 +2967,36 @@ class _FrameTranslation:
         edges_to_add.append(
             (path, map_node(path.reference_destination_object), REFERENCE_OBJECT_LABEL)
         )
-        if isinstance(path.reference_source_object, Region):
-            _translate_region(
-                perception_digraph,
-                path.reference_source_object,
-                map_node=map_node,
-                map_edge=map_edge,
-                axes_info=axes_info,
-                temporal_scopes=immutableset([TemporalScope.BEFORE]),
-            )
-        if isinstance(path.reference_destination_object, Region):
-            _translate_region(
-                perception_digraph,
-                path.reference_destination_object,
-                map_node=map_node,
-                map_edge=map_edge,
-                axes_info=axes_info,
-                temporal_scopes=immutableset([TemporalScope.AFTER]),
-            )
+        if path.reference_source_object == path.reference_destination_object:
+            if isinstance(path.reference_source_object, Region):
+                _translate_region(
+                    perception_digraph,
+                    path.reference_source_object,
+                    map_node=map_node,
+                    map_edge=map_edge,
+                    axes_info=axes_info,
+                    temporal_scopes=_DURING_ONLY,
+                )
+        else:
+            if isinstance(path.reference_source_object, Region):
+                _translate_region(
+                    perception_digraph,
+                    path.reference_source_object,
+                    map_node=map_node,
+                    map_edge=map_edge,
+                    axes_info=axes_info,
+                    temporal_scopes=immutableset([TemporalScope.BEFORE]),
+                )
+
+            if isinstance(path.reference_destination_object, Region):
+                _translate_region(
+                    perception_digraph,
+                    path.reference_destination_object,
+                    map_node=map_node,
+                    map_edge=map_edge,
+                    axes_info=axes_info,
+                    temporal_scopes=immutableset([TemporalScope.AFTER]),
+                )
         if path.reference_axis:
             edges_to_add.append(
                 (

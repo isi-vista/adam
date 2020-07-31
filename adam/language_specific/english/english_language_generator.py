@@ -828,7 +828,23 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     paths_involving_ground = immutableset(
                         path
                         for (_, path) in action.during.objects_to_paths.items()
-                        if path.reference_object.ontology_node == GROUND
+                        if (
+                            isinstance(path.reference_source_object, SituationObject)
+                            and path.reference_source_object.ontology_node == GROUND
+                        )
+                        or (
+                            isinstance(path.reference_source_object, Region)
+                            and path.reference_source_object.reference_object == GROUND
+                        )
+                        or (
+                            isinstance(path.reference_destination_object, SituationObject)
+                            and path.reference_destination_object.ontology_node == GROUND
+                        )
+                        or (
+                            isinstance(path.reference_destination_object, Region)
+                            and path.reference_destination_object.reference_object
+                            == GROUND
+                        )
                     )
                     if paths_involving_ground:
                         # we just look at the first to determine the direction

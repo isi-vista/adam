@@ -76,7 +76,10 @@ class DuringAction(Generic[_ObjectT]):
             for (num, path) in enumerate(paths):
                 if path not in paths_to_skip:
                     for i in range(num, len(paths)):
-                        if path.reference_object == paths[i].reference_object:
+                        if (
+                            path.reference_source_object
+                            == paths[i].reference_source_object
+                        ):
                             path.unify(paths[i], override=True)
                             paths_to_skip.add(paths[i])
                     objects_to_unified_paths.append((obj, path))
