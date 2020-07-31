@@ -653,7 +653,7 @@ def test_path_from_action_description():
     assert perception.during.objects_to_paths
     assert len(perception.during.objects_to_paths) == 1
     path = only(perception.during.objects_to_paths[ball_perception])
-    assert path.reference_object == ground_perception
+    assert path.reference_source_object == ground_perception
     assert path.operator == TOWARD
 
 

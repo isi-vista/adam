@@ -1034,9 +1034,17 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             spatial_path: SpatialPath[SituationObject],
         ):
             # don't talk about spatial paths to non-salient objects
-            if (
-                spatial_path.reference_object
-                and spatial_path.reference_object not in self.situation.salient_objects
+            if spatial_path.reference_destination_object and (
+                (
+                    isinstance(spatial_path.reference_destination_object, SituationObject)
+                    and spatial_path.reference_destination_object
+                    not in self.situation.salient_objects
+                )
+                or (
+                    isinstance(spatial_path.reference_destination_object, Region)
+                    and spatial_path.reference_destination_object.reference_object
+                    not in self.situation.salient_objects
+                )
             ):
                 return None
 
@@ -1057,7 +1065,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
 
                 if (
                     path_object in core_argument_fillers
-                    and spatial_path.reference_object in core_argument_fillers
+                    and spatial_path.reference_source_object in core_argument_fillers
                 ):
                     return None
 
@@ -1084,13 +1092,13 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     f"Don't know how to translate spatial path {spatial_path}"
                 )
 
-            if isinstance(spatial_path.reference_object, Region):
+            if isinstance(spatial_path.reference_source_object, Region):
                 reference_object_node = self._noun_for_object(
-                    spatial_path.reference_object.reference_object
+                    spatial_path.reference_source_object.reference_object
                 )
             else:
                 reference_object_node = self._noun_for_object(
-                    spatial_path.reference_object
+                    spatial_path.reference_source_object
                 )
 
             if self.dependency_graph.out_degree[reference_object_node]:

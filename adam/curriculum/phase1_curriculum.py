@@ -112,6 +112,9 @@ from adam.ontology.phase1_ontology import (
     WALK,
     strictly_over,
     strictly_under,
+    on_region,
+    near_region,
+    far_region,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -687,6 +690,7 @@ def falling_template(
     syntax_hints: Iterable[str],
     spatial_properties: Iterable[OntologyNode] = immutableset(),
     background: Iterable[TemplateObjectVariable],
+    start_distal: bool,
 ) -> Phase1SituationTemplate:
     ground = GROUND_OBJECT_TEMPLATE
     computed_background = [ground]
@@ -705,7 +709,10 @@ def falling_template(
                             theme,
                             SpatialPath(
                                 operator=TOWARD,
-                                reference_object=ground,
+                                reference_source_object=far_region(ground)
+                                if start_distal
+                                else near_region(ground),
+                                reference_destination_object=on_region(ground),
                                 properties=spatial_properties,
                             ),
                         )
@@ -726,10 +733,12 @@ def fall_on_ground_template(
     *,
     spatial_properties: Iterable[OntologyNode] = immutableset(),
     background: Iterable[TemplateObjectVariable] = immutableset(),
+    start_distal: bool,
 ) -> Phase1SituationTemplate:
+    ground = GROUND_OBJECT_TEMPLATE
     return Phase1SituationTemplate(
         "falls-to-ground",
-        salient_object_variables=[theme, GROUND_OBJECT_TEMPLATE],
+        salient_object_variables=[theme, ground],
         background_object_variables=background,
         actions=[
             Action(
@@ -740,8 +749,11 @@ def fall_on_ground_template(
                         (
                             theme,
                             SpatialPath(
-                                None,
-                                reference_object=GROUND_OBJECT_TEMPLATE,
+                                TOWARD,
+                                reference_source_object=far_region(ground)
+                                if start_distal
+                                else near_region(ground),
+                                reference_destination_object=on_region(ground),
                                 properties=spatial_properties,
                             ),
                         )
@@ -749,8 +761,8 @@ def fall_on_ground_template(
                 ),
             )
         ],
-        before_action_relations=[negate(on(theme, GROUND_OBJECT_TEMPLATE))],
-        after_action_relations=[on(theme, GROUND_OBJECT_TEMPLATE)],
+        before_action_relations=[negate(on(theme, ground))],
+        after_action_relations=[on(theme, ground)],
     )
 
 
@@ -769,15 +781,24 @@ def make_fall_templates(
             lands_on_ground=object_ends_up_on_ground,
             syntax_hints=syntax_hints,
             background=background,
+            start_distal=start_distal,
         )
         for object_ends_up_on_ground in (True, False)
         for syntax_hints in syntax_hints_options
+        for start_distal in (True, False)
     ]
 
+    object_falling.extend(
+        [
+            fall_on_ground_template(
+                arbitary_object, background=background, start_distal=start_distal
+            )
+            for start_distal in (True, False)
+        ]
+    )
+
     # "ball fell on the ground"
-    return object_falling + [
-        fall_on_ground_template(arbitary_object, background=background)
-    ]
+    return object_falling
 
 
 def _make_fall_curriculum(
@@ -1044,6 +1065,7 @@ def bare_fly(
     spatial_properties: Iterable[OntologyNode] = immutableset(),
     background: Iterable[TemplateObjectVariable] = immutableset(),
 ) -> Phase1SituationTemplate:
+    ground = GROUND_OBJECT_TEMPLATE
     return Phase1SituationTemplate(
         "fly",
         salient_object_variables=[agent],
@@ -1058,7 +1080,7 @@ def bare_fly(
                             agent,
                             SpatialPath(
                                 AWAY_FROM if up else TOWARD,
-                                reference_object=GROUND_OBJECT_TEMPLATE,
+                                reference_source_object=ground,
                                 properties=spatial_properties,
                             ),
                         )
@@ -1154,7 +1176,7 @@ def intransitive_roll(
                             agent,
                             SpatialPath(
                                 None,
-                                reference_object=surface,
+                                reference_source_object=surface,
                                 properties=spatial_properties,
                             ),
                         )
@@ -1189,7 +1211,7 @@ def transitive_roll(
                             theme,
                             SpatialPath(
                                 None,
-                                reference_object=surface,
+                                reference_source_object=surface,
                                 properties=spatial_properties,
                             ),
                         )
@@ -1224,7 +1246,7 @@ def transitive_roll_with_surface(
                             theme,
                             SpatialPath(
                                 None,
-                                reference_object=surface,
+                                reference_source_object=surface,
                                 properties=spatial_properties,
                             ),
                         )
@@ -1417,6 +1439,7 @@ def make_jump_template(
     spatial_properties: Iterable[OntologyNode] = immutableset(),
     background: Iterable[TemplateObjectVariable] = immutableset(),
 ) -> Phase1SituationTemplate:
+    ground = GROUND_OBJECT_TEMPLATE
     return Phase1SituationTemplate(
         "jump-on-ground",
         salient_object_variables=[agent],
@@ -1425,9 +1448,7 @@ def make_jump_template(
             Action(
                 JUMP,
                 argument_roles_to_fillers=[(AGENT, agent)],
-                auxiliary_variable_bindings=[
-                    (JUMP_INITIAL_SUPPORTER_AUX, GROUND_OBJECT_TEMPLATE)
-                ],
+                auxiliary_variable_bindings=[(JUMP_INITIAL_SUPPORTER_AUX, ground)],
                 during=DuringAction(
                     objects_to_paths=[
                         (
@@ -1436,7 +1457,7 @@ def make_jump_template(
                                 operator=operator
                                 if use_adverbial_path_modifier
                                 else None,
-                                reference_object=GROUND_OBJECT_TEMPLATE,
+                                reference_source_object=ground,
                                 properties=spatial_properties,
                             ),
                         )
@@ -1475,7 +1496,10 @@ def make_pass_template(
                         (
                             agent,
                             SpatialPath(
-                                None, reference_object=goal, properties=spatial_properties
+                                None,
+                                reference_source_object=agent,
+                                reference_destination_object=goal,
+                                properties=spatial_properties,
                             ),
                         ),
                         (
@@ -1484,7 +1508,8 @@ def make_pass_template(
                                 operator=operator
                                 if use_adverbial_path_modifier
                                 else None,
-                                reference_object=GROUND_OBJECT_TEMPLATE,
+                                reference_source_object=agent,
+                                reference_destination_object=GROUND_OBJECT_TEMPLATE,
                                 properties=spatial_properties,
                             ),
                         ),
@@ -1986,7 +2011,8 @@ def make_take_template(
                                     )
                                 )
                                 else None,
-                                reference_object=ground,
+                                reference_source_object=on_region(ground),
+                                reference_destination_object=on_region(agent),
                                 properties=spatial_properties,
                             ),
                         )
@@ -2033,7 +2059,8 @@ def make_walk_run_template(
                             agent,
                             SpatialPath(
                                 operator=TOWARD,
-                                reference_object=goal,
+                                reference_source_object=ground,
+                                reference_destination_object=goal,
                                 properties=spatial_properties,
                             ),
                         ),
@@ -2043,7 +2070,7 @@ def make_walk_run_template(
                                 operator=operator
                                 if use_adverbial_path_modifier
                                 else None,
-                                reference_object=GROUND_OBJECT_TEMPLATE,
+                                reference_source_object=ground,
                                 properties=spatial_properties,
                             ),
                         ),
@@ -2119,7 +2146,8 @@ def bare_move_template(
                             agent,
                             SpatialPath(
                                 None,
-                                reference_object=goal_reference,
+                                reference_source_object=GROUND_OBJECT_TEMPLATE,
+                                reference_destination_object=goal_reference,
                                 properties=spatial_properties,
                             ),
                         )
@@ -2153,7 +2181,8 @@ def transitive_move_template(
                             theme,
                             SpatialPath(
                                 None,
-                                reference_object=goal_reference,
+                                reference_source_object=GROUND_OBJECT_TEMPLATE,
+                                reference_destination_object=goal_reference,
                                 properties=spatial_properties,
                             ),
                         )
@@ -2395,7 +2424,8 @@ def make_push_templates(
                             agent,
                             SpatialPath(
                                 None,
-                                reference_object=push_goal,
+                                reference_source_object=push_surface,
+                                reference_destination_object=push_goal,
                                 properties=spatial_properties,
                             ),
                         ),
@@ -2405,7 +2435,7 @@ def make_push_templates(
                                 operator=operator
                                 if use_adverbial_path_modifier
                                 else None,
-                                reference_object=GROUND_OBJECT_TEMPLATE,
+                                reference_source_object=push_surface,
                                 properties=spatial_properties,
                             ),
                         ),
@@ -2437,7 +2467,8 @@ def make_push_templates(
                             agent,
                             SpatialPath(
                                 None,
-                                reference_object=push_goal,
+                                reference_source_object=push_surface,
+                                reference_destination_object=push_goal,
                                 properties=spatial_properties,
                             ),
                         ),
@@ -2447,7 +2478,7 @@ def make_push_templates(
                                 operator=operator
                                 if use_adverbial_path_modifier
                                 else None,
-                                reference_object=GROUND_OBJECT_TEMPLATE,
+                                reference_source_object=push_surface,
                                 properties=spatial_properties,
                             ),
                         ),
@@ -2512,9 +2543,10 @@ def throw_on_ground_template(
     spatial_properties: Iterable[OntologyNode] = immutableset(),
     background: Iterable[TemplateObjectVariable] = immutableset(),
 ) -> Phase1SituationTemplate:
+    ground = GROUND_OBJECT_TEMPLATE
     return Phase1SituationTemplate(
         "throw-on-ground",
-        salient_object_variables=[agent, theme, GROUND_OBJECT_TEMPLATE],
+        salient_object_variables=[agent, theme, ground],
         background_object_variables=background,
         actions=[
             Action(
@@ -2525,7 +2557,7 @@ def throw_on_ground_template(
                     (
                         GOAL,
                         Region(
-                            GROUND_OBJECT_TEMPLATE,
+                            ground,
                             distance=EXTERIOR_BUT_IN_CONTACT,
                             direction=GRAVITATIONAL_UP,
                         ),
@@ -2537,7 +2569,7 @@ def throw_on_ground_template(
                             theme,
                             SpatialPath(
                                 None,
-                                reference_object=GROUND_OBJECT_TEMPLATE,
+                                reference_source_object=ground,
                                 properties=spatial_properties,
                             ),
                         )
@@ -2545,7 +2577,7 @@ def throw_on_ground_template(
                 ),
             )
         ],
-        after_action_relations=[on(theme, GROUND_OBJECT_TEMPLATE)],
+        after_action_relations=[on(theme, ground)],
         constraining_relations=[bigger_than(agent, theme)],
     )
 
@@ -2574,7 +2606,10 @@ def throw_template(
                         (
                             theme,
                             SpatialPath(
-                                None, reference_object=goal, properties=spatial_properties
+                                None,
+                                reference_source_object=GROUND_OBJECT_TEMPLATE,
+                                reference_destination_object=goal,
+                                properties=spatial_properties,
                             ),
                         )
                     ]
@@ -2611,7 +2646,7 @@ def throw_up_down_template(
                             theme,
                             SpatialPath(
                                 AWAY_FROM,
-                                reference_object=GROUND_OBJECT_TEMPLATE,
+                                reference_source_object=GROUND_OBJECT_TEMPLATE,
                                 properties=spatial_properties,
                             ),
                         )
@@ -2622,7 +2657,7 @@ def throw_up_down_template(
                             theme,
                             SpatialPath(
                                 TOWARD,
-                                reference_object=GROUND_OBJECT_TEMPLATE,
+                                reference_source_object=GROUND_OBJECT_TEMPLATE,
                                 properties=spatial_properties,
                             ),
                         )
@@ -2656,7 +2691,10 @@ def throw_to_template(
                         (
                             theme,
                             SpatialPath(
-                                None, reference_object=goal, properties=spatial_properties
+                                None,
+                                reference_source_object=GROUND_OBJECT_TEMPLATE,
+                                reference_destination_object=goal,
+                                properties=spatial_properties,
                             ),
                         )
                     ]
@@ -2693,7 +2731,10 @@ def throw_to_region_template(
                         (
                             theme,
                             SpatialPath(
-                                None, reference_object=goal, properties=spatial_properties
+                                None,
+                                reference_source_object=agent,
+                                reference_destination_object=goal,
+                                properties=spatial_properties,
                             ),
                         )
                     ]
@@ -2875,8 +2916,15 @@ def _make_come_down_template(
                 argument_roles_to_fillers=[(AGENT, agent), (GOAL, goal_reference)],
                 during=DuringAction(
                     objects_to_paths=[
-                        (agent, SpatialPath(TOWARD, ground)),
-                        (agent, SpatialPath(TO, goal_reference)),
+                        (agent, SpatialPath(TOWARD, reference_source_object=ground)),
+                        (
+                            agent,
+                            SpatialPath(
+                                TO,
+                                reference_source_object=ground,
+                                reference_destination_object=goal_reference,
+                            ),
+                        ),
                     ]
                 ),
             )

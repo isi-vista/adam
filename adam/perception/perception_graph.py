@@ -2960,16 +2960,28 @@ class _FrameTranslation:
         edges_to_add: List[Tuple[Any, Any, Any]] = []
         edges_to_add.append((moving_object, path, HAS_PATH_LABEL))
         edges_to_add.append(
-            (path, map_node(path.reference_object), REFERENCE_OBJECT_LABEL)
+            (path, map_node(path.reference_source_object), REFERENCE_OBJECT_LABEL)
         )
-        if isinstance(path.reference_object, Region):
+        edges_to_add.append(
+            (path, map_node(path.reference_destination_object), REFERENCE_OBJECT_LABEL)
+        )
+        if isinstance(path.reference_source_object, Region):
             _translate_region(
                 perception_digraph,
-                path.reference_object,
+                path.reference_source_object,
                 map_node=map_node,
                 map_edge=map_edge,
                 axes_info=axes_info,
-                temporal_scopes=_DURING_ONLY,
+                temporal_scopes=immutableset([TemporalScope.BEFORE]),
+            )
+        if isinstance(path.reference_destination_object, Region):
+            _translate_region(
+                perception_digraph,
+                path.reference_destination_object,
+                map_node=map_node,
+                map_edge=map_edge,
+                axes_info=axes_info,
+                temporal_scopes=immutableset([TemporalScope.AFTER]),
             )
         if path.reference_axis:
             edges_to_add.append(

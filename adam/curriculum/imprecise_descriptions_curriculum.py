@@ -837,6 +837,7 @@ def make_fall_imprecise_temporal_descriptions(
                         syntax_hints=syntax_hints,
                         spatial_properties=[FAST] if is_fast else [SLOW],
                         background=background,
+                        start_distal=start_distal,
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
@@ -845,6 +846,7 @@ def make_fall_imprecise_temporal_descriptions(
                 for object_ends_up_on_ground in BOOL_SET
                 for syntax_hints in syntax_hints_options
                 for is_fast in BOOL_SET
+                for start_distal in BOOL_SET
             ),
             # Fall on Ground
             flatten(
@@ -853,12 +855,14 @@ def make_fall_imprecise_temporal_descriptions(
                         arbitary_object,
                         spatial_properties=[FAST] if is_fast else [SLOW],
                         background=background,
+                        start_distal=start_distal,
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 5,
                 )
                 for is_fast in BOOL_SET
+                for start_distal in BOOL_SET
             ),
         ),
         language_generator=language_generator,

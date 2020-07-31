@@ -620,6 +620,7 @@ def _on_region_factory(reference_object: _ObjectT) -> Region[_ObjectT]:
     )
 
 
+on_region = _on_region_factory
 on = make_dsl_region_relation(_on_region_factory)  # pylint:disable=invalid-name
 
 
@@ -631,6 +632,7 @@ def _near_region_factory(
     )
 
 
+near_region = _near_region_factory
 near = make_dsl_region_relation(_near_region_factory)  # pylint:disable=invalid-name
 
 
@@ -640,6 +642,7 @@ def _far_region_factory(
     return Region(reference_object=reference_object, distance=DISTAL, direction=direction)
 
 
+far_region = _far_region_factory
 far = make_dsl_region_relation(_far_region_factory)  # pylint:disable=invalid-name
 
 
@@ -2069,7 +2072,7 @@ def _make_spin_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
 def spin_around_primary_axis(object_):
     return SpatialPath(
         operator=None,
-        reference_object=object_,
+        reference_source_object=object_,
         reference_axis=PrimaryAxisOfObject(object_),
         orientation_changed=True,
     )
@@ -2131,7 +2134,7 @@ _FALL_ACTION_DESCRIPTION = ActionDescription(
     frame=ActionDescriptionFrame({THEME: _FALL_THEME}),
     during=DuringAction(
         objects_to_paths=[
-            (_FALL_THEME, SpatialPath(operator=TOWARD, reference_object=_FALL_GROUND))
+            (_FALL_THEME, SpatialPath(operator=TOWARD, reference_source_object=_FALL_GROUND))
         ]
     ),
     # You can't fall if you start on the ground.
@@ -2511,7 +2514,7 @@ def _make_roll_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
                         roll_theme,
                         SpatialPath(
                             operator=AWAY_FROM,
-                            reference_object=roll_agent,
+                            reference_source_object=roll_agent,
                             reference_axis=HorizontalAxisOfObject(roll_theme, index=0),
                             orientation_changed=True,
                         ),
@@ -2540,7 +2543,7 @@ def _make_roll_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
                         roll_agent,
                         SpatialPath(
                             operator=AWAY_FROM,
-                            reference_object=roll_agent,
+                            reference_source_object=roll_agent,
                             reference_axis=HorizontalAxisOfObject(roll_agent, index=0),
                             orientation_changed=True,
                         ),
