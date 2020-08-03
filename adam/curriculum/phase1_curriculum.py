@@ -2003,7 +2003,7 @@ def make_take_template(
                                     )
                                 )
                                 else None,
-                                reference_source_object=agent,
+                                reference_source_object=ground,
                                 properties=spatial_properties,
                             ),
                         )
@@ -2900,13 +2900,7 @@ def _make_come_down_template(
                 during=DuringAction(
                     objects_to_paths=[
                         (agent, SpatialPath(TOWARD, reference_source_object=ground)),
-                        (
-                            agent,
-                            SpatialPath(
-                                TO,
-                                reference_source_object=goal_reference,
-                            ),
-                        ),
+                        (agent, SpatialPath(TO, reference_source_object=goal_reference)),
                     ]
                 ),
             )
