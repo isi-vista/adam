@@ -319,7 +319,7 @@ class ObjectRecognizer:
                     matched_object_node,
                     graph_to_return,
                     pattern_match,
-                    remove_internal_structure=True,
+                    remove_internal_structure=False,
                 )
 
         candidate_object_subgraphs = extract_candidate_objects(perception_graph)
@@ -370,7 +370,7 @@ class ObjectRecognizer:
                                 object_nodes.append(
                                     ((debug_string,), matched_object_node)
                                 )
-                        object_matches.append((matched_object_node, pattern_match))
+                    object_matches.append((matched_object_node, pattern_match))
                     # We match each candidate objects against only one object type.
                     # See https://github.com/isi-vista/adam/issues/627
                     break
@@ -702,6 +702,25 @@ def _add_external_properties_linked_to_root_object_perception(
         output_graph.add_edge(matched_object_node, linked_property_node, label=edge_label)
 
 
+def _add_properties_linked_to_root_object_perception(
+    *,
+    original_graph: DiGraph,
+    output_graph: DiGraph,
+    matched_nodes: AbstractSet[PerceptionGraphNode],
+    matched_object_node: ObjectSemanticNode,
+) -> None:
+    # We take two graphs as input because we are assuming object-internal properties
+    # have already been deleted from the output_graph, so we have to look for them
+    # in the original, unaltered graph
+    root_node = _get_root_object_perception(original_graph, matched_nodes)
+    for succ in original_graph.successors(root_node):
+        edge_label = _get_edge_label(original_graph, root_node, succ)
+        output_graph.add_edge(matched_object_node, succ, label=edge_label)
+    for pred in original_graph.predecessors(root_node):
+        edge_label = _get_edge_label(original_graph, pred, root_node)
+        output_graph.add_edge(pred, matched_object_node, label=edge_label)
+
+
 def _add_relationships_linked_to_root_object_perception(
     *,
     original_graph: DiGraph,
@@ -832,7 +851,12 @@ def replace_object_match(
                     # Prevent multiple `has-property` assertions to the same color node
                     # On a recognized object
                     if isinstance(matched_subgraph_node_predecessor, ObjectSemanticNode):
-                        prop = matched_subgraph_node_predecessor
+                        # Sub objects connect to parent object semantic nodes so this
+                        # condition doesn't really apply to them. The original code
+                        # Is left below in-case we want to re-enable a check here in
+                        # the future
+                        continue
+                        # prop = matched_subgraph_node_predecessor
                     else:
                         prop = matched_subgraph_node_predecessor[0]
                     if prop in external_properties:
@@ -866,9 +890,9 @@ def replace_object_match(
             f"but got match {pattern_match}"
         )
 
-    # Remove all matched nodes which are not shared world items (e.g. gravity, the learner)
     perception_digraph.remove_node(root)
     if remove_internal_structure:
+        # Remove all matched nodes which are not shared world items (e.g. gravity, the learner)
         perception_digraph.remove_nodes_from(
             matched_node
             for matched_node in matched_subgraph_nodes
@@ -876,15 +900,24 @@ def replace_object_match(
         )
         perception_digraph.remove_nodes_from(duplicate_nodes_to_remove)
 
-    # We want to re-add any properties linked directly to the root node of an object.
-    # Example: water is a liquid
-    # These may be relevant to learning verb semantics
-    # (e.g. you can only drink a liquid)
-    _add_external_properties_linked_to_root_object_perception(
-        original_graph=current_perception.copy_as_digraph(),
-        output_graph=perception_digraph,
-        matched_nodes=matched_subgraph_nodes,
-        matched_object_node=replacement_object_node,
-    )
+        # We want to re-add any properties linked directly to the root node of an object.
+        # Example: water is a liquid
+        # These may be relevant to learning verb semantics
+        # (e.g. you can only drink a liquid)
+        _add_external_properties_linked_to_root_object_perception(
+            original_graph=current_perception.copy_as_digraph(),
+            output_graph=perception_digraph,
+            matched_nodes=matched_subgraph_nodes,
+            matched_object_node=replacement_object_node,
+        )
+    else:
+        # If we are not removing the internal structure we need to replace all the internal links
+        # With the new root
+        _add_properties_linked_to_root_object_perception(
+            original_graph=current_perception.copy_as_digraph(),
+            output_graph=perception_digraph,
+            matched_nodes=matched_subgraph_nodes,
+            matched_object_node=replacement_object_node,
+        )
 
     return PerceptionGraph(perception_digraph, dynamic=current_perception.dynamic)
