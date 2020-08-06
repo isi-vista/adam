@@ -2,8 +2,20 @@ from enum import Enum, auto
 from itertools import chain
 from typing import Dict, Iterable, List, Mapping, MutableMapping, Optional, Union, cast
 
+from attr import Factory, attrib, attrs
+from attr.validators import deep_mapping, instance_of
+from immutablecollections import (
+    ImmutableDict,
+    ImmutableSet,
+    ImmutableSetMultiDict,
+    immutabledict,
+    immutableset,
+    immutablesetmultidict,
+)
+from immutablecollections.converter_utils import _to_immutabledict
 from more_itertools import only, quantify
 from networkx import DiGraph
+from vistautils.preconditions import check_arg
 
 from adam.axes import AxesInfo, WORLD_AXES
 from adam.axis import GeonAxis
@@ -21,7 +33,6 @@ from adam.ontology.during import DuringAction
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
     ABOUT_THE_SAME_SIZE_AS_LEARNER,
-    SAME_TYPE,
     BABY,
     COLOR,
     COLORS_TO_RGBS,
@@ -35,6 +46,9 @@ from adam.ontology.phase1_ontology import (
     SIZE_RELATIONS,
     TWO_DIMENSIONAL,
     on,
+    BIGGER_THAN_SAME_TYPE,
+    BIGGER_THAN,
+    SMALLER_THAN_SAME_TYPE,
 )
 from adam.ontology.phase1_spatial_relations import (
     EXTERIOR_BUT_IN_CONTACT,
@@ -63,18 +77,6 @@ from adam.random_utils import SequenceChooser
 from adam.relation import Relation
 from adam.situation import Action, SituationObject, SituationRegion
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
-from attr import Factory, attrib, attrs
-from attr.validators import deep_mapping, instance_of
-from immutablecollections import (
-    ImmutableDict,
-    ImmutableSet,
-    ImmutableSetMultiDict,
-    immutabledict,
-    immutableset,
-    immutablesetmultidict,
-)
-from immutablecollections.converter_utils import _to_immutabledict
-from vistautils.preconditions import check_arg
 
 
 class ColorPerceptionMode(Enum):
@@ -748,20 +750,22 @@ class _PerceptionGeneration:
             )
         ]
         for relation in size_relations:
-            perception = self._objects_to_perceptions[relation.first_slot]
-            # only record relative size if the objects are of the same type, and record this as well if they are
-            self._property_assertion_perceptions.append(
-                HasBinaryProperty(perception, relation.relation_type)
+            # We convert biggerThan to biggerThanSameType to denote it's a special type of relative size between
+            # objects of same type.
+            new_relation_type = (
+                BIGGER_THAN_SAME_TYPE
+                if relation.relation_type == BIGGER_THAN
+                else SMALLER_THAN_SAME_TYPE
             )
-            # add a relation indicating that these are of the same type
-            same_relation = Relation(
+            size_relation_same_type = Relation(
+                relation_type=new_relation_type,
                 first_slot=self._objects_to_perceptions[relation.first_slot],
                 second_slot=self._objects_to_perceptions[  # type:ignore
                     relation.second_slot
                 ],
-                relation_type=SAME_TYPE,
+                negated=relation.negated,
             )
-            self._relation_perceptions.extend([same_relation])
+            self._relation_perceptions.extend([size_relation_same_type])
 
     def _perceive_size_relative_to_learner(self) -> None:
         """
