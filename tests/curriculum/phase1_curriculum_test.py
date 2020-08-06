@@ -1,5 +1,3 @@
-from more_itertools import flatten
-
 from adam.curriculum.phase1_curriculum import (
     Phase1InstanceGroup,
     _make_behind_in_front_curriculum,

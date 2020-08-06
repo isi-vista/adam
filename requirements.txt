@@ -31,4 +31,5 @@ mypy==0.620
 towncrier
 sphinx==2.1.2
 sphinx-autodoc-typehints==1.8.0
+isort==4.3.21
 sphinx_rtd_theme

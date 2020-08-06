@@ -206,61 +206,6 @@ def build_functionally_defined_objects_train_curriculum(
     ]
 
 
-def _make_sit_on_curriculum(
-    num_samples: Optional[int],
-    num_noise_objects: Optional[int],
-    language_generator: LanguageGenerator[
-        HighLevelSemanticsSituation, LinearizedDependencyTree
-    ],
-) -> Phase1InstanceGroup:
-    sitter = standard_object(
-        "sitter_0",
-        THING,
-        required_properties=[ANIMATE],
-        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
-    )
-    seat = standard_object(
-        "sitting-surface", INANIMATE_OBJECT, required_properties=[CAN_BE_SAT_ON_BY_PEOPLE]
-    )
-    return phase1_instances(
-        "sit_on",
-        chain(
-            *[
-                sampled(
-                    make_sit_template_intransitive(
-                        sitter, seat, num_noise_objects, surface=False, syntax_hints=False
-                    ),
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER_FACTORY(),
-                    max_to_sample=num_samples if num_samples else 25,
-                ),
-                sampled(
-                    make_sit_transitive(
-                        sitter, seat, num_noise_objects, surface=False, syntax_hints=False
-                    ),
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER_FACTORY(),
-                    max_to_sample=num_samples if num_samples else 25,
-                ),
-            ]
-        ),
-        language_generator=language_generator,
-    )
-
-
-def build_functionally_defined_objects_train_curriculum(
-    num_samples: Optional[int],
-    num_noise_objects: Optional[int],
-    language_generator: LanguageGenerator[
-        HighLevelSemanticsSituation, LinearizedDependencyTree
-    ],
-) -> Sequence[Phase1InstanceGroup]:
-    return [
-        _make_sit_on_curriculum(num_samples, num_noise_objects, language_generator),
-        _make_drink_curriculum(num_samples, num_noise_objects, language_generator),
-    ]
-
-
 def build_debug_curriculum_train(
     num_samples: Optional[int],
     num_noise_objects: Optional[int],
