@@ -1,0 +1,4 @@
+_includes:
+   - "../root.params"
+
+parameters_directory : "%adam_root%/parameters/experiments/gaze_ablation"
