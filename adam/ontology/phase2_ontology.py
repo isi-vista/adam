@@ -34,6 +34,7 @@ from adam.ontology.phase1_ontology import (
     GAILA_PHASE_1_ONTOLOGY,
     SMALLER_THAN,
     BIGGER_THAN,
+    PERCEIVABLE_PROPERTY,
     _TIRE,
     BOX,
     DOG,
@@ -76,7 +77,6 @@ from adam.ontology.phase1_ontology import (
     _WALL,
     _ROOF,
     HOUSE,
-    PERCEIVABLE_PROPERTY,
 )
 from adam.ontology.phase1_size_relationships import build_size_relationships
 from adam.ontology.structural_schema import ObjectStructuralSchema
