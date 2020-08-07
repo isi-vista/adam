@@ -5,7 +5,6 @@ _includes:
 experiment: 'pursuit-ablating-gaze'
 curriculum: pursuit
 learner: pursuit-gaze
-starting_point : 17
 accuracy_to_txt : True
 accuracy_logging_path : "out_out.txt"
 
