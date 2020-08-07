@@ -34,6 +34,7 @@ from adam.ontology.phase1_ontology import (
     GAILA_PHASE_1_ONTOLOGY,
     SMALLER_THAN,
     BIGGER_THAN,
+    PERCEIVABLE_PROPERTY,
     _TIRE,
     BOX,
     DOG,
@@ -80,6 +81,12 @@ from adam.ontology.phase1_ontology import (
 from adam.ontology.phase1_size_relationships import build_size_relationships
 from adam.ontology.structural_schema import ObjectStructuralSchema
 from adam.relation import flatten_relations
+
+TWO = OntologyNode("two")
+subtype(TWO, PERCEIVABLE_PROPERTY)
+MANY = OntologyNode("many")
+subtype(TWO, PERCEIVABLE_PROPERTY)
+HAS_COUNT = OntologyNode("has-count")
 
 CHAIR_2 = OntologyNode(
     "chair-2",
