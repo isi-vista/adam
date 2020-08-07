@@ -87,6 +87,7 @@ from adam.ontology.phase1_ontology import (
     PUSH,
     TAKE,
     HARD_FORCE,
+    DRINK,
 )
 from adam.ontology.phase1_spatial_relations import (
     EXTERIOR_BUT_IN_CONTACT,
@@ -100,6 +101,7 @@ from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
     TO,
     DISTAL,
+    VIA,
 )
 from adam.random_utils import SequenceChooser
 from adam.relation import Relation
@@ -956,6 +958,10 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             if region.distance == INTERIOR and relation.negated:
                 preposition = "out of"
 
+            # We special case this case for drink so agents can drink from containers
+            elif region.distance == INTERIOR and action and action.action_type == DRINK:
+                preposition = "from"
+
             elif region.distance == INTERIOR:
                 preposition = "in"
 
@@ -1060,13 +1066,17 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             if spatial_path.operator == TOWARD:
                 preposition = "toward"
             elif spatial_path.operator == AWAY_FROM:
-                preposition = "away_from"
+                preposition = "away from"
+            # We special case this relationship for 'drink'
+            elif spatial_path.properties == TO and action and action.action_type == DRINK:
+                preposition = "from"
             # TO is the default spatial path in most actions
             # so we let the preposition be handled by the GOAL
             # We also explicitly ignore the None operator
             # as spatial paths may just have properties
             # we are interested in asserting
-            elif spatial_path.operator in [TO, None]:
+            # VIA doesn't have a preposition in our set
+            elif spatial_path.operator in [TO, None, VIA]:
                 return None
 
             if not preposition:

@@ -42,14 +42,25 @@ The docs will be under `docs/_build/html`
 
 # To generate an HTML dump of the curriculum
 
-In English: run `adam.curriculum_to_html parameters/html/curriculum_to_html.phase1.params`
-
-In Chinese: run `adam.curriculum_to_html parameters/html/curriculum_to_html.phase1.chinese.params`
+Run `adam.curriculum_to_html /full/path/to/parameters/html/curriculum_to_html.phase1.params`
 
 
 # To Run the Learner over an Entire Curriculum
 
-run `adam.experiment.run_m9  /full/path/to/parameters/experiment/m9/m9.params`
+Run `adam.experiment.run_m9  /full/path/to/parameters/experiment/m9/m9.params`
+
+# Languages
+Currently, our curriculum dump and learner run in English by default, but they are also runnable in Chinese. 
+Our Chinese implementation uses Yale romanization to maintain UTF-8 encoding, but this can easily be [converted to the more common
+Pinyin romanization](https://ctext.org/pinyin.pl?if=en&text=&from=yale&to=pinyin). 
+
+To generate a curriculum dump or run the learner in Chinese, add the following line to your `parameters/root.params` file: 
+
+```
+language_mode : CHINESE
+```
+and then run the commands given above. 
+
 
 # Visualization
 ## To step through visual representations of the curriculum
@@ -66,12 +77,16 @@ If you are using PyCharm, please set your docstring format to "Google" and your 
 # Contributors
 
 * Deniz Beser
+* Joe Cecil
 * Marjorie Freedman
 * Ryan Gabbard
 * Chris Jenkins
+* Ashwin Kumar
 * Elizabeth Lee
 * Jacob Lichtefeld
 * Mitch Marcus
+* Justin Martin
+* Sarah Payne
 * Ralph Weischedel
 * Charles Yang
 

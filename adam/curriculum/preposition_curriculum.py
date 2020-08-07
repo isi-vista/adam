@@ -332,7 +332,7 @@ def _make_beside_training(
                                 figure,
                                 ground,
                                 make_noise_objects(noise_objects),
-                                is_right=direction,
+                                is_right=True,
                                 is_training=True,
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -341,7 +341,7 @@ def _make_beside_training(
                         )
                         for figure in figures
                         for ground in grounds
-                        for direction in BOOL_SET
+                        # for direction in BOOL_SET
                     ]
                 )
             ]
@@ -375,7 +375,7 @@ def _make_under_training(
                         ground,
                         make_noise_objects(noise_objects),
                         is_training=True,
-                        is_distal=distance,
+                        is_distal=use_above_below,
                         syntax_hints=[USE_ABOVE_BELOW] if use_above_below else [],
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -384,7 +384,7 @@ def _make_under_training(
                 )
                 for figure in figures
                 for ground in grounds
-                for distance in BOOL_SET
+                # for distance in BOOL_SET
                 for use_above_below in BOOL_SET
             ]
         ),
@@ -418,7 +418,7 @@ def _make_over_training(
                         ground,
                         make_noise_objects(noise_objects),
                         is_training=True,
-                        is_distal=distance,
+                        is_distal=use_above_below,
                         syntax_hints=[USE_ABOVE_BELOW] if use_above_below else [],
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -427,7 +427,7 @@ def _make_over_training(
                 )
                 for figure in figures
                 for ground in grounds
-                for distance in BOOL_SET
+                # for distance in BOOL_SET
                 for use_above_below in BOOL_SET
             ]
         ),
@@ -750,7 +750,7 @@ def _make_beside_tests(
                                 figure,
                                 ground,
                                 make_noise_objects(noise_objects),
-                                is_right=direction,
+                                is_right=True,
                                 is_training=False,
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -759,7 +759,7 @@ def _make_beside_tests(
                         )
                         for figure in figures
                         for ground in grounds
-                        for direction in BOOL_SET
+                        # for direction in BOOL_SET
                     ]
                 )
             ]
@@ -797,7 +797,7 @@ def _make_under_tests(
                         ground,
                         make_noise_objects(noise_objects),
                         is_training=False,
-                        is_distal=distance,
+                        is_distal=use_above_below,
                         syntax_hints=[USE_ABOVE_BELOW] if use_above_below else [],
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -806,7 +806,7 @@ def _make_under_tests(
                 )
                 for figure in figures
                 for ground in grounds
-                for distance in BOOL_SET
+                # for distance in BOOL_SET
                 for use_above_below in BOOL_SET
             ]
         ),
@@ -847,7 +847,7 @@ def _make_over_tests(
                         ground,
                         make_noise_objects(noise_objects),
                         is_training=False,
-                        is_distal=distance,
+                        is_distal=use_above_below,
                         syntax_hints=[USE_ABOVE_BELOW] if use_above_below else [],
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -856,7 +856,7 @@ def _make_over_tests(
                 )
                 for figure in figures
                 for ground in grounds
-                for distance in BOOL_SET
+                # for distance in BOOL_SET
                 for use_above_below in BOOL_SET
             ]
         ),

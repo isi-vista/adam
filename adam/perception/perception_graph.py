@@ -355,6 +355,33 @@ class PerceptionGraph(PerceptionGraphProtocol):
     ) -> "PerceptionGraph":
         return _FrameTranslation().translate_frames(perceptual_representation)
 
+    @staticmethod
+    def add_temporal_scopes_to_edges(
+        digraph: DiGraph, temporal_scopes: Union[TemporalScope, Iterable[TemporalScope]]
+    ) -> DiGraph:
+        r"""
+        Modifies the given digraph in place, applying the given `TemporalScope`\ s to all edges.
+        This new graph will be dynamic.
+
+        Note that this should only be applied to static perception digraphs.
+        """
+        # Assume the graph is dynamic if an arbitrary edge label is temporally scoped.
+        _, _, a_label = first(digraph.edges(data="label"))
+        if isinstance(a_label, TemporallyScopedEdgeLabel):
+            raise RuntimeError(
+                "Cannot use add_temporal_scopes_to_edges on a graph which is "
+                "already dynamic"
+            )
+
+        for (source, target) in digraph.edges():
+            unwrapped_label = digraph.edges[source, target]["label"]
+            temporally_scoped_label = TemporallyScopedEdgeLabel.for_dynamic_perception(
+                unwrapped_label, when=temporal_scopes
+            )
+            digraph.edges[source, target]["label"] = temporally_scoped_label
+
+        return digraph
+
     def copy_with_temporal_scopes(
         self, temporal_scopes: Union[TemporalScope, Iterable[TemporalScope]]
     ) -> "PerceptionGraph":
@@ -370,14 +397,9 @@ class PerceptionGraph(PerceptionGraphProtocol):
                 "already dynamic"
             )
 
-        wrapped_graph = self.copy_as_digraph()
-
-        for (source, target) in wrapped_graph.edges():
-            unwrapped_label = wrapped_graph.edges[source, target]["label"]
-            temporally_scoped_label = TemporallyScopedEdgeLabel.for_dynamic_perception(
-                unwrapped_label, when=temporal_scopes
-            )
-            wrapped_graph.edges[source, target]["label"] = temporally_scoped_label
+        wrapped_graph = self.add_temporal_scopes_to_edges(
+            self._graph.copy(), temporal_scopes
+        )
 
         return PerceptionGraph(dynamic=True, graph=wrapped_graph)
 
@@ -644,7 +666,11 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
         )
 
     @staticmethod
-    def from_schema(object_schema: ObjectStructuralSchema) -> "PerceptionGraphPattern":
+    def from_schema(
+        object_schema: ObjectStructuralSchema,
+        *,
+        perception_generator: HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
+    ) -> "PerceptionGraphPattern":
         """
         Creates a pattern for recognizing an object based on its *object_schema*.
         """
@@ -658,9 +684,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
         situation = HighLevelSemanticsSituation(
             ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[schema_situation_object]
         )
-        perception_generator = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
-            GAILA_PHASE_1_ONTOLOGY
-        )
+        perception_generator = perception_generator
         # We explicitly exclude groundin perception generation, which were not
         # specified in the schema
         perception = perception_generator.generate_perception(
@@ -712,19 +736,29 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
 
     @staticmethod
     def from_ontology_node(
-        node: OntologyNode, ontology: Ontology
+        node: OntologyNode,
+        ontology: Ontology,
+        *,
+        perception_generator: HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
     ) -> "PerceptionGraphPattern":
         """
         Creates a pattern for recognizing an obect based on its *ontology_node*
         """
         # First, we check to see if the ontology node has a corresponding
         # schema in the ontology. If so we just use `from_schema`
+        if perception_generator.ontology != ontology:
+            raise RuntimeError(
+                "Ontology of perception generator does not match ontology of "
+                "from_ontology_node"
+            )
+
         if (
             node
             in ontology._structural_schemata.keys()  # pylint:disable=protected-access
         ):
             return PerceptionGraphPattern.from_schema(
-                first(ontology.structural_schemata(node))
+                first(ontology.structural_schemata(node)),
+                perception_generator=perception_generator,
             )
         # If the node doesn't have a corresponding structural schemata we see if it can be
         # created as a single object scene
@@ -735,9 +769,6 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
         )
         situation = HighLevelSemanticsSituation(
             ontology=ontology, salient_objects=[schema_situation_object]
-        )
-        perception_generator = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
-            ontology
         )
         # We explicitly exclude ground in perception generation
         perception = perception_generator.generate_perception(
@@ -1748,7 +1779,9 @@ class AnyObjectPerception(NodePredicate):
         return f"*obj{debug_handle_str}"
 
     def is_equivalent(self, other) -> bool:
-        return isinstance(other, AnyObjectPerception)
+        return isinstance(other, AnyObjectPerception) or isinstance(
+            other, ObjectSemanticNode
+        )
 
     def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
         return isinstance(predicate_node, AnyObjectPerception)
@@ -2659,13 +2692,11 @@ def _uniquify(
 class _FrameTranslation:
     unique_counter: Incrementer = attrib(init=False, default=Incrementer(0))
 
-    def translate_frame(
-        self, frame: DevelopmentalPrimitivePerceptionFrame
-    ) -> "PerceptionGraph":
+    def _translate_frame(self, frame: DevelopmentalPrimitivePerceptionFrame) -> DiGraph:
         """
-                Gets the `PerceptionGraph` corresponding to a
-                `DevelopmentalPrimitivePerceptionFrame`.
-                """
+        Gets the `DiGraph` corresponding to a
+        `DevelopmentalPrimitivePerceptionFrame`.
+        """
         graph = DiGraph()
 
         # see force_unique_counter in map_node above
@@ -2757,6 +2788,16 @@ class _FrameTranslation:
             for (object_, axis) in frame.axis_info.axes_facing.items():
                 graph.add_edge(axis, object_, label=FACING_OBJECT_LABEL)
 
+        return graph
+
+    def translate_frame(
+        self, frame: DevelopmentalPrimitivePerceptionFrame
+    ) -> "PerceptionGraph":
+        """
+        Gets the `PerceptionGraph` corresponding to a
+        `DevelopmentalPrimitivePerceptionFrame`.
+        """
+        graph = self._translate_frame(frame)
         return PerceptionGraph(graph)
 
     def translate_frames(
@@ -2775,22 +2816,19 @@ class _FrameTranslation:
         # First, we translate each of the two frames into PerceptionGraphs independently.
         # The edges of each graph are marked with the appropriate "temporal specifier"
         # which tells whether they belong to the "before" frame or the "after" frame.
-        before_frame_graph = (
-            self.translate_frame(perceptual_representation.frames[0])
-            .copy_with_temporal_scopes([TemporalScope.BEFORE])
-            .copy_as_digraph()
+        before_frame_graph = PerceptionGraph.add_temporal_scopes_to_edges(
+            self._translate_frame(perceptual_representation.frames[0]),
+            [TemporalScope.BEFORE],
         )
 
-        after_frame_graph = (
-            self.translate_frame(perceptual_representation.frames[1])
-            .copy_with_temporal_scopes([TemporalScope.AFTER])
-            .copy_as_digraph()
+        after_frame_graph = PerceptionGraph.add_temporal_scopes_to_edges(
+            self._translate_frame(perceptual_representation.frames[1]),
+            [TemporalScope.AFTER],
         )
 
         # This will be what the PerceptionGraph we are building will wrap.
-        _dynamic_digraph = DiGraph()
-        # Start with everything which is in the first frame's PerceptionGraph.
-        _dynamic_digraph.update(before_frame_graph)
+        # It starts with everything which is in the first frame's PerceptionGraph.
+        _dynamic_digraph = before_frame_graph
 
         # We have to be more careful adding things from the second frame's PerceptionGraph.
         # We can freely add all the nodes because they don't contain temporal information
@@ -2901,7 +2939,13 @@ class _FrameTranslation:
                     temporal_scopes=_DURING_ONLY,
                 )
 
-        return PerceptionGraph(graph=_dynamic_digraph, dynamic=True)
+        # The PerceptionGraph constructor always copies the graph it's passed, so to avoid copying
+        # the constructed digraph, we use this ugly hack. We construct a PerceptionGraph from an
+        # empty graph (which should be faster) and use object.__setattr__ to set its graph attribute
+        # to our constructed graph (working around the fact that PerceptionGraph is frozen).
+        new_perception_graph = PerceptionGraph(graph=DiGraph(), dynamic=True)
+        object.__setattr__(new_perception_graph, "_graph", _dynamic_digraph)
+        return new_perception_graph
 
     def _add_path_node(
         self,

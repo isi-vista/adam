@@ -1,17 +1,19 @@
 import logging
 from typing import Callable, Optional, Mapping, Iterable, Tuple
-
 from adam.curriculum.curriculum_utils import Phase1InstanceGroup
 from adam.curriculum.imprecise_descriptions_curriculum import (
     make_imprecise_size_curriculum,
     make_imprecise_temporal_descriptions,
     make_subtle_verb_distinctions_curriculum,
 )
+import random
+from adam.learner.objects import PursuitObjectLearnerNew
 from adam.curriculum.phase2_curriculum import (
     build_functionally_defined_objects_curriculum,
     build_gaila_m13_curriculum,
     build_m13_shuffled_curriculum,
 )
+from adam.curriculum.preposition_curriculum import make_prepositions_curriculum
 from adam.curriculum.verbs_with_dynamic_prepositions_curriculum import (
     make_verb_with_dynamic_prepositions_curriculum,
 )
@@ -23,17 +25,22 @@ from adam.experiment.experiment_utils import (
     build_generics_curriculum,
     build_m6_prepositions_curriculum,
     build_pursuit_curriculum,
+    build_functionally_defined_objects_train_curriculum,
 )
 from adam.language.dependency import LinearizedDependencyTree
 from adam.language.language_generator import LanguageGenerator
 from adam.language.language_utils import phase2_language_generator
 from adam.language_specific.english import ENGLISH_DETERMINERS
 from adam.learner.attributes import SubsetAttributeLearner, SubsetAttributeLearnerNew
+from adam.learner.functional_learner import FunctionalLearner
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
 from adam.learner.relations import SubsetRelationLearnerNew
 from adam.learner.verbs import SubsetVerbLearner, SubsetVerbLearnerNew
 from adam.ontology.phase2_ontology import GAILA_PHASE_2_ONTOLOGY
+from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
+    GAILA_PHASE_1_PERCEPTION_GENERATOR,
+)
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from vistautils.parameters import Parameters
 from vistautils.parameters_only_entrypoint import parameters_only_entry_point
@@ -120,6 +127,7 @@ def log_experiment_entry_point(params: Parameters) -> None:
         learner_logging_path=params.optional_creatable_directory("experiment_group_dir"),
         starting_point=params.integer("starting_point", default=-1),
         point_to_log=params.integer("point_to_log", default=0),
+        load_learner_state=params.optional_existing_file("learner_state_path"),
     )
 
 
@@ -138,6 +146,7 @@ def learner_factory_from_params(
             "verb-subset",
             "integrated-learner",
             "integrated-learner-recognizer",
+            "pursuit-gaze",
         ],
     )
 
@@ -149,6 +158,10 @@ def learner_factory_from_params(
     ]:
         raise RuntimeError("Only able to test Chinese with integrated learner.")
 
+    rng = random.Random()
+    rng.seed(0)
+    perception_generator = GAILA_PHASE_1_PERCEPTION_GENERATOR
+
     objects = [YOU_HACK, ME_HACK]
     objects.extend(PHASE_1_CURRICULUM_OBJECTS)
 
@@ -158,11 +171,40 @@ def learner_factory_from_params(
         determiners=ENGLISH_DETERMINERS,
         ontology=GAILA_PHASE_1_ONTOLOGY,
         language_mode=language_mode,
+        perception_generator=perception_generator,
     )
 
     if learner_type == "pursuit":
         return lambda: ObjectPursuitLearner.from_parameters(
             params.namespace("pursuit"), graph_logger=graph_logger
+        )
+    elif learner_type == "pursuit-gaze":
+        return lambda: IntegratedTemplateLearner(
+            object_learner=PursuitObjectLearnerNew(
+                learning_factor=0.05,
+                graph_match_confirmation_threshold=0.7,
+                lexicon_entry_threshold=0.7,
+                rng=rng,
+                smoothing_parameter=0.002,
+                ontology=GAILA_PHASE_2_ONTOLOGY,
+                language_mode=language_mode,
+                rank_gaze_higher=True,
+            ),
+            attribute_learner=SubsetAttributeLearnerNew(
+                ontology=GAILA_PHASE_2_ONTOLOGY,
+                beam_size=beam_size,
+                language_mode=language_mode,
+            ),
+            relation_learner=SubsetRelationLearnerNew(
+                ontology=GAILA_PHASE_2_ONTOLOGY,
+                beam_size=beam_size,
+                language_mode=language_mode,
+            ),
+            action_learner=SubsetVerbLearnerNew(
+                ontology=GAILA_PHASE_2_ONTOLOGY,
+                beam_size=beam_size,
+                language_mode=language_mode,
+            ),
         )
     elif learner_type == "object-subset":
         return lambda: SubsetObjectLearner(
@@ -209,6 +251,7 @@ def learner_factory_from_params(
                 beam_size=beam_size,
                 language_mode=language_mode,
             ),
+            functional_learner=FunctionalLearner(language_mode=language_mode),
         )
     elif learner_type == "integrated-learner-recognizer":
         return lambda: IntegratedTemplateLearner(
@@ -230,6 +273,7 @@ def learner_factory_from_params(
                 beam_size=beam_size,
                 language_mode=language_mode,
             ),
+            functional_learner=FunctionalLearner(language_mode=language_mode),
         )
     else:
         raise RuntimeError("can't happen")
@@ -262,8 +306,8 @@ def curriculum_from_params(
         "m13-subtle-verb-distinction": (make_subtle_verb_distinctions_curriculum, None),
         "m13-object-restrictions": (build_functionally_defined_objects_curriculum, None),
         "m13-functionally-defined-objects": (
+            build_functionally_defined_objects_train_curriculum,
             build_functionally_defined_objects_curriculum,
-            None,
         ),
         "m13-generics": (build_generics_curriculum, None),
         "m13-complete": (build_gaila_m13_curriculum, None),
@@ -272,6 +316,7 @@ def curriculum_from_params(
             None,
         ),
         "m13-shuffled": (build_m13_shuffled_curriculum, build_gaila_m13_curriculum),
+        "m13-relations": (make_prepositions_curriculum, None),
     }
 
     curriculum_name = params.string("curriculum", str_to_train_test_curriculum.keys())

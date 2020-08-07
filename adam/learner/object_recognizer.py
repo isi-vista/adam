@@ -1,8 +1,17 @@
 import logging
 from itertools import chain
-from typing import AbstractSet, Iterable, List, Mapping, Sequence, Set, Tuple, Union
+from typing import (
+    AbstractSet,
+    Iterable,
+    List,
+    Mapping,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+    Callable,
+)
 
-from adam.axis import GeonAxis
 from adam.language_specific.chinese.chinese_phase_1_lexicon import (
     GAILA_PHASE_1_CHINESE_LEXICON,
 )
@@ -18,6 +27,7 @@ from adam.learner.alignments import (
     LanguagePerceptionSemanticAlignment,
     PerceptionSemanticAlignment,
 )
+from adam.learner.learner_utils import default_post_process_enrichment
 from adam.ontology import OntologyNode
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
@@ -35,6 +45,10 @@ from adam.perception import (
     MatchMode,
 )
 from adam.perception.deprecated import LanguageAlignedPerception
+from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
+    GAILA_PHASE_1_PERCEPTION_GENERATOR,
+    HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
+)
 from adam.perception.perception_graph import (
     AnyObjectPerception,
     ENTIRE_SCENE,
@@ -53,6 +67,7 @@ from adam.semantics import (
     ObjectConcept,
     ObjectSemanticNode,
     GROUND_OBJECT_CONCEPT,
+    SemanticNode,
 )
 from adam.utils.networkx_utils import subgraph
 from attr import attrib, attrs
@@ -65,7 +80,8 @@ _LIST_OF_PERCEIVED_PATTERNS = immutableset(
     (
         node.handle,
         PerceptionGraphPattern.from_schema(
-            first(GAILA_PHASE_1_ONTOLOGY.structural_schemata(node))
+            first(GAILA_PHASE_1_ONTOLOGY.structural_schemata(node)),
+            perception_generator=GAILA_PHASE_1_PERCEPTION_GENERATOR,
         ),
     )
     for node in PHASE_1_CURRICULUM_OBJECTS
@@ -199,6 +215,8 @@ class ObjectRecognizer:
         determiners: Iterable[str],
         ontology: Ontology,
         language_mode: LanguageMode,
+        *,
+        perception_generator: HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
     ) -> "ObjectRecognizer":
         ontology_types_to_concepts = {
             obj_type: ObjectConcept(obj_type.handle) for obj_type in ontology_types
@@ -209,7 +227,9 @@ class ObjectRecognizer:
                 immutabledict(
                     (
                         concept,
-                        PerceptionGraphPattern.from_ontology_node(obj_type, ontology),
+                        PerceptionGraphPattern.from_ontology_node(
+                            obj_type, ontology, perception_generator=perception_generator
+                        ),
                     )
                     for (obj_type, concept) in ontology_types_to_concepts.items()
                 )
@@ -235,7 +255,13 @@ class ObjectRecognizer:
         )
 
     def match_objects(
-        self, perception_semantic_alignment: PerceptionSemanticAlignment
+        self,
+        perception_semantic_alignment: PerceptionSemanticAlignment,
+        *,
+        post_process: Callable[
+            [PerceptionGraph, AbstractSet[SemanticNode]],
+            Tuple[PerceptionGraph, AbstractSet[SemanticNode]],
+        ] = default_post_process_enrichment,
     ) -> Tuple[PerceptionSemanticAlignment, Mapping[Tuple[str, ...], ObjectSemanticNode]]:
         r"""
         Recognize known objects in a `PerceptionGraph`.
@@ -359,9 +385,14 @@ class ObjectRecognizer:
             cumulative_millis_in_failed_matches_ms,
         )
         semantic_object_nodes = immutableset(node for (_, node) in object_nodes)
+
+        post_process_graph, post_process_nodes = post_process(
+            graph_to_return, semantic_object_nodes
+        )
+
         return (
             perception_semantic_alignment.copy_with_updated_graph_and_added_nodes(
-                new_graph=graph_to_return, new_nodes=semantic_object_nodes
+                new_graph=post_process_graph, new_nodes=post_process_nodes
             ),
             immutabledict(object_nodes),
         )
@@ -390,7 +421,13 @@ class ObjectRecognizer:
         )
 
     def match_objects_with_language(
-        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
+        self,
+        language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
+        *,
+        post_process: Callable[
+            [PerceptionGraph, AbstractSet[SemanticNode]],
+            Tuple[PerceptionGraph, AbstractSet[SemanticNode]],
+        ] = default_post_process_enrichment,
     ) -> LanguagePerceptionSemanticAlignment:
         """
         Recognize known objects in a `LanguagePerceptionSemanticAlignment`.
@@ -416,7 +453,8 @@ class ObjectRecognizer:
             post_match_perception_semantic_alignment,
             tokens_to_object_nodes,
         ) = self.match_objects(
-            language_perception_semantic_alignment.perception_semantic_alignment
+            language_perception_semantic_alignment.perception_semantic_alignment,
+            post_process=post_process,
         )
         return LanguagePerceptionSemanticAlignment(
             language_concept_alignment=language_perception_semantic_alignment.language_concept_alignment.copy_with_added_token_alignments(
@@ -503,6 +541,7 @@ class ObjectRecognizer:
 def extract_candidate_objects(
     whole_scene_perception_graph: PerceptionGraph
 ) -> Sequence[PerceptionGraph]:
+
     """
     Pulls out distinct objects from a scene.
 
@@ -570,7 +609,7 @@ def extract_candidate_objects(
         while nodes_to_examine:
             node_to_examine = nodes_to_examine.pop()
             is_allowable_node = (
-                not isinstance(node_to_examine, ObjectPerception)
+                not isinstance(node_to_examine, (ObjectPerception, ObjectSemanticNode))
                 or node_to_examine in object_nodes_in_object
             )
             if node_to_examine not in nodes_visited and is_allowable_node:
@@ -579,14 +618,19 @@ def extract_candidate_objects(
                 nodes_to_examine.extend(
                     out_neighbor
                     for (_, out_neighbor) in scene_digraph.out_edges(node_to_examine)
+                    if not (
+                        isinstance(out_neighbor, tuple)
+                        and isinstance(out_neighbor[0], Region)
+                        and out_neighbor[0].reference_object == GROUND_PERCEPTION
+                    )
                 )
                 nodes_to_examine.extend(
                     in_neighbor
                     for (in_neighbor, _) in scene_digraph.in_edges(node_to_examine)
                     # Avoid in-edges from Regions as they can come from other objects regions (e.g ground).
                     if not (
-                        isinstance(node_to_examine, GeonAxis)
-                        and isinstance(in_neighbor, tuple)
+                        # isinstance(node_to_examine, GeonAxis)
+                        isinstance(in_neighbor, tuple)
                         and isinstance(in_neighbor[0], Region)
                     )
                 )
