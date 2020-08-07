@@ -101,6 +101,11 @@ class CandidateAccuracyObserver(
     Provide an accuracy score.
     """
     name: str = attrib(validator=instance_of(str))
+
+    # these params allow the accuracy to be written out to a text file at each step which is helpful for graphing for
+    # experiments such as the gaze ablation where we want to compare accuracy
+    accuracy_to_txt: bool = attrib(default=False)
+    txt_path: str = attrib(validator=instance_of(str), default="accuracy_out.txt")
     _num_predictions: int = attrib(init=False, default=0)
     _num_predictions_with_gold_in_candidates: int = attrib(init=False, default=0)
 
@@ -122,6 +127,18 @@ class CandidateAccuracyObserver(
 
     def report(self) -> None:
         accuracy = self.accuracy()
+
+        # write out to an accuracy file if requested to do so by the user
+        if self.accuracy_to_txt:
+            try:
+                with open(self.txt_path, "a") as f:
+                    f.write(f"{accuracy}\n")
+            # we currently catch errors with a warning rather than stopping the program if we can't log accuracy
+            except OSError as e:
+                logging.warning(
+                    f"The following error occurred while attempting to log accuracy to a txt file: {e}"
+                )
+
         if accuracy is not None:
             logging.info(
                 "%s: accuracy of learner's predictions ('gold' description was in learner's candidates) "
