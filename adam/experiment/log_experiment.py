@@ -112,7 +112,7 @@ def log_experiment_entry_point(params: Parameters) -> None:
             ),
             pre_example_training_observers=[
                 logger.pre_observer(),
-                CandidateAccuracyObserver("pre-acc-observer"),
+                CandidateAccuracyObserver("pre-acc-observer", accuracy_to_txt=True),
             ],
             post_example_training_observers=[logger.post_observer()],
             test_instance_groups=test_instance_groups,
