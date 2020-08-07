@@ -6,7 +6,6 @@ experiment: 'pursuit-ablating-gaze'
 curriculum: pursuit
 learner: pursuit-gaze
 accuracy_to_txt : True
-accuracy_logging_path : "out_out.txt"
 
 pursuit:
    learning_factor: 0.05

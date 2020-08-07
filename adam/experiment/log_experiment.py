@@ -105,7 +105,15 @@ def log_experiment_entry_point(params: Parameters) -> None:
 
     # these are the params to use for writing accuracy to a text file at every iteration (e.g. to graph later)
     accuracy_to_txt = params.boolean("accuracy_to_txt", default=False)
-    txt_path = params.string("accuracy_logging_path", default="out.txt")
+    accuracy_logging_path = params.string(
+        "accuracy_logging_path", default="accuracy_out.txt"
+    )
+    # we want to log to the same file as the html output, etc.
+    experiment_group_dir = params.optional_creatable_directory("experiment_group_dir")
+    if experiment_group_dir:
+        txt_path = str(experiment_group_dir / accuracy_logging_path)
+    else:
+        txt_path = accuracy_logging_path
 
     execute_experiment(
         Experiment(
@@ -130,7 +138,7 @@ def log_experiment_entry_point(params: Parameters) -> None:
             "log_hypothesis_every_n_steps", default=250
         ),
         log_learner_state=params.boolean("log_learner_state", default=True),
-        learner_logging_path=params.optional_creatable_directory("experiment_group_dir"),
+        learner_logging_path=experiment_group_dir,
         starting_point=params.integer("starting_point", default=0),
         point_to_log=params.integer("point_to_log", default=0),
         load_learner_state=params.optional_existing_file("learner_state_path"),

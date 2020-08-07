@@ -105,7 +105,7 @@ class CandidateAccuracyObserver(
     # these params allow the accuracy to be written out to a text file at each step which is helpful for graphing for
     # experiments such as the gaze ablation where we want to compare accuracy
     accuracy_to_txt: bool = attrib(default=False)
-    txt_path: str = attrib(validator=instance_of(str), default="out.txt")
+    txt_path: str = attrib(validator=instance_of(str), default="accuracy_out.txt")
     _num_predictions: int = attrib(init=False, default=0)
     _num_predictions_with_gold_in_candidates: int = attrib(init=False, default=0)
 
