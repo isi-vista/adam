@@ -138,6 +138,11 @@ def execute_experiment(
     Runs an `Experiment`.
     """
 
+    # the starting point must be greater than or equal to 0
+    if starting_point < 0:
+        logging.warning(f"Starting point {starting_point} is invalid, setting to 0")
+        starting_point = 0
+
     # make the directories in which to log the learner
     if log_learner_state and learner_logging_path:
         learner_path = learner_logging_path / "learner_state"
