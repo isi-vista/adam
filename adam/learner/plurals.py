@@ -22,7 +22,7 @@ from adam.learner.template_learner import AbstractTemplateLearnerNew
 from adam.ontology.phase2_ontology import TWO, HAS_COUNT, MANY
 from adam.perception import MatchMode
 from adam.perception.perception_graph import PerceptionGraph
-from adam.semantics import AttributeConcept
+from adam.semantics import AttributeConcept, SemanticNode
 
 _MAXIMUM_PLURAL_TEMPLATE_TOKEN_LENGTH = 5
 
@@ -57,6 +57,13 @@ class AbstractPluralTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
             self._language_mode,
             candidate_plural_templates,
         )
+
+    def _enrich_post_process(
+        self,
+        perception_graph_after_matching: PerceptionGraph,
+        immutable_new_nodes: AbstractSet[SemanticNode],
+    ) -> Tuple[PerceptionGraph, AbstractSet[SemanticNode]]:
+        return perception_graph_after_matching, immutable_new_nodes
 
 
 @attrs
