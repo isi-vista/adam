@@ -2,3 +2,10 @@ _includes:
    - "../root.params"
 
 parameters_directory : "%adam_root%/parameters/experiments/gaze_ablation"
+min_num_objects: 3
+max_num_objects : 8
+num_increments: 5
+min_num_noise : 0
+max_num_noise : 0
+min_instances : 15
+max_instances : 20
