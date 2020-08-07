@@ -103,6 +103,10 @@ def log_experiment_entry_point(params: Parameters) -> None:
         params, language_mode
     )
 
+    # these are the params to use for writing accuracy to a text file at every iteration (e.g. to graph later)
+    accuracy_to_txt = params.boolean("accuracy_to_txt", default=False)
+    txt_path = params.string("accuracy_logging_path", default="out.txt")
+
     execute_experiment(
         Experiment(
             name=experiment_name,
@@ -112,7 +116,9 @@ def log_experiment_entry_point(params: Parameters) -> None:
             ),
             pre_example_training_observers=[
                 logger.pre_observer(),
-                CandidateAccuracyObserver("pre-acc-observer", accuracy_to_txt=True),
+                CandidateAccuracyObserver(
+                    "pre-acc-observer", accuracy_to_txt=accuracy_to_txt, txt_path=txt_path
+                ),
             ],
             post_example_training_observers=[logger.post_observer()],
             test_instance_groups=test_instance_groups,
