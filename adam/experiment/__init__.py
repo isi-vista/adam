@@ -249,7 +249,7 @@ def execute_experiment(
 
             learner.observe(
                 LearningExample(perceptual_representation, linguistic_description),
-                observation_num=num_observations,
+                offset=starting_point,
             )
 
             if experiment.post_example_training_observers:

@@ -63,20 +63,14 @@ class AbstractTemplateLearner(
         learning_example: LearningExample[
             DevelopmentalPrimitivePerceptionFrame, LinguisticDescription
         ],
-        observation_num: int = -1,
+        offset: int = 0,
     ) -> None:
-        if observation_num >= 0:
-            logging.info(
-                "Observation %s: %s",
-                observation_num,
-                learning_example.linguistic_description.as_token_string(),
-            )
-        else:
-            logging.info(
-                "Observation %s: %s",
-                self._observation_num,
-                learning_example.linguistic_description.as_token_string(),
-            )
+
+        logging.info(
+            "Observation %s: %s",
+            self._observation_num + offset,
+            learning_example.linguistic_description.as_token_string(),
+        )
         self._observation_num += 1
 
         self._assert_valid_input(learning_example)
@@ -274,20 +268,13 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
     def learn_from(
         self,
         language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
-        observation_num: int = -1,
+        offset: int = 0,
     ) -> None:
-        if observation_num >= 0:
-            logging.info(
-                "Observation %s: %s",
-                observation_num,
-                language_perception_semantic_alignment.language_concept_alignment.language.as_token_string(),
-            )
-        else:
-            logging.info(
-                "Observation %s: %s",
-                self._observation_num,
-                language_perception_semantic_alignment.language_concept_alignment.language.as_token_string(),
-            )
+        logging.info(
+            "Observation %s: %s",
+            self._observation_num + offset,
+            language_perception_semantic_alignment.language_concept_alignment.language.as_token_string(),
+        )
 
         self._observation_num += 1
 

@@ -88,7 +88,7 @@ class TopLevelLanguageLearner(ABC, Generic[PerceptionT, LinguisticDescriptionT])
     def observe(
         self,
         learning_example: LearningExample[PerceptionT, LinguisticDescription],
-        observation_num: int = -1,
+        offset: int = 0,
     ) -> None:
         """
         Observe a `LearningExample`, possibly updating internal state.
@@ -139,7 +139,7 @@ class MemorizingLanguageLearner(
     def observe(
         self,
         learning_example: LearningExample[PerceptionT, LinguisticDescription],
-        observation_num: int = -1,  # pylint:disable=unused-argument
+        offset: int = 0,  # pylint:disable=unused-argument
     ) -> None:
         self._memorized_situations[
             learning_example.perception
@@ -211,7 +211,7 @@ class ComposableLearner(ABC):
     def learn_from(
         self,
         language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
-        observation_num: int = -1,
+        offset: int = 0,
     ) -> None:
         """
         Learn from a `LanguagePerceptionSemanticAlignment` describing a situation. This may update
