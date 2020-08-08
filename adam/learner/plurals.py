@@ -1,11 +1,12 @@
 import itertools
 from abc import ABC
 from collections import Counter
-from typing import AbstractSet, Iterable, Optional, Tuple
+from typing import AbstractSet, Iterable, Optional, Tuple, List
 
-from attr import attrs
+from attr import attrs, attrib
 from immutablecollections import immutableset, immutablesetmultidict
 
+from adam.language import LinguisticDescription
 from adam.learner.alignments import (
     LanguagePerceptionSemanticAlignment,
     PerceptionSemanticAlignment,
@@ -47,7 +48,6 @@ class AbstractPluralTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                         i,
                     )
                 ):
-
                     yield output
 
         # Generate all the possible plural template alignments
@@ -70,6 +70,8 @@ class AbstractPluralTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
 class SubsetPluralLearnerNew(
     AbstractTemplateSubsetLearnerNew, AbstractPluralTemplateLearnerNew
 ):
+    potential_plural_markers: Counter = attrib(init=False, default=Counter())
+
     def _can_learn_from(
         self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
     ) -> bool:
@@ -131,6 +133,9 @@ class SubsetPluralLearnerNew(
             # We need at least two nodes - a wildcard and a property -
             # for meaningful attribute semantics.
             return False
+        # If we are keeping a hypothesis, use the template for that to update the list of possible plural markers.
+        self.potential_plural_markers.update([t for t in bound_surface_template.surface_template.elements
+                                              if isinstance(t, str)])
         return True
 
     def _update_hypothesis(
@@ -152,3 +157,7 @@ class SubsetPluralLearnerNew(
             ),
             trim_after_match=pattern_remove_incomplete_region_or_spatial_path,
         )
+
+    def is_plural_utterance(self, desc: LinguisticDescription) -> bool:
+        potential_markers = [t[0] for t in self.potential_plural_markers.most_common(3)]
+        return any([t in potential_markers for t in desc.as_token_sequence()])

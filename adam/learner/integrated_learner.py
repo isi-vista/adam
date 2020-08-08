@@ -150,7 +150,10 @@ class IntegratedTemplateLearner(
                     current_learner_state, observation_num=observation_num
                 )
 
-        if self.generics_learner:
+        if self.generics_learner and isinstance(self.attribute_learner, SubsetPluralLearnerNew) \
+                and self.attribute_learner.is_plural_utterance(learning_example.linguistic_description):
+            print('running generics for ', learning_example.linguistic_description)
+            # plural marker could be marking a generic statment
             self.generics_learner.learn_from(current_learner_state)
 
     def describe(
@@ -394,4 +397,6 @@ class IntegratedTemplateLearner(
             valid_sub_learners.append(self.action_learner)
         if self.functional_learner:
             valid_sub_learners.append(self.functional_learner)
+        if self.generics_learner:
+            valid_sub_learners.append(self.generics_learner)
         return valid_sub_learners

@@ -22,6 +22,7 @@ from adam.learner.learner_utils import AlignmentSlots, candidate_templates
 from adam.learner.object_recognizer import (
     extract_candidate_objects,
 )
+from adam.learner.objects import ObjectPursuitLearner
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
 from adam.learner.pursuit import (
     AbstractPursuitLearnerNew,
@@ -35,7 +36,7 @@ from adam.learner.template_learner import (
 )
 from adam.perception import ObjectPerception, MatchMode
 from adam.perception.perception_graph import PerceptionGraph, PerceptionGraphPattern
-from adam.semantics import ObjectConcept, GenericConcept
+from adam.semantics import ObjectConcept, GenericConcept, SemanticNode
 
 _MAXIMUM_GENERICS_TEMPLATE_TOKEN_LENGTH = 5
 
@@ -68,9 +69,14 @@ class AbstractGenericsTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
             candidate_generics_templates,
         )
 
+    def _enrich_post_process(self, perception_graph_after_matching: PerceptionGraph,
+                             immutable_new_nodes: AbstractSet[SemanticNode]) -> Tuple[
+        PerceptionGraph, AbstractSet[SemanticNode]]:
+        return perception_graph_after_matching, immutable_new_nodes
+
 
 @attrs
-class PursuitGenericsLearnerNew(
+class PursuitGenericsLearner(
     AbstractPursuitLearnerNew, AbstractGenericsTemplateLearnerNew
 ):
     """
@@ -80,14 +86,14 @@ class PursuitGenericsLearnerNew(
     def _can_learn_from(
             self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
     ) -> bool:
-        # The plural marker signals a generic when we hear a word we know, but the sentence doesn't match the scene
+        # This is already only engaged when the scene has a plural marker. We want to check whether the
+        # tokens in the utterance match the scene, i.e if there are recognized concepts.
         recognized_concepts = language_perception_semantic_alignment. \
             language_concept_alignment.node_to_language_span.keys()
-        # Check if the language is plural - TODO:
-        is_plural = True  # language_perception_semantic_alignment.language_concept_alignment.language
+        print(recognized_concepts)
         return (
                 not language_perception_semantic_alignment.language_concept_alignment.is_entirely_aligned
-                and is_plural and recognized_concepts
+                and recognized_concepts
         )
 
     def _preprocess_scene(
@@ -103,21 +109,14 @@ class PursuitGenericsLearnerNew(
             learning_state: LanguagePerceptionSemanticAlignment,
             bound_surface_template: SurfaceTemplateBoundToSemanticNodes,
     ) -> AbstractSet[PerceptionGraphTemplate]:
-        if bound_surface_template.slot_to_semantic_node:
-            raise RuntimeError(
-                "Object learner should not have slot to semantic node alignments!"
-            )
-
+        # TODO: add generic specific representation
         return immutableset(
-            PerceptionGraphTemplate(
-                graph_pattern=PerceptionGraphPattern.from_graph(
-                    candidate_object
-                ).perception_graph_pattern,
-                template_variable_to_pattern_node=immutabledict(),
-            )
-            for candidate_object in extract_candidate_objects(
-                learning_state.perception_semantic_alignment.perception_graph
-            )
+            [
+                PerceptionGraphTemplate.from_graph(
+                    learning_state.perception_semantic_alignment.perception_graph,
+                    template_variable_to_matched_object_node=bound_surface_template.slot_to_semantic_node,
+                )
+            ]
         )
 
     # I can't spot the difference in arguments pylint claims?
@@ -128,10 +127,6 @@ class PursuitGenericsLearnerNew(
     ) -> bool:
         if len(hypothesis.graph_pattern) < 2:
             # A one node graph is to small to meaningfully describe an object
-            return False
-        if all(isinstance(node, ObjectPerception) for node in hypothesis.graph_pattern):
-            # A hypothesis which consists of just sub-object structure
-            # with no other content is insufficiently distinctive.
             return False
         return True
 
