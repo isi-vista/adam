@@ -13,7 +13,6 @@ from adam.language import LinguisticDescription, LinguisticDescriptionT
 from adam.situation import SituationT
 from adam.perception import PerceptionT, PerceptualRepresentation
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
-from adam.visualization.make_scenes import situation_to_filename
 
 
 class DescriptionObserver(Generic[SituationT, LinguisticDescriptionT, PerceptionT], ABC):
@@ -102,6 +101,11 @@ class CandidateAccuracyObserver(
     Provide an accuracy score.
     """
     name: str = attrib(validator=instance_of(str))
+
+    # these params allow the accuracy to be written out to a text file at each step which is helpful for graphing for
+    # experiments such as the gaze ablation where we want to compare accuracy
+    accuracy_to_txt: bool = attrib(default=False)
+    txt_path: str = attrib(validator=instance_of(str), default="accuracy_out.txt")
     _num_predictions: int = attrib(init=False, default=0)
     _num_predictions_with_gold_in_candidates: int = attrib(init=False, default=0)
 
@@ -123,6 +127,18 @@ class CandidateAccuracyObserver(
 
     def report(self) -> None:
         accuracy = self.accuracy()
+
+        # write out to an accuracy file if requested to do so by the user
+        if self.accuracy_to_txt:
+            try:
+                with open(self.txt_path, "a") as f:
+                    f.write(f"{accuracy}\n")
+            # we currently catch errors with a warning rather than stopping the program if we can't log accuracy
+            except OSError as e:
+                logging.warning(
+                    f"The following error occurred while attempting to log accuracy to a txt file: {e}"
+                )
+
         if accuracy is not None:
             logging.info(
                 "%s: accuracy of learner's predictions ('gold' description was in learner's candidates) "
@@ -369,12 +385,7 @@ class LearningProgressHtmlLogger:  # pragma: no cover
                     f'\t\t\t\t<td valign="top">{learner_description}<br/>Accuracy: {accuracy:2.2f}</td>\n'
                 )
 
-            if situation and isinstance(situation, HighLevelSemanticsSituation):
-                render_buttons_text = self.render_buttons_html(
-                    situation, perceptual_representation
-                )
-            else:
-                render_buttons_text = ""
+            render_buttons_text = ""
 
             outfile.write(
                 f'\t\t\t\t<td valign="top">{clickable_perception_string}\n\t\t\t\t</td>\n'
@@ -383,29 +394,6 @@ class LearningProgressHtmlLogger:  # pragma: no cover
                 outfile.write(f"\t\t\t\t<td valign='top'>{render_buttons_text}</td>")
             outfile.write(f"\t\t\t</tr>\n\t\t</tbody>\n\t</table>")
             outfile.write("\n</body>")
-
-    def render_buttons_html(
-        self,
-        situation: HighLevelSemanticsSituation,
-        perception: PerceptualRepresentation[PerceptionT],
-    ) -> str:
-        buttons = []
-        for frame in range(3):
-            filename = situation_to_filename(situation, frame)
-            button_suffix = self._get_button_suffix()
-            buttons.append(
-                f"""
-                <button onclick="myFunction('render{filename}-{button_suffix}')">View Rendering {frame + 1}</button>
-                <div id="render{filename}-{button_suffix}" style="display: none">
-                <img src="renders/{filename}">
-                </div>
-                """
-            )
-        if not situation.is_dynamic:
-            return buttons[0]
-        if perception.during and perception.during.at_some_point:
-            return "".join(buttons)
-        return "".join(buttons[0:2])
 
     def _get_button_suffix(self) -> str:
         suffix = str(self._button_id_suffix)

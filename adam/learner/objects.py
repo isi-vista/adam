@@ -1,8 +1,9 @@
 import logging
 from abc import ABC
+from itertools import chain
 from pathlib import Path
 from random import Random
-from typing import AbstractSet, Iterable, List, Optional, Sequence, Union
+from typing import AbstractSet, Iterable, List, Optional, Sequence, Union, Tuple
 from adam.language_specific.chinese.chinese_phase_1_lexicon import (
     GAILA_PHASE_1_CHINESE_LEXICON,
 )
@@ -22,6 +23,8 @@ from adam.learner.object_recognizer import (
     ObjectRecognizer,
     PerceptionGraphFromObjectRecognizer,
     extract_candidate_objects,
+    replace_match_root_with_object_semantic_node,
+    replace_match_with_object_graph_node,
 )
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
 from adam.learner.pursuit import (
@@ -50,8 +53,19 @@ from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
     RgbColorPerception,
 )
-from adam.perception.perception_graph import PerceptionGraph, PerceptionGraphPattern
-from adam.semantics import Concept, ObjectConcept, GROUND_OBJECT_CONCEPT
+from adam.perception.perception_graph import (
+    PerceptionGraph,
+    PerceptionGraphPattern,
+    PerceptionGraphPatternMatch,
+)
+from adam.semantics import (
+    Concept,
+    ObjectConcept,
+    GROUND_OBJECT_CONCEPT,
+    SemanticNode,
+    ObjectSemanticNode,
+    FunctionalObjectConcept,
+)
 from adam.utils import networkx_utils
 from attr import attrib, attrs, evolve
 from attr.validators import instance_of, optional
@@ -62,6 +76,8 @@ from immutablecollections import (
     immutableset,
     immutablesetmultidict,
 )
+
+from adam.utils.networkx_utils import subgraph
 from vistautils.parameters import Parameters
 
 
@@ -108,6 +124,47 @@ class AbstractObjectTemplateLearnerNew(AbstractTemplateLearnerNew):
             if not language_alignment.token_index_is_aligned(tok_idx)
             # ignore determiners
             and token not in ["a", "the"]
+        )
+
+    def _enrich_post_process(
+        self,
+        perception_graph_after_matching: PerceptionGraph,
+        immutable_new_nodes: AbstractSet[SemanticNode],
+    ) -> Tuple[PerceptionGraph, AbstractSet[SemanticNode]]:
+        object_root_nodes = immutableset(  # pylint:disable=protected-access
+            node
+            for node in perception_graph_after_matching._graph.nodes  # pylint:disable=protected-access
+            if isinstance(node, ObjectPerception)
+        )
+        new_nodes = []
+        perception_graph_after_processing = perception_graph_after_matching
+        for object_root_node in object_root_nodes:
+            fake_subgraph = subgraph(  # pylint:disable=protected-access
+                perception_graph_after_matching._graph,  # pylint:disable=protected-access
+                [object_root_node],
+            )
+            fake_perception_graph = PerceptionGraph(
+                graph=fake_subgraph, dynamic=perception_graph_after_matching.dynamic
+            )
+            fake_pattern_graph = PerceptionGraphPattern.from_graph(fake_perception_graph)
+            fake_object_semantic_node = ObjectSemanticNode(
+                concept=FunctionalObjectConcept("unknown_object")
+            )
+            perception_graph_after_processing = replace_match_root_with_object_semantic_node(
+                object_semantic_node=fake_object_semantic_node,
+                current_perception=perception_graph_after_processing,
+                pattern_match=PerceptionGraphPatternMatch(
+                    matched_pattern=fake_pattern_graph.perception_graph_pattern,
+                    graph_matched_against=perception_graph_after_matching,
+                    matched_sub_graph=fake_perception_graph,
+                    pattern_node_to_matched_graph_node=fake_pattern_graph.perception_graph_node_to_pattern_node,
+                ),
+            )
+            new_nodes.append(fake_object_semantic_node)
+
+        return (
+            perception_graph_after_processing,
+            immutableset(chain(immutable_new_nodes, new_nodes)),
         )
 
 
@@ -240,10 +297,10 @@ class ObjectPursuitLearner(AbstractPursuitLearner, AbstractObjectTemplateLearner
                     if not isinstance(neighbor, ObjectPerception):
                         other_nodes.append(neighbor)
 
-            subgraph = networkx_utils.subgraph(
+            generated_subgraph = networkx_utils.subgraph(
                 perception_as_digraph, all_object_perception_nodes + other_nodes
             )
-            meanings.append(PerceptionGraph(subgraph))
+            meanings.append(PerceptionGraph(generated_subgraph))
         logging.info(f"Got {len(meanings)} candidate meanings")
         return meanings
 
@@ -485,24 +542,55 @@ class ObjectRecognizerAsTemplateLearner(TemplateLearner):
     def learn_from(
         self,
         language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
-        observation_num: int = -1,
+        offset: int = 0,
     ) -> None:
         # The object recognizer doesn't learn anything.
         # It just recognizes predefined object patterns.
         pass
 
+    @staticmethod
+    def _enrich_post_process(
+        perception_graph_after_matching: PerceptionGraph,
+        immutable_new_nodes: AbstractSet[SemanticNode],
+    ) -> Tuple[PerceptionGraph, AbstractSet[SemanticNode]]:
+        new_nodes = []
+        perception_graph_after_processing = perception_graph_after_matching
+        for candiate_object_graph in extract_candidate_objects(
+            perception_graph_after_matching
+        ):
+            fake_pattern_graph = PerceptionGraphPattern.from_graph(candiate_object_graph)
+            fake_object_semantic_node = ObjectSemanticNode(
+                concept=FunctionalObjectConcept("unknown_object")
+            )
+            perception_graph_after_processing = replace_match_with_object_graph_node(
+                matched_object_node=fake_object_semantic_node,
+                current_perception=perception_graph_after_processing,
+                pattern_match=PerceptionGraphPatternMatch(
+                    matched_pattern=fake_pattern_graph.perception_graph_pattern,
+                    graph_matched_against=perception_graph_after_processing,
+                    matched_sub_graph=candiate_object_graph,
+                    pattern_node_to_matched_graph_node=fake_pattern_graph.perception_graph_node_to_pattern_node,
+                ),
+            )
+            new_nodes.append(fake_object_semantic_node)
+
+        return (
+            perception_graph_after_processing,
+            immutableset(chain(immutable_new_nodes, new_nodes)),
+        )
+
     def enrich_during_learning(
         self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
     ) -> LanguagePerceptionSemanticAlignment:
         return self._object_recognizer.match_objects_with_language(
-            language_perception_semantic_alignment
+            language_perception_semantic_alignment, post_process=self._enrich_post_process
         )
 
     def enrich_during_description(
         self, perception_semantic_alignment: PerceptionSemanticAlignment
     ) -> PerceptionSemanticAlignment:
         (new_perception_semantic_alignment, _) = self._object_recognizer.match_objects(
-            perception_semantic_alignment
+            perception_semantic_alignment, post_process=self._enrich_post_process
         )
         return new_perception_semantic_alignment
 
@@ -538,6 +626,10 @@ class ObjectRecognizerAsTemplateLearner(TemplateLearner):
                             )
                         ]
                     )
+        # FunctionalObjectConcepts mean we have recognized an object but don't have
+        # Knowledge of what the lexicalization is. So we just return an empty set
+        if isinstance(concept, FunctionalObjectConcept):
+            return immutableset()
         raise RuntimeError(f"Invalid concept {concept}")
 
     def log_hypotheses(self, log_output_path: Path) -> None:

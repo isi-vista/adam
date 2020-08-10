@@ -38,12 +38,14 @@ from adam.curriculum.phase1_curriculum import (
     build_gaila_phase1_attribute_curriculum,
     build_gaila_generics_curriculum,
     build_gaila_phase1_verb_curriculum,
+    make_sit_transitive,
+    make_sit_template_intransitive,
 )
 from adam.curriculum.preposition_curriculum import make_prepositions_curriculum
 from adam.curriculum.verbs_with_dynamic_prepositions_curriculum import (
     make_verb_with_dynamic_prepositions_curriculum,
 )
-from adam.language_specific.english.english_language_generator import IGNORE_COLORS
+
 from adam.ontology import THING
 from adam.ontology.phase1_ontology import (
     CHAIR,
@@ -52,21 +54,13 @@ from adam.ontology.phase1_ontology import (
     INANIMATE_OBJECT,
     HOLLOW,
     GAILA_PHASE_1_ONTOLOGY,
-    SIT,
     AGENT,
-    SIT_GOAL,
-    SIT_THING_SAT_ON,
-    GOAL,
     DRINK,
     LIQUID,
     PERSON,
     THEME,
     DRINK_CONTAINER_AUX,
-)
-from adam.ontology.phase1_spatial_relations import (
-    Region,
-    GRAVITATIONAL_UP,
-    EXTERIOR_BUT_IN_CONTACT,
+    inside,
 )
 from adam.ontology.phase2_ontology import (
     CHAIR_2,
@@ -111,55 +105,13 @@ def _make_sit_on_chair_curriculum(
         )
         seat = standard_object("chair", chair_type)
         templates.append(
-            Phase1SituationTemplate(
-                f"sit-on-chair",
-                salient_object_variables=[sitter, seat],
-                background_object_variables=make_noise_objects(noise_objects),
-                actions=[
-                    Action(
-                        SIT,
-                        argument_roles_to_fillers=[
-                            (AGENT, sitter),
-                            (
-                                GOAL,
-                                Region(
-                                    seat,
-                                    direction=GRAVITATIONAL_UP,
-                                    distance=EXTERIOR_BUT_IN_CONTACT,
-                                ),
-                            ),
-                        ],
-                        auxiliary_variable_bindings=[(SIT_THING_SAT_ON, seat)],
-                    )
-                ],
-                constraining_relations=[],
-                syntax_hints=[IGNORE_COLORS],
+            make_sit_transitive(
+                sitter, seat, noise_objects, surface=False, syntax_hints=False
             )
         )
         templates.append(
-            Phase1SituationTemplate(
-                f"sit-intransitive",
-                salient_object_variables=[sitter],
-                background_object_variables=make_noise_objects(noise_objects),
-                actions=[
-                    Action(
-                        SIT,
-                        argument_roles_to_fillers=[(AGENT, sitter)],
-                        auxiliary_variable_bindings=[
-                            (
-                                SIT_GOAL,
-                                Region(
-                                    seat,
-                                    direction=GRAVITATIONAL_UP,
-                                    distance=EXTERIOR_BUT_IN_CONTACT,
-                                ),
-                            ),
-                            (SIT_THING_SAT_ON, seat),
-                        ],
-                    )
-                ],
-                constraining_relations=[],
-                syntax_hints=[IGNORE_COLORS],
+            make_sit_template_intransitive(
+                sitter, seat, noise_objects, surface=False, syntax_hints=False
             )
         )
 
@@ -206,7 +158,7 @@ def _make_drink_cups_curriculum(
         templates.append(
             Phase1SituationTemplate(
                 "drink-cup",
-                salient_object_variables=[liquid_0, person_0],
+                salient_object_variables=[liquid_0, person_0, cup_obj],
                 background_object_variables=make_noise_objects(noise_objects),
                 actions=[
                     Action(
@@ -215,6 +167,7 @@ def _make_drink_cups_curriculum(
                         auxiliary_variable_bindings=[(DRINK_CONTAINER_AUX, cup_obj)],
                     )
                 ],
+                asserted_always_relations=[inside(liquid_0, cup_obj)],
             )
         )
 

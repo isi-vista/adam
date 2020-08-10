@@ -138,16 +138,23 @@ def execute_experiment(
     Runs an `Experiment`.
     """
 
+    # the starting point must be greater than or equal to 0
+    if starting_point < 0:
+        logging.warning(f"Starting point {starting_point} is invalid, setting to 0")
+        starting_point = 0
+
     # make the directories in which to log the learner
     if log_learner_state and learner_logging_path:
         learner_path = learner_logging_path / "learner_state"
-        try:
-            os.mkdir(learner_path)
-        # if we don't have a directory where we can log our learner state, we simply don't log it
-        except OSError:
-            logging.warning("Cannot log learner state to %s", str(learner_path))
-            log_learner_state = False
-            logging.warning("Proceeding without logging learner state")
+        # if the directory in which we wish to log the learner doesn't exist, we must create it
+        if not os.path.exists(learner_path):
+            try:
+                os.mkdir(learner_path)
+            # if we don't have a directory where we can log our learner state, we simply don't log it
+            except OSError:
+                logging.warning("Cannot log learner state to %s", str(learner_path))
+                log_learner_state = False
+                logging.warning("Proceeding without logging learner state")
 
     logging.info("Beginning experiment %s", experiment.name)
 
@@ -234,6 +241,7 @@ def execute_experiment(
                             perceptual_representation,
                             learner_descriptions_before_seeing_example,
                         )
+                        pre_example_observer.report()
                 else:
                     raise ValueError(
                         "Observed training instances cannot lack a situation"
@@ -241,7 +249,7 @@ def execute_experiment(
 
             learner.observe(
                 LearningExample(perceptual_representation, linguistic_description),
-                observation_num=num_observations,
+                offset=starting_point,
             )
 
             if experiment.post_example_training_observers:
@@ -266,6 +274,13 @@ def execute_experiment(
 
     if log_path:
         learner.log_hypotheses(log_path / "final")
+        # log the final learner if the user wishes for it to be logged
+        if log_learner_state:
+            pickle.dump(
+                learner,
+                open(learner_path / f"final_learner_state.pkl", "wb"),
+                pickle.HIGHEST_PROTOCOL,
+            )
 
     logging.info("Warming up for tests")
     for warm_up_instance_group in experiment.warm_up_test_instance_groups:
@@ -281,12 +296,15 @@ def execute_experiment(
             )
 
     logging.info("Performing tests")
+    num_test_observations = 0
     for test_instance_group in experiment.test_instance_groups:
         for (
             situation,
             test_instance_language,
             test_instance_perception,
         ) in test_instance_group.instances():
+            logging.info(f"Test Description: {num_test_observations}")
+            num_test_observations += 1
             descriptions_from_learner = learner.describe(test_instance_perception)
             for test_observer in experiment.test_observers:
                 test_observer.observe(

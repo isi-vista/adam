@@ -4,14 +4,21 @@ Classes to represent semantics from the learner's point-of-view.
 Really this and `HighLevelSemanticsSituation` should somehow be refactored together,
 but it's not worth the trouble at this point.
 """
-from typing import Mapping
+from more_itertools import one, flatten
+from typing import Mapping, Iterable
 
 from typing_extensions import Protocol, runtime
 
 from attr import attrib, attrs
 from attr.validators import deep_mapping, instance_of
-from immutablecollections import ImmutableDict, immutabledict
-from immutablecollections.converter_utils import _to_immutabledict
+from immutablecollections import (
+    ImmutableDict,
+    immutabledict,
+    ImmutableSet,
+    ImmutableSetMultiDict,
+    immutablesetmultidict,
+)
+from immutablecollections.converter_utils import _to_immutabledict, _to_immutableset
 
 
 @runtime
@@ -45,6 +52,11 @@ class RelationConcept(Concept):
 
 @attrs(frozen=True, eq=False)
 class ActionConcept(Concept):
+    debug_string: str = attrib(validator=instance_of(str))
+
+
+@attrs(frozen=True, eq=False)
+class FunctionalObjectConcept(ObjectConcept):
     debug_string: str = attrib(validator=instance_of(str))
 
 
@@ -135,3 +147,95 @@ class ActionSemanticNode(SemanticNode):
     # def __attrs_post_init__(self) -> None:
     #     for template in self.templates:
     #         check_arg(template.num_slots >= 1)
+
+
+@attrs(frozen=True)
+class LearnerSemantics:
+    """
+    Represent's the learner's semantic (rather than perceptual) understanding of a situation.
+    The learner is assumed to view the situation as a collection of *objects* which possess
+    *attributes*, have *relations* to one another, and serve as the arguments of *actions*.
+    """
+
+    objects: ImmutableSet[ObjectSemanticNode] = attrib(converter=_to_immutableset)
+    attributes: ImmutableSet[AttributeSemanticNode] = attrib(converter=_to_immutableset)
+    relations: ImmutableSet[RelationSemanticNode] = attrib(converter=_to_immutableset)
+    actions: ImmutableSet[ActionSemanticNode] = attrib(converter=_to_immutableset)
+
+    functional_concept_to_object_concept: ImmutableDict[
+        FunctionalObjectConcept, ObjectConcept
+    ] = attrib(
+        converter=_to_immutabledict,
+        validator=deep_mapping(
+            instance_of(FunctionalObjectConcept), instance_of(ObjectConcept)
+        ),
+        default=immutabledict(),
+    )
+
+    objects_to_attributes: ImmutableSetMultiDict[
+        ObjectSemanticNode, AttributeSemanticNode
+    ] = attrib(init=False)
+    objects_to_relation_in_slot1: ImmutableSetMultiDict[
+        ObjectSemanticNode, RelationSemanticNode
+    ] = attrib(init=False)
+    objects_to_actions: ImmutableSetMultiDict[
+        ObjectSemanticNode, ActionSemanticNode
+    ] = attrib(init=False)
+
+    @staticmethod
+    def from_nodes(
+        semantic_nodes: Iterable[SemanticNode],
+        *,
+        concept_map: ImmutableDict[
+            FunctionalObjectConcept, ObjectConcept
+        ] = immutabledict(),
+    ) -> "LearnerSemantics":
+        return LearnerSemantics(
+            objects=[
+                node for node in semantic_nodes if isinstance(node, ObjectSemanticNode)
+            ],
+            attributes=[
+                node for node in semantic_nodes if isinstance(node, AttributeSemanticNode)
+            ],
+            relations=[
+                node for node in semantic_nodes if isinstance(node, RelationSemanticNode)
+            ],
+            actions=[
+                node for node in semantic_nodes if isinstance(node, ActionSemanticNode)
+            ],
+            functional_concept_to_object_concept=concept_map,
+        )
+
+    @objects_to_attributes.default
+    def _init_objects_to_attributes(
+        self
+    ) -> ImmutableSetMultiDict[ObjectSemanticNode, AttributeSemanticNode]:
+        return immutablesetmultidict(
+            (one(attribute.slot_fillings.values()), attribute)
+            for attribute in self.attributes
+        )
+
+    @objects_to_relation_in_slot1.default
+    def _init_objects_to_relations(
+        self
+    ) -> ImmutableSetMultiDict[ObjectSemanticNode, AttributeSemanticNode]:
+        return immutablesetmultidict(
+            flatten(
+                [
+                    (slot_filler, relation)
+                    for slot_filler in relation.slot_fillings.values()
+                ]
+                for relation in self.relations
+            )
+        )
+
+    @objects_to_actions.default
+    def _init_objects_to_actions(
+        self
+    ) -> ImmutableSetMultiDict[ObjectSemanticNode, AttributeSemanticNode]:
+        return immutablesetmultidict(
+            flatten(
+                [(slot_filler, action) for slot_filler in action.slot_fillings.values()]
+                for action in self.actions
+            )
+        )

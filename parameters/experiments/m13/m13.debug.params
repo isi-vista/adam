@@ -14,4 +14,6 @@ include_verbs_with_dynamic_prepositions: False
 include_m9_complete: False
 include_m13_complete: False
 include_m13_shuffled: False
-include_debug: False
+include_debug: True
+accuracy_to_txt : True
+accuracy_logging_path : "accuracy_logging_out.txt"

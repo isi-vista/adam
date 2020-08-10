@@ -45,6 +45,7 @@ from adam.perception.perception_graph import (
     REFERENCE_OBJECT_LABEL,
     NodePredicate,
     RelationTypeIsPredicate,
+    PerceptionGraph,
 )
 from adam.semantics import (
     Concept,
@@ -552,3 +553,10 @@ def candidate_templates(
         # See https://github.com/isi-vista/adam/issues/789
         if covers_entire_utterance(bound_surface_template, language_concept_alignment)
     )
+
+
+def default_post_process_enrichment(
+    perception_graph_after_matching: PerceptionGraph,
+    immutable_new_nodes: AbstractSet[SemanticNode],
+) -> Tuple[PerceptionGraph, AbstractSet[SemanticNode]]:
+    return perception_graph_after_matching, immutable_new_nodes

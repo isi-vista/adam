@@ -149,7 +149,13 @@ def run_subset_learner_for_object(
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
     "learner",
-    [pytest.mark.skip(subset_object_learner_factory), integrated_learner_factory],
+    [
+        pytest.param(
+            subset_object_learner_factory,
+            marks=pytest.mark.skip("No Longer Need to Test Old Learners"),
+        ),
+        integrated_learner_factory,
+    ],
 )
 def test_subset_learner(language_mode, learner):
     run_subset_learner_for_object(
@@ -328,6 +334,100 @@ def test_pursuit_object_learner(language_mode):
             smoothing_parameter=0.002,
             ontology=GAILA_PHASE_1_ONTOLOGY,
             language_mode=language_mode,
+        )
+    )
+    for training_stage in [train_curriculum]:
+        for (
+            _,
+            linguistic_description,
+            perceptual_representation,
+        ) in training_stage.instances():
+            learner.observe(
+                LearningExample(perceptual_representation, linguistic_description)
+            )
+
+    for test_instance_group in [test_obj_curriculum]:
+        for (
+            _,
+            test_instance_language,
+            test_instance_perception,
+        ) in test_instance_group.instances():
+            logging.info("lang: %s", test_instance_language)
+            descriptions_from_learner = learner.describe(test_instance_perception)
+            gold = test_instance_language.as_token_sequence()
+            assert gold in [
+                desc.as_token_sequence() for desc in descriptions_from_learner
+            ]
+
+
+@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
+def test_pursuit_object_learner_with_gaze(language_mode):
+    target_objects = [
+        BALL,
+        # PERSON,
+        # CHAIR,
+        # TABLE,
+        DOG,
+        # BIRD,
+        BOX,
+    ]
+
+    language_generator = phase1_language_generator(language_mode)
+
+    target_test_templates = []
+    for obj in target_objects:
+        # Create train and test templates for the target objects
+        test_obj_object = object_variable("obj-with-color", obj)
+        test_template = Phase1SituationTemplate(
+            "colored-obj-object",
+            salient_object_variables=[test_obj_object],
+            syntax_hints=[IGNORE_COLORS],
+            gazed_objects=[test_obj_object],
+        )
+        target_test_templates.extend(
+            all_possible(
+                test_template,
+                chooser=PHASE1_CHOOSER_FACTORY(),
+                ontology=GAILA_PHASE_1_ONTOLOGY,
+            )
+        )
+    rng = random.Random()
+    rng.seed(0)
+
+    # We can use this to generate the actual pursuit curriculum
+    train_curriculum = make_simple_pursuit_curriculum(
+        target_objects=target_objects,
+        num_instances=30,
+        num_objects_in_instance=3,
+        num_noise_instances=0,
+        language_generator=language_generator,
+        add_gaze=True,
+    )
+
+    test_obj_curriculum = phase1_instances(
+        "obj test",
+        situations=target_test_templates,
+        language_generator=language_generator,
+    )
+
+    # All parameters should be in the range 0-1.
+    # Learning factor works better when kept < 0.5
+    # Graph matching threshold doesn't seem to matter that much, as often seems to be either a
+    # complete or a very small match.
+    # The lexicon threshold works better between 0.07-0.3, but we need to play around with it because we end up not
+    # lexicalize items sufficiently because of diminishing lexicon probability through training
+    rng = random.Random()
+    rng.seed(0)
+    learner = IntegratedTemplateLearner(
+        object_learner=PursuitObjectLearnerNew(
+            learning_factor=0.05,
+            graph_match_confirmation_threshold=0.7,
+            lexicon_entry_threshold=0.7,
+            rng=rng,
+            smoothing_parameter=0.002,
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+            language_mode=language_mode,
+            rank_gaze_higher=True,
         )
     )
     for training_stage in [train_curriculum]:

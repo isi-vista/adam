@@ -1,3 +1,5 @@
+from typing import Tuple
+
 from adam.geon import LARGE_TO_SMALL, CONSTANT, SMALL_TO_LARGE_TO_SMALL
 from adam.ontology import OntologyNode, CAN_FILL_TEMPLATE_SLOT
 from adam.ontology.ontology import Ontology
@@ -32,13 +34,61 @@ from adam.ontology.phase1_ontology import (
     contacts,
     above,
     GAILA_PHASE_1_ONTOLOGY,
-    GAILA_PHASE_1_SIZE_GRADES,
     SMALLER_THAN,
     BIGGER_THAN,
+    PERCEIVABLE_PROPERTY,
+    _TIRE,
+    BOX,
+    DOG,
+    _WING,
+    _TAIL,
+    MILK,
+    WATER,
+    JUICE,
+    HAT,
+    CUP,
+    COOKIE,
+    BOOK,
+    BIRD,
+    BALL,
+    _FOOT,
+    _LEG_SEGMENT,
+    _ARM_SEGMENT,
+    HEAD,
+    HAND,
+    WATERMELON,
+    _INANIMATE_LEG,
+    _ANIMAL_LEG,
+    _ARM,
+    _CHAIR_SEAT,
+    _CHAIR_BACK,
+    _TORSO,
+    _BODY,
+    BABY,
+    PERSON,
+    DAD,
+    MOM,
+    _TABLETOP,
+    DOOR,
+    TABLE,
+    _TRUCK_CAB,
+    _TRAILER,
+    _FLATBED,
+    TRUCK,
+    CAR,
+    _WALL,
+    _ROOF,
+    HOUSE,
 )
 from adam.ontology.phase1_size_relationships import build_size_relationships
 from adam.ontology.structural_schema import ObjectStructuralSchema
 from adam.relation import flatten_relations
+
+TWO = OntologyNode("two")
+subtype(TWO, PERCEIVABLE_PROPERTY)
+MANY = OntologyNode("many")
+subtype(TWO, PERCEIVABLE_PROPERTY)
+HAS_COUNT = OntologyNode("has-count")
 
 CHAIR_2 = OntologyNode(
     "chair-2",
@@ -184,6 +234,25 @@ _CHAIR_5_SCHEMA = ObjectStructuralSchema(
     axes=_CHAIR_SCHEMA_BACK.schema.axes.copy(),
 )
 
+GAILA_PHASE_2_SIZE_GRADES: Tuple[Tuple[OntologyNode, ...], ...] = (
+    (HOUSE,),
+    (_ROOF, _WALL),
+    (CAR, TRUCK),
+    (_TRAILER, _FLATBED),
+    (_TRUCK_CAB,),
+    (TABLE, DOOR),
+    (_TABLETOP,),
+    (MOM, DAD, PERSON),
+    (DOG, BOX, CHAIR, CHAIR_2, CHAIR_3, CHAIR_4, CHAIR_5, _TIRE),
+    (BABY,),
+    (_BODY,),
+    (_TORSO, _CHAIR_BACK, _CHAIR_SEAT),
+    (_ARM, _ANIMAL_LEG, _INANIMATE_LEG),
+    (WATERMELON, HAND, HEAD, _ARM_SEGMENT, _LEG_SEGMENT, _FOOT),
+    (BALL, BIRD, BOOK, COOKIE, CUP, CUP_2, CUP_3, CUP_4, HAT, JUICE, WATER, MILK),
+    (_TAIL, _WING),
+)
+
 
 GAILA_PHASE_2_ONTOLOGY = Ontology(
     "gaila-phase-2",
@@ -203,7 +272,7 @@ GAILA_PHASE_2_ONTOLOGY = Ontology(
     ],
     action_to_description=_ACTIONS_TO_DESCRIPTIONS,
     relations=build_size_relationships(
-        GAILA_PHASE_1_SIZE_GRADES, relation_type=BIGGER_THAN, opposite_type=SMALLER_THAN
+        GAILA_PHASE_2_SIZE_GRADES, relation_type=BIGGER_THAN, opposite_type=SMALLER_THAN
     ),
 )
 

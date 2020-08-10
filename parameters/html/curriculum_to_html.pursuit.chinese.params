@@ -1,6 +1,0 @@
-_includes:
-    - curriculum_to_html.params
-
-curriculum: "pursuit"
-pursuit_noise: 3
-language: "chinese"
