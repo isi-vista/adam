@@ -319,7 +319,7 @@ class ObjectRecognizer:
                     matched_object_node, graph_to_return, pattern_match
                 )
 
-        candidate_object_subgraphs = extract_candidate_objects(perception_graph)
+        candidate_object_subgraphs = extract_candidate_objects(perception_graph, True)
 
         for candidate_object_graph in candidate_object_subgraphs:
             num_object_nodes = candidate_object_graph.count_nodes_matching(
@@ -539,7 +539,7 @@ class ObjectRecognizer:
 
 
 def extract_candidate_objects(
-    whole_scene_perception_graph: PerceptionGraph
+    whole_scene_perception_graph: PerceptionGraph, sort_by_increasing_size: bool = False
 ) -> Sequence[PerceptionGraph]:
 
     """
@@ -642,9 +642,10 @@ def extract_candidate_objects(
     # we sort the candidate objects' graphs from least to greatest number of nodes in the graph. This allows us to match objects
     # with less cost before objects with greater cost, and also causes us to match gazed objects after non-gazed objects, which is the
     # order needed to ensure that gaze is assigned to the correct object if there are multiple in the scene
-    candidate_objects.sort(
-        key=lambda x: len(x._graph.node)  # pylint:disable=protected-access
-    )
+    if sort_by_increasing_size:
+        candidate_objects.sort(
+            key=lambda x: len(x._graph.node)  # pylint:disable=protected-access
+        )
     return candidate_objects
 
 
