@@ -325,6 +325,7 @@ class ObjectRecognizer:
             num_object_nodes = candidate_object_graph.count_nodes_matching(
                 lambda node: isinstance(node, ObjectPerception)
             )
+            print(candidate_object_graph.copy_as_digraph().node)
 
             for (concept, pattern) in concepts_to_patterns.items():
                 # As an optimization, we count how many sub-object nodes
@@ -333,7 +334,7 @@ class ObjectRecognizer:
                 # and we can bail out early.
                 if num_object_nodes != self._concept_to_num_subobjects[concept]:
                     continue
-
+                print("matching to", concept.debug_string)
                 with Timer(factor=1000) as t:
                     matcher = pattern.matcher(
                         candidate_object_graph, match_mode=MatchMode.OBJECT
@@ -342,6 +343,7 @@ class ObjectRecognizer:
                         matcher.matches(use_lookahead_pruning=True), None
                     )
                 if pattern_match:
+                    print("MATCH SUCCESSFUL")
                     cumulative_millis_in_successful_matches_ms += t.elapsed
                     matched_object_node = ObjectSemanticNode(concept)
 
@@ -374,7 +376,10 @@ class ObjectRecognizer:
                     break
                 else:
                     cumulative_millis_in_failed_matches_ms += t.elapsed
+
         if object_nodes:
+            # TODO : fix this in a less hacky way
+            object_nodes.reverse()
             logging.info(
                 "Object recognizer recognized: %s",
                 [concept for (concept, _) in object_nodes],
