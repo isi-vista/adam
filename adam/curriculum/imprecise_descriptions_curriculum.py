@@ -201,6 +201,7 @@ def _tall_x_template(
         salient_object_variables=[theme1],
         background_object_variables=computed_background,
         asserted_always_relations=[bigger_than(theme1, theme2)],
+        gazed_objects=[theme1],
     )
 
 
@@ -218,6 +219,7 @@ def _big_x_template(
         salient_object_variables=[theme1],
         background_object_variables=computed_background,
         asserted_always_relations=[bigger_than(theme1, theme2)],
+        gazed_objects=[theme1],
     )
 
 
@@ -235,6 +237,7 @@ def _little_x_template(
         salient_object_variables=[theme1],
         background_object_variables=computed_background,
         asserted_always_relations=[bigger_than(theme2, theme1)],
+        gazed_objects=[theme1],
     )
 
 
@@ -252,6 +255,7 @@ def _short_x_template(
         salient_object_variables=[theme1],
         background_object_variables=computed_background,
         asserted_always_relations=[bigger_than(theme2, theme1)],
+        gazed_objects=[theme1],
     )
 
 
