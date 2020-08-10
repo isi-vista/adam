@@ -8,7 +8,7 @@ learner: 'integrated-learner-recognizer'
 use_pegasus: true
 
 workflow_name: 'm13_runner'
-workflow_name: '%experiments_root%/%experiment%'
+workflow_name: '%adam_experiment_root%/%experiment%'
 
 backend: slurm
 partition: ephemeral
