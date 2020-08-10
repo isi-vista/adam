@@ -16,7 +16,7 @@ from adam.curriculum.imprecise_descriptions_curriculum import (
 )
 from adam.learner import LearningExample
 
-# from adam.learner.verbs import SubsetVerbLearnerNew
+from adam.learner.verbs import SubsetVerbLearnerNew
 from adam.learner.attributes import SubsetAttributeLearner, SubsetAttributeLearnerNew
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
@@ -43,9 +43,9 @@ def integrated_learner_factory(language_mode: LanguageMode):
         attribute_learner=SubsetAttributeLearnerNew(
             ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=language_mode
         ),
-        # action_learner=SubsetVerbLearnerNew(
-        #    ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=language_mode
-        # ),
+        action_learner=SubsetVerbLearnerNew(
+           ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=language_mode
+        ),
     )
 
 
