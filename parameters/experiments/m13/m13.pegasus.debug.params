@@ -7,6 +7,16 @@ curriculum: 'm13-pegasus-debug'
 learner: 'integrated-learner-recognizer'
 use_pegasus: true
 
+workflow_name: 'm13_runner_debug'
+workflow_directory: '%experiments_root%/%experiment%'
+
+backend: slurm
+partition: ephemeral
+num_cpus: 1
+num_gpus: 0
+memory: '2G'  # not sure how much is needed
+job_time_in_minutes: 240  # 4 hours should be plenty for this?
+
 include_objects: True
 include_imprecise_size: False
 include_imprecise_temporal: False
