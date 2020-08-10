@@ -5,7 +5,8 @@ from more_itertools import only, quantify
 from adam.axes import HorizontalAxisOfObject
 from adam.ontology import IN_REGION, OntologyNode, IS_SPEAKER
 from adam.ontology.phase1_ontology import (
-    SAME_TYPE,
+    BIGGER_THAN_SAME_TYPE,
+    SMALLER_THAN_SAME_TYPE,
     AGENT,
     ANIMATE,
     BALL,
@@ -80,7 +81,6 @@ _PERCEPTION_GENERATOR = HighLevelSemanticsSituationToDevelopmentalPrimitivePerce
 )
 
 
-@pytest.mark.skip("TODO: fix this")
 def test_big_ball():
     ball1 = situation_object(BALL, debug_handle="ball_0")
     ball2 = situation_object(BALL, debug_handle="ball_1")
@@ -102,9 +102,13 @@ def test_big_ball():
 
     perceived_objects = ball_perception.frames[0].perceived_objects
     object_handles = set(obj.debug_handle for obj in perceived_objects)
-    assert object_handles == {"ball_0", "ball_1", "the ground"}
+    assert object_handles == {"**ball_0", "**ball_1", "the ground"}
     assert any(
-        relation.relation_type == SAME_TYPE
+        relation.relation_type == BIGGER_THAN_SAME_TYPE
+        for relation in ball_perception.frames[0].relations
+    )
+    assert any(
+        relation.relation_type == SMALLER_THAN_SAME_TYPE
         for relation in ball_perception.frames[0].relations
     )
 
