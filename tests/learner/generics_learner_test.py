@@ -1,17 +1,20 @@
 import random
+from pathlib import Path
 from typing import Iterable
 
 import pytest
 
 from adam.axes import AxesInfo
 from adam.curriculum.curriculum_utils import PHASE1_CHOOSER_FACTORY, phase1_instances
-from adam.curriculum.phase1_curriculum import _make_plural_objects_curriculum, _make_generic_statements_curriculum
+from adam.curriculum.phase1_curriculum import _make_plural_objects_curriculum, _make_generic_statements_curriculum, \
+    _make_eat_curriculum, _make_drink_curriculum, _make_sit_curriculum, _make_jump_curriculum, _make_fly_curriculum
 from adam.language.language_utils import phase1_language_generator
 from adam.learner import LearningExample
 from adam.learner.generics import PursuitGenericsLearner
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
 from adam.learner.plurals import SubsetPluralLearnerNew
+from adam.learner.verbs import SubsetVerbLearnerNew
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
     GAILA_PHASE_1_ONTOLOGY,
@@ -19,6 +22,7 @@ from adam.ontology.phase1_ontology import (
     LIQUID,
     is_recognized_particular,
 )
+from adam.perception.perception_graph import DumpPartialMatchCallback
 from adam.random_utils import RandomChooser
 from adam.situation import SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
@@ -34,7 +38,7 @@ def integrated_learner_factory(language_mode: LanguageMode):
             ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=language_mode
         ),
         generics_learner=PursuitGenericsLearner(
-            learning_factor=0.05,
+            learning_factor=0.5,
             graph_match_confirmation_threshold=0.7,
             lexicon_entry_threshold=0.7,
             rng=rng,
@@ -71,26 +75,31 @@ def run_generics_test(learner, language_generator, language_mode):
                         axis_info=AxesInfo(),
                     )
 
+    # actions = list(_make_eat_curriculum(10, 0, language_generator).instances())
+    # actions.extend(_make_drink_curriculum(10, 0, language_generator).instances())
+    # # actions.extend(_make_sit_curriculum(20, 0, language_generator).instances())
+    # actions.extend(_make_jump_curriculum(10, 0, language_generator).instances())
+    # actions.extend(_make_fly_curriculum(10, 0, language_generator).instances())
     # Teach plurals
-    train_curriculum = phase1_instances(
-        "multiples of the same object",
+    plurals = list(phase1_instances(
+        "plurals pretraining",
         build_object_multiples_situations(
             ontology=GAILA_PHASE_1_ONTOLOGY, chooser=PHASE1_CHOOSER_FACTORY()
         ),
         language_generator=language_generator,
-    )
+    ).instances())
     for (
         _,
         linguistic_description,
         perceptual_representation,
-    ) in train_curriculum.instances():
+    ) in plurals:
         # Get the object matches first - preposition learner can't learn without already recognized objects
         learner.observe(
             LearningExample(perceptual_representation, linguistic_description)
         )
 
     generics_curriculum = _make_generic_statements_curriculum(
-        num_samples=10, noise_objects=0, language_generator=language_generator
+        num_samples=20, noise_objects=0, language_generator=language_generator
     )
     for (
         _,
@@ -102,7 +111,7 @@ def run_generics_test(learner, language_generator, language_mode):
         learner.observe(
             LearningExample(perceptual_representation, linguistic_description)
         )
-
+    learner.log_hypotheses(Path('/renders/'))
     # test_curriculum = _make_plural_objects_curriculum(
     #     10, 0, language_generator=language_generator
     # )

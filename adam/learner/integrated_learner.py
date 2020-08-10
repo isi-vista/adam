@@ -150,11 +150,15 @@ class IntegratedTemplateLearner(
                     current_learner_state, observation_num=observation_num
                 )
 
+        # Engage generics learner if the utterance has a plural marker and isn't recognized
         if self.generics_learner and isinstance(self.attribute_learner, SubsetPluralLearnerNew) \
                 and self.attribute_learner.is_plural_utterance(learning_example.linguistic_description):
-            print('running generics for ', learning_example.linguistic_description)
             # plural marker could be marking a generic statment
-            self.generics_learner.learn_from(current_learner_state)
+            descs = self._linguistic_descriptions_from_semantics(current_learner_state.perception_semantic_alignment)
+            if not learning_example.linguistic_description.as_token_sequence() \
+                   in [desc.as_token_sequence() for desc in descs]:
+                # if the statement isn't a recognized sentence
+                self.generics_learner.learn_from(current_learner_state)
 
     def describe(
         self, perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]

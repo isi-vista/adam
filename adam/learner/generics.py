@@ -6,37 +6,31 @@ from typing import AbstractSet, Iterable, Optional, Tuple
 
 from attr import attrs
 from immutablecollections import (
-    immutabledict,
     immutableset,
 )
 
 from adam.learner import (
     get_largest_matching_pattern,
-    graph_without_learner,
 )
 from adam.learner.alignments import (
     LanguagePerceptionSemanticAlignment,
     PerceptionSemanticAlignment,
 )
 from adam.learner.learner_utils import AlignmentSlots, candidate_templates
-from adam.learner.object_recognizer import (
-    extract_candidate_objects,
-)
 from adam.learner.objects import ObjectPursuitLearner
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
 from adam.learner.pursuit import (
     AbstractPursuitLearnerNew,
 )
 from adam.learner.surface_templates import (
-    SurfaceTemplate,
     SurfaceTemplateBoundToSemanticNodes,
 )
 from adam.learner.template_learner import (
     AbstractTemplateLearnerNew,
 )
-from adam.perception import ObjectPerception, MatchMode
-from adam.perception.perception_graph import PerceptionGraph, PerceptionGraphPattern
-from adam.semantics import ObjectConcept, GenericConcept, SemanticNode
+from adam.perception import MatchMode
+from adam.perception.perception_graph import PerceptionGraph
+from adam.semantics import GenericConcept, SemanticNode
 
 _MAXIMUM_GENERICS_TEMPLATE_TOKEN_LENGTH = 5
 
@@ -90,7 +84,6 @@ class PursuitGenericsLearner(
         # tokens in the utterance match the scene, i.e if there are recognized concepts.
         recognized_concepts = language_perception_semantic_alignment. \
             language_concept_alignment.node_to_language_span.keys()
-        print(recognized_concepts)
         return (
                 not language_perception_semantic_alignment.language_concept_alignment.is_entirely_aligned
                 and recognized_concepts
@@ -110,6 +103,7 @@ class PursuitGenericsLearner(
             bound_surface_template: SurfaceTemplateBoundToSemanticNodes,
     ) -> AbstractSet[PerceptionGraphTemplate]:
         # TODO: add generic specific representation
+
         return immutableset(
             [
                 PerceptionGraphTemplate.from_graph(
