@@ -378,8 +378,6 @@ class ObjectRecognizer:
                     cumulative_millis_in_failed_matches_ms += t.elapsed
 
         if object_nodes:
-            # TODO : fix this in a less hacky way
-            object_nodes.reverse()
             logging.info(
                 "Object recognizer recognized: %s",
                 [concept for (concept, _) in object_nodes],
@@ -644,6 +642,12 @@ def extract_candidate_objects(
                 immutableset(candidate_subgraph_nodes)
             )
         )
+    # we sort the candidate objects' graphs from least to greatest number of nodes in the graph. This allows us to match objects
+    # with less cost before objects with greater cost, and also causes us to match gazed objects after non-gazed objects, which is the
+    # order needed to ensure that gaze is assigned to the correct object if there are multiple in the scene
+    candidate_objects.sort(
+        key=lambda x: len(x._graph.node)  # pylint:disable=protected-access
+    )
     return candidate_objects
 
 
