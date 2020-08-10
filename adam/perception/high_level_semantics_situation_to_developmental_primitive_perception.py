@@ -3,22 +3,8 @@ from itertools import chain
 from random import Random
 from typing import Dict, Iterable, List, Mapping, MutableMapping, Optional, Union, cast
 from typing_extensions import Protocol, runtime
-
-from attr import Factory, attrib, attrs
-from attr.validators import deep_mapping, instance_of
-from immutablecollections import (
-    ImmutableDict,
-    ImmutableSet,
-    ImmutableSetMultiDict,
-    immutabledict,
-    immutableset,
-    immutablesetmultidict,
-)
-from immutablecollections.converter_utils import _to_immutabledict
 from more_itertools import only, quantify
 from networkx import DiGraph
-from vistautils.preconditions import check_arg
-
 from adam.axes import AxesInfo, WORLD_AXES
 from adam.axis import GeonAxis
 from adam.geon import Geon
@@ -92,6 +78,7 @@ from immutablecollections import (
 from immutablecollections.converter_utils import _to_immutabledict
 from vistautils.preconditions import check_arg
 from vistautils.range import Range
+
 
 class ColorPerceptionMode(Enum):
     """
