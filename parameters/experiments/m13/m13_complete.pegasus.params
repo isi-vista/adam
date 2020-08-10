@@ -1,0 +1,8 @@
+_includes:
+   - "../../root.params"
+   - "m13.params"
+
+experiment: 'm13-complete'
+curriculum: 'm13-complete'
+learner: 'integrated-learner-recognizer'
+use_pegasus: true
