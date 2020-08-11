@@ -150,6 +150,7 @@ def execute_experiment(
     log_learner_state: bool = True,
     load_learner_state: Optional[Path] = None,
     resume_from_latest_logged_state: bool = False,
+    debug_learner_pickling: bool = False,
     starting_point: int = 0,
     point_to_log: int = 0,
 ) -> None:
@@ -287,6 +288,10 @@ def execute_experiment(
                         ),
                         pickle.HIGHEST_PROTOCOL,
                     )
+                    if debug_learner_pickling:
+                        logging.info("Pickling and unpickling learner...")
+                        learner = pickle.loads(pickle.dumps(learner, protocol=pickle.HIGHEST_PROTOCOL))
+                        logging.info("Pickled and unpickled.")
 
             if experiment.pre_example_training_observers:
                 learner_descriptions_before_seeing_example = learner.describe(
