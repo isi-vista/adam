@@ -81,7 +81,7 @@ def main(params: Parameters):
             log_experiment_entry_point(experiment_params)
         else:
             experiment_name = Locator(experiment_params.string("experiment"))
-            experiment_params.unify({
+            experiment_params = experiment_params.unify({
                 'experiment_group_dir': directory_for(experiment_name) / "output",
                 "hypothesis_log_dir": directory_for(experiment_name) / "hypotheses",
                 # State pickles will go under experiment_name/learner_state
