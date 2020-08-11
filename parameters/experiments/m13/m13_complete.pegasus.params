@@ -10,6 +10,8 @@ use_pegasus: true
 
 workflow_name: 'm13_runner'
 workflow_name: '%adam_experiment_root%/%experiment%'
+site: 'saga'
+namespace: 'saga'
 
 backend: slurm
 partition: ephemeral
