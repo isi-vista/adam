@@ -11,7 +11,7 @@ from immutablecollections import (
 
 from adam.learner import (
     get_largest_matching_pattern,
-)
+    SurfaceTemplate)
 from adam.learner.alignments import (
     LanguagePerceptionSemanticAlignment,
     PerceptionSemanticAlignment,
@@ -27,10 +27,10 @@ from adam.learner.surface_templates import (
 )
 from adam.learner.template_learner import (
     AbstractTemplateLearnerNew,
-)
+    TemplateLearner)
 from adam.perception import MatchMode
 from adam.perception.perception_graph import PerceptionGraph
-from adam.semantics import GenericConcept, SemanticNode
+from adam.semantics import GenericConcept, SemanticNode, Concept
 
 _MAXIMUM_GENERICS_TEMPLATE_TOKEN_LENGTH = 5
 
@@ -178,3 +178,31 @@ class PursuitGenericsLearner(
                 hypothesis.render_to_file(
                     concept.debug_string, log_output_path / f"{concept.debug_string}.{i}"
                 )
+
+
+@attrs
+class SimpleGenericsLearner(TemplateLearner):
+    def enrich_during_learning(self,
+                               language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment) -> LanguagePerceptionSemanticAlignment:
+        return language_perception_semantic_alignment
+
+    def enrich_during_description(self,
+                                  perception_semantic_alignment: PerceptionSemanticAlignment) -> PerceptionSemanticAlignment:
+        return perception_semantic_alignment
+
+    def log_hypotheses(self, log_output_path: Path) -> None:
+        pass
+
+    def templates_for_concept(self, concept: Concept) -> AbstractSet[SurfaceTemplate]:
+        return set()
+
+    def learn_from(
+            self,
+            language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
+            observation_num: int = -1,
+    ) -> None:
+
+        print('learning from', language_perception_semantic_alignment.language_concept_alignment.node_to_language_span)
+        print(language_perception_semantic_alignment.perception_semantic_alignment.semantic_nodes)
+
+

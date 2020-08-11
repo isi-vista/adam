@@ -10,7 +10,7 @@ from adam.curriculum.phase1_curriculum import _make_plural_objects_curriculum, _
     _make_eat_curriculum, _make_drink_curriculum, _make_sit_curriculum, _make_jump_curriculum, _make_fly_curriculum
 from adam.language.language_utils import phase1_language_generator
 from adam.learner import LearningExample
-from adam.learner.generics import PursuitGenericsLearner
+from adam.learner.generics import PursuitGenericsLearner, SimpleGenericsLearner
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
 from adam.learner.plurals import SubsetPluralLearnerNew
@@ -37,21 +37,23 @@ def integrated_learner_factory(language_mode: LanguageMode):
         attribute_learner=SubsetPluralLearnerNew(
             ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=language_mode
         ),
-        generics_learner=PursuitGenericsLearner(
-            learning_factor=0.5,
-            graph_match_confirmation_threshold=0.7,
-            lexicon_entry_threshold=0.7,
-            rng=rng,
-            smoothing_parameter=0.002,
-            ontology=GAILA_PHASE_1_ONTOLOGY,
-            language_mode=language_mode,
-        )
+        action_learner=SubsetVerbLearnerNew(ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=language_mode),
+        generics_learner=SimpleGenericsLearner()
+        # generics_learner=PursuitGenericsLearner(
+        #     learning_factor=0.5,
+        #     graph_match_confirmation_threshold=0.7,
+        #     lexicon_entry_threshold=0.7,
+        #     rng=rng,
+        #     smoothing_parameter=0.002,
+        #     ontology=GAILA_PHASE_1_ONTOLOGY,
+        #     language_mode=language_mode,
+        # )
     )
 
 
 def run_generics_test(learner, language_generator, language_mode):
     def build_object_multiples_situations(
-        ontology: Ontology, *, samples_per_object: int = 10, chooser: RandomChooser
+        ontology: Ontology, *, samples_per_object: int = 3, chooser: RandomChooser
     ) -> Iterable[HighLevelSemanticsSituation]:
         for object_type in PHASE_1_CURRICULUM_OBJECTS:
             # Exclude slow objects for now
@@ -75,11 +77,11 @@ def run_generics_test(learner, language_generator, language_mode):
                         axis_info=AxesInfo(),
                     )
 
-    # actions = list(_make_eat_curriculum(10, 0, language_generator).instances())
-    # actions.extend(_make_drink_curriculum(10, 0, language_generator).instances())
-    # # actions.extend(_make_sit_curriculum(20, 0, language_generator).instances())
-    # actions.extend(_make_jump_curriculum(10, 0, language_generator).instances())
-    # actions.extend(_make_fly_curriculum(10, 0, language_generator).instances())
+    actions = list(_make_eat_curriculum(10, 0, language_generator).instances())
+    actions.extend(_make_drink_curriculum(10, 0, language_generator).instances())
+    actions.extend(_make_sit_curriculum(10, 0, language_generator).instances())
+    actions.extend(_make_jump_curriculum(10, 0, language_generator).instances())
+    actions.extend(_make_fly_curriculum(10, 0, language_generator).instances())
     # Teach plurals
     plurals = list(phase1_instances(
         "plurals pretraining",
@@ -92,7 +94,7 @@ def run_generics_test(learner, language_generator, language_mode):
         _,
         linguistic_description,
         perceptual_representation,
-    ) in plurals:
+    ) in actions + plurals:
         # Get the object matches first - preposition learner can't learn without already recognized objects
         learner.observe(
             LearningExample(perceptual_representation, linguistic_description)
@@ -111,7 +113,7 @@ def run_generics_test(learner, language_generator, language_mode):
         learner.observe(
             LearningExample(perceptual_representation, linguistic_description)
         )
-    learner.log_hypotheses(Path('/renders/'))
+    # learner.log_hypotheses(Path('/renders/'))
     # test_curriculum = _make_plural_objects_curriculum(
     #     10, 0, language_generator=language_generator
     # )
