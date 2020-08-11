@@ -6,6 +6,7 @@ from vistautils.parameters import Parameters, YAMLParametersLoader
 from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 from pegasus_wrapper import (
     initialize_vista_pegasus_wrapper,
+    directory_for,
     run_python_on_parameters,
     Locator,
     write_workflow_description,
@@ -80,6 +81,16 @@ def main(params: Parameters):
             log_experiment_entry_point(experiment_params)
         else:
             experiment_name = Locator(experiment_params.string("experiment"))
+            experiment_params.unify({
+                'experiment_group_dir': directory_for(experiment_name) / "output",
+                "hypothesis_log_dir": directory_for(experiment_name) / "hypotheses",
+                # State pickles will go under experiment_name/learner_state
+                "learner_logging_path": directory_for(experiment_name),
+                "resume_from_latest_logged_state": True,
+                "log_hypothesis_every_n_steps": params.integer("save_state_every_n_steps"),
+                "debug_learner_pickling": params.boolean("debug_learner_pickling", default=False),
+            })
+
             run_python_on_parameters(
                 experiment_name,
                 log_experiment_script,

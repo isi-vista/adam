@@ -20,15 +20,18 @@ num_gpus: 0
 memory: '2G'  # not sure how much is needed
 job_time_in_minutes: 240  # 4 hours should be plenty for this?
 
-include_objects: True
+save_every_n_steps: 50
+debug_learner_pickling: true
+
+include_objects: False
 include_imprecise_size: False
 include_imprecise_temporal: False
-include_subtle_verb: False
+include_subtle_verb: True
 include_object_restrictions: False
-include_functionally_defined_objects: False
+include_functionally_defined_objects: True
 include_relations: False
 include_generics: False
-include_verbs_with_dynamic_prepositions: False
+include_verbs_with_dynamic_prepositions: True
 include_m9_complete: False
 include_m13_complete: False
 include_m13_shuffled: False
