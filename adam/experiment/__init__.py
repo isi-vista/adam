@@ -209,7 +209,7 @@ def execute_experiment(
     # If we should resume from the latest logged state, try to load each numbered state file,
     # starting with the file for the learner that got the farthest in the curriculum
     elif resume_from_latest_logged_state:
-        logging.info("Attempting to result from latest learner state...")
+        logging.info("Attempting to resume from latest learner state...")
         learner = None
         # This should already be set, but just in case it wasn't, for example if
         # log_learner_state = False, set it.
