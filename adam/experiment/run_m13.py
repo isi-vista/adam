@@ -86,6 +86,7 @@ def main(params: Parameters):
                 "hypothesis_log_dir": directory_for(experiment_name) / "hypotheses",
                 # State pickles will go under experiment_name/learner_state
                 "learner_logging_path": directory_for(experiment_name),
+                "log_learner_state": True,
                 "resume_from_latest_logged_state": True,
                 "log_hypothesis_every_n_steps": params.integer("save_state_every_n_steps"),
                 "debug_learner_pickling": params.boolean("debug_learner_pickling", default=False),
