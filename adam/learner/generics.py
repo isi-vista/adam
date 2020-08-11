@@ -2,9 +2,9 @@ import itertools
 import logging
 from abc import ABC
 from pathlib import Path
-from typing import AbstractSet, Iterable, Optional, Tuple
+from typing import AbstractSet, Iterable, Optional, Tuple, Dict, Set
 
-from attr import attrs
+from attr import attrs, attrib, Factory
 from immutablecollections import (
     immutableset,
 )
@@ -30,7 +30,8 @@ from adam.learner.template_learner import (
     TemplateLearner)
 from adam.perception import MatchMode
 from adam.perception.perception_graph import PerceptionGraph
-from adam.semantics import GenericConcept, SemanticNode, Concept
+from adam.semantics import GenericConcept, SemanticNode, Concept, ActionSemanticNode, ObjectSemanticNode, ObjectConcept, \
+    ActionConcept
 
 _MAXIMUM_GENERICS_TEMPLATE_TOKEN_LENGTH = 5
 
@@ -182,6 +183,10 @@ class PursuitGenericsLearner(
 
 @attrs
 class SimpleGenericsLearner(TemplateLearner):
+    learned_representations: Dict[Tuple[str], Tuple[ObjectConcept, Set[ActionConcept]]] = attrib(
+        init=False, default=Factory(dict)
+    )
+
     def enrich_during_learning(self,
                                language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment) -> LanguagePerceptionSemanticAlignment:
         return language_perception_semantic_alignment
@@ -201,8 +206,32 @@ class SimpleGenericsLearner(TemplateLearner):
             language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
             observation_num: int = -1,
     ) -> None:
-
         print('learning from', language_perception_semantic_alignment.language_concept_alignment.node_to_language_span)
         print(language_perception_semantic_alignment.perception_semantic_alignment.semantic_nodes)
+
+        sequence = language_perception_semantic_alignment.language_concept_alignment.language.as_token_sequence()
+        recognized_semantic_nodes = language_perception_semantic_alignment.perception_semantic_alignment.semantic_nodes
+        span = language_perception_semantic_alignment.language_concept_alignment.node_to_language_span
+
+        # Check if both an action and an object is recognized
+        action_nodes = [n for n in recognized_semantic_nodes if isinstance(n, ActionSemanticNode)]
+        object_nodes = [n for n in recognized_semantic_nodes if isinstance(n, ObjectSemanticNode)]
+
+        significant_object_node: Optional[ObjectSemanticNode] = None
+        # Check if a recognized object matches the heard utterance
+        for node in recognized_semantic_nodes:
+            if isinstance(node, ObjectSemanticNode) and node in span:
+                significant_object_node = node
+
+        if action_nodes and object_nodes and significant_object_node:
+            # Generic!
+            action_concepts = set([a.concept for a in action_nodes])
+            if sequence in self.learned_representations:
+                known_representation = self.learned_representations[sequence]
+                known_representation[1].update(action_concepts)
+            else:
+                self.learned_representations[sequence] = (significant_object_node.concept, action_concepts)
+
+        print(self.learned_representations)
 
 
