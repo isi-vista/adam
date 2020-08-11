@@ -220,6 +220,7 @@ def execute_experiment(
             try:
                 with learner_state_path.open("rb") as f:
                     learner = pickle.load(f)
+                starting_point = iteration_number
             except OSError:
                 logging.warning("Unable to open learner state at %s; skipping.", str(learner_state_path))
             except pickle.UnpicklingError:
