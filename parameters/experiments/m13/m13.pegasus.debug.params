@@ -4,7 +4,6 @@ _includes:
 
 experiment: 'm13-pegasus-debug'
 experiment_group_dir: '%adam_experiment_root%/%experiment%'
-curriculum: 'm13-pegasus-debug'
 learner: 'integrated-learner-recognizer'
 use_pegasus: true
 

@@ -1,7 +1,20 @@
 _includes:
    - "../../root.params"
-   - "m13.shuffled.params"
+   - "m13.params"
 
+include_objects: False
+include_imprecise_size: False
+include_imprecise_temporal: False
+include_subtle_verb: False
+include_object_restrictions: False
+include_functionally_defined_objects: False
+include_relations: False
+include_generics: False
+include_verbs_with_dynamic_prepositions: False
+include_m9_complete: False
+include_m13_complete: False
+include_m13_shuffled: True
+include_debug: False
 use_pegasus: true
 
 workflow_name: 'm13_shuffled_pegasus'
