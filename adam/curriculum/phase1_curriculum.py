@@ -3181,10 +3181,10 @@ def build_gaila_phase1_verb_curriculum(
         ),
         _make_fly_curriculum(num_samples, num_noise_objects, language_generator),
         _make_roll_curriculum(num_samples, num_noise_objects, language_generator),
-        # TODO: in Chinese, _make_speaker_addressee_curriculum currently leads to an error in graph matching
-        _make_speaker_addressee_curriculum(
-            num_samples, num_noise_objects, language_generator
-        ),
+        # TODO: see https://github.com/isi-vista/adam/issues/937
+        # _make_speaker_addressee_curriculum(
+        #     num_samples, num_noise_objects, language_generator
+        # ),
         _make_jump_curriculum(num_samples, num_noise_objects, language_generator),
         _make_drink_curriculum(num_samples, num_noise_objects, language_generator),
         _make_sit_curriculum(num_samples, num_noise_objects, language_generator),
