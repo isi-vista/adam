@@ -1,7 +1,8 @@
+import collections
 import itertools
+import typing
 from abc import ABC
-from collections import Counter
-from typing import AbstractSet, Iterable, Optional, Tuple, List
+from typing import AbstractSet, Iterable, Optional, Tuple
 
 from attr import attrs, attrib
 from immutablecollections import immutableset, immutablesetmultidict
@@ -70,7 +71,9 @@ class AbstractPluralTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
 class SubsetPluralLearnerNew(
     AbstractTemplateSubsetLearnerNew, AbstractPluralTemplateLearnerNew
 ):
-    potential_plural_markers: Counter = attrib(init=False, default=Counter())
+    potential_plural_markers: typing.Counter[str] = attrib(
+        init=False, default=collections.Counter()
+    )
 
     def _can_learn_from(
         self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
@@ -79,14 +82,14 @@ class SubsetPluralLearnerNew(
             s.concept
             for s in language_perception_semantic_alignment.perception_semantic_alignment.semantic_nodes
         ]
-        counts = Counter(concepts)
+        counts = collections.Counter(concepts)
         return max(counts.values()) > 1
 
     def _preprocess_scene(
         self, perception_semantic_alignment: PerceptionSemanticAlignment
     ) -> PerceptionSemanticAlignment:
         nodes = [s for s in perception_semantic_alignment.semantic_nodes]
-        counts = Counter([s.concept for s in nodes])
+        counts = collections.Counter([s.concept for s in nodes])
         digraph = perception_semantic_alignment.perception_graph.copy_as_digraph()
         for node in nodes:
             count = counts[node.concept]
@@ -134,8 +137,13 @@ class SubsetPluralLearnerNew(
             # for meaningful attribute semantics.
             return False
         # If we are keeping a hypothesis, use the template for that to update the list of possible plural markers.
-        self.potential_plural_markers.update([t for t in bound_surface_template.surface_template.elements
-                                              if isinstance(t, str)])
+        self.potential_plural_markers.update(
+            [
+                t
+                for t in bound_surface_template.surface_template.elements
+                if isinstance(t, str)
+            ]
+        )
         return True
 
     def _update_hypothesis(
