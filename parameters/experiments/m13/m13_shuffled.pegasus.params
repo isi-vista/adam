@@ -2,6 +2,8 @@ _includes:
    - "../../root.params"
    - "m13.params"
 
+experiment: 'm13-shuffled-pegasus'
+experiment_group_dir: '%adam_experiment_root%/%experiment%'
 include_objects: False
 include_imprecise_size: False
 include_imprecise_temporal: False
