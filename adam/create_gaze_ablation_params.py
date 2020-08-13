@@ -40,12 +40,18 @@ def create_gaze_ablation_entry_point(params: Parameters) -> None:
                 # all possible accuracies
                 for prob_given in values_for_accuracy:
                     for prob_not_given in values_for_accuracy:
+                        # both ignoring and perceiving gaze
                         for add_gaze in [True, False]:
-                            file_name = (
-                                f"pursuit-ablating-gaze-{num_instances}_instances-{num_noise_instances}_noise_instances-"
-                                f"{num_objects_in_instance}_objects_in_instance-{prob_given}_given-{prob_not_given}_not_given-{add_gaze}"
-                                f"_gaze"
+                            # add the required arguments to create a unique filename
+                            file_name = FILE_NAME_STRING.format(
+                                num_instances=num_instances,
+                                num_noise_instances=num_noise_instances,
+                                num_objects_in_instance=num_objects_in_instance,
+                                prob_given=prob_given,
+                                prob_not_given=prob_not_given,
+                                add_gaze=add_gaze,
                             )
+                            # format the arguments in the parameter file and write them out
                             param_file_string = PARAM_FILE_STRING.format(
                                 experiment=file_name,
                                 num_instances=num_instances,
@@ -55,9 +61,14 @@ def create_gaze_ablation_entry_point(params: Parameters) -> None:
                                 prob_given=prob_given,
                                 prob_not_given=prob_not_given,
                             )
+                            with open(f"{parameters_dir}/{file_name}", "a") as f:
+                                f.write(param_file_string)
 
-                        with open(f"{parameters_dir}/{file_name}", "a") as f:
-                            f.write(param_file_string)
+
+FILE_NAME_STRING = (
+    "pursuit-ablating-gaze-{num_instances:d}_instances-{num_noise_instances:d}_noise_instances-{num_objects_in_instance:d}_"
+    "objects_in_instance-{prob_given:.3f}_given-{prob_not_given:.3f}_not_given-{add_gaze}_gaze"
+)
 
 
 PARAM_FILE_STRING = """_includes:
