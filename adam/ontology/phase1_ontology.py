@@ -184,6 +184,15 @@ subtype(CAUSALLY_AFFECTED, PERCEIVABLE_PROPERTY)
 STATIONARY = OntologyNode("stationary", [BINARY])
 subtype(STATIONARY, PERCEIVABLE_PROPERTY)
 
+# Perception distinctions to indicate uniqueness of sub-object repeats
+IS_LEFT = OntologyNode("is-left", [BINARY])
+subtype(IS_LEFT, PERCEIVABLE_PROPERTY)
+IS_RIGHT = OntologyNode("is-right", [BINARY])
+subtype(IS_RIGHT, PERCEIVABLE_PROPERTY)
+IS_UPPER = OntologyNode("is-upper", [BINARY])
+subtype(IS_UPPER, PERCEIVABLE_PROPERTY)
+IS_LOWER = OntologyNode("is-lower", [BINARY])
+subtype(IS_LOWER, PERCEIVABLE_PROPERTY)
 
 # Properties not perceived by the learner, but useful for situation generation
 
@@ -1430,9 +1439,9 @@ _ARM_SEGMENT_SCHEMA = _make_human_arm_segment()
 # schemata describing the sub-object structural nature of a Human Arm
 _ARM_SCHEMA_HAND = SubObject(_HAND_SCHEMA)
 _ARM_SCHEMA_UPPER = SubObject(
-    _ARM_SEGMENT_SCHEMA
+    _ARM_SEGMENT_SCHEMA, properties=[IS_UPPER]
 )  # Is that the correct sub-object we want?
-_ARM_SCHEMA_LOWER = SubObject(_ARM_SEGMENT_SCHEMA)
+_ARM_SCHEMA_LOWER = SubObject(_ARM_SEGMENT_SCHEMA, properties=[IS_LOWER])
 
 _ARM_SCHEMA = ObjectStructuralSchema(
     ontology_node=_ARM,
@@ -1444,8 +1453,8 @@ _ARM_SCHEMA = ObjectStructuralSchema(
 )
 
 # Schemata describing an animal leg
-_LEG_SEGMENT_0 = SubObject(_UPPER_LEG_SEGMENT_SCHEMA)
-_LEG_SEGMENT_1 = SubObject(_LOWER_LEG_SEGMENT_SCHEMA)
+_LEG_SEGMENT_0 = SubObject(_UPPER_LEG_SEGMENT_SCHEMA, properties=[IS_UPPER])
+_LEG_SEGMENT_1 = SubObject(_LOWER_LEG_SEGMENT_SCHEMA, properties=[IS_LOWER])
 _HUMAN_FOOT = SubObject(_FOOT_SCHEMA)
 _ANIMAL_LEG_SCHEMA = ObjectStructuralSchema(
     _ANIMAL_LEG,
@@ -1463,10 +1472,10 @@ _ANIMAL_LEG_SCHEMA = ObjectStructuralSchema(
 # schemata describing the sub-object structural nature of a Person
 _PERSON_SCHEMA_HEAD = SubObject(_HEAD_SCHEMA)
 _PERSON_SCHEMA_TORSO = SubObject(_TORSO_SCHEMA)
-_PERSON_SCHEMA_LEFT_ARM = SubObject(_ARM_SCHEMA)
-_PERSON_SCHEMA_RIGHT_ARM = SubObject(_ARM_SCHEMA)
-_PERSON_SCHEMA_LEFT_LEG = SubObject(_ANIMAL_LEG_SCHEMA)
-_PERSON_SCHEMA_RIGHT_LEG = SubObject(_ANIMAL_LEG_SCHEMA)
+_PERSON_SCHEMA_LEFT_ARM = SubObject(_ARM_SCHEMA, properties=[IS_LEFT])
+_PERSON_SCHEMA_RIGHT_ARM = SubObject(_ARM_SCHEMA, properties=[IS_RIGHT])
+_PERSON_SCHEMA_LEFT_LEG = SubObject(_ANIMAL_LEG_SCHEMA, properties=[IS_LEFT])
+_PERSON_SCHEMA_RIGHT_LEG = SubObject(_ANIMAL_LEG_SCHEMA, properties=[IS_RIGHT])
 
 _PERSON_SCHEMA_APPENDAGES = [
     _PERSON_SCHEMA_LEFT_ARM,
@@ -1598,10 +1607,10 @@ _TABLE_SCHEMA = ObjectStructuralSchema(
 )
 
 # schemata describing the sub-object structural nature of a dog
-_DOG_SCHEMA_LEG_1 = SubObject(_ANIMAL_LEG_SCHEMA)
-_DOG_SCHEMA_LEG_2 = SubObject(_ANIMAL_LEG_SCHEMA)
-_DOG_SCHEMA_LEG_3 = SubObject(_ANIMAL_LEG_SCHEMA)
-_DOG_SCHEMA_LEG_4 = SubObject(_ANIMAL_LEG_SCHEMA)
+_DOG_SCHEMA_LEG_1 = SubObject(_ANIMAL_LEG_SCHEMA, properties=[IS_LEFT, IS_LOWER])
+_DOG_SCHEMA_LEG_2 = SubObject(_ANIMAL_LEG_SCHEMA, properties=[IS_LEFT, IS_UPPER])
+_DOG_SCHEMA_LEG_3 = SubObject(_ANIMAL_LEG_SCHEMA, properties=[IS_RIGHT, IS_LOWER])
+_DOG_SCHEMA_LEG_4 = SubObject(_ANIMAL_LEG_SCHEMA, properties=[IS_RIGHT, IS_UPPER])
 _DOG_SCHEMA_TORSO = SubObject(_TORSO_SCHEMA)
 _DOG_SCHEMA_HEAD = SubObject(_DOG_HEAD_SCHEMA)
 _DOG_SCHEMA_TAIL = SubObject(_TAIL_SCHEMA)
@@ -1642,11 +1651,11 @@ _DOG_SCHEMA = ObjectStructuralSchema(
 # schemata describing the sub-object structural nature of a bird
 _BIRD_SCHEMA_HEAD = SubObject(_BIRD_HEAD_SCHEMA)
 _BIRD_SCHEMA_TORSO = SubObject(_TORSO_SCHEMA)
-_BIRD_SCHEMA_LEFT_LEG = SubObject(_ANIMAL_LEG_SCHEMA)
-_BIRD_SCHEMA_RIGHT_LEG = SubObject(_ANIMAL_LEG_SCHEMA)
+_BIRD_SCHEMA_LEFT_LEG = SubObject(_ANIMAL_LEG_SCHEMA, properties=[IS_LEFT])
+_BIRD_SCHEMA_RIGHT_LEG = SubObject(_ANIMAL_LEG_SCHEMA, properties=[IS_RIGHT])
 _BIRD_SCHEMA_TAIL = SubObject(_TAIL_SCHEMA)
-_BIRD_SCHEMA_LEFT_WING = SubObject(_WING_SCHEMA)
-_BIRD_SCHEMA_RIGHT_WING = SubObject(_WING_SCHEMA)
+_BIRD_SCHEMA_LEFT_WING = SubObject(_WING_SCHEMA, properties=[IS_LEFT])
+_BIRD_SCHEMA_RIGHT_WING = SubObject(_WING_SCHEMA, properties=[IS_RIGHT])
 _BIRD_LEGS = [_BIRD_SCHEMA_LEFT_LEG, _BIRD_SCHEMA_RIGHT_LEG]
 _BIRD_WINGS = [_BIRD_SCHEMA_LEFT_WING, _BIRD_SCHEMA_RIGHT_WING]
 _BIRD_APPENDAGES = flatten(

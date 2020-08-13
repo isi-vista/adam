@@ -1369,6 +1369,13 @@ class _PerceptionGeneration:
             self._relation_perceptions.append(
                 Relation(PART_OF, sub_object_perception, root_object_perception)
             )
+            # SubObjects can have properties so we translate them here
+            for prop in sub_object.properties:
+                self._perceive_property(
+                    self._generator.ontology.properties_for_node(prop),
+                    sub_object_perception,
+                    prop,
+                )
 
         # Translate sub-object relations specified by the object's structural schema.
         for sub_object_relation in schema.sub_object_relations:

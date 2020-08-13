@@ -318,7 +318,12 @@ class PerceptionGraphProtocol(Protocol):
         lines.append("Nodes:")
         lines.extend(f"\t{node}" for node in self._graph.nodes)
         lines.append("\nEdges:")
-        lines.extend(f"\t{edge}" for edge in self._graph.edges(data="label"))
+        lines.extend(
+            f"\t{edge}"
+            for edge in self._graph.edges(
+                data="label" if isinstance(self, PerceptionGraph) else "predicate"
+            )
+        )
         return "\n".join(lines)
 
 
@@ -1127,7 +1132,7 @@ class PatternMatching:
     # "Non-default attributes not allowed after default attributes."
     # But that doesn't seem to be our situation? And it works fine?
     _match_mode: MatchMode = attrib(  # type: ignore
-        validator=instance_of(MatchMode), kw_only=MatchMode.OBJECT
+        validator=instance_of(MatchMode), kw_only=True
     )
 
     # Callable object for debugging purposes. We use this to track the number of calls to match and render the graphs.
@@ -2482,46 +2487,30 @@ def _translate_region(
 
 # This is used to control the order in which pattern nodes are matched,
 # which can have a significant impact on match speed.
-# We try to match the most restrictive nodes first.
-_PATTERN_PREDICATE_NODE_ORDER = [
-    # If we have matchedObjects in the pattern we want to try and find these first.
-    ObjectSemanticNodePerceptionPredicate,
-    # Paths are rare, match them next
-    IsPathPredicate,
-    PathOperatorPredicate,
-    # properties and colors tend to be highlight restrictive, so let's match them first
-    IsOntologyNodePredicate,
-    IsColorNodePredicate,
-    AnyObjectPerception,
-    GeonPredicate,
-    CrossSectionPredicate,
-    RegionPredicate,
-    # the matcher tends to get bogged down when dealing with axes,
-    # so we search those last one the other nodes have established the skeleton of a match.
-    AxisPredicate,
-]
+# We try to match the most restrictive nodes first
+GRAPH_NODE_ORDER_TO_PATTERN_PREDICATE_NODE_ORDER = immutabledict(  # type: ignore
+    [
+        # If we have matchedObjects in the pattern we want to try and find these first.
+        (ObjectSemanticNode, ObjectSemanticNodePerceptionPredicate),
+        # Paths are rare, match them next
+        (SpatialPath, IsPathPredicate),
+        (PathOperator, PathOperatorPredicate),
+        # properties and colors tend to be highlight restrictive, so let's match them first
+        (OntologyNode, IsOntologyNodePredicate),
+        (RgbColorPerception, IsColorNodePredicate),
+        (ObjectPerception, AnyObjectPerception),
+        (Geon, GeonPredicate),
+        (CrossSection, CrossSectionPredicate),
+        (Region, RegionPredicate),
+        # the matcher tends to get bogged down when dealing with axes,
+        # so we search those last one the other nodes have established the skeleton of a match.
+        (GeonAxis, AxisPredicate),
+    ]
+)
 
-
-def _pattern_matching_node_order(node_node_data_tuple) -> int:
-    (node, _) = node_node_data_tuple
-    return _PATTERN_PREDICATE_NODE_ORDER.index(node.__class__)
-
-
-# This is used to control the order in which pattern nodes are matched,
-# which can have a significant impact on match speed.
-# This should match _PATTERN_PREDICATE_NODE_ORDER above.
-_GRAPH_NODE_ORDER = [  # type: ignore
-    ObjectSemanticNode,
-    SpatialPath,
-    PathOperator,
-    OntologyNode,
-    RgbColorPerception,
-    ObjectPerception,
-    Geon,
-    Region,
-    GeonAxis,
-    CrossSection,
-]
+_GRAPH_NODE_ORDER = list(  # type: ignore
+    GRAPH_NODE_ORDER_TO_PATTERN_PREDICATE_NODE_ORDER.keys()
+)
 
 
 def _graph_node_order(node_node_data_tuple) -> int:
@@ -2533,6 +2522,16 @@ def _graph_node_order(node_node_data_tuple) -> int:
         node = node[0]
 
     return _GRAPH_NODE_ORDER.index(node.__class__)
+
+
+_PATTERN_PREDICATE_NODE_ORDER = list(  # type: ignore
+    GRAPH_NODE_ORDER_TO_PATTERN_PREDICATE_NODE_ORDER.values()
+)
+
+
+def _pattern_matching_node_order(node_node_data_tuple) -> int:
+    (node, _) = node_node_data_tuple
+    return _PATTERN_PREDICATE_NODE_ORDER.index(node.__class__)
 
 
 GOVERNED = OntologyNode("governed")

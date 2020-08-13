@@ -71,6 +71,8 @@ from adam.ontology.phase1_ontology import (
     ME_HACK,
     YOU_HACK,
     PHASE_1_CURRICULUM_OBJECTS,
+    HAND,
+    HEAD,
 )
 from adam.random_utils import RandomChooser
 
@@ -165,6 +167,7 @@ def learner_factory_from_params(
 
     objects = [YOU_HACK, ME_HACK]
     objects.extend(PHASE_1_CURRICULUM_OBJECTS)
+    objects.extend([HAND, HEAD])
 
     # Eval hack! This is specific to the Phase 1 ontology
     object_recognizer = ObjectRecognizer.for_ontology_types(

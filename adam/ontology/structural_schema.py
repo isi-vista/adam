@@ -95,3 +95,10 @@ class SubObject:
     """
     A human-readable string which should be accessed for debugging purposes only.
     """
+
+    properties: ImmutableSet[OntologyNode] = attrib(
+        converter=_to_immutableset, default=immutableset(), kw_only=True
+    )
+    r"""
+    The `OntologyNode`\ s representing the properties this object has.
+    """

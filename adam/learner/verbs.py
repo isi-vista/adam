@@ -42,7 +42,11 @@ from adam.semantics import (
 from attr import attrib, attrs
 from immutablecollections import immutabledict, immutableset, immutablesetmultidict
 from attr.validators import instance_of
-from adam.learner.learner_utils import candidate_templates, AlignmentSlots
+from adam.learner.learner_utils import (
+    candidate_templates,
+    AlignmentSlots,
+    pattern_remove_incomplete_region_or_spatial_path,
+)
 
 # This is the maximum number of tokens we will hypothesize
 # as the non-argument-slots portion of a surface template for an action.
@@ -280,4 +284,5 @@ class SubsetVerbLearnerNew(
                     if previous_slot == new_slot
                 ]
             ),
+            trim_after_match=pattern_remove_incomplete_region_or_spatial_path,
         )

@@ -45,6 +45,7 @@ from adam.perception import (
     MatchMode,
 )
 from adam.perception.deprecated import LanguageAlignedPerception
+from adam.perception.developmental_primitive_perception import RgbColorPerception
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     GAILA_PHASE_1_PERCEPTION_GENERATOR,
     HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
@@ -756,6 +757,7 @@ def replace_object_match(
     pattern_match: PerceptionGraphPatternMatch,
     *,
     remove_internal_structure: bool,
+    remove_non_root_color_nodes: bool = True,
 ) -> PerceptionGraph:
     """
     Internal function to replace the nodes of the perception matched by the object pattern
@@ -771,12 +773,20 @@ def replace_object_match(
         disable_order_check=True,
     )
 
+    root = _get_root_object_perception(perception_digraph, matched_subgraph_nodes)
+    if root in SHARED_WORLD_ITEMS:
+        raise RuntimeError(
+            f"Pattern match root cannot be a shared world item, "
+            f"but got match {pattern_match}"
+        )
+
     # Multiple sub-objects of a matched object may link to the same property
     # (for example, to a color shared by all the parts).
     # In this case, we want the shared object node to link to this property only once.
     external_properties: Set[Union[OntologyNode, ObjectSemanticNode]] = set()
     # These will only *actually* be removed if remove_internal_structure is True
     duplicate_nodes_to_remove: List[PerceptionGraphNode] = []
+    color_nodes_to_remove: List[PerceptionGraphNode] = []
 
     for matched_subgraph_node in matched_subgraph_nodes:
         if isinstance(matched_subgraph_node, ObjectSemanticNode):
@@ -791,6 +801,10 @@ def replace_object_match(
         # shared world item's relationships.
         if matched_subgraph_node in SHARED_WORLD_ITEMS:
             continue
+
+        if isinstance(matched_subgraph_node, RgbColorPerception):
+            if root not in perception_digraph.predecessors(matched_subgraph_node):
+                color_nodes_to_remove.append(matched_subgraph_node)
 
         # If there is an edge from the matched sub-graph to a node outside it,
         # also add an edge from the object match node to that node.
@@ -883,13 +897,6 @@ def replace_object_match(
                     label=edge_label,
                 )
 
-    root = _get_root_object_perception(perception_digraph, matched_subgraph_nodes)
-    if root in SHARED_WORLD_ITEMS:
-        raise RuntimeError(
-            f"Pattern match root cannot be a shared world item, "
-            f"but got match {pattern_match}"
-        )
-
     perception_digraph.remove_node(root)
     if remove_internal_structure:
         # Remove all matched nodes which are not shared world items (e.g. gravity, the learner)
@@ -919,5 +926,10 @@ def replace_object_match(
             matched_nodes=matched_subgraph_nodes,
             matched_object_node=replacement_object_node,
         )
+
+    # We know that having multiple colors perceived in sub-object structures can slow down
+    # our graph matching routine so we remove all colors from the sub-objects of a matched objects
+    if remove_non_root_color_nodes:
+        perception_digraph.remove_nodes_from(color_nodes_to_remove)
 
     return PerceptionGraph(perception_digraph, dynamic=current_perception.dynamic)
