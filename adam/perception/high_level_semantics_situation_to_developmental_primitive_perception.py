@@ -1378,6 +1378,7 @@ class _PerceptionGeneration:
                 )
 
         # Translate sub-object relations specified by the object's structural schema.
+        situation_region_to_perception_region = dict()
         for sub_object_relation in schema.sub_object_relations:
             # TODO: right now we translate all situation relations directly to perceptual
             # relations without modification. This is not always the right thing.
@@ -1385,17 +1386,24 @@ class _PerceptionGeneration:
             arg1_perception = sub_object_to_object_perception[
                 sub_object_relation.first_slot
             ]
-            arg2_perception: Union[ObjectPerception, RegionPerception]
+            arg2_perception: Union[ObjectPerception, Optional[RegionPerception]]
             if isinstance(sub_object_relation.second_slot, SubObject):
                 arg2_perception = sub_object_to_object_perception[
                     sub_object_relation.second_slot
                 ]
             else:
                 arg2 = sub_object_relation.second_slot
-                arg2_perception = arg2.copy_remapping_objects(
-                    sub_object_to_object_perception,
-                    axis_mapping=top_level_and_subobject_schema_axes_to_perceivable_axes,
-                )
+                arg2_perception = None
+                for sit_region in situation_region_to_perception_region:
+                    if arg2.distance == sit_region.distance and arg2.direction == sit_region.direction and arg2.reference_object == sit_region.reference_object:
+                        arg2_perception = situation_region_to_perception_region[sit_region]
+                        break
+                if not arg2_perception:
+                    arg2_perception = arg2.copy_remapping_objects(
+                        sub_object_to_object_perception,
+                        axis_mapping=top_level_and_subobject_schema_axes_to_perceivable_axes,
+                    )
+                    situation_region_to_perception_region[arg2] = arg2_perception
             self._relation_perceptions.append(
                 Relation(
                     sub_object_relation.relation_type, arg1_perception, arg2_perception
