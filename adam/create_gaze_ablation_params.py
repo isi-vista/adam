@@ -46,11 +46,25 @@ def create_gaze_ablation_entry_point(params: Parameters) -> None:
                                 f"{num_objects_in_instance}_objects_in_instance-{prob_given}_given-{prob_not_given}_not_given-{add_gaze}"
                                 f"_gaze"
                             )
-                            param_file_string = f"""_includes:
+                            param_file_string = PARAM_FILE_STRING.format(
+                                experiment=file_name,
+                                num_instances=num_instances,
+                                num_noise_instances=num_noise_instances,
+                                num_objects_in_instance=num_objects_in_instance,
+                                add_gaze=add_gaze,
+                                prob_given=prob_given,
+                                prob_not_given=prob_not_given,
+                            )
+
+                        with open(f"{parameters_dir}/{file_name}", "a") as f:
+                            f.write(param_file_string)
+
+
+PARAM_FILE_STRING = """_includes:
    - "../../root.params"
    - "m13.params"
 
-experiment: '{file_name}'
+experiment: '{experiment}'
 curriculum: pursuit
 learner: pursuit-gaze
 accuracy_to_txt : True
@@ -62,15 +76,12 @@ pursuit:
    smoothing_parameter: .001
 
 pursuit-curriculum-params:
-   num_instances: {num_instances}
-   num_noise_instances: {num_noise_instances}
-   num_objects_in_instance: {num_objects_in_instance}
+   num_instances: {num_instances:d}
+   num_noise_instances: {num_noise_instances:d}
+   num_objects_in_instance: {num_objects_in_instance:d}
    add_gaze : {add_gaze}
-   prob_given : {prob_given}
-   prob_not_given : {prob_not_given}"""
-
-                        with open(f"{parameters_dir}/{file_name}", "a") as f:
-                            f.write(param_file_string)
+   prob_given : {prob_given:.3f}
+   prob_not_given : {prob_not_given:.3f}"""
 
 
 if __name__ == "__main__":
