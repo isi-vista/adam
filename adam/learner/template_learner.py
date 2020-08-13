@@ -136,7 +136,6 @@ class AbstractTemplateLearner(
                             pattern=pattern,
                             match=match,
                             matched_objects_to_names=matched_objects_to_names,
-                            # allow_undescribed=allow_undescribed,
                         ),
                         pattern,
                         score,
