@@ -66,6 +66,7 @@ def run_preposition_test(learner, situation_template, language_generator):
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=2,
+            block_multiple_of_the_same_type=True,
         ),
         language_generator=language_generator,
     )
@@ -76,6 +77,7 @@ def run_preposition_test(learner, situation_template, language_generator):
             chooser=PHASE1_TEST_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
+            block_multiple_of_the_same_type=True,
         ),
         language_generator=language_generator,
     )
@@ -297,6 +299,7 @@ def test_subset_preposition_has(language_mode, learner):
                 chooser=PHASE1_CHOOSER_FACTORY(),
                 ontology=GAILA_PHASE_1_ONTOLOGY,
                 max_to_sample=1,
+                block_multiple_of_the_same_type=True,
             ),
         ).instances()
     )
@@ -309,6 +312,7 @@ def test_subset_preposition_has(language_mode, learner):
                 chooser=PHASE1_CHOOSER_FACTORY(),
                 ontology=GAILA_PHASE_1_ONTOLOGY,
                 max_to_sample=1,
+                block_multiple_of_the_same_type=True,
             ),
         ).instances()
     )
@@ -320,6 +324,7 @@ def test_subset_preposition_has(language_mode, learner):
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
+            block_multiple_of_the_same_type=True,
         ),
         language_generator=language_generator,
     )

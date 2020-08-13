@@ -106,6 +106,7 @@ def run_verb_test(learner, situation_template, language_generator):
                     max_to_sample=10,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
+                    block_multiple_of_the_same_type=True,
                 )
             ]
         ),
@@ -120,6 +121,7 @@ def run_verb_test(learner, situation_template, language_generator):
                     max_to_sample=1,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_TEST_CHOOSER_FACTORY(),
+                    block_multiple_of_the_same_type=True,
                 )
             ]
         ),
@@ -503,6 +505,7 @@ def test_throw_animacy(language_mode, learner):
                     max_to_sample=10,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
+                    block_multiple_of_the_same_type=True,
                 )
                 for situation_template in make_throw_animacy_templates(None)
             ]
@@ -519,6 +522,7 @@ def test_throw_animacy(language_mode, learner):
                     max_to_sample=1,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
+                    block_multiple_of_the_same_type=True,
                 )
                 for situation_template in make_throw_animacy_templates(None)
             ]

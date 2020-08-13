@@ -160,6 +160,7 @@ def test_learner_as_default_addressee():
             ontology=GAILA_PHASE_1_ONTOLOGY,
             chooser=RandomChooser.for_seed(0),
             max_to_sample=1,
+            block_multiple_of_the_same_type=True,
         )
     )
 
@@ -169,6 +170,7 @@ def test_learner_as_default_addressee():
             ontology=GAILA_PHASE_1_ONTOLOGY,
             chooser=RandomChooser.for_seed(0),
             max_to_sample=1,
+            block_multiple_of_the_same_type=True,
         )
     )
 
@@ -178,6 +180,7 @@ def test_learner_as_default_addressee():
             ontology=GAILA_PHASE_1_ONTOLOGY,
             chooser=RandomChooser.for_seed(0),
             max_to_sample=1,
+            block_multiple_of_the_same_type=True,
         )
     )
 
@@ -233,6 +236,7 @@ def test_before_after_relations_asserted():
             ontology=GAILA_PHASE_1_ONTOLOGY,
             chooser=RandomChooser.for_seed(0),
             max_to_sample=1,
+            block_multiple_of_the_same_type=True,
         )
     )
 

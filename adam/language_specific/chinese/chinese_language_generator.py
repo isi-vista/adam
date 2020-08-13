@@ -9,6 +9,7 @@ from networkx import DiGraph
 from adam.language_specific.chinese.chinese_phase_2_lexicon import (
     GAILA_PHASE_2_CHINESE_LEXICON,
 )
+from adam.ontology.phase2_ontology import gravitationally_aligned_axis_is_largest
 from adam.axes import FacingAddresseeAxis, GRAVITATIONAL_DOWN_TO_UP_AXIS
 from adam.language.dependency import (
     DependencyRole,
@@ -512,10 +513,15 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 if (
                     relation.first_slot in self.situation.salient_objects
                     and isinstance(relation.second_slot, SituationObject)
-                    and relation.second_slot.ontology_node == LEARNER
+                    and relation.second_slot.ontology_node
+                    not in self.situation.salient_objects
+                    and relation.first_slot.ontology_node
+                    == relation.second_slot.ontology_node
                 ):
                     # tall
-                    if USE_VERTICAL_MODIFIERS in self.situation.syntax_hints:
+                    if gravitationally_aligned_axis_is_largest(
+                        relation.first_slot.ontology_node, self.situation.ontology
+                    ):
                         token = DependencyTreeToken("gau1 da4", ADJECTIVE)
                     # big
                     else:
@@ -530,10 +536,15 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 if (
                     relation.first_slot in self.situation.salient_objects
                     and isinstance(relation.second_slot, SituationObject)
-                    and relation.second_slot.ontology_node == LEARNER
+                    and relation.second_slot.ontology_node
+                    not in self.situation.salient_objects
+                    and relation.first_slot.ontology_node
+                    == relation.second_slot.ontology_node
                 ):
                     # short
-                    if USE_VERTICAL_MODIFIERS in self.situation.syntax_hints:
+                    if gravitationally_aligned_axis_is_largest(
+                        relation.first_slot.ontology_node, self.situation.ontology
+                    ):
                         token = DependencyTreeToken("dwan3", ADJECTIVE)
                     # small
                     else:
@@ -1012,15 +1023,20 @@ class SimpleRuleBasedChineseLanguageGenerator(
             relation: Relation[SituationObject],
         ):
             """Translate relations that the user explicitly calls out, including possession and region"""
-
             if relation.relation_type == BIGGER_THAN:
+                # big is specified when there's two objects of the same type, and the second isn't salient
                 if (
                     relation.first_slot in self.situation.salient_objects
                     and isinstance(relation.second_slot, SituationObject)
-                    and relation.second_slot.ontology_node == LEARNER
+                    and relation.second_slot.ontology_node
+                    not in self.situation.salient_objects
+                    and relation.first_slot.ontology_node
+                    == relation.second_slot.ontology_node
                 ):
                     # tall
-                    if USE_VERTICAL_MODIFIERS in self.situation.syntax_hints:
+                    if gravitationally_aligned_axis_is_largest(
+                        relation.first_slot.ontology_node, self.situation.ontology
+                    ):
                         token = DependencyTreeToken("gau1 da4", ADJECTIVE)
                     # big
                     else:
@@ -1035,10 +1051,15 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 if (
                     relation.first_slot in self.situation.salient_objects
                     and isinstance(relation.second_slot, SituationObject)
-                    and relation.second_slot.ontology_node == LEARNER
+                    and relation.second_slot.ontology_node
+                    not in self.situation.salient_objects
+                    and relation.first_slot.ontology_node
+                    == relation.second_slot.ontology_node
                 ):
                     # short
-                    if USE_VERTICAL_MODIFIERS in self.situation.syntax_hints:
+                    if gravitationally_aligned_axis_is_largest(
+                        relation.first_slot.ontology_node, self.situation.ontology
+                    ):
                         token = DependencyTreeToken("dwan3", ADJECTIVE)
                     # small
                     else:
@@ -1323,5 +1344,4 @@ IGNORE_HAS_AS_VERB = "IGNORE_HAS_AS_VERB"
 ATTRIBUTES_AS_X_IS_Y = "ATTRIBUTES_AS_X_IS_Y"
 USE_NEAR = "USE_NEAR"
 IGNORE_GOAL = "IGNORE_GOAL"
-USE_VERTICAL_MODIFIERS = "USE_VERTICAL_MODIFIERS"
 USE_ABOVE_BELOW = "USE_ABOVE_BELOW"

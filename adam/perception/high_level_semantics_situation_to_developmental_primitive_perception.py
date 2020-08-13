@@ -3,10 +3,8 @@ from itertools import chain
 from random import Random
 from typing import Dict, Iterable, List, Mapping, MutableMapping, Optional, Union, cast
 from typing_extensions import Protocol, runtime
-
 from more_itertools import only, quantify
 from networkx import DiGraph
-
 from adam.axes import AxesInfo, WORLD_AXES
 from adam.axis import GeonAxis
 from adam.geon import Geon
@@ -36,6 +34,9 @@ from adam.ontology.phase1_ontology import (
     SIZE_RELATIONS,
     TWO_DIMENSIONAL,
     on,
+    BIGGER_THAN_SAME_TYPE,
+    BIGGER_THAN,
+    SMALLER_THAN_SAME_TYPE,
 )
 from adam.ontology.phase1_spatial_relations import (
     EXTERIOR_BUT_IN_CONTACT,
@@ -303,10 +304,9 @@ class _PerceptionGeneration:
         )
         # Once all the objects and relations are perceived, determine their colors.
         self._perceive_colors()
-
         # Handle implicit size relations
         self._perceive_size_relative_to_learner()
-        # self._perceive_implicit_size()
+        self._perceive_all_relative_size()
 
         # for now, we assume that actions do not alter the relationship of objects axes
         # to the speaker, learner, and addressee
@@ -803,6 +803,37 @@ class _PerceptionGeneration:
                     dfs_walk(successor, inherited_color)
 
         dfs_walk(root)
+
+    def _perceive_all_relative_size(self) -> None:
+        """This method handles perception of relative size of two objects of the same type"""
+        size_relations = [
+            relation
+            for relation in self._situation.always_relations
+            if relation.relation_type in SIZE_RELATIONS
+            and (
+                isinstance(relation.first_slot, SituationObject)
+                and isinstance(relation.second_slot, SituationObject)
+                and relation.first_slot.ontology_node
+                == relation.second_slot.ontology_node
+            )
+        ]
+        for relation in size_relations:
+            # We convert biggerThan to biggerThanSameType to denote it's a special type of relative size between
+            # objects of same type.
+            new_relation_type = (
+                BIGGER_THAN_SAME_TYPE
+                if relation.relation_type == BIGGER_THAN
+                else SMALLER_THAN_SAME_TYPE
+            )
+            size_relation_same_type = Relation(
+                relation_type=new_relation_type,
+                first_slot=self._objects_to_perceptions[relation.first_slot],
+                second_slot=self._objects_to_perceptions[  # type:ignore
+                    relation.second_slot
+                ],
+                negated=relation.negated,
+            )
+            self._relation_perceptions.extend([size_relation_same_type])
 
     def _perceive_size_relative_to_learner(self) -> None:
         """
