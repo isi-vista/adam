@@ -321,7 +321,7 @@ def sampled(
     chooser: SequenceChooser,
     max_to_sample: int,
     default_addressee_node: OntologyNode = LEARNER,
-    block_multiple_of_the_same_type: bool = True,
+    block_multiple_of_the_same_type: bool,
 ) -> Iterable[HighLevelSemanticsSituation]:
     """
     Gets *max_to_sample* instantiations of *situation_template* with *ontology*

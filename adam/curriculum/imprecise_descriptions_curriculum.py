@@ -430,6 +430,7 @@ def make_throw_imprecise_temporal_descriptions(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 5,
+                    block_multiple_of_the_same_type=True,
                 )
                 for is_fast in BOOL_SET
             ),
@@ -446,6 +447,7 @@ def make_throw_imprecise_temporal_descriptions(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 5,
+                    block_multiple_of_the_same_type=True,
                 )
                 for is_fast in BOOL_SET
             ),
@@ -463,6 +465,7 @@ def make_throw_imprecise_temporal_descriptions(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 5,
+                    block_multiple_of_the_same_type=True,
                 )
                 for is_fast in BOOL_SET
                 for is_up in BOOL_SET
@@ -480,6 +483,7 @@ def make_throw_imprecise_temporal_descriptions(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 5,
+                    block_multiple_of_the_same_type=True,
                 )
                 for is_fast in BOOL_SET
             ),
@@ -524,6 +528,7 @@ def make_move_imprecise_temporal_descriptions(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 5,
+                    block_multiple_of_the_same_type=True,
                 )
                 for is_fast in BOOL_SET
             ),
@@ -540,6 +545,7 @@ def make_move_imprecise_temporal_descriptions(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 5,
+                    block_multiple_of_the_same_type=True,
                 )
                 for is_fast in BOOL_SET
             ),
@@ -581,6 +587,7 @@ def make_jump_imprecise_temporal_descriptions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for use_adverbial_path_modifier in (True, False)
                     for is_fast in BOOL_SET
@@ -620,6 +627,7 @@ def make_take_grab_subtle_verb_distinction(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for use_adverbial_path_modifier in BOOL_SET
                     for hard_force in BOOL_SET
@@ -678,6 +686,7 @@ def make_push_shove_subtle_verb_distinctions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for template in templates
                 ]
@@ -721,6 +730,7 @@ def make_walk_run_subtle_verb_distinction(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for use_adverbial_path_modifier in BOOL_SET
                     for hard_force in BOOL_SET
@@ -761,6 +771,7 @@ def make_pass_toss_subtle_verb_distinction(
                             else [SOFT_FORCE],
                             background=background,
                         ),
+                        block_multiple_of_the_same_type=True,
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
@@ -804,6 +815,7 @@ def make_roll_imprecise_temporal_descriptions(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 5,
+                    block_multiple_of_the_same_type=True,
                 )
                 for is_fast in BOOL_SET
             ),
@@ -820,6 +832,7 @@ def make_roll_imprecise_temporal_descriptions(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 5,
+                    block_multiple_of_the_same_type=True,
                 )
                 for is_fast in BOOL_SET
             ),
@@ -836,6 +849,7 @@ def make_roll_imprecise_temporal_descriptions(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 5,
+                    block_multiple_of_the_same_type=True,
                 )
                 for is_fast in BOOL_SET
             ),
@@ -871,6 +885,7 @@ def make_fly_imprecise_temporal_descriptions(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 5,
+                    block_multiple_of_the_same_type=True,
                 )
                 for is_up in BOOL_SET
                 for syntax_hints in syntax_hints_options
@@ -908,6 +923,7 @@ def make_fall_imprecise_temporal_descriptions(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 5,
+                    block_multiple_of_the_same_type=True,
                 )
                 for object_ends_up_on_ground in BOOL_SET
                 for syntax_hints in syntax_hints_options
@@ -924,6 +940,7 @@ def make_fall_imprecise_temporal_descriptions(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 5,
+                    block_multiple_of_the_same_type=True,
                 )
                 for is_fast in BOOL_SET
             ),

@@ -118,6 +118,7 @@ def run_subset_learner_for_object(
             chooser=PHASE1_TEST_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
+            block_multiple_of_the_same_type=True,
         ),
         language_generator=language_generator,
     )

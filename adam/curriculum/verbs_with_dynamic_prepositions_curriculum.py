@@ -2561,6 +2561,7 @@ def _make_push_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for template in to_in_templates
                 ]
@@ -2580,6 +2581,7 @@ def _make_push_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for is_right in BOOL_SET
                 ]
@@ -2599,6 +2601,7 @@ def _make_push_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for is_distal in BOOL_SET
                 ]
@@ -2619,6 +2622,7 @@ def _make_push_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for is_distal in BOOL_SET
                     for is_in_front in BOOL_SET
@@ -2640,6 +2644,7 @@ def _make_push_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for is_ending_proximal in BOOL_SET
                     for is_towards in BOOL_SET
@@ -2661,6 +2666,7 @@ def _make_push_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for is_distal in BOOL_SET
                 ]
@@ -2712,6 +2718,7 @@ def _make_go_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                 ]
             ),
@@ -2723,6 +2730,7 @@ def _make_go_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                 ]
             ),
@@ -2736,6 +2744,7 @@ def _make_go_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for is_right in BOOL_SET
                 ]
@@ -2754,6 +2763,7 @@ def _make_go_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for is_distal in BOOL_SET
                     for is_behind in BOOL_SET
@@ -2769,6 +2779,7 @@ def _make_go_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for is_distal in BOOL_SET
                 ]
@@ -2786,6 +2797,7 @@ def _make_go_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for is_distal in BOOL_SET
                 ]
@@ -2806,6 +2818,7 @@ def _make_go_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for is_behind in BOOL_SET
                     for is_near_path in BOOL_SET
@@ -2827,6 +2840,7 @@ def _make_go_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for is_over in BOOL_SET
                     for is_near_goal in BOOL_SET
@@ -2846,6 +2860,7 @@ def _make_go_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for is_toward in BOOL_SET
                     for is_near_goal in BOOL_SET
@@ -2865,6 +2880,7 @@ def _make_go_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for is_distal in BOOL_SET
                 ]
@@ -2908,6 +2924,7 @@ def _make_sit_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for syntax_hints in syntax_hints_options
                 ]
@@ -2922,6 +2939,7 @@ def _make_sit_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for syntax_hints in syntax_hints_options
                 ]
@@ -2982,6 +3000,7 @@ def _make_roll_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for is_right in BOOL_SET
                 ]
@@ -3001,6 +3020,7 @@ def _make_roll_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for is_distal in BOOL_SET
                     for is_behind in BOOL_SET
@@ -3019,6 +3039,7 @@ def _make_roll_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                 ]
             ),
@@ -3036,6 +3057,7 @@ def _make_roll_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                 ]
             ),
@@ -3054,6 +3076,7 @@ def _make_roll_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for is_right in BOOL_SET
                 ]
@@ -3074,6 +3097,7 @@ def _make_roll_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for is_distal in BOOL_SET
                     for is_behind in BOOL_SET
@@ -3094,6 +3118,7 @@ def _make_roll_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for is_over in BOOL_SET
                 ]
@@ -3113,6 +3138,7 @@ def _make_roll_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for is_over in BOOL_SET
                     for surface in surfaces
@@ -3132,6 +3158,7 @@ def _make_roll_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for is_toward in BOOL_SET
                     for surface in surfaces
@@ -3152,6 +3179,7 @@ def _make_roll_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for is_toward in BOOL_SET
                     for surface in surfaces
@@ -3167,6 +3195,7 @@ def _make_roll_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for surface in surfaces
                 ]
@@ -3185,6 +3214,7 @@ def _make_roll_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for surface in surfaces
                 ]
@@ -3216,6 +3246,7 @@ def _make_take_with_prepositions(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 5,
+                    block_multiple_of_the_same_type=True,
                 )
             ]
         ),
@@ -3262,6 +3293,7 @@ def _make_fall_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for syntax_hints in syntax_hints_options
                 ]
@@ -3276,6 +3308,7 @@ def _make_fall_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for syntax_hints in syntax_hints_options
                 ]
@@ -3294,6 +3327,7 @@ def _make_fall_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for syntax_hints in syntax_hints_options
                     for is_right in BOOL_SET
@@ -3314,6 +3348,7 @@ def _make_fall_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for syntax_hints in syntax_hints_options
                     for is_distal in BOOL_SET
@@ -3334,6 +3369,7 @@ def _make_fall_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for syntax_hints in syntax_hints_options
                     for is_toward in BOOL_SET
@@ -3391,6 +3427,7 @@ def _make_put_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for template in on_in_templates
                 ]
@@ -3405,6 +3442,7 @@ def _make_put_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for speaker_addressee in special_agents
                 ]
@@ -3419,6 +3457,7 @@ def _make_put_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for is_right in BOOL_SET
                 ]
@@ -3433,6 +3472,7 @@ def _make_put_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for is_distal in BOOL_SET
                 ]
@@ -3452,6 +3492,7 @@ def _make_put_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for is_distal in BOOL_SET
                     for is_in_front in BOOL_SET
@@ -3514,6 +3555,7 @@ def _make_move_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for is_right in BOOL_SET
                 ]
@@ -3532,6 +3574,7 @@ def _make_move_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for is_distal in BOOL_SET
                     for is_in_front in BOOL_SET
@@ -3547,6 +3590,7 @@ def _make_move_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for is_distal in BOOL_SET
                 ]
@@ -3561,6 +3605,7 @@ def _make_move_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for is_toward in BOOL_SET
                 ]
@@ -3573,6 +3618,7 @@ def _make_move_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for template in situation_templates
                 ]
@@ -3591,6 +3637,7 @@ def _make_move_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for is_distal in BOOL_SET
                 ]
@@ -3609,6 +3656,7 @@ def _make_move_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for is_right in BOOL_SET
                 ]
@@ -3628,6 +3676,7 @@ def _make_move_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for is_distal in BOOL_SET
                     for is_in_front in BOOL_SET
@@ -3647,6 +3696,7 @@ def _make_move_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for is_toward in BOOL_SET
                 ]
@@ -3665,6 +3715,7 @@ def _make_move_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for is_distal in BOOL_SET
                 ]
@@ -3684,6 +3735,7 @@ def _make_move_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for is_distal in BOOL_SET
                 ]
@@ -3732,6 +3784,7 @@ def _make_throw_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for template in situation_templates
                 ]
@@ -3746,6 +3799,7 @@ def _make_throw_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for is_right in BOOL_SET
                 ]
@@ -3765,6 +3819,7 @@ def _make_throw_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for is_distal in BOOL_SET
                     for is_in_front in BOOL_SET
@@ -3780,6 +3835,7 @@ def _make_throw_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for is_distal in BOOL_SET
                 ]
@@ -3798,6 +3854,7 @@ def _make_throw_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                 ]
             ),
@@ -3816,6 +3873,7 @@ def _make_throw_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for is_distal in BOOL_SET
                 ]
@@ -3834,6 +3892,7 @@ def _make_throw_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for is_towards in BOOL_SET
                 ]
@@ -3885,6 +3944,7 @@ def _make_jump_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for template in templates
                 ]
@@ -3899,6 +3959,7 @@ def _make_jump_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for is_right in BOOL_SET
                 ]
@@ -3917,6 +3978,7 @@ def _make_jump_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for is_distal in BOOL_SET
                     for is_in_front in BOOL_SET
@@ -3961,6 +4023,7 @@ def _make_fly_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                 ]
             ),
@@ -3974,6 +4037,7 @@ def _make_fly_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for is_right in BOOL_SET
                 ]
@@ -3992,6 +4056,7 @@ def _make_fly_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for is_distal in BOOL_SET
                     for is_in_front in BOOL_SET
@@ -4005,6 +4070,7 @@ def _make_fly_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                 ]
             ),
@@ -4016,6 +4082,7 @@ def _make_fly_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                 ]
             ),
@@ -4029,6 +4096,7 @@ def _make_fly_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for is_toward in BOOL_SET
                 ]
@@ -4041,6 +4109,7 @@ def _make_fly_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                 ]
             ),
@@ -4079,6 +4148,7 @@ def _make_come_with_prepositions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                 ]
             )

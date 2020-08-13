@@ -178,6 +178,7 @@ def _make_sit_on_curriculum(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 25,
+                    block_multiple_of_the_same_type=True,
                 ),
                 sampled(
                     make_sit_transitive(
@@ -186,6 +187,7 @@ def _make_sit_on_curriculum(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 25,
+                    block_multiple_of_the_same_type=True,
                 ),
             ]
         ),
