@@ -679,6 +679,7 @@ This is a placeholder for a more sophisticated representation of size:
 https://github.com/isi-vista/adam/issues/70
 """
 subtype(SMALLER_THAN_SAME_TYPE, SIZE_RELATION)
+subtype(SMALLER_THAN, SIZE_RELATION)
 
 bigger_than = make_opposite_dsl_relation(  # pylint:disable=invalid-name
     BIGGER_THAN, opposite_type=SMALLER_THAN

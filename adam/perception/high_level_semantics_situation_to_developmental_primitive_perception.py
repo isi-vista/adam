@@ -305,7 +305,7 @@ class _PerceptionGeneration:
         # Once all the objects and relations are perceived, determine their colors.
         self._perceive_colors()
         # Handle implicit size relations
-        # self._perceive_size_relative_to_learner()
+        self._perceive_size_relative_to_learner()
         self._perceive_all_relative_size()
 
         # for now, we assume that actions do not alter the relationship of objects axes
