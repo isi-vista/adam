@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import (
     Any,
     Callable,
+    cast,
     Generic,
     Iterable,
     Sequence,
@@ -130,11 +131,16 @@ def _learner_states_by_most_recent(learner_path: Path) -> Iterable[Tuple[int, Pa
         if not logged_state_path.is_file():
             logging.warning("Skipping non-file learner state %s.", str(logged_state_path))
             continue
-        iteration_number_string = logged_state_path.name.replace("learner_state_at_", "").replace(".pkl", "")
+        iteration_number_string = logged_state_path.name.replace(
+            "learner_state_at_", ""
+        ).replace(".pkl", "")
         try:
             iteration_number = int(iteration_number_string)
         except ValueError:
-            logging.warning("Skipping learner state file with bad iteration number %s.", iteration_number_string)
+            logging.warning(
+                "Skipping learner state file with bad iteration number %s.",
+                iteration_number_string,
+            )
             continue
         paths.append((iteration_number, logged_state_path))
         logged_state_path.stat()
@@ -174,9 +180,7 @@ def execute_experiment(
         )
 
     if resume_from_latest_logged_state and starting_point != -1:
-        raise RuntimeError(
-            "Starting point should not be specified when"
-        )
+        raise RuntimeError("Starting point should not be specified when")
 
     # make the directories in which to log the learner
     if log_learner_state and learner_logging_path:
@@ -214,18 +218,26 @@ def execute_experiment(
         learner = None
         # This should already be set, but just in case it wasn't, for example if
         # log_learner_state = False, set it.
-        learner_path = learner_logging_path / "learner_state"
+        learner_path = cast(Path, learner_logging_path) / "learner_state"
         # Note that this is safe if the learner path doesn't exist -- this loop will simply never
         # execute.
-        for iteration_number, learner_state_path in _learner_states_by_most_recent(learner_path):
+        for iteration_number, learner_state_path in _learner_states_by_most_recent(
+            learner_path
+        ):
             try:
                 with learner_state_path.open("rb") as f:
                     learner = pickle.load(f)
                 starting_point = iteration_number
             except OSError:
-                logging.warning("Unable to open learner state at %s; skipping.", str(learner_state_path))
+                logging.warning(
+                    "Unable to open learner state at %s; skipping.",
+                    str(learner_state_path),
+                )
             except pickle.UnpicklingError:
-                logging.warning("Couldn't unpickle learner state at %s; skipping.", str(learner_state_path))
+                logging.warning(
+                    "Couldn't unpickle learner state at %s; skipping.",
+                    str(learner_state_path),
+                )
         # Fall back on default learner
         if learner is None:
             logging.info("Could not load a saved learner; using factory instead.")
@@ -290,7 +302,9 @@ def execute_experiment(
                     )
                     if debug_learner_pickling:
                         logging.info("Pickling and unpickling learner...")
-                        learner = pickle.loads(pickle.dumps(learner, protocol=pickle.HIGHEST_PROTOCOL))
+                        learner = pickle.loads(
+                            pickle.dumps(learner, protocol=pickle.HIGHEST_PROTOCOL)
+                        )
                         logging.info("Pickled and unpickled.")
 
             if experiment.pre_example_training_observers:

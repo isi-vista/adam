@@ -81,22 +81,25 @@ def main(params: Parameters):
             log_experiment_entry_point(experiment_params)
         else:
             experiment_name = Locator(experiment_params.string("experiment"))
-            experiment_params = experiment_params.unify({
-                'experiment_group_dir': directory_for(experiment_name) / "output",
-                "hypothesis_log_dir": directory_for(experiment_name) / "hypotheses",
-                # State pickles will go under experiment_name/learner_state
-                "learner_logging_path": directory_for(experiment_name),
-                "log_learner_state": True,
-                "resume_from_latest_logged_state": True,
-                "log_hypothesis_every_n_steps": params.integer("save_state_every_n_steps"),
-                "debug_learner_pickling": params.boolean("debug_learner_pickling", default=False),
-            })
+            experiment_params = experiment_params.unify(
+                {
+                    "experiment_group_dir": directory_for(experiment_name) / "output",
+                    "hypothesis_log_dir": directory_for(experiment_name) / "hypotheses",
+                    # State pickles will go under experiment_name/learner_state
+                    "learner_logging_path": directory_for(experiment_name),
+                    "log_learner_state": True,
+                    "resume_from_latest_logged_state": True,
+                    "log_hypothesis_every_n_steps": params.integer(
+                        "save_state_every_n_steps"
+                    ),
+                    "debug_learner_pickling": params.boolean(
+                        "debug_learner_pickling", default=False
+                    ),
+                }
+            )
 
             run_python_on_parameters(
-                experiment_name,
-                log_experiment_script,
-                experiment_params,
-                depends_on=[],
+                experiment_name, log_experiment_script, experiment_params, depends_on=[]
             )
 
     if use_pegasus:
