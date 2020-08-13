@@ -3332,7 +3332,8 @@ def build_gaila_phase1_verb_curriculum(
         _make_spin_curriculum(num_samples, num_noise_objects, language_generator),
         _make_go_curriculum(num_samples, num_noise_objects, language_generator),
         _make_push_curriculum(num_samples, num_noise_objects, language_generator),
-        _make_throw_curriculum(num_samples, num_noise_objects, language_generator),
+        # TODO: fix this based on Deniz's thoughts
+        # _make_throw_curriculum(num_samples, num_noise_objects, language_generator),
         _make_pass_curriculum(num_samples, num_noise_objects, language_generator),
         # _make_put_on_speaker_addressee_body_part_curriculum(num_samples, num_noise_objects, language_generator),
         _make_come_curriculum(num_samples, num_noise_objects, language_generator),
