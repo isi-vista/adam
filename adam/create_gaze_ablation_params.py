@@ -6,7 +6,7 @@ import numpy as np
 def create_gaze_ablation_entry_point(params: Parameters) -> None:
     """This function creates all possible gaze ablation param files within a given range"""
     # get the parameters directory, which must be non-null
-    parameters_dir = params.optional_creatable_directory("parameters_directory")
+    parameters_dir = params.creatable_directory("parameters_directory")
     if not parameters_dir:
         raise RuntimeError(
             "Must specify a directory where you wish to write your param files"
