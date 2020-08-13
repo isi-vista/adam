@@ -490,7 +490,8 @@ class SubsetObjectLearnerNew(
                 template_variable_to_pattern_node=immutabledict(),
             )
             for candidate_object in extract_candidate_objects(
-                learning_state.perception_semantic_alignment.perception_graph
+                learning_state.perception_semantic_alignment.perception_graph,
+                sort_by_increasing_size=False,
             )
         )
 
@@ -556,7 +557,7 @@ class ObjectRecognizerAsTemplateLearner(TemplateLearner):
         new_nodes = []
         perception_graph_after_processing = perception_graph_after_matching
         for candiate_object_graph in extract_candidate_objects(
-            perception_graph_after_matching
+            perception_graph_after_matching, sort_by_increasing_size=False
         ):
             fake_pattern_graph = PerceptionGraphPattern.from_graph(candiate_object_graph)
             fake_object_semantic_node = ObjectSemanticNode(
@@ -685,7 +686,8 @@ class PursuitObjectLearnerNew(
                 template_variable_to_pattern_node=immutabledict(),
             )
             for candidate_object in extract_candidate_objects(
-                learning_state.perception_semantic_alignment.perception_graph
+                learning_state.perception_semantic_alignment.perception_graph,
+                sort_by_increasing_size=False,
             )
         )
 

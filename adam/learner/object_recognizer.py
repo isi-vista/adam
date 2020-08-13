@@ -319,7 +319,9 @@ class ObjectRecognizer:
                     matched_object_node, graph_to_return, pattern_match
                 )
 
-        candidate_object_subgraphs = extract_candidate_objects(perception_graph, True)
+        candidate_object_subgraphs = extract_candidate_objects(
+            perception_graph, sort_by_increasing_size=True
+        )
 
         for candidate_object_graph in candidate_object_subgraphs:
             num_object_nodes = candidate_object_graph.count_nodes_matching(
@@ -539,7 +541,7 @@ class ObjectRecognizer:
 
 
 def extract_candidate_objects(
-    whole_scene_perception_graph: PerceptionGraph, sort_by_increasing_size: bool = False
+    whole_scene_perception_graph: PerceptionGraph, sort_by_increasing_size: bool
 ) -> Sequence[PerceptionGraph]:
 
     """
