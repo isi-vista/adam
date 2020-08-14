@@ -1378,7 +1378,9 @@ class _PerceptionGeneration:
                 )
 
         # Translate sub-object relations specified by the object's structural schema.
-        situation_region_to_perception_region = dict()
+        situation_region_to_perception_region: Dict[
+            Region[SubObject], Region[ObjectPerception]
+        ] = dict()
         for sub_object_relation in schema.sub_object_relations:
             # TODO: right now we translate all situation relations directly to perceptual
             # relations without modification. This is not always the right thing.
