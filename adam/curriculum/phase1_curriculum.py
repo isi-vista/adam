@@ -2,7 +2,7 @@
 Curricula for DARPA GAILA Phase 1
 """
 from math import ceil
-
+from adam.ontology.phase1_ontology import DISTAL
 from adam.language.language_generator import LanguageGenerator
 from adam.language.dependency import LinearizedDependencyTree
 from itertools import chain
@@ -709,7 +709,10 @@ def falling_template(
                             theme,
                             SpatialPath(
                                 operator=TOWARD,
-                                reference_source_object=ground,
+                                reference_source_object=Region(ground, distance=DISTAL),
+                                reference_destination_object=Region(
+                                    ground, distance=EXTERIOR_BUT_IN_CONTACT
+                                ),
                                 properties=spatial_properties,
                             ),
                         )
@@ -747,7 +750,10 @@ def fall_on_ground_template(
                             theme,
                             SpatialPath(
                                 TOWARD,
-                                reference_source_object=ground,
+                                reference_source_object=Region(ground, distance=DISTAL),
+                                reference_destination_object=Region(
+                                    ground, distance=EXTERIOR_BUT_IN_CONTACT
+                                ),
                                 properties=spatial_properties,
                             ),
                         )
@@ -1074,7 +1080,14 @@ def bare_fly(
                             agent,
                             SpatialPath(
                                 AWAY_FROM if up else TOWARD,
-                                reference_source_object=ground,
+                                reference_source_object=Region(ground, distance=DISTAL)
+                                if not up
+                                else ground,
+                                reference_destination_object=Region(
+                                    ground, distance=DISTAL
+                                )
+                                if up
+                                else ground,
                                 properties=spatial_properties,
                             ),
                         )
@@ -1171,6 +1184,7 @@ def intransitive_roll(
                             SpatialPath(
                                 None,
                                 reference_source_object=surface,
+                                reference_destination_object=surface,
                                 properties=spatial_properties,
                             ),
                         )
@@ -1206,6 +1220,7 @@ def transitive_roll(
                             SpatialPath(
                                 None,
                                 reference_source_object=surface,
+                                reference_destination_object=surface,
                                 properties=spatial_properties,
                             ),
                         )
@@ -1241,6 +1256,7 @@ def transitive_roll_with_surface(
                             SpatialPath(
                                 None,
                                 reference_source_object=surface,
+                                reference_destination_object=surface,
                                 properties=spatial_properties,
                             ),
                         )
@@ -1452,6 +1468,7 @@ def make_jump_template(
                                 if use_adverbial_path_modifier
                                 else None,
                                 reference_source_object=ground,
+                                reference_destination_object=ground,
                                 properties=spatial_properties,
                             ),
                         )
@@ -1491,7 +1508,8 @@ def make_pass_template(
                             agent,
                             SpatialPath(
                                 None,
-                                reference_source_object=goal,
+                                reference_source_object=Region(goal, distance=DISTAL),
+                                reference_destination_object=goal,
                                 properties=spatial_properties,
                             ),
                         ),
@@ -1502,6 +1520,7 @@ def make_pass_template(
                                 if use_adverbial_path_modifier
                                 else None,
                                 reference_source_object=GROUND_OBJECT_TEMPLATE,
+                                reference_destination_object=GROUND_OBJECT_TEMPLATE,
                                 properties=spatial_properties,
                             ),
                         ),
@@ -2004,6 +2023,7 @@ def make_take_template(
                                 )
                                 else None,
                                 reference_source_object=ground,
+                                reference_destination_object=ground,
                                 properties=spatial_properties,
                             ),
                         )
@@ -2050,7 +2070,8 @@ def make_walk_run_template(
                             agent,
                             SpatialPath(
                                 operator=TOWARD,
-                                reference_source_object=goal,
+                                reference_source_object=Region(goal, distance=DISTAL),
+                                reference_destination_object=goal,
                                 properties=spatial_properties,
                             ),
                         ),
@@ -2061,6 +2082,7 @@ def make_walk_run_template(
                                 if use_adverbial_path_modifier
                                 else None,
                                 reference_source_object=ground,
+                                reference_destination_object=ground,
                                 properties=spatial_properties,
                             ),
                         ),
@@ -2136,7 +2158,10 @@ def bare_move_template(
                             agent,
                             SpatialPath(
                                 None,
-                                reference_source_object=goal_reference,
+                                reference_source_object=Region(
+                                    goal_reference, distance=DISTAL
+                                ),
+                                reference_destination_object=goal_reference,
                                 properties=spatial_properties,
                             ),
                         )
@@ -2170,7 +2195,10 @@ def transitive_move_template(
                             theme,
                             SpatialPath(
                                 None,
-                                reference_source_object=goal_reference,
+                                reference_source_object=Region(
+                                    goal_reference, distance=DISTAL
+                                ),
+                                reference_destination_object=goal_reference,
                                 properties=spatial_properties,
                             ),
                         )
@@ -2412,7 +2440,10 @@ def make_push_templates(
                             agent,
                             SpatialPath(
                                 None,
-                                reference_source_object=push_goal,
+                                reference_source_object=Region(
+                                    push_goal, distance=DISTAL
+                                ),
+                                reference_destination_object=push_goal,
                                 properties=spatial_properties,
                             ),
                         ),
@@ -2423,6 +2454,7 @@ def make_push_templates(
                                 if use_adverbial_path_modifier
                                 else None,
                                 reference_source_object=push_surface,
+                                reference_destination_object=push_surface,
                                 properties=spatial_properties,
                             ),
                         ),
@@ -2454,7 +2486,10 @@ def make_push_templates(
                             agent,
                             SpatialPath(
                                 None,
-                                reference_source_object=push_goal,
+                                reference_source_object=Region(
+                                    push_goal, distance=DISTAL
+                                ),
+                                reference_destination_object=push_goal,
                                 properties=spatial_properties,
                             ),
                         ),
@@ -2465,6 +2500,7 @@ def make_push_templates(
                                 if use_adverbial_path_modifier
                                 else None,
                                 reference_source_object=push_surface,
+                                reference_destination_object=push_surface,
                                 properties=spatial_properties,
                             ),
                         ),
@@ -2556,6 +2592,7 @@ def throw_on_ground_template(
                             SpatialPath(
                                 None,
                                 reference_source_object=ground,
+                                reference_destination_object=ground,
                                 properties=spatial_properties,
                             ),
                         )
@@ -2593,7 +2630,8 @@ def throw_template(
                             theme,
                             SpatialPath(
                                 None,
-                                reference_source_object=goal,
+                                reference_source_object=agent,
+                                reference_destination_object=goal,
                                 properties=spatial_properties,
                             ),
                         )
@@ -2632,6 +2670,9 @@ def throw_up_down_template(
                             SpatialPath(
                                 AWAY_FROM,
                                 reference_source_object=GROUND_OBJECT_TEMPLATE,
+                                reference_destination_object=Region(
+                                    GROUND_OBJECT_TEMPLATE, distance=DISTAL
+                                ),
                                 properties=spatial_properties,
                             ),
                         )
@@ -2643,6 +2684,7 @@ def throw_up_down_template(
                             SpatialPath(
                                 TOWARD,
                                 reference_source_object=GROUND_OBJECT_TEMPLATE,
+                                reference_destination_object=GROUND_OBJECT_TEMPLATE,
                                 properties=spatial_properties,
                             ),
                         )
@@ -2677,7 +2719,8 @@ def throw_to_template(
                             theme,
                             SpatialPath(
                                 None,
-                                reference_source_object=goal,
+                                reference_source_object=agent,
+                                reference_destination_object=goal,
                                 properties=spatial_properties,
                             ),
                         )
