@@ -76,8 +76,8 @@ def gaze_ablation_runner_entry_point(params: Parameters) -> None:
                                     "num_noise_instances": num_noise_instances,
                                     "num_objects_in_instance": num_objects_in_instance,
                                     "add_gaze": add_gaze,
-                                    "prob_given": prob_given,
-                                    "prob_not_given": prob_not_given,
+                                    "prob_given": float(prob_given),
+                                    "prob_not_given": float(prob_not_given),
                                 }
                             })
 
