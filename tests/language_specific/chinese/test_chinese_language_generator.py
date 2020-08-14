@@ -1717,6 +1717,7 @@ def test_bird_flies_path_beside():
                             SpatialPath(
                                 VIA,
                                 reference_source_object=car_region,
+                                reference_destination_object=car_region,
                                 reference_axis=HorizontalAxisOfObject(car, index=0),
                             ),
                         )
@@ -1830,7 +1831,11 @@ def test_sitting_up():
                         (
                             mum,
                             SpatialPath(
-                                operator=AWAY_FROM, reference_source_object=ground
+                                operator=AWAY_FROM,
+                                reference_source_object=ground,
+                                reference_destination_object=Region(
+                                    ground, distance=DISTAL
+                                ),
                             ),
                         )
                     ]
@@ -1859,7 +1864,11 @@ def test_bird_flies_up():
                         (
                             bird,
                             SpatialPath(
-                                operator=AWAY_FROM, reference_source_object=ground
+                                operator=AWAY_FROM,
+                                reference_source_object=ground,
+                                reference_destination_object=Region(
+                                    ground, distance=DISTAL
+                                ),
                             ),
                         )
                     ]
@@ -1887,7 +1896,11 @@ def test_bird_flies_down():
                     objects_to_paths=[
                         (
                             bird,
-                            SpatialPath(operator=TOWARD, reference_source_object=ground),
+                            SpatialPath(
+                                operator=TOWARD,
+                                reference_source_object=Region(ground, distance=DISTAL),
+                                reference_destination_object=ground,
+                            ),
                         )
                     ]
                 ),
@@ -1916,7 +1929,11 @@ def test_going_up():
                         (
                             bird,
                             SpatialPath(
-                                operator=AWAY_FROM, reference_source_object=ground
+                                operator=AWAY_FROM,
+                                reference_source_object=ground,
+                                reference_destination_object=Region(
+                                    ground, distance=DISTAL
+                                ),
                             ),
                         )
                     ]
@@ -1943,7 +1960,11 @@ def test_going_down():
                     objects_to_paths=[
                         (
                             bird,
-                            SpatialPath(operator=TOWARD, reference_source_object=ground),
+                            SpatialPath(
+                                operator=TOWARD,
+                                reference_source_object=Region(ground, distance=DISTAL),
+                                reference_destination_object=ground,
+                            ),
                         )
                     ]
                 ),
@@ -1970,7 +1991,11 @@ def test_coming_up():
                         (
                             bird,
                             SpatialPath(
-                                operator=AWAY_FROM, reference_source_object=ground
+                                operator=AWAY_FROM,
+                                reference_source_object=ground,
+                                reference_destination_object=Region(
+                                    ground, distance=DISTAL
+                                ),
                             ),
                         )
                     ]
@@ -1997,7 +2022,11 @@ def test_coming_down():
                     objects_to_paths=[
                         (
                             bird,
-                            SpatialPath(operator=TOWARD, reference_source_object=ground),
+                            SpatialPath(
+                                operator=TOWARD,
+                                reference_source_object=Region(ground, distance=DISTAL),
+                                reference_destination_object=ground,
+                            ),
                         )
                     ]
                 ),
@@ -2043,7 +2072,11 @@ def test_jump_down():
                     objects_to_paths=[
                         (
                             dad,
-                            SpatialPath(operator=TOWARD, reference_source_object=ground),
+                            SpatialPath(
+                                operator=TOWARD,
+                                reference_source_object=Region(ground, distance=DISTAL),
+                                reference_destination_object=ground,
+                            ),
                         )
                     ]
                 ),
@@ -2374,7 +2407,8 @@ def test_dad_moves_towards_cookie():
                             dad,
                             SpatialPath(
                                 operator=TOWARD,
-                                reference_source_object=cookie,
+                                reference_source_object=Region(cookie, distance=DISTAL),
+                                reference_destination_object=cookie,
                                 reference_axis=HorizontalAxisOfObject(dad, 1),
                             ),
                         )
@@ -2408,6 +2442,9 @@ def test_dad_moves_away_from_cookie():
                             SpatialPath(
                                 operator=AWAY_FROM,
                                 reference_source_object=cookie,
+                                reference_destination_object=Region(
+                                    cookie, distance=DISTAL
+                                ),
                                 reference_axis=HorizontalAxisOfObject(dad, 1),
                             ),
                         )
@@ -2443,6 +2480,7 @@ def test_jump_fast():
                             SpatialPath(
                                 None,
                                 reference_source_object=situation_object(GROUND),
+                                reference_destination_object=situation_object(GROUND),
                                 properties=[FAST],
                             ),
                         )
@@ -2473,6 +2511,7 @@ def test_I_walk_fast():
                             SpatialPath(
                                 None,
                                 reference_source_object=situation_object(GROUND),
+                                reference_destination_object=situation_object(GROUND),
                                 properties=[FAST],
                             ),
                         )
@@ -2503,6 +2542,7 @@ def test_I_walk_slowly():
                             SpatialPath(
                                 None,
                                 reference_source_object=situation_object(GROUND),
+                                reference_destination_object=situation_object(GROUND),
                                 properties=[SLOW],
                             ),
                         )
@@ -2672,6 +2712,7 @@ def test_run():
                             SpatialPath(
                                 None,
                                 reference_source_object=GROUND,
+                                reference_destination_object=GROUND,
                                 properties=[HARD_FORCE],
                             ),
                         )
@@ -2700,6 +2741,7 @@ def test_run_fast():
                             SpatialPath(
                                 None,
                                 reference_source_object=GROUND,
+                                reference_destination_object=GROUND,
                                 properties=[HARD_FORCE, FAST],
                             ),
                         )
@@ -2728,6 +2770,7 @@ def test_run_slow():
                             SpatialPath(
                                 None,
                                 reference_source_object=GROUND,
+                                reference_destination_object=GROUND,
                                 properties=[HARD_FORCE, SLOW],
                             ),
                         )
@@ -2760,6 +2803,7 @@ def test_I_run_out_of_car_slowly():
                             SpatialPath(
                                 None,
                                 reference_source_object=GROUND,
+                                reference_destination_object=GROUND,
                                 properties=[HARD_FORCE, SLOW],
                             ),
                         )
@@ -2793,6 +2837,7 @@ def test_dad_slowly_grabs_cookie():
                             SpatialPath(
                                 None,
                                 reference_source_object=GROUND,
+                                reference_destination_object=GROUND,
                                 properties=[HARD_FORCE, SLOW],
                             ),
                         )
@@ -2839,6 +2884,7 @@ def test_i_shove_a_ball_on_a_table_dao():
                             SpatialPath(
                                 None,
                                 reference_source_object=GROUND,
+                                reference_destination_object=GROUND,
                                 properties=[HARD_FORCE],
                             ),
                         )
@@ -2876,6 +2922,7 @@ def test_i_shove_a_table():
                             SpatialPath(
                                 None,
                                 reference_source_object=GROUND,
+                                reference_destination_object=GROUND,
                                 properties=[HARD_FORCE],
                             ),
                         )
@@ -2919,6 +2966,7 @@ def test_i_push_table_down_slowly():
                             SpatialPath(
                                 operator=TOWARD,
                                 reference_source_object=situation_object(GROUND),
+                                reference_destination_object=situation_object(GROUND),
                                 properties=[SLOW],
                             ),
                         )
@@ -2954,7 +3002,10 @@ def test_i_throw_ball_down():
                             mum,
                             SpatialPath(
                                 operator=TOWARD,
-                                reference_source_object=situation_object(GROUND),
+                                reference_source_object=Region(
+                                    situation_object(GROUND), distance=DISTAL
+                                ),
+                                reference_destination_object=situation_object(GROUND),
                             ),
                         )
                     ]
@@ -2983,7 +3034,11 @@ def test_dad_passes_the_cookie_down_to_me():
                             dad,
                             SpatialPath(
                                 operator=TOWARD,
-                                reference_source_object=situation_object(GROUND),
+                                # TODO : fix ground checking in language generator
+                                reference_source_object=Region(
+                                    situation_object(GROUND), distance=DISTAL
+                                ),
+                                reference_destination_object=situation_object(GROUND),
                             ),
                         )
                     ]
@@ -3019,6 +3074,7 @@ def test_toss():
                             SpatialPath(
                                 None,
                                 reference_source_object=GROUND,
+                                reference_destination_object=GROUND,
                                 properties=[HARD_FORCE],
                             ),
                         )
@@ -3048,6 +3104,9 @@ def test_dad_tosses_the_cookie_up_to_me():
                             SpatialPath(
                                 operator=AWAY_FROM,
                                 reference_source_object=situation_object(GROUND),
+                                reference_destination_object=Region(
+                                    situation_object(GROUND), distance=DISTAL
+                                ),
                                 properties=[HARD_FORCE],
                             ),
                         )
@@ -3084,7 +3143,8 @@ def test_bird_flies_up_towards_mum():
                             bird,
                             SpatialPath(
                                 operator=TOWARD,
-                                reference_source_object=mum,
+                                reference_source_object=Region(mum, distance=DISTAL),
+                                reference_destination_object=mum,
                                 reference_axis=HorizontalAxisOfObject(bird, 1),
                             ),
                         ),
@@ -3093,6 +3153,9 @@ def test_bird_flies_up_towards_mum():
                             SpatialPath(
                                 operator=AWAY_FROM,
                                 reference_source_object=situation_object(GROUND),
+                                reference_destination_object=Region(
+                                    situation_object(GROUND), distance=DISTAL
+                                ),
                             ),
                         ),
                     ]
@@ -3127,6 +3190,7 @@ def test_bird_flies_away_from_mum():
                             SpatialPath(
                                 operator=AWAY_FROM,
                                 reference_source_object=mum,
+                                reference_destination_object=Region(mum, distance=DISTAL),
                                 reference_axis=HorizontalAxisOfObject(bird, 1),
                             ),
                         )
@@ -3181,6 +3245,7 @@ def test_you_toss_me_cookie():
                             SpatialPath(
                                 operator=None,
                                 reference_source_object=situation_object(GROUND),
+                                reference_destination_object=situation_object(GROUND),
                                 properties=[HARD_FORCE],
                             ),
                         )
@@ -3217,6 +3282,7 @@ def test_you_toss_mum_cookie():
                             SpatialPath(
                                 operator=None,
                                 reference_source_object=situation_object(GROUND),
+                                reference_destination_object=situation_object(GROUND),
                             ),
                         )
                     ]
@@ -3305,7 +3371,14 @@ def test_non_salient_in_path():
                 argument_roles_to_fillers=[(AGENT, dad), (THEME, cookie)],
                 during=DuringAction(
                     objects_to_paths=[
-                        (mum, SpatialPath(operator=None, reference_source_object=cookie))
+                        (
+                            mum,
+                            SpatialPath(
+                                operator=None,
+                                reference_source_object=cookie,
+                                reference_destination_object=cookie,
+                            ),
+                        )
                     ]
                 ),
             )
@@ -3327,7 +3400,14 @@ def test_not_yet_used_operator():
                 argument_roles_to_fillers=[(AGENT, dad), (THEME, cookie)],
                 during=DuringAction(
                     objects_to_paths=[
-                        (mum, SpatialPath(operator=FROM, reference_source_object=cookie))
+                        (
+                            mum,
+                            SpatialPath(
+                                operator=FROM,
+                                reference_source_object=cookie,
+                                reference_destination_object=cookie,
+                            ),
+                        )
                     ]
                 ),
             )
@@ -3354,6 +3434,7 @@ def test_bird_flies_away_from_mum_region():
                             SpatialPath(
                                 operator=AWAY_FROM,
                                 reference_source_object=Region(mum, distance=PROXIMAL),
+                                reference_destination_object=Region(mum, distance=DISTAL),
                                 reference_axis=HorizontalAxisOfObject(bird, 1),
                             ),
                         )
