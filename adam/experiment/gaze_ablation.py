@@ -85,6 +85,7 @@ def gaze_ablation_runner_entry_point(params: Parameters) -> None:
                                 experiment_name,
                                 log_experiment_entry_point,
                                 experiment_params,
+                                depends_on=[]
                             )
 
     write_workflow_description()
