@@ -3734,6 +3734,7 @@ def test_invalid_relations():
         generated_tokens(situation)
 
 
+
 def test_drink_from():
     agent = situation_object(MOM)
     liquid = situation_object(WATER)
@@ -3813,3 +3814,4 @@ def test_order_ba_and_prep_phrase():
         "twei1",
         "sya4 lai2",
     )
+
