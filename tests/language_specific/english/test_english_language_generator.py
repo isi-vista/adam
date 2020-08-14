@@ -827,6 +827,7 @@ def test_bird_flies_path_beside():
                             SpatialPath(
                                 VIA,
                                 reference_source_object=car_region,
+                                reference_destination_object=car_region,
                                 reference_axis=HorizontalAxisOfObject(car, index=0),
                             ),
                         )
@@ -856,7 +857,11 @@ def test_bird_flies_up():
                         (
                             bird,
                             SpatialPath(
-                                operator=AWAY_FROM, reference_source_object=ground
+                                operator=AWAY_FROM,
+                                reference_source_object=ground,
+                                reference_destination_object=Region(
+                                    ground, distance=DISTAL
+                                ),
                             ),
                         )
                     ]
@@ -1707,6 +1712,7 @@ def test_run():
                             SpatialPath(
                                 None,
                                 reference_source_object=GROUND,
+                                reference_destination_object=GROUND,
                                 properties=[HARD_FORCE],
                             ),
                         )
@@ -1735,6 +1741,7 @@ def test_toss():
                             SpatialPath(
                                 None,
                                 reference_source_object=GROUND,
+                                reference_destination_object=GROUND,
                                 properties=[HARD_FORCE],
                             ),
                         )
@@ -1764,6 +1771,7 @@ def test_shove():
                             SpatialPath(
                                 None,
                                 reference_source_object=table,
+                                reference_destination_object=table,
                                 properties=[HARD_FORCE],
                             ),
                         )
@@ -1800,6 +1808,7 @@ def test_grab():
                             SpatialPath(
                                 None,
                                 reference_source_object=GROUND,
+                                reference_destination_object=GROUND,
                                 properties=[HARD_FORCE],
                             ),
                         )
@@ -1826,7 +1835,10 @@ def test_slowly():
                         (
                             mom,
                             SpatialPath(
-                                None, reference_source_object=GROUND, properties=[SLOW]
+                                None,
+                                reference_source_object=GROUND,
+                                reference_destination_object=GROUND,
+                                properties=[SLOW],
                             ),
                         )
                     ]
@@ -1852,7 +1864,10 @@ def test_fast():
                         (
                             mom,
                             SpatialPath(
-                                None, reference_source_object=GROUND, properties=[FAST]
+                                None,
+                                reference_source_object=GROUND,
+                                reference_destination_object=GROUND,
+                                properties=[FAST],
                             ),
                         )
                     ]
