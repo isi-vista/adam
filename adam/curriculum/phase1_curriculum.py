@@ -2759,7 +2759,8 @@ def throw_to_region_template(
                             theme,
                             SpatialPath(
                                 None,
-                                reference_source_object=goal,
+                                reference_source_object=agent,
+                                reference_destination_object=theme,
                                 properties=spatial_properties,
                             ),
                         )
@@ -2942,8 +2943,28 @@ def _make_come_down_template(
                 argument_roles_to_fillers=[(AGENT, agent), (GOAL, goal_reference)],
                 during=DuringAction(
                     objects_to_paths=[
-                        (agent, SpatialPath(TOWARD, reference_source_object=ground)),
-                        (agent, SpatialPath(TO, reference_source_object=goal_reference)),
+                        (
+                            agent,
+                            SpatialPath(
+                                TOWARD,
+                                reference_source_object=Region(ground, distance=DISTAL),
+                                reference_destination_object=Region(
+                                    ground, distance=PROXIMAL
+                                ),
+                            ),
+                        ),
+                        (
+                            agent,
+                            SpatialPath(
+                                TO,
+                                reference_source_object=Region(
+                                    goal_reference, distance=DISTAL
+                                ),
+                                reference_destination_object=Region(
+                                    goal_reference, distance=PROXIMAL
+                                ),
+                            ),
+                        ),
                     ]
                 ),
             )
