@@ -12,6 +12,8 @@ from typing import (
     Callable,
 )
 
+from adam.axis import GeonAxis
+from adam.geon import Geon, CrossSection
 from adam.language_specific.chinese.chinese_phase_1_lexicon import (
     GAILA_PHASE_1_CHINESE_LEXICON,
 )
@@ -709,17 +711,39 @@ def _add_properties_linked_to_root_object_perception(
     output_graph: DiGraph,
     matched_nodes: AbstractSet[PerceptionGraphNode],
     matched_object_node: ObjectSemanticNode,
+    remove_hard_to_match_nodes: bool = True,
 ) -> None:
     # We take two graphs as input because we are assuming object-internal properties
     # have already been deleted from the output_graph, so we have to look for them
     # in the original, unaltered graph
     root_node = _get_root_object_perception(original_graph, matched_nodes)
+    # We currently want to remove geon and cross sectional information to
+    # try and speed up pattern intersection
+    nodes_to_remove = set()
     for succ in original_graph.successors(root_node):
+        if isinstance(succ, Tuple):  # type: ignore
+            if isinstance(succ[0], Geon):
+                nodes_to_remove.add(succ)
+        elif isinstance(succ, CrossSection) or isinstance(succ, GeonAxis):
+            nodes_to_remove.add(succ)
         edge_label = _get_edge_label(original_graph, root_node, succ)
         output_graph.add_edge(matched_object_node, succ, label=edge_label)
     for pred in original_graph.predecessors(root_node):
+        if isinstance(pred, Tuple):  # type: ignore
+            if isinstance(pred[0], Geon):
+                nodes_to_remove.add(pred)
+                continue
+        elif isinstance(pred, CrossSection) or isinstance(pred, GeonAxis):
+            nodes_to_remove.add(pred)
+            continue
         edge_label = _get_edge_label(original_graph, pred, root_node)
         output_graph.add_edge(pred, matched_object_node, label=edge_label)
+    # This cleans up any nodes we discovered and marked to remove as a post-processing step
+    if remove_hard_to_match_nodes:
+        nodes_to_remove_immutable = immutableset(
+            nodes_to_remove, disable_order_check=True
+        )
+        output_graph.remove_nodes_from(nodes_to_remove_immutable)
 
 
 def _add_relationships_linked_to_root_object_perception(
