@@ -2176,7 +2176,9 @@ _FALL_ACTION_DESCRIPTION = ActionDescription(
                 SpatialPath(
                     operator=TOWARD,
                     reference_source_object=Region(_FALL_GROUND, distance=DISTAL),
-                    reference_destination_object=Region(_FALL_GROUND, distance=PROXIMAL),
+                    reference_destination_object=Region(
+                        _FALL_GROUND, distance=EXTERIOR_BUT_IN_CONTACT
+                    ),
                 ),
                 # SpatialPath(operator=TOWARD, reference_source_object=_FALL_GROUND),
             )
