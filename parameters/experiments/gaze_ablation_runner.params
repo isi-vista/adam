@@ -1,0 +1,35 @@
+_includes:
+   - "../root.params"
+
+experiment: 'gaze_ablation_pegasus'
+experiment_group_dir: '%adam_experiment_root%/%experiment%'
+
+min_num_objects: 3
+max_num_objects : 8
+num_increments: 11
+min_num_noise : 0
+max_num_noise : 0
+min_instances : 15
+max_instances : 20
+
+gaze_ablation:
+    accuracy_to_txt: true
+    include_image_links: true
+    sort_learner_descriptions_by_length: true
+    num_pretty_descriptions: 5
+
+    save_state_every_n_steps: 200
+    debug_learner_pickling: false
+
+workflow_name: 'gaze_ablation_pegasus'
+workflow_directory: '%adam_experiment_root%/%experiment%'
+site: 'saga'
+namespace: 'saga'
+
+backend: slurm
+partition: ephemeral
+num_cpus: 1
+num_gpus: 0
+memory: '2G'  # not sure how much is needed
+job_time_in_minutes: 240  # 4 hours should be plenty for this?
+

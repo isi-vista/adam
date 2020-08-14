@@ -98,7 +98,6 @@ EXPERIMENT_NAME_FORMAT = (
 FIXED_PARAMETERS = {
     "curriculum": "pursuit",
     "learner": "pursuit-gaze",
-    "accuracy_to_txt": True,
     "pursuit": {
         "learning_factor": 0.05,
         "graph_match_confirmation_threshold": 0.7,
