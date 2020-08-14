@@ -21,6 +21,7 @@ from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
 from adam.learner.prepositions import SubsetPrepositionLearner
 from adam.learner.relations import SubsetRelationLearnerNew
+from adam.ontology import IS_SPEAKER, IS_ADDRESSEE
 from adam.ontology.phase1_ontology import (
     BALL,
     BOOK,
@@ -30,6 +31,7 @@ from adam.ontology.phase1_ontology import (
     PERSON,
     TABLE,
     WATER,
+    PERSON_CAN_HAVE,
 )
 from adam.situation.templates.phase1_templates import object_variable, sampled
 from immutablecollections import immutableset
@@ -280,10 +282,11 @@ def test_subset_preposition_in_front(language_mode, learner):
     ],
 )
 def test_subset_preposition_has(language_mode, learner):
-    person = standard_object("person", PERSON)
-    cup = standard_object("cup", CUP)
+    person = standard_object(
+        "person", PERSON, banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
+    )
+    object_ = standard_object("object", required_properties=[PERSON_CAN_HAVE])
     book = standard_object("book", BOOK)
-    ball = standard_object("ball", BALL)
 
     language_generator = phase1_language_generator(language_mode)
 
@@ -293,22 +296,10 @@ def test_subset_preposition_has(language_mode, learner):
             "Has Unit Train",
             language_generator=language_generator,
             situations=sampled(
-                _x_has_y_template(person, cup),
+                _x_has_y_template(person, object_),
                 chooser=PHASE1_CHOOSER_FACTORY(),
                 ontology=GAILA_PHASE_1_ONTOLOGY,
-                max_to_sample=1,
-            ),
-        ).instances()
-    )
-    has_train_curriculum.extend(
-        phase1_instances(
-            "Has Unit Train",
-            language_generator=language_generator,
-            situations=sampled(
-                _x_has_y_template(person, book),
-                chooser=PHASE1_CHOOSER_FACTORY(),
-                ontology=GAILA_PHASE_1_ONTOLOGY,
-                max_to_sample=1,
+                max_to_sample=10,
             ),
         ).instances()
     )
@@ -316,7 +307,7 @@ def test_subset_preposition_has(language_mode, learner):
     has_test_curriculum = phase1_instances(
         "Has Unit Test",
         situations=sampled(
-            _x_has_y_template(person, ball),
+            _x_has_y_template(person, book),
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
