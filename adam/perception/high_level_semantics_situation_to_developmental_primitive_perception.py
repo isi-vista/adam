@@ -1395,8 +1395,14 @@ class _PerceptionGeneration:
                 arg2 = sub_object_relation.second_slot
                 arg2_perception = None
                 for sit_region in situation_region_to_perception_region:
-                    if arg2.distance == sit_region.distance and arg2.direction == sit_region.direction and arg2.reference_object == sit_region.reference_object:
-                        arg2_perception = situation_region_to_perception_region[sit_region]
+                    if (
+                        arg2.distance == sit_region.distance
+                        and arg2.direction == sit_region.direction
+                        and arg2.reference_object == sit_region.reference_object
+                    ):
+                        arg2_perception = situation_region_to_perception_region[
+                            sit_region
+                        ]
                         break
                 if not arg2_perception:
                     arg2_perception = arg2.copy_remapping_objects(
