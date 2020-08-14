@@ -11,7 +11,7 @@ import numpy as np
 from adam.experiment.log_experiment import log_experiment_entry_point
 
 
-def create_gaze_ablation_entry_point(params: Parameters) -> None:
+def gaze_ablation_runner_entry_point(params: Parameters) -> None:
     """This function creates all possible gaze ablation param files within a given range"""
     initialize_vista_pegasus_wrapper(params)
 
@@ -108,4 +108,4 @@ FIXED_PARAMETERS = {
 }
 
 if __name__ == "__main__":
-    parameters_only_entry_point(create_gaze_ablation_entry_point)
+    parameters_only_entry_point(gaze_ablation_runner_entry_point)
