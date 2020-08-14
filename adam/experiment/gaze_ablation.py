@@ -8,7 +8,7 @@ from pegasus_wrapper import (
     write_workflow_description,
 )
 import numpy as np
-from adam.experiment.log_experiment import log_experiment_entry_point
+import adam.experiment.log_experiment as log_experiment_script
 
 
 def gaze_ablation_runner_entry_point(params: Parameters) -> None:
@@ -83,7 +83,7 @@ def gaze_ablation_runner_entry_point(params: Parameters) -> None:
 
                             run_python_on_parameters(
                                 experiment_name,
-                                log_experiment_entry_point,
+                                log_experiment_script,
                                 experiment_params,
                                 depends_on=[]
                             )
