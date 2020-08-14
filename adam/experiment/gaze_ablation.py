@@ -54,21 +54,24 @@ def gaze_ablation_runner_entry_point(params: Parameters) -> None:
                     for prob_not_given in values_for_accuracy:
                         # both ignoring and perceiving gaze
                         for add_gaze in [True, False]:
-                            # add the required arguments to create a unique filename
+                            # Define the experiment name, which is used both as a job name and to
+                            # choose a directory in which to store the experiment results.
+                            experiment_name_string = EXPERIMENT_NAME_FORMAT.format(
+                                num_instances=num_instances,
+                                num_noise_instances=num_noise_instances,
+                                num_objects_in_instance=num_objects_in_instance,
+                                prob_given=prob_given,
+                                prob_not_given=prob_not_given,
+                                add_gaze=add_gaze,
+                            )
                             experiment_name = Locator(
-                                EXPERIMENT_NAME_FORMAT.format(
-                                    num_instances=num_instances,
-                                    num_noise_instances=num_noise_instances,
-                                    num_objects_in_instance=num_objects_in_instance,
-                                    prob_given=prob_given,
-                                    prob_not_given=prob_not_given,
-                                    add_gaze=add_gaze,
-                                ).split('-')
+                                experiment_name_string.split('-')
                             )
 
                             # Note that the input parameters should include the root params and
                             # anything else we want.
                             experiment_params = baseline_parameters.unify(FIXED_PARAMETERS).unify({
+                                "experiment": experiment_name_string,
                                 "experiment_group_dir": directory_for(experiment_name),
                                 "hypothesis_log_dir": directory_for(experiment_name) / "hypotheses",
                                 "pursuit-curriculum-params": {
